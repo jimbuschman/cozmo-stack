@@ -41,6 +41,37 @@ public abstract class SteppedBehavior : IBehavior
 {
     private readonly object _gate = new();
     private readonly ConcurrentQueue<Action> _pending = new();
+    // Observation only: lets tests await an asynchronously queued action completion.
+    internal event Action? WorkPosted;
+    internal bool HasPostedWork => !_pending.IsEmpty;
+    private Task? _observedAsyncWork;
+    internal bool AwaitingAsyncCompletion => _observedAsyncWork is { IsCompleted: false };
+    internal Task AsyncWorkCompletion => _observedAsyncWork ?? Task.CompletedTask;
+    protected void ObserveAsyncWork(Task work) => _observedAsyncWork = work;
+    // Observation only: the fixture distinguishes a running animation from its completed ticket's
+    // still-pending default-scheduler callback. Neither task changes the production schedule.
+    private Task? _observedAnimationTicket;
+    private Task? _observedAnimationCallback;
+    internal bool AwaitingCompletedAnimationCallback => _observedAnimationTicket is { IsCompleted: true }
+        && _observedAnimationCallback is { IsCompleted: false };
+    internal Task AnimationCallbackCompletion => _observedAnimationCallback ?? Task.CompletedTask;
+    internal bool ManualAnimationInProgress => Context is not null
+        && Context.Robot.Animations.ManualTicking && Context.Robot.Animations.IsPlaying;
+    private TaskCompletionSource<Task> _asyncInvocation = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal Task<Task> AsyncInvocationStarted => _asyncInvocation.Task;
+    protected void ObserveAsyncInvocation(Task work) => _asyncInvocation.TrySetResult(work);
+    // Fixture scheduling only. The production path keeps Task.Run.
+    internal Func<Func<Task>, Task>? ActionTaskRunner { get; set; }
+    protected Task<T> RunAsyncAction<T>(Func<Task<T>> action)
+    {
+        if (ActionTaskRunner is null) return Task.Run(action);
+        Task<T>? result = null;
+        async Task Invoke() { result = action(); ObserveAsyncInvocation(result); await result; }
+        var scheduled = ActionTaskRunner(Invoke);
+        return Complete();
+        async Task<T> Complete() { await scheduled; return await result!; }
+    }
+    protected Task RunAsyncAction(Func<Task> action) => ActionTaskRunner?.Invoke(action) ?? Task.Run(action);
     private readonly List<string> _trace = new();
 
     private CozmoAnimations? _animations;
@@ -636,7 +667,7 @@ public abstract class SteppedBehavior : IBehavior
                 Log("action timed out");
                 StopActing();
                 // the action ended with TIMEOUT 0x03000018 (IAction::UpdateInternal 0x00540d1c)
-                _pending.Enqueue(() => timeoutDone(ActionOutcome.Failed(ActionOutcome.TimedOut)));
+                Post(() => timeoutDone(ActionOutcome.Failed(ActionOutcome.TimedOut)));
             }
         }
 
@@ -778,6 +809,10 @@ public abstract class SteppedBehavior : IBehavior
         if (_engineActingFlag) { Log("IBehavior.StartActing: the action is dropped because the behaviour is stopping (+0xa0)"); return 0; }
         if (!_resuming && !_engineRunning) { Log("IBehavior.StartActing.Failure.NotRunning"); return 0; }
         if (HasCurrentAction) { Log("IBehavior.StartActing.Failure.AlreadyActing"); return 0; }
+        _observedAsyncWork = null;
+        _observedAnimationTicket = null;
+        _observedAnimationCallback = null;
+        _asyncInvocation = new(TaskCreationOptions.RunContinuationsAsynchronously);
         int handle = Interlocked.Increment(ref _actionHandleCounter);
         Volatile.Write(ref _currentActionHandle, handle);
         ScoredActingStateChanged(true);
@@ -849,7 +884,7 @@ public abstract class SteppedBehavior : IBehavior
         void Complete(ActionOutcome outcome)
         {
             ActingEnded(handleToClear);
-            _pending.Enqueue(() => { if (CallbackMayRun(epoch)) done(outcome); });
+            Post(() => { if (CallbackMayRun(epoch)) done(outcome); });
         }
 
         if (liftSafe && Context.Robot.Motion.IsCarryingObject?.Invoke() == true
@@ -919,7 +954,8 @@ public abstract class SteppedBehavior : IBehavior
             _actionDeadlineMs = double.NaN;
             _onActionTimeout = timeout is null ? null : (o => { if (CallbackMayRun(epoch)) done(o); });
         }
-        ticket.Completion.ContinueWith(completion =>
+        _observedAnimationTicket = ticket.Completion;
+        _observedAnimationCallback = ticket.Completion.ContinueWith(completion =>
         {
             lock (_gate)
             {
@@ -930,7 +966,7 @@ public abstract class SteppedBehavior : IBehavior
                 // +0x84 is cleared first (HandleActionComplete 0x005be1fc, before the callback is reachable, 0x005be216); the behaviour still
                 // reads as busy (_acting) until the completion is queued, so neither a callback nor Update can see a gap.
                 ActingEnded(handleToClear);
-                _pending.Enqueue(() => { if (CallbackMayRun(epoch)) done(ActionOutcome.Succeeded); });
+                Post(() => { if (CallbackMayRun(epoch)) done(ActionOutcome.Succeeded); });
                 _owns = false; _acting = false;
                 _onActionTimeout = null; _actionTimeoutMs = double.NaN; _actionDeadlineMs = double.NaN;
             }
@@ -1109,7 +1145,11 @@ public abstract class SteppedBehavior : IBehavior
     /// Queues a completion to run on the next <see cref="Update"/>, on the manager's thread. Animation
     /// completions arrive this way; a subclass with another asynchronous action posts its completion here.
     /// </summary>
-    protected void Post(Action callback) => _pending.Enqueue(callback);
+    protected void Post(Action callback)
+    {
+        _pending.Enqueue(callback);
+        WorkPosted?.Invoke();
+    }
 
     /// <summary>Writes one trace line.</summary>
     protected void Log(string line)

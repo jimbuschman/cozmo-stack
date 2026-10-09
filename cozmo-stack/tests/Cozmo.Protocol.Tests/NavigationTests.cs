@@ -34,11 +34,8 @@ public class NavigationTests
 
     // The engine-faithful ActionList path completes each move on a later tick than the old host-Task path, so it
     // needs more pump iterations; these guards are load-tolerant harness bounds, not source oracles.
-    private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 60000)
-    {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!cond()) { tick?.Invoke(); if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("condition not met"); Thread.Sleep(5); }
-    }
+
+
 
     private static BehaviorContext Ctx(Rig rig) => new() { Robot = rig.Robot, Triggers = new AnimationTriggerMap() };
 
@@ -69,15 +66,18 @@ public class NavigationTests
     private static void RunToEnd(Rig rig, SteppedBehavior b, BehaviorContext ctx, Func<bool>? frames = null, int ms = 60000, double stepMs = 33)
     {
         double t = 0;
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        b.ActionTaskRunner = SignalTestContext.Schedule;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int modelSteps = 0;
         while (b.Update(ctx, t))
         {
             rig.Pump();
             if (frames?.Invoke() ?? false) rig.Frame();
             t += stepMs;
-            if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
-            Thread.Sleep(2);
+            if (++modelSteps > 10000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
+            SignalTestContext.AdvanceBehavior(b);
         }
         b.Stop(BehaviorStopReason.Completed);
     }
@@ -191,13 +191,14 @@ public class NavigationTests
     [Fact]
     public void DriveToPoseUsesTheLatticePlannerAndTheFakeRobotArrives()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null) return;
         using var rig = new Rig();
         Assert.True(rig.M.LoadPlanner(obb));
         var drive = new DriveToPoseAction(rig.M) { Goal = At(250, 120, Math.PI / 2) };
         var task = drive.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
         Assert.Contains(drive.Trace, l => l.Contains("lattice plan"));
         Assert.InRange(rig.X, 240, 260); Assert.InRange(rig.Y, 110, 130);
@@ -208,6 +209,7 @@ public class NavigationTests
     [Fact]
     public void DriveToObjectWithThePlannerTreatsOtherCubesAsObstaclesButNotTheTarget()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null || Lib is null) return;
         using var rig = new Rig();
@@ -216,7 +218,7 @@ public class NavigationTests
         Assert.Single(rig.Frame().Objects);
         var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
         var task = drive.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(task, () => rig.Pump());
         Assert.True(task.Result == ActionResult.Success, "result=" + task.Result + " trace: " + string.Join(" | ", drive.Trace));
         Assert.Equal(0, rig.M.Planner!.Env.ObstacleCount);                         // the target is not an obstacle
         // the drive reached the pre-action pose it chose. The corrected geometry (C-E7) puts the front
@@ -316,15 +318,16 @@ public class NavigationTests
     [Fact]
     public void AFailedAlignEndsTheMountWithoutTurningOrReversing()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Head = -0.2f;
         rig.Charger = At(200, 0, 0);
         Assert.Single(rig.Frame().Objects);
         rig.DockSucceeds = false;                       // the align reports a failed dock
-        var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId);
+        var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId) { Clock = () => 0f };
         var task = mount.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => { rig.Pump(); rig.Frame(); }, 15000);
+        SignalTestContext.Run(task, () => { rig.Pump(); rig.Frame(); });
 
         Assert.NotEqual(ActionResult.Success, task.Result);
         Assert.Equal(1, mount.Attempts);
@@ -352,13 +355,17 @@ public class NavigationTests
     [Fact]
     public void MountChargerAlignsTurnsAndBacksOntoTheContacts()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Head = -0.2f;
         rig.Charger = At(200, 0, 0);
         Assert.Single(rig.Frame().Objects);
         rig.DockOutcome = BlockStatus.NoBlock;                                       // an align reports no block
-        var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId);
+        // This positive-path fixture drives firmware commands and contacts. The independently
+        // checked 5 s/30 s timeout cases use explicit clocks in RFixBatch2Tests; wall scheduling
+        // of the production 1 ms checker must not turn this contact test into a timeout test.
+        var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId) { Clock = () => 0f };
         // The align leaves the robot 93 mm from the marker - the engine's own 120 less the 27 mm finger
         // offset (the Custom branch at 0x00553402) - and the head is then commanded to 0, from where the
         // marker sits at the very bottom edge of the nominal camera's frame. The charger is dirty from
@@ -370,7 +377,12 @@ public class NavigationTests
         // under test here is the turn, the backup and the contacts.
         rig.M.World.UnobservedMissesToUnknown = int.MaxValue;
         var task = mount.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => { rig.Pump(); if (!rig.OnCharger) rig.Frame(); }, 15000);
+        SignalTestContext.Run(task, () => { rig.Pump(); if (!rig.OnCharger) rig.Frame(); });
+        if (task.Result != ActionResult.Success)
+            throw new Xunit.Sdk.XunitException($"Mount returned {task.Result}; fixture pose ({rig.X}, {rig.Y}, {rig.Angle}), contacts {rig.OnCharger}, sensor contacts {rig.Robot.Sensors.OnCharger}; "
+                + $"robot pose {rig.M.RobotPose()}, charger pose {rig.M.World.GetLocatedObjectById(ChargerGeometry.ObjectId)?.Pose}; "
+                + string.Join(" | ", mount.Trace)
+                + " | paths: " + string.Join(" | ", rig.Sent.OfType<AppendPathSegmentLine>().Select(p => $"({p.XStartMm},{p.YStartMm})->({p.XEndMm},{p.YEndMm}) at {p.Speed.SpeedMmps}")));
         Assert.Equal(ActionResult.Success, task.Result);
         Assert.True(rig.OnCharger);
         Assert.True(rig.Robot.Sensors.OnCharger);
@@ -395,6 +407,7 @@ public class NavigationTests
     [Fact]
     public void DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Charger = At(-30, 0, 0);                                                 // the robot sits docked, facing out of the lip
         rig.Angle = (float)Math.PI;
@@ -404,15 +417,19 @@ public class NavigationTests
         Assert.True(Runnable(b, ctx));                                               // robot+0x34A: SetOnCharger's rising edge set the platform flag
         Assert.Equal(156f, b.DriveDistanceMm);                                       // 96.0f + 60.0f in binary32 (0x005C09E2)
         double t = 0;
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        b.ActionTaskRunner = SignalTestContext.Schedule;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int modelSteps = 0;
         while (b.Update(ctx, t))
         {
             rig.Pump();
             // Robot::Update clears +0x34A when no charger is located or the footprint leaves the charger (0x00513CD8..0x00513E2A, M4-019): the engine tick runs that step
             rig.Tick();
             t += 33;
-            if (sw.ElapsedMilliseconds > 60000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
+            SignalTestContext.AdvanceBehavior(b);
+            if (++modelSteps > 10000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
         }
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.Equal(156f, Math.Abs(line.XEndMm - line.XStartMm), 0);
@@ -429,11 +446,15 @@ public class NavigationTests
     [Fact]
     public void ReactToOnChargerPlaysThenAnnouncesSleepAndDisconnectOnItsTimers()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         rig.OnCharger = true; rig.State();
         var ctx = Ctx(rig);
         var b = new ReactToOnChargerBehavior("ReactToOnCharger", 300, 330);
         Assert.True(Runnable(b, ctx));
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        b.ActionTaskRunner = SignalTestContext.Schedule;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         double t = 0;
         Assert.True(b.Update(ctx, t));
@@ -457,6 +478,7 @@ public class NavigationTests
     [Fact]
     public void FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(200, 0);
@@ -464,7 +486,7 @@ public class NavigationTests
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         Idle(rig);
         var task = flip.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 60000);   // M13-028: the drive waits for the 45 mm lift move; Idle() acks every lift and streams the lift in position
+        SignalTestContext.Run(task, () => { Idle(rig); rig.Pump(); });   // M13-028: the drive waits for the 45 mm lift move; Idle() acks every lift and streams the lift in position
         Assert.Equal(ActionResult.Success, task.Result);
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Single();
         Assert.InRange(line.XEndMm, 217, 224);          // distance + 20
@@ -478,7 +500,7 @@ public class NavigationTests
         // component_minimumNumPixels asks for, so the engine's own front end would not see it either.
         rig.Cube = CubeAt(300, 80); rig.X = 0; rig.Y = 0; rig.Angle = 0; rig.State(); rig.Frame();
         var strict = new FlipBlockAction(rig.M, 7);
-        Assert.Equal(ActionResult.DidNotReachPreActionPose, strict.RunAsync(default).GetAwaiter().GetResult());
+        Assert.Equal(ActionResult.DidNotReachPreActionPose, SignalTestContext.Result(strict.RunAsync(default)));
     }
 
     // ------------------------------------------------------------------ block configurations
@@ -510,6 +532,7 @@ public class NavigationTests
     [Fact]
     public void TheConfigurationManagerTracksWhatTheWorldSeesAndWhenItFirstSawIt()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         double clock = 100;
@@ -590,11 +613,11 @@ public class NavigationTests
     /// The robot's side of a put-down: IS_PICKING_OR_PLACING (status bit 0x4) is reported while it lowers the lift once it has the PlaceObjectOnGround message, then it clears (firmware output order is
     /// HARDWARE_ONLY; the engine's PlaceObjectOnGroundAction::CheckIfDone waits for exactly this edge).
     /// </summary>
-    private static void PlacingFirmware(Rig rig, ref int raisedAt, ref bool cleared, Func<bool>? latched = null)
+    private static void PlacingFirmware(Rig rig, ref int raisedAt, ref bool cleared, Func<bool> latched)
     {
         if (!rig.Sent.Any(m => m is PlaceObjectOnGround)) return;
-        if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = Environment.TickCount; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
-        else if (!cleared && Environment.TickCount - raisedAt > 100 && (latched?.Invoke() ?? Environment.TickCount - raisedAt > 400)) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
+        if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = 1; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
+        else if (!cleared && latched()) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
         else if (!cleared) rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);                  // a camera frame (rig.Frame) reports a fresh state: keep reporting the bit while the lift lowers
     }
 
@@ -608,6 +631,7 @@ public class NavigationTests
     [Fact]
     public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()   // the name is the manifest's (M15-009/M15-011 `test` field)
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null)
         {
             if (Environment.GetEnvironmentVariable("COZMO_TESTS_WITHOUT_ASSETS") == "1") return;
@@ -629,11 +653,37 @@ public class NavigationTests
         Assert.Contains(think.Trace, l => l.Contains("HikingReactToNewArea"));
         Assert.False(Runnable(think, ctx));
         Assert.True(Runnable(bring, ctx));                                           // the cube at 330 mm is outside the 175 mm beacon
+        // The placement drive polls while following its path. An already-completed wait would
+        // spin inside the action and prevent this captured fixture from pumping the robot.
+        var firmwareTicks = new System.Collections.Concurrent.ConcurrentQueue<TaskCompletionSource>();
+        rig.M.Wait = (_, cancel) =>
+        {
+            if (cancel.IsCancellationRequested) return Task.FromCanceled(cancel);
+            var tick = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            firmwareTicks.Enqueue(tick);
+            signals.MarkFirmwareWorkPending();
+            return tick.Task;
+        };
         int raised = 0; bool cleared = false;
         double t = 0;
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        bring.ActionTaskRunner = SignalTestContext.Schedule;
         bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         uint target = bring.Candidate!.Value;
-        try { SpinUntil(() => !bring.Update(ctx, t += 33), () => { rig.Pump(); if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); PlacingFirmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false); }, 20000); }
+        try
+        {
+            int modelSteps = 0;
+            while (bring.Update(ctx, t += 33))
+            {
+                rig.Pump();
+                while (firmwareTicks.TryDequeue(out var tick)) tick.TrySetResult();
+                if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame();
+                PlacingFirmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false);
+                SignalTestContext.AdvanceBehavior(bring);
+                if (++modelSteps > 10000) throw new TimeoutException("placement exhausted its model ticks");
+            }
+        }
         catch (TimeoutException) { throw new TimeoutException("the placement did not finish: " + string.Join(" | ", bring.Trace) + " || sent: " + string.Join(",", rig.Sent.Select(m => m.GetType().Name).Where(n => !n.StartsWith("Backpack")))); }
         bring.Stop(BehaviorStopReason.Completed);
         var trace = bring.Trace.ToList();
@@ -664,6 +714,7 @@ public class NavigationTests
     [Fact]
     public void M15_011_TheBeaconIsAddedAtTheFullRobotPose()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Send(new RobotState
@@ -691,6 +742,7 @@ public class NavigationTests
     [Fact]
     public void M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(300, -30);
@@ -725,6 +777,7 @@ public class NavigationTests
     [InlineData(0x04000001u, "failed")]
     public void M15_008_TheStackCallbackActsOnlyOnTheEnginesCategories(uint result, string expected)
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(300, -30);
@@ -735,6 +788,9 @@ public class NavigationTests
         ctx.Needs = new NeedsManager(() => 0);
         var bring = new BringCubeToBeaconBehavior(rig.M, "Hiking_BringCubeToBeacon", 45);
         rig.M.Whiteboard.AddBeacon(new Pose3d(Mat3.Identity, new Vec3(0, 0, 0)), 175);
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        bring.ActionTaskRunner = SignalTestContext.Schedule;
         bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         uint target = rig.Vision.World.LocatedObjects.Select(o => o.ObjectId).First(i => i != bring.Candidate);
         bring.StackCompleted((ActionResult)result, target, 1);
@@ -796,6 +852,7 @@ public class NavigationTests
     [Fact]
     public void TheWorkoutBehaviourLiftsStrongThenWeakAndPutsTheCubeDown()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null || Lib is null) return;
         using var rig = new Rig();
@@ -832,6 +889,7 @@ public class NavigationTests
     [Fact]
     public void KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         Stack(rig, 260, 0);
@@ -852,6 +910,7 @@ public class NavigationTests
         {
             rig.Frame(); Idle(rig);                        // a frame, then the state the real robot streams with the lift in position (Frame's own state reports it moving)
             if (!tipped && b.CurrentPhase == KnockOverCubesBehavior.Phase.KnockingOverStack
+                && rig.Sent.OfType<AppendPathSegmentLine>().Any(line => line.Speed.SpeedMmps == FlipBlockAction.DriveSpeedMmps)
                 && rig.M.World.GetObjectById(7) is { } o7)
             {
                 tipped = true;
@@ -884,6 +943,7 @@ public class NavigationTests
     [Fact]
     public void PopAWheelieDrivesDocksAndReEnablesStopOnCliff()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(220, 0);
@@ -907,6 +967,7 @@ public class NavigationTests
     [Fact]
     public void PopAWheelieRetriesWithTheRetryAnimationWhenTheDockFails()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(220, 0);
@@ -925,6 +986,7 @@ public class NavigationTests
     [Fact]
     public void RamIntoBlockChargesTheCubeAndBacksOff()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(250, 0);
@@ -945,6 +1007,7 @@ public class NavigationTests
     [Fact]
     public void CantHandleTallStackLooksDownThenUpThenSulks()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         // M4-001 MA22 / M4-016 MA15: until the head is calibrated the engine reads it at -25 deg (Robot+0x2FC from the
@@ -967,6 +1030,7 @@ public class NavigationTests
     [Fact]
     public void CheckForStackAtIntervalLooksAboveTheBlockAndWaitsOutTheInterval()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
@@ -987,6 +1051,7 @@ public class NavigationTests
     [Fact]
     public void RespondPossiblyRollRespondsToAnUprightCubeAndRollsOneOnItsSide()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(220, 0);
@@ -1015,6 +1080,7 @@ public class NavigationTests
     [Fact]
     public void BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(240, 90);
@@ -1046,6 +1112,7 @@ public class NavigationTests
     [Fact]
     public void MajorFrustrationDrivesToARandomPoseInItsConfiguredRange()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
         var b = ReactToFrustrationBehavior.Major(rig.M);
@@ -1169,6 +1236,7 @@ public class NavigationTests
     [Fact]
     public void DriveOffChargerContactsActionFailsWhileStillOnTheContacts()
     {
+        using var signals = SignalTestContext.Install();
         static uint Bits(float f) => BitConverter.SingleToUInt32Bits(f);
         Assert.Equal(0x41200000u, Bits(DriveOffChargerContactsAction.ConstructorDistanceMm));   // 10.0f, 0x00558232
         Assert.Equal(0x41A00000u, Bits(DriveOffChargerContactsAction.ConstructorSpeedMmps));    // 20.0f, 0x00558236
@@ -1178,16 +1246,18 @@ public class NavigationTests
         using var rig = new Rig();
         // not on the contacts at Init -> Init returns 0 and CheckIfDone returns 0 without driving
         rig.OnCharger = false; rig.State();
-        var notOn = new DriveOffChargerContactsAction(rig.M);
-        Assert.Equal(ActionResult.Success, notOn.RunAsync(default).GetAwaiter().GetResult());
+        var notOn = new DriveOffChargerContactsAction(rig.M) { Clock = () => 0f };
+        Assert.Equal(ActionResult.Success, SignalTestContext.Result(notOn.RunAsync(default)));
         Assert.False(notOn.WasOnContactsAtInit);
         Assert.DoesNotContain(rig.Sent, m => m is AppendPathSegmentLine);
 
         // on the contacts at Init and still there after the drive -> 0x04000009
         rig.OnCharger = true; rig.State();
-        var on = new DriveOffChargerContactsAction(rig.M);
+        // Contacts/result test: advancing firmware while the captured checker is pending
+        // must not select the separate 30 s timeout branch (checked with an explicit clock).
+        var on = new DriveOffChargerContactsAction(rig.M) { Clock = () => 0f };
         var task = on.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(task, () => rig.Pump());
         Assert.True(on.WasOnContactsAtInit);
         Assert.Equal(ActionResult.StillOnCharger, task.Result);
     }
@@ -1199,6 +1269,7 @@ public class NavigationTests
     [Fact]
     public void DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(200, 0);
@@ -1208,7 +1279,7 @@ public class NavigationTests
         var flip = new DriveAndFlipBlockAction(rig.M, 7) { MaxTurnTowardsFaceRad = Math.PI / 2 };
         Idle(rig);
         var task = flip.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => { Idle(rig); rig.Pump(); }, ms: 60000);   // Idle() acks every lift and streams the lift in position (the flip's initial 45 mm move completes on it)
+        SignalTestContext.Run(task, () => { Idle(rig); rig.Pump(); });   // Idle() acks every lift and streams the lift in position (the flip's initial 45 mm move completes on it)
         Assert.NotEqual(0x04000001u, (uint)task.Result);
         Assert.Contains(flip.Trace, l => l.Contains("ignored by the outer compound"));
         Assert.Contains(flip.Trace, l => l.Contains("TurnTowardsLastFacePose"));

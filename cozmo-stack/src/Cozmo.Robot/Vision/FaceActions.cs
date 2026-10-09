@@ -189,6 +189,7 @@ public static class FaceTurns
 // fidelity: M13-014, M13-021
 public class TurnTowardsFaceAction : IDisposable
 {
+    internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
     /// <summary>Releases the smart face id's subscription to the face world.</summary>
     public void Dispose()
     {
@@ -400,8 +401,8 @@ public class TurnTowardsFaceAction : IDisposable
             Note($"TurnTowardsFaceAction.CheckIfDone.NoFaceObservedYet: Will wait no more than {FramesToWaitForFace} frames");
             lock (_gate) _state = 1;                                                     // WaitForImagesAction(robot, 10, VisionMode 2, 0)
             int target = _v.FramesProcessed + FramesToWaitForFace;
-            var deadline = DateTime.UtcNow.AddSeconds(2);                                // local guard, see the summary
-            while (VerifiedFaceId is null && _v.FramesProcessed < target && DateTime.UtcNow < deadline && !cancel.IsCancellationRequested)
+            var deadline = UtcNow().AddSeconds(2);                                // local guard, see the summary
+            while (VerifiedFaceId is null && _v.FramesProcessed < target && UtcNow() < deadline && !cancel.IsCancellationRequested)
                 await Task.Delay(20, CancellationToken.None);
             if (VerifiedFaceId is null)                                                  // state 1, 0x0054C5DA..0x0054C604
             {
@@ -490,6 +491,10 @@ public sealed class TurnTowardsLastFacePoseAction : TurnTowardsFaceAction
 // fidelity: M14-003
 public sealed class TrackFaceAction : IDisposable
 {
+    // Fixture clock seam: production retains the existing UTC-based tracking duration.
+    internal Func<DateTime> UtcNow { get; set; } = () => DateTime.UtcNow;
+    internal event Action? UpdateWaitObserved;
+
     public const double NeckHeightMm = 49.0;
 
     /// <summary>
@@ -589,8 +594,8 @@ public sealed class TrackFaceAction : IDisposable
         // (StopCriteriaMetAndTimeToStop 0x0056594D), the small-angle clamping with its random periods (UpdateSmallAngleClamping 0x0056584D), the sound with its spacing, the eye shift
         // (+0xA1, 0x0056529C..0x0056535A), the update timeout, the mode, the driving-animation end and the 0x5654xx result mapping.
         SteppedBehavior.ReportMissing("TrackFaceAction (M14-003): ITrackAction::CheckIfDone 0x00564F09 on the ActionList tick is not built (TrackFaceAction is not routed through the built ActionList); the Task.Delay(60) loop is a stand-in and its stop criteria, small-angle clamping, sound, eye shift and timeout are unread");
-        var end = DateTime.UtcNow + duration;
-        while (DateTime.UtcNow < end && !cancel.IsCancellationRequested)
+        var end = UtcNow() + duration;
+        while (UtcNow() < end && !cancel.IsCancellationRequested)
         {
             var face = _v.Faces.GetFace(FaceId);
             var robot = _v.History.Latest?.RobotPose;
@@ -624,6 +629,7 @@ public sealed class TrackFaceAction : IDisposable
                                           headSpeed, TrackAccelRadPerSec2, waitForSettle: false,
                                           bodyAccelRadPerSec2: BitConverter.Int32BitsToSingle(unchecked((int)BodyTurnAccelBits)), bodyToleranceRad: (float)PanToleranceRad);
             }
+            UpdateWaitObserved?.Invoke();
             await Task.Delay(UpdateIntervalMs, CancellationToken.None);
         }
         return true;

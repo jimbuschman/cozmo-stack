@@ -1210,7 +1210,9 @@ public class HardwareRunnerTests
             {
                 Console.WriteLine("half way through something");
                 stop.Cancel();                                   // the person hits Ctrl+C
-                await Task.Delay(Timeout.Infinite, ct);
+                var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                using var registration = ct.Register(() => cancelled.TrySetCanceled(ct));
+                await cancelled.Task;
                 return 0;
             });
 
@@ -1232,7 +1234,9 @@ public class HardwareRunnerTests
             var run = await HardwareRunner.Execute(check, o, CancellationToken.None, async (_, ct) =>
             {
                 Console.WriteLine("still going");
-                await Task.Delay(TimeSpan.FromSeconds(30), ct);
+                var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                using var registration = ct.Register(() => cancelled.TrySetCanceled(ct));
+                await cancelled.Task;
                 return 0;
             });
 

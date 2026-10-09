@@ -187,6 +187,7 @@ public sealed class VisionSystem : IDisposable
     internal void ResetToConstructed()
     {
         Interlocked.Increment(ref _removals);
+        RemovalInvalidated?.Invoke();
         bool locked = Monitor.TryEnter(_busy, RemovalWait);
         try
         {
@@ -207,6 +208,7 @@ public sealed class VisionSystem : IDisposable
         }
         finally { if (locked) Monitor.Exit(_busy); }
     }
+    internal event Action? RemovalInvalidated;
 
     /// <summary>Whether a removal happened since the frame that captured <paramref name="removal"/> started.</summary>
     private bool RemovedSince(int removal) => Volatile.Read(ref _removals) != removal;
@@ -727,7 +729,7 @@ public sealed class VisionSystem : IDisposable
             (CameraFrame Frame, int Removal) taken;
             lock (_mailbox)
             {
-                if (_next is not { } n) { _processorRunning = false; return; }
+                if (_next is not { } n) { _processorRunning = false; Monitor.PulseAll(_mailbox); return; }
                 taken = n;
                 _next = null;
             }
@@ -736,6 +738,10 @@ public sealed class VisionSystem : IDisposable
             lock (_mailbox) _next = null;                        // a frame that arrived meanwhile is discarded, not processed and not counted
             Thread.Sleep(ProcessorPollInterval);
         }
+    }
+    internal void WaitForProcessorIdle()
+    {
+        lock (_mailbox) while (_processorRunning) Monitor.Wait(_mailbox);
     }
 
     /// <summary>

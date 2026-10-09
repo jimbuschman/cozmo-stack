@@ -1628,26 +1628,31 @@ public class M5AnimationTests
     {
         var port = new FakePort();
         using var robot = CozmoRobot.CreateForTest(port, EngineTickRunner.HostNowNs, new CozmoEngineOptions { BlockPoolPath = "" });
+        using var ticks = new TickSignal(robot.Engine);
         robot.Engine.StartProduction();
         void Data(RobotMessage m) => port.Raise(ReceiverMarker.Data, Rig.RobotEp, m.ToBytes());
         robot.Engine.ConnectToRobot(Rig.RobotIp);
-        Assert.True(SpinWait.SpinUntil(() => robot.Engine.ConnectionState == 1, 3000));
+        ticks.Until(() => robot.Engine.ConnectionState == 1);
+        Assert.True(robot.Engine.ConnectionState == 1);
         port.Raise(ReceiverMarker.OnConnected, Rig.RobotEp);
-        Assert.True(SpinWait.SpinUntil(() => robot.Engine.ConnectionState == 2, 3000));
+        ticks.Until(() => robot.Engine.ConnectionState == 2);
+        Assert.True(robot.Engine.ConnectionState == 2);
         Data(new RobotAvailable { SerialNumberHead = 0x1234, HwVersion = 5 });
         Data(new FirmwareVersion { RobotId = 1, Signature = Encoding.UTF8.GetBytes(Rig.ShippedFw) });
-        Assert.True(SpinWait.SpinUntil(() => port.Messages().Any(m => m is GetManufacturingInfo), 3000));
+        ticks.Until(() => port.Messages().Any(m => m is GetManufacturingInfo));
+        Assert.True(port.Messages().Any(m => m is GetManufacturingInfo));
         Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
-        Assert.True(SpinWait.SpinUntil(() => port.Messages().Any(m => m is SyncTime), 3000));
+        ticks.Until(() => port.Messages().Any(m => m is SyncTime));
+        Assert.True(port.Messages().Any(m => m is SyncTime));
         // M3-026/M3-033: the connection reads are queued at Success but only go out after Gate A; establish the first
         // synced full state and answer every read, in order, until the queue drains and ready to stream opens.
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
         int answered = 0;
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (!robot.AnimationStreamingOpen && DateTime.UtcNow < deadline)
+        while (!robot.AnimationStreamingOpen)
         {
-            if (!SpinWait.SpinUntil(() => port.Messages().OfType<NVCommand>().Count() > answered, 3000)) break;
+            ticks.Until(() => robot.AnimationStreamingOpen || port.Messages().OfType<NVCommand>().Count() > answered);
+            if (robot.AnimationStreamingOpen) break;
             var cmd = port.Messages().OfType<NVCommand>().ElementAt(answered);
             answered++;
             Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
@@ -1657,12 +1662,14 @@ public class M5AnimationTests
         int before = port.Messages().Count;
         int Audio() => port.Messages().Skip(before).Count(m => m is AudioSample or AudioSilence);
         robot.Animations.Play(Clip("long", new EventKeyframe(10_000, "TAPPED_BLOCK")));
-        Assert.True(SpinWait.SpinUntil(() => Audio() >= 14, 3000));
-        Thread.Sleep(300);                                                // several engine ticks with nothing played
+        ticks.Until(() => Audio() >= 14);
+        Assert.True(Audio() >= 14);
+        ticks.Next(5);                                                // several engine ticks with nothing played
         Assert.Equal(14, Audio());
         Data(new AnimationState { Timestamp = 11, NumAudioFramesPlayed = 14, NumAnimBytesPlayed = 0, Tag = 1 });
-        Assert.True(SpinWait.SpinUntil(() => Audio() >= 28, 3000));
-        Thread.Sleep(300);
+        ticks.Until(() => Audio() >= 28);
+        Assert.True(Audio() >= 28);
+        ticks.Next(5);
         Assert.Equal(28, Audio());
         robot.Animations.Stop();
     }

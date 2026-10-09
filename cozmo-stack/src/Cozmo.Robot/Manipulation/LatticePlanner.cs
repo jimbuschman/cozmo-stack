@@ -983,8 +983,10 @@ public class LatticePlanner
     /// Returns 0 when the plan failed, 3 when it succeeded with an empty segment list and 2 on success.
     /// </summary>
     // fidelity: M13-018
+    internal event Action? PlanningStarted;
     public PlanningResult DoPlanning(StateC start, IReadOnlyList<StateC> goals, out LatticePlan? plan)
     {
+        PlanningStarted?.Invoke();
         if (ArtificialPlannerDelayMs > 0)
         {
             int slept = 0;

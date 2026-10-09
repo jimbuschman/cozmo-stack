@@ -155,6 +155,7 @@ public sealed class FlipBlockAction
         return null;
     }
 
+    internal event Action? CheckTickObserved;
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
         var target = _m.World.GetLocatedObjectById(ObjectId);
@@ -189,7 +190,9 @@ public sealed class FlipBlockAction
             while (true)
             {
                 ActionResult? compoundResult = compound.IsCompleted ? await compound : null;
-                if (CheckIfDoneTick(compoundResult) is { } result)
+                var checkedResult = CheckIfDoneTick(compoundResult);
+                CheckTickObserved?.Invoke();
+                if (checkedResult is { } result)
                 {
                     if (compoundResult is null) compoundCancel.Cancel();                        // BadObject while RUNNING: stand-in for the destructor's destruction of the compound (the engine does NOT cancel inside CheckIfDone)
                     return result;

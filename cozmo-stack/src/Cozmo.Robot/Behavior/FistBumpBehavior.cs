@@ -416,7 +416,7 @@ public sealed class FistBumpBehavior : SteppedBehavior
         _cancel?.Cancel();
         var cts = _cancel = new CancellationTokenSource();
         Log($"start {what}");
-        Task.Run(() => run(cts.Token)).ContinueWith(t =>
+        ObserveAsyncWork(RunAsyncAction(() => { var work = run(cts.Token); ObserveAsyncInvocation(work); return work; }).ContinueWith(t =>
         {
             uint result = t.Status == TaskStatus.RanToCompletion ? t.Result : failed;
             Post(() =>
@@ -426,7 +426,7 @@ public sealed class FistBumpBehavior : SteppedBehavior
                 Log($"{what} -> 0x{result:X8}");
                 if (CallbackMayRun(epoch)) onDone(result);
             });
-        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default));
     }
 
     /// <summary>Disables (false) or re-enables (true) the lift and head power, lift first (0x005F2704, 0x005F270E).</summary>

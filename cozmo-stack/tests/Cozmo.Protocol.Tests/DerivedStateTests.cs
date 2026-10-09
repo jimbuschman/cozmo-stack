@@ -996,7 +996,7 @@ public class DerivedStateTests
         Assert.Contains(b.Trace, l => l.StartsWith("play NothingToDoBoredIntro"));
         Assert.Equal(1, b.BoredSequences);
         b.Stop(BehaviorStopReason.Cancelled);
-        SpinUntil(() => !rig.Robot.Animations.IsPlaying);
+        Assert.False(rig.Robot.Animations.IsPlaying);
     }
 
     /// <summary>
@@ -1006,24 +1006,25 @@ public class DerivedStateTests
     private static bool Step(Rig rig, IBehavior b, BehaviorContext ctx, ref double t)
     {
         int before = (b as SteppedBehavior)?.Trace.Count ?? 0;
+        bool wasPlaying = rig.Robot.Animations.IsPlaying;
         rig.Robot.Animations.Stop();
-        SpinUntil(() => !rig.Robot.Animations.IsPlaying);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        Assert.False(rig.Robot.Animations.IsPlaying);
+        if (wasPlaying && b is SteppedBehavior action) BehaviorTestSignals.WaitForPostedWork(action);
         bool running = true;
-        while (sw.ElapsedMilliseconds < 8000)     // generous: one run of the full suite in parallel starved this at 3 s
+        while (true)     // only modeled engine ticks advance this transition
         {
             t += 33;
             running = b.Update(ctx, t);
             if (!running || ((b as SteppedBehavior)?.Trace.Count ?? 0) > before) break;
-            Thread.Sleep(5);
+            if (b is SteppedBehavior pending && pending.AwaitingAsyncCompletion)
+                pending.AsyncWorkCompletion.WaitAsync(TimeSpan.FromMinutes(2)).GetAwaiter().GetResult();
         }
         return running;
     }
 
-    private static void SpinUntil(Func<bool> cond)
+    private static void AdvanceModelUntil(Func<bool> cond)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!cond() && sw.ElapsedMilliseconds < 2000) Thread.Sleep(5);
+        while (!cond()) { } // model-only predicate; async completion is signaled by its caller
         Assert.True(cond());
     }
 
@@ -1268,8 +1269,9 @@ public class DerivedStateTests
         double t = 0;
         b.Update(ctx, t);
         rig.Robot.Animations.Stop();
-        SpinUntil(() => !rig.Robot.Animations.IsPlaying);
-        SpinUntil(() => { t += 33; b.Update(ctx, t); return b.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.TurningToLastLocation; });
+        Assert.False(rig.Robot.Animations.IsPlaying);
+        BehaviorTestSignals.WaitForPostedWork(b);
+        AdvanceModelUntil(() => { t += 33; b.Update(ctx, t); return b.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.TurningToLastLocation; });
         Assert.Equal(1, locator.Turns);
 
         // the turn's 0.5 s companion wait passes; the turn itself is still going, so nothing changes
@@ -1279,7 +1281,8 @@ public class DerivedStateTests
 
         // the turn ends without a sighting: absence
         locator.CompleteTurn();
-        SpinUntil(() => { t += 33; b.Update(ctx, t); return b.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.ReactingToBlockAbsence; });
+        BehaviorTestSignals.WaitForPostedWork(b);
+        AdvanceModelUntil(() => { t += 33; b.Update(ctx, t); return b.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.ReactingToBlockAbsence; });
         Assert.Contains(b.Trace, l => l.StartsWith("play CubeMovedUpset"));
         Assert.False(Step(rig, b, ctx, ref t));
         b.Stop(BehaviorStopReason.Completed);      // what the manager does when Update returns false
@@ -1291,14 +1294,15 @@ public class DerivedStateTests
         t = 0;
         seen.Update(ctx, t);
         rig.Robot.Animations.Stop();
-        SpinUntil(() => !rig.Robot.Animations.IsPlaying);
-        SpinUntil(() => { t += 33; seen.Update(ctx, t); return seen.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.TurningToLastLocation; });
+        Assert.False(rig.Robot.Animations.IsPlaying);
+        BehaviorTestSignals.WaitForPostedWork(seen);
+        AdvanceModelUntil(() => { t += 33; seen.Update(ctx, t); return seen.CurrentPhase == AcknowledgeCubeMovedBehavior.Phase.TurningToLastLocation; });
         seen.ObjectObserved(7);
         seen.Update(ctx, t + 33);
         Assert.Equal(AcknowledgeCubeMovedBehavior.Phase.ReactingToBlockPresence, seen.CurrentPhase);
         Assert.Contains(seen.Trace, l => l.StartsWith("play AcknowledgeObject"));
         seen.Stop(BehaviorStopReason.Cancelled);
-        SpinUntil(() => !rig.Robot.Animations.IsPlaying);
+        Assert.False(rig.Robot.Animations.IsPlaying);
     }
 
     /// <summary>
@@ -1454,7 +1458,7 @@ public class DerivedStateTests
             Assert.False(string.IsNullOrEmpty(((PlayAnimBehavior)b).LastSelected), $"{b.Id} resolved to no clip");
             b.Stop(BehaviorStopReason.Cancelled);
         }
-        SpinUntil(() => !rig.Robot.Animations.IsPlaying);
+        Assert.False(rig.Robot.Animations.IsPlaying);
     }
 
     /// <summary>The emotion events the M10 behaviours fire exist in the shipped mood model.</summary>

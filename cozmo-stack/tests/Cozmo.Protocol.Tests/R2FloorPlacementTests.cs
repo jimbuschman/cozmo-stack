@@ -39,8 +39,7 @@ public class R2FloorPlacementTests
 
     private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 8000)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!cond()) { tick?.Invoke(); if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("condition not met"); Thread.Sleep(2); }
+        SignalTestContext.Until(cond, tick);
     }
 
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>
@@ -132,6 +131,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_019_TheGridOrderAndTheOutPoseHoldingTheLastTestedCandidate()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var bring = NewBring(rig);
@@ -173,6 +173,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_019_TheRadiusTestIsStrictAndTheFailureSkipIsASphereOf100Millimetres()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var bring = NewBring(rig);
@@ -218,6 +219,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_019_M15_020_TheFrameFollowsTheNearestNonCarriedCubeAndTheObstacleTestUsesTheCarriedFootprint()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var bring = NewBring(rig);
         var carried = Cube(rig, 7, At(100, 50, 22, 0));
@@ -242,6 +244,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_020_FindCubesInBeaconIsThreeDimensionalAndSkipsTheCarriedCube()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         Cube(rig, 8, At(10, 0, 22));
         Cube(rig, 9, At(0, 0, 80));                                                        // z = 80 > 30: outside a 30 mm beacon although planar-inside
@@ -260,6 +263,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_024_TheCapsKeepTheLastEntriesPerObjectAndPerFailureKind()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var wb = rig.M.Whiteboard;
@@ -288,6 +292,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_024_EntryMatchesExpiryDistanceAndAngle()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var wb = rig.M.Whiteboard;
@@ -322,6 +327,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_024_TheStackOnFilterUsesThePoseAwareMemory()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0; rig.M.ClockSec = () => clock;
         var bring = NewBring(rig);
@@ -350,6 +356,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_023_TheFailureStampBlocksTheBehaviourForTheCooldown()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 1000; rig.M.ClockSec = () => clock;
         var ctx = Ctx(rig);
@@ -384,6 +391,7 @@ public class R2FloorPlacementTests
     public void M15_023_M15_025_NoFreePosesStampsLogsTriggersTheEventAndStartsNothing()
     {
         if (!NeedsAssets()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 500; rig.M.ClockSec = () => clock;
         rig.Cube = At(330, -20, 22);
@@ -394,10 +402,12 @@ public class R2FloorPlacementTests
         var beacon = rig.M.Whiteboard.AddBeacon(At(250, 90), 30);
         var bring = NewBring(rig);
         bring.IsUnlocked = _ => false;                                                       // FindFreeCubeToStackOn answers null: the floor branch
+        bring.ActionTaskRunner = SignalTestContext.Schedule;
+        bring.WorkPosted += signals_rig.Notify;
         double t = 0;
         bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         uint target = bring.Candidate!.Value;
-        SpinUntil(() => !bring.Update(ctx, t += 33), () => { rig.Pump(); if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); }, 15000);
+        while (bring.Update(ctx, t += 33)) { rig.Pump(); if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); SignalTestContext.AdvanceBehavior(bring); }
         Assert.True(rig.M.Docking.Carrying.IsCarrying(target));
         Assert.Equal(500.0f, beacon.FailedToFindLocationTimeSec);
         var tr = bring.Trace.ToList();
@@ -434,6 +444,7 @@ public class R2FloorPlacementTests
         var pose = At(12.5, -30.25, 0, 0.0);
         void Case(uint result, int attempt, bool carrying, Action<BringCubeToBeaconBehavior, Rig, string[]> check)
         {
+            using var signals_rig = SignalTestContext.Install();
             using var rig = new Rig();
             var ctx = Ctx(rig); ctx.Needs = new NeedsManager(() => 0);
             var (bring, target) = StartedBring(rig, ctx);
@@ -491,6 +502,7 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_InitSendsTheMessageThenStopsMotorsAndTheActionWaitsForTheStatusGate()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 100; rig.M.ClockSec = () => clock;
         var notCarrying = new PlaceObjectOnGroundAction(rig.M);
@@ -510,13 +522,14 @@ public class R2FloorPlacementTests
         Assert.Equal(7u, action.VerifyAction!.ObjectId);
         SpinUntil(() => !rig.M.Docking.Carrying.IsCarryingObject, () => rig.Pump());           // the robot's BLOCK_PLACED result released it
         Assert.False(rig.M.Docking.DockingSuccessByte == false);                              // the success byte is the message's (stored by HandlePickAndPlaceResult), nothing here reads it
-        Thread.Sleep(30);
+        SignalTestContext.StepContinuation();
         Assert.False(task.IsCompleted);                                                       // not carrying any more, status gate never opened: still RUNNING
         clock = 100 + 29.9;
-        Thread.Sleep(30);
+        SignalTestContext.StepContinuation();
         Assert.False(task.IsCompleted);
         clock = 100 + 30.0;                                                                   // now >= start + 30.0f
-        Assert.Equal(ActionResult.Timeout, await task.WaitAsync(TimeSpan.FromSeconds(5)));
+        SignalTestContext.Run(task);
+        Assert.Equal(ActionResult.Timeout, await task);
         Assert.Equal(0x03000018u, (uint)ActionResult.Timeout);
     }
 
@@ -533,8 +546,8 @@ public class R2FloorPlacementTests
         // the robot's side of a put-down: IS_PICKING_OR_PLACING is reported while it lowers the lift, then it clears
         if (rig.Sent.Any(m => m is PlaceObjectOnGround))
         {
-            if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = Environment.TickCount; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
-            else if (!cleared && Environment.TickCount - raisedAt > 100 && (latched?.Invoke() ?? Environment.TickCount - raisedAt > 400)) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
+            if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = 1; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
+            else if (!cleared && (latched?.Invoke() ?? true)) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
         else if (!cleared) rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);                  // a camera frame (rig.Frame) reports a fresh state: keep reporting the bit while the lift lowers
         }
     }
@@ -549,6 +562,7 @@ public class R2FloorPlacementTests
     {
         foreach (var verify in new[] { ActionResult.Success, ActionResult.VisualObservationFailed })
         {
+            using var signals_rig = SignalTestContext.Install();
             using var rig = new Rig();
             Cube(rig, 7, At(100, 0, 22));
             rig.M.Docking.Carrying.SetCarrying(7);
@@ -556,8 +570,7 @@ public class R2FloorPlacementTests
             var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = sub };
             int raised = 0; bool cleared = false;
             var task = action.RunAsync(default);
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            while (!task.IsCompleted && sw.ElapsedMilliseconds < 8000) { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); Thread.Sleep(2); }
+            SignalTestContext.Run(task, () => { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
             Assert.True(task.IsCompleted, $"{verify}: raised={raised} cleared={cleared} latched={action.StatusLatched} sent={string.Join(",", rig.Sent.Select(m => m.GetType().Name).Distinct())}");
             Assert.Equal(verify, task.Result);
             Assert.True(action.StatusLatched);
@@ -594,6 +607,7 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_InitTakesTheReactionLockOnObjectPositionUpdatedAndTheEndRemovesIt()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
@@ -608,8 +622,7 @@ public class R2FloorPlacementTests
         Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
         Assert.False(manager.HasDisableLock(ReactionTrigger.CubeMoved, "placeOnGroundAction"));
         int raised = 0; bool cleared = false;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 8000) { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); Thread.Sleep(2); }
+        SignalTestContext.Run(task, () => { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
         Assert.Equal(ActionResult.Success, await task);
         Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
         // not carrying: Init fails with 0x03000011 and never takes the lock
@@ -640,6 +653,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_022_ABlockedPlacementGoalFailsWithRetry()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         Cube(rig, 7, At(300, 0, 22));
         var blocker = Cube(rig, 20, At(0, 0, 22), ObjectType.Block_LIGHTCUBE2);
@@ -670,27 +684,44 @@ public class R2FloorPlacementTests
             if (Environment.GetEnvironmentVariable("COZMO_TESTS_WITHOUT_ASSETS") == "1") return;
             throw new Xunit.Sdk.XunitException("re-analysis/obb (the shipped config and animation assets) is missing, so the live-entry test cannot run; provide it or set COZMO_TESTS_WITHOUT_ASSETS=1");
         }
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
         rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
         double clock = 0;
         var ctx = Ctx(rig);
         using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M, withReactions: false, random: new Random(1));
         var bring = Assert.IsType<BringCubeToBeaconBehavior>(stack.Bound["Hiking_BringCubeToBeacon"]);
+        bring.ActionTaskRunner = SignalTestContext.Schedule;
+        bring.WorkPosted += signals_rig.Notify;
         Assert.Equal(45.0, bring.RecentFailureCooldownSec);
         Assert.Equal(5.0, Assert.IsType<BringCubeToBeaconBehavior>(stack.Bound["SparksBringCubeToBeacon"]).RecentFailureCooldownSec);
         rig.Cube = At(330, -20, 22);
         Assert.Single(rig.Frame().Objects);
         rig.M.Whiteboard.AddBeacon(At(0, 0), 175);
         stack.Manager.Activity = null;                                                       // the activity chooser is not under test: the manager ticks only the behaviour it was switched to
+        // Placement's running checks resume only after an explicit modeled firmware pump.
+        var firmwareTicks = new System.Collections.Concurrent.ConcurrentQueue<TaskCompletionSource>();
+        rig.M.Wait = (_, cancel) =>
+        {
+            if (cancel.IsCancellationRequested) return Task.FromCanceled(cancel);
+            var tick = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            firmwareTicks.Enqueue(tick);
+            signals_rig.MarkFirmwareWorkPending();
+            return tick.Task;
+        };
         Assert.True(stack.Manager.SwitchToBehaviorBase(bring, 0).GetAwaiter().GetResult());
         int raised = 0; bool cleared = false;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (stack.Manager.IsRunning(bring) && sw.ElapsedMilliseconds < 25000)
+
+        while (stack.Manager.IsRunning(bring))
         {
             clock += 0.033;
             stack.Manager.Update(clock * 1000, clock);
-            rig.Pump(); if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); Firmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false);
-            Thread.Sleep(2);
+            rig.Pump();
+            while (firmwareTicks.TryDequeue(out var tick)) tick.TrySetResult();
+            if (!rig.M.Docking.Carrying.IsCarryingObject) rig.Frame(); Firmware(rig, ref raised, ref cleared, () => bring.LastPlaceAction?.StatusLatched ?? false);
+            SignalTestContext.AdvanceBehavior(bring);
         }
         Assert.False(stack.Manager.IsRunning(bring), string.Join(" | ", bring.Trace));
         Assert.Contains(bring.Trace, l => l.Contains("onPlaceActionResult.Done: Successfully placed cube"));
@@ -709,6 +740,7 @@ public class R2FloorPlacementTests
     public void M15_020_TheCandidateFilterIsPickUpAndRollFailuresMatchedByPose()
     {
         if (!NeedsAssets()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 100; rig.M.ClockSec = () => clock;
         var ctx = Ctx(rig);
@@ -759,6 +791,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M15_020_FindUsableAndAreAllFollowTheEngine()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var wb = rig.M.Whiteboard;
         wb.CanPickUpObject = o => o.ObjectId != 12;
@@ -794,6 +827,7 @@ public class R2FloorPlacementTests
     public void M15_020_CanPickUpObjectRejectsACubeThatIsTooHigh()
     {
         if (!NeedsAssets()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = At(300, 0, 22);
         Assert.Single(rig.Frame().Objects);
@@ -812,6 +846,7 @@ public class R2FloorPlacementTests
     [Fact]
     public async Task M15_022_ABareActionTakesTheLockThroughTheManipulationSystemsManager()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
@@ -829,8 +864,8 @@ public class R2FloorPlacementTests
             Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));      // no manager attached: not taken
             Assert.Contains(missing, m => m.Contains("placeOnGroundAction"));
             int raised1 = 0; bool cleared1 = false;
-            var sw1 = System.Diagnostics.Stopwatch.StartNew();
-            while (!t1.IsCompleted && sw1.ElapsedMilliseconds < 8000) { rig.Pump(); Firmware(rig, ref raised1, ref cleared1, () => bare.StatusLatched); Thread.Sleep(2); }
+
+            SignalTestContext.Run(t1, () => { rig.Pump(); Firmware(rig, ref raised1, ref cleared1, () => bare.StatusLatched); });
             Assert.Equal(ActionResult.Success, await t1);
         }
         finally { SteppedBehavior.MissingReported -= OnMissing; }
@@ -841,8 +876,7 @@ public class R2FloorPlacementTests
         var task = action.RunAsync(default);
         Assert.True(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
         int raised = 0; bool cleared = false;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 8000) { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); Thread.Sleep(2); }
+        SignalTestContext.Run(task, () => { rig.Pump(); Firmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
         Assert.Equal(ActionResult.Success, await task);
         Assert.False(manager.HasDisableLock(ReactionTrigger.ObjectPositionUpdated, "placeOnGroundAction"));
     }
@@ -856,6 +890,7 @@ public class R2FloorPlacementTests
     public async Task M15_022_TheVerifyChildIsTheEnginesTurnTowardsObjectAction()
     {
         if (!NeedsAssets()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = At(300, 0, 22);
         Assert.Single(rig.Frame().Objects);
@@ -879,6 +914,7 @@ public class R2FloorPlacementTests
     [Fact]
     public void M12_012_IsPoseTooHighIsBinary32()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var cube = Cube(rig, 7, At(0, 0, 22), locate: false);
         double z = 37.0 + 3.0 * Math.Pow(2, -18);
@@ -997,6 +1033,7 @@ public class R2FloorPlacementTests
         if (!NeedsAssets()) return;
         void Case(uint result, int attempt, bool carrying, Action<BringCubeToBeaconBehavior, Rig, string[], uint> check)
         {
+            using var signals_rig = SignalTestContext.Install();
             using var rig = new Rig();
             var ctx = Ctx(rig); ctx.Needs = new NeedsManager(() => 0);
             var (bring, target) = StartedBring(rig, ctx);

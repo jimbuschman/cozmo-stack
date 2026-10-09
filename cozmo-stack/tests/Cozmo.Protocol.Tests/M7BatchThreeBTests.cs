@@ -515,6 +515,7 @@ public class M7BatchThreeBTests
 
     private sealed class FistRig : IDisposable
     {
+        private readonly SignalTestContext Signals = SignalTestContext.Install();
         public readonly Rig Rig = new();
         public readonly List<string> Power = new();
         public readonly List<(float Pan, float Tilt)> PanTilts = new();
@@ -531,6 +532,8 @@ public class M7BatchThreeBTests
 
         public FistRig(bool realAnimations, Func<CancellationToken, Task<uint>>? turn = null, float maxTime = 30f, bool abort = true, bool update = true, bool withVision = false)
         {
+            Rig.Robot.Animations.ManualTicking = true;
+            Rig.Robot.Animations.ClockMs = () => Ms;
             var obb = ObbRoot();
             AnimationTriggerMap triggers;
             if (realAnimations)
@@ -552,6 +555,8 @@ public class M7BatchThreeBTests
                 EnableHeadPower = on => Power.Add("head:" + on),
                 SmartPushIdleAnimation = IdlePushes.Add,
             };
+            Fist.ActionTaskRunner = SignalTestContext.Schedule;
+            Fist.WorkPosted += Signals.Notify;
             Fist.AddListener(u => { Listener.Add(u); Events.Add("reset:" + u); });
             Fist.Step += l => { if (l.StartsWith("BehaviorObjectiveAchieved(")) Events.Add(l); };
             Manager = NewManager(Ctx(Rig, triggers), Fist);
@@ -559,14 +564,23 @@ public class M7BatchThreeBTests
 
         public void Start() => Assert.True(Manager.StartAsync("FistBump", 0).GetAwaiter().GetResult());
 
-        /// <summary>One manager tick on the engine's seconds, 100 ms apart; the async actions need a moment of real time to complete.</summary>
+        /// <summary>One modeled manager and animation tick, after signaled action completion has been delivered.</summary>
         public void Step(int n = 1)
         {
             for (int i = 0; i < n; i++)
             {
                 Ms += 100;
+                if (Fist.AwaitingAsyncCompletion)
+                {
+                    SignalTestContext.Run(Fist.AsyncInvocationStarted);
+                    var invoked = Fist.AsyncInvocationStarted.GetAwaiter().GetResult();
+                    if (invoked.IsCompleted) SignalTestContext.Run(Fist.AsyncWorkCompletion);
+                }
+                bool wasPlaying = Rig.Robot.Animations.IsPlaying;
+                Rig.Robot.Animations.Scheduler.Advance(Ms);
+                if (wasPlaying && !Rig.Robot.Animations.IsPlaying && Fist.HasCurrentAction) BehaviorTestSignals.WaitForPostedWork(Fist);
                 Manager.Update(Ms, Ms / 1000.0);
-                Thread.Sleep(2);
+                SignalTestContext.Drain();          // start newly queued actions after the manager tick returns
             }
         }
 
@@ -576,7 +590,7 @@ public class M7BatchThreeBTests
             return done();
         }
 
-        public void Dispose() => Rig.Dispose();
+        public void Dispose() { Rig.Dispose(); Signals.Dispose(); }
     }
 
     /// <summary>
@@ -648,6 +662,9 @@ public class M7BatchThreeBTests
         f.Step(40);
         Assert.Equal(2, f.PanTilts.Count);
         openPan.SetResult();
+        // The pan's wrapper resumes on the worker scheduler. Deliver its queued completion before
+        // advancing the modeled search clock; worker load must not consume the search window.
+        SignalTestContext.Run(f.Fist.AsyncWorkCompletion);
         Assert.True(f.StepUntil(() => f.PanTilts.Count == 3));
         Assert.Equal(unchecked((int)0xBE860A92), BitConverter.SingleToInt32Bits(f.PanTilts[2].Pan));   // the third pan is entry 0 again
         Assert.All(f.PanTiltFlags, fl => Assert.Equal((false, true), fl));               // PanAndTiltAction(robot, pan, tilt, false, true): 0x005F23BE..0x005F23C6
@@ -701,6 +718,7 @@ public class M7BatchThreeBTests
         // 1 -> turn (success) -> 3 -> request animation in flight, state 4
         Assert.True(f.StepUntil(() => f.Fist.State == 4));
         f.Rig.Robot.Animations.Stop();                       // the request animation ends: +0x84 clears
+        BehaviorTestSignals.WaitForPostedWork(f.Fist);
         // 4 -> idle animation starts (still in flight) -> 5 -> snapshots at 0 -> 6
         Assert.True(f.StepUntil(() => f.Fist.State == 6));
         Assert.Equal(new[] { "lift:False", "head:False" }, f.Power);
@@ -724,6 +742,7 @@ public class M7BatchThreeBTests
         Assert.Equal(7, f.Fist.State);                       // the success animation (0xC9) started
         Assert.Equal(new[] { "lift:False", "head:False", "lift:True", "head:True" }, f.Power);
         f.Rig.Robot.Animations.Stop();                       // the success animation ends
+        BehaviorTestSignals.WaitForPostedWork(f.Fist);
         Assert.True(f.StepUntil(() => f.Manager.Current is null));
         // state 7: NeedActionCompleted(0), objective 8, ResetTrigger(+0x148 = true), objective 7 (0x005F2274..0x005F229A); Stop: ResetTrigger(false)
         Assert.Equal(new[] { "BehaviorObjectiveAchieved(8)", "reset:True", "BehaviorObjectiveAchieved(7)", "reset:False" }, f.Events);

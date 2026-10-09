@@ -260,6 +260,7 @@ public class RFixBatch1Tests
     [Fact]
     public void M13_002_TheApproachLiftMoveIsSentWithTheActionsOwnSpeedNotTheTolerance()
     {
+        using var signals = SignalTestContext.Install();
         if (MarkerLibrary.EmbeddedOrNull is null) return;
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
@@ -270,8 +271,10 @@ public class RFixBatch1Tests
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };   // flag A = 0: a robot 200 mm away is not refused (M12-031)
         using var cts = new CancellationTokenSource();
         var t = flip.RunAsync(cts.Token);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!rig.Sent.OfType<SetLiftHeight>().Any(l => l.HeightMm == 45f) && !t.IsCompleted && sw.ElapsedMilliseconds < 8000) { rig.Pump(); rig.State(flags, lowLift); Thread.Sleep(5); }
+        rig.Robot.Transport.MessageQueued += signals.Notify;
+        t.ContinueWith(_ => signals.Notify(), TaskScheduler.Default);
+        SignalTestContext.Until(() => rig.Sent.OfType<SetLiftHeight>().Any(l => l.HeightMm == 45f) || t.IsCompleted,
+            () => { rig.Pump(); rig.State(flags, lowLift); });
         cts.Cancel();
         Assert.True(rig.Sent.OfType<SetLiftHeight>().Any(l => l.HeightMm == 45f), $"{(t.IsCompleted ? t.Result.ToString() : "running")} | {string.Join(" | ", flip.Trace)}");
         var lift = rig.Sent.OfType<SetLiftHeight>().First(l => l.HeightMm == 45f);   // the approach move

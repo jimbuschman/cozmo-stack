@@ -50,6 +50,7 @@ public class SearchForBlockTests
     [Fact]
     public void TheNearbySearchBacksOffAndLooksBothWays()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var act = new SearchForNearbyObjectAction(rig.M, 1, SearchForBlockHelper.BackOffMm,
                                                   SearchForBlockHelper.SearchSpeedMmps,
@@ -57,7 +58,7 @@ public class SearchForBlockTests
             { Wait = (t, c) => Task.CompletedTask };
 
         var task = act.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump(), 10_000);
+        SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
 
         var (w1, w2, w3, a1, a2, sign) = act.Draw;
@@ -102,10 +103,11 @@ public class SearchForBlockTests
     [Fact]
     public void AnUnlocatedTargetEndsTheSearchAtOnce()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var helper = new SearchForBlockHelper(rig.M, 999) { Wait = (t, c) => Task.CompletedTask };
         var task = helper.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump(), 5_000);
+        SignalTestContext.Run(task, () => rig.Pump());
 
         Assert.Equal(ActionResult.BadObject, task.Result);
         Assert.Equal(0, helper.State);
@@ -120,6 +122,7 @@ public class SearchForBlockTests
     [Fact]
     public void TheSearchRunsItsThreeStatesAndThenGivesUp()
     {
+        using var signals = SignalTestContext.Install();
         if (MarkerLibrary.EmbeddedOrNull is null) return;
         using var rig = new Rig();
         rig.Cube = At(200, 0);
@@ -134,7 +137,7 @@ public class SearchForBlockTests
         var helper = new SearchForBlockHelper(rig.M, target.ObjectId, new EngineRandom(7u))
             { Wait = (t, c) => Task.CompletedTask };
         var task = helper.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump(), 30_000);
+        SignalTestContext.Run(task, () => rig.Pump());
 
         Assert.Equal(ActionResult.VisualObservationFailed, task.Result);
         Assert.Equal(SearchForBlockHelper.StateCount, helper.State);
@@ -161,6 +164,7 @@ public class SearchForBlockTests
     [InlineData(9, 27)] [InlineData(10, 27)] [InlineData(11, 27)] [InlineData(12, 25)] [InlineData(13, 26)] [InlineData(14, 27)]
     public void M12_010_State1ContinuesAfterAnyFailedChild(int failOrdinal, int expectedPaths)
     {
+        using var signals = SignalTestContext.Install();
         if (MarkerLibrary.EmbeddedOrNull is null) return;
         using var rig = new Rig();
         rig.Cube = At(200, 0);
@@ -173,7 +177,7 @@ public class SearchForBlockTests
         var helper = new SearchForBlockHelper(rig.M, target.ObjectId, new EngineRandom(7u)) { Wait = (t, c) => Task.CompletedTask };
         var task = helper.RunAsync(default);
         int handled = 0;
-        SpinUntil(() => task.IsCompleted, () =>
+        SignalTestContext.Run(task, () =>
         {
             rig.Pump();
             var eps = rig.Sent.OfType<ExecutePath>().ToList();
@@ -182,14 +186,10 @@ public class SearchForBlockTests
                 if (handled == failOrdinal) rig.Send(new PathFollowingEvent { EventId = eps[handled].EventId, EventType = (byte)PathEventType.Interrupted });
                 else rig.ReleasePath();
             }
-        }, 30_000);
+        });
         Assert.Equal(ActionResult.VisualObservationFailed, task.Result);
         Assert.Equal(expectedPaths, rig.Sent.OfType<ExecutePath>().Count());
     }
 
-    private static void SpinUntil(Func<bool> done, Action pump, int ms)
-    {
-        var end = DateTime.UtcNow.AddMilliseconds(ms);
-        while (DateTime.UtcNow < end && !done()) { pump(); Thread.Sleep(2); }
-    }
+
 }

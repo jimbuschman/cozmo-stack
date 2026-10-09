@@ -20,11 +20,9 @@ public class ManipulationTests
 
     internal static Pose3d CubeAt(double x, double y, double yaw = 0) => new(Mat3.AboutZ(yaw), new Vec3(x, y, CubeGeometry.CubeSizeMm / 2));
 
-    private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 5000)
-    {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!cond()) { tick?.Invoke(); if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("condition not met"); Thread.Sleep(5); }
-    }
+    private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 60000)
+        => SignalTestContext.Until(cond, tick);
+
 
     // ------------------------------------------------------------------ pre-action poses
 
@@ -233,10 +231,11 @@ public class ManipulationTests
     [Fact]
     public void DriveToPoseSucceedsWhenThePathCompletesAtTheGoal()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.AboutZ(0.5), new Vec3(150, -40, 0)) };
         var task = drive.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
         Assert.Contains(drive.Trace, l => l.Contains("Success"));
         // the head went to the path-following angle
@@ -307,6 +306,7 @@ public class ManipulationTests
     [Fact]
     public void DockingStreamsTheErrorSignalFromEachFrameAndPicksUpOnTheRobotsResult()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(150, 0);
@@ -321,7 +321,7 @@ public class ManipulationTests
         // one signal from the frame already in hand, another from the next frame
         Assert.Equal(1, rig.M.Docking.ErrorSignalsSent);
         rig.Frame(); rig.Pump();
-        SpinUntil(() => dock.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(dock, () => rig.Pump());
         Assert.Equal(2, rig.M.Docking.ErrorSignalsSent);
         var signal = rig.Sent.OfType<DockingErrorSignal>().First();
         Assert.InRange(signal.XDist, 120, 135);            // the front face is 128 mm ahead
@@ -343,13 +343,14 @@ public class ManipulationTests
     [Fact]
     public void AFailedDockReportsAndNothingIsCarried()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         rig.DockSucceeds = false;
         var dock = rig.M.Docking.DockAsync(obj, obj.Markers.First(k => k.Code == MarkerType.LightCubeI_Front), DockAction.PickupLow, PathMotionProfile.Default, timeout: TimeSpan.FromSeconds(5));
-        SpinUntil(() => dock.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(dock, () => rig.Pump());
         Assert.False(dock.Result!.Succeeded);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
     }
@@ -363,6 +364,7 @@ public class ManipulationTests
     [Fact]
     public void TheDockTargetIsExcludedFromTheMovedBroadcast()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(150, 0);
@@ -392,13 +394,14 @@ public class ManipulationTests
     [Fact]
     public void DriveToObjectGoesToTheClosestPreDockPoseThenPickupSucceeds()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(200, 30, 0.2);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         var drive = new DriveToObjectAction(rig.M, 7, PreActionType.Docking);
         var task = drive.RunAsync(default);
-        SpinUntil(() => task.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(task, () => rig.Pump());
         Assert.True(task.Result == ActionResult.Success, "obj=" + obj.Pose + " result=" + task.Result + " trace: " + string.Join(" | ", drive.Trace));
         var chosen = drive.Chosen!;
         Assert.InRange(Math.Abs(rig.X - chosen.WorldPose.Translation.X), 0, 0.5);
@@ -407,7 +410,7 @@ public class ManipulationTests
         rig.Frame();
         var pickup = new PickupObjectAction(rig.M, 7);
         var pt = pickup.RunAsync(default);
-        SpinUntil(() => pt.IsCompleted, () => { rig.Pump(); });
+        SignalTestContext.Run(pt, () => { rig.Pump(); });
         Assert.Equal(ActionResult.Success, pt.Result);
         Assert.Equal(DockAction.PickupLow, pickup.SelectedDockAction);
         Assert.True(rig.M.Docking.Carrying.IsCarrying(7));
@@ -417,12 +420,13 @@ public class ManipulationTests
     [Fact]
     public void ADockActionRefusesWhenNotNearAPreActionPose()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(300, 60);                                          // its nearest pre-dock pose is 200 mm away
         Assert.Single(rig.Frame().Objects);
         var pickup = new PickupObjectAction(rig.M, 7);
-        var r = pickup.RunAsync(default).GetAwaiter().GetResult();
+        var r = SignalTestContext.Result(pickup.RunAsync(default));
         Assert.Equal(ActionResult.DidNotReachPreActionPose, r);
         Assert.DoesNotContain(rig.Pump(), m => m is DockWithObject);
     }
@@ -430,6 +434,7 @@ public class ManipulationTests
     [Fact]
     public void PickupSelectsHighDockForACubeOnTopOfAnother()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(120, 0, 66));       // sitting on another cube
@@ -439,7 +444,7 @@ public class ManipulationTests
         rig.X = 120 - 97; rig.State();                                       // at the pre-dock pose
         var pickup = new PickupObjectAction(rig.M, 7) { CheckPreActionPose = false };
         var t = pickup.RunAsync(default);
-        SpinUntil(() => t.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(t, () => rig.Pump());
         Assert.Equal(DockAction.PickupHigh, pickup.SelectedDockAction);
     }
 
@@ -449,12 +454,12 @@ public class ManipulationTests
         public Task<ActionResult> RunAsync(DockSubAction action, List<string> trace, CancellationToken cancel) => Task.FromResult(ActionResult.Success);
     }
 
-    /// <summary>The robot's side of a put-down: IS_PICKING_OR_PLACING rises once the message is in and clears 400 ms later.</summary>
-    private static void PlacingFirmware(Rig rig, ref int raisedAt, ref bool cleared, Func<bool>? latched = null)
+    /// <summary>The robot's side of a put-down: IS_PICKING_OR_PLACING rises after the command and clears after the action observes its latch.</summary>
+    private static void PlacingFirmware(Rig rig, ref int raisedAt, ref bool cleared, Func<bool> latched)
     {
         if (!rig.Sent.Any(m => m is PlaceObjectOnGround)) return;
-        if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = Environment.TickCount; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
-        else if (!cleared && Environment.TickCount - raisedAt > 100 && (latched?.Invoke() ?? Environment.TickCount - raisedAt > 400)) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
+        if (raisedAt == 0) { rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing); raisedAt = 1; rig.Cube = new Pose3d(Mat3.AboutZ(rig.Angle), new Vec3(rig.X + 100 * Math.Cos(rig.Angle), rig.Y + 100 * Math.Sin(rig.Angle), 22)); }
+        else if (!cleared && latched()) { rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos)); cleared = true; }
         else if (!cleared) rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);                  // a camera frame (rig.Frame) reports a fresh state: keep reporting the bit while the lift lowers
     }
 
@@ -466,16 +471,17 @@ public class ManipulationTests
     [Fact]
     public void PlaceOnGroundNeedsACarriedObjectAndReleasesIt()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var place = new PlaceObjectOnGroundAction(rig.M);
-        Assert.Equal(ActionResult.NotCarryingObjectAbort, place.RunAsync(default).GetAwaiter().GetResult());
+        Assert.Equal(ActionResult.NotCarryingObjectAbort, SignalTestContext.Result(place.RunAsync(default)));
         rig.Pump();
         Assert.Contains(rig.Sent, m => m is StopAllMotors);                                   // 0x00554894 runs in every case
         rig.M.Docking.Carrying.SetCarrying(7);
         var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedVerify() };
         var t = action.RunAsync(default);
         int raised = 0; bool cleared = false;
-        SpinUntil(() => t.IsCompleted, () => { rig.Pump(); PlacingFirmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
+        SignalTestContext.Run(t, () => { rig.Pump(); PlacingFirmware(rig, ref raised, ref cleared, () => action.StatusLatched); });
         Assert.Equal(ActionResult.Success, t.Result);
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
         // The three offsets come first and are always zero; the speeds are the engine's constant
@@ -502,6 +508,7 @@ public class ManipulationTests
     [Fact]
     public void M2_002_PlaceObjectOnGroundWaitsForThePickingOrPlacingStatusGate()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
         rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);       // the robot is picking/placing
@@ -509,15 +516,15 @@ public class ManipulationTests
         var t = place.RunAsync(default);
         Assert.True(place.StatusLatched);                                // +0x84 set at 0x005549C0
         SpinUntil(() => rig.M.Docking.Carrying.IsCarryingObject == false, () => rig.Pump());
-        Thread.Sleep(30);
+        SignalTestContext.StepContinuation();
         Assert.False(t.IsCompleted);                                     // the result is in; the gate is closed
         // 0x005549E0: clearing bit 0x4 is insufficient while MovementComponent+9 is set.
         rig.State(flags: (uint)RobotStatusFlag.IsMoving);
-        Thread.Sleep(30);
+        SignalTestContext.StepContinuation();
         Assert.False(t.IsCompleted);
         // the place is done: bit 0x4 clear and the robot is not moving
         rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos));
-        SpinUntil(() => t.IsCompleted, () => rig.Pump());
+        SignalTestContext.Run(t, () => rig.Pump());
         Assert.Equal(ActionResult.Success, t.Result);
     }
 
@@ -527,6 +534,7 @@ public class ManipulationTests
     [Fact]
     public void M2_002_AnUnlatchedPlaceTimesOutAt30SecondsWithTheEngineResult()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         int clockBits = 0;
         rig.M.ClockSec = () => BitConverter.Int32BitsToSingle(Volatile.Read(ref clockBits));
@@ -537,10 +545,10 @@ public class ManipulationTests
         SpinUntil(() => !rig.M.Docking.Carrying.IsCarryingObject, () => rig.Pump());
         Assert.False(place.StatusLatched);
         Volatile.Write(ref clockBits, unchecked((int)0x41EFFFFF)); // binary32 immediately below 30 seconds
-        Thread.Sleep(30);
+        SignalTestContext.StepContinuation();
         Assert.False(task.IsCompleted); // neither the old 10-second timeout nor BlockPlaced completes it
         Volatile.Write(ref clockBits, unchecked((int)0x41F00000));
-        SpinUntil(() => task.IsCompleted);
+        SignalTestContext.Run(task);
         Assert.Equal(0x03000018u, (uint)task.Result);
         Assert.False(place.StatusLatched);
     }
@@ -553,15 +561,18 @@ public class ManipulationTests
     private static void RunToEnd(Rig rig, SteppedBehavior b, BehaviorContext ctx, Func<bool>? frames = null, int ms = 8000)
     {
         double t = 0;
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        b.ActionTaskRunner = SignalTestContext.Schedule;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int modelSteps = 0;
         while (b.Update(ctx, t))
         {
             rig.Pump();
             if (frames?.Invoke() ?? false) rig.Frame();
             t += 33;
-            if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
-            Thread.Sleep(5);
+            if (++modelSteps > 10000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
+            SignalTestContext.AdvanceBehavior(b);
         }
         b.Stop(BehaviorStopReason.Completed);
     }
@@ -569,6 +580,7 @@ public class ManipulationTests
     [Fact]
     public void PickUpCubeReactsDrivesDocksAndCelebrates()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         rig.Cube = CubeAt(220, -20, 0.1);
@@ -590,6 +602,7 @@ public class ManipulationTests
     [Fact]
     public void PutDownBlockBacksUpPlaysThePutDownAndLooksDown()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
         var ctx = Ctx(rig);
@@ -612,6 +625,7 @@ public class ManipulationTests
     [Fact]
     public void RollBlockSucceedsWhenTheUpAxisChanges()
     {
+        using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
         // a cube on its side: X axis up

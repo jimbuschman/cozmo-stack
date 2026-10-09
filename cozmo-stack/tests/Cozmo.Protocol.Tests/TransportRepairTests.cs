@@ -725,8 +725,8 @@ public class TransportRepairTests
         var exec = new SerialExecutor("test-executor");
         exec.Start();
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
-        exec.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
-        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        exec.Post(() => { busy.Set(); gate.Wait(); });
+        Assert.True(busy.Wait(TimeSpan.FromMinutes(2)));
 
         var order = new List<int>(); var threads = new HashSet<int>();
         int running = 0, maxRunning = 0;
@@ -746,7 +746,7 @@ public class TransportRepairTests
         var done = new ManualResetEventSlim();
         exec.Post(() => done.Set());
         gate.Set();
-        Assert.True(done.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(done.Wait(TimeSpan.FromMinutes(2)));
 
         Assert.Equal(Enumerable.Range(0, 20), order);        // every copy kept, in order (G1.9, G1.10)
         Assert.Equal(1, maxRunning);                         // never overlapping
@@ -770,7 +770,7 @@ public class TransportRepairTests
         using var t = new ReliableTransport();
         var seen = new List<(ReliableTransport.ExecutorItem item, int thread)>();
         Traced(t, seen);
-        Assert.True(SpinWait.SpinUntil(() => { lock (seen) return seen.Count(s => s.item.Kind == "tick") >= 3; }, 5000),
+        Assert.True(TransportActivity.Wait(t, () => { lock (seen) return seen.Count(s => s.item.Kind == "tick") >= 3; }),
             "no update ran without a Connect");
         Assert.Equal(LinkState.Idle, t.State);
         List<(ReliableTransport.ExecutorItem item, int thread)> snap; lock (seen) snap = seen.ToList();
@@ -796,9 +796,9 @@ public class TransportRepairTests
         Assert.Equal(1000, t.Connection!.LatestRecvMs);      // G2.3: stamped when the posted Connect made it
 
         clk.NowMs = 1000 + 5000.1;                            // G2.7: strictly past lastRecv + 5000
-        Assert.True(SpinWait.SpinUntil(() => t.State == LinkState.Disconnected, 5000), "the connection never timed out");
+        Assert.True(TransportActivity.Wait(t, () => t.State == LinkState.Disconnected), "the connection never timed out");
         int ticksAtTimeout; lock (seen) ticksAtTimeout = seen.Count(s => s.item.Kind == "tick");
-        Assert.True(SpinWait.SpinUntil(() => { lock (seen) return seen.Count(s => s.item.Kind == "tick") >= ticksAtTimeout + 5; }, 5000),
+        Assert.True(TransportActivity.Wait(t, () => { lock (seen) return seen.Count(s => s.item.Kind == "tick") >= ticksAtTimeout + 5; }),
             "the update stopped when the connection timed out");
     }
 
@@ -825,17 +825,17 @@ public class TransportRepairTests
         int pendingBefore = c.PendingCount;                   // the ConnectionRequest, unacked
 
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
-        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });   // a long-running item
-        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Executor.Post(() => { busy.Set(); gate.Wait(); });   // a long-running item
+        Assert.True(busy.Wait(TimeSpan.FromMinutes(2)));
         int start; lock (seen) start = seen.Count;
         long p0 = t.Scheduler!.Posted;
-        Assert.True(SpinWait.SpinUntil(() => t.Scheduler.Posted >= p0 + 3, 5000));
+        Assert.True(TransportActivity.Wait(t, () => t.Scheduler.Posted >= p0 + 3));
 
         clk.NowMs = 1010;
         t.SendData(Data, reliable: true, flush: false);       // returns although the executor is busy
         Assert.Equal(pendingBefore, c.PendingCount);          // and did not run SendMessage on this thread
         long p1 = t.Scheduler.Posted;
-        Assert.True(SpinWait.SpinUntil(() => t.Scheduler.Posted >= p1 + 2, 5000));
+        Assert.True(TransportActivity.Wait(t, () => t.Scheduler.Posted >= p1 + 2));
         gate.Set();
         Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
 
@@ -883,8 +883,8 @@ public class TransportRepairTests
         var (t, _, _) = Offline();
         Connect(t);
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
-        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
-        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Executor.Post(() => { busy.Set(); gate.Wait(); });
+        Assert.True(busy.Wait(TimeSpan.FromMinutes(2)));
         t.Disconnect("queued");
         Assert.NotNull(t.Connection);                        // not run on the caller's thread
         Assert.Equal(LinkState.Connected, t.State);
@@ -912,8 +912,8 @@ public class TransportRepairTests
         using var t = new ReliableTransport(TransportOptions.EngineDefaults, clk, manualPump: true);
         var reasons = new List<string>(); t.Disconnected += r => { lock (reasons) reasons.Add(r); };
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
-        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
-        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Executor.Post(() => { busy.Set(); gate.Wait(); });
+        Assert.True(busy.Wait(TimeSpan.FromMinutes(2)));
         t.Disconnect("before any address");                 // no address yet: nothing to disconnect
         t.Connect(IPAddress.Loopback, 59980);               // sync mode: connection A is made here (R36, G2.1)
         var a = t.Connection!;
@@ -964,7 +964,9 @@ public class TransportRepairTests
     {
         var first = new StopwatchClock();
         double a1 = first.NowMs;
-        Thread.Sleep(30);
+        using var advanced = new ManualResetEventSlim();
+        using var timer = new Timer(_ => advanced.Set(), null, 30, Timeout.Infinite);
+        advanced.Wait(); // explicit timer signal: this test checks the real monotonic epoch
         var later = new StopwatchClock();
         double b = later.NowMs, a2 = first.NowMs;
         Assert.True(b >= a1 + 25, $"a clock made later restarted its epoch: {b} vs {a1}");
@@ -1262,13 +1264,13 @@ public class TransportRepairTests
         var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
 
         robot.SendTo(ConnectionResponse(), local);
-        Thread.Sleep(100);
+        Assert.True(t.CurrentSocket!.Poll(-1, SelectMode.SelectRead));
         clk.NowMs = 1001; t.Pump();
         Assert.Equal(LinkState.Connected, t.State);
 
         robot.SendTo(UnreliableOfLength(1500), local);
         robot.SendTo(Raw(ReliableMessageType.SingleReliableMessage, 2, 2, 1, Data), local);
-        Thread.Sleep(100);
+        Assert.True(t.CurrentSocket!.Poll(-1, SelectMode.SelectRead));
         clk.NowMs = 1041; t.Pump();
 
         Assert.Equal(1, t.UdpReceiveErrors[1]);
@@ -1359,16 +1361,16 @@ public class TransportRepairTests
         var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
 
         robot.SendTo(ConnectionResponse(), local);
-        Assert.True(SpinWait.SpinUntil(() => t.State == LinkState.Connected, 5000), "the ConnectionResponse was never read");
+        Assert.True(TransportActivity.Wait(t, () => t.State == LinkState.Connected), "the ConnectionResponse was never read");
         robot.SendTo(Raw(ReliableMessageType.DisconnectRequest, 2, 2, 1, Array.Empty<byte>()), local);
-        Assert.True(SpinWait.SpinUntil(() => t.Connection is null, 5000), "the DisconnectRequest was never handled");
+        Assert.True(TransportActivity.Wait(t, () => t.Connection is null), "the DisconnectRequest was never handled");
 
-        Assert.True(SpinWait.SpinUntil(() => Snap(events).Any(e => e.Marker == ReceiverMarker.OnDisconnected), 5000));
+        Assert.True(TransportActivity.Wait(t, () => Snap(events).Any(e => e.Marker == ReceiverMarker.OnDisconnected)));
         Assert.Equal(robot.LocalEndPoint, Snap(events).Single(e => e.Marker == ReceiverMarker.OnDisconnected).Address);
         Assert.Equal(LinkState.Disconnected, t.State);
         Assert.NotNull(t.LocalEndPoint);                                      // the socket is kept
         int ticks = Ticks(seen);
-        Assert.True(SpinWait.SpinUntil(() => Ticks(seen) >= ticks + 5, 5000), "the update stopped");
+        Assert.True(TransportActivity.Wait(t, () => Ticks(seen) >= ticks + 5), "the update stopped");
         Assert.False(t.TimedOut);
     }
 
@@ -1403,13 +1405,13 @@ public class TransportRepairTests
 
         clk.NowMs = 1000 + 5000.0;                                            // G2.7: not past it yet
         int t0 = Ticks(seen);
-        Assert.True(SpinWait.SpinUntil(() => Ticks(seen) >= t0 + 5, 5000));
+        Assert.True(TransportActivity.Wait(t, () => Ticks(seen) >= t0 + 5));
         Assert.NotNull(t.Connection);
         Assert.False(t.TimedOut);
 
         clk.NowMs = 1000 + 5000.1;
-        Assert.True(SpinWait.SpinUntil(() => t.TimedOut, 5000), "the +0xA1 flag was never set");
-        Assert.True(SpinWait.SpinUntil(() => Snap(reasons).Count == 1, 5000));
+        Assert.True(TransportActivity.Wait(t, () => t.TimedOut), "the +0xA1 flag was never set");
+        Assert.True(TransportActivity.Wait(t, () => Snap(reasons).Count == 1));
         Assert.Null(t.Connection);                                            // deleted
         Assert.Empty(t.ConnectionAddresses);
         Assert.Contains(Snap(warnings), w => w.Contains("Disconnecting TimedOut Connection"));
@@ -1421,7 +1423,7 @@ public class TransportRepairTests
 
         int frames = Snap(outbound).Count, t1 = Ticks(seen);
         clk.NowMs = 7000;
-        Assert.True(SpinWait.SpinUntil(() => Ticks(seen) >= t1 + 5, 5000), "the update stopped after the timeout");
+        Assert.True(TransportActivity.Wait(t, () => Ticks(seen) >= t1 + 5), "the update stopped after the timeout");
         Assert.Equal(frames, Snap(outbound).Count);                           // nothing sent for the deleted connection
         Assert.True(t.TimedOut);                                              // only Connect clears it
 
@@ -1791,8 +1793,8 @@ public class TransportRepairTests
         var x = t.Connection!;
 
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
-        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
-        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Executor.Post(() => { busy.Set(); gate.Wait(); });
+        Assert.True(busy.Wait(TimeSpan.FromMinutes(2)));
         clk.NowMs = 1050;
         t.Disconnect("old link");
         t.Connect(IPAddress.Loopback, 59962);
@@ -1953,21 +1955,23 @@ public class TransportRepairTests
         t.Connect(IPAddress.Loopback, ((IPEndPoint)robot.LocalEndPoint!).Port);
         var local = new IPEndPoint(IPAddress.Loopback, ((IPEndPoint)t.LocalEndPoint!).Port);
         robot.SendTo(ConnectionResponse(), local);
-        Thread.Sleep(100);
+        Assert.True(t.CurrentSocket!.Poll(-1, SelectMode.SelectRead));
         clk.NowMs = 1001; t.Pump();
         Assert.Equal(LinkState.Connected, t.State);
 
         robot.SendTo(Array.Empty<byte>(), local);
         robot.SendTo(Raw(ReliableMessageType.SingleReliableMessage, 2, 2, 1, Data), local);
-        Thread.Sleep(100);
+        Assert.True(t.CurrentSocket!.Poll(-1, SelectMode.SelectRead));
         clk.NowMs = 1041; t.Pump();
         Assert.Empty(delivered);
         clk.NowMs = 1043;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var polls = new List<int>();
+        t.ReceivePollObserved += polls.Add;
         t.Pump();
         Assert.Equal(Data, Assert.Single(delivered));
         t.Pump();                                           // nothing waiting: EAGAIN, silent, no block
-        Assert.True(sw.ElapsedMilliseconds < 1000, $"a read blocked for {sw.ElapsedMilliseconds} ms");
+        Assert.NotEmpty(polls);
+        Assert.All(polls, timeout => Assert.Equal(0, timeout)); // the empty read never waits for readiness
     }
 
     /// <summary>
@@ -2346,8 +2350,8 @@ public class TransportRepairTests
         var c = t.Connection!;
 
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
-        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
-        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Executor.Post(() => { busy.Set(); gate.Wait(); });
+        Assert.True(busy.Wait(TimeSpan.FromMinutes(2)));
         clk.NowMs = 1010;
         t.SendData(new byte[3000], reliable: true, flush: false);   // posted at 1010; R22: three type-6 parts
         clk.NowMs = 1020;                                            // runs later
@@ -2385,8 +2389,8 @@ public class TransportRepairTests
         Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
         var c = t.Connection!;
         var gate = new ManualResetEventSlim(); var busy = new ManualResetEventSlim();
-        t.Executor.Post(() => { busy.Set(); gate.Wait(TimeSpan.FromSeconds(10)); });
-        Assert.True(busy.Wait(TimeSpan.FromSeconds(5)));
+        t.Executor.Post(() => { busy.Set(); gate.Wait(); });
+        Assert.True(busy.Wait(TimeSpan.FromMinutes(2)));
         var buf = new byte[] { 0x10, 0x20, 0x30 };
         t.SendData(buf, reliable: true, flush: false);        // posted while the executor is busy
         buf[0] = 0xEE;                                         // the caller reuses its array before the closure runs

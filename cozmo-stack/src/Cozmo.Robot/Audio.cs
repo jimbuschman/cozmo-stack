@@ -446,6 +446,7 @@ public sealed class CozmoAudio
 
             using var _ = new HighResolutionTimer();
             var clock = System.Diagnostics.Stopwatch.StartNew();
+            TimeSpan Elapsed() => PlayElapsed?.Invoke() ?? clock.Elapsed;
             int lastPending = int.MaxValue;
             var lastProgress = TimeSpan.Zero;
             while (true)
@@ -459,8 +460,8 @@ public sealed class CozmoAudio
                 }
                 int pending = stream.PendingFor(token);
                 if (pending == 0) return;
-                if (pending != lastPending) { lastPending = pending; lastProgress = clock.Elapsed; }
-                else if (clock.Elapsed - lastProgress > StallTimeout)
+                if (pending != lastPending) { lastPending = pending; lastProgress = Elapsed(); }
+                else if (Elapsed() - lastProgress > StallTimeout)
                 {
                     stream.Remove(o => ReferenceEquals(o, token));
                     return;
@@ -470,4 +471,5 @@ public sealed class CozmoAudio
         }
         finally { Interlocked.Decrement(ref _playing); }
     }
+    internal Func<TimeSpan>? PlayElapsed { get; set; }
 }

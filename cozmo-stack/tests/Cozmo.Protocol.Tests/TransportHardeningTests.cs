@@ -175,18 +175,17 @@ public class TransportHardeningTests
     {
         using var t = new ReliableTransport();
         var done = new ManualResetEventSlim();
-        long elapsedMs = -1; int once = 0;
+        int joins = 0, once = 0;
+        t.Executor.JoinObserved += () => Interlocked.Increment(ref joins);
         t.FrameTrace += _ =>
         {
             if (Interlocked.Exchange(ref once, 1) == 1) return;
-            var sw = System.Diagnostics.Stopwatch.StartNew();
             t.Dispose();
-            elapsedMs = sw.ElapsedMilliseconds;
             done.Set();
         };
         t.Connect(Nowhere, 59994);                          // the ConnectionRequest is traced on the dispatch thread
         Assert.True(done.Wait(TimeSpan.FromSeconds(10)), "the handler never ran");
-        Assert.True(elapsedMs < 1000, $"Dispose on the dispatch thread took {elapsedMs} ms");
+        Assert.Equal(0, joins); // disposing on the dispatch thread never waits on the executor join
     }
 
     /// <summary>
@@ -226,17 +225,19 @@ public class TransportHardeningTests
     public void DisposeFromAHandlerRaisedUnderTheTransportLockDoesNotWaitOutTheJoinBound()
     {
         var t = new ReliableTransport(TransportOptions.EngineDefaults, null, manualPump: true);
-        long elapsedMs = -1; int once = 0;
+        bool returned = false;
+        int joins = 0, once = 0;
+        t.Executor.JoinObserved += () => Interlocked.Increment(ref joins);
         t.FrameTrace += _ =>
         {
             if (Interlocked.Exchange(ref once, 1) == 1) return;
-            var sw = System.Diagnostics.Stopwatch.StartNew();
             t.Dispose();
-            elapsedMs = sw.ElapsedMilliseconds;
+            returned = true;
         };
         t.Connect(Nowhere, 59989);
-        Assert.True(elapsedMs >= 0 && elapsedMs < 1000, $"Dispose inside the handler took {elapsedMs} ms");
-        Assert.True(SpinWait.SpinUntil(() => t.State == LinkState.Disconnected, 5000), "the link never ended");
+        Assert.True(returned);
+        Assert.Equal(0, joins); // handler holds the transport lock: executor join is skipped
+        Assert.True(TransportActivity.Wait(t, () => t.State == LinkState.Disconnected), "the link never ended");
     }
 
     /// <summary>
@@ -307,18 +308,18 @@ public class TransportHardeningTests
     {
         using var t = new ReliableTransport();
         var released = new ManualResetEventSlim();
-        t.Disconnected += _ => released.Wait(TimeSpan.FromSeconds(5));   // a handler that blocks
+        using var entered = new ManualResetEventSlim();
+        t.Disconnected += _ => { entered.Set(); released.Wait(); }; // block until the test explicitly releases it
 
         t.Connect(Nowhere, 59995);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         t.Disconnect();
         // Updated for M1-035: Disconnect is a queued action (R38, B21; R37). Waiting for it to have run makes
         // the test cover the shutdown itself again: it queues the notification rather than running it, and
-        // the dispatcher join bound (2 s) is the only cost although the handler stays blocked for 5 s.
+        // the handler cannot return until the test releases it below.
         Assert.True(t.Flush(TimeSpan.FromSeconds(5)), "the posted disconnect never ran");
-        sw.Stop();
+        entered.Wait();
         Assert.Equal(LinkState.Disconnected, t.State);
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(4), $"the disconnect took {sw.ElapsedMilliseconds} ms behind a blocked handler");
+        Assert.False(released.IsSet); // disconnect/executor finished while the handler still cannot return
         released.Set();
     }
 }

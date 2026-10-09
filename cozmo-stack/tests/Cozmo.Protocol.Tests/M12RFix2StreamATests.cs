@@ -21,8 +21,7 @@ public class M12RFix2StreamATests
 
     private static void Spin(Func<bool> done, Action tick, int ms = 8000)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!done()) { tick(); if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("condition not met"); Thread.Sleep(2); }
+        SignalTestContext.Until(done, tick);
     }
 
     // ------------------------------------------------------------------ M12-019
@@ -119,6 +118,7 @@ public class M12RFix2StreamATests
     [Fact]
     public void M12_002_ThePathIdWrapsFromFFFFToZero()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var sender = new PathSender(rig.Robot);
         var none = Array.Empty<PathSegment>();
@@ -153,6 +153,7 @@ public class M12RFix2StreamATests
     public async Task M12_007_AStillMovingObjectKeepsVerifyRunningUntilTheAllowanceThenFails()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         var (rig, obj) = MovingCubeRig();
         using var _ = rig;
         var pick = new PickupObjectAction(rig.M, 7) { CheckPreActionPose = false };
@@ -168,7 +169,7 @@ public class M12RFix2StreamATests
             int before = VerifyLines(pick);
             rig.T = stateTime - 33;
             rig.State();
-            Spin(() => VerifyLines(pick) > before, () => Thread.Sleep(1));
+            Spin(() => VerifyLines(pick) > before, () => { });
             Assert.False(task.IsCompleted);
             Assert.Equal("Verify -> Running", pick.Trace.Last(l => l.StartsWith("Verify -> ")));
         }
@@ -183,7 +184,7 @@ public class M12RFix2StreamATests
         // one millisecond past the boundary: failed
         rig.T = stamp + 501 - 33;
         rig.State();
-        Spin(() => task.IsCompleted, () => Thread.Sleep(1));
+        Spin(() => task.IsCompleted, () => { });
         Assert.Equal(ActionResult.PickupObjectStillMoving, await task);          // r4 (0x03000004) + 0x10, 0x00553CEA: ABORT category, not Retry
         Assert.Contains(pick.Trace, l => l == "PickupObjectAction.Verify.ObjectStillMoving");
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);                       // SetCarriedObjectAsUnattached(true)
@@ -203,6 +204,7 @@ public class M12RFix2StreamATests
     public async Task M12_007_AFailedDockSkipsTheMovingBlockAndEndsAtTheCarryCheck()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         var (rig, _) = MovingCubeRig();
         using var _ = rig;
         rig.DockSucceeds = false;
@@ -222,6 +224,7 @@ public class M12RFix2StreamATests
     [Fact]
     public void M12_017_WithNoDockActionTheLiftMessagesHaveNoHandler()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var raised = new List<string>();
         rig.M.Docking.LiftLoad += v => raised.Add("LiftLoad " + v);
@@ -247,6 +250,7 @@ public class M12RFix2StreamATests
     public void M12_017_TheDockSquintIsAddedAfterDockWithObjectNotBefore()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         Assert.Single(rig.Frame().Objects);
@@ -284,14 +288,15 @@ public class M12RFix2StreamATests
 
     private static void RunBehavior(Rig rig, PutDownBlockBehavior b, BehaviorContext ctx, Action<double>? each = null)
     {
+        b.ActionTaskRunner = SignalTestContext.Schedule;
+        if (SynchronizationContext.Current is SignalTestContext signals) b.WorkPosted += signals.Notify;
         double t = 0;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         while (b.Update(ctx, t))
         {
             each?.Invoke(t);
             rig.Pump(); t += 33;
-            if (sw.ElapsedMilliseconds > 8000) throw new TimeoutException(string.Join(" | ", b.Trace));
-            Thread.Sleep(5);
+            SignalTestContext.AdvanceBehavior(b);
         }
     }
 
@@ -305,10 +310,14 @@ public class M12RFix2StreamATests
     public void M15_012_WithACarriedObjectTheLookAfterPlaceBuildsHeadAndAMinusEightyDrive()
     {
         Assert.Equal(0xBEB2B8C2u, BitConverter.SingleToUInt32Bits(PutDownBlockBehavior.LookDownHeadAngleRad));
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
         var ctx = Ctx(rig);
-        var b = new PutDownBlockBehavior(rig.M);
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
+        b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         RunBehavior(rig, b, ctx);
         Assert.Equal(2, rig.Sent.OfType<ExecutePath>().Count());                     // the random back-up and the look-down drive
@@ -326,9 +335,13 @@ public class M12RFix2StreamATests
     [Fact]
     public void M15_012_WithNoCarriedObjectOnlyTheKeepAliveRemains()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
-        var b = new PutDownBlockBehavior(rig.M);
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
+        b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         rig.Pump();
         rig.Sent.Clear();
@@ -347,11 +360,15 @@ public class M12RFix2StreamATests
     [Fact]
     public void M15_012_AFailedLookDownDriveEndsTheCompoundBeforeTheImageWaitAndTheKeepAlive()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
         rig.HoldPath = true;
         var ctx = Ctx(rig);
-        var b = new PutDownBlockBehavior(rig.M);
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
+        b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         b.LookDownAtBlock();
         int handled = 0;

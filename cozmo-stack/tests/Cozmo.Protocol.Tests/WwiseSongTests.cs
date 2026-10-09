@@ -320,9 +320,10 @@ public class WwiseSongTests
             },
         };
         s.Play(clip, 0);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int preparationsOnScheduler = 0;
+        source.MusicPreparationObserved = () => ++preparationsOnScheduler;
         s.Advance(0);
-        Assert.True(sw.ElapsedMilliseconds < 500, $"the first frame took {sw.ElapsedMilliseconds} ms: the song was rendered on the scheduler thread");
+        Assert.Equal(0, preparationsOnScheduler); // first frame does no synchronous music preparation
         Assert.True(s.AudioStreaming);
 
         // The song is mixed while it plays, and the scheduler will not send samples that have not been
@@ -335,10 +336,7 @@ public class WwiseSongTests
         {
             if (stream is not null)
             {
-                var w = System.Diagnostics.Stopwatch.StartNew();
-                while (stream.Ready < (sink.Frames + 1) * CozmoAudio.SamplesPerFrame &&
-                       stream.Ready < stream.Pcm.Length && w.ElapsedMilliseconds < 2000)
-                    Thread.Sleep(1);
+                stream.WaitForSamples(Math.Min((sink.Frames + 1) * CozmoAudio.SamplesPerFrame, stream.Pcm.Length));
             }
             s.Advance(t);
         }
@@ -375,11 +373,11 @@ public class WwiseSongTests
         var prepare = source.LastMusicRenderTime;
         Assert.True(prepare > TimeSpan.Zero);
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int preparationsOnCaller = 0;
+        source.MusicPreparationObserved = () => ++preparationsOnCaller;
         var pcm = source.GetPcm(ev, 1f);
         Assert.NotNull(pcm);
-        Assert.True(sw.ElapsedMilliseconds < 100,
-            $"GetPcm after a prewarm took {sw.ElapsedMilliseconds} ms (preparing took {prepare.TotalMilliseconds:F0} ms)");
+        Assert.Equal(0, preparationsOnCaller); // cached GetPcm does not execute the expensive preparation
         Assert.Equal((int)(462000L * CozmoAudio.SampleRate / 1000), pcm!.Length);
 
         // the first block is ready before the song starts, and the rest is not yet mixed
@@ -529,6 +527,7 @@ public class WwiseSongTests
     [Fact]
     public void AStepThatCompletesNormallyAdvancesToTheNextStep()
     {
+        using var nextStep = new ManualResetEventSlim();
         if (Obb() is not { } obb) return;
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
@@ -540,7 +539,9 @@ public class WwiseSongTests
 
         Assert.Single(b.Steps);
         Assert.True(b.IsActing, "the get-in step's animation is in flight");
-        Assert.True(SpinWait.SpinUntil(() => b.Steps.Count >= 2, 15_000),
+        b.Trace += line => { if (line.StartsWith("step 2:")) nextStep.Set(); };
+        if (b.Steps.Count < 2) nextStep.Wait();
+        Assert.True(b.Steps.Count >= 2,
             $"the get-in did not complete and advance: [{string.Join(" | ", b.Steps)}]");
         Assert.True(b.IsActing, "the next step's animation is in flight");
         b.Stop(BehaviorStopReason.Cancelled);

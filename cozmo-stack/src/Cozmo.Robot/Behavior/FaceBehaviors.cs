@@ -22,7 +22,7 @@ public abstract class ActionBehavior : SteppedBehavior
         _cancel?.Cancel();
         var cts = _cancel = new CancellationTokenSource();
         Log($"start {what}");
-        Task.Run(() => action(cts.Token)).ContinueWith(t =>
+        ObserveAsyncWork(RunAsyncAction(() => action(cts.Token)).ContinueWith(t =>
         {
             var r = t.Status == TaskStatus.RanToCompletion ? t.Result : failed;
             Post(() =>
@@ -32,7 +32,7 @@ public abstract class ActionBehavior : SteppedBehavior
                 Log($"{what} -> {r}");
                 onDone(r);
             });
-        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default));
     }
 
     protected void CancelAction() { _cancel?.Cancel(); _cancel = null; }

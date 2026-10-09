@@ -407,7 +407,8 @@ public class EngineAppLayerTests
     private static Rig RigWithHeader(uint version, uint time)
     {
         var rig = new Rig(new CozmoEngineOptions { ResourcesPath = TempResources(version, time), BlockPoolPath = "" });
-        Assert.True(SpinWait.SpinUntil(() => rig.Engine.ExpectedFirmwareVersion == version && rig.Engine.ExpectedFirmwareTime == time, 5000),
+        rig.Engine.FirmwareHeaderLoader!.Join();
+        Assert.True(rig.Engine.ExpectedFirmwareVersion == version && rig.Engine.ExpectedFirmwareTime == time,
                     "the header loader never delivered the header");
         return rig;
     }
@@ -1388,7 +1389,7 @@ public class EngineAppLayerTests
         Encoding.UTF8.GetBytes("{\"version\": 1, \"time\": 2}").CopyTo(shortFile, 0);
         Assert.Null(FirmwareHeader.Parse(shortFile));
         using var rig = new Rig(new CozmoEngineOptions { ResourcesPath = Path.Combine(Path.GetTempPath(), "no-such-" + Guid.NewGuid().ToString("N")) });
-        Thread.Sleep(200);
+        rig.Engine.FirmwareHeaderLoader!.Join();
         Assert.Equal(0u, rig.Engine.ExpectedFirmwareVersion);
         Assert.Equal(0u, rig.Engine.ExpectedFirmwareTime);
     }
@@ -2063,7 +2064,8 @@ public class EngineAppLayerTests
         rig.Disconnected();
         rig.Tick();
         Assert.Null(rig.Engine.Robot);
-        Assert.True(SpinWait.SpinUntil(() => !robot.Animations.IsTicking, 3000), "the animation tick loop kept running");
+        robot.Animations.WaitForTickerStop();
+        Assert.False(robot.Animations.IsTicking, "the animation tick loop kept running");
 
         Assert.Same(constructedCal, vision.Calibration);
         Assert.True(vision.Enabled);
@@ -2104,7 +2106,8 @@ public class EngineAppLayerTests
         rig.Disconnected();
         rig.Tick();
         Assert.Null(rig.Engine.Robot);
-        Assert.True(SpinWait.SpinUntil(() => !rig.Robot.Animations.IsTicking, 3000), "the animation tick loop kept running");
+        rig.Robot.Animations.WaitForTickerStop();
+        Assert.False(rig.Robot.Animations.IsTicking, "the animation tick loop kept running");
         Assert.Equal(0, rig.Robot.State.StateCount);
         Assert.False(rig.Robot.Cubes.Connections.AutoBlockPoolEnabled);
 
@@ -2130,12 +2133,14 @@ public class EngineAppLayerTests
         rig.Robot.Animations.Scheduler.PushLiveQuietly();
         Assert.True(rig.Robot.Animations.StreamLive(new Cozmo.Robot.Animation.HeadKeyframe(0, 100, 5, 0)));
         // M5 A29: the live keyframe goes out in the streamer's Updates, which the tick loop runs on this test seam
+        using var animationTicks = new TickSignal(rig.Robot.Animations);
         List<RobotMessage> after = new();
-        Assert.True(SpinWait.SpinUntil(() =>
+        animationTicks.Until(() =>
         {
             lock (rig.Port.Sent) after = rig.Port.Sent.Skip(sent).Select(b => RobotMessage.Parse(b)).ToList();
             return after.OfType<StartOfAnimation>().Any();
-        }, 3000), "the live animation was never opened");
+        });
+        Assert.True(after.OfType<StartOfAnimation>().Any(), "the live animation was never opened");
         var start = Assert.Single(after.OfType<StartOfAnimation>());
         Assert.Equal(Cozmo.Robot.Animation.AnimationScheduler.LiveAnimationTag, start.AnimId);
     }
@@ -2150,7 +2155,7 @@ public class EngineAppLayerTests
         public IReadOnlyList<Cozmo.Robot.Vision.DetectedFace> Detect(Cozmo.Robot.Vision.GrayImage image, uint timestamp)
         {
             Entered.Set();
-            Release.Wait(TimeSpan.FromSeconds(10));
+            Release.Wait();
             return new[] { new Cozmo.Robot.Vision.DetectedFace(0, new(10, 10, 40, 40)) };
         }
     }
@@ -2181,15 +2186,17 @@ public class EngineAppLayerTests
         vision.World.ObjectObserved += _ => Interlocked.Increment(ref objectEvents);
 
         var frame = Task.Run(() => vision.ProcessCapture(new Cozmo.Robot.Vision.GrayImage(320, 240), 1, 0));
-        Assert.True(detector.Entered.Wait(TimeSpan.FromSeconds(10)), "the frame never reached face detection");
-        var releaser = Task.Run(async () => { await Task.Delay(300); detector.Release.Set(); });
+        Assert.True(detector.Entered.Wait(TimeSpan.FromMinutes(2)), "the frame never reached face detection");
+        using var removalEntered = new ManualResetEventSlim();
+        vision.RemovalInvalidated += removalEntered.Set;
+        var releaser = Task.Run(() => { removalEntered.Wait(); detector.Release.Set(); });
         rig.Disconnected();
         Assert.False(frame.IsCompleted);                   // the frame is in flight when the removal runs
         rig.Tick();                                        // RemoveRobot: the vision reset waits for the frame
         Assert.Null(rig.Engine.Robot);
-        Assert.True(frame.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(frame.Wait(TimeSpan.FromMinutes(2)));
         Assert.Null(frame.Result);                         // discarded
-        Assert.True(releaser.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(releaser.Wait(TimeSpan.FromMinutes(2)));
 
         Assert.Equal(0, vision.Faces.Count);
         Assert.Empty(vision.LastFaces);
@@ -2214,6 +2221,7 @@ public class EngineAppLayerTests
     {
         using var rig = new Rig();
         var audio = rig.Robot.Audio;
+        audio.PlayElapsed = () => TimeSpan.Zero; // the stall timeout cannot release this Play
         rig.ToSuccess();
         // M3-033: the first synced full state sends the connection reads; drain the whole queue so streaming opens.
         rig.SendFirstFullState(timestamp: 10);
@@ -2228,15 +2236,18 @@ public class EngineAppLayerTests
         var pcm = CozmoAudio.Tone(440, TimeSpan.FromSeconds(10));
         var play = new Thread(() => audio.Play(pcm)) { IsBackground = true };
         play.Start();
-        Assert.True(SpinWait.SpinUntil(() => audio.FramesSent >= 5, 5000), "the Play never started sending");
+        using var sentFive = new ManualResetEventSlim();
+        audio.OnFrameSent += () => { if (audio.FramesSent >= 5) sentFive.Set(); };
+        if (audio.FramesSent >= 5) sentFive.Set();
+        sentFive.Wait();
+        Assert.True(audio.FramesSent >= 5, "the Play never started sending");
 
         rig.Disconnected();
         rig.Tick();                                        // RemoveRobot
         Volatile.Write(ref removed, 1);
         Assert.Null(rig.Engine.Robot);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        Assert.True(play.Join(TimeSpan.FromSeconds(3)), "Play did not end after the removal");
-        Assert.True(sw.Elapsed < TimeSpan.FromMilliseconds(500), $"Play took {sw.ElapsedMilliseconds} ms to end");
+        Assert.True(play.Join(TimeSpan.FromMinutes(2)), "Play did not end after the removal");
+        Assert.True(audio.PlayElapsed() < CozmoAudio.StallTimeout, "removal ended Play while the stall timeout was still disabled");
         Assert.Equal(0, audio.FramesSent);                 // reset to 0 at the removal, and nothing sent since
         Assert.Equal(0, framesAfterRemoval);
     }

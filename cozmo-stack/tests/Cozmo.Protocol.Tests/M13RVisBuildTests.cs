@@ -37,8 +37,7 @@ public class M13RVisBuildTests
     /// <summary>Runs a face action to its end, feeding frames as the vision loop would.</summary>
     private static FaceActionResult RunWithFrames(Rig rig, Task<FaceActionResult> task)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 8000) { rig.Pump(); rig.Frame(); Thread.Sleep(5); }
+        SignalTestContext.Run(task, () => { rig.Pump(); rig.Frame(); });
         Assert.True(task.IsCompleted, "the action did not finish");
         return task.Result;
     }
@@ -252,6 +251,7 @@ public class M13RVisBuildTests
     public void M13_023_ATiltedLocatedCubeDoesNotAbortTheLiftAttachOrTheStackCheck()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -321,6 +321,7 @@ public class M13RVisBuildTests
     public void M13_010_TheChoosersScorerSubtractsTheHistoryRingForTrackDelta()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = new BehaviorContext { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Mood = new MoodState(new MoodModel()) };
         var graph = new Graph2d(new[] { (0.0, 1.0), (1.0, 1.0) });
@@ -343,6 +344,7 @@ public class M13RVisBuildTests
         Assert.NotEqual(typeof(TurnTowardsFaceAction), typeof(TurnTowardsLastFacePoseAction));
         Assert.Equal(0, TurnTowardsLastFacePoseAction.EngineFaceIdArgument);           // 0x0055B3BC: face id 0
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         using var a = new TurnTowardsLastFacePoseAction(rig.M.Vision, Math.PI, sayName: false);
         Assert.False(a.RequireVerifiedFace);
@@ -358,6 +360,7 @@ public class M13RVisBuildTests
     public void M13_014_NoFacePoseWithTheFlagClearIsSuccessInStateThree()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig();
         using var a = new TurnTowardsLastFacePoseAction(rig.Vision, Math.PI, false);
         Assert.Equal(FaceActionResult.Success, a.Init());
@@ -383,6 +386,7 @@ public class M13RVisBuildTests
     public void M13_014_NoFacePoseWithTheFlagSetIsNoFace0x0300000E()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig();
         using var flagged = new TurnTowardsLastFacePoseAction(rig.Vision, Math.PI, false) { RequireVerifiedFace = true };
         Assert.Equal(0x0300000Eu, (uint)flagged.Init());
@@ -400,6 +404,7 @@ public class M13RVisBuildTests
     public void M13_014_InitWithAPoseStartsStateZeroAndLocksTracks()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 150, 250), null));
         rig.Frame();
         Assert.Single(rig.Vision.Faces.Faces);
@@ -421,6 +426,7 @@ public class M13RVisBuildTests
     public void M13_014_TheObservedFaceHandlerChoosesTheStrictlyClosestFaceWhileTheStateIsAtMostOne()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 150, 250), null), (8, new Vec3(300, 20, 250), null));
         rig.Frame();
         Assert.Equal(2, rig.Vision.Faces.Count);
@@ -454,6 +460,7 @@ public class M13RVisBuildTests
     public void M13_014_AfterTheWaitTheHandlerIsClosedAndAVerifiedFaceIsMarkedTurnedTowards()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 150, 250), null), (8, new Vec3(300, 20, 250), null));
         rig.Frame();
         using var a = new TurnTowardsLastFacePoseAction(rig.Vision, Math.PI, false);
@@ -477,13 +484,23 @@ public class M13RVisBuildTests
     public void M13_014_ANoFrameWaitEndsNoFaceWhenFlaggedAndSuccessWhenNot()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 150, 250), null));
         rig.Frame();
-        using var flagged = new TurnTowardsFaceAction(rig.Vision, 7) { RequireVerifiedFace = true };
-        Assert.Equal(0x0300000Eu, (uint)flagged.RunAsync(default).GetAwaiter().GetResult());
+        var now = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        using var flagged = new TurnTowardsFaceAction(rig.Vision, 7) { RequireVerifiedFace = true, UtcNow = () => now };
+        var flaggedTask = flagged.RunAsync(default);
+        SignalTestContext.Until(() => flagged.State == 1, () => rig.Pump());
+        now = now.AddSeconds(2);
+        SignalTestContext.Run(flaggedTask);
+        Assert.Equal(0x0300000Eu, (uint)flaggedTask.Result);
         Assert.Contains(flagged.Trace, l => l.Contains("Will wait no more than 10 frames"));
-        using var plain = new TurnTowardsFaceAction(rig.Vision, 7);
-        Assert.Equal(FaceActionResult.Success, plain.RunAsync(default).GetAwaiter().GetResult());
+        using var plain = new TurnTowardsFaceAction(rig.Vision, 7) { UtcNow = () => now };
+        var plainTask = plain.RunAsync(default);
+        SignalTestContext.Until(() => plain.State == 1, () => rig.Pump());
+        now = now.AddSeconds(2);
+        SignalTestContext.Run(plainTask);
+        Assert.Equal(FaceActionResult.Success, plainTask.Result);
         Assert.False(rig.Vision.Faces.HasTurnedTowardsFace(7));
         Assert.Null(plain.Reaction);
     }
@@ -499,6 +516,7 @@ public class M13RVisBuildTests
         if (!NeedsLibrary()) return;
         foreach (var (max, expected) in new[] { (0.5, new[] { 0.5, 0.5 }), (Math.PI, new[] { (double)MathF.PI, (double)0.7853982f }) })
         {
+            using var signals_rig = SignalTestContext.Install();
             using var rig = FaceRig((7, new Vec3(400, 150, 250), null));
             rig.Frame();
             var maxes = new List<double>();
@@ -510,6 +528,7 @@ public class M13RVisBuildTests
             Assert.Equal(expected[0], maxes[0], 6);
             Assert.Equal(expected[1], maxes[1], 6);
         }
+        using var signals_rig2 = SignalTestContext.Install();
         using var rig2 = FaceRig((7, new Vec3(400, 150, 250), null));
         rig2.Frame();
         var moved = new List<double>();
@@ -533,6 +552,7 @@ public class M13RVisBuildTests
     public void M13_014_TheCallbackSettersInstallRegardlessOfSayNameAndOnlyLogWhenItIsZero()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 150, 250), "Jim"));
         rig.Frame();
         using var quiet = new TurnTowardsFaceAction(rig.Vision, 7, Math.PI, sayName: false);
@@ -573,6 +593,7 @@ public class M13RVisBuildTests
     public void M13_014_AnUnnamedFaceUsesTheNoNameFunction()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 150, 250), null));
         rig.Frame();
         using var none = new TurnTowardsFaceAction(rig.Vision, 7, Math.PI, sayName: true);
@@ -591,6 +612,7 @@ public class M13RVisBuildTests
     public void M13_014_DriveAndFlipBlockForwardsTheCallersSayNameAndKnockOverPassesFalse()
     {
         if (!NeedsLibrary()) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         Assert.False(new DriveAndFlipBlockAction(rig.M, 1).SayName);
         Assert.True(new DriveAndFlipBlockAction(rig.M, 1) { SayName = true }.SayName);

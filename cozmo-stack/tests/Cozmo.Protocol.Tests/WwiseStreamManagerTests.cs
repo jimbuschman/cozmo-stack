@@ -530,17 +530,19 @@ public class WwiseStreamManagerTests
         var s = rig.Create();
         s.Start964CB8();
         var inside = new ManualResetEventSlim();
+        io.ServiceEntered = inside.Set;
         Exception? second = null;
+        Thread? first = null;
         lock (s.Lock14)                                         // held here, so the first thread's Step blocks on it inside Service
         {
-            var first = new Thread(() => { inside.Set(); io.Step(); });
+            first = new Thread(io.Step);
             first.Start();
             inside.Wait();
-            Thread.Sleep(200);                                  // the first thread is now inside Service, blocked on Lock14 (PrepareTransfer or TryDestroy)
             var other = new Thread(() => { try { io.Step(); } catch (Exception e) { second = e; } });
             other.Start(); other.Join();
             Assert.IsType<InvalidOperationException>(second);
         }
+        first.Join();
     }
 
     [Fact]

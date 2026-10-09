@@ -290,7 +290,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
             int epoch = CallbackEpoch;
             var cts = _driveCancel = new CancellationTokenSource();
             Log($"start DriveStraightAction({BackUpDistanceMm:F1} mm, {BackUpSpeedMmps:F1} mm/s)");
-            Task.Run(() => drive(BackUpDistanceMm, BackUpSpeedMmps, cts.Token)).ContinueWith(t =>
+            ObserveAsyncWork(RunAsyncAction(() => drive(BackUpDistanceMm, BackUpSpeedMmps, cts.Token)).ContinueWith(t =>
             {
                 Post(() =>
                 {
@@ -298,7 +298,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
                     if (ReferenceEquals(_driveCancel, cts)) _driveCancel = null;
                     if (CallbackMayRun(epoch)) SendFinishedReactToCliffMessage();               // lambda $_2 (0x006058DA)
                 });
-            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default));
             return;
         }
         SendFinishedReactToCliffMessage();

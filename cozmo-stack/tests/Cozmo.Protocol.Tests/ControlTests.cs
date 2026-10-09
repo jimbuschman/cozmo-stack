@@ -13,16 +13,12 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class ControlTests
 {
-    /// <summary>Spins until a message of the wanted type has been sent, so tests never race the send.</summary>
-    private static async Task<T> WaitFor<T>(Func<T?> get, int timeoutMs = 2000) where T : class
+    /// <summary>The getter pumps the manual engine and transport; no worker clock is involved.</summary>
+    private static Task<T> WaitFor<T>(Func<T?> get, int timeoutMs = 2000) where T : class
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < timeoutMs)
-        {
-            if (get() is { } v) return v;
-            await Task.Delay(5);
-        }
-        throw new TimeoutException($"no {typeof(T).Name} was sent within {timeoutMs} ms");
+        for (int tick = 0; tick < 100; tick++)
+            if (get() is { } value) return Task.FromResult(value);
+        throw new InvalidOperationException($"no {typeof(T).Name} was sent in the bounded manual ticks");
     }
 
     // ------------------------------------------------------------------ harness

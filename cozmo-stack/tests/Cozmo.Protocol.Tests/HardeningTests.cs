@@ -131,11 +131,9 @@ public class HardeningTests
         }
 
         // Start one more and give the ticker a moment: if the race left no ticker, position never advances.
+        using var ticks = new TickSignal(robot.Animations);
         robot.Animations.Play(name);
-        var deadline = DateTime.UtcNow.AddSeconds(3);
-        while (DateTime.UtcNow < deadline && robot.Animations.Scheduler.KeyframesFired == 0
-               && robot.Animations.IsPlaying)
-            Thread.Sleep(10);
+        ticks.Until(() => robot.Animations.Scheduler.KeyframesFired > 0 || !robot.Animations.IsPlaying);
 
         Assert.True(robot.Animations.Scheduler.KeyframesFired > 0 || !robot.Animations.IsPlaying,
             "an animation was left running with no ticker advancing it");
@@ -244,7 +242,7 @@ public class HardeningTests
         Assert.False(rig.Robot.State.CalibratingMotors);   // nothing is running, but nothing has finished
 
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromSeconds(5));
-        await Task.Delay(50);                                  // the transport executor posts the frame asynchronously
+        // Rig.Sent advances the engine and drains the transport synchronously.
         Assert.Contains(rig.Sent(), m => m is SetHeadAngle);   // the command is sent
         Assert.False(pending.IsCompleted);                     // not refused: it waits for an ack the rig never sends
     }

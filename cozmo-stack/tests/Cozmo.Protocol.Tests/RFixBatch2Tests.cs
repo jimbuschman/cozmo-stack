@@ -413,15 +413,17 @@ public class RFixBatch2Tests
     {
         var obb = ObbRoot();
         if (obb is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         Assert.True(rig.M.LoadPlanner(obb));
         rig.M.Planner!.ArtificialPlannerDelayMs = 3000;
+        using var planning = new ManualResetEventSlim();
+        rig.M.Planner.PlanningStarted += planning.Set;
         var drive = new DriveToPoseAction(rig.M) { Goal = At(250, 120, Math.PI / 2) };
         var task = Task.Run(() => drive.RunAsync(default));         // the planning runs inside the first call, so it needs its own thread for StopPlanning to reach it
-        Thread.Sleep(150);
+        Assert.True(planning.Wait(TimeSpan.FromMinutes(2)), "the planning worker never entered DoPlanning");
         rig.M.Planner.StopPlanning();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 8000) { rig.Pump(); Thread.Sleep(5); }
+        SignalTestContext.Run(task, () => { rig.Pump(); });
         Assert.True(task.IsCompleted);
         Assert.Equal(ActionResult.PathPlanningFailedAbort, task.Result);
         Assert.Equal(LatticePlanner.PlanningResult.Failure, rig.M.Planner.LastPlanningResult);
@@ -444,6 +446,7 @@ public class RFixBatch2Tests
         Assert.Equal(Bits(-1.5707964f), Bits(arc.StartAngleRad));
         var turn = new PathSegment.PointTurn(1.5, 2.5, 3.0, 0.0349066, 2f, 10f, 10f, true);
         Assert.Equal(Bits((float)0.0349066), Bits(turn.AngleToleranceRad));
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.M.StartPath(new PathSegment[] { line, arc, turn }).Dispose();
         rig.Pump();
@@ -489,6 +492,7 @@ public class RFixBatch2Tests
     public void M13_009_APreDockPoseIsGeneratedForALocatedChargerForActionTypesZeroAndOneOnly()
     {
         if (MarkerLibrary.EmbeddedOrNull is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Head = -0.2f;
         rig.Charger = At(200, 0, 0);
@@ -537,6 +541,7 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_013_TheContactsActionTicksInitAndCheckIfDoneAsTheEngineDoes()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         // not on the contacts: Init returns 0 without starting the drive; CheckIfDone returns 0
         rig.OnCharger = false; rig.State();
@@ -571,6 +576,7 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_013_TheTrackLockClearIsMadeOnlyInSdkMode()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         Assert.False(new DriveOffChargerContactsAction(rig.M, isInSdkMode: () => false, drive: new FakeDrive()).TracksToLockCleared);
         Assert.True(new DriveOffChargerContactsAction(rig.M, isInSdkMode: () => true, drive: new FakeDrive()).TracksToLockCleared);
@@ -611,6 +617,7 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_008_BackupCheckIfDoneReturnsTheEnginesCodesInTheEnginesOrder()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var mount = new MountChargerAction(rig.M, 1);
         var drive = new FakeDrive();
@@ -642,6 +649,7 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_008_AMissingChargerFailsInitWithBadObject()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var mount = new MountChargerAction(rig.M, 424242);
         Assert.Equal(ActionResult.BadObject, mount.RunAsync(default).GetAwaiter().GetResult());
@@ -660,6 +668,7 @@ public class RFixBatch2Tests
         if (MarkerLibrary.EmbeddedOrNull is null) return;
         foreach (bool low in new[] { false, true })
         {
+            using var signals_rig = SignalTestContext.Install();
             using var rig = new Rig();
             rig.Head = -0.2f;
             rig.Charger = At(200, 0, 0);
@@ -669,10 +678,10 @@ public class RFixBatch2Tests
             rig.LiftAngleReported = low ? (float)Math.Asin((32.0 - 45.0) / 66.0) : 0f;
             rig.State();
             rig.M.World.UnobservedMissesToUnknown = int.MaxValue;
-            var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId);
+            // This case checks the queued lift's strict threshold and speed, not action deadlines.
+            var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId) { Clock = () => 0f };
             var task = mount.RunAsync(default);
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            while (!task.IsCompleted && sw.ElapsedMilliseconds < 20000) { rig.Pump(); if (!rig.OnCharger) rig.Frame(); Thread.Sleep(3); }
+            SignalTestContext.Run(task, () => { rig.Pump(); if (!rig.OnCharger) rig.Frame(); });
             Assert.True(task.IsCompleted);
             var lifts = rig.Sent.OfType<SetLiftHeight>().Where(l => l.HeightMm == 45f).ToList();
             if (!low) Assert.Empty(lifts);                                            // 45.0 is not below 45.0
@@ -706,11 +715,13 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_017_TheBehaviourIsRunnableOnThePlatformFlagNotTheContacts()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         WorldCharger(rig, 0, 0);                                        // the charger quad covers x in [0, 96], y in [-40, 40] (0x004E9A50)
         rig.X = 30; rig.Y = 0; rig.Angle = 0;
         var ctx = Ctx(rig);
-        var b = new DriveOffChargerBehavior(rig.M, "DriveOffCharger", 60);
+        var b = new DriveOffChargerBehavior(rig.M, "DriveOffCharger", 60) { ActionTaskRunner = SignalTestContext.Schedule };
+        b.WorkPosted += signals_rig.Notify;
         Assert.False(Runnable(b, ctx));                                 // neither flag
         rig.OnCharger = true; rig.State();
         Assert.True(rig.Robot.Sensors.OnCharger); Assert.True(rig.Robot.Sensors.OnChargerPlatform);
@@ -731,20 +742,22 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_017_WhileThePlatformFlagStaysSetTheBehaviourKeepsDrivingAndNeverTimesOut()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Angle = (float)Math.PI;
         rig.OnCharger = true; rig.State();                               // no charger in the rig's physics: the contacts stay on, so SetOnChargerPlatform(false) leaves +0x34A set
         var ctx = Ctx(rig);
-        var b = new DriveOffChargerBehavior(rig.M, "DriveOffCharger", 60);
+        var b = new DriveOffChargerBehavior(rig.M, "DriveOffCharger", 60) { ActionTaskRunner = SignalTestContext.Schedule };
+        b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         double t = 0;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (rig.Sent.OfType<AppendPathSegmentLine>().Count() < 2 && sw.ElapsedMilliseconds < 15000)
+
+        while (rig.Sent.OfType<AppendPathSegmentLine>().Count() < 2)
         {
             Assert.True(b.Update(ctx, t));
             rig.Pump();
             t += 33;
-            Thread.Sleep(2);
+            SignalTestContext.AdvanceBehavior(b);
         }
         Assert.True(rig.Sent.OfType<AppendPathSegmentLine>().Count() >= 2, "the behaviour did not start a second drive while +0x34A stayed set");
         t = 60_000;                                                      // a minute of the behaviour's own clock
@@ -766,6 +779,7 @@ public class RFixBatch2Tests
     public void M13_015_FailureMarksTheCubeOnlyWhenItIsStillInTheWorldAndOnlyForAbortAndSpentRetry()
     {
         if (MarkerLibrary.EmbeddedOrNull is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = new Pose3d(Mat3.AboutZ(0), new Vec3(220, 0, 22));
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -801,6 +815,7 @@ public class RFixBatch2Tests
     public void M13_015_SuccessStartsTheAnimationBeforeTheObjectiveAndTheNeedsAction()
     {
         if (MarkerLibrary.EmbeddedOrNull is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = new Pose3d(Mat3.AboutZ(0), new Vec3(220, 0, 22));
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -902,6 +917,7 @@ public class RFixBatch2Tests
         // the boundary: intersecting leaves the flag, clear of it clears
         foreach (var (x, stays) in new[] { (-22.0, true), (-22.3, false), (50.0, true), (90.0, true) })
         {
+            using var signals_rig = SignalTestContext.Install();
             using var rig = new Rig();
             WorldCharger(rig, 0, 0);
             rig.X = (float)x; rig.Y = 0; rig.Angle = 0;
@@ -926,6 +942,7 @@ public class RFixBatch2Tests
     [Fact]
     public void M4_019_TheStepDoesNotRunWhileTheRobotIsOffItsTreads()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Robot.Sensors.SetOnChargerPlatform(true);
         Assert.True(rig.Robot.Sensors.OnChargerPlatform);
@@ -948,21 +965,23 @@ public class RFixBatch2Tests
     [Fact]
     public void M4_019_M13_017_TheBehaviourStopsRedrivingOnceTheEngineTickClearsThePlatformFlag()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         WorldCharger(rig, 0, 0);
         rig.X = 30; rig.Y = 0; rig.Angle = 0;
         rig.OnCharger = true; rig.State();
         var ctx = Ctx(rig);
-        var b = new DriveOffChargerBehavior(rig.M, "DriveOffCharger", 60);
+        var b = new DriveOffChargerBehavior(rig.M, "DriveOffCharger", 60) { ActionTaskRunner = SignalTestContext.Schedule };
+        b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         rig.OnCharger = false; rig.State(); rig.Tick();                  // contacts gone, the footprint still overlaps: flag set
         Assert.True(rig.Robot.Sensors.OnChargerPlatform);
         Assert.True(b.Update(ctx, 0));                                   // still driving
         rig.X = -80; rig.State(); rig.Tick();                            // the robot is clear of the charger: the engine tick clears the flag
         Assert.False(rig.Robot.Sensors.OnChargerPlatform);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         double t = 33;
-        while (b.Update(ctx, t) && sw.ElapsedMilliseconds < 5000) { rig.Pump(); t += 33; }
+        while (b.Update(ctx, t)) { rig.Pump(); SignalTestContext.AdvanceBehavior(b); t += 33; }
         Assert.False(b.Update(ctx, t));                                  // finished: UpdateInternal's platform-clear branch (0x005C0DB0..0x005C0DF2) ends it, not a timeout
     }
 
@@ -1068,27 +1087,30 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_008_TheReverseTimesOutAtFiveSecondsAndTheOthersAtThirtyOnTheEngineClock()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         float now = 0f;
         var mount = new MountChargerAction(rig.M, 100) { Clock = () => now, DriveFactory = (d, s, c) => new RunningDrive() };
         var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
         var backup = (Task<uint>)typeof(MountChargerAction).GetMethod("RunBackupAsync", flags)!.Invoke(mount, new object[] { CancellationToken.None })!;
-        Thread.Sleep(50);
+        SignalTestContext.StepContinuation();
         Assert.False(backup.IsCompleted);
-        now = 4.9f; Thread.Sleep(50);
+        now = 4.9f; SignalTestContext.StepContinuation();
         Assert.False(backup.IsCompleted);                                                 // 4.9 < 5.0
         now = 5.0f;
-        Assert.True(backup.Wait(5000));
+        SignalTestContext.Run(backup);
+        Assert.True(backup.IsCompleted);
         Assert.Equal(0x03000018u, backup.Result);                                         // now >= start + 5.0f
         Assert.Equal(5.0f, F(0x40A00000)); Assert.Equal(MountChargerAction.BackupTimeoutSec, F(0x40A00000));
         Assert.Equal(30.0f, F(0x41F00000)); Assert.Equal(MountChargerAction.DefaultActionTimeoutSec, F(0x41F00000));
         // the others: 30.0f (the same RunToEnd with the default slot)
         now = 0f;
         var run = (Task<uint>)typeof(MountChargerAction).GetMethod("RunToEnd", flags)!.Invoke(mount, new object[] { new Func<uint>(() => (uint)ActionResult.Running), CancellationToken.None, MountChargerAction.DefaultActionTimeoutSec })!;
-        now = 29.9f; Thread.Sleep(50);
+        now = 29.9f; SignalTestContext.StepContinuation();
         Assert.False(run.IsCompleted);
         now = 30.0f;
-        Assert.True(run.Wait(5000));
+        SignalTestContext.Run(run);
+        Assert.True(run.IsCompleted);
         Assert.Equal(0x03000018u, run.Result);
     }
 
@@ -1098,15 +1120,17 @@ public class RFixBatch2Tests
     [Fact]
     public void M13_013_TheContactsActionTimesOutAtThirtySeconds()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.OnCharger = true; rig.State();
         float now = 0f;
         var action = new DriveOffChargerContactsAction(rig.M, () => false, new RunningDrive()) { Clock = () => now };
         var task = action.RunAsync(CancellationToken.None);
-        now = 29.9f; Thread.Sleep(50);
+        now = 29.9f; SignalTestContext.StepContinuation();
         Assert.False(task.IsCompleted);
         now = 30.0f;
-        Assert.True(task.Wait(5000));
+        SignalTestContext.Run(task);
+        Assert.True(task.IsCompleted);
         Assert.Equal((ActionResult)0x03000018, task.Result);
     }
 
@@ -1142,6 +1166,7 @@ public class RFixBatch2Tests
     public void M13_008_EachStageOfTheMountEndsWithTheTimeoutWhenItOutlastsTheThirtySecondSlot(string stage)
     {
         if (MarkerLibrary.EmbeddedOrNull is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Head = -0.2f;
         rig.Charger = At(200, 0, 0);
@@ -1153,20 +1178,21 @@ public class RFixBatch2Tests
         float now = 0f;
         var mount = new MountChargerAction(rig.M, ChargerGeometry.ObjectId) { Clock = () => now };
         var task = mount.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         bool Reached() => stage switch
         {
             "align" => true,
             "head" => rig.Sent.OfType<SetHeadAngle>().Any(h => h.AngleRad == 0f),
             _ => rig.LiftHeights.Contains(45f),
         };
-        if (stage == "align") Thread.Sleep(300);                                     // nothing is pumped: the align is still in flight
-        else while (!Reached() && !task.IsCompleted && sw.ElapsedMilliseconds < 20000) { rig.Pump(); if (!rig.OnCharger) rig.Frame(); Thread.Sleep(2); }
+        if (stage == "align") SignalTestContext.StepContinuation();                                     // nothing is pumped: the align is still in flight
+        else SignalTestContext.Until(() => !(!Reached() && !task.IsCompleted), () => { rig.Pump(); if (!rig.OnCharger) rig.Frame(); });
         Assert.False(task.IsCompleted, $"the mount ended before the {stage} stage: {task.Status} {string.Join(" | ", mount.Trace)}");
-        now = 29.9f; Thread.Sleep(100);
+        now = 29.9f; SignalTestContext.StepContinuation();
         Assert.False(task.IsCompleted);                                                // 29.9 < 30.0: still inside the slot
         now = 40f;                                                                     // a 40 s stage
-        Assert.True(task.Wait(10000), $"no timeout in the {stage} stage");
+        SignalTestContext.Run(task);
+        Assert.True(task.IsCompleted, $"no timeout in the {stage} stage");
         Assert.Equal((ActionResult)0x03000018, task.Result);
     }
 }

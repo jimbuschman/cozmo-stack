@@ -86,6 +86,7 @@ public sealed class WwiseSteppedStreamIo : IWwiseStreamIoSeam
     }
 
     private int _servicingThread;   // the managed id of the thread inside Service (0 = none): one servicing thread at a time
+    internal Action? ServiceEntered { get; set; }
 
     private void Service(WwiseStreamDevice device)
     {
@@ -93,7 +94,7 @@ public sealed class WwiseSteppedStreamIo : IWwiseStreamIoSeam
         int owner = Interlocked.CompareExchange(ref _servicingThread, me, 0);
         if (owner != 0 && owner != me)
             throw new InvalidOperationException("M6-025: the stream I/O seam is driven by one thread at a time (the engine has one I/O thread per device, 0x97CA90)");
-        try { ServiceCore(device); }
+        try { ServiceEntered?.Invoke(); ServiceCore(device); }
         finally { if (owner == 0) Interlocked.Exchange(ref _servicingThread, 0); }
     }
 

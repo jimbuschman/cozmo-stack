@@ -1751,7 +1751,7 @@ public sealed partial class CozmoEngine : IDisposable
         Handler.Initialised = true;
         // fidelity: M1-029
         // G5.16..G5.18, G5.25: RobotManager::Init starts the header load on its own thread; nothing waits for it.
-        if (Options.ResourcesPath is { } res) FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
+        if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
         else Log("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
     }
 
@@ -1794,6 +1794,8 @@ public sealed partial class CozmoEngine : IDisposable
 
     /// <summary>One engine tick now, on the calling thread (the offline seam; tests).</summary>
     internal void Tick() => TickAt(_nowNs() - _runStartNs);
+    internal Thread? FirmwareHeaderLoader { get; }
+    internal event Action? TickCompleted;
 
     private void Kick()
     {
@@ -1840,6 +1842,7 @@ public sealed partial class CozmoEngine : IDisposable
             }
             finally { _inTick = false; }
         }
+        TickCompleted?.Invoke();
         return 0;
     }
 

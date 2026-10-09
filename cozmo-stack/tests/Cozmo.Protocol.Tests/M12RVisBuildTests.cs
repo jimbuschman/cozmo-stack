@@ -50,6 +50,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_022_TheSevenArgAndFourArgConstructorsDifferInActionTypeAndDistance()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var seven = new DriveToObjectAction(rig.M, 7, PreActionType.Rolling);
         Assert.Equal(PreActionType.Rolling, seven.ActionType);
@@ -73,6 +74,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_022_TheGotoObjectFactoryPicksTheConstructorByUsePreDockPose()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var pre = DriveToObjectAction.FromGotoObject(rig.M, 7, 120f, useManualSpeed: true, usePreDockPose: true);
         Assert.Equal(PreActionType.Docking, pre.ActionType);
@@ -119,13 +121,13 @@ public class M12RVisBuildTests
     public async Task M12_022_TheTypeSixDriveGoesToThePointShortOfTheObject()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(300, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
         var drive = new DriveToObjectAction(rig.M, 7, 150f, useManualSpeed: false);
         var task = drive.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+        SignalTestContext.Run(task, () => { rig.Pump(); });
         await task;
         var lines = rig.Sent.OfType<AppendPathSegmentLine>().ToList();
         Assert.NotEmpty(lines);
@@ -140,6 +142,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_011_ACheckAtEndOfZeroReturnsSuccessBeforeLookingForTheObject()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var drive = new DriveToObjectAction(rig.M, 99, PreActionType.Docking) { CheckAtEnd = false };
         Assert.Equal(ActionResult.Success, drive.CheckIfDone());
@@ -149,6 +152,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_011_AMissingObjectIsBadObject()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var drive = new DriveToObjectAction(rig.M, 99, PreActionType.Docking);
         Assert.Equal(0x03000004u, (uint)drive.CheckIfDone());
@@ -162,6 +166,7 @@ public class M12RVisBuildTests
     public void M12_011_TypeSixComparesTheDistanceToTheObjectOriginAgainstPlus0x84()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(300, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -180,6 +185,7 @@ public class M12RVisBuildTests
     public void M12_011_TheProductionPathReadsTheInPositionFlagOfThePosesFunction()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(300, 0);
         Assert.Single(rig.Frame().Objects);
@@ -219,6 +225,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_TheEntryGatesReturnRunning()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, anim, _) = NewDrive(rig, At(100, 0));
         anim.StateValue = 3;
@@ -233,6 +240,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_FailedIsPathPlanningFailedWithNoEndAnimation()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, anim, _) = NewDrive(rig, At(100, 0));
         Assert.Equal(0x03000013u, (uint)d.CheckIfDone(Tick(0)));
@@ -247,6 +255,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_ComputingPathTimesOutAfterFourSecondsByAbortingThePath()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, anim, aborts) = NewDrive(rig, At(100, 0));
         Assert.Equal(0x01000000u, (uint)d.CheckIfDone(Tick(1, now: 10.0)));
@@ -263,6 +272,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_WaitingReturnsRunningAndFollowingPlaysTheStartAnimation()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, anim, _) = NewDrive(rig, At(100, 0));
         Assert.Equal(0x01000000u, (uint)d.CheckIfDone(Tick(2)));
@@ -283,6 +293,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_ReadyAtTheGoalIsSuccessAndTheEndAnimationCanKeepItRunning()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, anim, _) = NewDrive(rig, At(100, 0));
         Assert.Equal(0u, (uint)d.CheckIfDone(Tick(4, robot: At(105, -5))));          // inside (10, 10)
@@ -301,6 +312,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_NotAtTheGoalIsFailedTraversingOrTheInitialResultByThePathIds()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, anim, _) = NewDrive(rig, At(100, 0));
         Assert.Equal(0x04000002u, (uint)d.CheckIfDone(Tick(4, robot: At(0, 0), id42: 5, id44: 5)));
@@ -316,6 +328,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_TheThresholdPairReplacesTheXAndYTolerance()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, _, _) = NewDrive(rig, At(100, 0));
         d.PreActionObjectPose = At(200, 0, 22);
@@ -331,6 +344,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_023_TheGoalTestedIsGoalsAtTheIndex()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var (d, _, _) = NewDrive(rig, At(100, 0));
         d.Goals = new[] { At(100, 0), At(500, 500) };
@@ -343,6 +357,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_024_TheDefaultDrivingAnimationHandlerIsAVisibleStub()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var d = new DriveToPoseAction(rig.M) { Goal = At(100, 0) };
         Assert.Throws<NotSupportedException>(() => d.CheckIfDone(Tick(4, robot: At(100, 0))));
@@ -354,11 +369,11 @@ public class M12RVisBuildTests
     [Fact]
     public async Task M12_024_TheLivePathTraceNamesTheMissingAnimations()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var drive = new DriveToPoseAction(rig.M) { Goal = At(150, -40, 0, 0.5) };
         var task = drive.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+        SignalTestContext.Run(task, () => { rig.Pump(); });
         Assert.Equal(ActionResult.Success, await task);
         Assert.Contains(drive.Trace, l => l.Contains("M12-024 RECOVERABLE_GAP"));
     }
@@ -371,6 +386,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_025_TheConstructorStoresItsArguments()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var a = new PlaceRelObjectAction(rig.M, 7, flagAt0xA8: true, a: 12.5, b: -3.0, dockActionFlagAt0x95: true, skipOffsetTransform: false);
         Assert.Equal(12.5, a.OffsetA); Assert.Equal(-3.0, a.OffsetB);
@@ -395,6 +411,7 @@ public class M12RVisBuildTests
     [InlineData(20.0, 20.0, false)]
     public void M12_025_TheConstructorStopsCheckingPreDockPosesForAnyNonTinyOffset(double a, double b, bool checksPreDockPoses)
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var act = new PlaceRelObjectAction(rig.M, 7, flagAt0xA8: false, a: a, b: b, dockActionFlagAt0x95: false, skipOffsetTransform: true);
         Assert.Equal(checksPreDockPoses, act.CheckPreActionPose);
@@ -408,6 +425,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_025_TheWireRoutes()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var act = PlaceRelObjectAction.FromWireMessage(rig.M, 7, usePreDockPose: false, placementOffsetXmm: 30.0, useManualSpeed: true);
         Assert.Equal(30.0, act.OffsetA); Assert.Equal(0.0, act.OffsetB);
@@ -425,6 +443,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_025_InitInternalSkipsTheTransformAndStoresTheOffsets()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var act = new PlaceRelObjectAction(rig.M, 7, false, a: -20.0, b: 5.0, dockActionFlagAt0x95: false, skipOffsetTransform: true);
         Assert.Equal(ActionResult.Success, act.RunInitInternal());
@@ -455,6 +474,7 @@ public class M12RVisBuildTests
     public void M12_025_TheTransformMapsTheOffsetsByTheBlocksAlignment(double psi, double expectA, double expectB)
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -468,6 +488,7 @@ public class M12RVisBuildTests
     public void M12_025_TheTransformFailuresHaveTheirOwnResults()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -603,6 +624,7 @@ public class M12RVisBuildTests
     public void M12_008_TheEarlyStepsReturnOneAndAttachNothing()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -624,6 +646,7 @@ public class M12RVisBuildTests
     public void M12_008_ThePickedUpObjectHangsAtThePointBelowThePlateWithItsRotationKept()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0, 0.3);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -654,6 +677,7 @@ public class M12RVisBuildTests
     public void M12_008_ACubeOnTopIsRecordedDirtyAndFollowsTheCarriedOne()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Head = 0.05f;
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(260, 0, 22));
@@ -685,8 +709,7 @@ public class M12RVisBuildTests
     // host-Task path, and this guard is not a source oracle.
     private static void Spin(Task t, Rig rig, Action? each = null, int ms = 60000)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!t.IsCompleted && sw.ElapsedMilliseconds < ms) { rig.Pump(); each?.Invoke(); Thread.Sleep(5); }
+        SignalTestContext.Run(t, () => { rig.Pump(); each?.Invoke(); });
     }
 
     private static PreActionPose FakePose(Pose3d pose) =>
@@ -869,6 +892,7 @@ public class M12RVisBuildTests
     public void M12_029_TheDefaultFunctionReturnsEveryPoseAndTheInPositionByte()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -922,6 +946,7 @@ public class M12RVisBuildTests
     public void M12_029_TheDriveToHelperFunctorRemovesTheMatchAndClearsInPosition()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -946,6 +971,7 @@ public class M12RVisBuildTests
     [Fact]
     public void M12_030_TheConstructorPicksActionTypeTwoOrOne()
     {
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var two = new DriveToPlaceCarriedObjectAction(rig.M, At(300, 0, 22), true, false, false, true, 5.0);
         Assert.Equal(PreActionType.PlaceOnGround, two.ActionType); Assert.Equal(2, (int)two.ActionType);
@@ -968,6 +994,7 @@ public class M12RVisBuildTests
     public async Task M12_017_InitInternalRunsAfterThePreActionCheck()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var cube = Assert.Single(rig.Frame().Objects).Object;
@@ -995,6 +1022,7 @@ public class M12RVisBuildTests
     public async Task M12_017_SelectDockActionForAPlaceRel()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1010,6 +1038,7 @@ public class M12RVisBuildTests
         t = low.RunAsync(default); Spin(t, rig, () => rig.Frame());
         Assert.Equal(DockAction.PlaceLow, low.SelectedDockAction);
         // a target that is too high to stack on
+        using var signals_rig2 = SignalTestContext.Install();
         using var rig2 = new Rig();
         rig2.Cube = new Pose3d(Mat3.Identity, new Vec3(120, 0, 66)); rig2.Head = 0.1f;
         rig2.Frame();
@@ -1028,6 +1057,7 @@ public class M12RVisBuildTests
     public async Task M12_005_ThePlaceDockCarriesPlus0xBBAndPlus0x95()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1056,6 +1086,7 @@ public class M12RVisBuildTests
     public async Task M12_005_RollWritesZeroAndPickupWritesTwoInPlus0xBB()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1063,6 +1094,7 @@ public class M12RVisBuildTests
         var t = roll.RunAsync(default); Spin(t, rig, () => rig.Frame());
         var b = OnlyDock(rig);
         Assert.Equal(5, b[17]); Assert.Equal(0, b[20]);
+        using var signals_rig2 = SignalTestContext.Install();
         using var rig2 = new Rig();
         rig2.Cube = ManipulationTests.CubeAt(150, 0);
         Assert.Single(rig2.Frame().Objects);
@@ -1079,6 +1111,7 @@ public class M12RVisBuildTests
     public async Task M12_017_TheDockMarkerIsTheClosestPreActionPosesMarker()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1098,6 +1131,7 @@ public class M12RVisBuildTests
     public void M12_025_TheBBTestReadsThePostTransformB()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1131,6 +1165,7 @@ public class M12RVisBuildTests
     public void M12_025_TheTransformWorksWithTheEnginesQueries()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1225,6 +1260,7 @@ public class M12RVisBuildTests
     public async Task M12_022_AStrictlyNegativeDistanceIsNoDistanceSet(float distance)
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(300, 0);
         rig.Frame();
@@ -1244,6 +1280,7 @@ public class M12RVisBuildTests
     public void M12_022_ZeroDistanceIsNotAnError(float distance)
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(300, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -1265,6 +1302,7 @@ public class M12RVisBuildTests
         Assert.True(DriveToObjectAction.TryBuildObjectDeltaGoal(At(200, 100, 22), At(0, 0, 5), float.NaN, out var goal));
         Assert.True(double.IsNaN(goal.Translation.X) && double.IsNaN(goal.Translation.Y));
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(300, 0);
         rig.Frame();
@@ -1283,6 +1321,7 @@ public class M12RVisBuildTests
     public void M12_008_TheCubeOnTopFollowsAtOnceWhenThePickupResultArrives()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Head = 0.05f;
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(260, 0, 22));
@@ -1309,6 +1348,7 @@ public class M12RVisBuildTests
     public void M12_008_ANonZeroAttachResultIsRecordedAndLoggedNotDecided()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -1329,6 +1369,7 @@ public class M12RVisBuildTests
     public void M12_008_TheConfirmerWritesAreSynchronisedAndTheBroadcastCounterIsAtomic()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -1484,6 +1525,7 @@ public class M12RVisBuildTests
     public void M12_036_TheSystemsObstaclesIgnoreTheCarriedObject()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 60);
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(200, -20, 22))));
@@ -1608,6 +1650,7 @@ public class M12RVisBuildTests
     public void M12_031_FlipBlockInitCallsGetPreActionPosesWithFlagAAndActsOnTheResultOnly()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1618,6 +1661,7 @@ public class M12RVisBuildTests
         Assert.DoesNotContain(inBox.Trace, l => l.Contains("GetPreActionPoses ->"));
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine);                       // it went on to drive
 
+        using var signals_far = SignalTestContext.Install();
         using var far = new Rig();
         far.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(far.Frame().Objects);
@@ -1644,6 +1688,7 @@ public class M12RVisBuildTests
     public void M12_012_CanStackNeedsTheHelperChecksAndTheHeightRule()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var cube = Assert.Single(rig.Frame().Objects).Object;
@@ -1662,6 +1707,7 @@ public class M12RVisBuildTests
         var charger = new ObservableObject(30, ObjectType.Charger_Basic, ChargerGeometry.Markers) { Pose = At(200, 0, 22), PoseState = PoseState.Known };
         Assert.False(docking.CanStackOnTopOfObject(charger));
 
+        using var signals_rig2 = SignalTestContext.Install();
         using var rig2 = new Rig();
         rig2.Head = 0.05f;
         rig2.Cube = new Pose3d(Mat3.Identity, new Vec3(260, 0, 22));
@@ -1684,6 +1730,7 @@ public class M12RVisBuildTests
     public void M12_008_TheSuccessByteIsStoredBeforeTheBranchAndTheAttachReturnIsDiscarded()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -1715,6 +1762,7 @@ public class M12RVisBuildTests
     public void M12_025_TheLegacyConstructorKeepsThePreActionCheckAndTheDefaultDockingMethod()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1744,6 +1792,7 @@ public class M12RVisBuildTests
         Assert.Equal((byte)DockAction.PlaceLow, OnlyDock(rig)[17]);
 
         // onTop true against a target that cannot be stacked on: 0x03000004 and no dock is sent
+        using var signals_rig2 = SignalTestContext.Install();
         using var rig2 = new Rig();
         rig2.Cube = new Pose3d(Mat3.Identity, new Vec3(120, 0, 66)); rig2.Head = 0.1f;
         rig2.Frame();
@@ -1821,6 +1870,7 @@ public class M12RVisBuildTests
     public async Task M12_037_TheCompoundIsVerifyThenTurnWithTheRecordedArguments()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var cube = Assert.Single(rig.Frame().Objects).Object;
@@ -1862,6 +1912,7 @@ public class M12RVisBuildTests
     public async Task M12_017_InitInternalThenTheCompoundThenTheDock()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1887,6 +1938,7 @@ public class M12RVisBuildTests
     public void M12_037_TheDefaultVerifyNoObjectStubIsCountedAndTraced()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1907,6 +1959,7 @@ public class M12RVisBuildTests
     public async Task M12_030_TheCloneKeepsNothingSoTheInnerChainDrivesInsteadOfAnswering0x03000004()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1939,6 +1992,7 @@ public class M12RVisBuildTests
     public void M12_030_CheckIfDoneReportsPlacementGoalNotFree()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -1971,6 +2025,7 @@ public class M12RVisBuildTests
     public void M12_030_IsPlacementGoalFreeIntersectsThePaddedCandidateQuadWithoutAZTest()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 60);
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.Identity, new Vec3(200, -5, 22))));
@@ -2171,6 +2226,7 @@ public class M12RVisBuildTests
     public void M12_035_TheFlipInstallersLeaveTheFlagZeroSoCheckIfDoneEnds0x04000001()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -2221,6 +2277,7 @@ public class M12RVisBuildTests
     public void M12_028_TheLegacyPlaceRelKeepsTheEarlierStandInAndNeverWaitsForAVisibleMarker()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -2246,6 +2303,7 @@ public class M12RVisBuildTests
     public void M13_028_TheFlipDriveDistanceIsTheThreeDimensionalNorm()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -2271,6 +2329,7 @@ public class M12RVisBuildTests
     public void M13_028_TheFlipDrivesOnlyAfterTheLiftMoveCompletes()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.HoldLift = true;                                                        // the lift move stays RUNNING until the test acknowledges it
         rig.Cube = ManipulationTests.CubeAt(200, 0);
@@ -2283,16 +2342,16 @@ public class M12RVisBuildTests
         LiftState(Math.Asin(-13.0 / 66));                                           // 32 mm = 66 sin(a) + 45
         var flip = new FlipBlockAction(rig.M, 7) { CheckPreActionPose = false };
         var task = flip.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!rig.Sent.OfType<SetLiftHeight>().Any() && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+
+        SignalTestContext.Until(() => !(!rig.Sent.OfType<SetLiftHeight>().Any()), () => { rig.Pump(); });
         var lift = Assert.Single(rig.Sent.OfType<SetLiftHeight>());
         Assert.Equal(45f, lift.HeightMm);
         Assert.Empty(rig.Sent.OfType<AppendPathSegmentLine>());                     // the drive waits for the lift
         Assert.False(task.IsCompleted);
         rig.Send(new MotorActionAck { ActionId = lift.ActionId });
         LiftState(0.0);                                                             // 45 mm, in position
-        sw.Restart();
-        while (!rig.Sent.OfType<AppendPathSegmentLine>().Any() && sw.ElapsedMilliseconds < 60000) { LiftState(0.0); rig.Pump(); Thread.Sleep(5); }
+
+        SignalTestContext.Until(() => !(!rig.Sent.OfType<AppendPathSegmentLine>().Any()), () => { LiftState(0.0); rig.Pump(); });
         Assert.NotEmpty(rig.Sent.OfType<AppendPathSegmentLine>());
         Spin(task, rig, () => LiftState(0.0), ms: 60000);
     }
@@ -2306,6 +2365,7 @@ public class M12RVisBuildTests
     public void M13_028_ACarriedObjectAddsNoDriveOrTurnsAndTheMaxTurnUsesTheEpsilon()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         Assert.Single(rig.Frame().Objects);
@@ -2338,13 +2398,13 @@ public class M12RVisBuildTests
         rig.HoldLift = true; rig.HoldPath = true;
         LiftReports(rig, Math.Asin(-13.0 / 66));                                     // the lift at 32 mm: the 45 mm move is sent and waits
         var task = flip.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!rig.Sent.OfType<SetLiftHeight>().Any() && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+
+        SignalTestContext.Until(() => !(!rig.Sent.OfType<SetLiftHeight>().Any()), () => { rig.Pump(); });
         approach = Assert.Single(rig.Sent.OfType<SetLiftHeight>());
         Assert.Equal(45f, approach.HeightMm);
         rig.Send(new MotorActionAck { ActionId = approach.ActionId });
-        sw.Restart();
-        while (!rig.Sent.OfType<ExecutePath>().Any() && sw.ElapsedMilliseconds < 60000) { LiftReports(rig, 0.0); rig.Pump(); Thread.Sleep(5); }
+
+        SignalTestContext.Until(() => !(!rig.Sent.OfType<ExecutePath>().Any()), () => { LiftReports(rig, 0.0); rig.Pump(); });
         Assert.NotEmpty(rig.Sent.OfType<ExecutePath>());
         Assert.False(task.IsCompleted);                                              // the drive is RUNNING
         return task;
@@ -2363,6 +2423,7 @@ public class M12RVisBuildTests
     public void M13_028_TheCarryLiftIsQueuedOnlyWithinFortyMillimetresInThreeDimensions(double cubeX, bool queued)
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Cube = ManipulationTests.CubeAt(200, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
@@ -2370,8 +2431,11 @@ public class M12RVisBuildTests
         var task = StartFlipAtTheDrive(rig, flip, out _);
         Assert.False(flip.LiftRaised);                                               // 200 mm away: no tick so far queued it
         obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(cubeX, 0, 22));
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < 500) { rig.Pump(); Thread.Sleep(5); }
+        bool checkedNewPose = false;
+        flip.CheckTickObserved += () => checkedNewPose = true;
+        SignalTestContext.Until(() => checkedNewPose, () => rig.Pump());
+        if (queued)
+            SignalTestContext.Until(() => rig.Sent.OfType<SetLiftHeight>().Count() >= 2, () => rig.Pump());
         Assert.False(task.IsCompleted);
         Assert.Equal(queued, flip.LiftRaised);
         Assert.Equal(queued ? new[] { 45f, LiftPresets.CarryMm } : new[] { 45f }, rig.Sent.OfType<SetLiftHeight>().Select(m => m.HeightMm));
@@ -2397,15 +2461,16 @@ public class M12RVisBuildTests
     public void M13_028_TheCarryLiftRunsWhileTheApproachLiftHoldsTheTrackAndTakesNoLock()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var flip = FlipWithCubeAt(rig, 30.0, out _);
         rig.HoldLift = true;
         LiftReports(rig, Math.Asin(-13.0 / 66));
         var task = flip.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         // M4-016: the lift move's timeout is on the engine clock, so stop pumping as soon as the carry lift is queued
         // rather than letting the engine clock run past the 30 s IAction timeout.
-        while (rig.Sent.OfType<SetLiftHeight>().Count() < 2 && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+        SignalTestContext.Until(() => !(rig.Sent.OfType<SetLiftHeight>().Count() < 2), () => { rig.Pump(); });
         Assert.False(task.IsCompleted);
         Assert.True(flip.LiftRaised);
         Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, rig.Sent.OfType<SetLiftHeight>().Select(m => m.HeightMm));   // both sent: the carry lift was not refused while the track is held
@@ -2432,6 +2497,7 @@ public class M12RVisBuildTests
     public void M13_028_AFailedCompoundMarksTheObjectUnknownAndQueuesNoCarryLift()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.HoldLift = true;                                                          // the 45 mm move is never acknowledged
         rig.Cube = ManipulationTests.CubeAt(200, 0);
@@ -2485,6 +2551,7 @@ public class M12RVisBuildTests
     public void M13_028_TheCarryLiftIsQueuedByARunningTickWithin40mmInThreeDimensions(double cubeX, bool queued)
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var flip = FlipWithCubeAt(rig, cubeX, out _);
         Assert.Null(flip.CheckIfDoneTick(null));
@@ -2502,6 +2569,7 @@ public class M12RVisBuildTests
     public void M13_028_TheTickLooksTheObjectUpEveryTickAndReturnsTheCompoundsResult()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var flip = FlipWithCubeAt(rig, 30.0, out var obj);
         obj.PoseState = PoseState.Unknown;                                             // lost
@@ -2526,28 +2594,33 @@ public class M12RVisBuildTests
     public void M13_028_TheFlipNeverWaitsOnTheQueuedCarryLift()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var flip = FlipWithCubeAt(rig, 200.0, out var obj);
         var task = StartFlipAtTheDrive(rig, flip, out _);
         obj.Pose = new Pose3d(obj.Pose.Rotation, new Vec3(30.0, 0, 22));
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         // M4-016: stop pumping as soon as the carry lift is queued, so the engine clock stays well inside the 30 s IAction timeout.
-        while (!flip.LiftRaised && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+        SignalTestContext.Until(() => !(!flip.LiftRaised), () => { rig.Pump(); });
         Assert.True(flip.LiftRaised);
         // The flip runs on an async Task: CheckIfDone stores [this+0x13C] (LiftRaised) BEFORE it calls
         // ActionList::QueueAction (0x0055F15C before 0x0055F16A), so the flag can be observed before the carry
         // action is on the wire. Wait (bounded) for the 92 mm SetLiftHeight to actually appear instead of a
         // single pump.
-        sw.Restart();
-        while (rig.Sent.OfType<SetLiftHeight>().Count() < 2 && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+
+        SignalTestContext.Until(() => !(rig.Sent.OfType<SetLiftHeight>().Count() < 2), () => { rig.Pump(); });
         var lifts = rig.Sent.OfType<SetLiftHeight>().ToList();
         Assert.True(lifts.Count >= 2, "the queued carry lift (92 mm) must reach the wire");
         Assert.Equal(new[] { 45f, LiftPresets.CarryMm }, lifts.Select(l => l.HeightMm));
+        // Keep the controlled engine clock fixed while delivering the path's terminal signal. The carry
+        // action cannot reach its 30 s timeout, so completion proves that the flip does not await it.
+        var fixedClockMs = rig.Clock.NowMs;
+        var fixedEngineSeconds = rig.Robot.Engine.Timer.SecondsF;
         rig.ReleasePath();                                                             // the drive completes; the carry lift (lifts[1]) is never acknowledged
-        sw.Restart();
-        Spin(task, rig, () => LiftReports(rig, 0.0), ms: 4000);
+        SignalTestContext.Run(task, () => { LiftReports(rig, 0.0); rig.Tick(); });
         Assert.True(task.IsCompleted, "the flip must not wait for the carry lift");
-        Assert.True(sw.ElapsedMilliseconds < 4000);
+        Assert.Equal(fixedClockMs, rig.Clock.NowMs);
+        Assert.Equal(fixedEngineSeconds, rig.Robot.Engine.Timer.SecondsF);
         Assert.Equal(ActionResult.Success, task.Result);
         Assert.Equal(1, flip.QueuedLiftCancelsNotModelled);
         Assert.Contains(flip.Trace, l => l.Contains("ActionList::Cancel(id) is not modelled"));
@@ -2562,18 +2635,21 @@ public class M12RVisBuildTests
     public void M13_028_ALostObjectEndsARunningFlipWithBadObjectAndNoPathIsSentAfterwards()
     {
         if (Lib is null) return;
+        using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var flip = FlipWithCubeAt(rig, 200.0, out var obj);
         rig.HoldLift = true;
         LiftReports(rig, Math.Asin(-13.0 / 66));                                       // the 45 mm move waits: the compound is RUNNING
         var task = flip.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+
         // M4-016: stop pumping as soon as the lift command is sent, so the engine clock stays inside the 30 s IAction timeout.
-        while (!rig.Sent.OfType<SetLiftHeight>().Any() && sw.ElapsedMilliseconds < 60000) { rig.Pump(); Thread.Sleep(5); }
+        SignalTestContext.Until(() => !(!rig.Sent.OfType<SetLiftHeight>().Any()), () => { rig.Pump(); });
         Assert.False(task.IsCompleted);
         var lift = Assert.Single(rig.Sent.OfType<SetLiftHeight>());
         obj.PoseState = PoseState.Unknown;
-        Spin(task, rig, ms: 60000);
+        // Let the flip consume the lost-object state at the fixed engine time. Pumping the held lift
+        // here would advance its timeout before the flip's next CheckIfDone continuation.
+        SignalTestContext.Run(task);
         Assert.True(task.IsCompleted);
         Assert.Equal(ActionResult.BadObject, task.Result);
         Assert.Equal(3, flip.M8CallsNotModelled);
@@ -2581,8 +2657,8 @@ public class M12RVisBuildTests
         int sentAtReturn = rig.Sent.Count;
         // only now does the lift move complete: the compound would go on to its drive
         rig.Send(new MotorActionAck { ActionId = lift.ActionId });
-        sw.Restart();
-        while (!flip.Trace.Any(l => l.Contains("the flip has ended")) && sw.ElapsedMilliseconds < 60000) { LiftReports(rig, 0.0); rig.Pump(); Thread.Sleep(5); }
+
+        SignalTestContext.Until(() => !(!flip.Trace.Any(l => l.Contains("the flip has ended"))), () => { LiftReports(rig, 0.0); rig.Pump(); });
         var after = rig.Sent.Skip(sentAtReturn).ToList();
         Assert.DoesNotContain(after, m => m is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn or ExecutePath or ClearPath or SetLiftHeight);
         Assert.Contains(flip.Trace, l => l.Contains("the flip has ended; the embedded compound is not continued"));

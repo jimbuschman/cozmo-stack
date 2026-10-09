@@ -791,10 +791,11 @@ public class M3DeviceTests
     {
         var sent = new List<RobotMessage>();
         var audio = new CozmoAudio(sent.Add) { PlayedFrames = () => 0, PlayedBytes = () => 0 };
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var elapsed = TimeSpan.Zero;
+        audio.PlayElapsed = () => { elapsed += TimeSpan.FromMilliseconds(100); return elapsed; };
         audio.Play(CozmoAudio.Tone(440, TimeSpan.FromSeconds(1)));
         Assert.Equal(8192 / 745, sent.OfType<AudioSample>().Count());
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(5));
+        Assert.True(elapsed < TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -806,7 +807,8 @@ public class M3DeviceTests
     {
         var sent = new List<RobotMessage>();
         int played = 0, maxUnplayed = 0;
-        var audio = new CozmoAudio(m => { lock (sent) { sent.Add(m); maxUnplayed = Math.Max(maxUnplayed, sent.Count - Volatile.Read(ref played)); } })
+        using var frameSent = new AutoResetEvent(false);
+        var audio = new CozmoAudio(m => { lock (sent) { sent.Add(m); maxUnplayed = Math.Max(maxUnplayed, sent.Count - Volatile.Read(ref played)); frameSent.Set(); } })
         {
             PlayedFrames = () => Volatile.Read(ref played),
             PlayedBytes = () => Volatile.Read(ref played) * 745,
@@ -816,14 +818,15 @@ public class M3DeviceTests
         {
             while (!Volatile.Read(ref stop))
             {
-                Thread.Sleep(10);
-                lock (sent) if (played < sent.Count) Interlocked.Increment(ref played);
+                frameSent.WaitOne();
+                lock (sent) Volatile.Write(ref played, sent.Count);
             }
         }) { IsBackground = true };
         robot.Start();
         var pcm = CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(600));
         audio.Play(pcm);
         Volatile.Write(ref stop, true);
+        frameSent.Set();
         robot.Join();
         Assert.Equal(CozmoAudio.ToFrames(pcm).Count, sent.Count);
         Assert.True(maxUnplayed <= 8192 / 745, $"{maxUnplayed} frames were unplayed at once");
@@ -2724,20 +2727,25 @@ public class M3DeviceTests
     {
         var port = new FakePort();
         using var robot = CozmoRobot.CreateForTest(port, EngineTickRunner.HostNowNs, new CozmoEngineOptions { BlockPoolPath = "" });
+        using var ticks = new TickSignal(robot.Engine);
         robot.Engine.StartProduction();
         Assert.True(robot.Animations.EngineDriven);
         void Data(RobotMessage m) => port.Raise(ReceiverMarker.Data, Rig.RobotEp, m.ToBytes());
         bool Sent(Func<RobotMessage, bool> p) => port.Messages().Any(p);
 
         robot.Engine.ConnectToRobot(Rig.RobotIp);
-        Assert.True(SpinWait.SpinUntil(() => robot.Engine.ConnectionState == 1, 3000), "no connect");
+        ticks.Until(() => robot.Engine.ConnectionState == 1);
+        Assert.True(robot.Engine.ConnectionState == 1, "no connect");
         port.Raise(ReceiverMarker.OnConnected, Rig.RobotEp);
-        Assert.True(SpinWait.SpinUntil(() => robot.Engine.ConnectionState == 2, 3000), "not connected");
+        ticks.Until(() => robot.Engine.ConnectionState == 2);
+        Assert.True(robot.Engine.ConnectionState == 2, "not connected");
         Data(new RobotAvailable { SerialNumberHead = 0x1234, HwVersion = 5 });
         Data(new FirmwareVersion { RobotId = 1, Signature = Encoding.UTF8.GetBytes(Rig.ShippedFw) });
-        Assert.True(SpinWait.SpinUntil(() => Sent(m => m is GetManufacturingInfo), 3000), "no GetManufacturingInfo");
+        ticks.Until(() => Sent(m => m is GetManufacturingInfo));
+        Assert.True(Sent(m => m is GetManufacturingInfo), "no GetManufacturingInfo");
         Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
-        Assert.True(SpinWait.SpinUntil(() => Sent(m => m is SyncTime), 3000), "no SyncTime");
+        ticks.Until(() => Sent(m => m is SyncTime));
+        Assert.True(Sent(m => m is SyncTime), "no SyncTime");
         // M3-026/M3-032: the connection reads are queued at Success but only go out after Gate A, so establish the
         // first synced full state and answer each read, in the engine's order, until the queue drains and ready to
         // stream opens (CD20). M3-033: 12 constructor reads, then CameraCalib, Lab and (with no NeedsManager here) no
@@ -2745,10 +2753,10 @@ public class M3DeviceTests
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
         int answered = 0;
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (!robot.AnimationStreamingOpen && DateTime.UtcNow < deadline)
+        while (!robot.AnimationStreamingOpen)
         {
-            if (!SpinWait.SpinUntil(() => port.Messages().OfType<NVCommand>().Count() > answered, 3000)) break;
+            ticks.Until(() => robot.AnimationStreamingOpen || port.Messages().OfType<NVCommand>().Count() > answered);
+            if (robot.AnimationStreamingOpen) break;
             var cmd = port.Messages().OfType<NVCommand>().ElementAt(answered);
             answered++;
             bool calibration = cmd.Tag == 0x80000001;
@@ -2769,16 +2777,15 @@ public class M3DeviceTests
             DurationMs = 300,
         };
         var done = robot.Animations.Play(clip)!;
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         uint ts = 20;
-        while (!done.IsCompleted && sw.Elapsed < TimeSpan.FromSeconds(10))
+        while (!done.IsCompleted)
         {
             // the robot plays everything it was given: its AnimationState reports what the stream sent
             var sent = port.Messages().Skip(before).ToList();
             int frames = sent.Count(m => m is AudioSample or AudioSilence or EndOfAnimation);
             int bytes = sent.Where(m => (byte)m.Id >= 0x8E && (byte)m.Id <= 0x9B).Sum(m => m.ToBytes().Length);
             Data(new AnimationState { Timestamp = ts++, NumAudioFramesPlayed = frames, NumAnimBytesPlayed = bytes, Tag = 1 });
-            Thread.Sleep(30);
+            ticks.Next();
         }
         Assert.True(done.IsCompleted, "the clip never completed");
         Assert.Equal(AnimationEndReason.Completed, done.Result);

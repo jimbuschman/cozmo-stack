@@ -106,7 +106,7 @@ public class BehaviorTests
     {
         var a = new BehaviorArbiter { AutonomyEnabled = true };
         a.TriggerCooldowns[ReactionTrigger.CliffDetected] = TimeSpan.FromSeconds(5);
-        var t0 = DateTime.UtcNow;
+        var t0 = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         a.Request(BehaviorPriority.Reaction, "x", ReactionTrigger.CliffDetected, t0);
         a.Finished(BehaviorPriority.Reaction);
         Assert.True(a.Request(BehaviorPriority.Reaction, "y", ReactionTrigger.RobotPickedUp, t0).Started);

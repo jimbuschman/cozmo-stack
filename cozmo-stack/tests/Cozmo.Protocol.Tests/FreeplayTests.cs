@@ -28,7 +28,12 @@ public class FreeplayTests
     private static BehaviorContext Ctx(Rig rig, MoodState? mood = null) => new() { Robot = rig.Robot, Triggers = new AnimationTriggerMap(), Mood = mood, Random = new Random(3) };
 
     /// <summary>IsRunnable is gated on the animation library; the stack tests load the real one (the empty trigger map keeps plays instant).</summary>
-    private static void LoadAssets(Rig rig, string obb) => rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+    private static void LoadAssets(Rig rig, string obb)
+    {
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        rig.Robot.Animations.LoadFrom(Path.Combine(obb, "assets", "cozmo_resources", "assets"));
+    }
 
     private static bool Runnable(SteppedBehavior b, BehaviorContext ctx) =>
         (bool)typeof(SteppedBehavior).GetMethod("IsRunnableInternal", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.Invoke(b, new object[] { ctx })!;
@@ -1154,14 +1159,17 @@ public class FreeplayTests
     private static void RunToEnd(Rig rig, SteppedBehavior b, BehaviorContext ctx, Func<bool>? until = null, double stepMs = 100, int ms = 15000)
     {
         double t = 0;
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        b.ActionTaskRunner = SignalTestContext.Schedule;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int modelSteps = 0;
         while (b.Update(ctx, t))
         {
             rig.Pump(); t += stepMs;
             if (until?.Invoke() ?? false) { b.Stop(BehaviorStopReason.Interrupted); return; }
-            if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
-            Thread.Sleep(2);
+            if (++modelSteps > 10000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
+            SignalTestContext.AdvanceBehavior(b);
         }
         b.Stop(BehaviorStopReason.Completed);
     }
@@ -1174,6 +1182,7 @@ public class FreeplayTests
     [Fact]
     public void LookAroundInPlaceScansOneFullTurnAndStops()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         PanTilt(rig);
         var p = new LookAroundParams { NumberOfScansBeforeStop = 1, S1Body = (10, 30), S2Wait = (0.1, 0.1), S3Body = (5, 25), S4HeadChanges = (1, 1), S6Body = (30, 65) };
@@ -1199,6 +1208,7 @@ public class FreeplayTests
     [Fact]
     public void DriveInDesperationIdlesDrivesToRandomPointsAndRequests()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
         var b = new DriveInDesperationBehavior(rig.Vision, rig.M, "Needs_SevereLowRepairState", useCubes: false, 5, 20, AnimationTrigger.NeedsSevereLowRepairRequest) { IdleScale = 0.01 };
@@ -1216,6 +1226,7 @@ public class FreeplayTests
     [Fact]
     public void ExpressNeedsAndTheGetInFollowTheBrackets()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         double clock = 0;
         var needs = new NeedsManager(() => clock);
@@ -1375,6 +1386,7 @@ public class FreeplayTests
     [Fact]
     public void ASevereNeedTakesPriorityOverFreeplayAndTheGetInPlaysOnce()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null) return;
         using var rig = new Rig();
@@ -1382,6 +1394,7 @@ public class FreeplayTests
         double clock = 0;
         var ctx = Ctx(rig);
         using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M, withReactions: false, random: new Random(2));
+        foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) behavior.ActionTaskRunner = SignalTestContext.Schedule;
         var log = new List<string>(); stack.Freeplay.Log += log.Add;
         var needs = stack.Needs;
         PanTilt(rig);
@@ -1389,21 +1402,21 @@ public class FreeplayTests
         // energy critical: the NeedsSevereLowEnergy activity (priority 2) wins over the freeplay chain
         needs.SetLevel(NeedId.Energy, 0.0);
         var decisions = new List<FreeplayDecision>();
-        for (int i = 0; i < 40; i++) { clock = i * 0.5; decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M)); rig.Pump(); Thread.Sleep(5); }
+        for (int i = 0; i < 40; i++) { clock = i * 0.5; decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M)); rig.Pump(); foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) SignalTestContext.AdvanceBehavior(behavior); }
         Assert.Contains(decisions, d => d.Activity == "NeedsSevereLowEnergy" && d.Behavior == "Needs_SevereLowEnergyGetIn");
         Assert.Contains(decisions, d => d.Activity == "NeedsSevereLowEnergy" && d.Behavior == "Needs_SevereLowEnergyState");
         Assert.True(needs.IsSevereExpressed(NeedId.Energy));
         Assert.Equal(1, decisions.Select(d => d.Behavior).Distinct().Count(b => b == "Needs_SevereLowEnergyGetIn"));
         // feeding refills the energy: the activity wants to end, and freeplay resumes with Hiking (no face, no cube)
         needs.RegisterNeedsActionCompleted("Feed"); needs.RegisterNeedsActionCompleted("Feed"); needs.RegisterNeedsActionCompleted("Feed");
-        for (int i = 40; i < 80; i++) { clock = i * 0.5; decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M)); rig.Pump(); Thread.Sleep(5); }
+        for (int i = 40; i < 80; i++) { clock = i * 0.5; decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M)); rig.Pump(); foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) SignalTestContext.AdvanceBehavior(behavior); }
         Assert.Equal("NeedsSevereLowEnergy", stack.Freeplay.Current?.Id);   // the running behaviour is not interrupted by the refill alone
         // the desperation drive loops (IsRunnableInternal 0x005D90AC returns 1): the activity ends the way the engine's
         // does after the app's Feeding activity, by the requested-activity path
         Assert.True(stack.Freeplay.Current!.Strategy.WantsToEnd(stack.Freeplay.Inputs, 0, out var endReason), endReason);
         Assert.Contains("left Critical", endReason);
         stack.Freeplay.RequestNewActivity();
-        for (int i = 80; i < 90; i++) { clock = i * 0.5; decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M)); rig.Pump(); Thread.Sleep(5); }
+        for (int i = 80; i < 90; i++) { clock = i * 0.5; decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M)); rig.Pump(); foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) SignalTestContext.AdvanceBehavior(behavior); }
         Assert.Contains(log, l => l.Contains("'NeedsSevereLowEnergy' was requested"));
         Assert.Contains(decisions.Where(d => d.AtSec >= 20), d => d.Activity == "Hiking");
     }
@@ -1411,6 +1424,7 @@ public class FreeplayTests
     [Fact]
     public void TheWholeStackDrivesOffTheChargerAndPlaysWithTheCubeItSees()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null || MarkerLibrary.EmbeddedOrNull is null) return;
         using var rig = new Rig();
@@ -1418,6 +1432,7 @@ public class FreeplayTests
         double clock = 0;
         var ctx = Ctx(rig);
         using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M, withReactions: false, random: new Random(4));
+        foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) behavior.ActionTaskRunner = SignalTestContext.Schedule;
         var log = new List<string>(); stack.Freeplay.Log += log.Add;
         PanTilt(rig);
         // sitting on the charger (facing out) with a cube on its side ahead
@@ -1426,12 +1441,11 @@ public class FreeplayTests
         Assert.Single(rig.Frame().Objects);
         rig.DockOutcome = BlockStatus.NoBlock;
         var decisions = new List<FreeplayDecision>();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        for (int i = 0; i < 400 && sw.ElapsedMilliseconds < 30000; i++)
+        for (int i = 0; i < 400; i++)
         {
             clock = i * 0.25;
             decisions.Add(stack.Tick(clock, clock * 1000, rig.Robot, rig.Vision, rig.M));
-            rig.Pump(); rig.Frame(); Thread.Sleep(2);
+            rig.Pump(); rig.Frame(); foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) SignalTestContext.AdvanceBehavior(behavior);
             // BehaviorDriveOffCharger ends on robot+0x34A (OnChargerPlatform), which Robot::Update clears (0x00513CD8..0x00513E2A, M4-019): the engine tick runs that step
             rig.Tick();
             if (decisions.Any(d => d.Behavior == "RollBlockOnSide") && rig.Sent.OfType<DockWithObject>().Any()) break;

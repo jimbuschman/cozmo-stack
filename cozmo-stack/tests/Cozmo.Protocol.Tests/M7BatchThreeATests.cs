@@ -654,7 +654,8 @@ public class M7BatchThreeATests
         var drive = new ReactToCliffBehavior(rig.Robot) { AlwaysStreamline = true };
         var seen = new List<(float Distance, float Speed)>();
         var release = new TaskCompletionSource();
-        drive.DriveStraight = (d, v, ct) => { seen.Add((d, v)); return release.Task; };
+        using var started = new ManualResetEventSlim();
+        drive.DriveStraight = (d, v, ct) => { seen.Add((d, v)); started.Set(); return release.Task; };
         int driveFinished = 0;
         drive.RobotCliffEventFinished += () => driveFinished++;
         drive.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
@@ -663,12 +664,13 @@ public class M7BatchThreeATests
         Assert.True(drive.ReactNow);
         drive.Update(ctx, 0);                                                    // wait lambda ends; AlwaysStreamline goes to the back-up
         drive.Update(ctx, 100);
-        SpinWait.SpinUntil(() => seen.Count == 1, 2000);
+        Assert.True(started.Wait(TimeSpan.FromMinutes(2)), "the drive action never started");
         Assert.Equal(new[] { (F(unchecked((int)0xC2700000)), F(0x42C80000)) }, seen);
         Assert.True(drive.Update(ctx, 200));                                     // the drive is the action in flight: the behaviour stays
         Assert.Equal(0, driveFinished);
         release.SetResult();
-        for (int t = 3; t < 40 && driveFinished == 0; t++) { Thread.Sleep(10); drive.Update(ctx, t * 100); }
+        BehaviorTestSignals.WaitForPostedWork(drive);
+        drive.Update(ctx, 300);
         Assert.Equal(1, driveFinished);
         Assert.DoesNotContain(drive.Trace, l => l.Contains("BehaviorObjectiveAchieved"));
     }

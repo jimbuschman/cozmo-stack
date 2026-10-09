@@ -2108,9 +2108,13 @@ public class BehaviorFrameworkTests
             probe.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
             int second = 0;
             probe.Play(AnimationTrigger.Hiccup, () => { probe.Play(AnimationTrigger.Hiccup, () => second++); });
+            using var posted = new ManualResetEventSlim();
+            probe.WorkPosted += posted.Set;
             rig.Robot.Animations.Stop();
+            posted.Wait();
+            probe.WorkPosted -= posted.Set;
             double t = 0;
-            for (int i = 0; i < 400 && !probe.Trace.Count(l => l.StartsWith("play ")).Equals(2); i++) { probe.Update(ctx, t += 33); Thread.Sleep(1); }
+            for (int i = 0; i < 400 && !probe.Trace.Count(l => l.StartsWith("play ")).Equals(2); i++) probe.Update(ctx, t += 33);
             Assert.Equal(2, probe.Trace.Count(l => l.StartsWith("play ")));
             Assert.DoesNotContain(probe.Trace, l => l.Contains("AlreadyActing"));
             probe.Stop(BehaviorStopReason.Cancelled);

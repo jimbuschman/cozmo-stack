@@ -424,10 +424,13 @@ public class DeviceTests
         var display = new CozmoDisplay(sent.Add);
         var image = NativeOracleFixtures.Bitmap("test-pattern");
 
-        var start = DateTime.UtcNow;
+        var start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        var now = start;
+        display.UtcNow = () => now;
+        display.Wait = duration => now += duration;
         display.Show(image);
         display.Show(image);
-        var elapsed = DateTime.UtcNow - start;
+        var elapsed = now - start;
 
         Assert.Equal(2, sent.Count);
         Assert.Equal(2, display.FramesSent);

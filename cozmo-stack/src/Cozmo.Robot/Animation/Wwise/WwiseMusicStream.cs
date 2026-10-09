@@ -257,6 +257,19 @@ public sealed class WwiseMusicStream : IDisposable
     public IReadOnlySet<uint> Excluded { get; }
     /// <summary>How many samples are ready to be read.</summary>
     public int Ready { get { lock (_gate) return _committedTo; } }
+    // Observation only: tests wait for a committed block instead of racing the renderer's worker.
+    internal void WaitForSamples(int samples)
+    {
+        lock (_gate)
+            while (_committedTo < Math.Min(samples, _mix.Length)) Monitor.Wait(_gate);
+    }
+
+    internal void WaitForInitialLead()
+    {
+        lock (_gate)
+            while (!_initialLeadReady) Monitor.Wait(_gate);
+    }
+    private bool _initialLeadReady;
     /// <summary>How many samples the scheduler has taken, as it last reported.</summary>
     public int Consumed { get { lock (_gate) return _consumed; } }
     /// <summary>Times the worker was asked for samples it had not rendered yet.</summary>
@@ -342,6 +355,7 @@ public sealed class WwiseMusicStream : IDisposable
             if (magnitude > Peak) Peak = (short)magnitude;
         }
         _committedTo = target;
+        Monitor.PulseAll(_gate);
     }
 
     /// <summary>Samples that hit full scale after the chain; zero when it did its job.</summary>
@@ -404,6 +418,8 @@ public sealed class WwiseMusicStream : IDisposable
                     int from = Consumed > 0 ? Consumed
                                             : (int)Math.Round(Math.Min(wallMs, LeadMs) * CozmoAudio.SampleRate / 1000.0);
                     AdvanceTo((from + LeadSamples) * 1000.0 / CozmoAudio.SampleRate);
+                    if (wallMs >= LeadMs)
+                        lock (_gate) { _initialLeadReady = true; Monitor.PulseAll(_gate); }
                     try { await Task.Delay(10, cts.Token); } catch (OperationCanceledException) { return; }
                 }
             }, cts.Token);

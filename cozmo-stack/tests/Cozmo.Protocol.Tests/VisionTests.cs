@@ -745,7 +745,8 @@ public class VisionTests
         Assert.Equal(0x80000001u, CameraCalibration.NvEntryTag);
         Assert.Equal(1, CameraSettings.CalibrationReadLength);
 
-        using var robot = CozmoRobot.CreateOffline();
+        var clock = new ManualClock { NowMs = 1000 };
+        using var robot = CozmoRobot.CreateOffline(clock: clock);
         robot.Transport.OfflineAcceptConnection();
         robot.Transport.OfflineOutbound.Clear();
         robot.Engine.NvStorage!.Read(CameraCalibration.NvEntryTag, _ => { });
@@ -759,8 +760,8 @@ public class VisionTests
             .Select(sm => { try { return RobotMessage.Parse(sm.Payload); } catch { return null; } })
             .OfType<NVCommand>()
             .ToList();
-        var end = DateTime.UtcNow.AddSeconds(2);
-        while (Commands().Count == 0 && DateTime.UtcNow < end) { robot.Transport.OfflineTick(); Thread.Sleep(2); }
+        // Drain the manual transport after the synchronous NV update.
+        for (int tick = 0; Commands().Count == 0 && tick < 100; tick++) { clock.Advance(40); robot.Transport.OfflineTick(); }
         var cmd = Commands()[0];
         Assert.Equal(CameraCalibration.NvEntryTag, cmd.Tag);
         Assert.Equal(1, cmd.Length);
@@ -1358,9 +1359,12 @@ public class VisionTests
 
     private static void SpinUntil(Func<bool> cond, int ms = 3000)
     {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!cond()) { if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("condition not met"); Thread.Sleep(5); }
+        // These predicates execute the behavior's modeled tick. TurnOverride returns a completed task,
+        // so its completion is already queued; no asynchronous worker needs a wall-clock allowance.
+        for (int tick = 0; tick < 100; tick++) if (cond()) return;
+        throw new InvalidOperationException("behavior did not reach the expected state in modeled ticks");
     }
+
 
     // ------------------------------------------------------------------ the captured robot
 

@@ -104,15 +104,18 @@ public class FaceTests
     private static void RunToEnd(Rig rig, SteppedBehavior b, BehaviorContext ctx, bool frames = true, int ms = 10000, double stepMs = 33)
     {
         double t = 0;
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        b.ActionTaskRunner = SignalTestContext.Schedule;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
+        int modelSteps = 0;
         while (b.Update(ctx, t))
         {
             rig.Pump();
             if (frames) rig.Frame();
             t += stepMs;
-            if (sw.ElapsedMilliseconds > ms) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
-            Thread.Sleep(2);
+            if (++modelSteps > 10000) throw new TimeoutException("behaviour did not finish: " + string.Join(" | ", b.Trace));
+            SignalTestContext.AdvanceBehavior(b);
         }
         b.Stop(BehaviorStopReason.Completed);
     }
@@ -266,14 +269,14 @@ public class FaceTests
     [Fact]
     public void TurnTowardsFaceTurnsThenFineTunesOnAFreshObservation()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 150, 250), "Jim"));
         rig.Frame();
         Assert.Single(rig.Vision.Faces.Faces);
         var turn = new TurnTowardsFaceAction(rig.Vision, 7, Math.PI, sayName: true) { SayNameTrigger = AnimationTrigger.AcknowledgeFaceNamed, NoNameTrigger = AnimationTrigger.AcknowledgeFaceUnnamed };
         var events = new List<string>(); turn.EmotionEvent += events.Add;
         var task = turn.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 5000) { rig.Pump(); rig.Frame(); Thread.Sleep(5); }
+        SignalTestContext.Run(task, () => { rig.Pump(); rig.Frame(); });
         Assert.Equal(FaceActionResult.Success, task.Result);
         Assert.InRange(Math.Abs(rig.Angle - Math.Atan2(150, 400)), 0, 0.05);       // facing (400, 150)
         Assert.True(turn.ObservedFace); Assert.True(turn.FineTuned);
@@ -283,7 +286,7 @@ public class FaceTests
         Assert.Contains(turn.Trace, l => l.Contains("Will fine tune"));
         // no face at all, +0x193 clear: Init sets state 3 and returns 0 (0x0054BEB6..0x0054BEBC), so the action succeeds; it never returns 0x0300000B (M13-014)
         using var empty = FaceRig();
-        Assert.Equal(FaceActionResult.Success, new TurnTowardsFaceAction(empty.Vision, SmartFaceID.Invalid).RunAsync(default).GetAwaiter().GetResult());
+        Assert.Equal(FaceActionResult.Success, SignalTestContext.Result(new TurnTowardsFaceAction(empty.Vision, SmartFaceID.Invalid).RunAsync(default)));
     }
 
     /// <summary>
@@ -388,16 +391,29 @@ public class FaceTests
     [Fact]
     public void TrackFaceFollowsTheFaceWithinItsTolerances()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, 0, 250), null));
         rig.Frame();
         var track = new TrackFaceAction(rig.Vision, 7) { PanToleranceRad = 0.0698132, TiltToleranceRad = 0.0698132 };
+        var epoch = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+        int elapsedMs = 0;
+        track.UtcNow = () => epoch.AddMilliseconds(elapsedMs);
+        int updateWaits = 0;
+        track.UpdateWaitObserved += () => updateWaits++;
         var task = track.RunAsync(TimeSpan.FromMilliseconds(600), default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 3000)
+        while (!task.IsCompleted)
         {
             // the person walks sideways; the fake robot follows on each command
-            rig.FaceDetector.Faces[0] = (7, new Vec3(400, Math.Min(200, sw.ElapsedMilliseconds * 0.5), 250), null);
-            rig.Pump(); rig.Frame(); Thread.Sleep(5);
+            rig.FaceDetector.Faces[0] = (7, new Vec3(400, Math.Min(200, elapsedMs * 0.5), 250), null);
+            rig.Pump(); rig.Frame();
+            // Transport notifications also wake the signal context. Only the tracker's own
+            // completed update starts the next 60 ms tracking period.
+            if (updateWaits > 0)
+            {
+                elapsedMs += TrackFaceAction.UpdateIntervalMs * updateWaits;
+                updateWaits = 0;
+            }
+            if (!task.IsCompleted && SignalTestContext.Drain() == 0) SignalTestContext.StepContinuation();
         }
         Assert.True(task.Result);
         Assert.True(track.Updates >= 3);
@@ -418,6 +434,7 @@ public class FaceTests
     [Fact]
     public void PlayAnimWithFaceTurnsToTheLastFaceThenPlays()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(400, -150, 250), null));
         rig.Frame();
         var ctx = Ctx(rig);
@@ -432,6 +449,7 @@ public class FaceTests
     [Fact]
     public void AcknowledgeFaceGreetsANewFaceAndNotAgainWithinAMinute()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(350, 150, 250), "Jim"));
         rig.Frame();
         var ctx = Ctx(rig);
@@ -459,6 +477,7 @@ public class FaceTests
     [Fact]
     public void InteractWithFacesVerifiesDrivesTracksAndFiresTheEmotionEvent()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(450, 60, 260), null));
         rig.Frame();
         var ctx = Ctx(rig);
@@ -479,6 +498,7 @@ public class FaceTests
     [Fact]
     public void DriveToFaceDrivesUntilTwoHundredMillimetresAway()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = FaceRig((7, new Vec3(600, 0, 250), null));
         rig.Frame();
         var ctx = Ctx(rig);
@@ -503,18 +523,22 @@ public class FaceTests
     [Fact]
     public void SearchForFacePlaysTheSearchUntilAFaceAppears()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = FaceRig();
         var ctx = Ctx(rig);
         var b = new SearchForFaceBehavior(rig.Vision);
         int updates = 0;
         double t = 0;
+        rig.Robot.Animations.ManualTicking = true;
+        rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
+        b.ActionTaskRunner = SignalTestContext.Schedule;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         while (b.Update(ctx, t))
         {
             rig.Pump(); rig.Frame(); t += 33;
             if (++updates == 1) rig.FaceDetector.Faces.Add((7, new Vec3(400, 0, 250), null));   // someone walks in during the first search
             if (updates > 500) throw new TimeoutException(string.Join(" | ", b.Trace));
-            Thread.Sleep(2);
+            SignalTestContext.AdvanceBehavior(b);
         }
         Assert.True(b.Found);
         Assert.Contains(b.Trace, l => l.Contains("ComeHere_SearchForFace"));
@@ -530,6 +554,7 @@ public class FaceTests
     [Fact]
     public void ReactToPetTurnsToThePetAndPlaysItsTrigger()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         rig.Vision.Pets.Update(new[] { new DetectedPet(3, PetType.Cat, new FaceRect(100, 80, 60, 60)) }, 1000, false);
         var ctx = Ctx(rig);

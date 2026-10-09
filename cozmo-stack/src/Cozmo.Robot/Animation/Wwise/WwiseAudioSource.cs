@@ -249,6 +249,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
 
     /// <summary>Wall time of the last music preparation, for the tool and the scheduler-safety test.</summary>
     public TimeSpan LastMusicRenderTime { get; private set; }
+    internal Action? MusicPreparationObserved { get; set; }
 
     /// <summary>
     /// Resolves and prepares one song. Everything expensive happens here: the plan, the MIDI, the draws
@@ -257,6 +258,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
     /// </summary>
     private WwiseMusicStream? BuildStream(uint eventId, IReadOnlyDictionary<uint, uint> switches, float volume)
     {
+        MusicPreparationObserved?.Invoke();
         var timer = System.Diagnostics.Stopwatch.StartNew();
         var plan = _library.ResolveMusic(eventId, switches);
         var voices = _renderer.BuildVoices(plan);

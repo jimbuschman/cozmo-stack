@@ -1681,13 +1681,6 @@ public class M11RVisBuildTests : IDisposable
 
     // ------------------------------------------------------------------------------------------- M11-049, M11-040
 
-    private static Task<bool> Until(Func<bool> cond, int ms = 3000)
-    {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!cond()) { if (sw.ElapsedMilliseconds > ms) return Task.FromResult(false); Thread.Sleep(2); }
-        return Task.FromResult(true);
-    }
-
     private static CameraFrame BadFrame(uint id) => new() { ImageId = id, Timestamp = id, Width = 320, Height = 240, Encoding = 8 };
 
     /// <summary>
@@ -1705,7 +1698,7 @@ public class M11RVisBuildTests : IDisposable
         var log = new List<string>(); vision.Log += l => { lock (log) log.Add(l); };
         Assert.False(vision.Enabled);
         vision.HandOverFrame(BadFrame(1));
-        Thread.Sleep(50);
+        vision.WaitForProcessorIdle();
         lock (log) Assert.Empty(log);                           // dropped: nothing processed, not even a decode attempt
         var callback = typeof(CameraSettings).GetMethod("OnCalibrationRead", BindingFlags.NonPublic | BindingFlags.Instance)!;
         var data = new byte[size < 0 ? CameraSettings.CalibrationBytes : size];
@@ -1715,7 +1708,8 @@ public class M11RVisBuildTests : IDisposable
         // the frame is taken now. With a calibration installed (the success outcome) it is decoded, and the empty JPEG says so; without one (the two failure outcomes) the engine's
         // VisionSystem::Update refuses with the NotReady warning (M11-012, 0x006B4D66..0x006B4FFC)
         string expected = vision.Calibration is null ? "Must be initialized and have calibrated camera" : "frame 2";
-        Assert.True(Until(() => { lock (log) return log.Any(l => l.Contains(expected)); }).Result, string.Join(" | ", log));
+        vision.WaitForProcessorIdle();
+        lock (log) Assert.True(log.Any(l => l.Contains(expected)), string.Join(" | ", log));
         Assert.Null(typeof(VisionSystem).GetProperty("Paused"));
         Assert.Null(typeof(VisionSystem).GetProperty("IsPaused"));
     }
@@ -1737,7 +1731,7 @@ public class M11RVisBuildTests : IDisposable
         {
             if (!l.StartsWith("frame ")) return;
             lock (seen) seen.Add(l);
-            if (l.StartsWith("frame 1:")) { inFrameOne.Set(); release.Wait(3000); }
+            if (l.StartsWith("frame 1:")) { inFrameOne.Set(); release.Wait(); }
         };
         vision.HandOverFrame(BadFrame(1));
         Assert.True(inFrameOne.Wait(3000));
@@ -1747,11 +1741,12 @@ public class M11RVisBuildTests : IDisposable
         vision.HandOverFrame(BadFrame(4));
         Assert.Equal(2, vision.FramesDropped);                  // 2 and 3 were replaced
         release.Set();
-        Thread.Sleep(150);                                      // several polls
+        vision.WaitForProcessorIdle();                                      // several polls
         lock (seen) Assert.DoesNotContain(seen, l => l.StartsWith("frame 4:") || l.StartsWith("frame 3:") || l.StartsWith("frame 2:"));
         Assert.Equal(2, vision.FramesDropped);                  // the discard is not counted
         vision.HandOverFrame(BadFrame(5));
-        Assert.True(Until(() => { lock (seen) return seen.Any(l => l.StartsWith("frame 5:")); }).Result);
+        vision.WaitForProcessorIdle();
+        lock (seen) Assert.True(seen.Any(l => l.StartsWith("frame 5:")));
     }
 
     /// <summary>

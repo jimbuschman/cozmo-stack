@@ -18,6 +18,7 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 internal sealed class Rig : IDisposable
 {
+    private readonly SignalTestContext? _signalContext;
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
     /// <summary>True when the extracted marker library is not present, so a marker test has nothing to render.</summary>
     public bool NoLibrary => Lib is null;
@@ -70,7 +71,9 @@ internal sealed class Rig : IDisposable
 
     public Rig()
     {
+        _signalContext = SynchronizationContext.Current as SignalTestContext;
         Robot = CozmoRobot.CreateOffline(clock: Clock);
+        if (_signalContext is not null) Robot.Transport.MessageQueued += _signalContext.MarkFirmwareWorkPending;
         Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
         // The robot calibrates head and lift on connect (M4-004). The fake robot reports both finished, so Motion
         // stores the reported head angle (MA22/RS6) and a head/lift action can reach its in-position test instead
@@ -216,6 +219,7 @@ internal sealed class Rig : IDisposable
     /// </summary>
     public List<RobotMessage> Pump()
     {
+        _signalContext?.BeginFirmwarePump();
         var fresh = new List<RobotMessage>();
         for (int round = 0; round < 50; round++)
         {
@@ -244,6 +248,8 @@ internal sealed class Rig : IDisposable
             if (fresh.Count > before) ReactMessages(fresh.GetRange(before, fresh.Count - before));
             // the offline connection sends what is pending from its update tick, paced by its clock
             Clock.Advance(50);
+            if (Robot.Animations.ManualTicking)
+                Robot.Animations.Scheduler.Advance(Robot.Animations.ClockMs?.Invoke() ?? Clock.NowMs);
             Robot.Transport.OfflineTick();
             // B-ACTIONS batch 2: a queued head/lift IActionRunner is Init'd on Robot::Update's ActionList tick. The
             // engine ticks continuously in production, so keep pumping while the action list has work: a terminal
@@ -343,11 +349,13 @@ internal sealed class Rig : IDisposable
     private void FollowPath(ExecutePath ep)
     {
         float wasX = X, wasY = Y;
-        // the fake robot follows the path perfectly: its pose becomes the last segment's end
-        foreach (var s in Sent.OfType<AppendPathSegmentLine>().TakeLast(CountSince<AppendPathSegmentLine>(ep))) { X = s.XEndMm; Y = s.YEndMm; }
-        // arcs end at their sweep's end point, heading tangent
-        int clearIdx = Sent.IndexOf(Sent.OfType<ClearPath>().Last());
-        foreach (var seg in Sent.Skip(clearIdx).TakeWhile(x => x != ep))
+        // The fake robot follows each segment in wire order; arcs end at their sweep's end
+        // point with a tangent heading, and lines end at their commanded position.
+        // A transport batch can already contain another path's ClearPath after this ExecutePath.
+        // Firmware executes only the segments preceding this command, in their wire order.
+        int executeIdx = Sent.IndexOf(ep);
+        int clearIdx = Sent.FindLastIndex(executeIdx, message => message is ClearPath);
+        foreach (var seg in Sent.Skip(clearIdx).Take(executeIdx - clearIdx))
         {
             if (seg is AppendPathSegmentArc arc)
             {
@@ -409,7 +417,11 @@ internal sealed class Rig : IDisposable
         return Sent.Skip(clear).Take(idx - clear).OfType<TMsg>().Count();
     }
 
-    public void Dispose() { M.Dispose(); Vision.Dispose(); Robot.Dispose(); }
+    public void Dispose()
+    {
+        if (_signalContext is not null) Robot.Transport.MessageQueued -= _signalContext.MarkFirmwareWorkPending;
+        M.Dispose(); Vision.Dispose(); Robot.Dispose();
+    }
 }
 
 /// <summary>

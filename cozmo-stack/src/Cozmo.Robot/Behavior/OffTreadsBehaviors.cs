@@ -624,7 +624,7 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
                 Log($"random drive: {dist:F0} mm at {ang * 180 / Math.PI:F0} deg");
                 var cts = _driveCancel = new CancellationTokenSource();
                 var drive = new Cozmo.Robot.Manipulation.DriveToPoseAction(_m) { Goal = goal };
-                Task.Run(() => drive.RunAsync(cts.Token)).ContinueWith(t =>
+                ObserveAsyncWork(RunAsyncAction(() => drive.RunAsync(cts.Token)).ContinueWith(t =>
                 {
                     var r = t.Status == TaskStatus.RanToCompletion ? t.Result : Cozmo.Robot.Manipulation.ActionResult.Abort;
                     Post(() =>
@@ -635,7 +635,7 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
                         Log($"random drive -> {r}");
                         Finish();
                     });
-                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+                }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default));
                 return;
             }
             Finish();

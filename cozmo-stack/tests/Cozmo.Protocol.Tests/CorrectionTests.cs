@@ -79,6 +79,7 @@ public class CorrectionTests
     [Fact]
     public void TheObjectPositionUpdatedReactionFiresThroughTheManager()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null || MarkerLibrary.EmbeddedOrNull is null) return;
         using var rig = new Rig();
@@ -238,6 +239,7 @@ public class CorrectionTests
     [Fact]
     public void ARecalibrationDoesNotBlockDirectMotion()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var state = rig.Robot.State;
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = false });
@@ -250,7 +252,7 @@ public class CorrectionTests
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true, AutoStarted = true });
         Assert.False(state.HeadCalibrated);
         Assert.False(state.CalibrationComplete);
-        var sent = rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1)).GetAwaiter().GetResult();
+        var sent = SignalTestContext.Result(rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1)));
         rig.Pump();
         Assert.Contains(rig.Sent, m => m is DriveWheels);
         Assert.NotEqual(MotionResult.Refused, sent.Result);
@@ -259,7 +261,7 @@ public class CorrectionTests
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false, AutoStarted = true });
         Assert.True(state.CalibrationComplete);
         int mark = rig.Sent.Count;
-        var allowed = rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1)).GetAwaiter().GetResult();
+        var allowed = SignalTestContext.Result(rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1)));
         rig.Pump();
         Assert.Contains(rig.Sent.Skip(mark), m => m is DriveWheels);
         Assert.NotEqual(MotionResult.Refused, allowed.Result);
@@ -364,10 +366,11 @@ public class CorrectionTests
     [Fact]
     public void AnImmediatePathCompletionIsNotLost()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         using var run = rig.M.StartPath(new PathSegment[] { new PathSegment.Line(0, 0, 100, 0, 50f, 200f, 200f) });
         rig.Send(new PathFollowingEvent { EventId = run.PathId, EventType = (byte)PathEventType.Completed });
-        var ev = run.WaitAsync(TimeSpan.FromSeconds(1), default).GetAwaiter().GetResult();
+        var ev = SignalTestContext.Result(run.WaitAsync(TimeSpan.FromSeconds(1), default));
         Assert.Equal(PathEventType.Completed, ev);
         Assert.False(run.Aborted);
     }
@@ -376,6 +379,7 @@ public class CorrectionTests
     [Fact]
     public void ADriveCancelledMidPathAbortsItOnTheRobot()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         using var cts = new CancellationTokenSource();
         // the path is never answered (nothing pumps the fake robot), so the drive is still following when the
@@ -385,17 +389,15 @@ public class CorrectionTests
         int clearsBefore = rig.M.Paths.Sent.OfType<ClearPath>().Count();
 
         cts.Cancel();
-        var result = drive.GetAwaiter().GetResult();
+        var result = SignalTestContext.Result(drive);
         Assert.Equal(ActionResult.CancelledWhileRunning, result);
         Assert.True(rig.M.Paths.Sent.OfType<ClearPath>().Count() > clearsBefore,
                     "the cancelled drive must clear the robot's path rather than leave the firmware following it");
     }
 
     private static void SpinUntil(Func<bool> condition, int ms = 3000)
-    {
-        var end = DateTime.UtcNow.AddMilliseconds(ms);
-        while (DateTime.UtcNow < end && !condition()) Thread.Sleep(5);
-    }
+        => SignalTestContext.Until(condition);
+
 
     // ---------------------------------------------------------------- 15: planner failure is not a blind drive
 
@@ -409,6 +411,7 @@ public class CorrectionTests
     [Fact]
     public void ASoftObstacleDoesNotBlockTheGoal()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null) return;
         if (MarkerLibrary.EmbeddedOrNull is null) return;
@@ -423,8 +426,7 @@ public class CorrectionTests
 
         var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)) };
         var task = drive.RunAsync(default);
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (!task.IsCompleted && sw.ElapsedMilliseconds < 30000) { rig.Pump(); Thread.Sleep(2); }
+        SignalTestContext.Run(task, () => rig.Pump());
         Assert.True(task.IsCompleted, "the drive did not finish: " + string.Join(" | ", drive.Trace));
         var r = task.Result;
 
@@ -445,6 +447,7 @@ public class CorrectionTests
     [Fact]
     public void APlannerFailureSendsNoPathEvenWhenTheStraightLineIsClear()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null) return;
         var prims = MotionPrimitiveSet.FromObb(obb);
@@ -455,7 +458,7 @@ public class CorrectionTests
         rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
 
         var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)) };
-        var r = drive.RunAsync(default).GetAwaiter().GetResult();
+        var r = SignalTestContext.Result(drive.RunAsync(default));
         rig.Pump();
 
         Assert.Equal(ActionResult.PathPlanningFailedAbort, r);
@@ -536,6 +539,7 @@ public class CorrectionTests
     [Fact]
     public void TheStackItselfHandlesBeingPutDown()
     {
+        using var signals = SignalTestContext.Install();
         var obb = ObbRoot();
         if (obb is null) return;
         using var rig = new Rig();
@@ -601,6 +605,7 @@ public class CorrectionTests
     [Fact]
     public void OnlyACompletedBehaviourIsPenalisedForRepeating()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         var ctx = Ctx(rig);
         using var manager = new BehaviorManager(ctx);
@@ -791,6 +796,7 @@ public class CorrectionTests
     [Fact]
     public void TheConstructorDefaultSkipsTheResumeRestore()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         bool empty = false;
         using var manager = new BehaviorManager(Ctx(rig)) { ActionListIsEmpty = () => empty };
@@ -815,6 +821,7 @@ public class CorrectionTests
     [Fact]
     public void TheResumeRestoresTheStoredHeadAndLiftWhenTheActionListIsEmpty()
     {
+        using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         bool empty = false;
         using var manager = new BehaviorManager(Ctx(rig)) { ActionListIsEmpty = () => empty };

@@ -329,6 +329,10 @@ public sealed class ReliableTransport : IDisposable
 
     /// <summary>Frames the connection produced while offline (see <see cref="CreateOffline"/>).</summary>
     public List<Frame> OfflineOutbound { get; } = new();
+    internal Frame[] OfflineOutboundSnapshot()
+    {
+        lock (_lock) return OfflineOutbound.ToArray();
+    }
 
     // ------------------------------------------------------------- test seams
 
@@ -353,6 +357,9 @@ public sealed class ReliableTransport : IDisposable
 
     /// <summary>Test seam: called on the executor thread just before each posted item runs. Null in production.</summary>
     internal Action<ExecutorItem>? ExecutorTrace { get; set; }
+    // Optional test observation after the existing work has completed.
+    internal event Action? ExecutorCompleted;
+    internal event Action? MessageQueued;
 
     /// <summary>Test seam: the executor (both modes) and the scheduler (async mode only; null in sync mode).</summary>
     internal SerialExecutor Executor => _exec;
@@ -644,7 +651,7 @@ public sealed class ReliableTransport : IDisposable
     /// executor accepts nothing more (it has been completed).
     /// </summary>
     private bool TryPostLifeLocked(string kind, Action action) =>
-        _exec.Post(seq => { ExecutorTrace?.Invoke(new ExecutorItem(kind, seq)); action(); });
+        _exec.Post(seq => { ExecutorTrace?.Invoke(new ExecutorItem(kind, seq)); action(); ExecutorCompleted?.Invoke(); });
 
     // fidelity: M1-035, M1-020
     /// <summary>
@@ -674,6 +681,7 @@ public sealed class ReliableTransport : IDisposable
             var now = new List<Action>();
             lock (_lock) SendMessageLocked(address, type, payload, reliable, flush, 0.0, now);
             RaiseAll(now);
+            MessageQueued?.Invoke();
             return;
         }
         double posted = _clock.NowMs;
@@ -684,6 +692,7 @@ public sealed class ReliableTransport : IDisposable
             var effects = new List<Action>();
             lock (_lock) SendMessageLocked(address, type, copy, reliable, flush, posted, effects);
             RaiseAll(effects);
+            MessageQueued?.Invoke();
         });
     }
 
@@ -935,9 +944,12 @@ public sealed class ReliableTransport : IDisposable
     /// <see cref="SocketError.WouldBlock"/>, the host's EAGAIN. Only the executor reads, so nothing else can take
     /// the datagram between the poll and the read.
     /// </summary>
-    private static int ReadDontWait(Socket s, byte[] buffer, ref EndPoint from)
+    internal event Action<int>? ReceivePollObserved;
+    private int ReadDontWait(Socket s, byte[] buffer, ref EndPoint from)
     {
-        if (!s.Poll(0, SelectMode.SelectRead)) throw new SocketException((int)SocketError.WouldBlock);
+        const int timeoutMicroseconds = 0;
+        ReceivePollObserved?.Invoke(timeoutMicroseconds);
+        if (!s.Poll(timeoutMicroseconds, SelectMode.SelectRead)) throw new SocketException((int)SocketError.WouldBlock);
         return s.ReceiveFrom(buffer, SocketFlags.None, ref from);
     }
 
@@ -1207,7 +1219,7 @@ public sealed class ReliableTransport : IDisposable
     /// Called by the scheduler when the 2 ms entry is due: G1.7, a copy of the callback is posted to the
     /// executor (AddTaskHolder 0x007FC270); the scheduler thread never runs it.
     /// </summary>
-    private void PostTick() => _exec.Post(seq => { ExecutorTrace?.Invoke(new ExecutorItem("tick", seq)); RunTick(); });
+    private void PostTick() => _exec.Post(seq => { ExecutorTrace?.Invoke(new ExecutorItem("tick", seq)); RunTick(); ExecutorCompleted?.Invoke(); });
 
     // fidelity: M1-010, M1-015
     /// <summary>
@@ -1712,6 +1724,7 @@ internal sealed class TransportScheduler
 
     /// <summary>How many copies have been posted so far.</summary>
     internal long Posted => Interlocked.Read(ref _posted);
+    internal event Action? CopyPosted;
 
     internal int? ThreadId => _thread?.ManagedThreadId;
     internal Thread WorkerThread => _thread!;
@@ -1724,6 +1737,7 @@ internal sealed class TransportScheduler
         _post();                                     // G1.7: a copy to the immediate queue (0x007FC270)
         Interlocked.Increment(ref _posted);
         Volatile.Write(ref _dueNs, now + _periodNs); // G1.8: re-added at that now + period (0x007FC352..0x007FC376)
+        CopyPosted?.Invoke();
         return true;
     }
 
@@ -1819,8 +1833,10 @@ internal sealed class SerialExecutor
 
     internal void Join(TimeSpan timeout)
     {
+        JoinObserved?.Invoke();
         if (Thread.CurrentThread != _thread && _thread.IsAlive) _thread.Join(timeout);
     }
+    internal event Action? JoinObserved;
 
     private void Run()
     {

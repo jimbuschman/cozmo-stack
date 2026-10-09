@@ -511,15 +511,18 @@ public class AnimationGapTests
     [Fact]
     public void HeadAndLiftKeyframesGoOutAsAnimationKeyframesNotMotorCommands()
     {
-        using var robot = CozmoRobot.CreateOffline();
+        // ReliableConnection reserves timestamp0 for never-sent messages.
+        var clock = new Cozmo.Transport.ManualClock { NowMs = 1000 };
+        var transportOptions = new Cozmo.Transport.TransportOptions();
+        using var robot = CozmoRobot.CreateOffline(transportOptions, clock);
         robot.Transport.OfflineAcceptConnection();
         var clip = Clip("t", new HeadKeyframe(0, 120, -7, 0), new LiftKeyframe(0, 250, 60, 0), new EventKeyframe(300, "end"));
         robot.Animations.Scheduler.Play(clip, 0);
         Run(robot.Animations.Scheduler, 0, 400);
-        // The engine spaces packets 2 ms apart and batches, so a message queued inside that window waits
-        // for the next connection update. A live transport ticks on its own thread; here it is ticked
-        // by hand so nothing is left pending when the outbound frames are read.
-        for (int i = 0; i < 10; i++) { Thread.Sleep(3); robot.Transport.OfflineTick(); }
+        // Engine sends are unflushed. This small batch becomes worth sending only after the
+        // partial-packet age gate (>32.3ms), not merely after the 2ms separation interval.
+        clock.Advance(transportOptions.MaxTimeSinceLastSendMs + 1);
+        robot.Transport.OfflineTick();
 
         // Nothing acknowledges the offline connection, so every tick re-sends the unacked reliable frames;
         // each message is counted once by its sequence id.

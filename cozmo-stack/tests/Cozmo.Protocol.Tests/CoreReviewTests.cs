@@ -18,24 +18,13 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class CoreReviewTests
 {
-    /// <summary>Waits for a condition, polling, so a real background thread has time to do its work.</summary>
-    private static bool Within(int ms, Func<bool> cond)
-    {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        while (sw.ElapsedMilliseconds < ms)
-        {
-            if (cond()) return true;
-            Thread.Sleep(5);
-        }
-        return cond();
-    }
-
     /// <summary>
     /// Every CLAD message the robot has sent, decoded. The connection batches rather than sending as it
     /// goes, so it is ticked first - a live transport does that on its own thread.
     /// </summary>
-    private static List<RobotMessage> Outbound(CozmoRobot robot)
+    private static List<RobotMessage> Outbound(CozmoRobot robot, ManualClock? clock = null)
     {
+        clock?.Advance(new TransportOptions().MaxTimeSinceLastSendMs + 1);
         try { robot.Transport.OfflineTick(); } catch { }     // nothing to tick once disconnected
         var seen = new HashSet<ushort>();
         var outp = new List<RobotMessage>();
@@ -52,15 +41,55 @@ public class CoreReviewTests
     /// <summary>
     /// A stable snapshot of the offline transport's capture list. Several of these tests have a real
     /// background thread sending while the test reads - the animation ticker, above all - and the capture
-    /// list is a plain list, so a copy taken while it grows can throw. Retrying the copy is the whole fix:
-    /// what is being observed is the test harness's record of the wire, not anything production locks.
+    /// list is captured under the transport writer's lock so observing it does not race a send.
     /// </summary>
     private static List<Frame> Frames(CozmoRobot robot)
     {
-        for (int attempt = 0; ; attempt++)
+        return new List<Frame>(robot.Transport.OfflineOutboundSnapshot());
+    }
+
+    // Keep the real background ticker, but release one update at a time on a modeled clock.
+    private sealed class ControlledTicker : IDisposable
+    {
+        private readonly ManualResetEventSlim _entered = new(false);
+        private readonly AutoResetEvent _release = new(false);
+        private readonly object _gate = new();
+        private bool _stopping;
+        private long _now;
+        public readonly ManualClock TransportClock = new() { NowMs = 1000 };
+        public readonly CozmoRobot Robot;
+        public long Now => Volatile.Read(ref _now);
+        public ControlledTicker()
         {
-            try { return new List<Frame>(robot.Transport.OfflineOutbound); }
-            catch (InvalidOperationException) when (attempt < 50) { Thread.Sleep(2); }
+            Robot = CozmoRobot.CreateOffline(clock: TransportClock);
+            Robot.Animations.ClockMs = () => Now;
+            Robot.Animations.TickObserved += OnTick;
+            Robot.Transport.OfflineAcceptConnection();
+        }
+        private void OnTick()
+        {
+            lock (_gate) if (_stopping) return;
+            _entered.Set();
+            _release.WaitOne();
+        }
+        public void Started() => Assert.True(_entered.Wait(TimeSpan.FromMinutes(2)), "the background ticker never started");
+        public void Step()
+        {
+            _entered.Reset();
+            Interlocked.Add(ref _now, 33);
+            _release.Set();
+            Assert.True(_entered.Wait(TimeSpan.FromMinutes(2)), "the background ticker never advanced");
+        }
+        public List<RobotMessage> Sent() => Outbound(Robot, TransportClock);
+        public void Dispose()
+        {
+            lock (_gate) _stopping = true;
+            Robot.Animations.TickObserved -= OnTick;
+            _release.Set();
+            Robot.Dispose();
+            Robot.Animations.WaitForTickerStop();
+            _entered.Dispose();
+            _release.Dispose();
         }
     }
 
@@ -82,22 +111,20 @@ public class CoreReviewTests
     [Fact]
     public void CORE001_ALiveBodyKeyframeIsStoppedAtItsDurationWithNobodyDrivingTheScheduler()
     {
-        using var robot = CozmoRobot.CreateOffline();
-        robot.Transport.OfflineAcceptConnection();
+        using var ticker = new ControlledTicker();
+        var robot = ticker.Robot;
         robot.Animations.Scheduler.PushLiveQuietly();
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         Assert.True(robot.Animations.StreamLive(new BodyKeyframe(0, 200, "STRAIGHT", 40)));
-
-        // robot messages go out unflushed, so the drive command reaches the wire on a later transport update
-        Assert.True(Within(500, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed != 0)),
+        ticker.Started();
+        ticker.Step();
+        Assert.True(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed != 0),
                     "the keyframe's drive command never went out");
-
-        // nothing else is ticking anything: if the stop arrives, the animation system brought it
-        Assert.True(Within(2_000, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed == 0)),
+        while (ticker.Now + 33 < 200) ticker.Step();
+        Assert.False(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed == 0));
+        while (ticker.Now < 300) ticker.Step();
+        Assert.True(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed == 0),
                     "the live body keyframe was never stopped");
-
-        // and it waited for the duration rather than stopping at once
-        Assert.True(sw.ElapsedMilliseconds >= 200);
+        Assert.True(ticker.Now >= 200);
     }
 
     /// <summary>
@@ -111,34 +138,39 @@ public class CoreReviewTests
     [Fact]
     public void CORE001_TheToolPathSendsNoDisableAnimTracks()
     {
-        using var robot = CozmoRobot.CreateOffline();
-        robot.Transport.OfflineAcceptConnection();
+        using var ticker = new ControlledTicker();
+        var robot = ticker.Robot;
         using (Cozmo.Conformance.CoreChecks.QuietLiveIdle(robot, "CORE-001"))
         {
             Assert.True(robot.Animations.StreamLive(new BodyKeyframe(0, 200, "STRAIGHT", 40)));
-            Assert.True(Within(500, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed != 0)));
-            Assert.True(Within(2_000, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed == 0)));
+            ticker.Started();
+            ticker.Step();
+            Assert.True(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed != 0));
+            while (ticker.Now < 300) ticker.Step();
+            Assert.True(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed == 0));
         }
-        Assert.Empty(Outbound(robot).OfType<DisableAnimTracks>());
-        Assert.Empty(Outbound(robot).OfType<EnableAnimTracks>());
-        Assert.Equal(0, robot.Motion.LockedTracks);          // no wire lock was ever taken
+        Assert.Empty(ticker.Sent().OfType<DisableAnimTracks>());
+        Assert.Empty(ticker.Sent().OfType<EnableAnimTracks>());
+        Assert.Equal(0, robot.Motion.LockedTracks);
     }
 
     /// <summary>CORE-001 clock.</summary>
     [Fact]
     public void CORE001_TheLiveKeyframeClockIsTheAnimationSystemsOwn()
     {
-        using var robot = CozmoRobot.CreateOffline();
-        robot.Transport.OfflineAcceptConnection();
+        using var ticker = new ControlledTicker();
+        var robot = ticker.Robot;
         robot.Animations.Scheduler.PushLiveQuietly();
         Assert.True(robot.Animations.StreamLive(new BodyKeyframe(0, 400, "STRAIGHT", 40)));
-        Assert.True(Within(500, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed != 0)),
+        ticker.Started();
+        ticker.Step();
+        Assert.True(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed != 0),
                     "the keyframe's drive command never went out");
-
-        // the stop must not be there yet: the keyframe has 400 ms to run
-        Assert.False(Within(150, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed == 0)),
+        while (ticker.Now < 150) ticker.Step();
+        Assert.False(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed == 0),
                      "the body was stopped immediately, so the deadline was read on the wrong clock");
-        Assert.True(Within(1_500, () => Outbound(robot).OfType<BodyMotion>().Any(b => b.Speed == 0)),
+        while (ticker.Now < 500) ticker.Step();
+        Assert.True(ticker.Sent().OfType<BodyMotion>().Any(b => b.Speed == 0),
                     "the live body keyframe was never stopped");
     }
 
@@ -176,16 +208,18 @@ public class CoreReviewTests
 
         var playing = robot.Animations.Play(clip);
         Assert.NotNull(playing);
-        Assert.True(Within(1_000, () => robot.Animations.IsTicking), "the animation never started ticking");
+        Assert.True(robot.Animations.IsTicking, "the animation never started ticking");
 
         // The robot goes away underneath it. Batch 3 (M1-025, M1-015, M1-026): the app-level disconnect removes the
         // robot at the next engine tick (CB33), which ends its animation; a send refused afterwards returns failure
         // silently (CB29) instead of throwing, so no Faulted is raised any more.
         robot.Disconnect();
 
-        var finished = await Task.WhenAny(playing!, Task.Delay(3_000));
+        var finished = playing!;
+        await finished;
         Assert.Same(playing, finished);                       // it ended rather than hanging
-        Assert.True(Within(2_000, () => !robot.Animations.IsTicking), "the ticker was still running");
+        robot.Animations.WaitForTickerStop();
+        Assert.False(robot.Animations.IsTicking, "the ticker was still running");
         Assert.False(robot.Animations.IsPlaying);
 
         // the process is still here to make these assertions, which is the other half of the claim
@@ -266,18 +300,18 @@ public class CoreReviewTests
         Task? stopping = null;
         try
         {
-            Assert.True(sink.Entered.Wait(30_000), "the sink was never reached");
+            Assert.True(sink.Entered.Wait(TimeSpan.FromMinutes(2)), "the sink was never reached");
             // A dedicated worker avoids thread-pool starvation under full-suite load.
             stopping = Task.Factory.StartNew(() =>
             {
                 stoppingStarted.Set();
                 scheduler.Stop();
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
-            Assert.True(stoppingStarted.Wait(30_000), "the cancellation worker never started");
+            Assert.True(stoppingStarted.Wait(TimeSpan.FromMinutes(2)), "the cancellation worker never started");
         }
         finally { sink.Release.Set(); }
-        Assert.True(streaming.Wait(30_000));
-        Assert.True(stopping!.Wait(30_000));
+        Assert.True(streaming.Wait(TimeSpan.FromMinutes(2)));
+        Assert.True(stopping!.Wait(TimeSpan.FromMinutes(2)));
 
         var log = sink.Snapshot();
         Assert.Contains("head", log);            // the keyframe that was legitimately in flight went out
@@ -324,7 +358,7 @@ public class CoreReviewTests
             t.Start();
         }
         start.Set();
-        foreach (var t in threads) Assert.True(t.Join(5_000));
+        foreach (var t in threads) Assert.True(t.Join(TimeSpan.FromMinutes(2)));
 
         var got = tickets.Where(t => t is not null).Select(t => t!.Generation).ToList();
         Assert.Equal(n, got.Count);                       // every play was accepted (each replaces the last)
@@ -401,7 +435,7 @@ public class CoreReviewTests
             t.Start();
         }
         start.Set();
-        foreach (var t in threads) Assert.True(t.Join(5_000));
+        foreach (var t in threads) Assert.True(t.Join(TimeSpan.FromMinutes(2)));
 
         // every installation is a clear, its three segments and an execute, in that order and unbroken
         var sent = rig.M.Paths.Sent.ToList();
@@ -620,7 +654,7 @@ public class CoreReviewTests
         Assert.True(pcm!.Length > 8 * lead, "the song is too short to tell running ahead from finishing");
 
         // nobody takes any samples: the render must stop a lead in rather than running the song out
-        Thread.Sleep(400);
+        stream.WaitForInitialLead();
         Assert.True(stream.Ready <= 3 * lead,
                     $"rendered {stream.Ready} samples with nothing consumed (a lead is {lead})");
         Assert.True(stream.Ready < pcm.Length);
@@ -628,8 +662,8 @@ public class CoreReviewTests
         // the scheduler reports what it has taken, the way it does once a frame
         int consumed = 4 * lead;
         source.ReadySamples(pcm, consumed);
-        Assert.True(Within(2_000, () => stream.Ready >= consumed),
-                    "the render did not follow consumption");
+        stream.WaitForSamples(consumed);
+        Assert.True(stream.Ready >= consumed, "the render did not follow consumption");
         Assert.True(stream.Ready <= consumed + 3 * lead,
                     $"rendered {stream.Ready} against {consumed} consumed");
     }
@@ -662,7 +696,7 @@ public class CoreReviewTests
         var stream = stalled.StreamFor(song)!;
 
         // the robot has no room: nothing is consumed for a while
-        Thread.Sleep(300);
+        stream.WaitForInitialLead();
         int rendered = stream.Ready;
         Assert.True(rendered < pcm.Length, "the render ran the whole song out while nothing was heard");
         var before = pcm.Take(rendered).ToArray();
@@ -715,7 +749,7 @@ public class CoreReviewTests
         for (int i = 1; i <= N; i++)
         {
             int want = (frames.Count(f => f is not null) + 1) * CozmoAudio.SamplesPerFrame;
-            Within(2_000, () => stream.Ready >= want || stream.Ready >= stream.Pcm.Length);
+            stream.WaitForSamples(want);
             scheduler.Advance(i * 33.0);
         }
 

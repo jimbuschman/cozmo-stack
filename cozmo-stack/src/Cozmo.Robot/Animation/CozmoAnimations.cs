@@ -464,11 +464,20 @@ public sealed class CozmoAnimations : IDisposable
         return new AnimationTicket(handle.Completion, handle.Generation);
     }
 
-    private static double NowMs() => Environment.TickCount64;
+    internal bool ManualTicking { get; set; }
+    internal Func<double>? ClockMs { get; set; }
+    private double NowMs() => ClockMs?.Invoke() ?? Environment.TickCount64;
+    internal event Action? TickObserved;
+    internal void WaitForTickerStop()
+    {
+        Thread? ticker;
+        lock (_gate) ticker = _ticker;
+        if (ticker is not null && ticker != Thread.CurrentThread) ticker.Join();
+    }
 
     private void StartTicker()
     {
-        if (EngineDriven) return;       // the engine tick advances the scheduler (CD12)
+        if (EngineDriven || ManualTicking) return;       // the engine tick advances the scheduler (CD12)
         lock (_gate)
         {
             if (_running) return;
@@ -495,7 +504,8 @@ public sealed class CozmoAnimations : IDisposable
                 // time synced and ready to stream. While that gate is shut nothing is streamed.
                 // MISSING (M5): what the animation timeline does while the streamer is not updated is not in the M1
                 // inventory; here the scheduler is simply not advanced, and it catches up to the clock once open.
-                if (_robot.AnimationStreamingOpen) _scheduler.Advance(origin + sw.Elapsed.TotalMilliseconds);
+                if (_robot.AnimationStreamingOpen) _scheduler.Advance(ClockMs?.Invoke() ?? origin + sw.Elapsed.TotalMilliseconds);
+                TickObserved?.Invoke();
             }
             catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
             {

@@ -262,24 +262,25 @@ public class BehaviorHardeningTests
         reactive.Reacted += _ =>
         {
             slowStarted.Set();
-            release.Wait(TimeSpan.FromSeconds(5));       // a deliberately slow consumer
+            release.Wait();       // a deliberately slow consumer
         };
         reactive.Start();
 
         rig.Send(new RobotState { Status = 0 });
         rig.Send(new RobotState { Status = (uint)RobotStatusFlag.IsPickedUp });   // raises a reaction
-        Assert.True(slowStarted.Wait(TimeSpan.FromSeconds(5)), "the reaction never ran");
+        Assert.True(slowStarted.Wait(TimeSpan.FromMinutes(2)), "the reaction never ran");
 
         // While the reaction is still stuck, more robot state must keep being processed.
         int before = rig.Robot.State.StateCount;
-        var sw = Stopwatch.StartNew();
-        for (int i = 0; i < 20; i++) rig.Send(new RobotState { Status = (uint)RobotStatusFlag.IsPickedUp });
-        sw.Stop();
+        var delivery = Task.Run(() =>
+        {
+            for (int i = 0; i < 20; i++) rig.Send(new RobotState { Status = (uint)RobotStatusFlag.IsPickedUp });
+        });
+        delivery.GetAwaiter().GetResult();
 
         Assert.True(rig.Robot.State.StateCount >= before + 20,
             $"state processing stalled: {rig.Robot.State.StateCount - before} of 20 arrived");
-        Assert.True(sw.Elapsed < TimeSpan.FromSeconds(2),
-            $"state delivery was blocked by the slow reaction for {sw.Elapsed.TotalSeconds:F1}s");
+        Assert.False(release.IsSet, "state delivery completed while the slow reaction was still blocked");
 
         release.Set();
     }
