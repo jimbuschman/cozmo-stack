@@ -2333,3 +2333,5 @@ WP444 suppliesparentnewchildpublication/replacement, pendingversusactivequeries,
 Checkpoint445 — EQ445 seven-type persistent parameter graphs; primary269 ARM instructions plus reused22-instruction type1. Research generator validates full selected ranges and raw operation dependencies. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q15 parked until Q14 closure.
 
 Checkpoint446 — CM446 output-mode writer/next-animation choices;332 complete native instructions andactualcallable tables/getterrelocation. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; no promotion/Q15/productionchange.
+
+Checkpoint447 — AD447 actual OnDevice/OnRobot deleting slots join alreadypositiveASTATE317/DQUEUE309/DWORK311/base/weakcallbackcontracts;11 native instructions/relocation. CM446 concrete destructor uncertainty settled; broaderinput/writer stillPARTIAL. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE.

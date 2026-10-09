@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 447 — selected deleting-animation joins
+
+Primary: `20261009-sound-selected-animation-delete-native.txt`,11 complete native instructions plus relocation; actual constructor-selected table4 values reused from `20261008-sound-animation-entry-slots.txt`. ASTATE317D–G/DQUEUE309/DWORK311/DCB308/RCTX316/AP7 already supply base destruction, queue stop/release, weak expiry and abort effects. No re-extraction of those positive bodies.
+
+| Row | Primary | Decision/order |
+| --- | --- | --- |
+| AD447A selected deleting slots | AENTRY306 tables1023FFC=597689/10240B0=5980B5;597688..696/5980B4..C2 | OnDevice/OnRobot actualvt4 wrappers each call4AF478 beforetaildelete(originalbase-returnedA). ActualPLT4AF478..484 usesGOT1043EB4 resolved5962E5, joiningASTATE317D exactsharedbasebody. Neitherwrapperhasnullgate, extraabort/reset/stop-event orderivedmembercleanup. CM446D/F destructorselectionnowactualpositive, notinferredfromclassnames. |
+| AD447B destructor vs abort | ASTATE317D–G;AP7;CM446D/F | ReplacementofexistingA invokesAP7Abort first, thenactualvt4→base. RejectionofnewA state4/5 invokesvt4 alone. BaseclearsRNG38 beforeoptionalqueueStop/Release;Releasecallsselectedqueuevt4 andexecutorsecondStop beforepointerclear;mutex/eventvector destruction precedessharedcontrolrelease. AP7alonehascallbackflush/bufferreset/StopCozmoEvent/state4; noneaddedtodestructor. Nativeweakexpired callbacks skip accordingtoDCB308; detachedbatch/Stop rulesstayDQUEUE309/DWORK311. |
+| AD447C local creator/lifetime closure | CM446;AENTRY306/AP/ASORT305;ASTATE317;RCTX316/DCB308/DPOST307..DSORT315 | Knownclientmodewriter→selectedconstructors→Init/Prepare→scheduledpost/callback→actualdeletingwrappers isnowpositivelyjoined forselectedOnDevice/OnRobotfamily. Widerpublicgame-input/valuefamilies,appupdates/dispatchandotherwritersremainseparate; noabsenceofcallerprooffromnavigationindex. No productionpathpromotedbeyondnamedlocalresearchjoins. |
+
+out of scope: allocator/free/vector backing, phonecondition/mutex/thread implementations andlog/string mechanics under scopeguard; per-sample DSP under ADP-1. Nativequeue/lifetime/callback decisions retained.
+
+CM446's concrete deleting-animation uncertainty is settled byAD447; its higher-layer dispatch/input boundary stays explicit. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE. Q14-021/065 remainPARTIAL forbroaderproductioninput/writer closure; Q15 followscompletedQ14. Nextboundedstep checksclientcurrent-animation update/pop entry andmodeinputs againstpositive frame/scheduling rows.
+
 ## Checkpoint 446 — client output-mode writer and next-animation selection
 
 Primary: `20261009-sound-client-mode-animation-native.txt`,332 complete Thumb/ARM instructions plus actual tables/relocation/literals; engine hash unchanged. AS1–9/SH, GOR1–4, UC34/35/QC/SX and AENTRY306/AP/ASEL304/ASORT305 reused. C=RobotAudioClient; A=animation. Offsetshex. No new exclusion or absent-caller reachability claim.

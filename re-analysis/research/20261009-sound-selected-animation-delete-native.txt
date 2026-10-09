@@ -1,0 +1,20 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00597688..0x00597696 exclusive; Thumb;
+00597688: push         {r7, lr}
+0059768A: blx          #0x4af478 ; Anki::Cozmo::Audio::RobotAudioAnimation::~RobotAudioAnimation
+
+0059768E: pop.w        {r7, lr}
+00597692: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+
+RANGE 0x005980B4..0x005980C2 exclusive; Thumb;
+005980B4: push         {r7, lr}
+005980B6: blx          #0x4af478 ; Anki::Cozmo::Audio::RobotAudioAnimation::~RobotAudioAnimation
+
+005980BA: pop.w        {r7, lr}
+005980BE: b.w          #0x8ca88c ; <EXTERNAL>::operator.delete
+
+RANGE 0x004AF478..0x004AF484 exclusive; ARM;
+004AF478: add          ip, pc, #0xb00000
+004AF47C: add          ip, ip, #148, #20
+004AF480: ldr          pc, [ip, #0xa34]!
+01043EB4: raw=004A4010 relocated=005962E5 _ZN4Anki5Cozmo5Audio19RobotAudioAnimationD1Ev
