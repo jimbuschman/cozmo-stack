@@ -11,6 +11,16 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 23 native-row obligations CHECKED, 8 CHECKED scope exclusions, 109 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 273 — bank registry publication endpoint
+
+Primary: `20261008-sound-bank-registry-publication-native.txt`; same engine hash. BA272 caller, UD261 lookup/erase and BR142 bank key/defaults reused. R=bank registry M44, B=incoming bank.
+
+| Step | Address | Behaviour | Gates | Order / failure results | Boundary / remaining dependency |
+|---|---|---|---|---|---|
+| BP273A | 00A68544..00A685E8;00A68760..00A6879C | Lock108E330; first matching existing key8/C through registry chains10 unlocks/returnsvoid without updating incoming B. Missing writes both keys to B8/C before backing availability. Endpoint bucket count0 unlocks without publication; nonzero prepends B via B10=oldhead, head=B, registry countC increments, unlock. | No retain or replacement on duplicate key. No explicit incoming Bnull guard on missing path. Key stores precede any eventual no-publication exit. BA272 still returns loader result1 after this void helper. | Composite key duplicate gate → incoming key fields → backing endpoint → next/head/count publication → unlock. | out of scope: registry hash/rehash/backing allocation internals. Remaining registry/provider/key/reference/input writers stay PARTIAL; endpoint does not prove every backing outcome succeeds. |
+
+Coverage reconciliation now reuses UD261–BP273 known bank unload, event prepare/unprepare, action/target preparation and media availability joins. Remaining preparation/deferred/public inputs, alias/state/reference/flag/global writers and other providers remain PARTIAL. Totals unchanged, Q15 parked; no production/fidelity changes.
+
 ## Checkpoint 272 — action bank admission and ID release joins
 
 Primary: `20261008-sound-action-bank-admission-release-native.txt`; same engine hash. EA271 callers, UD261 registry and PB263/PM263 cleanup reused. Admission inputs14/15/16 are raw mode and two bytes; EA271 supplies2/0/0.

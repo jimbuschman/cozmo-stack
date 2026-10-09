@@ -1,0 +1,62 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A68544..0x00A685EC exclusive; ARM;
+00A68544: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A68548: mov          r6, r0
+00A6854C: sub          sp, sp, #0x14
+00A68550: ldr          r0, [pc, #0x29c] ; word[00A687F4]=00625DCC
+00A68554: add          r7, sp, #8
+00A68558: mov          r8, r3
+00A6855C: add          r0, pc, r0
+00A68560: stm          r7, {r1, r2}
+00A68564: bl           #0x4d3064
+00A68568: ldr          sb, [r6, #4]
+00A6856C: ldr          r4, [sp, #8]
+00A68570: cmp          sb, #0
+00A68574: ldr          r5, [sp, #0xc]
+00A68578: beq          #0xa685d4
+00A6857C: add          r0, r5, r4
+00A68580: mov          r1, sb
+00A68584: bl           #0x4a6694
+00A68588: ldr          r3, [r6]
+00A6858C: ldr          r3, [r3, r1, lsl #2]
+00A68590: cmp          r3, #0
+00A68594: bne          #0xa685a8
+00A68598: b            #0xa685d4
+00A6859C: ldr          r3, [r3, #0x10]
+00A685A0: cmp          r3, #0
+00A685A4: beq          #0xa685d4
+00A685A8: ldr          r2, [r3, #8]
+00A685AC: cmp          r2, r4
+00A685B0: bne          #0xa6859c
+00A685B4: ldr          r2, [r3, #0xc]
+00A685B8: cmp          r2, r5
+00A685BC: bne          #0xa6859c
+00A685C0: ldr          r0, [pc, #0x230] ; word[00A687F8]=00625D64
+00A685C4: add          r0, pc, r0
+00A685C8: add          sp, sp, #0x14
+00A685CC: pop          {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A685D0: b            #0x4d3070
+00A685D4: ldm          r7, {r0, r1}
+00A685D8: add          r3, r8, #8
+00A685DC: stm          r3, {r0, r1}
+00A685E0: ldr          r4, [r6, #4]
+00A685E4: cmp          r4, #0
+00A685E8: bne          #0xa687a0
+RANGE 0x00A68760..0x00A687A0 exclusive; ARM;
+00A68760: cmp          r4, #0
+00A68764: beq          #0xa685c0
+00A68768: ldr          r5, [r6, #0xc]
+00A6876C: ldr          r3, [r8, #8]
+00A68770: mov          r1, r4
+00A68774: ldr          r0, [r8, #0xc]
+00A68778: add          r5, r5, #1
+00A6877C: add          r0, r0, r3
+00A68780: bl           #0x4a6694
+00A68784: ldr          r3, [r6]
+00A68788: ldr          r3, [r3, r1, lsl #2]
+00A6878C: str          r3, [r8, #0x10]
+00A68790: ldr          r3, [r6]
+00A68794: str          r8, [r3, r1, lsl #2]
+00A68798: str          r5, [r6, #0xc]
+00A6879C: b            #0xa685c0
