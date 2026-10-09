@@ -1515,3 +1515,7 @@ OP245A–C recover four ARM producers absent from navigation index: ID/name look
 ### Checkpoint 246 — event reference/destruction binding
 
 ER246A–C bind the known factory table, mutex-protected retain/release, zero-count ID unlink and owner-before-action destructor order. Queued event release family locally joined; mutex setup/index/action/provider closure retained. Storage internals excluded. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 247 — event-wide owner retirement
+
+EO247A–C trace all event-pointer matches, descriptor/group/object release order, owner retirement and shifted-successor erase traversal. Existing group/object families reused; manager role/action/mutex/provider/writer closure retained. Storage internals excluded. No totals/Q15/fidelity/production changes.
