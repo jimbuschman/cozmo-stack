@@ -1531,3 +1531,7 @@ AP249A/B bind the0400 factory's table, commonC/base0 cleanup and30 word0-only ou
 ### Checkpoint 250 — action base defaults/registration role
 
 AB250A/B join exact base type/flag/default fields and identify A60DEC as registry publication rather than property setup. Earlier factory label corrected; backing infrastructure excluded and conditional insertion kept bounded. No totals/Q15/fidelity/production changes.
+
+### Checkpoint 251 — event reader/action-list writer
+
+EL251A–C trace physical action IDs, retain-before-list publication, raw early failures without local rollback and existing-event versus new-event bank behavior. Event release/traversal joins reused; registration/mutex/provider/input/sharing closure retained. No totals/Q15/fidelity/production changes.
