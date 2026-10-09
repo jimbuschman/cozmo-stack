@@ -1,7 +1,7 @@
 | Q14 census | Status | Count |
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
-| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through254 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
+| Per-item native rows and production joins | PARTIAL | 23 CHECKED native-row obligations / 8 CHECKED scope exclusions / 109 PARTIAL / 0 NOT DONE; decision checkpoints through269 add local bodies and reconcile known joins without settling remaining in-scope families/writers |
 
 # Q14 per-item work census
 
@@ -1603,3 +1603,7 @@ DP267A–D trace descriptor gates, immediate/deferred manager mode, descriptor p
 ### Checkpoint 268 — interior media release and alias choice
 
 IR268A/B and AV268C trace interior counter raw returns/key-based registry retirement and first-alias availability with size-before-pointer publication. DP267 wording corrected; storage internals excluded. Deferred/public input/provider/alias/reference writers remain PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 269 — event unprepare command
+
+EU269A–C trace single/bulk event references/E14 release, first-missing partial result and owned-array release, plus distinct count/data/key completion shaping. Known descendants reused; preparation/deferred/public caller/provider/input/writer closure remains PARTIAL. No totals/Q15/fidelity/production changes.
