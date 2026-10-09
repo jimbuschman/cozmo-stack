@@ -1,0 +1,236 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x00594730..0x0059475C exclusive; Thumb; _ZN4Anki5Cozmo5Audio20CozmoAudioController24RegisterRobotAudioBufferEjj
+00594730: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00594734: sub          sp, #0x24
+00594736: mov          fp, r0
+00594738: movs         r0, #0x20
+0059473A: mov          sl, r2
+0059473C: str          r1, [sp, #0x14]
+0059473E: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+00594742: movs         r1, #0x20
+00594744: mov          sb, r0
+00594746: blx          #0x4a403c ; <EXTERNAL>::__aeabi_memclr4
+
+0059474A: add.w        r0, sb, #0x18
+0059474E: blx          #0x4a64d8 ; <EXTERNAL>::std::__ndk1::recursive_mutex::recursive_mutex
+
+00594752: movs         r6, #0
+00594754: add.w        r8, fp, #0x78
+00594758: strb.w       r6, [sb, #0x1c]
+RANGE 0x005947A6..0x005947B4 exclusive; Thumb;
+005947A6: cmp          r0, sl
+005947A8: bne          #0x59478c
+005947AA: movs         r0, #0
+005947AC: b            #0x594892
+005947AE: ldr.w        sb, [sp, #0xc]
+005947B2: movs         r6, #0
+RANGE 0x005947B4..0x005947CE exclusive; Thumb;
+005947B4: movs         r0, #0x10
+005947B6: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+005947BA: vmov         s0, r5
+005947BE: mov          r7, r0
+005947C0: cmp          r5, #0
+005947C2: vcvt.f32.u32 s4, s0
+005947C6: strd         r6, sl, [r7]
+005947CA: strd         sl, sb, [r7, #8]
+RANGE 0x00594890..0x00594894 exclusive; Thumb;
+00594890: movs         r0, #1
+00594892: str          r0, [sp, #0x10]
+RANGE 0x005948DE..0x005948E8 exclusive; Thumb;
+005948DE: ldr          r0, [r4, #8]
+005948E0: ldr          r1, [sp, #0x14]
+005948E2: cmp          r0, r1
+005948E4: bne          #0x5948c6
+005948E6: b            #0x5949da
+RANGE 0x005948EA..0x0059490C exclusive; Thumb;
+005948EA: movs         r0, #0x10
+005948EC: blx          #0x4a42a0 ; <EXTERNAL>::operator.new
+
+005948F0: vmov         s0, r5
+005948F4: mov          sb, r0
+005948F6: movs         r0, #0
+005948F8: cmp          r5, #0
+005948FA: vcvt.f32.u32 s4, s0
+005948FE: str.w        r0, [sb]
+00594902: ldr          r0, [sp, #0x14]
+00594904: strd         r0, r0, [sb, #4]
+00594908: str.w        sl, [sb, #0xc]
+RANGE 0x005949DA..0x00594A48 exclusive; Thumb;
+005949DA: ldr          r0, [sp, #0x10]
+005949DC: cbnz         r0, #0x594a40
+005949DE: ldr          r0, [sp, #8]
+005949E0: blx          #0x4a6538 ; <EXTERNAL>::std::__ndk1::recursive_mutex::~recursive_mutex
+
+005949E4: ldr          r0, [sp, #0xc]
+005949E6: blx          #0x4af220 ; std::__ndk1::__deque_base<Anki::Cozmo::Audio::RobotAudioFrameStream,std::__ndk1::allocator<Anki::Cozmo::Audio::RobotAudioFrameStream>>::~__deque_base
+
+005949EA: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+005949EE: movs         r0, #0
+005949F0: strd         r0, r0, [sp, #0x18]
+005949F4: str          r0, [sp, #0x20]
+005949F6: ldr          r0, [sp, #0x14]
+005949F8: add          r1, sp, #0x18
+005949FA: str          r0, [sp]
+005949FC: adr          r0, #0x88
+005949FE: adr          r2, #0xb8
+00594A00: mov          r3, sl
+00594A02: blx          #0x4a4108 ; Anki::Util::sErrorF
+
+00594A06: ldr          r0, [sp, #0x18]
+00594A08: cbz          r0, #0x594a28
+00594A0A: ldr          r1, [sp, #0x1c]
+00594A0C: cmp          r1, r0
+00594A0E: itttt        ne
+00594A10: subne.w      r2, r1, #8
+00594A14: subne        r2, r2, r0
+00594A16: mvnne        r3, #7
+00594A1A: bicne.w      r2, r3, r2
+00594A1E: itt          ne
+00594A20: addne        r1, r1, r2
+00594A22: strne        r1, [sp, #0x1c]
+00594A24: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+00594A28: ldr          r0, [pc, #0xc8] ; word[00594AF4]=00AA9D5A
+00594A2A: movs         r2, #1
+00594A2C: ldr          r1, [pc, #0xc8] ; word[00594AF8]=00AA9D5C
+00594A2E: add          r0, pc
+00594A30: add          r1, pc
+00594A32: ldr          r0, [r0]
+00594A34: ldr          r1, [r1]
+00594A36: ldrb         r0, [r0]
+00594A38: strb         r2, [r1]
+00594A3A: cbz          r0, #0x594a40
+00594A3C: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+
+00594A40: ldr          r0, [r7, #0xc]
+00594A42: add          sp, #0x24
+00594A44: pop.w        {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x00594AFC..0x00594BF8 exclusive; Thumb; _ZN4Anki5Cozmo5Audio20CozmoAudioController26UnregisterRobotAudioBufferEjj
+00594AFC: push         {r4, r5, r6, r7, lr}
+00594AFE: sub          sp, #0x1c
+00594B00: mov          r4, r0
+00594B02: add.w        r5, r4, #0x78
+00594B06: mov          r7, r1
+00594B08: add          r1, sp, #0x14
+00594B0A: mov          r0, r5
+00594B0C: strd         r2, r7, [sp, #0x14]
+00594B10: blx          #0x4af22c ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::__unordered_map_hasher<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::hash<unsigned_int>,true>,std::__ndk1::__unordered_map_equal<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::equal_to<unsigned_int>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>>>::find<unsigned_int>
+
+00594B14: mov          r6, r0
+00594B16: cbz          r6, #0x594b3c
+00594B18: ldr          r7, [r6, #0xc]
+00594B1A: cbz          r7, #0x594b2e
+00594B1C: add.w        r0, r7, #0x18
+00594B20: blx          #0x4a6538 ; <EXTERNAL>::std::__ndk1::recursive_mutex::~recursive_mutex
+
+00594B24: mov          r0, r7
+00594B26: blx          #0x4af220 ; std::__ndk1::__deque_base<Anki::Cozmo::Audio::RobotAudioFrameStream,std::__ndk1::allocator<Anki::Cozmo::Audio::RobotAudioFrameStream>>::~__deque_base
+
+00594B2A: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+00594B2E: movs         r0, #0
+00594B30: mov          r1, r6
+00594B32: str          r0, [r6, #0xc]
+00594B34: mov          r0, r5
+00594B36: blx          #0x4af238 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::__unordered_map_hasher<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::hash<unsigned_int>,true>,std::__ndk1::__unordered_map_equal<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>,std::__ndk1::equal_to<unsigned_int>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned_int,Anki::Cozmo::Audio::RobotAudioBuffer*>>>::erase
+
+00594B3A: b            #0x594b8c
+00594B3C: movs         r0, #0
+00594B3E: ldr          r3, [sp, #0x14]
+00594B40: str          r0, [sp, #8]
+00594B42: strd         r0, r0, [sp, #0xc]
+00594B46: adr          r0, #0xdc
+00594B48: add          r1, sp, #8
+00594B4A: adr          r2, #0x108
+00594B4C: str          r7, [sp]
+00594B4E: blx          #0x4a4108 ; Anki::Util::sErrorF
+
+00594B52: ldr          r0, [sp, #8]
+00594B54: cbz          r0, #0x594b74
+00594B56: ldr          r1, [sp, #0xc]
+00594B58: cmp          r1, r0
+00594B5A: itttt        ne
+00594B5C: subne.w      r2, r1, #8
+00594B60: subne        r2, r2, r0
+00594B62: mvnne        r3, #7
+00594B66: bicne.w      r2, r3, r2
+00594B6A: itt          ne
+00594B6C: addne        r1, r1, r2
+00594B6E: strne        r1, [sp, #0xc]
+00594B70: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+00594B74: ldr          r0, [pc, #0x114] ; word[00594C8C]=00AA9C0E
+00594B76: movs         r2, #1
+00594B78: ldr          r1, [pc, #0x114] ; word[00594C90]=00AA9C10
+00594B7A: add          r0, pc
+00594B7C: add          r1, pc
+00594B7E: ldr          r0, [r0]
+00594B80: ldr          r1, [r1]
+00594B82: ldrb         r0, [r0]
+00594B84: strb         r2, [r1]
+00594B86: cbz          r0, #0x594b8c
+00594B88: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+
+00594B8C: adds         r4, #0x8c
+00594B8E: add          r1, sp, #0x18
+00594B90: mov          r0, r4
+00594B92: blx          #0x4af244 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>,std::__ndk1::__unordered_map_hasher<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>,std::__ndk1::hash<unsigned_int>,true>,std::__ndk1::__unordered_map_equal<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>,std::__ndk1::equal_to<unsigned_int>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>>>::find<unsigned_int>
+
+00594B96: mov          r1, r0
+00594B98: cbz          r1, #0x594ba2
+00594B9A: mov          r0, r4
+00594B9C: blx          #0x4af250 ; std::__ndk1::__hash_table<std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>,std::__ndk1::__unordered_map_hasher<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>,std::__ndk1::hash<unsigned_int>,true>,std::__ndk1::__unordered_map_equal<unsigned_int,std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>,std::__ndk1::equal_to<unsigned_int>,true>,std::__ndk1::allocator<std::__ndk1::__hash_value_type<unsigned_int,unsigned_int>>>::erase
+
+00594BA0: b            #0x594bf4
+00594BA2: movs         r0, #0
+00594BA4: str          r0, [sp, #8]
+00594BA6: ldrd         r3, r1, [sp, #0x14]
+00594BAA: strd         r0, r0, [sp, #0xc]
+00594BAE: str          r1, [sp]
+00594BB0: adr          r0, #0x70
+00594BB2: add          r1, sp, #8
+00594BB4: adr          r2, #0x9c
+00594BB6: blx          #0x4a4108 ; Anki::Util::sErrorF
+
+00594BBA: ldr          r0, [sp, #8]
+00594BBC: cbz          r0, #0x594bdc
+00594BBE: ldr          r1, [sp, #0xc]
+00594BC0: cmp          r1, r0
+00594BC2: itttt        ne
+00594BC4: subne.w      r2, r1, #8
+00594BC8: subne        r2, r2, r0
+00594BCA: mvnne        r3, #7
+00594BCE: bicne.w      r2, r3, r2
+00594BD2: itt          ne
+00594BD4: addne        r1, r1, r2
+00594BD6: strne        r1, [sp, #0xc]
+00594BD8: blx          #0x4a40cc ; <EXTERNAL>::operator.delete
+
+00594BDC: ldr          r0, [pc, #0xb4] ; word[00594C94]=00AA9BA6
+00594BDE: movs         r2, #1
+00594BE0: ldr          r1, [pc, #0xb4] ; word[00594C98]=00AA9BA8
+00594BE2: add          r0, pc
+00594BE4: add          r1, pc
+00594BE6: ldr          r0, [r0]
+00594BE8: ldr          r1, [r1]
+00594BEA: ldrb         r0, [r0]
+00594BEC: strb         r2, [r1]
+00594BEE: cbz          r0, #0x594bf4
+00594BF0: blx          #0x4a4114 ; Anki::Util::sDebugBreakOnError
+
+00594BF4: add          sp, #0x1c
+00594BF6: pop          {r4, r5, r6, r7, pc}
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004AF70C..0x004AF718 exclusive; ARM;
+004AF70C: add          ip, pc, #0xb00000
+004AF710: add          ip, ip, #148, #20
+004AF714: ldr          pc, [ip, #0x87c]!
+RANGE 0x004AF73C..0x004AF748 exclusive; ARM;
+004AF73C: add          ip, pc, #0xb00000
+004AF740: add          ip, ip, #148, #20
+004AF744: ldr          pc, [ip, #0x85c]!
+01043F90: raw=004A4010 relocated=00594731 _ZN4Anki5Cozmo5Audio20CozmoAudioController24RegisterRobotAudioBufferEjj
+01043FA0: raw=004A4010 relocated=00594AFD _ZN4Anki5Cozmo5Audio20CozmoAudioController26UnregisterRobotAudioBufferEjj
