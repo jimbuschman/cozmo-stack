@@ -1659,3 +1659,7 @@ CW281A–C join global settings copy/defaults to the concrete app stack block an
 ### Checkpoint 282 — shipped preparation-mode value
 
 CV282A/B reuse SL34 halfword0101 override and CW281 settings copy to establish startup global mode18=1 through concrete relocated public wrapper. This supplies known nonzero Switch preparation consumers when invoked; it does not prove every public request/future mode writer. Other in-scope family/input/provider/writer closure remains PARTIAL; totals/Q15/fidelity/production unchanged.
+
+### Checkpoint 283 — Switch defaults and node publication
+
+SI283A–C join known type6 factory/member tables to initial next/count/type/group values and selector-based registry head publication. Registration precedes group-head defaults; init returns1 regardless of no-publication backing endpoint. Storage/hash internals excluded; broader inputs/providers/writers and totals/Q15/fidelity/production unchanged.
