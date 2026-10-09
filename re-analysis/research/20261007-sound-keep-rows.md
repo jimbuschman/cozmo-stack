@@ -11,6 +11,20 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 27 native-row obligations CHECKED, 8 CHECKED scope exclusions, 105 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 419 — playing completion subscription-key producer
+
+Primary: `20261009-sound-playing-completion-cleanup-key-native.txt`, same engine hash;50 instruction words plus literals. ActualappPostEvent/eventactions→playingrecordcompletionE13–16/PB10/NREG positive; retainedsubscriptionlists areDC2/DC9/DC10. R=playingrecord,G=resolvedobject,K=stackscope atsp10; offsets hex.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| CK419A keypublication | A036C4..A03708;A03800..A03808;PB10/QC3 | Afterplayingregistryunlink,constructK words0/4/8/14={0,R3C playingID,0,0},bytesC/10=FF;paddingunwritten. QC3 resolvesobjectnumericID previouslycapturedfromR24. MissingobjectpreservesK0=0;foundstoresrawGpointertoK0 BEFORElow30objectrelease. NumericobjectID isnotK0. No “missingobject meansskip subscriptions” branch. |
+| CK419B objectrelease/subscription order | A0370C..A03734;A03818..A03828;DC4/OB354 | DecrementG7Clow30/preserveupper2;newzero callsA0B600(G) thenpoolfreebeforeA1C660(R,&K). K0preservesrawpointeridentityeveniftheobjecthasbeenfreed; no dereference/relookup bythisproducer. Nonzeroobjectcountalso invokesA1C660afterdecrement. Missingobjecttailsamesubscriptioncallwithfirstword0. DC2 firstlistthen secondlist consumeexactkey. |
+| CK419C bundle/record/callback boundary | A03738..A0375C;PB10/DC3/E16 | AfterA1C660,liveR28nonnullbundleDC3release;no-opA1C65C,poolfreeR. EndOfEventcallbackgate/payload/unlock/order PB10/E16 followsrecordfree. Subscriptionkey isnotcallbackpayload; callbackpayload alreadycapturednumericobject/playing/eventIDs. No cleanup completion callbackinsertedbetweentwolists. |
+
+out of scope: playingregistry/hash,poolrelease andownedlist backing mechanics; exactkey,reference/destructor andnotification order retained.
+
+Concreteplaying-keyproducer nowjoins existing listteardown. DC10's A1238C scopedRTPC-key invalidation isthenamedremainingrecipient totrace next;no genericallwriter closure substituted. Counts unchanged27 native CHECKED+8 scope CHECKED/105 PARTIAL/0 NOT DONE; Q15 pending Q14. No production,manifest orhardware changes.
+
 ## Checkpoint 418 — event pending product and lifetime integration
 
 Primary: `20261009-sound-event-pending-products-native.txt`, same engine hash;99 instruction words plus literals/table. Actual835bankevent/906action witness andE21/NE409 dispatchestablishthecaller. E=event,A=action,P=allocatedpending,D=incomingexternaldescriptor,G=incomingobject; offsets hex. ExistingE22–28 scheduler/order/skipcontracts andDR162E/DC3/DC4/OB354 knowncleanup reused.
