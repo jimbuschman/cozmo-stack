@@ -1,0 +1,86 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009810F4..0x009811F4 exclusive; ARM;
+009810F4: ldr          ip, [r0, #0x30]
+009810F8: cmp          ip, #0
+009810FC: bxeq         lr
+00981100: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00981104: ldr          lr, [r0, #0x60]
+00981108: ldr          r4, [r0, #0x5c]
+0098110C: lsls         ip, lr, #2
+00981110: popeq        {r3, r4, r5, r6, r7, r8, sb, pc}
+00981114: cmp          r3, #0
+00981118: mov          r7, r2
+0098111C: mov          r6, r1
+00981120: mov          r5, r0
+00981124: bne          #0x981180
+00981128: mov          sb, r4
+0098112C: ldr          lr, [r4], #4
+00981130: mov          r3, #0
+00981134: mov          r2, r7
+00981138: mov          r1, r6
+0098113C: ldr          r8, [lr, #0x30]
+00981140: mov          r0, lr
+00981144: cmp          r8, r3
+00981148: beq          #0x981170
+0098114C: ldrsh        r8, [r8, #0x60]
+00981150: cmp          r8, r3
+00981154: ble          #0x981170
+00981158: ldr          ip, [lr]
+0098115C: ldr          ip, [ip, #0x64]
+00981160: blx          ip
+00981164: ldr          lr, [r5, #0x60]
+00981168: ldr          sb, [r5, #0x5c]
+0098116C: lsl          ip, lr, #2
+00981170: add          r3, sb, ip
+00981174: cmp          r4, r3
+00981178: bne          #0x98112c
+0098117C: pop          {r3, r4, r5, r6, r7, r8, sb, pc}
+00981180: mov          r8, r4
+00981184: b            #0x981194
+00981188: add          r3, r8, ip
+0098118C: cmp          r4, r3
+00981190: beq          #0x9811f0
+00981194: ldr          lr, [r4], #4
+00981198: ldr          r3, [lr, #0x38]
+0098119C: cmp          r3, #0
+009811A0: bne          #0x981188
+009811A4: ldr          sb, [lr, #0x30]
+009811A8: mov          r0, lr
+009811AC: mov          r1, r6
+009811B0: mov          r2, r7
+009811B4: cmp          sb, #0
+009811B8: mov          r3, #1
+009811BC: beq          #0x981188
+009811C0: ldrsh        sb, [sb, #0x60]
+009811C4: cmp          sb, #0
+009811C8: ble          #0x981188
+009811CC: ldr          ip, [lr]
+009811D0: ldr          ip, [ip, #0x64]
+009811D4: blx          ip
+009811D8: ldr          lr, [r5, #0x60]
+009811DC: ldr          r8, [r5, #0x5c]
+009811E0: lsl          ip, lr, #2
+009811E4: add          r3, r8, ip
+009811E8: cmp          r4, r3
+009811EC: bne          #0x981194
+009811F0: pop          {r3, r4, r5, r6, r7, r8, sb, pc}
+RANGE 0x00A1DDE0..0x00A1DE28 exclusive; ARM;
+00A1DDE0: ldr          r3, [r0, #0x30]
+00A1DDE4: cmp          r3, #0
+00A1DDE8: bxeq         lr
+00A1DDEC: push         {r4, r5, r6, lr}
+00A1DDF0: mov          r6, r2
+00A1DDF4: ldr          r4, [r3, #0xc]
+00A1DDF8: mov          r5, r1
+00A1DDFC: cmp          r4, #0
+00A1DE00: popeq        {r4, r5, r6, pc}
+00A1DE04: sub          r0, r4, #0xc
+00A1DE08: mov          r1, r5
+00A1DE0C: mov          r2, r6
+00A1DE10: mov          r3, #0
+00A1DE14: bl           #0xa00a3c
+00A1DE18: ldr          r4, [r4, #0x24]
+00A1DE1C: cmp          r4, #0
+00A1DE20: bne          #0xa1de04
+00A1DE24: pop          {r4, r5, r6, pc}

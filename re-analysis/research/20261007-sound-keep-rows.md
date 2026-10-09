@@ -11,6 +11,19 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 24 native-row obligations CHECKED, 8 CHECKED scope exclusions, 108 PARTIAL, 0 NOT DONE; no completed-Q14 claim. |
 
+## Checkpoint 371 — known node64 raw-value propagation
+
+Primary: `20261008-sound-node-value-propagation-native.txt`, same engine hash. BU370 known table64 joins, bus unregister descriptor/value and selected bus64 body reused. N=node,D=incomingdescriptor,V=raw incomingvalue,L=PBI+C; offsets hex. These are control/value decisions, not PCM multiplication.
+
+| Step | Address / evidence | Exact selected contract / order |
+|---|---|---|
+| VP371A container admission | 9810F4..981128;BU370H | Known RanSeq/Switch/ActorMixer/Layer64=9810F4. OwnN30nullreturns. Snapshot N60/count,N5C/base; wrappingcount<<2zero returns. No signed own active-count test. Incomingarg3==0 selectsVP371B;anynonzero selectsVP371C; savedV/D reused for every accepted child. No opcode/playingID/object/exclusion-list/RNG gate. |
+| VP371B zero-mode children | 98112C..98117C | Visit physical child pointers forward. Child30nonnull and signed16 childcontext60>0 callschild.live64(child,V,D,0);inactive skips. No child38 filter in mode0. Afteracceptedcallback reloadliveN60/N5C and wrappingend;after skip preserve previousbase/count. Compare savednextpointer withend by equality;continuefromsavedpointer. No child retain/null check, shrink clamp, result aggregation, reverse order or context64 fallback. |
+| VP371C nonzero-mode children | 981180..9811F0 | Forward order/end handling asVP371B. Firstchild38nonnull skips, then child30null or signed16 childcontext60<=0 skips. Acceptedchild.live64(child,V,D,1), normalizing incomingnonzero mode. Descriptor/value unmodified here. BU370 retirement caller supplies1, so bus-associated children are locally skipped on this container recursion branch. |
+| VP371D Sound64 | A1DDE0..A1DE24 | Sound30nullreturns;elsecontextCheadnullreturns. Visit L physicalnext24 order; every live entry invokesA00A3C(L−C,V,D,0), ignoringincomingarg3 andrawresult. Next loadedaftercallback. No signedactive-context gate, object/playingID/category filter, descriptor copy, local value arithmetic or PBI reference change. PBI cache-update recipientA00A3C is a retained decision body, not sampleDSP or assumed volume application. |
+
+BU370 known nonbus64 recipients now locally positive. Actual PBI cache update/consumer, full bus destructor and list/descriptor/value/state/input/provider/writer/product closure remain PARTIAL. Counts unchanged; Q15 pending Q14. No production/fidelity/hardware changes.
+
 ## Checkpoint 370 — bus unregister value and transition cleanup
 
 Primary: `20261008-sound-bus-unregister-control-native.txt`, same engine hash. RT369 destructor prefix, TT8 transition unsubscribe and known bus tables reused. N=bus,B=packed property block,D=stack notification descriptor; offsets hex. Scalar value propagation is exact control, not sample mixing.

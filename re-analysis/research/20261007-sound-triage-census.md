@@ -2011,3 +2011,7 @@ RT369A–G settle locked root reset, destructor identity/marker order, first-roo
 ### Checkpoint 370 — unregister value and transition-entry recipients
 
 BU370A–H settle locked flag/vector unregister, default/property0B raw value, descriptor byte mask, missing-entry callback, known bus64 traversal/zero override and TT8-backed entry detach. Downstream Sound/container64 and remaining complete destructor/value/input/writer/product closure stay PARTIAL. Counts unchanged; Q15 pending Q14.
+
+### Checkpoint 371 — known node64 propagation
+
+VP371A–D settle forward container active-child admission, zero/nonzero bus-scope modes, callback-time base/end reload and Sound all-PBI forwarding withmode0. A00A3C cache update and wider destructor/value/list/input/writer/product closure stay PARTIAL. Counts unchanged, Q15 pending Q14.
