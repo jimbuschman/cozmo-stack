@@ -139,3 +139,30 @@ The verdicts:
    - M11 will make the VisionSystem always present.
 
 Apply rule 10 (every log in the cited ranges). Commit and push.
+
+## JPEG unblocked (manager, 2026-10-10)
+
+Source: `research/20261010-jpeg-defaults-and-save-rows.md`.
+
+**The default Huffman table row: adopted.** The manager re-read libopencv_imgcodecs.so 0x15BA4..0x15BE8: four null
+checks on +0xC4, +0xC8, +0xB4 and +0xB8, then `bl 0xE2B8(cinfo, cinfo+0xC4, cinfo+0xB4)`, its result ignored. The
+static segment at VA 0x175018 starts `FF C4 01 A2`, with the standard Annex K tables in the order DC0, DC1, AC0, AC1.
+- Use the extractor's walk rows: the stop at ≤ 16 bytes remaining; count > 256 or count > remaining − 17 fails;
+  selector > 3 fails; alloc_small 0x118; sent_table = 0.
+- The copy always takes 256 huffval bytes, so the tail beyond the count is uninitialised stack (U2). Standard libjpeg
+  derives its tables from the counted entries only. **Confirm with the emulator oracle** that no decoded output
+  depends on those tail bytes. If one does, list it as never-written bytes, under the rule for M3-037.
+
+**EncodedImage::Save is unreachable in the shipped app (manager).**
+- It has no call site and no data pointer in libcozmoEngine.so (the extractor's scan).
+- No shipped .so imports `_ZNK4Anki5Cozmo12EncodedImage4Save...`. The manager checked every library in
+  resources/lib/armeabi-v7a.
+- No Unity script references EncodedImage.
+
+It is a dead export. **M3-018's Save part (quality 90, the JPEG encoder) is out of scope as unreachable;** record that
+in M3-018's `unresolved` with this evidence. M3-018's decode and IsColor parts stay in scope.
+
+**Build next (Codex or the manager's implementer):**
+1. The JPEG decode port (M3-001/M3-018 decode) from the J rows with their corrections, plus the default-table row.
+2. Its acceptance oracle: the shipped imdecode, cvtColor and resize running under `re-analysis/tools/emu/` on real
+   camera frames plus a synthetic corpus that reaches every J branch. Mats must be byte-identical.
