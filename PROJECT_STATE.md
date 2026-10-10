@@ -50,6 +50,27 @@ stands. Nothing new starts outside the current layer.
 
 **2026-10-09 resumed M1/M2 build progress (pushed):** the Opus corrections and cited MISSING/policy disposition are applied. `ce859bf` fixes the M1-024 decay snapshot caller and the M1-044/M1-015 warning level. The one-batch cited inventory correction is `3d2018c`, and manager-reopened extraction rows/ownership corrections are `5456b3f`. The checked finite-real M1-029 J1 wrapper and maximum reachable J7 input are built in `21b8738`; J1 non-finite mapping and other listed MISSINGs remain open. M1-048's checked U1-U7 engine decisions are assigned to the existing live UDP implementation in `d42130f`, awaiting strong verification. `0ab7fd8` records the remaining MISSINGs and stop point. No records were settled; M1 and M2 remain INVENTORY_APPROVED, and no hardware acceptance was started. The itemized open boundaries are in `jobs/status/B-M1M2.md`.
 
+**2026-10-10: M3 + M4 builds landed (`1fb19ee`, with `8a3a23c` and earlier).** Every M3+M4 row group is built and Opus-checked. The full suite passes, 4137/4137. Details and verdicts are in `jobs/B-M3M4.md`. In this batch:
+- M3-041 is EXACT_SOURCE.
+- M3-042 (policy) and M3-043 (NV write side) are new.
+- M4-008 and M4-010 own the power-level and connect-log rows.
+- The JPEG decode is a port checked against an emulator oracle.
+
+**Left for M3+M4 ACCEPTED:**
+- the final Opus pass that settles the IMPLEMENTATION_GAP records;
+- the verification packets;
+- the operator's robot run for the HARDWARE_ONLY records.
+
+**Pinned:**
+- M4-027's Touch/Cliff teardown (no C# objects yet);
+- the cv::Exception catcher (M11);
+- the other OpenCV decoders for encodings 5/6/7;
+- the DAS `$data` sink;
+- the higher-layer lock callers' debug names (M5/M7/M8);
+- a stack-wide decision on channel prefixes.
+
+**Queued cleanup:** see the "Queued" lines in `jobs/B-M3M4.md`.
+
 ## Now (2026-10-02)
 
 - **Codex's answers have been checked and applied.** Codex's DEFECT findings were spot-checked in the binary and held,
