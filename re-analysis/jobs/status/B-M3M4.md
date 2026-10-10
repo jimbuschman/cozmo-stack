@@ -123,3 +123,7 @@ BLOCKED: the manager adopted build rows in B-M3M4.md, but the inventory/approved
 Remaining adopted groups and JPEG default-table/Save research are not complete. A local JPEG default-table draft is uncommitted and is not build authority. Rule 9 whole-layer verification packet is not due: same-layer work remains. Stop at the inventory blocker; no claim that this layer or adopted slice is done.
 
 Blocker/census publication: 4c8b135, pushed to main. Candidate patch uses zero-context hunks to avoid whitespace-only context in the report file; validated with git apply --reverse --unidiff-zero --check against the local candidate. Documentation-only pushes skip the suite under the normal hook. Production candidate remains uncommitted.
+
+### Operator-authorized NV candidate publication — 2026-10-10
+
+The operator explicitly directed committing/pushing the tested NV candidate now and then stopping, with the manager taking over M3/M4. This instruction supersedes the publication hold above. Publish only NvStorage.cs, its four M3DeviceTests regressions, unresolved-only M3-038/M3-040 metadata and the generated gap report. Current frozen statuses/evidence and inventories remain unchanged; no record is settled. The candidate passed all 4,003 tests before this commit; the normal push gate checks the committed content again. Existing native census and candidate patch remain the review evidence. All MISSINGs and the host dispatch limitation remain recorded above. No further adopted-group builds or JPEG research in this handoff.

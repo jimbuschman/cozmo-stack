@@ -146,6 +146,7 @@ public sealed class NvStorageComponent : IDisposable
     private readonly Queue<PendingRequest> _queue = new();
     private PendingRequest? _inFlight;
     private readonly List<Action> _onIdle = new();
+    private readonly object _idleExecution = new();
     private readonly List<string> _log = new();
 
     internal NvStorageComponent(CozmoRobot robot)
@@ -462,16 +463,41 @@ public sealed class NvStorageComponent : IDisposable
     /// <see cref="OnIdle"/> (AddOneShotOnIdleCallback, 0x00645C32). A request completion does not run it: 0x006437EE
     /// calls only SetState(0), and SetState (0x00642B0C) runs no callbacks.
     /// </summary>
+    // fidelity: M3-040
     public void ProcessOnIdle()
     {
-        Action[] run;
+        // Native dispatch has one engine executor. A competing host caller only
+        // appends; it must not invoke the same front concurrently or block a callback
+        // waiting for that caller. Monitor permits the native same-thread reentry.
+        if (!Monitor.TryEnter(_idleExecution)) return;
+        try { ProcessOnIdleCore(); }
+        finally { Monitor.Exit(_idleExecution); }
+    }
+
+    private void ProcessOnIdleCore()
+    {
         lock (_gate)
         {
             if (_inFlight is not null || _queue.Count != 0 || _onIdle.Count == 0) return;
-            run = _onIdle.ToArray();
-            _onIdle.Clear();
         }
-        foreach (var a in run) a();
+        // 00645B08..00645BAE: test NV state/queue once, invoke the front before pop,
+        // and keep draining even if a callback enqueues NV work. An exception leaves
+        // the front intact. AddOneShot can reenter this loop; there is no native guard.
+        while (true)
+        {
+            Action callback;
+            lock (_gate)
+            {
+                if (_onIdle.Count == 0) return;
+                callback = _onIdle[0];
+                _log.Add("debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ");
+            }
+            callback();
+            lock (_gate)
+            {
+                _onIdle.RemoveAt(0);
+            }
+        }
     }
 
     // fidelity: M3-026, M3-027, M3-030, M3-031
@@ -489,6 +515,7 @@ public sealed class NvStorageComponent : IDisposable
     {
         Action<NvResult>? timeoutCallback = null;
         NvResult timeoutResult = default;
+        PendingRequest? timeoutRequest = null;
         bool runOnIdle = false;
         lock (_gate)
         {
@@ -500,8 +527,7 @@ public sealed class NvStorageComponent : IDisposable
                     if (SyncedClock > deadline)
                     {
                         _log.Add($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:x}");
-                        req.Deadline = null;
-                        _inFlight = null;
+                        timeoutRequest = req;
                         timeoutCallback = req.Callback;
                         timeoutResult = new NvResult(-4, Array.Empty<byte>());
                     }
@@ -516,6 +542,9 @@ public sealed class NvStorageComponent : IDisposable
         }
         // M3-030: on timeout only the callback runs; there is no broadcast chunk and no sink fill.
         timeoutCallback?.Invoke(timeoutResult);
+        if (timeoutRequest is not null)
+            lock (_gate)
+                if (ReferenceEquals(_inFlight, timeoutRequest)) _inFlight = null;
         if (runOnIdle) ProcessOnIdle();
     }
 
@@ -526,12 +555,16 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public void OnDisconnected()
     {
-        lock (_gate) { _queue.Clear(); _inFlight = null; _onIdle.Clear(); }
+        // fidelity: M3-038
+        // 00643F22..00643F6A: idle functions, queued requests, then active request
+        // functions are destroyed without invocation. Managed references are released
+        // in that same order; backup-manager destruction remains M15 ownership.
+        lock (_gate) { _onIdle.Clear(); _queue.Clear(); _inFlight = null; }
     }
 
     private void OnMessage(RobotMessage m) { if (m is NVOpResult r) OnResult(r); }
 
-    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag);
+    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag, PendingRequest Request);
 
     private void OnResult(NVOpResult r)
     {
@@ -741,9 +774,7 @@ public sealed class NvStorageComponent : IDisposable
     {
         List<NVStorageOpResult>? broadcasts = null;
         if (req.Broadcast) broadcasts = BuildBroadcasts(req.Tag, req.Op, result, data);
-        req.Deadline = null;
-        _inFlight = null;
-        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag);
+        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag, req);
     }
 
     private void Deliver(Completion c)
@@ -760,6 +791,9 @@ public sealed class NvStorageComponent : IDisposable
         c.Callback?.Invoke(c.Result);
         if (c.Broadcasts is not null)
             foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
+        // SetState(0) is after callback/broadcast, not before: 006437EA..006437EE.
+        lock (_gate)
+            if (ReferenceEquals(_inFlight, c.Request)) _inFlight = null;
     }
 
     // fidelity: M3-030
@@ -804,7 +838,12 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public event Action<NVStorageOpResult>? NVStorageOpResultBroadcast;
 
-    public void Dispose() { _robot.Message -= OnMessage; }
+    // fidelity: M3-038
+    public void Dispose()
+    {
+        _robot.Message -= OnMessage;
+        OnDisconnected();
+    }
 }
 
 /// <summary>The terminal result of one NV request: the NVResult and the assembled bytes (empty on an error).</summary>

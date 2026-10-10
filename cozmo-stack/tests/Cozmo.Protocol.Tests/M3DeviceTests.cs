@@ -17,6 +17,105 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class M3DeviceTests
 {
+    [Fact]
+    public async Task M3_040_CompetingHostRegistrationDoesNotInvokeTheExecutingFrontTwice()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int firstCalls = 0, secondCalls = 0;
+        var execution = Task.Run(() => nv.OnIdle(() =>
+        {
+            Interlocked.Increment(ref firstCalls);
+            entered.SetResult();
+            release.Task.GetAwaiter().GetResult();
+        }));
+        await entered.Task;
+        try
+        {
+            nv.OnIdle(() => Interlocked.Increment(ref secondCalls));
+            Assert.Equal(1, firstCalls);
+            Assert.Equal(0, secondCalls);
+        }
+        finally { release.SetResult(); }
+        await execution;
+        Assert.Equal(1, firstCalls);
+        Assert.Equal(1, secondCalls);
+    }
+
+    // Adopted I5: gate once, invoke-before-pop; callbacks can enqueue work without
+    // stopping the current drain. Expectations come from 00645B08..00645BAE.
+    [Fact]
+    public void M3_040_IdleDrainKeepsItsEntryPredicateAcrossCallbacks()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var order = new List<string>();
+        int idleLogs = nv.Log.Count(l => l ==
+            "debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ");
+        nv.Read(0x80000001, _ =>
+        {
+            order.Add("terminal");
+            Assert.False(nv.IsIdle); // SetState(0) follows the terminal callback.
+        });
+        rig.Tick();
+        nv.OnIdle(() =>
+        {
+            order.Add("first");
+            nv.Read(0x80000001, null);
+            nv.OnIdle(() => order.Add("appended")); // queue gate prevents recursion
+        });
+        nv.OnIdle(() => order.Add("second"));
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1 });
+        rig.Tick();
+        Assert.Equal(new[] { "terminal", "first", "second", "appended" }, order);
+        Assert.Equal(3, nv.Log.Count(l => l ==
+            "debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ") - idleLogs);
+    }
+
+    [Fact]
+    public void M3_040_ThrowingIdleCallbackRemainsAtTheFront()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int calls = 0;
+        Assert.Throws<InvalidOperationException>(() => nv.OnIdle(() =>
+        {
+            calls++;
+            throw new InvalidOperationException("callback");
+        }));
+        Assert.Throws<InvalidOperationException>(nv.ProcessOnIdle);
+        Assert.Equal(2, calls); // 645B9A invoke precedes 645BA0 pop
+    }
+
+    [Fact]
+    public void M3_038_DisposeDropsPendingFunctionsAndUnsubscribesTheLiveReplyEntry()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int calls = 0;
+        nv.Read(0x80000001, _ => calls++);
+        rig.Tick();
+        nv.Read(0x80000001, _ => calls++);
+        nv.OnIdle(() => calls++);
+        nv.Dispose();
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1 });
+        rig.Tick();
+        nv.ProcessOnIdle();
+        Assert.Equal(0, calls);
+        Assert.True(nv.IsIdle);
+        Assert.Empty(nv.QueuedTags);
+    }
+
     // Checked Opus M3-026/M3-030 rows: 00644E3A..00644E4C and 006436DA.
     [Fact]
     public void M3_026_M3_030_CheckedReadLogsRunThroughTheLiveReplyEntry()

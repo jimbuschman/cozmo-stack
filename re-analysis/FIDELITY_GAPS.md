@@ -82,7 +82,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: 0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
-* outstanding: S1: NV owner/delete boundary 0x005112D6..0x005112E4; recipient identity 0x0050FD8C..0x0050FD90. M3-035 remains specifically pending-read callback discard. Virtual delete descendants UNKNOWN. Source triage S1. Source: re-analysis/research/20261006-M1M2-missing-triage.md.
+* outstanding: built, awaiting strong verification: 2026-10-10 NV lifetime batch, adopted N1-N8 owner boundary. Dispose unsubscribes before dropping idle/queued/active callbacks without invocation; retained host removal clears the same references. Tests drive live disposal/reply and discard. Call accounting: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: persistent saved command +0xE8 is the subsequent adopted N build; backup manager destruction 0x00643F48 remains M15; native captured object final-owner bodies remain their producer layers. Manager must refresh frozen RECOVERABLE_GAP inventory/status before worker status conversion.
 
 **M3-039 — SDK cube-sleep recipient** (live path)
 
@@ -100,7 +100,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Current callback candidate not fully compared.
 * best authority: libcozmoEngine.so 3.4.0-1204 NV queue and Robot lambda.
 * evidence: Registration 0x00528A5A..0x00528A6E; idle invocation boundary 0x00645C20..0x00645C32 (triage N1). M1-041 retains the ready-byte store/log body at 0x0052C3A6..0x0052C3B6.
-* outstanding: Recover NV queue-idle predicate/order and callback invocation scheduling. The callback body that stores/logs ready is owned by M1-041; M3-035 separately owns disconnect/destruction callback discard.
+* outstanding: built, awaiting strong verification: 2026-10-10 NV lifetime batch. Adopted I1-I9 from 20261009-M3M4-remaining-rows.md: OnIdle appends then synchronously dispatches; idle predicate checked once; exact debug log precedes front invocation; pop follows invocation; queued NV work does not stop an entered drain; exceptions retain the front. Completion only becomes idle after terminal callback/broadcast. Call accounting and regressions: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: manager must refresh the frozen RECOVERABLE_GAP inventory/status to IMPLEMENTATION_GAP; no worker settlement or snapshot rewrite. Captured callback bodies stay in their owning records (M1-041 ready store/log).
 
 **M3-041 — IMU diagnostic chunk reception, file logging and stream close on robot removal** (live path)
 
