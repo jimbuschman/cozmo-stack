@@ -166,3 +166,14 @@ in M3-018's `unresolved` with this evidence. M3-018's decode and IsColor parts s
 1. The JPEG decode port (M3-001/M3-018 decode) from the J rows with their corrections, plus the default-table row.
 2. Its acceptance oracle: the shipped imdecode, cvtColor and resize running under `re-analysis/tools/emu/` on real
    camera frames plus a synthetic corpus that reaches every J branch. Mats must be byte-identical.
+
+## M3-041 L30 (manager, 2026-10-10)
+
+The IMU logger's number formatter is **shipped** inside libc++_shared.so. `0x82528` is a vsnprintf wrapper, and
+`0x813B0` a full printf core. An integer prints as `%ld`; a float as `%.*g` at the stream precision (default 6). It
+reads no locale (the decimal point is a literal '.'), and it calls out to the phone only for leaf predicates.
+
+**Plan:** reproduce `%ld` and `%.*g` exactly. Correctly rounded digit generation, round-half-even on the exact binary
+value, the `%g` e/f switch (`P > e >= -4`), trailing-zero stripping and a two-digit signed exponent. **Accept it
+against an emulator oracle** of the shipped 0x82528, the way the M1-029 converter was, on f32-widened IMU values. Until
+that passes, L30 stays RECOVERABLE_GAP.

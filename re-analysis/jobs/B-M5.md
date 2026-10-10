@@ -80,3 +80,34 @@ over the row.
 | M5-038 | the factory is buildable; the record stays RECOVERABLE_GAP |
 | M5-036 | stays HARDWARE_ONLY |
 | M5-039 | blocked on extraction |
+
+## Extractions checked (manager, 2026-10-10): `research/20261010-m5-g3-m5039-l30-rows.md`
+
+**G3, adopted.** The manager re-read the asDouble dispatch at 0x008E9A38: type byte +8, `bhi` above 5 throws, and a
+`tbb` table for 0–5. The caller always calls `asDouble(CooldownTime_Sec)`.
+| Value type | Result |
+| --- | --- |
+| null / missing key | 0.0 |
+| int | `l2d` |
+| uint | `ul2d` |
+| real | the stored double |
+| bool | 1.0 or 0.0 |
+| string, array, object | `Json::LogicError("Value is not convertible to double.")` |
+
+- The throw is uncaught up to `LoadNonConfigData`; above that is UNKNOWN. **Parked:** where it's finally caught. It
+  isn't reachable with the shipped animation-group files, which use numbers.
+- Correct M5-011 and M5-014's evidence: the default comes from the null Value through asDouble (0x008E9A82), not from
+  the dead constant at 0x0058C868.
+- The mood == 3 fall-through at 0x0058C5DA isn't covered. Leave it as a RECOVERABLE_GAP for later.
+
+**M5-039, adopted with a manager correction.**
+- **The gate:** `Robot::Update` reads +0x29 (0x0051410C) and +0x2A (0x00514112). When both are non-zero it calls
+  `AnimationStreamer::Update(robot+0x60, robot)` (0x0057CE5C); otherwise it skips the call silently. A non-zero result
+  logs "Robot %d had an animation streamer failure (%d)" and Update continues.
+- **The precondition:** +0x34E (0x00513C5C, "Waiting for first full robot state to be handled").
+- **The writers:** +0x29 is written by the ctor, `SyncTime` (0x00515228) and `HandleSyncTimeAck` (0x005366AC). +0x2A
+  is written by the on-idle lambda (0x0052C3A6).
+- **The extractor's "no caller of ProcessOnIdleCallbacks" is wrong.** The manager re-read both callers: NV `Update`
+  tail-calls it at 0x006456EC, and `AddOneShotOnIdleCallback` at 0x00645C32, both through the veneer 0x008CCE6C. This
+  is the M1-041 path. The flag is reachable.
+- Fix M5-039's effect text: the gate is polled every Update. Narrow its evidence to the gate span.
