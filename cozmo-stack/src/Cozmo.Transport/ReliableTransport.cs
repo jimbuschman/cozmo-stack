@@ -312,6 +312,9 @@ public sealed class ReliableTransport : IDisposable
         // G4.1: the RCM ctor registers its UDP transport with WifiUtil for the RCM's lifetime; this stack raises
         // the same handler (G4.4) from the host's address-change notification (policy M1-037, D5), subscribed
         // here and unsubscribed by Dispose.
+        // fidelity: M1-049
+        // The original's Android bind/unbind trigger (WifiUtil, JNI) is app-layer (AGENTS.md "Scope: the app boundary");
+        // the host's address-change notification stands in for it and drives M1-023's engine-side reset flag.
         _networkChange = networkChange ?? HostNetworkChange.Host;
         _networkChange.Subscribe(OnNetworkAddressChanged);
 
@@ -451,6 +454,8 @@ public sealed class ReliableTransport : IDisposable
         catch (InvalidOperationException) { Safe(a); }   // adding completed during shutdown
     }
 
+    // fidelity: M1-034
+    // Handler isolation, an operator-approved departure: a subscriber's exception is caught and logged; the original aborts.
     /// <summary>
     /// Raises an event, isolating its subscribers from one another.
     ///

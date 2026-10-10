@@ -63,12 +63,14 @@
       "name": "UDP transport and reliability",
       "milestone": "M1",
       "source_investigation_exhausted": true,
-      "implementation_fidelity_complete": false,
+      "implementation_fidelity_complete": true,
       "review": {
-        "state": "INVENTORY_APPROVED",
+        "state": "ACCEPTED",
         "inventory": "re-analysis/inventory/M1-transport.md",
         "approved": "2026-10-09",
-        "snapshot": "re-analysis/inventory/M1-transport.approved.json"
+        "snapshot": "re-analysis/inventory/M1-transport.approved.json",
+        "accepted_commit": "8ff5546",
+        "accepted": "2026-10-09"
       }
     },
     {

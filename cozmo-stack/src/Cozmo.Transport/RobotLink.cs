@@ -12,6 +12,10 @@ namespace Cozmo.Transport;
 ///  engine -> GetManufacturingInfo(0x25) → robot MfgId(0xED);
 ///  engine -> SyncTime(0x4B) → robot SyncTimeAck(0xC2) and RobotState(0xF0) streaming begins (~30 Hz).
 /// </summary>
+// fidelity: M1-014, M1-033, M1-036
+// M1-014: the host threads that carry the engine's executor topology (the topology and dispatch order are M1-047/M1-024).
+// M1-033: the robot accepts packed frames of types 7, 8 and 9 (hardware-verified, bundle 20261009-112625-M1-PACKED-ZERO).
+// M1-036: no crash reporter; the original's Breakpad reporting is an operator-approved departure.
 public sealed class RobotLink : IDisposable
 {
     public ReliableTransport Transport { get; }

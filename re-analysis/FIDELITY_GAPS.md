@@ -24,7 +24,7 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | no |
+| M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 41 | 4 | 15 | 0 | 3 | no | no |
 | M4-control — Motion, sensors, lights and cubes | 31 | 6 | 10 | 0 | 3 | no | no |
@@ -52,7 +52,7 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 39 | 0 | 0 | 3 |
+| M1-transport | ACCEPTED | 39 | 0 | 0 | 3 |
 | M2-protocol | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 14 | 0 | 0 | 0 |
 | M4-control | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |

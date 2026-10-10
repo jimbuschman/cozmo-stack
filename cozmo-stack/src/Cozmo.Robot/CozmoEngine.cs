@@ -1876,6 +1876,10 @@ public sealed partial class CozmoEngine : IDisposable
         if (handled is not null) foreach (var t in handled.GetInvocationList()) Isolated((Action)t);
     });
 
+    // fidelity: M1-051, M1-052
+    // SDK mode is not supported (AGENTS.md "Scope: the app boundary"): it is never entered here, so the engine's SDK
+    // entry/state writers (M1-051) and SDK connection callbacks (M1-052) are unreachable. The robot-side ExitSdkMode
+    // path (M1-025) stays exact.
     // fidelity: M1-025
     /// <summary>
     /// This stack's disconnect request: DisconnectCurrent on the engine thread (B33, CC29). The type 3 is queued on

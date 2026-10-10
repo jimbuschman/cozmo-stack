@@ -12,6 +12,8 @@ namespace Cozmo.Transport;
 ///
 /// Nesting is safe: Windows reference-counts the requests, and each instance ends exactly the one it began.
 /// </summary>
+// fidelity: M1-013
+// The Windows timer primitive that realises the engine's 2 ms and 60 ms periods (host policy; the periods themselves are engine records).
 public readonly struct HighResolutionTimer : IDisposable
 {
     [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
