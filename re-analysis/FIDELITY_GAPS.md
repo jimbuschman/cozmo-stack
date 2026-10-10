@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **468 records** over 16 subsystems.
+Manifest of **473 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 145 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
-| EQUIVALENT_IMPLEMENTATION | 2 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 39 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
+| RECOVERABLE_GAP | 43 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 237 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 34 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 9 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -26,19 +26,19 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
-| M3-device — Camera, display and audio device layer | 43 | 0 | 17 | 0 | 3 | yes | no |
-| M4-control — Motion, sensors, lights and cubes | 31 | 0 | 15 | 0 | 3 | yes | no |
+| M3-device — Camera, display and audio device layer | 44 | 1 | 17 | 0 | 3 | no | no |
+| M4-control — Motion, sensors, lights and cubes | 32 | 0 | 15 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 39 | 3 | 13 | 0 | 1 | no | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 26 | 0 | 23 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 24 | 2 | 17 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 18 | 4 | 13 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 28 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 14 | 1 | 10 | 0 | 0 | no | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 56 | 6 | 34 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 58 | 8 | 34 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 40 | 8 | 21 | 0 | 0 | no | no |
 | M13-navigation — Planning, charger and block configurations | 29 | 3 | 23 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 32 | 6 | 22 | 0 | 0 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 33 | 7 | 22 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -55,7 +55,7 @@ status.
 | M1-transport | ACCEPTED | 39 | 0 | 0 | 3 |
 | M2-protocol | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
-| M4-control | INVENTORY_APPROVED | 10 | 0 | 0 | 0 |
+| M4-control | INVENTORY_APPROVED | 11 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 21 | 0 | 0 | 0 |
 | M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |
@@ -72,6 +72,17 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
+
+### M3-device — Camera, display and audio device layer
+
+**M3-044 — CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
+* effect: The stack sends EnableColorImages and an ImageRequest when a tool starts the camera; if the engine does not, the robot's camera state differs.
+* rests on: Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md "Settling pass") (Opus NEEDS EXTRACTION, 2026-09-30; M3-023).
+* best authority: libcozmoEngine.so 3.4.0-1204 camera start path.
+* evidence: cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders.
+* outstanding: RECOVERABLE_GAP: find what the engine sends when the camera starts (callers of the EnableColorImages and ImageRequest senders) and whether StartCamera has any engine counterpart; otherwise it becomes a COMPATIBILITY_POLICY for the tools.
 
 ### M5-animation — Animation clips, scheduler and face
 
@@ -274,6 +285,24 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: Camera auto/exposure/gain settings 0x0065DEDE..0x0065DEFC; color false 0x0065DF14; undefine markers 0x0065DF32; delete custom objects 0x0065DF4E (triage E4).
 * outstanding: Recover concrete camera/custom-world handlers and effects in shipped order.
 
+**M11-057 — LimitedExposure: the vision system's reader of the exposure limit (M4-017 E9)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: The exposure limit M4-017 sets has no reader in the stack, so it changes nothing downstream.
+* rests on: Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md "Settling pass"); M11-034 covers only the schedule.
+* best authority: libcozmoEngine.so 3.4.0-1204 VisionSystem.
+* evidence: M4-017 row E9 (re-analysis/jobs/B-M3M4.md) names the LimitedExposure reader in VisionSystem; M11-034's evidence covers the schedule only.
+* outstanding: RECOVERABLE_GAP: extract the reader and its effect.
+
+**M11-058 — cv::Exception from the image decode: where it is caught and what happens to the frame** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: A decode that throws (e.g. an empty JPEG vector) is reported as a failed decode by the stack; the engine does not catch it in DecodeImageHelper, so the real outcome is decided higher up.
+* rests on: Named by the JPEG Opus checks (2026-10-10) and the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md "Settling pass").
+* best authority: libcozmoEngine.so 3.4.0-1204 VisionComponent / image-chunk handler.
+* evidence: DecodeImageHelper's imdecode call site 0x004F28C6 has only a cleanup landing pad (LSDA call site 0x004F28BC..0x004F28CA, lp 0x004F2EA0) ending in _Unwind_Resume (re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md O9).
+* outstanding: RECOVERABLE_GAP: read the exidx/LSDA tables of each caller up to the image-chunk handler for a cv::Exception or catch-all, and what the catcher does.
+
 ### M12-manipulation — Docking, carrying and pre-action poses
 
 **M12-024 — DrivingAnimationHandler PlayStartAnim / PlayEndAnim** (live path)
@@ -443,6 +472,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204 SDK lifecycle.
 * evidence: Enter 0x0065E104..0x0065E224; Exit 0x0065E2A4..0x0065E43E; UI exit 0x00661546..0x00661566; fields UNKNOWN (triage E8).
 * outstanding: Recover telemetry field construction, producer gates and ordering. M15-028 is only Robot lifetime telemetry/context.
+
+**M15-033 — RobotDataBackupManager: NV write backup, wipe, destruction and the backup reads' sink** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: NV writes, erases and wipes are mirrored into the engine's robot-data backup; without it the backup and its restore path differ.
+* rests on: Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md "Settling pass"); M3-031, M3-034, M3-038 and M3-043 defer their backup calls here. Bodies unread.
+* best authority: libcozmoEngine.so 3.4.0-1204 RobotDataBackupManager.
+* evidence: Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass).
+* outstanding: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -2663,4 +2701,5 @@ Each of these is a question already answered. The original's behaviour is establ
 | M3-042 | M3-device | COMPATIBILITY_POLICY | Host persistent directory and stat mapping for the IMU diagnostic logger | libcozmoEngine.so 3.4.0-1204 IMU handlers (M3-041 rows L5/L6) and FileUtils (rows F8.1/F8.2). |
 | M4-029 | M4-control | COMPATIBILITY_POLICY | SDK light-state and lift-power recipients | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M4-030 | M4-control | COMPATIBILITY_POLICY | StopRobotForSdk action/control recipient | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
+| M4-032 | M4-control | EQUIVALENT_IMPLEMENTATION | Phone printf rendering of %f / %.1f / %.2f in engine logs | Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs. |
 

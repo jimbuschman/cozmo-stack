@@ -219,7 +219,8 @@ public class M4ControlTests
         rig.Data(s0); rig.Tick();
         Assert.True(rig.Engine.Robot.FirstFullStateHandled);
         Assert.Null(rig.Engine.Robot.AcceptedState);                    // s0 was rejected at the origin check
-        Assert.True(rig.Logged("Received RobotState with originID 0"));
+        // 0x005132C8 key, 0xBE686C "Received RobotState with originID=%u, only %zu pose origins available" (the list holds origin 1)
+        Assert.True(rig.Logged("warning: Robot.UpdateFullRobotState.BadOriginID: Received RobotState with originID=0, only 1 pose origins available"));
         var s2 = rig.MakeState(origin: 2);
         rig.Data(s2); rig.Tick();
         Assert.Null(rig.Engine.Robot.AcceptedState);                    // s2 was rejected at the origin check
@@ -701,6 +702,65 @@ public class M4ControlTests
         // C5 (0x00549104..0x0054913C): 32 only when strictly nearer; at 62 mm, halfway, it is 92
         Assert.Equal(92f, CozmoMotion.NegativeHeightTarget(62f));
         Assert.Equal(32f, CozmoMotion.NegativeHeightTarget(61.99f));
+    }
+
+    /// <summary>
+    /// M4-002 / M4-016, MoveLiftToHeightAction::Init (0x0054903C..0x005491D2): the clamp, the InvalidHeight warning and the
+    /// preset choice happen when the action starts, with the lift height read then; the warning is "%f mm. Clipping to be in
+    /// range." (0x00549398) with the requested height; a NaN height is stored by the second clamp as 32.
+    /// </summary>
+    [Fact]
+    public async Task M4_002_Init_TheLiftClampWarningAndPresetChoiceRunAtInitWithTheHeightReadThen()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        async Task<float> Sent(float ask, float liftAngleAtInit)
+        {
+            rig.State(liftAngle: 0.6f);                              // 82.3 mm when the action is queued
+            int mark = rig.Mark();
+            var pending = rig.Robot.Motion.SetLiftHeightAsync(ask, timeout: TimeSpan.FromMilliseconds(1), requireCalibration: false);
+            rig.State(liftAngle: liftAngleAtInit);                   // the height Init reads, before the tick that runs Init
+            rig.Tick();
+            var l = Assert.IsType<SetLiftHeight>(rig.SentSince(mark).Single(m => m is SetLiftHeight));
+            rig.Tick();
+            await pending;
+            return l.HeightMm;
+        }
+        // negative: the nearer preset to the height at Init (-0.1 rad = 38.4 mm: 32), not at queueing (82.3 mm: 92)
+        Assert.Equal(32f, await Sent(-1f, -0.1f));
+        Assert.False(rig.Logged("InvalidHeight"));
+        // 0x00549398: "%f mm. Clipping to be in range." with the requested height
+        Assert.Equal(32f, await Sent(10f, 0.6f));
+        Assert.True(rig.Logged("warning: MoveLiftToHeightAction.Init.InvalidHeight: 10.000000 mm. Clipping to be in range."));
+        Assert.Equal(92f, await Sent(150.5f, 0.6f));
+        Assert.True(rig.Logged("warning: MoveLiftToHeightAction.Init.InvalidHeight: 150.500000 mm. Clipping to be in range."));
+        // 0x0054918E..0x005491D2: the second clamp stores NaN as 32 (no warning: the first clamp's compares are unordered)
+        int warnings = rig.Log.Count(l => l.Contains("InvalidHeight"));
+        Assert.Equal(32f, await Sent(float.NaN, 0.6f));
+        Assert.Equal(warnings, rig.Log.Count(l => l.Contains("InvalidHeight")));
+        // in range is untouched
+        Assert.Equal(60f, await Sent(60f, 0.6f));
+    }
+
+    /// <summary>
+    /// M4-031: a LockTracks caller that supplies no debug name gets one visible MISSING line per calling file (the engine passes a
+    /// name the inventory does not give for these M5/M7/M8 callers); a supplied name logs nothing.
+    /// </summary>
+    [Fact]
+    public void M4_031_AMissingLockTracksDebugNameIsReportedOncePerCallingFile()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        var m = rig.Robot.Motion;
+        int Count(string file) { lock (rig.Log) return rig.Log.Count(l => l.StartsWith("MISSING: MovementComponent.LockTracks debug name not supplied by " + file)); }
+        m.LockTracks(1, "A");
+        m.LockTracks(1, "B");
+        Assert.Equal(1, Count("M4ControlTests.cs"));
+        m.LockTracks(1, "C", null, "X/Other.cs");
+        m.LockTracks(1, "D", null, "X/Other.cs");
+        Assert.Equal(1, Count("Other.cs"));
+        m.LockTracks(1, "E", "named", "X/Third.cs");
+        Assert.Equal(0, Count("Third.cs"));
     }
 
     /// <summary>M2-015 (settled by M4 MD1): the MessageExtras defaults are the app's, head 10/20 and lift 10/20, duration 0.</summary>

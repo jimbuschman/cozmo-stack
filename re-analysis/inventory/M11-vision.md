@@ -1383,3 +1383,11 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 ## Manager correction (2026-10-09): transferred recipients
 
 M11-053 adds P1 tread-boundary Delocalize argument (0x00512B78..0x00512BA6; 0x00510A24..0x00510D98). M11-055 owns S7 vision/world/pose/map boundaries (0x0051115E..0x005111AC; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE). M11-056 owns SDK camera/custom-world messages (0x0065DEDE..0x0065DF4E). Source: 20261006-M1M2-missing-triage.md P1/S7/E4.
+
+
+## Added from the M3+M4 settling pass (manager, 2026-10-10)
+
+| Record | Status | Evidence |
+| --- | --- | --- |
+| M11-057 | RECOVERABLE_GAP: the LimitedExposure reader (M4-017 E9). | Named by the M3+M4 settling pass (2026-10-10). |
+| M11-058 | RECOVERABLE_GAP: the catcher of a cv::Exception from the image decode (imdecode call site 0x004F28C6 has a cleanup-only landing pad). | JPEG Opus checks and the settling pass (2026-10-10). |

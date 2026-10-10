@@ -2551,6 +2551,88 @@ public class M3DeviceTests
     }
 
     /// <summary>
+    /// M3-025/M3-026/M3-028 acceptance gate (0x006430BA..0x006430CE): a read reply with +0x78 == 0 (no read dispatched since the last
+    /// SetState(0)) or with a base tag != +0x50 logs the sWarningF at 0x0064318E, format 0xBFB8B6 "Tag recvd: 0x%x, BaseTag: 0x%x,
+    /// ExpectedBaseTag: 0x%x (pending %d), BlobSize: %u, result: %s", and changes nothing; a matching reply is accepted.
+    /// </summary>
+    [Fact]
+    public void M3_028_TheReadReplyGateWarnsWithTheEnginesTextAndChangesNothing()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int callbacks = 0;
+        NvResult? got = null;
+        nv.Read(0x182000, r => { callbacks++; got = r; });
+        rig.Tick();
+        // base tag != +0x50 (0x182000), +0x78 = 1
+        rig.Data(new NVOpResult { Tag = 0x194000, Op = 0, Result = 0, Length = 0, Data = new byte[3] });
+        rig.Tick();
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x194000, BaseTag: 0x194000, " +
+                        "ExpectedBaseTag: 0x182000 (pending 1), BlobSize: 3, result: NV_OKAY", nv.Log);
+        Assert.Equal(0, callbacks);
+        Assert.Equal(0x182000u, nv.InFlightTag);                                  // nothing changed: still in flight
+        // the matching reply is accepted (a header-less factory-size blob is not needed: a valid header)
+        var blob = new byte[20];
+        NvHeader(4, 0x435A4D4F).CopyTo(blob, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = blob });
+        rig.Tick();
+        Assert.Equal(1, callbacks);
+        Assert.Equal(4, got!.Value.Data.Length);
+        // +0x78 is 0 again (SetState(0)); +0x50 stays 0x182000
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = blob });
+        rig.Tick();
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x182000, BaseTag: 0x182000, " +
+                        "ExpectedBaseTag: 0x182000 (pending 0), BlobSize: 20, result: NV_OKAY", nv.Log);
+        Assert.Equal(1, callbacks);
+    }
+
+    /// <summary>
+    /// M3-025/M3-028: +0x50 starts at 0x198000 in the constructor (0x00642872, str at 0x0064289E), so after the component is
+    /// rebuilt for the next robot a stray read reply's warning names ExpectedBaseTag 0x198000 (pending 0), not the last robot's tag.
+    /// </summary>
+    [Fact]
+    public void M3_028_ARebuiltComponentExpectsTheConstructorsBaseTag()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        nv.OnDisconnected();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[3] });
+        rig.Tick();
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x182000, BaseTag: 0x182000, " +
+                        "ExpectedBaseTag: 0x198000 (pending 0), BlobSize: 3, result: NV_OKAY", nv.Log);
+    }
+
+    /// <summary>
+    /// M3-028: the %x renders (lowercase, no zero padding) of TooLittleReadData (0xBFBB3F "Tag 0x%x, Got %u, Expected %u"),
+    /// InvalidDataSize (0xBFBA1C "Tag 0x%x, size %u, maxSizeAllowed %u") and ReadingRestOfData (0xBFBABA "Tag: 0x%x, TotalSize: %u").
+    /// </summary>
+    [Fact]
+    public void M3_028_TheHeaderLogsRenderTheTagAsUnpaddedLowercaseHex()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        void ReadWith(byte[] data)
+        {
+            nv.Read(0x182000, _ => { });
+            rig.Tick();
+            rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = data });
+            rig.Tick();
+        }
+        ReadWith(new byte[8]);
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.TooLittleReadData: Tag 0x182000, Got 8, Expected 1024", nv.Log);
+        ReadWith(NvHeader(0xFFFFFF, 0x435A4D4F));
+        Assert.Contains(nv.Log, l => l.StartsWith("warning: NVStorageComponent.HandleNVOpResult.InvalidDataSize: Tag 0x182000, size 16777215, maxSizeAllowed "));
+        ReadWith(NvHeader(0x800, 0x435A4D4F));
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ReadingRestOfData: Tag: 0x182000, TotalSize: 2048", nv.Log);
+    }
+
+    /// <summary>
     /// M3-028/M3-029: for a non-factory read whose header total fits in the first blob, the delivered entry is
     /// exactly the header total (the resize at 0x643922 targets the reply vector, so reassembly copies total at
     /// offset 0), with the 16-byte header skipped and no 16-byte zero tail.
@@ -3346,6 +3428,43 @@ public class M3DeviceTests
         Assert.True(ignoring >= 0, "no IgnoringDistCoeffs line");
         Assert.True(recvd < ignoring, $"Recvd ({recvd}) must precede IgnoringDistCoeffs ({ignoring})");
         Assert.Contains("0.01", logs[recvd]);                   // the received distortion, before the <=6 zeroing
+    }
+
+    /// <summary>
+    /// M3-022/1j, the callback's four logs per 0x0065AB68..0x0065AFE4: Failed has the empty format (0xBE3F00);
+    /// SizeMismatch is "Expected %zu, got %zu" (0x0065AFE4: expected 56, then the blob size); Recvd is the
+    /// channel-Unnamed "Received new %dx%d camera calibration from robot. (fx: %f, fy: %f, cx: %f, cy: %f, distCoeffs: %s)"
+    /// (0xBFE313) with "[a, b, ..., h]" (0x0065B014/0x0065B018/0x0065B01C); IgnoringDistCoeffs has channel Unnamed and the
+    /// empty format. Expected texts are written out from those rows (cols 320, rows 240, floats %f six decimals, %g).
+    /// </summary>
+    [Theory]
+    [InlineData(-1, 56, "warning: VisionComponent.ReadCameraCalibration.Failed")]
+    [InlineData(0, 40, "warning: VisionComponent.ReadCameraCalibration.SizeMismatch: Expected 56, got 40")]
+    public void M3_022_1j_TheFailedAndSizeMismatchLogsAreTheEnginesTexts(int result, int size, string expected)
+    {
+        using var rig = new Rig();
+        var logs = new List<string>();
+        rig.Robot.CameraSettings.Log += logs.Add;
+        rig.ToSuccess();
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = (sbyte)result, Length = 0, Data = Calibration56()[..size] });
+        rig.Tick();
+        Assert.Contains(expected, logs);
+    }
+
+    [Fact]
+    public void M3_022_1j_TheRecvdAndIgnoringLogsAreTheEnginesTexts()
+    {
+        using var rig = new Rig();
+        var logs = new List<string>();
+        rig.Robot.CameraSettings.Log += logs.Add;
+        rig.ToSuccess(bodyHw: 4);
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();
+        Assert.Contains("info: [Unnamed] VisionComponent.ReadCameraCalibration.Recvd: Received new 320x240 camera calibration from robot. " +
+            "(fx: 290.000000, fy: 291.000000, cx: 160.000000, cy: 120.000000, distCoeffs: [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08])", logs);
+        Assert.Contains("info: [Unnamed] VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs", logs);
     }
 
     private static DefaultCameraParams Defaults(float maxGain, float gain, ushort min, ushort max) => new()

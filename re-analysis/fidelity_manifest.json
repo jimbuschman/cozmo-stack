@@ -91,7 +91,7 @@
       "id": "M3-device",
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
-      "source_investigation_exhausted": true,
+      "source_investigation_exhausted": false,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -200,7 +200,7 @@
       "review": {
         "inventory": "re-analysis/inventory/M11-vision.md",
         "state": "INVENTORY_APPROVED",
-        "approved": "2026-10-09",
+        "approved": "2026-10-10",
         "snapshot": "re-analysis/inventory/M11-vision.approved.json"
       }
     },
@@ -252,7 +252,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-09",
+        "approved": "2026-10-10",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -9312,6 +9312,23 @@
       "test": "M3DeviceTests NV write-side cases (to add)."
     },
     {
+      "id": "M3-044",
+      "subsystem": "M3-device",
+      "title": "CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "The stack sends EnableColorImages and an ImageRequest when a tool starts the camera; if the engine does not, the robot's camera state differs.",
+      "provenance": "Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\") (Opus NEEDS EXTRACTION, 2026-09-30; M3-023).",
+      "authority": "libcozmoEngine.so 3.4.0-1204 camera start path.",
+      "evidence": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders."
+      ],
+      "unresolved": "RECOVERABLE_GAP: find what the engine sends when the camera starts (callers of the EnableColorImages and ImageRequest senders) and whether StartCamera has any engine counterpart; otherwise it becomes a COMPATIBILITY_POLICY for the tools.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
       "id": "M4-029",
       "subsystem": "M4-control",
       "title": "SDK light-state and lift-power recipients",
@@ -9361,6 +9378,23 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests PrintLockState diagnostic case after extraction."
+    },
+    {
+      "id": "M4-032",
+      "subsystem": "M4-control",
+      "title": "Phone printf rendering of %f / %.1f / %.2f in engine logs",
+      "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "effect": "Engine log numbers printed with %f-family formats; a different rounding of ties or of inf/nan changes the log text.",
+      "provenance": "Manager ruling (2026-10-10) on the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\"): the phone's bionic printf is a system library that does not ship, so it may be EQUIVALENT_IMPLEMENTATION.",
+      "authority": "Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs.",
+      "evidence": [
+        "The engine passes widened doubles to vsnprintf through sChanneledInfoF/sWarningF (e.g. M4-016 InvalidHeight 0x00549398; M4-001 formats 0xBEA11C/0xBEA169)."
+      ],
+      "unresolved": "EQUIVALENT_IMPLEMENTATION: .NET fixed-point formatting with the invariant culture (correctly rounded on the exact binary value, as bionic's printf) stands for %f/%.Nf; inf/nan render as \"inf\"/\"nan\". NULL %s renders \"(null)\" (bionic). The packaged libc++ formatter (ostream numbers) is not this record: it ships and is ported exactly (M3-041 L30).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M5-039",
@@ -9431,6 +9465,40 @@
       "test": "M11 SDK reset recipient cases after extraction."
     },
     {
+      "id": "M11-057",
+      "subsystem": "M11-vision",
+      "title": "LimitedExposure: the vision system's reader of the exposure limit (M4-017 E9)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "The exposure limit M4-017 sets has no reader in the stack, so it changes nothing downstream.",
+      "provenance": "Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\"); M11-034 covers only the schedule.",
+      "authority": "libcozmoEngine.so 3.4.0-1204 VisionSystem.",
+      "evidence": [
+        "M4-017 row E9 (re-analysis/jobs/B-M3M4.md) names the LimitedExposure reader in VisionSystem; M11-034's evidence covers the schedule only."
+      ],
+      "unresolved": "RECOVERABLE_GAP: extract the reader and its effect.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-058",
+      "subsystem": "M11-vision",
+      "title": "cv::Exception from the image decode: where it is caught and what happens to the frame",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "A decode that throws (e.g. an empty JPEG vector) is reported as a failed decode by the stack; the engine does not catch it in DecodeImageHelper, so the real outcome is decided higher up.",
+      "provenance": "Named by the JPEG Opus checks (2026-10-10) and the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\").",
+      "authority": "libcozmoEngine.so 3.4.0-1204 VisionComponent / image-chunk handler.",
+      "evidence": [
+        "DecodeImageHelper's imdecode call site 0x004F28C6 has only a cleanup landing pad (LSDA call site 0x004F28BC..0x004F28CA, lp 0x004F2EA0) ending in _Unwind_Resume (re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md O9)."
+      ],
+      "unresolved": "RECOVERABLE_GAP: read the exidx/LSDA tables of each caller up to the image-chunk handler for a cv::Exception or catch-all, and what the catcher does.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
       "id": "M15-029",
       "subsystem": "M15-freeplay",
       "title": "Repair need mutation and random part-damage contract",
@@ -9497,6 +9565,23 @@
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests SDK telemetry field cases after extraction."
+    },
+    {
+      "id": "M15-033",
+      "subsystem": "M15-freeplay",
+      "title": "RobotDataBackupManager: NV write backup, wipe, destruction and the backup reads' sink",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "NV writes, erases and wipes are mirrored into the engine's robot-data backup; without it the backup and its restore path differ.",
+      "provenance": "Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\"); M3-031, M3-034, M3-038 and M3-043 defer their backup calls here. Bodies unread.",
+      "authority": "libcozmoEngine.so 3.4.0-1204 RobotDataBackupManager.",
+      "evidence": [
+        "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass)."
+      ],
+      "unresolved": "RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     }
   ]
 }

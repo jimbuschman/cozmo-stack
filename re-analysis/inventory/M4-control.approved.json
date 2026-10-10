@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "3f9f03e6c3ed609eb17c7f489d2bc1c481860baecc6049ede3d19a6c35cd2a75",
+  "inventory_sha256": "82649395477767c432fb27c6e93e3750683f6e2c5bb5556e2321bde9db586085",
   "records": {
     "M4-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -397,6 +397,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 PrintLockState.",
       "evidence": [
         "PrintLockState 0x006410D8..0x006413CA; lock/unlock caller 0x0063FF02..0x0063FF24 (triage E9)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-032": {
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "title": "Phone printf rendering of %f / %.1f / %.2f in engine logs",
+      "authority": "Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs.",
+      "evidence": [
+        "The engine passes widened doubles to vsnprintf through sChanneledInfoF/sWarningF (e.g. M4-016 InvalidHeight 0x00549398; M4-001 formats 0xBEA11C/0xBEA169)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -376,3 +376,17 @@ The one blocking item was the unowned empty-payload line. The manager made it pa
 - a phone-printf boundary for `%f`/`%.1f` (M4-001, M4-016).
 
 **M4-010:** live-entry tests for the full connection claim.
+
+**Fix round S1 (Opus, 2026-10-10): code supported, apart from three items the manager fixed.**
+- TooLittleReadData's Expected is the literal 1024 (0x00643440), not 16, and its test was circular.
+- +0x50 starts at 0x198000 (0x00642872/0x0064289E) and is reset when the component is rebuilt; there is a new test.
+- InvalidHeader is built from its traced row: debug, channel NVStorage, key 0xBFB993, format 0xBFB9C5 (manager re-read the strings).
+- The invented fallback at NvStorage.cs:1118 is now "(null)".
+
+The full suite passes, 4137 → 4145.
+
+**Queued:**
+- empty-format rendering differs across files ("Key" vs "Key: "), part of the stack-wide channel-prefix decision;
+- the InvalidDataSize test asserts a prefix (it could assert 4096);
+- ReadAsync's invented "no terminal NVOpResult" line (NvStorage.cs:609);
+- the lift variability step is unbuilt; every live caller passes 0 (0x0054914A).

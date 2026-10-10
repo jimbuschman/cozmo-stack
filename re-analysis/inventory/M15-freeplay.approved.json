@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "cc258bcdd354d1d787a83eefbf4aa38def95f4b6d44ba880acf6ff911a84874d",
+  "inventory_sha256": "04b23e5a21883a8fe4fba4fd605ec5d1f706e07c81ca9e12ed54038bfba0a16e",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -421,6 +421,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 SDK lifecycle.",
       "evidence": [
         "Enter 0x0065E104..0x0065E224; Exit 0x0065E2A4..0x0065E43E; UI exit 0x00661546..0x00661566; fields UNKNOWN (triage E8)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-033": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotDataBackupManager: NV write backup, wipe, destruction and the backup reads' sink",
+      "authority": "libcozmoEngine.so 3.4.0-1204 RobotDataBackupManager.",
+      "evidence": [
+        "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass)."
       ],
       "live_path": true,
       "hardware_required": false

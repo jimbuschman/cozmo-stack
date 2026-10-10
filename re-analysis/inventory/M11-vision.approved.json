@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "cce6f799fa069a23990c10fb1f491cc9032dc50fbd5f5f498b84d4ff553304bc",
+  "inventory_sha256": "1f8387f60b7b8c815a5c8df84f5147eab842fc3330469e183664a17636232bb4",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -680,6 +680,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "Camera auto/exposure/gain settings 0x0065DEDE..0x0065DEFC; color false 0x0065DF14; undefine markers 0x0065DF32; delete custom objects 0x0065DF4E (triage E4)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-057": {
+      "status": "RECOVERABLE_GAP",
+      "title": "LimitedExposure: the vision system's reader of the exposure limit (M4-017 E9)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 VisionSystem.",
+      "evidence": [
+        "M4-017 row E9 (re-analysis/jobs/B-M3M4.md) names the LimitedExposure reader in VisionSystem; M11-034's evidence covers the schedule only."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-058": {
+      "status": "RECOVERABLE_GAP",
+      "title": "cv::Exception from the image decode: where it is caught and what happens to the frame",
+      "authority": "libcozmoEngine.so 3.4.0-1204 VisionComponent / image-chunk handler.",
+      "evidence": [
+        "DecodeImageHelper's imdecode call site 0x004F28C6 has only a cleanup landing pad (LSDA call site 0x004F28BC..0x004F28CA, lp 0x004F2EA0) ending in _Unwind_Resume (re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md O9)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -420,7 +420,23 @@ public sealed class CozmoMotion
     /// (the entry's node+0x1C, which PrintLockState prints) is <paramref name="debugName"/>; callers outside the movement
     /// component do not pass one yet (row 3: IActionRunner passes its name; callers outside this file that pass none get an empty string, reported MISSING).
     /// </summary>
-    public void LockTracks(byte mask, string who, string debugName = "") { lock (_gate) LockTracksLocked(mask, who, debugName); }
+    public void LockTracks(byte mask, string who, string? debugName = null, [System.Runtime.CompilerServices.CallerFilePath] string callerFile = "")
+    {
+        lock (_gate)
+        {
+            // fidelity: M4-031
+            // The engine's LockTracks always takes a debug name (the entry's node+0x1C, printed by PrintLockState). The callers in the
+            // higher layers (M5 animation, M7/M8 behaviours) do not supply one yet: say so, once per calling file, and keep an empty name.
+            if (debugName is null)
+            {
+                if (_missingDebugNameFiles.Add(callerFile))
+                    Log($"MISSING: MovementComponent.LockTracks debug name not supplied by {System.IO.Path.GetFileName(callerFile)} (owning layer M5/M7/M8): the engine passes the caller's own string, which the inventory does not give; using an empty name");
+                debugName = "";
+            }
+            LockTracksLocked(mask, who, debugName);
+        }
+    }
+    private readonly HashSet<string> _missingDebugNameFiles = new();
 
     /// <summary><c>MovementComponent::UnlockTracks</c> 0x0063fe5c: remove the owner's entry per bit; true when a found key left its track still locked (A10).</summary>
     public bool UnlockTracks(byte mask, string who) { lock (_gate) return UnlockTracksLocked(mask, who); }
@@ -760,7 +776,7 @@ bool requireCalibration = true)
     /// negative height goes to the nearer of 32 and 92 to the current height (MA13). Nothing is sent when
     /// |target − height| &lt; tolerance and the lift is not moving (MA15). Completion as for the head, on the lift's
     /// in-position test and MC+0xB (MA17).
-    /// The angular-tolerance clip (≥ 1.5°, MA13) cannot bind at 5 mm: the lift's steepest point, 66 mm/rad at 45 mm,
+    /// The angular-tolerance clip (≥ 1.5°, MA13; the f32 threshold 0x3CD67750 at 0x005493BC, the "TolTooSmall" warning 0x005492C8) cannot bind at 5 mm: the lift's steepest point, 66 mm/rad at 45 mm,
     /// makes 1.5° at most 1.73 mm. Its formula is not in the inventory and is not needed for this API.
     /// <paramref name="suppressTrackLocking"/> is the action's byte +0x56 (M13-028: FlipBlockAction::CheckIfDone sets it to 1 on its queued carry lift, 0x0055F152..0x0055F154):
     /// IActionRunner::Update 0x00540370 branches over both the AreAnyTracksLocked test and LockTracks when it is non-zero (0x00540428..0x00540434 -> 0x00540592), and the action's
@@ -790,22 +806,13 @@ bool requireCalibration = true)
     private MoveAction BuildLiftAction(float heightMm, float maxSpeedRadPerSec, float accelRadPerSec2,
                                        float durationSec, TimeSpan? timeout, bool suppressTrackLocking)
     {
-        float target = heightMm;
-        if (target >= 0f && (target < LowDockHeightMm || target > CarryHeightMm))
-        {
-            float c = Math.Clamp(target, LowDockHeightMm, CarryHeightMm);
-            Log($"warning: MoveLiftToHeightAction.Init.InvalidHeight: {heightMm:F1} mm, clamped to {c:F1}");
-            target = c;
-        }
-        else if (target < 0f)
-        {
-            target = NegativeHeightTarget(CurrentLiftHeightMm());
-        }
-        // fidelity: M4-003, M4-016
-        // MA12: the game handler queues the action at NOW; the ActionList tick drives its timeout/Init/CheckIfDone.
-        var a = new MoveAction(this, isHead: false, target, GameLiftToleranceMm, $"lift to {target:F1} mm",
-                               id => new SetLiftHeight(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id))
-                { SuppressTrackLocking = suppressTrackLocking };
+        // fidelity: M4-002, M4-003, M4-016
+        // MA12: the game handler queues the action at NOW; the ActionList tick drives its timeout/Init/CheckIfDone. The clamp, the
+        // InvalidHeight warning and the negative-height preset choice are MoveLiftToHeightAction::Init's (MoveAction.Init), not the builder's.
+        MoveAction? a = null;
+        a = new MoveAction(this, isHead: false, heightMm, GameLiftToleranceMm, $"lift to {heightMm:F1} mm",
+                           id => new SetLiftHeight(a!.Target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id))
+            { SuppressTrackLocking = suppressTrackLocking };
         a.SetName(MoveAction.LiftName(heightMm));                  // the ctor's name argument: the requested height
         a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
         return a;
@@ -1145,7 +1152,11 @@ bool requireCalibration = true)
         }
         public readonly CozmoMotion Owner;
         public readonly bool IsHead;
-        public readonly float Target, Tolerance;
+        /// <summary>The motor target. For a lift action it is +0x84, which Init derives from <see cref="RequestedHeight"/> (+0x78).</summary>
+        public float Target;
+        public readonly float Tolerance;
+        /// <summary>Lift only, +0x78: the constructor's height argument; Init clamps it in place (0x00549058..0x005490F6).</summary>
+        public float RequestedHeight;
         public readonly string What;
         /// <summary>The message builder that carries the action id (MA8): SetHeadAngle / SetLiftHeight.</summary>
         public readonly Func<byte, RobotMessage> Build;
@@ -1165,7 +1176,7 @@ bool requireCalibration = true)
                           Func<byte, RobotMessage> build)
             : base(isHead ? 0x12 : 0x13, isHead ? HeadTrack : LiftTrack)   // M13-022: head type 0x12; lift 0x13 (R-ANIM pre-extraction)
         {
-            Owner = owner; IsHead = isHead; Target = target; Tolerance = tolerance; What = what; Build = build;
+            Owner = owner; IsHead = isHead; Target = target; RequestedHeight = target; Tolerance = tolerance; What = what; Build = build;
             // fidelity: M4-016
             // The base IActionRunner warnings/infos (TimedOut, TracksLocked, Cancel, ...) reach the engine log.
             Log = line => Owner.Log(line);
@@ -1206,6 +1217,37 @@ bool requireCalibration = true)
         // move and falls back to QueueNow (Q15).
         public override bool CanInterrupt() => false;
 
+        // fidelity: M4-002, M4-016
+        /// <summary>
+        /// MoveLiftToHeightAction::Init's height handling (0x0054903C..0x005491D2), run when the action starts, with the lift
+        /// height read at that moment. A height that is not negative (and not NaN) and lies below 32 or above 92 logs the
+        /// "MoveLiftToHeightAction.Init.InvalidHeight" warning, format "%f mm. Clipping to be in range." (0x0054936C, 0x00549398)
+        /// with the double-widened height, then is stored back to +0x78 as 32 (below) or 92 (above). A negative height (after
+        /// that) takes the nearer of preset 0 (32) and preset 2 (92) to GetLiftHeight (0x00549104..0x0054913C), strictly
+        /// nearer for 32, and skips the second clamp (0x00549140 jumps to 0x005491CE). Otherwise +0x84 = the height and the
+        /// second clamp into [32, 92] (0x0054918E..0x005491D2) stores a NaN as 32. A NaN height skips the first clamp (blt at
+        /// 0x0054905C is true unordered), is not negative (bpl at 0x00549102 is true unordered) and so reaches the second clamp.
+        /// The height-variability step between them (+0x80, 0x00549142..0x0054918A) is not built: see the MISSING note in the report.
+        /// </summary>
+        private void LiftInitHeightLocked()
+        {
+            float h = RequestedHeight;
+            if (h >= 0f && (h < LowDockHeightMm || h > CarryHeightMm))
+            {
+                string shown = double.IsPositiveInfinity(h) ? "inf" : ((double)h).ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
+                // fidelity: M4-032 (%f rendered by .NET fixed-point, invariant culture: the phone printf boundary)
+                Owner.Log($"warning: MoveLiftToHeightAction.Init.InvalidHeight: {shown} mm. Clipping to be in range.");
+                h = h < LowDockHeightMm ? LowDockHeightMm : CarryHeightMm;
+                RequestedHeight = h;
+            }
+            if (h < 0f)
+            {
+                Target = NegativeHeightTarget(Owner.CurrentLiftHeightMm());   // no second clamp
+                return;
+            }
+            Target = float.IsNaN(h) ? LowDockHeightMm : h < LowDockHeightMm ? LowDockHeightMm : h >= CarryHeightMm ? CarryHeightMm : h;
+        }
+
         // fidelity: M4-016
         /// <summary>
         /// The concrete Init (MA15, C6 L1): in position sends nothing and latches; otherwise the next motor
@@ -1216,6 +1258,7 @@ bool requireCalibration = true)
         {
             lock (Owner._gate)
             {
+                if (!IsHead) LiftInitHeightLocked();
                 if (Owner.InPositionLocked(this)) { InPositionLatched = true; return 0; }
                 Id = Owner.NextActionId();                       // MA8: taken in MoveHeadToAngle / MoveLiftToHeight
                 if (!Owner._robot.SendMessage(Build(Id))) return (int)ResultSendFailed;

@@ -1057,7 +1057,8 @@ public sealed partial class EngineRobot
         if (Engine.StateStored is { } stored) Engine.RunIsolated(() => stored(s));
         if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
         {
-            Engine.Log($"warning: Robot.UpdateFullRobotState: Received RobotState with originID {s.PoseOriginId}, which is not in the pose origin list (current origin {CurrentOriginId}); the pose and the later steps are skipped");
+            // 0x00512EC4..0x00512EE2: key 0x005132C8, format 0xBE686C, args state+8 (%u) and PoseOriginList+0xC (%zu, the list's count).
+            Engine.Log($"warning: Robot.UpdateFullRobotState.BadOriginID: Received RobotState with originID={s.PoseOriginId}, only {_origins.Count} pose origins available");
             AcceptedState = null;
             return true;
         }

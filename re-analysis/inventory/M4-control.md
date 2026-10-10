@@ -620,3 +620,10 @@ M4-027 adds the ResetDevices ownership candidate while retaining native componen
 - **M4-010** now also owns the ConnectToObjects pre-loop BlockPool log. Evidence: the same file's B1..B6 (0x005173A6).
 
 Settling pass (manager, 2026-10-10, Opus at 3c994bc): M4-002 is reopened to IMPLEMENTATION_GAP. The lift clamp, warning and preset choice belong in MoveLiftToHeightAction::Init (0x0054903C..0x005491D2), including the second clamp that maps NaN to 32. Details in jobs/B-M3M4.md "Settling pass".
+
+
+## Added from the M3+M4 settling pass (manager, 2026-10-10)
+
+| Record | Status | Evidence |
+| --- | --- | --- |
+| M4-032 | EQUIVALENT_IMPLEMENTATION: the phone printf's %f-family rendering (bionic, not shipped); NULL %s is "(null)". | Manager ruling, 2026-10-10. |

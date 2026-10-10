@@ -757,17 +757,18 @@ public sealed class CameraSettings
         Vision.CameraCalibration? installed = null;
         lock (_gate)
         {
-            if (r.Result != 0) Emit($"warning: VisionComponent.ReadCameraCalibration.Failed: {r.Result}");
+            if (r.Result != 0) Emit("warning: VisionComponent.ReadCameraCalibration.Failed");   // empty format (0xBE3F00, 0x0065AB7A)
             else if (r.Data.Length != CalibrationBytes)
-                Emit($"warning: VisionComponent.ReadCameraCalibration.SizeMismatch: {r.Data.Length} bytes, expected {CalibrationBytes}");
+                // "Expected %zu, got %zu" (0x0065AE50..0x0065AE58): r3 = MakeWordAligned(size) is compared with the blob size, which is the second arg.
+                Emit($"warning: VisionComponent.ReadCameraCalibration.SizeMismatch: Expected {CalibrationBytes}, got {r.Data.Length}");
             else
             {
                 installed = Vision.CameraCalibration.Unpack(r.Data);
                 // 0x0065ACE8 logs the received struct before the <=6 check zeroes the distortion.
-                Emit($"info: VisionComponent.ReadCameraCalibration.Recvd: {installed}");
+                Emit($"info: [Unnamed] VisionComponent.ReadCameraCalibration.Recvd: {RecvdText(installed)}");
                 if (_bodyHwVersion <= 6)
                 {
-                    Emit($"info: VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs: body hardware version {_bodyHwVersion} <= 6");
+                    Emit("info: [Unnamed] VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs");   // empty format (0xBE3F00)
                     installed = installed with { DistortionCoefficients = new double[8] };
                 }
                 Calibration = installed;
@@ -776,6 +777,23 @@ public sealed class CameraSettings
         }
         if (installed is not null) CalibrationInstalled?.Invoke(installed);
         VisionEnabledSet?.Invoke();
+    }
+
+    /// <summary>
+    /// The Recvd format (0xBFE313) "Received new %dx%d camera calibration from robot. (fx: %f, fy: %f, cx: %f, cy: %f,
+    /// distCoeffs: %s)" with its args (0x0065ACB2..0x0065AD20): %d = the u16 at struct +0x16 then the one at +0x14
+    /// (columns, rows); %f = the float widened to double; %s = the ostream "[" a ", " b ... ", " h "]" of the eight floats
+    /// (0x0065AC60..0x0065ACAE), each through the libc++ operator&lt;&lt;(float) (%g, precision 6; LibcxxPrintf). The %f
+    /// rendering is the phone libc's printf (a boundary); fixed with six decimals.
+    /// </summary>
+    internal static string RecvdText(Vision.CameraCalibration c)
+    {
+        static string F(double v) => double.IsNaN(v) ? "nan" : double.IsInfinity(v) ? (v < 0 ? "-inf" : "inf")
+            : v.ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
+        var d = new string[8];
+        for (int i = 0; i < 8; i++) d[i] = LibcxxPrintf.FormatFloat((float)c.DistortionCoefficients[i]);
+        return $"Received new {c.Columns}x{c.Rows} camera calibration from robot. (fx: {F((float)c.FocalLengthX)}, fy: {F((float)c.FocalLengthY)}, " +
+               $"cx: {F((float)c.CenterX)}, cy: {F((float)c.CenterY)}, distCoeffs: [{string.Join(", ", d)}])";
     }
 
     private void Emit(string line) => Log?.Invoke(line);

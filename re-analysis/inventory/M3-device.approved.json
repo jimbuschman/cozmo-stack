@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "dc2674c66242349466f74daafdee87899fbad51bf20ac4a2630a090763ff13d0",
+  "inventory_sha256": "066522cc2208dd70cf7cf3053c8fa70226fe0979d954b678f56821ab0bc5841a",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -489,6 +489,16 @@
         "re-analysis/research/20261010-nv-write-dispatch-rows.md WB1..WB21: ProcessRequest jump table 0x00645032; ERASE send with saved Data copy 0x0064512E; WIPEALL sentinel 0x198000 and stale Length/Data 0x0064521A; WRITE dispatch arming; Update state-1 chunk loop 0x00645816..0x00645920 (0x400/0x3F0, header magic 0x435A4D4F, tag step +1 factory / +0x400, deadline clock+5000).",
         "re-analysis/research/20261010-nv-write-dispatch-rows.md WC1..WC5: write timeout 0x006456F4..0x00645758 (gate +0x48, unsigned clock > deadline, WriteTimeout warning, cb(-4), SetState(0), no retry).",
         "re-analysis/research/20261010-nv-write-dispatch-rows.md WD1..WD9: HandleNVOpResult WIPEALL sentinel 0x0064302C/0x00643030, mid-write ack, last-chunk delivery order, retryable results {-8,-7,-5,-4} with ResendLastCommand and NumRetriesExceeded."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-044": {
+      "status": "RECOVERABLE_GAP",
+      "title": "CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends",
+      "authority": "libcozmoEngine.so 3.4.0-1204 camera start path.",
+      "evidence": [
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders."
       ],
       "live_path": true,
       "hardware_required": false
