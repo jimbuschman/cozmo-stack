@@ -91,7 +91,7 @@
       "id": "M3-device",
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -104,7 +104,7 @@
       "id": "M4-control",
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -9407,15 +9407,16 @@
       "subsystem": "M3-device",
       "title": "imdecode's decoder choice for a non-JPEG payload in encodings 5/6/7 (findDecoder over the decoders registered in the shipped libopencv_imgcodecs.so)",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/Jpeg/OpenCvImdecode.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "a payload in encodings 5/6/7 that does not start FF D8 FF is decoded by whichever registered OpenCV decoder claims it in the original, where the port returns an empty Mat",
       "provenance": "Cross-layer split (manager, 2026-10-10): item I-1 of re-analysis/research/20261010-m3m4-cross-layer-splits.md; pinned in re-analysis/jobs/B-M3M4.md \"JPEG port: Opus check\" and in M3-001's MISSING (1).",
       "authority": "libopencv_imgcodecs.so (OpenCV 3.1, shipped) and libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Encodings 5/6/7 reach imdecode from DecodeImageHelper (gray dispatch tbh 0x004F2898, RGB dispatch tbh 0x004F21AE; imdecode call 0x004F28C6; M3-001/M3-018)",
-        "re-analysis/jobs/B-M3M4.md \"JPEG port: Opus check (2026-10-10)\": other OpenCV decoders (PNG/TIFF) for non-JPEG payloads in encodings 5/6/7 pinned; the J rows say only 'none -> empty' (J114)"
+        "re-analysis/jobs/B-M3M4.md \"JPEG port: Opus check (2026-10-10)\": other OpenCV decoders (PNG/TIFF) for non-JPEG payloads in encodings 5/6/7 pinned; the J rows say only 'none -> empty' (J114)",
+        "re-analysis/research/20261010-m3045-m4033-rows.md Part A (manager-adopted 2026-10-10): imdecode 0xFAC4 -> imdecode_ 0xF6AC: empty-buffer cv::error -215 line 490; window min(32,size) from each decoder's signatureLength (slot 0x24); first checkSignature (slot 0x28) match in registration order BMP, HDR, JPEG, WebP, SunRaster, PxM, TIFF, PNG, JPEG2000, EXR (list 0x178E28, init 0x10684); no match -> the pre-built empty Mat, no log (0xF822..0xF830, 0xFA24); readHeader/readData failure -> empty Mat. Engine: encodings 5/6 and 7 call imdecode flags 0 (gray 0x4F28C6, 0x4F2C4C) / 1 (RGB 0x4F21DC, 0x4F25AE); the encoding byte comes only from the robot's ImageChunk; ImageRequest cannot ask for 5/6/7."
       ],
-      "unresolved": "RECOVERABLE_GAP: read cv::findDecoder in libopencv_imgcodecs.so (the registered decoders, their signature checks and their order) and what each would produce for the engine's call. Whether the robot ever sends encodings 5/6/7 is not established (HARDWARE_ONLY unless the robot firmware can be read; not checked). live_path is true until that is settled, because the dispatch runs on every image.",
+      "unresolved": "IMPLEMENTATION_GAP (manager ruling, 2026-10-10): port the signature dispatch exactly (window, order, first match, empty Mat on no match). A payload whose signature matches one of the nine non-JPEG decoders is a visible MISSING (decoder bodies not ported) returning the empty Mat. Residual: differs from the original only for a valid non-JPEG image in a JPEG* encoding; whether firmware ever sends 5/6/7 is HARDWARE_ONLY, and the M3M4-HW run records every frame's encoding. Before: RECOVERABLE_GAP: read cv::findDecoder in libopencv_imgcodecs.so (the registered decoders, their signature checks and their order) and what each would produce for the engine's call. Whether the robot ever sends encodings 5/6/7 is not established (HARDWARE_ONLY unless the robot firmware can be read; not checked). live_path is true until that is settled, because the dispatch runs on every image.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9437,6 +9438,23 @@
       "hardware_required": false,
       "live_path": false,
       "test": ""
+    },
+    {
+      "id": "M3-047",
+      "subsystem": "M3-device",
+      "title": "Robot::SendMessage: every engine-to-robot send's failure warning",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "effect": "A failed robot send is silent instead of logging the engine's warning naming the message type.",
+      "provenance": "Opus check of the post-split build round (2026-10-10, jobs/B-M3M4.md); the warning had no record of its own (it leaned on M4-020).",
+      "authority": "libcozmoEngine.so 3.4.0-1204 Robot::SendMessage.",
+      "evidence": [
+        "Robot::SendMessage 0x0051349C..0x005134BC: handler virtual +0x10 result in r4; cbz r4 skips; sWarningF key 0x00513558 \"Robot.SendMessage\", format 0x0051356C \"Robot %d failed to send a message type %s\" with the robot id (+0x10) and EngineToRobotTagToString (0x007AF8D0, table 0x010343A0; all 105 tags equal MessageCatalog's names); returns r4. Reached through PLT 0x004A5368 from 73 call sites (Opus BL/BLX sweep, 2026-10-10), e.g. 0x0057BFAA, 0x00658314, 0x0064539E, 0x00632380, 0x00514BCE, 0x00640852, 0x00512B46, 0x0059A256, 0x0053D430, 0x0053D342."
+      ],
+      "unresolved": "IMPLEMENTATION_GAP: route every engine-to-robot send through the warning (build round fix in progress). The callers' records hand their send failure off to this record.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M4AbortSleepTests.B_M3M4_Item1_EveryComponentSendWarnsWhenItFails"
     },
     {
       "id": "M4-029",
@@ -9512,16 +9530,17 @@
       "subsystem": "M4-control",
       "title": "TouchSensorComponent: the per-RobotState Update, the ctor, the dtor and its logging",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "the backpack touch value and its timestamp are stored differently or not at all, a touch log differs, or teardown differs",
       "provenance": "Cross-layer split (manager, 2026-10-10): item I-3 of re-analysis/research/20261010-m3m4-cross-layer-splits.md; the stack has no TouchSensorComponent (M4-027's teardown MISSING line, Motion.cs:1084).",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "UpdateFullRobotState calls TouchSensorComponent::Update: ldr.w r0,[r4,#0x28C]; blx 0x4A7C00 at 0x00512990..0x00512996, right after the cliff UpdateRobotData (0x0051298C)",
         "Update 0x0064E75C stores RobotState+0 at +4 and the u16 at RobotState+0x58 at +8, then tail-calls Log through the veneer 0x008CCFCC; Log 0x0064E76C returns unless +0x10 (logging) is set; the ctor 0x0064E738 zeroes +4..+0x14; the dtor 0x0064E746 deletes +0xC through its vtable slot 1 (the logger, present only after StartLogging 0x0064EA44)",
-        "Call sites from a full .text BL/BLX sweep: ctor 0x0050FE6C; dtor 0x00510766, 0x005113E0, 0x0051171A; Update 0x00512996"
+        "Call sites from a full .text BL/BLX sweep: ctor 0x0050FE6C; dtor 0x00510766, 0x005113E0, 0x0051171A; Update 0x00512996",
+        "re-analysis/research/20261010-m3045-m4033-rows.md Part B (manager-adopted 2026-10-10): ctor 0x0064E738 (writes +0, +4, +0xC, +0x10, +0x14; not +8); Robot+0x28C (0x0050FE60..0x0050FE70); Update from UpdateFullRobotState 0x00512996 gated on Robot+0x29 (0x0051293C..0x00512942) stores the timestamp at +4 and RobotState+0x58 (u16) at +8, then tail-calls Log (0x0064E75C..0x0064E766 -> 0x0064E76C); Log returns unless +0x10. StartLogging/StopLogging have no caller (no PLT, BL/BLX/B.W, veneer or data pointer); +4/+8 are read only by Log. Teardown: dtor deletes the logger (0x0080E090), no flush, no log, no send."
       ],
-      "unresolved": "RECOVERABLE_GAP: read who reads +4/+8 (UNKNOWN) and StartLogging's callers (not swept). Then build: Update on every time-synced RobotState, the ctor/dtor and the logger. This record absorbs M4-027's Touch teardown (+0x28C).",
+      "unresolved": "IMPLEMENTATION_GAP (manager ruling, 2026-10-10): build the component (stores on each gated Update; teardown) with no consumer. The logging branch (lazy RollingFileLogger 'sensorData/touchSensor', 20 MiB, header and lines; StartLogging/StopLogging) is unreachable: nothing sets +0x10. Corrections to the old text: the ctor does not write +8; Log, not StartLogging, creates the logger. Before: RECOVERABLE_GAP: read who reads +4/+8 (UNKNOWN) and StartLogging's callers (not swept). Then build: Update on every time-synced RobotState, the ctor/dtor and the logger. This record absorbs M4-027's Touch teardown (+0x28C).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

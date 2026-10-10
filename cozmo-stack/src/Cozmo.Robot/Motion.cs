@@ -419,6 +419,7 @@ public sealed class CozmoMotion
     /// <c>MovementComponent::LockTracks</c> 0x00640098: one owner entry per bit in the multiset. The engine's second string
     /// (the entry's node+0x1C, which PrintLockState prints) is <paramref name="debugName"/>; callers outside the movement
     /// component do not pass one yet (row 3: IActionRunner passes its name; callers outside this file that pass none get an empty string, reported MISSING).
+    /// Owners of the engine callers 0x0054BE24, 0x0054EC08 and 0x005BE624: UNKNOWN (no record names them; extraction pending, B-M3M4 build item 9).
     /// </summary>
     public void LockTracks(byte mask, string who, string? debugName = null, [System.Runtime.CompilerServices.CallerFilePath] string callerFile = "")
     {
@@ -588,7 +589,7 @@ bool requireCalibration = true)
 
     // --------------------------------------------------------------- head and lift
 
-    // fidelity: M4-003
+    // fidelity: M4-003, M4-034
     /// <summary>MD1/MA11: the head speed the original app passes (Unity Robot.cs:1443-1450).</summary>
     public const float DefaultHeadSpeedRadPerSec = 10f;
     /// <summary>MD1/MA11: the head acceleration the original app passes.</summary>
@@ -613,7 +614,8 @@ bool requireCalibration = true)
     // fidelity: M4-003
     /// <summary>
     /// MA12: the M12 CarryingComponent interface. True while an object is on the lift
-    /// (<c>CarryingComponent(+0x284)+8 != −1</c>). Set by the manipulation layer when it is built.
+    /// (<c>CarryingComponent(+0x284)+8 != −1</c>; its owner is M12-008, the PlaceObjectOnGroundAction it leads to is M15-022 and M12-015).
+    /// Set by the manipulation layer when it is built.
     /// </summary>
     internal Func<bool>? IsCarryingObject { get; set; }
     /// <summary>
@@ -707,7 +709,7 @@ bool requireCalibration = true)
     /// <summary><c>Anki::operator&lt;</c> (0x0084CD12): <c>operator&gt;(b, a)</c>.</summary>
     internal static bool RadiansLessThan(float a, float b) => RadiansGreaterThan(b, a);
 
-    // fidelity: M4-001, M4-003, M4-016
+    // fidelity: M4-001, M4-003, M4-016, M4-034
     /// <summary>
     /// The game SetHeadAngle (MA10): MoveHeadToAngleAction(angle, tolerance 0.0349066, variability 0), whose speed,
     /// acceleration and duration are the caller's. The Radians ctor rescales the angle into (−π, π] first
@@ -746,12 +748,14 @@ bool requireCalibration = true)
         {
             // getDegrees 0x0084CD40: one f32 multiply, then promoted for %.1f.
             float degrees = target * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+            // fidelity: M4-032 (M4-001: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
             Log(FormattableString.Invariant($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: Requested head angle ({degrees:F1}deg) less than min head angle (-25.0deg). Clipping."));
             target = MinHeadAngleRad;
         }
         else if (RadiansGreaterThan(target, MaxHeadAngleRad))
         {
             float degrees = target * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+            // fidelity: M4-032 (M4-001: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
             Log(FormattableString.Invariant($"warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: Requested head angle ({degrees:F1}deg) more than max head angle (44.5deg). Clipping."));
             target = MaxHeadAngleRad;
         }
@@ -767,7 +771,7 @@ bool requireCalibration = true)
         return a;
     }
 
-    // fidelity: M4-002, M4-003, M4-016
+    // fidelity: M4-002, M4-003, M4-016, M4-034
     /// <summary>
     /// The game SetLiftHeight (MA12): MoveLiftToHeightAction(h, tolerance 5.0 mm, variability 0) with the caller's
     /// speed, acceleration and duration. A height of exactly 32 mm while carrying runs PlaceObjectOnGroundAction
@@ -776,7 +780,7 @@ bool requireCalibration = true)
     /// negative height goes to the nearer of 32 and 92 to the current height (MA13). Nothing is sent when
     /// |target − height| &lt; tolerance and the lift is not moving (MA15). Completion as for the head, on the lift's
     /// in-position test and MC+0xB (MA17).
-    /// The angular-tolerance clip (≥ 1.5°, MA13; the f32 threshold 0x3CD67750 at 0x005493BC, the "TolTooSmall" warning 0x005492C8) cannot bind at 5 mm: the lift's steepest point, 66 mm/rad at 45 mm,
+    /// The angular-tolerance clip (≥ 1.5° = 0.0261799, MA13 cites 0x005491D6..0x005492EE for the clip; the "TolTooSmall" warning 0x005492C8 lies inside that range; the f32 threshold 0x3CD67750 is read from 0x005493BC, outside MA13's range, and is carried here from the earlier comment, not row-cited) cannot bind at 5 mm: the lift's steepest point, 66 mm/rad at 45 mm,
     /// makes 1.5° at most 1.73 mm. Its formula is not in the inventory and is not needed for this API.
     /// <paramref name="suppressTrackLocking"/> is the action's byte +0x56 (M13-028: FlipBlockAction::CheckIfDone sets it to 1 on its queued carry lift, 0x0055F152..0x0055F154):
     /// IActionRunner::Update 0x00540370 branches over both the AreAnyTracksLocked test and LockTracks when it is non-zero (0x00540428..0x00540434 -> 0x00540592), and the action's
@@ -794,6 +798,8 @@ bool requireCalibration = true)
         // MA12: if the height is exactly 32.0 and something is carried, run PlaceObjectOnGroundAction instead.
         if (heightMm == LowDockHeightMm && IsCarryingObject?.Invoke() == true && PlaceObjectOnGroundAsync is not null)
             return PlaceObjectOnGroundAsync();
+        if (heightMm == LowDockHeightMm && (IsCarryingObject is null || PlaceObjectOnGroundAsync is null))
+            Behavior.SteppedBehavior.ReportMissing("M12-008 / M15-022 | the game SetLiftHeight switch at 32.0 mm while carrying (CarryingComponent(+0x284)+8, M12-008; PlaceObjectOnGroundAction, M15-022 / M12-015): the seam is not wired on this robot, so the plain lift action runs");
         var a = BuildLiftAction(heightMm, maxSpeedRadPerSec, accelRadPerSec2, durationSec, timeout, suppressTrackLocking);
         Queue(a, position);
         return a.Done.Task;
@@ -1042,7 +1048,7 @@ bool requireCalibration = true)
     // fidelity: M4-026
     /// <summary>
     /// While AbortAll runs, the sends of its path (StopAllMotors, EnableAnimTracks) go through Robot::SendMessage's failure warning
-    /// (0x00513558/0x0051356C). Other sends of this class are older and unchanged (queued separately).
+    /// (0x00513558/0x0051356C). Every other send of this class goes through CozmoRobot.SendMessage and <c>CozmoEngine.SendMessage</c>, which route to the same warning (<c>EngineRobot.SendChecked</c>) whenever an EngineRobot exists.
     /// </summary>
     private Func<RobotMessage, bool>? _abortSend;
     private bool SendOnAbortPath(RobotMessage m) => _abortSend is { } s ? s(m) : _robot.SendMessage(m);
@@ -1081,11 +1087,13 @@ bool requireCalibration = true)
     /// lights, 0x270 the cube lights and 0x450 the tap filter are the deletions at 0x00511500, 0x00511428, 0x0051143E,
     /// 0x0051146A and 0x005111EA. Each owner pointer is cleared before its destructor runs (the Lifetime does that), except slot 0x450 (the tap filter), which is released with clearBefore:false and cleared afterwards (0x00511220),
     /// and none of the destructors sends a message: nothing is unlocked, stopped or switched off by them.
-    /// NOT BOUND (reported MISSING): Touch +0x28C and Cliff +0x288 (their RollingFileLogger close; this stack has no Touch
+    /// NOT BOUND (reported MISSING, below): Touch +0x28C (M4-033) and Cliff +0x288 (M4-027) (their RollingFileLogger close; this stack has no Touch
     /// component and the Cliff state lives in <see cref="CozmoSensors"/>).
     /// </summary>
     internal void BindRobotLifetime(EngineRobot robot)
     {
+        Behavior.SteppedBehavior.ReportMissing("M4-033 | ~Robot's deletion of TouchSensorComponent (+0x28C): the component, its destructor and its logger close are unread and not built");
+        Behavior.SteppedBehavior.ReportMissing("M4-027 | ~Robot's deletion of CliffSensorComponent (+0x288, ~CliffSensorComponent 0x00633FF8): its RollingFileLogger close is not reproduced (the Cliff state lives in CozmoSensors)");
         var lifetime = robot.Lifetime;
         lifetime.Bind(-3, _ => AbortAll(robot));
         lifetime.Bind(0x450, _ => _robot.Cubes.DestroyTapFilter());
@@ -1306,6 +1314,7 @@ bool requireCalibration = true)
                     if (IsHead && moving)
                     {
                         float degrees = BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
+                        // fidelity: M4-032 (M4-016: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
                         Owner.Log(FormattableString.Invariant($"info: MoveHeadToAngleAction.CheckIfDone.HeadMovingInPosition: [{tag}] Head considered in position at {Target * degrees:F1}deg but still moving at {Owner._headAngle * degrees:F1}deg"));
                     }
                     return moving ? EngineActionResult.Running : EngineActionResult.Success;
@@ -1319,8 +1328,10 @@ bool requireCalibration = true)
                         {
                             float degrees = BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
                             // Game/compound construction uses variability 0 (MA10), tolerance at +80, variability +88.
+                            // fidelity: M4-032 (M4-016: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
                             Owner.Log(FormattableString.Invariant($"debug: MoveHeadToAngleAction.CheckIfDone.NotInPosition: [{tag}] Waiting for head to get in position: {Owner._headAngle * degrees:F1}deg vs. {Target * degrees:F1}deg(+/-{0f:F1}) tol:{Tolerance * degrees:F1}deg"));
                         }
+                        // fidelity: M4-032 (M4-016: the %.1f and %f renders are the phone printf boundary, .NET fixed-point, invariant culture)
                         else Owner.Log(FormattableString.Invariant($"debug: MoveLiftToHeightAction.CheckIfDone.NotInPosition: [{tag}] Waiting for lift to get in position: {Owner.CurrentLiftHeightMm():F1}mm vs. {Target:F1}mm (tol: {Tolerance:F6})"));
                         count = 0;
                     }
@@ -1337,7 +1348,7 @@ bool requireCalibration = true)
         // L16/D5: the base runs the stop-before-unlock tail; then the Done task maps the stored result.
         public override void WatcherEnding()
         {
-            // fidelity: M4-028
+            // fidelity: M4-016
             // L11 (0x0054D138..0x0054D15A): ~MoveLiftToHeightAction releases its MotorActionAck subscription (+0xA0) first, then
             // tails to the IActionRunner destructor (the stop and unlock tail, the watcher's ActionEnding).
             if (!IsHead) Owner.ReleaseAckSubscription(this);
@@ -1380,7 +1391,7 @@ bool requireCalibration = true)
                 case MotorActionAck ack:
                     foreach (var a in _actions)
                     {
-                        // fidelity: M4-028
+                        // fidelity: M4-016
                         // Row 6: the head callback (0x0054D624..0x0054D68E: guard +0xAA sent and +0xA9 == id; ack flag +0xAB) and the lift one
                         // (0x0054D748..0x0054D7B2: +0x95, +0x94; flag +0x96) are the same shape: they act only when the command was sent and the
                         // id equals the action's, with no test of the ack flag, so a repeated ack logs again. Actions INFO
@@ -1423,7 +1434,7 @@ bool requireCalibration = true)
     }
 }
 
-// fidelity: M4-026
+// fidelity: M13-029
 /// <summary>
 /// The engine's PathComponent (Robot+0x5C) as far as Robot::AbortAll reaches it: <c>Abort</c> 0x00649100..0x006491BC (A3) and
 /// <c>ClearPath</c> 0x00649220..0x006492A0 (A4). The path planner, the status transition, VizManager and PathDolerOuter belong to
@@ -1497,7 +1508,7 @@ internal sealed class PathComponent
         if (_missingReported.Add(what)) _robot.Engine.Log($"MISSING: {what}");
     }
 
-    // fidelity: M4-026
+    // fidelity: M13-029
     /// <summary>
     /// PathComponent::Abort (A3), in this order: Planner INFO "Aborting from status '%s'" (event "PathComponent.Abort", the
     /// status name from the table indexed by +0x38); when a planner is set, its virtual +0x10 and +0x47 = 0 (only then); the
@@ -1535,7 +1546,7 @@ internal sealed class PathComponent
         return cleared;
     }
 
-    // fidelity: M4-026
+    // fidelity: M13-029
     /// <summary>
     /// PathComponent::ClearPath (A4): a non-zero u16 +0x42 is copied to +0x4A; <c>VizManager::ErasePath</c>(robot id); the
     /// PathDolerOuter's ClearPath when it is set; +0x40 = 0xFF; +0x3C = BaseStationTimer seconds; then ClearPath {u16 0}

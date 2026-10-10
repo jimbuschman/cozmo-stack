@@ -672,7 +672,7 @@ public sealed class NvStorageComponent : IDisposable
         NvEntryTagName(tag) ?? "(null)";   // bionic printf's NULL %s (manager ruling 2026-10-10)
 
     private void QueueDataToWriteMissing(uint tag, int bytes) =>
-        _log.Add($"MISSING: RobotDataBackupManager::QueueDataToWrite(0x{tag:x}, {bytes} bytes) (M15 recipient, 0x0051AE04): the backup manager is not built");
+        _log.Add($"MISSING: RobotDataBackupManager::QueueDataToWrite(0x{tag:x}, {bytes} bytes) (M15-033 is the recipient, 0x0051AE04): the backup manager is not built");
 
     private void DispatchReadLocked(PendingRequest req)
     {
@@ -1240,8 +1240,8 @@ public sealed class NvStorageComponent : IDisposable
             }
             lock (_gate)
                 _log.Add(c.Op == OpWipeAll
-                    ? "MISSING: RobotDataBackupManager::WipeAll (M15 recipient, 0x00643406): the backup manager is not built"
-                    : $"MISSING: RobotDataBackupManager::WriteDataForTag(0x{c.NameTag:x}, {c.Result.Result}, {c.Op == OpWrite}) (M15 recipient, 0x00643418): the backup manager is not built");
+                    ? "MISSING: RobotDataBackupManager::WipeAll (M15-033 is the recipient, 0x00643406): the backup manager is not built"
+                    : $"MISSING: RobotDataBackupManager::WriteDataForTag(0x{c.NameTag:x}, {c.Result.Result}, {c.Op == OpWrite}) (M15-033 is the recipient, 0x00643418): the backup manager is not built");
         }
         else
         {

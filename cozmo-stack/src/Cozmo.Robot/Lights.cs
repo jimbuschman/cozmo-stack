@@ -579,7 +579,7 @@ public sealed class CubeLightComponent
     /// <summary>
     /// The default-layer inputs the engine reads from other components (LC3 PickNextAnimForDefaultLayer). IsCarried
     /// is wired by the M12 manipulation layer (CarryingComponent). MISSING interface: the located object's +0x24
-    /// pose state (M11 BlockWorld) is not wired; until it is, IsVisible stays unset.
+    /// pose state (M11 BlockWorld) is not wired (M11-004 owns the BlockWorld by-id helpers); until it is, IsVisible stays unset and the default layer reports MISSING.
     /// </summary>
     internal Func<ObjectType, bool>? IsCarried { get; set; }
     internal Func<ObjectType, bool>? IsVisible { get; set; }
@@ -931,6 +931,10 @@ public sealed class CubeLightComponent
             PlayLightAnim(type, _sleepSkipFade ? "SleepNoFade" : "Sleep", StateLayer);
             return;
         }
+        // MISSING: M11-004 | the located object's +0x24 == 1 (IsVisible) and the located object itself are M11-004's (BlockWorld's ById helpers); with no hook the
+        // default layer never reads Visible.
+        if (IsVisible is null)
+            Behavior.SteppedBehavior.ReportMissing("M11-004 | CubeLightComponent::PickNextAnimForDefaultLayer reads the located object's +0x24 (0x00637DA6..0x00637E02); no BlockWorld hook is wired (IsVisible), so the Visible trigger is never chosen");
         string trigger = IsCarried?.Invoke(type) == true ? "Carrying"
                        : IsVisible?.Invoke(type) == true ? "Visible"
                        : "Connected";
@@ -947,7 +951,7 @@ public sealed class CubeLightComponent
     /// </summary>
     private void SetObjectLights(ObjectType type, CubeLightPattern p)
     {
-        if (p.MakeRelative) Log("warning: MISSING: a makeRelative cube light pattern needs the located object (M11); sent to the connected cube");
+        if (p.MakeRelative) Log("warning: MISSING: a makeRelative cube light pattern needs the located object (M11-004: the located object and makeRelative); sent to the connected cube");
         var cube = _robot.Cubes.ConnectedCubes.FirstOrDefault(c => c.Type == type && c.ObjectId is not null);
         if (cube is null) return;
         var leds = new LedPattern[4];

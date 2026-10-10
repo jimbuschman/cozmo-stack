@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "ea5b062fdd25bfb55493f76b1cddcfe71c709f5fcfd90b22ad04083e50472638",
+  "inventory_sha256": "a84c8f9ecaf96df4a9addaa9d5516993dfdadf970b39370eb243d2342d9686cf",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -514,12 +514,13 @@
       "hardware_required": false
     },
     "M3-045": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "imdecode's decoder choice for a non-JPEG payload in encodings 5/6/7 (findDecoder over the decoders registered in the shipped libopencv_imgcodecs.so)",
       "authority": "libopencv_imgcodecs.so (OpenCV 3.1, shipped) and libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Encodings 5/6/7 reach imdecode from DecodeImageHelper (gray dispatch tbh 0x004F2898, RGB dispatch tbh 0x004F21AE; imdecode call 0x004F28C6; M3-001/M3-018)",
-        "re-analysis/jobs/B-M3M4.md \"JPEG port: Opus check (2026-10-10)\": other OpenCV decoders (PNG/TIFF) for non-JPEG payloads in encodings 5/6/7 pinned; the J rows say only 'none -> empty' (J114)"
+        "re-analysis/jobs/B-M3M4.md \"JPEG port: Opus check (2026-10-10)\": other OpenCV decoders (PNG/TIFF) for non-JPEG payloads in encodings 5/6/7 pinned; the J rows say only 'none -> empty' (J114)",
+        "re-analysis/research/20261010-m3045-m4033-rows.md Part A (manager-adopted 2026-10-10): imdecode 0xFAC4 -> imdecode_ 0xF6AC: empty-buffer cv::error -215 line 490; window min(32,size) from each decoder's signatureLength (slot 0x24); first checkSignature (slot 0x28) match in registration order BMP, HDR, JPEG, WebP, SunRaster, PxM, TIFF, PNG, JPEG2000, EXR (list 0x178E28, init 0x10684); no match -> the pre-built empty Mat, no log (0xF822..0xF830, 0xFA24); readHeader/readData failure -> empty Mat. Engine: encodings 5/6 and 7 call imdecode flags 0 (gray 0x4F28C6, 0x4F2C4C) / 1 (RGB 0x4F21DC, 0x4F25AE); the encoding byte comes only from the robot's ImageChunk; ImageRequest cannot ask for 5/6/7."
       ],
       "live_path": true,
       "hardware_required": false
@@ -533,6 +534,16 @@
         "cozmo-stack/src/Cozmo.Robot/Camera.cs:78-99 CameraFrame.PresentationJpeg/Save (StbImageWriteSharp); callers cozmo-stack/src/Cozmo.Conformance/Devices.cs:157 and cozmo-stack/src/Cozmo.Conformance/VisionTool.cs:171 only"
       ],
       "live_path": false,
+      "hardware_required": false
+    },
+    "M3-047": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Robot::SendMessage: every engine-to-robot send's failure warning",
+      "authority": "libcozmoEngine.so 3.4.0-1204 Robot::SendMessage.",
+      "evidence": [
+        "Robot::SendMessage 0x0051349C..0x005134BC: handler virtual +0x10 result in r4; cbz r4 skips; sWarningF key 0x00513558 \"Robot.SendMessage\", format 0x0051356C \"Robot %d failed to send a message type %s\" with the robot id (+0x10) and EngineToRobotTagToString (0x007AF8D0, table 0x010343A0; all 105 tags equal MessageCatalog's names); returns r4. Reached through PLT 0x004A5368 from 73 call sites (Opus BL/BLX sweep, 2026-10-10), e.g. 0x0057BFAA, 0x00658314, 0x0064539E, 0x00632380, 0x00514BCE, 0x00640852, 0x00512B46, 0x0059A256, 0x0053D430, 0x0053D342."
+      ],
+      "live_path": true,
       "hardware_required": false
     }
   }

@@ -524,3 +524,18 @@ M8-015/M13-029 status unchanged with a note; M3-034 retired into M15-034/035/036
 11. **M3-043:** the vector-overload caller sweep (Thumb BL/BLX; ARM-mode separately).
 12. **Extraction for the new RECOVERABLE_GAPs:** M3-045, M4-033 (readers of +4/+8, StartLogging callers) first, since
     they hold M3/M4's source flags; the higher-layer ones in their layers' turn.
+
+**Build round after the split (Opus, 2026-10-10): code supported after two fix rounds.**
+- Every engine-to-robot send now goes through Robot::SendMessage's failure warning (M3-047, new).
+- Exceptions, as in the engine:
+  - GetManufacturingInfo is a handler send from RobotInitialConnection::OnNotified (0x0052DE7C).
+  - The path segments are sent by PathDolerOuter::Dole straight to the handler (0x00507F9E, 0x00507FF0, 0x00508046). The manager added `SendToHandler` and a test.
+- RobotStopped's game event carries nothing.
+- MISSING reports reach the engine log.
+- The full suite passes, 4154/4154.
+
+**Queued:**
+- An M1 note: connect-time RequestCrashReports{0} is gated on `[r4+0x28] >= 4` (0x0053D3C6..0x0053D3DC), not on the SetAppRunID result. The stack returns early when that send fails.
+- Each engine logs every process-wide MISSING report.
+
+**Next:** Codex job `jobs/B-M3M4-2.md` (M3-045, M4-033, M4-010 tests), then the final Opus pass and the robot run.

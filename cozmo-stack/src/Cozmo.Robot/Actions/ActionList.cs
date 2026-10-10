@@ -39,7 +39,7 @@ internal sealed class ActionList : IDisposable
     /// <summary>T6/T5: the watcher this list ticks.</summary>
     internal ActionWatcher Watcher => _watcher;
 
-// fidelity: M7-020
+// fidelity: M8-015
     /// <summary>
     /// W12: move a callback into the watcher and return its integer handle. W13: registration is not gated by the
     /// external interface.
@@ -160,7 +160,7 @@ return 0;
             }
             if (DuplicateOrClearingGuard(incoming)) return 1;
             incoming.RetriesRemain = retries;
-            // fidelity: M7-020
+            // fidelity: M8-015
             // W7/W8/W9: the engine reaches the watcher for every runner through the robot (IActionRunner::
             // GetRobotCompletedActionMessage 0x540AC2 [r0,#4] -> robot+0x250 ActionList -> [r0,#0x10] watcher).
             // QueueAction is the point the runner is accepted; a compound's setter propagates to its children.

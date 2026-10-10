@@ -651,3 +651,5 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M4-031 | Narrowed to PrintLockState and the lock-tree order; debug-name callers named; test filled. | IMPLEMENTATION_GAP |
 | M4-033 | NEW: TouchSensorComponent (I-3): the live per-state Update, ctor, dtor, logging; live RECOVERABLE_GAP, so `source_investigation_exhausted` is now false. | RECOVERABLE_GAP |
 | M4-034 | NEW: the app's head/lift defaults 10/20/0 as the C# API's defaults (manager ruling on MA11; app-boundary input). | COMPATIBILITY_POLICY |
+
+M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-10; rows research/20261010-m3045-m4033-rows.md). M3-045 ports the imdecode signature dispatch; non-JPEG matches are a visible MISSING. M4-033 builds the store; its logging branch is unreachable.

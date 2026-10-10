@@ -223,7 +223,7 @@ internal sealed class ActionQueue : IDisposable
     /// </summary>
     public bool Delete(IActionRunner runner) => DeleteRunner(runner);
 
-    // fidelity: M7-020
+    // fidelity: M8-015
     /// <summary>
     /// D1..D7: the queue deletion path. D1 inserts tag+60 into the queue deletion set (a duplicate returns false);
     /// D2 Preps before the game snapshot/destructor; D3 snapshots the game record before the destructor (the

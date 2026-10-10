@@ -437,3 +437,7 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M3-043 | Backup bodies named as handoffs to M15-033; test filled. | IMPLEMENTATION_GAP |
 | M3-045 | NEW: imdecode's decoder choice for a non-JPEG payload in encodings 5/6/7 (I-1). live_path true until the robot's use of 5/6/7 is settled, so `source_investigation_exhausted` is now false. | RECOVERABLE_GAP |
 | M3-046 | NEW: CameraFrame.PresentationJpeg/Save, tool-only, non-engine bytes (I-2); evidence A25 from M3-018. | COMPATIBILITY_POLICY |
+
+M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-10; rows research/20261010-m3045-m4033-rows.md). M3-045 ports the imdecode signature dispatch; non-JPEG matches are a visible MISSING. M4-033 builds the store; its logging branch is unreachable.
+
+| M3-047 | IMPLEMENTATION_GAP: Robot::SendMessage failure warning on every engine-to-robot send (0x0051349C; 73 call sites via PLT 0x004A5368). | Opus check, 2026-10-10. |

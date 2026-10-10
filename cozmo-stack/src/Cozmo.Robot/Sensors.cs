@@ -90,12 +90,11 @@ public sealed class CozmoSensors
 
     // fidelity: M4-019
     /// <summary>
-    /// H4: <c>HandleRobotStopped</c>'s game-side <c>RobotStopped</c> broadcast (0x00535480), raised with the
-    /// reason byte when the cliff sensor is enabled. The behaviour-end and action-cancel calls that precede it
-    /// (<c>BehaviorManager::RequestCurrentBehaviorEndImmediately</c>, <c>ActionList::Cancel(-1)</c>) are the M7/M8
-    /// interfaces and are not wired here.
+    /// H4: <c>HandleRobotStopped</c>'s game-side <c>RobotStopped</c> broadcast (MessageEngineToGame(RobotStopped&amp;&amp;) 0x00535478, Robot::Broadcast 0x00535480;
+    /// the message has no fields, Size 0), raised with nothing when the cliff sensor is enabled. <c>ActionList::Cancel(-1)</c> (M8-015) runs before it; the
+    /// behaviour-end call before that (<c>BehaviorManager::RequestCurrentBehaviorEndImmediately</c>, M8-019) is reported MISSING and not made.
     /// </summary>
-    public event Action<byte>? RobotStopped;
+    public event Action? RobotStopped;
 
     /// <summary>
     /// Raised when the robot starts or stops reporting that it is falling, derived from
@@ -422,6 +421,19 @@ public sealed class CozmoSensors
             // W5: variance = M2 / (size - 1) once size >= 2.
             _cliffVariance = n >= 2 ? _cliffM2 / (n - 1) : 0f;
         }
+    }
+
+    // fidelity: M10-015
+    /// <summary>
+    /// M10-015's hook for the two calls UpdateFullRobotState makes just before UpdateCliffRunningStats (0x00512FB4..0x00512FBA
+    /// <c>RobotGyroDriftDetector::DetectGyroDrift</c> and 0x00512FC4 <c>DetectBias</c> on robot+0x27C). Null reports MISSING (once) and does nothing.
+    /// </summary>
+    internal Action<RobotState>? GyroDriftDetect;
+
+    private void DetectGyroDriftAndBias(RobotState s)
+    {
+        if (GyroDriftDetect is { } hook) hook(s);
+        else Behavior.SteppedBehavior.ReportMissing("M10-015 | UpdateFullRobotState 0x00512FB4..0x00512FC4: RobotGyroDriftDetector::DetectGyroDrift and DetectBias are unread (M10-015) and not called here");
     }
 
     // fidelity: M4-019
@@ -793,16 +805,21 @@ public sealed class CozmoSensors
                 break;
 
             case Protocol.RobotStopped rs:
-                // fidelity: M4-019
+                // fidelity: M4-019, M8-015, M8-019
                 // H1..H4 HandleRobotStopped tag 0xD4 (0x0053539C..0x00535480): H3 Evaluate sets comp+0x1C := the
-                // Robot's last state timestamp (robot+0x2C); if the cliff sensor is enabled (+4 != 0), RobotStopped is
-                // broadcast. The preceding BehaviorManager::RequestCurrentBehaviorEndImmediately and
-                // ActionList::Cancel(-1) are the M7/M8 interfaces, named in M4-019's unresolved and not wired here.
-                // Nothing is sent to the robot.
+                // Robot's last state timestamp (robot+0x2C); if the cliff sensor is enabled (+4 != 0, 0x00535436), in this order:
+                // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; MISSING: M8-019, reported below),
+                // ActionList::Cancel(-1) (0x00535466..0x0053546E; M8-015's ActionList, the robot's own) and the RobotStopped broadcast (0x00535480).
+                // Nothing is sent to the robot by this handler.
                 EvaluateCliffSuspiciousnessWhenStopped(_robot.Engine.Robot?.StoredState?.Timestamp ?? _cliffTimestamp);
                 bool stoppedEnabled;
                 lock (_gate) stoppedEnabled = _cliffEnabled;
-                if (stoppedEnabled) RobotStopped?.Invoke(rs.Field0);
+                if (stoppedEnabled)
+                {
+                    Behavior.SteppedBehavior.ReportMissing("M8-019 | HandleRobotStopped 0x00535454: BehaviorManager::RequestCurrentBehaviorEndImmediately is unread and not called here");
+                    _robot.Engine.Robot?.ActionList.Cancel(-1);
+                    RobotStopped?.Invoke();
+                }
                 break;
 
             case Protocol.FallingStarted fs:
@@ -892,6 +909,7 @@ public sealed class CozmoSensors
                 // the threshold schedule and the frame logic are skipped.
                 if (treadsChanged)
                 {
+                    DetectGyroDriftAndBias(s);
                     if (s.CliffDataRaw is { Length: 4 } traw) UpdateCliffRunningStats(traw[0]);
                     UpdateCliffDetectThreshold();
                 }
@@ -937,6 +955,7 @@ public sealed class CozmoSensors
                         }
                         if (statsAllowed)
                         {
+                            DetectGyroDriftAndBias(s);
                             if (s.CliffDataRaw is { Length: 4 } sraw) UpdateCliffRunningStats(sraw[0]);
                             UpdateCliffDetectThreshold();
                         }

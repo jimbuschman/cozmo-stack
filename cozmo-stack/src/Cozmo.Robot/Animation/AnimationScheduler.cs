@@ -469,7 +469,7 @@ public sealed class AnimationScheduler
     /// <summary>Where the sound for an audio keyframe comes from (M6); null leaves audio keyframes silent.</summary>
     public IAnimationAudioSource? AudioSource { get; set; }
 
-    // fidelity: M3-024
+    // fidelity: M6-028
     /// <summary>
     /// <c>RobotAudioClient</c>'s output source byte (<c>[client+0x3c]</c>), which <c>CreateAudioAnimation</c> 0x00599FF0 switches on (0x0059A070..0x0059A0B6) when
     /// InitStream asks for the animation's audio (A12). The client constructor leaves it 0 (None, 0x005994BC/0x005994E6) until HandleFirmwareVersion sets it
@@ -832,7 +832,7 @@ public sealed class AnimationScheduler
         _seamDueMs = _nowMs;
     }
 
-    // fidelity: M3-024
+    // fidelity: M6-028
     /// <summary>
     /// <c>RobotAudioClient::CreateAudioAnimation(anim)</c> 0x00599FF0, the call InitStream makes (A12). An audio animation that is still current is aborted and cleared first
     /// (0x00599FF8..0x0059A06C; the engine also logs "CurrentAnimation '%s' state: %s is NOT Null when creating a new animation", which needs the engine's
@@ -866,7 +866,7 @@ public sealed class AnimationScheduler
                 if (!_reportedDeviceAudio)
                 {
                     _reportedDeviceAudio = true;
-                    Log?.Invoke("warning: MISSING: RobotAudioClient::CreateAudioAnimation: the output source is 1 (PlayOnDevice): RobotAudioAnimationOnDevice (0x005974B0..0x00597687) posts the keyframe events on the device through Dispatch::After (0x00597562..0x005975A2); this stack has no device audio output, so no sound plays, and no audio is streamed to the robot (M3-024)");
+                    Log?.Invoke("warning: MISSING: RobotAudioClient::CreateAudioAnimation: the output source is 1 (PlayOnDevice): RobotAudioAnimationOnDevice (0x005974B0..0x00597687) posts the keyframe events on the device through Dispatch::After (0x00597562..0x005975A2); this stack has no device audio output, so no sound plays, and no audio is streamed to the robot (M6-028)");
                 }
                 return null;
             case 0:
@@ -1674,8 +1674,8 @@ public sealed class AnimationScheduler
                 }
                 return;
             }
-            // fidelity: M3-010
-            // C5–C7: retain the actual f32 vector. MISSING: the M6 Wwise renderer still supplies shorts.
+            // fidelity: M3-010, M6-016
+            // C5–C7: retain the actual f32 vector. MISSING: M6-016 / M6-015 | the M6 Wwise renderer still supplies shorts (the short-PCM path below is a stand-in; ReportMissing names it).
             if (source is IAnimationFloatAudioSource floats)
             {
                 var rendered = floats.GetFloatPcm(id, k.Volume);
@@ -1685,6 +1685,7 @@ public sealed class AnimationScheduler
             }
             var pcm = source.GetPcm(id, k.Volume);
             if (pcm is null || pcm.Length == 0) return;
+            Behavior.SteppedBehavior.ReportMissing("M6-016 / M6-015 | PopRobotAudioMessage's f32 buffer (0x00597DB4): this audio source hands 16-bit PCM (IAnimationAudioSource.GetPcm), so the frame is encoded through the short overload of the mu-law encoder, a stand-in for the engine's vector<float> and encodeMuLaw(float)");
             _pcm = pcm; _floatPcm = null; _floatSource = null; _pos = 0; _eventId = id;
         }
 
@@ -1712,8 +1713,8 @@ public sealed class AnimationScheduler
             int ready = _s.AudioSource is { } src ? src.ReadySamples(pcm, _pos) : pcm.Length;
             if (Math.Max(0, ready - _pos) < want) return null;
             var samples = new byte[CozmoAudio.SamplesPerFrame];
-            // fidelity: M3-010
-            // The source hands 16-bit PCM, so this is AnkiMuLaw.Encode(short). The engine's buffer is a
+            // fidelity: M3-010, M6-016
+            // MISSING: M6-016 / M6-015 (reported when the PCM is taken, above). The source hands 16-bit PCM, so this is AnkiMuLaw.Encode(short). The engine's buffer is a
             // vector<float> (PopRobotAudioMessage 0x00597DB4) and it calls encodeMuLaw(float); the float
             // overload's NaN warning is therefore not reachable from this short PCM seam. The 744-byte
             // frame is zero-padded below the samples (C5).

@@ -453,6 +453,8 @@ public sealed class CozmoRobot : IDisposable
     /// is no connection in state 2 or the handshake has not validated the robot (M1-030).
     /// </summary>
     public bool SendMessage(RobotMessage m, bool reliable = true, bool flush = false) => Engine.SendMessage(m);
+    /// <summary>A handler send without the Robot::SendMessage warning (the path doler's segment sends; see CozmoEngine.SendToHandler).</summary>
+    internal bool SendToHandler(RobotMessage m) => Engine.SendToHandler(m);
 
     /// <summary>Whether the engine's animation streamer is running (CD12): the animation loop streams only then.</summary>
     public bool AnimationStreamingOpen => Engine.AnimationStreamingOpen;

@@ -11,6 +11,7 @@ namespace Cozmo.Protocol.Tests;
 /// actions, the flip action, block configurations, the whiteboard's beacons, the workouts, and the behaviours
 /// built on them, all on the fake robot side of <see cref="Rig"/>.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class NavigationTests
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;

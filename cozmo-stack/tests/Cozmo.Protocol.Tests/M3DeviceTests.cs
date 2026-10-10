@@ -2280,6 +2280,77 @@ public class M3DeviceTests
         Assert.True(rig.Robot.CameraSettings.VisionEnabled);
     }
 
+    /// <summary>
+    /// M3-022 order (B-M3M4 build item 4): the callback installs the calibration (SetCameraCalibration, 0x0065ADE0) before it stores +0x48 = 1
+    /// (0x0065AE80), so at the install the flag is still 0 and the install is announced first; on a failed read there is no install and only the store.
+    /// </summary>
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(-1, false)]
+    public void M3_022_TheInstallPrecedesTheEnabledStore(int result, bool installs)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var order = new List<string>();
+        bool? enabledAtInstall = null;
+        rig.Robot.CameraSettings.CalibrationInstalled += _ => { order.Add("install"); enabledAtInstall = rig.Robot.CameraSettings.VisionEnabled; };
+        rig.Robot.CameraSettings.VisionEnabledSet += () => order.Add("store");
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = (sbyte)result, Length = 0, Data = installs ? Calibration56() : Array.Empty<byte>() });
+        rig.Tick();
+        Assert.Equal(installs ? new[] { "install", "store" } : new[] { "store" }, order);
+        if (installs) Assert.False(enabledAtInstall);
+        Assert.True(rig.Robot.CameraSettings.VisionEnabled);
+    }
+
+    /// <summary>
+    /// B-M3M4 build item 3 (M3-034 retired into M15-034 / M15-035 / M15-033 / M15-036, M11-059): the connection reads whose layer is unbuilt report MISSING naming the
+    /// owning record when they complete, and the FaceAlbum/Enrollment pair, which the engine reads only past the branch at 0x00650E3C, is gated on a hook owned by
+    /// M11-059: with the hook returning false the pair is not queued (the constructor reads are then 0x182000, 0x195000 and straight on to the backup reads at
+    /// 0x180000, where the ungated order has 0x184000); with none set the gate is reported MISSING and the pair is queued as before.
+    /// Tags are the engine's: ProgressionUnlock 0x182000 (0x0064BEFA), Inventory 0x195000 (0x0063CA52), FaceAlbum 0x184000 (0x006512F0), Enrollment 0x183000 (0x00651330).
+    /// </summary>
+    [Fact]
+    public void M3_034_TheUnbuiltConnectionReadsNameTheirOwningRecords()
+    {
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        var missing = new List<string>();
+        void OnMissing(string m) { lock (missing) missing.Add(m); }
+        Cozmo.Robot.Behavior.SteppedBehavior.MissingReported += OnMissing;
+        try
+        {
+            using var rig = new Rig();
+            rig.ToValidated();
+            rig.Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
+            rig.Tick();
+            SendFirstFullState(rig);
+            var tags = new List<uint>();
+            var nv = rig.Robot.Engine.NvStorage!;
+            for (int i = 0; !nv.IsIdle && i < 100; i++) { tags.Add(NvCommands(rig)[^1].Tag); AnswerInFlight(rig); }
+            Assert.Equal(new uint[] { 0x182000, 0x195000, 0x184000, 0x183000, 0x180000 }, tags.Take(5));
+            lock (missing)
+            {
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M11-059 | the FaceAlbum/Enrollment read pair"));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-034 | "));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-035 | "));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-033 | "));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-036 | "));
+            }
+        }
+        finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= OnMissing; }
+
+        using var gated = new Rig();
+        gated.Robot.Engine.FaceAlbumReadsGate = () => false;
+        gated.ToValidated();
+        gated.Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
+        gated.Tick();
+        SendFirstFullState(gated);
+        var gatedTags = new List<uint>();
+        var gnv = gated.Robot.Engine.NvStorage!;
+        for (int i = 0; !gnv.IsIdle && i < 100; i++) { gatedTags.Add(NvCommands(gated)[^1].Tag); AnswerInFlight(gated); }
+        Assert.Equal(new uint[] { 0x182000, 0x195000, 0x180000 }, gatedTags.Take(3));
+    }
+
     // ================================================================== NV storage wire core: M3-025..M3-031, M3-035
 
     private static List<NVCommand> NvCommands(Rig rig) => rig.Port.Messages().OfType<NVCommand>().ToList();
@@ -3112,8 +3183,9 @@ public class M3DeviceTests
     /// by ConnectToRobot (AddRobot) and queues #1..#12; <c>CozmoRobot.ConnectAsync</c> returns on the Success
     /// response and only then does the caller build the VisionSystem, so the FaceAlbum/Enrollment reads (#3/#4)
     /// complete after it exists and its handler adopts them. The Needs read (#15) reaches the NeedsManager.
-    /// ProgressionUnlock, Inventory, the RDBM backup reads and Lab have no component here, so their reads complete
-    /// with a no-op sink (the record's unresolved names each missing layer).
+    /// ProgressionUnlock, Inventory, the RDBM backup reads and Lab have no component here: their reads complete with a sink that reports MISSING naming the
+    /// owning record (M15-034, M15-035, M15-033, M15-036), asserted in M3_034_TheUnbuiltConnectionReadsNameTheirOwningRecords; this test covers
+    /// only the two layers that exist (FaceAlbum/Enrollment, Needs).
     /// </summary>
     [Fact]
     public void M3_034_TheConnectionReadCallbacksReachTheirLayers()

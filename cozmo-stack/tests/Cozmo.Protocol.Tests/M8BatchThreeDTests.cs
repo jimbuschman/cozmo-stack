@@ -10,6 +10,7 @@ namespace Cozmo.Protocol.Tests;
 /// <c>20261002-R-BEH2-M8-gap1-extraction.md</c> Part 1, the section and the addresses cited per test) and none is what the code returned. The helper bodies are a
 /// test <see cref="IHelper"/> subclass: the six concrete helper classes' bodies are unread and not built.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class M8BatchThreeDTests
 {
     // ------------------------------------------------------------------ fixtures

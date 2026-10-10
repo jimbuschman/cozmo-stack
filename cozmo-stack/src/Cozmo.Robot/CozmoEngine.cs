@@ -725,14 +725,26 @@ public sealed partial class EngineRobot
     /// <see cref="CozmoEngine.ConnectionFaceAlbumLoaded"/> with the album and the enrollment, and the result is
     /// kept for a VisionSystem built after ConnectAsync returns (the read completes after Gate A, which is after
     /// the connection response). ProgressionUnlock, Inventory and the backup reads have no component in this
-    /// stack: they queue and complete with a no-op sink.
+    /// stack: they queue and complete with a sink that reports MISSING and names the owning record (M15-034, M15-035,
+    /// M15-033).
+    /// M11-059: the FaceAlbum/Enrollment pair is queued in the engine only past the branch at 0x00650E3C (VisionSystem::Init's
+    /// outcome, then the album load-or-erase branch 0x00650FB4..0x0065108A), so it is gated on
+    /// <see cref="CozmoEngine.FaceAlbumReadsGate"/>; with no hook set the gate is reported MISSING and the pair is queued as before.
     /// </summary>
     private void QueueConnectionReads()
     {
         var nv = Engine.NvStorage;
         if (nv is null) return;                                  // no NV component: the offline/test seam
-        nv.Read(0x182000, _ => { });                             // #1 ProgressionUnlock
-        nv.Read(0x195000, _ => { });                             // #2 Inventory
+        nv.Read(0x182000, NoSink("M15-034", "ProgressionUnlockComponent's NV read callback 0x0064CE34"));   // #1 ProgressionUnlock
+        nv.Read(0x195000, NoSink("M15-035", "InventoryComponent's NV read callback 0x0063D7C4"));          // #2 Inventory
+        // fidelity: M11-059
+        // The pair is read by the engine only past VisionComponent::Init's branch at 0x00650E3C. The hook is M11-059's.
+        if (Engine.FaceAlbumReadsGate is { } faceGate)
+        {
+            if (!faceGate()) goto backupReads;
+        }
+        else
+            Behavior.SteppedBehavior.ReportMissing("M11-059 | the FaceAlbum/Enrollment read pair is queued only past the branch at 0x00650E3C (VisionSystem::Init's outcome, the album load-or-erase branch 0x00650FB4..0x0065108A); that outcome is unread, so this stack queues the pair unconditionally");
         // #3 FaceAlbum 0x184000: the empty callback fills VC+0x2F4 (the album bytes).
         nv.Read(0x184000, _ => { }, _faceAlbum);
         // #4 FaceEnrollment 0x183000: on terminal success the engine's callback consumes VC+0x2F4 and
@@ -750,8 +762,13 @@ public sealed partial class EngineRobot
             if (r.Result != 0) return;
             Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
         });
-        foreach (uint tag in BackupReadTags) nv.Read(tag, _ => { });       // #5..#12 RDBM backup
+    backupReads:
+        foreach (uint tag in BackupReadTags) nv.Read(tag, NoSink("M15-033", $"RobotDataBackupManager's backup read callback for tag 0x{tag:X}"));       // #5..#12 RDBM backup
     }
+
+    /// <summary>The sink of a connection read whose owning layer is unbuilt: it reports MISSING naming the record, once per process.</summary>
+    internal static Action<NvResult> NoSink(string record, string what) =>
+        _ => Behavior.SteppedBehavior.ReportMissing($"{record} | {what}: this stack has no component for it, so the read completes and its result is dropped");
 
     /// <summary>The album bytes from #3 (the engine's VC+0x2F4); cleared when #3 is armed, filled on completion.</summary>
     private readonly List<byte> _faceAlbum = new();
@@ -862,7 +879,7 @@ public sealed partial class EngineRobot
                 if (!_reportedFirmwareRootThrow)
                 {
                     _reportedFirmwareRootThrow = true;
-                    Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON root is not an object or null, so Json::Value::operator[] throws Json::LogicError (0x008EADC2..0x008EAE64) out of the handler; where the engine catches it is not established (M10-010, M1-029 row 11o); nothing is set");
+                    Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON root is not an object or null, so Json::Value::operator[] throws Json::LogicError (0x008EADC2..0x008EAE64) out of the handler; where the engine catches it is not established and has no record yet (M3-024 owns this parse, M10-010 the physical flag; M1-029 row 11o); nothing is set");
                 }
                 return;
             }
@@ -952,7 +969,7 @@ public sealed partial class EngineRobot
     /// <summary>The ids in the pose-origin list.</summary>
     public IReadOnlyList<uint> PoseOriginIds => _origins.ToArray();
 
-    // fidelity: M4-020
+    // fidelity: M11-019, M11-053
     /// <summary>
     /// The Robot constructor's Delocalize (manager spot-check, 0x00510A24): ClearCliffRunningStats (the cache is already
     /// 400, so nothing is sent, SC4d), PoseOriginList::AddNewOrigin (0x00510A66) creates origin 1, SetNewPose
@@ -1001,7 +1018,7 @@ public sealed partial class EngineRobot
         _bodyNotInAccModeCount++;
         if (_bodyNotInAccModeCount < 16) return;
         Engine.Log("warning: Robot.UpdateFullRobotState.BodyNotInAccessoryMode");
-        Engine.Handler.SendMessage(new SetBodyRadioMode { RadioMode = BodyRadioMode.BODY_ACCESSORY_OPERATING_MODE, WifiChannel = 0 });
+        SendChecked(new SetBodyRadioMode { RadioMode = BodyRadioMode.BODY_ACCESSORY_OPERATING_MODE, WifiChannel = 0 });
         _bodyNotInAccModeCount = 0;
     }
 
@@ -1093,9 +1110,9 @@ public sealed partial class EngineRobot
     /// </summary>
     internal void TracePrinterOnConnected()
     {
-        if (!Engine.Handler.SendMessage(new SetAppRunID { Field0 = new[] { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu } })) return;
+        if (!Engine.SendMessage(new SetAppRunID { Field0 = new[] { 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu, 0xFFFFFFFFu } })) return;
         _crashReportIndex = 0;
-        Engine.Handler.SendMessage(new RequestCrashReports { Field0 = 0 });
+        Engine.SendMessage(new RequestCrashReports { Field0 = 0 });
     }
 
     /// <summary>
@@ -1106,7 +1123,7 @@ public sealed partial class EngineRobot
     {
         if (_crashReportIndex is not { } i || i >= 3) return;
         _crashReportIndex = i + 1;
-        Engine.Handler.SendMessage(new RequestCrashReports { Field0 = (uint)(i + 1) });
+        Engine.SendMessage(new RequestCrashReports { Field0 = (uint)(i + 1) });
     }
 
     // fidelity: M1-041, M1-031
@@ -1144,7 +1161,7 @@ public sealed partial class EngineRobot
         }
         // 0x00513C66..0x00513C6A: VizManager::SendStartRobotUpdate (0x004A7DA4, through context+0x24) sits between the two gates. It is
         // debug visualisation on the app side and out of scope (manager, 2026-10-09); nothing is built for it.
-        // fidelity: M8-011
+        // fidelity: M3-032
         // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below. No source for that result exists in this
         // stack (see CozmoEngine.VisionUpdateAllResultsFailed), so with no hook the gate is reported MISSING once and the tick continues.
         if (Engine.VisionUpdateAllResultsFailed is { } visionGate)
@@ -1160,7 +1177,7 @@ public sealed partial class EngineRobot
         else
         {
             // reported once per process (ReportMissing de-duplicates), not once per engine robot
-            Behavior.SteppedBehavior.ReportMissing("Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: this stack has neither status on the engine tick, so neither gate is applied");
+            Behavior.SteppedBehavior.ReportMissing("M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: this stack has neither status on the engine tick, so neither gate is applied");
         }
         // fidelity: M4-019
         // 0x00513CD8..0x00513E2A: the charger-platform step (the platform flag's clear) follows UpdateAllResults / SendAbsLocalizationUpdate / MapComponent::UpdateRobotPose
@@ -1405,7 +1422,7 @@ internal sealed class RobotInitialConnection
         // 0x52E3AA: ReadLabAssignmentsFromRobot (CozmoExperiments, 0x6A5B1E) queues NV 0x196000; the lab layer
         // has no component in this stack, so the read queues and completes with a no-op sink. It precedes the
         // Needs read (0x52E3B2), which the NeedsManager queues on the serial edge below.
-        _engine.NvStorage?.Read(0x196000, _ => { });
+        _engine.NvStorage?.Read(0x196000, EngineRobot.NoSink("M15-036", "the Lab read's callback 0x006A6486 into CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34"));
         // fidelity: M15-014, M3-033
         // C2 row 10 / 0x0052E3B2 -> 0x006943F8: the Needs read 0x194000 follows the lab read. In the engine the
         // NeedsManager owns it (StartReadFromRobot 0x006944B4), but this stack builds the NeedsManager after the
@@ -1717,12 +1734,20 @@ public sealed partial class CozmoEngine : IDisposable
     /// <c>UpdateAllResults</c> gate, ahead of <see cref="AIComponentUpdate"/>. The <c>VisionSystem</c> (the owner of the <c>BlockWorld</c> it reads) sets it.
     /// </summary>
     internal Action? ChargerPlatformUpdate;
+    // fidelity: M3-032, M11-035
     /// <summary>
     /// The <c>VisionComponent::UpdateAllResults()</c> result as <c>Robot::Update</c> tests it (0x00513C76 <c>blx 0x4a7db0</c>; 0x00513C7C <c>cbz r6</c>): true is the non-zero
     /// result, after which <c>Robot::Update</c> warns and returns (0x00513C92..0x00513C9A). In this stack the vision results are handled inside <c>VisionSystem</c> on the
-    /// frame's own thread and nothing returns that status to the engine tick, so no source exists: while this is null the gate is reported MISSING once and the tick goes on.
+    /// frame's own thread and nothing returns that status to the engine tick, so no source exists: while this is null the gate is reported MISSING once and the tick goes on. The gate is M3-032's; the result's source (the per-mode result handlers) is M11-035's: the hook M11-035 fills.
     /// </summary>
     internal Func<bool>? VisionUpdateAllResultsFailed;
+    // fidelity: M11-059, M3-033
+    /// <summary>
+    /// The branch at 0x00650E3C that decides whether VisionComponent::Init goes on to queue the FaceAlbum/Enrollment reads (VisionSystem::Init's outcome and the
+    /// album load-or-erase branch 0x00650FB4..0x0065108A): true queues the pair, false skips it. Owned by M11-059; null (the default) reports MISSING and queues
+    /// the pair, the behaviour before the gate was named.
+    /// </summary>
+    internal Func<bool>? FaceAlbumReadsGate;
     // fidelity: M1-024
     /// <summary>
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>
@@ -1759,11 +1784,17 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     public event Action? GoToSleepRequested;
 
+    private readonly Action<string> _missingSink;
+
     internal CozmoEngine(IEngineTransport transport, CozmoEngineOptions? options, Func<long>? nowNs = null)
     {
         _t = transport;
         Options = options ?? new CozmoEngineOptions();
         _nowNs = nowNs ?? EngineTickRunner.HostNowNs;
+        // Every MISSING report (SteppedBehavior.ReportMissing, once per process per message) reaches this engine's log, so a handoff to an unbuilt record is visible
+        // in production. The event add/remove is atomic and the callback may run on any thread: Log invokes the LogLine subscribers as for any engine line.
+        _missingSink = line => { if (!_disposed) Log(line); };
+        Behavior.SteppedBehavior.MissingReported += _missingSink;
         _runStartNs = _nowNs();
         Rcm = new RobotConnectionManager(this, transport);
         Handler = new MessageHandler(this, Rcm);
@@ -1931,7 +1962,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     public void SetRobotVolume(float volume) => Post(() => SendRobotVolume(volume));
 
-    internal void SendRobotVolume(float volume) => Handler.SendMessage(new SetAudioVolume { Level = AudioVolumeLevel(volume) });
+    internal void SendRobotVolume(float volume) => SendMessage(new SetAudioVolume { Level = AudioVolumeLevel(volume) });
 
     // fidelity: M1-042
     /// <summary>
@@ -1954,8 +1985,24 @@ public sealed partial class CozmoEngine : IDisposable
 
     // ------------------------------------------------------------------ robot → engine
 
-    /// <summary>MessageHandler::SendMessage (B28, CB29): true when the message was handed to the transport.</summary>
-    public bool SendMessage(RobotMessage m) => Handler.SendMessage(m);
+    // fidelity: M4-020, M3-013, M3-023, M3-026, M4-017
+    /// <summary>
+    /// The robot send of every EngineToRobot message in the stack except the connection handshake's own (RobotInitialConnection's GetManufacturingInfo,
+    /// which is a MessageHandler send, not a Robot one): CozmoRobot.SendMessage, SendRobotVolume (0x0059A256), the TracePrinter sends (0x0053D430, 0x0053D342), the
+    /// body radio mode (0x00512B46) and the components' sends come through here or <see cref="EngineRobot.SendChecked"/>, except the path segments (<see cref="SendToHandler"/>). The engine routes them through
+    /// Robot::SendMessage (PLT 0x004A5368; blx sites 0x0057BFAA, 0x00658314, 0x0064539E, 0x00632380), which sends through
+    /// MessageHandler::SendMessage (B28, CB29) and warns "Robot %d failed to send a message type %s" on failure
+    /// (0x005134F4/0x0051356C). True when the message was handed to the transport. With no EngineRobot there is no
+    /// Robot::SendMessage to run, so only the handler's send happens.
+    /// </summary>
+    public bool SendMessage(RobotMessage m) => Robot is { } r ? r.SendChecked(m) : Handler.SendMessage(m);
+
+    // fidelity: M3-047
+    /// <summary>
+    /// A send straight to the MessageHandler, with no Robot::SendMessage warning: the engine's PathDolerOuter::Dole sends each path
+    /// segment through the handler's virtual SendMessage (PointTurn 0x00507F9E, Line 0x00507FF0, Arc 0x00508046; r3 = 1, [sp] = 0).
+    /// </summary>
+    internal bool SendToHandler(RobotMessage m) => Handler.SendMessage(m);
 
     /// <summary>RCD state: 0 none, 1 connecting, 2 connected (B21, B23).</summary>
     public int ConnectionState => Rcm.Rcd.State;
@@ -2113,6 +2160,7 @@ public sealed partial class CozmoEngine : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
+        Behavior.SteppedBehavior.MissingReported -= _missingSink;
         _runner?.Stop();
         _t.Received -= Rcm.Rcd.ReceiveData;
     }

@@ -520,7 +520,7 @@ public sealed class CozmoCubes
                 case ObjectConnectionState s:
                 {
                     // fidelity: M4-009
-                    // LC8a (0x00533B56..0x00533CB2): the engine ignores a slot above 4. NOT REPRODUCED: this stack uses
+                    // LC8a (0x00533B56..0x00533CB2): the engine ignores a slot above 4. MISSING: M11-013 / M11-041 | NOT REPRODUCED (reported below): this stack uses
                     // the slot as its BlockWorld ObjectID (an M11 interface; the engine's ObjectIDs come from
                     // ObservableObject::SetID, LC8e), and its manipulation and vision fixtures connect cubes on slots
                     // 7..9; the bound is recorded (MaxActiveObjectSlot), and CubeConnections applies it. A robot never
@@ -529,6 +529,7 @@ public sealed class CozmoCubes
                     // then the game-side broadcast, which the CubeLightComponent hears (S1, LC1). Disconnected:
                     // RemoveConnectedActiveObject (the connected entry with that activeID is erased, LC8b), then
                     // HandleDisconnectedFromObject.
+                    Behavior.SteppedBehavior.ReportMissing("M11-013 / M11-041 | HandleActiveObjectConnectionState 0x00533B3C..0x00533C34: the engine's ObjectID comes from ObservableObject::SetID (AddConnectedActiveObject, 0x00623040) and the slot gate (> 4, 0x00533B56) is the engine's; this stack uses the reported slot as the BlockWorld ObjectID");
                     bool isNew = !_byFactoryId.ContainsKey(s.FactoryID);
                     var c = Track(s.FactoryID);
                     c.Type = s.ObjectType;
@@ -553,7 +554,7 @@ public sealed class CozmoCubes
                 }
                 case ObjectPowerLevel p:
                 {
-                    // fidelity: M4-008
+                    // fidelity: M4-008, M4-032 (the %.2f renders of volts and percent, F2, are the phone printf boundary)
                     // HandleObjectPowerLevel 0x00537130..0x005373E8 (rows A1..A16). The log lines follow this file's convention (no channel prefix); the channel is "Unnamed".
                     uint robotId = CozmoEngine.RobotId;                                      // A2: Robot+0x10
                     float volts = p.BatteryLevel / 100f;                                      // A3
@@ -586,7 +587,7 @@ public sealed class CozmoCubes
                     // family / type / ObjectID order, whose activeID (+0x40) is the message's; none: the epilogue, no Broadcast log and no broadcast.
                     // A13 (0x0053736C..0x0053737A, Anki::ObjectID slot 0 at 0x004EF772): objectID is the object's game ObjectID value, not the activeID.
                     if (ConnectedObjectIdForActiveId is null)
-                        Log("MISSING: HandleObjectPowerLevel 0x00537360: no BlockWorld is attached, so the connected-object lookup (A12) has nothing to search; nothing is broadcast");
+                        Log("MISSING: HandleObjectPowerLevel 0x00537360: no BlockWorld is attached, so the connected-object lookup (A12) has nothing to search; nothing is broadcast (M11-004: BlockWorld's connected-object helpers, FindConnectedObjectHelper 0x0061F078)");
                     else if (ConnectedObjectIdForActiveId(p.ObjectID) is { } objectId)
                     {
                         Log($"debug: RobotToEngine.ObjectPowerLevel.Broadcast: RobotID {robotId} activeID {p.ObjectID} objectID {objectId} at {p.BatteryLevel} cv");   // A14 (objectID is %u)

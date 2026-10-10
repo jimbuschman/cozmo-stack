@@ -88,7 +88,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     {
         _robot = robot;
         robot.Sensors.CliffDetected += r => HandleCliffEvent((byte)r.Sensors);
-        robot.Sensors.RobotStopped += _ => HandleRobotStopped();
+        robot.Sensors.RobotStopped += () => HandleRobotStopped();
         robot.Sensors.ChargerEvent += HandleChargerEvent;       // tag 0x39
     }
 

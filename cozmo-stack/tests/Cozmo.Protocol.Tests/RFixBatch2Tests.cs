@@ -10,6 +10,7 @@ namespace Cozmo.Protocol.Tests;
 /// R-FIX batch 2 (M13): tests whose expected values come from the binary's instructions, from the shipped asset, or from independent exact geometry. Each test names the record and the
 /// citation it checks. A float32 emulation here is written from the cited instruction listing in the test itself, not read back from the implementation.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class RFixBatch2Tests
 {
     private static float F(uint bits) => BitConverter.UInt32BitsToSingle(bits);

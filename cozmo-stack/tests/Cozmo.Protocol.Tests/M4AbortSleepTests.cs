@@ -202,6 +202,95 @@ public class M4AbortSleepTests
     }
 
     /// <summary>
+    /// B-M3M4 build item 1 (Robot::SendMessage 0x0051349C, warning 0x00513558 / 0x0051356C; M4-020's evidence, M3-023, M4-017): the engine sends every message
+    /// through Robot::SendMessage, so a send that fails warns whichever component made it. The Robot exists after ConnectToRobot but the handshake has not
+    /// validated, so the transport filters every non-handshake message and the send fails for real (no test seam). The expected type names are the engine's
+    /// EngineToRobotTagToString strings (table 0x010343A0, index (tag ^ 0x80) &amp; 0xFF, read from libcozmoEngine.so): tag 0x66 "enableColorImages"
+    /// (0x00C1F1F3), 0x0B "setHeadlight" (0x00C1EE76), 0x03 "setBackpackLightsMiddle" (0x00C1EE1E), 0x37 "headAngle" (0x00C1EF67); not read from MessageCatalog.
+    /// </summary>
+    [Fact]
+    public void B_M3M4_Item1_EveryComponentSendWarnsWhenItFails()
+    {
+        using var rig = new Rig();
+        rig.Engine.ConnectToRobot(Rig.RobotIp); rig.Tick();
+        rig.Port.Raise(ReceiverMarker.OnConnected, Rig.RobotEp); rig.Tick();
+        Assert.NotNull(rig.Engine.Robot);
+        int mark = rig.Mark(), logMark = rig.LogLines().Count;
+        Assert.False(rig.Robot.SendMessage(new EnableColorImages { Enable = true }));    // the return value is kept
+        rig.Robot.CameraSettings.EnableColorImages(true);                                // M3-023, through Camera's _send
+        rig.Robot.Lights.SetHeadlight(true);                                             // M4-017
+        rig.Robot.SetBackpackLights(default, default, default);                          // Lights' raw path
+        rig.Robot.SetHeadAngle(0.1f);
+        Assert.Empty(rig.HexSince(mark));
+        var warnings = rig.LogLines().Skip(logMark).Where(l => l.StartsWith("warning: Robot.SendMessage: ")).ToList();
+        Assert.Equal(new[]
+        {
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type enableColorImages",   // CozmoRobot.SendMessage itself
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type enableColorImages",   // CameraSettings
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type setHeadlight",
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type setBackpackLightsMiddle",
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type headAngle",
+        }, warnings);
+    }
+
+    /// <summary>
+    /// Build item 3: a MISSING report reaches the engine log (once per process per message: the de-dup is unchanged), and a disposed engine no longer receives it.
+    /// </summary>
+    [Fact]
+    public void B_M3M4_MissingReportsReachTheEngineLogOnce()
+    {
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        using var rig = new Rig();
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("TEST-RECORD | a handoff");
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("TEST-RECORD | a handoff");
+        Assert.Equal(1, rig.LogLines().Count(l => l == "MISSING: TEST-RECORD | a handoff"));
+        int before = rig.LogLines().Count;
+        rig.Robot.Dispose();
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("TEST-RECORD | after dispose");
+        Assert.Equal(before, rig.LogLines().Count);
+    }
+
+    /// <summary>
+    /// Build item 1 sweep: SendRobotVolume (0x0059A256) and the TracePrinter's SetAppRunID (0x0053D430) are Robot::SendMessage sends too, so they warn when they fail
+    /// (robot present, handshake not validated: the transport filters them). Literal EngineToRobotTagToString names (table 0x010343A0): tag 0x64 "setAudioVolume"
+    /// (0x00C1F1D3), tag 0xA0 "appRunID" (0x00C1F383); not from MessageCatalog.
+    /// </summary>
+    [Fact]
+    public void B_M3M4_Sweep_VolumeAndTracePrinterSendsWarnWhenTheyFail()
+    {
+        using var rig = new Rig();
+        rig.Engine.ConnectToRobot(Rig.RobotIp); rig.Tick();
+        rig.Port.Raise(ReceiverMarker.OnConnected, Rig.RobotEp); rig.Tick();
+        int logMark = rig.LogLines().Count;
+        rig.Engine.SendRobotVolume(1f);
+        rig.Engine.Robot!.TracePrinterOnConnected();
+        var warnings = rig.LogLines().Skip(logMark).Where(l => l.StartsWith("warning: Robot.SendMessage: ")).ToList();
+        Assert.Equal(new[]
+        {
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type setAudioVolume",
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type appRunID",
+        }, warnings);
+    }
+
+    /// <summary>
+    /// M3-047: PathDolerOuter::Dole sends each path segment straight to the MessageHandler (PointTurn 0x00507F9E, Line 0x00507FF0, Arc 0x00508046), not
+    /// through Robot::SendMessage, so a failed segment send logs no "Robot.SendMessage" warning (robot present, handshake not validated: the transport filters every send).
+    /// </summary>
+    [Fact]
+    public void M3_047_PathSegmentSendsAreHandlerSendsWithNoWarning()
+    {
+        using var rig = new Rig();
+        rig.Engine.ConnectToRobot(Rig.RobotIp); rig.Tick();
+        rig.Port.Raise(ReceiverMarker.OnConnected, Rig.RobotEp); rig.Tick();
+        int logMark = rig.LogLines().Count;
+        var sender = new Cozmo.Robot.Manipulation.PathSender(rig.Robot);
+        sender.Execute(new Cozmo.Robot.Manipulation.PathSegment[] { new Cozmo.Robot.Manipulation.PathSegment.Line(0, 0, 100, 0, 50, 200, 200) });
+        Assert.Contains(sender.Sent, m => m is AppendPathSegmentLine);
+        var warnings = rig.LogLines().Skip(logMark).Where(l => l.StartsWith("warning: Robot.SendMessage: ")).ToList();
+        Assert.DoesNotContain(warnings, w => w.Contains("appendPathSeg"));   // table 0x010343A0: 0x3D appendPathSegLine, 0x3E appendPathSegArc, 0x3F appendPathSegPointTurn
+    }
+
+    /// <summary>
     /// M4-026 A3 (PathComponent::PathComponent 0x00648B14 movs r0,#4; 0x00648B16 strd r0,r5,[fp,#0x38]): the status starts at 4 (Ready) and +0x40 at
     /// 0xFF (0x00648B1A..0x00648B1C), so a freshly built Robot's removal logs "Aborting from status 'Ready'" (name table row 4).
     /// </summary>

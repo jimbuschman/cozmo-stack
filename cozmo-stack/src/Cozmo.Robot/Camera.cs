@@ -75,7 +75,7 @@ public sealed class CameraFrame
     /// <summary><c>DecodeImageRGB</c> (A9..A11): 320 x 240 RGB, row-major, 3 bytes a pixel, or false with the reason.</summary>
     public bool TryDecodeRgb(out byte[]? rgb, out string? error, Action<string>? log = null) => EncodedImageDecoder.TryDecodeRgb(this, out rgb, out error, log);
 
-    // fidelity: M3-018
+    // fidelity: M3-046
     /// <summary>
     /// What <c>EncodedImage::Save</c> writes (the Save presentation; the JPEG encoder itself is out of scope, unreachable): encoding 9 is decoded to RGB (A9, A10) and written as a JPEG at
     /// quality 90; encoding 8 is the reconstructed JPEG; any other encoding is the raw bytes. The JPEG writer is
@@ -126,8 +126,8 @@ public sealed class CameraFrame
 /// BGR2RGB swap are the shipped libopencv_imgproc ones; none of it uses StbImageSharp any more. The raw cases read
 /// <c>rows*cols</c> (<c>*3</c>) bytes from the vector start with no length check (G2, Y2, Y3, Z6, Z7); the engine's missing
 /// bytes are stale or uninitialised heap, which no shipped artifact can derive, so this stack applies policy M3-037 (SD2).
-/// MISSING (inventory): the disposition of a cv::Exception (empty JPEG vector, J114/J115) by the engine's caller, which the rows
-/// leave to M11; it is reported here as a failed decode carrying the shipped OpenCV text. The rendering of a NULL <c>%s</c>
+/// MISSING: M11-058 | the disposition of a cv::Exception (empty JPEG vector, J114/J115) by the engine's caller, which the rows
+/// leave to M11-058; it is reported here (SteppedBehavior.ReportMissing and the failed decode) carrying the shipped OpenCV text. The rendering of a NULL <c>%s</c>
 /// (EnumToString above 9) is the phone's printf and is not in the inventory.
 /// </summary>
 public static class EncodedImageDecoder
@@ -705,6 +705,9 @@ public sealed class CameraSettings
     /// </summary>
     internal void Handle(DefaultCameraParams m)
     {
+        // MISSING: M11-059 | VisionSystem::IsInitialized (0x006B2CD6) and the initial exposure (vision_config.json InitialExposureTime_ms, read by
+        // VisionComponent::Init 0x00650DAE..0x00650DCA) are M11-059's; this stack holds the constants 16 and true.
+        Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (unread); this stack uses the constants true and 16");
         if (!VisionSystemInitialized) { Emit("error: VisionComponent.HandleDefaultCameraParams: VisionSystem not initialized"); return; }
         ushort min = m.Field2, max = m.Field3;
         if (!(min <= InitialExposureTimeMs && InitialExposureTimeMs <= max))
@@ -773,12 +776,17 @@ public sealed class CameraSettings
                 }
                 Calibration = installed;
             }
-            VisionEnabled = true;
         }
+        // fidelity: M3-022
+        // Order (0x0065AB68): SetCameraCalibration (0x0065ADE0; the install, which starts processing) runs first, and only then the
+        // +0x48 store (0x0065AE80), on every path. MISSING: M11-039 | the install's consumer chain into MarkerDetector::Init is
+        // M11-039's, and the readers of +0x48 (the image drop) are M11-049's; the two events below are this stack's seam to them.
         if (installed is not null) CalibrationInstalled?.Invoke(installed);
+        lock (_gate) VisionEnabled = true;
         VisionEnabledSet?.Invoke();
     }
 
+    // fidelity: M3-022, M4-032
     /// <summary>
     /// The Recvd format (0xBFE313) "Received new %dx%d camera calibration from robot. (fx: %f, fy: %f, cx: %f, cy: %f,
     /// distCoeffs: %s)" with its args (0x0065ACB2..0x0065AD20): %d = the u16 at struct +0x16 then the one at +0x14

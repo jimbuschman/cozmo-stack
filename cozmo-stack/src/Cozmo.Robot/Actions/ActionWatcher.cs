@@ -2,7 +2,7 @@ using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot;
 
-// fidelity: M7-020
+// fidelity: M8-015
 /// <summary>
 /// The engine's <c>ActionWatcher</c> (20261004-actionlist-extraction.md rows W1..W17, with D3/D5/D6): the node
 /// tree over action tags, the destruction-event deque and the callback drain.

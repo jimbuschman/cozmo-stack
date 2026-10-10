@@ -15,7 +15,7 @@ public sealed record TurnInPlaceSpec(double AngleRad, bool IsAbsolute, double To
 /// The sub-action for the head (M13-020): <c>MoveHeadToAngleAction(robot, angle, tolerance, Radians(0))</c>
 /// (0xB8 bytes), then <c>[+0x9D] = 0</c>, <c>[+0x9C] = [PanAndTiltAction+0x126]</c> and, when
 /// <c>[PanAndTiltAction+0x161]</c>, the eight bytes at <c>[+0x158..0x15F]</c> copied to <c>[+0x90..0x97]</c>. The body is
-/// <see cref="MoveHeadToAngleAction"/> (M13-022).
+/// the live <c>CozmoMotion</c> head action (Motion.cs, M4-001 / M4-016); this stack has no second copy of it.
 /// </summary>
 public sealed record MoveHeadToAngleSpec(double AngleRad, double ToleranceRad, double VarianceRad, bool Byte0x9C, bool Byte0x9D,
                                          bool Bytes0x90Set, uint Word0x90, uint Word0x94);
@@ -34,11 +34,11 @@ public sealed record MoveHeadToAngleSpec(double AngleRad, double ToleranceRad, d
 /// returns the compound's <c>IActionRunner::Update()</c> unchanged.
 ///
 /// What is NOT built: the compound (<c>CompoundActionParallel</c>, the M8 framework) and the wiring of the two child actions into it.
-/// <see cref="TurnInPlaceAction"/> and <see cref="MoveHeadToAngleAction"/> (M13-022) exist as classes, but <see cref="Children"/> still
+/// <see cref="TurnInPlaceAction"/> (M13-022) exists as a class and the head move is the live <c>CozmoMotion</c> action (M4-016), but <see cref="Children"/> still
 /// holds the specs Init fills (how Init applies its tolerance, through SetTolerance's 2-degree minimum or by a store, is not in the
 /// inventory). <see cref="CompoundUpdate"/> is the compound's <c>IActionRunner::Update()</c>; it has no default, and calling
 /// <see cref="Init"/> or <see cref="CheckIfDone"/> without one throws <see cref="NotSupportedException"/>. THIS CLASS, TurnTowardsPoseCompound,
-/// WaitForImagesAction, TurnInPlaceAction and MoveHeadToAngleAction ARE NOT LIVE: nothing outside the tests constructs them, except
+/// WaitForImagesAction and TurnInPlaceAction ARE NOT LIVE: nothing outside the tests constructs them, except
 /// <see cref="TurnTowardsPoseCompound.InitPose"/>, which the face turn calls for its pan/head computation. The stack's own pan-and-tilt for
 /// the live paths is <see cref="Cozmo.Robot.Behavior.PanAndTilt"/>, which is not this class and is not claimed to be.
 /// </summary>
@@ -272,7 +272,7 @@ public static class PanTiltResult
 }
 
 /// <summary>
-/// What <see cref="TurnInPlaceAction"/> and <see cref="MoveHeadToAngleAction"/> read from the robot and send through the
+/// What <see cref="TurnInPlaceAction"/> and the live head action read from the robot and send through the
 /// <c>MovementComponent</c> (M13-022). <c>MovementComponent::TurnInPlace</c> and <c>MoveHeadToAngle</c> are unread (M13-021), so no
 /// implementation exists in this stack: the two methods are the visible stubs, and a test or a later record supplies them.
 /// </summary>
@@ -467,96 +467,6 @@ public sealed class TurnInPlaceAction
             if (!_robot.BodyMoving && Byte0x85) { Log?.Invoke("TurnInPlaceAction: stopped without reaching the angle"); result = PanTiltResult.MotorStoppedMakingProgress; }
         }
         return IsOffTreadsStateValid() ? result : PanTiltResult.InvalidOffTreadsState;                               // (h)
-    }
-}
-
-/// <summary>
-/// The engine's <c>MoveHeadToAngleAction</c> (M13-022): constructor 0x00547E40, <c>IsHeadInPosition</c> 0x005484F4, <c>Init</c> 0x00548534,
-/// <c>CheckIfDone</c> 0x005485CC, the motorActionAck handler 0x0054D624. The +0xA8 eye branch of CheckIfDone is dead (+0xA8 is only ever
-/// written 0 in this class) and is not built; the Preset constructor 0x0054834D and <c>GetPresetHeadAngle</c> 0x00548441 are unread (M13-021).
-/// </summary>
-// fidelity: M13-022
-public sealed class MoveHeadToAngleAction
-{
-    public const int ActionType = 0x12;
-    public const int TracksToLock = 1;
-    public static readonly float MinAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));         // 0xBEDF66F3
-    public static readonly float MaxAngleRad = BitConverter.Int32BitsToSingle(0x3F46D3F2);          // 0x3F46D3F2
-    public static readonly float MinToleranceRad = BitConverter.Int32BitsToSingle(0x3D0EFA35);      // 2 degrees (literal 0x3D0EFA35 at 0x00548338)
-    public const int MotorActionAckTag = 0xC4;
-
-    private readonly IPanTiltRobot _robot;
-    public event Action<string>? Log;
-    /// <summary>The draw for a variability above 0 (<c>IAction::GetRNG</c>, unread); PanAndTiltAction passes Radians(0).</summary>
-    public Func<float, float>? RandomInRange { get; set; }
-
-    public MoveHeadToAngleAction(IPanTiltRobot robot, float angle, float tolerance, float variability, Func<float, float>? randomInRange = null)
-    {
-        _robot = robot; RandomInRange = randomInRange;
-        Speed0x90 = 15.0f; Accel0x94 = 20.0f; Duration0x98 = 0; Byte0x9C = true; Byte0x9D = false; Float0xA0 = 0;
-        Variability0x88 = variability;
-        if (angle < MinAngleRad || angle > MaxAngleRad) { Log?.Invoke("MoveHeadToAngleAction: angle clamped"); angle = Math.Min(Math.Max(angle, MinAngleRad), MaxAngleRad); }
-        if (tolerance < MinToleranceRad) { Log?.Invoke("MoveHeadToAngleAction: tolerance below the minimum"); tolerance = MinToleranceRad; }
-        if (variability > 0)
-        {
-            angle += (RandomInRange ?? throw new NotSupportedException("IAction::GetRNG is unread: a variability above 0 needs RandomInRange"))(variability);
-            angle = Math.Min(Math.Max(angle, MinAngleRad), MaxAngleRad);
-        }
-        Angle0x78 = angle; Tolerance0x80 = tolerance;
-    }
-
-    public float Angle0x78 { get; private set; }
-    public float Tolerance0x80 { get; private set; }
-    public float Variability0x88 { get; }
-    public float Speed0x90 { get; set; }
-    public float Accel0x94 { get; set; }
-    public float Duration0x98 { get; }
-    /// <summary>+0x9C, copied from PanAndTiltAction's +0x126.</summary>
-    public bool Byte0x9C { get; set; }
-    public bool Byte0x9D { get; set; }
-    public float Float0xA0 { get; private set; }
-    public byte ActionId0xA9 { get; private set; }
-    public bool Byte0xAA { get; private set; }     // a MoveHeadToAngle was sent
-    public bool Byte0xAB { get; private set; }     // its ack arrived
-    public bool Byte0xAC { get; private set; }     // in position
-    public bool Byte0xAD { get; private set; }     // the head has moved
-    private int _logCounter;
-
-    /// <summary><c>IsHeadInPosition</c> 0x005484F4: Radians(target).IsNear(Radians(robot head), +0x80 + 1e-5).</summary>
-    public bool IsHeadInPosition() => EngineRadians.IsNear(Angle0x78, _robot.HeadAngle, Tolerance0x80 + 1e-5f);
-
-    /// <summary><c>Init</c> 0x00548534 (the +0xA0 write also runs when the send fails).</summary>
-    public uint Init()
-    {
-        Byte0xAD = false; Byte0xAA = false; Byte0xAB = false;
-        Byte0xAC = IsHeadInPosition();
-        if (Byte0xAC) return 0;
-        uint sent = _robot.MoveHeadToAngle(Angle0x78, Speed0x90, Accel0x94, Duration0x98, out byte id);
-        ActionId0xA9 = id;
-        if (sent == 0) Byte0xAA = true;
-        if (Byte0x9C && !Byte0x9D) Float0xA0 = 0.5f * MathF.Abs(Angle0x78 - _robot.HeadAngle);
-        return sent != 0 ? PanTiltResult.SendMessageToRobotFailed : 0;
-    }
-
-    /// <summary>The motorActionAck handler 0x0054D624: the ack of this action's move sets +0xAB.</summary>
-    public void HandleMotorActionAck(byte actionId) { if (Byte0xAA && actionId == ActionId0xA9) Byte0xAB = true; }
-
-    /// <summary><c>CheckIfDone</c> 0x005485CC.</summary>
-    public uint CheckIfDone()
-    {
-        if (Byte0xAA && !Byte0xAB) { if (++_logCounter % 11 == 0) Log?.Invoke("MoveHeadToAngleAction: waiting for the motor ack"); return PanTiltResult.Running; }   // (a)
-        Byte0xAC = Byte0xAC || IsHeadInPosition();                                                                  // (b)
-        if (_robot.HeadMoving) Byte0xAD = true;                                                                     // (d)
-        if (Byte0xAC)                                                                                               // (e)
-        {
-            if (!_robot.HeadMoving) return PanTiltResult.Success;
-            Log?.Invoke("MoveHeadToAngleAction: in position but still moving");
-            return PanTiltResult.Running;
-        }
-        if (_robot.HeadMoving) return PanTiltResult.Running;                                                        // (f)
-        if (!Byte0xAD) return PanTiltResult.Running;
-        Log?.Invoke("MoveHeadToAngleAction: stopped without reaching the angle");
-        return PanTiltResult.MotorStoppedMakingProgress;
     }
 }
 

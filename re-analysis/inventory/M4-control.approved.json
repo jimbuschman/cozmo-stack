@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "bc43edf7f4dc29edcdceef66549899a6643b7278de1575b2d4012fdecf262fe5",
+  "inventory_sha256": "11df33489dc5f020ed206cbeff465f442919021cf1d8791519fe3f28dce07b8f",
   "records": {
     "M4-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -424,13 +424,14 @@
       "hardware_required": false
     },
     "M4-033": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "TouchSensorComponent: the per-RobotState Update, the ctor, the dtor and its logging",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "UpdateFullRobotState calls TouchSensorComponent::Update: ldr.w r0,[r4,#0x28C]; blx 0x4A7C00 at 0x00512990..0x00512996, right after the cliff UpdateRobotData (0x0051298C)",
         "Update 0x0064E75C stores RobotState+0 at +4 and the u16 at RobotState+0x58 at +8, then tail-calls Log through the veneer 0x008CCFCC; Log 0x0064E76C returns unless +0x10 (logging) is set; the ctor 0x0064E738 zeroes +4..+0x14; the dtor 0x0064E746 deletes +0xC through its vtable slot 1 (the logger, present only after StartLogging 0x0064EA44)",
-        "Call sites from a full .text BL/BLX sweep: ctor 0x0050FE6C; dtor 0x00510766, 0x005113E0, 0x0051171A; Update 0x00512996"
+        "Call sites from a full .text BL/BLX sweep: ctor 0x0050FE6C; dtor 0x00510766, 0x005113E0, 0x0051171A; Update 0x00512996",
+        "re-analysis/research/20261010-m3045-m4033-rows.md Part B (manager-adopted 2026-10-10): ctor 0x0064E738 (writes +0, +4, +0xC, +0x10, +0x14; not +8); Robot+0x28C (0x0050FE60..0x0050FE70); Update from UpdateFullRobotState 0x00512996 gated on Robot+0x29 (0x0051293C..0x00512942) stores the timestamp at +4 and RobotState+0x58 (u16) at +8, then tail-calls Log (0x0064E75C..0x0064E766 -> 0x0064E76C); Log returns unless +0x10. StartLogging/StopLogging have no caller (no PLT, BL/BLX/B.W, veneer or data pointer); +4/+8 are read only by Log. Teardown: dtor deletes the logger (0x0080E090), no flush, no log, no send."
       ],
       "live_path": true,
       "hardware_required": false

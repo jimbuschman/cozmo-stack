@@ -196,7 +196,7 @@ public sealed class VisionSystem : IDisposable
     internal void ResetToConstructed()
     {
         Interlocked.Increment(ref _removals);
-        // fidelity: M4-017, M1-025, M4-027
+        // fidelity: M11-061, M4-017, M1-025, M4-027
         // CB33/CC26/CC27: removal deletes this owner; a new owner's request deque is empty.
         // The retained-host reset remains the M4-027 candidate; do not replay requests on a later robot.
         lock (_modeGate) _limitedExposureRequests.Clear();
@@ -305,7 +305,7 @@ public sealed class VisionSystem : IDisposable
     /// <summary>The mode enable bitmask at <c>VisionSystem+0xac</c>, from the shipped config (C2.3).</summary>
     public int ModeEnableMask { get; set; } = ShippedModeEnableMask;
 
-    // fidelity: M4-017
+    // fidelity: M11-061
     // E5: VisionSystem+0xB0. This bounded caller only queues mode 14; other mode recipients remain M11.
     private sealed record LimitedExposureRequest(bool Enable);
     private readonly Queue<LimitedExposureRequest> _limitedExposureRequests = new();
@@ -934,7 +934,7 @@ public sealed class VisionSystem : IDisposable
         {
             if (RemovedSince(removal)) return null;
             Volatile.Write(ref _frameTimestamp, timestamp);
-            // fidelity: M4-017 — E6, before ShouldProcessVisionMode dispatch in this image update.
+            // fidelity: M11-061 — E6, before ShouldProcessVisionMode dispatch in this image update.
             ApplyQueuedLimitedExposure();
             // fidelity: M11-021 — ApplyCLAHE(image, 4, out) 0x006B44EC runs unconditionally before the
             // marker-mode gate; DetectMarkersWithCLAHE picks the original or the CLAHE image from the

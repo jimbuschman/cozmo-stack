@@ -111,7 +111,15 @@ public sealed class PathSender
     /// <summary>Every message sent, for tests and the conformance log.</summary>
     public List<RobotMessage> Sent { get; } = new();
 
-    private void Send(RobotMessage m) { Sent.Add(m); _robot.SendMessage(m, flush: true); }
+    // fidelity: M3-047
+    // Path segments go straight to the handler, as PathDolerOuter::Dole sends them (0x00507F9E, 0x00507FF0, 0x00508046): no
+    // Robot::SendMessage warning on failure. The other path messages go through the robot's send.
+    private void Send(RobotMessage m)
+    {
+        Sent.Add(m);
+        if (m is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn) _robot.SendToHandler(m);
+        else _robot.SendMessage(m, flush: true);
+    }
 
     private static uint F(double v) => BitConverter.SingleToUInt32Bits((float)v);
 

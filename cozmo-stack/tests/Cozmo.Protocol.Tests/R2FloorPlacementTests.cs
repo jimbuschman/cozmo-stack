@@ -11,6 +11,7 @@ namespace Cozmo.Protocol.Tests;
 /// (<c>re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md</c>, rows cited per test) and from the independent binary32 emulation of the disassembly in
 /// <c>re-analysis/evidence/m15-floor-placement/emulate_candidates.py</c>, never from running the C#.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class R2FloorPlacementTests
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;

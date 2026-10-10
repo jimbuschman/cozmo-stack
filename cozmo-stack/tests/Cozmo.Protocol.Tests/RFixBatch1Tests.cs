@@ -13,6 +13,7 @@ namespace Cozmo.Protocol.Tests;
 /// Where the engine calls a libm function (acosf, cosf, atan2f) the stack uses MathF as a stand-in, so those comparisons carry a
 /// few-ulp tolerance and no claim of bit equality.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class RFixBatch1Tests
 {
     private static float F(uint bits) => BitConverter.UInt32BitsToSingle(bits);

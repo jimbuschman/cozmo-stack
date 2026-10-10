@@ -2055,18 +2055,73 @@ public class M4ControlTests
         rig.ToSynced();
         rig.State();
         var s = rig.Robot.Sensors;
-        var seen = new List<byte>();
-        s.RobotStopped += seen.Add;
+        var seen = new List<int>();
+        s.RobotStopped += () => seen.Add(7);
         s.SetCliffSensorEnabled(true);
         int mark = rig.Mark();
         rig.Data(new RobotStopped { Field0 = 7 }); rig.Tick();
-        Assert.Equal(7, Assert.Single(seen));
+        Assert.Single(seen);                                                // the broadcast carries no fields (Size 0)
         Assert.Equal(rig.Engine.Robot!.StoredState!.Timestamp, s.CliffSuspiciousAt);
         Assert.DoesNotContain(rig.RawSince(mark), b => b[0] == 0x3B);      // no robot send
         seen.Clear();
         s.SetCliffSensorEnabled(false);
         rig.Data(new RobotStopped { Field0 = 8 }); rig.Tick();
         Assert.Empty(seen);                                                // disabled: no broadcast
+    }
+
+    /// <summary>
+    /// M4-019 H4 (0x00535432..0x00535480) with M8-015 / M8-019: with the cliff sensor enabled, HandleRobotStopped calls
+    /// BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454, M8-019: reported MISSING, not built), then ActionList::Cancel(-1)
+    /// (0x0053546E) on the robot's own list, then broadcasts; with the sensor disabled none of the three happens. UpdateFullRobotState's
+    /// DetectGyroDrift/DetectBias calls (0x00512FBA, 0x00512FC4, M10-015) are reported MISSING too, until a hook is set.
+    /// </summary>
+    [Fact]
+    public async Task M4_019_H4_RobotStoppedCancelsTheActionsAndNamesTheUnbuiltCalls()
+    {
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
+        var missing = new List<string>();
+        void OnMissing(string m) { lock (missing) missing.Add(m); }
+        Cozmo.Robot.Behavior.SteppedBehavior.MissingReported += OnMissing;
+        try
+        {
+            using var rig = new Rig();
+            rig.ToSynced();
+            rig.Calibrate();
+            rig.State();
+            var s = rig.Robot.Sensors;
+            s.SetCliffSensorEnabled(false);
+            var head = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+            rig.Tick();
+            rig.Data(new RobotStopped { Field0 = 7 }); rig.Tick();
+            Assert.DoesNotContain(rig.Log, l => l.Contains("IActionRunner.Cancel: Cancelling action MoveHeadTo"));   // disabled: no Cancel(-1)
+            lock (missing) Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M8-019"));
+            s.SetCliffSensorEnabled(true);
+            var order = new List<string>();
+            void OnOrder(string m) { if (m.StartsWith("MISSING: M8-019 | ")) lock (order) order.Add("behaviour-end"); }
+            Cozmo.Robot.Behavior.SteppedBehavior.MissingReported += OnOrder;
+            int logSeen = 0;
+            s.RobotStopped += () =>
+            {
+                lock (order)
+                {
+                    // at the broadcast the Cancel(-1) line must already be in the log
+                    if (rig.Log.Any(l => l.StartsWith("info: [Actions] IActionRunner.Cancel: Cancelling action MoveHeadTo"))) order.Add("cancel");
+                    order.Add("broadcast"); logSeen++;
+                }
+            };
+            rig.Data(new RobotStopped { Field0 = 7 }); rig.Tick();
+            Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= OnOrder;
+            Assert.Equal(1, logSeen);                                                     // the broadcast fired
+            lock (order) Assert.Equal(new[] { "behaviour-end", "cancel", "broadcast" }, order);   // H4 order: 0x00535454, 0x0053546E, 0x00535480
+            Assert.Contains(rig.Log, l => l.StartsWith("info: [Actions] IActionRunner.Cancel: Cancelling action MoveHeadTo"));
+            lock (missing)
+            {
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M8-019 | "));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M10-015 | "));
+            }
+            await Task.WhenAny(head, Task.Delay(1000));
+        }
+        finally { Cozmo.Robot.Behavior.SteppedBehavior.MissingReported -= OnMissing; }
     }
 
     // ------------------------------------------------------------------ M4-003, M4-005, M4-009, M4-012 (M12 wiring)
