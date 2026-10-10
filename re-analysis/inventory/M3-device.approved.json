@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "066522cc2208dd70cf7cf3053c8fa70226fe0979d954b678f56821ab0bc5841a",
+  "inventory_sha256": "803fb85def37f0e4a1ef4f0c877c8a5670bb2b7b15867e2a5dd1ea462322e04f",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -494,13 +494,14 @@
       "hardware_required": false
     },
     "M3-044": {
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends",
       "authority": "libcozmoEngine.so 3.4.0-1204 camera start path.",
       "evidence": [
-        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders."
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders.",
+        "re-analysis/research/20261010-m3044-camera-start-rows.md (manager-adopted 2026-10-10): robot ImageRequest is sent only by Robot::SendSyncTime {Stream, QVGA} at connection (0x005152F0/0x00515304, already built at CozmoEngine.cs:995) and by the SetRobotImageSendMode helper (0x004EDE4C); robot EnableColorImages only via VisionComponent (0x006582E8), reached from the game message 0x77 and BehaviorTrackLaser (0x005FAD2E/0x005FBDB6). The app's game ImageRequest (0x74) only stores Robot+0x340 (0x004EE9F2)."
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     }
   }

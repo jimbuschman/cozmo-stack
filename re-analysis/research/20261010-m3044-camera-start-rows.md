@@ -27,3 +27,39 @@ step | what the original does | citation | record | classification
 10 Unity use of ImageRequest | Only ImageReceiver: Initialize registers the ImageChunk callback if previously Off, stores mode, sends G2E ImageRequest{mode}; StopCapture removes the callback and sends Off. Instances: VizManager (wires ProcessImageChunk only, no CaptureStream call found) and DroneModeCameraFeed (Initialize and OnApplicationPause(false) call CaptureStream, OnApplicationPause(true) calls StopCapture). | unity/scripts/csharp/ImageReceiver.cs:37-74; unity/scripts/csharp/Cozmo.Challenge.DroneMode/DroneModeCameraFeed.cs:86-116; unity/scripts/csharp/Anki.Cozmo.Viz/VizManager.cs:24,157,222 | NEW | EXACT_SOURCE
 
 11 Robot reaction to ImageRequest {mode,res} and EnableColorImages | Whether the firmware produces colour frames, what resolution 0 versus 4 does, and whether a second ImageRequest restarts the stream: not in any shipped artifact read. | n/a | M3-016 (HARDWARE_ONLY, existing) | HARDWARE_ONLY
+
+## Answers to the three questions
+
+1. Senders. RobotInterface ImageRequest: SendSyncTime (fields {1,4}) and the SetRobotImageSendMode helper (fields from the game message). RobotInterface EnableColorImages: only the VisionComponent helper, triggered by BehaviorTrackLaser Init/Cleanup and the G2E EnableColorImages message (plus SDK-mode ResetRobot, unreachable). The G2E ImageRequest (the one the Unity app uses) triggers no robot message.
+2. Engine-initiated sends without an app request: yes for ImageRequest, exactly one, at connection, {Stream=1, QVGA=4}, after SyncTime and InitController both sent successfully, reliable/non-hot, result ignored. No for EnableColorImages: nothing sends it at connection or vision start.
+3. App/game messages (the job of the C# API): G2E ImageRequest (0x74), G2E SetRobotImageSendMode, G2E EnableColorImages (0x77). Engine-internal: the SendSyncTime ImageRequest (triggered by RobotConnectionResponse result 0) and the BehaviorTrackLaser EnableColorImages. SdkStatus::ResetRobot is SDK mode.
+
+## Conclusion on CozmoRobot.StartCamera
+
+StartCamera (CozmoRobot.cs:549-554) calls Camera.Restart(), then CameraSettings.EnableColorImages(color) (robot EnableColorImages{color}), then sends robot-interface ImageRequest {Mode = Stream or SingleShot} with ImageResolution unset (generated field, sbyte, default 0). No engine path sends these two in that sequence:
+- A robot ImageRequest with a caller-chosen mode exists in the engine only via G2E SetRobotImageSendMode (row 7), which also sets +0x340 and takes the resolution from the caller. The Unity ImageRequest never reaches the robot (row 5).
+- EnableColorImages at camera start has no counterpart except the G2E message and BehaviorTrackLaser (rows 8, 9).
+- The original already requests {Stream,4} at connection (row 3). A later ImageRequest {Stream,0} from StartCamera is not an original behaviour. CozmoEngine.cs:995 sends the connection {Stream,4}.
+All callers of StartCamera are Conformance tools (CoreChecks.cs:362,431; Devices.cs:168; FreeplayTool.cs:148; ManipTool.cs:57; Reactions.cs:199; VisionTool.cs:145) plus a doc comment at CozmoRobot.cs:183.
+
+So StartCamera has no engine counterpart as a unit: it is a tool convenience and fits a COMPATIBILITY_POLICY limited to tools, unless the manager maps it onto rows 7 and 8 (G2E SetRobotImageSendMode, then G2E EnableColorImages if colour is wanted), which is a different behaviour from what it sends now.
+
+## Existing records
+
+- M3-023 (title: EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it; IMPLEMENTATION_GAP): the title holds. Evidence 3a writers 0x00650180, 0x006582D6, 0x00658368, 0x00658F74 is confirmed (stores at those addresses). Its unresolved text is right that StartCamera had no row; rows 5, 7, 8 are the camera-control rows it lacked.
+- A16 (M3-device.md line 122: ImageRequest {Stream 1, QVGA 4} is sent at SyncTime, 0x005152F0): holds, but covers only the send; the SyncTime caller (row 4), the InitController-success gate and the ignored result (row 3) are what it lacks.
+
+## Contradicted by the source
+
+None.
+
+## Too weak
+
+None found. M3-023 3b (the only reader is BehaviorTrackLaser) was not re-scanned here; only the two PLT callers of VisionComponent::EnableColorImages were re-found.
+
+## Open questions
+
+1. Robot+0x340 initial 0: the store at 0x005100D4 uses r4; the movs r4,#0 itself was not located (neighbouring writes 0x005100A0..0x005100DC are zero stores).
+2. Emitter of ExternalInterface::RobotConnectionResponse (result 0): not traced (RECOVERABLE_GAP; it is the trigger of the connection ImageRequest).
+3. HandleImageChunk and CompressAndSendImage were read only for the +0x340 gate.
+4. Manager decision: COMPATIBILITY_POLICY for StartCamera (tool-only), or re-map onto G2E SetRobotImageSendMode / EnableColorImages (rows 7-8).

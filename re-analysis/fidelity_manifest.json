@@ -91,7 +91,7 @@
       "id": "M3-device",
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -9316,16 +9316,17 @@
       "subsystem": "M3-device",
       "title": "CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "The stack sends EnableColorImages and an ImageRequest when a tool starts the camera; if the engine does not, the robot's camera state differs.",
       "provenance": "Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\") (Opus NEEDS EXTRACTION, 2026-09-30; M3-023).",
       "authority": "libcozmoEngine.so 3.4.0-1204 camera start path.",
       "evidence": [
-        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders."
+        "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders.",
+        "re-analysis/research/20261010-m3044-camera-start-rows.md (manager-adopted 2026-10-10): robot ImageRequest is sent only by Robot::SendSyncTime {Stream, QVGA} at connection (0x005152F0/0x00515304, already built at CozmoEngine.cs:995) and by the SetRobotImageSendMode helper (0x004EDE4C); robot EnableColorImages only via VisionComponent (0x006582E8), reached from the game message 0x77 and BehaviorTrackLaser (0x005FAD2E/0x005FBDB6). The app's game ImageRequest (0x74) only stores Robot+0x340 (0x004EE9F2)."
       ],
-      "unresolved": "RECOVERABLE_GAP: find what the engine sends when the camera starts (callers of the EnableColorImages and ImageRequest senders) and whether StartCamera has any engine counterpart; otherwise it becomes a COMPATIBILITY_POLICY for the tools.",
+      "unresolved": "COMPATIBILITY_POLICY (manager, 2026-10-10): StartCamera has no engine counterpart as a unit; its only callers are the Conformance tools (CoreChecks.cs:362/431, Devices.cs:168, FreeplayTool.cs:148, ManipTool.cs:57, Reactions.cs:199, VisionTool.cs:145), so it is a tool convenience off the live path. It sends EnableColorImages{color} and ImageRequest with resolution 0, where the engine's connection request uses 4. Production camera control goes through the game-message paths (0x74, 0x77, SetRobotImageSendMode), which the C# API owns. Open: who emits RobotConnectionResponse result 0 (the connection ImageRequest's trigger).",
       "hardware_required": false,
-      "live_path": true,
+      "live_path": false,
       "test": ""
     },
     {

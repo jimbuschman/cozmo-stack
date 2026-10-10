@@ -541,6 +541,7 @@ public sealed class CozmoRobot : IDisposable
         }
     }
 
+    // fidelity: M3-044 (tool-only policy: no engine counterpart; production camera control is the game-message path)
     /// <summary>
     /// Starts the camera: this stack's call, not the engine's (the engine requests the stream at SyncTime, A16, and
     /// never sends EnableColorImages at connection, A24). The colour flag goes through

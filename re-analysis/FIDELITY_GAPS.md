@@ -9,9 +9,9 @@ Manifest of **473 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 145 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 43 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 42 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 237 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 34 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 35 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 9 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -26,7 +26,7 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
-| M3-device — Camera, display and audio device layer | 44 | 1 | 17 | 0 | 3 | no | no |
+| M3-device — Camera, display and audio device layer | 44 | 0 | 17 | 0 | 3 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 32 | 0 | 15 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 39 | 3 | 13 | 0 | 1 | no | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 26 | 0 | 23 | 0 | 0 | yes | no |
@@ -72,17 +72,6 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
-
-### M3-device — Camera, display and audio device layer
-
-**M3-044 — CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs`
-* effect: The stack sends EnableColorImages and an ImageRequest when a tool starts the camera; if the engine does not, the robot's camera state differs.
-* rests on: Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md "Settling pass") (Opus NEEDS EXTRACTION, 2026-09-30; M3-023).
-* best authority: libcozmoEngine.so 3.4.0-1204 camera start path.
-* evidence: cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders.
-* outstanding: RECOVERABLE_GAP: find what the engine sends when the camera starts (callers of the EnableColorImages and ImageRequest senders) and whether StartCamera has any engine counterpart; otherwise it becomes a COMPATIBILITY_POLICY for the tools.
 
 ### M5-animation — Animation clips, scheduler and face
 
@@ -2699,6 +2688,7 @@ Each of these is a question already answered. The original's behaviour is establ
 | M1-052 | M1-transport | COMPATIBILITY_POLICY | SDK connection callback virtual targets | libcozmoEngine.so 3.4.0-1204 communication-change callback. |
 | M3-039 | M3-device | COMPATIBILITY_POLICY | SDK cube-sleep recipient | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M3-042 | M3-device | COMPATIBILITY_POLICY | Host persistent directory and stat mapping for the IMU diagnostic logger | libcozmoEngine.so 3.4.0-1204 IMU handlers (M3-041 rows L5/L6) and FileUtils (rows F8.1/F8.2). |
+| M3-044 | M3-device | COMPATIBILITY_POLICY | CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends | libcozmoEngine.so 3.4.0-1204 camera start path. |
 | M4-029 | M4-control | COMPATIBILITY_POLICY | SDK light-state and lift-power recipients | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M4-030 | M4-control | COMPATIBILITY_POLICY | StopRobotForSdk action/control recipient | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M4-032 | M4-control | EQUIVALENT_IMPLEMENTATION | Phone printf rendering of %f / %.1f / %.2f in engine logs | Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs. |

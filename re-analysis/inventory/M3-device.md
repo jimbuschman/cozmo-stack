@@ -409,3 +409,5 @@ Settling pass (manager, 2026-10-10, Opus at 3c994bc): M3-027, M3-030 and M3-040 
 | Record | Status | Evidence |
 | --- | --- | --- |
 | M3-044 | RECOVERABLE_GAP: CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends (CozmoRobot.cs:549-554). | Named by the M3+M4 settling pass (2026-10-10). |
+
+M3-044 is COMPATIBILITY_POLICY, tool-only and off the live path (manager, 2026-10-10). Rows: research/20261010-m3044-camera-start-rows.md. The engine has no StartCamera counterpart; the connection ImageRequest {Stream, QVGA} is already built.
