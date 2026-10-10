@@ -964,9 +964,8 @@ public class TransportRepairTests
     {
         var first = new StopwatchClock();
         double a1 = first.NowMs;
-        using var advanced = new ManualResetEventSlim();
-        using var timer = new Timer(_ => advanced.Set(), null, 30, Timeout.Infinite);
-        advanced.Wait(); // explicit timer signal: this test checks the real monotonic epoch
+        // Wait on the first clock itself (a Windows timer can fire a tick early): this test checks the real monotonic epoch.
+        while (first.NowMs < a1 + 30) Thread.Sleep(1);
         var later = new StopwatchClock();
         double b = later.NowMs, a2 = first.NowMs;
         Assert.True(b >= a1 + 25, $"a clock made later restarted its epoch: {b} vs {a1}");
