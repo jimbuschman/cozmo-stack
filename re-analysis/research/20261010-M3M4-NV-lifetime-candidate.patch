@@ -1,0 +1,294 @@
+diff --git a/cozmo-stack/src/Cozmo.Robot/NvStorage.cs b/cozmo-stack/src/Cozmo.Robot/NvStorage.cs
+index 00dd790..5255835 100644
+--- a/cozmo-stack/src/Cozmo.Robot/NvStorage.cs
++++ b/cozmo-stack/src/Cozmo.Robot/NvStorage.cs
+@@ -146,6 +146,7 @@ public sealed class NvStorageComponent : IDisposable
+     private readonly Queue<PendingRequest> _queue = new();
+     private PendingRequest? _inFlight;
+     private readonly List<Action> _onIdle = new();
++    private readonly object _idleExecution = new();
+     private readonly List<string> _log = new();
+ 
+     internal NvStorageComponent(CozmoRobot robot)
+@@ -462,16 +463,41 @@ public sealed class NvStorageComponent : IDisposable
+     /// <see cref="OnIdle"/> (AddOneShotOnIdleCallback, 0x00645C32). A request completion does not run it: 0x006437EE
+     /// calls only SetState(0), and SetState (0x00642B0C) runs no callbacks.
+     /// </summary>
++    // fidelity: M3-040
+     public void ProcessOnIdle()
+     {
+-        Action[] run;
++        // Native dispatch has one engine executor. A competing host caller only
++        // appends; it must not invoke the same front concurrently or block a callback
++        // waiting for that caller. Monitor permits the native same-thread reentry.
++        if (!Monitor.TryEnter(_idleExecution)) return;
++        try { ProcessOnIdleCore(); }
++        finally { Monitor.Exit(_idleExecution); }
++    }
++
++    private void ProcessOnIdleCore()
++    {
+         lock (_gate)
+         {
+             if (_inFlight is not null || _queue.Count != 0 || _onIdle.Count == 0) return;
+-            run = _onIdle.ToArray();
+-            _onIdle.Clear();
+         }
+-        foreach (var a in run) a();
++        // 00645B08..00645BAE: test NV state/queue once, invoke the front before pop,
++        // and keep draining even if a callback enqueues NV work. An exception leaves
++        // the front intact. AddOneShot can reenter this loop; there is no native guard.
++        while (true)
++        {
++            Action callback;
++            lock (_gate)
++            {
++                if (_onIdle.Count == 0) return;
++                callback = _onIdle[0];
++                _log.Add("debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ");
++            }
++            callback();
++            lock (_gate)
++            {
++                _onIdle.RemoveAt(0);
++            }
++        }
+     }
+ 
+     // fidelity: M3-026, M3-027, M3-030, M3-031
+@@ -489,6 +515,7 @@ public sealed class NvStorageComponent : IDisposable
+     {
+         Action<NvResult>? timeoutCallback = null;
+         NvResult timeoutResult = default;
++        PendingRequest? timeoutRequest = null;
+         bool runOnIdle = false;
+         lock (_gate)
+         {
+@@ -500,8 +527,7 @@ public sealed class NvStorageComponent : IDisposable
+                     if (SyncedClock > deadline)
+                     {
+                         _log.Add($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:x}");
+-                        req.Deadline = null;
+-                        _inFlight = null;
++                        timeoutRequest = req;
+                         timeoutCallback = req.Callback;
+                         timeoutResult = new NvResult(-4, Array.Empty<byte>());
+                     }
+@@ -516,6 +542,9 @@ public sealed class NvStorageComponent : IDisposable
+         }
+         // M3-030: on timeout only the callback runs; there is no broadcast chunk and no sink fill.
+         timeoutCallback?.Invoke(timeoutResult);
++        if (timeoutRequest is not null)
++            lock (_gate)
++                if (ReferenceEquals(_inFlight, timeoutRequest)) _inFlight = null;
+         if (runOnIdle) ProcessOnIdle();
+     }
+ 
+@@ -526,12 +555,16 @@ public sealed class NvStorageComponent : IDisposable
+     /// </summary>
+     public void OnDisconnected()
+     {
+-        lock (_gate) { _queue.Clear(); _inFlight = null; _onIdle.Clear(); }
++        // fidelity: M3-038
++        // 00643F22..00643F6A: idle functions, queued requests, then active request
++        // functions are destroyed without invocation. Managed references are released
++        // in that same order; backup-manager destruction remains M15 ownership.
++        lock (_gate) { _onIdle.Clear(); _queue.Clear(); _inFlight = null; }
+     }
+ 
+     private void OnMessage(RobotMessage m) { if (m is NVOpResult r) OnResult(r); }
+ 
+-    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag);
++    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag, PendingRequest Request);
+ 
+     private void OnResult(NVOpResult r)
+     {
+@@ -741,9 +774,7 @@ public sealed class NvStorageComponent : IDisposable
+     {
+         List<NVStorageOpResult>? broadcasts = null;
+         if (req.Broadcast) broadcasts = BuildBroadcasts(req.Tag, req.Op, result, data);
+-        req.Deadline = null;
+-        _inFlight = null;
+-        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag);
++        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag, req);
+     }
+ 
+     private void Deliver(Completion c)
+@@ -760,6 +791,9 @@ public sealed class NvStorageComponent : IDisposable
+         c.Callback?.Invoke(c.Result);
+         if (c.Broadcasts is not null)
+             foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
++        // SetState(0) is after callback/broadcast, not before: 006437EA..006437EE.
++        lock (_gate)
++            if (ReferenceEquals(_inFlight, c.Request)) _inFlight = null;
+     }
+ 
+     // fidelity: M3-030
+@@ -804,7 +838,12 @@ public sealed class NvStorageComponent : IDisposable
+     /// </summary>
+     public event Action<NVStorageOpResult>? NVStorageOpResultBroadcast;
+ 
+-    public void Dispose() { _robot.Message -= OnMessage; }
++    // fidelity: M3-038
++    public void Dispose()
++    {
++        _robot.Message -= OnMessage;
++        OnDisconnected();
++    }
+ }
+ 
+ /// <summary>The terminal result of one NV request: the NVResult and the assembled bytes (empty on an error).</summary>
+diff --git a/cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs b/cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs
+index 539c52b..99aa9b2 100644
+--- a/cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs
++++ b/cozmo-stack/tests/Cozmo.Protocol.Tests/M3DeviceTests.cs
+@@ -17,6 +17,105 @@ namespace Cozmo.Protocol.Tests;
+ /// </summary>
+ public class M3DeviceTests
+ {
++    [Fact]
++    public async Task M3_040_CompetingHostRegistrationDoesNotInvokeTheExecutingFrontTwice()
++    {
++        using var rig = new Rig();
++        rig.ToSuccess();
++        DrainCalibrationRead(rig);
++        var nv = rig.Robot.Engine.NvStorage!;
++        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
++        int firstCalls = 0, secondCalls = 0;
++        var execution = Task.Run(() => nv.OnIdle(() =>
++        {
++            Interlocked.Increment(ref firstCalls);
++            entered.SetResult();
++            release.Task.GetAwaiter().GetResult();
++        }));
++        await entered.Task;
++        try
++        {
++            nv.OnIdle(() => Interlocked.Increment(ref secondCalls));
++            Assert.Equal(1, firstCalls);
++            Assert.Equal(0, secondCalls);
++        }
++        finally { release.SetResult(); }
++        await execution;
++        Assert.Equal(1, firstCalls);
++        Assert.Equal(1, secondCalls);
++    }
++
++    // Adopted I5: gate once, invoke-before-pop; callbacks can enqueue work without
++    // stopping the current drain. Expectations come from 00645B08..00645BAE.
++    [Fact]
++    public void M3_040_IdleDrainKeepsItsEntryPredicateAcrossCallbacks()
++    {
++        using var rig = new Rig();
++        rig.ToSuccess();
++        DrainCalibrationRead(rig);
++        var nv = rig.Robot.Engine.NvStorage!;
++        var order = new List<string>();
++        int idleLogs = nv.Log.Count(l => l ==
++            "debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ");
++        nv.Read(0x80000001, _ =>
++        {
++            order.Add("terminal");
++            Assert.False(nv.IsIdle); // SetState(0) follows the terminal callback.
++        });
++        rig.Tick();
++        nv.OnIdle(() =>
++        {
++            order.Add("first");
++            nv.Read(0x80000001, null);
++            nv.OnIdle(() => order.Add("appended")); // queue gate prevents recursion
++        });
++        nv.OnIdle(() => order.Add("second"));
++        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1 });
++        rig.Tick();
++        Assert.Equal(new[] { "terminal", "first", "second", "appended" }, order);
++        Assert.Equal(3, nv.Log.Count(l => l ==
++            "debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ") - idleLogs);
++    }
++
++    [Fact]
++    public void M3_040_ThrowingIdleCallbackRemainsAtTheFront()
++    {
++        using var rig = new Rig();
++        rig.ToSuccess();
++        DrainCalibrationRead(rig);
++        var nv = rig.Robot.Engine.NvStorage!;
++        int calls = 0;
++        Assert.Throws<InvalidOperationException>(() => nv.OnIdle(() =>
++        {
++            calls++;
++            throw new InvalidOperationException("callback");
++        }));
++        Assert.Throws<InvalidOperationException>(nv.ProcessOnIdle);
++        Assert.Equal(2, calls); // 645B9A invoke precedes 645BA0 pop
++    }
++
++    [Fact]
++    public void M3_038_DisposeDropsPendingFunctionsAndUnsubscribesTheLiveReplyEntry()
++    {
++        using var rig = new Rig();
++        rig.ToSuccess();
++        DrainCalibrationRead(rig);
++        var nv = rig.Robot.Engine.NvStorage!;
++        int calls = 0;
++        nv.Read(0x80000001, _ => calls++);
++        rig.Tick();
++        nv.Read(0x80000001, _ => calls++);
++        nv.OnIdle(() => calls++);
++        nv.Dispose();
++        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = -1 });
++        rig.Tick();
++        nv.ProcessOnIdle();
++        Assert.Equal(0, calls);
++        Assert.True(nv.IsIdle);
++        Assert.Empty(nv.QueuedTags);
++    }
++
+     // Checked Opus M3-026/M3-030 rows: 00644E3A..00644E4C and 006436DA.
+     [Fact]
+     public void M3_026_M3_030_CheckedReadLogsRunThroughTheLiveReplyEntry()
+diff --git a/re-analysis/FIDELITY_GAPS.md b/re-analysis/FIDELITY_GAPS.md
+index 02d59d3..22062e9 100644
+--- a/re-analysis/FIDELITY_GAPS.md
++++ b/re-analysis/FIDELITY_GAPS.md
+@@ -82,7 +82,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
+ * rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+ * best authority: libcozmoEngine.so 3.4.0-1204
+ * evidence: 0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
+-* outstanding: S1: NV owner/delete boundary 0x005112D6..0x005112E4; recipient identity 0x0050FD8C..0x0050FD90. M3-035 remains specifically pending-read callback discard. Virtual delete descendants UNKNOWN. Source triage S1. Source: re-analysis/research/20261006-M1M2-missing-triage.md.
++* outstanding: built, awaiting strong verification: 2026-10-10 NV lifetime batch, adopted N1-N8 owner boundary. Dispose unsubscribes before dropping idle/queued/active callbacks without invocation; retained host removal clears the same references. Tests drive live disposal/reply and discard. Call accounting: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: persistent saved command +0xE8 is the subsequent adopted N build; backup manager destruction 0x00643F48 remains M15; native captured object final-owner bodies remain their producer layers. Manager must refresh frozen RECOVERABLE_GAP inventory/status before worker status conversion.
+ 
+ **M3-039 — SDK cube-sleep recipient** (live path)
+ 
+@@ -100,7 +100,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
+ * rests on: Current callback candidate not fully compared.
+ * best authority: libcozmoEngine.so 3.4.0-1204 NV queue and Robot lambda.
+ * evidence: Registration 0x00528A5A..0x00528A6E; idle invocation boundary 0x00645C20..0x00645C32 (triage N1). M1-041 retains the ready-byte store/log body at 0x0052C3A6..0x0052C3B6.
+-* outstanding: Recover NV queue-idle predicate/order and callback invocation scheduling. The callback body that stores/logs ready is owned by M1-041; M3-035 separately owns disconnect/destruction callback discard.
++* outstanding: built, awaiting strong verification: 2026-10-10 NV lifetime batch. Adopted I1-I9 from 20261009-M3M4-remaining-rows.md: OnIdle appends then synchronously dispatches; idle predicate checked once; exact debug log precedes front invocation; pop follows invocation; queued NV work does not stop an entered drain; exceptions retain the front. Completion only becomes idle after terminal callback/broadcast. Call accounting and regressions: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: manager must refresh the frozen RECOVERABLE_GAP inventory/status to IMPLEMENTATION_GAP; no worker settlement or snapshot rewrite. Captured callback bodies stay in their owning records (M1-041 ready store/log).
+ 
+ **M3-041 — IMU diagnostic chunk reception, file logging and stream close on robot removal** (live path)
+ 
+diff --git a/re-analysis/fidelity_manifest.json b/re-analysis/fidelity_manifest.json
+index 7c14068..b55ee15 100644
+--- a/re-analysis/fidelity_manifest.json
++++ b/re-analysis/fidelity_manifest.json
+@@ -8785,7 +8785,7 @@
+       ],
+       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
+       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
+-      "unresolved": "S1: NV owner/delete boundary 0x005112D6..0x005112E4; recipient identity 0x0050FD8C..0x0050FD90. M3-035 remains specifically pending-read callback discard. Virtual delete descendants UNKNOWN. Source triage S1. Source: re-analysis/research/20261006-M1M2-missing-triage.md.",
++      "unresolved": "built, awaiting strong verification: 2026-10-10 NV lifetime batch, adopted N1-N8 owner boundary. Dispose unsubscribes before dropping idle/queued/active callbacks without invocation; retained host removal clears the same references. Tests drive live disposal/reply and discard. Call accounting: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: persistent saved command +0xE8 is the subsequent adopted N build; backup manager destruction 0x00643F48 remains M15; native captured object final-owner bodies remain their producer layers. Manager must refresh frozen RECOVERABLE_GAP inventory/status before worker status conversion.",
+       "hardware_required": false,
+       "live_path": true,
+       "test": ""
+@@ -9248,7 +9248,7 @@
+       "evidence": [
+         "Registration 0x00528A5A..0x00528A6E; idle invocation boundary 0x00645C20..0x00645C32 (triage N1). M1-041 retains the ready-byte store/log body at 0x0052C3A6..0x0052C3B6."
+       ],
+-      "unresolved": "Recover NV queue-idle predicate/order and callback invocation scheduling. The callback body that stores/logs ready is owned by M1-041; M3-035 separately owns disconnect/destruction callback discard.",
++      "unresolved": "built, awaiting strong verification: 2026-10-10 NV lifetime batch. Adopted I1-I9 from 20261009-M3M4-remaining-rows.md: OnIdle appends then synchronously dispatches; idle predicate checked once; exact debug log precedes front invocation; pop follows invocation; queued NV work does not stop an entered drain; exceptions retain the front. Completion only becomes idle after terminal callback/broadcast. Call accounting and regressions: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: manager must refresh the frozen RECOVERABLE_GAP inventory/status to IMPLEMENTATION_GAP; no worker settlement or snapshot rewrite. Captured callback bodies stay in their owning records (M1-041 ready store/log).",
+       "hardware_required": false,
+       "live_path": true,
+       "test": "M3DeviceTests.M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout plus idle cases after extraction."
