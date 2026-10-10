@@ -73,3 +73,35 @@ as M1-029). It applies to J42's resize setup, and anywhere else the default VFP 
 3. Then the JPEG port plus its emulator oracle, once the manager adopts those rows.
 4. Apply `research/20261009-M3M4-remaining-rows.md` once the manager has checked it.
 5. When the layer's build is done, prepare the verification packet (rule 9).
+
+## Rows checked (manager, 2026-10-10): the remaining records
+
+An Opus row check of `research/20261009-M3M4-remaining-rows.md` reopened every call target, through the PLT/GOT and
+the `bx pc` veneers.
+
+- **Adopted as written:** M4-027, M4-028, M4-031, M3-038 and M3-040.
+- **M4-026: adopted with corrections.**
+  - **A3 (Path.Abort):**
+    - after the reverse loop, `0x006491AC..0x006491B4` stores the global `PoseOriginList::UnknownOriginID` (GOT
+      0x0103E978) into `[*(this+0x50)]+0x0C`. Build that store;
+    - the loop at `0x00649198..0x006491A4` destroys 12-byte inline elements back to front through each one's vtable
+      slot 0. That's a destroy in place, with no operator delete.
+  - **A10 (UnlockTracks):**
+    - on the missing-key path (INFO, then PrintLockState at 0x0063FF76) the track count is reloaded (0x0063FF7A) and
+      falls into 0x0063FF7E..0x0063FF88, so a selected track that was **already empty** also adds its bit to the
+      EnableAnimTracks mask;
+    - the return value is OR'd only on the found-and-erased path (0x0063FF1A..0x0063FF22, count != 0 after the erase).
+      A track still locked by others whose key is missing doesn't set it;
+    - the send happens only when the u8 mask != 0 (0x0063FF96).
+- **M3-039, M4-029 and M4-030 (the SDK recipients): unreachable in this stack.**
+  - ResetRobot has two callers: EnterMode (0x0065E1F8, only on first entry, 0x0065E11A..0x0065E17C) and OnDisconnect
+    (0x0065E5D0, gated on +0x78 and +0x7C).
+  - +0x78 is set only by EnterMode's internal branch (0x0065E172) and by OnConnectionSuccess (0x0065E8D4), which is
+    reached only behind IsExternalSdkConnection.
+  - M4-029's lift-power dispatch (0x0065DF8C) is unconditional within ResetRobot, so its evidence should say "inside
+    ResetRobot", not "under +0x79". It is still reachable only after SDK mode has been entered.
+  - **Scope note:** the original also enters *internal* SDK mode from CodeLab (`CodeLabGame.cs:967`) and Edu mode
+    (`SettingsEduModePanel.cs:119`). Those are app features the stack doesn't implement (AGENTS.md "Scope: the app
+    boundary"), so "SDK mode is not supported" covers them too.
+  - Record each of the three as COMPATIBILITY_POLICY with this evidence: unreachable without SDK mode. The shared
+    recipient functions stay owned by their own records.

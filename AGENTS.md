@@ -52,7 +52,7 @@ the Unity screens and flows, user profiles, the Android Java layer and the app's
   side (when, what, the order, the payload) stays exact.
 - **Where the engine needs an input the app supplied** (stored volume, a profile, Android network callbacks), the stack
   supplies it from its own settings or host events. Each one is recorded as a COMPATIBILITY_POLICY naming the input.
-- **SDK mode is not supported.** Its engine paths are unreachable and are recorded as such.
+- **SDK mode is not supported,** neither external SDK programs nor the internal SDK mode the app enters for CodeLab and Edu mode. Its engine paths are unreachable and are recorded as such.
 
 App-layer code is still evidence of what the engine receives, and stays authority 2. It isn't reproduced unless the
 stack implements that feature.
