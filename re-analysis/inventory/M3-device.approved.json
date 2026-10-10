@@ -2,16 +2,18 @@
   "subsystem": "M3-device",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "803fb85def37f0e4a1ef4f0c877c8a5670bb2b7b15867e2a5dd1ea462322e04f",
+  "inventory_sha256": "ea5b062fdd25bfb55493f76b1cddcfe71c709f5fcfd90b22ad04083e50472638",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "JPEG reconstruction headers (gray 324 B, colour 334 B 4:2:2), height/width BE at 0x5E..0x61, 240x320 decode check, frame timestamp = last chunk",
+      "title": "Camera frame reconstruction and gray decode: mini-JPEG headers, BE size fields, the DecodeImageHelper<Image> dispatch, the libjpeg 9 / OpenCV 3.1 imdecode port, the 240x320 check, DecodeImageHelper's logs",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A13 header tables 0x00C48C40 (gray, 0x144 B) and 0x00C48D84 (colour, 0x14E B): SOF0 at 0x59, 1 or 3 components (Y 0x21, Cb/Cr 0x11)",
         "A12 MiniToJpegHelper writes height BE at 0x5E/0x5F and width BE at 0x60/0x61 (0x004F31C4..0x004F32CC)",
-        "A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC"
+        "A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC",
+        "JPEG port rows: re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md and re-analysis/jobs/B-M3M4.md \"JPEG unblocked\" (J/L/D/O rows)",
+        "Handoffs: a cv::Exception leaves DecodeImageHelper at the imdecode call 0x004F28C6, whose landing pad 0x004F2EA0 only cleans up and ends in _Unwind_Resume: M11-058; the decoded Image, with the J38 +0x3C timestamp copy, goes to VisionSystem::Update(PoseData, ImageCache) 0x006B4C78: M11-033"
       ],
       "live_path": true,
       "hardware_required": false
@@ -107,12 +109,13 @@
     },
     "M3-010": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "encodeMuLaw(float) exactly; no volume scaling; short frames zero-padded",
+      "title": "encodeMuLaw(float) exactly: the per-sample encoder (PopRobotAudioMessage's loop, zero pad and AudioSample build are M6-016's)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C6 encodeMuLaw 0x00597AD8..0x00597B8E, segment table 0x00C5C3F0, 32767.0 at 0x00597C18; NaN warns and gives 0",
-        "C5 PopRobotAudioMessage 0x00597DD4..0x00597E4E: zero-pad below 744",
-        "C7 no volume scaling (0x00597DFC..0x00597E02)"
+        "Handoff, owned by M6-016 (overlap ruling 2026-10-10): C5 PopRobotAudioMessage 0x00597DD4..0x00597E4E: zero-pad below 744",
+        "Handoff, owned by M6-016 (overlap ruling 2026-10-10): C7 no volume scaling (0x00597DFC..0x00597E02)",
+        "encodeMuLaw is called per sample from PopRobotAudioMessage's loop 0x00597DFC..0x00597E12 (blx 0x4AF5BC); the float vector comes from RobotAudioBuffer::PopNextAudioFrameData (blx 0x4AF5B0, 0x00597DE0) behind the state gate 0x00597DD4..0x00597DDA: M6-016; the buffer's producer is the Hijack plug-in, M6-015"
       ],
       "live_path": true,
       "hardware_required": false
@@ -142,12 +145,12 @@
     },
     "M3-013": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "The feed: FIFO drain stopping at the first over-budget message; per Update, one 33 ms frame at a time while the drain completes and the audio animation is ready",
+      "title": "SendBufferedMessages: FIFO drain under the byte and audio-frame budgets, and the stream counters",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "C14 SendBufferedMessages 0x0057BF60..0x0057C010",
-        "C15 UpdateStream 0x0057C8E4..0x0057CABE, 0x0057CC6C..0x0057CCA6",
-        "C16 readiness 0x0059A1CC..0x0059A1F6, states per Q5 GetStringForAnimationState 0x00596434"
+        "C14 SendBufferedMessages 0x0057BF60..0x0057C010: stop when size > bytes (cmp r4,r1; bhi 0x0057BF96); stop when frames < isAudio (cmp r0,r5; blt 0x0057BF9E; isAudio = (tag & 0xFE) == 0x8E, 0x0057BF8C..0x0057BF94); send blx 0x4A5368 (Robot::SendMessage) 0x0057BFAA; counters robot+0x23C/+0x244 0x0057BFBC..0x0057BFCC",
+        "Handoff: C15 UpdateStream 0x0057C8E4..0x0057CABE (the per-Update frame loop: M5-007, M5-008, M5-026) and ShouldProcessAnimationFrame 0x0057CC6C..0x0057CCA6 (M5-018, overlap ruling 2026-10-10)",
+        "Handoff: C16 readiness 0x0059A1CC..0x0059A1F6 (RobotAudioClient::UpdateAnimationIsReady, reached by the tail b.w 0x8CB8AC at 0x0057CCA6): M6-027; states per Q5 GetStringForAnimationState 0x00596434"
       ],
       "live_path": true,
       "hardware_required": false
@@ -199,13 +202,13 @@
     },
     "M3-018": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Colour decode: half-width JPEG, BGR to RGB, cv::resize INTER_LINEAR to 320x240; IsColor; Save at quality 90",
+      "title": "Colour decode and IsColor: the DecodeImageHelper<ImageRGB> dispatch, imdecode(1), cvtColor 4, the half-width resize, IsColor, the RGB logs",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440)",
         "A10 Resize -> cv::resize(..., m) with m = 1 = INTER_LINEAR (0x00870486..0x008704D6)",
         "A7 IsColor tbb 0x004F2110 (0x004F2102..0x004F211E)",
-        "A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8)"
+        "Handoffs: a cv::Exception from imdecode: M11-058 (as M3-001); the caller VisionSystem::Update 0x006B4B68 (IsColor 0x006B4B7C, DecodeImageRGB 0x006B4B90): M11-033. A25 (EncodedImage::Save, unreachable) moved to M3-046"
       ],
       "live_path": true,
       "hardware_required": false
@@ -234,26 +237,28 @@
     },
     "M3-021": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Camera exposure and gain: constructor limits, the initial exposure from vision_config.json, DefaultCameraParams handling, the SetCameraSettings range check and send",
+      "title": "Camera exposure/gain parameters: the VisionSystem ctor limits, HandleDefaultCameraParams, SetCameraSettings with IsExposureValid/IsGainValid and the SetCameraParams send, SetNextCameraParams (queue and warning), SetCameraExposureParams",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "1a VisionSystem ctor: max 66, min 1, minGain 0.1, maxGain 4.0, cur 16, gain 2.0 (0x006B002A..0x006B004A); 1b Init changes none (0x006B0658)",
-        "1f VisionComponent::Init reads ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA); vision_config.json:46 = 16",
+        "Handoff, owned by M11-059: 1f VisionComponent::Init reads ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA); vision_config.json:46 = 16",
         "1k HandleDefaultCameraParams: no time-sync gate (0x00537114..0x0053712A); needs IsInitialized (0x006B2CD6); min <= init <= max; SetCameraSettings(init, gain) first (0x00657CCA), then SetCameraExposureParams (0x00657D04)",
         "1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166)",
-        "1o the engine never requests DefaultCameraParams"
+        "1o the engine never requests DefaultCameraParams",
+        "Functions (exports): HandleDefaultCameraParams entry 0x00537114, VisionComponent::HandleDefaultCameraParams 0x00657CA0, VisionComponent::SetCameraSettings 0x006560C8, VisionSystem::SetNextCameraParams 0x006B229C, VisionSystem::SetCameraExposureParams 0x006B92F0. Handoffs: VisionSystem::IsInitialized 0x006B2CD6, true after VisionSystem::Init 0x006B0658: M11-059; the consumer of the SetNextCameraParams slot in VisionSystem::Update: M11-060"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-022": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "At connection the NV CameraCalib read is queued; its callback enables vision on every path and on success installs the calibration and starts processing",
+      "title": "The connection-time CameraCalib read and its callback: the Failed/SizeMismatch/Recvd logs, the distortion zeroing for body hardware <= 6, the +0x48 store",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "1h NVStorageComponent::Read(0x80000001, cb) queued in the connection handler (0x006583E2..0x006583FA); M1 CD21",
         "1j callback 0x0065AB68: the Failed, SizeMismatch and Recvd paths all end strb.w #1 at +0x48 (0x0065AE7E/0x0065AE80); distortion zeroed when robot+0x24 <= 6; SetCameraCalibration starts processing (0x0065175E..0x00651766)",
-        "2a..2f +0x48 is written only by that callback; +0x4B never; +0x49 stays 0"
+        "2a..2f +0x48 is written only by that callback; +0x4B never; +0x49 stays 0",
+        "Handoffs: VisionComponent::SetCameraCalibration blx 0x4B3C90 at 0x0065ADE0, before the +0x48 store strb.w r0,[r5,#0x48] at 0x0065AE80: the install is M11-039's; the readers of +0x48 (the image drop) are M11-049's (overlap ruling 2026-10-10)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -265,18 +270,19 @@
       "evidence": [
         "A24 EnableColorImages 0x006582CC..0x00658314",
         "3a writers 0x00650180, 0x006582D6, 0x00658368, 0x00658F74",
-        "3b the only reader is BehaviorTrackLaser (0x005FAC64, 0x005FBDAE)"
+        "Handoff, owned by M7-025: 3b the only reader is BehaviorTrackLaser (0x005FAC64, 0x005FBDAE)"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-024": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "The audio output source comes from the firmware version JSON: \"sim\" null means physical, play on the robot",
+      "title": "HandleFirmwareVersion: the firmware JSON parse and the audio output source (\"sim\" isNull gives SetOutputSource(2), otherwise 1)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "C1 HandleFirmwareVersion 0x00536934..0x0053698E (\"sim\" at 0x00536A4C)",
-        "C2 CreateAudioAnimation 0x0059A070..0x0059A0B6"
+        "Handoff, owned by M6-028: C2 CreateAudioAnimation 0x0059A070..0x0059A0B6",
+        "Parse steps (overlap ruling 2026-10-10, this record's): a parse failure returns (cbz 0x00536932); a non-object root throws Json::LogicError (0x008EADC2..0x008EAE64). Handoffs: blx 0x4AA2C4 Robot::SetPhysicalRobot at 0x00536980 (M10-010) and blx 0x4AA2D0 RobotAudioClient::SetOutputSource at 0x0053698E"
       ],
       "live_path": true,
       "hardware_required": false
@@ -363,29 +369,31 @@
     },
     "M3-032": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "NV dispatch is gated in Robot::Update (Running state, a first full state after SyncTimeAck, and a passing UpdateAllResults once calibrated)",
+      "title": "The NV dispatch gates in Robot::Update: Gate A (a first full state after SyncTimeAck), the SyncTime watchdog and Gate B (calibration and UpdateAllResults)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "CozmoEngine::Update returns early unless engine+0x10 != 0 and UiMessageHandler::Update == 0 (0x4ED4DE..0x4ED51C); UpdateAllRobots runs only in state 3 Running (0x4ED5C4..0x4ED6BE); SyncTime watchdog 5 s (0x513BF6..0x513C5A)",
-        "Gate A robot+0x34E (0x513C5C..0x513C62) is set only by UpdateFullRobotState when robot+0x29 (0x51293C..0x512948); Gate B vc+0x28 calibration + UpdateAllResults failure returns (0x513C6E..0x513CBC); replies are not gated (0x52F850..0x52F856)"
+        "Engine-state part, owned by M1-024 (state 3 Running, the UI return); the watchdog is this record's: CozmoEngine::Update returns early unless engine+0x10 != 0 and UiMessageHandler::Update == 0 (0x4ED4DE..0x4ED51C); UpdateAllRobots runs only in state 3 Running (0x4ED5C4..0x4ED6BE); SyncTime watchdog 5 s (0x513BF6..0x513C5A)",
+        "Gate A robot+0x34E (0x513C5C..0x513C62) is set only by UpdateFullRobotState when robot+0x29 (0x51293C..0x512948); Gate B vc+0x28 calibration + UpdateAllResults failure returns (0x513C6E..0x513CBC); replies are not gated (0x52F850..0x52F856)",
+        "Gate A ldrb.w r0,[r4,#0x34E]; cmp r0,#0; beq.w 0x513DA6 0x00513C5C..0x00513C62; VizManager::SendStartRobotUpdate blx 0x4A7DA4 0x00513C6A (out of scope); Gate B ldr.w r0,[r4,#0x258]; ldr r1,[r0,#0x28]; cbz r1 0x00513C6E..0x00513C74, blx 0x4A7DB0 VisionComponent::UpdateAllResults 0x00513C76, cbz r6 0x00513C7C, sWarningF blx 0x4A4540 0x00513C92, b 0x514484 0x00513CBC. Handoffs: UpdateAllResults' result (0x006542EC): M11-035; the calibration pointer [vc+0x28] is installed on M11-039's path"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-033": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "At connection the engine queues 12 NV reads, then the CameraCalib read, then Lab and Needs; ready-to-stream waits for the whole queue",
+      "title": "The connection-time NV read order and ready-to-stream after the queue drains",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Robot ctor reads #1 ProgressionUnlock 0x182000 (0x64BEFA), #2 Inventory 0x195000 (0x63CA52), #3/#4 FaceAlbum 0x184000/0x183000 (0x6512F0/0x651330), #5..#12 the 8 RDBM backup reads (0x51AD0A)",
-        "#13 CameraCalib 0x80000001 (0x6583FA) then Lab 0x196000 (0x6A5B1E) and Needs 0x194000 (0x6944CC) in the mfgId lambda (0x52E3A6..0x52E3B2); ProcessOnIdleCallbacks waits for the deque to drain (0x645B10..0x645B1A)"
+        "#13 CameraCalib 0x80000001 (0x6583FA) then Lab 0x196000 (0x6A5B1E) and Needs 0x194000 (0x6944CC) in the mfgId lambda (0x52E3A6..0x52E3B2); ProcessOnIdleCallbacks waits for the deque to drain (0x645B10..0x645B1A)",
+        "Handoff for #3/#4: VisionComponent::Init (0x00650D20) calls VisionSystem::Init (blx 0x4BA200 at 0x00650E36), then cmp r6,#0; beq.w 0x650FB4 (0x00650E3C..0x00650E3E); non-zero: sErrorF 0x00650E58, the debug-break gate 0x00650E90..0x00650E9A, return 0x00650FB0, no album read; zero: 0x00650FB4, a branch at 0x00650FE8..0x00650FFC, then VisionComponent::LoadFaceAlbumFromRobot (blx 0x4BA23C at 0x0065108A; body 0x006512A0 reads 0x184000 at 0x006512F0 and 0x183000 at 0x00651330): M11-059. The reads' owners: Progression M15-034, Inventory M15-035, FaceAlbum M14-012, RDBM M15-033, Lab M15-036, Needs M15-014"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-034": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "The connection reads' callbacks and data sinks (progression, inventory, face album, backup, lab, needs)",
+      "title": "The connection reads' callbacks: handoffs only (progression M15-034, inventory M15-035, face album M14-012, backup M15-033, lab M15-036, needs M15-014)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "ProgressionUnlock 0x102F6B8+0x14 = 0x64CE34 (defaults on -1, SendUnlockStatus); Inventory 0x102EF3C+0x14 = 0x63D7C4 (+0x104 = 1, Unpack, SendInventoryAllToGame, RequestDefaultSparks on -1)",
@@ -429,11 +437,12 @@
     },
     "M3-038": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "NV component destruction and pending callback lifetime",
+      "title": "~NVStorageComponent and the drop of queued/active callbacks without invocation",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "Handoff: the RobotDataBackupManager destruction reached at 0x00643F48 (per the record, not re-read): M15-033 (destructor 0x0051A5F0); the captured objects' own destructors belong to their producers"
       ],
       "live_path": true,
       "hardware_required": false
@@ -500,6 +509,28 @@
       "evidence": [
         "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs:549-554 (the stack's sends); M3-023's evidence for the engine's EnableColorImages and ImageRequest senders.",
         "re-analysis/research/20261010-m3044-camera-start-rows.md (manager-adopted 2026-10-10): robot ImageRequest is sent only by Robot::SendSyncTime {Stream, QVGA} at connection (0x005152F0/0x00515304, already built at CozmoEngine.cs:995) and by the SetRobotImageSendMode helper (0x004EDE4C); robot EnableColorImages only via VisionComponent (0x006582E8), reached from the game message 0x77 and BehaviorTrackLaser (0x005FAD2E/0x005FBDB6). The app's game ImageRequest (0x74) only stores Robot+0x340 (0x004EE9F2)."
+      ],
+      "live_path": false,
+      "hardware_required": false
+    },
+    "M3-045": {
+      "status": "RECOVERABLE_GAP",
+      "title": "imdecode's decoder choice for a non-JPEG payload in encodings 5/6/7 (findDecoder over the decoders registered in the shipped libopencv_imgcodecs.so)",
+      "authority": "libopencv_imgcodecs.so (OpenCV 3.1, shipped) and libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Encodings 5/6/7 reach imdecode from DecodeImageHelper (gray dispatch tbh 0x004F2898, RGB dispatch tbh 0x004F21AE; imdecode call 0x004F28C6; M3-001/M3-018)",
+        "re-analysis/jobs/B-M3M4.md \"JPEG port: Opus check (2026-10-10)\": other OpenCV decoders (PNG/TIFF) for non-JPEG payloads in encodings 5/6/7 pinned; the J rows say only 'none -> empty' (J114)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-046": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "CameraFrame.PresentationJpeg/Save: a tool-only JPEG writer with non-engine bytes",
+      "authority": "libcozmoEngine.so 3.4.0-1204 EncodedImage::Save (a dead export)",
+      "evidence": [
+        "A25 EncodedImage::Save quality 90 (movs r2,#0x5a; 0x004F2EFC..0x004F2FA8): no call site and no data pointer in libcozmoEngine.so, no shipped library imports it, no Unity script references EncodedImage (re-analysis/jobs/B-M3M4.md \"JPEG unblocked\")",
+        "cozmo-stack/src/Cozmo.Robot/Camera.cs:78-99 CameraFrame.PresentationJpeg/Save (StbImageWriteSharp); callers cozmo-stack/src/Cozmo.Conformance/Devices.cs:157 and cozmo-stack/src/Cozmo.Conformance/VisionTool.cs:171 only"
       ],
       "live_path": false,
       "hardware_required": false

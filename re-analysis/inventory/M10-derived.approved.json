@@ -1,8 +1,8 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M10-derived.md",
-  "inventory_sha256": "d70aa30e849ea58dcc5f27138fb7f3532c320135bc9a1f8d9e7642c2d65e988d",
+  "inventory_sha256": "07a92ea668030a8bc5bbb6bf2d6e0344621fa5b0df3356eaae3a75d27013dc56",
   "records": {
     "M10-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -164,6 +164,16 @@
       "evidence": [
         "0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M10-015": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotGyroDriftDetector::DetectGyroDrift and DetectBias on each RobotState",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4"
       ],
       "live_path": true,
       "hardware_required": false

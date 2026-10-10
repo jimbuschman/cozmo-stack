@@ -390,3 +390,137 @@ The full suite passes, 4137 → 4145.
 - the InvalidDataSize test asserts a prefix (it could assert 4096);
 - ReadAsync's invented "no terminal NVOpResult" line (NvStorage.cs:609);
 - the lift variability step is unbuilt; every live caller passes 0 (0x0054914A).
+
+## Cross-layer split applied (2026-10-10)
+
+Source: `research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied to the manifest at the same
+HEAD with the manager's rulings. Every touched record's `unresolved` starts "Cross-layer split (manager, 2026-10-10 …)",
+and each touched inventory has a "Cross-layer split" table. Nothing was settled in this pass. Re-approved: M3, M4, M5,
+M6, M7, M8, M10, M11, M13, M14, M15. `fidelity.py --check` passes (488 records).
+
+**Gate flags.** M3-045 and M4-033 are live-path RECOVERABLE_GAPs, so `source_investigation_exhausted` is now false for
+M3-device and M4-control.
+
+### New records (15)
+
+| Id | Layer | Status | What | From |
+|---|---|---|---|---|
+| M3-045 | M3 | RECOVERABLE_GAP | imdecode's decoder choice for a non-JPEG payload in encodings 5/6/7 (I-1). live_path true until the robot's use of 5/6/7 is settled. | M3-001/M3-018 |
+| M3-046 | M3 | COMPATIBILITY_POLICY | CameraFrame.PresentationJpeg/Save: tool-only, non-engine bytes (I-2); takes A25. | M3-018 |
+| M4-033 | M4 | RECOVERABLE_GAP | TouchSensorComponent: the live per-state Update (0x00512996), ctor, dtor, logging (I-3). | M4-027 |
+| M4-034 | M4 | COMPATIBILITY_POLICY | The app's head/lift defaults 10/20/0 as the C# API defaults (ruling on MA11). | M4-003 |
+| M6-027 | M6 | IMPLEMENTATION_GAP | RobotAudioClient::UpdateAnimationIsReady (S-1). | M3-013 C16 |
+| M6-028 | M6 | IMPLEMENTATION_GAP | RobotAudioClient::CreateAudioAnimation (S-2). | M3-024 C2 |
+| M7-025 | M7 | RECOVERABLE_GAP | BehaviorTrackLaser's read of VisionComponent+0x32A (S-10). | M3-023 3b |
+| M8-019 | M8 | RECOVERABLE_GAP | BehaviorManager::RequestCurrentBehaviorEndImmediately (S-7). | M4-019 H4 |
+| M10-015 | M10 | RECOVERABLE_GAP | RobotGyroDriftDetector::DetectGyroDrift/DetectBias per state (S-8). | M4-019 |
+| M11-059 | M11 | RECOVERABLE_GAP | VisionComponent::Init / VisionSystem::Init, IsInitialized, the album load-or-erase branch (S-3). | M3-021, M3-033 |
+| M11-060 | M11 | RECOVERABLE_GAP | VisionSystem::Update's application of the pending camera params (S-4). | M3-021 1d |
+| M11-061 | M11 | IMPLEMENTATION_GAP | The vision-mode request queue E4..E7 (S-6); code built under M4-017. | M4-017 |
+| M15-034 | M15 | RECOVERABLE_GAP | ProgressionUnlock NV read callback 0x0064CE34 (S-9a). | M3-034 |
+| M15-035 | M15 | RECOVERABLE_GAP | Inventory NV read callback 0x0063D7C4 (S-9b). | M3-034 |
+| M15-036 | M15 | RECOVERABLE_GAP | The Lab read and RestoreLoadedActiveExperiments 0x006A5C34 (S-11). | M3-033/M3-034 |
+
+### Narrowed records (title before → after)
+
+- **M3-001:** "JPEG reconstruction headers (gray 324 B, colour 334 B 4:2:2), height/width BE at 0x5E..0x61, 240x320 decode check, frame timestamp = last chunk" → "Camera frame reconstruction and gray decode: mini-JPEG headers, BE size fields, the DecodeImageHelper<Image> dispatch, the libjpeg 9 / OpenCV 3.1 imdecode port, the 240x320 check, DecodeImageHelper's logs".
+- **M3-010:** "encodeMuLaw(float) exactly; no volume scaling; short frames zero-padded" → "encodeMuLaw(float) exactly: the per-sample encoder (PopRobotAudioMessage's loop, zero pad and AudioSample build are M6-016's)".
+- **M3-013:** "The feed: FIFO drain stopping at the first over-budget message; per Update, one 33 ms frame at a time while the drain completes and the audio animation is ready" → "SendBufferedMessages: FIFO drain under the byte and audio-frame budgets, and the stream counters".
+- **M3-018:** "Colour decode: half-width JPEG, BGR to RGB, cv::resize INTER_LINEAR to 320x240; IsColor; Save at quality 90" → "Colour decode and IsColor: the DecodeImageHelper<ImageRGB> dispatch, imdecode(1), cvtColor 4, the half-width resize, IsColor, the RGB logs".
+- **M3-021:** "Camera exposure and gain: constructor limits, the initial exposure from vision_config.json, DefaultCameraParams handling, the SetCameraSettings range check and send" → "Camera exposure/gain parameters: the VisionSystem ctor limits, HandleDefaultCameraParams, SetCameraSettings with IsExposureValid/IsGainValid and the SetCameraParams send, SetNextCameraParams (queue and warning), SetCameraExposureParams".
+- **M3-022:** "At connection the NV CameraCalib read is queued; its callback enables vision on every path and on success installs the calibration and starts processing" → "The connection-time CameraCalib read and its callback: the Failed/SizeMismatch/Recvd logs, the distortion zeroing for body hardware <= 6, the +0x48 store".
+- **M3-023:** title unchanged; 3b relabelled as a handoff to M7-025.
+- **M3-024:** "The audio output source comes from the firmware version JSON: "sim" null means physical, play on the robot" → "HandleFirmwareVersion: the firmware JSON parse and the audio output source ("sim" isNull gives SetOutputSource(2), otherwise 1)".
+- **M3-032:** "NV dispatch is gated in Robot::Update (Running state, a first full state after SyncTimeAck, and a passing UpdateAllResults once calibrated)" → "The NV dispatch gates in Robot::Update: Gate A (a first full state after SyncTimeAck), the SyncTime watchdog and Gate B (calibration and UpdateAllResults)".
+- **M3-033:** "At connection the engine queues 12 NV reads, then the CameraCalib read, then Lab and Needs; ready-to-stream waits for the whole queue" → "The connection-time NV read order and ready-to-stream after the queue drains".
+- **M3-034:** "The connection reads' callbacks and data sinks (progression, inventory, face album, backup, lab, needs)" → "The connection reads' callbacks: handoffs only (progression M15-034, inventory M15-035, face album M14-012, backup M15-033, lab M15-036, needs M15-014)". Retired, not deleted; stays IMPLEMENTATION_GAP until the build round names each sink.
+- **M3-038:** "NV component destruction and pending callback lifetime" → "~NVStorageComponent and the drop of queued/active callbacks without invocation".
+- **M4-003:** "The head and lift API follows the game-message path: caller speed/accel/duration; the original app passes head 10/20 and lift 10/20, duration 0" → "The game SetHeadAngle/SetLiftHeight factories: the message fields into the action, the 32.0-while-carrying switch". MA11 moved to M4-034.
+- **M4-008:** "Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names); IMU and cube battery in the engine units" → "Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names) and HandleObjectPowerLevel (cube battery)".
+- **M4-009:** "Cube tracking: ObjectAvailable / ObjectConnectionState, Moved / Stopped / UpAxisChanged handling with the charger and carry filters, per-object IsMoving" → "HandleActiveObjectMoved/Stopped/UpAxisChanged: lookup, charger filter, double-tap window, IsMoving on change, the broadcasts".
+- **M4-016:** "Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes" → "MoveHeadToAngleAction / MoveLiftToHeightAction Init, CheckIfDone and the MotorActionAck handlers: no send in position, ack by id, the latch and has-moved bytes, 0x04000004 / 0x03000016, the u16 diagnostic counters".
+- **M4-017:** "Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight" → "BodyLightComponent and SetHeadlight: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, the headlight's EnableMode(14) call and send". E4..E7 relabelled as handoffs to M11-061.
+- **M4-018:** "Cube lights: WakeUp on connection and reconnect, layers and PlayLightAnim gates, SetObjectLights / SetLEDs, SetCubeGamma, CubeID, CubeLights, white balance, default-layer anims" → "CubeLightComponent: layers, PlayLightAnim gates, SetObjectLights/SetLEDs, the SetLights wire group (SetCubeGamma, CubeID, CubeLights, white balance), WakeUp, EnableGameLayerOnly, default-layer anims, the +0x2C4 hold".
+- **M4-019:** "Cliff: sensor defaults, CliffEvent and PotentialCliff handling, EnableStopOnCliff senders, the threshold schedule 50 / 400 / 150" → "CliffSensorComponent: defaults, CliffEvent/PotentialCliff, the EnableStopOnCliff senders, the 50/400/150 schedule with its running stats, HandleRobotStopped's Evaluate and broadcast gate".
+- **M4-020:** "RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime" → "RobotState acceptance gates (time sync; unknown origin ids dropped with the BadOriginID warning) and SyncTime's AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity}".
+- **M4-026:** "Robot AbortAll ordered control and wire effects" → "Robot::AbortAll: the order of its five calls and the OR'd result".
+- **M4-028:** "Go-to-sleep lift child construction and motor effects" → "The sleep sequence's lift child: MoveLiftToHeightAction(Preset 0, 5.0f, 0) construction".
+- **M4-031:** "Track-lock diagnostic enumeration" → "Track-lock diagnostic enumeration: PrintLockState and the lock-tree order".
+- **Higher layers:** M5-022 "Disconnect and teardown: a failed send only returns; ~Robot AbortAll cancels actions, aborts path and docking, sends AbortAnimation 0x8D and StopAllMotors" → "Disconnect and teardown: a failed send only returns; Robot::SendAbortAnimation (0x8D) as AbortAll calls it; ~AnimationStreamer". M13-022 "TurnInPlaceAction and MoveHeadToAngleAction" → "TurnInPlaceAction, and the M13 callers of MoveHeadToAngleAction (the action itself is M4-001/M4-016's)".
+- **Refreshed only (in-layer):** M3-025 and M4-002 (S1 recorded, tests; not settled), M3-026, M3-028, M3-031, M3-043, M4-001, M4-010, M4-027.
+- **Notes only (higher layers, no status change):** M5-018, M5-038, M6-016, M7-020, M8-011, M8-015, M10-010, M11-041, M11-049, M13-029, M14-012, M15-014, M15-033. M8-015 and M13-029 keep RECOVERABLE_GAP (their layers' turn); their notes say rows and built code exist.
+
+### Overlap rulings (rule: the owner is the record in the layer whose engine function the code reproduces)
+
+| Engine code | Owner | The other record keeps |
+|---|---|---|
+| PopRobotAudioMessage 0x00597DB4..0x00597E8E | **M6-016**, the whole function (gate, PopNextAudioFrameData, the per-sample loop with no volume C7, the zero pad C5, the AudioSample ctor, the tail) | M3-010: encodeMuLaw (its own function), called per sample at 0x00597DFC..0x00597E12. **This differs from the draft**, which kept the loop, pad and AudioSample build in M3-010; the manager may reverse it. |
+| ShouldProcessAnimationFrame 0x0057CC6C..0x0057CCA6 | **M5-018** | M3-013: SendBufferedMessages; the readiness tail is M6-027 |
+| HandleFirmwareVersion 0x005368F4..0x0053698E | **M3-024**, the shared parse steps included (cbz 0x00536932; LogicError 0x008EADC2..0x008EAE64) | M10-010: the physical flag via SetPhysicalRobot (0x00536980) and its gates |
+| Calibration callback +0x48 (store 0x0065AE80 in 0x0065AB68) | **M3-022** (the store, in the callback function) | M11-049: the readers (other functions) |
+| HandleActiveObjectConnectionState 0x00533B3C..0x00533C34 (slot gate 0x00533B56) | **M11-041** (its title names the handler; code in BlockWorld.cs) | M4-009: Moved/Stopped/UpAxisChanged |
+| MoveHeadToAngleAction 0x00547E40..0x005488B8 | **M4-001** (ctor clip) / **M4-016** (Init, CheckIfDone, acks); live code Motion.cs | M13-022: its calls into the action; its duplicate C# class goes in the build round |
+| Robot::AbortAll 0x0051194C..0x0051198C | **M4-026** | M5-022: SendAbortAnimation (0x00511972) and the failed send |
+| PathComponent::Abort/ClearPath 0x00649100..0x006492A0 | **M13-029** | M4-026: the call at 0x0051195E..0x00511960 |
+| Sleep factory 0x0052CEA2..0x0052CFC0 | **M5-038** (factory) | M4-028: the lift child ctor (0x0052CFA2, body 0x00548B84); M8-017: AddAction (0x0052CFB0) and execution |
+| Gate B 0x00513C6E..0x00513C9A (Robot::Update) | **M3-032** | M8-011: nothing; M11-035 owns UpdateAllResults' result |
+| FaceAlbum/FaceEnrollment read callbacks 0x0065A860 (logs 0x0065A8F0/0x0065A916) | **M14-012** | M3-034: retired (handoff only) |
+
+Other rulings applied: MA11 → COMPATIBILITY_POLICY M4-034; encodings 5/6/7 → M3-045; DockingComponent+0xC's writer
+cited to M12-017 in M4-009 (note); the M7-020 tags on ActionList/ActionQueue/ActionWatcher noted in M7-020 and M8-015;
+M8-015/M13-029 status unchanged with a note; M3-034 retired into M15-034/035/036, M14-012, M15-033, M15-014.
+
+### Not applied (needs the manager)
+
+- **The DAS `$data` sink** (M4-008, every sEventF): no record created; its layer is not ruled. Noted in M4-008.
+- **The Json::LogicError catcher** for a non-object firmware JSON root (0x008EADC2..0x008EAE64; M1-029 row 11o): no
+  record created. Under the overlap ruling it belongs to M3-024's path; M3-024 says it needs a record before it settles.
+- **The Cliff logger close** (+0x288, ~CliffSensorComponent 0x00633FF8): left in M4-027 (M4-019 or M4-033 were the
+  draft's options).
+- **M4-002's variability caller list:** only two ctor callers are known (0x0052AC92, 0x0052CFA2); a full sweep of both
+  MoveLiftToHeightAction ctors is still to be recorded.
+- **M11-004 covering the ById helpers** (M4-018) and **M12-008 owning CarryingComponent+8** (M4-003): cited, to confirm.
+
+### Build round (code; each item names its record)
+
+1. **Robot::SendMessage's failure warning on every CozmoRobot.SendMessage path** (engine PLT 0x004A5368; warning
+   0x005134F4/0x0051356C). Confirmed engine senders: SendBufferedMessages 0x0057BFAA (M3-013; CozmoAnimations.cs:39,
+   176), EnableColorImages 0x00658314 (M3-023; Camera.cs), NV dispatch 0x0064539E (M3-026; NvStorage.cs:647),
+   SetHeadlight 0x00632380 (M4-017; Lights.cs). To confirm the engine sender first: the ReadingRestOfData re-request
+   (M3-028), the NV resends (M3-031; NvStorage.cs:816, 1083), the write chunks (M3-043), SetCameraParams (M3-021;
+   Camera.cs `_send`), SetPropSlot and the connection sends (M4-010; Cubes.cs, CubeAccel.cs), MoveHead/MoveLiftToHeight
+   (M4-016; Motion.cs:275, 464, 559, 909, 925, 938, 955, 970, 989, 1264 and the 1048 fallback), the cube-light sends
+   (M4-018; Lights.cs), the threshold and EnableStopOnCliff sends (M4-019; Sensors.cs).
+2. **Retags:** Actions/IActionRunner.cs:195, 278, 337, 382, 398, 412, 421 M4-016 → M8-015; ActionList.cs,
+   ActionQueue.cs, ActionWatcher.cs M7-020 → M8-015; Motion.cs:1426-1560 PathComponent M4-026 → M13-029 (with tests
+   M4_026_A3_*/A4_*/Row4); CozmoEngine.cs:955-968 ConstructorDelocalize M4-020 → M11-019/M11-053;
+   Vision/VisionSystem.cs:310-335, :938 M4-017 → M11-061; CozmoEngine.cs:1147-1163 Gate B M8-011 → M3-032;
+   Motion.cs:1340, 1383 M4-028 → M4-016; Camera.cs:78-99 M3-018 → M3-046; AnimationScheduler.cs:472/835 and
+   CozmoAnimations.cs:165 M3-024 → M6-028 (keep M3-024 on the HandleFirmwareVersion code); M4-034 on the head/lift
+   defaults in Motion.cs.
+3. **Named handoffs** (visible MISSING lines or hooks naming the record): M3-001/M3-018 cv::Exception → M11-058
+   (Vision/Jpeg/EncodedImageDecode.cs:100-104, Camera.cs:129); M3-010 short-PCM stand-in → M6-016/M6-015
+   (AnimationScheduler.cs); M3-021 constant 16 and IsInitialized → M11-059 (Camera.cs); M3-022 events → M11-039/M11-049;
+   M3-033 FaceAlbum gate → M11-059 (CozmoEngine.cs, instead of the unconditional reads); M3-034 no-op sinks
+   (CozmoEngine.cs:734-735, the backup reads, :1408) → M15-034/M15-035/M15-033/M15-036, and replace
+   M3_034_TheConnectionReadCallbacksReachTheirLayers; M3-024 firmware-JSON MISSING → M3-024/M10-010; M4-003 carry seam →
+   M12-008/M15-022; M4-008 FindConnectedObjectHelper MISSING → M11-004; M4-009 slot-as-ObjectID → M11-013/M11-041;
+   M4-018 IsVisible and makeRelative → M11-004; M4-019 Cancel(-1) wired to M8-015's ActionList, behaviour end → M8-019,
+   DetectGyroDrift/DetectBias hook → M10-015; NV backup MISSING lines → M15-033 (M3-031, M3-043); M4-027 Touch/Cliff
+   MISSING (Motion.cs:1084) → M4-033/M4-027.
+4. **M3-022 order:** install (0x0065ADE0) before the +0x48 store (0x0065AE80); Camera.cs sets VisionEnabled first.
+5. **M4-032 tags** on the %f/%.1f/%.2f renders: Motion.cs:749, 755 (M4-001); Motion.cs:1309, 1322 (M4-016);
+   Camera.cs:783-796 (M3-022); Cubes.cs:561 (M4-008).
+6. **Test fields** (filled in this pass where the tests exist): M3-025, M3-028, M3-031, M3-038, M3-043, M4-001, M4-002,
+   M4-010, M4-026, M4-027, M4-028, M4-031. Still to move: M3_010_C5 now exercises M6-016's pad; M4_028_Row6 (head
+   ack) is M4-016's; M4_016 timeout tests exercise M8-015's IActionRunner. The weak InvalidDataSize test (M3-028) and
+   the circular-test queue items stand.
+7. **M4-010:** live-entry tests for the full connection claim (filter timers, duplicate-type branch, all five slots,
+   expiry/reconnect, diagnostics; P19-P22/P28/P29 checked as built).
+8. **M4-016:** the queued TolTooSmall citation; resolve the duplicate MoveHeadToAngleAction in
+   Vision/PanAndTiltActions.cs (M13-022).
+9. **M4-031:** owners of the LockTracks callers 0x0054BE24, 0x0054EC08, 0x005BE624 (UNKNOWN; extraction).
+10. **M3-001/M3-018:** the O8 cv::redirectError read (pinned); fopen("") stays a system-library boundary (no code).
+11. **M3-043:** the vector-overload caller sweep (Thumb BL/BLX; ARM-mode separately).
+12. **Extraction for the new RECOVERABLE_GAPs:** M3-045, M4-033 (readers of +4/+8, StartLogging callers) first, since
+    they hold M3/M4's source flags; the higher-layer ones in their layers' turn.

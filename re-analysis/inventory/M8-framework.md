@@ -674,3 +674,13 @@ Previous subsystem flag quoted before correction: `source_investigation_exhauste
 ## Manager correction (2026-10-09): transferred recipients
 
 M8-015 expands to the ActionList/ActionQueue/IAction lifecycle from P3/P4 and teardown cancellation (0x0053F580..0x0053F70C; 0x00540370..0x0054063E; 0x00540D4A..0x00540E80; 0x005549B8..0x005549F4; teardown 0x0053E6A8..0x0053E6E0). M8-016 remains behavior-container teardown; M8-017 owns S14 compound sleep execution; M8-018 owns ResetRobot dispatch (0x0065DCFC..0x0065DF98). Source: 20261006-M1M2-missing-triage.md S5/S14/E1/P3-P4.
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M8-011 | Note: Gate B (0x00513C6E..0x00513C9A) is M3-032's (overlap ruling); tag moves in the build round. | IMPLEMENTATION_GAP |
+| M8-015 | Note: rows and built code exist (status unchanged, its layer's turn); owner of the IActionRunner base (from M4-016), Cancel(-1) (M4-026, M4-019) and QueueActionNow (M4-003). | RECOVERABLE_GAP |
+| M8-019 | NEW (S-7): BehaviorManager::RequestCurrentBehaviorEndImmediately (from M4-019 H4). | RECOVERABLE_GAP |

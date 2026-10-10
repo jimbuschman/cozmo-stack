@@ -3154,3 +3154,13 @@ fast-pow `DbToLinear` is not used by the output-gain stage, which is `powf(10.0f
 ## ADP-1 (operator decision, 2026-10-05)
 
 The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample DSP arithmetic may become EQUIVALENT_IMPLEMENTATION; every decision stays exact. No record is reclassified by this note. Each mixed record states its boundary in `unresolved`, and moves only when its equivalent part passes the equivalence test (`jobs/B-ADP-HARNESS.md`).
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M6-016 | Note: owner of the whole of PopRobotAudioMessage (overlap with M3-010), including the C5 pad and C7 no-volume rows; also the OnDevice playback and InitAnimation draws from M3-024. | IMPLEMENTATION_GAP |
+| M6-027 | NEW (S-1): RobotAudioClient::UpdateAnimationIsReady (from M3-013 C16). | IMPLEMENTATION_GAP |
+| M6-028 | NEW (S-2): RobotAudioClient::CreateAudioAnimation (from M3-024 C2). | IMPLEMENTATION_GAP |

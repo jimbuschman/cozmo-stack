@@ -1313,3 +1313,12 @@ M7-023 owns S4 mood teardown/null-ActionList ordering (0x00511150; 0x005111B6; r
 ## Manager correction (2026-10-09): M1-053 caller ownership
 
 M7-022 owns the non-live `BehaviorDockingTestSimple::UpdateInternal` GetRobotState caller at 0x005CC31E and its state copy to +0x270/state 3 (0x005CC310..0x005CC32C). M1-053 owns only the UpdateAllRobots game publication path; this second caller is not a publication path. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so.
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M7-020 | Note: ActionList/ActionQueue/ActionWatcher carry M7-020 tags but implement M8-015's rows; retag in the build round. | IMPLEMENTATION_GAP |
+| M7-025 | NEW (S-10): BehaviorTrackLaser's read of VisionComponent+0x32A (from M3-023 3b). | RECOVERABLE_GAP |

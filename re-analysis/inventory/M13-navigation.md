@@ -2498,3 +2498,12 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 ## Manager correction (2026-10-09): transferred recipients
 
 M13-029 owns S9 path/planner teardown (0x0051127E..0x00511288; recipients 0x00649100, 0x00649220); virtual descendants UNKNOWN. Source: 20261006-M1M2-missing-triage.md S9.
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M13-022 | Title and evidence narrowed: MoveHeadToAngleAction is M4-001/M4-016's (overlap ruling); this record keeps TurnInPlaceAction and its calls into the action. | IMPLEMENTATION_GAP |
+| M13-029 | Note: owner of PathComponent::Abort/ClearPath (overlap with M4-026); rows and built code exist (status unchanged, its layer's turn). | RECOVERABLE_GAP |

@@ -1,8 +1,8 @@
 {
   "subsystem": "M8-framework",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "02825a54fca3f63f9a84953e973c7c570290647f0cbac47644a165386ea400ab",
+  "inventory_sha256": "9979ce92514a21dec81f703905d061b92c6274f6d40dd1db518794db7f2076f4",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -250,6 +250,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "ResetRobot 0x0065DCFC..0x0065DF98 invokes external slot +0x0C repeatedly; child contracts E2-E5 remain separate (triage E1)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-019": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BehaviorManager::RequestCurrentBehaviorEndImmediately, as HandleRobotStopped calls it",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Called at 0x00535454 (blx 0x4AA1C8) from Robot::HandleRobotStopped when the cliff sensor is enabled (gate 0x00535436..0x00535438; M4-019 H4 0x00535432..0x00535480)"
       ],
       "live_path": true,
       "hardware_required": false

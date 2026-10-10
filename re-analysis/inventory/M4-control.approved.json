@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "82649395477767c432fb27c6e93e3750683f6e2c5bb5556e2321bde9db586085",
+  "inventory_sha256": "bc43edf7f4dc29edcdceef66549899a6643b7278de1575b2d4012fdecf262fe5",
   "records": {
     "M4-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -30,13 +30,14 @@
     },
     "M4-003": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "The head and lift API follows the game-message path: caller speed/accel/duration; the original app passes head 10/20 and lift 10/20, duration 0",
+      "title": "The game SetHeadAngle/SetLiftHeight factories: the message fields into the action, the 32.0-while-carrying switch",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "MA10 game SetHeadAngle overwrites +0x90..+0x98 with the message values (0x0052ABE0..0x0052AC24)",
-        "MA11 unity/scripts/csharp/Robot.cs:1443-1450 (head 10, 20, 0) and 1638-1646 (lift 10, 20, 0)",
         "MA12 game SetLiftHeight: 32.0 while carrying -> PlaceObjectOnGroundAction (0x0052AC40..0x0052AC9E)",
-        "MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)"
+        "MA9, MA13 action ctor defaults (head 15/20 at 0x00547F14..0x00547F28; lift 10/20 at 0x00548A68..0x00548A78)",
+        "Re-read (cross-layer split): head: MoveHeadToAngleAction ctor blx 0x4A94FC at 0x0052AC18, then the ldm/stm of msg+4..+0xC into action+0x90 (0x0052AC1C..0x0052AC24). Lift: vcmp.f32 s16,s0 against 32.0 at 0x0052AC54; the carried test ldr.w r0,[r5,#0x284]; ldr r0,[r0,#8]; adds r0,#1; beq (0x0052AC5E..0x0052AC66); PlaceObjectOnGroundAction ctor blx 0x4A940C at 0x0052AC72; otherwise movt r3,#0x40A0 (5.0) and MoveLiftToHeightAction(h, 5.0, 0) blx 0x4A9508 at 0x0052AC92, then msg+4..+0xC into +0x88..+0x90 (0x0052AC96..0x0052AC9E)",
+        "Handoffs: the factories return the action; queueing is ActionList::QueueActionNow 0x0053DCA0 (M8-015); PlaceObjectOnGroundAction: M15-022 and M12-015; the carried ObjectID [robot+0x284]+8: M12-008; the app's 10/20/0 (MA11): policy M4-034"
       ],
       "live_path": true,
       "hardware_required": false
@@ -86,27 +87,29 @@
     },
     "M4-008": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names); IMU and cube battery in the engine units",
+      "title": "Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names) and HandleObjectPowerLevel (cube battery)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SC2 UpdateRobotData 0x00634016..0x00634036",
         "U1 0x0051293C ldrb [r4,#0x29]; beq.w 0x512A8A (the only gate before the work)",
         "U3 0x00512986 ldr.w r0,[r4,#0x288]; 0x0051298C blx UpdateRobotData; origin check ContainsOriginID 0x00512C3E..0x00512C4A runs later",
         "U4 0x0063401A..0x00634036 raw cliff to +0xE/+0x12, CLIFF_DETECTED to +6, timestamp to +8",
-        "re-analysis/research/20261010-power-level-and-connect-log-rows.md A1..A16 and Addendum A13/C1..C7 (manager-adopted 2026-10-10): HandleObjectPowerLevel 0x00537130..0x00537402 - Log 0x005371CE, DAS gate with per-activeID maps this+0x138/+0x144 0x005371FA..0x0053726C, Report log 0x0053728C, DAS event robot.accessory_powerlevel 0x005372B2..0x00537324, map updates 0x00537348/0x00537358, connected-object lookup 0x00537360 -> BlockWorld::FindConnectedObjectHelper 0x0061F078, ObjectID getter 0x004EF772, Broadcast log 0x005373A2 and ObjectPowerLevel broadcast 0x005373C8..0x005373E4."
+        "re-analysis/research/20261010-power-level-and-connect-log-rows.md A1..A16 and Addendum A13/C1..C7 (manager-adopted 2026-10-10): HandleObjectPowerLevel 0x00537130..0x00537402 - Log 0x005371CE, DAS gate with per-activeID maps this+0x138/+0x144 0x005371FA..0x0053726C, Report log 0x0053728C, DAS event robot.accessory_powerlevel 0x005372B2..0x00537324, map updates 0x00537348/0x00537358, connected-object lookup 0x00537360 -> BlockWorld::FindConnectedObjectHelper 0x0061F078, ObjectID getter 0x004EF772, Broadcast log 0x005373A2 and ObjectPowerLevel broadcast 0x005373C8..0x005373E4.",
+        "Handoffs: the connected-object lookup at 0x00537360 (GetConnectedActiveObjectByActiveIdHelper 0x0061F720 -> BlockWorld::FindConnectedObjectHelper 0x0061F078): M11-004; raw IMU accel/gyro: M10-012/M10-013"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-009": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Cube tracking: ObjectAvailable / ObjectConnectionState, Moved / Stopped / UpAxisChanged handling with the charger and carry filters, per-object IsMoving",
+      "title": "HandleActiveObjectMoved/Stopped/UpAxisChanged: lookup, charger filter, double-tap window, IsMoving on change, the broadcasts",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "S1, S2, CD10a..CD10c, LC8a..LC8e as before",
         "C11.1 DockingComponent+0xC is an ObjectID, the object currently being docked with (the dock target): default -1 (0x0063BA1E/0x0063BA2A); only writer DockWithObject (0x0063BAAC/0x0063BAB6); readers include the Moved 0x0053416E/74 and Stopped 0x0053497C/84 exclusions",
-        "LC8a 0x00533B56 slot > 4 is ignored; AddConnectedActiveObject rejects activeID >= 5 (0x00623040)",
-        "LC8e SetID gives every ActiveCube of a type the same ObjectID for the process lifetime (0x004EF468..0x004EF52A)"
+        "Handoff, owned by M11-041 (overlap ruling 2026-10-10: HandleActiveObjectConnectionState 0x00533B3C..0x00533C34 with its slot gate): LC8a 0x00533B56 slot > 4 is ignored; AddConnectedActiveObject rejects activeID >= 5 (0x00623040)",
+        "Handoff, owned by M11-013: LC8e SetID gives every ActiveCube of a type the same ObjectID for the process lifetime (0x004EF468..0x004EF52A)",
+        "Moved callees (0x00533E4C..0x005341BA): BlockWorld::FindLocatedMatchingObjects blx 0x4A7084 0x0053401E (M11-004); CarryingComponent::IsCarryingObject blx 0x4A6FAC 0x0053411E/0x0053417C; ObjectPoseConfirmer::MarkObjectDirty blx 0x4A7174 0x0053413C (M11-009); ObjectMoved build/broadcast blx 0x4AA108 0x005341A8, blx 0x4A5B0C 0x005341B0; BlockTapFilterComponent::ShouldIgnoreMovementDueToDoubleTap blx 0x4A7FF0 0x00534278 (M4-023)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -188,35 +191,37 @@
     },
     "M4-016": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Head and lift move semantics: no send when in position, ack matched by id, completion in position and stopped, tolerances and error codes",
+      "title": "MoveHeadToAngleAction / MoveLiftToHeightAction Init, CheckIfDone and the MotorActionAck handlers: no send in position, ack by id, the latch and has-moved bytes, 0x04000004 / 0x03000016, the u16 diagnostic counters",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "MA9, MA13, MA15..MA17, C1, C6, C10.1 as before",
-        "C11.3 the lift CheckIfDone body 0x005493F6..0x00549508 contains no eye-shift removal; the head +0xA8 has only three writers, all zero (0x00547F3C, 0x005484B0, 0x00548724), so H4..H6 never execute"
+        "C11.3 the lift CheckIfDone body 0x005493F6..0x00549508 contains no eye-shift removal; the head +0xA8 has only three writers, all zero (0x00547F3C, 0x005484B0, 0x00548724), so H4..H6 never execute",
+        "Handoff: IAction::UpdateInternal (0x00540D1C..0x00540F9E) calls the action's Init and CheckIfDone virtuals; the timer, the 30 s timeout slot, the TimedOut warning (+0x57 test 0x00540E7C, sWarningF 0x00540EB6), Cancel, SetTag and PrepForCompletion are IActionRunner's: M8-015"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-017": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Backpack lights: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, headlight",
+      "title": "BodyLightComponent and SetHeadlight: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, the headlight's EnableMode(14) call and send",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "LB1..LB6, LB4a..LB4i as before",
         "E2 0x0063234A..0x00632364 SetHeadlight calls VisionComponent::EnableMode(14, enable) on robot+0x258",
         "E3 VisionMode 14 = LimitedExposure (name table 0x01034230, entry 14 -> 0x00C1DC64)",
-        "E4 0x006527AC..0x006527B6 EnableMode tail-calls VisionSystem::SetNextMode (PLT 0x4BA35C)",
-        "E5 0x006B2282..0x006B2298 SetNextMode queues (mode,bool) on the deque at VisionSystem+0xB0",
-        "E6 0x006B4FB6..0x006B4FE4 VisionSystem::Update drains the deque",
-        "E7 0x006B1A76..0x006B1CC6 EnableMode(14) sets/clears mask bit 14 at VisionSystem+0xAC",
-        "E8 0x00632368..0x00632380 EngineToRobot(SetHeadlight) then SendMessage reliable, not hot"
+        "Handoff, owned by M11-061: E4 0x006527AC..0x006527B6 EnableMode tail-calls VisionSystem::SetNextMode (PLT 0x4BA35C)",
+        "Handoff, owned by M11-061: E5 0x006B2282..0x006B2298 SetNextMode queues (mode,bool) on the deque at VisionSystem+0xB0",
+        "Handoff, owned by M11-061: E6 0x006B4FB6..0x006B4FE4 VisionSystem::Update drains the deque",
+        "Handoff, owned by M11-061: E7 0x006B1A76..0x006B1CC6 EnableMode(14) sets/clears mask bit 14 at VisionSystem+0xAC",
+        "E8 0x00632368..0x00632380 EngineToRobot(SetHeadlight) then SendMessage reliable, not hot",
+        "Re-read handoff: ldr.w r0,[r0,#0x258]; movs r1,#0xE; blx 0x4A91CC VisionComponent::EnableMode(14, on) at 0x00632350..0x00632364 (M11-061); then SetHeadlight blx 0x4B8E38 0x00632374 and Robot::SendMessage blx 0x4A5368 0x00632380; the LimitedExposure reader (E9): M11-057"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-018": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Cube lights: WakeUp on connection and reconnect, layers and PlayLightAnim gates, SetObjectLights / SetLEDs, SetCubeGamma, CubeID, CubeLights, white balance, default-layer anims",
+      "title": "CubeLightComponent: layers, PlayLightAnim gates, SetObjectLights/SetLEDs, the SetLights wire group (SetCubeGamma, CubeID, CubeLights, white balance), WakeUp, EnableGameLayerOnly, default-layer anims, the +0x2C4 hold",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "S5..S8, LC1..LC8, LC6, C10.3 rows S3..S7, W1..W5, P1..P5, D1..D5 as before",
@@ -225,14 +230,15 @@
         "C12.1 the static ObjectLights for EnableGameLayerOnly(enable=1) is 0x0105B4A0, filled by _INIT_36 (0x004D7EB4..0x004D7EE5): eight u32 0x000000FF at +0x00..+0x1F, the rest zero",
         "C12.2 the enable=1 branch is live: game tag 0xBB EnableLightStates -> 0x0063A48A..0x0063A496 and 0x0063AFF8..0x0063B006 pass enable = (msg.byte0 == 0); the app sends it from Robot.cs:1902-1907",
         "C13.1 EnableGameLayerOnly branch detail: all-objects enable=0 stops layer 0 once (0x00639ADA/DE, 0x00639AE6) and sets comp+0x22 := 0 (0x00639B32); single-object enable=0 stops layers 0 and 2 (0x00639AA2, 0x00639AB0) and does not touch comp+0x22; enable=1 sets ObjectInfo+0x1C := 1 and (all-objects only) comp+0x22 := 1",
-        "C13.4 EnableGameLayerOnly returns without acting when comp+0x22 (all-objects, 0x00639A16..0x00639A1C) or ObjectInfo+0x1C (single-object, 0x006399DC..0x006399E0) already equals enable"
+        "C13.4 EnableGameLayerOnly returns without acting when comp+0x22 (all-objects, 0x00639A16..0x00639A1C) or ObjectInfo+0x1C (single-object, 0x006399DC..0x006399E0) already equals enable",
+        "Handoffs: PickNextAnimForDefaultLayer's BlockWorld::GetLocatedObjectByIdHelper blx 0x4A7114 at 0x00637DB4 (Visible needs the located object's +0x24 == 1), SetObjectLights' located lookup blx 0x4A7114 0x00637E82 and connected lookup blx 0x4A6FB8 0x00637E96, ActiveCube::MakeStateRelativeToXY blx 0x4B9288 0x00637EE8: M11-004; the +0x2C4 writers: Robot::Delocalize M11-053, SetLocalizedTo M11-044, CheckAndUpdateTreadsState M10-001"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-019": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Cliff: sensor defaults, CliffEvent and PotentialCliff handling, EnableStopOnCliff senders, the threshold schedule 50 / 400 / 150",
+      "title": "CliffSensorComponent: defaults, CliffEvent/PotentialCliff, the EnableStopOnCliff senders, the 50/400/150 schedule with its running stats, HandleRobotStopped's Evaluate and broadcast gate",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SC1..SC8, SC4a..SC4j, SC6, C2, C7, C8 as before",
@@ -256,22 +262,24 @@
         "C12.3 robot+0x2C0 is per-mismatch-run: 0 at the ctor 0x0050FF08, 0 on a frame match 0x00512EAE, 0 on the treads Delocalize 0x00512B9C, old+1 on a mismatch 0x00512F1C, 0 after 0x65 0x00512F88",
         "C12.4 the stats gate r6=0 is false on the AddRobotStateToHistory failure (0x00512BEE/0x00512BF4/0x00512C38), the GetLastStateWithFrameID failure (0x00513088/0x00513110) and the origin miss (0x00512F0C)",
         "C13.2 the treads-change Delocalize stores +0x2C0 = 0 at 0x00512B9C then b 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch increment; the stats run unconditionally",
-        "C13.3 RobotStateHistory ctor sets a 3000 ms retention window at +0x3c (0x0053088D..0x005308C6); the stack's parallel cliff history mirrors it"
+        "C13.3 RobotStateHistory ctor sets a 3000 ms retention window at +0x3c (0x0053088D..0x005308C6); the stack's parallel cliff history mirrors it",
+        "Handoffs in HandleRobotStopped: the gate ldrb r0,[r0,#4]; cbz 0x00535436..0x00535438; BehaviorManager::RequestCurrentBehaviorEndImmediately blx 0x4AA1C8 0x00535454 (M8-019); ldr.w r0,[r4,#0x250]; mov.w r1,#-1; blx 0x4A7ABC ActionList::Cancel(-1) 0x00535466..0x0053546E (M8-015); the RobotStopped game message blx 0x4AA1D4 0x00535478 and Robot::Broadcast 0x00535480. In UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4 (M10-015). The history lookups (C12.4): M11-051/M11-053; the charger geometry: M13-009"
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-020": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "RobotState acceptance: time-sync gate, unknown origin ids dropped; origin 1 from the ctor Delocalize; AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity} at SyncTime",
+      "title": "RobotState acceptance gates (time sync; unknown origin ids dropped with the BadOriginID warning) and SyncTime's AbsoluteLocalizationUpdate {0, frame 0, origin 1, identity}",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "SC4f UFRS gates 0x0051293C..0x00512942, ContainsOriginID 0x00512BE2..0x00512C4A",
-        "SC4g PoseOriginList next id = 1 (0x0084792C..0x0084793C); UnknownOriginID = 0 (0x00C97B20)",
-        "Robot::Delocalize 0x00510A24: AddNewOrigin 0x00510A66, SetNewPose 0x00510B4C, SendAbsLocalizationUpdate 0x00510BF4 when time-synced",
+        "Handoff, owned by M11-019/M11-053 (the ctor's Delocalize, call site 0x00510324, creates origin 1): SC4g PoseOriginList next id = 1 (0x0084792C..0x0084793C); UnknownOriginID = 0 (0x00C97B20)",
+        "Handoff, owned by M11-019/M11-053 (the ctor's Delocalize, call site 0x00510324, creates origin 1): Robot::Delocalize 0x00510A24: AddNewOrigin 0x00510A66, SetNewPose 0x00510B4C, SendAbsLocalizationUpdate 0x00510BF4 when time-synced",
         "SC4e robot+0x2B0 = 0 (0x0050FF02, 0x0051032C); SC4h SendSyncTime -> SendAbsLocalizationUpdate (0x0051526E..0x005153AE)",
         "C3: +0x34E (first full state) is set right after the +0x29 gate, before ContainsOriginID (0x0051293C..0x00512948); RS6, lift, SC2, IMU, treads, status bits, MovementComponent::Update and SC10 all run before the origin check",
-        "C9: +0x2C6 set by every AddVisionOnlyStateToHistory, sent by Robot::Update 0x00513CBE..0x00513CCC; treads-path Delocalize 0x00512A62..0x00512BAA (M11 pose-origin interface; the record claims only the connection-time origin 1 and the gate)"
+        "Handoff, owned by M11 (M11-019/M11-053): C9: +0x2C6 set by every AddVisionOnlyStateToHistory, sent by Robot::Update 0x00513CBE..0x00513CCC; treads-path Delocalize 0x00512A62..0x00512BAA (M11 pose-origin interface; the record claims only the connection-time origin 1 and the gate)",
+        "BadOriginID warning key and format (0x005132C8, 0xBE686C; args 0x00512EC4..0x00512EE2), built in fix round S1 item 3"
       ],
       "live_path": true,
       "hardware_required": false
@@ -339,11 +347,13 @@
     },
     "M4-026": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Robot AbortAll ordered control and wire effects",
+      "title": "Robot::AbortAll: the order of its five calls and the OR'd result",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051194C..0x0051198C; 0x00649268..0x0064927C; 0x0063BE36; 0x00517E0A; 0x006409C2; Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "Re-read: ActionList::Cancel ldr.w r0,[r4,#0x250]; mov.w r1,#-1; blx 0x4A7ABC 0x00511956..0x0051195A; PathComponent::Abort ldr r0,[r4,#0x5C]; blx 0x4A7AC8 0x0051195E..0x00511960; DockingComponent::AbortDocking ldr.w r0,[r4,#0x280]; blx 0x4A7AD4 0x00511966..0x0051196A; Robot::SendAbortAnimation blx 0x4A7AE0 0x00511972; MovementComponent::StopAllMotors ldr.w r0,[r4,#0x254]; blx 0x4A7AEC 0x00511978..0x0051197C; orr.w/orrs/movne r0,#1 0x00511980..0x00511988",
+        "Handoffs: Cancel(-1) M8-015; PathComponent::Abort/ClearPath 0x00649100..0x006492A0 (0x00649268..0x0064927C included) M13-029; the AbortDocking send 0x0063BE10..0x0063BE36 M12-018; SendAbortAnimation (0x00517E0A) M5-022; StopAllMotors (0x006409C2) M4-015"
       ],
       "live_path": true,
       "hardware_required": false
@@ -362,11 +372,12 @@
     },
     "M4-028": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Go-to-sleep lift child construction and motor effects",
+      "title": "The sleep sequence's lift child: MoveLiftToHeightAction(Preset 0, 5.0f, 0) construction",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "Re-read: movs r0,#0xA4; blx 0x4A42A0 0x0052CF8E..0x0052CF90; movs r3,#0; movt r3,#0x40A0; movs r2,#0; blx 0x4A9A48 MoveLiftToHeightAction::MoveLiftToHeightAction(Robot&, Preset, float) 0x0052CF96..0x0052CFA2, body 0x00548B84 (GetPresetHeight 0x00548C14, GetPresetName 0x00548CD4, exports). Handoffs: AddAction blx r7 (the parent's vtable +0x20) 0x0052CFB0 and execution: M8-017; the factory 0x0052CEA2..0x0052CFC0: M5-038; Init/CheckIfDone/acks: M4-016 and M4-002"
       ],
       "live_path": true,
       "hardware_required": false
@@ -393,10 +404,11 @@
     },
     "M4-031": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Track-lock diagnostic enumeration",
+      "title": "Track-lock diagnostic enumeration: PrintLockState and the lock-tree order",
       "authority": "libcozmoEngine.so 3.4.0-1204 PrintLockState.",
       "evidence": [
-        "PrintLockState 0x006410D8..0x006413CA; lock/unlock caller 0x0063FF02..0x0063FF24 (triage E9)."
+        "PrintLockState 0x006410D8..0x006413CA; lock/unlock caller 0x0063FF02..0x0063FF24 (triage E9).",
+        "Handoff: the debug-name argument comes from each LockTracks caller (re-analysis/research/20261010-m4-movement-leftover-rows.md Row 3: 0x004F0F68 through the helper 0x004F0F4C, called from 0x004F0E00, 0x0054058E (IActionRunner, M8-007), 0x0054BE24, 0x0054EC08; 0x005BE624; 0x00640290; 0x006404EC; the tail at 0x0063F0B8); M5-035 for the streamer's locks; the owners of 0x0054BE24, 0x0054EC08 and 0x005BE624 are UNKNOWN"
       ],
       "live_path": true,
       "hardware_required": false
@@ -407,6 +419,29 @@
       "authority": "Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs.",
       "evidence": [
         "The engine passes widened doubles to vsnprintf through sChanneledInfoF/sWarningF (e.g. M4-016 InvalidHeight 0x00549398; M4-001 formats 0xBEA11C/0xBEA169)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-033": {
+      "status": "RECOVERABLE_GAP",
+      "title": "TouchSensorComponent: the per-RobotState Update, the ctor, the dtor and its logging",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "UpdateFullRobotState calls TouchSensorComponent::Update: ldr.w r0,[r4,#0x28C]; blx 0x4A7C00 at 0x00512990..0x00512996, right after the cliff UpdateRobotData (0x0051298C)",
+        "Update 0x0064E75C stores RobotState+0 at +4 and the u16 at RobotState+0x58 at +8, then tail-calls Log through the veneer 0x008CCFCC; Log 0x0064E76C returns unless +0x10 (logging) is set; the ctor 0x0064E738 zeroes +4..+0x14; the dtor 0x0064E746 deletes +0xC through its vtable slot 1 (the logger, present only after StartLogging 0x0064EA44)",
+        "Call sites from a full .text BL/BLX sweep: ctor 0x0050FE6C; dtor 0x00510766, 0x005113E0, 0x0051171A; Update 0x00512996"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-034": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "The C# head/lift API's default speed, acceleration and duration (head 10/20/0, lift 10/20/0): the app's values, an app input",
+      "authority": "Unity app code (authority 2): unity/scripts/csharp/Robot.cs",
+      "evidence": [
+        "MA11 unity/scripts/csharp/Robot.cs:1443-1450 (head 10, 20, 0) and 1638-1646 (lift 10, 20, 0): the values the app puts into the game SetHeadAngle/SetLiftHeight messages",
+        "The engine side is M4-003: the message fields go into the action (0x0052AC1C..0x0052AC24, 0x0052AC96..0x0052AC9E)"
       ],
       "live_path": true,
       "hardware_required": false

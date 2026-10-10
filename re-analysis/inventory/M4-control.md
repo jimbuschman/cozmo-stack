@@ -627,3 +627,27 @@ Settling pass (manager, 2026-10-10, Opus at 3c994bc): M4-002 is reopened to IMPL
 | Record | Status | Evidence |
 | --- | --- | --- |
 | M4-032 | EQUIVALENT_IMPLEMENTATION: the phone printf's %f-family rendering (bionic, not shipped); NULL %s is "(null)". | Manager ruling, 2026-10-10. |
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M4-001 | In-layer: overlap ruling (MoveHeadToAngleAction is M4-001/M4-016's, not M13-022's); M4-032 tag listed for the build round; tests refreshed. | IMPLEMENTATION_GAP |
+| M4-002 | In-layer: unresolved and test refreshed for fix round S1; the variability step recorded as unreachable on the live path. | IMPLEMENTATION_GAP |
+| M4-003 | Narrowed to the game factories; MA11 moved to M4-034; handoffs M8-015, M15-022/M12-015, M12-008. | IMPLEMENTATION_GAP |
+| M4-008 | Title drops IMU (M10-012/M10-013) and cites the cube battery rows; lookup handoff -> M11-004. DAS $data sink open (no record). | IMPLEMENTATION_GAP |
+| M4-009 | Narrowed to Moved/Stopped/UpAxisChanged (overlap ruling: HandleActiveObjectConnectionState -> M11-041); LC8e -> M11-013; dock-target writer cited to M12-017. | IMPLEMENTATION_GAP |
+| M4-010 | In-layer: build-round tests listed; test field refreshed. | IMPLEMENTATION_GAP |
+| M4-016 | Narrowed to the head/lift actions' Init, CheckIfDone and ack handlers; the IActionRunner base -> M8-015. | IMPLEMENTATION_GAP |
+| M4-017 | Narrowed to BodyLightComponent and SetHeadlight; E4..E7 -> M11-061; E9 -> M11-057. | IMPLEMENTATION_GAP |
+| M4-018 | Narrowed to CubeLightComponent; lookups and makeRelative -> M11-004; +0x2C4 writers -> M11-053, M11-044, M10-001. | IMPLEMENTATION_GAP |
+| M4-019 | Narrowed to CliffSensorComponent and HandleRobotStopped's gate; behaviour end -> M8-019; Cancel(-1) -> M8-015; DetectGyroDrift/DetectBias -> M10-015. | IMPLEMENTATION_GAP |
+| M4-020 | Narrowed to the acceptance gates and SyncTime's AbsoluteLocalizationUpdate; Delocalize/PoseOriginList/C9 -> M11-019/M11-053. | IMPLEMENTATION_GAP |
+| M4-026 | Narrowed to AbortAll's order and result (overlap rulings: AbortAll M4-026; PathComponent -> M13-029; SendAbortAnimation -> M5-022); test filled. | IMPLEMENTATION_GAP |
+| M4-027 | In-layer: Touch -> M4-033; test filled. | IMPLEMENTATION_GAP |
+| M4-028 | Narrowed to the sleep lift child's construction (overlap ruling: factory M5-038, AddAction/execution M8-017); test filled. | IMPLEMENTATION_GAP |
+| M4-031 | Narrowed to PrintLockState and the lock-tree order; debug-name callers named; test filled. | IMPLEMENTATION_GAP |
+| M4-033 | NEW: TouchSensorComponent (I-3): the live per-state Update, ctor, dtor, logging; live RECOVERABLE_GAP, so `source_investigation_exhausted` is now false. | RECOVERABLE_GAP |
+| M4-034 | NEW: the app's head/lift defaults 10/20/0 as the C# API's defaults (manager ruling on MA11; app-boundary input). | COMPATIBILITY_POLICY |

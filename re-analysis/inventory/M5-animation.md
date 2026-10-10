@@ -821,3 +821,13 @@ Previous subsystem flag quoted before correction: `source_investigation_exhauste
 ## Manager correction (2026-10-09): transferred recipients
 
 M5-037 owns S3 animation teardown (0x00511524..0x0051154A; streamer 0x0057AF48..0x0057AFDA and 0x0057B044..0x0057B0C2). M5-038 owns S14 factory/triggers (0x0052CEA2..0x0052CFC0); M1-045 retains handoff/submission. M5-039 owns ready-to-stream consumer lifecycle (0x0052C3A6; 0x0053667E..0x005366AC). Source: 20261006-M1M2-missing-triage.md S3/S14/N2.
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M5-018 | Note: owner of ShouldProcessAnimationFrame (overlap with M3-013); readiness tail -> M6-027. | IMPLEMENTATION_GAP |
+| M5-022 | Title narrowed: AbortAll is M4-026's (overlap ruling); keeps SendAbortAnimation and the failed send; handoff evidence added. | IMPLEMENTATION_GAP |
+| M5-038 | Note: owner of the sleep factory; lift child M4-028, AddAction M8-017. | RECOVERABLE_GAP |

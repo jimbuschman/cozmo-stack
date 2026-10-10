@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "3c69ca1099446ca15794cb114ea1a835f6ae4e0216ffa8bbd66cd60f8ac169cc",
+  "inventory_sha256": "74d38c3656afd159ac7d2de7e4b8cd98b67b3ab2d75c7e4fa44aef7f49870422",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -313,6 +313,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "RemoveDisableReactionsLock(\"sdk\") dispatch at 0x0065DD9A; concrete body UNKNOWN (triage E2)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-025": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BehaviorTrackLaser's read of VisionComponent+0x32A (the EnableColorImages flag) and its effect",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)"
       ],
       "live_path": true,
       "hardware_required": false

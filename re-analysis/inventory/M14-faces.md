@@ -435,3 +435,11 @@ Previous subsystem flag quoted before correction: `source_investigation_exhauste
 ## Manager correction (2026-10-09): transferred recipients
 
 M14-013 owns S10 pet/face/speech ownership (0x0051128C..0x005112C6; 0x005114A6..0x005114B4), including M14-006; recursive effects UNKNOWN. Source: 20261006-M1M2-missing-triage.md S10.
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M14-012 | Note: owner of the FaceAlbum/FaceEnrollment read callbacks (from M3-034; overlap ruling); the reads' gate is M11-059's. | IMPLEMENTATION_GAP |

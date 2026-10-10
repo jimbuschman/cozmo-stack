@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "04b23e5a21883a8fe4fba4fd605ec5d1f706e07c81ca9e12ed54038bfba0a16e",
+  "inventory_sha256": "696757ced2f680407e3c18340608fba09991981b0b989f1279f19928ed78080b",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -431,6 +431,36 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotDataBackupManager.",
       "evidence": [
         "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-034": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ProgressionUnlockComponent's NV read callback (tag 0x182000) and its sink",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Read queued at 0x0064BEFA (tag 0x182000, M3-033 #1); callback 0x102F6B8+0x14 = 0x0064CE34 (defaults on -1, SendUnlockStatus; M3-034's summary)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-035": {
+      "status": "RECOVERABLE_GAP",
+      "title": "InventoryComponent's NV read callback (tag 0x195000) and its sink",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Read queued at 0x0063CA52 (tag 0x195000, M3-033 #2); callback 0x102EF3C+0x14 = 0x0063D7C4 (+0x104 = 1, Unpack, SendInventoryAllToGame, RequestDefaultSparks on -1; M3-034's summary)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-036": {
+      "status": "RECOVERABLE_GAP",
+      "title": "The Lab read: ReadLabAssignmentsFromRobot (tag 0x196000) and its callback into CozmoExperiments::RestoreLoadedActiveExperiments",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "Read(0x196000) at 0x006A5B1E from the mfgId lambda (0x0052E3A6..0x0052E3B2, M3-033 #13); callback 0x10317B8+0x14 = 0x006A6486 -> CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34 (exports)"
       ],
       "live_path": true,
       "hardware_required": false

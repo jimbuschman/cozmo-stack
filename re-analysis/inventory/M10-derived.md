@@ -465,3 +465,12 @@ Previous subsystem flag quoted before correction: `source_investigation_exhauste
 ## Manager correction (2026-10-09): transferred recipients
 
 M10-014 owns S6 classifier/filter/gyro boundaries (0x0051121A..0x0051124C; 0x00511418..0x00511424; identity 0x0050FE1C..0x0050FE20); state effects remain UNKNOWN. Source: 20261006-M1M2-missing-triage.md S6.
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M10-010 | Note: HandleFirmwareVersion and its parse are M3-024's (overlap ruling); this record keeps the SetPhysicalRobot flag and its gates. | IMPLEMENTATION_GAP |
+| M10-015 | NEW (S-8): RobotGyroDriftDetector::DetectGyroDrift/DetectBias per state (from M4-019). | RECOVERABLE_GAP |

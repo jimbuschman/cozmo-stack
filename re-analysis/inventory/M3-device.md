@@ -411,3 +411,29 @@ Settling pass (manager, 2026-10-10, Opus at 3c994bc): M3-027, M3-030 and M3-040 
 | M3-044 | RECOVERABLE_GAP: CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends (CozmoRobot.cs:549-554). | Named by the M3+M4 settling pass (2026-10-10). |
 
 M3-044 is COMPATIBILITY_POLICY, tool-only and off the live path (manager, 2026-10-10). Rows: research/20261010-m3044-camera-start-rows.md. The engine has no StartCamera counterpart; the connection ImageRequest {Stream, QVGA} is already built.
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M3-001 | Narrowed to frame reconstruction and the gray decode; handoffs named: cv::Exception -> M11-058, decoded Image/timestamp -> M11-033; non-JPEG 5/6/7 -> M3-045. | IMPLEMENTATION_GAP |
+| M3-010 | Narrowed to encodeMuLaw(float). Overlap ruling: PopRobotAudioMessage (loop, zero pad C5, no volume C7, AudioSample build) is M6-016's; C5/C7 relabelled as handoffs. | IMPLEMENTATION_GAP |
+| M3-013 | Narrowed to SendBufferedMessages (C14). C15 -> M5-007/M5-008/M5-026 and M5-018 (overlap ruling); C16 -> M6-027. | IMPLEMENTATION_GAP |
+| M3-018 | Narrowed to the colour decode and IsColor. A25 (Save) moved to M3-046; handoffs M11-058, M11-033. | IMPLEMENTATION_GAP |
+| M3-021 | Narrowed to the exposure/gain parameter path. 1f/1g -> M11-059; 1d -> M11-060. | IMPLEMENTATION_GAP |
+| M3-022 | Narrowed to the CameraCalib read, its callback logs, the distortion zeroing and the +0x48 store (overlap ruling: readers -> M11-049; install -> M11-039). | IMPLEMENTATION_GAP |
+| M3-023 | 3b (the BehaviorTrackLaser reader) relabelled as a handoff to M7-025; StartCamera text points at M3-044. | IMPLEMENTATION_GAP |
+| M3-024 | Narrowed to HandleFirmwareVersion's parse and output source (overlap ruling: the whole handler incl. the shared parse is M3-024's; M10-010 keeps SetPhysicalRobot's flag). C2 -> M6-028. LogicError catcher open (no record). | IMPLEMENTATION_GAP |
+| M3-025 | In-layer: unresolved and test refreshed for fix round S1. | IMPLEMENTATION_GAP |
+| M3-026 | In-layer: unresolved refreshed (M3-027 settled; "(null)" under M4-032). | IMPLEMENTATION_GAP |
+| M3-028 | In-layer: unresolved and test refreshed for fix round S1. | IMPLEMENTATION_GAP |
+| M3-031 | Backup call named as a handoff to M15-033; test refreshed. | IMPLEMENTATION_GAP |
+| M3-032 | Narrowed to the gates in Robot::Update (overlap ruling: Gate B is M3-032's, not M8-011's); engine state -> M1-024; UpdateAllResults' result -> M11-035. | IMPLEMENTATION_GAP |
+| M3-033 | Narrowed to the read order and ready-to-stream; the FaceAlbum gate -> M11-059; each read's owner named. | IMPLEMENTATION_GAP |
+| M3-034 | Retired into M15-034, M15-035, M14-012, M15-033, M15-036, M15-014; kept as a handoff-only record until the build round names each sink. | IMPLEMENTATION_GAP |
+| M3-038 | Narrowed to ~NVStorageComponent; backup destruction -> M15-033; test filled. | IMPLEMENTATION_GAP |
+| M3-043 | Backup bodies named as handoffs to M15-033; test filled. | IMPLEMENTATION_GAP |
+| M3-045 | NEW: imdecode's decoder choice for a non-JPEG payload in encodings 5/6/7 (I-1). live_path true until the robot's use of 5/6/7 is settled, so `source_investigation_exhausted` is now false. | RECOVERABLE_GAP |
+| M3-046 | NEW: CameraFrame.PresentationJpeg/Save, tool-only, non-engine bytes (I-2); evidence A25 from M3-018. | COMPATIBILITY_POLICY |

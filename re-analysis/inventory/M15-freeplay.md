@@ -871,3 +871,15 @@ M15-027 owns S11 Needs/AI/progression/inventory (0x00695908..0x0069594A; 0x00511
 | Record | Status | Evidence |
 | --- | --- | --- |
 | M15-033 | RECOVERABLE_GAP: RobotDataBackupManager (QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0, sink 0x0051DF34). | Named by the M3+M4 settling pass (2026-10-10). |
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M15-014 | Note: owner of the Needs read callback 0x0069BEB2 (from M3-034). | IMPLEMENTATION_GAP |
+| M15-033 | Note: owner of the RDBM sink (M3-034), the write-result backup call (M3-031/M3-043) and the destruction at 0x00643F48 (M3-038). | RECOVERABLE_GAP |
+| M15-034 | NEW (S-9a): ProgressionUnlockComponent's NV read callback 0x0064CE34 (from M3-034). | RECOVERABLE_GAP |
+| M15-035 | NEW (S-9b): InventoryComponent's NV read callback 0x0063D7C4 (from M3-034). | RECOVERABLE_GAP |
+| M15-036 | NEW (S-11): the Lab read and RestoreLoadedActiveExperiments 0x006A5C34 (from M3-033/M3-034). | RECOVERABLE_GAP |

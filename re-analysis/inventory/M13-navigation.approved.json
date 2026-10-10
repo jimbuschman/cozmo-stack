@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "b341a75b4acff569f1607609f496f39e2481ddb94039b013e1f2c1b88d115b76",
+  "inventory_sha256": "ec932c93de1cfdd4a7e8b1f8b39f5433a58c45fdf91477579289d7b221f1ab18",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -305,12 +305,12 @@
     },
     "M13-022": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "TurnInPlaceAction and MoveHeadToAngleAction",
+      "title": "TurnInPlaceAction, and the M13 callers of MoveHeadToAngleAction (the action itself is M4-001/M4-016's)",
       "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q5, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap2.md): TurnInPlaceAction ctor 0x005459D4 (type 0x28, tracks 4; +0x78 = 5.235988, +0x7C = 10.0, +0x80 = 25.0, +0xB0 = Radians(2 deg) 0x3D0EFA35, +0xC4 = [+0x78], +0xC8 = [+0x7C], +0xD8 = 1, subscribes to tag 0xC4 motorActionAck); SetMaxSpeed 0x00545C08 writes +0xC4 and sets +0xCC; SetAccel 0x00545D14; SetTolerance 0x00545D50 (minimum 2 degrees); IsOffTreadsStateValid 0x00545EC4; Init 0x00545FA0 (invalid off-treads -> 0x0300000A; +0xD0 = [robot+0x2B0]; absolute/relative target math; relative |angle| > +0x80*2pi -> 0x03000000; in position -> 0; MovementComponent::TurnInPlace failing -> 0x03000016; eye-shift when +0xD8; +0xAC = 0.5*|+0xA4| at 0x0054620C); IsBodyInPosition 0x00546374; CheckIfDone 0x0054642C (RUNNING until the ack, origin-change counter, 0x04000004 when stopped without progress, 0x0300000A tail); MoveHeadToAngleAction ctor 0x00547E40 (type 0x12, tracks 1; +0x90 = 15.0, +0x94 = 20.0, +0x9C = 1, +0x9D = 0; angle clamped to [-0.4363323, 0.7766715]; tolerance floor 2 degrees), IsHeadInPosition 0x005484F4, Init 0x00548534 (in position -> 0; MoveHeadToAngle failing -> 0x03000016; the +0xA0 write also on failure), CheckIfDone 0x005485CC (0x04000004 when stopped with +0xAD set); ack handlers 0x0054D3F8 and 0x0054D624; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md): TurnInPlaceAction::GetCompletionUnion 0x005469A8 builds TurnInPlaceCompleted {relocalizedCnt = [this+0xD4]} and calls Set_turnInPlaceCompleted (0x005469AC..0x005469B8); [this+0xD4] is incremented in CheckIfDone when robot[+0x2B0] != [this+0xD0] (0x0054644A..0x0054645E); the MoveHeadToAngleAction Preset constructor 0x0054834C sets the head angle Radians(preset == 0 ? -0.261799395f (0xBE860A92, pool 0x00548428) : -1.0f), calls the 4-arg constructor (Robot&, Radians const& angle, Radians tolerance, Radians variability) (0x00548376..0x00548382) and names the action 'MoveHeadTo_' + ('GroundPlaneVisible' (18 chars, 0x00BEA1DD) for preset 0, 'ERROR' (5 chars, 0x00BEA1F0) otherwise) at this+0x48; GetPresetHeadAngle 0x00548440 returns the same two values",
       "evidence": [
-        "0x005459D4..0x00546894 TurnInPlaceAction; 0x00547E40..0x005488B8 MoveHeadToAngleAction; 0x0054D3F8, 0x0054D624",
+        "0x005459D4..0x00546894 TurnInPlaceAction; 0x0054D3F8, 0x0054D624. Handoff (overlap ruling 2026-10-10): 0x00547E40..0x005488B8 MoveHeadToAngleAction is M4-001/M4-016's",
         "re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q5; re-analysis/research/20260929-R-VIS-verify-M13-gap2.md Q5 (PASS)",
-        "0x005469A8..0x005469BE, 0x0054644A..0x0054645E, 0x0054834C..0x005483CC, 0x00548440..0x00548454",
+        "0x005469A8..0x005469BE, 0x0054644A..0x0054645E, 0x0054834C..0x005483CC, 0x00548440..0x00548454 (0x0054834C..0x005483CC and 0x00548440..0x00548454 lie in MoveHeadToAngleAction: M4-016's)",
         "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q4; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q4"
       ],
       "live_path": true,

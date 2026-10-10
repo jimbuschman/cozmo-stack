@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-10-05",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "92d4251b45432c1b543ddef4f465ef2a7d323f08fb7c54b6ed7785aaa6bcd71f",
+  "inventory_sha256": "2dd04ee418df110a3075959681728054db537d9472ecc77c62feb6d0b50a95f1",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -401,6 +401,27 @@
         "correction C28 (2026-09-29): list order and tie keys 0x9F3274 (0x9F3288..0x9F351C; keys 0xA00324..0xA0037C), kill 0xA01CA4 and voice stop (0xA01CA4..0xA01DA0, 0x9FF7B8, 0xA44A50..0xA44BC8), global checks 0xA376C0/0xA37880, per-object variant 0x9FA6F8/0x9FA410, limiter creation chain 0x9F2D20, removal 0xA029DC/0xA01684/0x9ED428; report re-analysis/research/20260929-B-M6b-4-batch4b-limits.md and its citation check",
         "production path (checklist 1): engine 0xA379D8 calls node->vt+0x90 (0xA37D94) -> C# WwiseEventRuntime.ExecutePlay -> IWwisePlaybackBridge.OnPlay -> WwisePlaybackBridge.PlaySound -> WwisePlaybackLimiter.Walk; Term 0xA029DC -> WwisePlaybackLimiter.TermPbiA029DC; voice-pass stop 0xA44948 -> WwiseVoiceBusPass.VoicePass; flush 0xA38420 -> NotificationA38600/TerminatePbi",
         "correction C29 (2026-09-30): removal walk 0x9ED428/0x9C5240/0x9FACD0/0x9FA2EC/0x9FAA70/0x9F4D40, Term 0xA029DC order, 0xA01684, remove-by-keys 0x9F3528, reposition 0x9F36A0/0xA01A08/0x9FFE1C, below byte 0x9BEB30 (threshold 0x37800000), 0xA0285C/0xA0067C/0x9D3558 returns, voice-pass stop 0xA44948..0xA44BFC and flush 0xA38420; report re-analysis/research/20260929-B-M6b-4-batch4b-missing.md and its citation check #2"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-027": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotAudioClient::UpdateAnimationIsReady: the audio animation's readiness for ShouldProcessAnimationFrame",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "UpdateAnimationIsReady 0x0059A1CC..0x0059A1F6: no audio animation -> ready; state byte +0x3C 1 or 3 -> ready; 4 or 5 -> ClearCurrentAnimation (blx 0x4ADBC4 at 0x0059A1F0) then ready; otherwise not ready",
+        "Reached by the tail b.w 0x8CB8AC from ShouldProcessAnimationFrame at 0x0057CCA6 (M5-018); the states per Q5 GetStringForAnimationState 0x00596434 (M3 row C16)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-028": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotAudioClient::CreateAudioAnimation: the output-source switch, the post-construction state check and the source-0 clear",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "CreateAudioAnimation 0x00599FF0: the +0x3C source switch (cmp r0,#0/#2/#1 0x0059A074..0x0059A07C), the two constructions 0x0059A082..0x0059A0B6, the post-construction state check ldrb.w r0,[r6,#0x3C] 0x0059A0BA (states 4/5), the source-0 clear 0x0059A11C..0x0059A12E (per M3-024's record, not re-read); the client's initial source is null (0x005994E6)"
       ],
       "live_path": true,
       "hardware_required": false

@@ -19,6 +19,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "connect" => SmokeTest.Run(args).GetAwaiter().GetResult(),
     "m1-link-check" => LinkCheck.Run(args),
     "control-check" => ControlCheck.Run(args),
+    "m3m4-hw" => M3M4Hw.Run(args),
     "fakerobot" => FakeRobot(args),
     "probe" => Probe.Run(args).GetAwaiter().GetResult(),
     "camera" => Devices.Camera(args).GetAwaiter().GetResult(),
@@ -169,6 +170,8 @@ static int Usage()
                                              motors and disposes (bounded 2 s), then writes the bundle.
                                              Exit 0 PASS, 1 FAIL or INCOMPLETE, 2 usage or OBB missing, 3 watchdog,
                                              4 interrupted (Ctrl+C)
+          m3m4-hw [robot-ip] [--only <checks>] [--origin-probe] [--include-lift] [--cube-wait <s>] [--photo KEY=path] [--out <dir>] [--yes]
+                                             DRAFT hardware run M3M4-HW (M3-008, M3-016, M3-036, M4-013, M4-021, M4-024): observations only, no PASS
           fakerobot [--port 5551] [--seconds 60]  loopback stand-in for the robot transport (127.0.0.1) for testing the socket path without hardware
           probe <robot-ip> [--include-motion] [--include-state] [--only <step>] [--out results.json]
                                              subsystem-by-subsystem protocol verification on a real robot: sends only

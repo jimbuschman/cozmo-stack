@@ -1391,3 +1391,15 @@ M11-053 adds P1 tread-boundary Delocalize argument (0x00512B78..0x00512BA6; 0x00
 | --- | --- | --- |
 | M11-057 | RECOVERABLE_GAP: the LimitedExposure reader (M4-017 E9). | Named by the M3+M4 settling pass (2026-10-10). |
 | M11-058 | RECOVERABLE_GAP: the catcher of a cv::Exception from the image decode (imdecode call site 0x004F28C6 has a cleanup-only landing pad). | JPEG Opus checks and the settling pass (2026-10-10). |
+
+## Cross-layer split (manager, 2026-10-10)
+
+Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extractor at f56329c), applied with the manager's rulings (`re-analysis/jobs/B-M3M4.md` "Cross-layer split applied (2026-10-10)"). Overlap rule: the owner is the record in the layer whose engine function the code reproduces; the other record keeps only its handoff and cites the owner. No record is settled in this pass.
+
+| Record | Change | Status |
+| --- | --- | --- |
+| M11-041 | Note: owner of HandleActiveObjectConnectionState with its slot gate (overlap with M4-009). | IMPLEMENTATION_GAP |
+| M11-049 | Note: the +0x48 store is M3-022's; this record owns the readers (overlap ruling). | IMPLEMENTATION_GAP |
+| M11-059 | NEW (S-3): VisionComponent::Init / VisionSystem::Init, IsInitialized and the album load-or-erase branch (from M3-021, M3-033). | RECOVERABLE_GAP |
+| M11-060 | NEW (S-4): VisionSystem::Update's application of the pending camera params (from M3-021 1d). | RECOVERABLE_GAP |
+| M11-061 | NEW (S-6): the vision-mode request queue (from M4-017 E4..E7; code built under M4-017). | IMPLEMENTATION_GAP |

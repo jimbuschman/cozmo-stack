@@ -1,8 +1,8 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "e76e79a3e73490a4146f5e413028a71a28ee22afcd48579ba1069bdc19dba6a2",
+  "inventory_sha256": "9a3739a47724e8781afd74fe03c6dba2bc81c624cf1fd87b1607ecf69d7b4f50",
   "records": {
     "M5-001": {
       "status": "EXACT_SOURCE",
@@ -258,10 +258,11 @@
     },
     "M5-022": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Disconnect and teardown: a failed send only returns; ~Robot AbortAll cancels actions, aborts path and docking, sends AbortAnimation 0x8D and StopAllMotors",
+      "title": "Disconnect and teardown: a failed send only returns; Robot::SendAbortAnimation (0x8D) as AbortAll calls it; ~AnimationStreamer",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
-        "A37 0x0051194C..0x0051197C; 0x00511120; 0x0051154A; ~AnimationStreamer 0x0057AF58"
+        "A37 0x0051194C..0x0051197C; 0x00511120; 0x0051154A; ~AnimationStreamer 0x0057AF58",
+        "Handoff (overlap ruling 2026-10-10): AbortAll's order and result (0x0051194C..0x0051198C) are M4-026's; this record keeps Robot::SendAbortAnimation, called at 0x00511972 (body 0x00517E0A)"
       ],
       "live_path": true,
       "hardware_required": false

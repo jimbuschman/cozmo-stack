@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "1f8387f60b7b8c815a5c8df84f5147eab842fc3330469e183664a17636232bb4",
+  "inventory_sha256": "b2b1b7636d55b5c857cf966ed7cf6781780af9ef5aa4819de8b59fa3fc49f5be",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -700,6 +700,40 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 VisionComponent / image-chunk handler.",
       "evidence": [
         "DecodeImageHelper's imdecode call site 0x004F28C6 has only a cleanup landing pad (LSDA call site 0x004F28BC..0x004F28CA, lp 0x004F2EA0) ending in _Unwind_Resume (re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md O9)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-059": {
+      "status": "RECOVERABLE_GAP",
+      "title": "VisionComponent::Init and VisionSystem::Init: the config reads, IsInitialized and the face-album load-or-erase branch",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "VisionComponent::Init 0x00650D20: ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA; rows 4a..4l; vision_config.json:46 = 16); VisionSystem::Init (0x006B0658) called at 0x00650E36 (blx 0x4BA200), then cmp r6,#0; beq.w 0x650FB4 (0x00650E3C..0x00650E3E); non-zero: sErrorF 0x00650E58, the debug-break gate 0x00650E90..0x00650E9A, return 0x00650FB0",
+        "Zero: 0x00650FB4, a branch at 0x00650FE8..0x00650FFC, then LoadFaceAlbumFromRobot blx 0x4BA23C at 0x0065108A (body 0x006512A0 reads 0x184000 at 0x006512F0 and 0x183000 at 0x00651330); the other branch 0x0065100C..0x00651086 (EraseAllFaces 0x00651014, BroadcastLoadedNamesAndIDs 0x00651032) is unread; VisionSystem::IsInitialized 0x006B2CD6"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-060": {
+      "status": "RECOVERABLE_GAP",
+      "title": "VisionSystem::Update's application of the pending SetNextCameraParams to the current exposure and gain",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-061": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The vision-mode request queue: VisionComponent::EnableMode, VisionSystem::SetNextMode, the Update drain and VisionSystem::EnableMode's mask",
+      "authority": "libcozmoEngine.so 3.4.0-1204",
+      "evidence": [
+        "E4 0x006527AC..0x006527B6 VisionComponent::EnableMode (0x006527A8) tail-calls VisionSystem::SetNextMode (PLT 0x4BA35C)",
+        "E5 0x006B2282..0x006B2298 SetNextMode queues (mode, bool) on the deque at VisionSystem+0xB0",
+        "E6 0x006B4FB6..0x006B4FE4 VisionSystem::Update drains the deque",
+        "E7 0x006B1A76..0x006B1CC6 VisionSystem::EnableMode sets/clears the mode's bit in the mask at VisionSystem+0xAC (checked for mode 14)"
       ],
       "live_path": true,
       "hardware_required": false
