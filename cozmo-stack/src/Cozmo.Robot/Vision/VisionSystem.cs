@@ -63,7 +63,8 @@ public sealed class VisionSystem : IDisposable
         // fidelity: M4-018, M4-017
         // C11.2: read the same localization owner as SetLocalizedTo and the published game status.
         robot.Lights.Cubes.IsLocalized = () => World.Robot2C4 != 0;
-        robot.VisionModeRecipient = this;
+        // fidelity: M4-017
+        robot.Lights.AttachVisionSystem(this);   // set-recipient + take-pending, atomic with SetHeadlight
         World.IsCarryingObject = id => Carrying(id);
         World.OnTreads = () => robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
         // fidelity: M11-037
@@ -1090,9 +1091,8 @@ public sealed class VisionSystem : IDisposable
 
     public void Dispose()
     {
-        if (ReferenceEquals(_robot.VisionModeRecipient, this))
+        if (_robot.Lights.DetachVisionSystem(this))
         {
-            _robot.VisionModeRecipient = null;
             _robot.Lights.Cubes.IsLocalized = () => _robot.Sensors.OffTreads.Robot2C4 != 0;
         }
         _robot.Message -= OnMessage;

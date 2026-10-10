@@ -356,22 +356,57 @@ public sealed class CozmoLights
         Backpack = (on, on, on);
     }
 
+    /// <summary>Mode-14 requests made while no VisionSystem was attached (see AttachVisionSystem).</summary>
+    private readonly Queue<bool> _pendingLimitedExposure = new();
+
     // fidelity: M4-017
     /// <summary>
     /// The headlight (LB6, 0x00632344..0x00632380): SetHeadlight, reliable, not hot.
     /// E2..E7: the engine first calls <c>VisionComponent::EnableMode(14)</c> (LimitedExposure) on robot+0x258, which
     /// queues (mode, bool) on <c>VisionSystem::SetNextMode</c> (the deque at VisionSystem+0xB0); the mask bit is
     /// applied when <c>VisionSystem::Update</c> drains the queue.
-    /// The queue lives on the actual VisionSystem. Its absent-recipient error still proceeds to the wire send.
+    /// The queue lives on the actual VisionSystem; with none attached the request is held and the wire send still proceeds.
     /// </summary>
+    /// <summary>
+    /// Sets the mode recipient and hands it the mode-14 requests made while none was attached, in order. Under the same lock as
+    /// <see cref="SetHeadlight"/>'s recipient test and enqueue, so a request is either queued on the recipient or held and
+    /// taken here, never lost.
+    /// </summary>
+    internal void AttachVisionSystem(Vision.VisionSystem vision)
+    {
+        lock (_pendingLimitedExposure)
+        {
+            _robot.VisionModeRecipient = vision;
+            foreach (var pending in _pendingLimitedExposure) vision.QueueLimitedExposure(pending);
+            _pendingLimitedExposure.Clear();
+        }
+    }
+
+    /// <summary>Clears the recipient if it is <paramref name="vision"/>, under the SetHeadlight lock.</summary>
+    internal bool DetachVisionSystem(Vision.VisionSystem vision)
+    {
+        lock (_pendingLimitedExposure)
+        {
+            if (!ReferenceEquals(_robot.VisionModeRecipient, vision)) return false;
+            _robot.VisionModeRecipient = null;
+            return true;
+        }
+    }
+
     public void SetHeadlight(bool on)
     {
-        if (_robot.VisionModeRecipient is { } vision) vision.QueueLimitedExposure(on);
-        else
+        // The recipient test and the enqueue are atomic with AttachVisionSystem (same lock), so no request is lost.
+        lock (_pendingLimitedExposure)
         {
-            // E4: 006527CA empty format at 00BE3F00; 00652800 _errG store, then the debug-break gate.
-            _robot.Engine.Log("error: VisionComponent.EnableMode.NullVisionSystem: ");
-            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            if (_robot.VisionModeRecipient is { } vision) vision.QueueLimitedExposure(on);
+            else
+            {
+                // Manager decision (B-M3M4 fix round 1, item 3): the engine's NullVisionSystem branch (0x006527AC..
+                // 0x00652808) is unreachable (the VisionComponent ctor always allocates the VisionSystem, 0x00650184..
+                // 0x00650196), so no engine error and no _errG store. The requested mode is kept and handed to the
+                // VisionSystem that attaches (AttachVisionSystem).
+                _pendingLimitedExposure.Enqueue(on);
+            }
         }
         _robot.SendMessage(new SetHeadlight(on));
         HeadlightOn = on;
@@ -788,8 +823,17 @@ public sealed class CubeLightComponent
     /// otherwise, then picks the default layer-2 animation; the all-objects path stops only layer 0 and sets
     /// comp+0x22 := 0, while the single-object path stops layers 0 and 2 and does not write comp+0x22.
     /// </summary>
-    internal void EnableGameLayerOnly(bool enable, ObjectType? type = null)
+    internal void EnableGameLayerOnly(bool enable, ObjectType? type = null, int objectId = -1)
     {
+        // fidelity: M4-018
+        // Entry log (0x0063997A sChanneledInfoF, before the C13.4 gates): channel "CubeLightComponent" (printed as
+        // "[CubeLightComponent]", the IHelper channel convention), event "CubeLightComponent.EnableGameLayerOnly" (0x00639BAC), format
+        // "%s game layer only for %s" (0x00639BD4): "Enabling" (0x00BFAA93) when enable != 0 else "Disabling"
+        // (0x00BFAA9C); "all objects" (0x00639B94) when ObjectID == -1, else "object " (0x00639BA0) + the id.
+        Log($"info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: {(enable ? "Enabling" : "Disabling")} game layer only for " +
+            (objectId == -1 ? "all objects" : FormattableString.Invariant($"object {objectId}")));
+        // An id other than -1 with no ObjectInfo (type null): the lookup fails, complete no-op after the entry log.
+        if (type is null && objectId != -1) return;
         // fidelity: M4-018 (C13.4)
         // C13.4: the engine branches to the epilogue without acting when the target is already in the requested
         // state: the all-objects (id -1) comp+0x22 for the all-objects case (0x00639A16..0x00639A1C), the object's
@@ -797,7 +841,8 @@ public sealed class CubeLightComponent
         lock (_gate)
         {
             if (type is null) { if (_gameLayerOnlyDefault == enable) return; }
-            else if (_infos.TryGetValue(type.Value, out var current) && current.GameLayerOnly == enable) return;
+            // A single object with no ObjectInfo: complete no-op (cmp r7,end; beq at 0x006399D8..0x006399E0).
+            else if (!_infos.TryGetValue(type.Value, out var current) || current.GameLayerOnly == enable) return;
         }
         if (enable)
         {
@@ -861,19 +906,15 @@ public sealed class CubeLightComponent
     /// which sends game tag 0xBB <c>EnableLightStates</c> (C12.2). The engine receives
     /// <c>enable = (msg.byte0 == 0)</c>, so the app's <paramref name="enable"/> = true is the engine's enable = 0
     /// (restore the default layer) and false is the engine's enable = 1 (static off lights, game layer only).
-    /// <paramref name="objectID"/> −1 is the engine's all-objects id; an id with no connected cube does nothing
-    /// (the engine's ObjectID find fails).
+    /// <paramref name="objectID"/> −1 is the engine's all-objects id; an id with no connected cube logs the entry line
+    /// and then does nothing (the engine's ObjectID find fails).
     /// </summary>
     public void SetEnableFreeplayLightStates(bool enable, int objectID = -1)
     {
-        ObjectType? type;
-        if (objectID < 0) type = null;
-        else
-        {
-            type = _robot.Cubes.ByObjectId((uint)objectID)?.Type;
-            if (type is null) return;
-        }
-        EnableGameLayerOnly(!enable, type);
+        // Only -1 means all objects; any other id (negative too) is logged and looked up like any id, and an unknown
+        // one is a no-op after the entry log (EnableGameLayerOnly).
+        ObjectType? type = objectID == -1 ? null : _robot.Cubes.ByObjectId(unchecked((uint)objectID))?.Type;
+        EnableGameLayerOnly(!enable, type, objectID);
     }
 
     // fidelity: M4-018

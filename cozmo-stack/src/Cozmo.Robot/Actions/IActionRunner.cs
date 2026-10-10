@@ -192,6 +192,19 @@ public abstract class ActionRunner : IActionRunner
     protected virtual float PostDelaySeconds => 0f;
     public float TimeoutSeconds { get; set; } = BitConverter.Int32BitsToSingle(unchecked((int)0x41F00000));
 
+    // fidelity: M4-016
+    // +0x57: the timeout-warning flag; defaults to 1 from the ctor's +0x55 = 0x10000 store (0x0053FE18..0x0053FE1C).
+    public bool TimeoutWarningEnabled { get; set; } = true;
+    /// <summary>The runner's name string (+0x48, set from the ctor's name argument): the "%s" of the engine's action logs.
+    /// A concrete action overrides it with its engine name; the default is only the C# type name (the engine name of
+    /// the other action types is not in this change's inventory).</summary>
+    // MISSING: the engine's +0x48 name string for action types other than MoveHeadToAngle/MoveLiftToHeight (each
+    // ctor builds its own name). Until each type's name is extracted and set, logs print the C# type name here.
+    protected virtual string ActionName => GetType().Name;
+
+    // The "[%d]" of the action logs is the current tag (+0x60), printed as a signed int.
+    private int TagForLog => unchecked((int)Tag);
+
     /// <summary>The engine clock (<c>BaseStationTimer::GetCurrentTimeInSeconds</c>, 0x00540D4A..0x00540D4E).</summary>
     protected virtual float EngineClockSeconds => 0f;
 
@@ -262,7 +275,9 @@ public abstract class ActionRunner : IActionRunner
         {
             // L4: custom motion profile; a false return logs unused, not failure.
             if (HasCustomMotionProfile && !SetMotionProfile())
-                Log?.Invoke("info: IActionRunner.Update.MotionProfileUnused");
+                // fidelity: M4-016
+                // Event "IActionRunner.SetMotionProfile.Unused", channel "Actions"; the level is kept as the stack had it (info).
+                Log?.Invoke(FormattableString.Invariant($"info: [Actions] IActionRunner.SetMotionProfile.Unused: Action {ActionName} [{TagForLog}] unable to set motion profile. Perhaps speeds already set manually?"));
             // L4: store RUNNING BEFORE the lock check.
             State = EngineActionResult.Running;
             // L5: +0x56 bypasses AreAnyTracksLocked and LockTracks; otherwise a locked required mask fails
@@ -271,6 +286,8 @@ public abstract class ActionRunner : IActionRunner
             {
                 if (AreAnyTracksLocked(RequiredTrackMask))
                 {
+                    // "TracksLockedOnChargerInSDK" (gated on robot+0x338 on-charger AND SDK mode) is unreachable here:
+                    // SDK mode is unsupported in this stack, so that separate path is not built.
                     Log?.Invoke("warning: IActionRunner.Update.TracksLocked");
                     State = EngineActionResult.TracksLocked;
                     Watcher?.ActionEndUpdating();
@@ -315,7 +332,16 @@ public abstract class ActionRunner : IActionRunner
         float timeout = TimeoutSeconds;                            // L8: +0x2C
 
         // L8/L10: FIRST now >= f32(start + timeout) -> timeout, including equality.
-        if (now >= StartTime + timeout) return Finish(EngineActionResult.Timeout);
+        if (now >= StartTime + timeout)
+        {
+            // fidelity: M4-016
+            // After the 0x03000018 result (0x00540E80) the engine tests +0x57 (0x00540E7C) and calls sWarningF
+            // (0x00540EB6): event "IAction.Update.TimedOut" (0x00540FE0), format "%s timed out after %.1f seconds."
+            // (0x00540FF8), the timeout from slot 0x2C. sWarningF carries no channel.
+            if (TimeoutWarningEnabled)
+                Log?.Invoke(FormattableString.Invariant($"warning: IAction.Update.TimedOut: {ActionName} timed out after {timeout:F1} seconds."));
+            return Finish(EngineActionResult.Timeout);
+        }
         // L8: else now < f32(f32(start + pre) + post) -> RUNNING wait.
         if (now < (StartTime + pre) + post) return EngineActionResult.Running;
 
@@ -353,7 +379,8 @@ public abstract class ActionRunner : IActionRunner
     {
         if (_prepped)
         {
-            Log?.Invoke("debug: IActionRunner.PrepForCompletion.AlreadyPrepped");
+            // fidelity: M4-016
+            Log?.Invoke(FormattableString.Invariant($"debug: [Actions] IActionRunner.PrepForCompletion.AlreadyPrepped: {ActionName} [{TagForLog}]"));
             return;
         }
         _completionUnion = GetCompletionUnion();
@@ -368,7 +395,9 @@ public abstract class ActionRunner : IActionRunner
     public virtual void Cancel()
     {
         if (State == EngineActionResult.NotStarted) return;
-        Log?.Invoke("info: IActionRunner.Cancel: action cancelled");
+        // fidelity: M4-016
+        // Info channel "Actions", event "IActionRunner.Cancel", "Cancelling action %s[%d]" (name, tag; no space before "[").
+        Log?.Invoke(FormattableString.Invariant($"info: [Actions] IActionRunner.Cancel: Cancelling action {ActionName}[{TagForLog}]"));
         State = EngineActionResult.Cancelled;
     }
 
@@ -380,14 +409,20 @@ public abstract class ActionRunner : IActionRunner
     {
         if (State == EngineActionResult.Running)
         {
-            Log?.Invoke("warning: IActionRunner.SetTag.Running");
+            // fidelity: M4-016
+            // sWarningF event "IActionRunner.SetTag": "Action %s [%d] is running unable to set tag to %d" (name, tag, requested).
+            Log?.Invoke(FormattableString.Invariant($"warning: IActionRunner.SetTag: Action {ActionName} [{TagForLog}] is running unable to set tag to {unchecked((int)requested)}"));
             State = EngineActionResult.BadTag;
             return false;
         }
         if (Tag != OriginalTag) ActionRunnerTagCounter.Global.Release(Tag);
         if (requested == 0 || ActionRunnerTagCounter.Global.IsInUse(requested))
         {
-            Log?.Invoke("warning: IActionRunner.SetTag.BadTag");
+            // fidelity: M4-016
+            // sErrorF event "IActionRunner.SetTag.InvalidTag": "Tag [%d] is invalid", then the error-flag store and the
+            // debug-break gate (the same helper as the other sErrorF sites).
+            Log?.Invoke(FormattableString.Invariant($"error: IActionRunner.SetTag.InvalidTag: Tag [{unchecked((int)requested)}] is invalid"));
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             State = EngineActionResult.BadTag;
             return false;
         }

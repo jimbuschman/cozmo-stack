@@ -824,17 +824,193 @@ public class M4ControlTests
         Assert.Equal(0x03000018u, outcome.EngineResult);
     }
 
+    /// <summary>
+    /// M4-017 (manager decision, B-M3M4 fix round 1 item 3): the engine's NullVisionSystem branch (0x006527AC..
+    /// 0x00652808) is unreachable (VisionComponent ctor 0x00650184..0x00650196 always allocates the VisionSystem), so
+    /// with no VisionSystem attached SetHeadlight logs no engine error, does not set _errG, still sends the message,
+    /// and the requested mode is applied when a VisionSystem attaches.
+    /// </summary>
     [Fact]
-    public void M4_017_CheckedNullVisionErrorStillSendsHeadlight()
+    public void M4_017_NoVisionSystemLogsNoErrorSendsHeadlightAndAppliesTheModeOnAttach()
     {
         using var rig = new Rig();
         rig.ToSynced();
         EngineErrorState.ErrorFlagSet = false;
         int mark = rig.Mark();
         rig.Robot.Lights.SetHeadlight(true);
-        Assert.Contains("error: VisionComponent.EnableMode.NullVisionSystem: ", rig.Log);
-        Assert.True(EngineErrorState.ErrorFlagSet);
+        Assert.False(rig.Logged("NullVisionSystem"));
+        Assert.False(EngineErrorState.ErrorFlagSet);
         Assert.Single(rig.SentSince(mark).OfType<SetHeadlight>());
+        using var vision = new VisionSystem(rig.Robot, new CameraCalibration
+        { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 });
+        vision.ModeEnableMask = 1;
+        vision.ProcessImage(new GrayImage(16, 16), 1, 100, new VisionPoseData(100, Pose3d.Identity, 0, 0, false, false));
+        Assert.Equal(0x4000, vision.ModeEnableMask);               // the held LimitedExposure (mode 14) request applied
+    }
+
+    /// <summary>
+    /// M4-017 race: SetHeadlight's null-recipient test and enqueue are atomic with the VisionSystem ctor's
+    /// set-recipient + take-pending, so a request racing the attach is never lost (it is on the new system's queue
+    /// either way, and the mode bit is applied on its first Update).
+    /// </summary>
+    [Fact]
+    public void M4_017_ARequestRacingTheVisionSystemAttachIsNeverLost()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        for (int i = 0; i < 40; i++)
+        {
+            using var gate = new ManualResetEventSlim();
+            var setter = Task.Run(() => { gate.Wait(); rig.Robot.Lights.SetHeadlight(true); });
+            gate.Set();
+            using var vision = new VisionSystem(rig.Robot, new CameraCalibration
+            { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 });
+            setter.Wait();
+            vision.ModeEnableMask = 1;
+            vision.ProcessImage(new GrayImage(16, 16), 1, 100, new VisionPoseData(100, Pose3d.Identity, 0, 0, false, false));
+            Assert.Equal(0x4000, vision.ModeEnableMask);
+        }
+    }
+
+    private sealed class TimeoutProbe : ActionRunner
+    {
+        public float Now;
+        public TimeoutProbe() : base(0, 0) { }
+        protected override float EngineClockSeconds => Now;
+        public override uint CheckIfDone() => EngineActionResult.Running;
+        public override bool CanInterrupt() => false;
+    }
+
+    /// <summary>
+    /// M4-016 (0x00540E7C +0x57 test, 0x00540EB6 sWarningF; event "IAction.Update.TimedOut" 0x00540FE0, format
+    /// "%s timed out after %.1f seconds." 0x00540FF8, timeout from slot 0x2C): the timeout result 0x03000018 is
+    /// followed by the warning (sWarningF, no channel) while the +0x57 flag (default 1, ctor +0x55 = 0x10000 store 0x0053FE18..0x0053FE1C) is set.
+    /// </summary>
+    [Fact]
+    public async Task M4_016_TimeoutLogsTheWarningForHeadAndLift()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State();
+        var head = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
+        rig.Tick(5000);
+        Assert.Equal(0x03000018u, (await head).EngineResult);
+        Assert.Contains("warning: IAction.Update.TimedOut: MoveHeadTo28.647890Deg timed out after 5.0 seconds.", rig.Log);
+        var lift = rig.Robot.Motion.SetLiftHeightAsync(80f);
+        rig.Tick();
+        rig.Tick(30_000);
+        Assert.Equal(0x03000018u, (await lift).EngineResult);
+        Assert.Contains("warning: IAction.Update.TimedOut: MoveLiftTo80.000000mm timed out after 30.0 seconds.", rig.Log);
+    }
+
+    /// <summary>
+    /// M4-016 action names (the runner's +0x48 name string, from the ctor's name argument): head "MoveHeadTo" +
+    /// to_string((float)getDegrees) + "Deg" (getDegrees = f32 multiply by 0x42652EE1; to_string of a float is "%f", 6
+    /// decimals), lift "MoveLiftTo" + to_string((float)height) + "mm". 0.5 rad -> 28.647890 degrees. The names reach the
+    /// base IActionRunner logs; the base texts are the engine's (rule 10): Cancel info "Actions"/"IActionRunner.Cancel"
+    /// "Cancelling action %s[%d]"; SetTag while running warning "IActionRunner.SetTag" "Action %s [%d] is running unable to
+    /// set tag to %d"; SetTag invalid error "IActionRunner.SetTag.InvalidTag" "Tag [%d] is invalid" then the error flag.
+    /// </summary>
+    [Fact]
+    public async Task M4_016_ActionNamesAndBaseRunnerLogsMatchTheEngineTexts()
+    {
+        using var rig = new Rig();
+        rig.ToSynced();
+        rig.Calibrate();
+        rig.State();
+        var head = rig.Robot.Motion.SetHeadAngleAsync(0.5f, timeout: TimeSpan.FromSeconds(5));
+        rig.Tick();
+        // The live runner is on the action list; find its tag from the lift/head Cancel path below by cancelling all.
+        rig.Robot.Engine.Robot!.ActionList.Cancel(-1);
+        rig.Tick();
+        await Task.WhenAny(head, Task.Delay(1000));
+        string cancel = rig.Log.Single(l => l.StartsWith("info: [Actions] IActionRunner.Cancel: Cancelling action MoveHeadTo28.647890Deg["));
+        Assert.EndsWith("]", cancel);
+
+        var log = new List<string>();
+        var a = new TimeoutProbe { Log = log.Add };
+        int tag = (int)a.Tag;
+        a.Now = 1f; a.Update();                                            // RUNNING
+        EngineErrorState.ErrorFlagSet = false;
+        Assert.False(a.SetTag(7));
+        Assert.Contains($"warning: IActionRunner.SetTag: Action TimeoutProbe [{tag}] is running unable to set tag to 7", log);
+        Assert.False(EngineErrorState.ErrorFlagSet);
+        var b = new TimeoutProbe { Log = log.Add };
+        Assert.False(b.SetTag(0));
+        Assert.Contains("error: IActionRunner.SetTag.InvalidTag: Tag [0] is invalid", log);
+        Assert.True(EngineErrorState.ErrorFlagSet);                        // sErrorF stores _errG
+        EngineErrorState.ErrorFlagSet = false;
+        new TimeoutProbe { Log = log.Add }.Cancel();                       // NOT_STARTED: unchanged, no log
+        Assert.DoesNotContain(log, l => l.Contains("IActionRunner.Cancel"));
+        a.Cancel();
+        Assert.Contains($"info: [Actions] IActionRunner.Cancel: Cancelling action TimeoutProbe[{tag}]", log);
+        a.Prep(); a.Prep();
+        Assert.Contains($"debug: [Actions] IActionRunner.PrepForCompletion.AlreadyPrepped: TimeoutProbe [{tag}]", log);
+    }
+
+    /// <summary>M4-016 0x00540E7C: with the +0x57 flag clear, the timeout result is returned with no warning.</summary>
+    [Fact]
+    public void M4_016_TimeoutWarningIsSkippedWhenTheFlagIsClear()
+    {
+        var log = new List<string>();
+        var a = new TimeoutProbe { TimeoutWarningEnabled = false, Log = log.Add };
+        Assert.True(new TimeoutProbe().TimeoutWarningEnabled);            // the default is 1
+        a.Now = 1f; a.Update();                                            // stamps the start, RUNNING
+        a.Now = 31f;
+        Assert.Equal(0x03000018u, a.Update());
+        Assert.DoesNotContain(log, l => l.Contains("TimedOut"));
+    }
+
+    /// <summary>
+    /// M4-016 eleven-count debug logs (head WaitingForAck 0x00548620, head NotInPosition 0x005487C0, lift
+    /// WaitingForAck 0x00549446, lift NotInPosition 0x00549516: each `blo #0xb` then log then reset): the log fires
+    /// when the u16 counter reaches 11 and the count restarts, so consecutive logs are exactly 11 CheckIfDone calls
+    /// apart. The counters are process-wide (0x01051028/2A head, 0x0105102C/2E lift), so only the spacing between two
+    /// logs is asserted.
+    /// </summary>
+    [Fact]
+    public void M4_016_TheElevenCountLogsFireEveryEleventhCheckIfDone()
+    {
+        foreach (bool head in new[] { true, false })
+        {
+            foreach (bool waitingAck in new[] { true, false })
+            {
+                using var rig = new Rig();
+                rig.ToSynced();
+                rig.Calibrate();
+                var inPos = RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos;
+                rig.State(flags: inPos, liftAngle: 0f);
+                int mark = rig.Mark();
+                var pending = head ? rig.Robot.Motion.SetHeadAngleAsync(0.5f) : rig.Robot.Motion.SetLiftHeightAsync(80f);
+                rig.Tick();
+                var sent = rig.SentSince(mark).Single(m => m is SetHeadAngle or SetLiftHeight);
+                byte id = sent is SetHeadAngle h ? h.ActionId : ((SetLiftHeight)sent).ActionId;
+                if (!waitingAck) rig.Data(new MotorActionAck { ActionId = id });
+                string name = head ? "MoveHeadToAngleAction" : "MoveLiftToHeightAction";
+                string ev = $"debug: {name}.CheckIfDone.{(waitingAck ? "WaitingForAck" : "NotInPosition")}: [";
+                int Logs() { lock (rig.Log) return rig.Log.Count(l => l.StartsWith(ev)); }
+                int Step()
+                {
+                    int calls = 0;
+                    for (int before = Logs(); Logs() == before && calls < 40; calls++)
+                    {
+                        if (waitingAck) rig.Tick();
+                        else rig.State(flags: inPos, head: 0.1f, liftAngle: 0f);   // stopped, not in position, never moved
+                    }
+                    return calls;
+                }
+                Step();                                                     // align on a log (counter reset to 0)
+                Assert.Equal(11, Step());                                   // counter 0 -> 11: the log fires on the 11th call
+                string line;
+                lock (rig.Log) line = rig.Log.Last(l => l.StartsWith(ev));
+                if (waitingAck) Assert.EndsWith("] ActionID: " + id, line);
+                else if (head) Assert.Contains("] Waiting for head to get in position: 5.7deg vs. 28.6deg(+/-0.0) tol:", line);
+                else Assert.EndsWith("] Waiting for lift to get in position: 45.0mm vs. 80.0mm (tol: 5.000000)", line);
+                Assert.False(pending.IsCompleted);
+            }
+        }
     }
 
     [Fact]
@@ -1549,6 +1725,108 @@ public class M4ControlTests
     }
 
     /// <summary>
+    /// M4-018 entry log (sChanneledInfoF 0x0063997A, before the C13.4 gates; event "CubeLightComponent.EnableGameLayerOnly"
+    /// 0x00639BAC, format "%s game layer only for %s" 0x00639BD4; "Enabling" 0x00BFAA93 / "Disabling" 0x00BFAA9C;
+    /// "all objects" 0x00639B94 / "object " 0x00639BA0 + id), and the single-object no-op when the object has no
+    /// ObjectInfo (cmp r7,end; beq 0x006399D8..0x006399E0): nothing is sent or stopped.
+    /// </summary>
+    [Fact]
+    public void M4_018_EnableGameLayerOnlyLogsOnEntryAndASingleUnknownObjectIsANoOp()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var type = ObjectType.Block_LIGHTCUBE1;
+            ConnectCube(rig, slot: 0, type: type);
+            var cubes = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);   // engine enable 1, all objects
+            Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for all objects", rig.Log);
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: -1);   // already in state: still logs first
+            Assert.Equal(2, rig.Log.Count(l => l == "info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for all objects"));
+            rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: 0);     // engine enable 0, object 0
+            Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Disabling game layer only for object 0", rig.Log);
+
+            int mark = rig.Mark();
+            string top = cubes.TopPatternName(type) ?? "";
+            cubes.EnableGameLayerOnly(true, ObjectType.Block_LIGHTCUBE2, 7);       // no ObjectInfo for this object
+            Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for object 7", rig.Log);
+            Assert.Empty(rig.RawSince(mark));                                      // no SetObjectLights
+            Assert.Equal(top, cubes.TopPatternName(type) ?? "");                   // no stops on any object
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    /// <summary>
+    /// M4-018 entry log precedes the ObjectInfo lookup, through the live caller: an unknown id logs "... for object N"
+    /// (0x00639BA0 "object " + id) and is then a no-op; only id -1 is "all objects", so another negative id prints
+    /// "object -5" and is looked up like any id.
+    /// </summary>
+    [Fact]
+    public void M4_018_SetEnableFreeplayLightStatesLogsBeforeLookupForAnUnknownId()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            ConnectCube(rig, slot: 0, type: ObjectType.Block_LIGHTCUBE1);
+            rig.Tick(); rig.Tick();
+            int mark = rig.Mark();
+            rig.Robot.SetEnableFreeplayLightStates(enable: false, objectID: 99);
+            Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Enabling game layer only for object 99", rig.Log);
+            rig.Robot.SetEnableFreeplayLightStates(enable: true, objectID: -5);
+            Assert.Contains("info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: Disabling game layer only for object -5", rig.Log);
+            Assert.DoesNotContain(rig.Log, l => l.Contains("for all objects"));
+            Assert.Empty(rig.RawSince(mark));                                      // nothing sent for an unknown id
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    /// <summary>
+    /// M4-018 C13.1 disable-all order (0x00639AEA..0x00639B32): Stop(layer 0, all), then for each object
+    /// ObjectInfo+0x1C := 0, +0x18, PickNextAnimForDefaultLayer, and comp+0x22 := 0 LAST. A re-entrant disable-all
+    /// made from the first object's pick therefore still sees comp+0x22 == 1 and runs in full, so B is picked twice
+    /// (nested, then outer); were comp+0x22 cleared first the nested call would return at C13.4 and B is picked once.
+    /// Each object is cleared and re-picked before the next: at A's pick B has not been picked yet.
+    /// </summary>
+    [Fact]
+    public void M4_018_C13_1_DisableAllClearsAndRepicksEachObjectThenWritesComp22Last()
+    {
+        var res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            rig.ToSynced();
+            rig.State();
+            var a = ObjectType.Block_LIGHTCUBE1; var b = ObjectType.Block_LIGHTCUBE2;
+            ConnectCube(rig, slot: 0, type: a);
+            ConnectCube(rig, slot: 1, type: b);
+            var cubes = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();
+            cubes.EnableGameLayerOnly(true);                                       // all objects: layers emptied, comp+0x22 = 1
+            Assert.Null(cubes.TopPatternName(a)); Assert.Null(cubes.TopPatternName(b));
+            var picks = new List<(ObjectType Type, string? OtherTop)>();
+            bool nested = false;
+            cubes.IsCarried = t =>
+            {
+                picks.Add((t, cubes.TopPatternName(t == a ? b : a)));
+                if (!nested) { nested = true; cubes.EnableGameLayerOnly(false); }
+                return false;
+            };
+            cubes.EnableGameLayerOnly(false);
+            Assert.Equal(2, picks.Count(p => p.Type == b));                        // nested B + outer B (comp+0x22 still 1 in the nested call)
+            Assert.Equal(a, picks[0].Type); Assert.Equal(b, picks[^1].Type);
+            Assert.Null(picks[0].OtherTop);                                        // A picked before B was touched
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
+    /// <summary>
     /// M4-018 C13.4 (0x006399DC..0x006399E0 single-object, 0x00639A16..0x00639A1C all-objects): EnableGameLayerOnly
     /// branches to the epilogue without acting when the target is already in the requested state - comp+0x22 == enable
     /// for id -1, ObjectInfo+0x1C == enable for a named object. A repeated SetEnableFreeplayLightStates with the same
@@ -1970,14 +2248,17 @@ public class M4ControlTests
             var type = ObjectType.Block_LIGHTCUBE1;
             ConnectCube(rig, slot: 0, type: type);
             var lights = rig.Robot.Lights.Cubes;
+            rig.Tick(); rig.Tick();                                  // WakeUp (100 ms) ends; the default layer is Connected
+            Assert.Equal("connected", lights.TopPatternName(type));
+            lights.IsCarried = _ => true;                            // the next default pick would be Carrying
             vision.World.OnRobotDelocalized();
             lights.OnRobotDelocalized();
             Assert.False(lights.IsLocalized!());
-            lights.Update(); // C11.2: request remains pending while the owner's flag is zero.
+            lights.Update(); // C11.2 (gate 0x00637930): the request remains pending while the owner's flag is zero.
+            Assert.Equal("connected", lights.TopPatternName(type));
             vision.World.SetLocalizedTo(new ObservableObject(42, type, CubeGeometry.MarkersFor(type)));
-            Assert.True(lights.IsLocalized!()); // OffTreads' separate retained flag cannot answer this writer.
-            lights.Update();
-            Assert.Equal(vision.World.Robot2C4 != 0, lights.IsLocalized());
+            lights.Update(); // C11.2 / S7: the first Update after robot+0x2C4 returns to 1 applies the held refresh (re-pick).
+            Assert.Equal("carrying", lights.TopPatternName(type));
         }
         finally { Directory.Delete(res, true); }
     }

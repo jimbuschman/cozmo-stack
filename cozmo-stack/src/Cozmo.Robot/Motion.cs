@@ -616,6 +616,7 @@ bool requireCalibration = true)
         // promotes it and IAction::UpdateInternal stamps the start, sends in Init and checks the engine clock.
         var a = new MoveAction(this, isHead: true, target, tolerance, $"head to {target:F3} rad",
                                id => new SetHeadAngle(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id));
+        a.SetName(MoveAction.HeadName(RescaleRadians(radians)));   // the ctor's name argument: the requested (rescaled, unclipped) angle
         a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
         return a;
     }
@@ -675,6 +676,7 @@ bool requireCalibration = true)
         var a = new MoveAction(this, isHead: false, target, GameLiftToleranceMm, $"lift to {target:F1} mm",
                                id => new SetLiftHeight(target, maxSpeedRadPerSec, accelRadPerSec2, durationSec, id))
                 { SuppressTrackLocking = suppressTrackLocking };
+        a.SetName(MoveAction.LiftName(heightMm));                  // the ctor's name argument: the requested height
         a.TimeoutSeconds = (float)(timeout ?? DefaultActionTimeout).TotalSeconds;
         return a;
     }
@@ -910,7 +912,21 @@ bool requireCalibration = true)
             : base(isHead ? 0x12 : 0x13, isHead ? HeadTrack : LiftTrack)   // M13-022: head type 0x12; lift 0x13 (R-ANIM pre-extraction)
         {
             Owner = owner; IsHead = isHead; Target = target; Tolerance = tolerance; What = what; Build = build;
+            // fidelity: M4-016
+            // The base IActionRunner warnings/infos (TimedOut, TracksLocked, Cancel, ...) reach the engine log.
+            Log = line => Owner.Log(line);
         }
+
+        // fidelity: M4-016
+        // The runner's name string (+0x48), from the ctor's name argument: head "MoveHeadTo" + to_string((float)degrees) + "Deg",
+        // lift "MoveLiftTo" + to_string((float)height) + "mm"; to_string of a float is printf "%f" (6 decimals).
+        private string _name = "";
+        internal void SetName(string name) => _name = name;
+        protected override string ActionName => _name;
+        internal static string HeadName(float requestedRadians) =>
+            "MoveHeadTo" + ((double)(requestedRadians * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1)))).ToString("F6", System.Globalization.CultureInfo.InvariantCulture) + "Deg";
+        internal static string LiftName(float requestedHeightMm) =>
+            "MoveLiftTo" + ((double)requestedHeightMm).ToString("F6", System.Globalization.CultureInfo.InvariantCulture) + "mm";
 
         // L7: the engine clock (BaseStationTimer::GetCurrentTimeInSeconds).
         protected override float EngineClockSeconds => Owner._robot.Engine.Timer.SecondsF;
