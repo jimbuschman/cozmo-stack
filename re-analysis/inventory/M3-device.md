@@ -400,3 +400,5 @@ M3-041 settled (manager, 2026-10-10): EXACT_SOURCE after the Opus re-check of th
 ## M3-001/M3-018 JPEG port (manager, 2026-10-10)
 
 The decode is a port of the shipped libjpeg 9 / OpenCV 3.1 code. It is accepted against an emulator oracle of the shipped libraries (SHA-pinned; 3323 cases, 0 differing bytes) and was Opus-checked twice. Adopted rows: jobs/B-M3M4.md "JPEG unblocked" and research/20261010-jpeg-lse-logs-oom-rows.md (LSE, DecodeImageHelper logs, out of memory). Pinned: the cv::Exception catcher above the helper (M11), other OpenCV decoders for non-JPEG payloads in encodings 5/6/7, and an indirect cv::redirectError.
+
+Settling pass (manager, 2026-10-10, Opus at 3c994bc): M3-027, M3-030 and M3-040 are EXACT_SOURCE. M3-025 and M3-028 are reopened to IMPLEMENTATION_GAP: the read-reply acceptance warning and the X8-versus-%x log formats contradict the binary (0x006430BA..0x0064318E). Details in jobs/B-M3M4.md "Settling pass".

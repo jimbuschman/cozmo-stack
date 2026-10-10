@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "1b2656550bce82915e698a140eb65c8e3a2398ee53c4495a888ee7fab333b1a0",
+  "inventory_sha256": "3f9f03e6c3ed609eb17c7f489d2bc1c481860baecc6049ede3d19a6c35cd2a75",
   "records": {
     "M4-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -17,7 +17,7 @@
       "hardware_required": false
     },
     "M4-002": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Lift presets 0 LowDock 32 / 1 HighDock 76 / 2 HeightCarry 92 / 3 OutOfFOV -1; clamp to 32..92; a negative height goes to the nearer of 32 and 92",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [

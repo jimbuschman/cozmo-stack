@@ -1669,7 +1669,7 @@
       "subsystem": "M4-control",
       "title": "Lift presets 0 LowDock 32 / 1 HighDock 76 / 2 HeightCarry 92 / 3 OutOfFOV -1; clamp to 32..92; a negative height goes to the nearer of 32 and 92",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "MA14 preset table 0x00C54684, names 0x00548EBC..0x00548EDC",
@@ -1680,7 +1680,7 @@
       "test": "M4ControlTests.M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset",
       "effect": "the lift goes to a different height",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): the preset table 32/76/92/-1 (MA14); MoveLiftToHeightAction::Init clamps a height in [0, inf) outside [32, 92] with a warning and sends a negative height to whichever of 32 and 92 is nearer the current height 66 sin(robot+0x300) + 45 (MA13) - CozmoMotion.SetLiftHeightAsync. C5: 32 is chosen only when the current height is strictly nearer to it, so a tie (62 mm) goes to 92 (0x00549104..0x0054913C).",
-      "unresolved": null,
+      "unresolved": "Opus settling pass (2026-10-10, HEAD 3c994bc, jobs/B-M3M4.md \"Settling pass\"): REOPENED: MoveLiftToHeightAction::Init (0x0054903C..0x005490F6, 0x00549104..0x0054913C) does the clamp, the InvalidHeight warning (\"%f mm. Clipping to be in range.\" 0x00549398, requested height) and the negative-height preset choice at Init time with the lift height read then; the C# does them when the action is built. Init's second clamp into [32,92] (0x0054918E..0x005491D2) maps NaN to 32; missing in the C#. Before: ",
       "hardware_required": false
     },
     {
@@ -7238,8 +7238,8 @@
         "_maxSizeTable (0x4D7F41; InitSizeTable 0x643B48..0x643CE0): 0x180000..0x183000 -> 0x1000, 0x184000 -> 0x10000, 0x194000..0x197000 -> 0x1000, 0x198000 -> 0x64000, 0xDE000 -> 0x30, 0xDE030 -> 0x1DFD0",
         "_maxFactoryEntrySizeTable (0xC81064, 23 keys, pass 4b Q1): 0x80000000..0x80000008, 0x80000010..0x80000012 and 0xC0000000/1/4 -> 1; 0x80010000..0x80060000, 0x80100000, 0x80110000 -> 0xFFFF; IsFactoryEntryTag 0x6440D4..0x64412C is exact membership in those 23 keys; InitSizeTable value rule 0x643D5A..0x643D84 (0xFFFF only when (tag & 0x7FFF0000) != 0 and (tag & 0xFFFF0000) != 0xC0000000); GetMaxSizeForEntryTag 0x643FC8..0x64404E; GetBaseEntryTag 0x6441F8..0x6443F4"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": "Opus verification of B-CORE2 (2026-10-02, re-analysis/research/20261002-B-CORE2-verify.md): SETTLED. GetBaseEntryTag 0x006441F8..0x0064433C (factory walk, non-factory floor, tag>>15 <= 0x32) matches NvStorage.cs:206-230; both warnings use \"0x%x\" (0xBFB444) and the C# writes {tag:x}; the tests take their inputs from the branches.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Opus settling pass (2026-10-10, HEAD 3c994bc, jobs/B-M3M4.md \"Settling pass\"): REOPENED: read-reply acceptance contradicts the engine. It accepts only when +0x78 != 0 and +0x50 == base tag (0x006430BA..0x006430CE), else sWarningF at 0x0064318E \"Tag recvd: 0x%x, BaseTag: 0x%x, ExpectedBaseTag: 0x%x (pending %d), BlobSize: %u, result: %s\" (0xBFB8B6) with the stale +0x50. NvStorage.cs drops idle-time replies silently / emits MISSING. Before: Opus verification of B-CORE2 (2026-10-02, re-analysis/research/20261002-B-CORE2-verify.md): SETTLED. GetBaseEntryTag 0x006441F8..0x0064433C (factory walk, non-factory floor, tag>>15 <= 0x32) matches NvStorage.cs:206-230; both warnings use \"0x%x\" (0xBFB444) and the C# writes {tag:x}; the tests take their inputs from the branches.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_025_TheTagValidityAndSizeTables, M3DeviceTests.M3_025_GetBaseEntryTagFactoriesAndTheSentinel, M3DeviceTests.M3_025_TheReplyAcceptCheckUsesTheBaseTag"
@@ -7274,8 +7274,8 @@
         "READ case 0x64503E..0x64507C: factory tag -> Length = _maxFactoryEntrySizeTable[tag]; non-factory -> mov #0x400 at 0x64536A, stored +0xE0 (0x64536E); op 0 -> +0xE4; byte 9 zero",
         "send reliable = 1, hot = 0 (0x645392..0x6453D2); arm 0x6453F8..0x645484: +0x50 = request tag (0x64541E/0x64542A), +0x58 = cb, +0x71 = broadcast, +0x74 = robot+0x2C + 0x1388 (0x64543E), +0x54 = caller vector or a fresh one (0x645448..0x64546E), state 2, +0xF4 = 0"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-1-2.md): NEEDS EXTRACTION. The READ command's Data is +0xE8 (0x00645386; resend 0x00645CE2; re-request 0x006438AC); ProcessRequest's READ path never writes it and Update state 1's write path does (0x00645822), so a READ after a WRITE carries unsettled data. M3DeviceTests.cs:1554 asserts the empty guess. Length 0x400 (0x0064536A) or the factory table value (0x00645074), the send (0x0064539A) and the arm (0x0064541C..0x00645484) hold. Before: built, awaiting strong verification (Batch 1, uncommitted): the READ Length is the factory table value or 0x400, it is sent from Update, the sink is cleared at arm and the 5 s deadline is armed from the synced clock. MISSING: what populates the READ command's Data (+0xE8) - the approved rows name +0xE8 as the source at 0x00645386 but do not settle which path fills it, when, or its initial value; the command still sends empty data and the test still asserts that.",
+      "status": "EXACT_SOURCE",
+      "unresolved": "Opus settling pass (2026-10-10, HEAD 3c994bc, jobs/B-M3M4.md \"Settling pass\"): SETTLED. Saved command +0xDC/+0xE0/+0xE4/+0xE8 built per N1..N13; READ dispatch re-read 0x0064536A..0x00645484 (Length 0x400, +0xE8 copy, send r2=1 r3=0, SendingRead log, arm clock+0x1388, SetState(2), +0xF4=0). Never-written bytes under M3-037.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_027_AReadComputesItsLengthFromTheTag"
@@ -7293,8 +7293,8 @@
         "fits -> resize to size+16 (0x6438E2..0x643936); otherwise ReadingRestOfData re-requests tag = the reply's tag, op 0, Length = size+16, reliable/not-hot, no re-arm (0x643840..0x6438CA)",
         "the fits-path resize at 0x643922 targets the reply vector (sp+0x44), not the pending buffer; it is a shrink/no-op, so the reassembly copy is bounded at the header total and the delivered non-factory buffer is exactly that total with no tail (pass 4b Q3)"
       ],
-      "status": "EXACT_SOURCE",
-      "unresolved": null,
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Opus settling pass (2026-10-10, HEAD 3c994bc, jobs/B-M3M4.md \"Settling pass\"): REOPENED: TooLittleReadData (0xBFBB3F), InvalidDataSize (0xBFBA1C) and ReadingRestOfData (0xBFBABA) print X8 against %x formats; InvalidHeader's format unconfirmed (0xBFB9C5 candidate, call site untraced). Before: ",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_028_TheNonFactoryHeaderRejectsShortBadAndOversizeBlobs, M3DeviceTests.M3_028_TheRestIsReRequestedWithoutReArming, M3DeviceTests.M3_028_M3_029_TheDeliveredNonFactorySizeIsTheHeaderTotal"
@@ -7330,8 +7330,8 @@
         "completion 0x643600..0x643692: MORE(3) waits; -1 ReadEntryNotFound; 0 ReadSuccess; other negatives ReadFailed; the function (+0x58) is invoked only when [+0x68] != 0, else the +0x54 vector is the sink (0x6436B6..0x643714)",
         "broadcast when +0x71: 0x400 chunks, result 3 per non-final / 0 for the final, index byte (0x643718..0x6437D4); SetState(0) clears +0x48/+0x1C/+0x78 (0x6437EA)"
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "built, awaiting strong verification: B-M3M4 batch 1 (2026-10-06). Checked Opus ReadEntryNotFound %x fixed; present read callback emits ExecutingReadCallback with tag name immediately before invocation, after the outcome log. No callback or MORE emits no callback log. MISSING: null-%s rendering for an unnamed tag; NV command data remains M3-027. Live reply-entry regression added. Previous checked verification: Opus verification of B-CORE2 (2026-10-02, re-analysis/research/20261002-B-CORE2-verify.md): NOT YET. The debug log NVStorageComponent.HandleNVOpResult.ExecutingReadCallback before the callback (0x006436DA, string 0xBFBCA5) is missing (NvStorage.cs:733-735); ReadEntryNotFound prints \"0x%x\" (0xBFBC0B), the C# X8 (NvStorage.cs:652). The per-blob sink, the 1000-chunk bound, MORE, the negative-result broadcast and SetState(0) last hold. Before: built, awaiting strong verification: B-CORE2 batch 3 (NV sink, bound, logs). The reassembly writes each applied blob into the caller's sink as it arrives (0x00643568..0x00643596, PendingRequest.Write), so a timeout (Update state 1, 0x006457A8..0x006457C0) leaves the applied blobs in the sink; CompleteLocked no longer appends at completion. The broadcast loop stops at 1000 chunks (0x00643770..0x00643798) and logs LoopBoundOverflow via sErrorF with nvStorageComponent.cpp line 0x4a7. The read completion logs ReadSuccess (0x00643640), ReadEntryNotFound (0x0064360E) and ReadFailed (0x0064366E) by the final result, with the base tag named through NVStorage::EnumToString(NVEntryTag) (0x7CEE38).",
+      "status": "EXACT_SOURCE",
+      "unresolved": "Opus settling pass (2026-10-10, HEAD 3c994bc, jobs/B-M3M4.md \"Settling pass\"): SETTLED. Completion order callback, broadcast, SetState(0); timeout without broadcast 0x006457A8..0x006457C0; ReadSuccess/EntryNotFound formats 0xBFBC5E/0xBFBC0B. Null %s unreachable for normalised tags (R6). The acceptance step before it belongs to M3-025/M3-026/M3-028.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_030_TheSinkIsFilledAndTheBufferIsBroadcastInChunks"
@@ -8787,7 +8787,7 @@
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-"unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md \"Rows checked: the remaining records\"); recovered, now to build. Before: S1: NV owner/delete boundary 0x005112D6..0x005112E4; recipient identity 0x0050FD8C..0x0050FD90. M3-035 remains specifically pending-read callback discard. Virtual delete descendants UNKNOWN. Source triage S1. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Also (Codex 7dc053f, merged 2026-10-10): built, awaiting strong verification: 2026-10-10 NV lifetime batch, adopted N1-N8 owner boundary. Dispose unsubscribes before dropping idle/queued/active callbacks without invocation; retained host removal clears the same references. Tests drive live disposal/reply and discard. Call accounting: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: persistent saved command +0xE8 is the subsequent adopted N build; backup manager destruction 0x00643F48 remains M15; native captured object final-owner bodies remain their producer layers. Manager must refresh frozen RECOVERABLE_GAP inventory/status before worker status conversion.",
+      "unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md \"Rows checked: the remaining records\"); recovered, now to build. Before: S1: NV owner/delete boundary 0x005112D6..0x005112E4; recipient identity 0x0050FD8C..0x0050FD90. M3-035 remains specifically pending-read callback discard. Virtual delete descendants UNKNOWN. Source triage S1. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Also (Codex 7dc053f, merged 2026-10-10): built, awaiting strong verification: 2026-10-10 NV lifetime batch, adopted N1-N8 owner boundary. Dispose unsubscribes before dropping idle/queued/active callbacks without invocation; retained host removal clears the same references. Tests drive live disposal/reply and discard. Call accounting: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: persistent saved command +0xE8 is the subsequent adopted N build; backup manager destruction 0x00643F48 remains M15; native captured object final-owner bodies remain their producer layers. Manager must refresh frozen RECOVERABLE_GAP inventory/status before worker status conversion.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9243,14 +9243,14 @@
       "subsystem": "M3-device",
       "title": "NV idle callback scheduling and invocation predicate",
       "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "effect": "Ready byte can be written before NV work is idle or missed when queue drains.",
       "provenance": "Current callback candidate not fully compared.",
       "authority": "libcozmoEngine.so 3.4.0-1204 NV queue and Robot lambda.",
       "evidence": [
         "Registration 0x00528A5A..0x00528A6E; idle invocation boundary 0x00645C20..0x00645C32 (triage N1). M1-041 retains the ready-byte store/log body at 0x0052C3A6..0x0052C3B6."
       ],
-"unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md); recovered, now to build. Before: Recover NV queue-idle predicate/order and callback invocation scheduling. The callback body that stores/logs ready is owned by M1-041; M3-035 separately owns disconnect/destruction callback discard. Also (Codex 7dc053f, merged 2026-10-10): built, awaiting strong verification: 2026-10-10 NV lifetime batch. Adopted I1-I9 from 20261009-M3M4-remaining-rows.md: OnIdle appends then synchronously dispatches; idle predicate checked once; exact debug log precedes front invocation; pop follows invocation; queued NV work does not stop an entered drain; exceptions retain the front. Completion only becomes idle after terminal callback/broadcast. Call accounting and regressions: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: manager must refresh the frozen RECOVERABLE_GAP inventory/status to IMPLEMENTATION_GAP; no worker settlement or snapshot rewrite. Captured callback bodies stay in their owning records (M1-041 ready store/log).",
+      "unresolved": "Opus settling pass (2026-10-10, HEAD 3c994bc, jobs/B-M3M4.md \"Settling pass\"): SETTLED. ProcessOnIdleCallbacks 0x00645B08..0x00645BAE (entry tests once, debug log 0x00645B56, invoke, pop, loop), AddOneShot 0x00645C20..0x00645C32, Update state-0 tail call 0x006456EC; the only caller runs on the tick thread under _tickLock.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout plus idle cases after extraction."

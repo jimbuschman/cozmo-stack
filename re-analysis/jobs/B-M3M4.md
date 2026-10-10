@@ -335,3 +335,44 @@ The one blocking item was the unowned empty-payload line. The manager made it pa
 - the A25 label at Camera.cs:139-140;
 - data.zip is 12.5 MB;
 - `VisionSystem.cs:794` logs `frame {id}: {Type}: {msg}` for any exception. That pre-dates this round, and it includes the O5 wrap stub, which a crafted colour JPEG can reach.
+
+## Settling pass (Opus, 2026-10-10, HEAD 3c994bc)
+
+**Result.** Of the 32 IMPLEMENTATION_GAP records:
+- **Settled:** M3-027, M3-030 and M3-040.
+- **Reopened:** M3-025, M3-028 and M4-002, which were settled but are contradicted by the binary.
+
+**Build fixes (round S1, Sonnet). The verifier's citations are the rows.**
+1. **M3-022:** the four camera-calibration callback logs (0x0065AB68..0x0065AFE4).
+2. **Read-reply acceptance (M3-025/M3-026/M3-028):**
+   - the gate on +0x78 and +0x50 (0x006430BA..0x006430CE);
+   - the warning at 0x0064318E (0xBFB8B6);
+   - `%x` in place of X8 (0xBFBB3F, 0xBFBA1C, 0xBFBABA);
+   - InvalidHeader stays MISSING until its call site is traced.
+3. **M4-020:** the BadOriginID key and format (0x005132C8, 0xBE686C; args 0x00512EC4..0x00512EE2).
+4. **M4-002/M4-016:** the lift clamp, warning and preset choice move into Init (0x0054903C..0x0054913C). The warning becomes "%f mm. Clipping to be in range." (0x00549398).
+5. **The lift's second clamp:** [32,92], with NaN going to 32 (0x0054918E..0x005491D2).
+6. **M4-031:** report the missing debug name visibly.
+7. **"(null)":** apply it at `NvStorage.cs:446,668-669`.
+8. **Queued items:**
+   - the invented NV log lines (`NvStorage.cs:643,1015`);
+   - stale `unresolved`/`test` fields;
+   - M4-016's TolTooSmall citation.
+
+**Cross-layer, pinned:**
+- **M6:** M3-010, M3-013, M3-024.
+- **M11:** M3-021, M3-032, M3-033, M4-009, M4-017, M4-018, M4-020.
+- **M8-015 / M8-017:** M4-003, M4-016, M4-026, M4-028.
+- **Touch/Cliff:** M4-027.
+- **M10?:** M4-019's DetectGyroDrift/DetectBias.
+- **M3-034:** the Progression, Inventory, backup and Lab sinks (higher layers).
+- **M3-001/M3-018:** the cv::Exception disposition and encodings 5/6/7.
+
+**New records to write (manager):**
+- RobotDataBackupManager (M15);
+- CozmoRobot.StartCamera (M3-023);
+- the M11 LimitedExposure effect;
+- the cv::Exception disposition;
+- a phone-printf boundary for `%f`/`%.1f` (M4-001, M4-016).
+
+**M4-010:** live-entry tests for the full connection claim.

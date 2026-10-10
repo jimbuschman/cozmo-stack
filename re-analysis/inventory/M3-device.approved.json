@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "4f483dd52485e28317b97e99dd14e8fe926c274720f462ece8c200e76c21f1b8",
+  "inventory_sha256": "dc2674c66242349466f74daafdee87899fbad51bf20ac4a2630a090763ff13d0",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -282,7 +282,7 @@
       "hardware_required": false
     },
     "M3-025": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "NV entry-tag validity and the size tables: a valid non-factory tag is a _maxSizeTable key; factory tags take their table value",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -305,7 +305,7 @@
       "hardware_required": false
     },
     "M3-027": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV ProcessRequest READ: the factory/non-factory Length, the reliable send, and the pending-read arm (5 s robot-clock deadline, retry counter 0)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -316,7 +316,7 @@
       "hardware_required": false
     },
     "M3-028": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "NV non-factory reads: the OMZC header check and the Length = size+16 re-request",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -340,7 +340,7 @@
       "hardware_required": false
     },
     "M3-030": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV completion: the callback or the caller vector sink, the 0x400-chunk broadcast, and SetState(0)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -449,7 +449,7 @@
       "hardware_required": false
     },
     "M3-040": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV idle callback scheduling and invocation predicate",
       "authority": "libcozmoEngine.so 3.4.0-1204 NV queue and Robot lambda.",
       "evidence": [

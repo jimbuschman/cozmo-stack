@@ -618,3 +618,5 @@ M4-027 adds the ResetDevices ownership candidate while retaining native componen
 
 - **M4-008** now also owns HandleObjectPowerLevel after the arithmetic: the Log, the DAS gate and its per-activeID maps, the Report log, the DAS event, the connected-object lookup (BlockWorld FindConnectedObjectHelper 0x0061F078), the ObjectID getter (0x004EF772), the Broadcast log and the ObjectPowerLevel broadcast. Evidence: research/20261010-power-level-and-connect-log-rows.md A1..A16 and the Addendum (0x00537130..0x00537402).
 - **M4-010** now also owns the ConnectToObjects pre-loop BlockPool log. Evidence: the same file's B1..B6 (0x005173A6).
+
+Settling pass (manager, 2026-10-10, Opus at 3c994bc): M4-002 is reopened to IMPLEMENTATION_GAP. The lift clamp, warning and preset choice belong in MoveLiftToHeightAction::Init (0x0054903C..0x005491D2), including the second clamp that maps NaN to 32. Details in jobs/B-M3M4.md "Settling pass".
