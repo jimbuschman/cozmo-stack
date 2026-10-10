@@ -11,6 +11,7 @@ namespace Cozmo.Protocol.Tests;
 /// the state-name helper). Every expected value is taken from a row of the approved inventory (M7-behaviour.md Correction A3 and the
 /// gap-pass-1 extraction 20261002-R-BEH2-M7-gap1-extraction.md; cited per test), not from what the code returns.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class M7BatchThreeATests
 {
     private static BehaviorContext Ctx(Rig rig, Func<NeedId?>? need = null) => new()

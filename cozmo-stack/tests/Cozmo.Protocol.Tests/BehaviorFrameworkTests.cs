@@ -11,6 +11,7 @@ namespace Cozmo.Protocol.Tests;
 /// Tests for the reconstructed behaviour framework: scoped resources, the repetition penalty, and
 /// score-based selection.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class BehaviorFrameworkTests
 {
     private static string? ObbRoot()
@@ -2392,3 +2393,10 @@ private sealed class FakeExternalInterface : IWhiteboardExternalInterface
     }
 }
 
+
+/// <summary>
+/// SteppedBehavior.MissingReported / ReportMissing keep a process-wide once-per-message set. The tests that subscribe to it (or reset it) read that
+/// state, so nothing else runs while they do; otherwise another test's report can consume the message first.
+/// </summary>
+[CollectionDefinition("SteppedBehavior missing-report statics", DisableParallelization = true)]
+public sealed class SteppedBehaviorMissingReportStaticsCollection { }

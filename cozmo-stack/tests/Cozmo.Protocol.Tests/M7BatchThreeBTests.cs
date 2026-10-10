@@ -15,6 +15,7 @@ namespace Cozmo.Protocol.Tests;
 /// (<c>20261002-R-BEH2-M7-gap1-extraction.md</c> section 2, <c>20260929-R-BEH2-pre-extraction.md</c> sections 3 and 8 with the corrections of
 /// <c>20260930-R-BEH2-pre-extraction-check.md</c>), or from the shipped assets, and is cited per test; none is what the code returned.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class M7BatchThreeBTests
 {
     private static float F(int bits) => BitConverter.Int32BitsToSingle(bits);

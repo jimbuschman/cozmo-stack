@@ -13,6 +13,7 @@ namespace Cozmo.Protocol.Tests;
 /// those rows or the shipped Unity/CLAD types, never from the code under test. The records stay
 /// IMPLEMENTATION_GAP (M7-020 and the queue/watcher rows).
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class ActionCompletionTests
 {
     // ------------------------------------------------------------------ rig
