@@ -1,6 +1,6 @@
 {
   "subsystem": "M3-device",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
   "inventory_sha256": "4c9780a19faad26f5d54f98f7d510db8c6d3029685f97417bb3bbde0984190d6",
   "records": {
@@ -428,7 +428,7 @@
       "hardware_required": false
     },
     "M3-038": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "NV component destruction and pending callback lifetime",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -439,17 +439,17 @@
       "hardware_required": false
     },
     "M3-039": {
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "SDK cube-sleep recipient",
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "Dispatch EnableCubeSleep(1,1) at 0x0065DEA2; +0x79 SDK send gate (triage E3)."
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M3-040": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "NV idle callback scheduling and invocation predicate",
       "authority": "libcozmoEngine.so 3.4.0-1204 NV queue and Robot lambda.",
       "evidence": [

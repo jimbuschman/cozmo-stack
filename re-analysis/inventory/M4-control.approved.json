@@ -1,6 +1,6 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-09",
+  "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M4-control.md",
   "inventory_sha256": "dcd0f4e8a65a411f43d354c72fe6ae84cc57689cfdb948d8cb8aa72086ff6f0b",
   "records": {
@@ -336,7 +336,7 @@
       "hardware_required": false
     },
     "M4-026": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Robot AbortAll ordered control and wire effects",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -347,7 +347,7 @@
       "hardware_required": false
     },
     "M4-027": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Sensor/light/movement/CubeAccel teardown and retained host reset candidate",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -359,7 +359,7 @@
       "hardware_required": false
     },
     "M4-028": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Go-to-sleep lift child construction and motor effects",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -370,27 +370,27 @@
       "hardware_required": false
     },
     "M4-029": {
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "SDK light-state and lift-power recipients",
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "EnableLightStates(false,-1) at 0x0065DECA; EnableLiftPower(true) at 0x0065DF8C; +0x79 gate (triage E3)."
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M4-030": {
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "StopRobotForSdk action/control recipient",
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "StopRobotForSdk dispatch at 0x0065DF6A; receiver effects UNKNOWN (triage E5)."
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M4-031": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Track-lock diagnostic enumeration",
       "authority": "libcozmoEngine.so 3.4.0-1204 PrintLockState.",
       "evidence": [

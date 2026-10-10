@@ -96,7 +96,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M3-device.md",
-        "approved": "2026-10-09",
+        "approved": "2026-10-10",
         "snapshot": "re-analysis/inventory/M3-device.approved.json"
       }
     },
@@ -104,12 +104,12 @@
       "id": "M4-control",
       "name": "Motion, sensors, lights and cubes",
       "milestone": "M4",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M4-control.md",
-        "approved": "2026-10-09",
+        "approved": "2026-10-10",
         "snapshot": "re-analysis/inventory/M4-control.approved.json"
       }
     },
@@ -8777,7 +8777,7 @@
       "subsystem": "M3-device",
       "title": "NV component destruction and pending callback lifetime",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN.",
@@ -8785,7 +8785,7 @@
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "built, awaiting strong verification: 2026-10-10 NV lifetime batch, adopted N1-N8 owner boundary. Dispose unsubscribes before dropping idle/queued/active callbacks without invocation; retained host removal clears the same references. Tests drive live disposal/reply and discard. Call accounting: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: persistent saved command +0xE8 is the subsequent adopted N build; backup manager destruction 0x00643F48 remains M15; native captured object final-owner bodies remain their producer layers. Manager must refresh frozen RECOVERABLE_GAP inventory/status before worker status conversion.",
+"unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md \"Rows checked: the remaining records\"); recovered, now to build. Before: S1: NV owner/delete boundary 0x005112D6..0x005112E4; recipient identity 0x0050FD8C..0x0050FD90. M3-035 remains specifically pending-read callback discard. Virtual delete descendants UNKNOWN. Source triage S1. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Also (Codex 7dc053f, merged 2026-10-10): built, awaiting strong verification: 2026-10-10 NV lifetime batch, adopted N1-N8 owner boundary. Dispose unsubscribes before dropping idle/queued/active callbacks without invocation; retained host removal clears the same references. Tests drive live disposal/reply and discard. Call accounting: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: persistent saved command +0xE8 is the subsequent adopted N build; backup manager destruction 0x00643F48 remains M15; native captured object final-owner bodies remain their producer layers. Manager must refresh frozen RECOVERABLE_GAP inventory/status before worker status conversion.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -8795,7 +8795,7 @@
       "subsystem": "M4-control",
       "title": "Robot AbortAll ordered control and wire effects",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051194C..0x0051198C; 0x00649268..0x0064927C; 0x0063BE36; 0x00517E0A; 0x006409C2; Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required.",
@@ -8803,7 +8803,7 @@
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "MISSING: Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.",
+      "unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted with corrections A3 and A10 (manager, 2026-10-10, jobs/B-M3M4.md); recovered, now to build. Before: MISSING: Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -8813,7 +8813,7 @@
       "subsystem": "M4-control",
       "title": "Sensor/light/movement/CubeAccel teardown and retained host reset candidate",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510; Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN.",
@@ -8822,7 +8822,7 @@
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "S2: Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership. ResetDevices candidate maps to native AbortAll 0x0051194C..0x0051198C and component boundaries 0x005111EA..0x0051121A, 0x005113E0..0x005113F6, 0x00511428..0x00511488, 0x00511500..0x00511510; it is not proof of equivalent ownership. Queues/subscriptions/virtual descendants UNKNOWN. Source: 20261006-M1M2-missing-triage.md S2.",
+      "unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md); recovered, now to build. Before: S2: Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership. ResetDevices candidate maps to native AbortAll 0x0051194C..0x0051198C and component boundaries 0x005111EA..0x0051121A, 0x005113E0..0x005113F6, 0x00511428..0x00511488, 0x00511500..0x00511510; it is not proof of equivalent ownership. Queues/subscriptions/virtual descendants UNKNOWN. Source: 20261006-M1M2-missing-triage.md S2.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -8832,7 +8832,7 @@
       "subsystem": "M4-control",
       "title": "Go-to-sleep lift child construction and motor effects",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0052CF8E..0x0052CFB0; MoveLiftToHeightAction preset0, tolerance f32 0x40A00000; exact child initialization, locking, stop and completion must be verified in the control layer.",
@@ -8840,7 +8840,7 @@
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "S14: lift child MoveLiftToHeightAction preset0, tolerance bits 0x40A00000; construction/locking/stop/completion remain this M4 gap. Caller 0x0052CF8E..0x0052CFB0. Source: re-analysis/research/20261006-M1M2-missing-triage.md.",
+      "unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md); recovered, now to build. Before: S14: lift child MoveLiftToHeightAction preset0, tolerance bits 0x40A00000; construction/locking/stop/completion remain this M4 gap. Caller 0x0052CF8E..0x0052CFB0. Source: re-analysis/research/20261006-M1M2-missing-triage.md.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9224,16 +9224,16 @@
       "subsystem": "M3-device",
       "title": "SDK cube-sleep recipient",
       "location": "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "SDK ResetRobot can omit/reorder cube-sleep request or invoke a wrong recipient.",
       "provenance": "Engine dispatch known; concrete receiver UNKNOWN.",
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "Dispatch EnableCubeSleep(1,1) at 0x0065DEA2; +0x79 SDK send gate (triage E3)."
       ],
-      "unresolved": "Recover concrete cube-sleep receiver and preserve +0x79/order; receiver internals UNKNOWN.",
+      "unresolved": "COMPATIBILITY_POLICY: unreachable in this stack: SDK mode, external and the internal mode used by CodeLab and Edu, is not supported (AGENTS.md \"Scope: the app boundary\"). ResetRobot's only callers are EnterMode (first entry, 0x0065E11A..0x0065E17C) and OnDisconnect (gated on +0x78/+0x7C); +0x78 is set only by EnterMode's internal branch (0x0065E172) and OnConnectionSuccess (0x0065E8D4, behind IsExternalSdkConnection). Manager row check, 2026-10-10, jobs/B-M3M4.md. The shared recipient functions stay owned by their own records. Before: Recover concrete cube-sleep receiver and preserve +0x79/order; receiver internals UNKNOWN.",
       "hardware_required": false,
-      "live_path": true,
+      "live_path": false,
       "test": "M3DeviceTests SDK reset cube-sleep cases after extraction."
     },
     {
@@ -9241,14 +9241,14 @@
       "subsystem": "M3-device",
       "title": "NV idle callback scheduling and invocation predicate",
       "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "Ready byte can be written before NV work is idle or missed when queue drains.",
       "provenance": "Current callback candidate not fully compared.",
       "authority": "libcozmoEngine.so 3.4.0-1204 NV queue and Robot lambda.",
       "evidence": [
         "Registration 0x00528A5A..0x00528A6E; idle invocation boundary 0x00645C20..0x00645C32 (triage N1). M1-041 retains the ready-byte store/log body at 0x0052C3A6..0x0052C3B6."
       ],
-      "unresolved": "built, awaiting strong verification: 2026-10-10 NV lifetime batch. Adopted I1-I9 from 20261009-M3M4-remaining-rows.md: OnIdle appends then synchronously dispatches; idle predicate checked once; exact debug log precedes front invocation; pop follows invocation; queued NV work does not stop an entered drain; exceptions retain the front. Completion only becomes idle after terminal callback/broadcast. Call accounting and regressions: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: manager must refresh the frozen RECOVERABLE_GAP inventory/status to IMPLEMENTATION_GAP; no worker settlement or snapshot rewrite. Captured callback bodies stay in their owning records (M1-041 ready store/log).",
+"unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md); recovered, now to build. Before: Recover NV queue-idle predicate/order and callback invocation scheduling. The callback body that stores/logs ready is owned by M1-041; M3-035 separately owns disconnect/destruction callback discard. Also (Codex 7dc053f, merged 2026-10-10): built, awaiting strong verification: 2026-10-10 NV lifetime batch. Adopted I1-I9 from 20261009-M3M4-remaining-rows.md: OnIdle appends then synchronously dispatches; idle predicate checked once; exact debug log precedes front invocation; pop follows invocation; queued NV work does not stop an entered drain; exceptions retain the front. Completion only becomes idle after terminal callback/broadcast. Call accounting and regressions: re-analysis/research/20261010-M3M4-NV-lifetime-build-census.md. MISSING: manager must refresh the frozen RECOVERABLE_GAP inventory/status to IMPLEMENTATION_GAP; no worker settlement or snapshot rewrite. Captured callback bodies stay in their owning records (M1-041 ready store/log).",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_035_ADisconnectDiscardsTheReadWithNoCallbackOrTimeout plus idle cases after extraction."
@@ -9266,7 +9266,7 @@
       ],
       "effect": "Received IMU diagnostic packets can open/write a file that must be synchronized and closed on final chunk or robot removal.",
       "provenance": "New bounded reachability extraction prompted by final Opus M1-046 omitted file close; rows are not yet manager-checked implementation authority.",
-      "unresolved": "Recover/check and build the complete diagnostic IMU logging path: exact file names/directories/collision handling, CSV/sample formatting, info/error/stream-state decisions, shared processed/raw stream interactions, final-chunk and destructor sync/close ordering. Engine handlers are reachable on received BF/C7 packets without app debug or SDK mode; no claim that firmware emits them spontaneously. No logger currently exists, so this is a visible recoverable production-path gap. Check the new I1-I11 rows before implementation. Request producer/ordinary firmware emission conditions remain unknown; no unreachable disposition or settlement.",
+      "unresolved": "Rows L1-L36 adopted (manager, 2026-10-10, jobs/B-M3M4.md), except L30: every float and filename number goes through the packaged libc++ formatter (0x49B64 -> 0x82528 -> bl 0x813B0), which is unread. M3-041 stays RECOVERABLE_GAP until L30 has rows; everything else can be built ahead of it. Before: Recover/check and build the complete diagnostic IMU logging path: exact file names/directories/collision handling, CSV/sample formatting, info/error/stream-state decisions, shared processed/raw stream interactions, final-chunk and destructor sync/close ordering. Engine handlers are reachable on received BF/C7 packets without app debug or SDK mode; no claim that firmware emits them spontaneously. No logger currently exists, so this is a visible recoverable production-path gap. Check the new I1-I11 rows before implementation. Request producer/ordinary firmware emission conditions remain unknown; no unreachable disposition or settlement.",
       "hardware_required": false,
       "live_path": true,
       "test": "No IMU file-logging regression exists yet; add source-derived ingress/final-chunk/removal file-lifetime tests after checked extraction."
@@ -9276,16 +9276,16 @@
       "subsystem": "M4-control",
       "title": "SDK light-state and lift-power recipients",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "SDK reset may send wrong light/lift command or use the wrong gate/order.",
       "provenance": "Dispatcher known; receivers UNKNOWN.",
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "EnableLightStates(false,-1) at 0x0065DECA; EnableLiftPower(true) at 0x0065DF8C; +0x79 gate (triage E3)."
       ],
-      "unresolved": "Recover concrete receivers and exact message values/order/gates.",
+      "unresolved": "COMPATIBILITY_POLICY: unreachable in this stack: SDK mode, external and the internal mode used by CodeLab and Edu, is not supported (AGENTS.md \"Scope: the app boundary\"). ResetRobot's only callers are EnterMode (first entry, 0x0065E11A..0x0065E17C) and OnDisconnect (gated on +0x78/+0x7C); +0x78 is set only by EnterMode's internal branch (0x0065E172) and OnConnectionSuccess (0x0065E8D4, behind IsExternalSdkConnection). Manager row check, 2026-10-10, jobs/B-M3M4.md. The shared recipient functions stay owned by their own records. The lift-power dispatch (0x0065DF8C) is unconditional within ResetRobot, not under +0x79. Before: Recover concrete receivers and exact message values/order/gates.",
       "hardware_required": false,
-      "live_path": true,
+      "live_path": false,
       "test": "M4ControlTests SDK reset light/lift cases after extraction."
     },
     {
@@ -9293,16 +9293,16 @@
       "subsystem": "M4-control",
       "title": "StopRobotForSdk action/control recipient",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "SDK reset can stop the robot through a different action/control path.",
       "provenance": "Dispatcher known; receiver/action effects UNKNOWN.",
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
         "StopRobotForSdk dispatch at 0x0065DF6A; receiver effects UNKNOWN (triage E5)."
       ],
-      "unresolved": "Identify/recover receiver, action construction, gates and downstream effects before implementation.",
+      "unresolved": "COMPATIBILITY_POLICY: unreachable in this stack: SDK mode, external and the internal mode used by CodeLab and Edu, is not supported (AGENTS.md \"Scope: the app boundary\"). ResetRobot's only callers are EnterMode (first entry, 0x0065E11A..0x0065E17C) and OnDisconnect (gated on +0x78/+0x7C); +0x78 is set only by EnterMode's internal branch (0x0065E172) and OnConnectionSuccess (0x0065E8D4, behind IsExternalSdkConnection). Manager row check, 2026-10-10, jobs/B-M3M4.md. The shared recipient functions stay owned by their own records. Before: Identify/recover receiver, action construction, gates and downstream effects before implementation.",
       "hardware_required": false,
-      "live_path": true,
+      "live_path": false,
       "test": "M4ControlTests StopRobotForSdk source-derived case after extraction."
     },
     {
@@ -9310,14 +9310,14 @@
       "subsystem": "M4-control",
       "title": "Track-lock diagnostic enumeration",
       "location": "cozmo-stack/src/Cozmo.Robot/Motion.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "Lock diagnostics can enumerate tracks or ownership names in a different order.",
       "provenance": "Entry/caller known; traversal and names not verified.",
       "authority": "libcozmoEngine.so 3.4.0-1204 PrintLockState.",
       "evidence": [
         "PrintLockState 0x006410D8..0x006413CA; lock/unlock caller 0x0063FF02..0x0063FF24 (triage E9)."
       ],
-      "unresolved": "Recover tree traversal, ownership names and diagnostic order; do not substitute M4-003/M4-016 action semantics.",
+      "unresolved": "RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md); recovered, now to build. Before: Recover tree traversal, ownership names and diagnostic order; do not substitute M4-003/M4-016 action semantics.",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests PrintLockState diagnostic case after extraction."
