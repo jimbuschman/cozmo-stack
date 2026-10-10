@@ -105,3 +105,37 @@ the `bx pc` veneers.
     boundary"), so "SDK mode is not supported" covers them too.
   - Record each of the three as COMPATIBILITY_POLICY with this evidence: unreachable without SDK mode. The shared
     recipient functions stay owned by their own records.
+
+## Opus pass on the first slice (4ae4d32), 2026-10-10: fix round 1
+
+The verdicts:
+- **M3-010, M4-009 and M4-019:** their slices are exact, but each record stays open on later pieces.
+- **M4-017:** exact apart from item 3 below. The record stays open.
+- **M4-016 and M4-018:** each has a defect. Fix these:
+
+1. **M4-016, the timeout log.** After the 0x03000018 result (0x00540E80), the engine checks `ldrb [+0x57]` (0x00540E7C).
+   It defaults to 1, from the ctor's +0x55 = 0x10000 store (0x0053FE18..0x0053FE1C). It then calls sWarningF at 0x00540EB6
+   with "IAction.Update.TimedOut" (0x00540FE0), format "%s timed out after %.1f seconds." (0x00540FF8), and the timeout
+   from slot 0x2C. `IActionRunner.cs:318` doesn't log, and `MoveAction.Log` is never wired, so the base's other
+   IActionRunner warnings are silent too. Wire the log and emit it.
+   - Pass the engine's "Actions" channel argument.
+   - Add tests for the four u16 counters and the eleven-count WaitingForAck/NotInPosition logs, head and lift, at the
+     `blo #0xb` boundaries 0x00548620, 0x005487C0, 0x00549446 and 0x00549516.
+2. **M4-018, EnableGameLayerOnly.** It logs on entry, before the C13.4 gates: sChanneledInfoF at 0x0063997A, channel
+   "CubeLightComponent", event "CubeLightComponent.EnableGameLayerOnly" (0x00639BAC), format "%s game layer only for
+   %s" (0x00639BD4).
+   - The first %s is "Enabling" (0x00BFAA93) when enable != 0, otherwise "Disabling" (0x00BFAA9C).
+   - The second is "all objects" (0x00639B94) when ObjectID+4 == -1, otherwise "object " (0x00639BA0) followed by the
+     id (0x00639930..0x00639940).
+   - Also: a single object with no ObjectInfo is a no-op (`cmp r7,end; beq` at 0x006399D8..0x006399E0). The C# still
+     runs SetObjectLights and the stops; fix that.
+   - Replace the circular test at `M4ControlTests.cs:1980`. Show that the held refresh fires (a re-pick or a send) after
+     SetLocalizedTo, and add a regression for the disable-all order (`Lights.cs:845-859`, 0x00639AEA..0x00639B32).
+3. **M4-017, the manager's decision.** In the engine the NullVisionSystem branch (VisionComponent+0x1C == 0,
+   0x006527AC..0x00652808) can't be reached: the VisionComponent ctor always allocates the VisionSystem
+   (0x00650184..0x00650196). The stack's optional VisionSystem is a host configuration, not engine state.
+   - **When no VisionSystem is attached, don't emit the engine error or set `_errG`** (`Lights.cs:130-136`). Keep the
+     requested mode and apply it when a VisionSystem is attached.
+   - M11 will make the VisionSystem always present.
+
+Apply rule 10 (every log in the cited ranges). Commit and push.
