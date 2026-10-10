@@ -11,6 +11,10 @@
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
 | Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 76 native-row obligations CHECKED, 8 CHECKED scope exclusions, 56 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
+## Checkpoint 572 — concrete MIDI get-in route and single-step dispatch
+
+`20261010-sound-midi-getin-routing.md` GI572A–E joins two complete primary payloads to actual Layer/RanSeq128 and fresh-note routing. Get-in's admitted flag12 selects single-step A0A6FC; selection happens before selected-child note eligibility, without continuous mode5 lookahead. Q14-051 remains PARTIAL specifically for A0A3B4 random-state/candidate48 inputs and concrete inherited preparation; target membership and executable dispatch are no longer unpaid. Counts unchanged76nativeCHECKED+8scopeCHECKED/56PARTIAL/140;140AUDIBLE/0INTERNAL. No production/fidelity/hardware/Q15 edits.
+
 ## Checkpoint 571 — source contract reconciliation closes090/091
 
 `20261010-sound-source-contract-closeout.md` reconciles the unchanged original090/091 obligations and checkpoint558's exact unpaid remainder against complete reports565–570. The three admitted generator products now have positive Init/Reset/format/render/seek/duration/stop-loop/raw-state rows; END569/ADM570 settle the actual source interfaces and bound unused context suppliers. Earlier decoder/stream controls retain their existing positive coverage. No new helper descent, DSP-equivalence acceptance or whole-MIDI claim. Q14-090/091 CHECKED; counts76nativeCHECKED+8scopeCHECKED/56PARTIAL/140;140AUDIBLE/0INTERNAL. No production/fidelity/hardware/Q15 edits.

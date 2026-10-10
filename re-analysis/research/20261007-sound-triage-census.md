@@ -581,7 +581,7 @@ CHECKED: RB519 maps the specified shipped Robot_Bus_1 four-slot route through FQ
 
 PARTIAL: Q15 NS1–3/NE1–6 locate the actual per-note submission/preparation helper and channel/pitch/velocity gates; cited9BBF9C is a byte-stream consumer, not child MIDI filtering. Actual target110896138 node128 child/get-in membership remains open.
 
-**Current disposition, checkpoint558:** PARTIAL: Resolve actual target110896138 node128 child/get-in403781184 membership and per-note routing;9BBF9C byte-stream reading is not evidence for this selector. Evidence: NS/NE and serialized graph target witness; no missing-caller exclusion. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+**Current disposition, checkpoint572:** PARTIAL: Bind get-in403781184 A0A3B4 random-state/candidate48 eligibility for its three children, then concrete inherited note/channel/velocity preparation. GI572 settles target110896138 membership, actual Layer/RanSeq128 bindings and admitted single-step dispatch; selection precedes selected-child filtering. Evidence: verified two full primary payloads and fresh-route/entry ARM capture, GI572A–E with existing NS/NE/DG/LN/TR/C17. See `20261010-sound-midi-getin-routing.md`; older remaining-work prose is superseded. out of scope: allocator/vector backing, isolated per-sample DSP and excluded branches.
 
 ## Q14-052 — triage line 91
 
