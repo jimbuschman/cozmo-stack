@@ -1969,18 +1969,22 @@ public class FreeplayTests
 
         clock = 1000;
         needs.StartWriteToRobot(clock);
-        rig.Tick();                                                  // M3-026: Update sends the queued write
+        rig.Tick();                                                  // M3-043 WB3: Update sends the ERASE the engine queues before every write
         rig.Pump();
+        Assert.Equal(NvStorageComponent.OpErase, rig.Sent.OfType<NVCommand>().Last().Op);
+        rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpErase, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+        rig.Pump();                                                  // WB11 dispatch, then WB15 one chunk per Update
 
         var write = rig.Sent.OfType<NVCommand>().Last();
         Assert.Equal(NeedsManager.NeedsNvKey, write.Tag);
         Assert.Equal(NvStorageComponent.OpWrite, write.Op);
-        Assert.Equal(NeedsStateOnRobot.Size, write.Data.Length);
-        Assert.Equal(5u, BitConverter.ToUInt32(write.Data, 0x00));
-        Assert.Equal(1000UL, BitConverter.ToUInt64(write.Data, 0x04));
-        Assert.Equal(90000, BitConverter.ToInt32(write.Data, 0x0C));
-        Assert.Equal(80000, BitConverter.ToInt32(write.Data, 0x10));
-        Assert.Equal(50000, BitConverter.ToInt32(write.Data, 0x14));
+        Assert.Equal(NeedsStateOnRobot.Size + 16, write.Data.Length);   // WB15: the 16-byte header, then the payload
+        const int h = 16;
+        Assert.Equal(5u, BitConverter.ToUInt32(write.Data, h + 0x00));
+        Assert.Equal(1000UL, BitConverter.ToUInt64(write.Data, h + 0x04));
+        Assert.Equal(90000, BitConverter.ToInt32(write.Data, h + 0x0C));
+        Assert.Equal(80000, BitConverter.ToInt32(write.Data, h + 0x10));
+        Assert.Equal(50000, BitConverter.ToInt32(write.Data, h + 0x14));
         Assert.Equal(1000, needs.LastWriteToRobotSec, 6);
 
         // the terminal callback: a failed write logs and sets the error flag, a good one is a no-op
@@ -2140,7 +2144,7 @@ public class FreeplayTests
             else
                 ReplyNeedsRead(rig, Array.Empty<byte>(), -1);
 
-            int rw = rig.Sent.OfType<NVCommand>().Count(c => c.Op == NvStorageComponent.OpWrite);
+            int rw = rig.Sent.OfType<NVCommand>().Count(c => c.Op == NvStorageComponent.OpErase);   // M3-043 WA12: every queued write sends its ERASE first
             return (dw, rw, sent, changed, needs.State.GetNeedLevel(NeedId.Play));
         }
 
@@ -2212,9 +2216,11 @@ public class FreeplayTests
         double clock = 0;
         var needs = new NeedsManager(() => clock);
         needs.NvStorage = rig.Robot.Engine.NvStorage;
-        int WriteCount() => rig.Sent.OfType<NVCommand>().Count(c => c.Op == NvStorageComponent.OpWrite);
+        int WriteCount() => rig.Sent.OfType<NVCommand>().Count(c => c.Op == NvStorageComponent.OpErase);   // M3-043 WA12: a queued write sends its ERASE first
         void CompleteWrite()
         {
+            rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpErase, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+            rig.Pump();
             rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpWrite, Result = 0, Length = 0, Data = Array.Empty<byte>() });
             rig.Pump();
         }
@@ -2250,11 +2256,13 @@ public class FreeplayTests
         {
             sbyte? got = null;
             Assert.Equal(1, nv.Write(NeedsManager.NeedsNvKey, new byte[NeedsStateOnRobot.Size], r => got = r.Result));
-            rig.Tick();                                              // M3-026: Update sends the queued write
+            rig.Tick();                                              // M3-043: the ERASE first
             rig.Pump();
+            rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpErase, Result = 0, Length = 0, Data = Array.Empty<byte>() });
+            rig.Pump();                                              // then the one chunk
             var cmd = rig.Sent.OfType<NVCommand>().Last();
             Assert.Equal(NvStorageComponent.OpWrite, cmd.Op);
-            Assert.Equal(NeedsStateOnRobot.Size, cmd.Data.Length);
+            Assert.Equal(NeedsStateOnRobot.Size + 16, cmd.Data.Length);
             rig.Send(new NVOpResult { Tag = NeedsManager.NeedsNvKey, Op = NvStorageComponent.OpWrite, Result = replyResult, Length = 0, Data = Array.Empty<byte>() });
             rig.Pump();
             return got;

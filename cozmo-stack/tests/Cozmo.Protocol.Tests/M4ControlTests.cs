@@ -14,6 +14,7 @@ namespace Cozmo.Protocol.Tests;
 /// in each test. The engine runs over a fake transport port on the production path (CozmoRobot.CreateForTest), ticked
 /// by hand, so the per-tick order and the origin gate are the production ones.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class M4ControlTests
 {
     // Opus M4-001: literal strings BEA11C/BEA169; getDegrees f32 0084CD40.

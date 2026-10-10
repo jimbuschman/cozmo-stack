@@ -69,6 +69,14 @@ public sealed class CozmoEngineOptions
     /// <summary>Where the block pool is kept (<see cref="CubeConnections.Init"/>); an empty path turns persistence off.</summary>
     public string? BlockPoolPath { get; init; }
 
+    // fidelity: M3-041
+    /// <summary>
+    /// The directory DataPlatform resolves as its string at +0xC, under which the IMU logger's scope-2 "imu_logs"
+    /// directory is made (rows L5/L6). The engine takes it from the app; null: the user's local application data folder,
+    /// under "cozmo-stack". Host policy.
+    /// </summary>
+    public string? DataPlatformPersistentPath { get; init; }
+
     // fidelity: M1-042
     /// <summary>The stored robot volume the app sends after a Success response (policy M1-042; default 1.0).</summary>
     public float RobotVolume { get; init; } = 1.0f;
@@ -1012,6 +1020,10 @@ public sealed partial class EngineRobot
         return false;
     }
 
+    // fidelity: M4-026
+    /// <summary>Robot::SendMessage with its failure warning (0x00513558/0x0051356C), for the AbortAll path (the same send as <see cref="Send"/>).</summary>
+    internal bool SendChecked(RobotMessage m) => Send(m, m.GetType().Name);
+
     /// <summary>Test seam only (not a production path): a non-null return forces the send result.</summary>
     internal Func<RobotMessage, bool?>? SendFault;
 
@@ -1120,8 +1132,17 @@ public sealed partial class EngineRobot
             SyncTimeSentAt = 0;
         }
         // fidelity: M3-032
-        // Gate A 0x00513C5C..0x00513C62. Gate B below remains dependent on M11's missing result/calibration state.
-        if (!FirstFullStateHandled) { AnimationStreamingOpen = false; return; }
+        // G1, Gate A 0x00513C5C..0x00513C62: robot+0x34E (the first full state handled) zero bypasses everything below, after the
+        // channeled debug log of 0x00513DA6..0x00513DC2 (channel "Unnamed", key Robot.Update, no stored error flag). Gate B (G2)
+        // remains dependent on M11's calibration pointer and UpdateAllResults result.
+        if (!FirstFullStateHandled)
+        {
+            Engine.Log("debug: Robot.Update: Waiting for first full robot state to be handled");
+            AnimationStreamingOpen = false;
+            return;
+        }
+        // 0x00513C66..0x00513C6A: VizManager::SendStartRobotUpdate (0x004A7DA4, through context+0x24) sits between the two gates. It is
+        // debug visualisation on the app side and out of scope (manager, 2026-10-09); nothing is built for it.
         // fidelity: M8-011
         // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below. No source for that result exists in this
         // stack (see CozmoEngine.VisionUpdateAllResultsFailed), so with no hook the gate is reported MISSING once and the tick continues.
@@ -1129,7 +1150,9 @@ public sealed partial class EngineRobot
         {
             if (visionGate())
             {
-                Engine.Log("warning: Robot.Update: VisionComponent::UpdateAllResults failed; the rest of the update is skipped");
+                // G2 (0x00513C7E..0x00513C9A): sWarningF with the key Robot.Update.VisionComponentUpdateFail and an empty format, then
+                // the return to 0x00514484, which skips everything below.
+                Engine.Log("warning: Robot.Update.VisionComponentUpdateFail: ");
                 return;
             }
         }

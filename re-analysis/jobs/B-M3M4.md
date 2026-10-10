@@ -177,3 +177,161 @@ reads no locale (the decimal point is a literal '.'), and it calls out to the ph
 value, the `%g` e/f switch (`P > e >= -4`), trailing-zero stripping and a two-digit signed exponent. **Accept it
 against an emulator oracle** of the shipped 0x82528, the way the M1-029 converter was, on f32-widened IMU values. Until
 that passes, L30 stays RECOVERABLE_GAP.
+
+**Correction:** the shipped core is not correctly rounded. It is a musl-style `fmt_fp` working on base-1e9 limbs, with
+the rounding quirks that come with the limb boundaries. The port reproduces it, quirks included.
+
+**Opus check of the build (2026-10-10): FAIL.** The formatter passes the oracle: 4291/4291 rows, the fixture
+regenerates byte-identical, and no test is circular. Seven objections:
+
+1. **Blocks.** After a handler close, the filebuf's put area survives. Insertions keep buffering with the state at 0
+   until about 4095 bytes are held, and the next open writes those stale bytes at the head of the new file. The C# sets
+   state 5 at once, and `M3ImuLogLiveTests.cs:299/304` assert that. Rows are being extracted
+   (`research/20261010-m3041-filebuf-rows.md`).
+2. **Blocks.** OpeningLogFile and ClosingLogFile are `sChanneledInfoF` with channel "Unnamed". Print them as
+   `info: [Unnamed] …`.
+3. CreateDirectory is engine code (0x008028AC..0x008029C8): the '/' walk, mkdir 0700, the stat bit test and the
+   200-iteration cap. Port it.
+4. FileExists tests `S_ISREG`; `File.Exists` doesn't. Port it.
+5. **Visibility.** The carry loop at 0x821E4 reads one limb below `a` that is never initialised: stack residue on the
+   phone. The port assumes 0. State this boundary in the code, in the fixture's `boundary` field and in `unresolved`.
+6. **Visibility.** The host log directory needs a COMPATIBILITY_POLICY record.
+7. **Blocks.** The `M3ImuLogStatics` collection runs in parallel with the other users of `EngineErrorState`. Join the
+   serial collection.
+
+**Filebuf rows adopted** (`research/20261010-m3041-filebuf-rows.md`). The manager re-read three of them:
+- overflow with a null FILE returns −1 at 0x0050176C and touches nothing;
+- sync returns at 0x0050147C, skipping the reset block at 0x0050146C, so `__cm_` and the put area survive a close;
+- xsputn (0x004E3F06) is a memcpy that never looks at FILE, plus a one-character overflow.
+
+**Pinned:**
+- The vtable's bodies are taken to be the engine's own copies, not the libc++_shared exports of the same names.
+- `__always_noconv_` is taken to be 1 (`codecvt<char,char,mbstate_t>`).
+- How many sputn calls one number makes (num_put) is unread. It only matters when the buffer fills while the file is
+  closed.
+
+**Fix round re-checked (Opus, 2026-10-10): PASS.** All seven objections are resolved. The manager applied the queued items: the M3-042 tag on EngineFileUtils, the unreachable no-write-mode sync comment, and the boundaries in M3-041's and M3-042's `unresolved` (the uninitialised limb; Windows `\` components skipping the cap; the Unix lstat fallback). M3-041 is EXACT_SOURCE. Queued, not M3-041's: the stack is inconsistent about empty-format log text (`CliffPickupBehaviors.cs:218` has no `": "`).
+
+## NV write side (manager, 2026-10-10)
+
+Rows `research/20261010-nv-write-dispatch-rows.md` adopted as M3-043. The manager re-read the chunk loop (0x00645816..0x00645920: 0x400/0x3F0 caps, the stores to +0xE8 and +0xE0) and the write timeout (gate +0x48 at 0x006456F4, `bls` at 0x00645706, cb(-4) at 0x00645754).
+- **The saved Data (+0xE8) is written only by the chunk loop.** A READ, ERASE or WIPEALL sent after a write carries the last chunk sent. Built per Update, one chunk per call, not all at once at Write time.
+- **Never-written bytes** (header 14..15, a first WIPEALL's Length, the padded over-read) go under M3-037's policy.
+- **Pinned:** vector-overload callers (unswept narrow `b`/ARM); the M15 backup bodies.
+
+## M4-026/027/028/031 build (Sonnet, 2026-10-10)
+
+Built: 30 new tests (M4AbortSleepTests), all passing. The fidelity check passes. In the shared tree the full suite has two failures: the known slow-motor flake and a load-sensitive M12 test.
+
+**Sent back for extraction** (`research/20261010-m4-movement-leftover-rows.md`):
+- the five direct-drive strings at +0xBC..+0xCC;
+- the UnlockTracks info channel;
+- the LockTracks debug string for each caller;
+- the ERobotDriveToPoseStatus name table;
+- the lock-tree comparator;
+- the MotorActionAcked arguments;
+- AnimTrackFlagsToString for 0, 0xFF and bit 7;
+- the StopHead/StopBody gates (MA4; M4-015 still has the old per-track gate).
+
+**Pinned:**
+- M4-027's Touch (+0x28C) and Cliff (+0x288) teardown, their RollingFileLogger flush/close, and the FaceLayerToRemove/ScopedHandle releases. There are no C# objects behind them yet, so they stay visible MISSING lines.
+- The production sleep sequence (M5/M8).
+- Other AbortAll callers.
+
+**Queued:**
+- CompoundAction.AddAction overwrites the child's Log with a null parent Log (also in QueueHeadAndLiftCompound).
+
+**Accepted:**
+- PathComponent as a hook model.
+- The teardown bindings.
+- Removal running AbortAll, so in-flight actions end Cancelled, as in the engine.
+
+**Opus check of the M4-026/027/028/031 build (2026-10-10): FAIL.** Four objections, each sent back as fix round 2:
+1. The PathComponent constructor sets status 4 (Ready) and +0x40 = 0xFF (0x00648B14..0x00648B1C). The build started both at 0.
+2. AbortAll, Path.Abort and ClearPath return the engine's Result (1 if any send failed; 0x00511980..0x00511988). The C# had the meaning inverted, and three tests pinned the inverted value.
+3. On removal the AbortAll sends fail after the disconnect and log `Robot.SendMessage` warnings (0x0051349C). The build logged none.
+4. The PathDoler hook was skipped silently. It must be a visible MISSING line.
+
+**Supported:**
+- the A1/A3/A4/A7/A10 orders, row 1b and row 8;
+- the comparator and the D1 text;
+- the head and lift acks: a repeated ack logs again, because +0xAB is only stored and never tested;
+- the unreachable L6/L8 branch;
+- the teardown bindings.
+
+**Queued:**
+- CozmoMotion's older sends don't go through the SendMessage failure warning;
+- PathComponent duplicates PathSender._pathId and DriveActions' status; wiring is M12/M13;
+- the higher-layer lock callers pass no debug name (M5/M7/M8);
+- the log prefixes are inconsistent.
+
+**Opus check of the Q/N/R/W/U/P/G + M3-043 build (2026-10-10): FAIL.** Three omissions:
+1. ConnectToObjects' pre-loop BlockPool log (0x005173A6).
+2. The rest of HandleObjectPowerLevel after the U4/U5 arithmetic: the volts log (0x005371CE), the DAS-report gate and log (0x005371FA..0x0053728C), and the broadcast lookup, log and game message (0x00537366..0x005373E4).
+3. The constructor's SetState(0) log (0x006428E8).
+
+Items 1 and 2 are being extracted (`research/20261010-power-level-and-connect-log-rows.md`). Item 3, the full OnDisconnected reset of the saved command, and the stale comments are in fix round 2.
+
+The manager corrected three records:
+- **M3-043:** a factory-tag Write fails with FactoryTagNotAllowed only; the size check passes, because a limit of 0 becomes 0xFFFFFFF0.
+- **M3-032:** the VizManager item is out of scope.
+- **M3-037:** it now covers the NV never-written bytes.
+
+**Queued, outside this diff:** M14-012. VisionSystem writes the enrollment even when the album Write failed, but the engine gates it on the return value (`cbz r6` at 0x006573C0). The Request shim returns void.
+
+**M4 fix round 2 re-checked (Opus, 2026-10-10): code supported.** The one blocking item was a circular test. The expected warning type names came from MessageCatalog. The manager replaced them with literals cited from EngineToRobotTagToString (0x007AF8D0, table 0x010343A0): clearPath, abortDocking, abortAnimation, stop. The manager also fixed the PathDoler comment ("built when the context is set", 0x00648B56). M4AbortSleepTests pass, 45/45. **M4-026/027/028/031 are accepted for commit.**
+
+**Queued:**
+- a test for the EnableAnimTracks failure warning after a disconnect;
+- `ErrorFlagSet` is process-wide.
+
+## JPEG port: Opus check (2026-10-10): FAIL
+
+The oracle holds up:
+- a full regeneration is byte-identical;
+- a hostile allocator changes no case;
+- the stand-ins carry no behaviour;
+- the expected values come from the oracle.
+
+**Blocking:**
+1. **The LSE marker (0xF8) is unported.** get_lse (imgcodecs 0x22004..0x223DA) sets color_transform at cinfo+0x130, so J73's "nothing sets it" is false. The shipped decoder applies subtract-green, while the port returns an empty Mat. It is reachable through encodings 5/6/7.
+2. **A circular test.** It normalised "(null)" to "null".
+3. **An invented out-of-memory text.** The real strings ship in libopencv_core.
+4. **Rule 10: the engine's own logs.** DecodeImageHelper's UnsupportedEncoding error and BadDecode warning are not emitted, and the live caller logs `frame {id}: {error}` instead.
+
+**Manager rulings:**
+- **NULL `%s`:** rendered as bionic's "(null)". That is the phone libc's printf, a boundary of the system library. Remove the normalisation. This also settles M3-026 Q2.
+- **Out of memory:** use the shipped message text once extracted. The allocation failure itself remains phone state.
+- **Logs:** emit the engine's logs inside the decode helper. The caller's invented line goes, unless a recorded policy owns it.
+- **LSE and color_transform:** extract (`research/20261010-jpeg-lse-logs-oom-rows.md`), then port them and extend the corpus.
+- **Queued:**
+  - pin the library SHAs in the oracle;
+  - the wrong `_errG` citation (the stores are at 0x4F22AC/0x4F297A);
+  - "no NEON dependence" is overstated;
+  - the leftover A25 label;
+  - data.zip is 12 MB.
+- **cv::Exception from an empty vector:** the engine doesn't catch it (`_Unwind_Resume`). It needs an M11 record before M3-001 settles. **Pinned.**
+- **Other OpenCV decoders (PNG/TIFF) for non-JPEG payloads in encodings 5/6/7:** **pinned**, because whether the robot ever sends 5/6/7 is not established.
+
+**NV fixes re-checked (Opus, 2026-10-10): code supported.** The one blocking item was the A12 lookup hook, which was installed only by ManipulationSystem. The manager moved it to VisionSystem's constructor, which owns the BlockWorld. The manager also:
+- stopped `Dispose` logging the constructor's SetState line; the destructor has no SetState;
+- added the new rows to M4-008's and M4-010's evidence;
+- re-approved M4.
+
+The affected tests pass, 538/538. **The Q/N/R/W/U/P/G groups and M3-043 are accepted for commit.**
+
+**Queued:**
+- a stack-wide decision on channel prefixes;
+- the DAS `$data` sink;
+- the SetState line is logged at disconnect, where the engine logs it at the next construction;
+- the tautological bits assertion in M4_008_U4_U5;
+- no test for `pending = 1`.
+
+**JPEG fix round re-checked (Opus, 2026-10-10): code supported.** All four objections are resolved: LSE, the logs, "(null)" and the out-of-memory text. The oracle reproduces: a full regeneration is byte-identical, and the SHA pins hold.
+
+The one blocking item was the unowned empty-payload line. The manager made it part of policy M3-020: the record and the tag now say so. The manager also corrected the stale StbImageSharp text in the inventory and pinned O8 (an indirect `cv::redirectError`) in M3-001. **M3-001/M3-018 are accepted for commit.**
+
+**Queued:**
+- the A25 label at Camera.cs:139-140;
+- data.zip is 12.5 MB;
+- `VisionSystem.cs:794` logs `frame {id}: {Type}: {msg}` for any exception. That pre-dates this round, and it includes the O5 wrap stub, which a crafted colour JPEG can reach.

@@ -118,6 +118,10 @@ public sealed class VisionSystem : IDisposable
         // fidelity: M4-023
         _doubleTapEnded = OnDoubleTapPendingEnded;
         robot.Cubes.DoubleTapPendingEnded += _doubleTapEnded;
+        // fidelity: M4-008
+        // A12: HandleObjectPowerLevel reads the BlockWorld at Robot+0x34 unconditionally (0x00537360); the stack's
+        // BlockWorld is this VisionSystem's, so the lookup is installed wherever a VisionSystem is built.
+        robot.Cubes.ConnectedObjectIdForActiveId = World.ConnectedObjectIdForActiveId;
         // fidelity: M3-033, M3-034
         // VisionComponent::Init's FaceAlbum/Enrollment reads complete after Gate A, i.e. after
         // CozmoRobot.ConnectAsync returns and the caller builds this VisionSystem. The engine raises the result
@@ -823,14 +827,14 @@ public sealed class VisionSystem : IDisposable
         if (isColor)
         {
             // colour -> DecodeImageRGB + ImageCache::Reset(ImageRGB const&) (0x0087459E, RGB at +0x54)
-            if (!f.TryDecodeRgb(out var rgb, out var error)) { Log?.Invoke($"frame {f.ImageId}: {error}"); return null; }
+            if (!f.TryDecodeRgb(out var rgb, out _, Log)) return null;      // the helper's own logs (D2..D7) went to Log
             cache.Reset(rgb!, f.Width, f.Height);
         }
         else
         {
             // fidelity: M3-001
             // A6: a frame that does not decode (A8..A11, policy M3-020) is not processed.
-            if (!f.TryDecodeGray(out var gray, out var error)) { Log?.Invoke($"frame {f.ImageId}: {error}"); return null; }
+            if (!f.TryDecodeGray(out var gray, out _, Log)) return null;    // the helper's own logs (D2..D7) went to Log
             cache.Reset(gray!);
         }
         return ProcessCapture(cache, f.ImageId, f.Timestamp, removal);

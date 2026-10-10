@@ -568,6 +568,84 @@ public class ControlTests
         Assert.Same(cube, rig.Robot.Cubes.ByObjectId(7));
     }
 
+    /// <summary>
+    /// U4/U5 (0x00537156..0x005371A8): the cube battery byte becomes volts by an unsigned f32 conversion and a divide by 100f (0x42C80000), and the
+    /// percentage is 100 at 1.5 V or more, 0 at 1.0 V or less, else (V + -1) * 100 added to itself. The expected bits are the instructions applied
+    /// in binary32 (round-to-nearest, the Android default, the M1-029 assumption), through the live ObjectPowerLevel entry.
+    /// </summary>
+    [Theory]
+    [InlineData((byte)0, 0x00000000u, 0x00000000u)]
+    [InlineData((byte)99, 0x3F7D70A4u, 0x00000000u)]
+    [InlineData((byte)100, 0x3F800000u, 0x00000000u)]
+    [InlineData((byte)101, 0x3F8147AEu, 0x3FFFFFF0u)]
+    [InlineData((byte)110, 0x3F8CCCCDu, 0x41A00002u)]
+    [InlineData((byte)125, 0x3FA00000u, 0x42480000u)]
+    [InlineData((byte)133, 0x3FAA3D71u, 0x42840001u)]
+    [InlineData((byte)149, 0x3FBEB852u, 0x42C40000u)]
+    [InlineData((byte)150, 0x3FC00000u, 0x42C80000u)]
+    [InlineData((byte)255, 0x40233333u, 0x42C80000u)]
+    public void M4_008_U4_U5_TheCubeBatteryByteIsHundredthsOfAVoltAndTheEnginesPercentage(byte raw, uint voltBits, uint percentBits)
+    {
+        var rig = new Rig();
+        rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
+        rig.Send(new ObjectPowerLevel { ObjectID = 3, BatteryLevel = raw, MissedPackets = 0 });
+        var cube = rig.Robot.Cubes.ByObjectId(3)!;
+        Assert.Equal(voltBits, unchecked((uint)BitConverter.SingleToInt32Bits(cube.BatteryVolts!.Value)));
+        Assert.Equal(percentBits, unchecked((uint)BitConverter.SingleToInt32Bits(cube.BatteryPercent!.Value)));
+        Assert.Equal(0x42C80000, BitConverter.SingleToInt32Bits(100f));      // U4's divisor
+    }
+
+    /// <summary>
+    /// M4-008 A4..A11 (0x0053714E..0x00537360): every ObjectPowerLevel logs the Log line; the DAS report (the Report line and the event) is skipped only when
+    /// a report was made (the stored time is not 0), it was under 600 s ago ((now - then) >> 3 <= 0x4A on u32 seconds, so 599 skips and 600 reports) and at
+    /// most 0x200 more packets were missed (512 skips, 513 reports); a clock that went backwards wraps and reports. Only a report updates the two maps.
+    /// </summary>
+    [Fact]
+    public void M4_008_A4_A11_TheDasReportGateAndItsMaps()
+    {
+        var rig = new Rig();
+        var logs = new List<string>();
+        rig.Robot.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        void Power(uint active, uint missed, byte cv = 140) => rig.Send(new ObjectPowerLevel { ObjectID = active, MissedPackets = missed, BatteryLevel = cv });
+        int Reports() { lock (logs) return logs.Count(l => l.StartsWith("debug: RobotToEngine.ObjectPowerLevel.Report:")); }
+        void At(float seconds) => rig.Robot.Cubes.Seconds = () => seconds;
+
+        At(100.9f);
+        Power(7, 10);                                                       // first sighting: the stored time is 0
+        Assert.Contains("debug: RobotToEngine.ObjectPowerLevel.Log: RobotID 1 activeID 7 at 1.40V 80.00%", logs);
+        Assert.Contains("debug: RobotToEngine.ObjectPowerLevel.Report: Sending DAS report for robotID 1 activeID 7 now 100 then 0", logs);   // 100.9 truncates to 100
+        Assert.Contains("debug: [Events] robot.accessory_powerlevel: 7 1.40V (10 lost)", logs);
+        Assert.Equal(1, Reports());
+
+        At(699f);  Power(7, 10);  Assert.Equal(1, Reports());               // 599 s: (599 >> 3) = 0x4A, skipped
+        At(700f);  Power(7, 10);  Assert.Equal(2, Reports());               // 600 s: 75 > 0x4A, reported
+        Assert.Contains(logs, l => l.EndsWith("now 700 then 100"));
+        At(701f);  Power(7, 10 + 512);  Assert.Equal(2, Reports());         // 512 more missed: skipped
+        At(701f);  Power(7, 10 + 513);  Assert.Equal(3, Reports());         // 513: reported, and the stored count is now 523 / the time 701
+        Assert.Contains(logs, l => l.EndsWith("now 701 then 700"));
+        At(702f);  Power(7, 10 + 513 + 512);  Assert.Equal(3, Reports());   // measured from the last REPORT, not the last message
+        At(5f);    Power(7, 523);  Assert.Equal(4, Reports());              // the clock went back: now - then wraps, reported
+        At(5f);    Power(9, 0);   Assert.Equal(5, Reports());               // another activeID has its own entries
+    }
+
+    /// <summary>
+    /// M4-008 A12 without a world: nothing to search, so nothing is broadcast and the gap is visible (MISSING line). The lookup with a world: M4PowerLevelTests.
+    /// </summary>
+    [Fact]
+    public void M4_008_A12_WithoutAWorldNothingIsBroadcastAndTheGapIsVisible()
+    {
+        var rig = new Rig();
+        var logs = new List<string>();
+        var sent = new List<ObjectPowerLevel>();
+        rig.Robot.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.Robot.Cubes.PowerLevelBroadcast += sent.Add;
+        rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
+        rig.Send(new ObjectPowerLevel { ObjectID = 3, MissedPackets = 2, BatteryLevel = 120 });
+        Assert.Empty(sent);
+        Assert.Contains(logs, l => l.StartsWith("MISSING: HandleObjectPowerLevel 0x00537360"));
+        Assert.DoesNotContain(logs, l => l.Contains("ObjectPowerLevel.Broadcast"));
+    }
+
     [Fact]
     public void CubeTelemetryLandsOnTheConnectedCube()
     {

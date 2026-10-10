@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "dcd0f4e8a65a411f43d354c72fe6ae84cc57689cfdb948d8cb8aa72086ff6f0b",
+  "inventory_sha256": "1b2656550bce82915e698a140eb65c8e3a2398ee53c4495a888ee7fab333b1a0",
   "records": {
     "M4-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -92,7 +92,8 @@
         "SC2 UpdateRobotData 0x00634016..0x00634036",
         "U1 0x0051293C ldrb [r4,#0x29]; beq.w 0x512A8A (the only gate before the work)",
         "U3 0x00512986 ldr.w r0,[r4,#0x288]; 0x0051298C blx UpdateRobotData; origin check ContainsOriginID 0x00512C3E..0x00512C4A runs later",
-        "U4 0x0063401A..0x00634036 raw cliff to +0xE/+0x12, CLIFF_DETECTED to +6, timestamp to +8"
+        "U4 0x0063401A..0x00634036 raw cliff to +0xE/+0x12, CLIFF_DETECTED to +6, timestamp to +8",
+        "re-analysis/research/20261010-power-level-and-connect-log-rows.md A1..A16 and Addendum A13/C1..C7 (manager-adopted 2026-10-10): HandleObjectPowerLevel 0x00537130..0x00537402 - Log 0x005371CE, DAS gate with per-activeID maps this+0x138/+0x144 0x005371FA..0x0053726C, Report log 0x0053728C, DAS event robot.accessory_powerlevel 0x005372B2..0x00537324, map updates 0x00537348/0x00537358, connected-object lookup 0x00537360 -> BlockWorld::FindConnectedObjectHelper 0x0061F078, ObjectID getter 0x004EF772, Broadcast log 0x005373A2 and ObjectPowerLevel broadcast 0x005373C8..0x005373E4."
       ],
       "live_path": true,
       "hardware_required": false
@@ -120,7 +121,8 @@
         "D2 0x00517DD8 BroadcastAvailableObjects is the whole setter (strb [r0,#0x490]; bx lr)",
         "D3/D4 no other store in .text and no caller of the setter anywhere in the shipped engine",
         "D5 0x0051419A ObjectUnavailable is broadcast only when +0x490 is set; the node is erased either way (0x00514218)",
-        "D6 0x0053398E ObjectAvailable is also gated on +0x490 (M4-025)"
+        "D6 0x0053398E ObjectAvailable is also gated on +0x490 (M4-025)",
+        "re-analysis/research/20261010-power-level-and-connect-log-rows.md B1..B6 (manager-adopted 2026-10-10): ConnectToObjects pre-loop BlockPool info log 0x005173A6, streams 0x0051720C..0x00517354."
       ],
       "live_path": true,
       "hardware_required": false

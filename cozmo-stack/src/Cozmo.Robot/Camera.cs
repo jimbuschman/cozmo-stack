@@ -1,5 +1,4 @@
 using Cozmo.Protocol;
-using StbImageSharp;
 using StbImageWriteSharp;
 using Cozmo.Robot.Vision;
 
@@ -71,14 +70,14 @@ public sealed class CameraFrame
     public DateTime ReceivedUtc { get; init; } = DateTime.UtcNow;
 
     /// <summary><c>DecodeImageGray</c> (A8, A11): a 320 x 240 gray image, or false with the reason.</summary>
-    public bool TryDecodeGray(out GrayImage? image, out string? error) => EncodedImageDecoder.TryDecodeGray(this, out image, out error);
+    public bool TryDecodeGray(out GrayImage? image, out string? error, Action<string>? log = null) => EncodedImageDecoder.TryDecodeGray(this, out image, out error, log);
 
     /// <summary><c>DecodeImageRGB</c> (A9..A11): 320 x 240 RGB, row-major, 3 bytes a pixel, or false with the reason.</summary>
-    public bool TryDecodeRgb(out byte[]? rgb, out string? error) => EncodedImageDecoder.TryDecodeRgb(this, out rgb, out error);
+    public bool TryDecodeRgb(out byte[]? rgb, out string? error, Action<string>? log = null) => EncodedImageDecoder.TryDecodeRgb(this, out rgb, out error, log);
 
     // fidelity: M3-018
     /// <summary>
-    /// What <c>EncodedImage::Save</c> writes (A25): encoding 9 is decoded to RGB (A9, A10) and written as a JPEG at
+    /// What <c>EncodedImage::Save</c> writes (the Save presentation; the JPEG encoder itself is out of scope, unreachable): encoding 9 is decoded to RGB (A9, A10) and written as a JPEG at
     /// quality 90; encoding 8 is the reconstructed JPEG; any other encoding is the raw bytes. The JPEG writer is
     /// StbImageWriteSharp in place of OpenCV's, so the bytes are not the engine's. Throws
     /// <see cref="InvalidDataException"/> when a colour frame does not decode.
@@ -96,7 +95,7 @@ public sealed class CameraFrame
         return Encoding == MiniJpeg.EncodingJpegMinimizedGray ? Jpeg : RawPayload;
     }
 
-    /// <summary>Writes <see cref="PresentationJpeg"/> (A25).</summary>
+    /// <summary>Writes <see cref="PresentationJpeg"/>.</summary>
     public void Save(string path) => File.WriteAllBytes(path, PresentationJpeg());
     public override string ToString() =>
         $"CameraFrame #{ImageId} {Width}x{Height} {(IsColor ? "colour" : "gray")} chunks={ChunkCount} " +
@@ -105,38 +104,31 @@ public sealed class CameraFrame
 
 // fidelity: M3-001, M3-018, M3-020
 /// <summary>
-/// <c>EncodedImage::DecodeImageGray</c> and <c>DecodeImageRGB</c> (M3 inventory A7..A11; the 2026-09-29
-/// pre-extraction Part 1 item 2 gives every dispatch value, and the manager spot-checked the tbh/tbb tables and the
-/// cvtColor coefficient table).
+/// <c>EncodedImage::DecodeImageGray</c> and <c>DecodeImageRGB</c> (M3 inventory A7..A11, rows J1..J115): the live entry is
+/// <see cref="CameraFrame.TryDecodeGray"/> / <see cref="CameraFrame.TryDecodeRgb"/>, which hand the frame to
+/// <see cref="Cozmo.Robot.Vision.Jpeg.EncodedImageDecode"/> (the engine's dispatch around OpenCV: tbh 0x004F2898 and 0x004F21AE).
 ///
 /// <list type="bullet">
 /// <item><b>IsColor (I1, I2; tbb 0x004F2110).</b> 1, 5, 8 false; 2, 3, 4, 6, 7 true; above 8 true; encoding 0 takes
 /// the VERIFY-failure path (<c>sVerifyFailedReturnFalse</c> 0x004F2130) and logs <c>VERIFY(false): NoneImageEncoding</c>
 /// on the <c>EncodedImage.IsColor.UnsupportedImageEncoding</c> channel, and is false.</item>
-/// <item><b>Gray (Y0..Y8; <c>DecodeImageHelper&lt;Image&gt;</c> 0x004F287C, tbh 0x004F289C base 0x004F2898).</b> 1: the payload's
-/// <c>rows*cols</c> bytes copied as the image; 2: <c>rows*cols*3</c> bytes converted to gray with
-/// <c>Y = (4899*R + 9617*G + 1868*B + 8192) &gt;&gt; 14</c> (cvtColor code 7, Y4); 5, 6: <c>imdecode(flags 0)</c>;
-/// 7: the same, then 160 zero columns left and right; 8: the reconstructed gray JPEG decoded; 9: the half-width
-/// colour JPEG decoded to gray and resized to 320 x 240 by <see cref="ResizeLinear"/>. 0, 3, 4 and 10..255 take the
-/// <c>EncodedImage.DecodeImageRGB.UnsupportedEncoding</c> default (the literal says DecodeImageRGB even in the gray
-/// helper, Y1) and write no image.</item>
-/// <item><b>RGB (Z0..Z8; <c>DecodeImageHelper&lt;ImageRGB&gt;</c> 0x004F2184, tbh 0x004F21B2 base 0x004F21AE).</b> 1: the gray byte
-/// replicated into three channels (cvtColor code 8, Z7); 2: a straight copy with no channel swap (Z6); 5, 6:
-/// <c>imdecode(flags 1)</c> then cvtColor code 4 BGR2RGB; 7: the same, then the 160-column border; 8: the
-/// reconstructed gray JPEG decoded as colour; 9: the half-width colour JPEG decoded as colour and resized. 0, 3, 4
-/// and 10..255 take the same UnsupportedEncoding default.</item>
-/// <item><b>Check (A11).</b> The result must be 240 rows by 320 columns, otherwise BadDecode. For the raw cases 1 and
-/// 2 it is vacuous: the engine builds the Mat with exactly +0x18 x +0x14, the same constants it checks (Y2, Z6).</item>
+/// <item><b>Gray (Y0..Y8; <c>DecodeImageHelper&lt;Image&gt;</c> 0x004F287C).</b> 1: the payload's <c>rows*cols</c> bytes copied;
+/// 2: <c>rows*cols*3</c> bytes converted with cvtColor code 7; 5, 6: <c>imdecode(flags 0)</c>; 7: the same, then 160 zero columns
+/// left and right; 8: the reconstructed gray JPEG decoded; 9: the half-width colour JPEG decoded to gray and resized to
+/// 320 x 240; 0, 3, 4 and 10..255 take the <c>EncodedImage.DecodeImageRGB.UnsupportedEncoding</c> default.</item>
+/// <item><b>RGB (Z0..Z8; <c>DecodeImageHelper&lt;ImageRGB&gt;</c> 0x004F2184).</b> 1: gray replicated (cvtColor code 8); 2: a
+/// straight copy; 5, 6: <c>imdecode(flags 1)</c> then cvtColor code 4; 7: the same plus the 160-column border; 8: the gray JPEG
+/// decoded as colour; 9: the half-width colour JPEG decoded and resized.</item>
+/// <item><b>Check (A11, J38).</b> The result must be EncodedImage+0x18 rows by +0x14 columns (240 x 320, the only geometry
+/// AddChunk accepts), otherwise BadDecode.</item>
 /// </list>
-/// The raw cases read <c>rows*cols</c> (<c>*3</c>) bytes from the vector start with no length check (G2, Y2, Y3, Z6,
-/// Z7). The engine's missing bytes are stale or uninitialised heap, which no shipped artifact can derive, so this
-/// stack applies policy M3-037 (SD2): a short payload's missing bytes read as 0 and a long payload's extra bytes are
-/// ignored. The JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg (<c>cv::imdecode</c>): the geometry
-/// and the resize are the engine's; pixel values may differ in the last bit where the two decoders' IDCT, chroma
-/// upsampling and colour conversion round differently.
-/// MISSING: the empty-vector raw case (the engine's <c>Mat</c> constructor calls <c>cv::error(-215)</c> when
-/// <c>data == null</c>; whether that exception is caught above is not in the rows), and the exact rendering of a
-/// NULL <c>%s</c> argument for encodings above 9 (Z1's <c>sErrorF</c> was not read).
+/// The JPEG decode is the shipped libopencv_imgcodecs JpegDecoder (libjpeg 9) ported in <c>Vision/Jpeg</c>, the resize and the
+/// BGR2RGB swap are the shipped libopencv_imgproc ones; none of it uses StbImageSharp any more. The raw cases read
+/// <c>rows*cols</c> (<c>*3</c>) bytes from the vector start with no length check (G2, Y2, Y3, Z6, Z7); the engine's missing
+/// bytes are stale or uninitialised heap, which no shipped artifact can derive, so this stack applies policy M3-037 (SD2).
+/// MISSING (inventory): the disposition of a cv::Exception (empty JPEG vector, J114/J115) by the engine's caller, which the rows
+/// leave to M11; it is reported here as a failed decode carrying the shipped OpenCV text. The rendering of a NULL <c>%s</c>
+/// (EnumToString above 9) is the phone's printf and is not in the inventory.
 /// </summary>
 public static class EncodedImageDecoder
 {
@@ -175,289 +167,51 @@ public static class EncodedImageDecoder
 
     // fidelity: M3-001
     /// <summary>
-    /// <c>EncodedImage::DecodeImageGray</c> = <c>DecodeImageHelper&lt;Image&gt;</c> (Y0..Y8). See the class summary
-    /// for the dispatch and the raw-payload policy (M3-037).
+    /// <c>EncodedImage::DecodeImageGray</c> = <c>DecodeImageHelper&lt;Image&gt;</c> (Y0..Y8). See the class summary.
     /// </summary>
-    public static bool TryDecodeGray(CameraFrame f, out GrayImage? image, out string? error)
+    public static bool TryDecodeGray(CameraFrame f, out GrayImage? image, out string? error, Action<string>? log = null)
     {
         image = null;
-        int h = f.Height, w = f.Width;
-        byte[] pixels;
-        int rows, cols;
-        switch (f.Encoding)
-        {
-            case 1:                                     // Y2: Image(rows, cols, data); copy rows*cols
-                rows = h; cols = w;
-                pixels = CopyRaw(f.RawPayload, rows * cols);
-                break;
-            case 2:                                     // Y3, Y4: ImageRGB(rows, cols, data) then ToGray (cvtColor 7)
-                rows = h; cols = w;
-                pixels = RgbToGray(CopyRaw(f.RawPayload, rows * cols * 3), rows * cols);
-                break;
-            case 5 or 6:                                // Y5: imdecode(flags 0 = IMREAD_GRAYSCALE)
-                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
-                    return false;
-                break;
-            case 7:                                     // Y6: imdecode(flags 0) then copyMakeBorder(160, 160)
-                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
-                    return false;
-                pixels = AddZeroColumns(pixels, cols, rows, 1, 160);
-                cols += 320;
-                break;
-            case 8:                                     // Y7: MiniToJpegHelper(gray) then imdecode(flags 0)
-                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
-                    return false;
-                break;
-            case 9:                                     // Y7: half-width colour JPEG, imdecode(flags 0), Resize(1)
-                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.Grey, out pixels, out cols, out rows, out error))
-                    return false;
-                pixels = ResizeLinear(pixels, cols, rows, 1, w, h);
-                cols = w; rows = h;
-                break;
-            default:                                    // Y0, Y1: 0, 3, 4, 10..255
-                return Unsupported(f.Encoding, out error);
-        }
-        // A11/Y8: the result must be 240 x 320; for cases 1 and 2 this is vacuous (the Mat is built at that size).
-        // The gray tail loads the same "EncodedImage.DecodeImageRGB.BadDecode" string (0x004F2CF6 -> 0xBE497F).
-        if (rows != Rows || cols != Columns)
-            return Fail($"EncodedImage.DecodeImageRGB.BadDecode: Failed to decode {Columns}x{Rows} image from " +
-                        $"buffer. Got {cols}x{rows}", out error);
-        image = new GrayImage(cols, rows, pixels);
+        if (EmptyMiniReconstruction(f)) return PolicyFail(log, out error);
+        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeGray(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log);
+        if (!r.Ok) return Fail(r.Error!, out error);
+        image = new GrayImage(r.Image!.Cols, r.Image.Rows, r.Image.Data);
         error = null;
         return true;
     }
 
     // fidelity: M3-018
     /// <summary>
-    /// <c>EncodedImage::DecodeImageRGB</c> = <c>DecodeImageHelper&lt;ImageRGB&gt;</c> (Z0..Z8). See the class summary
-    /// for the dispatch and the raw-payload policy (M3-037).
+    /// <c>EncodedImage::DecodeImageRGB</c> = <c>DecodeImageHelper&lt;ImageRGB&gt;</c> (Z0..Z8). See the class summary.
     /// </summary>
-    public static bool TryDecodeRgb(CameraFrame f, out byte[]? rgb, out string? error)
+    public static bool TryDecodeRgb(CameraFrame f, out byte[]? rgb, out string? error, Action<string>? log = null)
     {
         rgb = null;
-        int h = f.Height, w = f.Width;
-        byte[] pixels;
-        int rows, cols;
-        switch (f.Encoding)
-        {
-            case 1:                                     // Z7: Image(rows, cols, data) then ImageRGB(const Image&)
-                rows = h; cols = w;                     //     -> SetFromGray, cvtColor code 8 GRAY2BGR
-                pixels = GrayToRgb(CopyRaw(f.RawPayload, rows * cols), rows * cols);
-                break;
-            case 2:                                     // Z6: ImageRGB(rows, cols, data) then CopyTo, no swap
-                rows = h; cols = w;
-                pixels = CopyRaw(f.RawPayload, rows * cols * 3);
-                break;
-            case 5 or 6 or 7 or 8 or 9:
-            {
-                // Z2/Z3/Z4/Z5: imdecode(flags 1 = IMREAD_COLOR), which the engine follows with cvtColor code 4
-                // (BGR2RGB). StbImageSharp's RedGreenBlue is already RGB, so the net order matches.
-                if (!TryJpeg(f.Jpeg, StbImageSharp.ColorComponents.RedGreenBlue, out pixels, out cols, out rows, out error))
-                    return false;
-                if (f.Encoding == 7)
-                {
-                    pixels = AddZeroColumns(pixels, cols, rows, 3, 160);
-                    cols += 320;
-                }
-                else if (f.Encoding == 9)
-                {
-                    pixels = ResizeLinear(pixels, cols, rows, 3, w, h);
-                    cols = w; rows = h;
-                }
-                break;
-            }
-            default:                                    // Z0, Z1: 0, 3, 4, 10..255
-                return Unsupported(f.Encoding, out error);
-        }
-        // Z8/A11: the result must be 240 x 320; for cases 1 and 2 this is vacuous.
-        if (rows != Rows || cols != Columns)
-            return Fail($"EncodedImage.DecodeImageRGB.BadDecode: Failed to decode {Columns}x{Rows} image from " +
-                        $"buffer. Got {cols}x{rows}", out error);
-        rgb = pixels;
+        if (EmptyMiniReconstruction(f)) return PolicyFail(log, out error);
+        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeRgb(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log);
+        if (!r.Ok) return Fail(r.Error!, out error);
+        rgb = r.Image!.Data;
         error = null;
         return true;
     }
 
-    /// <summary>
-    /// Y1/Z1: the default and unsupported cases (0, 3, 4, 10..255) log
-    /// <c>EncodedImage.DecodeImageRGB.UnsupportedEncoding</c> / "Encoding %s not yet supported for decoding image
-    /// chunks" and return failure with no image. The literal says DecodeImageRGB even in the gray helper.
-    /// <c>EnumToString</c> returns NULL above 9; this stack writes "null" there (Z1 leaves the rendering open).
-    /// </summary>
-    private static bool Unsupported(byte encoding, out string? error)
-        => Fail($"EncodedImage.DecodeImageRGB.UnsupportedEncoding: Encoding {EnumToString(encoding)} not yet " +
-                "supported for decoding image chunks", out error);
+    // fidelity: M3-020
+    /// <summary>Policy M3-020: an empty or all-0xFF mini payload gives no reconstruction (the engine reads data[-1]); it is a decode failure.</summary>
+    private static bool EmptyMiniReconstruction(CameraFrame f)
+        => f.Jpeg.Length == 0 && f.Encoding is MiniJpeg.EncodingJpegMinimizedGray or MiniJpeg.EncodingJpegMinimizedColor;
 
-    /// <summary>The names in <c>EnumToString(ImageEncoding)</c> for 0..9 (pointer table 0x01034A60); NULL above 9.</summary>
-    private static string EnumToString(byte encoding) => encoding switch
-    {
-        0 => "NoneImageEncoding",
-        1 => "RawGray",
-        2 => "RawRGB",
-        3 => "YUYV",
-        4 => "BAYER",
-        5 => "JPEGGray",
-        6 => "JPEGColor",
-        7 => "JPEGColorHalfWidth",
-        8 => "JPEGMinimizedGray",
-        9 => "JPEGMinimizedColor",
-        _ => "null",
-    };
+    // fidelity: M3-020 (the visible line is part of the policy record)
+    private const string EmptyMiniMessage = "EncodedImage.Decode: empty payload (policy M3-020)";
 
-    // fidelity: M3-037
-    /// <summary>
-    /// SD2 policy M3-037: the engine reads <paramref name="need"/> bytes from the vector start with no length check
-    /// (Y2, Y3, Z6, Z7). A short payload's missing bytes are stale or uninitialised heap, which no shipped artifact
-    /// can derive, so they read as 0 here; a long payload's extra bytes are ignored.
-    /// </summary>
-    private static byte[] CopyRaw(byte[] payload, int need)
+    // The policy failure is not an engine log line (the engine reads data[-1] here); it is reported through the same sink as a warning so that the
+    // policy is visible when it fires, and returned as the failure text.
+    private static bool PolicyFail(Action<string>? log, out string? error)
     {
-        var dst = new byte[need];
-        Array.Copy(payload, dst, Math.Min(payload.Length, need));
-        return dst;
-    }
-
-    // fidelity: M3-001
-    /// <summary>
-    /// Y4: cvtColor code 7 (COLOR_RGB2GRAY), 8U, the static coefficient triple at rodata 0xE2AB0 = {4899, 9617,
-    /// 1868}: <c>Y = (4899*R + 9617*G + 1868*B + 8192) &gt;&gt; 14</c> with an arithmetic shift, R the source byte 0
-    /// (the payload is RGB order). The sum of three non-negative ints cannot overflow.
-    /// </summary>
-    private static byte[] RgbToGray(byte[] rgb, int pixels)
-    {
-        var gray = new byte[pixels];
-        for (int i = 0; i < pixels; i++)
-        {
-            int r = rgb[3 * i], g = rgb[3 * i + 1], b = rgb[3 * i + 2];
-            gray[i] = (byte)((4899 * r + 9617 * g + 1868 * b + 8192) >> 14);
-        }
-        return gray;
-    }
-
-    // fidelity: M3-018
-    /// <summary>Z7: cvtColor code 8 (COLOR_GRAY2BGR) replicates the gray byte into all three channels.</summary>
-    private static byte[] GrayToRgb(byte[] gray, int pixels)
-    {
-        var rgb = new byte[pixels * 3];
-        for (int i = 0; i < pixels; i++)
-        {
-            byte v = gray[i];
-            rgb[3 * i] = v; rgb[3 * i + 1] = v; rgb[3 * i + 2] = v;
-        }
-        return rgb;
-    }
-
-    /// <summary>Y6/Z3: copyMakeBorder(0, 0, left = right = 160, BORDER_CONSTANT, Scalar zeros).</summary>
-    private static byte[] AddZeroColumns(byte[] src, int cols, int rows, int channels, int each)
-    {
-        int newCols = cols + 2 * each;
-        var dst = new byte[rows * newCols * channels];
-        int rowBytes = cols * channels, newRowBytes = newCols * channels, pad = each * channels;
-        for (int y = 0; y < rows; y++)
-            Array.Copy(src, y * rowBytes, dst, y * newRowBytes + pad, rowBytes);
-        return dst;
-    }
-
-    private static bool TryJpeg(byte[] jpeg, StbImageSharp.ColorComponents components, out byte[] pixels,
-                                out int width, out int height, out string? error)
-    {
-        pixels = Array.Empty<byte>(); width = height = 0;
-        // policy M3-020: an empty or all-0xFF payload has no JPEG at all
-        if (jpeg.Length == 0) return Fail("EncodedImage.Decode: empty payload (policy M3-020)", out error);
-        try
-        {
-            var img = ImageResult.FromMemory(jpeg, components);
-            // fidelity: M3-018
-            // The engine's imdecode (0x004F21DC) returns a cv::Mat that the next call, cv::cvtColor code 4
-            // (0x004F2250), asserts is not empty. The stack has no explicit engine check to port here (the
-            // address is the cvtColor call); an empty decode is rejected instead of reaching the assert. The
-            // exact OpenCV assert text is not in the inventory.
-            if (img.Width == 0 || img.Height == 0)
-                return Fail("EncodedImage.Decode: the JPEG decoded to an empty Mat; the engine's cv::cvtColor (0x004F2250) asserts on it (M3-018)", out error);
-            pixels = img.Data; width = img.Width; height = img.Height;
-            error = null;
-            return true;
-        }
-        catch (Exception e) when (e is InvalidOperationException or ArgumentException or IndexOutOfRangeException or NullReferenceException)
-        {
-            // The engine's imdecode leaves an empty Mat and cv::cvtColor (0x004F2250) asserts; this stack
-            // rejects the frame rather than reproduce the OpenCV assert (M3-018). The .NET message is not
-            // the engine's.
-            return Fail("EncodedImage.Decode: the JPEG did not decode; the engine's cv::cvtColor (0x004F2250) asserts on the empty Mat (M3-018)", out error);
-        }
+        log?.Invoke("warning: " + EmptyMiniMessage);
+        return Fail(EmptyMiniMessage, out error);
     }
 
     private static bool Fail(string why, out string? error) { error = why; return false; }
-
-    // fidelity: M3-018
-    /// <summary>
-    /// <c>cv::resize(src, dst, Size(dstCols, dstRows), 0, 0, INTER_LINEAR)</c> for 8-bit images (A10), as OpenCV's
-    /// generic fixed-point path computes it:
-    /// <list type="bullet">
-    /// <item>pixel-centre mapping, <c>f = (d + 0.5) * (src / dst) - 0.5</c> in float, <c>s = floor(f)</c>, weight
-    /// <c>f - s</c>;</item>
-    /// <item>horizontally, a source index below 0 or at or past the last column is clamped with weight 0;
-    /// vertically the two rows are clamped into the image and the weights kept;</item>
-    /// <item>weights scaled by 2048 (INTER_RESIZE_COEF_BITS 11) and rounded to the nearest short, half to even;</item>
-    /// <item>the horizontal pass in int, the vertical pass <c>(b0 * r0 + b1 * r1 + (1 &lt;&lt; 21)) &gt;&gt; 22</c>,
-    /// saturated to 0..255.</item>
-    /// </list>
-    /// OpenCV's SIMD vertical pass rounds differently for weights that are not exact in 11 bits. The engine's resize
-    /// here is 160 → 320 columns and 240 → 240 rows, whose weights (0.75/0.25 and 1/0) are exact, and for which every
-    /// path gives <c>(3a + b + 2) &gt;&gt; 2</c> between neighbours and the edge pixel itself at the first and last column.
-    /// </summary>
-    public static byte[] ResizeLinear(byte[] src, int srcCols, int srcRows, int channels, int dstCols, int dstRows)
-    {
-        const int CoefScale = 1 << 11;
-        double scaleX = (double)srcCols / dstCols, scaleY = (double)srcRows / dstRows;
-
-        var xofs = new int[dstCols];
-        var ax = new short[dstCols * 2];
-        for (int dx = 0; dx < dstCols; dx++)
-        {
-            float fx = (float)((dx + 0.5) * scaleX - 0.5);
-            int sx = (int)Math.Floor(fx);
-            fx -= sx;
-            if (sx < 0) { fx = 0; sx = 0; }
-            if (sx >= srcCols - 1) { fx = 0; sx = srcCols - 1; }
-            xofs[dx] = sx;
-            ax[2 * dx] = SatShort((1f - fx) * CoefScale);
-            ax[2 * dx + 1] = SatShort(fx * CoefScale);
-        }
-
-        var dst = new byte[dstCols * dstRows * channels];
-        var r0 = new int[dstCols * channels];
-        var r1 = new int[dstCols * channels];
-        for (int dy = 0; dy < dstRows; dy++)
-        {
-            float fy = (float)((dy + 0.5) * scaleY - 0.5);
-            int sy = (int)Math.Floor(fy);
-            fy -= sy;
-            short b0 = SatShort((1f - fy) * CoefScale), b1 = SatShort(fy * CoefScale);
-            HResize(src, srcCols, Math.Clamp(sy, 0, srcRows - 1), channels, xofs, ax, r0);
-            HResize(src, srcCols, Math.Clamp(sy + 1, 0, srcRows - 1), channels, xofs, ax, r1);
-            int o = dy * dstCols * channels;
-            for (int i = 0; i < r0.Length; i++)
-            {
-                int v = (b0 * r0[i] + b1 * r1[i] + (1 << 21)) >> 22;
-                dst[o + i] = (byte)Math.Clamp(v, 0, 255);
-            }
-        }
-        return dst;
-    }
-
-    private static void HResize(byte[] src, int srcCols, int row, int cn, int[] xofs, short[] ax, int[] outRow)
-    {
-        int rowBase = row * srcCols * cn;
-        for (int dx = 0; dx < xofs.Length; dx++)
-        {
-            int sx = xofs[dx], sx1 = Math.Min(sx + 1, srcCols - 1);
-            for (int c = 0; c < cn; c++)
-                outRow[dx * cn + c] = src[rowBase + sx * cn + c] * ax[2 * dx] + src[rowBase + sx1 * cn + c] * ax[2 * dx + 1];
-        }
-    }
-
-    private static short SatShort(float v) => (short)Math.Clamp(Math.Round(v, MidpointRounding.ToEven), short.MinValue, short.MaxValue);
 }
 
 /// <summary>

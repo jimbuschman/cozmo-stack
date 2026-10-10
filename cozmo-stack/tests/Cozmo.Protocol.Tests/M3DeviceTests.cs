@@ -15,6 +15,7 @@ namespace Cozmo.Protocol.Tests;
 /// inventory (Appendix A rows A*, B*, C*; Appendix B rows 1a..1q, 2a..2f, 3a..3b), named in each test, never from what
 /// the code returns.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]
 public class M3DeviceTests
 {
     [Fact]
@@ -157,17 +158,17 @@ public class M3DeviceTests
 
     // Opus M3-031: shared resend helper 00645C6A; write caller 006431A2.
     [Theory]
-    [InlineData((byte)1, "NVOP_WRITE")]
-    [InlineData((byte)2, "NVOP_ERASE")]
-    [InlineData((byte)3, "NVOP_WIPEALL")]
-    public void M3_031_CheckedWriteFamilyRetryLogsAndExhaustion(byte op, string opName)
+    [InlineData((byte)2, "NVOP_ERASE", "0x182000", "0x182000")]      // saved tag = the erase tag (WB3); the ack's r8 is the message tag
+    [InlineData((byte)3, "NVOP_WIPEALL", "0x0", "0x198000")]        // WB8: saved tag 0; WD2: a WIPEALL ack's tag is 0x198000 (the write chunk: M3_043_WD7_*)
+    public void M3_031_CheckedWriteFamilyRetryLogsAndExhaustion(byte op, string opName, string savedTag, string ackTag)
     {
         using var rig = new Rig();
         rig.ToSuccess();
         DrainCalibrationRead(rig);
         var nv = rig.Robot.Engine.NvStorage!;
         NvResult? completion = null;
-        nv.Request(0x182000, 1, op, new byte[] { 0x12 }, r => completion = r);
+        if (op == NvStorageComponent.OpErase) nv.Erase(0x182000, r => completion = r);
+        else nv.WipeAll(r => completion = r);
         rig.Tick();
         int initial = NvCommands(rig).Count;
         int logStart = nv.Log.Count;
@@ -177,18 +178,704 @@ public class M3DeviceTests
             rig.Tick();
             Assert.Null(completion);
             Assert.Equal(initial + attempt, NvCommands(rig).Count);
-            Assert.Contains($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x182000, Op: {opName}, Attempt: {attempt}", nv.Log);
-            Assert.Contains($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x182000 resent due to NV_LOOP, op: {opName}", nv.Log);
+            Assert.Contains($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: {savedTag}, Op: {opName}, Attempt: {attempt}", nv.Log);
+            Assert.Contains($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag {ackTag} resent due to NV_LOOP, op: {opName}", nv.Log);
         }
         rig.Data(new NVOpResult { Tag = 0x182000, Op = op, Result = -8 });
         rig.Tick();
         Assert.Equal(-8, completion!.Value.Result);
         Assert.Equal(initial + 7, NvCommands(rig).Count);
-        Assert.Contains($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x182000, Op: {opName}, Attempts: 8", nv.Log);
+        Assert.Contains($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: {savedTag}, Op: {opName}, Attempts: 8", nv.Log);
         var retryLogs = nv.Log.Skip(logStart).Where(l => l.Contains("ResendLastCommand") || l.Contains("ResentFailedWrite")).ToArray();
         Assert.Equal(15, retryLogs.Length); // Retry then ResentFailedWrite, seven pairs; final exceeded
         Assert.Contains(".Retry:", retryLogs[0]);
         Assert.Contains(".ResentFailedWrite:", retryLogs[1]);
+    }
+
+    // ================================================================== B-M3M4 build: the NV saved command (M3-027 N1..N13),
+    // the completion order (M3-030 R, M3-031 W) and the retry error flag (M3-031 N9). Every expected value is a number or text
+    // from the cited instructions of libcozmoEngine.so; the tests drive the live reply entry (Engine.Tick, NVOpResult).
+
+    private static byte[] Pattern(int n)
+    {
+        var b = new byte[n];
+        for (int i = 0; i < n; i++) b[i] = (byte)(1 + i * 7);
+        return b;
+    }
+
+    /// <summary>Writes through the live entry: Update state 0 sends it, the ack completes it, the component is idle again.</summary>
+    private static void WriteAndAck(Rig rig, uint tag, byte[] data)
+    {
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? done = null;
+        Assert.Equal(1, nv.Write(tag, data, r => done = r));
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = tag, Op = NvStorageComponent.OpWrite, Result = 0 });
+        rig.Tick();
+        Assert.NotNull(done);
+    }
+
+    private static NVCommand ReadAndGetCommand(Rig rig, uint tag, Action<NvResult>? callback = null)
+    {
+        rig.Robot.Engine.NvStorage!.Read(tag, callback);
+        rig.Tick();
+        return NvCommands(rig)[^1];
+    }
+
+    /// <summary>N1 (0x006428AE..0x006428B4: strd 0,0,[+0xE8]; str 0,[+0xF0]) and N13 (0x0064536A: Length = 0x400, a constant): a READ before any WRITE has no Data.</summary>
+    [Fact]
+    public void M3_027_N1_N13_AReadBeforeAnyWriteCarriesNoData()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var cmd = ReadAndGetCommand(rig, 0x182000);
+        Assert.Empty(cmd.Data);
+        Assert.Equal(0x400, cmd.Length);
+        Assert.Equal(0, cmd.Unknown);                       // +0xE5, written only by the constructor (0x006428AA)
+    }
+
+    /// <summary>
+    /// N5..N8 (0x00645822..0x00645988), the chunk assembly (the live write path drives it one chunk per Update, M3_043_WB15_*), exercised directly. A one-chunk payload leaves the 16-byte header and the payload; the header is the magic 0x435A4D4F little-endian,
+    /// a zero u32, the source length and a zero u16 at byte 12 (0x00645860..0x0064587E). Bytes 14 and 15 are never written (N6), so they are not
+    /// asserted. The saved Length is the vector's size (0x00645918).
+    /// </summary>
+    [Theory]
+    [InlineData(100, 116)]
+    [InlineData(1008, 1024)]       // 0x3F0 payload bytes after the header: still one chunk (0x0064588A..0x00645898)
+    public void M3_027_N5_N8_AOneChunkAssemblyIsTheHeaderAndThePayload(int payload, int expectedDataLength)
+    {
+        var data = Pattern(payload);
+        var saved = new NvStorageComponent.SavedCommand();
+        int taken = saved.AssembleWriteChunk(0x182000, data, 0, factoryDataFlag: false);
+        Assert.Equal(payload, taken);
+        Assert.Equal(expectedDataLength, saved.Data.Length);
+        Assert.Equal(expectedDataLength, saved.Length);
+        var expectedHeader = new byte[] { 0x4F, 0x4D, 0x5A, 0x43, 0, 0, 0, 0, (byte)(payload & 0xFF), (byte)(payload >> 8), 0, 0, 0, 0 };
+        Assert.Equal(expectedHeader, saved.Data[..14]);
+        Assert.Equal(data, saved.Data[16..]);
+        Assert.Equal(NvStorageComponent.OpWrite, saved.Op);
+        Assert.Equal(0x182000u, saved.Tag);
+        Assert.Equal(new[] { 14, 15 }, NvStorageComponent.HeaderNeverWrittenBytes);
+    }
+
+    /// <summary>
+    /// N5..N7: the first chunk is min(remaining, 0x3F0) after the header, later ones min(remaining, 0x400) with no header, and each replaces the
+    /// vector's contents (0x00645766, 0x00645840..0x00645898).
+    /// </summary>
+    [Theory]
+    [InlineData(1009, 1008, 1)]
+    [InlineData(2500, 1008, 1024)]
+    public void M3_027_N5_N7_ChunksAreSizedAndEachReplacesTheVector(int payload, int firstChunk, int secondChunk)
+    {
+        var data = Pattern(payload);
+        var saved = new NvStorageComponent.SavedCommand();
+        Assert.Equal(firstChunk, saved.AssembleWriteChunk(0x182000, data, 0, false));
+        Assert.Equal(16 + firstChunk, saved.Data.Length);
+        Assert.Equal(secondChunk, saved.AssembleWriteChunk(0x182400, data, firstChunk, false));
+        Assert.Equal(data[firstChunk..(firstChunk + secondChunk)], saved.Data);      // no header, the first chunk is gone
+        Assert.Equal(0x182400u, saved.Tag);
+    }
+
+    /// <summary>
+    /// N9 (0x00645CD4..0x00645CEE): a resend copies the saved header and the saved Data, so the retransmitted READ is the first one.
+    /// The Retry log names the saved tag and op (0x00645C88..0x00645C8E).
+    /// </summary>
+    [Fact]
+    public void M3_027_N9_AResendCarriesTheSavedHeaderAndData()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var first = ReadAndGetCommand(rig, 0x182000, _ => { });
+        int count = NvCommands(rig).Count;
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -8 });
+        rig.Tick();
+        var cmds = NvCommands(rig);
+        Assert.Equal(count + 1, cmds.Count);
+        var resent = cmds[^1];
+        Assert.Equal((first.Tag, first.Length, first.Op, first.Unknown), (resent.Tag, resent.Length, resent.Op, resent.Unknown));
+        Assert.Equal(first.Data, resent.Data);
+        Assert.Empty(resent.Data);
+        Assert.Contains("info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x182000, Op: NVOP_READ, Attempt: 1", rig.Robot.Engine.NvStorage!.Log);
+    }
+
+    /// <summary>
+    /// N10 (0x00643888..0x006438BC): the re-request stores the response tag, op 0 and Length = total + 16 into the saved header and
+    /// copies the saved Data; a reply never repopulates it. A later resend (N9) sends the re-request again.
+    /// </summary>
+    [Fact]
+    public void M3_027_N10_TheRestRequestAndALaterResendCarryTheSavedData()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        ReadAndGetCommand(rig, 0x182000, _ => { });
+        var blob = new byte[16 + 100];
+        NvHeader(0x800, 0x435A4D4F).CopyTo(blob, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = NvStorageComponent.ResultMore, Length = 0, Data = blob });
+        rig.Tick();
+        var rest = NvCommands(rig)[^1];
+        Assert.Equal(0x810, rest.Length);
+        Assert.Equal(0x182000u, rest.Tag);
+        Assert.Empty(rest.Data);                              // the saved vector, not the 100 bytes the reply carried
+        int count = NvCommands(rig).Count;
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -8 });
+        rig.Tick();
+        var resent = NvCommands(rig)[^1];
+        Assert.Equal(count + 1, NvCommands(rig).Count);
+        Assert.Equal(0x810, resent.Length);                   // the saved header was changed by the re-request
+        Assert.Equal(rest.Data, resent.Data);
+    }
+
+    /// <summary>
+    /// N2 (0x00642B52..0x00642B60) and N11 (0x0064575A..0x006457BC): SetState(0) clears only +0x48, +0x1C and +0x78, and the timeout
+    /// invokes the callback and sets state 0, so neither a completion nor a timeout clears the saved Data.
+    /// </summary>
+    [Fact]
+    public void M3_027_N2_N11_ACompletionAndATimeoutLeaveTheSavedData()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 1000, PoseOriginId = 1 });
+        rig.Tick();
+        var nv = rig.Robot.Engine.NvStorage!;
+        var first = ReadAndGetCommand(rig, 0x182000, _ => { });
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -1 });             // a completion
+        rig.Tick();
+        NvResult? got = null;
+        var second = ReadAndGetCommand(rig, 0x182000, r => got = r);
+        Assert.Equal(first.Data, second.Data);
+        rig.Data(new RobotState { Timestamp = 7000, PoseOriginId = 1 });             // past the 5 s deadline: the timeout
+        rig.Tick();
+        Assert.Equal(-4, got!.Value.Result);
+        var third = ReadAndGetCommand(rig, 0x182000);
+        Assert.Equal(first.Data, third.Data);
+        Assert.Empty(third.Data);
+    }
+
+    /// <summary>N12 (0x00643F26..0x00643F44) and N1: a removed robot's component frees the saved Data; the next one starts with none.</summary>
+    [Fact]
+    public void M3_027_N12_N1_ADisconnectFreesTheSavedData()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        nv.OnDisconnected();
+        Assert.Empty(ReadAndGetCommand(rig, 0x182000).Data);
+    }
+
+    /// <summary>N4 (0x006453B8..0x006453D2): after the send, ProcessRequest logs "StartTag: 0x%x, Length: %u" with the saved tag and length.</summary>
+    [Fact]
+    public void M3_027_N4_TheReadSendLogsItsSavedTagAndLength()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        ReadAndGetCommand(rig, 0x182000);
+        Assert.Contains("debug: NVStorageComponent.ProcessRequest.SendingRead: StartTag: 0x182000, Length: 1024", rig.Robot.Engine.NvStorage!.Log);
+    }
+
+    /// <summary>
+    /// W2 (0x00643384..0x00643420) in the engine's order: the broadcast (+0x40) - one BroadcastNVStorageOpResult whatever the result's
+    /// sign (tag, result, op, index 0, no data) - then the debug log 0x006433C6 and the callback (+0x38), then the backup call
+    /// (WriteDataForTag(tag, result, op == 1), an M15 recipient this stack does not have, so the MISSING line stands in for it).
+    /// </summary>
+    [Theory]
+    [InlineData((sbyte)0)]
+    [InlineData((sbyte)-6)]
+    public void M3_031_W2_AWriteCompletionBroadcastsThenRunsTheCallbackThenTheBackup(sbyte result)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var order = new List<string>();
+        var broadcasts = new List<NVStorageOpResult>();
+        nv.NVStorageOpResultBroadcast += b => { order.Add("broadcast"); broadcasts.Add(b); };
+        nv.Erase(0x182000, r => order.Add("callback:" + nv.Log[^1]), broadcast: true);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = result });
+        rig.Tick();
+        Assert.Equal(new[] { "broadcast", "callback:debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_GameUnlocks" }, order);
+        var b0 = Assert.Single(broadcasts);
+        Assert.Equal((0x182000u, NvStorageComponent.OpErase, result, 0), (b0.Tag, b0.Op, b0.Result, b0.Index));
+        Assert.Empty(b0.Data);
+        var log = nv.Log;
+        int cb = log.ToList().FindIndex(l => l.Contains("ExecutingWriteCallback"));
+        int backup = log.ToList().FindIndex(l => l.StartsWith("MISSING: RobotDataBackupManager::WriteDataForTag(0x182000, " + result + ", False)"));
+        Assert.True(cb >= 0 && backup > cb, "the backup call follows the callback");
+    }
+
+    /// <summary>
+    /// R1 (0x0064302C..0x00643034): a WIPEALL response (op 3) is normalised to 0x198000, so the callback is named NVEntry_NEXT_SLOT
+    /// (EnumToString 0x007CEF34..0x007CF06C) and W2 passes that tag to the broadcast; the backup call is WipeAll (0x00643406).
+    /// </summary>
+    [Fact]
+    public void M3_030_R1_M3_031_W2_AWipeAllResponseIsNamedByTheSentinelTag()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var broadcasts = new List<NVStorageOpResult>();
+        nv.NVStorageOpResultBroadcast += broadcasts.Add;
+        nv.Request(0x182000, 0, NvStorageComponent.OpWipeAll, Array.Empty<byte>(), _ => { }, broadcast: true);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpWipeAll, Result = 0 });
+        rig.Tick();
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_NEXT_SLOT", nv.Log);
+        Assert.Equal(0x198000u, Assert.Single(broadcasts).Tag);
+        Assert.Contains(nv.Log, l => l.StartsWith("MISSING: RobotDataBackupManager::WipeAll"));
+    }
+
+    /// <summary>
+    /// R3 (0x006437BE..0x006437D2) and N9 (0x00645D62..0x00645D76): after sErrorF the engine stores _errG and then calls the debug-break
+    /// gate, for the 1000-chunk bound of the read broadcast and for the exhausted retry counter.
+    /// </summary>
+    [Fact]
+    public void M3_030_R3_M3_031_N9_TheErrorFlagIsStoredByTheLoopBoundAndByExhaustedRetries()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        EngineErrorState.ErrorFlagSet = false;
+        nv.Read(0x80010000, null, null, broadcast: true);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x80010000, Op = 0, Result = 0, Length = 999, Data = new byte[1024] });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.Contains("LoopBoundOverflow"));
+        Assert.True(EngineErrorState.ErrorFlagSet);
+
+        EngineErrorState.ErrorFlagSet = false;
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        for (int i = 0; i < 7; i++) { rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -8 }); rig.Tick(); }
+        Assert.False(EngineErrorState.ErrorFlagSet);          // seven resends: no error yet
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -8 });
+        rig.Tick();
+        Assert.Contains("error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x182000, Op: NVOP_READ, Attempts: 8", nv.Log);
+        Assert.True(EngineErrorState.ErrorFlagSet);
+        EngineErrorState.ErrorFlagSet = false;
+    }
+
+    /// <summary>
+    /// G1 (0x00513C5C..0x00513C62, 0x00513DA6..0x00513DC2): until the first full state is handled Robot::Update logs the channeled debug
+    /// line "Waiting for first full robot state to be handled" and returns. G2 (0x00513C7E..0x00513C9A): a non-zero UpdateAllResults
+    /// warns Robot.Update.VisionComponentUpdateFail (empty format) and returns.
+    /// </summary>
+    [Fact]
+    public void M3_032_G1_G2_RobotUpdateLogsItsTwoGates()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var logs = new List<string>();
+        rig.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.Tick();
+        Assert.Contains("debug: Robot.Update: Waiting for first full robot state to be handled", logs);
+        logs.Clear();
+        SendFirstFullState(rig);
+        logs.Clear();
+        rig.Tick();
+        Assert.DoesNotContain("debug: Robot.Update: Waiting for first full robot state to be handled", logs);
+        rig.Engine.VisionUpdateAllResultsFailed = () => true;
+        rig.Tick();
+        Assert.Contains("warning: Robot.Update.VisionComponentUpdateFail: ", logs);
+    }
+
+    /// <summary>
+    /// R4 (0x004D7F40..0x004D7FC6, the pair tables at 0x00C81014 and 0x00C81064, read from the binary) and R5 (0x00643C76..0x00643CE0): the finite key
+    /// universe is 10 non-factory keys, 23 factory keys, and 0xDE000 and 0xDE030 from InitSizeTable. R6 (0x006441F8..0x00644340, EnumToString
+    /// 0x007CEE38..0x007CF0A8): normalising any of them returns the key itself and every one has a name, so the callback's "%s" is never null.
+    /// </summary>
+    [Fact]
+    public void M3_030_R4_R5_R6_EveryInitialisedKeyIsItsOwnBaseAndHasAName()
+    {
+        var keys = new uint[]
+        {
+            0x180000, 0x181000, 0x182000, 0x183000, 0x184000, 0x194000, 0x195000, 0x196000, 0x197000, 0x198000,            // R4: the normal pairs
+            0x80000000, 0x80000001, 0x80000002, 0x80000003, 0x80000004, 0x80000005, 0x80000006, 0x80000007, 0x80000008,
+            0x80000010, 0x80000011, 0x80000012, 0x80010000, 0x80020000, 0x80030000, 0x80040000, 0x80050000, 0x80060000,
+            0x80100000, 0x80110000, 0xC0000000, 0xC0000001, 0xC0000004,                                                    // R4: the factory pairs
+            0xDE000, 0xDE030,                                                                                              // R5
+        };
+        foreach (uint key in keys)
+        {
+            Assert.Equal(key, NvStorageComponent.GetBaseEntryTag(key));
+            Assert.NotNull(NvStorageComponent.NvEntryTagName(key));
+        }
+    }
+
+    // ================================================================== M3-043: the NV write side (rows WA1..WA15, WB1..WB21, WC1..WC5, WD1..WD9 of
+    // research/20261010-nv-write-dispatch-rows.md). Expected values are the rows' addresses, texts and numbers, through the live engine entry.
+
+    private static string[] LogSince(NvStorageComponent nv, int start) => nv.Log.Skip(start).ToArray();
+
+    /// <summary>Synchronises the robot clock (robot+0x2C) to <paramref name="timestamp"/> through a RobotState, as a connected robot does.</summary>
+    private static void SetRobotClock(Rig rig, uint timestamp)
+    {
+        rig.Data(new RobotState { Timestamp = timestamp, PoseOriginId = 1 });
+        rig.Tick();
+    }
+
+    /// <summary>
+    /// WA6, WA9, WA11 (0x00644520..0x006446B8, 0x006446F0..0x0064471E): every check is evaluated; an invalid tag warns InvalidTag with the name and the
+    /// tag, the size check still runs (GetMaxSizeForEntryTag warns for a tag with no key), and the failure broadcasts (-6, op 1), then calls the
+    /// callback with -6, and returns false. Nothing is queued or sent.
+    /// </summary>
+    [Fact]
+    public void M3_043_WA6_WA11_AnInvalidTagFailsEveryCheckThenBroadcastsThenCallsBack()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var order = new List<string>();
+        nv.NVStorageOpResultBroadcast += b => order.Add($"broadcast:{b.Tag:x}:{b.Op}:{b.Result}:{b.Index}:{b.Data.Length}");
+        int start = nv.Log.Count;
+        int sent = NvCommands(rig).Count;
+        Assert.Equal(0, nv.Write(1, new byte[] { 1, 2, 3, 4 }, r => order.Add("callback:" + r.Result), broadcast: true));
+        Assert.Equal(new[] { "broadcast:1:1:-6:0:0", "callback:-6" }, order);
+        var log = LogSince(nv, start);
+        Assert.Contains(log, l => l.StartsWith("warning: NVStorageComponent.Write.InvalidTag: Tag: "));
+        Assert.Contains(log, l => l.EndsWith("(0x1)"));
+        Assert.Contains("warning: NVStorageComponent.GetMaxSizeForEntryTag.InvalidTag: 0x1", log);
+        Assert.Empty(nv.QueuedTags);
+        rig.Tick();
+        Assert.Equal(sent, NvCommands(rig).Count);
+    }
+
+    /// <summary>WA7 (0x00644572..0x006445A0): a factory tag without +0x15C (0 in every normal run) warns FactoryTagNotAllowed; WA2: a null vector is only an info log and no callback.</summary>
+    [Fact]
+    public void M3_043_WA2_WA7_WA8_AFactoryTagAndNullDataAreRejected()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int called = 0;
+        int start = nv.Log.Count;
+        Assert.Equal(0, nv.Write(0x80000001, new byte[] { 1, 2, 3, 4 }, _ => called++));
+        Assert.Equal(1, called);
+        Assert.Contains("warning: NVStorageComponent.Write.FactoryTagNotAllowed: Tag: NVEntry_CameraCalib (0x80000001)", LogSince(nv, start));
+
+        start = nv.Log.Count;
+        Assert.Equal(0, nv.Write(0x182000, (byte[]?)null, _ => called++));      // the vector overload: info, no broadcast, no callback
+        Assert.Equal(1, called);
+        Assert.Equal(new[] { "info: NVStorageComponent.Write.NullData: NVEntry_GameUnlocks" }, LogSince(nv, start));
+
+        start = nv.Log.Count;
+        Assert.Equal(0, nv.Write(0x182000, null, 4, _ => called++));             // the pointer overload: a warning, and the failure exit
+        Assert.Equal(2, called);
+        Assert.Contains("warning: NVStorageComponent.Write.NullData: NVEntry_GameUnlocks", LogSince(nv, start));
+    }
+
+    /// <summary>
+    /// WA9 (0x00644616..0x006446CA): limit = the table size (0x1000 for 0x182000) - 0x10; the count is padded up to a multiple of 4 and rejected
+    /// when count - 1 is not below the limit (unsigned), so 0 and anything over 0xFF0 fail with InvalidSize and the padded count and the limit; 5 bytes queue as 8.
+    /// </summary>
+    [Theory]
+    [InlineData(0u, false, 0u)]
+    [InlineData(5u, true, 8u)]
+    [InlineData(0xFF0u, true, 0xFF0u)]
+    [InlineData(0xFF1u, false, 0xFF4u)]
+    public void M3_043_WA9_TheSizeIsPaddedAndLimited(uint numBytes, bool accepted, uint paddedBytes)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int start = nv.Log.Count;
+        int result = nv.Write(0x182000, new byte[numBytes], numBytes, _ => { });
+        var log = LogSince(nv, start);
+        if (accepted)
+        {
+            Assert.Equal(1, result);
+            Assert.Contains($"debug: NVStorageComponent.Write.DataQueued: NVEntry_GameUnlocks - numBytes: {paddedBytes}", log);
+        }
+        else
+        {
+            Assert.Equal(0, result);
+            Assert.Contains($"warning: NVStorageComponent.Write.InvalidSize: Tag: NVEntry_GameUnlocks, {paddedBytes} bytes (limit 4080 bytes)", log);
+        }
+    }
+
+    /// <summary>
+    /// WA12, WA13, WB3..WB7, WB11..WB19: a successful Write queues an ERASE then the WRITE and sends nothing; the ERASE goes out on the next Update
+    /// (Length = the tag's maximum size, op 2, the saved Data, which is empty before any write); its ack completes it; the WRITE dispatch sends nothing
+    /// again; the next Update sends the one chunk (header + payload, Length = its size), and its ack completes the write.
+    /// </summary>
+    [Fact]
+    public void M3_043_WA12_WB3_WB11_WB18_AWriteIsAnEraseThenADispatchThenAChunk()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var data = Pattern(100);
+        NvResult? done = null;
+        int start = nv.Log.Count;
+        int sent = NvCommands(rig).Count;
+        Assert.Equal(1, nv.Write(0x182000, data, r => done = r));
+        Assert.Equal(sent, NvCommands(rig).Count);                                 // Write sends nothing
+        Assert.Equal(new uint[] { 0x182000, 0x182000 }, nv.QueuedTags);
+        var queued = LogSince(nv, start);
+        Assert.Equal("debug: NVStorageComponent.Write.PrecedingWriteWithErase: Tag: NVEntry_GameUnlocks", queued[0]);
+        Assert.Equal("debug: NVStorageComponent.Write.DataQueued: NVEntry_GameUnlocks - numBytes: 100", queued[1]);
+
+        rig.Tick();                                                                // ERASE dispatch
+        var erase = Assert.Single(NvCommands(rig).Skip(sent));
+        Assert.Equal((0x182000u, 0x1000, NvStorageComponent.OpErase, (byte)0), (erase.Tag, erase.Length, erase.Op, erase.Unknown));
+        Assert.Empty(erase.Data);
+        Assert.Contains("debug: NVStorageComponent.ProcessRequest.SendingErase: NVEntry_GameUnlocks (Tag: 0x182000) size: 4096", nv.Log);
+        Assert.Contains("debug: NVStorageComponent.SetState: PrevState: 0, NewState: 1", nv.Log);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Tick();                                                                // the ack completes the ERASE; the same Update dispatches the WRITE (nothing sent)
+        Assert.Contains("info: NVStorageComponent.HandleNVOpResult.WriteSuccess: BaseTag: NVEntry_GameUnlocks, lastTag: 0x182000, op: NVOP_ERASE, result: NV_OKAY", nv.Log);
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x182000, Op: NVOP_ERASE, Result: NV_OKAY", nv.Log);
+        Assert.Null(done);                                                         // the erase has no callback
+
+        Assert.Single(NvCommands(rig).Skip(sent));
+        Assert.Contains(nv.Log, l => l.StartsWith("debug: NVStorageComponent.ProcessRequest.SendingWrite: StartTag: 0x182000 (NVEntry_GameUnlocks), timeoutTime: "));
+        rig.Tick();                                                                // the chunk
+        var chunk = NvCommands(rig)[^1];
+        Assert.Equal(2, NvCommands(rig).Skip(sent).Count());
+        Assert.Equal((0x182000u, 116, NvStorageComponent.OpWrite), (chunk.Tag, chunk.Length, chunk.Op));
+        Assert.Equal(new byte[] { 0x4F, 0x4D, 0x5A, 0x43, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0 }, chunk.Data[..14]);
+        Assert.Equal(data, chunk.Data[16..]);
+        Assert.Contains("debug: NVStorageComponent.Update.SendingWriteMsg: BaseTag: NVEntry_GameUnlocks, tag: 0x182000, bytesSent: 100", nv.Log);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpWrite, Result = 0 });
+        rig.Tick();
+        Assert.Equal(0, done!.Value.Result);
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_GameUnlocks", nv.Log);
+        rig.Tick();
+        Assert.True(nv.IsIdle);
+    }
+
+    /// <summary>
+    /// WB15, WB19, WB20, WD4 (0x00645816..0x0064598A, 0x00643062..0x0064307E): a 2500-byte payload is three chunks, one per Update, tagged T, T + 0x400,
+    /// T + 0x800 (non-factory base), of 1008 (after the header), 1024 and 468 bytes. An ack with more chunks left logs and calls nothing; the callback runs
+    /// once, at the last ack. A READ, ERASE or WIPEALL after the write carries the last chunk (WB21): the saved Data and Length.
+    /// </summary>
+    [Fact]
+    public void M3_043_WB15_WB20_WB21_AMultiChunkWriteSendsOneChunkPerUpdateAndLeavesTheLastChunkSaved()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var data = Pattern(2500);
+        int callbacks = 0;
+        int sent = NvCommands(rig).Count;
+        nv.Write(0x182000, data, _ => callbacks++);
+        rig.Tick();                                                                // erase
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Tick();                                                                // its ack, then the WRITE dispatch in the same Update
+        var expected = new (uint Tag, int Length)[] { (0x182000, 1024), (0x182400, 1024), (0x182800, 468) };
+        rig.Tick();                                                                // chunk 0: one chunk per Update call
+        for (int i = 0; i < 3; i++)
+        {
+            var cmd = NvCommands(rig)[^1];
+            Assert.Equal((expected[i].Tag, expected[i].Length, NvStorageComponent.OpWrite), (cmd.Tag, cmd.Length, cmd.Op));
+            Assert.Equal(expected[i].Length, cmd.Data.Length);
+            int count = NvCommands(rig).Count;
+            rig.Tick();                                                            // nothing more is sent while the ack is awaited
+            Assert.Equal(count, NvCommands(rig).Count);
+            int before = nv.Log.Count;
+            rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpWrite, Result = (sbyte)(i == 0 ? 3 : 0) });   // any result >= 0 advances (WD4)
+            rig.Tick();
+            if (i < 2)
+            {
+                Assert.Equal(0, callbacks);
+                Assert.Equal(count + 1, NvCommands(rig).Count);                    // the next chunk goes out in the Update after the ack
+                Assert.DoesNotContain(nv.Log.Skip(before), l => l.Contains("WriteSuccess") || l.Contains("ExecutingWriteCallback"));
+            }
+        }
+        Assert.Equal(1, callbacks);
+        Assert.Equal(data[2032..], NvCommands(rig)[^1].Data);                      // the last chunk, no header
+        Assert.Equal(new byte[] { 0x4F, 0x4D, 0x5A, 0x43 }, NvCommands(rig)[^3].Data[..4]);   // the first chunk carried the header
+
+        nv.Read(0x182000, _ => { });
+        rig.Tick();
+        var read = NvCommands(rig)[^1];
+        Assert.Equal((NvStorageComponent.OpRead, 0x400), (read.Op, read.Length));
+        Assert.Equal(data[2032..], read.Data);                                     // WB21
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = -1 });
+        rig.Tick();
+
+        nv.WipeAll(_ => { });
+        rig.Tick();
+        var wipe = NvCommands(rig)[^1];
+        Assert.Contains("debug: NVStoageComponent.ProcessRequest.SendingWipeAll: ", nv.Log);   // the engine's own spelling, empty format
+        Assert.Equal((0u, 0x400, NvStorageComponent.OpWipeAll), (wipe.Tag, wipe.Length, wipe.Op));    // WB9: the stale Length (the READ's 0x400) and Data
+        Assert.Equal(data[2032..], wipe.Data);
+    }
+
+    /// <summary>
+    /// WB8, WB10, WD2, WD3 (0x006451CA, 0x0064302C): a WIPEALL ack is normalised to 0x198000 whatever its tag, so it is accepted while the
+    /// awaited +0x20 is 0x198000, and the callback is named NVEntry_NEXT_SLOT. Its Length is the stale +0xE0 (WB9); a first-ever WIPEALL would send a Length the engine never wrote (WB10), which is 0 here under policy M3-037 (not reachable after the connection reads).
+    /// </summary>
+    [Fact]
+    public void M3_043_WB8_WB10_WD2_AWipeAllIsAckedByTheSentinelWhateverTheAckTag()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        int calls = 0;
+        nv.WipeAll(_ => calls++);
+        Assert.Contains("debug: NVStorageComponent.WipeAll.Queued: ", nv.Log);
+        rig.Tick();
+        var wipe = NvCommands(rig)[^1];
+        Assert.Equal((0u, 0x400, NvStorageComponent.OpWipeAll), (wipe.Tag, wipe.Length, wipe.Op));   // WB9: the Length is the last connection READ's, never rewritten
+        Assert.Empty(wipe.Data);
+        rig.Data(new NVOpResult { Tag = 0x1234, Op = NvStorageComponent.OpWipeAll, Result = 0 });
+        rig.Tick();
+        Assert.Equal(1, calls);
+        Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_NEXT_SLOT", nv.Log);
+        Assert.Contains("info: NVStorageComponent.HandleNVOpResult.WriteSuccess: BaseTag: NVEntry_NEXT_SLOT, lastTag: 0x198000, op: NVOP_WIPEALL, result: NV_OKAY", nv.Log);
+    }
+
+    /// <summary>
+    /// WD3 (0x00643080..0x006430A0): an ack while none is awaited, or for another tag, warns AckdTagBaseTagWasNeverSent "BaseTag: 0x%x, Tag: 0x%x" and changes nothing.
+    /// </summary>
+    [Fact]
+    public void M3_043_WD3_AnAckNobodyAwaitsIsWarnedAndIgnored()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        rig.Data(new NVOpResult { Tag = 0x183000, Op = NvStorageComponent.OpWrite, Result = 0 });
+        rig.Tick();
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.AckdTagBaseTagWasNeverSent: BaseTag: 0x183000, Tag: 0x183000", nv.Log);
+        nv.Erase(0x182000, _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x183000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Tick();
+        Assert.False(nv.IsIdle);                                                   // still awaiting the 0x182000 ack
+        rig.Data(new NVOpResult { Tag = 0x5555, Op = 7, Result = 0 });
+        rig.Tick();
+        Assert.Contains(nv.Log, l => l.StartsWith("warning: NVStorageComponent.HandleNVOpResult.UnhandledOperation: "));
+    }
+
+    /// <summary>
+    /// WC1..WC5 (0x006456F4..0x00645758, 0x00642B54): with an ack awaited, the write times out only when the clock is strictly past the deadline
+    /// (set at the chunk send, clock + 5000): WriteTimeout with +0x20, the callback with -4, SetState(0); no retry, no ExecutingWriteCallback, no broadcast.
+    /// A late ack then finds nothing awaited (WC5).
+    /// </summary>
+    [Fact]
+    public void M3_043_WC1_WC5_AWriteTimesOutOnceTheClockPassesTheDeadline()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        rig.Data(new SyncTimeAck());
+        SetRobotClock(rig, 1000);
+        var nv = rig.Robot.Engine.NvStorage!;
+        var results = new List<sbyte>();
+        var broadcasts = new List<NVStorageOpResult>();
+        nv.NVStorageOpResultBroadcast += broadcasts.Add;
+        nv.Write(0x182000, Pattern(8), r => results.Add(r.Result), broadcast: true);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Tick();
+        rig.Tick();                                                                // the chunk: deadline = 1000 + 5000
+        int sent = NvCommands(rig).Count;
+        SetRobotClock(rig, 6000);                                                  // not strictly past
+        Assert.Empty(results);
+        SetRobotClock(rig, 6001);
+        Assert.Equal(new sbyte[] { -4 }, results);
+        Assert.Contains("warning: NVStorageComponent.Update.WriteTimeout: Tag: 0x182000", nv.Log);
+        Assert.Equal(sent, NvCommands(rig).Count);                                 // no retry
+        Assert.DoesNotContain(nv.Log, l => l.Contains("ExecutingWriteCallback"));
+        Assert.Empty(broadcasts);
+        Assert.True(nv.IsIdle);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpWrite, Result = 0 });
+        rig.Tick();
+        Assert.Equal(new sbyte[] { -4 }, results);
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.AckdTagBaseTagWasNeverSent: BaseTag: 0x182000, Tag: 0x182000", nv.Log);
+    }
+
+    /// <summary>
+    /// WD7..WD9 (0x00643194..0x006431E4, 0x0064328E..0x006432BA, 0x00645C54..0x00645D9A): a retryable negative ack resends the SAME chunk (saved tag, Length, Data),
+    /// logs Retry and ResentFailedWrite, and does not re-arm the deadline; the eighth failure logs NumRetriesExceeded (error, _errG), WriteOpFailed and
+    /// WriteFailed, completes with the result and drops the rest.
+    /// </summary>
+    [Fact]
+    public void M3_043_WD7_WD9_ARetryableAckResendsTheSameChunkThenFails()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        DrainCalibrationRead(rig);
+        var nv = rig.Robot.Engine.NvStorage!;
+        NvResult? done = null;
+        nv.Write(0x182000, Pattern(2500), r => done = r);
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Tick();
+        rig.Tick();
+        var first = NvCommands(rig)[^1];
+        int count = NvCommands(rig).Count;
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+        for (int attempt = 1; attempt <= 7; attempt++)
+        {
+            rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpWrite, Result = -5 });
+            rig.Tick();
+            Assert.Null(done);
+            var resent = NvCommands(rig)[^1];
+            Assert.Equal(count + attempt, NvCommands(rig).Count);
+            Assert.Equal((first.Tag, first.Length, first.Op), (resent.Tag, resent.Length, resent.Op));
+            Assert.Equal(first.Data, resent.Data);
+            Assert.Contains($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x182000, Op: NVOP_WRITE, Attempt: {attempt}", nv.Log);
+            Assert.Contains("info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x182000 resent due to NV_BUSY, op: NVOP_WRITE", nv.Log);
+        }
+        Assert.False(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpWrite, Result = -5 });
+        rig.Tick();
+        Assert.Equal(-5, done!.Value.Result);
+        Assert.Contains("error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x182000, Op: NVOP_WRITE, Attempts: 8", nv.Log);
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x182000, op: NVOP_WRITE, result: NV_BUSY", nv.Log);
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.WriteFailed: BaseTag: NVEntry_GameUnlocks, lastTag: 0x182000, op: NVOP_WRITE, result: NV_BUSY", nv.Log);
+        Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+        int after = NvCommands(rig).Count;
+        rig.Tick();
+        rig.Tick();
+        Assert.Equal(after, NvCommands(rig).Count);                                // the remaining chunks were dropped
+    }
+
+    /// <summary>
+    /// WB10 (0x00642848..0x006428E8): the constructor ends with SetState(0), which logs "PrevState: %d, NewState: 0"; +8 is never written, so PrevState is 0
+    /// (policy M3-037). The engine builds a component per Robot, so the line recurs when a removed robot's component is replaced, and the saved command is back to
+    /// the constructed state (byte +0xE5 and Data; Tag, Length and op never written: 0).
+    /// </summary>
+    [Fact]
+    public void M3_043_WB10_TheConstructorLogsSetStateZeroAndADisconnectRebuildsTheSavedCommand()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var nv = rig.Robot.Engine.NvStorage!;
+        const string line = "debug: NVStorageComponent.SetState: PrevState: 0, NewState: 0";
+        Assert.Equal(line, nv.Log[0]);
+        DrainCalibrationRead(rig);
+        nv.Write(0x182000, Pattern(8), _ => { });
+        rig.Tick();
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Tick();
+        rig.Tick();
+        int before = nv.Log.Count(l => l == line);
+        nv.OnDisconnected();
+        Assert.Equal(before + 1, nv.Log.Count(l => l == line));
+        nv.WipeAll(_ => { });
+        rig.Tick();
+        var wipe = NvCommands(rig)[^1];
+        Assert.Equal((0u, 0, NvStorageComponent.OpWipeAll, (byte)0), (wipe.Tag, wipe.Length, wipe.Op, wipe.Unknown));
+        Assert.Empty(wipe.Data);
     }
 
     // ================================================================== display: M3-006, M3-007, M3-009
@@ -1403,7 +2090,7 @@ public class M3DeviceTests
         var src = new byte[160 * 240];
         var rnd = new Random(7);
         rnd.NextBytes(src);
-        var dst = EncodedImageDecoder.ResizeLinear(src, 160, 240, 1, 320, 240);
+        var dst = Cozmo.Robot.Vision.Jpeg.OpenCvResize.ResizeLinear(new Cozmo.Robot.Vision.Jpeg.CvMat(240, 160, 1, src), 320, 240).Data;
         for (int y = 0; y < 240; y++)
         {
             byte P(int k) => src[y * 160 + k];
@@ -1800,7 +2487,7 @@ public class M3DeviceTests
         Assert.Equal(0x400, cmd.Length);
         Assert.Equal(NvStorageComponent.OpRead, cmd.Op);
         Assert.Equal(0, cmd.Unknown);
-        Assert.Empty(cmd.Data);   // MISSING: the engine carries the last written data vector +0xE8 (0x00645386)
+        Assert.Empty(cmd.Data);   // N1 (0x006428AE..0x006428B4): no WRITE has run, so the saved vector (+0xE8) is empty; later writes: M3_027_N5_N8_*
     }
 
     /// <summary>

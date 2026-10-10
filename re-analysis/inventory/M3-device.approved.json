@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "4c9780a19faad26f5d54f98f7d510db8c6d3029685f97417bb3bbde0984190d6",
+  "inventory_sha256": "4f483dd52485e28317b97e99dd14e8fe926c274720f462ece8c200e76c21f1b8",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -459,12 +459,36 @@
       "hardware_required": false
     },
     "M3-041": {
-      "status": "RECOVERABLE_GAP",
+      "status": "EXACT_SOURCE",
       "title": "IMU diagnostic chunk reception, file logging and stream close on robot removal",
       "authority": "libcozmoEngine.so 3.4.0-1204 Messaging IMU handlers and filebuf destructor.",
       "evidence": [
         "Unconditional Messaging construction/init 0x0051020A..0x00510218,0x00510334..0x00510348 and tagBF/C7 registration 0x00532BC8..0x00532BE8; processed sequence change 0x00535C64..0x00535C76 -> open0x00535E76, raw order0 0x00536128..0x0053612C -> open0x0053649C. No app-debug/SDK gate on these normal receive paths. Newly extracted I1-I8: re-analysis/research/20261009-M1-046-imu-reachability.md, companion 20261009-M1-046-imu-native.txt.",
         "Final processed chunk closes at0x00535F5C; raw order2 closes at0x005361F4. Messaging destructor 0x00532A48 vector release precedes filebuf destructor0x00532A64 ->0x005010B4 ->close0x0050111C; virtual sync slot+18 relocation0x0101F2DC ->0x00501398 ->fwrite0x00501416/fflush0x00501428, then fclose0x00501130. M1-046 owns retirement entry/order, this record owns file recipient effects. I9/I10 in the same report; phone stdio implementation is external runtime."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-042": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Host persistent directory and stat mapping for the IMU diagnostic logger",
+      "authority": "libcozmoEngine.so 3.4.0-1204 IMU handlers (M3-041 rows L5/L6) and FileUtils (rows F8.1/F8.2).",
+      "evidence": [
+        "M3-041 rows L5/L6 (jobs/B-M3M4.md): the logger's directory is DataPlatform::pathToResource scope 2 + \"imu_logs\", built on the app-supplied persistent path.",
+        "re-analysis/research/20261010-m3041-filebuf-rows.md F8.1 DirectoryExists 0x00802824 (stat, st_mode 0x4000 bit), F8.2 FileExists 0x0080342A (stat, st_mode 0x8000 bit)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-043": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "NV storage write side: Write(), the WRITE/ERASE/WIPEALL dispatch, the chunk loop, the write timeout and write-result handling",
+      "authority": "libcozmoEngine.so 3.4.0-1204 NVStorageComponent.",
+      "evidence": [
+        "re-analysis/research/20261010-nv-write-dispatch-rows.md WA1..WA15: Write overloads 0x006443F4 (vector) and 0x006444FC (pointer); checks, padded size limit 0x00644634, failure exit 0x006446F0..0x0064471E, the preceding ERASE request, the 0x48-byte request.",
+        "re-analysis/research/20261010-nv-write-dispatch-rows.md WB1..WB21: ProcessRequest jump table 0x00645032; ERASE send with saved Data copy 0x0064512E; WIPEALL sentinel 0x198000 and stale Length/Data 0x0064521A; WRITE dispatch arming; Update state-1 chunk loop 0x00645816..0x00645920 (0x400/0x3F0, header magic 0x435A4D4F, tag step +1 factory / +0x400, deadline clock+5000).",
+        "re-analysis/research/20261010-nv-write-dispatch-rows.md WC1..WC5: write timeout 0x006456F4..0x00645758 (gate +0x48, unsigned clock > deadline, WriteTimeout warning, cb(-4), SetState(0), no retry).",
+        "re-analysis/research/20261010-nv-write-dispatch-rows.md WD1..WD9: HandleNVOpResult WIPEALL sentinel 0x0064302C/0x00643030, mid-write ack, last-chunk delivery order, retryable results {-8,-7,-5,-4} with ResendLastCommand and NumRetriesExceeded."
       ],
       "live_path": true,
       "hardware_required": false

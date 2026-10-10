@@ -317,6 +317,9 @@ public sealed class CozmoRobot : IDisposable
         // PathFollower, BehaviorManager, MoodManager, ReactiveBehavior, CubeMovedReactionStrategy - are
         // built by callers here and keep their state across a removal.
         Engine.RobotRemoved = ResetDevices;
+        // fidelity: M4-026, M4-027
+        // ~Robot's AbortAll and the component deletions the M4 devices stand for, at the Robot's Lifetime slots.
+        Engine.BindRobotLifetime = Motion.BindRobotLifetime;
         // fidelity: M4-011
         // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.
         Engine.BlockFilterInit = LoadBlockPool;

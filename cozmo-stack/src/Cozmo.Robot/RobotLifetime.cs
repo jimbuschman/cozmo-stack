@@ -110,6 +110,9 @@ public sealed partial class EngineRobot
         var actions = ActionList;
         Lifetime.Bind(0x250, _ => actions.Dispose());
         InitSubscriptions();
+        // fidelity: M4-026, M4-027
+        // The host binds the Robot components it carries (AbortAll, the movement, light, CubeAccel and tap deletions).
+        Engine.BindRobotLifetime?.Invoke(this);
     }
 }
 
@@ -127,6 +130,9 @@ public sealed partial class CozmoEngine
     internal Action<string>? ClearDasGlobal;
     internal Action<uint>? RobotStorageFreed;
     internal Func<EngineRobot, IActionRunner?>? CreateGoToSleepSequence;
+    // fidelity: M4-026, M4-027
+    /// <summary>Called by <c>EngineRobot.InitLifetime</c> for each Robot built: the host binds its components' Lifetime slots.</summary>
+    internal Action<EngineRobot>? BindRobotLifetime;
     private void Required(Action? action, string missing)
     {
         if (action is null) Log($"MISSING: {missing}");

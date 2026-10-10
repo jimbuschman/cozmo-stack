@@ -53,6 +53,9 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public const int MaxReadResends = 7;
 
+    /// <summary>M3-031 N9: the retry limit byte (+0xF5), 8 from the constructor (0x006428B8); ResendLastCommand refuses when the incremented counter reaches it.</summary>
+    private const int RetryLimit = 8;
+
     /// <summary>M3-028: the non-factory 16-byte header, whose u32[0] is the magic "OMZC".</summary>
     public const int NvHeaderSize = 16;
     /// <summary>M3-028: the header magic <c>0x435A4D4F</c>.</summary>
@@ -109,8 +112,27 @@ public sealed class NvStorageComponent : IDisposable
         public int Retries { get; set; }
         /// <summary>M3-027/M3-029: robot+0x2C + 5000 (5000 before the first RobotState makes +0x2C 0).</summary>
         public uint? Deadline { get; set; }
-        /// <summary>M3-031: the last command built, so a retry resends the identical bytes.</summary>
-        public NVCommand? LastCommand { get; set; }
+        /// <summary>
+        /// M3-030 R1 (0x00643042..0x00643048): the normalised response tag the callback and its log are named by
+        /// (<c>GetBaseEntryTag</c> of the response, or 0x198000 for a WIPEALL response, 0x0064302C). Set when a response
+        /// is accepted; the request's own tag until then.
+        /// </summary>
+        public uint? ResponseBaseTag { get; set; }
+        // fidelity: M3-043
+        /// <summary>WB3: the size the ERASE was queued with (front +0x40); 0 asks for the tag's maximum size.</summary>
+        public uint EraseSize { get; init; }
+        /// <summary>WB11: the component's +0xC (the base tag of the write in progress).</summary>
+        public uint WriteBaseTag { get; set; }
+        /// <summary>WB11/WB15: +0x10, the tag of the next chunk.</summary>
+        public uint NextTag { get; set; }
+        /// <summary>WB11/WB15: +0x14, how much of <see cref="Data"/> has been put in chunks.</summary>
+        public int Offset { get; set; }
+        /// <summary>+0x1C: more chunks are still to be sent.</summary>
+        public bool MoreData { get; set; }
+        /// <summary>+0x48: a write, erase or wipe ack is awaited.</summary>
+        public bool AckAwaited { get; set; }
+        /// <summary>+0x20: the tag the awaited ack must normalise to (the raw tag for ERASE, 0x198000 for WIPEALL, the base tag for WRITE).</summary>
+        public uint AckTag { get; set; }
 
         private byte[] _buffer = Array.Empty<byte>();
         /// <summary>The reassembly buffer (zero-filled to its current size, M3-029).</summary>
@@ -141,8 +163,75 @@ public sealed class NvStorageComponent : IDisposable
         }
     }
 
+    // fidelity: M3-027
+    /// <summary>
+    /// The component's one saved <c>NVCommand</c> (N1..N13): the tag (+0xDC), length (+0xE0), op (+0xE4), a byte at +0xE5
+    /// that only the constructor writes (0, 0x006428AA) and the <c>Data</c> vector (+0xE8/+0xEC/+0xF0, null at
+    /// construction, 0x006428AE..0x006428B4). READ dispatch (0x0064503E..0x0064507C, 0x0064536A..0x0064539E), the
+    /// re-request (0x00643888..0x006438BC) and the resend (0x00645CD4..0x00645CEE) all build their outgoing command from
+    /// it, copying the header and the Data. Nothing clears it: <c>SetState(0)</c> (0x00642B52..0x00642B60) resets only
+    /// +0x48, +0x1C and +0x78, so a completion, a timeout or an idle tick leave it as it was (N2, N11).
+    /// </summary>
+    internal sealed class SavedCommand
+    {
+        public uint Tag;                                   // +0xDC
+        public int Length;                                 // +0xE0, independent of Data.Length (N13)
+        public byte Op;                                    // +0xE4
+        /// <summary>+0xE5: written only by the constructor (0).</summary>
+        public const byte Byte9 = 0;
+        public byte[] Data = Array.Empty<byte>();          // +0xE8: the logical vector; a copy goes into each command
+
+        /// <summary>The outgoing command: the saved header and a copy of the saved Data (0x0064537A..0x00645392).</summary>
+        public NVCommand ToCommand() => new() { Tag = Tag, Length = Length, Op = Op, Unknown = Byte9, Data = (byte[])Data.Clone() };
+
+        /// <summary>
+        /// N5..N8 (0x00645822..0x00645988): the chunk assembly of <c>Update</c> state 1. The saved tag becomes the
+        /// request's current chunk tag (+0x10) and the op 1; the vector's logical end goes back to its begin (the
+        /// allocation stays); on offset 0 with +0x15C false the 16-byte header is inserted first, then the chunk is
+        /// appended, and the saved Length is the vector's size. The header is the little-endian magic 0x435A4D4F, a zero
+        /// u32, the source length as a u32 and a zero u16 at byte 12; bytes 14 and 15 are never written (N6: the halfword
+        /// store at sp+0x38 stops at byte 13), so the engine copies whatever the stack held, and they are 0 here
+        /// (<see cref="HeaderNeverWrittenBytes"/>). The chunk is min(remaining, 0x400), or min(remaining, 0x3F0) when the
+        /// header was inserted. Returns the number of source bytes appended; the caller advances its offset (+0x14) by it
+        /// and its next tag (+0x10) by 1 for a factory tag, else 0x400 (0x006458A6..0x006458C2).
+        /// </summary>
+        public int AssembleWriteChunk(uint chunkTag, byte[] source, int sourceOffset, bool factoryDataFlag)
+        {
+            Tag = chunkTag;
+            Op = OpWrite;
+            int remaining = source.Length - sourceOffset;
+            int chunk = Math.Min(remaining, 0x400);
+            var data = new List<byte>();
+            if (sourceOffset == 0 && !factoryDataFlag)
+            {
+                var header = new byte[NvHeaderSize];                       // bytes 14..15 stay 0: never written (N6)
+                BitConverter.GetBytes(NonFactoryHeaderMagic).CopyTo(header, 0);
+                BitConverter.GetBytes((uint)source.Length).CopyTo(header, 8);
+                data.AddRange(header);
+                chunk = Math.Min(remaining, 0x3F0);
+            }
+            for (int i = 0; i < chunk; i++) data.Add(source[sourceOffset + i]);
+            Data = data.ToArray();
+            Length = Data.Length;                                          // 0x00645918..0x00645920
+            return chunk;
+        }
+    }
+
+    /// <summary>The two bytes of the 16-byte write header that the engine never writes (N6): offsets 14 and 15.</summary>
+    internal static readonly int[] HeaderNeverWrittenBytes = { 14, 15 };
+
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
+    private SavedCommand _saved = new();
+
+    /// <summary>
+    /// A new component starts with the saved command as the constructor leaves it: byte +0xE5 = 0 and Data null (0x006428AA..0x006428B4).
+    /// Tag, Length and op (+0xDC..+0xE4) are never written by the constructor: 0 under policy M3-037.
+    /// </summary>
+    // fidelity: M3-037
+    private void ResetSavedToConstructed() => _saved = new SavedCommand();
+    /// <summary>+8: 0 idle, 1 write/erase/wipe pending, 2 read pending.</summary>
+    private int _state;
     private readonly Queue<PendingRequest> _queue = new();
     private PendingRequest? _inFlight;
     private readonly List<Action> _onIdle = new();
@@ -151,6 +240,7 @@ public sealed class NvStorageComponent : IDisposable
 
     internal NvStorageComponent(CozmoRobot robot)
     {
+        ConstructedSetStateLocked();
         _robot = robot;
         robot.Message += OnMessage;
     }
@@ -359,29 +449,151 @@ public sealed class NvStorageComponent : IDisposable
         return 1;
     }
 
-    /// <summary>Queues any NV operation with an explicit length; the callback owns the terminal result.</summary>
-    public void Request(uint tag, int length, byte op, byte[] data, Action<NvResult> callback) =>
-        Enqueue(new PendingRequest { Tag = tag, Length = length, Op = op, Data = data, Callback = callback });
-
-    // fidelity: M15-014
     /// <summary>
-    /// <c>NVStorageComponent::Write</c> (Appendix G Q1, Appendix I): the engine returns 0 for an invalid tag,
-    /// for a factory tag when <c>+0x15C == 0</c> (the factory data is not loaded), for null data and for an
-    /// oversize request (<c>0x00644578..0x006446B8</c>); otherwise the WRITE is queued and returns 1.
-    /// <c>NeedsManager::StartWriteToRobot</c> uses this to put the 116-byte <c>NeedsStateOnRobot</c> blob on
-    /// the non-factory key 0x194000, which none of the extra zero conditions affect, and treats 0 as
-    /// <c>StartWriteToRobot.WriteFailed</c>. This port returns 0 only for the invalid tag.
+    /// Compatibility entry for callers that name the operation: it calls the engine's own API (<see cref="Write(uint, byte[]?, Action{NvResult}?, bool)"/>,
+    /// <see cref="Erase"/>, <see cref="WipeAll"/>, <see cref="Read"/>), so every check, the preceding erase and the chunk loop apply. The length
+    /// argument is not used: the engine computes every length itself.
     /// </summary>
-    public int Write(uint tag, byte[] data, Action<NvResult>? callback)
+    public void Request(uint tag, int length, byte op, byte[] data, Action<NvResult> callback, bool broadcast = false)
     {
-        if (!IsValidEntryTag(tag))
+        switch (op)
         {
-            lock (_gate) _log.Add($"warning: NVStorageComponent.Write.InvalidTag: Tag: 0x{tag:X8}");
-            callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
+            case OpWrite: Write(tag, data, callback, broadcast); break;
+            case OpErase: Erase(tag, callback, broadcast); break;
+            case OpWipeAll: WipeAll(callback, broadcast); break;
+            default: Read(tag, callback, null, broadcast); break;
+        }
+    }
+
+    // fidelity: M3-043, M15-014
+    /// <summary>
+    /// The vector overload (WA1..WA3, 0x006443F4): a null vector logs NullData (info) and returns false with no broadcast and no callback;
+    /// otherwise the pointer overload runs with the vector's own, unpadded length. Returns 1 when the write was queued, else 0.
+    /// </summary>
+    public int Write(uint tag, byte[]? data, Action<NvResult>? callback, bool broadcast = false)
+    {
+        if (data is null)
+        {
+            lock (_gate) _log.Add($"info: NVStorageComponent.Write.NullData: {TagNameOrMissing(tag)}");
             return 0;
         }
-        Enqueue(new PendingRequest { Tag = tag, Length = data.Length, Op = OpWrite, Data = data, Callback = callback });
+        return Write(tag, data, (uint)data.Length, callback, broadcast);
+    }
+
+    // fidelity: M3-043, M15-014
+    /// <summary>
+    /// The pointer overload (WA5..WA14, 0x006444FC). Every check is evaluated, none short-circuits another: the tag (InvalidTag), a factory tag
+    /// without +0x15C (FactoryTagNotAllowed), null data (NullData), and the size (GetMaxSizeForEntryTag, minus 0x10 without +0x15C, the count padded
+    /// up to a multiple of 4, rejected when count - 1 is not below the limit as unsigned values: InvalidSize). Any failure broadcasts (-6, op 1) when
+    /// asked, then calls the callback with -6, and returns 0. Success queues an ERASE of the tag (no callback, no broadcast) behind the debug log
+    /// PrecedingWriteWithErase, then the WRITE with a copy of the padded data, logs DataQueued and returns 1. Nothing is sent here. The 0..3 padding
+    /// bytes are read past the caller's count in the engine (WA14, never defined); they are 0 here under policy M3-037.
+    /// // fidelity: M3-037
+    /// </summary>
+    public int Write(uint tag, byte[]? data, uint numBytes, Action<NvResult>? callback, bool broadcast = false)
+    {
+        bool valid = true;
+        lock (_gate)
+        {
+            string name = TagNameOrMissing(tag);
+            if (!IsValidEntryTag(tag))
+            {
+                _log.Add($"warning: NVStorageComponent.Write.InvalidTag: Tag: {name} (0x{tag:x})");
+                valid = false;
+            }
+            if (IsFactoryEntryTag(tag) && !FactoryWritesAllowed)
+            {
+                _log.Add($"warning: NVStorageComponent.Write.FactoryTagNotAllowed: Tag: {name} (0x{tag:x})");
+                valid = false;
+            }
+            if (data is null)
+            {
+                _log.Add($"warning: NVStorageComponent.Write.NullData: {name}");
+                valid = false;
+            }
+            uint max = (uint)MaxSizeForEntryTagLogged(tag);
+            uint limit = FactoryWritesAllowed ? max : unchecked(max - 0x10);
+            uint n = numBytes;
+            uint pad = 4 - (n & 3);
+            if (pad < 4) n += pad;
+            if (unchecked(n - 1) >= limit)
+            {
+                _log.Add($"warning: NVStorageComponent.Write.InvalidSize: Tag: {name}, {n} bytes (limit {(int)limit} bytes)");
+                valid = false;
+            }
+            if (valid)
+            {
+                if (!FactoryWritesAllowed)
+                {
+                    _log.Add($"debug: NVStorageComponent.Write.PrecedingWriteWithErase: Tag: {name}");
+                    _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpErase });
+                }
+                var vector = new byte[n];
+                Array.Copy(data!, vector, (int)Math.Min(numBytes, (uint)data!.Length));
+                _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpWrite, Data = vector, Callback = callback, Broadcast = broadcast });
+                _log.Add($"debug: NVStorageComponent.Write.DataQueued: {name} - numBytes: {n}");
+            }
+        }
+        if (valid) return 1;
+        if (broadcast) NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpWrite, -6, 0, Array.Empty<byte>()));
+        callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
+        return 0;
+    }
+
+    // fidelity: M3-043
+    /// <summary>
+    /// Erase (0x006449C0, 0x00644A40; the queueing side of the sibling ops in the rows): an invalid tag warns Erase.InvalidEntryTag, a factory tag
+    /// without +0x15C warns with Write's own key FactoryTagNotAllowed; either broadcasts (-6, op 2) when asked, calls the callback with -6 and
+    /// returns false. Otherwise the ERASE is queued with <paramref name="size"/> (0 = the tag's maximum size at dispatch), logged Erase.Queued.
+    /// </summary>
+    public int Erase(uint tag, Action<NvResult>? callback, bool broadcast = false, uint size = 0)
+    {
+        bool valid = true;
+        lock (_gate)
+        {
+            string name = TagNameOrMissing(tag);
+            if (!IsValidEntryTag(tag))
+            {
+                _log.Add($"warning: NVStorageComponent.Erase.InvalidEntryTag: Tag: {name} (0x{tag:x})");
+                valid = false;
+            }
+            else if (IsFactoryEntryTag(tag) && !FactoryWritesAllowed)
+            {
+                _log.Add($"warning: NVStorageComponent.Write.FactoryTagNotAllowed: Tag: {name} (0x{tag:x})");
+                valid = false;
+            }
+            if (valid)
+            {
+                _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpErase, Callback = callback, Broadcast = broadcast, EraseSize = size });
+                _log.Add($"debug: NVStorageComponent.Erase.Queued: {name}");
+            }
+        }
+        if (valid) return 1;
+        if (broadcast) NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpErase, -6, 0, Array.Empty<byte>()));
+        callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
+        return 0;
+    }
+
+    // fidelity: M3-043
+    /// <summary>WipeAll (0x00644C10): no tag or flag checks; the WIPEALL is queued and logged WipeAll.Queued (empty format).</summary>
+    public int WipeAll(Action<NvResult>? callback, bool broadcast = false)
+    {
+        lock (_gate)
+        {
+            _queue.Enqueue(new PendingRequest { Tag = 0, Op = OpWipeAll, Callback = callback, Broadcast = broadcast });
+            _log.Add("debug: NVStorageComponent.WipeAll.Queued: ");
+        }
         return 1;
+    }
+
+    // fidelity: M3-043
+    /// <summary>WipeFactory (0x00644CB8): without +0x15C it logs the error "Must be allowed to write to factory addresses", stores the error flag and returns false.</summary>
+    public int WipeFactory(Action<NvResult>? callback)
+    {
+        lock (_gate)
+            _log.Add("error: NVStorageComponent.WipeFactory.NotAllowed: Must be allowed to write to factory addresses");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        return 0;
     }
 
     /// <summary>Queues a READ and waits for its terminal result (the request length is computed by the component).</summary>
@@ -406,30 +618,198 @@ public sealed class NvStorageComponent : IDisposable
         lock (_gate) _queue.Enqueue(r);
     }
 
-    // fidelity: M3-026, M3-027
+    // fidelity: M3-026, M3-027, M3-043
     /// <summary>
-    /// M3-026/M3-027 (ProcessRequest READ, 0x64503E..0x64507C; 0x64536A; 0x645392..0x645484): pop the front
-    /// request, compute a READ's Length from the tag, send it reliable and not hot, clear the caller's sink
-    /// (+0x54, 0x645448..0x64546E) and arm the 5 s deadline. Only <see cref="Update"/> calls this, in state 0.
+    /// ProcessRequest (0x00644FD4..0x006456A4, WB1): pops the front request and dispatches on its op (READ 0x64503E, WRITE 0x645248,
+    /// ERASE 0x64507E, WIPEALL 0x645188). Only <see cref="Update"/> calls this, in state 0.
     /// </summary>
     private void StartNextLocked()
     {
         if (_queue.Count == 0) { _inFlight = null; return; }
         _inFlight = _queue.Dequeue();
         var req = _inFlight;
-        // M3-027: the component computes the READ length from the tag; the caller no longer passes it.
-        bool read = req.Op == OpRead;
-        if (read) req.Length = IsFactoryEntryTag(req.Tag) ? MaxFactorySizeForEntryTag(req.Tag) : NonFactoryReadLength;
-        var command = new NVCommand { Tag = req.Tag, Length = req.Length, Op = req.Op, Unknown = 0, Data = req.Data };
-        req.LastCommand = command;
-        _log.Add($"NV request tag=0x{req.Tag:X8} op={req.Op} length={req.Length} data={req.Data.Length}B");
+        switch (req.Op)
+        {
+            case OpRead: DispatchReadLocked(req); break;
+            case OpErase: DispatchEraseLocked(req); break;
+            case OpWrite: DispatchWriteLocked(req); break;
+            case OpWipeAll: DispatchWipeAllLocked(req); break;
+        }
+    }
+
+    private void SendSavedLocked(PendingRequest req)
+    {
+        var command = _saved.ToCommand();
+        _log.Add($"NV request tag=0x{command.Tag:X8} op={command.Op} length={command.Length} data={command.Data.Length}B");
         // M3-027: the command is reliable and not hot. MessageHandler::SendMessage ignores those arguments
         // (M1-026) and the transport frames robot-bound messages reliably, so flush: true is the existing call.
         _robot.SendMessage(command, flush: true);
+    }
+
+    // fidelity: M3-043, M3-037
+    /// <summary>
+    /// The constructor's last act is SetState(0) (0x006428E8), which always logs. PrevState (+8) is never written by the constructor, so
+    /// the engine prints whatever the new object held: 0 here, under policy M3-037 (never-written bytes). The engine builds a new
+    /// component per Robot, so this runs at construction and again when a removed robot's component is replaced (<see cref="OnDisconnected"/>).
+    /// </summary>
+    private void ConstructedSetStateLocked()
+    {
+        _state = 0;                                                    // M3-037: +8 is uninitialised in the engine
+        _log.Add("debug: NVStorageComponent.SetState: PrevState: 0, NewState: 0");
+    }
+
+    /// <summary>SetState (0x00642B0C..0x00642B64, WB7): logs the transition; only state 0 clears +0x48, +0x1C and +0x78 (the request's flags here).</summary>
+    private void SetStateLocked(int state)
+    {
+        _log.Add($"debug: NVStorageComponent.SetState: PrevState: {_state}, NewState: {state}");
+        _state = state;
+    }
+
+    private static string TagNameOrMissing(uint tag) =>
+        NvEntryTagName(tag) ?? "<null: the phone's rendering of a null %s is open (MISSING)>";
+
+    private void QueueDataToWriteMissing(uint tag, int bytes) =>
+        _log.Add($"MISSING: RobotDataBackupManager::QueueDataToWrite(0x{tag:x}, {bytes} bytes) (M15 recipient, 0x0051AE04): the backup manager is not built");
+
+    private void DispatchReadLocked(PendingRequest req)
+    {
+        // N3 (0x00645040..0x00645046, 0x0064536A..0x00645392): the saved tag (+0xDC) and op (+0xE4 = 0) are written, the
+        // Length (+0xE0) is 0x400 or the factory table value, and the outgoing command is the saved header with a copy
+        // of the saved Data (0x00645386), whatever an earlier write left in it. The Length is independent of that
+        // vector's size (N13).
+        _saved.Tag = req.Tag;
+        _saved.Op = OpRead;
+        _saved.Length = IsFactoryEntryTag(req.Tag) ? MaxFactorySizeForEntryTag(req.Tag) : NonFactoryReadLength;
+        req.Length = _saved.Length;
+        SendSavedLocked(req);
+        // N3/N4 (0x006453B8..0x006453D2): after the send, ProcessRequest logs the READ's saved tag and length.
+        _log.Add($"debug: NVStorageComponent.ProcessRequest.SendingRead: StartTag: 0x{_saved.Tag:x}, Length: {(uint)_saved.Length}");
         // M3-030 (0x645448..0x64546E): the caller's sink vector (+0x54) is cleared at arm, not at completion.
         req.Sink?.Clear();
-        // M3-027: only the READ path arms the 5 s deadline (+0x74); the write/erase path has its own (out of scope).
-        if (read) ArmDeadlineLocked(req);
+        ArmDeadlineLocked(req);
+        SetStateLocked(2);                                  // 0x00645474
+    }
+
+    // fidelity: M3-043
+    /// <summary>
+    /// ERASE dispatch (WB3..WB7, 0x0064507E..0x00645186): arms the ack (+0x20 = the raw tag, +0x44 = clock + 5000, +0x48 = 1), saves the header
+    /// (tag, op 2, Length = the queued size or the tag's maximum size), logs SendingErase, sends {saved tag, Length, op 2, byte, a copy of the
+    /// saved Data} - the Data is whatever the last write chunk left - then calls the backup manager's QueueDataToWrite with an empty vector
+    /// (M15: a visible MISSING line) and sets state 1.
+    /// </summary>
+    private void DispatchEraseLocked(PendingRequest req)
+    {
+        req.MoreData = false;
+        req.AckTag = req.Tag;
+        req.Deadline = SyncedClock + ReadTimeoutTicks;
+        _saved.Tag = req.Tag;
+        _saved.Op = OpErase;
+        req.AckAwaited = true;
+        _saved.Length = req.EraseSize != 0 ? (int)req.EraseSize : MaxSizeForEntryTagLogged(req.Tag);
+        _log.Add($"debug: NVStorageComponent.ProcessRequest.SendingErase: {TagNameOrMissing(req.Tag)} (Tag: 0x{req.Tag:x}) size: {(uint)_saved.Length}");
+        SendSavedLocked(req);
+        QueueDataToWriteMissing(req.Tag, 0);
+        SetStateLocked(1);
+    }
+
+    // fidelity: M3-043
+    /// <summary>
+    /// WRITE dispatch (WB11, 0x00645248..0x00645324): sends nothing. The component takes the queued vector (+0x18) and arms the chunk loop
+    /// (+0xC = +0x10 = the tag, +0x14 = 0, +0x1C = 1, +0x20 = the tag, +0x44 = clock + 5000, +0x48 = 0); the backup manager gets a copy of the
+    /// data (M15: a visible MISSING line); the log says SendingWrite although nothing has been sent; state 1. The saved header and Data are not
+    /// touched.
+    /// </summary>
+    private void DispatchWriteLocked(PendingRequest req)
+    {
+        req.WriteBaseTag = req.Tag;
+        req.NextTag = req.Tag;
+        req.MoreData = true;
+        req.Offset = 0;
+        req.AckTag = req.Tag;
+        req.Deadline = SyncedClock + ReadTimeoutTicks;
+        req.AckAwaited = false;
+        QueueDataToWriteMissing(req.Tag, req.Data.Length);
+        _log.Add($"debug: NVStorageComponent.ProcessRequest.SendingWrite: StartTag: 0x{req.Tag:x} ({TagNameOrMissing(req.Tag)}), timeoutTime: {(int)req.Deadline.Value}, currTime: {(int)SyncedClock}");
+        SetStateLocked(1);
+    }
+
+    // fidelity: M3-043
+    /// <summary>
+    /// WIPEALL dispatch (WB8, WB9, 0x00645188..0x00645246): logs with the key the engine spells "NVStoageComponent..." and an empty format, arms
+    /// the ack for the sentinel tag 0x198000, saves tag 0 and op 3 and sends the saved header with the STALE Length (+0xE0, not written here:
+    /// what the previous request left) and a copy of the stale Data. No backup call. A first-ever WIPEALL sends a Length the engine never
+    /// wrote (WB10): 0 here, under policy M3-037. // fidelity: M3-037
+    /// </summary>
+    private void DispatchWipeAllLocked(PendingRequest req)
+    {
+        _log.Add("debug: NVStoageComponent.ProcessRequest.SendingWipeAll: ");
+        req.AckTag = 0x198000;
+        req.MoreData = false;
+        req.Deadline = SyncedClock + ReadTimeoutTicks;
+        _saved.Tag = 0;
+        req.AckAwaited = true;
+        _saved.Op = OpWipeAll;
+        SendSavedLocked(req);
+        SetStateLocked(1);
+    }
+
+    // fidelity: M3-043
+    /// <summary>
+    /// The Update state-1 chunk send (WB15..WB20, 0x00645816..0x0064598A), one chunk per call: assemble the chunk into the saved command
+    /// (<see cref="SavedCommand.AssembleWriteChunk"/>), advance the offset and the next tag (+1 for a factory base, else 0x400), log
+    /// SendingWriteMsg with the payload bytes, send, then await the ack with a fresh 5 s deadline and a zero retry counter; the last chunk
+    /// clears the more-data flag. Header bytes 14..15 are never written by the engine; they are 0 here under policy M3-037.
+    /// </summary>
+    // fidelity: M3-037
+    private void SendChunkLocked(PendingRequest req)
+    {
+        uint chunkTag = req.NextTag;
+        int n = _saved.AssembleWriteChunk(chunkTag, req.Data, req.Offset, factoryDataFlag: FactoryWritesAllowed);
+        req.Offset += n;
+        req.NextTag += IsFactoryEntryTag(req.WriteBaseTag) ? 1u : 0x400u;
+        _log.Add($"debug: NVStorageComponent.Update.SendingWriteMsg: BaseTag: {TagNameOrMissing(req.WriteBaseTag)}, tag: 0x{_saved.Tag:x}, bytesSent: {n}");
+        SendSavedLocked(req);
+        req.AckAwaited = true;
+        req.Retries = 0;
+        req.Deadline = SyncedClock + ReadTimeoutTicks;
+        if (req.Offset >= req.Data.Length) req.MoreData = false;
+    }
+
+    /// <summary>+0x15C: written only by the constructor (0, 0x006428E0) and by BehaviorFactoryTest, which this stack does not run.</summary>
+    private const bool FactoryWritesAllowed = false;
+
+    // fidelity: M3-043
+    /// <summary>GetMaxSizeForEntryTag (0x00643FC8..0x0064404E) with its warning (WA10): an exact key other than 0x198000, else the warning "0x%x" and 0.</summary>
+    private int MaxSizeForEntryTagLogged(uint tag)
+    {
+        if (tag == 0x198000 || !MaxSizeTable.ContainsKey(tag))
+        {
+            _log.Add($"warning: NVStorageComponent.GetMaxSizeForEntryTag.InvalidTag: 0x{tag:x}");
+            return 0;
+        }
+        return MaxSizeTable[tag];
+    }
+
+    // fidelity: M3-031, M3-027
+    /// <summary>
+    /// ResendLastCommand (0x00645C54..0x00645D9A): the counter (+0xF4) is incremented first and compared as a u8 against
+    /// the limit (+0xF5 = 8, 0x006428B8). At the limit it logs NumRetriesExceeded (sErrorF, then the error-flag store and
+    /// the debug-break gate, 0x00645D62..0x00645D76) and returns false. Otherwise it logs Retry (info) with the saved
+    /// tag and op, and sends the saved header with a copy of the saved Data (WD9: the same command for a READ, a chunk,
+    /// an ERASE or a WIPEALL), and returns true.
+    /// </summary>
+    private bool ResendLastCommandLocked(PendingRequest req)
+    {
+        req.Retries = (byte)(req.Retries + 1);
+        if (req.Retries >= RetryLimit)
+        {
+            _log.Add($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{_saved.Tag:x}, Op: {NvOpName(_saved.Op)}, Attempts: {RetryLimit}");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return false;
+        }
+        _log.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{_saved.Tag:x}, Op: {NvOpName(_saved.Op)}, Attempt: {req.Retries}");
+        _robot.SendMessage(_saved.ToCommand(), flush: true);       // the saved header and a copy of the saved Data, for every op
+        return true;
     }
 
     // fidelity: M3-027, M3-029
@@ -521,10 +901,10 @@ public sealed class NvStorageComponent : IDisposable
         {
             if (_inFlight is { } req)
             {
-                // State 2 (read pending): only the timeout check. The deadline is only ever set for a READ.
-                if (req.Deadline is { } deadline)
+                if (req.Op == OpRead)
                 {
-                    if (SyncedClock > deadline)
+                    // State 2 (read pending): only the timeout check.
+                    if (req.Deadline is { } deadline && SyncedClock > deadline)
                     {
                         _log.Add($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:x}");
                         timeoutRequest = req;
@@ -532,6 +912,27 @@ public sealed class NvStorageComponent : IDisposable
                         timeoutResult = new NvResult(-4, Array.Empty<byte>());
                     }
                 }
+                else if (req.AckAwaited)
+                {
+                    // fidelity: M3-043
+                    // State 1 with an ack awaited (WC1..WC4, 0x006456F4..0x00645758): the clock strictly past the deadline warns WriteTimeout
+                    // with +0x20, calls the callback with -4, then SetState(0). No retry, no broadcast, no backup, no error flag.
+                    if (SyncedClock > req.Deadline)
+                    {
+                        _log.Add($"warning: NVStorageComponent.Update.WriteTimeout: Tag: 0x{req.AckTag:x}");
+                        timeoutRequest = req;
+                        timeoutCallback = req.Callback;
+                        timeoutResult = new NvResult(-4, Array.Empty<byte>());
+                    }
+                }
+                else if (!req.MoreData)
+                {
+                    // WB14 (0x006459A2..0x006459DE): nothing is left to send.
+                    _log.Add("warning: NVStorageComponent.Update.NoDataToWrite: ");
+                    SetStateLocked(0);
+                    _inFlight = null;
+                }
+                else SendChunkLocked(req);                  // one chunk per Update call
             }
             else
             {
@@ -544,7 +945,7 @@ public sealed class NvStorageComponent : IDisposable
         timeoutCallback?.Invoke(timeoutResult);
         if (timeoutRequest is not null)
             lock (_gate)
-                if (ReferenceEquals(_inFlight, timeoutRequest)) _inFlight = null;
+                if (ReferenceEquals(_inFlight, timeoutRequest)) { SetStateLocked(0); _inFlight = null; }
         if (runOnIdle) ProcessOnIdle();
     }
 
@@ -559,24 +960,53 @@ public sealed class NvStorageComponent : IDisposable
         // 00643F22..00643F6A: idle functions, queued requests, then active request
         // functions are destroyed without invocation. Managed references are released
         // in that same order; backup-manager destruction remains M15 ownership.
-        lock (_gate) { _onIdle.Clear(); _queue.Clear(); _inFlight = null; }
+        // fidelity: M3-027
+        // N12 (0x00643F26..0x00643F44): the request deque is destroyed, then the saved Data (+0xE8) is freed, before the backup
+        // manager's destructor (M15). A later robot's component is built afresh, so its saved Data starts null again (N1).
+        lock (_gate) { DestroyLocked(); ConstructedSetStateLocked(); }
     }
+
+    // The destructor's part only: ~NVStorageComponent (0x00643F22..0x00643F6A) calls no SetState; the constructor's
+    // SetState(0) line belongs to the next robot's component, which OnDisconnected stands in for.
+    private void DestroyLocked() { _onIdle.Clear(); _queue.Clear(); _inFlight = null; ResetSavedToConstructed(); }
 
     private void OnMessage(RobotMessage m) { if (m is NVOpResult r) OnResult(r); }
 
-    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag, PendingRequest Request);
+    private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag, PendingRequest Request, uint NameTag, byte Op);
 
     private void OnResult(NVOpResult r)
     {
         Completion? completion;
         lock (_gate)
         {
+            // fidelity: M3-043
+            // WD1/WD2 (0x00642FCC..0x00643048): every ack logs Recvd; a WIPEALL ack (op 3) is normalised to 0x198000 whatever its tag, any other
+            // op to GetBaseEntryTag(tag). Ops 1..3 are accepted only while an ack is awaited for that normalised tag (WD3).
+            _log.Add($"debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x{r.Tag:x}, Op: {NvOpName(r.Op) ?? "<null: MISSING>"}, Result: {NvResultName(r.Result) ?? "<null: MISSING>"}");
+            uint r8 = r.Op == OpWipeAll ? 0x198000u : r.Tag;
+            uint baseTag = r.Op == OpWipeAll ? 0x198000u : GetBaseEntryTag(r.Tag, _log.Add);
+            if (r.Op is >= OpWrite and <= OpWipeAll)
+            {
+                var wc = WriteAckLocked(r, baseTag, r8);
+                if (wc is null) return;
+                completion = wc;
+                goto delivered;
+            }
+            if (r.Op != OpRead)
+            {
+                _log.Add($"warning: NVStorageComponent.HandleNVOpResult.UnhandledOperation: {NvOpName(r.Op) ?? "<null: MISSING>"}");
+                return;
+            }
             var req = _inFlight;
             if (req is null) return;                          // nothing in flight
+            if (req.Op != OpRead)
+            {
+                _log.Add("MISSING: NVStorageComponent.HandleNVOpResult read ack while no read is pending (0x0064318A): the expected tag printed is the stale +0x50");
+                return;
+            }
             // M3-028/M3-026 accept check (pass 1 step 10 / pass 4 1e-1): the reply's base tag must be the pending
             // request's tag. A valid reply's base equals its own tag; the base comparison also admits a factory
             // reply whose raw tag differs from the request.
-            uint baseTag = GetBaseEntryTag(r.Tag, _log.Add);
             if (baseTag != req.Tag)
             {
                 _log.Add($"warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x{r.Tag:X8}, BaseTag: 0x{baseTag:X8}, ExpectedBaseTag: 0x{req.Tag:X8}");
@@ -584,34 +1014,26 @@ public sealed class NvStorageComponent : IDisposable
             }
             _log.Add($"NVOpResult tag=0x{r.Tag:X8} op={r.Op} result={r.Result} index={r.Length} data={r.Data.Length}B");
             sbyte result = r.Result;
+            // fidelity: M3-030
+            // R1 (0x00643024..0x00643048): the normalised response tag is 0x198000 for a WIPEALL response (op 3), else
+            // GetBaseEntryTag of the response tag; the callback's log names it.
+            req.ResponseBaseTag = baseTag;
 
             // fidelity: M15-014
             // Appendix I3 (0x00642F8C..0x00643937): op 0 takes the read header/reassembly path; ops 1-3 (WRITE,
             // ERASE, WIPEALL) take the write terminal (0x00643054..0x00643424). The write terminal completes with
             // the result byte, delivering 0 for a successful write.
-            if (req.Op != OpRead)
-            {
-                completion = WriteTerminalLocked(req, r);
-                if (completion is null) return;               // a retry was sent; keep waiting
-            }
-            else if (result <= -1)
+            if (result <= -1)
             {
                 // fidelity: M3-031
                 // M3-031 (0x006431E6..0x00643234): only {-8,-7,-5,-4} are retried; -6 and -1 are not. On a retry
                 // ResendLastCommand (0x00645C54) logs Retry and sends, then the caller logs ResentFailedRead; when
                 // the counter reaches +0xF5 = 8 it logs NumRetriesExceeded and returns 0, and the caller then logs
                 // ReadOpFailed for every negative result (0x006434E4).
-                if (IsRetryableResult(result))
+                if (IsRetryableResult(result) && ResendLastCommandLocked(req))
                 {
-                    if (req.Retries < MaxReadResends)
-                    {
-                        req.Retries++;
-                        _log.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempt: {req.Retries}");
-                        if (req.LastCommand is { } resend) _robot.SendMessage(resend, flush: true);
-                        _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x{r.Tag:x} resent due to {NvResultName(result)}");
-                        return;
-                    }
-                    _log.Add($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempts: {MaxReadResends + 1}");
+                    _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x{r.Tag:x} resent due to {NvResultName(result)}");
+                    return;
                 }
                 _log.Add($"warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x{r.Tag:x}, op: {NvOpName(req.Op)}, result: {NvResultName(result)}");
                 completion = CompleteLocked(req, result, req.Buffer);
@@ -650,9 +1072,14 @@ public sealed class NvStorageComponent : IDisposable
                             {
                                 // M3-028: the rest is on the robot; re-request it, reliable and not hot, with no re-arm.
                                 _log.Add($"debug: NVStorageComponent.HandleNVOpResult.ReadingRestOfData: Tag: 0x{r.Tag:X8}, TotalSize: {total}");
-                                var rerequest = new NVCommand { Tag = r.Tag, Length = (int)total + NvHeaderSize, Op = OpRead, Unknown = 0, Data = Array.Empty<byte>() };
-                                req.LastCommand = rerequest;
-                                _robot.SendMessage(rerequest, flush: true);
+                                // fidelity: M3-027
+                                // N10 (0x00643888..0x006438BC): the saved tag (+0xDC) becomes the response tag, the op (+0xE4)
+                                // 0 and the Length (+0xE0) total + 16; the command is the saved header with a copy of the
+                                // saved Data, which a reply never repopulates. A later resend sends this command again.
+                                _saved.Tag = r.Tag;
+                                _saved.Op = OpRead;
+                                _saved.Length = (int)total + NvHeaderSize;
+                                _robot.SendMessage(_saved.ToCommand(), flush: true);
                                 return;
                             }
                             // Fits in the first blob: 0x643922 resizes the reply vector to total+16 (pass 4b Q3).
@@ -672,8 +1099,9 @@ public sealed class NvStorageComponent : IDisposable
             // 0x00643600..0x00643694: after reassembly the engine logs the read outcome by the final result:
             // ReadSuccess (result 0, 0x00643640), ReadEntryNotFound (-1, 0x0064360E) or ReadFailed (anything else,
             // 0x0064366E). MORE (3) skips the log (0x00643606 -> 0x0064325A) and never reaches the completion.
-            if (req.Op == OpRead) LogReadResult(r, baseTag, result);
+            LogReadResult(r, baseTag, result);
         }
+    delivered:
         Deliver(completion.Value);
     }
 
@@ -698,40 +1126,46 @@ public sealed class NvStorageComponent : IDisposable
     // fidelity: M3-031
     private static bool IsRetryableResult(sbyte result) => result is -8 or -7 or -5 or -4;
 
-    // fidelity: M15-014, M3-031
+    // fidelity: M3-043
     /// <summary>
-    /// The WRITE/ERASE/WIPEALL terminal (Appendix I3; 0x00643054..0x00643424). A negative result resends for
-    /// {-8,-7,-5,-4} (i.e. -8..-4 except -6) while retries remain; otherwise it logs <c>WriteOpFailed</c> for
-    /// <b>every</b> negative result and completes with that result. A non-negative result logs
-    /// <c>WriteSuccess</c> and completes with the reply's own result byte (0 on success; 1/2 deliver 1/2).
-    /// Clearing <c>+0x48</c>/<c>+0x1C</c> and <c>SetState(0)</c> are the queue/in-flight reset
-    /// <see cref="CompleteLocked"/> performs; the engine's <c>WriteDataForTag</c> backup side effect has no
-    /// counterpart here.
+    /// A WRITE, ERASE or WIPEALL ack (WD3..WD8, 0x0064304E..0x00643362). It is accepted only while an ack is awaited (+0x48) for the normalised
+    /// tag (+0x20); otherwise it warns AckdTagBaseTagWasNeverSent and changes nothing. A result of 0 or more clears the await and, while chunks
+    /// remain, returns without a log or callback (the next Update sends the next chunk). A negative result in {-8, -7, -5, -4} resends the saved
+    /// command (ResentFailedWrite); any other, or an exhausted counter, logs WriteOpFailed, clears the await and drops the remaining chunks.
+    /// The final ack logs WriteFailed (result != 0) or WriteSuccess, then delivers: broadcast, callback, backup, SetState(0).
     /// </summary>
-    private Completion? WriteTerminalLocked(PendingRequest req, NVOpResult response)
+    private Completion? WriteAckLocked(NVOpResult r, uint sb, uint r8)
     {
-        sbyte result = response.Result;
+        var req = _inFlight;
+        if (req is null || req.Op == OpRead || !req.AckAwaited || req.AckTag != sb)
+        {
+            _log.Add($"warning: NVStorageComponent.HandleNVOpResult.AckdTagBaseTagWasNeverSent: BaseTag: 0x{sb:x}, Tag: 0x{r8:x}");
+            return null;
+        }
+        sbyte result = r.Result;
+        req.ResponseBaseTag = sb;
         if (result <= -1)
         {
-            if (IsRetryableResult(result))
+            if (IsRetryableResult(result) && ResendLastCommandLocked(req))
             {
-                if (req.Retries < MaxReadResends)
-                {
-                    req.Retries++;
-                    _log.Add($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempt: {req.Retries}");
-                    if (req.LastCommand is { } resend) _robot.SendMessage(resend, flush: true);
-                    // 0x006431AA..0x006431E0 formats the received result/tag/op;
-                    // ResendLastCommand's own Retry above uses the saved command's tag/op.
-                    _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x{response.Tag:x} resent due to {NvResultName(result)}, op: {NvOpName(response.Op)}");
-                    return null;
-                }
-                _log.Add($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{req.Tag:x}, Op: {NvOpName(req.Op)}, Attempts: {MaxReadResends + 1}");
+                _log.Add($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x{r8:x} resent due to {NvResultName(result)}, op: {NvOpName(r.Op)}");
+                return null;
             }
-            _log.Add($"warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x{req.Tag:X8}, result: {result}");
-            return CompleteLocked(req, result, req.Buffer);
+            _log.Add($"warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
+            req.AckAwaited = false;
+            req.MoreData = false;
         }
-        _log.Add($"info: NVStorageComponent.HandleNVOpResult.WriteSuccess: Tag: 0x{req.Tag:X8}");
-        return CompleteLocked(req, result, req.Buffer);
+        else
+        {
+            req.AckAwaited = false;
+            if (req.MoreData) return null;
+        }
+        string fp = TagNameOrUnreachable(sb);
+        if (result != 0)
+            _log.Add($"warning: NVStorageComponent.HandleNVOpResult.WriteFailed: BaseTag: {fp}, lastTag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
+        else
+            _log.Add($"info: NVStorageComponent.HandleNVOpResult.WriteSuccess: BaseTag: {fp}, lastTag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
+        return CompleteLocked(req, result, Array.Empty<byte>(), r.Op);
     }
 
     // fidelity: M3-029
@@ -770,30 +1204,59 @@ public sealed class NvStorageComponent : IDisposable
     /// callbacks (SetState(0) only, 0x6437EA; SetState 0x00642B0C runs no callbacks); <see cref="Update"/> sends
     /// the next request and runs them.
     /// </summary>
-    private Completion CompleteLocked(PendingRequest req, sbyte result, byte[] data)
+    private Completion CompleteLocked(PendingRequest req, sbyte result, byte[] data, byte? messageOp = null)
     {
+        byte op = messageOp ?? req.Op;
+        // R1 (0x00643042): the broadcast tag (sb) and the callback's name are the normalised response tag.
+        uint nameTag = req.ResponseBaseTag ?? req.Tag;
         List<NVStorageOpResult>? broadcasts = null;
-        if (req.Broadcast) broadcasts = BuildBroadcasts(req.Tag, req.Op, result, data);
-        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag, req);
+        if (req.Broadcast)
+        {
+            // fidelity: M3-031
+            // W2 (0x00643384..0x0064339E): a WRITE, ERASE or WIPEALL completion with the broadcast flag (+0x40) calls
+            // BroadcastNVStorageOpResult once, whatever the result's sign: (tag, result, op, index 0, no data, size 0).
+            broadcasts = req.Op == OpRead
+                ? BuildBroadcasts(nameTag, req.Op, result, data)
+                : new List<NVStorageOpResult> { new(nameTag, op, result, 0, Array.Empty<byte>()) };
+        }
+        return new Completion(req.Callback, new NvResult(result, data), broadcasts, req.Op == OpRead, req.Tag, req, nameTag, op);
     }
 
     private void Deliver(Completion c)
     {
-        // M3-030 / 0x006436B6..0x00643714: only a present read callback logs this,
-        // after the outcome log and immediately before invoking the callback.
-        if (c.ReadCallback && c.Callback is not null)
+        if (!c.ReadCallback)
         {
+            // fidelity: M3-031
+            // W2 (0x00643384..0x00643420), in the engine's order: the broadcast (gated on +0x40), then the callback (gated on
+            // +0x38) behind its debug log (0x006433C6, via 0x004A5B84, "%s" with the normalised tag's name), then the
+            // backup call (WipeAll for op 3, else WriteDataForTag(tag, result, op == 1)), then SetState(0).
+            if (c.Broadcasts is not null)
+                foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
+            if (c.Callback is not null)
+            {
+                lock (_gate) _log.Add($"debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: {TagNameOrUnreachable(c.NameTag)}");
+                c.Callback.Invoke(c.Result);
+            }
             lock (_gate)
-                _log.Add(NvEntryTagName(c.Tag) is { } name
-                    ? $"debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: {name}"
-                    : "MISSING: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback NULL-%s rendering");
+                _log.Add(c.Op == OpWipeAll
+                    ? "MISSING: RobotDataBackupManager::WipeAll (M15 recipient, 0x00643406): the backup manager is not built"
+                    : $"MISSING: RobotDataBackupManager::WriteDataForTag(0x{c.NameTag:x}, {c.Result.Result}, {c.Op == OpWrite}) (M15 recipient, 0x00643418): the backup manager is not built");
         }
-        c.Callback?.Invoke(c.Result);
-        if (c.Broadcasts is not null)
-            foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
+        else
+        {
+            // M3-030 R2 / 0x006436B6..0x00643714: only a present read callback logs this,
+            // after the outcome log and immediately before invoking the callback.
+            if (c.Callback is not null)
+            {
+                lock (_gate) _log.Add($"debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: {TagNameOrUnreachable(c.NameTag)}");
+            }
+            c.Callback?.Invoke(c.Result);
+            if (c.Broadcasts is not null)
+                foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
+        }
         // SetState(0) is after callback/broadcast, not before: 006437EA..006437EE.
         lock (_gate)
-            if (ReferenceEquals(_inFlight, c.Request)) _inFlight = null;
+            if (ReferenceEquals(_inFlight, c.Request)) { SetStateLocked(0); _inFlight = null; }
     }
 
     // fidelity: M3-030
@@ -805,6 +1268,14 @@ public sealed class NvStorageComponent : IDisposable
     /// 1000th broadcast does not exhaust the buffer it stops and logs LoopBoundOverflow via sErrorF with
     /// "../../../../engine/components/nvStorageComponent.cpp", line 0x4a7.
     /// </summary>
+    /// <summary>
+    /// R6 (0x006441F8..0x00644340, 0x007CEE38..0x007CF0A8): the normalised tag is a key of the two initialised tables
+    /// (R4, R5) or the sentinel 0x198000, and every one of those has a non-null name in EnumToString, so the callback's
+    /// "%s" is never null. A null here would mean a tag the engine cannot produce.
+    /// </summary>
+    private static string TagNameOrUnreachable(uint tag) =>
+        NvEntryTagName(tag) ?? throw new InvalidOperationException($"M3-030 R6: no name for the normalised tag 0x{tag:x}, which the engine cannot produce");
+
     private List<NVStorageOpResult> BuildBroadcasts(uint tag, byte op, sbyte result, byte[] data)
     {
         var chunks = new List<NVStorageOpResult>();
@@ -827,6 +1298,7 @@ public sealed class NvStorageComponent : IDisposable
             if (index >= 1000)
             {
                 _log.Add("error: LoopBoundOverflow: ../../../../engine/components/nvStorageComponent.cpp:1191");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();       // 0x006437BE..0x006437D2: _errG, then the debug-break gate
                 return chunks;
             }
         }
@@ -842,7 +1314,7 @@ public sealed class NvStorageComponent : IDisposable
     public void Dispose()
     {
         _robot.Message -= OnMessage;
-        OnDisconnected();
+        lock (_gate) DestroyLocked();
     }
 }
 

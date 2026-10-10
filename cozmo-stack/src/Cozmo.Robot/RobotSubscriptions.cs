@@ -88,10 +88,18 @@ public sealed partial class EngineRobot
         AddMessage(RobotMessageId.FirmwareVersion, m => HandleFirmwareVersion((FirmwareVersion)m));
         Lifetime.Bind(0x51C, _ => _idleHandles.Retire());
         // fidelity: M3-041
-        // Native 0x00532A64 closes the IMU stream after this vector retires.
-        // The actual logging/file recipient is a recoverable M3 gap, not storage-only disposal.
-        Lifetime.Bind(0x518, _ => _messagingHandles.Retire());
+        // I2 0x00532BC8..0x00532BE8: HandleImuData (tag 0xBF) and HandleImuRawData (tag 0xC7) are subscribed with the same
+        // retained-subscription helper as the handlers above, with no debug/SDK gate. The row set does not give their
+        // place in Messaging::Init's order; it is observable nowhere (distinct tags, retirement invokes no callback).
+        _imuLog = new ImuDiagnosticLog(this);
+        AddMessage(RobotMessageId.ImuDataChunk, m => _imuLog.HandleImuData((IMUDataChunk)m));
+        AddMessage(RobotMessageId.ImuRawDataChunk, m => _imuLog.HandleImuRawData((IMURawDataChunk)m));
+        // L35/I9: ~Messaging releases the subscription vector (0x00532A48), then the filebuf destructor closes the IMU
+        // stream (0x00532A64 -> 0x005010B4 -> close 0x0050111C): sync, fclose, no ClosingLogFile diagnostic.
+        Lifetime.Bind(0x518, _ => { _messagingHandles.Retire(); _imuLog.Destroy(); });
     }
+    private ImuDiagnosticLog _imuLog = null!;
+    internal ImuDiagnosticLog ImuLog => _imuLog;
     private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback)
         => _messagingHandles.Add(_robotMessages.Subscribe((int)tag, m => Engine.DeliverIsolated(() => callback(m))));
     internal bool DeliverMessage(RobotMessage message)

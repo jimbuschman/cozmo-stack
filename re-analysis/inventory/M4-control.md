@@ -613,3 +613,8 @@ Previous subsystem flag quoted before correction: `source_investigation_exhauste
 ## Manager correction (2026-10-09): transferred recipients
 
 M4-027 adds the ResetDevices ownership candidate while retaining native component boundaries (0x0051194C..0x0051198C; 0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510). M4-028 owns S14 lift child (0x0052CF8E..0x0052CFB0). M4-029 SDK light/lift power (0x0065DECA; 0x0065DF8C), M4-030 StopRobotForSdk (0x0065DF6A), M4-031 PrintLockState (0x006410D8..0x006413CA; caller 0x0063FF02..0x0063FF24). Source: 20261006-M1M2-missing-triage.md S2/S14/E3/E5/E9.
+
+## M4-008 and M4-010 additions (manager, 2026-10-10)
+
+- **M4-008** now also owns HandleObjectPowerLevel after the arithmetic: the Log, the DAS gate and its per-activeID maps, the Report log, the DAS event, the connected-object lookup (BlockWorld FindConnectedObjectHelper 0x0061F078), the ObjectID getter (0x004EF772), the Broadcast log and the ObjectPowerLevel broadcast. Evidence: research/20261010-power-level-and-connect-log-rows.md A1..A16 and the Addendum (0x00537130..0x00537402).
+- **M4-010** now also owns the ConnectToObjects pre-loop BlockPool log. Evidence: the same file's B1..B6 (0x005173A6).

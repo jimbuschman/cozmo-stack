@@ -150,6 +150,37 @@ public class DerivedStateTests
         Assert.Equal(0.95f * 490f + 490f, c.FilteredAccelMagnitude, 1e-2);
     }
 
+    /// <summary>
+    /// U1..U3 (0x005129A4..0x00512A6E): the accelerometer is copied unchanged, |a| is sqrt((x*x + y*y) + z*z) in f32, and both filters are
+    /// new * newFactor + old * oldFactor with the engine's literal bits (0x3D4CCCD0 / 0x3F733333 for the magnitude, 0x3DCCCCD0 / 0x3F666666 per axis;
+    /// 0x00512D04..0x00512D10), not the nearest decimals 0.05f / 0.1f. The expected bits are those instructions applied in binary32 to three states
+    /// through the live RobotState entry.
+    /// </summary>
+    [Fact]
+    public void M4_008_U1_U3_TheImuFiltersUseTheEnginesLiteralBits()
+    {
+        var rig = new Rig();
+        var c = rig.Robot.Sensors.OffTreads;
+        var expected = new (float x, float y, float z, uint raw, uint mag, uint ax, uint ay, uint az)[]
+        {
+            (100.5f, -2000f, 9800f, 0x461C4A05, 0x43FA100C, 0x4120CCCF, 0xC3480003, 0x44750004),
+            (50f, 3000.25f, 9700f, 0x461EA616, 0x4475B2E6, 0x4160B855, 0x42F00CD4, 0x44E78004),
+            (-7.125f, 12.5f, 9810.5f, 0x46194A0B, 0x44B205CC, 0x413ED918, 0x42DA8B8B, 0x45257D9C),
+        };
+        uint t = 1000;
+        foreach (var e in expected)
+        {
+            rig.Send(State(t, e.x, e.y, e.z));
+            t += 33;
+            Assert.Equal(e.raw, Bits(c.RawAccelMagnitude));
+            Assert.Equal(e.mag, Bits(c.FilteredAccelMagnitude));
+            Assert.Equal((e.ax, e.ay, e.az), (Bits(c.FilteredAccel.X), Bits(c.FilteredAccel.Y), Bits(c.FilteredAccel.Z)));
+            Assert.Equal((e.x, e.y, e.z), (c.RawAccel.X, c.RawAccel.Y, c.RawAccel.Z));    // U1: copied unchanged
+        }
+    }
+
+    private static uint Bits(float v) => unchecked((uint)BitConverter.SingleToInt32Bits(v));
+
     /// <summary>The filters run whether or not the head is calibrated; only the classification waits.</summary>
     [Fact]
     public void TheClassifierWaitsForTheHeadCalibrationGate()

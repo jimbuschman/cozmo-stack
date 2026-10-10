@@ -80,6 +80,16 @@ public sealed class OffTreadsClassifier
     public bool HeadCalibrated { get; set; }
 
     // ---------------------------------------------------------------- IMU state (M2 RS8, M10-012, M10-013)
+    // fidelity: M4-008
+    /// <summary>U2 (0x00512D04): the new-magnitude factor, bits 0x3D4CCCD0 (not 0.05f, 0x3D4CCCCD).</summary>
+    internal static readonly float AccelMagnitudeNewFactor = BitConverter.Int32BitsToSingle(0x3D4CCCD0);
+    /// <summary>U2 (0x00512D08): the old-magnitude factor, bits 0x3F733333.</summary>
+    internal static readonly float AccelMagnitudeOldFactor = BitConverter.Int32BitsToSingle(0x3F733333);
+    /// <summary>U3 (0x00512D0C): the new-axis factor, bits 0x3DCCCCD0 (not 0.1f, 0x3DCCCCCD).</summary>
+    internal static readonly float AccelAxisNewFactor = BitConverter.Int32BitsToSingle(0x3DCCCCD0);
+    /// <summary>U3 (0x00512D10): the old-axis factor, bits 0x3F666666.</summary>
+    internal static readonly float AccelAxisOldFactor = BitConverter.Int32BitsToSingle(0x3F666666);
+
     // fidelity: M10-012, M10-013
     /// <summary>
     /// Robot+0x360..+0x368, the raw accel of the last state (RS8), written only by UpdateFullRobotState (gap2 7a).
@@ -177,11 +187,14 @@ public sealed class OffTreadsClassifier
         RawAccel = new Vector3(a.X, a.Y, a.Z);
         RawGyro = new Vector3(state.Gyro.X, state.Gyro.Y, state.Gyro.Z);
         RawAccelMagnitude = MathF.Sqrt(a.X * a.X + a.Y * a.Y + a.Z * a.Z);
-        FilteredAccelMagnitude = 0.05f * RawAccelMagnitude + 0.95f * FilteredAccelMagnitude;
+        // fidelity: M4-008
+        // U2/U3 (0x005129C0..0x00512A6E): new * newFactor + old * oldFactor in f32, each factor the engine's literal bits (read at
+        // 0x00512D04..0x00512D10), not the nearest-float decimals 0.05f / 0.1f: the new factors are 0x3D4CCCD0 and 0x3DCCCCD0.
+        FilteredAccelMagnitude = RawAccelMagnitude * AccelMagnitudeNewFactor + FilteredAccelMagnitude * AccelMagnitudeOldFactor;
         FilteredAccel = new Vector3(
-            0.1f * a.X + 0.9f * FilteredAccel.X,
-            0.1f * a.Y + 0.9f * FilteredAccel.Y,
-            0.1f * a.Z + 0.9f * FilteredAccel.Z);
+            a.X * AccelAxisNewFactor + FilteredAccel.X * AccelAxisOldFactor,
+            a.Y * AccelAxisNewFactor + FilteredAccel.Y * AccelAxisOldFactor,
+            a.Z * AccelAxisNewFactor + FilteredAccel.Z * AccelAxisOldFactor);
 
         if (!HeadCalibrated) return false;                                      // A1: robot+0x314
 

@@ -336,6 +336,156 @@ public class EngineAppLayerTests
         Assert.Equal(0u, connections.Slots[0].FactoryId);
     }
 
+
+    // ------------------------------------------------------------------ B-M3M4 build: M4-010 diagnostics
+    // Every line is the engine's key and format string at the cited address (research/20261006-M3M4-diagnostics.txt P18, P23..P27), driven
+    // through the live engine entry (ObjectAvailable / ObjectConnectionState over the transport, Engine.Tick).
+
+    /// <summary>
+    /// P1 (0x00517426..0x00517434), P3..P5 (0x00514B36, 0x00514B84, 0x00514C04), P6 (0x005179F2..0x00517ADE), P7 (0x00517BF0..0x00517CE0) and P9
+    /// (0x005149AA..0x005149CA): the slot-state diagnostics, in the engine's order and with its arguments.
+    /// </summary>
+    [Fact]
+    public void M4_010_P1_P7_P9_TheSlotPathLogsWhatTheEngineLogs()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        var connections = rig.Robot.Cubes.Connections;
+        connections.ConnectToObjects(new uint[] { 0xAB, 0, 0, 0, 0 });
+        Assert.Contains("info: Robot.ConnectToObjects: Connecting objects with factoryID = 0xab, 0x0, 0x0, 0x0, 0x0, ", rig.Log);
+        // B2/B4 (0x0051720C..0x00517354): the pre-loop line, both streams in lower-case hex with trailing ", " and the pending byte as 0 or 1
+        int pre = rig.Log.FindIndex(l => l == "info: Robot.ConnectToObjects: Before processing factory_ids = 0xab, 0x0, 0x0, 0x0, 0x0, . _objectsToConnectTo = 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, ");
+        Assert.True(pre >= 0 && pre < rig.Log.FindIndex(pre, l => l.StartsWith("info: Robot.ConnectToObjects: Connecting objects")), "the pre-loop line precedes the loop's");
+        rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Tick();
+        Assert.Contains("info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot 0 with factory ID = 0xab", rig.Log);
+
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAC, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
+        rig.Tick();
+        Assert.Contains("info: Robot.HandleConnectedToObject: Ignoring connection to object 0xac of type Block_LIGHTCUBE2 with active ID 0 because expecting connection to 0xab of type Block_LIGHTCUBE1", rig.Log);
+
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Tick();
+        Assert.Contains("info: Robot.HandleConnectToObject: Connected to active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 1", rig.Log);
+        Assert.DoesNotContain(rig.Log, l => l.Contains("InvalidState"));
+
+        // a second connection report finds state 2, which is neither 1 nor 4 (0x005179E2..0x005179E8): the error, the stored flag, then the same handling
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Tick();
+        Assert.Contains("error: Robot.HandleConnectedToObject.InvalidState: Invalid state 2 when connected to object 0xab with active ID 0", rig.Log);
+        Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
+
+        // a mismatching disconnection is ignored with the expected id and type; the matching one from state 2 is valid (state & ~1 == 2) and
+        // marks the slot Disconnected (4) with the BaseStationTimer time
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAD, ObjectType = ObjectType.Block_LIGHTCUBE3, Connected = false });
+        rig.Tick();
+        Assert.Contains("info: Robot.HandleDisconnectedFromObject: Ignoring disconnection from object 0xad of type Block_LIGHTCUBE3 with active ID 0 because expecting connection to 0xab of type Block_LIGHTCUBE1", rig.Log);
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+        rig.Tick();
+        Assert.Contains("info: Robot.HandleDisconnectedFromObject: Disconnected from active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 2", rig.Log);
+        Assert.DoesNotContain(rig.Log, l => l.Contains("HandleDisconnectedFromObject.InvalidState"));
+        Assert.Equal(ActiveObjectSlotState.Disconnected, connections.Slots[0].State);
+
+        // two seconds later CheckDisconnectedObjects resets the slot and logs the three doubles as %f
+        rig.Tick(3000);
+        rig.Tick(60);
+        var reset = Assert.Single(rig.Log, l => l.StartsWith("info: Robot.CheckDisconnectedObjects: Resetting slot 0 with factory ID 0xab, connection state 4. Object disconnected at "));
+        Assert.EndsWith(" with max delay 2.000000 seconds", reset);
+        Assert.Matches(@"current time is \d+\.\d{6} with max delay", reset);
+        Assert.Equal(0u, connections.Slots[0].FactoryId);
+    }
+
+    /// <summary>
+    /// P5 (0x00514C04..0x00514C0E): a request of 0 for a held slot logs "Sending ... factory ID = %d" (0) before the message; P3 (0x00514B2C..0x00514B3C): a
+    /// request for a second cube of a type already connected warns, clears the request, and still sends (with the cleared id 0).
+    /// </summary>
+    [Fact]
+    public void M4_010_P3_P5_TheDuplicateTypeWarningAndTheEmptyingSendLogThemselves()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        var connections = rig.Robot.Cubes.Connections;
+        connections.ConnectToObjects(new uint[] { 0xAB, 0, 0, 0, 0 });
+        rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Tick();
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Tick();
+        // slot 1 asks for another cube of type 1 while slot 0 is connected
+        connections.ConnectToObjects(new uint[] { 0xAB, 0xCD, 0, 0, 0 });
+        rig.Data(new ObjectAvailable { FactoryId = 0xCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Tick();
+        Assert.Contains("warning: Robot.ConnectToRequestedObjects.SameTypeAlreadyConnected: Object with factory ID 0xcd matches type (Block_LIGHTCUBE1) of another connected object. Only one of each type may be connected.", rig.Log);
+        Assert.Contains("info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot 1 with factory ID = 0x0", rig.Log);
+        // emptying slot 0
+        connections.ConnectToObjects(new uint[] { 0, 0xCD, 0, 0, 0 });
+        rig.Tick();
+        Assert.Contains("info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot 0 with factory ID = 0", rig.Log);
+    }
+
+    /// <summary>
+    /// P12..P14 and P27 (0x0061A836..0x0061A926): the discovery diagnostics - one "Looking for objects of type %s with RSSI &lt; %d" per unpooled type in
+    /// kObjectTypes order {1, 2, 3}, "Discovered closer object 0x%x" for each candidate, then "Connecting to discovered objects" before the pool is
+    /// filled - and the P14 step the inventory leaves open (SendBlockPoolData) stays visible as MISSING.
+    /// </summary>
+    [Fact]
+    public void M4_010_P14_P27_TheDiscoveryDiagnosticsFollowTheTypeOrder()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        rig.Log.Clear();                       // the live engine already runs BlockFilter::Update before the first advertisement
+        rig.Data(new ObjectAvailable { FactoryId = 0x10, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Data(new ObjectAvailable { FactoryId = 0x30, ObjectType = ObjectType.Block_LIGHTCUBE3, Rssi = unchecked((sbyte)150) });   // the RSSI byte 150 is inside the "<=" predicate
+        rig.Tick();
+        rig.Robot.Cubes.EnableAutoBlockPool(true);
+        rig.Tick(3000);
+        var lines = rig.Log.Where(l => l.Contains("BlockFilter.UpdateDiscovering") || l.Contains("SendBlockPoolData")).ToList();
+        Assert.Equal(new[]
+        {
+            "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE1 with RSSI < 150",
+            "info: BlockFilter.UpdateDiscovering: Discovered closer object 0x10",
+            "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE2 with RSSI < 150",
+            "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE3 with RSSI < 150",
+            "info: BlockFilter.UpdateDiscovering: Discovered closer object 0x30",
+            "info: BlockFilter.UpdateDiscovering: Connecting to discovered objects",
+            "MISSING: BlockFilter::SendBlockPoolData (0x0061A9C0): no inventory row for the BlockPoolData broadcast",
+        }, lines);
+        // AddObjectToPersistentPool takes the first empty entry, in the tree's type order (P14)
+        Assert.Equal(new uint[] { 0x10, 0x30, 0, 0, 0 }, rig.Robot.Cubes.Connections.PooledFactoryIds.ToArray());
+    }
+
+    /// <summary>
+    /// P15 and P27 (0x0061AAE6..0x0061AB4A): a pooled cube no slot holds is looked up ("Looking for a replacement for object 0x%x of type %s"), and a closer
+    /// advertiser of its type that is a different cube is announced ("Found replacement object 0x%x") before the pool is requested again.
+    /// </summary>
+    [Fact]
+    public void M4_010_P15_P27_TheReplacementDiagnosticsNameThePooledCubeAndTheCandidate()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "cozmo-m3m4-" + Guid.NewGuid().ToString("N") + ".txt");
+        try
+        {
+            File.WriteAllText(path, "0x10,1\n");
+            using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
+            rig.ToSuccess();
+            rig.SendFirstFullState(1000);
+            rig.Data(new ObjectAvailable { FactoryId = 0x11, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 20 });
+            rig.Tick();
+            rig.Robot.Cubes.EnableAutoBlockPool(true);
+            rig.Log.Clear();
+            rig.Tick(3000);
+            Assert.DoesNotContain(rig.Log, l => l.Contains("BlockFilter.UpdateConnecting"));   // 5 s after the enable have not passed
+            rig.Tick(6000);
+            Assert.Contains("info: BlockFilter.UpdateConnecting: Looking for a replacement for object 0x10 of type Block_LIGHTCUBE1", rig.Log);
+            Assert.Contains("info: BlockFilter.UpdateConnecting: Found replacement object 0x11", rig.Log);
+            Assert.Contains("info: Robot.ConnectToObjects: Connecting objects with factoryID = 0x11, 0x0, 0x0, 0x0, 0x0, ", rig.Log);
+        }
+        finally { File.Delete(path); }
+    }
+
     // ------------------------------------------------------------------ rig
 
     private sealed class FakePort : IEngineTransport

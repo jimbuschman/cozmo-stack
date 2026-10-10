@@ -757,17 +757,26 @@ public class FaceTests
         rig.Pump();
 
         var album = rig.Sent.OfType<NVCommand>().Last();
-        Assert.Equal(0x184000u, album.Tag);                               // album first
+        Assert.Equal(0x184000u, album.Tag);                               // album first, behind its ERASE (M3-043 WA12)
+        Assert.Equal(NvStorageComponent.OpErase, album.Op);
+        rig.Send(new NVOpResult { Tag = 0x184000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Pump();
+        album = rig.Sent.OfType<NVCommand>().Last();
+        Assert.Equal(0x184000u, album.Tag);
         Assert.Equal(NvStorageComponent.OpWrite, album.Op);
-        Assert.Equal(4, album.Length);                                    // 3 rounded to a four-byte boundary
-        Assert.Equal(new byte[] { 1, 2, 3, 0 }, album.Data);
+        Assert.Equal(16 + 4, album.Length);                               // the WB15 header and 3 rounded to a four-byte boundary
+        Assert.Equal(new byte[] { 1, 2, 3, 0 }, album.Data[16..]);
 
-        ReplyNonFactoryRead(rig, 0x184000, Array.Empty<byte>());           // complete the first write
+        rig.Send(new NVOpResult { Tag = 0x184000, Op = NvStorageComponent.OpWrite, Result = 0 });   // complete the first write
+        rig.Pump();
+        Assert.Equal(0x183000u, rig.Sent.OfType<NVCommand>().Last().Tag);  // enrollment second, behind its ERASE
+        rig.Send(new NVOpResult { Tag = 0x183000, Op = NvStorageComponent.OpErase, Result = 0 });
+        rig.Pump();
         var enrollment = rig.Sent.OfType<NVCommand>().Last();
-        Assert.Equal(0x183000u, enrollment.Tag);                          // enrollment second
+        Assert.Equal(0x183000u, enrollment.Tag);
         Assert.Equal(NvStorageComponent.OpWrite, enrollment.Op);
-        Assert.Equal(4, enrollment.Length);                               // 2 rounded up
-        Assert.Equal(new byte[] { 4, 5, 0, 0 }, enrollment.Data);
+        Assert.Equal(16 + 4, enrollment.Length);                          // 2 rounded up
+        Assert.Equal(new byte[] { 4, 5, 0, 0 }, enrollment.Data[16..]);
 
         // empty data takes the erase path
         using var empty = new Rig();

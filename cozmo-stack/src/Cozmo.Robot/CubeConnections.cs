@@ -106,6 +106,8 @@ public sealed class CubeConnections
     private readonly object _gate = new();
     private readonly Action<SetPropSlot> _send;
     private readonly Func<float> _seconds;
+    private readonly Action<string>? _log;
+    private readonly List<string> _pendingLogs = new();     // appended under _gate, delivered outside it (FlushLogs)
 
     // Robot
     private readonly ActiveObjectTable<Info> _available = new();     // Robot+0x47C, libc++ unordered_map order
@@ -124,10 +126,12 @@ public sealed class CubeConnections
 
     /// <param name="send">Sends a SetPropSlot to the robot, reliably.</param>
     /// <param name="seconds">The engine's <c>BaseStationTimer::GetCurrentTimeInSeconds</c>.</param>
-    public CubeConnections(Action<SetPropSlot> send, Func<float> seconds)
+    /// <param name="log">The engine log (the channeled info, warning and error lines of the connection path).</param>
+    public CubeConnections(Action<SetPropSlot> send, Func<float> seconds, Action<string>? log = null)
     {
         _send = send;
         _seconds = seconds;
+        _log = log;
         for (int i = 0; i < SlotCount; i++)
         {
             _slots[i] = Info.Reset();
@@ -245,6 +249,7 @@ public sealed class CubeConnections
     {
         List<SetPropSlot> sent;
         lock (_gate) sent = UpdateLocked();
+        FlushLogs();
         Raise(sent);
     }
 
@@ -253,21 +258,47 @@ public sealed class CubeConnections
     /// anything (0x00533B58), a connection goes to <c>HandleConnectedToObject</c>, a disconnection to
     /// <c>HandleDisconnectedFromObject</c>.
     /// </summary>
-    public void OnConnectionState(uint slot, uint factoryId, bool connected)
+    public void OnConnectionState(uint slot, uint factoryId, bool connected, ObjectType type = ObjectType.InvalidObject)
     {
         if (slot >= SlotCount) return;
         lock (_gate)
         {
-            if (connected) HandleConnected((int)slot, factoryId);
-            else HandleDisconnected((int)slot, factoryId);
+            if (connected) HandleConnected((int)slot, factoryId, type);
+            else HandleDisconnected((int)slot, factoryId, type);
         }
+        FlushLogs();
     }
 
     /// <summary><c>Robot::ConnectToObjects</c> 0x00517150.</summary>
     public void ConnectToObjects(IReadOnlyList<uint> factoryIds)
     {
         lock (_gate) ConnectToObjectsLocked(factoryIds);
+        FlushLogs();
     }
+
+    // The channeled info, warning and error calls of the connection path. A line is queued where the engine logs it
+    // and delivered when the entry point has left the lock, in order.
+    private void Queue(string line) { if (_log is not null) _pendingLogs.Add(line); }
+
+    private void FlushLogs()
+    {
+        if (_log is null) return;
+        string[] lines;
+        lock (_gate)
+        {
+            if (_pendingLogs.Count == 0) return;
+            lines = _pendingLogs.ToArray();
+            _pendingLogs.Clear();
+        }
+        foreach (var l in lines) _log(l);
+    }
+
+    /// <summary>
+    /// <c>Anki::Cozmo::EnumToString(ObjectType)</c> 0x007D13A0: the table at 0x01034BA0 holds the 39 names for -1..37 in
+    /// the enum's own spelling and anything else returns null, which the phone's printf renders (not settled here).
+    /// </summary>
+    internal static string ObjectTypeName(ObjectType type) =>
+        (int)type is >= -1 and <= 37 ? type.ToString() : "<null: the phone's rendering of a null %s is open (MISSING)>";
 
     // ------------------------------------------------------------------ Robot
 
@@ -282,9 +313,21 @@ public sealed class CubeConnections
 
     private void ConnectToObjectsLocked(IReadOnlyList<uint> factoryIds)
     {
+        // P1 as extracted says requested-to-requested; the binary (0x005173F8..0x00517404, [robot+0x494 + 24 * i]) compares with the slot's own factory id, which is built.
+        // fidelity: M4-010
+        // B1..B6 (0x00517186..0x005173A6): the info line (channel BlockPool, key Robot.ConnectToObjects; this file's convention has no channel prefix) before the per-index loop, from two
+        // streams: the argument ids as "0x<hex>, " (B2, lowercase, trailing ", ") and the five request entries at Robot+0x454 (stride 8: id, pending byte) as
+        // "0x<hex>, pending = <0|1>, " (B4; the bool prints 0 or 1).
+        Queue($"info: Robot.ConnectToObjects: Before processing factory_ids = {string.Concat(Enumerable.Range(0, SlotCount).Select(k => $"0x{factoryIds[k]:x}, "))}. _objectsToConnectTo = {string.Concat(_requested.Select(r => $"0x{r.FactoryId:x}, pending = {(r.Pending ? 1 : 0)}, "))}");
+        // A differing slot logs the id list and then stores the request and the pending byte.
         for (int i = 0; i < SlotCount; i++)
             if (factoryIds[i] != _slots[i].FactoryId)   // 0x00517404
+            {
+                // fidelity: M4-010
+                // 0x00517426..0x00517434 (channel BlockPool): the %s is the five requested ids as "0x<hex>, " each, built by the stream at 0x00517210..0x00517248 (outside the cited range, kept).
+                Queue($"info: Robot.ConnectToObjects: Connecting objects with factoryID = {string.Concat(Enumerable.Range(0, SlotCount).Select(k => $"0x{factoryIds[k]:x}, "))}");
                 _requested[i] = (factoryIds[i], true);  // 0x00517472, 0x00517476
+            }
     }
 
     private List<SetPropSlot> ConnectToRequestedObjects()
@@ -301,6 +344,9 @@ public sealed class CubeConnections
             }
             if (want == 0)                                       // 0x00514BF4: empty the slot
             {
+                // fidelity: M4-010
+                // 0x00514C04..0x00514C0E (channel BlockPool): the slot and the factory id 0, as %d.
+                Queue($"info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot {i} with factory ID = 0");
                 _slots[i].State = ActiveObjectSlotState.PendingDisconnection;
                 _requested[i] = (0, false);
                 sent.Add(Send(0, i));
@@ -313,8 +359,16 @@ public sealed class CubeConnections
                 // the request, and then carries on regardless - it still sends, now with the cleared id, and
                 // still records the advertisement in the slot.
                 if (_slots[j].State == ActiveObjectSlotState.Connected && _slots[j].Type == info.Type)
+                {
+                    // fidelity: M4-010
+                    // 0x00514B36..0x00514B3C (sWarningF): the requested factory id (read before it is cleared) and the connected slot's type name.
+                    Queue($"warning: Robot.ConnectToRequestedObjects.SameTypeAlreadyConnected: Object with factory ID 0x{_requested[i].FactoryId:x} matches type ({ObjectTypeName(_slots[j].Type)}) of another connected object. Only one of each type may be connected.");
                     _requested[i] = (0, false);
+                }
             }
+            // fidelity: M4-010
+            // 0x00514B84..0x00514B8C (channel BlockPool), before the message is built and sent: the slot and the requested id (zero after the duplicate branch), as 0x%x.
+            Queue($"info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot {i} with factory ID = 0x{_requested[i].FactoryId:x}");
             sent.Add(Send(_requested[i].FactoryId, i));          // 0x00514BB4..0x00514BCE
             info.State = ActiveObjectSlotState.PendingConnection;  // 0x00514BDE..0x00514BEE
             _slots[i] = info;
@@ -331,20 +385,50 @@ public sealed class CubeConnections
         return m;
     }
 
-    private void HandleConnected(int slot, uint factoryId)
+    // fidelity: M4-010
+    private void HandleConnected(int slot, uint factoryId, ObjectType type)
     {
         ref var s = ref _slots[slot];
-        if (s.FactoryId != factoryId) return;   // "Ignoring connection to object ... because expecting ..."
-        // any state other than PendingConnection or Disconnected is logged as an error, and handled the same
+        if (s.FactoryId != factoryId)
+        {
+            // 0x00517AA8..0x00517ADE (channel BlockPool): the reported id, the reported type, the slot, then the slot's own id and type.
+            Queue($"info: Robot.HandleConnectedToObject: Ignoring connection to object 0x{factoryId:x} of type {ObjectTypeName(type)} with active ID {slot} because expecting connection to 0x{s.FactoryId:x} of type {ObjectTypeName(s.Type)}");
+            return;
+        }
+        // P6 says "unless state 0 or 1"; the binary (0x005179E2..0x005179E8, cmp #1 / cmp #4) is built. A state other than PendingConnection (1) or Disconnected (4) logs an error and stores the error flag,
+        // then the handling goes on unchanged.
+        if (s.State is not ActiveObjectSlotState.PendingConnection and not ActiveObjectSlotState.Disconnected)
+        {
+            Queue($"error: Robot.HandleConnectedToObject.InvalidState: Invalid state {(int)s.State} when connected to object 0x{factoryId:x} with active ID {slot}");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        }
+        // 0x00517A3C..0x00517A68 (channel BlockPool, the engine's own key spelling "HandleConnectToObject"): the slot, the id, the
+        // reported type and the state before the change.
+        Queue($"info: Robot.HandleConnectToObject: Connected to active Id {slot} with factory Id 0x{factoryId:x} of type {ObjectTypeName(type)}. Connection State = {(int)s.State}");
         _available.Remove(factoryId);                           // __erase_unique at 0x00517A98
         s.State = ActiveObjectSlotState.Connected;
         s.DisconnectedTime = 0;
     }
 
-    private void HandleDisconnected(int slot, uint factoryId)
+    // fidelity: M4-010
+    private void HandleDisconnected(int slot, uint factoryId, ObjectType type)
     {
         ref var s = ref _slots[slot];
-        if (s.FactoryId != factoryId) return;   // "Ignoring disconnection from object ..."
+        if (s.FactoryId != factoryId)
+        {
+            // 0x00517CAC..0x00517CE0 (channel BlockPool): the reported id, the reported type, the slot, then the slot's own id and type.
+            Queue($"info: Robot.HandleDisconnectedFromObject: Ignoring disconnection from object 0x{factoryId:x} of type {ObjectTypeName(type)} with active ID {slot} because expecting connection to 0x{s.FactoryId:x} of type {ObjectTypeName(s.Type)}");
+            return;
+        }
+        // P7 says state != 2 and "arms slot request"; the binary (0x00517BE0..0x00517BE4, bic #1; cmp #2) arms nothing and is built. The valid states are Connected (2) and PendingDisconnection (3) (state & ~1 == 2); any other logs an
+        // error and stores the error flag, then the handling goes on unchanged.
+        if (s.State is not ActiveObjectSlotState.Connected and not ActiveObjectSlotState.PendingDisconnection)
+        {
+            Queue($"error: Robot.HandleDisconnectedFromObject.InvalidState: Invalid state {(int)s.State} when disconnected from object 0x{factoryId:x} with active ID {slot}");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        }
+        // 0x00517C3A..0x00517C66 (channel BlockPool): the slot, the id, the reported type and the state before the change.
+        Queue($"info: Robot.HandleDisconnectedFromObject: Disconnected from active Id {slot} with factory Id 0x{factoryId:x} of type {ObjectTypeName(type)}. Connection State = {(int)s.State}");
         if (s.State == ActiveObjectSlotState.PendingDisconnection)
             s = Info.Reset();                    // 0x00517C92..0x00517CA6
         else
@@ -361,7 +445,13 @@ public sealed class CubeConnections
         for (int i = 0; i < SlotCount; i++)
             if (_slots[i].State == ActiveObjectSlotState.Disconnected
                 && (double)_slots[i].DisconnectedTime + DisconnectResetSeconds < now)
+            {
+                // fidelity: M4-010
+                // 0x0051499C..0x005149CA (channel BlockPool): slot, id, state, then three doubles as %f - the disconnect time (the f32
+                // widened), the current time (the same f32 value as read at 0x00514936) and the 2.0 second delay.
+                Queue($"info: Robot.CheckDisconnectedObjects: Resetting slot {i} with factory ID 0x{_slots[i].FactoryId:x}, connection state {(int)_slots[i].State}. Object disconnected at {F6((double)_slots[i].DisconnectedTime)}, current time is {F6(now)} with max delay {F6(DisconnectResetSeconds)} seconds");
                 _slots[i] = Info.Reset();
+            }
         _lastDisconnectCheck = now;
     }
 
@@ -380,6 +470,9 @@ public sealed class CubeConnections
 
     private bool IsConnectedToObject(uint factoryId) => _slots.Any(s => s.FactoryId == factoryId);
 
+    /// <summary>"%f": six decimals, the invariant point (the engine formats with the phone printf; ordinary values only).</summary>
+    private static string F6(double v) => v.ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
+
     // ------------------------------------------------------------------ BlockFilter
 
     private void UpdatePool()
@@ -397,15 +490,27 @@ public sealed class CubeConnections
         foreach (var type in PoolTypes)
         {
             if (_persistentPool.Any(p => p.Type == type)) continue;
+            // fidelity: M4-010
+            // 0x0061A836..0x0061A84A (channel BlockPool, key BlockFilter.UpdateDiscovering): the type name and the RSSI limit 150. The text
+            // says "<" while the closest-object predicate is "<=" (P16, P27).
+            Queue($"info: BlockFilter.UpdateDiscovering: Looking for objects of type {ObjectTypeName(type)} with RSSI < {ClosestRssiLimit}");
             uint closest = GetClosestDiscoveredObjectOfType(type, ClosestRssiLimit);
-            if (closest != 0) _discovering[type] = closest;
+            if (closest != 0)
+            {
+                Queue($"info: BlockFilter.UpdateDiscovering: Discovered closer object 0x{closest:x}");   // 0x0061A888..0x0061A896
+                _discovering[type] = closest;
+            }
         }
         float now = _seconds();
         if (now < _enableTime + _discoveryTime || _discovering.Count == 0) return;
+        Queue("info: BlockFilter.UpdateDiscovering: Connecting to discovered objects");                  // 0x0061A914..0x0061A926
         foreach (var (type, factoryId) in _discovering) AddObjectToPersistentPool(factoryId, type);
         _discovering.Clear();
         Array.Copy(_persistentPool, _runtimePool, SlotCount);
         ConnectToObjectsLocked(_runtimePool.Select(p => p.FactoryId).ToArray());
+        // MISSING (P14, 0x0061A9C0): BlockFilter::SendBlockPoolData, the game-bound BlockPoolData broadcast, is a step of this path whose
+        // body has no inventory row, so nothing is sent here.
+        Queue("MISSING: BlockFilter::SendBlockPoolData (0x0061A9C0): no inventory row for the BlockPoolData broadcast");
         _lastConnectTime = now;
     }
 
@@ -417,8 +522,12 @@ public sealed class CubeConnections
         {
             var (factoryId, type) = _runtimePool[i];
             if (factoryId == 0 || IsConnectedToObject(factoryId)) continue;
+            // fidelity: M4-010
+            // 0x0061AAE6..0x0061AAF8 (channel BlockPool, key BlockFilter.UpdateConnecting): the pooled id and its type name.
+            Queue($"info: BlockFilter.UpdateConnecting: Looking for a replacement for object 0x{factoryId:x} of type {ObjectTypeName(type)}");
             uint closest = GetClosestDiscoveredObjectOfType(type, ClosestRssiLimit);
             if (closest == 0 || closest == factoryId) continue;
+            Queue($"info: BlockFilter.UpdateConnecting: Found replacement object 0x{closest:x}");          // 0x0061AB3E..0x0061AB4A
             _runtimePool[i].FactoryId = closest;
             ConnectToObjectsLocked(_runtimePool.Select(p => p.FactoryId).ToArray());
         }
@@ -464,6 +573,7 @@ public sealed class CubeConnections
             Array.Copy(_persistentPool, _runtimePool, SlotCount);
             ConnectToObjectsLocked(_runtimePool.Select(p => p.FactoryId).ToArray());
         }
+        FlushLogs();
     }
 
     /// <summary>

@@ -49,6 +49,36 @@ public class RemainingGapTests
         Assert.Contains(c.SlotRequestsSent, m => m.FactoryId == 0xA0);
     }
 
+
+    // ------------------------------------------------------------------ B-M3M4 build: M4-010 P28 (std::__next_prime)
+
+    /// <summary>
+    /// P28 (libc++_shared.so 0x0003B038..0x0003B69F): up to 211 the result is a lower bound in the 48-entry table at 0x0009B480, whose first
+    /// entry is 0; above it the smallest prime at or above the input; 0xFFFFFFFC and up raises (0x0003B074). The table and the cases are
+    /// the binary's (the table was read from the shipped libc++_shared.so).
+    /// </summary>
+    [Fact]
+    public void M4_010_P28_NextPrimeIsTheSmallestPrimeAtOrAboveTheInputWithTheTablesZero()
+    {
+        Assert.Equal(new uint[]
+        {
+            0, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
+            127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211,
+        }, ActiveObjectTable<uint>.SmallPrimes);
+        Assert.Equal(0u, ActiveObjectTable<uint>.NextPrime(0));      // the table-defined 0 case
+        Assert.Equal(2u, ActiveObjectTable<uint>.NextPrime(1));
+        Assert.Equal(2u, ActiveObjectTable<uint>.NextPrime(2));
+        Assert.Equal(5u, ActiveObjectTable<uint>.NextPrime(4));
+        Assert.Equal(11u, ActiveObjectTable<uint>.NextPrime(8));
+        Assert.Equal(13u, ActiveObjectTable<uint>.NextPrime(12));
+        Assert.Equal(23u, ActiveObjectTable<uint>.NextPrime(23));     // the engine's 2, 5, 11, 23 bucket counts: 2 | 1 = 5, 2 * 5 | 1 = 11, 2 * 11 | 1 = 23
+        Assert.Equal(211u, ActiveObjectTable<uint>.NextPrime(200));
+        Assert.Equal(211u, ActiveObjectTable<uint>.NextPrime(211));
+        Assert.Equal(223u, ActiveObjectTable<uint>.NextPrime(212));
+        Assert.Equal(227u, ActiveObjectTable<uint>.NextPrime(224));
+        Assert.Throws<OverflowException>(() => ActiveObjectTable<uint>.NextPrime(0xFFFFFFFCu));
+    }
+
     // ------------------------------------------------------------------ M4-011: the persistent pool
 
     [Fact]

@@ -1705,9 +1705,9 @@ public class M11RVisBuildTests : IDisposable
         callback.Invoke(robot.CameraSettings, new object[] { new NvResult((sbyte)nvResult, data) });
         Assert.True(vision.Enabled);
         vision.HandOverFrame(BadFrame(2));
-        // the frame is taken now. With a calibration installed (the success outcome) it is decoded, and the empty JPEG says so; without one (the two failure outcomes) the engine's
+        // the frame is taken now. With a calibration installed (the success outcome) it is decoded, and the empty reconstruction says so (the M3-020 policy line); without one (the two failure outcomes) the engine's
         // VisionSystem::Update refuses with the NotReady warning (M11-012, 0x006B4D66..0x006B4FFC)
-        string expected = vision.Calibration is null ? "Must be initialized and have calibrated camera" : "frame 2";
+        string expected = vision.Calibration is null ? "Must be initialized and have calibrated camera" : "policy M3-020";
         vision.WaitForProcessorIdle();
         lock (log) Assert.True(log.Any(l => l.Contains(expected)), string.Join(" | ", log));
         Assert.Null(typeof(VisionSystem).GetProperty("Paused"));
@@ -1727,11 +1727,13 @@ public class M11RVisBuildTests : IDisposable
         using var vision = new VisionSystem(robot, Cal) { Enabled = true };
         var seen = new List<string>();
         var inFrameOne = new ManualResetEventSlim(); var release = new ManualResetEventSlim();
+        // each processed BadFrame ends in one M3-020 policy line (an empty mini reconstruction): the first one is frame 1, held here while 2, 3 and 4 arrive
         vision.Log += l =>
         {
-            if (!l.StartsWith("frame ")) return;
-            lock (seen) seen.Add(l);
-            if (l.StartsWith("frame 1:")) { inFrameOne.Set(); release.Wait(); }
+            if (!l.Contains("policy M3-020")) return;
+            int count;
+            lock (seen) { seen.Add(l); count = seen.Count; }
+            if (count == 1) { inFrameOne.Set(); release.Wait(); }
         };
         vision.HandOverFrame(BadFrame(1));
         Assert.True(inFrameOne.Wait(3000));
@@ -1742,11 +1744,11 @@ public class M11RVisBuildTests : IDisposable
         Assert.Equal(2, vision.FramesDropped);                  // 2 and 3 were replaced
         release.Set();
         vision.WaitForProcessorIdle();                                      // several polls
-        lock (seen) Assert.DoesNotContain(seen, l => l.StartsWith("frame 4:") || l.StartsWith("frame 3:") || l.StartsWith("frame 2:"));
+        lock (seen) Assert.Single(seen);                        // only frame 1 was processed: 2, 3 and 4 were replaced or discarded
         Assert.Equal(2, vision.FramesDropped);                  // the discard is not counted
         vision.HandOverFrame(BadFrame(5));
         vision.WaitForProcessorIdle();
-        lock (seen) Assert.True(seen.Any(l => l.StartsWith("frame 5:")));
+        lock (seen) Assert.Equal(2, seen.Count);                // frame 5 was processed
     }
 
     /// <summary>

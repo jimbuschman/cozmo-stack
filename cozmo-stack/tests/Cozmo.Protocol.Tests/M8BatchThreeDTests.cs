@@ -891,7 +891,8 @@ public class M8BatchThreeDTests
         e.VisionUpdateAllResultsFailed = () => true;
         e.Tick();
         Assert.Equal(2, ticks);                             // non-zero result: warns and returns, the helper tick is skipped
-        lock (log) Assert.Contains(log, l => l.Contains("warning: Robot.Update:"));
+        // 0x00513C8C..0x00513C92 (M3-032 G2): the warning's key is Robot.Update.VisionComponentUpdateFail and its format is empty (0x00BE3F00)
+        lock (log) Assert.Contains("warning: Robot.Update.VisionComponentUpdateFail: ", log);
         e.VisionUpdateAllResultsFailed = () => false;
         e.Tick();
         Assert.Equal(3, ticks);

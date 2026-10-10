@@ -40,9 +40,21 @@ public sealed class Cube
     /// and <c>(V - 1) * 200</c> between them - the compare against 1.5 at 0x00537176, the compare against 1
     /// at 0x00537184, and the <c>(V - 1) * 100</c> doubled at 0x00537196..0x0053719E.
     /// </summary>
-    public float? BatteryPercent => BatteryVolts is { } v
-        ? v >= 1.5f ? 100f : v <= 1.0f ? 0f : (v - 1f) * 200f
-        : null;
+    public float? BatteryPercent => BatteryVolts is { } v ? BatteryPercentOf(v) : null;
+
+    // fidelity: M4-008
+    /// <summary>
+    /// U4/U5 (0x00537156..0x005371A8), in the engine's operations: the percentage starts at 100 (the divisor's register, 0x00537162);
+    /// at 1.5 V or more it stays 100 (bge, 0x0053717E); at 1.0 V or less - or unordered, which the ble also takes - it is 0 (0x005371A4);
+    /// otherwise <c>(V + -1) * 100</c>, then the result added to itself, which is not collapsed to <c>* 200</c> in the rounding order.
+    /// </summary>
+    internal static float BatteryPercentOf(float volts)
+    {
+        if (volts >= 1.5f) return 100f;
+        if (!(volts > 1.0f)) return 0f;
+        float x = (volts + -1f) * 100f;
+        return x + x;
+    }
     /// <summary>Packets the robot says it missed from this cube.</summary>
     public uint? MissedPackets { get; internal set; }
 
@@ -107,6 +119,16 @@ public sealed class CozmoCubes
     private readonly object _gate = new();
     private readonly Dictionary<uint, Cube> _byFactoryId = new();
     private readonly Dictionary<uint, Cube> _byObjectId = new();
+    // fidelity: M4-008
+    // A7 (0x00537206..0x00537240): the two std::map<u32,u32> at this+0x138 and this+0x144 of RobotToEngineImplMessaging (the object the handler runs on, built with the
+    // Robot): the time of the last DAS report and the missed-packets count at it, per activeID. They persist and are reset where the Robot is rebuilt.
+    private readonly Dictionary<uint, uint> _lastReportTime = new();
+    private readonly Dictionary<uint, uint> _lastReportMissed = new();
+
+    /// <summary>
+    /// A15 (0x005373C8..0x005373E4): the game-bound ObjectPowerLevel {objectID, missedPackets, cv} that Robot::Broadcast sends; objectID is the connected object's game ObjectID (A13).
+    /// </summary>
+    public event Action<ObjectPowerLevel>? PowerLevelBroadcast;
 
     /// <summary>
     /// The object types the engine will take an advertisement for.
@@ -147,7 +169,7 @@ public sealed class CozmoCubes
         // The connection path's clock is BaseStationTimer::GetCurrentTimeInSeconds (CD3, CD4, CD8).
         Seconds = () => _robot.Engine.Timer.SecondsF;
         Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
-                                          () => Seconds());
+                                          () => Seconds(), l => _robot.Engine.Log(l));
     }
 
     /// <summary>The clock the connection path reads, in seconds (the engine clock); replaceable so tests can drive it.</summary>
@@ -283,6 +305,8 @@ public sealed class CozmoCubes
             _tapQueue.Clear();
             _tapDeadlineMs = 0;
             _doubleTaps.Clear();
+            _lastReportTime.Clear();
+            _lastReportMissed.Clear();
         }
         Connections.ResetToConstructed();
     }
@@ -305,6 +329,21 @@ public sealed class CozmoCubes
     private sealed class DoubleTapInfo { public uint WindowEnd; public bool Moving; public uint IgnoreUntil; public bool Pending; }
     /// <summary>Per object; keyed by type, one ObjectID per light-cube type (LC8e).</summary>
     private readonly Dictionary<ObjectType, DoubleTapInfo> _doubleTaps = new();
+
+    // fidelity: M4-027
+    /// <summary>
+    /// The tap filter's deletion at 0x005111EA..0x00511224 (T1): the ObjectTapped list (+0x2C) and the DoubleTapInfo tree (+0x20)
+    /// are destroyed, silently (no broadcast, no log); the shared filter and the subscription vector are not state of this
+    /// stack. Run by the Robot's Lifetime slot 0x450 (<see cref="CozmoMotion.BindRobotLifetime"/>).
+    /// </summary>
+    internal void DestroyTapFilter()
+    {
+        lock (_gate)
+        {
+            _tapQueue.Clear();
+            _doubleTaps.Clear();
+        }
+    }
 
     /// <summary>Whether the tap filter is on (+0x18).</summary>
     public bool BlockTapFilterEnabled { get { lock (_gate) return _tapFilterEnabled; } }
@@ -444,10 +483,16 @@ public sealed class CozmoCubes
     /// </summary>
     internal Func<Cube, bool>? ExcludeFromMovedBroadcast { get; set; }
 
+    /// <summary>
+    /// A12: the world's lookup of the connected object for an activeID, returning its ObjectID (BlockWorld.ConnectedObjectIdForActiveId). Null until a world is attached.
+    /// </summary>
+    internal Func<uint, uint?>? ConnectedObjectIdForActiveId { get; set; }
+
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
     internal void Handle(RobotMessage m)
     {
         Cube? discovered = null, connectionChanged = null, tapped = null, moved = null;
+        ObjectPowerLevel? powerBroadcast = null;
         (ObjectType Type, bool Connected)? lights = null;
         lock (_gate)
         {
@@ -502,15 +547,53 @@ public sealed class CozmoCubes
                         connectionChanged = c;
                     }
                     if (isNew) discovered = c;
-                    Connections.OnConnectionState(s.ObjectID, s.FactoryID, s.Connected);
+                    Connections.OnConnectionState(s.ObjectID, s.FactoryID, s.Connected, s.ObjectType);
                     lights = (s.ObjectType, s.Connected);
                     break;
                 }
-                case ObjectPowerLevel p when _byObjectId.TryGetValue(p.ObjectID, out var c):
-                    c.BatteryLevelRaw = p.BatteryLevel;
-                    c.MissedPackets = p.MissedPackets;
-                    c.LastSeenUtc = DateTime.UtcNow;
+                case ObjectPowerLevel p:
+                {
+                    // fidelity: M4-008
+                    // HandleObjectPowerLevel 0x00537130..0x005373E8 (rows A1..A16). The log lines follow this file's convention (no channel prefix); the channel is "Unnamed".
+                    uint robotId = CozmoEngine.RobotId;                                      // A2: Robot+0x10
+                    float volts = p.BatteryLevel / 100f;                                      // A3
+                    float percent = BatteryPercentOf(volts);
+                    Log($"debug: RobotToEngine.ObjectPowerLevel.Log: RobotID {robotId} activeID {p.ObjectID} at {F2(volts)}V {F2(percent)}%");   // A4
+                    // A6: BaseStationTimer::GetCurrentTimeInSeconds (the stack's engine clock, Seconds), truncated to u32 by vcvt.u32.f32.
+                    float secs = Seconds();
+                    uint now = secs >= 4294967296f ? uint.MaxValue : secs > 0f ? (uint)secs : 0u;
+                    _lastReportTime.TryAdd(p.ObjectID, 0u);                                   // A7: operator[] inserts 0
+                    _lastReportMissed.TryAdd(p.ObjectID, 0u);
+                    uint then = _lastReportTime[p.ObjectID];
+                    // A8: skipped only when a report was made, it was under 600 s ago ((now - then) >> 3 <= 0x4A, unsigned) and no more than 512 more packets were missed.
+                    bool skip = then != 0 && unchecked(now - then) >> 3 <= 0x4A && unchecked(p.MissedPackets - _lastReportMissed[p.ObjectID]) <= 0x200;
+                    if (!skip)
+                    {
+                        Log($"debug: RobotToEngine.ObjectPowerLevel.Report: Sending DAS report for robotID {robotId} activeID {p.ObjectID} now {now} then {then}");   // A9
+                        // A10: sEventF("robot.accessory_powerlevel", {"$data": "%.2f,%.2f"}, "%u %.2fV (%d lost)"). The stack has no DAS sink (IHelper's sEventF is rendered the same
+                        // way, as a debug line on the Events channel); the $data pair has no sink and is not rendered.
+                        Log($"debug: [Events] robot.accessory_powerlevel: {p.ObjectID} {F2(volts)}V ({unchecked((int)p.MissedPackets)} lost)");
+                        _lastReportTime[p.ObjectID] = now;                                    // A11, report path only
+                        _lastReportMissed[p.ObjectID] = p.MissedPackets;
+                    }
+                    if (_byObjectId.TryGetValue(p.ObjectID, out var known))
+                    {
+                        known.BatteryLevelRaw = p.BatteryLevel;
+                        known.MissedPackets = p.MissedPackets;
+                        known.LastSeenUtc = DateTime.UtcNow;
+                    }
+                    // A12 (0x00537360..0x0053736A, BlockWorld::GetConnectedActiveObjectByActiveIdHelper 0x0061F720 -> FindConnectedObjectHelper 0x0061F078): the first connected object, in
+                    // family / type / ObjectID order, whose activeID (+0x40) is the message's; none: the epilogue, no Broadcast log and no broadcast.
+                    // A13 (0x0053736C..0x0053737A, Anki::ObjectID slot 0 at 0x004EF772): objectID is the object's game ObjectID value, not the activeID.
+                    if (ConnectedObjectIdForActiveId is null)
+                        Log("MISSING: HandleObjectPowerLevel 0x00537360: no BlockWorld is attached, so the connected-object lookup (A12) has nothing to search; nothing is broadcast");
+                    else if (ConnectedObjectIdForActiveId(p.ObjectID) is { } objectId)
+                    {
+                        Log($"debug: RobotToEngine.ObjectPowerLevel.Broadcast: RobotID {robotId} activeID {p.ObjectID} objectID {objectId} at {p.BatteryLevel} cv");   // A14 (objectID is %u)
+                        powerBroadcast = new ObjectPowerLevel { ObjectID = objectId, MissedPackets = p.MissedPackets, BatteryLevel = p.BatteryLevel };   // A15
+                    }
                     break;
+                }
                 case ObjectTapped t:
                 {
                     // fidelity: M4-023
@@ -593,5 +676,11 @@ public sealed class CozmoCubes
         if (lights is { } l) _robot.Lights.Cubes.OnObjectConnectionState(l.Type, l.Connected);
         if (tapped is not null) CubeTapped?.Invoke(tapped);
         if (moved is not null) CubeMoved?.Invoke(moved);
+        if (powerBroadcast is not null) PowerLevelBroadcast?.Invoke(powerBroadcast);
     }
+
+    /// <summary>"%.2f": two decimals, the invariant point (ordinary values; the engine formats with the phone printf).</summary>
+    private static string F2(double v) => v.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
+
+    private static float BatteryPercentOf(float volts) => Cube.BatteryPercentOf(volts);
 }

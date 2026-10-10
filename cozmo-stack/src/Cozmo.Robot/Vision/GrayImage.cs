@@ -1,4 +1,4 @@
-using StbImageSharp;
+using Cozmo.Robot.Vision.Jpeg;
 
 namespace Cozmo.Robot.Vision;
 
@@ -26,14 +26,15 @@ public sealed class GrayImage
     public void Fill(byte v) => Array.Fill(Pixels, v);
 
     /// <summary>
-    /// Decodes a JPEG (as the camera layer delivers it, header rebuilt by <c>MiniJpeg</c>) to grayscale. Colour
-    /// frames are converted with the usual luma weights. The engine does the same in
-    /// <c>EncodedImage::DecodeImageGray</c> before <c>VisionSystem::Update</c>.
+    /// Decodes a JPEG file (offline tools) to grayscale with the shipped decoder: <c>cv::imdecode(buf, IMREAD_GRAYSCALE)</c>
+    /// (M3-001, <see cref="OpenCvImage"/>), as <c>EncodedImage::DecodeImageGray</c> does before the size check. Throws
+    /// <see cref="InvalidDataException"/> when the decoder returns an empty Mat.
     /// </summary>
     public static GrayImage FromJpeg(ReadOnlySpan<byte> jpeg)
     {
-        var img = ImageResult.FromMemory(jpeg.ToArray(), ColorComponents.Grey);
-        return new GrayImage(img.Width, img.Height, img.Data);
+        var mat = OpenCvImage.Imdecode(jpeg.ToArray(), 0);
+        if (mat.IsEmpty) throw new InvalidDataException("the JPEG did not decode");
+        return new GrayImage(mat.Cols, mat.Rows, mat.Data);
     }
 
     /// <summary>

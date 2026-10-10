@@ -346,11 +346,11 @@ The complete audit (`re-analysis/research/20260929-audit-complete.md`) found tha
 
 The 2026-09-29 pre-extraction (`re-analysis/research/20260929-R-DEV-pre-extraction.md`, Part 1 item 2) answered M3-001's and M3-018's `unresolved` and contradicted two of their statements. The manager spot-checked the tables in the binaries: gray `tbh` 0x004F2898, RGB `tbh` 0x004F21AE, IsColor `tbb` 0x004F2110 and the `cvtColor` coefficients at 0x00E2AB0 all match. M3-001 and M3-018 are rebuilt in `Camera.cs` for every encoding value:
 
-- **M3-001:** gray `DecodeImageHelper<Image>` 0x004F287C (tbh 0x004F289C base 0x004F2898). 1 copies `rows*cols`; 2 converts with `cvtColor` code 7 fixed point `(4899R + 9617G + 1868B + 8192) >> 14` (Y4); 5/6 `imdecode(flags 0)`; 7 plus the 160-column border; 8 the reconstructed gray JPEG; 9 the half-width colour JPEG to gray then INTER_LINEAR; 0/3/4/10..255 the `EncodedImage.DecodeImageRGB.UnsupportedEncoding` default. **Contradicted:** case 1 is not a length check (Y2), and the out-of-table values share the 3/4 error path (Y0/Y1). The JPEG entropy decode is still StbImageSharp (item 3 not built) — the residual.
+- **M3-001:** gray `DecodeImageHelper<Image>` 0x004F287C (tbh 0x004F289C base 0x004F2898). 1 copies `rows*cols`; 2 converts with `cvtColor` code 7 fixed point `(4899R + 9617G + 1868B + 8192) >> 14` (Y4); 5/6 `imdecode(flags 0)`; 7 plus the 160-column border; 8 the reconstructed gray JPEG; 9 the half-width colour JPEG to gray then INTER_LINEAR; 0/3/4/10..255 the `EncodedImage.DecodeImageRGB.UnsupportedEncoding` default. **Contradicted:** case 1 is not a length check (Y2), and the out-of-table values share the 3/4 error path (Y0/Y1). The JPEG entropy decode was StbImageSharp when this was written; it is now the libjpeg 9 / OpenCV port checked against an emulator oracle (see the 2026-10-10 note below).
 - **M3-018:** RGB `DecodeImageHelper<ImageRGB>` 0x004F2184 (tbh 0x004F21B2 base 0x004F21AE): 1 replicates gray to BGR; 2 a straight copy; 5/6 `imdecode(flags 1)` + `cvtColor(4)`; 7 plus the border; 8 the reconstructed gray JPEG + `cvtColor(4)`; 9 the half-width colour JPEG + `cvtColor(4)` + resize; 0/3/4/10..255 the default. `IsColor(0)` logs `EncodedImage.IsColor.UnsupportedImageEncoding` and returns false (I2).
 - **New M3-037** (forced policy, SD2): the short raw payload's undefined heap read is zero-filled here.
 
-**The residual for both:** the JPEG entropy decode is StbImageSharp in place of OpenCV's libjpeg 9, so decoded pixels may differ in the last bit (Part 1 item 3). Both records stay IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong verification".
+**The residual for both (superseded 2026-10-10):** the StbImageSharp decode has been replaced by the port; see the note below. Both records stay IMPLEMENTATION_GAP with `unresolved` "built, awaiting strong verification".
 
 ## Correction A5 (manager, 2026-10-02, the Codex M3/M4 re-audit)
 
@@ -381,3 +381,22 @@ Operator requested these corrections after the manager final Opus pass. This sec
 | M3-041 | RECOVERABLE_GAP: Recover/check and build the complete diagnostic IMU logging path: exact file names/directories/collision handling, CSV/sample formatting, info/error/stream-state decisions, shared processed/raw stream interactions, final-chunk and destructor sync/close ordering. Engine handlers are reachable on received BF/C7 packets without app debug or SDK mode; no claim that firmware emits them spontaneously. No logger currently exists, so this is a visible recoverable production-path gap. Check the new I1-I11 rows before implementation. Request producer/ordinary firmware emission conditions remain unknown; no unreachable disposition or settlement. | Final processed chunk closes at0x00535F5C; raw order2 closes at0x005361F4. Messaging destructor 0x00532A48 vector release precedes filebuf destructor0x00532A64 ->0x005010B4 ->close0x0050111C; virtual sync slot+18 relocation0x0101F2DC ->0x00501398 ->fwrite0x00501416/fflush0x00501428, then fclose0x00501130. M1-046 owns retirement entry/order, this record owns file recipient effects. I9/I10 in the same report; phone stdio implementation is external runtime. |
 
 M1-022 continues to own host syscall/resolver/descriptor/errno representations. The missing source success diagnostic has been built under M1-048. M1-053 assumes host sinf/atan2f arithmetic only for undefined external phone-libm imports, under the ordinary non-shipped system-library exception; ADP-1 does not apply. M1-046 now names the actual IMU stream recipient M3-041; no debug/SDK unreachability is inferred from missing app producers. The new I1-I11 extraction must be manager-checked before building the M3 logger.
+
+## M3-042: host policy for the IMU logger (manager, 2026-10-10)
+
+| Record | Status | Evidence |
+| --- | --- | --- |
+| M3-042 | COMPATIBILITY_POLICY: the app-supplied DataPlatform persistent path (CozmoEngineOptions.DataPlatformPersistentPath, default LocalApplicationData/cozmo-stack) and the host mapping of the engine's stat bit tests. From Opus objection 6 on the M3-041 build. | M3-041 rows L5/L6 (jobs/B-M3M4.md); research/20261010-m3041-filebuf-rows.md F8.1 DirectoryExists 0x00802824, F8.2 FileExists 0x0080342A. |
+
+M3-041 settled (manager, 2026-10-10): EXACT_SOURCE after the Opus re-check of the fix round passed (jobs/B-M3M4.md "M3-041 L30"). Its stated boundaries are in the record's `unresolved`. M3's last live-path RECOVERABLE_GAP is gone; the NV write dispatch (inside M3-027, an IMPLEMENTATION_GAP) is still being extracted.
+
+## M3-043: NV storage write side (manager, 2026-10-10)
+
+| Record | Status | Evidence |
+| --- | --- | --- |
+| M3-043 | IMPLEMENTATION_GAP: Write(), the WRITE/ERASE/WIPEALL dispatch, the Update chunk loop, the write timeout and write-result handling. | re-analysis/research/20261010-nv-write-dispatch-rows.md WA1..WA15 (0x006443F4, 0x006444FC), WB1..WB21 (0x00645032, 0x0064512E, 0x0064521A, 0x00645816..0x00645920), WC1..WC5 (0x006456F4..0x00645758), WD1..WD9 (0x0064302C). |
+
+
+## M3-001/M3-018 JPEG port (manager, 2026-10-10)
+
+The decode is a port of the shipped libjpeg 9 / OpenCV 3.1 code. It is accepted against an emulator oracle of the shipped libraries (SHA-pinned; 3323 cases, 0 differing bytes) and was Opus-checked twice. Adopted rows: jobs/B-M3M4.md "JPEG unblocked" and research/20261010-jpeg-lse-logs-oom-rows.md (LSE, DecodeImageHelper logs, out of memory). Pinned: the cv::Exception catcher above the helper (M11), other OpenCV decoders for non-JPEG payloads in encodings 5/6/7, and an indirect cv::redirectError.

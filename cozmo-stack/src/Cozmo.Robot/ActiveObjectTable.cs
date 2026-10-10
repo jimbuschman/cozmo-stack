@@ -197,9 +197,26 @@ internal sealed class ActiveObjectTable<T>
         get { for (var n = _head.Next; n is not null; n = n.Next) yield return n.Value; }
     }
 
-    private static uint NextPrime(uint n)
+    // fidelity: M4-010
+    /// <summary>
+    /// The 48-entry table <c>std::__next_prime</c> searches for an input of 211 or less (libc++_shared.so 0x0009B480, the
+    /// <c>cmp r0, #0xd3; bhi</c> at 0x0003B042): the first entry is 0, so an input of 0 returns 0.
+    /// </summary>
+    internal static readonly uint[] SmallPrimes =
     {
-        if (n <= 2) return 2;
+        0, 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
+        127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211,
+    };
+
+    /// <summary>
+    /// <c>std::__next_prime</c> (libc++_shared.so 0x0003B038..0x0003B69F, called at 0x00537C98 and 0x00537CEE): the smallest
+    /// prime at or above <paramref name="n"/> - a lower bound in <see cref="SmallPrimes"/> up to 211, then the first prime
+    /// among the numbers coprime to 210 (every prime above 211 is). An input of 0xFFFFFFFC or more raises (0x0003B074).
+    /// </summary>
+    internal static uint NextPrime(uint n)
+    {
+        if (n <= 211) return SmallPrimes[Array.FindIndex(SmallPrimes, p => p >= n)];
+        if (n >= 0xFFFFFFFCu) throw new OverflowException("__next_prime overflow");
         for (uint c = n; ; c++)
         {
             bool prime = c % 2 != 0;

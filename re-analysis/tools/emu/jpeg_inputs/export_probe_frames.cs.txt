@@ -1,0 +1,31 @@
+using System.Text.RegularExpressions;
+using Cozmo.Protocol;
+using Cozmo.Robot;
+using Cozmo.Transport;
+
+var path = args[0];
+var outDir = args[1];
+Directory.CreateDirectory(outDir);
+var clock = new ManualClock { NowMs = 1000 };
+var transport = ReliableTransport.CreateOffline(TransportOptions.EngineDefaults, clock);
+var got = new List<RobotMessage>();
+transport.DataReceived += d => got.Add(RobotMessage.Parse(d));
+transport.OfflineConnect();
+var line = new Regex(@"^(\S+) (TX|RX) ((?:[0-9a-f]{2} ?)+)$");
+foreach (var l in File.ReadAllLines(path))
+{
+    var m = line.Match(l.Trim('\uFEFF', ' '));
+    if (!m.Success || m.Groups[2].Value != "RX") continue;
+    clock.Advance(33);
+    transport.ProcessIncoming(Hex.Parse(m.Groups[3].Value));
+}
+var cam = new CozmoCamera();
+var frames = new List<CameraFrame>();
+cam.FrameReceived += frames.Add;
+foreach (var m in got) cam.Handle(m);
+int i = 0;
+foreach (var f in frames)
+{
+    File.WriteAllBytes(Path.Combine(outDir, $"fw2457_{i++:D2}.bin"), f.RawPayload);
+}
+Console.WriteLine($"{frames.Count} frames");

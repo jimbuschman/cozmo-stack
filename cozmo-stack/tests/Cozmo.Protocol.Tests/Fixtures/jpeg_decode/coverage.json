@@ -1,0 +1,958 @@
+{
+ "D1": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f2886..0x4f2898 100%",
+   "engine 0x4f218e..0x4f21ae 100%"
+  ]
+ },
+ "D2": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f2924..0x4f2944 100%"
+  ]
+ },
+ "D3": {
+  "percent": 54.5,
+  "ranges": [
+   "engine 0x4f2256..0x4f2298 55%"
+  ]
+ },
+ "D4": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f2966..0x4f2986 100%",
+   "engine 0x4f2298..0x4f22b8 100%"
+  ]
+ },
+ "D5": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x7c5364..0x7c5376 100%"
+  ]
+ },
+ "D6": {
+  "percent": 0.0,
+  "ranges": [
+   "engine 0x80d146..0x80d18a 0%",
+   "engine 0x80d2be..0x80d302 0%"
+  ]
+ },
+ "D7": {
+  "percent": 68.8,
+  "ranges": [
+   "engine 0x4f2cda..0x4f2d36 67%",
+   "engine 0x4f2658..0x4f26bc 70%"
+  ]
+ },
+ "J1": {
+  "percent": 84.0,
+  "ranges": [
+   "engine 0x4f287c..0x4f2d3e 83%",
+   "engine 0x4f2184..0x4f26b2 85%"
+  ]
+ },
+ "J10": {
+  "percent": 66.1,
+  "ranges": [
+   "imgcodecs 0x15854..0x15890 100%",
+   "imgcodecs 0x1ffd8..0x20018 34%"
+  ]
+ },
+ "J100": {
+  "percent": 99.4,
+  "ranges": [
+   "imgcodecs 0x36334..0x3660c 99%",
+   "imgcodecs 0x35128..0x353fa 99%"
+  ]
+ },
+ "J101": {
+  "percent": 99.5,
+  "ranges": [
+   "imgcodecs 0x35f9c..0x3630c 100%",
+   "imgcodecs 0x34d84..0x350fe 100%"
+  ]
+ },
+ "J102": {
+  "percent": 99.7,
+  "ranges": [
+   "imgcodecs 0x35b5c..0x35f02 100%",
+   "imgcodecs 0x348d0..0x34ce8 99%"
+  ]
+ },
+ "J103": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x200d2..0x20198 100%"
+  ]
+ },
+ "J104": {
+  "percent": 88.7,
+  "ranges": [
+   "imgcodecs 0x2a454..0x2a5da 89%"
+  ]
+ },
+ "J105": {
+  "percent": 37.8,
+  "ranges": [
+   "imgcodecs 0x23350..0x233c4 36%",
+   "imgcodecs 0x23560..0x235ca 40%"
+  ]
+ },
+ "J106": {
+  "percent": 37.0,
+  "ranges": [
+   "imgcodecs 0x2c1ec..0x2c2ec 15%",
+   "imgcodecs 0x2bf4c..0x2bfa6 100%"
+  ]
+ },
+ "J107": {
+  "percent": 10.0,
+  "ranges": [
+   "imgcodecs 0x2c328..0x2c410 38%",
+   "imgcodecs 0x2c204..0x2c2ca 5%",
+   "imgcodecs 0x2bfaa..0x2c1ce 0%"
+  ]
+ },
+ "J108": {
+  "percent": 90.7,
+  "ranges": [
+   "imgcodecs 0x2baf4..0x2bc70 89%",
+   "imgcodecs 0x2bc72..0x2bca4 100%"
+  ]
+ },
+ "J109": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2bd04..0x2bea0 100%"
+  ]
+ },
+ "J11": {
+  "percent": 55.0,
+  "ranges": [
+   "imgcodecs 0x155b0..0x155b8 100%",
+   "imgcodecs 0x15882..0x15886 100%",
+   "imgcodecs 0x15964..0x159a8 47%"
+  ]
+ },
+ "J110": {
+  "percent": 92.5,
+  "ranges": [
+   "imgcodecs 0x237b4..0x238f4 92%"
+  ]
+ },
+ "J111": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2bd04..0x2bea0 100%"
+  ]
+ },
+ "J112": {
+  "percent": 91.3,
+  "ranges": [
+   "imgproc 0xe2ab0..0xe2abb 0%",
+   "imgproc 0x2c3c4..0x2c414 100%",
+   "imgproc 0x2494c..0x24970 100%"
+  ]
+ },
+ "J113": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x24440..0x24442 100%",
+   "imgcodecs 0xb6f0c..0xb6f10 100%",
+   "imgcodecs 0xdcd8..0xdce0 100%"
+  ]
+ },
+ "J114": {
+  "percent": 81.6,
+  "ranges": [
+   "imgcodecs 0xf6ca..0xf716 74%",
+   "imgcodecs 0xfa78..0xfa88 50%",
+   "imgcodecs 0xf7d4..0xf850 94%",
+   "imgcodecs 0xf9d8..0xfa10 75%"
+  ]
+ },
+ "J115": {
+  "percent": 81.3,
+  "ranges": [
+   "core 0xc0970..0xc09b0 100%",
+   "core 0xc0804..0xc091a 77%"
+  ]
+ },
+ "J12": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x158c6..0x1592a 100%"
+  ]
+ },
+ "J13": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x15930..0x15962 100%"
+  ]
+ },
+ "J14": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x15b7c..0x15ba0 100%",
+   "imgcodecs 0x15bea..0x15c14 100%"
+  ]
+ },
+ "J15": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x15c32..0x15cea 100%"
+  ]
+ },
+ "J16": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x129e0..0x129e6 100%",
+   "imgcodecs 0x2019a..0x201d2 100%"
+  ]
+ },
+ "J17": {
+  "percent": 91.3,
+  "ranges": [
+   "imgcodecs 0x2a608..0x2a872 91%"
+  ]
+ },
+ "J18": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x31942..0x31acc 100%"
+  ]
+ },
+ "J19": {
+  "percent": 99.0,
+  "ranges": [
+   "imgcodecs 0x31adc..0x31c62 99%"
+  ]
+ },
+ "J2": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f29be..0x4f29c2 100%",
+   "engine 0x4f2a6c..0x4f2a70 100%",
+   "engine 0x4f2c44..0x4f2c4c 100%"
+  ]
+ },
+ "J20": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x22d22..0x22d82 100%"
+  ]
+ },
+ "J21": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x22b8a..0x22c18 100%",
+   "imgcodecs 0x2a77c..0x2a7b8 100%"
+  ]
+ },
+ "J22": {
+  "percent": 99.1,
+  "ranges": [
+   "imgcodecs 0x348fe..0x34a92 99%",
+   "imgcodecs 0x34aa6..0x34cf8 100%",
+   "imgcodecs 0x34d28..0x34d7e 95%"
+  ]
+ },
+ "J23": {
+  "percent": 69.6,
+  "ranges": [
+   "imgcodecs 0x22abe..0x22b50 10%",
+   "imgcodecs 0x237b4..0x238f4 92%",
+   "imgcodecs 0x236be..0x236ee 100%"
+  ]
+ },
+ "J24": {
+  "percent": 91.6,
+  "ranges": [
+   "imgcodecs 0x2bae4..0x2bcc0 92%"
+  ]
+ },
+ "J25": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x15580..0x155ac 100%"
+  ]
+ },
+ "J26": {
+  "percent": 85.9,
+  "ranges": [
+   "imgcodecs 0x2a9fc..0x2aab4 86%"
+  ]
+ },
+ "J27": {
+  "percent": 94.7,
+  "ranges": [
+   "imgcodecs 0x2aab8..0x2ab4e 95%"
+  ]
+ },
+ "J28": {
+  "percent": 91.7,
+  "ranges": [
+   "imgcodecs 0x2b8e0..0x2bad8 92%"
+  ]
+ },
+ "J29": {
+  "percent": 99.5,
+  "ranges": [
+   "imgcodecs 0x2b59c..0x2b8ca 100%"
+  ]
+ },
+ "J3": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f245a..0x4f2468 100%",
+   "engine 0x4f2bc0..0x4f2bd2 100%"
+  ]
+ },
+ "J30": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2ab58..0x2abaa 100%"
+  ]
+ },
+ "J31": {
+  "percent": 40.7,
+  "ranges": [
+   "engine 0x4f2886..0x4f28ac 58%",
+   "engine 0x4f289c..0x4f28ac 0%"
+  ]
+ },
+ "J32": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f31c4..0x4f320c 100%"
+  ]
+ },
+ "J33": {
+  "percent": 86.2,
+  "ranges": [
+   "engine 0x4f3210..0x4f3284 86%"
+  ]
+ },
+ "J34": {
+  "percent": 68.6,
+  "ranges": [
+   "engine 0x4f3286..0x4f32cc 69%"
+  ]
+ },
+ "J35": {
+  "percent": 0.0,
+  "ranges": [
+   "engine 0x4f21b2..0x4f21c2 0%"
+  ]
+ },
+ "J36": {
+  "percent": 92.6,
+  "ranges": [
+   "engine 0x4f21d6..0x4f2250 92%",
+   "engine 0x4f2364..0x4f2368 100%",
+   "engine 0x4f2430..0x4f2434 100%",
+   "engine 0x4f2620..0x4f2626 100%"
+  ]
+ },
+ "J37": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f2438..0x4f2440 100%",
+   "engine 0x4f2acc..0x4f2ad2 100%",
+   "engine 0x870486..0x8704de 100%",
+   "engine 0x86f1d6..0x86f22e 100%"
+  ]
+ },
+ "J38": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f2658..0x4f2674 100%",
+   "engine 0x4f2cda..0x4f2cf0 100%"
+  ]
+ },
+ "J39": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x4f2642..0x4f2654 100%",
+   "engine 0x4f2cc4..0x4f2cd6 100%"
+  ]
+ },
+ "J4": {
+  "percent": 100.0,
+  "ranges": [
+   "engine 0x871d38..0x871d5a 100%",
+   "engine 0x872cce..0x872d0a 100%"
+  ]
+ },
+ "J40": {
+  "percent": 80.4,
+  "ranges": [
+   "imgproc 0x2be78..0x2bfa6 70%",
+   "imgproc 0x26664..0x26768 93%"
+  ]
+ },
+ "J41": {
+  "percent": 56.5,
+  "ranges": [
+   "imgproc 0x821e8..0x82210 100%",
+   "imgproc 0x824aa..0x824c2 100%",
+   "imgproc 0x8261a..0x82764 62%",
+   "imgproc 0x82814..0x82920 40%"
+  ]
+ },
+ "J42": {
+  "percent": 89.8,
+  "ranges": [
+   "imgproc 0x82770..0x82796 100%",
+   "imgproc 0x8292c..0x82952 100%",
+   "imgproc 0x72354..0x7237e 71%"
+  ]
+ },
+ "J43": {
+  "percent": 100.0,
+  "ranges": [
+   "imgproc 0x87784..0x878a4 100%"
+  ]
+ },
+ "J44": {
+  "percent": 99.1,
+  "ranges": [
+   "imgproc 0x878a8..0x87a6a 99%"
+  ]
+ },
+ "J45": {
+  "percent": 100.0,
+  "ranges": [
+   "imgproc 0x7c6d8..0x7c8c4 100%"
+  ]
+ },
+ "J46": {
+  "percent": 82.1,
+  "ranges": [
+   "imgcodecs 0x217a8..0x2199a 87%",
+   "imgcodecs 0x223dc..0x22428 100%",
+   "imgcodecs 0x21074..0x212d4 76%"
+  ]
+ },
+ "J47": {
+  "percent": 90.4,
+  "ranges": [
+   "imgcodecs 0x21574..0x217a0 89%",
+   "imgcodecs 0x21d10..0x21d16 100%",
+   "imgcodecs 0x2b8e0..0x2bad8 92%"
+  ]
+ },
+ "J48": {
+  "percent": 71.3,
+  "ranges": [
+   "imgcodecs 0x21d18..0x21f38 71%"
+  ]
+ },
+ "J49": {
+  "percent": 75.8,
+  "ranges": [
+   "imgcodecs 0x2199a..0x21bee 76%"
+  ]
+ },
+ "J5": {
+  "percent": 82.5,
+  "ranges": [
+   "imgcodecs 0xfb20..0xfb92 82%"
+  ]
+ },
+ "J50": {
+  "percent": 85.9,
+  "ranges": [
+   "imgcodecs 0x21f50..0x22002 71%",
+   "imgcodecs 0x2149c..0x21552 93%",
+   "imgcodecs 0x2276c..0x227ca 100%"
+  ]
+ },
+ "J51": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x227cc..0x22870 100%"
+  ]
+ },
+ "J52": {
+  "percent": 20.7,
+  "ranges": [
+   "imgcodecs 0x159c8..0x15b50 10%",
+   "imgcodecs 0x15708..0x1582e 35%"
+  ]
+ },
+ "J53": {
+  "percent": 68.0,
+  "ranges": [
+   "imgcodecs 0x1299c..0x129e6 100%",
+   "imgcodecs 0x128ee..0x12904 100%",
+   "imgcodecs 0x1570e..0x157a6 39%",
+   "imgcodecs 0x1d13c..0x1d15a 100%",
+   "imgcodecs 0x1d2e8..0x1d35c 71%"
+  ]
+ },
+ "J54": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a014..0x2a0b8 100%",
+   "imgcodecs 0x2a0d0..0x2a16a 100%"
+  ]
+ },
+ "J55": {
+  "percent": 95.7,
+  "ranges": [
+   "imgcodecs 0x2a4c8..0x2a55e 92%",
+   "imgcodecs 0x2a16e..0x2a1d0 100%",
+   "imgcodecs 0x2a434..0x2a452 100%"
+  ]
+ },
+ "J56": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x11ea2..0x11f2a 100%",
+   "imgcodecs 0x11f2e..0x11fb8 100%"
+  ]
+ },
+ "J57": {
+  "percent": 98.0,
+  "ranges": [
+   "imgcodecs 0x2abac..0x2ad34 98%"
+  ]
+ },
+ "J58": {
+  "percent": 98.0,
+  "ranges": [
+   "imgcodecs 0x2ad40..0x2aece 98%"
+  ]
+ },
+ "J59": {
+  "percent": 97.8,
+  "ranges": [
+   "imgcodecs 0x2aee0..0x2af92 98%"
+  ]
+ },
+ "J6": {
+  "percent": 72.2,
+  "ranges": [
+   "imgcodecs 0xf6ca..0xf712 72%"
+  ]
+ },
+ "J60": {
+  "percent": 97.7,
+  "ranges": [
+   "imgcodecs 0x2af9c..0x2b24c 98%"
+  ]
+ },
+ "J61": {
+  "percent": 87.4,
+  "ranges": [
+   "imgcodecs 0x22e30..0x22e42 100%",
+   "imgcodecs 0x29530..0x29596 100%",
+   "imgcodecs 0x28be4..0x28e24 85%"
+  ]
+ },
+ "J62": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x28af4..0x28b1e 100%",
+   "imgcodecs 0x28b20..0x28bdc 100%"
+  ]
+ },
+ "J63": {
+  "percent": 0.0,
+  "ranges": [
+   "imgcodecs 0xcf328..0xcf4f0 0%"
+  ]
+ },
+ "J64": {
+  "percent": 96.3,
+  "ranges": [
+   "imgcodecs 0x28ee2..0x2901a 100%",
+   "imgcodecs 0x293d2..0x2952a 93%"
+  ]
+ },
+ "J65": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2901c..0x2912c 100%",
+   "imgcodecs 0x29294..0x293ce 100%"
+  ]
+ },
+ "J66": {
+  "percent": 92.5,
+  "ranges": [
+   "imgcodecs 0x29242..0x29290 100%",
+   "imgcodecs 0x29130..0x2923e 90%"
+  ]
+ },
+ "J67": {
+  "percent": 85.1,
+  "ranges": [
+   "imgcodecs 0x28e3c..0x28ede 100%",
+   "imgcodecs 0x21c0c..0x21d0e 74%",
+   "imgcodecs 0x2191a..0x21932 100%"
+  ]
+ },
+ "J68": {
+  "percent": 98.4,
+  "ranges": [
+   "imgcodecs 0x22e42..0x22e58 100%",
+   "imgcodecs 0x29f28..0x29ff6 100%",
+   "imgcodecs 0x295dc..0x29726 99%",
+   "imgcodecs 0x29730..0x29846 94%",
+   "imgcodecs 0x29910..0x29a92 100%"
+  ]
+ },
+ "J69": {
+  "percent": 94.5,
+  "ranges": [
+   "imgcodecs 0x2984c..0x29902 100%",
+   "imgcodecs 0x29a98..0x29c90 92%"
+  ]
+ },
+ "J7": {
+  "percent": 53.7,
+  "ranges": [
+   "core 0x23f2c..0x2406e 53%",
+   "core 0x23f82..0x23f84 100%"
+  ]
+ },
+ "J70": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x29bd0..0x29c18 100%",
+   "imgcodecs 0x29cc8..0x29e86 100%"
+  ]
+ },
+ "J71": {
+  "percent": 70.5,
+  "ranges": [
+   "imgcodecs 0x20390..0x20422 56%",
+   "imgcodecs 0x20424..0x20472 69%",
+   "imgcodecs 0x2028a..0x20384 56%",
+   "imgcodecs 0x15c18..0x15cde 100%"
+  ]
+ },
+ "J72": {
+  "percent": 80.4,
+  "ranges": [
+   "imgcodecs 0x24356..0x2435a 100%",
+   "imgcodecs 0x23dc4..0x23e32 89%",
+   "imgcodecs 0x23cd8..0x23d44 70%",
+   "imgcodecs 0x24440..0x24442 100%"
+  ]
+ },
+ "J73": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a1d4..0x2a22c 100%",
+   "imgcodecs 0x2a230..0x2a2a2 100%"
+  ]
+ },
+ "J74": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a37c..0x2a430 100%"
+  ]
+ },
+ "J75": {
+  "percent": 97.3,
+  "ranges": [
+   "imgcodecs 0x2b258..0x2b58e 97%"
+  ]
+ },
+ "J76": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x20b46..0x20be6 100%"
+  ]
+ },
+ "J77": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x20be8..0x20cfa 100%",
+   "imgcodecs 0x20e48..0x21028 100%"
+  ]
+ },
+ "J78": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x22b8a..0x22c18 100%"
+  ]
+ },
+ "J79": {
+  "percent": 89.2,
+  "ranges": [
+   "imgcodecs 0x2a63a..0x2a830 89%"
+  ]
+ },
+ "J8": {
+  "percent": 66.7,
+  "ranges": [
+   "engine 0x4f2cda..0x4f2d34 67%"
+  ]
+ },
+ "J80": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x325b0..0x325d2 100%",
+   "imgcodecs 0x36d70..0x36da6 100%",
+   "imgcodecs 0x35b24..0x35b5a 100%",
+   "imgcodecs 0x3253c..0x325ae 100%"
+  ]
+ },
+ "J81": {
+  "percent": 98.5,
+  "ranges": [
+   "imgcodecs 0x3242c..0x32534 98%"
+  ]
+ },
+ "J82": {
+  "percent": 98.8,
+  "ranges": [
+   "imgcodecs 0x322c4..0x3241e 99%"
+  ]
+ },
+ "J83": {
+  "percent": 99.0,
+  "ranges": [
+   "imgcodecs 0x32124..0x322b6 99%"
+  ]
+ },
+ "J84": {
+  "percent": 99.1,
+  "ranges": [
+   "imgcodecs 0x31f44..0x3211a 99%"
+  ]
+ },
+ "J85": {
+  "percent": 99.4,
+  "ranges": [
+   "imgcodecs 0x31c80..0x31f2e 99%"
+  ]
+ },
+ "J86": {
+  "percent": 99.5,
+  "ranges": [
+   "imgcodecs 0x325d4..0x328c2 99%"
+  ]
+ },
+ "J87": {
+  "percent": 99.5,
+  "ranges": [
+   "imgcodecs 0x328d0..0x32bf8 100%"
+  ]
+ },
+ "J88": {
+  "percent": 95.9,
+  "ranges": [
+   "imgcodecs 0x32c04..0x33072 96%"
+  ]
+ },
+ "J89": {
+  "percent": 99.6,
+  "ranges": [
+   "imgcodecs 0x33078..0x33458 100%"
+  ]
+ },
+ "J90": {
+  "percent": 96.8,
+  "ranges": [
+   "imgcodecs 0x33478..0x33994 97%"
+  ]
+ },
+ "J91": {
+  "percent": 96.9,
+  "ranges": [
+   "imgcodecs 0x33998..0x33e2c 97%"
+  ]
+ },
+ "J92": {
+  "percent": 98.1,
+  "ranges": [
+   "imgcodecs 0x33e30..0x34324 98%"
+  ]
+ },
+ "J93": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x34362..0x3440c 100%",
+   "imgcodecs 0x3463c..0x346bc 100%"
+  ]
+ },
+ "J94": {
+  "percent": 92.2,
+  "ranges": [
+   "imgcodecs 0x34410..0x34518 100%",
+   "imgcodecs 0x346be..0x347d0 85%"
+  ]
+ },
+ "J95": {
+  "percent": 98.3,
+  "ranges": [
+   "imgcodecs 0x36c70..0x36d64 98%",
+   "imgcodecs 0x35a34..0x35b16 98%"
+  ]
+ },
+ "J96": {
+  "percent": 98.9,
+  "ranges": [
+   "imgcodecs 0x36af8..0x36c68 99%",
+   "imgcodecs 0x358bc..0x35a2c 99%"
+  ]
+ },
+ "J97": {
+  "percent": 99.7,
+  "ranges": [
+   "imgcodecs 0x31942..0x31c62 100%",
+   "imgcodecs 0x36912..0x36a2e 100%",
+   "imgcodecs 0x35774..0x35886 100%"
+  ]
+ },
+ "J98": {
+  "percent": 99.3,
+  "ranges": [
+   "imgcodecs 0x3689c..0x36adc 99%",
+   "imgcodecs 0x3568c..0x358a0 99%"
+  ]
+ },
+ "J99": {
+  "percent": 99.3,
+  "ranges": [
+   "imgcodecs 0x3662c..0x36890 99%",
+   "imgcodecs 0x3541c..0x35680 99%"
+  ]
+ },
+ "L10": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x218f0..0x21968 100%"
+  ]
+ },
+ "L11": {
+  "percent": 97.1,
+  "ranges": [
+   "imgcodecs 0x2a4a0..0x2a4b6 100%",
+   "imgcodecs 0x2a4f4..0x2a50e 92%",
+   "imgcodecs 0x2a57e..0x2a58c 100%",
+   "imgcodecs 0x22abe..0x22ac6 100%"
+  ]
+ },
+ "L12": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a1d4..0x2a22c 100%"
+  ]
+ },
+ "L13": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a2a6..0x2a2f2 100%"
+  ]
+ },
+ "L14": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a16e..0x2a1d0 100%"
+  ]
+ },
+ "L15": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a230..0x2a2a2 100%"
+  ]
+ },
+ "L16": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2a518..0x2a560 100%"
+  ]
+ },
+ "L17": {
+  "percent": 86.4,
+  "ranges": [
+   "imgcodecs 0x2a4c4..0x2a4d8 100%",
+   "imgcodecs 0x2a562..0x2a57c 100%",
+   "imgcodecs 0x2a594..0x2a5be 71%"
+  ]
+ },
+ "L3": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x2202e..0x22032 100%"
+  ]
+ },
+ "L4": {
+  "percent": 87.5,
+  "ranges": [
+   "imgcodecs 0x2204a..0x2207a 88%"
+  ]
+ },
+ "L6": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x22130..0x22134 100%",
+   "imgcodecs 0x22174..0x2217e 100%",
+   "imgcodecs 0x22196..0x221a8 100%",
+   "imgcodecs 0x221c4..0x221d0 100%"
+  ]
+ },
+ "L7": {
+  "percent": 100.0,
+  "ranges": [
+   "imgcodecs 0x223c2..0x223cc 100%"
+  ]
+ },
+ "O1": {
+  "percent": 61.5,
+  "ranges": [
+   "imgcodecs 0xf404..0xf43e 66%",
+   "imgcodecs 0xf8f0..0xf96c 60%"
+  ]
+ },
+ "O2": {
+  "percent": 57.7,
+  "ranges": [
+   "core 0x816d8..0x81844 58%"
+  ]
+ },
+ "O3": {
+  "percent": 100.0,
+  "ranges": [
+   "core 0x81122..0x8113c 100%"
+  ]
+ },
+ "O4": {
+  "percent": 69.2,
+  "ranges": [
+   "core 0x80d80..0x80e50 69%"
+  ]
+ },
+ "O5": {
+  "percent": 100.0,
+  "ranges": [
+   "core 0x20a2c..0x20a42 100%",
+   "core 0x20a7c..0x20a88 100%"
+  ]
+ },
+ "O6": {
+  "percent": 94.7,
+  "ranges": [
+   "core 0x20a44..0x20a6a 95%"
+  ]
+ },
+ "O7": {
+  "percent": 65.7,
+  "ranges": [
+   "core 0xc0970..0xc09b0 100%",
+   "core 0xc02b4..0xc0346 51%"
+  ]
+ },
+ "O8": {
+  "percent": 76.8,
+  "ranges": [
+   "core 0xc0804..0xc0920 77%"
+  ]
+ }
+}
