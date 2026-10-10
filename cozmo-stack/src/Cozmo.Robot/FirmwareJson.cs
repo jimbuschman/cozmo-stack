@@ -250,9 +250,15 @@ internal static class Json
                 string key = Convert.ToHexString(lastKey);
                 if (!value.Members.TryGetValue(key, out var child)) value.Members[key] = child = new();
                 if (!ReadValue(child, depth + 1)) return Recover(TokenKind.ObjectEnd);
-                token = NextSkippingComments();
+                // fidelity: M1-029 (0x008E10C6..0x008E10EE): one token; only '}', ',' or a comment is accepted.
+                // After a comment the loop 0x008E10DE..0x008E10EA reads further tokens without checking their
+                // type: '}' ends the object, any other token (consumed) goes back to the member-name read (0x008E0F8E).
+                token = Next();
                 if (token.Kind == TokenKind.ObjectEnd) return true;
-                if (token.Kind != TokenKind.Comma) return Recover(TokenKind.ObjectEnd);
+                if (token.Kind == TokenKind.Comma) continue;
+                if (token.Kind != TokenKind.Comment) return Recover(TokenKind.ObjectEnd);
+                do token = Next(); while (token.Kind == TokenKind.Comment);
+                if (token.Kind == TokenKind.ObjectEnd) return true;
             }
         }
         private bool ReadArray(FirmwareJsonValue value, int depth)

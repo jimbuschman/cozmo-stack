@@ -48,6 +48,22 @@ public class FirmwareJsonDoubleTests
         }
     }
 
+    // M1-029: native ReadObject 0x008E10C6..0x008E10EE; after a comment further tokens are read untyped (0x008E10DE..0x008E10EA).
+    [Fact]
+    public void M1_029_AfterAMemberCommentAnyTokenReturnsToTheMemberNameRead()
+    {
+        Assert.True(Json.TryParseFirst(Encoding.ASCII.GetBytes("{\"version\":1 /**/ x \"time\":2}"), out var document));
+        using (document)
+        {
+            Assert.Equal(1, Json.Member(document.RootElement, "version").Signed);
+            Assert.Equal(2, Json.Member(document.RootElement, "time").Signed);
+        }
+        // The same input without the comment is rejected: only '}' or ',' may follow a value.
+        Assert.False(Json.TryParseFirst(Encoding.ASCII.GetBytes("{\"version\":1 x \"time\":2}"), out _));
+        // After a comment a '}' still ends the object.
+        Assert.True(Json.TryParseFirst(Encoding.ASCII.GetBytes("{\"version\":1 /**/ }"), out _));
+    }
+
     [Fact]
     public void FirmwareHeaderProductionEntryConvertsDecimalVersion()
     {

@@ -894,6 +894,9 @@ public sealed class ReliableTransport : IDisposable
             return false;
         }
         _sock = s;                                          // the new fd, which CloseSocket closes on the failures below
+        long openFd = s.Handle.ToInt64();                   // host descriptor representation, M1-022
+        // M1-048 (0x00839BBA): sChanneledInfoF "Network"/"UDPTransport.OpenSocket"/"Opened Socket %d", right after socket() succeeds.
+        effects.Add(() => Fan(Warning, $"{InfoLevel}Network: UDPTransport.OpenSocket: Opened Socket {openFd}"));
         try
         {
             OpenSocketFault?.Invoke("broadcast");
@@ -917,6 +920,8 @@ public sealed class ReliableTransport : IDisposable
             // CA29 (0x00839E76..0x00839EB6; 0x00839E14..0x00839E66): a warning; the socket stays open but unbound.
             RememberSocketError(e);
             effects.Add(() => Fan(Warning, "UDPTransport.OpenSocket.BindInUse: Warning: Unable to bind to in-use socket, continuing as this is OK in case of running multiple instances on one machine."));
+            // M1-048 (0x00839E40; reached via 0x00839E76 -> 0x00839D46 -> 0x00839DF2): "Un" for a failed bind.
+            effects.Add(() => Fan(Warning, $"{InfoLevel}Network: UDPTransport: Socket {openFd} open on port {port}. Bind Unsuccessful"));
             return true;
         }
         catch (SocketException e)
@@ -928,6 +933,8 @@ public sealed class ReliableTransport : IDisposable
             CloseSocketLocked(effects);
             return false;
         }
+        // M1-048 (0x00839E40): the same info line after a successful bind, with Bind "" + "successful".
+        effects.Add(() => Fan(Warning, $"{InfoLevel}Network: UDPTransport: Socket {openFd} open on port {port}. Bind successful"));
         return true;
     }
 
@@ -1214,7 +1221,7 @@ public sealed class ReliableTransport : IDisposable
                     int want = raw.Length;
                     Raise(() =>
                     {
-                        Fan(Warning, $"{ErrorLevel}UDPTransport.SentWrongNumBytes: Bytes {sent} != bufferSize {unchecked((uint)want)}");
+                        Fan(Warning, $"{ErrorLevel}UDPTransport.SentWrongNumBytes: sentBytes {sent} != bufferSize {unchecked((uint)want)}");
                         EngineErrorState.StoreAndMaybeBreak();
                         ErrorFlagStored?.Invoke();
                     });

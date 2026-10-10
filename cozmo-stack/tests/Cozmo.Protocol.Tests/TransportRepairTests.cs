@@ -1916,6 +1916,42 @@ public class TransportRepairTests
         t.Dispose();
     }
 
+    // M1-048 (0x00839BBA, 0x00839E40): the two OpenSocket info lines, in order, on a successful bind.
+    [Fact]
+    public void M1_048_OpenSocketLogsOpenedSocketThenSocketOpenOnPortBindSuccessful()
+    {
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+        var logs = new List<string>(); t.Warning += logs.Add;
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        long fd = t.CurrentSocket!.Handle.ToInt64();
+        var info = logs.Where(l => l.StartsWith("[info] ", StringComparison.Ordinal)).ToList();
+        Assert.Equal(new[]
+        {
+            $"[info] Network: UDPTransport.OpenSocket: Opened Socket {fd}",
+            $"[info] Network: UDPTransport: Socket {fd} open on port 0. Bind successful",
+        }, info);
+    }
+
+    // M1-048 (0x00839E40 via 0x00839E76 -> 0x00839D46 -> 0x00839DF2): after BindInUse the line says "Unsuccessful".
+    [Fact]
+    public void M1_048_OpenSocketAfterBindInUseLogsBindUnsuccessfulAfterTheWarning()
+    {
+        using var holder = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        holder.Bind(new IPEndPoint(IPAddress.Any, 47817));
+        using var t = new ReliableTransport(TransportOptions.EngineDefaults, new ManualClock(), manualPump: true);
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        t.Stop(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        var logs = new List<string>(); t.Warning += logs.Add;
+        t.Start(); Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        long fd = t.CurrentSocket!.Handle.ToInt64();
+        Assert.Equal(new[]
+        {
+            $"[info] Network: UDPTransport.OpenSocket: Opened Socket {fd}",
+            "UDPTransport.OpenSocket.BindInUse: Warning: Unable to bind to in-use socket, continuing as this is OK in case of running multiple instances on one machine.",
+            $"[info] Network: UDPTransport: Socket {fd} open on port 47817. Bind Unsuccessful",
+        }, logs);
+    }
+
     // M1-048: checked U4/U6 and reopened 00839656/0083ABB6 error targets.
     [Fact]
     public void M1_048_CloseFailureLogsFreshErrnoThenStoresTheErrorFlagTwice()
@@ -2042,7 +2078,12 @@ public class TransportRepairTests
         t.ReceivePollObserved += polls.Add;
         t.Pump();
         Assert.Equal(Data, Assert.Single(delivered));
+        int pollsBefore = polls.Count;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         t.Pump();                                           // nothing waiting: EAGAIN, silent, no block
+        sw.Stop();
+        Assert.True(polls.Count > pollsBefore, "the empty update never polled");
+        Assert.True(sw.ElapsedMilliseconds < 1000, $"a read blocked for {sw.ElapsedMilliseconds} ms");   // the read does not actually block
         Assert.NotEmpty(polls);
         Assert.All(polls, timeout => Assert.Equal(0, timeout)); // the empty read never waits for readiness
     }
@@ -2063,7 +2104,8 @@ public class TransportRepairTests
         t.SendHook = (_, datagram, _) => { requested = datagram.Length; return requested - 1; };
         t.Connect(IPAddress.Loopback, 59959);
         Assert.Contains(warnings, w => w.StartsWith(ReliableTransport.ErrorLevel + "UDPTransport.SentWrongNumBytes"));
-        Assert.Equal($"[error] UDPTransport.SentWrongNumBytes: Bytes {requested - 1} != bufferSize {requested}", Assert.Single(warnings));
+        // M1-048 U5: the engine's format string at 0x0083A44C is "sentBytes %zd != bufferSize %u" (literal from the binary).
+        Assert.Equal($"[error] UDPTransport.SentWrongNumBytes: sentBytes {requested - 1} != bufferSize {requested}", Assert.Single(warnings));
         Assert.Equal(0, t.UdpSendErrors[6]);
     }
 

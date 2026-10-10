@@ -175,17 +175,20 @@ public class TransportHardeningTests
     {
         using var t = new ReliableTransport();
         var done = new ManualResetEventSlim();
-        int joins = 0, once = 0;
+        int joins = 0, once = 0; long elapsedMs = -1;
         t.Executor.JoinObserved += () => Interlocked.Increment(ref joins);
         t.FrameTrace += _ =>
         {
             if (Interlocked.Exchange(ref once, 1) == 1) return;
-            t.Dispose();
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            t.Dispose();                                    // also joins the dispatch thread and the scheduler thread
+            elapsedMs = sw.ElapsedMilliseconds;
             done.Set();
         };
         t.Connect(Nowhere, 59994);                          // the ConnectionRequest is traced on the dispatch thread
         Assert.True(done.Wait(TimeSpan.FromSeconds(10)), "the handler never ran");
         Assert.Equal(0, joins); // disposing on the dispatch thread never waits on the executor join
+        Assert.True(elapsedMs >= 0 && elapsedMs < 1000, $"Dispose on the dispatch thread took {elapsedMs} ms");   // whole Dispose, under the 2 s join bounds
     }
 
     /// <summary>
@@ -226,17 +229,20 @@ public class TransportHardeningTests
     {
         var t = new ReliableTransport(TransportOptions.EngineDefaults, null, manualPump: true);
         bool returned = false;
-        int joins = 0, once = 0;
+        int joins = 0, once = 0; long elapsedMs = -1;
         t.Executor.JoinObserved += () => Interlocked.Increment(ref joins);
         t.FrameTrace += _ =>
         {
             if (Interlocked.Exchange(ref once, 1) == 1) return;
+            var sw = System.Diagnostics.Stopwatch.StartNew();
             t.Dispose();
+            elapsedMs = sw.ElapsedMilliseconds;
             returned = true;
         };
         t.Connect(Nowhere, 59989);
         Assert.True(returned);
         Assert.Equal(0, joins); // handler holds the transport lock: executor join is skipped
+        Assert.True(elapsedMs >= 0 && elapsedMs < 1000, $"Dispose inside the handler took {elapsedMs} ms");   // whole Dispose, under the 2 s join bounds
         Assert.True(TransportActivity.Wait(t, () => t.State == LinkState.Disconnected), "the link never ended");
     }
 
