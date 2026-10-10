@@ -2,7 +2,7 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 74 CHECKED native-row obligations / 8 CHECKED scope exclusions / 58 PARTIAL / 0 NOT DONE; checkpoint570 closes103 admitted source-context endpoint remainder |
+| Per-item native rows and production joins | PARTIAL | 76 CHECKED native-row obligations / 8 CHECKED scope exclusions / 56 PARTIAL / 0 NOT DONE; checkpoint571 reconciles090/091 against completed admitted source lifecycles |
 
 # Q14 per-item work census
 
@@ -101,8 +101,8 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-087 | 136 | CHECKED | AUDIBLE | Completion/object/state callbacks alter event lifetime, switch selection and subsequent playback. |
 | Q14-088 | 137 | PARTIAL | AUDIBLE | Play reachability, virtualization, fade and MIDI gates determine which sound is actually heard. |
 | Q14-089 | 138 | PARTIAL | AUDIBLE | Media-ID/DIDX/DATA selection and aliases determine playable content and source availability. |
-| Q14-090 | 139 | PARTIAL | AUDIBLE | Source type/header/format/results determine which decoder or generator plays and when it is ready. |
-| Q14-091 | 140 | PARTIAL | AUDIBLE | Render/seek/stream and generator endpoints determine output progress and end-of-stream. |
+| Q14-090 | 139 | CHECKED | AUDIBLE | Source type/header/format/results determine which decoder or generator plays and when it is ready. |
+| Q14-091 | 140 | CHECKED | AUDIBLE | Render/seek/stream and generator endpoints determine output progress and end-of-stream. |
 | Q14-092 | 141 | PARTIAL | AUDIBLE | Rate/frame writers and transition timing values change sound speed and scheduling. |
 | Q14-093 | 142 | CHECKED | AUDIBLE | Populated control-signal evaluators and notifications change live sound parameters. |
 | Q14-094 | 143 | CHECKED (scope exclusion) | AUDIBLE | Resolver/index/provider selection can change which media is found or whether sound is available. |
@@ -845,7 +845,7 @@ PARTIAL: K8,TR6–9,MS141A–I,BR142A–S in `20261007-sound-keep-rows.md`. Conc
 
 PARTIAL: SF1–SF5 reopen complete source factory mode/type dispatch, mode2 construction/registration/GetInfo/type-version/Init/Reset and PBI format publication. ADPCM/Vorbis source-specific rows AH/AS/AT/AR/VI remain independently covered. PR6–PR10/VC6–VC10 close registeredfactory9CC3EC andVorbiscreators. VM/ST/SB/PA addbothstartcallers, directbuffercontracts, streamingbind/loopandsetupassembly. RemainingheaderAB12B4, stream/cache/decoderrecipients andfullsource-specificclosure.
 
-**Current disposition, checkpoint558:** PARTIAL: Bind admitted mode2 generator100/101/102 source Init/reset/format-result products; AB12B4 header and Vorbis/ADPCM retained controls are superseded by checked003/004/097/101/102, not additional unread labels. Evidence: SF/PR/VC/VM/ST/SB/PA/RI205/PM536; same source gap103. out of scope: I/O/cache/backing, PCM file sources and excluded source-channel branches. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+**Current disposition, checkpoint571:** CHECKED: No unpaid source type, constructor, Init/Reset, header, packed-format or raw-result decision in the original S1–S7 contracts. SF/PR/VC and the already checked decoder/source obligations retain their positive coverage; G100566/G101565/G102567–568 bind the three previously unpaid admitted generator products. END569/ADM570 settle the selected interfaces and positively bound unreachable context suppliers. out of scope: storage/I/O/cache/backing, PCM file sources, excluded source-channel branches and isolated per-sample DSP. See `20261010-sound-source-contract-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-091 — triage line 140
 
@@ -853,7 +853,7 @@ PARTIAL: SF1–SF5 reopen complete source factory mode/type dispatch, mode2 cons
 
 PARTIAL: SF6–SF9 identify mode2 render allocation/geometry/state, Reset/Close/destruction, duration and control virtual forwarding. Existing ADPCM render/carry rows remain mapped separately. VM7 closesdirectbufferVorbisrender; ST/SB/PA closestart/readiness/bind/setupassemblycallercontracts. RemainingFCrenderAB1550,pendingseekAB2BFC, selectedstream/cache/decoder andplug-in generation/seek/duration/cache recipients.
 
-**Current disposition, checkpoint558:** PARTIAL: Bind mode2 generator100/101/102 generation/seek/duration/stop virtual recipients and exact EOS/not-ready outcomes. AB1550/AB2BFC Vorbis and selected stream controls are already positive. Evidence: SF6–9/VM/ST/SB/PA/HS/SC197/VPACK/NS/SWIN/RF544/checked097/101/102; out of scope: stream/cache/I/O and PCM-file sources. See `20261009-q14-partial-closeout.md`; older remaining-work prose above is historical and superseded.
+**Current disposition, checkpoint571:** CHECKED: No unpaid generation, seek, duration, stop-loop, EOS or not-ready decision in the original retained render/stream residuals. SF6–9/VM/ST/SB/PA/HS/SC197/VPACK/NS/SWIN/RF544 and checked097/101/102 retain their positive controls; G100566/G101565/G102567–568/END569/ADM570 settle the admitted generator and context remainder. out of scope: storage/I/O/cache/backing, PCM file sources, excluded source branches and isolated per-sample DSP. See `20261010-sound-source-contract-closeout.md`; older remaining-work prose above is historical and superseded.
 
 ## Q14-092 — triage line 141
 

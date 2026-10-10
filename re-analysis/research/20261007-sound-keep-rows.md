@@ -9,7 +9,11 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 70 native-row obligations CHECKED, 8 CHECKED scope exclusions, 62 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 76 native-row obligations CHECKED, 8 CHECKED scope exclusions, 56 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+
+## Checkpoint 571 — source contract reconciliation closes090/091
+
+`20261010-sound-source-contract-closeout.md` reconciles the unchanged original090/091 obligations and checkpoint558's exact unpaid remainder against complete reports565–570. The three admitted generator products now have positive Init/Reset/format/render/seek/duration/stop-loop/raw-state rows; END569/ADM570 settle the actual source interfaces and bound unused context suppliers. Earlier decoder/stream controls retain their existing positive coverage. No new helper descent, DSP-equivalence acceptance or whole-MIDI claim. Q14-090/091 CHECKED; counts76nativeCHECKED+8scopeCHECKED/56PARTIAL/140;140AUDIBLE/0INTERNAL. No production/fidelity/hardware/Q15 edits.
 
 ## Checkpoint 570 — admitted source context reachability closes103
 

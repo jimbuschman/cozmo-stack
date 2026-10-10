@@ -1,0 +1,14 @@
+# Q14-090 / Q14-091 — source contract close-out (checkpoint571)
+
+Scope guard reread before reconciliation. This closes the two original source obligations against existing primary extraction; it introduces no speculative implementation or unused callee tracing. Research coverage only; no fidelity-manifest acceptance.
+
+| Obligation | Exact previously open remainder | Positive resolution |
+| --- | --- | --- |
+| Q14-090, original C32.3 S1–S7 | Checkpoint558 retains admitted mode2 generator100/101/102 Init/reset/format-result products. Header AB12B4 and retained Vorbis/ADPCM controls were already superseded by checked003/004/097/101/102. | G100566, G101565 and G102567–568 bind concrete factories, parameter inputs, constructor format, Init results and Reset mutation. SF/PR/VC/VM/ST/SB/PA/RI205/PM536 remain the source/decoder caller evidence. END569/ADM570 close the same source gap previously owned by103. CHECKED. |
+| Q14-091, original C32.3 render/stream residuals | Checkpoint558 retains those same admitted products' generation/seek/duration/stop virtual recipients and exact EOS/not-ready states; AB1550/AB2BFC and selected stream controls were already positive. | Complete G100566/G101565/G102567–568 distinguish each product's budget, cursor, finite-loop, reset, seek and raw11/2D endpoints rather than assuming shared semantics. END569 binds queued stop-loop to actual product28, including WavePortal's success stub; ADM570 proves unused source-context suppliers unreachable within the complete admitted four-product context path. Earlier SF6–9/VM/ST/SB/PA/HS/SC197/VPACK/NS/SWIN/RF544/checked097/101/102 retain their positive controls. CHECKED. |
+
+Primary captures and complete shipped inputs remain in `20261009-sound-generator100-lifecycle.md`, `20261009-sound-generator101-lifecycle.md`, `20261009-sound-generator102-controls.md`, `20261009-sound-generator102-lifecycle.md`, `20261009-sound-generator-endpoints.md` and `20261009-sound-source-context-admission.md`, with their referenced native captures and payload witnesses. Engine SHA256:02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. This is reconciliation of already extracted production paths, not a new source claim from navigation notes.
+
+out of scope: storage/I/O/cache/backing infrastructure, PCM file sources, excluded source branches and isolated per-sample DSP. No DSP equivalence test or arithmetic acceptance is claimed. MIDI target selection, note routing and scheduling keep their specific PARTIAL obligations; this closure does not settle them.
+
+Both original census quotations and all140 impact tags are preserved. Coverage:76 native CHECKED +8 scope CHECKED /56 PARTIAL /0 NOT DONE /140. Impact:140 AUDIBLE /0 INTERNAL. No production code, manifest, inventory, project-state, hardware or Q15 change.
