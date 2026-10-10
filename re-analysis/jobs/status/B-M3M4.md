@@ -107,3 +107,7 @@ Final checks: second full run passed3995 and exposed only the stale RFixBatch3 l
 - Build commit: 4ae4d32f5f3253f60e704e8bd5f80ccadab5b6c4, pushed to main on 2026-10-09.
 - Push gate independently passed fidelity and all 3,996 tests, zero failed/skipped (3m27s). No hook bypass or force push.
 - DONE for the operator-authorized checked slice. M3-010 and M4-009/016/017/018/019 remain IMPLEMENTATION_GAP, built and awaiting strong verification, with the MISSING dependencies above retained. The whole M3/M4 layer is not complete or accepted. Stop here.
+
+## Adopted-row continuation — 2026-10-10
+
+CLAIMED Codex 2026-10-10. Operator authorizes B-M3M4 adopted groups and corrections, including the remaining-record adoption. JPEG decode stays held; default-table and Save encoder extraction goes to the manager. Each implementation batch runs the fidelity check and full suite before commit/push; no record is settled. Base ad8fa6c. Existing unrelated untracked research files are preserved.
