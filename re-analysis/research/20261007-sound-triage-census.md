@@ -2,7 +2,7 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 76 CHECKED native-row obligations / 8 CHECKED scope exclusions / 56 PARTIAL / 0 NOT DONE; checkpoint571 reconciles090/091 against completed admitted source lifecycles |
+| Per-item native rows and production joins | PARTIAL | 77 CHECKED native-row obligations / 8 CHECKED scope exclusions / 55 PARTIAL / 0 NOT DONE; checkpoint574 closes051 concrete MIDI get-in routing |
 
 # Q14 per-item work census
 
@@ -62,7 +62,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-048 | 86 | CHECKED | AUDIBLE | The isolated final PCM gain/interpolation still changes loudness despite its DSP exclusion. |
 | Q14-049 | 87 | PARTIAL | AUDIBLE | Recorded-node replay, fades and held-note lifetime determine selection and cutoff. |
 | Q14-050 | 88 | CHECKED | AUDIBLE | Robot bus FX order and mix-to-Hijack rate handoff determine the robot's heard output. |
-| Q14-051 | 90 | PARTIAL | AUDIBLE | MIDI target/get-in membership determines whether notes select the get-in sound branch. |
+| Q14-051 | 90 | CHECKED | AUDIBLE | MIDI target/get-in membership determines whether notes select the get-in sound branch. |
 | Q14-052 | 91 | PARTIAL | AUDIBLE | Velocity-to-gain/RTPC binding determines how loudly or with what parameters a note plays. |
 | Q14-053 | 92 | PARTIAL | AUDIBLE | Per-note draw cadence determines which randomized sound plays when a note fires. |
 | Q14-054 | 93 | CHECKED | AUDIBLE | Lead/buffering timing changes singing onset relative to the robot's animation/action. |
@@ -581,7 +581,7 @@ CHECKED: RB519 maps the specified shipped Robot_Bus_1 four-slot route through FQ
 
 PARTIAL: Q15 NS1–3/NE1–6 locate the actual per-note submission/preparation helper and channel/pitch/velocity gates; cited9BBF9C is a byte-stream consumer, not child MIDI filtering. Actual target110896138 node128 child/get-in membership remains open.
 
-**Current disposition, checkpoint573:** PARTIAL: Reconcile concrete inherited note/channel/velocity preparation on110896138→403781184→its actual type5 children and selected descendants, using NE flag-dependent parent recursion and actual property inputs. GI572/GC573 settle membership,128/single-step dispatch, node-local shared random-state selection and constant-success direct-candidate48; chosen-child filtering occurs after choice. Evidence: GI572A–E/GC573A–E, four verified primary RanSeq payloads and actual selector/state/admission ARM captures; existing NS/NE/DG/LN/TR/C/CA153 algorithms. See `20261010-sound-midi-getin-choice.md`; older remaining-work prose is superseded. out of scope: allocator/vector backing, isolated per-sample DSP and excluded branches.
+**Current disposition, checkpoint574:** CHECKED: GI572/GC573/GM574 settle actual target/get-in membership,128, nested random-state/candidate admission, flag-dependent parent preparation and authored/default/live-query MIDI gates. Primary87-object bounded path has twelve31/32 equality gates (48/50/53); routing is conditional, not every-note PCM output. out of scope: backing/I-O, isolated per-sample DSP and excluded branches. Broader049/052/053 claims retain their existing coverage. See `20261010-sound-midi-getin-controls.md`; older remaining-work prose is historical and superseded.
 
 ## Q14-052 — triage line 91
 
