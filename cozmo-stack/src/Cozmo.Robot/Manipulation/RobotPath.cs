@@ -241,6 +241,12 @@ public sealed class PathFollower : IDisposable
 
     public event Action<ushort, PathEventType>? Event;
 
+    /// <summary>
+    /// How a path wait's timeout elapses. Wall-clock by default; a test that drives the path from its own
+    /// signals replaces it with a delay that never completes, so host load cannot expire a wait early.
+    /// </summary>
+    public Func<TimeSpan, Task> TimeoutDelay { get; set; } = t => Task.Delay(t, CancellationToken.None);
+
     private void OnMessage(RobotMessage m)
     {
         if (m is not PathFollowingEvent e) return;
@@ -294,7 +300,7 @@ public sealed class PathFollower : IDisposable
         public async Task<PathEventType?> WaitAsync(TimeSpan timeout, CancellationToken cancel)
         {
             using var reg = cancel.Register(() => _tcs.TrySetCanceled());
-            var done = await Task.WhenAny(_tcs.Task, Task.Delay(timeout, CancellationToken.None));
+            var done = await Task.WhenAny(_tcs.Task, _follower.TimeoutDelay(timeout));
             if (done != _tcs.Task || _tcs.Task.IsCanceled) { Dispose(); return null; }
             return _tcs.Task.Result;
         }

@@ -133,6 +133,9 @@ public class SearchForBlockTests
         // located, but the pose is not Known: the search has something to look for and never finds it
         rig.M.World.MarkDirty(target.ObjectId);
         rig.Sent.Clear();
+        // The fake robot answers every path from rig.Pump, so no path wait may expire on wall-clock time: under host load the
+        // 5 s drive timeout fired early, a state-1 child failed, and the state-2 sweep (ignoreFailure 0) ended after fewer drives.
+        rig.M.Follower.TimeoutDelay = _ => new TaskCompletionSource().Task;
 
         var helper = new SearchForBlockHelper(rig.M, target.ObjectId, new EngineRandom(7u))
             { Wait = (t, c) => Task.CompletedTask };
@@ -174,6 +177,7 @@ public class SearchForBlockTests
         rig.M.World.MarkDirty(target.ObjectId);
         rig.Sent.Clear();
         rig.HoldPath = true;
+        rig.M.Follower.TimeoutDelay = _ => new TaskCompletionSource().Task;   // paths end only by the signals below, never by wall-clock load
         var helper = new SearchForBlockHelper(rig.M, target.ObjectId, new EngineRandom(7u)) { Wait = (t, c) => Task.CompletedTask };
         var task = helper.RunAsync(default);
         int handled = 0;
