@@ -11751,3 +11751,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint822 - actual mode4 parent has one authored RTPC binding
 
 `20261011-sound-mode4-parent-rtpc-disposition.md` binds parent62050212 full payload and298-child vector to oneD2687048/property0 curve input,state-group count0,and concrete post-registration callback980EE8 BX LR. Serialized source type0 remains distinct from core subscriber type2. This positive parent input prevents treating821 own-zero counts as inherited-control absence;actual live input/recipient/admission remain open. Q14-009/034 stay PARTIAL/AUDIBLE;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint823 - mode4 parent known RTPC recipient effects
+
+`20261011-sound-mode4-parent-recipient-disposition.md` checks both ActorMixer constructor publications and joins822 property0 to already paid holder/context products. Initial delivery clears cache flags;known later context8 adds delta to8C and returns. Those particular recipients do not create a first mode4 Play;alternate live products/internal inputs remain explicit. Q14-009/034 stay PARTIAL/AUDIBLE;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

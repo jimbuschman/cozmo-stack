@@ -1,0 +1,18 @@
+{
+  "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "checkedWords": {
+    "0103D0CC": "00A1B254",
+    "0103D0D0": "00A196D0",
+    "0103B7E4": "00A02EC0",
+    "0103D430": "00A02EC0",
+    "0103B7E8": "009886E8",
+    "0103D434": "009886E8",
+    "00980EE8": "E12FFF1E",
+    "009BDEE0": "E12FFF1E"
+  },
+  "constructorProducts": [
+    "103CF88",
+    "103D0CC"
+  ],
+  "boundary": "Constructor/table and literal byte checks; current runtime pointers and admitted requests are not emulated or assumed."
+}

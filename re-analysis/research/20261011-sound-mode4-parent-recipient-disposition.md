@@ -1,0 +1,17 @@
+# Q14-009/034: original parent RTPC recipient cut
+
+Checkpoint823;guard reread before each step;decisions only. Research only.116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL unchanged.
+
+This reconciles822's actual parent62050212/property0/source-type0 binding with already paid HP617/SP618/LD428/DG511 recipient contracts. It adds a mode4-specific bounded disposition,not newly recovered generic holder bodies or a new receiver family census. Native companion and reproducible word witness retain exact constructor/table evidence.
+
+A66910 and the allocated factoryA66950 both publish main103CF88 and holder103D0CC atnode10. The calculations use the actual ARMPC+8 literal and distinct +8/+14C adjustments;the words103D0C4=FFFFFFF0 and103D0C8=0 preceding the secondary table are ABI metadata,not callbacks. Holder0/4 areA1B254/A196D0. EarlierHP617/SP618 already established these products;current native byte assertions independently verify this particular parent family.
+
+Successful LW4 core registration uses subscriber type2,whose initial interface R26 invokes holder4. A196D0 walks existing holder4.array10/count14 records,physical stride28hex,invoking their recipientC;zero wrapped byte count returns before a callback. It creates neither records nor PBIs. The known base/continuous recipientC=9886E8 reaches9BCFE0,which clearsDCbit5 and,for nonzero initial argument1,DCbit6. Temporary-context9C07A0 clearsDCbit5 only. HP617 already paid the mask/re-registration interface and these concrete products. This initial recompute delivery operates on existing contexts;it is not a descending ActorMixer Play.
+
+Later property0 uses AC10/RD5 and LD428's active-recipient/child gates. ActorMixer/RanSeq container5C=987EF0 forwards only to eligible child contexts;Sound5C=A1DD7C walks existing contexts and9BCF24 applies the source/scope/filter gates. For the known final base/continuous context8,raw103B7E4/103D430=A02EC0 subtractsC thenA02CE4. Property0 takes unsigned dispatch defaultA02E6C->9BDDE0;branch table entry9BDDF0->9BDEC8 marksDDbit0,adds incoming delta r3 tocontext8C with one F32 VADD,stores8C and returns. Incoming new aggregate r2 is not used as the delta. The leaf has no callback,allocation,Play,selector/playlist change or source-start operation.
+
+Therefore822's authored parent binding cannot supply a first mode4 Play through these particular paid initial/re-registration and property0 recipient products:they invalidate or update existing parameter contexts. Parameter changes remain AUDIBLE because later rendering consumes them. This is not a proof that all possible holder records,alternate mutable products,other parent/bus controls,bank mutation or direct/internal inputs are absent. No raw saved runtime receiver is invented from a constructor table.
+
+Paid frontier:the original own zero registrations821,parent binding822,and these known recipient effects823. Stop reopening those generic bodies merely because009/034 remain PARTIAL. Still required is an actual alternative admitted request/recipient or a positive exclusion of the original direct/internal and mutable-input frontiers,then context/continuation/depth/defaults for any admitted mode4 request. No all-input unreachability upgrade;Q15 remains behindQ14.
+
+out of scope:storage/list backing and per-sample DSP. Native property delta arithmetic and state flags are parameter decisions,retained exactly. No production,manifest,inventory or hardware changes.
