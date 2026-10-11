@@ -1,0 +1,255 @@
+0x00A14098: ldr      ip, [r0, #4]
+0x00A1409C: cmp      ip, #0
+0x00A140A0: bxeq     lr
+0x00A140A4: push     {r4, r5, r6, r7, r8, sb, lr}
+0x00A140A8: mov      r6, r1
+0x00A140AC: mov      r4, r0
+0x00A140B0: sub      sp, sp, #0x1c
+0x00A140B4: mov      r1, ip
+0x00A140B8: mov      r0, r6
+0x00A140BC: mov      r7, r3
+0x00A140C0: mov      r5, r2
+0x00A140C4: bl       #0x4a6694   ; ->0x004A6694
+0x00A140C8: ldr      r3, [r4]
+0x00A140CC: ldr      r4, [r3, r1, lsl #2]
+0x00A140D0: cmp      r4, #0
+0x00A140D4: bne      #0xa140ec
+0x00A140D8: add      sp, sp, #0x1c
+0x00A140DC: pop      {r4, r5, r6, r7, r8, sb, pc}
+0x00A140E0: ldr      r4, [r4, #4]
+0x00A140E4: cmp      r4, #0
+0x00A140E8: beq      #0xa140d8
+0x00A140EC: ldr      r3, [r4]
+0x00A140F0: cmp      r6, r3
+0x00A140F4: bne      #0xa140e0
+0x00A140F8: ldr      lr, [r5]
+0x00A140FC: cmp      lr, #0
+0x00A14100: beq      #0xa14244
+0x00A14104: ldrb     r6, [r4, #0x20]
+0x00A14108: ldr      r2, [r4, #0x28]
+0x00A1410C: cmp      r6, #0
+0x00A14110: addne    r6, r4, #0x1c
+0x00A14114: subs     r2, r2, #1
+0x00A14118: bmi      #0xa140d8
+0x00A1411C: ldr      r8, [r4, #0x24]
+0x00A14120: mov      r3, #0
+0x00A14124: rsb      r1, r3, r2
+0x00A14128: add      r1, r1, r1, lsr #31
+0x00A1412C: add      r1, r3, r1, asr #1
+0x00A14130: rsb      r0, r1, r1, lsl #3
+0x00A14134: add      r0, r8, r0, lsl #2
+0x00A14138: ldr      ip, [r0, #0x18]
+0x00A1413C: cmp      lr, ip
+0x00A14140: sublo    r2, r1, #1
+0x00A14144: blo      #0xa14150
+0x00A14148: bls      #0xa14160
+0x00A1414C: add      r3, r1, #1
+0x00A14150: cmp      r2, r3
+0x00A14154: bge      #0xa14124
+0x00A14158: add      sp, sp, #0x1c
+0x00A1415C: pop      {r4, r5, r6, r7, r8, sb, pc}
+0x00A14160: ldr      lr, [r5, #4]
+0x00A14164: cmp      lr, #0
+0x00A14168: bne      #0xa14184
+0x00A1416C: ldr      r3, [r5, #8]
+0x00A14170: cmp      r3, #0
+0x00A14174: bne      #0xa14184
+0x00A14178: ldrb     r3, [r5, #0xc]
+0x00A1417C: cmp      r3, #0xff
+0x00A14180: beq      #0xa14414
+0x00A14184: ldrb     r3, [r0, #8]
+0x00A14188: ldr      ip, [r0, #0x10]
+0x00A1418C: cmp      r3, #0
+0x00A14190: addne    r6, r0, #4
+0x00A14194: subs     ip, ip, #1
+0x00A14198: bmi      #0xa140d8
+0x00A1419C: ldr      r8, [r0, #0xc]
+0x00A141A0: mov      r3, #0
+0x00A141A4: rsb      r1, r3, ip
+0x00A141A8: add      r1, r1, r1, lsr #31
+0x00A141AC: add      r1, r3, r1, asr #1
+0x00A141B0: rsb      r0, r1, r1, lsl #3
+0x00A141B4: add      r0, r8, r0, lsl #2
+0x00A141B8: ldr      r2, [r0, #0x18]
+0x00A141BC: cmp      lr, r2
+0x00A141C0: sublo    ip, r1, #1
+0x00A141C4: blo      #0xa141d0
+0x00A141C8: bls      #0xa141e0
+0x00A141CC: add      r3, r1, #1
+0x00A141D0: cmp      r3, ip
+0x00A141D4: ble      #0xa141a4
+0x00A141D8: add      sp, sp, #0x1c
+0x00A141DC: pop      {r4, r5, r6, r7, r8, sb, pc}
+0x00A141E0: ldr      lr, [r5, #8]
+0x00A141E4: cmp      lr, #0
+0x00A141E8: beq      #0xa142c8
+0x00A141EC: ldrb     r3, [r0, #8]
+0x00A141F0: ldr      ip, [r0, #0x10]
+0x00A141F4: cmp      r3, #0
+0x00A141F8: addne    r6, r0, #4
+0x00A141FC: subs     ip, ip, #1
+0x00A14200: bmi      #0xa140d8
+0x00A14204: ldr      r0, [r0, #0xc]
+0x00A14208: mov      r2, #0
+0x00A1420C: rsb      r3, r2, ip
+0x00A14210: add      r3, r3, r3, lsr #31
+0x00A14214: add      r3, r2, r3, asr #1
+0x00A14218: rsb      r8, r3, r3, lsl #3
+0x00A1421C: add      r8, r0, r8, lsl #2
+0x00A14220: ldr      r1, [r8, #0x18]
+0x00A14224: cmp      lr, r1
+0x00A14228: sublo    ip, r3, #1
+0x00A1422C: blo      #0xa14238
+0x00A14230: bls      #0xa14318
+0x00A14234: add      r2, r3, #1
+0x00A14238: cmp      ip, r2
+0x00A1423C: bge      #0xa1420c
+0x00A14240: b        #0xa140d8   ; ->0x00A140D8
+0x00A14244: ldr      r3, [r5, #4]
+0x00A14248: cmp      r3, #0
+0x00A1424C: bne      #0xa14104
+0x00A14250: ldr      r3, [r5, #8]
+0x00A14254: cmp      r3, #0
+0x00A14258: bne      #0xa14104
+0x00A1425C: ldrb     r3, [r5, #0xc]
+0x00A14260: cmp      r3, #0xff
+0x00A14264: bne      #0xa14104
+0x00A14268: ldrb     r3, [r5, #0x10]
+0x00A1426C: cmp      r3, #0xff
+0x00A14270: bne      #0xa14104
+0x00A14274: ldr      r6, [r5, #0x14]
+0x00A14278: cmp      r6, #0
+0x00A1427C: bne      #0xa14104
+0x00A14280: ldrb     r0, [r4, #0x20]
+0x00A14284: ldr      r1, [r4, #0x28]
+0x00A14288: cmp      r0, #0
+0x00A1428C: beq      #0xa140d8
+0x00A14290: adds     r2, r1, #0
+0x00A14294: add      r1, r4, #0x1c
+0x00A14298: movne    r2, #1
+0x00A1429C: ldr      r3, [r4, #8]
+0x00A142A0: str      r2, [sp, #0xc]
+0x00A142A4: mov      ip, #1
+0x00A142A8: str      r5, [sp]
+0x00A142AC: mov      r0, r4
+0x00A142B0: str      r7, [sp, #4]
+0x00A142B4: mov      r2, r6
+0x00A142B8: str      ip, [sp, #8]
+0x00A142BC: bl       #0xa137d8   ; ->0x00A137D8
+0x00A142C0: add      sp, sp, #0x1c
+0x00A142C4: pop      {r4, r5, r6, r7, r8, sb, pc}
+0x00A142C8: ldrb     r3, [r5, #0xc]
+0x00A142CC: cmp      r3, #0xff
+0x00A142D0: bne      #0xa141ec
+0x00A142D4: ldrb     r3, [r5, #0x10]
+0x00A142D8: cmp      r3, #0xff
+0x00A142DC: bne      #0xa141ec
+0x00A142E0: ldr      r3, [r5, #0x14]
+0x00A142E4: cmp      r3, #0
+0x00A142E8: ldrbeq   r3, [r0, #8]
+0x00A142EC: bne      #0xa141ec
+0x00A142F0: cmp      r3, #0
+0x00A142F4: ldr      r2, [r0, #0x10]
+0x00A142F8: beq      #0xa140d8
+0x00A142FC: adds     r2, r2, #0
+0x00A14300: add      r1, r0, #4
+0x00A14304: movne    r2, #1
+0x00A14308: cmp      r6, #0
+0x00A1430C: beq      #0xa1429c
+0x00A14310: ldr      r3, [r6]
+0x00A14314: b        #0xa142a0   ; ->0x00A142A0
+0x00A14318: ldrb     sb, [r5, #0xc]
+0x00A1431C: cmp      sb, #0xff
+0x00A14320: beq      #0xa1444c
+0x00A14324: ldrb     r3, [r8, #8]
+0x00A14328: ldr      ip, [r8, #0x10]
+0x00A1432C: cmp      r3, #0
+0x00A14330: addne    r6, r8, #4
+0x00A14334: subs     ip, ip, #1
+0x00A14338: bmi      #0xa140d8
+0x00A1433C: ldr      lr, [r8, #0xc]
+0x00A14340: mov      r2, #0
+0x00A14344: rsb      r3, r2, ip
+0x00A14348: add      r3, r3, r3, lsr #31
+0x00A1434C: add      r3, r2, r3, asr #1
+0x00A14350: rsb      r0, r3, r3, lsl #3
+0x00A14354: add      r0, lr, r0, lsl #2
+0x00A14358: ldrb     r1, [r0, #0x18]
+0x00A1435C: cmp      sb, r1
+0x00A14360: sublo    ip, r3, #1
+0x00A14364: blo      #0xa14370
+0x00A14368: bls      #0xa1437c
+0x00A1436C: add      r2, r3, #1
+0x00A14370: cmp      ip, r2
+0x00A14374: bge      #0xa14344
+0x00A14378: b        #0xa140d8   ; ->0x00A140D8
+0x00A1437C: ldrb     r1, [r5, #0x10]
+0x00A14380: cmp      r1, #0xff
+0x00A14384: beq      #0xa1447c
+0x00A14388: ldrb     r3, [r0, #8]
+0x00A1438C: add      r2, sp, #0x17
+0x00A14390: cmp      r3, #0
+0x00A14394: addne    r6, r0, #4
+0x00A14398: add      r0, r0, #0xc
+0x00A1439C: bl       #0xa18540   ; ->0x00A18540
+0x00A143A0: ldrb     r3, [sp, #0x17]
+0x00A143A4: cmp      r3, #0
+0x00A143A8: beq      #0xa140d8
+0x00A143AC: cmp      r0, #0
+0x00A143B0: beq      #0xa140d8
+0x00A143B4: ldr      lr, [r5, #0x14]
+0x00A143B8: ldrb     r3, [r0, #8]
+0x00A143BC: cmp      lr, #0
+0x00A143C0: beq      #0xa142f0
+0x00A143C4: ldr      ip, [r0, #0x10]
+0x00A143C8: cmp      r3, #0
+0x00A143CC: addne    r6, r0, #4
+0x00A143D0: subs     ip, ip, #1
+0x00A143D4: bmi      #0xa140d8
+0x00A143D8: ldr      r8, [r0, #0xc]
+0x00A143DC: mov      r2, #0
+0x00A143E0: rsb      r3, r2, ip
+0x00A143E4: add      r3, r3, r3, lsr #31
+0x00A143E8: add      r3, r2, r3, asr #1
+0x00A143EC: add      r1, r8, r3, lsl #3
+0x00A143F0: ldr      r0, [r1, #4]
+0x00A143F4: cmp      lr, r0
+0x00A143F8: sublo    ip, r3, #1
+0x00A143FC: blo      #0xa14408
+0x00A14400: bls      #0xa1448c
+0x00A14404: add      r2, r3, #1
+0x00A14408: cmp      ip, r2
+0x00A1440C: bge      #0xa143e0
+0x00A14410: b        #0xa140d8   ; ->0x00A140D8
+0x00A14414: ldrb     r3, [r5, #0x10]
+0x00A14418: cmp      r3, #0xff
+0x00A1441C: bne      #0xa14184
+0x00A14420: ldr      r3, [r5, #0x14]
+0x00A14424: cmp      r3, #0
+0x00A14428: bne      #0xa14184
+0x00A1442C: ldrb     r2, [r0, #8]
+0x00A14430: ldr      r3, [r0, #0x10]
+0x00A14434: cmp      r2, #0
+0x00A14438: beq      #0xa140d8
+0x00A1443C: adds     r2, r3, #0
+0x00A14440: add      r1, r0, #4
+0x00A14444: movne    r2, #1
+0x00A14448: b        #0xa14308   ; ->0x00A14308
+0x00A1444C: add      r0, r5, #0xc
+0x00A14450: bl       #0xa0dbe0   ; ->0x00A0DBE0
+0x00A14454: cmp      r0, #0
+0x00A14458: bne      #0xa14324
+0x00A1445C: ldrb     r0, [r8, #8]
+0x00A14460: ldr      r2, [r8, #0x10]
+0x00A14464: cmp      r0, #0
+0x00A14468: beq      #0xa140d8
+0x00A1446C: adds     r2, r2, #0
+0x00A14470: add      r1, r8, #4
+0x00A14474: movne    r2, #1
+0x00A14478: b        #0xa14308   ; ->0x00A14308
+0x00A1447C: ldr      r3, [r5, #0x14]
+0x00A14480: cmp      r3, #0
+0x00A14484: bne      #0xa14388
+0x00A14488: b        #0xa1442c   ; ->0x00A1442C
+0x00A1448C: mov      r2, #0
+0x00A14490: b        #0xa14308   ; ->0x00A14308
