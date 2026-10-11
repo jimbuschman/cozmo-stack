@@ -654,3 +654,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint823 - mode4 parent known RTPC recipient effects
 
 `20261011-sound-mode4-parent-recipient-disposition.md` checks both ActorMixer constructor publications and joins822 property0 to already paid holder/context products. Initial delivery clears cache flags;known later context8 adds delta to8C and returns. Those particular recipients do not create a first mode4 Play;alternate live products/internal inputs remain explicit. Q14-009/034 stay PARTIAL/AUDIBLE;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint824 - mode4 parent event-volume default and actual producer
+
+`20261011-sound-mode4-parent-volume-input-disposition.md` verifies exact Init STMG ordinal30 D2687048/default1/no-ramp/non-built-in and joins the parent curve to existing AP6/DPOST307E/PV460 animation producer. Event post precedes nonzero-playing-ID parameter call;native missing registry association returns1F before queueing. A matched playing ID is not Sound-start proof. This concrete parameter route supplies no independent first mode4 Play through823 known recipients;alternative direct/internal/mutable admission remains open.009/034 stay PARTIAL/AUDIBLE;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

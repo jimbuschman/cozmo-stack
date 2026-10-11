@@ -1,0 +1,15 @@
+# Q14-009/034: actual event-volume input joins for the mode4 parent
+
+Checkpoint824;guard reread before each step;decisions only. Research only.116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL unchanged.
+
+822's actual parent sourceD2687048 is the event-volume parameter already positively bound by AP6/DPOST307E/P9/PV460. This is a specific input join,not a newly discovered native producer. Independent primary-bank witness verifies archive/bank hashes and the single complete1095-byte Init STMG body. Its parameter count37 is atbody306;the native U5 21-byte record atordinal30 isbody940/absolute1197:ID D2687048,default3F800000,rampType0,up0,down0,built-in byte0. U5 and R15 already supply the ordered default registration/store;the record does not prove later values stay1 or global requests are absent.
+
+The reopened Thumb callers59781A..86 and59824A onward first post the actual event through4AF4F0,save returned playingID,finish callback-wrapper cleanup,then test that saved ID. Nonzero loads entry.volumeC and constructsD2687048 with MOVW7048/MOVTD268 before4AF4FC;zero skips the parameter call. ProcessEvents follows on both branches. P9/PV460 already bind4AF4FC to the playing-ID parameter interface,duration0/curve0,controller/helper gates and native99FB14. No invented global event-volume write or mode-selected object substitution.
+
+99FB14 callsA05044 on current playing registry before command selection/allocation. Resolver lookup miss returnsFFFFFFFF;the API then returns1F without queueing. A matched record returns its raw objectID24,not a node pointer or a forced readiness value. PV460's selected tag2 retains that original playingID in its scoped RTPC payload;object lookup failure atQC4 consumes without setting. A registry association is not proof that a Sound has already started or that every Play gate succeeded.
+
+This concrete producer is downstream of an event post,and its command is a parameter setter rather than a container Play. Combined with823's known property0 recipient effects,it supplies no independent first-Play entry into725225627/196431345. Ordinary-event PB647 and MIDI MT651 structural paths remain their paid bounded input results. No assertion that every possible public/internal parameter caller uses this producer,no universal registry/graph immutability,and no whole-runtime unreachability upgrade.
+
+Paid input frontier now includes own registration counts821,parent control bytes822,known recipient effects823,and authored/default plus concrete animation volume producer824. Q14-009/034 remain PARTIAL/AUDIBLE for an actually admitted alternative direct/internal or mutable graph input and its context/continuation/depth/defaults,or positive exclusion of that original frontier. Do not repeat source-ID/default searches or generic holder bodies as stronger proof. Q15 remains behindQ14.
+
+out of scope:STMG/registry backing,storage/hash/mutex primitive bodies and per-sample gain arithmetic. Raw defaults,request ordering,ID lookup,result1F and scope remain exact. No production,manifest,inventory or hardware changes.

@@ -1,0 +1,18 @@
+{
+  "archiveSha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145",
+  "bankSha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+  "stmgBodyOffset": 257,
+  "stmgBodyLength": 1095,
+  "parameterCount": 37,
+  "parameterOrdinal": 30,
+  "parameterBodyOffset": 940,
+  "absoluteOffset": 1197,
+  "rawHex": "487068d20000803f00000000000000000000000000",
+  "id": "D2687048",
+  "defaultBits": "3F800000",
+  "rampType": 0,
+  "rampUpBits": "00000000",
+  "rampDownBits": "00000000",
+  "builtIn": 0,
+  "boundary": "Primary authored default only; later scoped values and runtime publisher admission are not inferred from it."
+}
