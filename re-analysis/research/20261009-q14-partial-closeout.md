@@ -522,3 +522,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint790 — original twelve-curve-caller scope closure
 
 `20261010-sound-curve-twelve-caller-scope-closure.md` reconciles unchanged C35.3's sum/product, hints and twelve-caller request against AC/R/CR645's complete named caller/recipient joins.114 CHECKED; no extra address-taken caller is declared absent or unreachable. The unsupported broader hypothesis stays UNKNOWN outside the original bounded closure.108 native+8 scope CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only, no fidelity/production acceptance.
+
+### Checkpoint791 - flag-setting address arithmetic
+
+`20261010-sound-rate-frame-flag-arithmetic-disposition.md` extends785 with instruction-ID-checked ADDS/SUBS/MOVS propagation while keeping S-bit flags conservative. Four primary encoding witnesses;6855 windows/same300 events/no added or removed keys. Caps increase338 to434, explicitly preventing an exhaustive proof.043/092/099/120/124/130 PARTIAL;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
