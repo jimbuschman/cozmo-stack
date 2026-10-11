@@ -918,3 +918,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint889 — original policy-query output destinations
 
 `20261011-sound-voice-policy-output-disposition.md` accounts for seven actual A01768 direct ARM calls: two paid suppliedV+E0 destinations and five current-frame SP+14/C words. Seven independent native pointer/BL controls and five primary retained-carrier intervals pass without query-body reexecution. Later local copy/escape and unrestricted indirect/re-init/writer aliases stay open;033 PARTIAL, no all-writer absence or new family. Stop these direct handoffs.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint890 — original five local policy-output recipients
+
+`20261011-sound-voice-policy-local-output-disposition.md` follows889's five local outputs through three actual selection bodies. Thirty native ABI fixtures independently vary query policy0/1/2 and output mode0/7; no caller local-word read occurs after query return, and paired output-mode cases retain the same return/victim/Stop decisions. Query/cache and Stop bodies are explicit interfaces, not executed or reclassified. Complete primary caller ranges retain return-policy consumption and no direct local-slot read. This is not all-alias or runtime-admission proof;033/037 stay PARTIAL. Stop these local bodies.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.

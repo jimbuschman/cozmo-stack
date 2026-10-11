@@ -1,0 +1,676 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "cases": [
+    {
+      "entry": "00A37100",
+      "object_filter": true,
+      "query_call": "00A37258",
+      "fixture_policy": 0,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3725C",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": true,
+      "query_call": "00A37258",
+      "fixture_policy": 0,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3725C",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": true,
+      "query_call": "00A37258",
+      "fixture_policy": 1,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3725C",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A372D4",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": true,
+      "query_call": "00A37258",
+      "fixture_policy": 1,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3725C",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A372D4",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": true,
+      "query_call": "00A37258",
+      "fixture_policy": 2,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3725C",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": true,
+      "query_call": "00A37258",
+      "fixture_policy": 2,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3725C",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": false,
+      "query_call": "00A373B4",
+      "fixture_policy": 0,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A373B8",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": false,
+      "query_call": "00A373B4",
+      "fixture_policy": 0,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A373B8",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": false,
+      "query_call": "00A373B4",
+      "fixture_policy": 1,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A373B8",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A372D4",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": false,
+      "query_call": "00A373B4",
+      "fixture_policy": 1,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A373B8",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A372D4",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": false,
+      "query_call": "00A373B4",
+      "fixture_policy": 2,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A373B8",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A37100",
+      "object_filter": false,
+      "query_call": "00A373B4",
+      "fixture_policy": 2,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A373B8",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": true,
+      "query_call": "00A37578",
+      "fixture_policy": 0,
+      "fixture_modeword": 0,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000050",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3757C",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": true,
+      "query_call": "00A37578",
+      "fixture_policy": 0,
+      "fixture_modeword": 7,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000050",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3757C",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": true,
+      "query_call": "00A37578",
+      "fixture_policy": 1,
+      "fixture_modeword": 0,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3757C",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A375A0",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": true,
+      "query_call": "00A37578",
+      "fixture_policy": 1,
+      "fixture_modeword": 7,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3757C",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A375A0",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": true,
+      "query_call": "00A37578",
+      "fixture_policy": 2,
+      "fixture_modeword": 0,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3757C",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": true,
+      "query_call": "00A37578",
+      "fixture_policy": 2,
+      "fixture_modeword": 7,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A3757C",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": false,
+      "query_call": "00A37650",
+      "fixture_policy": 0,
+      "fixture_modeword": 0,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000050",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37654",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": false,
+      "query_call": "00A37650",
+      "fixture_policy": 0,
+      "fixture_modeword": 7,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000050",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37654",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": false,
+      "query_call": "00A37650",
+      "fixture_policy": 1,
+      "fixture_modeword": 0,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37654",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A375A0",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": false,
+      "query_call": "00A37650",
+      "fixture_policy": 1,
+      "fixture_modeword": 7,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37654",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A375A0",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": false,
+      "query_call": "00A37650",
+      "fixture_policy": 2,
+      "fixture_modeword": 0,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37654",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A373F4",
+      "object_filter": false,
+      "query_call": "00A37650",
+      "fixture_policy": 2,
+      "fixture_modeword": 7,
+      "query_local": "30007FD4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "20005000",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37654",
+          "R0": "20001000",
+          "R1": "30007FD4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A37880",
+      "object_filter": false,
+      "query_call": "00A37944",
+      "fixture_policy": 0,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37948",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A37880",
+      "object_filter": false,
+      "query_call": "00A37944",
+      "fixture_policy": 0,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37948",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "entry": "00A37880",
+      "object_filter": false,
+      "query_call": "00A37944",
+      "fixture_policy": 1,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37948",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A379B4",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A37880",
+      "object_filter": false,
+      "query_call": "00A37944",
+      "fixture_policy": 1,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37948",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000001"
+        },
+        {
+          "address": "00A01CA4",
+          "LR": "00A379B4",
+          "R0": "20001000",
+          "R1": "00000002",
+          "fixture_return": "DEADBEEF"
+        }
+      ]
+    },
+    {
+      "entry": "00A37880",
+      "object_filter": false,
+      "query_call": "00A37944",
+      "fixture_policy": 2,
+      "fixture_modeword": 0,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37948",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000002"
+        }
+      ]
+    },
+    {
+      "entry": "00A37880",
+      "object_filter": false,
+      "query_call": "00A37944",
+      "fixture_policy": 2,
+      "fixture_modeword": 7,
+      "query_local": "30007FC4",
+      "local_word_reads_after_query": [],
+      "returnR0": "00000001",
+      "victim_output": "A5A5A5A5",
+      "calls": [
+        {
+          "address": "00A01768",
+          "LR": "00A37948",
+          "R0": "20001000",
+          "R1": "30007FC4",
+          "fixture_return": "00000002"
+        }
+      ]
+    }
+  ],
+  "boundary": "Actual three selection bodies/five local query sites, one explicit eligible PBI, incoming priority2 vs candidate1, acyclic list. Query/output and Stop are opaque ABI fixtures. No query/cache/callback execution or actual runtime admission. Output mode0/7 varies independently of fixture policy0/1/2. Read watch and matching results apply only to these cases, not all aliases/branches/inputs."
+}
