@@ -3352,3 +3352,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint826 - saved rate/frame cap states and retained channel-loop bounds
 
 `20261011-sound-rate-frame-cap-disposition.md` retains all231 pending states from819 fifteen local caps without changing any456 event records. Two smallest source-loop frontiers have counters252/285,excluded by actual U8 sourcecount and retained mono/stereo1/2 loop bounds;ABI preservation verified without tracing sample reconstruction. Other13 caps/228 states remain explicit;no all-alias absence or status promotion. Six rate/frame obligations stay PARTIAL;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint827 - authored music child-count bound for smallest cap
+
+`20261011-sound-music-child-cap-disposition.md` independently computes all346 shipped music child counts/vectors from hash-checked common fields:1..84. Saved9879C8 counter185 is outside that finite successful-reader bound;987838 remains a legitimate,already-paid tempo/header read. No universal runtime-input/callback/alias proof or status promotion. Six rate/frame obligations stay PARTIAL;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

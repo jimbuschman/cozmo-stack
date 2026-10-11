@@ -1,0 +1,6198 @@
+{
+  "archiveSha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145",
+  "objectCount": 346,
+  "typeCounts": {
+    "10": 209,
+    "13": 123,
+    "12": 14
+  },
+  "maxChildCount": 84,
+  "childCountHistogram": {
+    "1": 289,
+    "2": 30,
+    "3": 15,
+    "4": 4,
+    "5": 2,
+    "13": 1,
+    "14": 1,
+    "15": 1,
+    "17": 1,
+    "34": 1,
+    "84": 1
+  },
+  "meterEnabledCounts": {
+    "0": 235,
+    "255": 104,
+    "1": 7
+  },
+  "rows": [
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 380691143,
+      "type": 10,
+      "payloadSha256": "507ef9c0b90f6e6caae8a7e7ae6692ca4a3b362a76091959e48b9eafc833aac6",
+      "childCountOffset": 6157201,
+      "childCount": 1,
+      "children": [
+        704630883
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6157209,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 71091648,
+      "type": 13,
+      "payloadSha256": "09c894b1bdcf3bf6909a17cc84ca59e5cb50ece3d4fe939f8ad9b364dc0be2f2",
+      "childCountOffset": 6157318,
+      "childCount": 1,
+      "children": [
+        380691143
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6157326,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 202301804,
+      "type": 10,
+      "payloadSha256": "cfc931eec3af4052b29ba519c6fbb2c85f2b88737f0f42c029b0f83d411dcf83",
+      "childCountOffset": 6157634,
+      "childCount": 1,
+      "children": [
+        561194426
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6157642,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 90869602,
+      "type": 13,
+      "payloadSha256": "34c17081a657117456c4637923e52524fd48c83787b9e5fcac2ac05a4561f4d4",
+      "childCountOffset": 6157751,
+      "childCount": 1,
+      "children": [
+        202301804
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6157759,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 376703184,
+      "type": 10,
+      "payloadSha256": "b539a2e8debd29008fc887fa83e217d14dbedfca66bd9467d03f5b2e507812b1",
+      "childCountOffset": 6158067,
+      "childCount": 1,
+      "children": [
+        372144919
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6158075,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 166197422,
+      "type": 13,
+      "payloadSha256": "d4e0e7ddd2ac160a1d5169af4ab79ab90f5813cfb65bae3b2fea5331b406bf81",
+      "childCountOffset": 6158184,
+      "childCount": 1,
+      "children": [
+        376703184
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6158192,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 626931784,
+      "type": 10,
+      "payloadSha256": "cfc9aa769b102546f6038e3414a42696201d3a3a74add61b952d19596a455cd2",
+      "childCountOffset": 6158500,
+      "childCount": 1,
+      "children": [
+        722138217
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6158508,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 200835038,
+      "type": 13,
+      "payloadSha256": "f03fc3e14dcf2c7b43260f778cdfe1cd8682d1130795d00b88e17f0bf94dc7c2",
+      "childCountOffset": 6158617,
+      "childCount": 1,
+      "children": [
+        626931784
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6158625,
+      "meterHex": "0000000000c0b2400000000000000000000048430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 84023651,
+      "type": 10,
+      "payloadSha256": "9647d561c1cb74917494553fd3bfd8f5a6712f0b2b9fed574d74bc93707f836f",
+      "childCountOffset": 6158933,
+      "childCount": 1,
+      "children": [
+        94528350
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6158941,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 274211300,
+      "type": 13,
+      "payloadSha256": "404f078f1203060cceaa7b7f93c7f3a7a6409640f92ec6418ae5159495b48b13",
+      "childCountOffset": 6159050,
+      "childCount": 1,
+      "children": [
+        84023651
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6159058,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 463495282,
+      "type": 10,
+      "payloadSha256": "895d1c2fed52aae6e8e6d1a2a626b016a9a84db2d5687019fb57cc4b5f1b7100",
+      "childCountOffset": 6159366,
+      "childCount": 1,
+      "children": [
+        1065464617
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6159374,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 444277268,
+      "type": 13,
+      "payloadSha256": "e2b22a90622d30bd08283bbe8f906c6a7cb0ef01683faff8512f57c769db8687",
+      "childCountOffset": 6159483,
+      "childCount": 1,
+      "children": [
+        463495282
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6159491,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 106854461,
+      "type": 10,
+      "payloadSha256": "0db9879c05de99aff82aef0cc378583597998ff82054ba5f7bcc39147da6a938",
+      "childCountOffset": 6159804,
+      "childCount": 1,
+      "children": [
+        402585750
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6159812,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 499716491,
+      "type": 13,
+      "payloadSha256": "0e31e4b3fd5fee7fe59086f8b6eb42a4b05180eae8dca65711ea61513183b6ac",
+      "childCountOffset": 6159921,
+      "childCount": 1,
+      "children": [
+        106854461
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6159929,
+      "meterHex": "0000000000c0b2400000000000000000000048430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 912305656,
+      "type": 10,
+      "payloadSha256": "9bfe4e1ec2c48f5925911e5d328ab870582c4e8d61a1ced0b29774e9965d9c6b",
+      "childCountOffset": 6160237,
+      "childCount": 1,
+      "children": [
+        880296021
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6160245,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 547607965,
+      "type": 13,
+      "payloadSha256": "c74cc80dc2aabfc29f3a84ca39b35ae285a2a2051fb2160c6a2afd8f6f214586",
+      "childCountOffset": 6160354,
+      "childCount": 1,
+      "children": [
+        912305656
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6160362,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 896093592,
+      "type": 10,
+      "payloadSha256": "c1411f9b3b4c1fdd67c840d513d5dd190253ea856f283aa23de7b9efe7aaff97",
+      "childCountOffset": 6160670,
+      "childCount": 1,
+      "children": [
+        685831613
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6160678,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 597156836,
+      "type": 13,
+      "payloadSha256": "969be1151b4b49a88ee14ac7248ed69ea84a5f4c222ad2f17e2aa4322e041a96",
+      "childCountOffset": 6160787,
+      "childCount": 1,
+      "children": [
+        896093592
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6160795,
+      "meterHex": "0000000000c0b2400000000000000000000048430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 888031004,
+      "type": 10,
+      "payloadSha256": "2a4130e222de8c6a6eab967792e64f2da4d8b09b99181ec35fac0eef2b3a30b3",
+      "childCountOffset": 6161103,
+      "childCount": 1,
+      "children": [
+        30429073
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6161111,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 639185794,
+      "type": 13,
+      "payloadSha256": "23bfafc0207df685096d1c2ce993af58730af35710656ea2e17c097169b372f6",
+      "childCountOffset": 6161220,
+      "childCount": 1,
+      "children": [
+        888031004
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6161228,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 753461229,
+      "type": 10,
+      "payloadSha256": "2fa0e34968076fdeb6f131e6816db88b44824bf958c620ff86bfa6bbc1403be7",
+      "childCountOffset": 6161536,
+      "childCount": 1,
+      "children": [
+        909600905
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6161544,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 745922457,
+      "type": 13,
+      "payloadSha256": "eb4429730e6880f584a823ddf589377cec7e38b077a488223332502f8dc11cd5",
+      "childCountOffset": 6161653,
+      "childCount": 1,
+      "children": [
+        753461229
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6161661,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 792815556,
+      "type": 10,
+      "payloadSha256": "d534e0f89239f78d646d8255c305db86a0bb41b24d60399049d5c1f412768d61",
+      "childCountOffset": 6161969,
+      "childCount": 1,
+      "children": [
+        778445309
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6161977,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 761024363,
+      "type": 13,
+      "payloadSha256": "0d5d4de116fc28d2013be6c894148a1b06ea282146568eb17b31eb694bb49e3f",
+      "childCountOffset": 6162086,
+      "childCount": 1,
+      "children": [
+        792815556
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6162094,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 44559327,
+      "type": 10,
+      "payloadSha256": "d03a3d97168b795d66f1831061eac19185bed80a87b7cbbbd9ab392768841c64",
+      "childCountOffset": 6162402,
+      "childCount": 1,
+      "children": [
+        422266058
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6162410,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 773900540,
+      "type": 13,
+      "payloadSha256": "794f681c75c663c989ee11a05941d58af62e24525ea84369600b39ddb74b29ed",
+      "childCountOffset": 6162519,
+      "childCount": 1,
+      "children": [
+        44559327
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6162527,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 156047116,
+      "type": 10,
+      "payloadSha256": "e233d17952877a41c8dc6c944dfa11ff1d01988675a5a9d24573f177d4e650ed",
+      "childCountOffset": 6162835,
+      "childCount": 1,
+      "children": [
+        479465315
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6162843,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 888151657,
+      "type": 13,
+      "payloadSha256": "112e95aa23a8a47759cc5ba476e81a33fda30af4ba81e5b0128d968175e73680",
+      "childCountOffset": 6162952,
+      "childCount": 1,
+      "children": [
+        156047116
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6162960,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 51813931,
+      "type": 10,
+      "payloadSha256": "57e58ceb115fb258fb7085c4c692d46dd39f0c6b02ac203c34b44a4c5fed074d",
+      "childCountOffset": 6163268,
+      "childCount": 1,
+      "children": [
+        230806183
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6163276,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 957126120,
+      "type": 13,
+      "payloadSha256": "b55d721817546def19cc56ce4765cab5459bd389caee6b499d461c10f684de1d",
+      "childCountOffset": 6163385,
+      "childCount": 1,
+      "children": [
+        51813931
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6163393,
+      "meterHex": "0000000000c0b2400000000000000000000048430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 608513422,
+      "type": 10,
+      "payloadSha256": "e2ba4a4f50dabc57f3c812086bbd068b6de278a6e63d365c84219724cd2c4281",
+      "childCountOffset": 6163701,
+      "childCount": 1,
+      "children": [
+        130192801
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6163709,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 958789730,
+      "type": 13,
+      "payloadSha256": "51ae6f7b5b08fb5cfa0f7726d0cee00d2ac5d35894fe9c5c8d930109d96b6fd7",
+      "childCountOffset": 6163818,
+      "childCount": 1,
+      "children": [
+        608513422
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6163826,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 34452189,
+      "type": 10,
+      "payloadSha256": "27872ea49c1adb4776d81b490c7572dcef01b014acc3e6f461c1cd12fd79097c",
+      "childCountOffset": 6164134,
+      "childCount": 1,
+      "children": [
+        787982984
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6164142,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1001278794,
+      "type": 13,
+      "payloadSha256": "694e0d3e5d51ffe6da821ef5b735acf4dee86af36ce998d429664f98c820a5ee",
+      "childCountOffset": 6164251,
+      "childCount": 1,
+      "children": [
+        34452189
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6164259,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 139286641,
+      "type": 12,
+      "payloadSha256": "f7a7b496c9e0608dfa9db23223089ee91aaac846eb65c48c9a5c3fe0d649f330",
+      "childCountOffset": 6164459,
+      "childCount": 17,
+      "children": [
+        71091648,
+        90869602,
+        166197422,
+        200835038,
+        274211300,
+        444277268,
+        499716491,
+        547607965,
+        597156836,
+        639185794,
+        745922457,
+        761024363,
+        773900540,
+        888151657,
+        957126120,
+        958789730,
+        1001278794
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6164531,
+      "meterHex": "0000000000c0c24000000000000000000000c842040401",
+      "meterEnabled": 1
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 711214128,
+      "type": 10,
+      "payloadSha256": "b4aea0d68e4af101fcf3b2e0e85315ce3f4228b74bd9b12a9c5cdd444faadb42",
+      "childCountOffset": 6166869,
+      "childCount": 1,
+      "children": [
+        673072277
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6166877,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 410013986,
+      "type": 13,
+      "payloadSha256": "c43b6349d82f44c55c47fdbce8c37cfbc7140928c86b1d62559f2397326a8225",
+      "childCountOffset": 6166991,
+      "childCount": 1,
+      "children": [
+        711214128
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6166999,
+      "meterHex": "5555555555d5c44000000000000000000000b442040401",
+      "meterEnabled": 1
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 424319695,
+      "type": 10,
+      "payloadSha256": "f62277f5179cd4ffac1f3f8154a9b5bf8500000391b616b999ad75b2748ce74e",
+      "childCountOffset": 6167429,
+      "childCount": 1,
+      "children": [
+        990345772
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6167437,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1488599,
+      "type": 13,
+      "payloadSha256": "29beb12d1a658a1b88e7a69d923e01ff1a544bcd229ebcd9d6f69f6f6c8c5a45",
+      "childCountOffset": 6167546,
+      "childCount": 1,
+      "children": [
+        424319695
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6167554,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 711331980,
+      "type": 10,
+      "payloadSha256": "1d38a41d139b0f0e3bc477a6039ae68e705979101dc9d0ec07f676fbd9e03cf4",
+      "childCountOffset": 6167862,
+      "childCount": 1,
+      "children": [
+        450287116
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6167870,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 77466784,
+      "type": 13,
+      "payloadSha256": "1c3f171300ab1cde26a44d74a05c98a32c81f189e21dd1e8e0ca07a4f5048600",
+      "childCountOffset": 6167979,
+      "childCount": 1,
+      "children": [
+        711331980
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6167987,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 473886202,
+      "type": 10,
+      "payloadSha256": "813139b07298e2fffd91b1854be02a8b188c23ff3d81ffa2afe623bae21fbb1e",
+      "childCountOffset": 6168295,
+      "childCount": 1,
+      "children": [
+        409483311
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6168303,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 114203973,
+      "type": 13,
+      "payloadSha256": "f81567ea972b0516705ed4ae09a370cbb5cbd3b6d5c1b7eb216f08c586b4cf3f",
+      "childCountOffset": 6168412,
+      "childCount": 1,
+      "children": [
+        473886202
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6168420,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1031501244,
+      "type": 10,
+      "payloadSha256": "41e2dbe7be1e07bafb48df0cc634ce5b2d902592697b6307e154e0e058328f44",
+      "childCountOffset": 6168728,
+      "childCount": 1,
+      "children": [
+        922674817
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6168736,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 124679430,
+      "type": 13,
+      "payloadSha256": "9e2ee1988e382cea415680db4ac519fde174fea7ab559795c98e4a36ccb0045b",
+      "childCountOffset": 6168845,
+      "childCount": 1,
+      "children": [
+        1031501244
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6168853,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 536806543,
+      "type": 10,
+      "payloadSha256": "a6ba59d6a57973d8d5d4891406a9af2ba0f2c6539b986a6b0de11dbc3ae2c584",
+      "childCountOffset": 6169161,
+      "childCount": 1,
+      "children": [
+        413469546
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6169169,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 257230119,
+      "type": 13,
+      "payloadSha256": "a4cd78aad83268d15ac4706d258aab7eb285f33974f6f705ec7d0d76af608fe3",
+      "childCountOffset": 6169278,
+      "childCount": 1,
+      "children": [
+        536806543
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6169286,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 307303850,
+      "type": 10,
+      "payloadSha256": "f8038ee6a52a006bd2afdfd746333dec53dd417d53d539b17ea8dc28f0b97577",
+      "childCountOffset": 6169594,
+      "childCount": 1,
+      "children": [
+        991435828
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6169602,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 340177127,
+      "type": 13,
+      "payloadSha256": "e86dd6ccf64bd151de32ab707cd7bdee9f60789a70a4f2f274aa3a34d23d1f07",
+      "childCountOffset": 6169711,
+      "childCount": 1,
+      "children": [
+        307303850
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6169719,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 774142435,
+      "type": 10,
+      "payloadSha256": "49a6a2ad112c896761fd91de1056826fda66d7a32db1cc2c7bb9844c9bb31756",
+      "childCountOffset": 6170027,
+      "childCount": 1,
+      "children": [
+        11970948
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6170035,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 464769728,
+      "type": 13,
+      "payloadSha256": "2844488fa439e5dd452be2903ae5c37e663cbabc6b3960918b10f0c896202011",
+      "childCountOffset": 6170144,
+      "childCount": 1,
+      "children": [
+        774142435
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6170152,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 46400244,
+      "type": 10,
+      "payloadSha256": "2cde85419d0ae32b110859c39fbed59ec7a9e6517dfb512262b299adc3681ed7",
+      "childCountOffset": 6170460,
+      "childCount": 1,
+      "children": [
+        503470929
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6170468,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 518939035,
+      "type": 13,
+      "payloadSha256": "f444fa3c7574d89ecc0e18e8c0e3be62fe7ed7311c5986742789a6a9cf7dba86",
+      "childCountOffset": 6170577,
+      "childCount": 1,
+      "children": [
+        46400244
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6170585,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 67678898,
+      "type": 10,
+      "payloadSha256": "abceec15ac6f266484a64c3faffdca806a696b10d53da109f7c3e900a10ef4c6",
+      "childCountOffset": 6170863,
+      "childCount": 1,
+      "children": [
+        464760213
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6170871,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 549382971,
+      "type": 13,
+      "payloadSha256": "9054f83310ffba88b31e5414a243c06c84f2df7ac4cde24904f355f594f13920",
+      "childCountOffset": 6170980,
+      "childCount": 1,
+      "children": [
+        67678898
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6170988,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 682395016,
+      "type": 10,
+      "payloadSha256": "def9cfd066f4f53ec483266e015eea3ddc822688abbb1d533a36ab2d85d90a57",
+      "childCountOffset": 6171296,
+      "childCount": 1,
+      "children": [
+        951551715
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6171304,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 561475816,
+      "type": 13,
+      "payloadSha256": "c676f998577912d3710bcb7fe97a88dd722e83871103620df3a9cd80a74904d3",
+      "childCountOffset": 6171413,
+      "childCount": 1,
+      "children": [
+        682395016
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6171421,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 898150245,
+      "type": 10,
+      "payloadSha256": "f13706d0bdde75b29d1cf51255d77a1daf6c75f4964900e82bbd8c0b8f520ad3",
+      "childCountOffset": 6171729,
+      "childCount": 1,
+      "children": [
+        166158341
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6171737,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 570778134,
+      "type": 13,
+      "payloadSha256": "0f01490370531bc45555b724392f6934f285ab8584614560dc758658a24b8e77",
+      "childCountOffset": 6171846,
+      "childCount": 1,
+      "children": [
+        898150245
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6171854,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 443806431,
+      "type": 10,
+      "payloadSha256": "89e5481f1782c8205a7d0b0030f4e1b6e0c813dbb50a2790e88ad06e77e8f8f6",
+      "childCountOffset": 6172162,
+      "childCount": 1,
+      "children": [
+        325170463
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6172170,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 625571790,
+      "type": 13,
+      "payloadSha256": "8bcd16212187262a8ed8b82502bcf5abe2022b7c502b0b720165cd6b447d8374",
+      "childCountOffset": 6172279,
+      "childCount": 1,
+      "children": [
+        443806431
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6172287,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1052138751,
+      "type": 10,
+      "payloadSha256": "9feb9d206a8da192388fc1b51e50a008905f39475e7c4c41f921620c13b6c837",
+      "childCountOffset": 6172595,
+      "childCount": 1,
+      "children": [
+        516551998
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6172603,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 772443822,
+      "type": 13,
+      "payloadSha256": "d19dae73d678fb58a6905f73f5852fa2c338159dc7e9cf96678d9fa466116376",
+      "childCountOffset": 6172712,
+      "childCount": 1,
+      "children": [
+        1052138751
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6172720,
+      "meterHex": "000000000040af400000000000000000000070430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 602865028,
+      "type": 12,
+      "payloadSha256": "3778e9852a2b96312676f145fed6ca176dd69aeda3ee90b566ca27277ebf3832",
+      "childCountOffset": 6172920,
+      "childCount": 13,
+      "children": [
+        1488599,
+        77466784,
+        114203973,
+        124679430,
+        257230119,
+        340177127,
+        464769728,
+        518939035,
+        549382971,
+        561475816,
+        570778134,
+        625571790,
+        772443822
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6172976,
+      "meterHex": "000000000040bf4000000000000000000000f042040401",
+      "meterEnabled": 1
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 557150294,
+      "type": 10,
+      "payloadSha256": "529f0c451dc7d6d9c9217bd007f21f97fe994982f70dcd2fe02812f86acbdd61",
+      "childCountOffset": 6173415,
+      "childCount": 1,
+      "children": [
+        1017827527
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6173423,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 623513715,
+      "type": 13,
+      "payloadSha256": "4e93733d26ed55ee1bf9a8cbf84bf8d70de61ef5405482405c80766f109ca917",
+      "childCountOffset": 6173537,
+      "childCount": 1,
+      "children": [
+        557150294
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6173545,
+      "meterHex": "0000000000c0c24000000000000000000000c842040401",
+      "meterEnabled": 1
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 295944160,
+      "type": 10,
+      "payloadSha256": "e4239dd53083bf81fb600cdd20021603a4b8cf50429d712f806e82b926ca19d8",
+      "childCountOffset": 6206724,
+      "childCount": 1,
+      "children": [
+        104682577
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6206732,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 205497859,
+      "type": 13,
+      "payloadSha256": "ea38d480a9303321b79371ebc17b6d794be779c11bf907cd4aea59c3e8397611",
+      "childCountOffset": 6206841,
+      "childCount": 1,
+      "children": [
+        295944160
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6206849,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 158741317,
+      "type": 10,
+      "payloadSha256": "44c2b6c67a0f48b28f6d28a0774905b4b71e0a590950fc392745c66b12952873",
+      "childCountOffset": 6207157,
+      "childCount": 1,
+      "children": [
+        270608572
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6207165,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 213356432,
+      "type": 13,
+      "payloadSha256": "e4d27b5125ad120acb447355685a60599ce994be553714193b6f43d2d05e7a05",
+      "childCountOffset": 6207274,
+      "childCount": 1,
+      "children": [
+        158741317
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6207282,
+      "meterHex": "000000000070b7400000000000000000000020430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 743249961,
+      "type": 10,
+      "payloadSha256": "6e8a7a295062f38fa0b9a0e921652a00122d3361e3590118edf9f4848d874795",
+      "childCountOffset": 6207590,
+      "childCount": 1,
+      "children": [
+        836613983
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6207598,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 283292467,
+      "type": 13,
+      "payloadSha256": "1daf48ae5d07b78b50efe229e32aba911458ccc67b12428ea5ade525e62add49",
+      "childCountOffset": 6207707,
+      "childCount": 1,
+      "children": [
+        743249961
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6207715,
+      "meterHex": "000000000070b7400000000000000000000020430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 941812503,
+      "type": 10,
+      "payloadSha256": "c4fffcbfb57784ea9cb426ec6b1eec6672aeae17d0a9adef83f5d4ae3f68d556",
+      "childCountOffset": 6208023,
+      "childCount": 1,
+      "children": [
+        948112388
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6208031,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 294304379,
+      "type": 13,
+      "payloadSha256": "68e7780d17aefce817a5ba8ffd83239c1e45fa89d79e3be8ec5a724a06250587",
+      "childCountOffset": 6208140,
+      "childCount": 1,
+      "children": [
+        941812503
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6208148,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 116790789,
+      "type": 10,
+      "payloadSha256": "7cb56619c8dbe9986b9e987427c7957f5cf958dac85fceced67ae273eb1f41d5",
+      "childCountOffset": 6208456,
+      "childCount": 1,
+      "children": [
+        174854756
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6208464,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 297668580,
+      "type": 13,
+      "payloadSha256": "a1963de2ed4ca1a8e203d242aac007d0d1c86aa1ebb8ef570b7f395725cb8212",
+      "childCountOffset": 6208573,
+      "childCount": 1,
+      "children": [
+        116790789
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6208581,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 396296817,
+      "type": 10,
+      "payloadSha256": "a48bdfbdcda36b3aef70de73950ceb8bf0728d4b334082b3c11b0ecbefca5baa",
+      "childCountOffset": 6208889,
+      "childCount": 1,
+      "children": [
+        530206940
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6208897,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 360115733,
+      "type": 13,
+      "payloadSha256": "d86712d18efda3028d0f7cffe8a2db6d725cb809297eb1ad99600cac70dde7dd",
+      "childCountOffset": 6209006,
+      "childCount": 1,
+      "children": [
+        396296817
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6209014,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 426278014,
+      "type": 10,
+      "payloadSha256": "71f632016b6b28e2e9cc2f16a687ad318d68d351c8aed32f156679b54e5a6c76",
+      "childCountOffset": 6209322,
+      "childCount": 1,
+      "children": [
+        1072657690
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6209330,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 476453346,
+      "type": 13,
+      "payloadSha256": "1e7ed9cda80d7e9a7cf5b177812fd9b717a330ce38d9983fdee883ad67d01b0f",
+      "childCountOffset": 6209439,
+      "childCount": 1,
+      "children": [
+        426278014
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6209447,
+      "meterHex": "000000000070b7400000000000000000000020430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 131370838,
+      "type": 10,
+      "payloadSha256": "ab988421350d6a5eeb12893ecb8834201631bec2117c8d01abf36003a030a1e8",
+      "childCountOffset": 6209755,
+      "childCount": 1,
+      "children": [
+        668362926
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6209763,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 581722532,
+      "type": 13,
+      "payloadSha256": "bd744c8c052bf0fd056d7466a8a509e6768794a6dd3daf15824a0b1a527e63f5",
+      "childCountOffset": 6209872,
+      "childCount": 1,
+      "children": [
+        131370838
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6209880,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1018452003,
+      "type": 10,
+      "payloadSha256": "5a23e4b7dcff39640c736ed1ccd7f54a4750e8c550d990d1a6f0a75959ca75f6",
+      "childCountOffset": 6210188,
+      "childCount": 1,
+      "children": [
+        223858732
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6210196,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 595203965,
+      "type": 13,
+      "payloadSha256": "9c85eed92b7e77c8734e75aeb3155e9ed52057a7bf20b44f04c97e7b19085c2b",
+      "childCountOffset": 6210305,
+      "childCount": 1,
+      "children": [
+        1018452003
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6210313,
+      "meterHex": "000000000070b7400000000000000000000020430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 76263424,
+      "type": 10,
+      "payloadSha256": "18391d16b41c728ad35ad5dd7c7bab4a01158dc423ee1690a5d72cfeaa63cc2f",
+      "childCountOffset": 6210621,
+      "childCount": 1,
+      "children": [
+        386591121
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6210629,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 615857833,
+      "type": 13,
+      "payloadSha256": "a8cc339836f05032ebeba2ef3414072de188e0ce554d15f364eb6af22dd05cce",
+      "childCountOffset": 6210738,
+      "childCount": 1,
+      "children": [
+        76263424
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6210746,
+      "meterHex": "000000000070b7400000000000000000000020430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 776892708,
+      "type": 10,
+      "payloadSha256": "07443b893379f7b99030718204387617effa224f7ebf90a3e9b5e089ed7707e0",
+      "childCountOffset": 6211054,
+      "childCount": 1,
+      "children": [
+        781342744
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6211062,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 636855814,
+      "type": 13,
+      "payloadSha256": "37c64b825187fc1dd0fb5fa3c0ad95c26a0990a94c4cee8f878910fb985bba0d",
+      "childCountOffset": 6211171,
+      "childCount": 1,
+      "children": [
+        776892708
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6211179,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 242980546,
+      "type": 10,
+      "payloadSha256": "50dcbb7ef9f2ea6ebe93d6885d1269f02627dac870478d49f65cf0f16e0cc937",
+      "childCountOffset": 6211487,
+      "childCount": 1,
+      "children": [
+        996346952
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6211495,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 750248738,
+      "type": 13,
+      "payloadSha256": "7930e35175782dd5f596e2e08c2839821c24bbc1521fa84bbd18742fe7602a0e",
+      "childCountOffset": 6211604,
+      "childCount": 1,
+      "children": [
+        242980546
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6211612,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 374142079,
+      "type": 10,
+      "payloadSha256": "47b70476123ab377bb68e00becb4c70953b254b6f7b792dae8100fb0d78be9fe",
+      "childCountOffset": 6211920,
+      "childCount": 1,
+      "children": [
+        239443491
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6211928,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 845731097,
+      "type": 13,
+      "payloadSha256": "32f951f142bc8486f56627fe4f32d7f18d115ab3931eea7983c366c4bd958af3",
+      "childCountOffset": 6212037,
+      "childCount": 1,
+      "children": [
+        374142079
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6212045,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1006632485,
+      "type": 10,
+      "payloadSha256": "4fad56b34a5cd65fc3f1a9d7b4f6be40fd3bc9deaa06394bb4cd0ecb6cf720fd",
+      "childCountOffset": 6212353,
+      "childCount": 1,
+      "children": [
+        141570639
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6212361,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 941793567,
+      "type": 13,
+      "payloadSha256": "11a3e0bc9a4cdd19d77b93029248691d4df4d7526168094aa637271d5df5ee6c",
+      "childCountOffset": 6212470,
+      "childCount": 1,
+      "children": [
+        1006632485
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6212478,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 914766641,
+      "type": 12,
+      "payloadSha256": "fa9aafd8fb82e385a0cd81920061a8687435ffe7ced6cf7c7f318cbd03b864fb",
+      "childCountOffset": 6212678,
+      "childCount": 14,
+      "children": [
+        205497859,
+        213356432,
+        283292467,
+        294304379,
+        297668580,
+        360115733,
+        476453346,
+        581722532,
+        595203965,
+        615857833,
+        636855814,
+        750248738,
+        845731097,
+        941793567
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 6212738,
+      "meterHex": "000000000070c74000000000000000000000a042040401",
+      "meterEnabled": 1
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 13563655,
+      "type": 10,
+      "payloadSha256": "76d87f48ef35c6f5b2e42dadb54016b2e45ba2024d0666b4e1e29ad02620ca9d",
+      "childCountOffset": 956334,
+      "childCount": 1,
+      "children": [
+        586479199
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 956342,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 55081681,
+      "type": 10,
+      "payloadSha256": "d40277b3d0295d0de6d78a88199dcc9801558b616f4a368a696fe22b860be404",
+      "childCountOffset": 956612,
+      "childCount": 1,
+      "children": [
+        185918009
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 956620,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 55232192,
+      "type": 10,
+      "payloadSha256": "c5e464539a60c0afba8cb4b610049cec7c1991f6f849b37a02014d1ebf70fddb",
+      "childCountOffset": 956878,
+      "childCount": 1,
+      "children": [
+        600428763
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 956886,
+      "meterHex": "711cc7711cc7bb400000000000000000000007430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 100416558,
+      "type": 10,
+      "payloadSha256": "cd3b345c1cc4a4dc577ff86fc35469041efbe307f3a442d300c411f588690f45",
+      "childCountOffset": 957156,
+      "childCount": 1,
+      "children": [
+        101942997
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 957164,
+      "meterHex": "970cc13adabcbe4000000000000000000000f4420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 373288892,
+      "type": 10,
+      "payloadSha256": "efe6d0ca8c4834b95e37d27b4c664a0b6d41806bab397ca154c12ac5a7e4683b",
+      "childCountOffset": 957434,
+      "childCount": 1,
+      "children": [
+        369121513
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 957442,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 32788517,
+      "type": 13,
+      "payloadSha256": "aee182cc3f1c7dceeffa6b0821eb2a46459fbc6088818e3777fe14d954b10195",
+      "childCountOffset": 957556,
+      "childCount": 1,
+      "children": [
+        373288892
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 957564,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 444615904,
+      "type": 10,
+      "payloadSha256": "57d01730aed36f5b83af1a6dd713ec45970702dda3308691cd81462b9faaa01f",
+      "childCountOffset": 957950,
+      "childCount": 1,
+      "children": [
+        826397650
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 957958,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 172253399,
+      "type": 13,
+      "payloadSha256": "268e2f83bf9f20b189e5718748ad84bcecca1471ebdfa6c42821d1b9665a33a7",
+      "childCountOffset": 958067,
+      "childCount": 1,
+      "children": [
+        444615904
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 958075,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 107341425,
+      "type": 12,
+      "payloadSha256": "ba22219d68f726c0c19b50dac3042ba353cc63fa70ae4ea52be7adbd51a94f50",
+      "childCountOffset": 958305,
+      "childCount": 2,
+      "children": [
+        32788517,
+        172253399
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 958317,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 980953481,
+      "type": 10,
+      "payloadSha256": "b2c6a498c3975ef68872c359ae6b777ea9f8bc3b795386b8a78687e62f13935d",
+      "childCountOffset": 958672,
+      "childCount": 1,
+      "children": [
+        1037040474
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 958680,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 409976487,
+      "type": 13,
+      "payloadSha256": "819ffcbe85057a6967359bc7a214a7b92b98fd8e1ee483b2c3fa278df793acc5",
+      "childCountOffset": 958794,
+      "childCount": 1,
+      "children": [
+        980953481
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 958802,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 591751925,
+      "type": 10,
+      "payloadSha256": "400100b84ecdce2a3c7bee07cefff5a00ffd655b2dfe0ef84b69ea524bbe8b82",
+      "childCountOffset": 959188,
+      "childCount": 1,
+      "children": [
+        763779631
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 959196,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 544581719,
+      "type": 13,
+      "payloadSha256": "651dd369458df1ad2e960da6d24f039f42057cea3bac7758b265cbb88fdd3225",
+      "childCountOffset": 959305,
+      "childCount": 1,
+      "children": [
+        591751925
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 959313,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 124799720,
+      "type": 12,
+      "payloadSha256": "301f28d4b92e4034cd49da596fe8b53c608a73f1bf3f83aa64bb2f221e29d071",
+      "childCountOffset": 959543,
+      "childCount": 2,
+      "children": [
+        409976487,
+        544581719
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 959555,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 125410794,
+      "type": 10,
+      "payloadSha256": "6ed327d2dbece6ec0fd065d4731e3b61b929148d697d22114613fe19b9d203a9",
+      "childCountOffset": 959910,
+      "childCount": 1,
+      "children": [
+        439100747
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 959918,
+      "meterHex": "970cc13adabcbe4000000000000000000000f4420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 858988103,
+      "type": 10,
+      "payloadSha256": "f35b90833db2a5b2c22ede7d46266877a9415c060b30e13b2aa5c819cfa6edf8",
+      "childCountOffset": 960188,
+      "childCount": 1,
+      "children": [
+        880527263
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 960196,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 485676965,
+      "type": 13,
+      "payloadSha256": "33b0f76f0372181e111d3c9defb8afb61654f228d8aa02174636b23579b072e1",
+      "childCountOffset": 960305,
+      "childCount": 1,
+      "children": [
+        858988103
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 960313,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 325697198,
+      "type": 10,
+      "payloadSha256": "3bbbce5bb88392b38dbd66c2fcb82c18f7b994f58dfa9dabc33788a6d08ad85b",
+      "childCountOffset": 960699,
+      "childCount": 1,
+      "children": [
+        129356772
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 960707,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 852642990,
+      "type": 13,
+      "payloadSha256": "ddcd98e42b4c74b598e08f71e095dc167052c333ebb8a1c6158f33876f2319a3",
+      "childCountOffset": 960821,
+      "childCount": 1,
+      "children": [
+        325697198
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 960829,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 137039696,
+      "type": 12,
+      "payloadSha256": "c940a36bfea13d035f0645187d1bd792f25fddc18bcebf2716cb7c650e529510",
+      "childCountOffset": 961059,
+      "childCount": 2,
+      "children": [
+        485676965,
+        852642990
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 961071,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 143160071,
+      "type": 10,
+      "payloadSha256": "aff5a9285abd69ac6881b66206db2832d9b08bd57ce5cdc6db48334cf5933200",
+      "childCountOffset": 961426,
+      "childCount": 1,
+      "children": [
+        50837569
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 961434,
+      "meterHex": "970cc13adabcbe4000000000000000000000f4420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 154182618,
+      "type": 10,
+      "payloadSha256": "3dc4a3b01c151651ce2e7f7ec3997fb41b53e341b24b60f2312df0530f5da1b8",
+      "childCountOffset": 961656,
+      "childCount": 1,
+      "children": [
+        961134373
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 961664,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 182599338,
+      "type": 10,
+      "payloadSha256": "a888b035964c87fea1566486d07aac49c24f159fb2b4910c12989181899a6dfc",
+      "childCountOffset": 961934,
+      "childCount": 1,
+      "children": [
+        366894945
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 961942,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 228992619,
+      "type": 10,
+      "payloadSha256": "e8abeee27272e9d49ab04c356e13b296d23a6340f771acec5bacc84f2d0b96d3",
+      "childCountOffset": 962212,
+      "childCount": 1,
+      "children": [
+        818073416
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 962220,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 409267964,
+      "type": 10,
+      "payloadSha256": "71d10e9c0057ce400f8a1c84981596a753b7c8a711f1b366684f583733ebd442",
+      "childCountOffset": 962490,
+      "childCount": 1,
+      "children": [
+        776529139
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 962498,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 326882792,
+      "type": 13,
+      "payloadSha256": "d37d7ab40e1c3ca3f2e0b4358e6cf7fe77d65ac84cd352df9bc284480dccb684",
+      "childCountOffset": 962612,
+      "childCount": 1,
+      "children": [
+        409267964
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 962620,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 992901851,
+      "type": 10,
+      "payloadSha256": "9391815e382b9597219dd78d817dfcf816cdd2250ea750655eebcdf86f91d750",
+      "childCountOffset": 963006,
+      "childCount": 1,
+      "children": [
+        188268355
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 963014,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 544204783,
+      "type": 13,
+      "payloadSha256": "46239f645f95ecfe96912f08c647bea02521d4d6789f7819ebab8eb5bc42cb76",
+      "childCountOffset": 963123,
+      "childCount": 1,
+      "children": [
+        992901851
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 963131,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 239311296,
+      "type": 12,
+      "payloadSha256": "93202e7e19d7b596c2f5ecee276e13192ed6670800503937fe2a2ecf3b40735d",
+      "childCountOffset": 963361,
+      "childCount": 2,
+      "children": [
+        326882792,
+        544204783
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 963373,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 297216238,
+      "type": 10,
+      "payloadSha256": "9587bd8b05d8abdfb30d66a92f7042388e41d3ce6de5c2a38c1501d8851ca00e",
+      "childCountOffset": 963728,
+      "childCount": 1,
+      "children": [
+        145262281
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 963736,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 332241657,
+      "type": 10,
+      "payloadSha256": "bc9808f6f676bfb56d47518dec466607eff5bb1dc4b350466e78fcb420ea3d2a",
+      "childCountOffset": 964006,
+      "childCount": 1,
+      "children": [
+        972609204
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 964014,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 989293524,
+      "type": 10,
+      "payloadSha256": "9fc410c6241dad3d395021fbadc8613afc67f2ae80010b909e3ed547848147a7",
+      "childCountOffset": 964498,
+      "childCount": 3,
+      "children": [
+        238705711,
+        370321936,
+        690989221
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 964514,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 340611389,
+      "type": 13,
+      "payloadSha256": "0106db006cacfd639616aecf2bea6f12cb42aa02cd7328c37dedde92c6ec84d6",
+      "childCountOffset": 964623,
+      "childCount": 1,
+      "children": [
+        989293524
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 964631,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 134185581,
+      "type": 10,
+      "payloadSha256": "a9dd2fe7e32e3bda1a31b1010c13de93b747ba05355121980244d708d7f63bf6",
+      "childCountOffset": 964987,
+      "childCount": 1,
+      "children": [
+        785864245
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 964995,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 204512651,
+      "type": 13,
+      "payloadSha256": "3390a02501016a74b58329bd408ff659cea0cc3cf466665dfd5a9d7d7c75a928",
+      "childCountOffset": 965104,
+      "childCount": 1,
+      "children": [
+        134185581
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 965112,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 274929705,
+      "type": 10,
+      "payloadSha256": "0dccf8be5a540cdb05ad5a487d05d2cb2bbf8c14d259ef7233f271b076dc8403",
+      "childCountOffset": 965498,
+      "childCount": 1,
+      "children": [
+        99128911
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 965506,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 501648818,
+      "type": 13,
+      "payloadSha256": "ded40205a30fffae375230ad2551626f809e92d3fcd1ada077adbb2450e01462",
+      "childCountOffset": 965620,
+      "childCount": 1,
+      "children": [
+        274929705
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 965628,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 370008866,
+      "type": 12,
+      "payloadSha256": "a9f72734228d35e70c293aa6299bec527ba5293e598ac484959ac0939b1b8fed",
+      "childCountOffset": 965853,
+      "childCount": 2,
+      "children": [
+        204512651,
+        501648818
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 965865,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 374795416,
+      "type": 10,
+      "payloadSha256": "80521817e2a13e17cbba18692a995c8cd45eecaa73f7ad9a197dcc395121c30f",
+      "childCountOffset": 966220,
+      "childCount": 1,
+      "children": [
+        886881589
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 966228,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 302546087,
+      "type": 10,
+      "payloadSha256": "272a2f424523cb1daf8ee0dfac9f701d2d3ccc653a41460fdb3fb57279f78d5e",
+      "childCountOffset": 966450,
+      "childCount": 1,
+      "children": [
+        781142017
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 966458,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 405968869,
+      "type": 13,
+      "payloadSha256": "8d6fa2f41113d61a78f82244a43da8f48f78da43e52c10df90c9614946b5c2f2",
+      "childCountOffset": 966627,
+      "childCount": 1,
+      "children": [
+        302546087
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 966635,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 473507943,
+      "type": 10,
+      "payloadSha256": "90026808fa2278af9c6115c3e50f21ef1a5939f76f5ce4a73c08d7c67f653dea",
+      "childCountOffset": 966991,
+      "childCount": 1,
+      "children": [
+        182089227
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 966999,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 16753858,
+      "type": 10,
+      "payloadSha256": "6b740a5cdbfe3e101b4ee2bd172bb96190215fec6fac0cce0313d08cd5cc9738",
+      "childCountOffset": 967310,
+      "childCount": 1,
+      "children": [
+        920535610
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 967318,
+      "meterHex": "000000000070c74000000000000000000000a0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 531844886,
+      "type": 13,
+      "payloadSha256": "92d72d56abf9c5496fd7f1ab50d2a7128cabaee4e4db0a51e6b86b9a29568f22",
+      "childCountOffset": 967427,
+      "childCount": 1,
+      "children": [
+        16753858
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 967435,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 576048046,
+      "type": 10,
+      "payloadSha256": "a2e5347c283b940a9ebc1c8267f6bfe219d55177b462da6ea9fdb2cbff2b310f",
+      "childCountOffset": 967827,
+      "childCount": 1,
+      "children": [
+        703613648
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 967835,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 590676886,
+      "type": 13,
+      "payloadSha256": "fed3f1a821ceb9af32fccaf47f437e7521619d8cf46bcd6384e6aa013db226f5",
+      "childCountOffset": 967960,
+      "childCount": 1,
+      "children": [
+        576048046
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 967968,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 173832388,
+      "type": 10,
+      "payloadSha256": "73248bb9a538260434995443127a1a3828423b26a679fd6ffa17748de56b4811",
+      "childCountOffset": 968324,
+      "childCount": 1,
+      "children": [
+        80200193
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 968332,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 32616516,
+      "type": 13,
+      "payloadSha256": "ca68628a1570942b1b4a087773e0d9155316bb4af15b2a46e0ccc763f84604e2",
+      "childCountOffset": 968441,
+      "childCount": 1,
+      "children": [
+        173832388
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 968449,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 177104278,
+      "type": 10,
+      "payloadSha256": "3b03520b50bfbd667bfd2b690193ee0e714108caa2d0e7568839f39d206cc03f",
+      "childCountOffset": 968835,
+      "childCount": 1,
+      "children": [
+        117424685
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 968843,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 975843038,
+      "type": 13,
+      "payloadSha256": "7cc78df16e8b234828013e33ef371e3b51053cac2374a7980d49aa54fa20762e",
+      "childCountOffset": 968957,
+      "childCount": 1,
+      "children": [
+        177104278
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 968965,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 597961066,
+      "type": 12,
+      "payloadSha256": "b3744d3c9c88f292504775983af932b6cb1ab3655dd6d6ca9fa5acf525906c48",
+      "childCountOffset": 969195,
+      "childCount": 2,
+      "children": [
+        32616516,
+        975843038
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 969207,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 706202665,
+      "type": 10,
+      "payloadSha256": "12c2c0c1b0306f96870600a8c1bf9fd9212038dc10f7a82f94ecc88cc0ad9f8f",
+      "childCountOffset": 969562,
+      "childCount": 1,
+      "children": [
+        1012302144
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 969570,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 703498761,
+      "type": 10,
+      "payloadSha256": "6ddc334b28ddf5ae825d3a1b4c24cfd32ecf46fe654c487c05f3ac775666ce7f",
+      "childCountOffset": 969840,
+      "childCount": 1,
+      "children": [
+        417573016
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 969848,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 84706396,
+      "type": 13,
+      "payloadSha256": "e77151de6ae717da17c33b52aaf06129f07e5f8224c315f97f450af772a7bc76",
+      "childCountOffset": 969962,
+      "childCount": 1,
+      "children": [
+        703498761
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 969970,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 25463410,
+      "type": 10,
+      "payloadSha256": "b781c607379c87f07f61011f17965d4797b903ebea15067df72f494064d7480f",
+      "childCountOffset": 970356,
+      "childCount": 1,
+      "children": [
+        378963850
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 970364,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 270331296,
+      "type": 13,
+      "payloadSha256": "376f88842f33abba98bee95c9cf0f961877f731ae716dd4f609eda1deeaaad66",
+      "childCountOffset": 970473,
+      "childCount": 1,
+      "children": [
+        25463410
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 970481,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 710967125,
+      "type": 12,
+      "payloadSha256": "a89048937402daafe47e89a409aea03b95e9a2c2f3230bb66c8aaf5430486179",
+      "childCountOffset": 970711,
+      "childCount": 2,
+      "children": [
+        84706396,
+        270331296
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 970723,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 355184688,
+      "type": 10,
+      "payloadSha256": "c83e0c0806cae9d49cd96fb2e44839c40e57779e35689fd9f0145d65d0e4d7d6",
+      "childCountOffset": 971078,
+      "childCount": 1,
+      "children": [
+        901201614
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 971086,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 132343716,
+      "type": 13,
+      "payloadSha256": "f89901731dc571cf4bedf0851d8aeb0c1023d3f337a7c02ecd9241ef0479e6c9",
+      "childCountOffset": 971200,
+      "childCount": 1,
+      "children": [
+        355184688
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 971208,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 526324829,
+      "type": 10,
+      "payloadSha256": "ea0636c9adc18e6608ca3ee439774eda0c140120f5a1fc55c1d98b2606d26521",
+      "childCountOffset": 971594,
+      "childCount": 1,
+      "children": [
+        322272483
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 971602,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 464705437,
+      "type": 13,
+      "payloadSha256": "8a39c9ae36fdb7e1d31de36b24171dfa23f47911ab8310df31b3d07acdf5b206",
+      "childCountOffset": 971711,
+      "childCount": 1,
+      "children": [
+        526324829
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 971719,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 731571665,
+      "type": 12,
+      "payloadSha256": "b61dc5c39cc523fedacc6295adf6436414b5f0d00c345659070ebbd655466780",
+      "childCountOffset": 971949,
+      "childCount": 2,
+      "children": [
+        132343716,
+        464705437
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 971961,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 755012894,
+      "type": 10,
+      "payloadSha256": "fa15d7c0d7d545837bf88e85e5e61238942f4a67e6a61aa520b4ae138aa6197a",
+      "childCountOffset": 972316,
+      "childCount": 1,
+      "children": [
+        690408519
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 972324,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 788112152,
+      "type": 10,
+      "payloadSha256": "948279c483cbeab8a7d72d6b485b5709f0ded0a8cdcf6c9f0bac1249d356ced9",
+      "childCountOffset": 972546,
+      "childCount": 1,
+      "children": [
+        475292668
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 972554,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 755483579,
+      "type": 13,
+      "payloadSha256": "70bbca3e6b610fbf604a3bcaaed848b9937365ab1990704d28a8117bacf793de",
+      "childCountOffset": 972663,
+      "childCount": 1,
+      "children": [
+        788112152
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 972671,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 773345523,
+      "type": 10,
+      "payloadSha256": "fe6d105721d258a7dc5262366a7474072305e390c924582827a24bc087cfe973",
+      "childCountOffset": 972984,
+      "childCount": 1,
+      "children": [
+        848661918
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 972992,
+      "meterHex": "6408d6d1e67db4400000000000000000000037430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 938490285,
+      "type": 10,
+      "payloadSha256": "1a03c759c17c4cb409476f7e7353fd7e08832a25906c74091b65a1e63d094601",
+      "childCountOffset": 973262,
+      "childCount": 1,
+      "children": [
+        820451187
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 973270,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 2245330,
+      "type": 13,
+      "payloadSha256": "6baf73eccecdb2e2f65b3a67a5b9730530726828b2bddc1446d14ff2f1efd49e",
+      "childCountOffset": 973384,
+      "childCount": 1,
+      "children": [
+        938490285
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 973392,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1007458722,
+      "type": 10,
+      "payloadSha256": "499600d371fdad04f2b07a1de5759e7e9f4aca5ff5cdd5b681d44b226a0f9f36",
+      "childCountOffset": 973778,
+      "childCount": 1,
+      "children": [
+        785273848
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 973786,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 226531639,
+      "type": 13,
+      "payloadSha256": "ef8ef25fea0220052ab2054c9071327003808b96e2cea5f13c883a7b32f714be",
+      "childCountOffset": 973895,
+      "childCount": 1,
+      "children": [
+        1007458722
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 973903,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 780070467,
+      "type": 12,
+      "payloadSha256": "5c5267010c8270391c43f1cf236f36308076889853e859fc84e317452d6406b1",
+      "childCountOffset": 974133,
+      "childCount": 2,
+      "children": [
+        2245330,
+        226531639
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 974145,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 784826194,
+      "type": 10,
+      "payloadSha256": "eb92acffb1de8e7790f85769fc0a395ece616774c51095264e0cf6878df9c335",
+      "childCountOffset": 974500,
+      "childCount": 1,
+      "children": [
+        443484851
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 974508,
+      "meterHex": "970cc13adabcbe4000000000000000000000f4420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 628184426,
+      "type": 10,
+      "payloadSha256": "019975103cd8cf8d9659634d6672fdaed51f521f00cd7b150650a2438fa26f5e",
+      "childCountOffset": 975420,
+      "childCount": 4,
+      "children": [
+        59563419,
+        76838629,
+        427235719,
+        584408457
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 975440,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 821536061,
+      "type": 13,
+      "payloadSha256": "0a839fe5076c73cec6adfc9e32e06977423c912fa924dd0b3b944a36e8fe223c",
+      "childCountOffset": 975549,
+      "childCount": 1,
+      "children": [
+        628184426
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 975557,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 625127375,
+      "type": 10,
+      "payloadSha256": "ed2f52b351c1323180df8950ef648ae425e40658de3656d2d3108ae4350a913c",
+      "childCountOffset": 975870,
+      "childCount": 1,
+      "children": [
+        666308300
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 975878,
+      "meterHex": "9224499224c9ba40000000000000000000000c430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 950047555,
+      "type": 13,
+      "payloadSha256": "1a19f6604501deea9c8397296b282e01101dc35da1232790c15a524da3aaacea",
+      "childCountOffset": 975987,
+      "childCount": 1,
+      "children": [
+        625127375
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 975995,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1009376225,
+      "type": 10,
+      "payloadSha256": "89880c9429c6dec4feaa33464e194cf3b297363a6f7546eeccd7b111ae4dcf85",
+      "childCountOffset": 976333,
+      "childCount": 1,
+      "children": [
+        683242764
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 976341,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 788070534,
+      "type": 12,
+      "payloadSha256": "1cfc3e8c3695625d3c911e14225a289d0b4c9ea0267338b41953ed2cb9005980",
+      "childCountOffset": 976450,
+      "childCount": 34,
+      "children": [
+        13563655,
+        55081681,
+        55232192,
+        100416558,
+        107341425,
+        124799720,
+        125410794,
+        137039696,
+        143160071,
+        154182618,
+        182599338,
+        228992619,
+        239311296,
+        297216238,
+        332241657,
+        340611389,
+        370008866,
+        374795416,
+        405968869,
+        473507943,
+        531844886,
+        590676886,
+        597961066,
+        706202665,
+        710967125,
+        731571665,
+        755012894,
+        755483579,
+        773345523,
+        780070467,
+        784826194,
+        821536061,
+        950047555,
+        1009376225
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 976590,
+      "meterHex": "000000000040bf4000000000000000000000f042040401",
+      "meterEnabled": 1
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 30911693,
+      "type": 10,
+      "payloadSha256": "8a5b18f287ff1f5a19983b3e84c7ec41b51dc6937213503c4f45ad682218bcf4",
+      "childCountOffset": 977414,
+      "childCount": 1,
+      "children": [
+        926160272
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 977422,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 73047063,
+      "type": 10,
+      "payloadSha256": "4d980405591cb1d2a0772ae23c1756b9209317eaef6ef279120679d1da3e6a49",
+      "childCountOffset": 977644,
+      "childCount": 1,
+      "children": [
+        899345182
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 977652,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 4255706,
+      "type": 13,
+      "payloadSha256": "c0a9b0fd43b5251e5b9c0919c27e99c7bcdca2d809dd234acc0d43e46af50823",
+      "childCountOffset": 977766,
+      "childCount": 2,
+      "children": [
+        30911693,
+        73047063
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 977778,
+      "meterHex": "9a7cd9a0c997c04000000000000000000000e2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 901435417,
+      "type": 10,
+      "payloadSha256": "a6569fa17fc60bc899eaa260e176092c2b295333e62b307077092d84239e9f00",
+      "childCountOffset": 978200,
+      "childCount": 1,
+      "children": [
+        300458931
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 978208,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1038877262,
+      "type": 10,
+      "payloadSha256": "aa1c25fa94557cc4507f9519f13008d0aa8a822c0e3995b1995cbc3ac528ab33",
+      "childCountOffset": 978430,
+      "childCount": 1,
+      "children": [
+        638973351
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 978438,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 5859510,
+      "type": 13,
+      "payloadSha256": "61a76713928f455b37692b95915940ff3cc3db2ec14d2e5cca90f0fc872e6367",
+      "childCountOffset": 978557,
+      "childCount": 2,
+      "children": [
+        901435417,
+        1038877262
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 978569,
+      "meterHex": "970cc13adabcce400000000000000000000074420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 224603209,
+      "type": 10,
+      "payloadSha256": "2bc58e997c8538ecf033b17b58ff16beb1fc669e2e4f1aac3e13b25b9300b648",
+      "childCountOffset": 978943,
+      "childCount": 1,
+      "children": [
+        282721132
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 978951,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 8570344,
+      "type": 13,
+      "payloadSha256": "d3dd94c464c7526852c4c3fac7717bb145f9ecb10048ff11db9d30d6cc747220",
+      "childCountOffset": 979070,
+      "childCount": 1,
+      "children": [
+        224603209
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 979078,
+      "meterHex": "2c64210b5988bc4000000000000000000000e6420704ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 194178244,
+      "type": 10,
+      "payloadSha256": "07441efb354e69b4d7414ec78efbfbbace0e27fd187d8578ba68a9c8b57e59a7",
+      "childCountOffset": 979422,
+      "childCount": 1,
+      "children": [
+        174793790
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 979430,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 15464657,
+      "type": 13,
+      "payloadSha256": "64f82e769df25b0e3682283ddf1df7095171f7fea94260b692acc1c39249f43f",
+      "childCountOffset": 979549,
+      "childCount": 1,
+      "children": [
+        194178244
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 979557,
+      "meterHex": "2c64210b5988bc4000000000000000000000e6420704ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 371728435,
+      "type": 10,
+      "payloadSha256": "ce9634047dde61d2115797d76ecb5a06e652d2e655e68b297c4b651ef3717f2c",
+      "childCountOffset": 979949,
+      "childCount": 1,
+      "children": [
+        133020840
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 979957,
+      "meterHex": "0f0f0f0f0f0f964000000000000000000000aa420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 27587572,
+      "type": 13,
+      "payloadSha256": "db84db433c9d53fb3bce056a55214aed35fe79c772383e1529127a362cdc3095",
+      "childCountOffset": 980071,
+      "childCount": 1,
+      "children": [
+        371728435
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 980079,
+      "meterHex": "0000000000408f4000000000000000000000f0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 196088338,
+      "type": 10,
+      "payloadSha256": "490c829c24ee330953f93906224c441ca26112eaf1d43bdc95209b2e6e8bad7d",
+      "childCountOffset": 980387,
+      "childCount": 1,
+      "children": [
+        98983359
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 980395,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 31707541,
+      "type": 13,
+      "payloadSha256": "d0546c903c68a8655db06bc79227ec7471c0ccf3b0340c7d0a57c462b5860e2d",
+      "childCountOffset": 980504,
+      "childCount": 1,
+      "children": [
+        196088338
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 980512,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 226413379,
+      "type": 10,
+      "payloadSha256": "17fd9426366fae9ca813d764f90312faf67676edc12dbd483d7029f6805cfc7b",
+      "childCountOffset": 980868,
+      "childCount": 1,
+      "children": [
+        800695145
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 980876,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 47106644,
+      "type": 13,
+      "payloadSha256": "28b86d3eec3a88d9f4f0749ae3efba1bac53e9256d6660fbc43d987c392213e9",
+      "childCountOffset": 980995,
+      "childCount": 1,
+      "children": [
+        226413379
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 981003,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 47606344,
+      "type": 10,
+      "payloadSha256": "b49d6b9f56696aa0b5e73d5e1a67554cdf6148e1204e1f187bb29d3b4c16096b",
+      "childCountOffset": 981369,
+      "childCount": 1,
+      "children": [
+        328107375
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 981377,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 275440046,
+      "type": 10,
+      "payloadSha256": "873d82d1e7dd5ddf99363b355280add5006043ca4afb6ec4163d171823d28007",
+      "childCountOffset": 981599,
+      "childCount": 1,
+      "children": [
+        532572235
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 981607,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 699034540,
+      "type": 10,
+      "payloadSha256": "2ac9f5a24ac4d72d8f6729b817efc9c22ca790f1bb627a2ac57c57b88818a730",
+      "childCountOffset": 981834,
+      "childCount": 1,
+      "children": [
+        705645408
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 981842,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 51971643,
+      "type": 13,
+      "payloadSha256": "99ea3c32cf6a929defb5fbca92fbc81846ed292bcfe1b5aa05175cf2cb18f92b",
+      "childCountOffset": 981961,
+      "childCount": 2,
+      "children": [
+        275440046,
+        699034540
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 981973,
+      "meterHex": "000000000040bf4000000000000000000000f0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 250698942,
+      "type": 10,
+      "payloadSha256": "45bdf9500ad0fd825b8500fc342d9bb99019ed19d0ebb22efdd6839f408def48",
+      "childCountOffset": 982371,
+      "childCount": 1,
+      "children": [
+        608258244
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 982379,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 64802688,
+      "type": 13,
+      "payloadSha256": "b8abc8620d28ae7b7771c9f9c15a680144b7b432d859e9b9236953f61f7c33c1",
+      "childCountOffset": 982493,
+      "childCount": 1,
+      "children": [
+        250698942
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 982501,
+      "meterHex": "aeec73484db0c14000000000000000000000d4420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 109685530,
+      "type": 10,
+      "payloadSha256": "3d7ec9f43a3db211e00604342130e6afcc14fdd59c26fff6114e57e2ef58a59f",
+      "childCountOffset": 982976,
+      "childCount": 1,
+      "children": [
+        130629322
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 982984,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 112935364,
+      "type": 10,
+      "payloadSha256": "3390a1d79198459c65725ebba468c4e5e46f326e735da6dd87a3d6cdba72527d",
+      "childCountOffset": 983242,
+      "childCount": 1,
+      "children": [
+        872183937
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 983250,
+      "meterHex": "f5a637bde94d904000000000000000000000e6420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 572897880,
+      "type": 10,
+      "payloadSha256": "9a2aefd1032292ce571351ba3013bd859c67f23358c35d552e635f09be985d5a",
+      "childCountOffset": 983556,
+      "childCount": 1,
+      "children": [
+        232485230
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 983564,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 116475964,
+      "type": 13,
+      "payloadSha256": "473e0918f44f0d0c795f58d027701f3938173088471fbfd58f7c3fb3340f9b19",
+      "childCountOffset": 983673,
+      "childCount": 1,
+      "children": [
+        572897880
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 983681,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 130770066,
+      "type": 10,
+      "payloadSha256": "397356167a7e9bcb75c791ac2e614ad5288bbc500e335b37bb6b394338ca2b67",
+      "childCountOffset": 983999,
+      "childCount": 1,
+      "children": [
+        5533838
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 984007,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 135166405,
+      "type": 10,
+      "payloadSha256": "99fe4c15eccac211302f90f71057398eed06c3a163c6cd9e59bc19f62e9b9985",
+      "childCountOffset": 984287,
+      "childCount": 1,
+      "children": [
+        20676662
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 984295,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 248686703,
+      "type": 10,
+      "payloadSha256": "ec9b976328e0670b8976bf8663d7d85995bc9f28bb0d3fb411e8806b0e5237ab",
+      "childCountOffset": 984517,
+      "childCount": 1,
+      "children": [
+        1005883713
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 984525,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 138575479,
+      "type": 13,
+      "payloadSha256": "667f8423a9cc3e49716b94a285e04330a057b0a1ecf638213e436ed109a24a48",
+      "childCountOffset": 984699,
+      "childCount": 1,
+      "children": [
+        248686703
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 984707,
+      "meterHex": "f5a637bde94dc04000000000000000000000e6420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 143670897,
+      "type": 10,
+      "payloadSha256": "11d6c6b8f7758d255a58ea44ebe0444e0f0bfe6284b1632ae2dac4065d36e498",
+      "childCountOffset": 985346,
+      "childCount": 2,
+      "children": [
+        308463980,
+        364762957
+      ],
+      "advancedHex": "0c0103000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 985358,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 424910335,
+      "type": 10,
+      "payloadSha256": "55d7f2233a7de43d51e64f4c6e9ad1b2f2ed81e03ef9fa46648804aa26409dda",
+      "childCountOffset": 985585,
+      "childCount": 1,
+      "children": [
+        121202617
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 985593,
+      "meterHex": "b76ddbb66ddbc14000000000000000000000d2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 147452660,
+      "type": 13,
+      "payloadSha256": "509540071a4e0b7e2e841c743cc46b0fa3035d68687a1972dd7aaf2fcc471f44",
+      "childCountOffset": 985707,
+      "childCount": 1,
+      "children": [
+        424910335
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 985715,
+      "meterHex": "b76ddbb66ddbc14000000000000000000000d2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 197925514,
+      "type": 10,
+      "payloadSha256": "62f1ba8071040651474a5dbabffc599408131780d3cb79484708815e9c38c243",
+      "childCountOffset": 986339,
+      "childCount": 2,
+      "children": [
+        790300111,
+        921179187
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 986351,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 162036791,
+      "type": 13,
+      "payloadSha256": "60c86dff3fccbca5355bd0200830ec970503684d619dec8a32adb04f5ce5f7e2",
+      "childCountOffset": 986570,
+      "childCount": 1,
+      "children": [
+        197925514
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 986578,
+      "meterHex": "3bd86fb53134924000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 97480507,
+      "type": 10,
+      "payloadSha256": "495a30af7210441d5906d0ca0ec9e8ab3bd22e4569a4e65e5f8db455931fbb16",
+      "childCountOffset": 986916,
+      "childCount": 1,
+      "children": [
+        571622321
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 986924,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 182511185,
+      "type": 13,
+      "payloadSha256": "0f530e0d14d88ab4467a796005eb468571c27ac74f0f2c557ab074af4a6f408f",
+      "childCountOffset": 987043,
+      "childCount": 1,
+      "children": [
+        97480507
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 987051,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 190137830,
+      "type": 10,
+      "payloadSha256": "7ea5f893343e5bec81013169220f91eb3527c078cc39dbfd009e0c09fcd82cce",
+      "childCountOffset": 987478,
+      "childCount": 1,
+      "children": [
+        706339062
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 987486,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 193895137,
+      "type": 10,
+      "payloadSha256": "b2704ad0cdfa5819ceeff1c09c73d76b09fe561bcb3f9cd6e6446ce580ea1ded",
+      "childCountOffset": 987845,
+      "childCount": 1,
+      "children": [
+        925745982
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 987853,
+      "meterHex": "b76ddbb66ddbc14000000000000000000000d2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 803248974,
+      "type": 10,
+      "payloadSha256": "61a50ad38542a8c65fc630d36c9ba9283d41ed0a32440eab38d8bb6e6fc512a8",
+      "childCountOffset": 988164,
+      "childCount": 1,
+      "children": [
+        711066499
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 988172,
+      "meterHex": "000000000070c74000000000000000000000a0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 196614454,
+      "type": 13,
+      "payloadSha256": "1b22d394b1641515689add37eaf9fb9b8a92c03eaee46e33a1d6f72440f2c0ba",
+      "childCountOffset": 988286,
+      "childCount": 1,
+      "children": [
+        803248974
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 988294,
+      "meterHex": "000000000070c74000000000000000000000a0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 639662402,
+      "type": 10,
+      "payloadSha256": "60762467613724b4075b13dc23d459684c3a20a8a9e90dcad584a932611d9d69",
+      "childCountOffset": 988607,
+      "childCount": 1,
+      "children": [
+        942744860
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 988615,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 204699969,
+      "type": 13,
+      "payloadSha256": "1dbc4b221e8b36a0d32bc9d2753bcfc075fbc238c89e47fef3205e2becc89427",
+      "childCountOffset": 988789,
+      "childCount": 1,
+      "children": [
+        639662402
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 988797,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 212922861,
+      "type": 10,
+      "payloadSha256": "1d83081ce1d3d3ecd560cc3ba05f4317a49817da7c29d086a664d0aa8343d8d1",
+      "childCountOffset": 989077,
+      "childCount": 1,
+      "children": [
+        721937590
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 989085,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 21797809,
+      "type": 10,
+      "payloadSha256": "7b4368d0656c016293a41c0b745083514bd2b3237846e5e0f5135d4223fb8e1d",
+      "childCountOffset": 989360,
+      "childCount": 1,
+      "children": [
+        110878200
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 989368,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 213532235,
+      "type": 13,
+      "payloadSha256": "87671208a1a68dde248a8226a13f3e2d600145609e2e8b00c3939d763b370f48",
+      "childCountOffset": 989498,
+      "childCount": 1,
+      "children": [
+        21797809
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 989506,
+      "meterHex": "b76ddbb66ddbc14000000000000000000000d2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 312707437,
+      "type": 10,
+      "payloadSha256": "2a88d521fb2c87ad18ccbae84986f4e9cd9c13ed9c1a077253d9ca273b016b86",
+      "childCountOffset": 989885,
+      "childCount": 1,
+      "children": [
+        224183118
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 989893,
+      "meterHex": "3bd86fb53134924000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 996233764,
+      "type": 10,
+      "payloadSha256": "ba5574856d093308b9fc21cc65f06f65cc082482c090ba962142056a2a91839c",
+      "childCountOffset": 990317,
+      "childCount": 2,
+      "children": [
+        46583992,
+        914600753
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 990329,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 324240658,
+      "type": 13,
+      "payloadSha256": "bae5b8a15ac4cfaebb2aa5a22c5650ac82d50b795959855ae60e3c7f6a0afddb",
+      "childCountOffset": 990448,
+      "childCount": 1,
+      "children": [
+        996233764
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 990456,
+      "meterHex": "f5a637bde94dc04000000000000000000000e6420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 339123398,
+      "type": 10,
+      "payloadSha256": "b5f9ce3b7ca6a976002d68e42dd5d62c88b276383b69a254f7c5621e5be214c7",
+      "childCountOffset": 990853,
+      "childCount": 1,
+      "children": [
+        281525036
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 990861,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 874658801,
+      "type": 10,
+      "payloadSha256": "e951e604f0aeecf24ad23e89f05695c29ae94497f96ad2b54545c06ed868916b",
+      "childCountOffset": 991167,
+      "childCount": 1,
+      "children": [
+        884693031
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 991175,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 347239248,
+      "type": 13,
+      "payloadSha256": "eaf644dd5a882b99a422d5f5bb46215ca25423c6239ee1e606b27501af072b14",
+      "childCountOffset": 991294,
+      "childCount": 1,
+      "children": [
+        874658801
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 991302,
+      "meterHex": "970cc13adabcce400000000000000000000074420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 572609591,
+      "type": 10,
+      "payloadSha256": "981a642678084e57b9835b67904fca66c008357844de0b6f766ed687f0478e24",
+      "childCountOffset": 991724,
+      "childCount": 1,
+      "children": [
+        271080092
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 991732,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 366304206,
+      "type": 13,
+      "payloadSha256": "a96f6cc38f66b3dbc749b090e65388483c5deb9509ac0f34b500a91e0a193460",
+      "childCountOffset": 991846,
+      "childCount": 1,
+      "children": [
+        572609591
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 991854,
+      "meterHex": "766227766207c24000000000000000000000d0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 374375078,
+      "type": 10,
+      "payloadSha256": "a2b5c09c2bfb36b16ecb188323802d17da2763837b62551e7dcafd6ade941898",
+      "childCountOffset": 992334,
+      "childCount": 1,
+      "children": [
+        260832058
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 992342,
+      "meterHex": "b76ddbb66ddbc14000000000000000000000d2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 383055392,
+      "type": 10,
+      "payloadSha256": "e89eafa76e880d287cc7267835f5c8636b068eff8a4a64b21ab8e6d391288188",
+      "childCountOffset": 992569,
+      "childCount": 1,
+      "children": [
+        554169516
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 992577,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 429978213,
+      "type": 10,
+      "payloadSha256": "2f20d70283a9106b2ab58fcd73de538cf59facb8ebb24b1282175e3aeebe5b98",
+      "childCountOffset": 992809,
+      "childCount": 1,
+      "children": [
+        1054595831
+      ],
+      "advancedHex": "040102000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 992817,
+      "meterHex": "e8909a60bc95b740000000000000000000001f430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 999028746,
+      "type": 10,
+      "payloadSha256": "568fc67a15e356f85f9534ec4d086966cbf39fce785733784e42344933a078e4",
+      "childCountOffset": 992981,
+      "childCount": 1,
+      "children": [
+        841932279
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 992989,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 470085631,
+      "type": 13,
+      "payloadSha256": "1f4674df948aec8c3fc7761e49c87b6a304c52ba1634fbec2808d248e0602595",
+      "childCountOffset": 993098,
+      "childCount": 1,
+      "children": [
+        999028746
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 993106,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 471012533,
+      "type": 10,
+      "payloadSha256": "c5a9d516128697afe2ec9c3cbc239fec10522075634d60cf2e38690cc48efd50",
+      "childCountOffset": 993503,
+      "childCount": 1,
+      "children": [
+        67436985
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 993511,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 918881703,
+      "type": 10,
+      "payloadSha256": "cb5d7e6fa001839be8cbcd717cff02207447f1f748b5a0bffb9bcadd51e3d9b3",
+      "childCountOffset": 993817,
+      "childCount": 1,
+      "children": [
+        275065314
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 993825,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 478465496,
+      "type": 13,
+      "payloadSha256": "5a17c501c49fbfb68a36f9538f4e97b2f41562f36dbc55f745eb9bdc765dff6a",
+      "childCountOffset": 993934,
+      "childCount": 1,
+      "children": [
+        918881703
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 993942,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 598188574,
+      "type": 10,
+      "payloadSha256": "1ce658ec489a32706fa153a22bc76e5dd2f71efe1f40a9bfa3cee4cc45558b4b",
+      "childCountOffset": 994334,
+      "childCount": 1,
+      "children": [
+        499443202
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 994342,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 507886657,
+      "type": 13,
+      "payloadSha256": "f4dc451dcd2b6dd99ec6e501f628824dcddb34aef10b00bcd224594b9f477eed",
+      "childCountOffset": 994467,
+      "childCount": 1,
+      "children": [
+        598188574
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 994475,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 554421372,
+      "type": 10,
+      "payloadSha256": "8a59f4f53bbcca73d59db8070b0fcb646b045af2f4d1f17087b2520f697dc6fe",
+      "childCountOffset": 994819,
+      "childCount": 1,
+      "children": [
+        1050882592
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 994827,
+      "meterHex": "3bd86fb53134c24000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 228501301,
+      "type": 10,
+      "payloadSha256": "02864b122f5eec76e55cfc4b522922f9b64ebf08c8c14ceacfb0148441d34d73",
+      "childCountOffset": 995049,
+      "childCount": 1,
+      "children": [
+        427276686
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 995057,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 562364500,
+      "type": 13,
+      "payloadSha256": "768d8809ae30f202b17d1e78d3fd6f70f387df00a933b1bc431f9d0a4b0594d0",
+      "childCountOffset": 995176,
+      "childCount": 1,
+      "children": [
+        228501301
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 995184,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 884409107,
+      "type": 10,
+      "payloadSha256": "fec3b19ac330a32fb9071128f1fedc3e61e9bba8d6826a35828291c566649798",
+      "childCountOffset": 995528,
+      "childCount": 1,
+      "children": [
+        630078487
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 995536,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 597863743,
+      "type": 13,
+      "payloadSha256": "d4a3a8b3e3a8e9fec31d0e4ca5cdcf3f6aea6ca5ec7942cce3b5fd0db725f3da",
+      "childCountOffset": 995655,
+      "childCount": 1,
+      "children": [
+        884409107
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 995663,
+      "meterHex": "2c64210b5988bc4000000000000000000000e6420704ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 614095586,
+      "type": 10,
+      "payloadSha256": "8667477196f6dfabb57d7fbbf2c0f76a04cc38d0246801baa0bfb6bf0da8fff6",
+      "childCountOffset": 996019,
+      "childCount": 1,
+      "children": [
+        125192937
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 996027,
+      "meterHex": "000000000070c74000000000000000000000a0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 36418148,
+      "type": 10,
+      "payloadSha256": "cdbb2dc38f7a8aec6ef263744cddb3fc48a2ca6376fe06830fc74307052c2a66",
+      "childCountOffset": 996410,
+      "childCount": 2,
+      "children": [
+        136777244,
+        253643617
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 996422,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 52955102,
+      "type": 10,
+      "payloadSha256": "0b75223f94293bb8a4ab7d387a21997baf9aea3fd747c2080c45986814efc90f",
+      "childCountOffset": 996870,
+      "childCount": 3,
+      "children": [
+        92920099,
+        332299980,
+        671234181
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 996886,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 54247848,
+      "type": 10,
+      "payloadSha256": "97b2e9ab4a4047645feb029cc10823837e036949f962ca31c681017388fda910",
+      "childCountOffset": 997269,
+      "childCount": 2,
+      "children": [
+        214209738,
+        617595617
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 997281,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 163535132,
+      "type": 10,
+      "payloadSha256": "e24638157013de45af9d3474f999b6fd05cda3d65f0f78e571065be8db5e4f6f",
+      "childCountOffset": 997842,
+      "childCount": 4,
+      "children": [
+        33188847,
+        360579134,
+        428052602,
+        945020100
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 997862,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 305281487,
+      "type": 10,
+      "payloadSha256": "c378e79469d620da4d37487998776710ca7f4a32565f67a70d99124e3991cb00",
+      "childCountOffset": 998358,
+      "childCount": 3,
+      "children": [
+        290773391,
+        575431618,
+        1006234426
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 998374,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 412497887,
+      "type": 10,
+      "payloadSha256": "84d93c3d9df74c27ae55ba7f262664336691990f828fd8c48e781d0fc9dfb20d",
+      "childCountOffset": 998918,
+      "childCount": 3,
+      "children": [
+        56321618,
+        78220781,
+        210347098
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 998934,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 443059243,
+      "type": 10,
+      "payloadSha256": "051f72f195c7b9e12993e5ee17e84a2148e3725436b8f01ef1a6fb254fcf8e49",
+      "childCountOffset": 999382,
+      "childCount": 3,
+      "children": [
+        78672608,
+        144685338,
+        428392388
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 999398,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 536479655,
+      "type": 10,
+      "payloadSha256": "656ffd1d9a0c67b89dc7b9b2acd5722564e68dfbcab0e18f023b52655ed8983f",
+      "childCountOffset": 999846,
+      "childCount": 3,
+      "children": [
+        441346950,
+        453182792,
+        712088376
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 999862,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 632721301,
+      "type": 10,
+      "payloadSha256": "6b0d421d956c3fdc79153f055a30a6471f1b2849f3bd78ca60a5ba1ce06113d1",
+      "childCountOffset": 1000423,
+      "childCount": 4,
+      "children": [
+        161074233,
+        457148825,
+        972773406,
+        1025927182
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1000443,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 661103820,
+      "type": 10,
+      "payloadSha256": "08e36f91cdd22b81193d6f84f5377ac1e7768d857bd13717a56f8b37fa8037d6",
+      "childCountOffset": 1000987,
+      "childCount": 3,
+      "children": [
+        209260297,
+        402230858,
+        524222778
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1001003,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 699582013,
+      "type": 10,
+      "payloadSha256": "ad50c07142e28b76c405a6895d5285701f2e3725552180e1a9d4d08690602866",
+      "childCountOffset": 1001451,
+      "childCount": 3,
+      "children": [
+        535886066,
+        673129484,
+        741095470
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1001467,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 910955117,
+      "type": 10,
+      "payloadSha256": "784b73b373de84b16654eabb8a3564f8d2911346bb50fda2463352e35cb84b8b",
+      "childCountOffset": 1002011,
+      "childCount": 3,
+      "children": [
+        392642331,
+        964644382,
+        1048072156
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1002027,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 970323948,
+      "type": 10,
+      "payloadSha256": "023cc3a04e97395b0d1276fbc830af838367d7a34fd4312f594a71e69a686653",
+      "childCountOffset": 1002297,
+      "childCount": 1,
+      "children": [
+        774919310
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1002305,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 971521257,
+      "type": 10,
+      "payloadSha256": "9338680a78f9dbf0a6fd8516d81a188540386092fd2bf176a76da26cb361e8b9",
+      "childCountOffset": 1002866,
+      "childCount": 4,
+      "children": [
+        290985926,
+        532778243,
+        840563778,
+        878899200
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1002886,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1047409488,
+      "type": 10,
+      "payloadSha256": "f594d1876502666d1b3721c18b2565d0f4fc5cb739e4ee653ce5d7bd91ff56a1",
+      "childCountOffset": 1003430,
+      "childCount": 3,
+      "children": [
+        22694834,
+        215569376,
+        703261494
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1003446,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 617874334,
+      "type": 13,
+      "payloadSha256": "1ae61955c608256afb370fd6376805724e78df53fc87adfaecb91d154256f914",
+      "childCountOffset": 1003636,
+      "childCount": 15,
+      "children": [
+        36418148,
+        52955102,
+        54247848,
+        163535132,
+        305281487,
+        412497887,
+        443059243,
+        536479655,
+        632721301,
+        661103820,
+        699582013,
+        910955117,
+        970323948,
+        971521257,
+        1047409488
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [
+        {
+          "sourceID": 3919823198,
+          "propertyID": 3,
+          "curveID": 75313583,
+          "pointCount": 2,
+          "offset": 1003560,
+          "rawHex": "5ec1a3e9000103af317d040002000000000000000000040000000000803f0000204204000000"
+        },
+        {
+          "sourceID": 3919823198,
+          "propertyID": 0,
+          "curveID": 663008154,
+          "pointCount": 2,
+          "offset": 1003598,
+          "rawHex": "5ec1a3e90001009ab384270202000000000000000000040000000000803ff32a25bf04000000"
+        }
+      ],
+      "meterOffset": 1003700,
+      "meterHex": "dbb66ddbb6bdc04000000000000000000000e0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 440010275,
+      "type": 10,
+      "payloadSha256": "055bbffd41922ff1da782dce1b67b5b3d13c5fb03d079b31d2dd851ce1ff2232",
+      "childCountOffset": 1004960,
+      "childCount": 3,
+      "children": [
+        586142701,
+        645335493,
+        867397906
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1004976,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 625924250,
+      "type": 13,
+      "payloadSha256": "5f9e192d74818d81b956cf59c0c3559e87f8d270e54eb4d4615189dde4c9c906",
+      "childCountOffset": 1005090,
+      "childCount": 1,
+      "children": [
+        440010275
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1005098,
+      "meterHex": "f5a637bde94d904000000000000000000000e6420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 631354119,
+      "type": 10,
+      "payloadSha256": "3ebdef79d6174a149dc3110fbee5f271d25f33e91a209e4eb32347a9ae6a93de",
+      "childCountOffset": 1005442,
+      "childCount": 1,
+      "children": [
+        341158118
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1005450,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 25398187,
+      "type": 10,
+      "payloadSha256": "3c82122db16d56169ed7347d671d4ca30addd7a1971c82f9ab21ce3db4ab042c",
+      "childCountOffset": 1005672,
+      "childCount": 1,
+      "children": [
+        939119827
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1005680,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 649081362,
+      "type": 13,
+      "payloadSha256": "5c7c8989c8232d0bb027cbf9d304e4e74058aea514e8f55342a5bf1c1522c211",
+      "childCountOffset": 1005799,
+      "childCount": 1,
+      "children": [
+        25398187
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1005807,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 936526143,
+      "type": 10,
+      "payloadSha256": "1f48a2c6895e8cdaf3d43bc1c4ae78687734694b35b5d55e3da50f77dbd3ee17",
+      "childCountOffset": 1006115,
+      "childCount": 1,
+      "children": [
+        666410675
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1006123,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 698437585,
+      "type": 13,
+      "payloadSha256": "14d97b4102df54971f596423673a62fe719e152298b01c62e37e29df5e486a52",
+      "childCountOffset": 1006242,
+      "childCount": 1,
+      "children": [
+        936526143
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1006250,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 283330329,
+      "type": 10,
+      "payloadSha256": "3901acea73bf5c1dc65c9d983009c33a7345aa3f4ba9b3c2140f884fa826f9e5",
+      "childCountOffset": 1006594,
+      "childCount": 1,
+      "children": [
+        925543733
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1006602,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 456416452,
+      "type": 10,
+      "payloadSha256": "db0feb1575f26d0e862a3787658e8083e4626f10e0c6454d217fcca261cd2ede",
+      "childCountOffset": 1006860,
+      "childCount": 1,
+      "children": [
+        987110924
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1006868,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1045447365,
+      "type": 10,
+      "payloadSha256": "a30be99bc1ec9f02aa7576df1f32760254315070bd27cbc154b22b739286ae02",
+      "childCountOffset": 1007090,
+      "childCount": 1,
+      "children": [
+        580689807
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1007098,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 706500286,
+      "type": 13,
+      "payloadSha256": "fb6f1ffef1f2275dd5f37faf06ca5e6aab5914e6369f785d3131ac66c90e9735",
+      "childCountOffset": 1007207,
+      "childCount": 3,
+      "children": [
+        283330329,
+        456416452,
+        1045447365
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1007223,
+      "meterHex": "8a9dd8899dd88c400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 930016717,
+      "type": 10,
+      "payloadSha256": "f54914ea74f3334a7b25c3a96eceeac99aae10ff18127e8053a77ca5484e7c8f",
+      "childCountOffset": 1007591,
+      "childCount": 1,
+      "children": [
+        503063430
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1007599,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 709376374,
+      "type": 13,
+      "payloadSha256": "fb4052cca62bfe9e1bd80c023e7cc3e975bbba4246ecb175ed47e5fcec7d0599",
+      "childCountOffset": 1007718,
+      "childCount": 1,
+      "children": [
+        930016717
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1007726,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 709933193,
+      "type": 10,
+      "payloadSha256": "8613524d2520ab03b74e9cae2de553d34c6ba6ee709ff67bcbfb83735220b956",
+      "childCountOffset": 1008039,
+      "childCount": 1,
+      "children": [
+        493190381
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1008047,
+      "meterHex": "9a7cd9a0c997c04000000000000000000000e2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 929030032,
+      "type": 10,
+      "payloadSha256": "a9822c7c09cc1fb8438bd64e27bf70c8dd4eb64c57f2d972d62b36a69c16883d",
+      "childCountOffset": 1008279,
+      "childCount": 1,
+      "children": [
+        500277566
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1008287,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1054381498,
+      "type": 10,
+      "payloadSha256": "295235bc8171609449840723687ddc44a04876d60d89b286085eb8cfe8089677",
+      "childCountOffset": 1008509,
+      "childCount": 1,
+      "children": [
+        561921149
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1008517,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 725753263,
+      "type": 13,
+      "payloadSha256": "25de36ccb4ba02df1d5024001148e930d7423d0a2ba035f6eaf174b2e5ab4b51",
+      "childCountOffset": 1008636,
+      "childCount": 2,
+      "children": [
+        929030032,
+        1054381498
+      ],
+      "advancedHex": "040102000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1008648,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 631927919,
+      "type": 10,
+      "payloadSha256": "869a18c27eb0b68f78d94b4de43d56aba1b9d92d8141a1a96772401d58af7a38",
+      "childCountOffset": 1009190,
+      "childCount": 1,
+      "children": [
+        153093947
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1009198,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 728052719,
+      "type": 13,
+      "payloadSha256": "dcf329f663343346020422f57d1c7f8b6a45b18ab204a4ff1d60cf2e5a613cd7",
+      "childCountOffset": 1009417,
+      "childCount": 1,
+      "children": [
+        631927919
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1009425,
+      "meterHex": "3bd86fb53134924000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 231359469,
+      "type": 10,
+      "payloadSha256": "1139e1cc98e597d9fc3683881d4a881ce5784c21f62d886ef3b983406547d8eb",
+      "childCountOffset": 1009799,
+      "childCount": 1,
+      "children": [
+        975330454
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1009807,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 733549739,
+      "type": 13,
+      "payloadSha256": "2fe5ccf5da704979fac7998a6c8029bdae7668461636bc0b14c8dc8d9e39cfac",
+      "childCountOffset": 1009921,
+      "childCount": 1,
+      "children": [
+        231359469
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1009929,
+      "meterHex": "f5a637bde94dc04000000000000000000000e6420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 307582060,
+      "type": 10,
+      "payloadSha256": "9318e2785324d3d0212a1d6388fdacbf9bab742d23f1011b4b5dd6476a5a6166",
+      "childCountOffset": 1010237,
+      "childCount": 1,
+      "children": [
+        437226785
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1010245,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 672268752,
+      "type": 10,
+      "payloadSha256": "c994cb35e31c7430b566ae800310c0a84ac8c711566473b49c9ddd5140f43416",
+      "childCountOffset": 1010503,
+      "childCount": 1,
+      "children": [
+        1009372562
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1010511,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 734177127,
+      "type": 13,
+      "payloadSha256": "d96dee685c0749c94c1520d725d68021a0e6c5a7766aa1ef0a481e0aa95947e0",
+      "childCountOffset": 1010620,
+      "childCount": 2,
+      "children": [
+        307582060,
+        672268752
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1010632,
+      "meterHex": "970cc13adabcce400000000000000000000074420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 737822284,
+      "type": 10,
+      "payloadSha256": "82fc74ab395358db11df1d8b59f7dbae1a753cb38c6252efb34b0066a4947375",
+      "childCountOffset": 1011011,
+      "childCount": 1,
+      "children": [
+        994616075
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1011019,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 26115404,
+      "type": 10,
+      "payloadSha256": "73e8128a93942c59ae2f8738c239c00b1336bf33facdbd66ea7c720d1b513c0d",
+      "childCountOffset": 1011246,
+      "childCount": 1,
+      "children": [
+        1001107263
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1011254,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 115630149,
+      "type": 10,
+      "payloadSha256": "174bf183f1f84f9c140566d11f54823317f86c96525a56f30bcc8ee95c4b7281",
+      "childCountOffset": 1011476,
+      "childCount": 1,
+      "children": [
+        380383820
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1011484,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 174093490,
+      "type": 10,
+      "payloadSha256": "1bd4386f71feb2c5ae7e00f307c7bae43bf7bce5a4ff7f9aa0ab541bf83d8283",
+      "childCountOffset": 1011711,
+      "childCount": 1,
+      "children": [
+        305614919
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1011719,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 646712466,
+      "type": 10,
+      "payloadSha256": "35c22d53eb33c365386a3e99447f093c7777f6e0e0af0becd64a3b88e50c1c23",
+      "childCountOffset": 1012059,
+      "childCount": 2,
+      "children": [
+        324801306,
+        809455538
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1012071,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 782215404,
+      "type": 10,
+      "payloadSha256": "57f8b7223fb836010d045b98bb78d92d0ed410416f14fdcc431522fa10d4a075",
+      "childCountOffset": 1012377,
+      "childCount": 1,
+      "children": [
+        139318692
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1012385,
+      "meterHex": "9224499224c9ba40000000000000000000000c430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 738516581,
+      "type": 13,
+      "payloadSha256": "9d7ebfd47e881a56cceb13aa8121dbc068aa58e3230d65d06b041ba3872c1fa6",
+      "childCountOffset": 1012499,
+      "childCount": 5,
+      "children": [
+        26115404,
+        115630149,
+        174093490,
+        646712466,
+        782215404
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1012523,
+      "meterHex": "9224499224c98a40000000000000000000000c430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 64365950,
+      "type": 10,
+      "payloadSha256": "b5d4db5ac4dd938c315ff36295727fd4f89284772c4a0cbc89cd0efac1d7ece4",
+      "childCountOffset": 1013021,
+      "childCount": 1,
+      "children": [
+        261047060
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1013029,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 776246892,
+      "type": 10,
+      "payloadSha256": "abacd7e98fd5358642d8803009c71a7ef6e57bab3a39d8f9de499ffd2fcca698",
+      "childCountOffset": 1013292,
+      "childCount": 1,
+      "children": [
+        288928654
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1013300,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 747546029,
+      "type": 13,
+      "payloadSha256": "8a06e515722fb4bd34ae74278b3d27b84bf57b7107d8c0931076d0e5119b5827",
+      "childCountOffset": 1013409,
+      "childCount": 2,
+      "children": [
+        64365950,
+        776246892
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1013421,
+      "meterHex": "970cc13adabcce400000000000000000000074420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 760329580,
+      "type": 10,
+      "payloadSha256": "31fdf27d3e46df943591b987ba92e683d579d1a1ed5db72bb7b6352984b04b05",
+      "childCountOffset": 1013915,
+      "childCount": 1,
+      "children": [
+        973356256
+      ],
+      "advancedHex": "050101000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1013923,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 241247541,
+      "type": 10,
+      "payloadSha256": "04205049963e90403845f2efada316a79ca6676b238203a9d59bdfc9793c6e8f",
+      "childCountOffset": 1014407,
+      "childCount": 3,
+      "children": [
+        97445904,
+        526500339,
+        673298267
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1014423,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1025214016,
+      "type": 10,
+      "payloadSha256": "48f08d325a582baaa66bc30135d7ab491c2dcba9be163fd62cfd9d2d7790c5fc",
+      "childCountOffset": 1014681,
+      "childCount": 1,
+      "children": [
+        385552325
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1014689,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 786156140,
+      "type": 13,
+      "payloadSha256": "f49e80a58c9d904499e38b5c9384a4dec98dfd5ba686f01430a4ed09353fc005",
+      "childCountOffset": 1014803,
+      "childCount": 2,
+      "children": [
+        241247541,
+        1025214016
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1014815,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 275806037,
+      "type": 10,
+      "payloadSha256": "399455aa75267b5f2d9129d2f3665e25815b9900da166b55e6ada673f10b3621",
+      "childCountOffset": 1015189,
+      "childCount": 1,
+      "children": [
+        90731002
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1015197,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 697736938,
+      "type": 10,
+      "payloadSha256": "80f4f4a437e5a05bbdebf1a69387cd30a0beed69a2a63416f90fb351e74066de",
+      "childCountOffset": 1015503,
+      "childCount": 1,
+      "children": [
+        216134833
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1015511,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 880463471,
+      "type": 10,
+      "payloadSha256": "29de885b155fd77aef3545d9d95469a0237acd0352814a4efca8de9861fc4e7e",
+      "childCountOffset": 1015769,
+      "childCount": 1,
+      "children": [
+        674070675
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1015777,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 918448924,
+      "type": 10,
+      "payloadSha256": "647aeb140185e4c10048ea817533801b87ac508488725148255c6e9434c690e0",
+      "childCountOffset": 1016035,
+      "childCount": 1,
+      "children": [
+        1043356718
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1016043,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 973274131,
+      "type": 10,
+      "payloadSha256": "d716d81b9cec830cdfbd9207871150641aeee8573423b5ff9b14a9dee70c78df",
+      "childCountOffset": 1016301,
+      "childCount": 1,
+      "children": [
+        31858013
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1016309,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 810285937,
+      "type": 13,
+      "payloadSha256": "0d5ca7f397da45bdcd827a075482ca65f48c7f306df090d95ef74c4610af6365",
+      "childCountOffset": 1016423,
+      "childCount": 5,
+      "children": [
+        275806037,
+        697736938,
+        880463471,
+        918448924,
+        973274131
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1016447,
+      "meterHex": "000000000070c74000000000000000000000a0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 58344213,
+      "type": 10,
+      "payloadSha256": "0ab38613c675fd6929035e7043414fd0c866a0959e04e85a2ca49a7ab4b447f8",
+      "childCountOffset": 1016875,
+      "childCount": 1,
+      "children": [
+        428986843
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1016883,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 818237974,
+      "type": 13,
+      "payloadSha256": "83d82baaf58b830b8cfdd48ee046648eb9024cf55b85815a34abcff1ac2c55fc",
+      "childCountOffset": 1016997,
+      "childCount": 1,
+      "children": [
+        58344213
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1017005,
+      "meterHex": "b76ddbb66ddbc14000000000000000000000d2420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 12395667,
+      "type": 10,
+      "payloadSha256": "d482818f8aac43fa6db0b2f110fb568a0de27308575aa9c834d0954b477eb77b",
+      "childCountOffset": 1017353,
+      "childCount": 1,
+      "children": [
+        120285685
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1017361,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 484841673,
+      "type": 10,
+      "payloadSha256": "3b09069c672c37ef3345619332e90a63280b6e2bbdbc8485115fe91d94dc1eab",
+      "childCountOffset": 1017593,
+      "childCount": 1,
+      "children": [
+        574613540
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1017601,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 655402807,
+      "type": 10,
+      "payloadSha256": "371fbfc25782f44ae62d58c363a69d0d053712a68ab77cf878f287522cb32f29",
+      "childCountOffset": 1017833,
+      "childCount": 1,
+      "children": [
+        111975830
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1017841,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 831572958,
+      "type": 13,
+      "payloadSha256": "b7c3839f10d4541b793707f3ac513e313e6faf24f4334b0e6ff1993dc3b92d5d",
+      "childCountOffset": 1017960,
+      "childCount": 3,
+      "children": [
+        12395667,
+        484841673,
+        655402807
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1017976,
+      "meterHex": "e8909a60bc959740000000000000000000001f430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 526547886,
+      "type": 10,
+      "payloadSha256": "2428b370cc1914a805b4ccfeef0d958f845227aee6d0b79690b965a70ea5a7de",
+      "childCountOffset": 1018350,
+      "childCount": 1,
+      "children": [
+        1067692802
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1018358,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 856920229,
+      "type": 13,
+      "payloadSha256": "e95d602b6b83be1f26be70e89f7d65d82d715f1e6d75d5d16d0ebb9e52c8bed8",
+      "childCountOffset": 1018477,
+      "childCount": 1,
+      "children": [
+        526547886
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1018485,
+      "meterHex": "2c64210b5988bc4000000000000000000000e6420704ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 858620227,
+      "type": 10,
+      "payloadSha256": "a99d0ea416ae6e3e56af4690ed179a9639c323e6980d29674ba373c803a12136",
+      "childCountOffset": 1020855,
+      "childCount": 2,
+      "children": [
+        172117982,
+        843557530
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1020867,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 875512136,
+      "type": 10,
+      "payloadSha256": "cba063695bda67dc999c5c6b001c6d610df17eff6c7228ece54aae55427b506c",
+      "childCountOffset": 1023063,
+      "childCount": 2,
+      "children": [
+        137570003,
+        358934259
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1023075,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1018093257,
+      "type": 10,
+      "payloadSha256": "645bb7bf872528e4bd0cb7cae7414990ae46efb99557ebf8348a0fd72b94e150",
+      "childCountOffset": 1025359,
+      "childCount": 2,
+      "children": [
+        218116835,
+        761385957
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1025371,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 858348914,
+      "type": 13,
+      "payloadSha256": "31be06dcf6ea1e1e65520d0fc40a97d19b6c5eb2202fbfb4efd8d285b107af48",
+      "childCountOffset": 1025485,
+      "childCount": 3,
+      "children": [
+        858620227,
+        875512136,
+        1018093257
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1025501,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 204994494,
+      "type": 10,
+      "payloadSha256": "5ade8b353ac769f95347fbf43e0cc7ecf397e4b2cc18eac9ce42d5700ee33d7c",
+      "childCountOffset": 1026059,
+      "childCount": 1,
+      "children": [
+        100938164
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1026067,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 568547352,
+      "type": 10,
+      "payloadSha256": "70a39ae93620a80de36fb2a6866c932bd9674d028ce96a8ec656e247bb0588ea",
+      "childCountOffset": 1026299,
+      "childCount": 1,
+      "children": [
+        780561165
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1026307,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 887996587,
+      "type": 13,
+      "payloadSha256": "9f72106345fecb3d3720721a99b0137dc2f81df0f70ecc127b96729514d28c35",
+      "childCountOffset": 1026426,
+      "childCount": 2,
+      "children": [
+        204994494,
+        568547352
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1026438,
+      "meterHex": "e8909a60bc95b740000000000000000000001f430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 754244159,
+      "type": 10,
+      "payloadSha256": "6b67d9a7d86e19e6356158af309c1fd2ed92d696b2b64b8874097c1595088d25",
+      "childCountOffset": 1027026,
+      "childCount": 2,
+      "children": [
+        441570570,
+        1004678476
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1027038,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 895881324,
+      "type": 13,
+      "payloadSha256": "67a43e9dbbf8c8ce932ec6323fd52be023ae92d6bbb5d16cb3ccc6075eff25e5",
+      "childCountOffset": 1027257,
+      "childCount": 1,
+      "children": [
+        754244159
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1027265,
+      "meterHex": "3bd86fb53134924000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 918973692,
+      "type": 10,
+      "payloadSha256": "7133d7a90245bfca0e583ab6cc022e2565689fe01fd029979c186ca4d4762b94",
+      "childCountOffset": 1027899,
+      "childCount": 2,
+      "children": [
+        745601150,
+        1014048737
+      ],
+      "advancedHex": "0c0103000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1027911,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 342459682,
+      "type": 10,
+      "payloadSha256": "bf32c85bbd1770b0d63a85782d1ca2e92e10e836d0259ec755410344aa750166",
+      "childCountOffset": 1028181,
+      "childCount": 1,
+      "children": [
+        434502194
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1028189,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 925608216,
+      "type": 13,
+      "payloadSha256": "c45e8723940f0cf428763ab305996677bf647c2e86a1236d93d1dd83656fb097",
+      "childCountOffset": 1028303,
+      "childCount": 1,
+      "children": [
+        342459682
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1028311,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 755006546,
+      "type": 10,
+      "payloadSha256": "1b61bceea37cee936528c9fa7afdcbabd131ddabf0fad35863ed6ac745ff2301",
+      "childCountOffset": 1028667,
+      "childCount": 1,
+      "children": [
+        373977865
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1028675,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 940507544,
+      "type": 13,
+      "payloadSha256": "b64035ad4cc8f6cb0d750b4af81850cedacb027af2acb969bb5f843ea1ddd410",
+      "childCountOffset": 1028789,
+      "childCount": 1,
+      "children": [
+        755006546
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1028797,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 340150991,
+      "type": 10,
+      "payloadSha256": "8ea91c40e8d224307571e67edbfbcd92fa6241c52cc2f66d5d20769de8a4ba4a",
+      "childCountOffset": 1029153,
+      "childCount": 1,
+      "children": [
+        524567128
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1029161,
+      "meterHex": "29a594524a29c44000000000000000000000ba420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 948560349,
+      "type": 13,
+      "payloadSha256": "a249d4cddcd99d56ea0d464ffe9b1ce4c3212b6b19968615a703b8947ef23126",
+      "childCountOffset": 1029291,
+      "childCount": 1,
+      "children": [
+        340150991
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1029299,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 728180549,
+      "type": 10,
+      "payloadSha256": "72aeeddf02d9391b346acbe98835f243a2b6ce504fb4a0e07e10df572c273bd0",
+      "childCountOffset": 1029685,
+      "childCount": 1,
+      "children": [
+        479129879
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1029693,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 955603725,
+      "type": 13,
+      "payloadSha256": "f3f56d49198a08116808ca9a361a3c4f5e87c24a718991b6eb049d12f6ecb6c1",
+      "childCountOffset": 1029807,
+      "childCount": 1,
+      "children": [
+        728180549
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1029815,
+      "meterHex": "000000000070c74000000000000000000000a0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 961151553,
+      "type": 10,
+      "payloadSha256": "1579802641eb071e5bc0440c453e44bbd815c594aaf755a6606937b17979e65e",
+      "childCountOffset": 1030164,
+      "childCount": 1,
+      "children": [
+        756568437
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1030172,
+      "meterHex": "3bd86fb53134c24000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 965831350,
+      "type": 10,
+      "payloadSha256": "c8d0b91cfb851102ce83918bbabcd4ce7ddcb613df6c6e72c6b71e2a13e310d7",
+      "childCountOffset": 1030483,
+      "childCount": 1,
+      "children": [
+        981497125
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1030491,
+      "meterHex": "000000000040bf4000000000000000000000f0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 967839455,
+      "type": 10,
+      "payloadSha256": "fbaeea028782bfee8ac6c9105773df61edbd4cefb327248938002b05510eab95",
+      "childCountOffset": 1031055,
+      "childCount": 1,
+      "children": [
+        16638362
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1031063,
+      "meterHex": "3bd86fb53134924000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 989856060,
+      "type": 10,
+      "payloadSha256": "08b4783bc98db1123e680c734c889903ae9f749456c05d2c699936171d20d05f",
+      "childCountOffset": 1031422,
+      "childCount": 1,
+      "children": [
+        896630993
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1031430,
+      "meterHex": "8b2ebae8a20bc14000000000000000000000dc420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 237843792,
+      "type": 10,
+      "payloadSha256": "670db701e7bb65944a15b00719e386b34128aeefac9ae8d660fc6e66449efdeb",
+      "childCountOffset": 1031688,
+      "childCount": 1,
+      "children": [
+        883215597
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1031696,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 998514633,
+      "type": 13,
+      "payloadSha256": "457c31f18dbd5aa8d370151069ee2e04c90c49d2a1da7aa61ac1c6e4ee78038a",
+      "childCountOffset": 1031815,
+      "childCount": 1,
+      "children": [
+        237843792
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1031823,
+      "meterHex": "2c64210b5988bc4000000000000000000000e6420704ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1004609112,
+      "type": 10,
+      "payloadSha256": "b11e681869927aa697196b716b25ecc2c71845669ae1577a1b8ae78bf165a389",
+      "childCountOffset": 1032172,
+      "childCount": 1,
+      "children": [
+        814962831
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1032180,
+      "meterHex": "c7711cc7715c914000000000000000000000d8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1011808732,
+      "type": 10,
+      "payloadSha256": "0091af20cd83756040f3b377ef58c2c9cef82cab88c41593e9668ccb24e9a9da",
+      "childCountOffset": 1032455,
+      "childCount": 1,
+      "children": [
+        683082591
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1032463,
+      "meterHex": "000000000070c74000000000000000000000a0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1029909360,
+      "type": 10,
+      "payloadSha256": "bbba4e47abcc0f5380445221718d3b01c8d366157ed11c4ab4f721a3d2a5f768",
+      "childCountOffset": 1032976,
+      "childCount": 2,
+      "children": [
+        598617648,
+        781231791
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1032988,
+      "meterHex": "9224499224c9ba40000000000000000000000c430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1033311162,
+      "type": 10,
+      "payloadSha256": "b8c6dcbc264a4652a940c56d42b517a512be328381ec7b0921d05e53843f5476",
+      "childCountOffset": 1033299,
+      "childCount": 1,
+      "children": [
+        740704489
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1033307,
+      "meterHex": "8a9dd8899dd8bc400000000000000000000002430404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 182741249,
+      "type": 10,
+      "payloadSha256": "66eef85ebfc400e0b9b758588920320fb1453a9abde28dc604c480479758728c",
+      "childCountOffset": 1033529,
+      "childCount": 1,
+      "children": [
+        35914833
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1033537,
+      "meterHex": "3bd86fb53134924000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1035231231,
+      "type": 13,
+      "payloadSha256": "e2d75b4d2aeacce69f739f8fb97a985d0bdb6e2646a2a520bf09be57812d65ee",
+      "childCountOffset": 1033762,
+      "childCount": 1,
+      "children": [
+        182741249
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [
+        {
+          "sourceID": 3919823198,
+          "propertyID": 3,
+          "curveID": 652330538,
+          "pointCount": 2,
+          "offset": 1033686,
+          "rawHex": "5ec1a3e90001032ac6e1260002000000000000000000040000000000803f0000204204000000"
+        },
+        {
+          "sourceID": 3919823198,
+          "propertyID": 0,
+          "curveID": 825768256,
+          "pointCount": 2,
+          "offset": 1033724,
+          "rawHex": "5ec1a3e9000100403938310202000000000000000000040000000000803ff32a25bf04000000"
+        }
+      ],
+      "meterOffset": 1033770,
+      "meterHex": "0000000000408f4000000000000000000000f0420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1046715569,
+      "type": 10,
+      "payloadSha256": "f2edaa7617bb1422429de4ec843e9c93417fb27faefd34cc91a668e0a69e4fcf",
+      "childCountOffset": 1034131,
+      "childCount": 1,
+      "children": [
+        317803051
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1034139,
+      "meterHex": "0000000000c0c24000000000000000000000c8420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1051186180,
+      "type": 10,
+      "payloadSha256": "fee74dc9f5fecc482b83189b98d5f18e5e5735ef5844266bd5ae2cfa64798819",
+      "childCountOffset": 1034407,
+      "childCount": 1,
+      "children": [
+        903057740
+      ],
+      "advancedHex": "040100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1034415,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 820907677,
+      "type": 10,
+      "payloadSha256": "54d428195ec5baa880ad47fe1ad55c0f20dcdf788fa17973a73ae994fa9e1a3d",
+      "childCountOffset": 1034918,
+      "childCount": 2,
+      "children": [
+        324092246,
+        354228573
+      ],
+      "advancedHex": "000100000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1034930,
+      "meterHex": "0000000000408f4000000000000000000000f042040400",
+      "meterEnabled": 0
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1059184614,
+      "type": 13,
+      "payloadSha256": "e157e053e38a09d361bef28ab683cf04c3cea4235a4544208ed39162edd0ec28",
+      "childCountOffset": 1035149,
+      "childCount": 1,
+      "children": [
+        820907677
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1035157,
+      "meterHex": "3bd86fb53134924000000000000000000000ce420404ff",
+      "meterEnabled": 255
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 797713379,
+      "type": 12,
+      "payloadSha256": "21a5f173d06fd783d207ed2369ece7c139d772aff58254484a08dd0394883347",
+      "childCountOffset": 1035387,
+      "childCount": 84,
+      "children": [
+        4255706,
+        5859510,
+        8570344,
+        15464657,
+        27587572,
+        31707541,
+        47106644,
+        47606344,
+        51971643,
+        64802688,
+        109685530,
+        112935364,
+        116475964,
+        130770066,
+        135166405,
+        138575479,
+        143670897,
+        147452660,
+        162036791,
+        182511185,
+        190137830,
+        193895137,
+        196614454,
+        204699969,
+        212922861,
+        213532235,
+        312707437,
+        324240658,
+        339123398,
+        347239248,
+        366304206,
+        374375078,
+        383055392,
+        429978213,
+        470085631,
+        471012533,
+        478465496,
+        507886657,
+        554421372,
+        562364500,
+        597863743,
+        614095586,
+        617874334,
+        625924250,
+        631354119,
+        649081362,
+        698437585,
+        706500286,
+        709376374,
+        709933193,
+        725753263,
+        728052719,
+        733549739,
+        734177127,
+        737822284,
+        738516581,
+        747546029,
+        760329580,
+        786156140,
+        810285937,
+        818237974,
+        831572958,
+        856920229,
+        858348914,
+        887996587,
+        895881324,
+        918973692,
+        925608216,
+        940507544,
+        948560349,
+        955603725,
+        961151553,
+        965831350,
+        967839455,
+        989856060,
+        998514633,
+        1004609112,
+        1011808732,
+        1029909360,
+        1033311162,
+        1035231231,
+        1046715569,
+        1051186180,
+        1059184614
+      ],
+      "advancedHex": "04010f000000",
+      "stateCount": 0,
+      "rtpcBindings": [],
+      "meterOffset": 1035727,
+      "meterHex": "000000000040bf4000000000000000000000f042040401",
+      "meterEnabled": 1
+    }
+  ],
+  "boundary": "Actual six-bank music type10/12/13 child counts only. Conditional successful reader loop bound; no runtime input admission, callback success, debug-skip configuration, or universal alias absence claim."
+}
