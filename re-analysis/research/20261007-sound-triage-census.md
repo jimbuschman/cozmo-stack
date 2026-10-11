@@ -3396,3 +3396,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint837 — thirteen policy-offset receiver seams reconciled
 
 `20261011-sound-voice-policy-receiver-seams.md` accounts for836’s13 retained encodings through selected manager cleanup,Play request,music-context allocation/array andline FX products. Indexed slot destinations preserve28-byte stride and supplied input bounds;known line allocation andmusic factory products are distinct from thevoice. All50 exact-offset candidates nowhave bounded dispositions;no complete composed/overlapping/block/copy/escaped alias orindirect re-init proof.033 PARTIAL;116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Continue original policy-writer census;Q15 remains behindQ14.
+
+### Checkpoint838 — byte overlaps and composed block destinations
+
+`20261011-sound-voice-policy-composed-store-disposition.md` records four nonexact-starting byte overlaps,478 finite address seeds,10 positive events/eight distinct stores andfive explicit32-instruction frontiers. Actual9F7CE0 copies16bytes toSP+D8..E7; neighbouringE1 global-default/E5/E6/E7 request stores retain theirpositive receiver identities. No newly admitted policy writer orcomplete alias/caller proof;033 PARTIAL. Counts116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;Q15 stays behindQ14.
