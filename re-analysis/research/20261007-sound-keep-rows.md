@@ -11771,3 +11771,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint827 - authored music child-count bound for smallest cap
 
 `20261011-sound-music-child-cap-disposition.md` independently computes all346 shipped music child counts/vectors from hash-checked common fields:1..84. Saved9879C8 counter185 is outside that finite successful-reader bound;987838 remains a legitimate,already-paid tempo/header read. No universal runtime-input/callback/alias proof or status promotion. Six rate/frame obligations stay PARTIAL;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint828 - segment marker-loop authored count bounds
+
+`20261011-sound-music-marker-cap-disposition.md` parses all209 shipped Segment payloads to their exact ends:stingers0,markers2..7. Four989FF4 saved incoming-loop counters46/47 and20 of52 98A190 cleanup counters>7 are outside those authored bounds;other32 states remain explicit under existing MK contracts. Name-length R5 is not misclassified as a parse counter. No all-runtime input/alias proof or status promotion;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

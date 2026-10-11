@@ -1,0 +1,6123 @@
+{
+  "objectCount": 209,
+  "maxMarkerCount": 7,
+  "countHistogram": {
+    "2": 197,
+    "3": 4,
+    "4": 1,
+    "5": 3,
+    "7": 4
+  },
+  "runtimePending": [
+    {
+      "address": "0098A0D4",
+      "instruction": "vcvt.f64.u32 d16, s15",
+      "known_registers": {
+        "sl": "0104028C",
+        "sb": "01052418",
+        "ip": "0000002E"
+      },
+      "nzcv_mask": "0F0F"
+    },
+    {
+      "address": "0098A130",
+      "instruction": "mov r3, #0",
+      "known_registers": {
+        "sl": "0104028C",
+        "sb": "01052418",
+        "ip": "0000002E"
+      },
+      "nzcv_mask": "F0F0"
+    },
+    {
+      "address": "0098A10C",
+      "instruction": "cmp ip, r8",
+      "known_registers": {
+        "sl": "0104028C",
+        "ip": "0000002F"
+      },
+      "nzcv_mask": "0A05"
+    },
+    {
+      "address": "0098A10C",
+      "instruction": "cmp ip, r8",
+      "known_registers": {
+        "sl": "0104028C",
+        "ip": "0000002F"
+      },
+      "nzcv_mask": "F5FA"
+    }
+  ],
+  "parserPending": [
+    {
+      "address": "0098A2DC",
+      "instruction": "bl #0xa7a988",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000006",
+        "r5": "00000009"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2FC",
+      "instruction": "cmp r1, #0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000006",
+        "r5": "0000000A"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2D8",
+      "instruction": "ldr r1, [sp, #4]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000006",
+        "r4": "00000002",
+        "r5": "00000007"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F8",
+      "instruction": "add r7, r7, #0x18",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000006",
+        "r4": "00000002",
+        "r5": "00000008"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A30C",
+      "instruction": "cmp r5, r6",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000007",
+        "r5": "00000007"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A314",
+      "instruction": "b #0x98a2d4",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000007",
+        "r5": "00000007"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F0",
+      "instruction": "ldr r1, [r7, #0x10]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000007",
+        "r5": "00000007"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A188",
+      "instruction": null,
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000007",
+        "r4": "00000002",
+        "r5": "00000004",
+        "r0": "00000002"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A308",
+      "instruction": "bl #0xa7a988",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000007",
+        "r4": "00000002",
+        "r5": "00000005"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A310",
+      "instruction": "bne #0x98a2f0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000007",
+        "r4": "00000002",
+        "r5": "00000005"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2E0",
+      "instruction": "mov r0, r4",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000008",
+        "r5": "00000004"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A300",
+      "instruction": "beq #0x98a30c",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000008",
+        "r5": "00000005"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2DC",
+      "instruction": "bl #0xa7a988",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000008",
+        "r4": "00000002",
+        "r5": "00000002"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2FC",
+      "instruction": "cmp r1, #0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000008",
+        "r4": "00000002",
+        "r5": "00000003"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A310",
+      "instruction": "bne #0x98a2f0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000009",
+        "r5": "00000002"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2D4",
+      "instruction": "ldr r0, [r8]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000009",
+        "r5": "00000002"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F4",
+      "instruction": "add r5, r5, #1",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000009",
+        "r5": "00000002"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2A0",
+      "instruction": "mov r3, #0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000009"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F0",
+      "instruction": "ldr r1, [r7, #0x10]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000009",
+        "r4": "00000002",
+        "r5": "00000000"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2D0",
+      "instruction": "bne #0x98a2ec",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "0000000A"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A25C",
+      "instruction": "ldr r5, [ip, #0xc]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "0000000A"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A274",
+      "instruction": "beq #0x98a2a8",
+      "known_registers": {
+        "r8": "01052418",
+        "r3": "00000000",
+        "fp": "00000009"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A274",
+      "instruction": "beq #0x98a2a8",
+      "known_registers": {
+        "r8": "01052418",
+        "r3": "00000000",
+        "fp": "00000009"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A30C",
+      "instruction": "cmp r5, r6",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000000",
+        "r4": "00000002",
+        "r5": "00000016"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A314",
+      "instruction": "b #0x98a2d4",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000000",
+        "r4": "00000002",
+        "r5": "00000016"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F0",
+      "instruction": "ldr r1, [r7, #0x10]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000000",
+        "r4": "00000002",
+        "r5": "00000016"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2E4",
+      "instruction": "b #0x98a188",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000001",
+        "r5": "00000015"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A304",
+      "instruction": "ldr r0, [r8]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000001",
+        "r5": "00000016"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A30C",
+      "instruction": "cmp r5, r6",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000001",
+        "r5": "00000016"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2E0",
+      "instruction": "mov r0, r4",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000001",
+        "r4": "00000002",
+        "r5": "00000013"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A300",
+      "instruction": "beq #0x98a30c",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000001",
+        "r4": "00000002",
+        "r5": "00000014"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2D8",
+      "instruction": "ldr r1, [sp, #4]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000002",
+        "r5": "00000013"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F8",
+      "instruction": "add r7, r7, #0x18",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000002",
+        "r5": "00000014"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A310",
+      "instruction": "bne #0x98a2f0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000002",
+        "r4": "00000002",
+        "r5": "00000011"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2D4",
+      "instruction": "ldr r0, [r8]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000002",
+        "r4": "00000002",
+        "r5": "00000011"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F4",
+      "instruction": "add r5, r5, #1",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000002",
+        "r4": "00000002",
+        "r5": "00000011"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A188",
+      "instruction": null,
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000003",
+        "r5": "00000010"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A308",
+      "instruction": "bl #0xa7a988",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000003",
+        "r5": "00000011"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A310",
+      "instruction": "bne #0x98a2f0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000003",
+        "r5": "00000011"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2E4",
+      "instruction": "b #0x98a188",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000003",
+        "r4": "00000002",
+        "r5": "0000000E",
+        "r0": "00000002"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A304",
+      "instruction": "ldr r0, [r8]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000003",
+        "r4": "00000002",
+        "r5": "0000000F"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A30C",
+      "instruction": "cmp r5, r6",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000003",
+        "r4": "00000002",
+        "r5": "0000000F"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2DC",
+      "instruction": "bl #0xa7a988",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000004",
+        "r5": "0000000E"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2FC",
+      "instruction": "cmp r1, #0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000004",
+        "r5": "0000000F"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A2D8",
+      "instruction": "ldr r1, [sp, #4]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000004",
+        "r4": "00000002",
+        "r5": "0000000C"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F8",
+      "instruction": "add r7, r7, #0x18",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000004",
+        "r4": "00000002",
+        "r5": "0000000D"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A30C",
+      "instruction": "cmp r5, r6",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000005",
+        "r5": "0000000C"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A314",
+      "instruction": "b #0x98a2d4",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000005",
+        "r5": "0000000C"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A2F0",
+      "instruction": "ldr r1, [r7, #0x10]",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000005",
+        "r5": "0000000C"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A188",
+      "instruction": null,
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000005",
+        "r4": "00000002",
+        "r5": "00000009",
+        "r0": "00000002"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing MK2-4 contract; no admission conclusion"
+    },
+    {
+      "address": "0098A308",
+      "instruction": "bl #0xa7a988",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000005",
+        "r4": "00000002",
+        "r5": "0000000A"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored cleanup count bound"
+    },
+    {
+      "address": "0098A310",
+      "instruction": "bne #0x98a2f0",
+      "known_registers": {
+        "r8": "01052418",
+        "fp": "00000005",
+        "r4": "00000002",
+        "r5": "0000000A"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored cleanup count bound"
+    }
+  ],
+  "parserBeyondAuthoredCleanupCount": 20,
+  "rows": [
+    {
+      "id": 380691143,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "507ef9c0b90f6e6caae8a7e7ae6692ca4a3b362a76091959e48b9eafc833aac6",
+      "stingerCount": 0,
+      "durationHex": "1600000000c0c240",
+      "markerCountOffset": 6157244,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6157248,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6157264,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 202301804,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "cfc931eec3af4052b29ba519c6fbb2c85f2b88737f0f42c029b0f83d411dcf83",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6157677,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6157681,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6157697,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 376703184,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "b539a2e8debd29008fc887fa83e217d14dbedfca66bd9467d03f5b2e507812b1",
+      "stingerCount": 0,
+      "durationHex": "2c00000000c0c240",
+      "markerCountOffset": 6158110,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6158114,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6158130,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 626931784,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "cfc9aa769b102546f6038e3414a42696201d3a3a74add61b952d19596a455cd2",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6158543,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6158547,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6158563,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 84023651,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "9647d561c1cb74917494553fd3bfd8f5a6712f0b2b9fed574d74bc93707f836f",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6158976,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6158980,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6158996,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 463495282,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "895d1c2fed52aae6e8e6d1a2a626b016a9a84db2d5687019fb57cc4b5f1b7100",
+      "stingerCount": 0,
+      "durationHex": "2100000000c0c240",
+      "markerCountOffset": 6159409,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6159413,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6159429,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 106854461,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "0db9879c05de99aff82aef0cc378583597998ff82054ba5f7bcc39147da6a938",
+      "stingerCount": 0,
+      "durationHex": "00000000c0321c41",
+      "markerCountOffset": 6159847,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6159851,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6159867,
+          "timeHex": "0000000000c0d240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 912305656,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "9bfe4e1ec2c48f5925911e5d328ab870582c4e8d61a1ced0b29774e9965d9c6b",
+      "stingerCount": 0,
+      "durationHex": "00000000c0321c41",
+      "markerCountOffset": 6160280,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6160284,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6160300,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 896093592,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "c1411f9b3b4c1fdd67c840d513d5dd190253ea856f283aa23de7b9efe7aaff97",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6160713,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6160717,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6160733,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 888031004,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "2a4130e222de8c6a6eab967792e64f2da4d8b09b99181ec35fac0eef2b3a30b3",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6161146,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6161150,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6161166,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 753461229,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "2fa0e34968076fdeb6f131e6816db88b44824bf958c620ff86bfa6bbc1403be7",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6161579,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6161583,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6161599,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 792815556,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "d534e0f89239f78d646d8255c305db86a0bb41b24d60399049d5c1f412768d61",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6162012,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6162016,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6162032,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 44559327,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "d03a3d97168b795d66f1831061eac19185bed80a87b7cbbbd9ab392768841c64",
+      "stingerCount": 0,
+      "durationHex": "3700000000c0c240",
+      "markerCountOffset": 6162445,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6162449,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6162465,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 156047116,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "e233d17952877a41c8dc6c944dfa11ff1d01988675a5a9d24573f177d4e650ed",
+      "stingerCount": 0,
+      "durationHex": "2c00000000c0c240",
+      "markerCountOffset": 6162878,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6162882,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6162898,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 51813931,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "57e58ceb115fb258fb7085c4c692d46dd39f0c6b02ac203c34b44a4c5fed074d",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6163311,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6163315,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6163331,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 608513422,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "e2ba4a4f50dabc57f3c812086bbd068b6de278a6e63d365c84219724cd2c4281",
+      "stingerCount": 0,
+      "durationHex": "8e1b437a9ecfc240",
+      "markerCountOffset": 6163744,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6163748,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6163764,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 34452189,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "27872ea49c1adb4776d81b490c7572dcef01b014acc3e6f461c1cd12fd79097c",
+      "stingerCount": 0,
+      "durationHex": "0000000000c0c240",
+      "markerCountOffset": 6164177,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6164181,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6164197,
+          "timeHex": "0000000000c0c240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 711214128,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "b4aea0d68e4af101fcf3b2e0e85315ce3f4228b74bd9b12a9c5cdd444faadb42",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaaaa46d040",
+      "markerCountOffset": 6166912,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6166916,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6166932,
+          "timeHex": "b4aaaaaaaa46d040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 424319695,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "f62277f5179cd4ffac1f3f8154a9b5bf8500000391b616b999ad75b2748ce74e",
+      "stingerCount": 0,
+      "durationHex": "210000000040bf40",
+      "markerCountOffset": 6167472,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6167476,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6167492,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 711331980,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "1d38a41d139b0f0e3bc477a6039ae68e705979101dc9d0ec07f676fbd9e03cf4",
+      "stingerCount": 0,
+      "durationHex": "420000000040bf40",
+      "markerCountOffset": 6167905,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6167909,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6167925,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 473886202,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "813139b07298e2fffd91b1854be02a8b188c23ff3d81ffa2afe623bae21fbb1e",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6168338,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6168342,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6168358,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1031501244,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "41e2dbe7be1e07bafb48df0cc634ce5b2d902592697b6307e154e0e058328f44",
+      "stingerCount": 0,
+      "durationHex": "010000000040bf40",
+      "markerCountOffset": 6168771,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6168775,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6168791,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 536806543,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "a6ba59d6a57973d8d5d4891406a9af2ba0f2c6539b986a6b0de11dbc3ae2c584",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6169204,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6169208,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6169224,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 307303850,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "f8038ee6a52a006bd2afdfd746333dec53dd417d53d539b17ea8dc28f0b97577",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6169637,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6169641,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6169657,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 774142435,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "49a6a2ad112c896761fd91de1056826fda66d7a32db1cc2c7bb9844c9bb31756",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6170070,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6170074,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6170090,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 46400244,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "2cde85419d0ae32b110859c39fbed59ec7a9e6517dfb512262b299adc3681ed7",
+      "stingerCount": 0,
+      "durationHex": "420000000040bf40",
+      "markerCountOffset": 6170503,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6170507,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6170523,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 67678898,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "abceec15ac6f266484a64c3faffdca806a696b10d53da109f7c3e900a10ef4c6",
+      "stingerCount": 0,
+      "durationHex": "0b0000000040bf40",
+      "markerCountOffset": 6170906,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6170910,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6170926,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 682395016,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "def9cfd066f4f53ec483266e015eea3ddc822688abbb1d533a36ab2d85d90a57",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6171339,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6171343,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6171359,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 898150245,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "f13706d0bdde75b29d1cf51255d77a1daf6c75f4964900e82bbd8c0b8f520ad3",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6171772,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6171776,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6171792,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 443806431,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "89e5481f1782c8205a7d0b0030f4e1b6e0c813dbb50a2790e88ad06e77e8f8f6",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6172205,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6172209,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6172225,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1052138751,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "9feb9d206a8da192388fc1b51e50a008905f39475e7c4c41f921620c13b6c837",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 6172638,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6172642,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6172658,
+          "timeHex": "000000000040bf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 557150294,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "529f0c451dc7d6d9c9217bd007f21f97fe994982f70dcd2fe02812f86acbdd61",
+      "stingerCount": 0,
+      "durationHex": "0000004079c81941",
+      "markerCountOffset": 6173458,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6173462,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6173478,
+          "timeHex": "0000004079c81941",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 295944160,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "e4239dd53083bf81fb600cdd20021603a4b8cf50429d712f806e82b926ca19d8",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6206767,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6206771,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6206787,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 158741317,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "44c2b6c67a0f48b28f6d28a0774905b4b71e0a590950fc392745c66b12952873",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6207200,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6207204,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6207220,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 743249961,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "6e8a7a295062f38fa0b9a0e921652a00122d3361e3590118edf9f4848d874795",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6207633,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6207637,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6207653,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 941812503,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "c4fffcbfb57784ea9cb426ec6b1eec6672aeae17d0a9adef83f5d4ae3f68d556",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6208066,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6208070,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6208086,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 116790789,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "7cb56619c8dbe9986b9e987427c7957f5cf958dac85fceced67ae273eb1f41d5",
+      "stingerCount": 0,
+      "durationHex": "000000002da71741",
+      "markerCountOffset": 6208499,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6208503,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6208519,
+          "timeHex": "000000002da71741",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 396296817,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "a48bdfbdcda36b3aef70de73950ceb8bf0728d4b334082b3c11b0ecbefca5baa",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6208932,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6208936,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6208952,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 426278014,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "71f632016b6b28e2e9cc2f16a687ad318d68d351c8aed32f156679b54e5a6c76",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6209365,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6209369,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6209385,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 131370838,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "ab988421350d6a5eeb12893ecb8834201631bec2117c8d01abf36003a030a1e8",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6209798,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6209802,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6209818,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1018452003,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "5a23e4b7dcff39640c736ed1ccd7f54a4750e8c550d990d1a6f0a75959ca75f6",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6210231,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6210235,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6210251,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 76263424,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "18391d16b41c728ad35ad5dd7c7bab4a01158dc423ee1690a5d72cfeaa63cc2f",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6210664,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6210668,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6210684,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 776892708,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "07443b893379f7b99030718204387617effa224f7ebf90a3e9b5e089ed7707e0",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6211097,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6211101,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6211117,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 242980546,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "50dcbb7ef9f2ea6ebe93d6885d1269f02627dac870478d49f65cf0f16e0cc937",
+      "stingerCount": 0,
+      "durationHex": "370000000070c740",
+      "markerCountOffset": 6211530,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6211534,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6211550,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 374142079,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "47b70476123ab377bb68e00becb4c70953b254b6f7b792dae8100fb0d78be9fe",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6211963,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6211967,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6211983,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1006632485,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "4fad56b34a5cd65fc3f1a9d7b4f6be40fd3bc9deaa06394bb4cd0ecb6cf720fd",
+      "stingerCount": 0,
+      "durationHex": "000000000070c740",
+      "markerCountOffset": 6212396,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 6212400,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 6212416,
+          "timeHex": "000000000070c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 13563655,
+      "bank": "Music.bnk",
+      "payloadSha256": "76d87f48ef35c6f5b2e42dadb54016b2e45ba2024d0666b4e1e29ad02620ca9d",
+      "stingerCount": 0,
+      "durationHex": "00000000006aa840",
+      "markerCountOffset": 956377,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 956381,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 956397,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 55081681,
+      "bank": "Music.bnk",
+      "payloadSha256": "d40277b3d0295d0de6d78a88199dcc9801558b616f4a368a696fe22b860be404",
+      "stingerCount": 0,
+      "durationHex": "000000000058ab40",
+      "markerCountOffset": 956655,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 956659,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 956675,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 55232192,
+      "bank": "Music.bnk",
+      "payloadSha256": "c5e464539a60c0afba8cb4b610049cec7c1991f6f849b37a02014d1ebf70fddb",
+      "stingerCount": 0,
+      "durationHex": "d0fad0581fc7cb40",
+      "markerCountOffset": 956921,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 956925,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 956941,
+          "timeHex": "d0fad0581fc7cb40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 100416558,
+      "bank": "Music.bnk",
+      "payloadSha256": "cd3b345c1cc4a4dc577ff86fc35469041efbe307f3a442d300c411f588690f45",
+      "stingerCount": 0,
+      "durationHex": "000000003c4ad140",
+      "markerCountOffset": 957199,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 957203,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 957219,
+          "timeHex": "9e0cc13adabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 373288892,
+      "bank": "Music.bnk",
+      "payloadSha256": "efe6d0ca8c4834b95e37d27b4c664a0b6d41806bab397ca154c12ac5a7e4683b",
+      "stingerCount": 0,
+      "durationHex": "00000000007ca540",
+      "markerCountOffset": 957477,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 957481,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 957497,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 444615904,
+      "bank": "Music.bnk",
+      "payloadSha256": "57d01730aed36f5b83af1a6dd713ec45970702dda3308691cd81462b9faaa01f",
+      "stingerCount": 0,
+      "durationHex": "00000000007ca540",
+      "markerCountOffset": 957993,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 957997,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 958013,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 980953481,
+      "bank": "Music.bnk",
+      "payloadSha256": "b2c6a498c3975ef68872c359ae6b777ea9f8bc3b795386b8a78687e62f13935d",
+      "stingerCount": 0,
+      "durationHex": "00000000005eaa40",
+      "markerCountOffset": 958715,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 958719,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 958735,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 591751925,
+      "bank": "Music.bnk",
+      "payloadSha256": "400100b84ecdce2a3c7bee07cefff5a00ffd655b2dfe0ef84b69ea524bbe8b82",
+      "stingerCount": 0,
+      "durationHex": "00000000005eaa40",
+      "markerCountOffset": 959231,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 959235,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 959251,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 125410794,
+      "bank": "Music.bnk",
+      "payloadSha256": "6ed327d2dbece6ec0fd065d4731e3b61b929148d697d22114613fe19b9d203a9",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaa3a4ad140",
+      "markerCountOffset": 959953,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 959957,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 959973,
+          "timeHex": "9e0cc13adabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 858988103,
+      "bank": "Music.bnk",
+      "payloadSha256": "f35b90833db2a5b2c22ede7d46266877a9415c060b30e13b2aa5c819cfa6edf8",
+      "stingerCount": 0,
+      "durationHex": "00000000006aa840",
+      "markerCountOffset": 960231,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 960235,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 960251,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 325697198,
+      "bank": "Music.bnk",
+      "payloadSha256": "3bbbce5bb88392b38dbd66c2fcb82c18f7b994f58dfa9dabc33788a6d08ad85b",
+      "stingerCount": 0,
+      "durationHex": "00000000006aa840",
+      "markerCountOffset": 960742,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 960746,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 960762,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 143160071,
+      "bank": "Music.bnk",
+      "payloadSha256": "aff5a9285abd69ac6881b66206db2832d9b08bd57ce5cdc6db48334cf5933200",
+      "stingerCount": 0,
+      "durationHex": "000000003c4ad140",
+      "markerCountOffset": 961469,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 961473,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 961489,
+          "timeHex": "9e0cc13adabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 154182618,
+      "bank": "Music.bnk",
+      "payloadSha256": "3dc4a3b01c151651ce2e7f7ec3997fb41b53e341b24b60f2312df0530f5da1b8",
+      "stingerCount": 0,
+      "durationHex": "00000000c095c740",
+      "markerCountOffset": 961699,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 961703,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 961719,
+          "timeHex": "00000000c095c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 182599338,
+      "bank": "Music.bnk",
+      "payloadSha256": "a888b035964c87fea1566486d07aac49c24f159fb2b4910c12989181899a6dfc",
+      "stingerCount": 0,
+      "durationHex": "00000000007ca540",
+      "markerCountOffset": 961977,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 961981,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 961997,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 228992619,
+      "bank": "Music.bnk",
+      "payloadSha256": "e8abeee27272e9d49ab04c356e13b296d23a6340f771acec5bacc84f2d0b96d3",
+      "stingerCount": 0,
+      "durationHex": "000000000070a740",
+      "markerCountOffset": 962255,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 962259,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 962275,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 409267964,
+      "bank": "Music.bnk",
+      "payloadSha256": "71d10e9c0057ce400f8a1c84981596a753b7c8a711f1b366684f583733ebd442",
+      "stingerCount": 0,
+      "durationHex": "000000000058ab40",
+      "markerCountOffset": 962533,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 962537,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 962553,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 992901851,
+      "bank": "Music.bnk",
+      "payloadSha256": "9391815e382b9597219dd78d817dfcf816cdd2250ea750655eebcdf86f91d750",
+      "stingerCount": 0,
+      "durationHex": "000000000058ab40",
+      "markerCountOffset": 963049,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 963053,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 963069,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 297216238,
+      "bank": "Music.bnk",
+      "payloadSha256": "9587bd8b05d8abdfb30d66a92f7042388e41d3ce6de5c2a38c1501d8851ca00e",
+      "stingerCount": 0,
+      "durationHex": "52555555152db340",
+      "markerCountOffset": 963771,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 963775,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 963791,
+          "timeHex": "cb45175d7491a940",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 332241657,
+      "bank": "Music.bnk",
+      "payloadSha256": "bc9808f6f676bfb56d47518dec466607eff5bb1dc4b350466e78fcb420ea3d2a",
+      "stingerCount": 0,
+      "durationHex": "00000000007ca540",
+      "markerCountOffset": 964049,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 964053,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 964069,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 989293524,
+      "bank": "Music.bnk",
+      "payloadSha256": "9fc410c6241dad3d395021fbadc8613afc67f2ae80010b909e3ed547848147a7",
+      "stingerCount": 0,
+      "durationHex": "ddf4a637216bf640",
+      "markerCountOffset": 964549,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 964553,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 964569,
+          "timeHex": "230b59c84266f540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 134185581,
+      "bank": "Music.bnk",
+      "payloadSha256": "a9dd2fe7e32e3bda1a31b1010c13de93b747ba05355121980244d708d7f63bf6",
+      "stingerCount": 0,
+      "durationHex": "000000000082a440",
+      "markerCountOffset": 965030,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 965034,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 965050,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 274929705,
+      "bank": "Music.bnk",
+      "payloadSha256": "0dccf8be5a540cdb05ad5a487d05d2cb2bbf8c14d259ef7233f271b076dc8403",
+      "stingerCount": 0,
+      "durationHex": "000000000082a440",
+      "markerCountOffset": 965541,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 965545,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 965561,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 374795416,
+      "bank": "Music.bnk",
+      "payloadSha256": "80521817e2a13e17cbba18692a995c8cd45eecaa73f7ad9a197dcc395121c30f",
+      "stingerCount": 0,
+      "durationHex": "000000000082a440",
+      "markerCountOffset": 966263,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 966267,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 966283,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 302546087,
+      "bank": "Music.bnk",
+      "payloadSha256": "272a2f424523cb1daf8ee0dfac9f701d2d3ccc653a41460fdb3fb57279f78d5e",
+      "stingerCount": 0,
+      "durationHex": "0000000000f9f540",
+      "markerCountOffset": 966493,
+      "markerCount": 5,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 966497,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571591,
+          "offset": 966513,
+          "timeHex": "982ebae8a20bd140",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1016571590,
+          "offset": 966533,
+          "timeHex": "d645175d7491d940",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1016571590,
+          "offset": 966553,
+          "timeHex": "346081e12598e940",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1539036744,
+          "offset": 966573,
+          "timeHex": "30bae8a28b4ef540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 473507943,
+      "bank": "Music.bnk",
+      "payloadSha256": "90026808fa2278af9c6115c3e50f21ef1a5939f76f5ce4a73c08d7c67f653dea",
+      "stingerCount": 0,
+      "durationHex": "00000000005eaa40",
+      "markerCountOffset": 967034,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 967038,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 967054,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 16753858,
+      "bank": "Music.bnk",
+      "payloadSha256": "6b740a5cdbfe3e101b4ee2bd172bb96190215fec6fac0cce0313d08cd5cc9738",
+      "stingerCount": 0,
+      "durationHex": "0000000000e7f840",
+      "markerCountOffset": 967353,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 967357,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 967373,
+          "timeHex": "000000000070f740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 576048046,
+      "bank": "Music.bnk",
+      "payloadSha256": "a2e5347c283b940a9ebc1c8267f6bfe219d55177b462da6ea9fdb2cbff2b310f",
+      "stingerCount": 0,
+      "durationHex": "2676622776a2e540",
+      "markerCountOffset": 967870,
+      "markerCount": 3,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 967874,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 0,
+          "offset": 967890,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 967906,
+          "timeHex": "2676622776a2e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 173832388,
+      "bank": "Music.bnk",
+      "payloadSha256": "73248bb9a538260434995443127a1a3828423b26a679fd6ffa17748de56b4811",
+      "stingerCount": 0,
+      "durationHex": "00000000007ca540",
+      "markerCountOffset": 968367,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 968371,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 968387,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 177104278,
+      "bank": "Music.bnk",
+      "payloadSha256": "3b03520b50bfbd667bfd2b690193ee0e714108caa2d0e7568839f39d206cc03f",
+      "stingerCount": 0,
+      "durationHex": "00000000007ca540",
+      "markerCountOffset": 968878,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 968882,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 968898,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 706202665,
+      "bank": "Music.bnk",
+      "payloadSha256": "12c2c0c1b0306f96870600a8c1bf9fd9212038dc10f7a82f94ecc88cc0ad9f8f",
+      "stingerCount": 0,
+      "durationHex": "00000000006aa840",
+      "markerCountOffset": 969605,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 969609,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 969625,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 703498761,
+      "bank": "Music.bnk",
+      "payloadSha256": "6ddc334b28ddf5ae825d3a1b4c24cfd32ecf46fe654c487c05f3ac775666ce7f",
+      "stingerCount": 0,
+      "durationHex": "000000000070a740",
+      "markerCountOffset": 969883,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 969887,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 969903,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 25463410,
+      "bank": "Music.bnk",
+      "payloadSha256": "b781c607379c87f07f61011f17965d4797b903ebea15067df72f494064d7480f",
+      "stingerCount": 0,
+      "durationHex": "000000000070a740",
+      "markerCountOffset": 970399,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 970403,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 970419,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 355184688,
+      "bank": "Music.bnk",
+      "payloadSha256": "c83e0c0806cae9d49cd96fb2e44839c40e57779e35689fd9f0145d65d0e4d7d6",
+      "stingerCount": 0,
+      "durationHex": "00000000005eaa40",
+      "markerCountOffset": 971121,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 971125,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 971141,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 526324829,
+      "bank": "Music.bnk",
+      "payloadSha256": "ea0636c9adc18e6608ca3ee439774eda0c140120f5a1fc55c1d98b2606d26521",
+      "stingerCount": 0,
+      "durationHex": "00000000005eaa40",
+      "markerCountOffset": 971637,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 971641,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 971657,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 755012894,
+      "bank": "Music.bnk",
+      "payloadSha256": "fa15d7c0d7d545837bf88e85e5e61238942f4a67e6a61aa520b4ae138aa6197a",
+      "stingerCount": 0,
+      "durationHex": "00000000005eaa40",
+      "markerCountOffset": 972359,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 972363,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 972379,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 788112152,
+      "bank": "Music.bnk",
+      "payloadSha256": "948279c483cbeab8a7d72d6b485b5709f0ded0a8cdcf6c9f0bac1249d356ced9",
+      "stingerCount": 0,
+      "durationHex": "000000000018e540",
+      "markerCountOffset": 972589,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 972593,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 972609,
+          "timeHex": "000000000018e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 773345523,
+      "bank": "Music.bnk",
+      "payloadSha256": "fe6d105721d258a7dc5262366a7474072305e390c924582827a24bc087cfe973",
+      "stingerCount": 0,
+      "durationHex": "5708d6d1e67dc440",
+      "markerCountOffset": 973027,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 973031,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 973047,
+          "timeHex": "5708d6d1e67dc440",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 938490285,
+      "bank": "Music.bnk",
+      "payloadSha256": "1a03c759c17c4cb409476f7e7353fd7e08832a25906c74091b65a1e63d094601",
+      "stingerCount": 0,
+      "durationHex": "00000000006aa840",
+      "markerCountOffset": 973305,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 973309,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 973325,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1007458722,
+      "bank": "Music.bnk",
+      "payloadSha256": "499600d371fdad04f2b07a1de5759e7e9f4aca5ff5cdd5b681d44b226a0f9f36",
+      "stingerCount": 0,
+      "durationHex": "00000000006aa840",
+      "markerCountOffset": 973821,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 973825,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 973841,
+          "timeHex": "0000000000409f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 784826194,
+      "bank": "Music.bnk",
+      "payloadSha256": "eb92acffb1de8e7790f85769fc0a395ece616774c51095264e0cf6878df9c335",
+      "stingerCount": 0,
+      "durationHex": "ed92215847cfd040",
+      "markerCountOffset": 974543,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 974547,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 974563,
+          "timeHex": "9e0cc13adabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 628184426,
+      "bank": "Music.bnk",
+      "payloadSha256": "019975103cd8cf8d9659634d6672fdaed51f521f00cd7b150650a2438fa26f5e",
+      "stingerCount": 0,
+      "durationHex": "000000000040af40",
+      "markerCountOffset": 975475,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 975479,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 975495,
+          "timeHex": "000000000040af40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 625127375,
+      "bank": "Music.bnk",
+      "payloadSha256": "ed2f52b351c1323180df8950ef648ae425e40658de3656d2d3108ae4350a913c",
+      "stingerCount": 0,
+      "durationHex": "8a24499224c9ca40",
+      "markerCountOffset": 975913,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 975917,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 975933,
+          "timeHex": "8a24499224c9ca40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1009376225,
+      "bank": "Music.bnk",
+      "payloadSha256": "89880c9429c6dec4feaa33464e194cf3b297363a6f7546eeccd7b111ae4dcf85",
+      "stingerCount": 0,
+      "durationHex": "d29dd8899dd8cc40",
+      "markerCountOffset": 976376,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 976380,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 976396,
+          "timeHex": "9b9dd8899dd8cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 30911693,
+      "bank": "Music.bnk",
+      "payloadSha256": "8a5b18f287ff1f5a19983b3e84c7ec41b51dc6937213503c4f45ad682218bcf4",
+      "stingerCount": 0,
+      "durationHex": "a6aaaaaae65ee140",
+      "markerCountOffset": 977457,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 977461,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 977477,
+          "timeHex": "a17cd9a0c997e040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 73047063,
+      "bank": "Music.bnk",
+      "payloadSha256": "4d980405591cb1d2a0772ae23c1756b9209317eaef6ef279120679d1da3e6a49",
+      "stingerCount": 0,
+      "durationHex": "aeaaaaaababdb440",
+      "markerCountOffset": 977687,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 977691,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 977707,
+          "timeHex": "189a7cd9a009ad40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 901435417,
+      "bank": "Music.bnk",
+      "payloadSha256": "a6569fa17fc60bc899eaa260e176092c2b295333e62b307077092d84239e9f00",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaadabcce40",
+      "markerCountOffset": 978243,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 978247,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 978263,
+          "timeHex": "98aaaaaadabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1038877262,
+      "bank": "Music.bnk",
+      "payloadSha256": "aa1c25fa94557cc4507f9519f13008d0aa8a822c0e3995b1995cbc3ac528ab33",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaadabcce40",
+      "markerCountOffset": 978473,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 978477,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 978493,
+          "timeHex": "98aaaaaadabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 224603209,
+      "bank": "Music.bnk",
+      "payloadSha256": "2bc58e997c8538ecf033b17b58ff16beb1fc669e2e4f1aac3e13b25b9300b648",
+      "stingerCount": 0,
+      "durationHex": "2564210b5988cc40",
+      "markerCountOffset": 978986,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 978990,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 979006,
+          "timeHex": "2564210b5988cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 194178244,
+      "bank": "Music.bnk",
+      "payloadSha256": "07441efb354e69b4d7414ec78efbfbbace0e27fd187d8578ba68a9c8b57e59a7",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaa5a88cc40",
+      "markerCountOffset": 979465,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 979469,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 979485,
+          "timeHex": "98aaaaaa5a88cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 371728435,
+      "bank": "Music.bnk",
+      "payloadSha256": "ce9634047dde61d2115797d76ecb5a06e652d2e655e68b297c4b651ef3717f2c",
+      "stingerCount": 0,
+      "durationHex": "dadcdcdcb49cf240",
+      "markerCountOffset": 979992,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 979996,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 980012,
+          "timeHex": "3f3c3c3c3cecf140",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 196088338,
+      "bank": "Music.bnk",
+      "payloadSha256": "490c829c24ee330953f93906224c441ca26112eaf1d43bdc95209b2e6e8bad7d",
+      "stingerCount": 0,
+      "durationHex": "d29dd8899dd8cc40",
+      "markerCountOffset": 980430,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 980434,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 980450,
+          "timeHex": "9b9dd8899dd8cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 226413379,
+      "bank": "Music.bnk",
+      "payloadSha256": "17fd9426366fae9ca813d764f90312faf67676edc12dbd483d7029f6805cfc7b",
+      "stingerCount": 0,
+      "durationHex": "52555555152db340",
+      "markerCountOffset": 980911,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 980915,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 980931,
+          "timeHex": "cb45175d7491a940",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 47606344,
+      "bank": "Music.bnk",
+      "payloadSha256": "b49d6b9f56696aa0b5e73d5e1a67554cdf6148e1204e1f187bb29d3b4c16096b",
+      "stingerCount": 0,
+      "durationHex": "5255555525aeb140",
+      "markerCountOffset": 981412,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 981416,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 981432,
+          "timeHex": "78d145175dd4ad40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 275440046,
+      "bank": "Music.bnk",
+      "payloadSha256": "873d82d1e7dd5ddf99363b355280add5006043ca4afb6ec4163d171823d28007",
+      "stingerCount": 0,
+      "durationHex": "00000000008ee240",
+      "markerCountOffset": 981642,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 981646,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 981662,
+          "timeHex": "000000000040df40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 699034540,
+      "bank": "Music.bnk",
+      "payloadSha256": "2ac9f5a24ac4d72d8f6729b817efc9c22ca790f1bb627a2ac57c57b88818a730",
+      "stingerCount": 0,
+      "durationHex": "00000000007cb540",
+      "markerCountOffset": 981877,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 981881,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 981897,
+          "timeHex": "0000000000408f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 250698942,
+      "bank": "Music.bnk",
+      "payloadSha256": "45bdf9500ad0fd825b8500fc342d9bb99019ed19d0ebb22efdd6839f408def48",
+      "stingerCount": 0,
+      "durationHex": "00000000d03de240",
+      "markerCountOffset": 982414,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 982418,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 982434,
+          "timeHex": "e4adec734895e040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 109685530,
+      "bank": "Music.bnk",
+      "payloadSha256": "3d7ec9f43a3db211e00604342130e6afcc14fdd59c26fff6114e57e2ef58a59f",
+      "stingerCount": 0,
+      "durationHex": "000000000044a640",
+      "markerCountOffset": 983019,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 983023,
+          "timeHex": "0000000000c08240",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 983039,
+          "timeHex": "0000000000eca340",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 112935364,
+      "bank": "Music.bnk",
+      "payloadSha256": "3390a1d79198459c65725ebba468c4e5e46f326e735da6dd87a3d6cdba72527d",
+      "stingerCount": 0,
+      "durationHex": "c11b8665d16fb440",
+      "markerCountOffset": 983285,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 983289,
+          "timeHex": "f8a637bde94d8040",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 983305,
+          "timeHex": "891364ceff9f9f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 572897880,
+      "bank": "Music.bnk",
+      "payloadSha256": "9a2aefd1032292ce571351ba3013bd859c67f23358c35d552e635f09be985d5a",
+      "stingerCount": 0,
+      "durationHex": "2676622776a2e540",
+      "markerCountOffset": 983599,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 983603,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 983619,
+          "timeHex": "2676622776a2e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 130770066,
+      "bank": "Music.bnk",
+      "payloadSha256": "397356167a7e9bcb75c791ac2e614ad5288bbc500e335b37bb6b394338ca2b67",
+      "stingerCount": 0,
+      "durationHex": "000000000070b740",
+      "markerCountOffset": 984042,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 984046,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 984062,
+          "timeHex": "f8bb2e7ea13dab40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 135166405,
+      "bank": "Music.bnk",
+      "payloadSha256": "99fe4c15eccac211302f90f71057398eed06c3a163c6cd9e59bc19f62e9b9985",
+      "stingerCount": 0,
+      "durationHex": "aeaaaaaa1aaab040",
+      "markerCountOffset": 984330,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 984334,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 984350,
+          "timeHex": "0000000000209c40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 248686703,
+      "bank": "Music.bnk",
+      "payloadSha256": "ec9b976328e0670b8976bf8663d7d85995bc9f28bb0d3fb411e8806b0e5237ab",
+      "stingerCount": 0,
+      "durationHex": "535555550070f740",
+      "markerCountOffset": 984560,
+      "markerCount": 5,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 984564,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571588,
+          "offset": 984580,
+          "timeHex": "e9a637bde94dd040",
+          "nameLength": 4,
+          "nameHex": "63633100"
+        },
+        {
+          "id": 1016571591,
+          "offset": 984600,
+          "timeHex": "6e014b3c2769e440",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1016571590,
+          "offset": 984620,
+          "timeHex": "f7a637bde94df040",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1539036744,
+          "offset": 984640,
+          "timeHex": "8e852c64216bf640",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 143670897,
+      "bank": "Music.bnk",
+      "payloadSha256": "11d6c6b8f7758d255a58ea44ebe0444e0f0bfe6284b1632ae2dac4065d36e498",
+      "stingerCount": 0,
+      "durationHex": "020000000017b140",
+      "markerCountOffset": 985393,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 985397,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 985413,
+          "timeHex": "899dd8899dd88c40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 424910335,
+      "bank": "Music.bnk",
+      "payloadSha256": "55d7f2233a7de43d51e64f4c6e9ad1b2f2ed81e03ef9fa46648804aa26409dda",
+      "stingerCount": 0,
+      "durationHex": "a6aaaaaab6bde040",
+      "markerCountOffset": 985628,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 985632,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 985648,
+          "timeHex": "000000000040df40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 197925514,
+      "bank": "Music.bnk",
+      "payloadSha256": "62f1ba8071040651474a5dbabffc599408131780d3cb79484708815e9c38c243",
+      "stingerCount": 0,
+      "durationHex": "c87959c4277e0141",
+      "markerCountOffset": 986386,
+      "markerCount": 7,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 986390,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571588,
+          "offset": 986406,
+          "timeHex": "70ba83fd56dbdf40",
+          "nameLength": 4,
+          "nameHex": "63633100"
+        },
+        {
+          "id": 1016571591,
+          "offset": 986426,
+          "timeHex": "5cc427904a4eeb40",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1016571590,
+          "offset": 986446,
+          "timeHex": "0af4a25aece1ef40",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1016571585,
+          "offset": 986466,
+          "timeHex": "3441c0f19180f440",
+          "nameLength": 4,
+          "nameHex": "63633400"
+        },
+        {
+          "id": 1016571584,
+          "offset": 986486,
+          "timeHex": "ad9a31263f31fa40",
+          "nameLength": 4,
+          "nameHex": "63633500"
+        },
+        {
+          "id": 1539036744,
+          "offset": 986506,
+          "timeHex": "a9da189aee100141",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 97480507,
+      "bank": "Music.bnk",
+      "payloadSha256": "495a30af7210441d5906d0ca0ec9e8ab3bd22e4569a4e65e5f8db455931fbb16",
+      "stingerCount": 0,
+      "durationHex": "5a5555553d8fe640",
+      "markerCountOffset": 986959,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 986963,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 986979,
+          "timeHex": "00000000803de540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 190137830,
+      "bank": "Music.bnk",
+      "payloadSha256": "7ea5f893343e5bec81013169220f91eb3527c078cc39dbfd009e0c09fcd82cce",
+      "stingerCount": 0,
+      "durationHex": "9062277662078240",
+      "markerCountOffset": 987521,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 987525,
+          "timeHex": "29bf4f3d016f7140",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 987541,
+          "timeHex": "29bf4f3d016f7140",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 193895137,
+      "bank": "Music.bnk",
+      "payloadSha256": "b2704ad0cdfa5819ceeff1c09c73d76b09fe561bcb3f9cd6e6446ce580ea1ded",
+      "stingerCount": 0,
+      "durationHex": "0000000070dbb140",
+      "markerCountOffset": 987888,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 987892,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 987908,
+          "timeHex": "c06ddbb66ddba140",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 803248974,
+      "bank": "Music.bnk",
+      "payloadSha256": "61a50ad38542a8c65fc630d36c9ba9283d41ed0a32440eab38d8bb6e6fc512a8",
+      "stingerCount": 0,
+      "durationHex": "0000000000e7f840",
+      "markerCountOffset": 988207,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 988211,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 988227,
+          "timeHex": "000000000070f740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 639662402,
+      "bank": "Music.bnk",
+      "payloadSha256": "60762467613724b4075b13dc23d459684c3a20a8a9e90dcad584a932611d9d69",
+      "stingerCount": 0,
+      "durationHex": "0000000000f9f540",
+      "markerCountOffset": 988650,
+      "markerCount": 5,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 988654,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571591,
+          "offset": 988670,
+          "timeHex": "982ebae8a20bd140",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1016571590,
+          "offset": 988690,
+          "timeHex": "d645175d7491d940",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1016571590,
+          "offset": 988710,
+          "timeHex": "346081e12598e940",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1539036744,
+          "offset": 988730,
+          "timeHex": "30bae8a28b4ef540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 212922861,
+      "bank": "Music.bnk",
+      "payloadSha256": "1d83081ce1d3d3ecd560cc3ba05f4317a49817da7c29d086a664d0aa8343d8d1",
+      "stingerCount": 0,
+      "durationHex": "0000000000408f40",
+      "markerCountOffset": 989120,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 989124,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 989140,
+          "timeHex": "0000000000408f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 21797809,
+      "bank": "Music.bnk",
+      "payloadSha256": "7b4368d0656c016293a41c0b745083514bd2b3237846e5e0f5135d4223fb8e1d",
+      "stingerCount": 0,
+      "durationHex": "a6aaaaaaa231e140",
+      "markerCountOffset": 989403,
+      "markerCount": 3,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 989407,
+          "timeHex": "b56ddbb66ddbc140",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 0,
+          "offset": 989423,
+          "timeHex": "b56ddbb66ddbc140",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 989439,
+          "timeHex": "000000000040df40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 312707437,
+      "bank": "Music.bnk",
+      "payloadSha256": "2a88d521fb2c87ad18ccbae84986f4e9cd9c13ed9c1a077253d9ca273b016b86",
+      "stingerCount": 0,
+      "durationHex": "5a5ff9e73034c240",
+      "markerCountOffset": 989928,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 989932,
+          "timeHex": "3ad86fb531348240",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 989948,
+          "timeHex": "88e9f25d62ccaf40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 996233764,
+      "bank": "Music.bnk",
+      "payloadSha256": "ba5574856d093308b9fc21cc65f06f65cc082482c090ba962142056a2a91839c",
+      "stingerCount": 0,
+      "durationHex": "16b29085ec3eb740",
+      "markerCountOffset": 990364,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 990368,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 990384,
+          "timeHex": "b690852c6461b440",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 339123398,
+      "bank": "Music.bnk",
+      "payloadSha256": "b5f9ce3b7ca6a976002d68e42dd5d62c88b276383b69a254f7c5621e5be214c7",
+      "stingerCount": 0,
+      "durationHex": "000000000044b640",
+      "markerCountOffset": 990896,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 990900,
+          "timeHex": "0000000000207c40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 990916,
+          "timeHex": "000000000044a640",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 874658801,
+      "bank": "Music.bnk",
+      "payloadSha256": "e951e604f0aeecf24ad23e89f05695c29ae94497f96ad2b54545c06ed868916b",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaadabcce40",
+      "markerCountOffset": 991210,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 991214,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 991230,
+          "timeHex": "98aaaaaadabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 572609591,
+      "bank": "Music.bnk",
+      "payloadSha256": "981a642678084e57b9835b67904fca66c008357844de0b6f766ed687f0478e24",
+      "stingerCount": 0,
+      "durationHex": "e9f9418e164ee340",
+      "markerCountOffset": 991767,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 991771,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 991787,
+          "timeHex": "736227766207e240",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 374375078,
+      "bank": "Music.bnk",
+      "payloadSha256": "a2b5c09c2bfb36b16ecb188323802d17da2763837b62551e7dcafd6ade941898",
+      "stingerCount": 0,
+      "durationHex": "d2f33ccf1321b040",
+      "markerCountOffset": 992377,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 992381,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 992397,
+          "timeHex": "6bc05855682e9a40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 383055392,
+      "bank": "Music.bnk",
+      "payloadSha256": "e89eafa76e880d287cc7267835f5c8636b068eff8a4a64b21ab8e6d391288188",
+      "stingerCount": 0,
+      "durationHex": "525555556561b440",
+      "markerCountOffset": 992612,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 992616,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 992632,
+          "timeHex": "000000000070a740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 429978213,
+      "bank": "Music.bnk",
+      "payloadSha256": "2f20d70283a9106b2ab58fcd73de538cf59facb8ebb24b1282175e3aeebe5b98",
+      "stingerCount": 0,
+      "durationHex": "0000000000f9b540",
+      "markerCountOffset": 992852,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 992856,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 992872,
+          "timeHex": "abec73484db0b140",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 999028746,
+      "bank": "Music.bnk",
+      "payloadSha256": "568fc67a15e356f85f9534ec4d086966cbf39fce785733784e42344933a078e4",
+      "stingerCount": 0,
+      "durationHex": "0000000000408f40",
+      "markerCountOffset": 993024,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 993028,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 993044,
+          "timeHex": "0000000000408f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 471012533,
+      "bank": "Music.bnk",
+      "payloadSha256": "c5a9d516128697afe2ec9c3cbc239fec10522075634d60cf2e38690cc48efd50",
+      "stingerCount": 0,
+      "durationHex": "bcb5fbf23a44b140",
+      "markerCountOffset": 993546,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 993550,
+          "timeHex": "9e377b7061bf8640",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 993566,
+          "timeHex": "76b9b26d38868740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 918881703,
+      "bank": "Music.bnk",
+      "payloadSha256": "cb5d7e6fa001839be8cbcd717cff02207447f1f748b5a0bffb9bcadd51e3d9b3",
+      "stingerCount": 0,
+      "durationHex": "62d8899dd839e040",
+      "markerCountOffset": 993860,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 993864,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 993880,
+          "timeHex": "7f9dd8899dd8dc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 598188574,
+      "bank": "Music.bnk",
+      "payloadSha256": "1ce658ec489a32706fa153a22bc76e5dd2f71efe1f40a9bfa3cee4cc45558b4b",
+      "stingerCount": 0,
+      "durationHex": "2676622776a2e540",
+      "markerCountOffset": 994377,
+      "markerCount": 3,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 994381,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 0,
+          "offset": 994397,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 994413,
+          "timeHex": "2676622776a2e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 554421372,
+      "bank": "Music.bnk",
+      "payloadSha256": "8a59f4f53bbcca73d59db8070b0fcb646b045af2f4d1f17087b2520f697dc6fe",
+      "stingerCount": 0,
+      "durationHex": "3c644bb1d294bd40",
+      "markerCountOffset": 994862,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 994866,
+          "timeHex": "3d774d8054028040",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 994882,
+          "timeHex": "1f278d795908ad40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 228501301,
+      "bank": "Music.bnk",
+      "payloadSha256": "02864b122f5eec76e55cfc4b522922f9b64ebf08c8c14ceacfb0148441d34d73",
+      "stingerCount": 0,
+      "durationHex": "000000000018e540",
+      "markerCountOffset": 995092,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 995096,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 995112,
+          "timeHex": "000000000018e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 884409107,
+      "bank": "Music.bnk",
+      "payloadSha256": "fec3b19ac330a32fb9071128f1fedc3e61e9bba8d6826a35828291c566649798",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaa5a88cc40",
+      "markerCountOffset": 995571,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 995575,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 995591,
+          "timeHex": "98aaaaaa5a88cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 614095586,
+      "bank": "Music.bnk",
+      "payloadSha256": "8667477196f6dfabb57d7fbbf2c0f76a04cc38d0246801baa0bfb6bf0da8fff6",
+      "stingerCount": 0,
+      "durationHex": "5853d69435ebb140",
+      "markerCountOffset": 996062,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 996066,
+          "timeHex": "0000000000708740",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 996082,
+          "timeHex": "00000000004cad40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 36418148,
+      "bank": "Music.bnk",
+      "payloadSha256": "cdbb2dc38f7a8aec6ef263744cddb3fc48a2ca6376fe06830fc74307052c2a66",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaa92c9d140",
+      "markerCountOffset": 996457,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 996461,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 996477,
+          "timeHex": "d0b66ddbb6bdd040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 52955102,
+      "bank": "Music.bnk",
+      "payloadSha256": "0b75223f94293bb8a4ab7d387a21997baf9aea3fd747c2080c45986814efc90f",
+      "stingerCount": 0,
+      "durationHex": "6855555525edc440",
+      "markerCountOffset": 996921,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 996925,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 996941,
+          "timeHex": "dbb66ddbb6bdc040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 54247848,
+      "bank": "Music.bnk",
+      "payloadSha256": "97b2e9ab4a4047645feb029cc10823837e036949f962ca31c681017388fda910",
+      "stingerCount": 0,
+      "durationHex": "d0b66ddbb6bdd040",
+      "markerCountOffset": 997316,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 997320,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 997336,
+          "timeHex": "d0b66ddbb6bdd040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 163535132,
+      "bank": "Music.bnk",
+      "payloadSha256": "e24638157013de45af9d3474f999b6fd05cda3d65f0f78e571065be8db5e4f6f",
+      "stingerCount": 0,
+      "durationHex": "6855555525edc440",
+      "markerCountOffset": 997897,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 997901,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 997917,
+          "timeHex": "dbb66ddbb6bdc040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 305281487,
+      "bank": "Music.bnk",
+      "payloadSha256": "c378e79469d620da4d37487998776710ca7f4a32565f67a70d99124e3991cb00",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaa92c9d140",
+      "markerCountOffset": 998409,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 998413,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 998429,
+          "timeHex": "d0b66ddbb6bdd040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 412497887,
+      "bank": "Music.bnk",
+      "payloadSha256": "84d93c3d9df74c27ae55ba7f262664336691990f828fd8c48e781d0fc9dfb20d",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaa6e28da40",
+      "markerCountOffset": 998969,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 998973,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 998989,
+          "timeHex": "45922449921cd940",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 443059243,
+      "bank": "Music.bnk",
+      "payloadSha256": "051f72f195c7b9e12993e5ee17e84a2148e3725436b8f01ef1a6fb254fcf8e49",
+      "stingerCount": 0,
+      "durationHex": "6855555525edc440",
+      "markerCountOffset": 999433,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 999437,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 999453,
+          "timeHex": "dbb66ddbb6bdc040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 536479655,
+      "bank": "Music.bnk",
+      "payloadSha256": "656ffd1d9a0c67b89dc7b9b2acd5722564e68dfbcab0e18f023b52655ed8983f",
+      "stingerCount": 0,
+      "durationHex": "6855555525edc440",
+      "markerCountOffset": 999897,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 999901,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 999917,
+          "timeHex": "dbb66ddbb6bdc040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 632721301,
+      "bank": "Music.bnk",
+      "payloadSha256": "6b0d421d956c3fdc79153f055a30a6471f1b2849f3bd78ca60a5ba1ce06113d1",
+      "stingerCount": 0,
+      "durationHex": "d0b66ddbb6bdd040",
+      "markerCountOffset": 1000478,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1000482,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1000498,
+          "timeHex": "d0b66ddbb6bdd040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 661103820,
+      "bank": "Music.bnk",
+      "payloadSha256": "08e36f91cdd22b81193d6f84f5377ac1e7768d857bd13717a56f8b37fa8037d6",
+      "stingerCount": 0,
+      "durationHex": "d0b66ddbb6bdd040",
+      "markerCountOffset": 1001038,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1001042,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1001058,
+          "timeHex": "d0b66ddbb6bdd040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 699582013,
+      "bank": "Music.bnk",
+      "payloadSha256": "ad50c07142e28b76c405a6895d5285701f2e3725552180e1a9d4d08690602866",
+      "stingerCount": 0,
+      "durationHex": "d0b66ddbb6bdd040",
+      "markerCountOffset": 1001502,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1001506,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1001522,
+          "timeHex": "d0b66ddbb6bdd040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 910955117,
+      "bank": "Music.bnk",
+      "payloadSha256": "784b73b373de84b16654eabb8a3564f8d2911346bb50fda2463352e35cb84b8b",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaa6e28da40",
+      "markerCountOffset": 1002062,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1002066,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1002082,
+          "timeHex": "45922449921cd940",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 970323948,
+      "bank": "Music.bnk",
+      "payloadSha256": "023cc3a04e97395b0d1276fbc830af838367d7a34fd4312f594a71e69a686653",
+      "stingerCount": 0,
+      "durationHex": "d0b66ddbb6bdd040",
+      "markerCountOffset": 1002340,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1002344,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1002360,
+          "timeHex": "d0b66ddbb6bdd040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 971521257,
+      "bank": "Music.bnk",
+      "payloadSha256": "9338680a78f9dbf0a6fd8516d81a188540386092fd2bf176a76da26cb361e8b9",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaa6e28da40",
+      "markerCountOffset": 1002921,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1002925,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1002941,
+          "timeHex": "45922449921cd940",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1047409488,
+      "bank": "Music.bnk",
+      "payloadSha256": "f594d1876502666d1b3721c18b2565d0f4fc5cb739e4ee653ce5d7bd91ff56a1",
+      "stingerCount": 0,
+      "durationHex": "b4aaaaaa6e28da40",
+      "markerCountOffset": 1003481,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1003485,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1003501,
+          "timeHex": "45922449921cd940",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 440010275,
+      "bank": "Music.bnk",
+      "payloadSha256": "055bbffd41922ff1da782dce1b67b5b3d13c5fb03d079b31d2dd851ce1ff2232",
+      "stingerCount": 0,
+      "durationHex": "ddf4a637216bf640",
+      "markerCountOffset": 1005011,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1005015,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1005031,
+          "timeHex": "230b59c84266f540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 631354119,
+      "bank": "Music.bnk",
+      "payloadSha256": "3ebdef79d6174a149dc3110fbee5f271d25f33e91a209e4eb32347a9ae6a93de",
+      "stingerCount": 0,
+      "durationHex": "dfb83ce3cd52b140",
+      "markerCountOffset": 1005485,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1005489,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1005505,
+          "timeHex": "000000000070a740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 25398187,
+      "bank": "Music.bnk",
+      "payloadSha256": "3c82122db16d56169ed7347d671d4ca30addd7a1971c82f9ab21ce3db4ab042c",
+      "stingerCount": 0,
+      "durationHex": "000000000018e540",
+      "markerCountOffset": 1005715,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1005719,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1005735,
+          "timeHex": "000000000018e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 936526143,
+      "bank": "Music.bnk",
+      "payloadSha256": "1f48a2c6895e8cdaf3d43bc1c4ae78687734694b35b5d55e3da50f77dbd3ee17",
+      "stingerCount": 0,
+      "durationHex": "000000000018e540",
+      "markerCountOffset": 1006158,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1006162,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1006178,
+          "timeHex": "000000000018e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 283330329,
+      "bank": "Music.bnk",
+      "payloadSha256": "3901acea73bf5c1dc65c9d983009c33a7345aa3f4ba9b3c2140f884fa826f9e5",
+      "stingerCount": 0,
+      "durationHex": "83c5c09e8467b040",
+      "markerCountOffset": 1006637,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1006641,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1006657,
+          "timeHex": "000000000070a740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 456416452,
+      "bank": "Music.bnk",
+      "payloadSha256": "db0feb1575f26d0e862a3787658e8083e4626f10e0c6454d217fcca261cd2ede",
+      "stingerCount": 0,
+      "durationHex": "d29dd8899dd8cc40",
+      "markerCountOffset": 1006903,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1006907,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1006923,
+          "timeHex": "9b9dd8899dd8cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1045447365,
+      "bank": "Music.bnk",
+      "payloadSha256": "a30be99bc1ec9f02aa7576df1f32760254315070bd27cbc154b22b739286ae02",
+      "stingerCount": 0,
+      "durationHex": "d29dd8899dd8cc40",
+      "markerCountOffset": 1007133,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1007137,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1007153,
+          "timeHex": "9b9dd8899dd8cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 930016717,
+      "bank": "Music.bnk",
+      "payloadSha256": "f54914ea74f3334a7b25c3a96eceeac99aae10ff18127e8053a77ca5484e7c8f",
+      "stingerCount": 0,
+      "durationHex": "000000000018e540",
+      "markerCountOffset": 1007634,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1007638,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1007654,
+          "timeHex": "000000000018e540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 709933193,
+      "bank": "Music.bnk",
+      "payloadSha256": "8613524d2520ab03b74e9cae2de553d34c6ba6ee709ff67bcbfb83735220b956",
+      "stingerCount": 0,
+      "durationHex": "6cbd5ab9ef6ab040",
+      "markerCountOffset": 1008082,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1008086,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1008102,
+          "timeHex": "dedcdcdc5c54ab40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 929030032,
+      "bank": "Music.bnk",
+      "payloadSha256": "a9822c7c09cc1fb8438bd64e27bf70c8dd4eb64c57f2d972d62b36a69c16883d",
+      "stingerCount": 0,
+      "durationHex": "52555555152db340",
+      "markerCountOffset": 1008322,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1008326,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1008342,
+          "timeHex": "e145175d74919940",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1054381498,
+      "bank": "Music.bnk",
+      "payloadSha256": "295235bc8171609449840723687ddc44a04876d60d89b286085eb8cfe8089677",
+      "stingerCount": 0,
+      "durationHex": "a6aaaaaa5c1ce240",
+      "markerCountOffset": 1008552,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1008556,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1008572,
+          "timeHex": "8a2ebae8a20be140",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 631927919,
+      "bank": "Music.bnk",
+      "payloadSha256": "869a18c27eb0b68f78d94b4de43d56aba1b9d92d8141a1a96772401d58af7a38",
+      "stingerCount": 0,
+      "durationHex": "c87959c4277e0141",
+      "markerCountOffset": 1009233,
+      "markerCount": 7,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1009237,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571588,
+          "offset": 1009253,
+          "timeHex": "70ba83fd56dbdf40",
+          "nameLength": 4,
+          "nameHex": "63633100"
+        },
+        {
+          "id": 1016571591,
+          "offset": 1009273,
+          "timeHex": "5cc427904a4eeb40",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1016571590,
+          "offset": 1009293,
+          "timeHex": "0af4a25aece1ef40",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1016571585,
+          "offset": 1009313,
+          "timeHex": "3441c0f19180f440",
+          "nameLength": 4,
+          "nameHex": "63633400"
+        },
+        {
+          "id": 1016571584,
+          "offset": 1009333,
+          "timeHex": "ad9a31263f31fa40",
+          "nameLength": 4,
+          "nameHex": "63633500"
+        },
+        {
+          "id": 1539036744,
+          "offset": 1009353,
+          "timeHex": "a9da189aee100141",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 231359469,
+      "bank": "Music.bnk",
+      "payloadSha256": "1139e1cc98e597d9fc3683881d4a881ce5784c21f62d886ef3b983406547d8eb",
+      "stingerCount": 0,
+      "durationHex": "b290852c6461a440",
+      "markerCountOffset": 1009842,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1009846,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1009862,
+          "timeHex": "ab90852c6461a440",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 307582060,
+      "bank": "Music.bnk",
+      "payloadSha256": "9318e2785324d3d0212a1d6388fdacbf9bab742d23f1011b4b5dd6476a5a6166",
+      "stingerCount": 0,
+      "durationHex": "4c555555d9bcde40",
+      "markerCountOffset": 1010280,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1010284,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1010300,
+          "timeHex": "4c555555d9bcde40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 672268752,
+      "bank": "Music.bnk",
+      "payloadSha256": "c994cb35e31c7430b566ae800310c0a84ac8c711566473b49c9ddd5140f43416",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaadabcce40",
+      "markerCountOffset": 1010546,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1010550,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1010566,
+          "timeHex": "98aaaaaadabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 737822284,
+      "bank": "Music.bnk",
+      "payloadSha256": "82fc74ab395358db11df1d8b59f7dbae1a753cb38c6252efb34b0066a4947375",
+      "stingerCount": 0,
+      "durationHex": "525555555588bc40",
+      "markerCountOffset": 1011054,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1011058,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1011074,
+          "timeHex": "000000000070a740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 26115404,
+      "bank": "Music.bnk",
+      "payloadSha256": "73e8128a93942c59ae2f8738c239c00b1336bf33facdbd66ea7c720d1b513c0d",
+      "stingerCount": 0,
+      "durationHex": "8a24499224c9ca40",
+      "markerCountOffset": 1011289,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1011293,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1011309,
+          "timeHex": "8a24499224c9ca40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 115630149,
+      "bank": "Music.bnk",
+      "payloadSha256": "174bf183f1f84f9c140566d11f54823317f86c96525a56f30bcc8ee95c4b7281",
+      "stingerCount": 0,
+      "durationHex": "77dda7ff79a9cb40",
+      "markerCountOffset": 1011519,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1011523,
+          "timeHex": "0e20d7abad0a7c40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1011539,
+          "timeHex": "77dda7ff79a9cb40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 174093490,
+      "bank": "Music.bnk",
+      "payloadSha256": "1bd4386f71feb2c5ae7e00f307c7bae43bf7bce5a4ff7f9aa0ab541bf83d8283",
+      "stingerCount": 0,
+      "durationHex": "8b24499224c9ca40",
+      "markerCountOffset": 1011754,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1011758,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1011774,
+          "timeHex": "1c0cc33024c9ca40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 646712466,
+      "bank": "Music.bnk",
+      "payloadSha256": "35c22d53eb33c365386a3e99447f093c7777f6e0e0af0becd64a3b88e50c1c23",
+      "stingerCount": 0,
+      "durationHex": "154992244922ce40",
+      "markerCountOffset": 1012106,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1012110,
+          "timeHex": "7f24499224c99a40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1012126,
+          "timeHex": "154992244922ce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 782215404,
+      "bank": "Music.bnk",
+      "payloadSha256": "57f8b7223fb836010d045b98bb78d92d0ed410416f14fdcc431522fa10d4a075",
+      "stingerCount": 0,
+      "durationHex": "d855319de348c240",
+      "markerCountOffset": 1012420,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1012424,
+          "timeHex": "9a24499224c97a40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1012440,
+          "timeHex": "9524499224c9ba40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 64365950,
+      "bank": "Music.bnk",
+      "payloadSha256": "b5d4db5ac4dd938c315ff36295727fd4f89284772c4a0cbc89cd0efac1d7ece4",
+      "stingerCount": 0,
+      "durationHex": "aaa3cdfb14bbe240",
+      "markerCountOffset": 1013064,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1013068,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1013084,
+          "timeHex": "a6aaaaaa3a4ae140",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 776246892,
+      "bank": "Music.bnk",
+      "payloadSha256": "abacd7e98fd5358642d8803009c71a7ef6e57bab3a39d8f9de499ffd2fcca698",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaadabcce40",
+      "markerCountOffset": 1013335,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1013339,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1013355,
+          "timeHex": "98aaaaaadabcce40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 760329580,
+      "bank": "Music.bnk",
+      "payloadSha256": "31fdf27d3e46df943591b987ba92e683d579d1a1ed5db72bb7b6352984b04b05",
+      "stingerCount": 0,
+      "durationHex": "000000000044b640",
+      "markerCountOffset": 1013958,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1013962,
+          "timeHex": "0000000000207c40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1013978,
+          "timeHex": "000000000044a640",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 241247541,
+      "bank": "Music.bnk",
+      "payloadSha256": "04205049963e90403845f2efada316a79ca6676b238203a9d59bdfc9793c6e8f",
+      "stingerCount": 0,
+      "durationHex": "ddf4a637216bf640",
+      "markerCountOffset": 1014458,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1014462,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1014478,
+          "timeHex": "230b59c84266f540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1025214016,
+      "bank": "Music.bnk",
+      "payloadSha256": "48f08d325a582baaa66bc30135d7ab491c2dcba9be163fd62cfd9d2d7790c5fc",
+      "stingerCount": 0,
+      "durationHex": "000000000044b640",
+      "markerCountOffset": 1014724,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1014728,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1014744,
+          "timeHex": "0000000000a4af40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 275806037,
+      "bank": "Music.bnk",
+      "payloadSha256": "399455aa75267b5f2d9129d2f3665e25815b9900da166b55e6ada673f10b3621",
+      "stingerCount": 0,
+      "durationHex": "0e1d4593c4fdae40",
+      "markerCountOffset": 1015232,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1015236,
+          "timeHex": "88aaf56f988c5740",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1015252,
+          "timeHex": "5cad7fc3642ca840",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 697736938,
+      "bank": "Music.bnk",
+      "payloadSha256": "80f4f4a437e5a05bbdebf1a69387cd30a0beed69a2a63416f90fb351e74066de",
+      "stingerCount": 0,
+      "durationHex": "40cb104a8847b640",
+      "markerCountOffset": 1015546,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1015550,
+          "timeHex": "0000000000706740",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1015566,
+          "timeHex": "0000000000e7a840",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 880463471,
+      "bank": "Music.bnk",
+      "payloadSha256": "29de885b155fd77aef3545d9d95469a0237acd0352814a4efca8de9861fc4e7e",
+      "stingerCount": 0,
+      "durationHex": "e709eaedc37caf40",
+      "markerCountOffset": 1015812,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1015816,
+          "timeHex": "0000000000706740",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1015832,
+          "timeHex": "0000000000e7a840",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 918448924,
+      "bank": "Music.bnk",
+      "payloadSha256": "647aeb140185e4c10048ea817533801b87ac508488725148255c6e9434c690e0",
+      "stingerCount": 0,
+      "durationHex": "00000000802bb840",
+      "markerCountOffset": 1016078,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1016082,
+          "timeHex": "0000000000706740",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1016098,
+          "timeHex": "0000000000e7a840",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 973274131,
+      "bank": "Music.bnk",
+      "payloadSha256": "d716d81b9cec830cdfbd9207871150641aeee8573423b5ff9b14a9dee70c78df",
+      "stingerCount": 0,
+      "durationHex": "e8dca6c5a278b540",
+      "markerCountOffset": 1016344,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1016348,
+          "timeHex": "0000000000706740",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1016364,
+          "timeHex": "0000000000e7a840",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 58344213,
+      "bank": "Music.bnk",
+      "payloadSha256": "0ab38613c675fd6929035e7043414fd0c866a0959e04e85a2ca49a7ab4b447f8",
+      "stingerCount": 0,
+      "durationHex": "5a555555a767e140",
+      "markerCountOffset": 1016918,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1016922,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1016938,
+          "timeHex": "000000000040df40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 12395667,
+      "bank": "Music.bnk",
+      "payloadSha256": "d482818f8aac43fa6db0b2f110fb568a0de27308575aa9c834d0954b477eb77b",
+      "stingerCount": 0,
+      "durationHex": "39a426186f6dd940",
+      "markerCountOffset": 1017396,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1017400,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1017416,
+          "timeHex": "e4909a60bc95d740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 484841673,
+      "bank": "Music.bnk",
+      "payloadSha256": "3b09069c672c37ef3345619332e90a63280b6e2bbdbc8485115fe91d94dc1eab",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaa6a52c840",
+      "markerCountOffset": 1017636,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1017640,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1017656,
+          "timeHex": "e4909a60bc95c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 655402807,
+      "bank": "Music.bnk",
+      "payloadSha256": "371fbfc25782f44ae62d58c363a69d0d053712a68ab77cf878f287522cb32f29",
+      "stingerCount": 0,
+      "durationHex": "8d705b1ed94cc840",
+      "markerCountOffset": 1017876,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1017880,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1017896,
+          "timeHex": "e4909a60bc95c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 526547886,
+      "bank": "Music.bnk",
+      "payloadSha256": "2428b370cc1914a805b4ccfeef0d958f845227aee6d0b79690b965a70ea5a7de",
+      "stingerCount": 0,
+      "durationHex": "2564210b5988cc40",
+      "markerCountOffset": 1018393,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1018397,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1018413,
+          "timeHex": "2564210b5988cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 858620227,
+      "bank": "Music.bnk",
+      "payloadSha256": "a99d0ea416ae6e3e56af4690ed179a9639c323e6980d29674ba373c803a12136",
+      "stingerCount": 0,
+      "durationHex": "0000000000f9f540",
+      "markerCountOffset": 1020902,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1020906,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1020922,
+          "timeHex": "30bae8a28b4ef540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 875512136,
+      "bank": "Music.bnk",
+      "payloadSha256": "cba063695bda67dc999c5c6b001c6d610df17eff6c7228ece54aae55427b506c",
+      "stingerCount": 0,
+      "durationHex": "0000000000f9f540",
+      "markerCountOffset": 1023110,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1023114,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1023130,
+          "timeHex": "30bae8a28b4ef540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1018093257,
+      "bank": "Music.bnk",
+      "payloadSha256": "645bb7bf872528e4bd0cb7cae7414990ae46efb99557ebf8348a0fd72b94e150",
+      "stingerCount": 0,
+      "durationHex": "0000000000f9f540",
+      "markerCountOffset": 1025406,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1025410,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1025426,
+          "timeHex": "30bae8a28b4ef540",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 204994494,
+      "bank": "Music.bnk",
+      "payloadSha256": "5ade8b353ac769f95347fbf43e0cc7ecf397e4b2cc18eac9ce42d5700ee33d7c",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaa6a52c840",
+      "markerCountOffset": 1026102,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1026106,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1026122,
+          "timeHex": "e4909a60bc95c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 568547352,
+      "bank": "Music.bnk",
+      "payloadSha256": "70a39ae93620a80de36fb2a6866c932bd9674d028ce96a8ec656e247bb0588ea",
+      "stingerCount": 0,
+      "durationHex": "98aaaaaa6a52c840",
+      "markerCountOffset": 1026342,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1026346,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1026362,
+          "timeHex": "e4909a60bc95c740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 754244159,
+      "bank": "Music.bnk",
+      "payloadSha256": "6b67d9a7d86e19e6356158af309c1fd2ed92d696b2b64b8874097c1595088d25",
+      "stingerCount": 0,
+      "durationHex": "c87959c4277e0141",
+      "markerCountOffset": 1027073,
+      "markerCount": 7,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1027077,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571588,
+          "offset": 1027093,
+          "timeHex": "70ba83fd56dbdf40",
+          "nameLength": 4,
+          "nameHex": "63633100"
+        },
+        {
+          "id": 1016571591,
+          "offset": 1027113,
+          "timeHex": "5cc427904a4eeb40",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1016571590,
+          "offset": 1027133,
+          "timeHex": "0af4a25aece1ef40",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1016571585,
+          "offset": 1027153,
+          "timeHex": "3441c0f19180f440",
+          "nameLength": 4,
+          "nameHex": "63633400"
+        },
+        {
+          "id": 1016571584,
+          "offset": 1027173,
+          "timeHex": "ad9a31263f31fa40",
+          "nameLength": 4,
+          "nameHex": "63633500"
+        },
+        {
+          "id": 1539036744,
+          "offset": 1027193,
+          "timeHex": "a9da189aee100141",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 918973692,
+      "bank": "Music.bnk",
+      "payloadSha256": "7133d7a90245bfca0e583ab6cc022e2565689fe01fd029979c186ca4d4762b94",
+      "stingerCount": 0,
+      "durationHex": "020000000017b140",
+      "markerCountOffset": 1027946,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1027950,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1027966,
+          "timeHex": "899dd8899dd88c40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 342459682,
+      "bank": "Music.bnk",
+      "payloadSha256": "bf32c85bbd1770b0d63a85782d1ca2e92e10e836d0259ec755410344aa750166",
+      "stingerCount": 0,
+      "durationHex": "525555557591b940",
+      "markerCountOffset": 1028224,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1028228,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1028244,
+          "timeHex": "000000000070b740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 755006546,
+      "bank": "Music.bnk",
+      "payloadSha256": "1b61bceea37cee936528c9fa7afdcbabd131ddabf0fad35863ed6ac745ff2301",
+      "stingerCount": 0,
+      "durationHex": "aeaaaaaa5ad4bd40",
+      "markerCountOffset": 1028710,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1028714,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1028730,
+          "timeHex": "000000000070b740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 340150991,
+      "bank": "Music.bnk",
+      "payloadSha256": "8ea91c40e8d224307571e67edbfbcd92fa6241c52cc2f66d5d20769de8a4ba4a",
+      "stingerCount": 0,
+      "durationHex": "a6aaaaaad602e140",
+      "markerCountOffset": 1029196,
+      "markerCount": 3,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1029200,
+          "timeHex": "c0f7de7bef3dbe40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 0,
+          "offset": 1029216,
+          "timeHex": "c0f7de7bef3dbe40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1029232,
+          "timeHex": "c6f7de7bef3dde40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 728180549,
+      "bank": "Music.bnk",
+      "payloadSha256": "72aeeddf02d9391b346acbe98835f243a2b6ce504fb4a0e07e10df572c273bd0",
+      "stingerCount": 0,
+      "durationHex": "00000000802bf840",
+      "markerCountOffset": 1029728,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1029732,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1029748,
+          "timeHex": "000000000070f740",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 961151553,
+      "bank": "Music.bnk",
+      "payloadSha256": "1579802641eb071e5bc0440c453e44bbd815c594aaf755a6606937b17979e65e",
+      "stingerCount": 0,
+      "durationHex": "3c644bb1d294bd40",
+      "markerCountOffset": 1030207,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1030211,
+          "timeHex": "57c427904a4e7b40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1030227,
+          "timeHex": "bed5c6d07457b340",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 965831350,
+      "bank": "Music.bnk",
+      "payloadSha256": "c8d0b91cfb851102ce83918bbabcd4ce7ddcb613df6c6e72c6b71e2a13e310d7",
+      "stingerCount": 0,
+      "durationHex": "11ef5604cc8bc340",
+      "markerCountOffset": 1030526,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1030530,
+          "timeHex": "3ad86fb531348240",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1030546,
+          "timeHex": "891755dad5d1b440",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 967839455,
+      "bank": "Music.bnk",
+      "payloadSha256": "fbaeea028782bfee8ac6c9105773df61edbd4cefb327248938002b05510eab95",
+      "stingerCount": 0,
+      "durationHex": "c11b8665d16fb440",
+      "markerCountOffset": 1031098,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1031102,
+          "timeHex": "a971d8d898208240",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1031118,
+          "timeHex": "2607388f8ad19f40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 989856060,
+      "bank": "Music.bnk",
+      "payloadSha256": "08b4783bc98db1123e680c734c889903ae9f749456c05d2c699936171d20d05f",
+      "stingerCount": 0,
+      "durationHex": "5d55555555d4ad40",
+      "markerCountOffset": 1031465,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1031469,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1031485,
+          "timeHex": "882ebae8a20ba140",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 237843792,
+      "bank": "Music.bnk",
+      "payloadSha256": "670db701e7bb65944a15b00719e386b34128aeefac9ae8d660fc6e66449efdeb",
+      "stingerCount": 0,
+      "durationHex": "2564210b5988cc40",
+      "markerCountOffset": 1031731,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1031735,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1031751,
+          "timeHex": "2564210b5988cc40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1004609112,
+      "bank": "Music.bnk",
+      "payloadSha256": "b11e681869927aa697196b716b25ecc2c71845669ae1577a1b8ae78bf165a389",
+      "stingerCount": 0,
+      "durationHex": "35699d7a4c4ebb40",
+      "markerCountOffset": 1032215,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1032219,
+          "timeHex": "3ad86fb531348240",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1032235,
+          "timeHex": "8a1223df286cac40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1011808732,
+      "bank": "Music.bnk",
+      "payloadSha256": "0091af20cd83756040f3b377ef58c2c9cef82cab88c41593e9668ccb24e9a9da",
+      "stingerCount": 0,
+      "durationHex": "000000000094b140",
+      "markerCountOffset": 1032498,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1032502,
+          "timeHex": "0000000000708740",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1032518,
+          "timeHex": "00000000001db040",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1029909360,
+      "bank": "Music.bnk",
+      "payloadSha256": "bbba4e47abcc0f5380445221718d3b01c8d366157ed11c4ab4f721a3d2a5f768",
+      "stingerCount": 0,
+      "durationHex": "604a92244946b840",
+      "markerCountOffset": 1033023,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1033027,
+          "timeHex": "6fdbb66ddb168440",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1033043,
+          "timeHex": "ab24499224c9aa40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1033311162,
+      "bank": "Music.bnk",
+      "payloadSha256": "b8c6dcbc264a4652a940c56d42b517a512be328381ec7b0921d05e53843f5476",
+      "stingerCount": 0,
+      "durationHex": "5e870b097de0a140",
+      "markerCountOffset": 1033342,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1033346,
+          "timeHex": "94c4f92072a17b40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1033362,
+          "timeHex": "94c4f92072a17b40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 182741249,
+      "bank": "Music.bnk",
+      "payloadSha256": "66eef85ebfc400e0b9b758588920320fb1453a9abde28dc604c480479758728c",
+      "stingerCount": 0,
+      "durationHex": "3e815472b549ff40",
+      "markerCountOffset": 1033572,
+      "markerCount": 4,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1033576,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571588,
+          "offset": 1033592,
+          "timeHex": "5cc427904a4edb40",
+          "nameLength": 4,
+          "nameHex": "63633100"
+        },
+        {
+          "id": 1016571591,
+          "offset": 1033612,
+          "timeHex": "45d31decb77af440",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1539036744,
+          "offset": 1033632,
+          "timeHex": "4bbfd5c6d094fd40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1046715569,
+      "bank": "Music.bnk",
+      "payloadSha256": "f2edaa7617bb1422429de4ec843e9c93417fb27faefd34cc91a668e0a69e4fcf",
+      "stingerCount": 0,
+      "durationHex": "00000000804bb140",
+      "markerCountOffset": 1034174,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1034178,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1034194,
+          "timeHex": "000000000020ac40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 1051186180,
+      "bank": "Music.bnk",
+      "payloadSha256": "fee74dc9f5fecc482b83189b98d5f18e5e5735ef5844266bd5ae2cfa64798819",
+      "stingerCount": 0,
+      "durationHex": "000000000040bf40",
+      "markerCountOffset": 1034450,
+      "markerCount": 2,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1034454,
+          "timeHex": "0000000000408f40",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1539036744,
+          "offset": 1034470,
+          "timeHex": "000000000040af40",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    },
+    {
+      "id": 820907677,
+      "bank": "Music.bnk",
+      "payloadSha256": "54d428195ec5baa880ad47fe1ad55c0f20dcdf788fa17973a73ae994fa9e1a3d",
+      "stingerCount": 0,
+      "durationHex": "c87959c4277e0141",
+      "markerCountOffset": 1034965,
+      "markerCount": 7,
+      "markers": [
+        {
+          "id": 43573010,
+          "offset": 1034969,
+          "timeHex": "0000000000000000",
+          "nameLength": 0,
+          "nameHex": ""
+        },
+        {
+          "id": 1016571588,
+          "offset": 1034985,
+          "timeHex": "70ba83fd56dbdf40",
+          "nameLength": 4,
+          "nameHex": "63633100"
+        },
+        {
+          "id": 1016571591,
+          "offset": 1035005,
+          "timeHex": "5cc427904a4eeb40",
+          "nameLength": 4,
+          "nameHex": "63633200"
+        },
+        {
+          "id": 1016571590,
+          "offset": 1035025,
+          "timeHex": "0af4a25aece1ef40",
+          "nameLength": 4,
+          "nameHex": "63633300"
+        },
+        {
+          "id": 1016571585,
+          "offset": 1035045,
+          "timeHex": "3441c0f19180f440",
+          "nameLength": 4,
+          "nameHex": "63633400"
+        },
+        {
+          "id": 1016571584,
+          "offset": 1035065,
+          "timeHex": "ad9a31263f31fa40",
+          "nameLength": 4,
+          "nameHex": "63633500"
+        },
+        {
+          "id": 1539036744,
+          "offset": 1035085,
+          "timeHex": "a9da189aee100141",
+          "nameLength": 0,
+          "nameHex": ""
+        }
+      ]
+    }
+  ],
+  "boundary": "Actual segment payload count bound only. Other setters/mutable old arrays/callback inputs are not excluded; saved parser states without a proven counter contradiction remain explicit."
+}
