@@ -1,0 +1,101 @@
+{
+  "scope": "Existing760/761 positive controls only;not a teardown caller, input or Q15 completion.",
+  "source_model": "20261010-sound-weight-formed-pointer-navigation.py",
+  "source_model_sha256": "917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf",
+  "controls": [
+    {
+      "label": "761 existing music-hook load/call",
+      "target": "00984930",
+      "seed": "0097D778",
+      "input_provenance": "Existing native return/load instructions",
+      "events": [
+        {
+          "address": "0097D77C",
+          "mode": "ARM",
+          "kind": "GOT-pointer",
+          "effective": "00984930",
+          "instruction": "ldr r0, [pc, r0]",
+          "seeds": [
+            "0097D778"
+          ]
+        },
+        {
+          "address": "0097D77C",
+          "mode": "ARM",
+          "kind": "formed-r0",
+          "effective": "00984930",
+          "instruction": "ldr r0, [pc, r0]",
+          "seeds": [
+            "0097D778"
+          ]
+        },
+        {
+          "address": "0097D780",
+          "mode": "ARM",
+          "kind": "live-r0-at-call",
+          "effective": "00984930",
+          "instruction": "bl #0x9a5e64",
+          "seeds": [
+            "0097D778"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "761 existing supplied hook pointer publication",
+      "target": "00984930",
+      "seed": "009A5E64",
+      "input_provenance": "Existing761 R0 argument handoff",
+      "events": [
+        {
+          "address": "009A5E6C",
+          "mode": "ARM",
+          "kind": "possible-stored-pointer-value",
+          "effective": "00984930",
+          "instruction": "str r0, [r3, #0x100]",
+          "seeds": [
+            "009A5E64"
+          ]
+        },
+        {
+          "address": "009A5E70",
+          "mode": "ARM",
+          "kind": "possible-returned-pointer",
+          "effective": "00984930",
+          "instruction": "bx lr",
+          "seeds": [
+            "009A5E64"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "760 initialized shared-context return arm",
+      "target": "0108D8D0",
+      "seed": "0099F164",
+      "input_provenance": "Existing native return/load instructions",
+      "events": [
+        {
+          "address": "0099F16C",
+          "mode": "ARM",
+          "kind": "formed-r0",
+          "effective": "0108D8D0",
+          "instruction": "add r0, r0, #0x68",
+          "seeds": [
+            "0099F164"
+          ]
+        },
+        {
+          "address": "0099F170",
+          "mode": "ARM",
+          "kind": "possible-returned-pointer",
+          "effective": "0108D8D0",
+          "instruction": "pop {r3, r4, r5, pc}",
+          "seeds": [
+            "0099F164"
+          ]
+        }
+      ]
+    }
+  ]
+}

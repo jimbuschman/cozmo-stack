@@ -11843,3 +11843,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint845 — command1F interior entries checked
 
 `20261011-sound-queue-command31-producer-interior-disposition.md` individually attributes19 external immediate encoding candidates into9A60B8..6120 toactualARM containing words. Corrects stale nearest-owner57D4/5E64 spillover withseparateprimaryentries/returns/literals;precedingStopAll returnsbeforeitsliteral andnewproducerentry. No nonzeroinput or complete caller/alias absence proof;104/131 PARTIAL.843 conditionalstopdescriptor/root joinstaypaid.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint846 — repaired five-teardown pointer navigation
+
+`20261011-sound-teardown-formed-pointer-disposition.md` substitutesexactfive084/118 entries into812'sunchanged repaired model:14898 windows/803explicitcaps/twoalready-paidTF612 dataoffsetevents. FullGOT/ThumbMOVW/flags/FIFO andthreeexistingnativehandoff/publication/returncontrols areexplicit;older23-windowtool'sLOADmapswereintact,notmisreportedbroken. No newactualcaller orcompletealiasabsence;084/118 PARTIAL. Stopthisfiniteleadwithoutnewsourcefamilies.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
