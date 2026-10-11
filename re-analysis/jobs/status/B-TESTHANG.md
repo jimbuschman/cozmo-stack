@@ -1,6 +1,6 @@
 DONE Codex 2026-10-11
 
-After B-M3M4-4 0ff0f41f. Implementation commit will be appended after validation.
+After B-M3M4-4 0ff0f41f. Implementation commit: b3c49a50 (pushed).
 
 ## Diagnostic baseline
 
