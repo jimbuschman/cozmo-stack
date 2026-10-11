@@ -3551,3 +3551,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint875 — controlled paired/block original target observations
 
 `20261011-sound-factory-key-paired-block-disposition.md` applies874 controlled transfers to the original factory/key inputs:15,280 windows/815 caps/31 observations; cap set exactly865+870 union, no new or removed cap. Seven old scalar events plus24 byte reads:16 same HK643 bounded-array false overruns and eight actual9B227C K1/K2 reads. No new factory target/writer or runtime absence proof; mutable keys remain UNKNOWN. Stop this pass and already-attributed31 observations.024/109/134 PARTIAL for concrete population/later writes and key initialization/mutation/escape bound to admitted input.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint876 — paired literal first-seed boundary
+
+`20261011-sound-factory-key-paired-literal-disposition.md` checks874/875's omitted paired-PC first-seed form only:four encoding candidates,zero original-target/GOT-vicinity seeds,zero execution/events/caps. Three candidates are different actual Thumb/ARM instructions; duplicate-destination76B428 remains a navigation encoding with nonmatching words, without mode/admission claim. No new callee/family or arbitrary later/alias exclusion. Stop these four candidates.024/109/134 PARTIAL;117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
