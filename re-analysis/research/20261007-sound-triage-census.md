@@ -3495,3 +3495,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint861 — shared descriptor paired slot-load navigation
 
 `20261011-sound-descriptor-paired-slot-disposition.md` checks a different original024 consumer form: ARM LDRD48/4C/50 can select a4C/50 word in either loaded register.23 pairs/zero selected-register calls/zero caps within128-byte straight windows. Primary9AF358 confirms two-word mapping and later overwrite before direct call; no shared receiver/ID or all conditional/block/foreign input exclusion. SI562/760/841/842 retained;024 PARTIAL for actual descriptor-field decision consumer.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint862 — paired-load exclusion-label correction
+
+861's report now removes an overbroad unrelated-recipient exclusion label.9EB568 is a direct call outside the selected descriptor-getter candidate; this slot check makes no behavior/completion claim for it and does not waive timing/control decisions. Only guard-listed backing/free mechanisms and per-sample DSP are excluded.23 pairs/zero selected calls/zero caps and024 PARTIAL unchanged.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
