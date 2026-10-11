@@ -9,8 +9,8 @@ Manifest of **506 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 151 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 51 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 248 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 250 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 41 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,7 +28,7 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 54 | 1 | 11 | 0 | 4 | no | no |
 | M4-control — Motion, sensors, lights and cubes | 36 | 0 | 9 | 0 | 3 | yes | no |
-| M5-animation — Animation clips, scheduler and face | 47 | 3 | 33 | 0 | 1 | no | no |
+| M5-animation — Animation clips, scheduler and face | 47 | 1 | 35 | 0 | 1 | no | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 28 | 0 | 25 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 25 | 3 | 17 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 19 | 5 | 13 | 0 | 0 | no | no |
@@ -86,32 +86,14 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M5-animation — Animation clips, scheduler and face
 
-**M5-045 — Which RandomGenerator AnimationGroupContainer+0x28 is (the stream behind the group draw)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
-* effect: Which animation a weighted group draw picks.
-* rests on: Opus fix-row extraction (2026-10-11), manager ruling.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261011-m5-fix-rows.md section 8 G4: AnimationGroup ctor 0x0058A5B8 binds group+0 from container+0x28 (0x0058B49E); container ctor 0x0058B484 has no direct caller found.
-* outstanding: RECOVERABLE_GAP: read the RobotDataLoader / CozmoContext construction of AnimationGroupContainer.
-
-**M5-046 — RobotDataLoader.CollectAnimFiles.Results info order over the four file types** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
-* effect: The order of the loader's Results info lines.
-* rests on: Opus fix-row extraction (2026-10-11), manager ruling.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261011-m5-fix-rows.md section 1 L3: info 0x0051F6EA, key 0x00BE7B49, fmt 0x00BE7B72; lambda 0x00523F58..0x00523F9A.
-* outstanding: RECOVERABLE_GAP: the libc++ unordered_map<int,...> iteration order over the 4 types (the other lambdas' type values and insert order).
-
 **M5-047 — AnimationGroup entry head window before the first UseHeadAngle entry in a file (stale stack slot sp+0x20)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
 * effect: Which entry the all-on-cooldown backup picks.
 * rests on: Opus fix-row extraction (2026-10-11), manager ruling.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261011-m5-fix-rows.md section 9 B6: DefineFromJson slot sp+0x20 (0x0058A680); +0x20/+0x24 written only when UseHeadAngle (0x0058C76E); copy 0x0058A6F2..0x0058A70C; feeds the backup window B2.
-* outstanding: RECOVERABLE_GAP: not settled by any static artifact; attempt by running the loader thread under re-analysis/tools/emu/.
+* evidence: re-analysis/research/20261011-m5-fix-rows.md section 9 B6: DefineFromJson slot sp+0x20 (0x0058A680); +0x20/+0x24 written only when UseHeadAngle (0x0058C76E); copy 0x0058A6F2..0x0058A70C; feeds the backup window B2.; re-analysis/research/20261011-m5-last-reads.md R47-1..R47-3, S47-1: the head words are entry+0x20/+0x24 = sp+0x40/+0x44 in DefineFromJson; the loader emulation stopped at pthread_create (0x005246C0) before LoadAnimationGroupFile, with no values observed.
+* outstanding: RECOVERABLE_GAP: the stale words at sp+0x40/+0x44 before the first UseHeadAngle entry. The loader-thread emulation stopped at pthread_create (0x005246C0). Next attempt: run the worker job body for one group file directly on a fresh emulated stack and test whether the words depend on the poison, on prior jobs, or on heap addresses. Until then the code emits MISSING: M5-047.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -1049,6 +1031,24 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-037: TLC delete 0x0057AF8C..0x0057AF98; shared_ptr +0xC release 0x0057AFD0.; re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): TD1-TD8, TDU: ~TrackLayerComponent 0x0064ED8C frees +0x10, +0xC, +8, +4 in order, no send or log; +0xC is the UiMessageHandler subscription container (TD3-TD6, 0x004EF184); libc++_shared.so __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8.
 * outstanding: built, awaiting strong verification: B-M5-1: managed TLC release order face then face/backpack/audio storage, parameter maps last; MISSING concrete tag-B4 shared subscription release 0x0057AFD4 and exact native handle ownership; no final send/callback invented. Previous notes: IMPLEMENTATION_GAP: build the teardown order (no sends, no logs) together with M5-037.
+
+**M5-045 — Which RandomGenerator AnimationGroupContainer+0x28 is (the stream behind the group draw)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
+* effect: Which animation a weighted group draw picks.
+* rests on: Opus fix-row extraction (2026-10-11); Codex last reads R45-1..R45-5 (2026-10-11), manager spot-check of 0x004EA764..0x004EA79A, 0x0051EDAE..0x0051EDBE, 0x0058B484..0x0058B49E.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261011-m5-last-reads.md R45-1..R45-5: CozmoContext ctor allocates RandomGenerator(0) at context+0x14 (0x004EA764..0x004EA776) and builds RobotDataLoader with the context (0x004EA790..0x004EA79A); the loader passes context+0x14 to AnimationGroupContainer (0x0051EDB6..0x0051EDBA), stored at +0x28 (0x0058B49E), copied to each group+0 (0x0058B4B8, 0x0058A5C2); StartEngine reseeds the same object via CozmoContext::SetRandomSeed (0x004ECBD4..0x004ECBDA, 0x004EADA2..0x004EADBE); named SetSeed emits event app.random_seed (0x0082F8CC..0x0082F914; kv/key/fmt 0x0082F990/0x0082F998/0x0082F9A8).; re-analysis/inventory/M5-animation.md R3 (same chain, already cited).
+* outstanding: Build: the group draw uses the context RNG (context+0x14), the one instance shared with the streamer (+0xA4) and the layer managers; the stack already passes AnimationScheduler.ContextRandom to the library (CozmoAnimations.cs:277). Remove the M5-045 MISSING line. StartEngine reseeds that same instance with its random_seed word (0 = a fresh /dev/urandom draw; the app sends 0, RobotEngineManager.cs:435-442) and emits event "app.random_seed", kv {"$data": "CozmoContext"}, fmt "%u", the effective seed; build it at the stack's engine start if absent. The entropy word itself is runtime (S45-1).
+
+**M5-046 — RobotDataLoader.CollectAnimFiles.Results info order over the four file types** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
+* effect: The order of the loader's Results info lines.
+* rests on: Opus fix-row extraction (2026-10-11); Codex last reads R46-1..R46-8 with shipped libc++ map execution (2026-10-11), manager spot-check of the four lambda type immediates and the log loop 0x0051F6A4..0x0051F710.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261011-m5-last-reads.md R46-1..R46-8: collect order clips (type 0, 0x00523F5C), cubeLights (2, 0x005241E6), backpackLights (3, 0x0052429A), animationGroups (1, 0x0052434A) into unordered_map<int,vector<string>> at loader+0x44; the log walks the node list from +0x4C (0x0051F6A4..0x0051F710); executed shipped operator[] / __rehash give the chain [1,3,2,0] for a fresh map with all four types populated; info 0x0051F6EA, channel 0x00BE5216, key 0x00BE7B49, fmt 0x00BE7B72; trace re-analysis/research/20261011-m5-last-reads-emu.txt.
+* outstanding: Build: with a fresh map and all four types populated (the shipped assets), the Results infos come in type order 1, 3, 2, 0 (groups, backpack lights, cube lights, clips), each "Found %zu animation files of type %d" with the vector size and the type. Any other population or a non-fresh map (a type with no accepted file, a later collect) needs its own node history: emit a visible MISSING: M5-046 line instead of an order.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
