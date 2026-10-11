@@ -1,0 +1,11 @@
+# Q14-024 composed paired slot-load navigation, checkpoint864
+
+Scope guard reread before every step. Request `requests/20261007-codex-queue-5.md`. Original frontier remains shared frame-context4C/50 descriptor ID/field consumption. An actual getter can change parameter/selection/lifecycle decisions, so this input/register-form check qualifies. SI562/760/841,842 single-load,861 direct-pair and863 composed-block boundaries remain paid. No context/descriptor/helper body is reopened.
+
+`-navigation.py/.json` checks ADD48/4C/50→unindexed immediate LDRD from the computed base, retaining863's ARM97D000..ABC000 seed region,128-byte straight windows, MOV aliases, first branch/call stopping and conditional/mixed-mode/receiver limits. Both loaded registers receive successive4-byte offsets; pre-index writeback updates the tracked base. Unsupported post-index operand layouts, Thumb, variable/shifted/composed bases, conditional merges, later calls and cached/copied/foreign inputs remain unproved. This distinct consumer form is not842's zero-displacement single load,861's direct paired displacement or863's LDM transfer.
+
+385 seeds, zero reached paired loads of the selected operand form, zero selected-register calls,12 byte-window caps. All12 caps exactly match863's list, checked from saved JSON.863's three new pointer origins and842's nine old cap dispositions are retained, not reopened or reclassified as DSP. There is no fresh callee/input/class to descend into;861's independent primary LDRD word/register layout remains the existing transfer witness.
+
+Q14-024 remains PARTIAL, AUDIBLE. Exactly open: actual shared-context4C/50 getter ID and descriptor-field decision recipient or complete bounded supported-input exclusion proof. Zero selected paired loads in these windows is not all-input absence. Stop this composed-pair method and all already recorded single/direct-pair/block/provider fronts. Further work requires a positive original consumer or a genuinely stronger supported-input proof; do not generate another context family from the negative result.
+
+out of scope: registry/hash/backing/free infrastructure and per-sample DSP arithmetic. Timing/control decisions remain in scope.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production, fidelity, inventory, PROJECT_STATE, hardware or Q15 change.

@@ -1,0 +1,1995 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "seeds": [
+    {
+      "address": "0097D9CC",
+      "instruction": "add r2, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "0097D9D4",
+      "instruction": "add fp, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0097D9F0",
+      "instruction": "add r3, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F27C",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F2DC",
+      "instruction": "add r4, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F2E0",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F370",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F3D0",
+      "instruction": "add r4, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F3D4",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F484",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F4E4",
+      "instruction": "add r4, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0097F4E8",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009805B8",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00980618",
+      "instruction": "add r8, r8, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "0098061C",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00980D24",
+      "instruction": "add r5, r1, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00980D84",
+      "instruction": "add r4, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00980D88",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00980E08",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00980E58",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00980EB0",
+      "instruction": "add r4, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00983B88",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00983D1C",
+      "instruction": "add r3, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00983DF8",
+      "instruction": "add r3, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00983EBC",
+      "instruction": "add r1, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00984FD0",
+      "instruction": "add r2, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00985124",
+      "instruction": "add r2, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00985A58",
+      "instruction": "add r0, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099833C",
+      "instruction": "add r1, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009983E4",
+      "instruction": "add r1, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099848C",
+      "instruction": "add r2, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099A530",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "0099AB2C",
+      "instruction": "add r6, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "0099ADB0",
+      "instruction": "add r6, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "0099AFD0",
+      "instruction": "add r1, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099AFF4",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099B084",
+      "instruction": "add r2, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099B0F0",
+      "instruction": "add r1, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099B114",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099B1A4",
+      "instruction": "add r2, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099B1C4",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099B248",
+      "instruction": "add r3, r1, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099B268",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099CD84",
+      "instruction": "add r2, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099E274",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "0099E7C4",
+      "instruction": "add r0, r7, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009A34C0",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009A4478",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009A5628",
+      "instruction": "add lr, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009A570C",
+      "instruction": "add sl, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009A93F8",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AA0E4",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009AA300",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AA35C",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AAA74",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AAB18",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AB0E0",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AB184",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AD2DC",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AD2F8",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AD360",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AD3AC",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AD3C8",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009AD41C",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009AD438",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009AD700",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009AF2E4",
+      "instruction": "add r3, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009AFDA8",
+      "instruction": "add r3, r5, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009B0314",
+      "instruction": "add r3, r5, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009B058C",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B0734",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B09C4",
+      "instruction": "add r3, r5, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009B1118",
+      "instruction": "add r1, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B1130",
+      "instruction": "add r1, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B1148",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009B12D4",
+      "instruction": "add r6, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B1314",
+      "instruction": "add r1, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B132C",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009B1934",
+      "instruction": "add r0, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B1958",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B2FB0",
+      "instruction": "add sl, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009B43D8",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B47F8",
+      "instruction": "add r3, r5, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B52F8",
+      "instruction": "add r3, r8, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B6098",
+      "instruction": "add r2, fp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B63C8",
+      "instruction": "add r3, r8, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B7768",
+      "instruction": "add r1, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B7CDC",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B7E98",
+      "instruction": "add sp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B7EDC",
+      "instruction": "add r2, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B7F68",
+      "instruction": "add r3, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B7FB8",
+      "instruction": "add fp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009B8044",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B8060",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B8074",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B860C",
+      "instruction": "add r3, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B87C4",
+      "instruction": "add r3, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009B996C",
+      "instruction": "add ip, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009BB2B4",
+      "instruction": "add r3, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009BD34C",
+      "instruction": "add ip, ip, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009BF920",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009C0154",
+      "instruction": "add r7, r7, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C0228",
+      "instruction": "add r7, r7, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C04AC",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009C07E0",
+      "instruction": "add r5, sb, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C0874",
+      "instruction": "add sl, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C0968",
+      "instruction": "add r6, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C0AC4",
+      "instruction": "add r8, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C2194",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C219C",
+      "instruction": "add lr, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009C3340",
+      "instruction": "add r8, r6, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009C3BDC",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009C3DAC",
+      "instruction": "add r8, r6, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009CA670",
+      "instruction": "add r3, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009CCD80",
+      "instruction": "add r8, r6, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009CCE44",
+      "instruction": "add r8, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009CCEFC",
+      "instruction": "add r7, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009CD070",
+      "instruction": "add fp, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009CF088",
+      "instruction": "add r2, r2, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009CF308",
+      "instruction": "add r2, r2, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009CFA88",
+      "instruction": "add r3, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009CFAB0",
+      "instruction": "add r3, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009D15B0",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DA0AC",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DA1B0",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DA4C0",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DA5CC",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DA864",
+      "instruction": "add r2, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DAFA0",
+      "instruction": "add r2, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DAFF0",
+      "instruction": "add r2, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DB158",
+      "instruction": "add r1, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DB5A8",
+      "instruction": "add r2, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DB6E4",
+      "instruction": "add r2, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC07C",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC0D8",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC12C",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC15C",
+      "instruction": "add r4, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC4B8",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC4E8",
+      "instruction": "add r5, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC620",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC65C",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC6B8",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC6E8",
+      "instruction": "add r5, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC8E4",
+      "instruction": "add r7, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC95C",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DC98C",
+      "instruction": "add r6, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCAE4",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCB44",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCB68",
+      "instruction": "add r7, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCBE4",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCC10",
+      "instruction": "add sb, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCCC4",
+      "instruction": "add r3, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCCEC",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCD4C",
+      "instruction": "add r1, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCD78",
+      "instruction": "add sb, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCE28",
+      "instruction": "add r2, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DCE70",
+      "instruction": "add ip, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "009DD514",
+      "instruction": "add r2, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DD564",
+      "instruction": "add r2, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DD5EC",
+      "instruction": "add r2, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DD980",
+      "instruction": "add sl, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DDA20",
+      "instruction": "add r2, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009DE0EC",
+      "instruction": "add r2, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DE1C8",
+      "instruction": "add r5, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DE230",
+      "instruction": "add r2, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009DE3CC",
+      "instruction": "add r6, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DE460",
+      "instruction": "add r2, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009DE4F8",
+      "instruction": "add r5, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009DE560",
+      "instruction": "add r2, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009E336C",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009E37F0",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009F660C",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "009FD730",
+      "instruction": "addeq r2, r4, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "009FE7C8",
+      "instruction": "addeq r2, r4, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0B708",
+      "instruction": "add r3, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0BE18",
+      "instruction": "add ip, ip, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0C034",
+      "instruction": "add r4, r4, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0C03C",
+      "instruction": "add r6, r6, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0C174",
+      "instruction": "add r6, r6, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0C17C",
+      "instruction": "add r5, r5, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0C6C0",
+      "instruction": "add r2, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0F68C",
+      "instruction": "add sb, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A0F908",
+      "instruction": "add r7, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A1A29C",
+      "instruction": "add r2, ip, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A1A3F4",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A1A424",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A1A5A8",
+      "instruction": "add r2, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A1F670",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A1F9E0",
+      "instruction": "addne r0, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A1FD60",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A22CFC",
+      "instruction": "add fp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A2737C",
+      "instruction": "add r0, r4, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A273B0",
+      "instruction": "add r0, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A27434",
+      "instruction": "add ip, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A27490",
+      "instruction": "add r0, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A284DC",
+      "instruction": "add r6, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A284F8",
+      "instruction": "addeq r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A285AC",
+      "instruction": "add r7, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A285D4",
+      "instruction": "addeq sb, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A29F64",
+      "instruction": "add r2, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A332C0",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A34110",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A379F8",
+      "instruction": "add r3, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A381BC",
+      "instruction": "add r2, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A3BD98",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A3BF58",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A3CB44",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A3CC38",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A4115C",
+      "instruction": "add r8, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A41454",
+      "instruction": "add r7, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4195C",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A42270",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A423F4",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A42580",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A42698",
+      "instruction": "add r0, r7, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A427A4",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A42A68",
+      "instruction": "add r0, sl, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A42BB0",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A42CEC",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A434A4",
+      "instruction": "add r0, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A436EC",
+      "instruction": "add r0, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A440F4",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A44200",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4481C",
+      "instruction": "add r8, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A46A60",
+      "instruction": "add r3, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A46D20",
+      "instruction": "add ip, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A4B010",
+      "instruction": "add r5, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B05C",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B1C4",
+      "instruction": "add r2, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B210",
+      "instruction": "add r2, r2, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B228",
+      "instruction": "add sl, sl, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B2EC",
+      "instruction": "add r2, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B338",
+      "instruction": "add r2, r2, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B8D4",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4B8DC",
+      "instruction": "add sb, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4BBF0",
+      "instruction": "add r6, r6, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4BBF8",
+      "instruction": "add sb, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4C1D0",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4C224",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4CAA4",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4E980",
+      "instruction": "add sl, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4F0F8",
+      "instruction": "add r6, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4F67C",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4F6D4",
+      "instruction": "add r1, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4F738",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4F760",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A4F9B8",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A539EC",
+      "instruction": "add sl, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A54308",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A543E0",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A55024",
+      "instruction": "addne r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A55704",
+      "instruction": "addne r3, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A557D4",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A55FC8",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5610C",
+      "instruction": "add r3, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A58564",
+      "instruction": "add r1, r4, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A58640",
+      "instruction": "add r0, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A58688",
+      "instruction": "add r1, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A58728",
+      "instruction": "add r2, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A58BA0",
+      "instruction": "add r6, r6, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A58EA0",
+      "instruction": "add r7, r7, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A59AC4",
+      "instruction": "add r7, r7, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A59D9C",
+      "instruction": "add r7, r7, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A59E88",
+      "instruction": "addne r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A59F9C",
+      "instruction": "add r3, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5A0E4",
+      "instruction": "add r5, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5A1A8",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5A238",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5A2F4",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5A3D8",
+      "instruction": "add sb, r3, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5A730",
+      "instruction": "add sb, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5BAEC",
+      "instruction": "add r0, r8, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5BB40",
+      "instruction": "add ip, r8, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5BD0C",
+      "instruction": "add ip, ip, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5C370",
+      "instruction": "add ip, ip, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5E73C",
+      "instruction": "add r5, ip, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5E9D4",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5F080",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A5F298",
+      "instruction": "add r5, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A602A0",
+      "instruction": "add r5, r5, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A60664",
+      "instruction": "add r7, r7, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A606D0",
+      "instruction": "add r5, sb, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A60E10",
+      "instruction": "add r7, sl, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A61078",
+      "instruction": "add r6, r5, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A68D38",
+      "instruction": "add r3, r4, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A68FE0",
+      "instruction": "add ip, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A6C240",
+      "instruction": "add ip, ip, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A6E390",
+      "instruction": "addne ip, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A6E3B4",
+      "instruction": "add ip, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A6E580",
+      "instruction": "add r1, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A6E5F8",
+      "instruction": "add ip, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A73F88",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A74090",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A740AC",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A7886C",
+      "instruction": "add r0, r5, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A78C5C",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A78CE0",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A7FA10",
+      "instruction": "add r3, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A81488",
+      "instruction": "add r4, r0, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A8148C",
+      "instruction": "add lr, r1, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A814E4",
+      "instruction": "add r4, sl, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A816FC",
+      "instruction": "add r4, r0, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A81704",
+      "instruction": "add sl, r1, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A82E74",
+      "instruction": "add r5, fp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A830FC",
+      "instruction": "add r2, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A836A0",
+      "instruction": "add sl, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A836DC",
+      "instruction": "add sb, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A83784",
+      "instruction": "add r3, r8, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A84D08",
+      "instruction": "add r7, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A85544",
+      "instruction": "add r1, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A86418",
+      "instruction": "add r1, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A872EC",
+      "instruction": "add r1, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A89BD0",
+      "instruction": "add r4, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A89D38",
+      "instruction": "add r2, sl, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A8AA3C",
+      "instruction": "add r3, fp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A8B994",
+      "instruction": "add r3, fp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A8C708",
+      "instruction": "add fp, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A8C8CC",
+      "instruction": "add r3, sb, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A8DA40",
+      "instruction": "add r3, fp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A8E8A4",
+      "instruction": "add r3, fp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A8FF7C",
+      "instruction": "add r3, r6, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A905FC",
+      "instruction": "add r3, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A92198",
+      "instruction": "add r0, r6, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A9219C",
+      "instruction": "add r1, r6, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A922D0",
+      "instruction": "add r2, r8, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A922DC",
+      "instruction": "add r3, r8, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A92730",
+      "instruction": "add r3, r8, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A92740",
+      "instruction": "add sp, sp, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A927DC",
+      "instruction": "add r2, sb, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A927E8",
+      "instruction": "add r3, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A92CA0",
+      "instruction": "add r3, sb, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A92D4C",
+      "instruction": "add r2, sb, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A92D58",
+      "instruction": "add r3, sb, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A93260",
+      "instruction": "add r3, sb, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A95810",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A95874",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A95964",
+      "instruction": "add r7, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A96660",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A967C0",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A967D0",
+      "instruction": "add r0, r5, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A96D30",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A96E54",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A96F24",
+      "instruction": "add sl, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A974DC",
+      "instruction": "add r2, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A9994C",
+      "instruction": "add r2, sb, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A99A08",
+      "instruction": "add r2, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A99B90",
+      "instruction": "add r3, sb, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A99C90",
+      "instruction": "add r2, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A99E70",
+      "instruction": "add r3, sl, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A99FB0",
+      "instruction": "add r3, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9A820",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9A884",
+      "instruction": "add r0, r0, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9AED4",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9BD4C",
+      "instruction": "add r0, r7, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9E9A8",
+      "instruction": "add r2, r8, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9EA68",
+      "instruction": "add r2, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9EB94",
+      "instruction": "add r5, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A9EB98",
+      "instruction": "add r4, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A9ED74",
+      "instruction": "add r2, r8, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9EE3C",
+      "instruction": "add r2, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9EF7C",
+      "instruction": "add r8, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A9EF80",
+      "instruction": "add r7, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00A9EF84",
+      "instruction": "add r6, r0, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9F1A8",
+      "instruction": "add r2, r8, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A9F270",
+      "instruction": "add r2, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AA09CC",
+      "instruction": "add fp, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AA1478",
+      "instruction": "add fp, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AA3300",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AA3548",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AA4284",
+      "instruction": "add r5, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AAB9E0",
+      "instruction": "add fp, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AAD908",
+      "instruction": "add r1, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AADE8C",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AADF90",
+      "instruction": "add r0, r4, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AB036C",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB039C",
+      "instruction": "add ip, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB0624",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB0764",
+      "instruction": "add r6, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB0A9C",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB0DE0",
+      "instruction": "add r0, r4, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB0E1C",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB0FC8",
+      "instruction": "add r0, r0, #0x4c",
+      "displacement": 76
+    },
+    {
+      "address": "00AB435C",
+      "instruction": "add r5, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AB4868",
+      "instruction": "add fp, sl, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AB52D8",
+      "instruction": "add r2, r3, #0x50",
+      "displacement": 80
+    }
+  ],
+  "candidates": [],
+  "window_caps": [
+    {
+      "address": "00A22CFC",
+      "instruction": "add fp, sp, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A46A60",
+      "instruction": "add r3, r2, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A814E4",
+      "instruction": "add r4, sl, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A816FC",
+      "instruction": "add r4, r0, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A81704",
+      "instruction": "add sl, r1, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A82E74",
+      "instruction": "add r5, fp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00A836A0",
+      "instruction": "add sl, r3, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00A84D08",
+      "instruction": "add r7, r0, #0x48",
+      "displacement": 72
+    },
+    {
+      "address": "00AA09CC",
+      "instruction": "add fp, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AA1478",
+      "instruction": "add fp, sp, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AB435C",
+      "instruction": "add r5, r3, #0x50",
+      "displacement": 80
+    },
+    {
+      "address": "00AB4868",
+      "instruction": "add fp, sl, #0x50",
+      "displacement": 80
+    }
+  ],
+  "selected_pair_loads": [],
+  "limit": "Aligned ARM ADD48/4C/50 in97D000..ABC000;128-byte straight windows,MOV aliases,unindexed immediate LDRD pairs and first branch/call. Conditional alternatives,mixed modes,Thumb,shifted bases,receiver identity and runtime absence not certified."
+}

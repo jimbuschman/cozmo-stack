@@ -3503,3 +3503,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint863 — shared descriptor composed block loads
 
 `20261011-sound-descriptor-block-slot-disposition.md` checks ADD48/4C/50→LDM IA/IB/DA/DB, a form excluded by842/861:385 seeds/13 reached block loads/nine target-containing loads/zero selected-register calls/12 caps. Primary IA/writeback/DB layouts checked; nine old caps retained and three new pointer origins bounded without context-class or DSP assumptions. No actual shared getter ID/field recipient or conditional/cached/foreign absence proof;024 PARTIAL.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint864 — shared descriptor composed paired loads
+
+`20261011-sound-descriptor-composed-paired-slot-disposition.md` checks ADD48/4C/50→unindexed immediate LDRD, distinct from842/861/863:385 seeds/zero reached pairs/zero selected calls/12 caps. Saved cap list equals863 exactly; existing primary origins/dispositions retained, no new body or DSP classification.024 PARTIAL for actual descriptor ID/field decision consumer or supported-input exclusion. Stop these paid slot/provider fronts pending a positive consumer or stronger proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
