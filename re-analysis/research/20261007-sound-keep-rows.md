@@ -11991,3 +11991,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint882 — original four-key native-image declaration
 
 `20261011-sound-header-key-image-initial-disposition.md` proves the16 key bytes are in actual writable NOBITS.bss/PT_LOAD zero-fill tail,file-backed end1059028,memory end108FFB4. Raw ELF32 headers/52,521 REL records agree with LIEF;no nearby relocation/COPY or overlapping defined dynamic symbol. Four words declared zero only before initialization, not runtime constants.125 initializer entries retained as metadata,without new body/family audit.109/134 close-out now names post-initialization values/mutation/escape and admitted input;PARTIAL unchanged. Stop this declaration check.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint883 — original key bulk-call byte spans
+
+`20261011-sound-header-key-bulk-span-disposition.md` adds BL/BLX destination/count overlap for14 actual imported primitive boundaries;36 native argument fixtures pass across12 ARM sites without helper execution.15,275 original key windows yield zero bulk events/815 caps; existing31 observations remain paid865/875. Unknown arguments, unselected origins, B/BX tails and aliases remain open.109/134 PARTIAL; stop this call form.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.

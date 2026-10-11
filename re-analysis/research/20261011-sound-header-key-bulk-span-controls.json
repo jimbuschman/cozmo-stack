@@ -1,0 +1,350 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "boundary": "Real ARM BL instructions, explicit argument fixtures; no actual caller admission or helper writes certified. Length R2 for memcpy/memmove including AEABI; R1 for AEABI memset/memclr and bzero.",
+  "stubs": {
+    "004A403C": "__aeabi_memclr4",
+    "004A42AC": "__aeabi_memcpy",
+    "004A4354": "__aeabi_memcpy4",
+    "004A45DC": "__aeabi_memset",
+    "004A4600": "__aeabi_memmove",
+    "004A48AC": "__aeabi_memclr8",
+    "004A6EEC": "__aeabi_memmove4",
+    "004ABB00": "__aeabi_memset8",
+    "004AE1E8": "__aeabi_memclr",
+    "004B150C": "__aeabi_memcpy8",
+    "004B855C": "__aeabi_memset4",
+    "004D36DC": "memset",
+    "004D37F0": "memcpy",
+    "004D667C": "memmove"
+  },
+  "no_ARM_BL_control_found": [
+    "__aeabi_memset8",
+    "__aeabi_memset4"
+  ],
+  "controls": [
+    {
+      "actual_BL": "00956578",
+      "stub": "004A403C",
+      "name": "__aeabi_memclr4",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00956578",
+      "stub": "004A403C",
+      "name": "__aeabi_memclr4",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00956578",
+      "stub": "004A403C",
+      "name": "__aeabi_memclr4",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951DB4",
+      "stub": "004A42AC",
+      "name": "__aeabi_memcpy",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951DB4",
+      "stub": "004A42AC",
+      "name": "__aeabi_memcpy",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951DB4",
+      "stub": "004A42AC",
+      "name": "__aeabi_memcpy",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951DA4",
+      "stub": "004A4354",
+      "name": "__aeabi_memcpy4",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951DA4",
+      "stub": "004A4354",
+      "name": "__aeabi_memcpy4",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951DA4",
+      "stub": "004A4354",
+      "name": "__aeabi_memcpy4",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095D194",
+      "stub": "004A45DC",
+      "name": "__aeabi_memset",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095D194",
+      "stub": "004A45DC",
+      "name": "__aeabi_memset",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095D194",
+      "stub": "004A45DC",
+      "name": "__aeabi_memset",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00954A40",
+      "stub": "004A4600",
+      "name": "__aeabi_memmove",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00954A40",
+      "stub": "004A4600",
+      "name": "__aeabi_memmove",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00954A40",
+      "stub": "004A4600",
+      "name": "__aeabi_memmove",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951048",
+      "stub": "004A48AC",
+      "name": "__aeabi_memclr8",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951048",
+      "stub": "004A48AC",
+      "name": "__aeabi_memclr8",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951048",
+      "stub": "004A48AC",
+      "name": "__aeabi_memclr8",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951508",
+      "stub": "004A6EEC",
+      "name": "__aeabi_memmove4",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951508",
+      "stub": "004A6EEC",
+      "name": "__aeabi_memmove4",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00951508",
+      "stub": "004A6EEC",
+      "name": "__aeabi_memmove4",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095C134",
+      "stub": "004AE1E8",
+      "name": "__aeabi_memclr",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095C134",
+      "stub": "004AE1E8",
+      "name": "__aeabi_memclr",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095C134",
+      "stub": "004AE1E8",
+      "name": "__aeabi_memclr",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00952974",
+      "stub": "004B150C",
+      "name": "__aeabi_memcpy8",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00952974",
+      "stub": "004B150C",
+      "name": "__aeabi_memcpy8",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "00952974",
+      "stub": "004B150C",
+      "name": "__aeabi_memcpy8",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "008FD678",
+      "stub": "004D36DC",
+      "name": "memset",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "008FD678",
+      "stub": "004D36DC",
+      "name": "memset",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "008FD678",
+      "stub": "004D36DC",
+      "name": "memset",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "008FF42C",
+      "stub": "004D37F0",
+      "name": "memcpy",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "008FF42C",
+      "stub": "004D37F0",
+      "name": "memcpy",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "008FF42C",
+      "stub": "004D37F0",
+      "name": "memcpy",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095FB7C",
+      "stub": "004D667C",
+      "name": "memmove",
+      "fixture_destination": "0108D998",
+      "fixture_count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095FB7C",
+      "stub": "004D667C",
+      "name": "memmove",
+      "fixture_destination": "0108D998",
+      "fixture_count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_BL": "0095FB7C",
+      "stub": "004D667C",
+      "name": "memmove",
+      "fixture_destination": "0108D9A0",
+      "fixture_count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    }
+  ]
+}
