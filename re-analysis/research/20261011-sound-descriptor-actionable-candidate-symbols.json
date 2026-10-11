@@ -1,0 +1,14 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "symbols": [
+    {
+      "value": "004DF289",
+      "name": "_ZN4Anki5Cozmo16ActionableObjectC2Ev"
+    },
+    {
+      "value": "004DF2C1",
+      "name": "_ZNK4Anki5Cozmo16ActionableObject20IsPreActionPoseValidERKNS0_13PreActionPoseEPKNS_6Pose3dERKNSt6__ndk16vectorINS8_4pairINS_13QuadrilateralILj2EfEENS_8ObjectIDEEENS8_9allocatorISE_EEEE"
+    }
+  ],
+  "boundary": "ELF symbol identity plus candidate return-data cut; not whole ActionableObject behavior or a receiver-class/other-caller census."
+}

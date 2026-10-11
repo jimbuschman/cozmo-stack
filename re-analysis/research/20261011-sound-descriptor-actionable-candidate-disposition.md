@@ -1,0 +1,11 @@
+# Q14-024 selected-slot return-data cut, checkpoint872
+
+Scope guard reread before each step. This checks the saved DE656 candidate4DF51C/4DF520, not a new robot/object family or a repeat of the9903F0 receiver search. A true getter result feeding descriptor fields would qualify; a coincident slot offset alone does not.
+
+Primary `-native.txt` and `-symbols.json`, engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Actual ELF symbol at4DF2C1 declares Anki::Cozmo::ActionableObject::IsPreActionPoseValid with its compiled parameter types; Thumb body entry4DF2C0 saves incomingR0 toFP. This is primary ELF identity, not a name inferred from Ghidra. The named owner does not by itself establish every receiver/virtual target, and none is substituted for101BFA0.
+
+At4DF50C..51C load [FP],read table−C,addFP to that offset,load the adjusted object's table and select50. Then BLX R6 at4DF520. Immediately4DF522 overwrites R0 with [SP,8];4DF524 LDRD R5,R6,[R0] therefore reads that reloaded local pointer, not the virtual result. Later4DF52C again reloads [FP]; the following branch/loop uses saved iterator/end values and setsR6=0/1. No descriptor-field dereference of the slot call's returned R0 occurs at the allegedly adjacent load.
+
+This rejects the candidate as an immediate returned-descriptor field-read witness. It does not certify the complete virtual target, the local output's construction/alias contract, all side effects or alternate callers, or every possible route through this robot function. Do not descend into its pose/geometry/virtual-target bodies from this rejected audio-getter lead, or call their behaviour bookkeeping/out of scope as a substitute for proof. Timing/control and robot behaviour are not waived. SI562's actual getter signatures and DP869/870's concrete population inputs remain independent.
+
+Q14-024 remains PARTIAL, AUDIBLE, for the current close-out's concrete population and actual shared4C/50 getter ID/field consumer or supported-input exclusion. Stop this one return-data candidate. out of scope: storage/hash/backing and per-sample DSP implementations.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production, fidelity, inventory, PROJECT_STATE, hardware or Q15 change.
