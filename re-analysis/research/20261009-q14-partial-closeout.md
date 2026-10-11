@@ -598,3 +598,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint809 - omitted MOVW GOT-address seeds
 
 `20261010-sound-rate-frame-movw-got-delta-disposition.md` pays the known narrow MOVW seed-filter limitation with31814 additional disjoint windows/1118 caps. Three events are existing byte controls at108DF98,reopened in primary source;zero new identities. Combined52620 windows/2116 caps/310 events is still bounded navigation,not all-writer/alias/input absence. Original six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint810 - weight-setter PC-relative address forms
+
+`20261010-sound-weight-pc-address-disposition.md` pays the explicit direct-PC address-construction lead forA08024:17639 ARM immediateADD/SUB,17041 ThumbADR16,and1073 ThumbADDW/SUBW candidates;zero selected target values. This bounded encoding result supplies no runtime node/childID/weight or indirect absence proof.008 remains PARTIAL/AUDIBLE;stop the finite lead.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
