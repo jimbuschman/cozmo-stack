@@ -850,3 +850,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Read, now IMPLEMENTATION_GAP | M5-040, M5-043, M5-044 |
 | ProceduralLive only via game-to-engine PushIdleAnimation (stack API input) | M5-030 |
+
+
+## Fix rows (manager, 2026-10-11; research/20261011-m5-fix-rows.md)
+
+| Change | Records |
+| --- | --- |
+| Fix rows adopted | M5-001..041 as listed in the rows file |
+| M5-014 corrected (clock, B6 inheritance) | M5-014 |
+| New RECOVERABLE_GAP | M5-045 group RNG instance, M5-046 Results order, M5-047 pre-first head window |

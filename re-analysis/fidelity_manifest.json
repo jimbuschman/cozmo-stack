@@ -117,7 +117,7 @@
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
-      "source_investigation_exhausted": true,
+      "source_investigation_exhausted": false,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -1840,7 +1840,8 @@
         "gap1 C3..C6 container, LoadAnimationFile 0x00521308..0x005215B4, CollectAnimFiles 0x0051F4C8..0x0051F6A0",
         "gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips",
         "R-ANIM pre-extraction part 1 item 1 F1..T3: FaceAnimation 0x004F9434, Event 0x004FA8B8, DeviceAudio 0x004FA658, RecordHeading 0x004FBB54, TurnToRecordedHeading 0x004FBF2C; CheckRotationSpeed 0x004FBBE6",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-001 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-001 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 1 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_001_D1_C1_C2_ARejectedKeyframeEndsTheLoadAndKeepsWhatCameBefore, M5AnimationTests.M5_001_J1_TheFourShippedJsonClipsLoad, AnimationAssetTests, M5AnimationTests.M5_001_P1_TheProceduralNameIsSkipped, M5AnimationTests.M5_001_F2_E2_D2_R1_T2_TheFiveJsonKeyframeReaders, M5AnimationTests.M5_001_F2_E2_D2_AnInvalidJsonKeyframeEndsTheLoadKeepingWhatCameBefore",
@@ -1859,7 +1860,8 @@
       "evidence": [
         "C6 SetFromFlatBuf 0x005838D0..0x00583AAC; SetFacePosition 0x00583B20..0x00583BF8",
         "gap3 K4 ProceduralFace() 0x00583660..0x005836A0 (table 0x00C5A970 = {2,3})",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-002 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-002 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 2 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_002_K4_TheDefaultFace, M5AnimationTests.M5_002_C6_SetFromFlatBufRules, M5AnimationTests.M5_002_C2_TheCentreIsClampedBeforeTheScaleIsSet",
@@ -1881,7 +1883,8 @@
         "C9 Clip table 0x00C5A97C (0x005847A8..0x00584908)",
         "C10 Combine 0x00584648..0x0058478E",
         "gap1 G10 distorter through layering",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-003 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-003 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 3 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_003_C7_GetFaceHelper, M5AnimationTests.M5_003_C8_C9_G10_InterpolateAndClip, M5AnimationTests.M5_003_C10_Combine, M5AnimationTests.M5_002_C2_TheCentreIsClampedBeforeTheScaleIsSet",
@@ -1940,7 +1943,8 @@
         "C5 0x004FBA8C..0x004FBB0E",
         "gap1 S1 0x004FB1A8..0x004FB3FE",
         "R-ANIM pre-extraction part 1 item 2 B1..B6: ProcessRadiusString 0x004FB588, compare 0x004FCB48",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-006 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-006 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 4 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_006_C4_S1_TheRadiusStringAndTheSpeedClamps, M5AnimationTests.M5_006_C5_TheStopGoesOnTheFirstFrameWithTheCounterAtTheDuration, AnimationTests.AZeroLengthBodyKeyframeIsNotStoppedButAStationaryOneIs, M5AnimationTests.M5_006_B3_B5_AJsonRadiusStringMustBeATokenAndANumberIsNot, AnimationGapTests.TheRadiusTokenIsEncodedExactlyAsTheEngineDoes, AnimationGapTests.AnUnknownRadiusTokenIsRefusedRatherThanGuessedAt",
@@ -1983,7 +1987,8 @@
         "A9 0x0057B2D4..0x0057B2F6, 0x0057B660..0x0057B672",
         "A13 0x0057CFF6..0x0057D036",
         "A27 0x0057ED0E..0x0057ED2A",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-008 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-008 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 5 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_008_A4_A5_A9_RefuseInterruptAndTheTags, M5AnimationTests.M5_008_A13_EachLoopReInitsWithTheSameTag, M5AnimationTests.M5_008_A27_ReplayLastAnimation, AnimationGapTests.TheTagCounterWrapsPastZeroAndFf",
@@ -2001,7 +2006,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C13 0x004F9E54..0x004FA05C",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-009 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-009 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 6 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_009_C13_TheAudioKeyframeLoadRules",
@@ -2022,7 +2028,8 @@
         "A30 0x0057BA60..0x0057BD6E",
         "A31 0x0057CF6A..0x0057CFF2",
         "R-ANIM pre-extraction part 1 item 3 P1..P8: _resetData GOT 0x103ED4C, Reset 0x0058359C, TLC::Init 0x0064EDE2, streamer ctor 0x0057A0D4..0x0057A288, default face 0x00583660",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-010 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-010 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 7 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_010_A2_TheNeutralFaceIsTheLayerBase, M5AnimationTests.M5_010_A6_A31_TheNeutralFaceIsReplayedAfterACancel, M5AnimationTests.M5_010_P1_P2_WithoutANeutralFaceTheLayerBaseStaysTheDefault",
@@ -2043,7 +2050,8 @@
         "D5 0x0058A946..0x0058AB2E",
         "D6 0x0058AB30..0x0058AE2A",
         "R-ANIM pre-extraction part 1 item 4 4.1..4.12: group loop 0x0058A622..0x0058A73C, entry DefineFromJson 0x0058C4CC..0x0058C7D2, ctor 0x0058C4B0, backup 0x0058AC2A",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-011 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-011 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 8 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_011_D5_TheWeightedDraw, AnimationTests.AGroupPicksByWeightAndFallsBackWhenAMoodMatchesNothing, AnimationAssetTests.AnimationGroupsLoadAndChooseOnlyRealClips, M5AnimationTests.M5_011_4_4_4_10_TheGroupLoaderRejectsInvalidEntriesAndContinues",
@@ -2102,14 +2110,15 @@
         "D6 0x0058AB30..0x0058AE2A",
         "D7 0x0058BA28..0x0058BA98",
         "R-ANIM pre-extraction part 1 item 4 4.8..4.12: CooldownTime default 0x0058C868, UseHeadAngle 0x0058C734, HeadAngle 0x0058C770, backup 0x0058AC2A",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-014 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-014 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md sections 8-9 (Opus extraction, manager-adopted 2026-10-11): G1 0x0058A95C, 0x0067B67E, 0x00513BE6..0x00513BEA, 0x00513E8A; B1-B6 0x0058ABBA..0x0058ADBA, 0x0058BA54..0x0058BA7C, 0x0058C70C..0x0058C726, 0x0058A680, 0x0058C76E, 0x0058A6F2..0x0058A70C."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_014_D6_TheDefaultBackup, M5AnimationTests.M5_014_D7_TheCooldownIsSharedByName, AnimationGroupGateTests.TheHeadAngleGateDropsEntriesOutsideTheirWindow, AnimationGroupGateTests.WhenEverythingIsOnCooldownTheSoonestIsTaken, AnimationGroupGateTests.AnEntryWithoutUseHeadAngleNeverQualifiesForTheBackup",
       "id": "M5-014",
       "effect": "clips repeat or are skipped differently",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The cooldown map (GroupContainer) is keyed by animation name and shared by every group of the library (D7: on cooldown iff end > now); the Default backup (D6, not strict) is the Default entry with the smallest TimeUntilCooldownOver among those whose [min - 0.05, max + 0.05] rad window holds the head angle, whatever their UseHeadAngle, with no cooldown set; without one, the first entry; strict gives nothing. Verify round 3 (2026-09-29, C5 item 4): the Default-mood backup skips an entry without UseHeadAngle (the forced policy SD2 for its uninitialised +0x20/+0x24), so when none qualifies the backup falls to the first entry.",
-      "unresolved": "Settling pass 2026-10-11: DEFECT, fix per re-analysis/research/20261011-m5-settling-pass.md row M5-014. No defaults for Weight, Mood or HeadAngleMin/Max (C5). For an entry without UseHeadAngle the head-angle fields are uninitialised stack; the forced choice (SD2) is that such an entry is outside every head window, so the backup falls to the first entry - put to the policy review. The cooldown time is MoodManager+0x130 (M7): unset, this machine's monotonic clock stands in.",
+      "unresolved": "Fix rows re-analysis/research/20261011-m5-fix-rows.md sections 8-9 and ruling 2 (2026-10-11): build B1-B5, TUCO and the B6 inheritance; the cooldown clock is BaseStationTimer seconds at MoodManager+0x130 (G1). The window before the first UseHeadAngle entry is stale stack (M5-047): emit MISSING there. Settling pass 2026-10-11: DEFECT, fix per re-analysis/research/20261011-m5-settling-pass.md row M5-014. No defaults for Weight, Mood or HeadAngleMin/Max (C5).",
       "hardware_required": false
     },
     {
@@ -2142,7 +2151,8 @@
         "C17 GetColorOptional 0x0084024C..0x0084050C; encoding 0x004FABDC..0x004FAC12",
         "C18 0x004FAC7C..0x004FADB6, 0x004FB0F4..0x004FB11A; 7140 keyframes in 111 shipped clips",
         "R-ANIM pre-extraction part 1 item 6 6.1..6.5: GetByString 0x0083F780, table 0x0105DFE0, GetColorOptional 0x0084024C",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-016 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-016 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 10 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "effect": "the backpack lights ignore or misplay animations",
@@ -2159,7 +2169,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C14 0x004F9AEC..0x004F9CBE, 0x004F9DAC..0x004F9DFC",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-017 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-017 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 11 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "test": "AnimationGapTests.TheAlternativeIsChosenByProbabilityAsTheEngineDoes, AnimationGapTests.AnUnproducibleChosenAlternativeIsSimplySilent, AnimationGapTests.AClipWithProbabilitiesPlaysTheWeightedAlternativeNotTheFirst",
@@ -6147,7 +6158,8 @@
         "A24 0x0057B442..0x0057B58A",
         "A25 0x0057D122..0x0057D1DE",
         "R-ANIM pre-extraction part 1 item 8 8a..8c: choice 0x0057B418..0x0057B430, reset 0x0057B562",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-023 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-023 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 12 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "status": "IMPLEMENTATION_GAP",
       "unresolved": "Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-023 (logs: exact rows to be extracted). Settled (C5): the streaming animation's keyframe is reset when +0x38 is set, else the idle's.",
@@ -6499,7 +6511,8 @@
         "A11 0x0057B6A8..0x0057B738, 0x0057B804..0x0057B828",
         "A12 0x0057B784..0x0057B7F8",
         "gap1 L7",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-024 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-024 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 13 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "animations start differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -6560,7 +6573,8 @@
         "A29 0x0057D064..0x0057D448",
         "A30 0x0057B914..0x0057BD6E",
         "R-ANIM pre-extraction part 1 item 9 9a..9c: +0x64 writers 0x00579FC6, 0x0057B926, 0x0057BD66, 0x0057D022, 0x0057D3F6; drain 0x0057D168; HasResponse 0x00670AD0",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-027 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-027 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 14 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "idle behaviour differs",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -6580,7 +6594,8 @@
         "A31 0x0057CF6A..0x0057CFF2; A32 0x0057A050, 0x0057E010; A33 0x0058D374..0x0058D558; A34 0x0057DB40..0x0057DCD6",
         "gap1 K1..K9 GenerateEyeShift 0x0058D10E.., LookAt 0x00584158..0x0058428A, GetNextBlinkFrame table 0x00C5AAD8",
         "gap2 Q1.7..Q1.10 StreamLayers 0x0057C4F6..0x0057C680",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-028 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-028 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 15 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "the idle face behaves differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -6600,7 +6615,8 @@
         "gap1 L1..L8 0x0058E630..0x0058EC6C",
         "gap2 Q1.1..Q1.6 0x0064F4FE..0x0064F518, 0x0058E66E..0x0058E77C, 0x0064EFA8..0x0064F22C",
         "gap3 K5 Remove end keyframe",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-029 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-029 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 16 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "layered faces behave differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -6620,7 +6636,8 @@
         "A35 0x0057D5F8..0x0057DA82",
         "gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-030 (Opus settling pass, manager-adopted 2026-10-11).",
-        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): PL1-PL19, PLU: ProceduralLive 0x198 is pushed only through GameToEngine PushIdleAnimation (tag 174, 0x0057EC1A..0x0057EC32); no fixed native caller or shipped config produces 0x198."
+        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): PL1-PL19, PLU: ProceduralLive 0x198 is pushed only through GameToEngine PushIdleAnimation (tag 174, 0x0057EC1A..0x0057EC32); no fixed native caller or shipped config produces 0x198.",
+        "re-analysis/research/20261011-m5-fix-rows.md section 17 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "the live idle moves differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -6660,7 +6677,8 @@
         "gap1 D4, D5",
         "gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)",
         "R-ANIM pre-extraction part 1 item 10 10a..10e: GetTransformationMatrix 0x00584FF8, InputArray 0x00585C84, warpAffine imgproc 0x0008193C",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-032 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-032 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 18 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "the face is drawn with different pixels",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -6680,7 +6698,8 @@
         "C15 0x004FA7A0..0x004FA852",
         "C19 0x004FBB58..0x004FBB82, 0x004FBE2C..0x004FBF28",
         "gap1 S2 0x004FBBDC..0x004FBDAC",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-033 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-033 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 19 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "event and heading keyframes behave differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -6698,7 +6717,8 @@
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
       "evidence": [
         "gap1 C7 0x00670438..0x0067075C; GetResponse 0x00670810..0x00670920",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-034 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-034 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 20 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "effect": "a trigger plays a different group",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
@@ -9787,7 +9807,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 ready-byte writer and SyncTimeAck.",
       "evidence": [
         "Ready store 0x0052C3A6; SyncTimeAck 0x0053667E..0x005366AC; streaming gate 0x00513BF2..0x00514470; exact consumer span UNKNOWN (triage N2).",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-039 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-039 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-fix-rows.md section 21 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "unresolved": "IMPLEMENTATION_GAP (ruling 4.4): Robot::Update gates AnimationStreamer::Update on robot+0x2A and +0x29; return the results of Update/UpdateStream/StreamLayers and log Robot.Update.AnimationStreamer per re-analysis/research/20261011-m5-settling-pass.md row M5-039.",
       "hardware_required": false,
@@ -9822,7 +9843,8 @@
       "provenance": "Opus settling pass (2026-10-11), manager-adopted.",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-001 and section 2 N2: 0x0057C876..0x0057C8E0."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-001 and section 2 N2: 0x0057C876..0x0057C8E0.",
+        "re-analysis/research/20261011-m5-fix-rows.md section 22 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
       "unresolved": "IMPLEMENTATION_GAP: build; the device-audio playback itself is M6's, named as a handoff.",
       "hardware_required": false,
@@ -9878,6 +9900,57 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): TD1-TD8, TDU: ~TrackLayerComponent 0x0064ED8C frees +0x10, +0xC, +8, +4 in order, no send or log; +0xC is the UiMessageHandler subscription container (TD3-TD6, 0x004EF184); libc++_shared.so __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8."
       ],
       "unresolved": "IMPLEMENTATION_GAP: build the teardown order (no sends, no logs) together with M5-037.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-045",
+      "subsystem": "M5-animation",
+      "title": "Which RandomGenerator AnimationGroupContainer+0x28 is (the stream behind the group draw)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "Which animation a weighted group draw picks.",
+      "provenance": "Opus fix-row extraction (2026-10-11), manager ruling.",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261011-m5-fix-rows.md section 8 G4: AnimationGroup ctor 0x0058A5B8 binds group+0 from container+0x28 (0x0058B49E); container ctor 0x0058B484 has no direct caller found."
+      ],
+      "unresolved": "RECOVERABLE_GAP: read the RobotDataLoader / CozmoContext construction of AnimationGroupContainer.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-046",
+      "subsystem": "M5-animation",
+      "title": "RobotDataLoader.CollectAnimFiles.Results info order over the four file types",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "The order of the loader's Results info lines.",
+      "provenance": "Opus fix-row extraction (2026-10-11), manager ruling.",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261011-m5-fix-rows.md section 1 L3: info 0x0051F6EA, key 0x00BE7B49, fmt 0x00BE7B72; lambda 0x00523F58..0x00523F9A."
+      ],
+      "unresolved": "RECOVERABLE_GAP: the libc++ unordered_map<int,...> iteration order over the 4 types (the other lambdas' type values and insert order).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-047",
+      "subsystem": "M5-animation",
+      "title": "AnimationGroup entry head window before the first UseHeadAngle entry in a file (stale stack slot sp+0x20)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
+      "status": "RECOVERABLE_GAP",
+      "effect": "Which entry the all-on-cooldown backup picks.",
+      "provenance": "Opus fix-row extraction (2026-10-11), manager ruling.",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261011-m5-fix-rows.md section 9 B6: DefineFromJson slot sp+0x20 (0x0058A680); +0x20/+0x24 written only when UseHeadAngle (0x0058C76E); copy 0x0058A6F2..0x0058A70C; feeds the backup window B2."
+      ],
+      "unresolved": "RECOVERABLE_GAP: not settled by any static artifact; attempt by running the loader thread under re-analysis/tools/emu/.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
