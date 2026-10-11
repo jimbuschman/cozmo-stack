@@ -1,0 +1,16 @@
+{
+  "baseline": "807 narrow GOT bounds",
+  "new": "808 ELF-derived full GOT bounds; same MOVW filter and local limits",
+  "baselineEvents": 310,
+  "newEvents": 310,
+  "baselineCaps": 435,
+  "newCaps": 998,
+  "baselineWindowCount": [
+    "6855"
+  ],
+  "newWindowCount": [
+    "20806"
+  ],
+  "added": [],
+  "missing": []
+}

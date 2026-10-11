@@ -3276,3 +3276,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint807 - explicit Thumb compare-and-branch navigation
 
 `20261010-sound-rate-frame-cbz-disposition.md` fixes the803 model's omitted CBZ/CBNZ target successors using primary shipped audio-control opcode witnesses. Same6855 windows/310 events,zero added or missing;caps434->435. No writer/admission/alias absence proof;804's independently recovered stack-alias reads remain outside this generic model. Original six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint808 - actual GOT section bounds for rate/frame navigation
+
+`20261010-sound-rate-frame-full-got-disposition.md` corrects the original model's1280-byte guessed GOT range to the independently witnessed75892-byte shipped section.20806 windows/998 caps/310 events;zero added or missing versus807. MOVW seed filter remains explicitly limited; no writer/alias/input absence proof or closure. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

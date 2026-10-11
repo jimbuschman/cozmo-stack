@@ -1,0 +1,22 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "sections": [
+    {
+      "name": ".got",
+      "virtual_address": "0103E78C",
+      "size": 75892,
+      "file_offset": 17029004,
+      "end": "01051000",
+      "sha256": "028f3d67d2009f718545b453c3cf7b3a3047357e61f38f737226dc9f9fe83766"
+    }
+  ],
+  "old_bounds": [
+    "0103FF00",
+    "01040400"
+  ],
+  "new_bounds": [
+    "0103E78C",
+    "01051000"
+  ],
+  "scope": "Raw ELF pointer navigation; no runtime resolver winner or alias absence proof."
+}
