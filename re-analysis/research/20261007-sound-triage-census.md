@@ -3320,3 +3320,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint818 - native startup zero-input conditions
 
 `20261011-sound-startup-frame-zero-disposition.md` joins the adapter's1024-frame/rounding1 product to11 original rounding cases and8 native setter/query cases. Conditional quantum2049 rounds to0;positive duration1001 yields second divisor0;binary32 rate1024/frame1024 stores999. External phone inputs and actual provider/raise binding remain UNKNOWN;fixtures are not actual-input admission proof. Six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint819 - publication observations at existing rate/frame seeds
+
+`20261011-sound-rate-frame-publication-disposition.md` checks stored/returned full pointer values at160 existing observation seeds only:one candidate,the already-paid804 stack alias9D5B64. All310 predecessor identities retained;15 local caps and other alias/input limitations stay explicit. No new receiver/writer,unreachability or scope-based promotion. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

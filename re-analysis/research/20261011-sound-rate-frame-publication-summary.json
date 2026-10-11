@@ -1,0 +1,21 @@
+{
+  "selected_seed_windows": 160,
+  "state_caps": 15,
+  "total_events": 456,
+  "baseline_event_count": 310,
+  "added_baseline_events": 0,
+  "missing_baseline_events": 0,
+  "publication_observations": [
+    {
+      "address": "009D5B64",
+      "mode": "ARM",
+      "kind": "possible-stored-pointer-value",
+      "effective": "0105243C",
+      "instruction": "str r0, [sp, #0x18]",
+      "seeds": [
+        "009D5974"
+      ]
+    }
+  ],
+  "scope": "Existing808/809 observation seeds only;not new executable sweep or all-writer/alias/input proof."
+}
