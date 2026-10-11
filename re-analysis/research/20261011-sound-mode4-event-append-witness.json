@@ -1,0 +1,201 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "boundary": "Actual9CCD20 body with explicit supplied Event/Action/index shapes. Mutex and UIDIVMOD interfaces are fixture boundaries; numerical provider/signal bodies not executed. No actual caller/ID/Event admission, publication, later mutation, concurrency or cycle reachability is certified.",
+  "cases": [
+    {
+      "case": "zero ID",
+      "returnR0": 14,
+      "event_head": "00000000",
+      "event14": "A5A5A5A5",
+      "action_refC": "FFFFFFFF",
+      "action_next10": "20007000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "00000000",
+      "interfaces": []
+    },
+    {
+      "case": "empty index",
+      "returnR0": 2,
+      "event_head": "00000000",
+      "event14": "A5A5A5A5",
+      "action_refC": "FFFFFFFF",
+      "action_next10": "20007000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "00000000",
+      "interfaces": [
+        {
+          "boundary": "004D3064",
+          "R0": "20004050",
+          "R1": "0000002A"
+        },
+        {
+          "boundary": "004D3070",
+          "R0": "20004050",
+          "R1": "00000000"
+        }
+      ]
+    },
+    {
+      "case": "empty bucket",
+      "returnR0": 2,
+      "event_head": "00000000",
+      "event14": "A5A5A5A5",
+      "action_refC": "FFFFFFFF",
+      "action_next10": "20007000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "00000000",
+      "interfaces": [
+        {
+          "boundary": "004D3064",
+          "R0": "20004050",
+          "R1": "0000002A"
+        },
+        {
+          "boundary": "004A6694",
+          "R0": "0000002A",
+          "R1": "00000001"
+        },
+        {
+          "boundary": "004D3070",
+          "R0": "20004050",
+          "R1": "00000000"
+        }
+      ]
+    },
+    {
+      "case": "missing key",
+      "returnR0": 2,
+      "event_head": "00000000",
+      "event14": "A5A5A5A5",
+      "action_refC": "FFFFFFFF",
+      "action_next10": "20007000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "00000000",
+      "interfaces": [
+        {
+          "boundary": "004D3064",
+          "R0": "20004050",
+          "R1": "0000002A"
+        },
+        {
+          "boundary": "004A6694",
+          "R0": "0000002A",
+          "R1": "00000001"
+        },
+        {
+          "boundary": "004D3070",
+          "R0": "20004050",
+          "R1": "00000000"
+        }
+      ]
+    },
+    {
+      "case": "empty event",
+      "returnR0": 1,
+      "event_head": "20002000",
+      "event14": "A5A5A5A5",
+      "action_refC": "00000000",
+      "action_next10": "00000000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "00000000",
+      "interfaces": [
+        {
+          "boundary": "004D3064",
+          "R0": "20004050",
+          "R1": "0000002A"
+        },
+        {
+          "boundary": "004A6694",
+          "R0": "0000002A",
+          "R1": "00000001"
+        },
+        {
+          "boundary": "004D3070",
+          "R0": "20004050",
+          "R1": "00000000"
+        }
+      ]
+    },
+    {
+      "case": "existing different tail",
+      "returnR0": 1,
+      "event_head": "20003000",
+      "event14": "A5A5A5A5",
+      "action_refC": "00000000",
+      "action_next10": "00000000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "20002000",
+      "interfaces": [
+        {
+          "boundary": "004D3064",
+          "R0": "20004050",
+          "R1": "0000002A"
+        },
+        {
+          "boundary": "004A6694",
+          "R0": "0000002A",
+          "R1": "00000001"
+        },
+        {
+          "boundary": "004D3070",
+          "R0": "20004050",
+          "R1": "00000000"
+        }
+      ]
+    },
+    {
+      "case": "already same action",
+      "returnR0": 1,
+      "event_head": "20002000",
+      "event14": "A5A5A5A5",
+      "action_refC": "00000000",
+      "action_next10": "20002000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "00000000",
+      "interfaces": [
+        {
+          "boundary": "004D3064",
+          "R0": "20004050",
+          "R1": "0000002A"
+        },
+        {
+          "boundary": "004A6694",
+          "R0": "0000002A",
+          "R1": "00000001"
+        },
+        {
+          "boundary": "004D3070",
+          "R0": "20004050",
+          "R1": "00000000"
+        }
+      ]
+    },
+    {
+      "case": "first duplicate key",
+      "returnR0": 1,
+      "event_head": "20002000",
+      "event14": "A5A5A5A5",
+      "action_refC": "00000000",
+      "action_next10": "00000000",
+      "second_action_refC": "00000011",
+      "second_action_next10": "00000000",
+      "interfaces": [
+        {
+          "boundary": "004D3064",
+          "R0": "20004050",
+          "R1": "0000002A"
+        },
+        {
+          "boundary": "004A6694",
+          "R0": "0000002A",
+          "R1": "00000001"
+        },
+        {
+          "boundary": "004D3070",
+          "R0": "20004050",
+          "R1": "00000000"
+        }
+      ]
+    }
+  ]
+}

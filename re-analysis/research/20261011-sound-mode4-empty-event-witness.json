@@ -1,0 +1,162 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "boundary": "Actual9CCC14+9D0418 constructor instructions, opaque allocator/publication ABI fixtures, then actual already-paid E22 empty-list branch. No real allocation/registry publication, admitted caller, post/queue, later action-list mutation or all-alias exclusion certified.",
+  "cases": [
+    {
+      "ID": 0,
+      "allocation_fixture": false,
+      "returnR0": "00000000",
+      "calls": [
+        {
+          "boundary": "allocator, opaque fixture",
+          "address": "00A7A7F4",
+          "size": 24,
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "ID": 0,
+      "allocation_fixture": true,
+      "returnR0": "20001000",
+      "calls": [
+        {
+          "boundary": "allocator, opaque fixture",
+          "address": "00A7A7F4",
+          "size": 24,
+          "fixture_return": "20001000"
+        },
+        {
+          "boundary": "publication, opaque fixture",
+          "address": "009CC9C4",
+          "object_words": [
+            "0103AF78",
+            "A5A5A5A5",
+            "00000000",
+            "00000001",
+            "00000000",
+            "00000000"
+          ],
+          "fixture_return": "DEADBEEF"
+        }
+      ],
+      "dispatcher_empty_branch": [
+        "009AA3DC",
+        "009AA3E0",
+        "009AA3E4",
+        "009AA3E8",
+        "009AA3EC",
+        "009AA3F0",
+        "009AA3F4",
+        "009AA3F8",
+        "009AA560",
+        "009AA564"
+      ],
+      "action_or_scheduler_calls": 0
+    },
+    {
+      "ID": 725225627,
+      "allocation_fixture": false,
+      "returnR0": "00000000",
+      "calls": [
+        {
+          "boundary": "allocator, opaque fixture",
+          "address": "00A7A7F4",
+          "size": 24,
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "ID": 725225627,
+      "allocation_fixture": true,
+      "returnR0": "20001000",
+      "calls": [
+        {
+          "boundary": "allocator, opaque fixture",
+          "address": "00A7A7F4",
+          "size": 24,
+          "fixture_return": "20001000"
+        },
+        {
+          "boundary": "publication, opaque fixture",
+          "address": "009CC9C4",
+          "object_words": [
+            "0103AF78",
+            "A5A5A5A5",
+            "2B3A109B",
+            "00000001",
+            "00000000",
+            "00000000"
+          ],
+          "fixture_return": "DEADBEEF"
+        }
+      ],
+      "dispatcher_empty_branch": [
+        "009AA3DC",
+        "009AA3E0",
+        "009AA3E4",
+        "009AA3E8",
+        "009AA3EC",
+        "009AA3F0",
+        "009AA3F4",
+        "009AA3F8",
+        "009AA560",
+        "009AA564"
+      ],
+      "action_or_scheduler_calls": 0
+    },
+    {
+      "ID": 196431345,
+      "allocation_fixture": false,
+      "returnR0": "00000000",
+      "calls": [
+        {
+          "boundary": "allocator, opaque fixture",
+          "address": "00A7A7F4",
+          "size": 24,
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "ID": 196431345,
+      "allocation_fixture": true,
+      "returnR0": "20001000",
+      "calls": [
+        {
+          "boundary": "allocator, opaque fixture",
+          "address": "00A7A7F4",
+          "size": 24,
+          "fixture_return": "20001000"
+        },
+        {
+          "boundary": "publication, opaque fixture",
+          "address": "009CC9C4",
+          "object_words": [
+            "0103AF78",
+            "A5A5A5A5",
+            "0BB54DF1",
+            "00000001",
+            "00000000",
+            "00000000"
+          ],
+          "fixture_return": "DEADBEEF"
+        }
+      ],
+      "dispatcher_empty_branch": [
+        "009AA3DC",
+        "009AA3E0",
+        "009AA3E4",
+        "009AA3E8",
+        "009AA3EC",
+        "009AA3F0",
+        "009AA3F4",
+        "009AA3F8",
+        "009AA560",
+        "009AA564"
+      ],
+      "action_or_scheduler_calls": 0
+    }
+  ]
+}
