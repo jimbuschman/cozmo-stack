@@ -1,0 +1,265 @@
+{
+  "scope": "Exactly original outer725225627, inner196431345 and its already-authored sibling990835622; native source media-ID geometry joined to shipped text metadata. No Play/caller proof or SDK-only inference.",
+  "bank": "English(US)/Cozmo.bnk",
+  "bankSHA256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+  "textMember": "English(US)/Cozmo.txt",
+  "textSHA256": "8474cb979bbbe72816851f66ebca481aa2d4b39a086ebc6aacb09069a94c02a7",
+  "xmlMember": "SoundbanksInfo.xml",
+  "xmlSHA256": "29d413aea0a738bf1cdbe75f1cb041a525c323779e413b5fcbdab2374345bd22",
+  "sounds": [
+    {
+      "parentID": 196431345,
+      "soundID": 64408167,
+      "payloadOffset": 6106043,
+      "payloadSHA256": "fa2c97c1bb1e5da47f08898523395300f4848e19decc19c8a162eed4eeb59159",
+      "mediaIDOffset": 6106052,
+      "mediaID": 929520359,
+      "sourceHeaderHex": "0100040001e75a6737690f000001",
+      "metadata": [
+        {
+          "line": 2417,
+          "text": "\t929520359\tvo_coz_shared_align_frustrated_06\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_06_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_06\t\t3945",
+          "shortName": "vo_coz_shared_align_frustrated_06",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_06"
+        },
+        {
+          "line": 4406,
+          "text": "\t929520359\tvo_coz_shared_align_frustrated_06\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_06_9EB30D42.wem\t929520359.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_06\t",
+          "shortName": "vo_coz_shared_align_frustrated_06",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_06"
+        }
+      ]
+    },
+    {
+      "parentID": 196431345,
+      "soundID": 462381941,
+      "payloadOffset": 6106094,
+      "payloadSHA256": "bbd260225cd9ae2fd1b94cd7705c5f831649c9f0a79caee7b90a81affc1c550f",
+      "mediaIDOffset": 6106103,
+      "mediaID": 351286176,
+      "sourceHeaderHex": "0100040001a033f014470e000001",
+      "metadata": [
+        {
+          "line": 1308,
+          "text": "\t351286176\tvo_coz_shared_align_frustrated_01\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_01_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_01\t\t3655",
+          "shortName": "vo_coz_shared_align_frustrated_01",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_01"
+        },
+        {
+          "line": 3334,
+          "text": "\t351286176\tvo_coz_shared_align_frustrated_01\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_01_9EB30D42.wem\t351286176.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_01\t",
+          "shortName": "vo_coz_shared_align_frustrated_01",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_01"
+        }
+      ]
+    },
+    {
+      "parentID": 196431345,
+      "soundID": 593468796,
+      "payloadOffset": 6106145,
+      "payloadSHA256": "b11af1484c5fe738f000b2f924737803e95f7bb10a71ca382ebb50c3a3651c64",
+      "mediaIDOffset": 6106154,
+      "mediaID": 671352408,
+      "sourceHeaderHex": "0100040001580604286c0e000001",
+      "metadata": [
+        {
+          "line": 1917,
+          "text": "\t671352408\tvo_coz_shared_align_frustrated_02\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_02_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_02\t\t3692",
+          "shortName": "vo_coz_shared_align_frustrated_02",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_02"
+        },
+        {
+          "line": 3921,
+          "text": "\t671352408\tvo_coz_shared_align_frustrated_02\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_02_9EB30D42.wem\t671352408.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_02\t",
+          "shortName": "vo_coz_shared_align_frustrated_02",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_02"
+        }
+      ]
+    },
+    {
+      "parentID": 196431345,
+      "soundID": 700326323,
+      "payloadOffset": 6106196,
+      "payloadSHA256": "afa9e2ce382c75dae948166107ba2922c613292cdf2c12819488c8e5339388c7",
+      "mediaIDOffset": 6106205,
+      "mediaID": 757434693,
+      "sourceHeaderHex": "01000400014589252d6a0e000001",
+      "metadata": [
+        {
+          "line": 2062,
+          "text": "\t757434693\tvo_coz_shared_align_frustrated_04\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_04_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_04\t\t3690",
+          "shortName": "vo_coz_shared_align_frustrated_04",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_04"
+        },
+        {
+          "line": 4062,
+          "text": "\t757434693\tvo_coz_shared_align_frustrated_04\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_04_9EB30D42.wem\t757434693.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_04\t",
+          "shortName": "vo_coz_shared_align_frustrated_04",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_04"
+        }
+      ]
+    },
+    {
+      "parentID": 196431345,
+      "soundID": 799826471,
+      "payloadOffset": 6106247,
+      "payloadSHA256": "73b6d27af086f164ea7feb66a13467d5996c38e124754d4342d1ed9ac89c43ab",
+      "mediaIDOffset": 6106256,
+      "mediaID": 704743743,
+      "sourceHeaderHex": "01000400013f89012a140f000001",
+      "metadata": [
+        {
+          "line": 1967,
+          "text": "\t704743743\tvo_coz_shared_align_frustrated_03\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_03_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_03\t\t3860",
+          "shortName": "vo_coz_shared_align_frustrated_03",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_03"
+        },
+        {
+          "line": 3967,
+          "text": "\t704743743\tvo_coz_shared_align_frustrated_03\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_03_9EB30D42.wem\t704743743.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_03\t",
+          "shortName": "vo_coz_shared_align_frustrated_03",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_03"
+        }
+      ]
+    },
+    {
+      "parentID": 196431345,
+      "soundID": 983052347,
+      "payloadOffset": 6106298,
+      "payloadSHA256": "7773996bb966eb2d20a2c04bbe40cdc2dbb7eee747f81639815e72cb846b116d",
+      "mediaIDOffset": 6106307,
+      "mediaID": 89407243,
+      "sourceHeaderHex": "01000400010b3f5405460e000001",
+      "metadata": [
+        {
+          "line": 839,
+          "text": "\t89407243\tvo_coz_shared_align_frustrated_05\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_05_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_05\t\t3654",
+          "shortName": "vo_coz_shared_align_frustrated_05",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_05"
+        },
+        {
+          "line": 2876,
+          "text": "\t89407243\tvo_coz_shared_align_frustrated_05\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_05_9EB30D42.wem\t89407243.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_05\t",
+          "shortName": "vo_coz_shared_align_frustrated_05",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated\\vo_coz_shared_align_frustrated_05"
+        }
+      ]
+    },
+    {
+      "parentID": 990835622,
+      "soundID": 67515496,
+      "payloadOffset": 6106488,
+      "payloadSHA256": "0331b7664c6bc5d2d5f779393d838a066aac8c779816a6ae8fe4b3836188e5d1",
+      "mediaIDOffset": 6106497,
+      "mediaID": 201226445,
+      "sourceHeaderHex": "0100040001cd78fe0bd20d000001",
+      "metadata": [
+        {
+          "line": 1043,
+          "text": "\t201226445\tvo_coz_shared_align_frustrated_start_04\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_04_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_04\t\t3538",
+          "shortName": "vo_coz_shared_align_frustrated_start_04",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_04"
+        },
+        {
+          "line": 3076,
+          "text": "\t201226445\tvo_coz_shared_align_frustrated_start_04\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_04_9EB30D42.wem\t201226445.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_04\t",
+          "shortName": "vo_coz_shared_align_frustrated_start_04",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_04"
+        }
+      ]
+    },
+    {
+      "parentID": 990835622,
+      "soundID": 75059560,
+      "payloadOffset": 6106539,
+      "payloadSHA256": "e570fd8043bc09137e34592a309de24e4a756cbf80d82007a4bdcfa0a3857337",
+      "mediaIDOffset": 6106548,
+      "mediaID": 932038451,
+      "sourceHeaderHex": "010004000133c78d37490e000001",
+      "metadata": [
+        {
+          "line": 2425,
+          "text": "\t932038451\tvo_coz_shared_align_frustrated_start_02\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_02_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_02\t\t3657",
+          "shortName": "vo_coz_shared_align_frustrated_start_02",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_02"
+        },
+        {
+          "line": 4413,
+          "text": "\t932038451\tvo_coz_shared_align_frustrated_start_02\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_02_9EB30D42.wem\t932038451.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_02\t",
+          "shortName": "vo_coz_shared_align_frustrated_start_02",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_02"
+        }
+      ]
+    },
+    {
+      "parentID": 990835622,
+      "soundID": 127444217,
+      "payloadOffset": 6106590,
+      "payloadSHA256": "1531dd726b2188075c01fec6228bb1f40a44aaccac17f5161d6909135d957109",
+      "mediaIDOffset": 6106599,
+      "mediaID": 956703483,
+      "sourceHeaderHex": "0100040001fb2206399b0d000001",
+      "metadata": [
+        {
+          "line": 2475,
+          "text": "\t956703483\tvo_coz_shared_align_frustrated_start_01\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_01_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_01\t\t3483",
+          "shortName": "vo_coz_shared_align_frustrated_start_01",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_01"
+        },
+        {
+          "line": 4462,
+          "text": "\t956703483\tvo_coz_shared_align_frustrated_start_01\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_01_9EB30D42.wem\t956703483.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_01\t",
+          "shortName": "vo_coz_shared_align_frustrated_start_01",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_01"
+        }
+      ]
+    },
+    {
+      "parentID": 990835622,
+      "soundID": 186525384,
+      "payloadOffset": 6106641,
+      "payloadSHA256": "16e49abcd2b6f96cfcabd8b17d4bff7232226024d0e5fcf6d407b00b333116d7",
+      "mediaIDOffset": 6106650,
+      "mediaID": 269786956,
+      "sourceHeaderHex": "01000400014c9f1410820d000001",
+      "metadata": [
+        {
+          "line": 1152,
+          "text": "\t269786956\tvo_coz_shared_align_frustrated_start_03\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_03_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_03\t\t3458",
+          "shortName": "vo_coz_shared_align_frustrated_start_03",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_03"
+        },
+        {
+          "line": 3182,
+          "text": "\t269786956\tvo_coz_shared_align_frustrated_start_03\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_03_9EB30D42.wem\t269786956.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_03\t",
+          "shortName": "vo_coz_shared_align_frustrated_start_03",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_03"
+        }
+      ]
+    },
+    {
+      "parentID": 990835622,
+      "soundID": 225400569,
+      "payloadOffset": 6106692,
+      "payloadSHA256": "cd6a470b6005c9e0b9ca5b61d6cb774f83744495102bfc3429c11d02a6a4ea64",
+      "mediaIDOffset": 6106701,
+      "mediaID": 989848742,
+      "sourceHeaderHex": "0100040001a6e4ff3a280f000001",
+      "metadata": [
+        {
+          "line": 2536,
+          "text": "\t989848742\tvo_coz_shared_align_frustrated_start_05\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_05_9EB30D42.wem\t\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_05\t\t3880",
+          "shortName": "vo_coz_shared_align_frustrated_start_05",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_05"
+        },
+        {
+          "line": 4524,
+          "text": "\t989848742\tvo_coz_shared_align_frustrated_start_05\tC:\\BuildAgent\\work\\fde19228489805b2\\CozmoAudio\\.cache\\Android\\Voices\\English(US)\\vo_coz_shared_align_frustrated_start_05_9EB30D42.wem\t989848742.wem\t\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_05\t",
+          "shortName": "vo_coz_shared_align_frustrated_start_05",
+          "objectPath": "\\Actor-Mixer Hierarchy\\Cozmo_Robot_Voice\\Robot_VO\\Robot_VO__Shared\\Robot_VO__Shared_Upgrade_Align_Frustrated_Loop\\vo_coz_shared_align_frustrated_start\\vo_coz_shared_align_frustrated_start_05"
+        }
+      ]
+    }
+  ],
+  "metadataLinesContainingSDK": []
+}

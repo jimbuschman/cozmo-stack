@@ -11667,3 +11667,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint801 - music-flush candidate source boundaries
 
 `20261010-sound-stop-offset-flush-candidate-source-disposition.md` attributes775's50 remaining encodings to upper halfwords of ARM instructions using seven primary entries and finite predecessor chains; all53 finite immediate candidates accounted. Corrects nearest-ownerA71138's spillover to separatePUSHA71534. ActualA71634 manager/context andA716BC manager/raw-mode admission, plus original stop-offset alias/writer proof, remain UNKNOWN;119 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint802 - mode4 media identity and native ID inputs
+
+`20261010-sound-mode4-media-input-disposition.md` positively joins six inner and five already-authored sibling Sound media IDs to shipped Shared Upgrade Align Frustrated Loop/start metadata, with native source-header geometry and exact payload/text witnesses. No SDK-only or actual Play admission follows. Exact two-ID engine raw-word/MOVW navigation and Unity/source/smali decimal search supply no input; not runtime absence.009/034 PARTIAL for original admitted request/continuation question.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
