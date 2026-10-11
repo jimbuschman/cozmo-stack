@@ -3435,3 +3435,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint846 — repaired five-teardown pointer navigation
 
 `20261011-sound-teardown-formed-pointer-disposition.md` substitutesexactfive084/118 entries into812'sunchanged repaired model:14898 windows/803explicitcaps/twoalready-paidTF612 dataoffsetevents. FullGOT/ThumbMOVW/flags/FIFO andthreeexistingnativehandoff/publication/returncontrols areexplicit;older23-windowtool'sLOADmapswereintact,notmisreportedbroken. No newactualcaller orcompletealiasabsence;084/118 PARTIAL. Stopthisfiniteleadwithoutnewsourcefamilies.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint847 — association-updater pointer-model correction
+
+`20261011-sound-fx-updater-formed-pointer-disposition.md` corrects738 executable-only data mappings/narrow GOT/no Thumb MOVW/DFS for the original9CDFE4 input. Unchanged812 model:14878 windows/803 explicit caps/zero events; separate direct-PC forms also yield zero candidates. Existing three native pointer controls pass. No runtime admission or complete caller absence proof;016 stays PARTIAL for settings/property/data/size and actual notification recipient. Stop these finite leads.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

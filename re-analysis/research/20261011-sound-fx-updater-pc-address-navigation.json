@@ -1,0 +1,11 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "target": "009CDFE4",
+  "formsExamined": {
+    "ARM immediate ADD/SUB PC": 17639,
+    "Thumb ADR16": 17041,
+    "Thumb ADDW/SUBW PC": 1073
+  },
+  "candidates": [],
+  "limit": "Encoding and arithmetic candidates only; modes, input bindings, computed/table-relative/copy/foreign call edges are not certified."
+}

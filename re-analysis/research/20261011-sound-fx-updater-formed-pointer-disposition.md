@@ -1,0 +1,15 @@
+# Q14-016 updater pointer-model correction, checkpoint847
+
+Scope guard reread before every step. Request: `requests/20261007-codex-queue-5.md`. Target is only the original association updater9CDFE4 and its mode-bit variant. An admitted property/data/size input could change FX parameter values; this address/input check is in scope. FA563 setter/update/notification order and AR648 first-key association reader remain paid. No notification family is opened without admission.
+
+The old738 `20261010-sound-fx-updater-pointer-expansion.py` replaced native LOAD mappings with executable sections, used only GOT103FF00..1040400, omitted Thumb MOVW seed handling and used a depth-first local worklist. It selected zero windows. Its negative result was already bounded; this correction does not turn it into an absence claim. In particular, a mapping defect in a zero-selected-window run is not evidence that a particular missing caller was lost.
+
+The new `-formed-pointer-navigation.py/.txt` substitutes only9CDFE4 into the unchanged repaired812 model, SHA256917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf. Original LOAD data reads, executable-section seed enumeration, full GOT103E78C..1051000, ARM/Thumb MOVW forms, width-aware loads, conditional flags and FIFO local worklist are retained. `-formed-pointer-summary.json` records14878 windows,803 explicit capped seeds and zero events. No formed/forwarded/stored/returned target pointer or target-valued indirect branch is supplied by this finite model.
+
+The separate `-pc-address-navigation.py/.json` substitutes9CDFE4 into810's existing direct-PC address decoder:17639 ARM immediate ADD/SUB-PC forms,17041 Thumb ADR16 forms and1073 Thumb ADDW/SUBW-PC forms; zero target candidates. This is a different encoding check, not a copied full pointer pass. It does not exclude composed/computed/table-relative/copied/foreign inputs.
+
+The unchanged shared model's three native760/761 handoff, publication and return controls were rerun using846 `20261011-sound-teardown-formed-pointer-controls.py/.json`; all three passed. Those controls are existing model observations, not an updater input, runtime proof or a source-fidelity upgrade.
+
+Q14-016 remains PARTIAL, AUDIBLE. Exactly open: a positively admitted shipped9CDFE4 settings/property/data/size input or complete bounded exclusion proof, then that input's actual FA563 notification recipient. The model caps, unmodelled shifted/composed address sequences, stack/copy aliases and foreign or mutable inputs prevent complete caller absence. All89 serialized zero association counts remain insufficient for runtime exclusion. Stop repeating these14878 windows/803 caps or these direct-PC forms; next work requires a positive original input or a stronger supported-input proof.
+
+out of scope: association backing allocation/copy/free, loader/storage infrastructure and per-sample FX arithmetic.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production, fidelity, inventory, PROJECT_STATE, hardware or Q15 change.
