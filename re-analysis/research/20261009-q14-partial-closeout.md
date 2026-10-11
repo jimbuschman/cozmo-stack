@@ -750,3 +750,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint847 — association-updater pointer-model correction
 
 `20261011-sound-fx-updater-formed-pointer-disposition.md` corrects738 executable-only data mappings/narrow GOT/no Thumb MOVW/DFS for the original9CDFE4 input. Unchanged812 model:14878 windows/803 explicit caps/zero events; separate direct-PC forms also yield zero candidates. Existing three native pointer controls pass. No runtime admission or complete caller absence proof;016 stays PARTIAL for settings/property/data/size and actual notification recipient. Stop these finite leads.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint848 — observer input pointer-model correction
+
+`20261011-sound-observer-formed-pointer-disposition.md` corrects666's executable-only data mappings/narrow GOT/no Thumb MOVW/DFS for original9A03DC/9A040C inputs. Unchanged812 model:14878 windows/803 explicit caps/zero events; separate direct-PC forms also yield zero candidates. OP666 canary-GOT use and781's18 interior candidates remain paid. OR613/MC667/787 actual propagation/construction/address contracts retained; no new callback family.028/029 PARTIAL for actual caller/key/callback/rawthirdword and callback body or supported-input exclusion proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
