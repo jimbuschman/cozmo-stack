@@ -1,0 +1,58 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D59A8..0x009D59FC exclusive; ARM;
+009D59A8: beq          #0x9d66cc
+009D59AC: ldrb         lr, [r3]
+009D59B0: mov          r1, r3
+009D59B4: mov          r2, #0
+009D59B8: mov          fp, ip
+009D59BC: b            #0x9d59cc
+009D59C0: cmp          lr, ip
+009D59C4: mov          r2, ip
+009D59C8: bls          #0x9d65e0
+009D59CC: ldrb         r0, [r1, #1]!
+009D59D0: add          ip, r2, #1
+009D59D4: cmp          r0, #9
+009D59D8: bne          #0x9d59c0
+009D59DC: add          lr, lr, #4
+009D59E0: str          fp, [sp]
+009D59E4: bic          lr, lr, #3
+009D59E8: add          r2, lr, r2, lsl #2
+009D59EC: adds         r2, r3, r2
+009D59F0: beq          #0x9d66cc
+009D59F4: vldr         s15, [r2]
+009D59F8: ldr          r2, [r4, #0x1c]
+RANGE 0x009D5BCC..0x009D5C50 exclusive; ARM;
+009D5BCC: ldrb         sl, [r3]
+009D5BD0: mov          r0, r3
+009D5BD4: mov          r1, #0
+009D5BD8: b            #0x9d5be8
+009D5BDC: cmp          sl, lr
+009D5BE0: mov          r1, lr
+009D5BE4: bls          #0x9d65bc
+009D5BE8: ldrb         ip, [r0, #1]!
+009D5BEC: add          lr, r1, #1
+009D5BF0: cmp          ip, #0xb
+009D5BF4: bne          #0x9d5bdc
+009D5BF8: add          sl, sl, #4
+009D5BFC: str          fp, [sp]
+009D5C00: bic          sl, sl, #3
+009D5C04: add          sl, sl, r1, lsl #2
+009D5C08: adds         sl, r3, sl
+009D5C0C: beq          #0x9d66e4
+009D5C10: vldr         s15, [sl]
+009D5C14: mov          r1, #0
+009D5C18: vmov         sl, fp, d18
+009D5C1C: lsr          r0, sl, #0xa
+009D5C20: orr          r0, r0, fp, lsl #22
+009D5C24: and          r0, r0, #1
+009D5C28: orrs         r1, r0, r1
+009D5C2C: beq          #0x9d5c80
+009D5C30: ldr          r0, [pc, #0x27c] ; word[009D5EB4]=FFFFFDFC
+009D5C34: mov          r2, #0xa
+009D5C38: add          r3, sp, #0x38
+009D5C3C: mov          r1, r4
+009D5C40: ldr          r0, [r7, r0]
+009D5C44: ldr          r0, [r0]
+009D5C48: bl           #0xa11590
+009D5C4C: ldr          r3, [sp, #0x18]

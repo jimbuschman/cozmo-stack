@@ -690,3 +690,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint832 - authored Action property-count cap bound
 
 `20261011-sound-action-property-cap-disposition.md` checks906 shipped Action payload hashes/blocks:ordinary counts0..2,range counts0,and27 raw0F delay inputs. Four of19 saved ordinary-scan states have nextindex37 beyond that finite bound;other15 remain explicit,including legitimate scalar rate loads/quotients and unresolved callback/live blob inputs. Zero authored ranges are not universal unreachability.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint833 - envelope-specific property-cap bound
+
+`20261011-sound-envelope-property-cap-disposition.md` checks allseven shipped type22 payloads to exact ends:ordinary counts6/7,firstproperty9 nextindex2,second11 nextindex4,ownranges/subscriptions0. Seven of32 saved explicit ordinary indices exceed7;other25 and post-query table mutation remain explicit. No Action/node bound reused for envelopes;804 rate-pointerSP18 contract remains paid.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

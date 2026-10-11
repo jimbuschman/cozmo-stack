@@ -1,0 +1,554 @@
+{
+  "envelopeCount": 7,
+  "countHistogram": {
+    "6": 6,
+    "7": 1
+  },
+  "rows": [
+    {
+      "id": 242033262,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "2cd438a4fe1ff955d8faf25adb3160c8bd979753b8b3a9b68e98a17a771db9f7",
+      "count": 6,
+      "ids": [
+        0,
+        9,
+        10,
+        11,
+        12,
+        14
+      ],
+      "rawValues": [
+        "01000000",
+        "68910d3f",
+        "0000f841",
+        "a69bc43e",
+        "6666ca41",
+        "0000803f"
+      ],
+      "rangeCount": 0,
+      "rtpcCount": 0,
+      "firstProperty9NextIndex": 2,
+      "secondProperty11NextIndex": 4
+    },
+    {
+      "id": 381606890,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "ab076eb95dc442bde581b751c298a85c0ddf32396c89a85d442476a17b862d0f",
+      "count": 7,
+      "ids": [
+        0,
+        9,
+        10,
+        11,
+        12,
+        14,
+        15
+      ],
+      "rawValues": [
+        "01000000",
+        "00000000",
+        "0000c041",
+        "00000000",
+        "00001841",
+        "00000000",
+        "02000000"
+      ],
+      "rangeCount": 0,
+      "rtpcCount": 0,
+      "firstProperty9NextIndex": 2,
+      "secondProperty11NextIndex": 4
+    },
+    {
+      "id": 655524060,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "88dadb28d757bac6b3ce394c02358cc2dcaa17a062f22605d8b3f7139e87be5c",
+      "count": 6,
+      "ids": [
+        0,
+        9,
+        10,
+        11,
+        12,
+        14
+      ],
+      "rawValues": [
+        "01000000",
+        "9a99993e",
+        "00005041",
+        "ee7cbf3e",
+        "9a99c141",
+        "c74b373e"
+      ],
+      "rangeCount": 0,
+      "rtpcCount": 0,
+      "firstProperty9NextIndex": 2,
+      "secondProperty11NextIndex": 4
+    },
+    {
+      "id": 756127569,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "d660e37cc44a46dacedffced33167d0a00272814bba6799618f1be3cb925907a",
+      "count": 6,
+      "ids": [
+        0,
+        9,
+        10,
+        11,
+        12,
+        14
+      ],
+      "rawValues": [
+        "01000000",
+        "68910d3f",
+        "0000f841",
+        "a69bc43e",
+        "6666ca41",
+        "0000803f"
+      ],
+      "rangeCount": 0,
+      "rtpcCount": 0,
+      "firstProperty9NextIndex": 2,
+      "secondProperty11NextIndex": 4
+    },
+    {
+      "id": 823049354,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "3c65030cd65ad7ca73f0799fdd393986b7d43f4abbbe6427ce1f392388dd1ac3",
+      "count": 6,
+      "ids": [
+        0,
+        9,
+        10,
+        11,
+        12,
+        14
+      ],
+      "rawValues": [
+        "01000000",
+        "9a99993e",
+        "00005041",
+        "ee7cbf3e",
+        "9a99c141",
+        "c74b373e"
+      ],
+      "rangeCount": 0,
+      "rtpcCount": 0,
+      "firstProperty9NextIndex": 2,
+      "secondProperty11NextIndex": 4
+    },
+    {
+      "id": 865077387,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "549cf20d0f5b303049934810ecb41e58ec79d7399aed8782fff831114207b48c",
+      "count": 6,
+      "ids": [
+        0,
+        9,
+        10,
+        11,
+        12,
+        14
+      ],
+      "rawValues": [
+        "01000000",
+        "9a99993e",
+        "00005041",
+        "ee7cbf3e",
+        "9a99c141",
+        "c74b373e"
+      ],
+      "rangeCount": 0,
+      "rtpcCount": 0,
+      "firstProperty9NextIndex": 2,
+      "secondProperty11NextIndex": 4
+    },
+    {
+      "id": 870948569,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadSha256": "96a4455cf3bc6b1357589290d25c14da2285f349df838dd60e257683f5b835d1",
+      "count": 6,
+      "ids": [
+        0,
+        9,
+        10,
+        11,
+        12,
+        14
+      ],
+      "rawValues": [
+        "01000000",
+        "9a99993e",
+        "00005041",
+        "ee7cbf3e",
+        "9a99c141",
+        "c74b373e"
+      ],
+      "rangeCount": 0,
+      "rtpcCount": 0,
+      "firstProperty9NextIndex": 2,
+      "secondProperty11NextIndex": 4
+    }
+  ],
+  "savedPending": [
+    {
+      "address": "009D59F8",
+      "instruction": "ldr r2, [r4, #0x1c]",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000019"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored envelope property index bound"
+    },
+    {
+      "address": "009D59DC",
+      "instruction": "add lr, lr, #4",
+      "known_registers": {
+        "r7": "0104028C",
+        "r2": "00000019",
+        "ip": "0000001A"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored envelope property index bound"
+    },
+    {
+      "address": "009D59C0",
+      "instruction": "cmp lr, ip",
+      "known_registers": {
+        "r7": "0104028C",
+        "r2": "00000019",
+        "ip": "0000001A"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored envelope property index bound"
+    },
+    {
+      "address": "009D5C44",
+      "instruction": "ldr r0, [r0]",
+      "known_registers": {
+        "r7": "0104028C",
+        "s14": "7F7FFFFF",
+        "lr": "00000007",
+        "r2": "0000000A",
+        "r0": "0108D908"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5C28",
+      "instruction": "orrs r1, r0, r1",
+      "known_registers": {
+        "r7": "0104028C",
+        "s14": "7F7FFFFF",
+        "lr": "00000008",
+        "r1": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5C0C",
+      "instruction": "beq #0x9d66e4",
+      "known_registers": {
+        "r7": "0104028C",
+        "s14": "7F7FFFFF",
+        "r1": "00000008",
+        "lr": "00000009"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored envelope property index bound"
+    },
+    {
+      "address": "009D5BF0",
+      "instruction": "cmp ip, #0xb",
+      "known_registers": {
+        "r7": "0104028C",
+        "s14": "7F7FFFFF",
+        "r1": "00000009",
+        "lr": "0000000A"
+      },
+      "nzcv_mask": "0C0C",
+      "disposition": "outside authored envelope property index bound"
+    },
+    {
+      "address": "009D5C34",
+      "instruction": "mov r2, #0xa",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "0000000F",
+        "r0": "FFFFFDFC"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5BD0",
+      "instruction": "mov r0, r3",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000010",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5C18",
+      "instruction": "vmov sl, fp, d18",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000010",
+        "r1": "00000000"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5BB4",
+      "instruction": "vcvt.s32.f64 s15, d16",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000011",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B98",
+      "instruction": "strb r0, [sp, #0x48]",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000012",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B7C",
+      "instruction": "ldr r0, [sp, #4]",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000013",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5ACC",
+      "instruction": "movw lr, #0xf42d",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000014",
+        "r1": "FFFFFE04"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B60",
+      "instruction": "str r8, [sp, #0x3c]",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000014",
+        "r0": "0105243C",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5AB0",
+      "instruction": "vldr s13, [r1]",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000015"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B44",
+      "instruction": "vcvt.f64.f32 d16, s15",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000015"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5A94",
+      "instruction": "bne #0x9d5a7c",
+      "known_registers": {
+        "r7": "0104028C",
+        "r1": "00000015",
+        "lr": "00000016"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5C18",
+      "instruction": "vmov sl, fp, d18",
+      "known_registers": {
+        "r7": "0104028C",
+        "lr": "00000010",
+        "r1": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5BFC",
+      "instruction": "str fp, [sp]",
+      "known_registers": {
+        "r7": "0104028C",
+        "r1": "00000010",
+        "lr": "00000011"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored envelope property index bound"
+    },
+    {
+      "address": "009D5BE0",
+      "instruction": "mov r1, lr",
+      "known_registers": {
+        "r7": "0104028C",
+        "r1": "00000010",
+        "lr": "00000011"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored envelope property index bound"
+    },
+    {
+      "address": "009D5C38",
+      "instruction": "add r3, sp, #0x38",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000011",
+        "r0": "FFFFFDFC",
+        "r2": "0000000A"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5BD4",
+      "instruction": "mov r1, #0",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000012",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5C1C",
+      "instruction": "lsr r0, sl, #0xa",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000012",
+        "r1": "00000000"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5BB8",
+      "instruction": "vstr s15, [r5, #0x1c]",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000013",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B9C",
+      "instruction": "vmov.f64 d20, #-5.000000e-01",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000014",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B80",
+      "instruction": "str r0, [sp, #0x40]",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000015",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B64",
+      "instruction": "str r0, [sp, #0x18]",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000016",
+        "r0": "0105243C",
+        "r1": "0108DAA8"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5A34",
+      "instruction": "ldr r0, [r7, r0]",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000017",
+        "r0": "FFFFFDFC",
+        "r2": "00000008"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5A6C",
+      "instruction": "mov r0, r2",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000017",
+        "r1": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5B48",
+      "instruction": "ldr fp, [sp]",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000017",
+        "r1": "00000000"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    },
+    {
+      "address": "009D5A18",
+      "instruction": "and r0, r0, #1",
+      "known_registers": {
+        "r7": "0104028C",
+        "ip": "00000018",
+        "r1": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing EP/804 contract; live callback/table or prior register origin remains explicit"
+    }
+  ],
+  "boundary": "Type22 authored payloads only; not Action or node blocks. RTPC callbacks may reload changed tables; zero authored ranges/subscriptions do not establish global runtime absence."
+}
