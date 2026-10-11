@@ -1,0 +1,34 @@
+{
+  "archiveSha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145",
+  "rows": [
+    {
+      "id": 725225627,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadOffset": 6106870,
+      "payloadSha256": "36d671bfc49e8b3b2cfb5f6e804c303fc505a35247e1fe00974186f984822dba",
+      "prefixHex": "9b103a2b00000000000000a4cfb203000000c000000100000000000000000000",
+      "secondParentID": 62050212,
+      "advancedHex": "000100000000",
+      "stateGroupCountOffset": 6106896,
+      "stateGroupCount": 0,
+      "rtpcCountOffset": 6106900,
+      "rtpcCount": 0,
+      "ranseqHeaderOffset": 6106902
+    },
+    {
+      "id": 196431345,
+      "bank": "English(US)/Cozmo.bnk",
+      "payloadOffset": 6106349,
+      "payloadSha256": "8c8394d4569991ac8b1ded030a6332a72cff1a3be9396b39e9e3313bb81d4d26",
+      "prefixHex": "f14db50b000000000000009b103a2b000000c000000100000000000000000000",
+      "secondParentID": 725225627,
+      "advancedHex": "000100000000",
+      "stateGroupCountOffset": 6106375,
+      "stateGroupCount": 0,
+      "rtpcCountOffset": 6106379,
+      "rtpcCount": 0,
+      "ranseqHeaderOffset": 6106381
+    }
+  ],
+  "boundary": "Successful bank reader creates no own state-group or RTPC registrations from these two payload sections. Ancestor/inherited and later runtime registrations, callbacks and direct-node admission remain unproved."
+}

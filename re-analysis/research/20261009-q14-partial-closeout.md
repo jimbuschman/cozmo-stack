@@ -642,3 +642,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint820 - approved no-JNI startup input branch
 
 `20261011-sound-no-jni-startup-disposition.md` quotes currentM6-018 and the existing operator-directedMD1/C33.5 input boundary. NativeA57724 with required default fields reaches orderedSetRate48000/SetFrame1024 and exact words48000,1024,21,5,128;no numerical import during startup. ConditionalJNI zero cases remain distinct;later/alternate input and all-writer/alias proofs remain open. Six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint821 - original mode4 own control-registration gates
+
+`20261011-sound-mode4-control-bindings-disposition.md` joins exactly725225627/196431345 payload hashes and successful native reader order to zero own state-group/RTPC counts. Native9F7180/9F7250 skip their registration loops; prior-reader callbacks, inherited/later bindings and direct-node admission remain explicit. This is not runtime unreachability. Q14-009/034 remain PARTIAL/AUDIBLE;116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only. Next bounded lead: actual second-parent62050212 registration/recipient path.
