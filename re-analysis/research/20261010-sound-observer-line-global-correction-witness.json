@@ -1,0 +1,30 @@
+[
+  {
+    "add_address": "0xa40f30",
+    "pc": "0xa40f38",
+    "literal": "0x64d01c",
+    "effective": "0x108df54",
+    "meaning": "parameter observer array"
+  },
+  {
+    "add_address": "0xa40f74",
+    "pc": "0xa40f7c",
+    "literal": "0x64cfd8",
+    "effective": "0x108df54",
+    "meaning": "meter observer initial array"
+  },
+  {
+    "add_address": "0xa40f98",
+    "pc": "0xa40fa0",
+    "literal": "0x64cfb4",
+    "effective": "0x108df54",
+    "meaning": "meter observer post-callback reload array"
+  },
+  {
+    "add_address": "0xa408ac",
+    "pc": "0xa408b4",
+    "literal": "0x64d698",
+    "effective": "0x108df4c",
+    "meaning": "audio thread identity"
+  }
+]

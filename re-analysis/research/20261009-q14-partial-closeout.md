@@ -502,3 +502,8 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint786 — Quota setter interior-entry inputs
 
 `20261010-sound-quota-interior-disposition.md` retains explicit primary/navigation limits. All21 immediate-body candidates are instruction fragments, not admitted quota inputs; source returns/literals and raw gate/order retained. Original obligations stay PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint787 — observer line-array global address correction
+
+`20261010-sound-observer-line-global-correction.md` corrects OR613's line-array descriptor from108DF4C to108DF54/count108DF58, independently confirmed by all three observer PC-relative equations.108DF4C remains the audio-thread identity; NTHREAD1/Q15 MNREG3 stay correct. Actual key/bit mutation and callback-reload order retained.028/029 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
