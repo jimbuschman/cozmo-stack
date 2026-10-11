@@ -1,0 +1,852 @@
+[
+  {
+    "poison": "0x0",
+    "prior": null,
+    "heap_pad": 0,
+    "loader": "0x40000000",
+    "container": "0x40000280",
+    "io": [
+      {
+        "operation": "fopen",
+        "path": "re-analysis\\obb\\assets\\cozmo_resources\\assets\\animationGroups\\Bored\\ag_bored.json",
+        "mode": "r",
+        "handle": "0x40001db0"
+      }
+    ],
+    "outcomes": [
+      {
+        "file": "Bored/ag_bored.json",
+        "outcome": "returned",
+        "result": "0x501ffec0",
+        "pc": "0x7f100000",
+        "lr": "0x208e847d"
+      }
+    ],
+    "events": [
+      {
+        "kind": "lookup-save",
+        "file": "Bored/ag_bored.json",
+        "sp_before": "0x501ffe48",
+        "r7": "0x40000280",
+        "r8": "0x40000000",
+        "lr": "0x2058b703"
+      },
+      {
+        "kind": "group-entry",
+        "file": "Bored/ag_bored.json",
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 0,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 1,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "poison": "0xa5",
+    "prior": null,
+    "heap_pad": 0,
+    "loader": "0x40000000",
+    "container": "0x40000280",
+    "io": [
+      {
+        "operation": "fopen",
+        "path": "re-analysis\\obb\\assets\\cozmo_resources\\assets\\animationGroups\\Bored\\ag_bored.json",
+        "mode": "r",
+        "handle": "0x40001db0"
+      }
+    ],
+    "outcomes": [
+      {
+        "file": "Bored/ag_bored.json",
+        "outcome": "returned",
+        "result": "0x501ffec0",
+        "pc": "0x7f100000",
+        "lr": "0x208e847d"
+      }
+    ],
+    "events": [
+      {
+        "kind": "lookup-save",
+        "file": "Bored/ag_bored.json",
+        "sp_before": "0x501ffe48",
+        "r7": "0x40000280",
+        "r8": "0x40000000",
+        "lr": "0x2058b703"
+      },
+      {
+        "kind": "group-entry",
+        "file": "Bored/ag_bored.json",
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 0,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 1,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "poison": "0xa5",
+    "prior": "audio/ag_audio_test.json",
+    "heap_pad": 0,
+    "loader": "0x40000000",
+    "container": "0x40000280",
+    "io": [
+      {
+        "operation": "fopen",
+        "path": "re-analysis\\obb\\assets\\cozmo_resources\\assets\\animationGroups\\audio\\ag_audio_test.json",
+        "mode": "r",
+        "handle": "0x40001ee0"
+      },
+      {
+        "operation": "fopen",
+        "path": "re-analysis\\obb\\assets\\cozmo_resources\\assets\\animationGroups\\Bored\\ag_bored.json",
+        "mode": "r",
+        "handle": "0x40001ef0"
+      }
+    ],
+    "outcomes": [
+      {
+        "file": "audio/ag_audio_test.json",
+        "outcome": "returned",
+        "result": "0x501ffec0",
+        "pc": "0x7f100000",
+        "lr": "0x208e847d"
+      },
+      {
+        "file": "Bored/ag_bored.json",
+        "outcome": "returned",
+        "result": "0x501ffec0",
+        "pc": "0x7f100000",
+        "lr": "0x208e847d"
+      }
+    ],
+    "events": [
+      {
+        "kind": "lookup-save",
+        "file": "audio/ag_audio_test.json",
+        "sp_before": "0x501ffe48",
+        "r7": "0x40000280",
+        "r8": "0x40000000",
+        "lr": "0x2058b703"
+      },
+      {
+        "kind": "group-entry",
+        "file": "audio/ag_audio_test.json",
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "audio/ag_audio_test.json",
+        "entry": 0,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "audio/ag_audio_test.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "audio/ag_audio_test.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "audio/ag_audio_test.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "audio/ag_audio_test.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "audio/ag_audio_test.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "audio/ag_audio_test.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "audio/ag_audio_test.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "audio/ag_audio_test.json"
+            }
+          ]
+        ]
+      },
+      {
+        "kind": "lookup-save",
+        "file": "Bored/ag_bored.json",
+        "sp_before": "0x501ffe48",
+        "r7": "0x40000280",
+        "r8": "0x40000000",
+        "lr": "0x2058b703"
+      },
+      {
+        "kind": "group-entry",
+        "file": "Bored/ag_bored.json",
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 0,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 1,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40000280",
+          "0x40000000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40000280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40000000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "poison": "0xa5",
+    "prior": null,
+    "heap_pad": 65536,
+    "loader": "0x40010000",
+    "container": "0x40010280",
+    "io": [
+      {
+        "operation": "fopen",
+        "path": "re-analysis\\obb\\assets\\cozmo_resources\\assets\\animationGroups\\Bored\\ag_bored.json",
+        "mode": "r",
+        "handle": "0x40011db0"
+      }
+    ],
+    "outcomes": [
+      {
+        "file": "Bored/ag_bored.json",
+        "outcome": "returned",
+        "result": "0x501ffec0",
+        "pc": "0x7f100000",
+        "lr": "0x208e847d"
+      }
+    ],
+    "events": [
+      {
+        "kind": "lookup-save",
+        "file": "Bored/ag_bored.json",
+        "sp_before": "0x501ffe48",
+        "r7": "0x40010280",
+        "r8": "0x40010000",
+        "lr": "0x2058b703"
+      },
+      {
+        "kind": "group-entry",
+        "file": "Bored/ag_bored.json",
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40010280",
+          "0x40010000"
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 0,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40010280",
+          "0x40010000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      },
+      {
+        "kind": "copy",
+        "file": "Bored/ag_bored.json",
+        "entry": 1,
+        "sp": "0x501ffdf0",
+        "words": [
+          "0x40010280",
+          "0x40010000"
+        ],
+        "last_writes": [
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe30",
+              "size": 4,
+              "value": "0x40010280",
+              "file": "Bored/ag_bored.json"
+            }
+          ],
+          [
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            },
+            {
+              "pc": "0x2058c044",
+              "address": "0x501ffe34",
+              "size": 4,
+              "value": "0x40010000",
+              "file": "Bored/ag_bored.json"
+            }
+          ]
+        ]
+      }
+    ]
+  }
+]
