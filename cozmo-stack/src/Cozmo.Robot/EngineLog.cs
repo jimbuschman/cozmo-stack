@@ -65,17 +65,20 @@ public sealed partial class CozmoEngine
         DisplayEngineEntry(entry);
     }
 
-    // The existing Action<string> component boundary funnels each call into one structured entry.
-    internal void Log(string line) => LogWithChannel(line, null);
+    // Legacy delegate for existing source ports (including higher-layer ports outside this job).
+    // Host diagnostics must use EmitStackLog at their call site; key spelling is never provenance.
+    internal void Log(string line) => EmitSourceLog(line);
 
-    internal void LogWithChannel(string line, string? suppliedChannel)
+    // Explicit boundary for source-ported Action<string> component delegates.
+    // Callers must already own a cited engine log call; this only decodes their legacy representation.
+    internal void EmitSourceLog(string line, string? suppliedChannel = null)
     {
         int split = line.IndexOf(": ", StringComparison.Ordinal);
         string levelName = split < 0 ? "" : line[..split];
         EngineLogLevel level = levelName switch { "debug" => EngineLogLevel.Debug, "info" => EngineLogLevel.Info,
             "event" => EngineLogLevel.Event, "warning" => EngineLogLevel.Warning, "error" => EngineLogLevel.Error, _ => EngineLogLevel.Info };
         // Host diagnostics, including MISSING, remain visible and are not engine logger calls.
-        if (line.Contains("MISSING:", StringComparison.Ordinal) || line.StartsWith("warning: event handler threw:", StringComparison.Ordinal) || levelName is not ("debug" or "info" or "event" or "warning" or "error"))
+        if (line.Contains("MISSING:", StringComparison.Ordinal) || line.StartsWith("event handler threw:", StringComparison.Ordinal) || levelName is not ("debug" or "info" or "event" or "warning" or "error"))
         { EmitStackLog(line); return; }
         string rest = line[(split + 2)..];
         string? channel = level is EngineLogLevel.Debug or EngineLogLevel.Info ? suppliedChannel : null;
@@ -84,9 +87,6 @@ public sealed partial class CozmoEngine
         int keyEnd = rest.IndexOf(": ", StringComparison.Ordinal);
         string key = keyEnd < 0 ? rest : rest[..keyEnd];
         string text = keyEnd < 0 ? "" : rest[(keyEnd + 2)..];
-        // Diagnostic sentences are host lines, not recovered printf keys. The explicit entry API
-        // is used for new ports; this adapter serves the existing source-keyed component delegates.
-        if (key.Contains(' ') && !key.StartsWith("DAS ", StringComparison.Ordinal)) { EmitStackLog(line); return; }
         EmitEngineLog(level, channel, key, text);
     }
 }

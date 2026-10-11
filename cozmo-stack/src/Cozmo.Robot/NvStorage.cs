@@ -273,7 +273,7 @@ public sealed class NvStorageComponent : IDisposable
     private void LogCall(string line)
     {
         _log.Add(line);
-        _pendingLogCalls.Enqueue(() => _robot.Engine.LogWithChannel(line, "NVStorage"));
+        _pendingLogCalls.Enqueue(() => _robot.Engine.EmitSourceLog(line, "NVStorage"));
     }
 
     /// <summary>The read request lines, for the conformance log.</summary>
@@ -981,8 +981,8 @@ public sealed class NvStorageComponent : IDisposable
             }
         }
         // M3-030: on timeout only the callback runs; there is no broadcast chunk and no sink fill.
+        FlushLogCalls(); // sWarningF 0x00645782 precedes callback 0x006457BC.
         timeoutCallback?.Invoke(timeoutResult);
-        FlushLogCalls();
         if (timeoutRequest is not null)
             lock (_gate)
                 if (ReferenceEquals(_inFlight, timeoutRequest)) { SetStateLocked(0); _inFlight = null; }
@@ -1268,6 +1268,8 @@ public sealed class NvStorageComponent : IDisposable
         using var logEmission = new LogEmission(this);
         if (!c.ReadCallback)
         {
+            // Recvd (0x00642FFE) and outcome logs precede BroadcastNVStorageOpResult (0x0064339E).
+            FlushLogCalls();
             // fidelity: M3-031
             // W2 (0x00643384..0x00643420), in the engine's order: the broadcast (gated on +0x40), then the callback (gated on
             // +0x38) behind its debug log (0x006433C6, via 0x004A5B84, "%s" with the normalised tag's name), then the

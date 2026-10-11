@@ -39,7 +39,7 @@ public class BackpackLoaderTests
             if (stateValue) Assert.Contains(patterns.Get("Charging")![0].OnColor, new[] { LedColor.Red, LedColor.Green });
             else Assert.Equal(LedColor.Green, patterns.Get("Charging")![0].OnColor);
             Assert.Equal(LedColor.Green, patterns.Get("BadCharger")![0].OnColor);
-            Assert.Contains("warning: event handler threw: JsonLogicError: in Json::Value::find(key, end, found): requires objectValue or nullValue", logs);
+            Assert.Contains("event handler threw: JsonLogicError: in Json::Value::find(key, end, found): requires objectValue or nullValue", logs);
             Assert.DoesNotContain(logs, line => line.Contains("InvalidJson")); // throw precedes the first isMember error report
         }
         finally { Directory.Delete(root, true); }

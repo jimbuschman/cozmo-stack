@@ -24,8 +24,10 @@ public class M3DeviceTests
         using var rig = new Rig();
         var entries = new List<EngineLogEntry>(); var stack = new List<string>(); var shown = new List<string>();
         rig.Engine.LogEntry += entries.Add; rig.Engine.StackLogLine += stack.Add; rig.Engine.LogLine += shown.Add;
-        foreach (string line in new[] { "no terminal NVOpResult", "MISSING: unread", "warning: event handler threw: boom" })
+        foreach (string line in new[] { "no terminal NVOpResult", "MISSING: unread", "event handler threw: boom" })
             rig.Engine.Log(line);
+        // Explicit stack diagnostics stay stack entries even when their text resembles a source key.
+        rig.Engine.EmitStackLog("info: Fake.Source.Key: diagnostic");
         Assert.Empty(entries); Assert.Equal(stack, shown); Assert.Equal("no terminal NVOpResult", stack[0]);
         rig.Engine.EmitEngineLog(EngineLogLevel.Info, "Unnamed", "test", new string('a', 1022) + "é");
         var e = Assert.Single(entries);
@@ -77,7 +79,7 @@ public class M3DeviceTests
 
     // Adopted sections 2, 6, 7 and ruling 12.5; expected strings are source rows.
     [Fact]
-    public void M3_012_OverflowAndNegativeFreeLogBeforeBudgetStores()
+    public void M3_012_OverflowAndNegativeFreeLogsInOrderAndClearsBudget()
     {
         var stream = new StreamSendBuffer();
         var lines = new List<string>();
@@ -534,12 +536,17 @@ public class M3DeviceTests
         var nv = rig.Robot.Engine.NvStorage!;
         var order = new List<string>();
         var broadcasts = new List<NVStorageOpResult>();
+        rig.Engine.LogEntry += e => {
+            if (e.Name == "NVStorageComponent.HandleNVOpResult.Recvd") order.Add("recvd");
+            if (e.Name == "NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback") order.Add("executing");
+        };
         nv.NVStorageOpResultBroadcast += b => { order.Add("broadcast"); broadcasts.Add(b); };
-        nv.Erase(0x182000, r => order.Add("callback:" + nv.Log[^1]), broadcast: true);
+        nv.Erase(0x182000, r => order.Add("callback"), broadcast: true);
         rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = result });
         rig.Tick();
-        Assert.Equal(new[] { "broadcast", "callback:debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_GameUnlocks" }, order);
+        // 0x00642FFE -> 0x0064339E -> ExecutingWriteCallback -> 0x006433F6.
+        Assert.Equal(new[] { "recvd", "broadcast", "executing", "callback" }, order);
         var b0 = Assert.Single(broadcasts);
         Assert.Equal((0x182000u, NvStorageComponent.OpErase, result, 0), (b0.Tag, b0.Op, b0.Result, b0.Index));
         Assert.Empty(b0.Data);
@@ -925,7 +932,9 @@ public class M3DeviceTests
         var results = new List<sbyte>();
         var broadcasts = new List<NVStorageOpResult>();
         nv.NVStorageOpResultBroadcast += broadcasts.Add;
-        nv.Write(0x182000, Pattern(8), r => results.Add(r.Result), broadcast: true);
+        var order = new List<string>();
+        rig.Engine.LogEntry += e => { if (e.Name == "NVStorageComponent.Update.WriteTimeout") order.Add("warning"); };
+        nv.Write(0x182000, Pattern(8), r => { order.Add("callback"); results.Add(r.Result); }, broadcast: true);
         rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = 0 });
         rig.Tick();
@@ -935,6 +944,7 @@ public class M3DeviceTests
         Assert.Empty(results);
         SetRobotClock(rig, 6001);
         Assert.Equal(new sbyte[] { -4 }, results);
+        Assert.Equal(new[] { "warning", "callback" }, order); // 0x00645782 before 0x006457BC
         Assert.Contains("warning: NVStorageComponent.Update.WriteTimeout: Tag: 0x182000", nv.Log);
         Assert.Equal(sent, NvCommands(rig).Count);                                 // no retry
         Assert.DoesNotContain(nv.Log, l => l.Contains("ExecutingWriteCallback"));
@@ -3157,7 +3167,9 @@ public class M3DeviceTests
 
         var nv = rig.Robot.Engine.NvStorage!;
         NvResult? got = null;
-        nv.Read(0x182000, r => got = r);
+        var order = new List<string>();
+        rig.Engine.LogEntry += e => { if (e.Name == "NVStorageComponent.Update.ReadTimeout") order.Add("warning"); };
+        nv.Read(0x182000, r => { order.Add("callback"); got = r; });
         rig.Tick();                                                              // sent now: deadline = 1000 + 5000 = 6000
         rig.Data(new RobotState { Timestamp = 6001, PoseOriginId = 1 });
         rig.Tick();
@@ -3165,6 +3177,7 @@ public class M3DeviceTests
         Assert.Equal(-4, got!.Value.Result);
         Assert.Empty(got.Value.Data);
         Assert.Contains("warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x182000", nv.Log);
+        Assert.Equal(new[] { "warning", "callback" }, order); // 0x00645782 before 0x006457BC
     }
 
     /// <summary>

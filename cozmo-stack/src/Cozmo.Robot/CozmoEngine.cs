@@ -349,7 +349,7 @@ internal sealed class RobotConnectionManager
     /// <summary>RCM::SendData (B28): only in state 2, else "NotValidState" and failure; then RT->SendData(reliable 1, flush 0).</summary>
     public bool SendData(byte[] clad)
     {
-        if (Rcd.State != 2) { _engine.Log("warning: RobotConnectionManager.SendData.NotValidState"); return false; }
+        if (Rcd.State != 2) { _engine.EmitSourceLog("warning: RobotConnectionManager.SendData.NotValidState"); return false; }
         _t.SendData(clad);
         return true;
     }
@@ -409,10 +409,10 @@ internal sealed class RobotConnectionManager
     /// </summary>
     private void HandleDataMessage(RobotConnectionData.Arrived a)
     {
-        if (Rcd.State != 2) { _engine.Log("warning: Connection not yet valid, dropping message"); return; }
+        if (Rcd.State != 2) { _engine.EmitStackLog("warning: Connection not yet valid, dropping message"); return; }
         if (a.Address is null || Rcd.Address is not { } expected || !a.Address.Address.Equals(expected.Address))
         {
-            _engine.Log($"warning: Expected messages from {Rcd.Address}, got one from {a.Address}. Dropping");
+            _engine.EmitStackLog($"warning: Expected messages from {Rcd.Address}, got one from {a.Address}. Dropping");
             return;
         }
         _data.Enqueue(a.Data ?? Array.Empty<byte>());
@@ -423,7 +423,7 @@ internal sealed class RobotConnectionManager
     private void HandleConnectionResponseMessage()
     {
         if (Rcd.State == 1) { Rcd.State = 2; Reason = RobotDisconnectReason.Unknown; }
-        else _engine.Log("error: Got connection response at unexpected time");
+        else _engine.EmitStackLog("error: Got connection response at unexpected time");
     }
 
     // fidelity: M1-015
@@ -436,7 +436,7 @@ internal sealed class RobotConnectionManager
     {
         int state = Rcd.State;
         if (_t.TimedOut) Reason = RobotDisconnectReason.WifiTimeout;
-        _engine.Log($"info: disconnect_reason {Reason}");
+        _engine.EmitStackLog($"info: disconnect_reason {Reason}");
         Reason = RobotDisconnectReason.Unknown;
         Rcd.Clear();
         if (_engine.Robots.RobotExists(CozmoEngine.RobotId)) _engine.Robots.RemoveRobot(CozmoEngine.RobotId, wasConnecting: state == 1);
@@ -476,11 +476,11 @@ internal sealed class MessageHandler
         {
             var robot = _engine.Robots.Get(CozmoEngine.RobotId);
             if (robot is null) continue;
-            if (data.Length == 0) { _engine.Log("error: MessageHandler.ProcessMessages: message of size 0"); continue; }
+            if (data.Length == 0) { _engine.EmitStackLog("error: MessageHandler.ProcessMessages: message of size 0"); continue; }
             if (_engine.Robots.ShouldFilterMessage(CozmoEngine.RobotId, data[0], robotToEngine: true)) continue;
             if (!TryUnpack(data, out var msg))
             {
-                _engine.Log($"error: MessageHandler.ProcessMessages: size mismatch unpacking tag 0x{data[0]:X2} ({data.Length} bytes); dropped");
+                _engine.EmitSourceLog($"error: MessageHandler.ProcessMessages: size mismatch unpacking tag 0x{data[0]:X2} ({data.Length} bytes); dropped");
                 continue;
             }
             if (msg is RobotErrorReport err)
@@ -489,13 +489,13 @@ internal sealed class MessageHandler
                 // CC12/CC13: {u32 code, bool fatal}; fatal is decided by the byte only.
                 if (err.Field1)
                 {
-                    _engine.Log($"error: robot.error.fatal code {err.Field0}");
+                    _engine.EmitStackLog($"error: robot.error.fatal code {err.Field0}");
                     _engine.Broadcast(msg);
                     _rcm.ClearData();
                     _rcm.DisconnectCurrent();
                     return;
                 }
-                _engine.Log($"warning: robot.error.nonfatal code {err.Field0}");
+                _engine.EmitStackLog($"warning: robot.error.nonfatal code {err.Field0}");
                 _engine.RaiseRobotErrorPassThrough(new RobotErrorPassThrough(err.Field0));
                 _engine.Broadcast(msg);
                 continue;
@@ -759,9 +759,9 @@ public sealed partial class EngineRobot
         nv.Read(0x183000, r =>
         {
             if (r.Result == -1)
-                Engine.Log("info: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound");
+                Engine.EmitSourceLog("info: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound");
             else if (r.Result != 0)
-                Engine.Log($"warning: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail: NVResult = {NvStorageComponent.NvResultName(r.Result)}");
+                Engine.EmitSourceLog($"warning: VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail: NVResult = {NvStorageComponent.NvResultName(r.Result)}");
             if (r.Result != 0) return;
             Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
         });
@@ -880,7 +880,7 @@ public sealed partial class EngineRobot
             catch (JsonLogicError e)
             {
                 // fidelity: M3-049, M1-034 — rows section 8 / ruling 12.4: isolate every throw before any stores.
-                Engine.EmitStackLog($"warning: event handler threw: {e.GetType().Name}: {e.Message}");
+                Engine.EmitStackLog($"event handler threw: {e.GetType().Name}: {e.Message}");
                 return;
             }
             // fidelity: M4-011
@@ -928,7 +928,7 @@ public sealed partial class EngineRobot
             || !Send(new InitController(), "InitController"))
         {
             // M1-041: both failures reach the same warning (0x005152C4, name 0x00515458).
-            Engine.Log("warning: Robot.SendSyncTime.FailedToSend");
+            Engine.EmitSourceLog("warning: Robot.SendSyncTime.FailedToSend");
             return;
         }
         // fidelity: M1-041, M4-020
@@ -936,7 +936,7 @@ public sealed partial class EngineRobot
         // AbsoluteLocalizationUpdate; SendSyncTime returns that send's result (0x005153AE), so +0x520 is set
         // only when the AbsoluteLocalizationUpdate send succeeds.
         Send(new ImageRequest { Mode = ImageSendMode.Stream, ImageResolution = 4 }, "ImageRequest");
-        Engine.Log("info: Robot.SendSyncTime: Setting pose to (0,0,0)");
+        Engine.EmitSourceLog("info: Robot.SendSyncTime: Setting pose to (0,0,0)");
         if (!SendAbsLocalizationUpdate()) return;
         SyncTimeSentAt = Engine.Timer.SecondsF;
     }
@@ -1016,7 +1016,7 @@ public sealed partial class EngineRobot
         if ((s.Status & (uint)RobotStatusFlag.IsBodyAccMode) != 0) return;
         _bodyNotInAccModeCount++;
         if (_bodyNotInAccModeCount < 16) return;
-        Engine.Log("warning: Robot.UpdateFullRobotState.BodyNotInAccessoryMode");
+        Engine.EmitSourceLog("warning: Robot.UpdateFullRobotState.BodyNotInAccessoryMode");
         SendChecked(new SetBodyRadioMode { RadioMode = BodyRadioMode.BODY_ACCESSORY_OPERATING_MODE, WifiChannel = 0 });
         _bodyNotInAccModeCount = 0;
     }
@@ -1049,7 +1049,7 @@ public sealed partial class EngineRobot
     /// <summary>HandleSyncTimeAck (CD19): +0x520 = 0 and +0x29 = 1; nothing is sent.</summary>
     internal void HandleSyncTimeAck()
     {
-        Engine.Log("info: Robot.HandleSyncTimeAck");                 // M1-041, 0x0053667E
+        Engine.EmitSourceLog("info: Robot.HandleSyncTimeAck");                 // M1-041, 0x0053667E
         SyncTimeSentAt = 0;
         TimeSynced = true;
     }
@@ -1076,7 +1076,7 @@ public sealed partial class EngineRobot
         if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
         {
             // 0x00512EC4..0x00512EE2: key 0x005132C8, format 0xBE686C, args state+8 (%u) and PoseOriginList+0xC (%zu, the list's count).
-            Engine.Log($"warning: Robot.UpdateFullRobotState.BadOriginID: Received RobotState with originID={s.PoseOriginId}, only {_origins.Count} pose origins available");
+            Engine.EmitSourceLog($"warning: Robot.UpdateFullRobotState.BadOriginID: Received RobotState with originID={s.PoseOriginId}, only {_origins.Count} pose origins available");
             AcceptedState = null;
             return true;
         }
@@ -1147,7 +1147,7 @@ public sealed partial class EngineRobot
         float now = Engine.Timer.SecondsF;
         if (SyncTimeSentAt > 0 && now > SyncTimeSentAt + 5.0f)
         {
-            Engine.Log("warning: Robot.Update.SyncTimeAckNotReceived");
+            Engine.EmitSourceLog("warning: Robot.Update.SyncTimeAckNotReceived");
             SyncTimeSentAt = 0;
         }
         // fidelity: M3-032
@@ -1156,7 +1156,7 @@ public sealed partial class EngineRobot
         // remains dependent on M11's calibration pointer and UpdateAllResults result.
         if (!FirstFullStateHandled)
         {
-            Engine.Log("debug: Robot.Update: Waiting for first full robot state to be handled");
+            Engine.EmitSourceLog("debug: Robot.Update: Waiting for first full robot state to be handled");
             AnimationStreamingOpen = false;
             return;
         }
@@ -1171,7 +1171,7 @@ public sealed partial class EngineRobot
             {
                 // G2 (0x00513C7E..0x00513C9A): sWarningF with the key Robot.Update.VisionComponentUpdateFail and an empty format, then
                 // the return to 0x00514484, which skips everything below.
-                Engine.Log("warning: Robot.Update.VisionComponentUpdateFail: ");
+                Engine.EmitSourceLog("warning: Robot.Update.VisionComponentUpdateFail: ");
                 return;
             }
         }
@@ -1198,7 +1198,7 @@ public sealed partial class EngineRobot
         Engine.RunIsolated(() =>
         {
             int actionResult = ActionList.Update();
-            if (actionResult != 0) Engine.Log("warning: Robot.Update.ActionList failed");
+            if (actionResult != 0) Engine.EmitStackLog("warning: Robot.Update.ActionList failed");
         });
         AnimationStreamingOpen = TimeSynced && ReadyToStream;
         // fidelity: M3-013, M5-039
@@ -1304,8 +1304,8 @@ internal sealed class RobotInitialConnection
     private void HandleFactoryFirmware()
     {
         if (ResponseSent) return;
-        _engine.Log("info: robot.factory_firmware_version 0");
-        _engine.Log("warning: robot firmware: factory firmware, version unknown (policy M1-040: not " + ShippedFirmwareVersion + ")");
+        _engine.EmitStackLog("info: robot.factory_firmware_version 0");
+        _engine.EmitStackLog("warning: robot firmware: factory firmware, version unknown (policy M1-040: not " + ShippedFirmwareVersion + ")");
         OnNotified(3, 0);
     }
 
@@ -1331,8 +1331,8 @@ internal sealed class RobotInitialConnection
         if (ResponseSent) return;
         if (!Json.TryParseFirst(f.Signature, out var doc))
         {
-            _engine.Log("error: RobotInitialConnection.HandleFirmwareVersion: firmware version JSON did not parse");
-            _engine.Log("warning: robot firmware: version unknown (policy M1-040: not " + ShippedFirmwareVersion + ")");
+            _engine.EmitStackLog("error: RobotInitialConnection.HandleFirmwareVersion: firmware version JSON did not parse");
+            _engine.EmitStackLog("warning: robot firmware: version unknown (policy M1-040: not " + ShippedFirmwareVersion + ")");
             OnNotified(3, 0);
             return;
         }
@@ -1342,9 +1342,9 @@ internal sealed class RobotInitialConnection
             if (Json.AsStringBytes(Json.Member(root, "build")).AsSpan().SequenceEqual("FACTORY"u8))
             {
                 bool f0 = Json.AsStringBytes(Json.Member(root, "version")).AsSpan().StartsWith("F"u8);
-                _engine.Log(f0 ? "info: FactoryFirmware" : "info: UnknownVersion");
-                _engine.Log("info: robot.factory_firmware_version");
-                _engine.Log("warning: robot firmware: factory build (policy M1-040: not " + ShippedFirmwareVersion + ")");
+                _engine.EmitSourceLog(f0 ? "info: FactoryFirmware" : "info: UnknownVersion");
+                _engine.EmitSourceLog("info: robot.factory_firmware_version");
+                _engine.EmitStackLog("warning: robot firmware: factory build (policy M1-040: not " + ShippedFirmwareVersion + ")");
                 OnNotified(3, 0);
                 return;
             }
@@ -1353,13 +1353,13 @@ internal sealed class RobotInitialConnection
             bool sim = (v | t) == 0 && !Json.IsNull(Json.Member(root, "sim"));
 
             // G5.7 (telemetry and log only)
-            _engine.Log($"info: robot firmware: {v}{(v == t ? " (dev)" : "")}{(sim ? " (SIM)" : "")} (app: {ev}{(ev == et ? " (dev)" : "")})");
+            _engine.EmitStackLog($"info: robot firmware: {v}{(v == t ? " (dev)" : "")}{(sim ? " (SIM)" : "")} (app: {ev}{(ev == et ? " (dev)" : "")})");
             // fidelity: M1-040
-            if (v != ShippedFirmwareVersion) _engine.Log($"warning: robot firmware {v} is not {ShippedFirmwareVersion} (policy M1-040: accepted)");
+            if (v != ShippedFirmwareVersion) _engine.EmitStackLog($"warning: robot firmware {v} is not {ShippedFirmwareVersion} (policy M1-040: accepted)");
 
             if (!RobotAvailableSeen && !sim)
             {
-                _engine.Log("error: RobotInitialConnection.HandleFirmwareVersion: no robotAvailable before firmwareVersion");
+                _engine.EmitStackLog("error: RobotInitialConnection.HandleFirmwareVersion: no robotAvailable before firmwareVersion");
                 _validated = true;
                 SendConnectionResponse(RobotConnectionResult.ConnectionFailure, 0);
                 _validated = false;
@@ -1385,7 +1385,7 @@ internal sealed class RobotInitialConnection
     {
         if (result is 3 or 4)
         {
-            _engine.Log($"warning: policy M1-040: the original's result {(RobotConnectionResult)result} is not applied; the robot is accepted");
+            _engine.EmitStackLog($"warning: policy M1-040: the original's result {(RobotConnectionResult)result} is not applied; the robot is accepted");
             result = 0;
         }
         _validated = true;
@@ -1420,7 +1420,7 @@ internal sealed class RobotInitialConnection
         BodyHwVersion = unchecked((int)id.BodyHwVersion);
         byte c = (byte)(id.BodyColor & 0xFF);
         if (c is 0 or 2 or 3 or 4) BodyColor = (sbyte)c;
-        else { _engine.Log($"error: RobotInitialConnection: bad body colour {c}"); BodyColor = -1; }
+        else { _engine.EmitStackLog($"error: RobotInitialConnection: bad body colour {c}"); BodyColor = -1; }
         SessionId = Guid.NewGuid();
         SendConnectionResponse(RobotConnectionResult.Success, fw);
         // fidelity: M3-033, M3-034, M1-028
@@ -1464,7 +1464,7 @@ internal sealed class RobotInitialConnection
     public bool HandleDisconnect(RobotConnectionResult result)
     {
         if (ResponseSent) return false;
-        _engine.Log($"info: RobotInitialConnection.HandleDisconnect: {result}");
+        _engine.EmitSourceLog($"info: RobotInitialConnection.HandleDisconnect: {result}");
         OnNotified((byte)result, 0);
         return true;
     }
@@ -1495,7 +1495,7 @@ internal sealed class RobotManager
     {
         if (version is { } v) Volatile.Write(ref _expectedVersion, v);
         if (time is { } t) Volatile.Write(ref _expectedTime, t);
-        if (ExpectedVersion == 0 || ExpectedTime == 0) _engine.Log("warning: RobotManager.ParseFirmwareHeader: version or time is 0");
+        if (ExpectedVersion == 0 || ExpectedTime == 0) _engine.EmitStackLog("warning: RobotManager.ParseFirmwareHeader: version or time is 0");
     }
 
     // fidelity: M1-025, M1-028, M1-029
@@ -1506,7 +1506,7 @@ internal sealed class RobotManager
     /// </summary>
     public EngineRobot? AddRobot(uint id, bool withRic = true)
     {
-        if (RobotExists(id)) { _engine.Log($"warning: RobotManager.AddRobot: robot {id} already exists"); return Get(id); }
+        if (RobotExists(id)) { _engine.EmitSourceLog($"warning: RobotManager.AddRobot: robot {id} already exists"); return Get(id); }
         // fidelity: M3-033
         // The engine's Robot constructor queues the connection-time NV reads; the RIC is the handshake path, so
         // the offline seam (withRic false) queues none.
@@ -1547,12 +1547,12 @@ internal sealed class RobotManager
         {
             if (!RobotEntries.TryGetValue(id, out robot))
             {
-                _engine.Log($"warning: RobotManager.RemoveRobot: Robot {id} does not exist. Ignoring.");
+                _engine.EmitSourceLog($"warning: RobotManager.RemoveRobot: Robot {id} does not exist. Ignoring.");
                 return;
             }
             ric = _rics.GetValueOrDefault(id);
         }
-        _engine.Log($"RobotManager.RemoveRobot: Removing robot with ID={id}");
+        _engine.EmitStackLog($"RobotManager.RemoveRobot: Removing robot with ID={id}");
         var result = wasConnecting ? RobotConnectionResult.ConnectionRejected : RobotConnectionResult.ConnectionFailure;
         bool answered = ric?.HandleDisconnect(result) ?? false;
         if (!answered)
@@ -1796,7 +1796,7 @@ public sealed partial class CozmoEngine : IDisposable
         _t = transport;
         Options = options ?? new CozmoEngineOptions();
         // fidelity: M3-052, M3-053
-        _logDisplay.Configure(DasLogDisplay.ShippedConfiguration(), line => DisplayLogLine(line.Line));
+        _logDisplay.Configure(DasLogDisplay.ShippedConfiguration(), line => EmitStackLog(line.Line));
         VerboseLogDisplay = Options.VerboseLogDisplay;
         _nowNs = nowNs ?? EngineTickRunner.HostNowNs;
         // Every MISSING report (SteppedBehavior.ReportMissing, once per process per message) reaches this engine's log, so a handoff to an unbuilt record is visible
@@ -1815,7 +1815,7 @@ public sealed partial class CozmoEngine : IDisposable
         // fidelity: M1-029
         // G5.16..G5.18, G5.25: RobotManager::Init starts the header load on its own thread; nothing waits for it.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
-        else Log("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
+        else EmitStackLog("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
     }
 
     // ------------------------------------------------------------------ running
@@ -1927,10 +1927,10 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     public void ConnectToRobot(IPAddress ip, bool isSimulated = false) => Post(() =>
     {
-        if (Robots.RobotExists(RobotId)) { Log("info: Robot already connected"); return; }
+        if (Robots.RobotExists(RobotId)) { EmitStackLog("info: Robot already connected"); return; }
         Rcm.Connect(ip, isSimulated);
-        if (Robots.AddRobot(RobotId) is null) Log("error: CozmoEngine.AddRobot failed");
-        else Log("info: Connected to robot!");
+        if (Robots.AddRobot(RobotId) is null) EmitStackLog("error: CozmoEngine.AddRobot failed");
+        else EmitStackLog("info: Connected to robot!");
         // fidelity: M15-016
         // J13: both the AddRobot-failed and the success path reach 0x004ED10A, so the needs edge is raised
         // unconditionally here; the already-connected branch above returns without it. DASPauseUploadingToServer(1)
@@ -2060,12 +2060,12 @@ public sealed partial class CozmoEngine : IDisposable
         Isolated(() =>
         {
             robot.SyncTime();
-            Log("info: RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime"); // 0x005289EC, after SyncTime at 0x005289D2
-            Log("info: RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims"); // 0x00528A34
+            EmitSourceLog("info: RobotEventHandler.HandleRobotConnectionResponse.SendingSyncTime"); // 0x005289EC, after SyncTime at 0x005289D2
+            EmitSourceLog("info: RobotEventHandler.HandleRobotConnectionResponse.QueueingSetReadyToStreamAnims"); // 0x00528A34
             robot.NvOnIdle(() =>
             {
                 robot.ReadyToStream = true;
-                Log("info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims"); // 0x0052C3B6, after +0x2A store at 0x0052C3A6
+                EmitSourceLog("info: RobotEventHandler.HandleRobotConnectionResponse.SettingReadyToStreamAnims"); // 0x0052C3B6, after +0x2A store at 0x0052C3A6
             });
         });
         // fidelity: M3-019, M3-022
@@ -2118,7 +2118,7 @@ public sealed partial class CozmoEngine : IDisposable
             _ = robot.ActionList.QueueAction(QueueActionPosition.Now, action, 0);
             return;
         }
-        else Log("warning: MISSING: CreateGoToSleepAnimSequence (CC8, M5 interface) is not implemented; GoToSleepRequested raised");
+        else EmitStackLog("warning: MISSING: CreateGoToSleepAnimSequence (CC8, M5 interface) is not implemented; GoToSleepRequested raised");
         var h = GoToSleepRequested;
         if (h is null) return;
         foreach (var t in h.GetInvocationList()) Isolated((Action)t);

@@ -17,6 +17,71 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class M4ControlTests
 {
+    // B-M3M4-6: world _gate must be released before the configuration subscriber takes _updateGate.
+    [Theory]
+    [InlineData(true)] [InlineData(false)]
+    public void B6_MovementPoseSubscriberAllowsConcurrentConfigurationBuild(bool moving)
+    {
+        using var rig = new Rig();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        rig.ToSynced(); rig.State(); ConnectCube(rig);
+        var world = vision.World;
+        uint id = world.ConnectedObjectIdForActiveId(0)!.Value;
+        var located = new ObservableObject(id, ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        { Pose = Pose3d.Identity, PoseState = PoseState.Known, OriginId = world.CurrentOriginId };
+        world.AddLocatedObject(located); world.SetLocalizedTo(located);
+        var configs = new BlockConfigurationManager(world, () => 0);
+        var updateGate = typeof(BlockConfigurationManager).GetField("_updateGate", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(configs)!;
+        using var held = new ManualResetEventSlim(); using var buildNow = new ManualResetEventSlim();
+        var build = Task.Run(() => {
+            lock (updateGate) { held.Set(); if (buildNow.Wait(TimeSpan.FromSeconds(5))) configs.Update(); }
+        });
+        Assert.True(held.Wait(TimeSpan.FromSeconds(5)));
+        bool completedInSubscriber = false; var changes = new List<(PoseState, PoseState)>();
+        world.PoseStateChanged += (_, before, after) => {
+            changes.Add((before, after)); buildNow.Set();
+            // This thread now needs _updateGate; its holder is running BuildLocked and needs world._gate.
+            completedInSubscriber = build.Wait(TimeSpan.FromSeconds(2));
+            if (completedInSubscriber) configs.Update();
+        };
+        rig.Data(moving ? new ObjectMoved { ObjectID = 0 } : new ObjectStoppedMoving { ObjectID = 0 }); rig.Tick();
+        buildNow.Set(); Assert.True(build.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(completedInSubscriber);
+        Assert.Equal(new[] { (PoseState.Known, PoseState.Dirty) }, changes);
+        Assert.Equal(moving, located.IsMoving); Assert.Null(world.LocalizedToObjectId);
+    }
+
+    [Fact]
+    public void B6_LightAndCubeLogsAllowCrossThreadComponentReentry()
+    {
+        string res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res); rig.ToSynced(); rig.State();
+            var reached = new List<bool>();
+            rig.Engine.LogEntry += e => {
+                if (e.Name?.StartsWith("CubeLightComponent.") == true)
+                    reached.Add(Task.Run(() => rig.Robot.Lights.Cubes.Update()).Wait(TimeSpan.FromSeconds(2)));
+                if (e.Name?.StartsWith("Robot.ActiveObjectMoved.") == true)
+                    reached.Add(Task.Run(() => rig.Robot.Cubes.ByObjectId(0)).Wait(TimeSpan.FromSeconds(2)));
+            };
+            rig.Engine.StackLogLine += line => {
+                if (line.StartsWith("tap from unknown object"))
+                    reached.Add(Task.Run(() => rig.Robot.Cubes.ByObjectId(4)).Wait(TimeSpan.FromSeconds(2)));
+            };
+            // Raw entry, no pre-registration: AddConnectedActiveObject must precede SettingLights.
+            Assert.Empty(rig.Robot.VisionModeRecipient!.World.ConnectedObjects);
+            int mark = rig.Mark(); ConnectCube(rig);
+            Assert.Single(rig.Robot.VisionModeRecipient.World.ConnectedObjects);
+            Assert.Contains(rig.SentSince(mark), m => m is CubeLights);
+            rig.Data(new ObjectMoved { ObjectID = 0 });
+            rig.Data(new ObjectTapped { ObjectID = 4, TapPos = 100, TapNeg = 0 }); rig.Tick();
+            Assert.True(reached.Count >= 3); Assert.All(reached, Assert.True);
+            Assert.DoesNotContain(rig.Log, l => l.Contains("PlayLightAnim requires the real connected"));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
     // B-M3M4-5 checked Stopped body 0x534924..53494A and the shared Moved body.
     [Theory]
     [InlineData(false, false)] [InlineData(true, false)] [InlineData(false, true)] [InlineData(true, true)]
@@ -177,9 +242,6 @@ public class M4ControlTests
         public void Tick(double ms = 60) { NowNs += (long)(ms * 1_000_000); Engine.Tick(); }
         public void Data(RobotMessage m)
         {
-            // Light tests provide the native caller's connected-world precondition before its game-side broadcast.
-            if (m is ObjectConnectionState cs && _fixtureWorld is not null)
-                _fixtureWorld.World.HandleActiveObjectConnectionState(cs.ObjectID, cs.FactoryID, cs.ObjectType, cs.Connected);
             Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
         }
 

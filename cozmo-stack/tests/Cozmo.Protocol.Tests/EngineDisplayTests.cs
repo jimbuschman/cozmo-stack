@@ -1,6 +1,8 @@
 using Cozmo.Robot;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
+// Engine instances subscribe to process-wide MISSING reports; serialize the display collectors with their producers.
+[Collection("SteppedBehavior missing-report statics")]
 public class EngineDisplayTests
 {
     [Fact]

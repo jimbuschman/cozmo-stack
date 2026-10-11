@@ -2481,12 +2481,19 @@ public sealed class BlockWorld
     // fidelity: M4-009, M11-009 — manager-checked 0x00534924..0x0053494A.
     internal void ApplyMovedOrStopped(ObservableObject matched, bool moving)
     {
+        PoseState? previous = null;
         lock (_gate)
         {
             if (IsCarryingObject?.Invoke(matched.ObjectId) != true && matched.PoseState == PoseState.Known)
-                MarkObjectDirty(matched, false);
+            {
+                // MarkObjectDirty(false) -> SetPoseStateHelper(Dirty), without its callout under _gate.
+                if (LocalizedToObjectId == matched.ObjectId) SetLocalizedTo(null);
+                previous = matched.PoseState;
+                matched.PoseState = PoseState.Dirty;
+            }
             matched.IsMoving = moving;
         }
+        if (previous is { } old) PoseStateChanged?.Invoke(matched, old, PoseState.Dirty);
     }
 
     public void MarkDirty(uint objectId)

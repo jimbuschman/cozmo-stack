@@ -234,7 +234,7 @@ public sealed class CozmoRobot : IDisposable
         Transport = transport ?? new ReliableTransport(options);
         var realPort = port is null ? new ReliableTransportPort(Transport) : null;
         Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock);
-        if (realPort is not null) realPort.Log = Engine.Log;
+        if (realPort is not null) realPort.Log = Engine.EmitStackLog;
         // fidelity: M3-012
         // The raw-bitmap face (MD3) and the single-frame audio sends go out at once, but in the stream counters
         // (C11), since the robot counts what it plays of them in the AnimationState the budget is refreshed from.
@@ -669,6 +669,8 @@ public sealed class CozmoRobot : IDisposable
         // fidelity: M3-021
         if (m is DefaultCameraParams dcp) Route(() => CameraSettings.Handle(dcp));
         Route(() => Sensors.Handle(m));
+        // AddConnectedActiveObject (0x00533BD6) precedes the broadcast (0x00533D2C).
+        if (m is ObjectConnectionState cs) Route(() => VisionModeRecipient?.HandleObjectConnectionState(cs));
         Route(() => Cubes.Handle(m));
         Route(() => CubeAccel.Handle(m));
     }

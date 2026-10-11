@@ -389,7 +389,7 @@ public class RFix2BTests
         engineRobot.HandleFirmwareVersion(Fw("7"));
         Assert.Null(provider());
         Assert.False(engineRobot.PhysicalRobotRecorded);
-        Assert.Equal(2, log.Count(l => l.StartsWith("warning: event handler threw: JsonLogicError: ", StringComparison.Ordinal))); // M3-049/M1-034: every throw is isolated
+        Assert.True(log.Count(l => l.StartsWith("event handler threw: JsonLogicError: ", StringComparison.Ordinal)) == 2, string.Join("\n", log)); // M3-049/M1-034: every throw is isolated
 
         engineRobot.HandleFirmwareVersion(Fw("null"));                             // null root becomes an object: sim is null
         Assert.Equal(RobotAudioOutputSource.PlayOnRobot, provider());

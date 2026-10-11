@@ -260,28 +260,33 @@ public class TransportHardeningTests
         t.Disconnect();                                     // after Dispose: nothing to do
     }
 
-    /// <summary>Host hygiene: Dispose posts teardown before completing the executor.
-    /// Executor refusal itself is checked separately without stranding a transport dispatch thread.</summary>
+    /// <summary>M1-014 host refusal regression: exercise refused executor posts without stranding
+    /// the real transport executor, which must still accept its disposal closure.</summary>
     [Fact]
-    public void DisposalClosesTheTransportBeforeTheExecutorRefusesFurtherPosts()
+    public void RefusedPostsRestoreIdleAndThrowForConnectDisconnectAndSendData()
     {
         using var t = new ReliableTransport();
-        t.Connect(Nowhere, 59991);
-        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
-        t.Dispose();
-        t.Executor.Complete();
-        Assert.False(t.Executor.Post(() => { }));
-        Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59992));
-
-        var executor = new SerialExecutor("test-completed-executor");
-        executor.Start();
+        var field = typeof(ReliableTransport).GetField("_exec", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var original = t.Executor;
+        var refused = new SerialExecutor("test-refused-posts");
+        refused.Start(); refused.Complete(); refused.Join(TimeSpan.FromSeconds(5));
+        Assert.False(refused.WorkerThread.IsAlive);
         try
         {
-            executor.Complete();
-            Assert.False(executor.Post(() => { }));
+            field.SetValue(t, refused);
+            Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59991));
+            Assert.Equal(LinkState.Idle, t.State);
+            Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59992));
+            Assert.Equal(LinkState.Idle, t.State);
+            Assert.Throws<ObjectDisposedException>(() => t.Disconnect());
+            field.SetValue(t, original);
+            t.Connect(Nowhere, 59991);
+            Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+            Assert.Equal(LinkState.Connecting, t.State); // passes SendData's not-connected gate
+            field.SetValue(t, refused);
+            Assert.Throws<ObjectDisposedException>(() => t.SendData(new GetManufacturingInfo().ToBytes()));
         }
-        finally { executor.Complete(); executor.Join(TimeSpan.FromSeconds(5)); }
-        Assert.False(executor.WorkerThread.IsAlive);
+        finally { field.SetValue(t, original); }
     }
 
     [Fact]

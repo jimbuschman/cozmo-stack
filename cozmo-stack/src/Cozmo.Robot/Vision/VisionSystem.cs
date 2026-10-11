@@ -667,7 +667,9 @@ public sealed class VisionSystem : IDisposable
             // fidelity: M11-041
             // HandleActiveObjectConnectionState 0x00533B3C: a connection registers the connected object (AddConnectedActiveObject), a
             // disconnection erases it (RemoveConnectedActiveObject).
-            case ObjectConnectionState cs: HandleObjectConnectionState(cs); break;
+            // Registration is performed by RouteToDevices before the connection broadcast reaches lights.
+            // 0x00533BD6 precedes Robot::Broadcast at 0x00533D2C; do not register twice here.
+
             // fidelity: M11-004
             // HandleImageImuData 0x00535C20 appends every image IMU sample to VisionComponent+0xb0's
             // ImuDataHistory (AddImuData 0x00538B24); the rotating gate reads it back.
@@ -690,7 +692,7 @@ public sealed class VisionSystem : IDisposable
     /// <see cref="CozmoCubes"/>'s (M4), which sees the same message. An unread body that throws (<c>CreateActiveObjectByType</c> for a type it
     /// does not build) is logged, not swallowed.
     /// </summary>
-    private void HandleObjectConnectionState(ObjectConnectionState cs)
+    internal void HandleObjectConnectionState(ObjectConnectionState cs)
     {
         uint? worldId = cs.Connected ? null : World.ConnectedObjectIdForActiveId(cs.ObjectID);
         try { World.HandleActiveObjectConnectionState(cs.ObjectID, cs.FactoryID, cs.ObjectType, cs.Connected); }

@@ -115,7 +115,7 @@ public sealed class BackpackLightAnimations
                 // fidelity: M1-034, M4-036 — section 13.4, operator pin: the native loader terminates;
                 // isolate this file and keep states already inserted, then continue the enumeration.
                 try { if (!JsonEmpty(doc.RootElement)) c.DefineFromJson(doc.RootElement, log); }
-                catch (JsonLogicError e) { log?.Invoke($"warning: event handler threw: {e.GetType().Name}: {e.Message}"); }
+                catch (JsonLogicError e) { log?.Invoke($"event handler threw: {e.GetType().Name}: {e.Message}"); }
             }
         }
         log?.Invoke($"info: [Animations] RobotDataLoader.LoadBackpackLightAnimations.LoadTime: Time to load backpack light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
@@ -702,7 +702,7 @@ public sealed class CubeLightComponent
     }
 
     private uint NowMs => _robot.Engine.Timer.TimeStampMs;
-    private void Log(string l) => _robot.Engine.LogWithChannel(l, "CubeLightComponent");
+    private void Log(string l) => _robot.Engine.EmitSourceLog(l, "CubeLightComponent");
 
     // fidelity: M4-018
     /// <summary>
@@ -740,37 +740,43 @@ public sealed class CubeLightComponent
     {
         Playing pushed;
         CubeLightPattern first;
-        lock (_gate)
+        var logs = new List<string>();
+        void Log(string line) => logs.Add(line);
+        try
         {
-            var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type);
-            if (connected is null)
-            { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real connected BlockWorld ObjectID; active-slot fallback is not used"); return false; }
-            uint id = connected.ObjectId;
-            string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
-            if (!_infos.TryGetValue(type, out var info)) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.InvalidObjectID: No object with id {id} exists in _objectInfo map can't play animation"); return false; }
-            var stack = info.Layers[layer];
-            if (stack.Count > 0 && !stack[^1].CanBeOverridden) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.CantBeOverridden: Current anim {stack[^1].Name} can not be overridden on object {id} layer {layerName}"); return false; }
-            string name = Animations.AnimationForTrigger(trigger);
-            var anim = Animations.ForTrigger(trigger);
-            if (anim is null || anim.Length == 0) { Log($"warning: CubeLightComponent.NoAnimForTrigger: No animation found for trigger {name}"); return false; }
-            if (info.GameLayerOnly && layer != UserLayer) { Log($"info: [CubeLightComponent] CubeLightComponent.OnlyGameLayerEnabled: Only game layer is enabled, refusing to play anim {name} on object {id} layer {layerName}"); return false; }
-            if (!info.GameLayerOnly && layer == UserLayer) { Log("info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.NotPlayingUserAnim: Refusing to play anim on User/Game layer when it is not enabled"); return false; }
-            if (stack.Count > 0 && stack[^1].Blended && blend) { Log("info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim: Can't play a blended anim over already playing blended anim"); return false; }
-            // Blending body remains M11's unported light-state handoff; do not manufacture the blended pattern.
-            if (blend) { Log("MISSING: M4-018 | BlendAnimWithCurLights body is not in the adopted rows; animation not pushed"); return false; }
-            first = anim[0];
-            var playing = new Playing { Anim = anim, Name = name, Index = 0,
-                TimerMs = (first.DurationMs | durationMs) == 0 ? 0 : unchecked(NowMs + first.DurationMs + durationMs),
-                CanBeOverridden = first.CanBeOverridden };
-            stack.Add(playing);
-            pushed = playing;
-            if (layer > info.CurrentLayer) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.LightsNotSet: Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
-            Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.SettingLights: Playing trigger {trigger} on layer {layerName} for object {id}");
-            info.CurrentLayer = layer;
-            pushed.PendingSend = true;
-            // SendTransitionMessage is an unread engine-to-game handoff on this path.
-            Log("MISSING: M4-018 | SendTransitionMessage 0x00638758..0x006387D8 game payload has no adopted row");
+            lock (_gate)
+            {
+                var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type);
+                if (connected is null)
+                { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real connected BlockWorld ObjectID; active-slot fallback is not used"); return false; }
+                uint id = connected.ObjectId;
+                string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
+                if (!_infos.TryGetValue(type, out var info)) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.InvalidObjectID: No object with id {id} exists in _objectInfo map can't play animation"); return false; }
+                var stack = info.Layers[layer];
+                if (stack.Count > 0 && !stack[^1].CanBeOverridden) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.CantBeOverridden: Current anim {stack[^1].Name} can not be overridden on object {id} layer {layerName}"); return false; }
+                string name = Animations.AnimationForTrigger(trigger);
+                var anim = Animations.ForTrigger(trigger);
+                if (anim is null || anim.Length == 0) { Log($"warning: CubeLightComponent.NoAnimForTrigger: No animation found for trigger {name}"); return false; }
+                if (info.GameLayerOnly && layer != UserLayer) { Log($"info: [CubeLightComponent] CubeLightComponent.OnlyGameLayerEnabled: Only game layer is enabled, refusing to play anim {name} on object {id} layer {layerName}"); return false; }
+                if (!info.GameLayerOnly && layer == UserLayer) { Log("info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.NotPlayingUserAnim: Refusing to play anim on User/Game layer when it is not enabled"); return false; }
+                if (stack.Count > 0 && stack[^1].Blended && blend) { Log("info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim: Can't play a blended anim over already playing blended anim"); return false; }
+                // Blending body remains M11's unported light-state handoff; do not manufacture the blended pattern.
+                if (blend) { Log("MISSING: M4-018 | BlendAnimWithCurLights body is not in the adopted rows; animation not pushed"); return false; }
+                first = anim[0];
+                var playing = new Playing { Anim = anim, Name = name, Index = 0,
+                    TimerMs = (first.DurationMs | durationMs) == 0 ? 0 : unchecked(NowMs + first.DurationMs + durationMs),
+                    CanBeOverridden = first.CanBeOverridden };
+                stack.Add(playing);
+                pushed = playing;
+                if (layer > info.CurrentLayer) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.LightsNotSet: Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
+                Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.SettingLights: Playing trigger {trigger} on layer {layerName} for object {id}");
+                info.CurrentLayer = layer;
+                pushed.PendingSend = true;
+                // SendTransitionMessage is an unread engine-to-game handoff on this path.
+                Log("MISSING: M4-018 | SendTransitionMessage 0x00638758..0x006387D8 game payload has no adopted row");
+            }
         }
+        finally { foreach (var line in logs) this.Log(line); }
         // Do not hold _gate while taking _sendGate: SetLights takes those in the opposite order.
         uint result;
         try { result = SetObjectLights(type, first); }
