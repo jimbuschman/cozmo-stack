@@ -4,6 +4,30 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot;
 
+// fidelity: M4-033
+// T1/T2 (0x0050FE60..0x0050FE70, 0x0064E738..0x0064E744): owned by one Robot at +0x28C.
+internal sealed class TouchSensorComponent
+{
+    internal uint Timestamp { get; private set; }
+    // The native ctor leaves +8 untouched. null represents the unobserved pre-Update value; there is no consumer (T12).
+    internal ushort? Raw { get; private set; }
+
+    internal void Update(RobotState state)
+    {
+        // T4, 0x0064E75C..0x0064E766: the two stores, then Log via 0x008CCFCC -> 0x0064E76C.
+        Timestamp = state.Timestamp;
+        Raw = state.BackpackTouchSensorRaw;
+        // T5/T11: Log returns because +0x10 is always clear. StartLogging 0x0064EA44 and StopLogging
+        // 0x0064EC10 have no callers; the logging body 0x0064E77A..0x0064E982 is unreachable.
+    }
+}
+
+public sealed partial class EngineRobot
+{
+    // fidelity: M4-033
+    internal TouchSensorComponent? TouchSensor { get; set; } = new();
+}
+
 /// <summary>Why a motion call finished.</summary>
 public enum MotionResult
 {
@@ -1087,14 +1111,16 @@ bool requireCalibration = true)
     /// lights, 0x270 the cube lights and 0x450 the tap filter are the deletions at 0x00511500, 0x00511428, 0x0051143E,
     /// 0x0051146A and 0x005111EA. Each owner pointer is cleared before its destructor runs (the Lifetime does that), except slot 0x450 (the tap filter), which is released with clearBefore:false and cleared afterwards (0x00511220),
     /// and none of the destructors sends a message: nothing is unlocked, stopped or switched off by them.
-    /// NOT BOUND (reported MISSING, below): Touch +0x28C (M4-033) and Cliff +0x288 (M4-027) (their RollingFileLogger close; this stack has no Touch
-    /// component and the Cliff state lives in <see cref="CozmoSensors"/>).
+    /// Touch +0x28C is bound under M4-033. Cliff +0x288 (M4-027) remains MISSING (its RollingFileLogger close;
+    /// the Cliff state lives in <see cref="CozmoSensors"/>).
     /// </summary>
     internal void BindRobotLifetime(EngineRobot robot)
     {
-        Behavior.SteppedBehavior.ReportMissing("M4-033 | ~Robot's deletion of TouchSensorComponent (+0x28C): the component, its destructor and its logger close are unread and not built");
         Behavior.SteppedBehavior.ReportMissing("M4-027 | ~Robot's deletion of CliffSensorComponent (+0x288, ~CliffSensorComponent 0x00633FF8): its RollingFileLogger close is not reproduced (the Cliff state lives in CozmoSensors)");
         var lifetime = robot.Lifetime;
+        // fidelity: M4-033
+        // T15: clear the owner before deletion; the logger is always null (T11). No flush, log or send.
+        lifetime.Bind(0x28C, _ => robot.TouchSensor = null);
         lifetime.Bind(-3, _ => AbortAll(robot));
         lifetime.Bind(0x450, _ => _robot.Cubes.DestroyTapFilter());
         lifetime.Bind(0x278, _ => _robot.CubeAccel.ResetToConstructed());

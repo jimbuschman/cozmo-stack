@@ -1,0 +1,308 @@
+{
+  "source": "shipped libopencv_imgcodecs.so 0x375A6, Unicorn via emu_jpeg_decode.Oracle; inputs from adopted Part C.3 rows; size always 32",
+  "library_sha256": {
+    "libcozmoEngine.so": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+    "libopencv_core.so": "8b8c9fcdff9028e5c1b58578d6c20040bebfc2f16c2d2d4bf885f79da56cba8d",
+    "libopencv_imgproc.so": "3c4e3ff7e639c61e21c5ef91ea2cc4125bb9bd259ff53f5c0b1eeb9a95054830",
+    "libopencv_imgcodecs.so": "4bdf5a45023c7938924f6c0018bf20774ebb5f7c0b2a637c93fe9e61b1f87218",
+    "libc++_shared.so": "8ac5090bbd0be7401af5fff6044ded6f1e6ced692fcd3581fa3cb937b519a16a"
+  },
+  "cases": [
+    {
+      "id": "raw-lossy",
+      "window_hex": "1000009d012a0000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "raw-lossless",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "riff-lossy",
+      "window_hex": "524946461800000057454250565038200c0000001000009d012a000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "riff-lossless",
+      "window_hex": "5249464618000000574542505650384c0c0000002f0000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "chunk-lossy",
+      "window_hex": "565038200c0000001000009d012a000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "chunk-lossless",
+      "window_hex": "5650384c0c0000002f0000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "alph-lossy",
+      "window_hex": "414c504800000000565038200c0000001000009d012a00000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "alph-lossless",
+      "window_hex": "414c5048000000005650384c0c0000002f000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "extended-flags-large-riff",
+      "window_hex": "52494646f6ffffff57454250565038580a000000ffffffff0000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "padded-short-lossless-1",
+      "window_hex": "2f20202020202020202020202020202020202020202020202020202020202020",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "padded-short-lossless-2",
+      "window_hex": "2f00202020202020202020202020202020202020202020202020202020202020",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "padded-short-lossless-31",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000020",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "riff-not-webp",
+      "window_hex": "5249464614000000004542505650384c05000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "riff-too-small",
+      "window_hex": "524946460b000000574542505650384c05000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "riff-too-large",
+      "window_hex": "52494646f7ffffff574542505650384c05000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "vp8x-size",
+      "window_hex": "5249464616000000574542505650385809000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "vp8x-product",
+      "window_hex": "524946461600000057454250565038580a00000000000000ffffffffffff0000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "vp8x-no-riff",
+      "window_hex": "565038580a000000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "alph-cap",
+      "window_hex": "414c5048f7ffffff000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "alph-incomplete-chunk",
+      "window_hex": "414c504819000000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 7
+    },
+    {
+      "id": "alph-next-header-too-short",
+      "window_hex": "414c504811000000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 7
+    },
+    {
+      "id": "riff-chunk-exceeds-riff",
+      "window_hex": "5249464614000000574542505650384c09000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "bitstream-size-cap",
+      "window_hex": "5650384cf7ffffff2f0000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "lossless-too-short",
+      "window_hex": "414c50480c0000000000000000000000000000005650384c0000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 7
+    },
+    {
+      "id": "lossless-marker",
+      "window_hex": "5650384c0c000000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "lossy-too-short",
+      "window_hex": "414c504808000000000000000000000056503820000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 7
+    },
+    {
+      "id": "lossy-key-marker",
+      "window_hex": "10000000012a0000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "lossy-not-key-frame",
+      "window_hex": "1100009d012a0000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "lossy-version",
+      "window_hex": "1800009d012a0000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "lossy-not-shown",
+      "window_hex": "0000009d012a0000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "lossy-partition-equal-size",
+      "window_hex": "1004009d012a0000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": true,
+      "status": 3
+    },
+    {
+      "id": "version-512",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000000",
+      "version": 512,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "version-767",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000000",
+      "version": 767,
+      "features_present": true,
+      "data_present": true,
+      "status": 0
+    },
+    {
+      "id": "version-768",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000000",
+      "version": 768,
+      "features_present": true,
+      "data_present": true,
+      "status": 2
+    },
+    {
+      "id": "version--1",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000000",
+      "version": -1,
+      "features_present": true,
+      "data_present": true,
+      "status": 2
+    },
+    {
+      "id": "null-features",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": false,
+      "data_present": true,
+      "status": 2
+    },
+    {
+      "id": "null-data",
+      "window_hex": "2f00000000000000000000000000000000000000000000000000000000000000",
+      "version": 513,
+      "features_present": true,
+      "data_present": false,
+      "status": 2
+    }
+  ]
+}

@@ -540,8 +540,8 @@ public class M4AbortSleepTests
     }
 
     /// <summary>
-    /// M4-027: the slots the stack's components are bound to log no MISSING (they are built); Touch (+0x28C) and Cliff (+0x288),
-    /// whose RollingFileLogger close and component are not built, still report the missing owner.
+    /// M4-027/M4-033: bound components, including Touch (+0x28C), log no MISSING. Cliff (+0x288),
+    /// whose RollingFileLogger close is not built, still reports the missing owner.
     /// </summary>
     [Fact]
     public void M4_027_BoundSlotsAreQuietAndUnbuiltOnesAreReported()
@@ -551,9 +551,8 @@ public class M4AbortSleepTests
         rig.State();
         Remove(rig);
         var lines = rig.LogLines();
-        foreach (var offset in new[] { "+0x254", "+0x278", "+0x274", "+0x270", "+0x450" })
+        foreach (var offset in new[] { "+0x254", "+0x278", "+0x274", "+0x270", "+0x450", "+0x28C" })
             Assert.DoesNotContain(lines, l => l.StartsWith("MISSING: Robot lifetime owner " + offset + " "));
-        Assert.Contains(lines, l => l.StartsWith("MISSING: Robot lifetime owner +0x28C "));
         Assert.Contains(lines, l => l.StartsWith("MISSING: Robot lifetime owner +0x288 "));
     }
 

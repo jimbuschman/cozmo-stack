@@ -13,6 +13,140 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class EngineAppLayerTests
 {
+    // T3/T4: transport -> UpdateFullRobotState gate -> device route -> cliff store -> Touch Update.
+    [Fact]
+    public void M4_033_GatedStateStoresTimestampAndRawBeforeOriginRejection()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        var touch = rig.Engine.Robot!.TouchSensor!;
+        Assert.Equal(0u, touch.Timestamp);
+        Assert.Null(touch.Raw); // native +8 is untouched by construction; no claim about its allocator bytes
+        rig.Data(new RobotState { Timestamp = 123, BackpackTouchSensorRaw = 0xFEDC, PoseOriginId = 99 });
+        rig.Tick(0);
+        Assert.Equal(0u, touch.Timestamp);
+        Assert.Null(touch.Raw);
+        rig.Data(new SyncTimeAck());
+        rig.Data(new RobotState { Timestamp = 123, BackpackTouchSensorRaw = 0xFEDC, PoseOriginId = 99 });
+        rig.Tick(0);
+        Assert.Equal(123u, touch.Timestamp);
+        Assert.Equal((ushort)0xFEDC, touch.Raw);
+        Assert.Null(rig.Engine.Robot.AcceptedState);
+        rig.Data(new RobotState { Timestamp = uint.MaxValue, BackpackTouchSensorRaw = 0, PoseOriginId = 1 });
+        rig.Tick(0);
+        Assert.Equal(uint.MaxValue, touch.Timestamp);
+        Assert.Equal((ushort)0, touch.Raw);
+        Assert.DoesNotContain(rig.Log, l => l.Contains("TouchSensor"));
+    }
+
+    // T15: Robot+0x28C owner cleared, no logger exists and no touch destructor side effects.
+    [Fact]
+    public void M4_033_RemovalClearsOwnerAndReplacementConstructsFreshComponent()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(42);
+        var old = rig.Engine.Robot!;
+        var touch = old.TouchSensor;
+        rig.Log.Clear();
+        rig.Disconnected();
+        rig.Tick(0);
+        Assert.Null(old.TouchSensor);
+        Assert.True(old.Lifetime.IsKnownNull(0x28C));
+        Assert.DoesNotContain(rig.Log, l => l.Contains("TouchSensor") || l.Contains("+0x28C"));
+        rig.Connect();
+        Assert.NotSame(touch, rig.Engine.Robot!.TouchSensor);
+        Assert.Equal(0u, rig.Engine.Robot.TouchSensor!.Timestamp);
+        Assert.Null(rig.Engine.Robot.TouchSensor.Raw);
+    }
+
+    // P2/P4/P5/P6: all five wire slots, ascending sends, and the reply lifecycle through production handlers.
+    [Fact]
+    public void M4_010_AllFiveSlotsSendConnectAndRequestedDisconnectInOrder()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        var c = rig.Robot.Cubes.Connections;
+        c.ConnectToObjects(new uint[] { 11, 12, 13, 14, 15 });
+        for (uint i = 0; i < 5; ++i)
+            rig.Data(new ObjectAvailable { FactoryId = 11 + i, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Port.Sent.Clear();
+        rig.Tick(0);
+        var sends = rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>().ToArray();
+        Assert.Equal(new uint[] { 11, 12, 13, 14, 15 }, sends.Select(m => m.FactoryId));
+        Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, sends.Select(m => m.Slot));
+        for (uint i = 0; i < 5; ++i)
+            rig.Data(new ObjectConnectionState { ObjectID = i, FactoryID = 11 + i, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Tick(0);
+        Assert.All(c.Slots, s => Assert.Equal(ActiveObjectSlotState.Connected, s.State));
+        c.ConnectToObjects(new uint[5]);
+        rig.Port.Sent.Clear();
+        rig.Tick(0);
+        sends = rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>().ToArray();
+        Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, sends.Select(m => m.Slot));
+        Assert.All(sends, m => Assert.Equal(0u, m.FactoryId));
+        Assert.All(c.Slots, s => Assert.Equal(ActiveObjectSlotState.PendingDisconnection, s.State));
+        for (uint i = 0; i < 5; ++i)
+            rig.Data(new ObjectConnectionState { ObjectID = i, FactoryID = 11 + i, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+        rig.Tick(0);
+        Assert.All(c.Slots, s => { Assert.Equal(0u, s.FactoryId); Assert.Equal(ActiveObjectSlotState.Empty, s.State); });
+    }
+
+    // P10: signed robot-clock delta, >=10001; expiry precedes requested connections (P11).
+    [Theory]
+    [InlineData(11000u, true)]
+    [InlineData(11001u, false)]
+    [InlineData(999u, true)]
+    public void M4_010_AdvertisementExpiryUsesRobotClockBeforeSlotSend(uint now, bool sends)
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Tick(0);
+        rig.Robot.Cubes.Connections.ConnectToObjects(new uint[] { 0xAB, 0, 0, 0, 0 });
+        rig.Port.Sent.Clear();
+        rig.Data(new RobotState { Timestamp = now, PoseOriginId = 1 });
+        rig.Tick(0);
+        Assert.Equal(sends, rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>().Any(m => m.FactoryId == 0xAB));
+        if (!sends)
+        {
+            rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Tick(0);
+            Assert.Single(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>(), m => m.FactoryId == 0xAB);
+        }
+    }
+
+    // P12/P14/P17: enabled gate; f32 2s throttle and discovery >= start+duration; Enable sends nothing.
+    [Fact]
+    public void M4_010_FilterEnableAndDiscoveryTimersUseInclusiveBoundaries()
+    {
+        using var rig = new Rig();
+        rig.ToSuccess();
+        rig.SendFirstFullState(1000);
+        rig.NowNs = 10_000_000_000;
+        rig.Robot.Cubes.EnableAutoBlockPool(false);
+        rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Tick(0);
+        rig.Port.Sent.Clear();
+        rig.Robot.Cubes.EnableAutoBlockPool(true, 4f);
+        Assert.Empty(rig.Port.Sent);
+        rig.Tick(0); // discovery runs but duration has not elapsed; last update = 10
+        rig.Log.Clear();
+        rig.NowNs = 11_000_000_000;
+        rig.Tick(0);
+        Assert.DoesNotContain(rig.Log, l => l.Contains("BlockFilter.UpdateDiscovering"));
+        rig.NowNs = 12_000_000_000;
+        rig.Tick(0); // interval equality admits discovery, but duration still gates connection
+        Assert.Contains(rig.Log, l => l.Contains("Discovered closer object 0xab"));
+        Assert.Empty(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>());
+        rig.NowNs = 14_000_000_000;
+        rig.Tick(0); // both interval and duration equality
+        Assert.Single(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>(), m => m.FactoryId == 0xAB && m.Slot == 0);
+        Assert.Equal(0xABu, rig.Robot.Cubes.Connections.PersistentPool[0].FactoryId);
+    }
+
     [Fact]
     public void M1_053_OfflineSeamWithoutPacketDoesNotPublish()
     {
@@ -417,9 +551,16 @@ public class EngineAppLayerTests
         // slot 1 asks for another cube of type 1 while slot 0 is connected
         connections.ConnectToObjects(new uint[] { 0xAB, 0xCD, 0, 0, 0 });
         rig.Data(new ObjectAvailable { FactoryId = 0xCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+        rig.Port.Sent.Clear();
         rig.Tick();
         Assert.Contains("warning: Robot.ConnectToRequestedObjects.SameTypeAlreadyConnected: Object with factory ID 0xcd matches type (Block_LIGHTCUBE1) of another connected object. Only one of each type may be connected.", rig.Log);
         Assert.Contains("info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot 1 with factory ID = 0x0", rig.Log);
+        // P3/P4: despite warning, a zero id goes on the wire; the advertised id is retained in the pending slot.
+        var duplicateSend = Assert.Single(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>());
+        Assert.Equal((byte)1, duplicateSend.Slot);
+        Assert.Equal(0u, duplicateSend.FactoryId);
+        Assert.Equal(0xCDu, connections.Slots[1].FactoryId);
+        Assert.Equal(ActiveObjectSlotState.PendingConnection, connections.Slots[1].State);
         // emptying slot 0
         connections.ConnectToObjects(new uint[] { 0, 0xCD, 0, 0, 0 });
         rig.Tick();
@@ -482,6 +623,42 @@ public class EngineAppLayerTests
             Assert.Contains("info: BlockFilter.UpdateConnecting: Looking for a replacement for object 0x10 of type Block_LIGHTCUBE1", rig.Log);
             Assert.Contains("info: BlockFilter.UpdateConnecting: Found replacement object 0x11", rig.Log);
             Assert.Contains("info: Robot.ConnectToObjects: Connecting objects with factoryID = 0x11, 0x0, 0x0, 0x0, 0x0, ", rig.Log);
+        }
+        finally { File.Delete(path); }
+    }
+
+    // P12/P15/P17: replacement uses >= enable+5, after the two-second update gate; runtime replacement does not Save.
+    [Fact]
+    public void M4_010_PoolReplacementAtFiveSecondsSendsWithoutChangingPersistentPool()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "cozmo-m3m4-" + Guid.NewGuid().ToString("N") + ".txt");
+        try
+        {
+            File.WriteAllText(path, "0x10,1\n");
+            using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
+            rig.ToSuccess();
+            rig.SendFirstFullState(1000);
+            rig.NowNs = 10_000_000_000;
+            rig.Tick(0); // advance the cached BaseStationTimer before Enable reads it
+            rig.Robot.Cubes.EnableAutoBlockPool(true);
+            rig.Data(new ObjectAvailable { FactoryId = 0x11, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
+            rig.Tick(0);
+            rig.Port.Sent.Clear();
+            rig.Log.Clear();
+            rig.NowNs = 13_000_000_000;
+            rig.Tick(0); // admitted filter, but only 3 of 5 seconds
+            Assert.DoesNotContain(rig.Log, l => l.Contains("BlockFilter.UpdateConnecting"));
+            rig.NowNs = 14_999_000_000;
+            rig.Tick(0);
+            Assert.Empty(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>());
+            rig.NowNs = 15_000_000_000;
+            rig.Tick(0); // equality admits both gates
+            var sent = Assert.Single(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>());
+            Assert.Equal(0x11u, sent.FactoryId);
+            Assert.Equal((byte)0, sent.Slot);
+            Assert.Contains("info: BlockFilter.UpdateConnecting: Found replacement object 0x11", rig.Log);
+            Assert.Equal(0x10u, rig.Robot.Cubes.Connections.PersistentPool[0].FactoryId);
+            Assert.Equal("0x10,1\n", File.ReadAllText(path));
         }
         finally { File.Delete(path); }
     }

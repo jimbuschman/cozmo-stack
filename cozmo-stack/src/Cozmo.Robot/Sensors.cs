@@ -867,6 +867,10 @@ public sealed class CozmoSensors
                             _cliffHistory.RemoveAt(0);
                     }
                 }
+                // fidelity: M4-033
+                // T3/T4: 0x00512996, after CliffSensorComponent::UpdateRobotData and before path/IMU handling.
+                // RouteToDevices has already enforced Robot+0x29 (the time-sync gate).
+                _robot.Engine.Robot?.TouchSensor?.Update(s);
                 // fidelity: M10-001, M10-005, M10-010
                 // UFRS order (M4 C3): the IMU filters and CheckAndUpdateTreadsState (0x00512A72) on BaseStationTimer ms
                 // (A2), gated by the head calibration (A1) and fed the physical flag (A4); the commit consequences run
