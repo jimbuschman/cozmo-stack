@@ -11675,3 +11675,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint803 - fair rate/frame navigation and new reads
 
 `20261010-sound-rate-frame-fair-worklist-disposition.md` preserves797's model/cap but uses FIFO to service queued loop exits:6855 windows,310 events versus300,ten additional actual GOT-pointer/read events,zero missing,434 caps unchanged. Primary PC/GOT equations and instructions independently bind all five read pairs. No new writer;9D5B64's actualrate-pointerSP18 save is retained as a concrete next alias step.043/092/099/120/124/130 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint804 - concrete rate-pointer stack alias
+
+`20261010-sound-rate-stack-alias-disposition.md` follows803's9D5B64 SP18 save through exactly three pointer reloads and live rate dereferences9D5C50/5E58/618C, with local entry/return,861-node graph and all-edge initialization-dominance witnesses. Six existing A11590 query interfaces receiveSP38 scope,not the saved pointer; no new direct rate writer or all-alias exclusion. These three primary reads are beyond the generic310-event model's stack support.043/092/099/120/124/130 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

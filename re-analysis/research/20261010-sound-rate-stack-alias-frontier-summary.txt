@@ -1,0 +1,265 @@
+instruction nodes 861
+[
+  {
+    "address": "0x9d5938",
+    "bytes": "f04f2de9",
+    "instruction": "push {r4, r5, r6, r7, r8, sb, sl, fp, lr}",
+    "predecessor": "0x9d5934",
+    "nearSlot18": false,
+    "stackAddressFrontier": false,
+    "SPWrite": true
+  },
+  {
+    "address": "0x9d595c",
+    "bytes": "54d04de2",
+    "instruction": "sub sp, sp, #0x54",
+    "predecessor": "0x9d5958",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": true
+  },
+  {
+    "address": "0x9d5a2c",
+    "bytes": "38308de2",
+    "instruction": "add r3, sp, #0x38",
+    "predecessor": "0x9d5a28",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5b64",
+    "bytes": "18008de5",
+    "instruction": "str r0, [sp, #0x18]",
+    "predecessor": "0x9d5b60",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5b74",
+    "bytes": "1c008de5",
+    "instruction": "str r0, [sp, #0x1c]",
+    "predecessor": "0x9d5b70",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5b78",
+    "bytes": "077added",
+    "instruction": "vldr s15, [sp, #0x1c]",
+    "predecessor": "0x9d5b74",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5bc0",
+    "bytes": "077acded",
+    "instruction": "vstr s15, [sp, #0x1c]",
+    "predecessor": "0x9d5bbc",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5c38",
+    "bytes": "38308de2",
+    "instruction": "add r3, sp, #0x38",
+    "predecessor": "0x9d5c34",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5c4c",
+    "bytes": "18309de5",
+    "instruction": "ldr r3, [sp, #0x18]",
+    "predecessor": "0x9d5c48",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5c54",
+    "bytes": "1c308de5",
+    "instruction": "str r3, [sp, #0x1c]",
+    "predecessor": "0x9d5c50",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5c58",
+    "bytes": "077a9ded",
+    "instruction": "vldr s14, [sp, #0x1c]",
+    "predecessor": "0x9d5c54",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5dc4",
+    "bytes": "077acded",
+    "instruction": "vstr s15, [sp, #0x1c]",
+    "predecessor": "0x9d5dc0",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5e40",
+    "bytes": "38308de2",
+    "instruction": "add r3, sp, #0x38",
+    "predecessor": "0x9d5e3c",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5e50",
+    "bytes": "18309de5",
+    "instruction": "ldr r3, [sp, #0x18]",
+    "predecessor": "0x9d5e4c",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5e5c",
+    "bytes": "1c308de5",
+    "instruction": "str r3, [sp, #0x1c]",
+    "predecessor": "0x9d5e58",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d5e60",
+    "bytes": "077a9ded",
+    "instruction": "vldr s14, [sp, #0x1c]",
+    "predecessor": "0x9d5e5c",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d6064",
+    "bytes": "38308de2",
+    "instruction": "add r3, sp, #0x38",
+    "predecessor": "0x9d6060",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d6180",
+    "bytes": "18209de5",
+    "instruction": "ldr r2, [sp, #0x18]",
+    "predecessor": "0x9d617c",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d6280",
+    "bytes": "38308de2",
+    "instruction": "add r3, sp, #0x38",
+    "predecessor": "0x9d627c",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d646c",
+    "bytes": "38308de2",
+    "instruction": "add r3, sp, #0x38",
+    "predecessor": "0x9d6468",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d6594",
+    "bytes": "54d08de2",
+    "instruction": "add sp, sp, #0x54",
+    "predecessor": "0x9d6590",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": true
+  },
+  {
+    "address": "0x9d6598",
+    "bytes": "f08fbde8",
+    "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}",
+    "predecessor": "0x9d6594",
+    "nearSlot18": false,
+    "stackAddressFrontier": false,
+    "SPWrite": true
+  },
+  {
+    "address": "0x9d65c0",
+    "bytes": "077added",
+    "instruction": "vldr s15, [sp, #0x1c]",
+    "predecessor": "0x9d65bc",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d65f0",
+    "bytes": "077added",
+    "instruction": "vldr s15, [sp, #0x1c]",
+    "predecessor": "0x9d65ec",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d6688",
+    "bytes": "54d08de2",
+    "instruction": "add sp, sp, #0x54",
+    "predecessor": "0x9d6684",
+    "nearSlot18": false,
+    "stackAddressFrontier": true,
+    "SPWrite": true
+  },
+  {
+    "address": "0x9d668c",
+    "bytes": "f08fbde8",
+    "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}",
+    "predecessor": "0x9d6688",
+    "nearSlot18": false,
+    "stackAddressFrontier": false,
+    "SPWrite": true
+  },
+  {
+    "address": "0x9d66dc",
+    "bytes": "077added",
+    "instruction": "vldr s15, [sp, #0x1c]",
+    "predecessor": "0x9d5e10",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  },
+  {
+    "address": "0x9d66e4",
+    "bytes": "077added",
+    "instruction": "vldr s15, [sp, #0x1c]",
+    "predecessor": "0x9d5c0c",
+    "nearSlot18": true,
+    "stackAddressFrontier": false,
+    "SPWrite": false
+  }
+]
+{
+  "scope": "Finite local control-flow path check only; calls retained at original interfaces. Not all runtime/global aliases.",
+  "dominatesReads": {
+    "0x9d5c4c": true,
+    "0x9d5e50": true,
+    "0x9d6180": true
+  },
+  "SPIndexedMemory": [],
+  "outOfGraphSuccessors": {}
+}

@@ -1,0 +1,40 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D5E60..0x009D5EF0 exclusive; ARM;
+009D5E60: vldr         s14, [sp, #0x1c]
+009D5E64: ldr          r3, [r4, #0x1c]
+009D5E68: vcvt.f64.u32 d17, s14
+009D5E6C: mov          r1, r3
+009D5E70: vdup.32      d18, r1
+009D5E74: str          r3, [sp, #0x10]
+009D5E78: ldr          r3, [r4, #0x14]
+009D5E7C: vshr.u64     d18, d18, #0x20
+009D5E80: vmov         s15, r0
+009D5E84: cmp          r2, #0
+009D5E88: beq          #0x9d5f90
+009D5E8C: ldrb         sl, [r2]
+009D5E90: mov          r0, r2
+009D5E94: mov          r1, #0
+009D5E98: ldr          fp, [sp]
+009D5E9C: b            #0x9d5ed4
+RANGE 0x009D66A0..0x009D6760 exclusive; ARM;
+009D66A0: b            #0x9d656c
+009D66A4: vldr         s15, [pc, #0x60] ; word[009D670C]=00000000
+009D66A8: b            #0x9d63bc
+009D66AC: vldr         d16, [pc, #0x4c] ; word[009D6700]=00000000
+009D66B0: ldr          fp, [sp]
+009D66B4: b            #0x9d5d6c
+009D66B8: vldr         d16, [pc, #0x40] ; word[009D6700]=00000000
+009D66BC: ldr          fp, [sp]
+009D66C0: b            #0x9d5b4c
+009D66C4: vldr         d16, [pc, #0x34] ; word[009D6700]=00000000
+009D66C8: b            #0x9d6180
+009D66CC: vmov         s15, sl
+009D66D0: b            #0x9d59f8
+009D66D4: vmov         s15, sl
+009D66D8: b            #0x9d6040
+009D66DC: vldr         s15, [sp, #0x1c]
+009D66E0: b            #0x9d5e18
+009D66E4: vldr         s15, [sp, #0x1c]
+009D66E8: b            #0x9d5c14
+009D66EC: nop

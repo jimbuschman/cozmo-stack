@@ -1,0 +1,10 @@
+{
+  "scope": "Finite local control-flow path check only; calls retained at original interfaces. Not all runtime/global aliases.",
+  "dominatesReads": {
+    "0x9d5c4c": true,
+    "0x9d5e50": true,
+    "0x9d6180": true
+  },
+  "SPIndexedMemory": [],
+  "outOfGraphSuccessors": {}
+}
