@@ -1,0 +1,113 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009EEC1C..0x009EECD0 exclusive; ARM;
+009EEC1C: ldr          r2, [pc, #0x15c] ; word[009EED80]=006514E8
+009EEC20: ldr          lr, [r3, #0x3c]
+009EEC24: ldr          r2, [pc, r2]
+009EEC28: cmp          lr, #0
+009EEC2C: ldr          r3, [r2, #0xb8]
+009EEC30: str          r3, [sp, #0x14]
+009EEC34: beq          #0x9eed58
+009EEC38: ldrb         ip, [lr]
+009EEC3C: mov          r2, lr
+009EEC40: mov          r3, #0
+009EEC44: b            #0x9eec54
+009EEC48: cmp          ip, r0
+009EEC4C: mov          r3, r0
+009EEC50: bls          #0x9eed58
+009EEC54: ldrb         r1, [r2, #1]!
+009EEC58: add          r0, r3, #1
+009EEC5C: cmp          r1, #0x2e
+009EEC60: bne          #0x9eec48
+009EEC64: add          ip, ip, #4
+009EEC68: bic          r2, ip, #3
+009EEC6C: add          r3, r2, r3, lsl #2
+009EEC70: adds         r3, lr, r3
+009EEC74: moveq        r3, r6
+009EEC78: ldr          r3, [r3]
+009EEC7C: cmp          r3, #2
+009EEC80: moveq        r1, #1
+009EEC84: beq          #0x9eec9c
+009EEC88: mov          r0, r5
+009EEC8C: bl           #0x9faec4
+009EEC90: cmp          r0, #0
+009EEC94: moveq        r1, #0
+009EEC98: movne        r1, #2
+009EEC9C: ldr          r2, [r7, #0x88]
+009EECA0: add          r3, r7, #0x84
+009EECA4: mov          r0, r8
+009EECA8: sub          r4, r4, #3
+009EECAC: bl           #0xa63984
+009EECB0: ldr          r1, [r7, #0x78]
+009EECB4: mov          r0, r8
+009EECB8: add          r1, r1, #0x14
+009EECBC: bl           #0xa63a64
+009EECC0: ldr          r3, [pc, #0xbc] ; word[009EED84]=00651388
+009EECC4: bics         r2, r4, #2
+009EECC8: ldr          r3, [pc, r3]
+009EECCC: ldrh         r2, [r3]
+RANGE 0x00A41F28..0x00A41FC0 exclusive; ARM;
+00A41F28: ldr          r3, [pc, #0x2d4] ; word[00A42204]=FFFFFE88
+00A41F2C: ldr          sb, [r5, #0x3c]
+00A41F30: ldr          r3, [r6, r3]
+00A41F34: cmp          sb, #0
+00A41F38: ldr          r8, [r3, #0x6c]
+00A41F3C: str          r8, [sp, #4]
+00A41F40: beq          #0xa41f84
+00A41F44: ldrb         lr, [sb]
+00A41F48: mov          r2, sb
+00A41F4C: mov          r3, #0
+00A41F50: b            #0xa41f60
+00A41F54: cmp          lr, r0
+00A41F58: mov          r3, r0
+00A41F5C: bls          #0xa41f84
+00A41F60: ldrb         r1, [r2, #1]!
+00A41F64: add          r0, r3, #1
+00A41F68: cmp          r1, #0x1b
+00A41F6C: bne          #0xa41f54
+00A41F70: add          lr, lr, #4
+00A41F74: bic          lr, lr, #3
+00A41F78: add          r3, lr, r3, lsl #2
+00A41F7C: adds         r3, sb, r3
+00A41F80: ldrne        r8, [r3]
+00A41F84: str          r8, [r4, #0x1e0]
+00A41F88: cmp          ip, #0
+00A41F8C: mov          r3, #0
+00A41F90: mvn          r2, #0
+00A41F94: str          r3, [sp, #0x10]
+00A41F98: strb         r2, [sp, #0x1c]
+00A41F9C: strb         r2, [sp, #0x20]
+00A41FA0: str          r3, [sp, #0x14]
+00A41FA4: str          r3, [sp, #0x18]
+00A41FA8: str          r3, [sp, #0x24]
+00A41FAC: ldr          r2, [r7, #0x70]
+00A41FB0: beq          #0xa420fc
+00A41FB4: ldrd         r0, r1, [ip]
+00A41FB8: rsb          r3, r2, #0x20
+00A41FBC: sub          lr, r2, #0x20
+RANGE 0x00A420FC..0x00A42160 exclusive; ARM;
+00A420FC: ldr          r3, [pc, #0x100] ; word[00A42204]=FFFFFE88
+00A42100: ldr          sb, [r5, #0x3c]
+00A42104: ldr          r3, [r6, r3]
+00A42108: cmp          sb, #0
+00A4210C: ldr          r8, [r3, #0x70]
+00A42110: str          r8, [sp, #8]
+00A42114: beq          #0xa421ec
+00A42118: ldrb         lr, [sb]
+00A4211C: mov          r2, sb
+00A42120: mov          r3, #0
+00A42124: b            #0xa42134
+00A42128: cmp          lr, r0
+00A4212C: mov          r3, r0
+00A42130: bls          #0xa421ec
+00A42134: ldrb         r1, [r2, #1]!
+00A42138: add          r0, r3, #1
+00A4213C: cmp          r1, #0x1c
+00A42140: bne          #0xa42128
+00A42144: add          lr, lr, #4
+00A42148: bic          lr, lr, #3
+00A4214C: add          r3, lr, r3, lsl #2
+00A42150: adds         r3, sb, r3
+00A42154: beq          #0xa421ec
+00A42158: vldr         s15, [r3]
+00A4215C: b            #0xa41ffc

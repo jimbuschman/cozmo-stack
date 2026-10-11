@@ -3368,3 +3368,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint830 - authored property-scan bound and live modulator cap boundary
 
 `20261011-sound-property-scan-cap-disposition.md` independently checks3490 shipped ordinary-property blocks,maxcount4. All six9EDF5C saved nextindices148/149 exceed those authored bounds;actual2E raw2 exists on Layer774902407.9E6D2C saved bucketindices126/127 remain explicit live-registry inputs under paid MTK/ER538;out of scope:hash/storage/growth implementation. No all-runtime input/alias proof or status promotion;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint831 - continuous/reduction property-cap register reconciliation
+
+`20261011-sound-control-property-cap-disposition.md` reuses positive3490-node/fifteen-bus propertycount<=4 to bound3 of4 CW and4 of10 LDRV saved states. Seven others remain explicit;post-query R0 is not blindly treated as an index,CW mode1 requiresR1=1. Existing CW/LDRV timing/parameter contracts credited,no new all-runtime input/alias claim.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

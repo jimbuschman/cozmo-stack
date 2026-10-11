@@ -1,0 +1,180 @@
+{
+  "ordinaryWitnessSha256": "03fde9ad222e9c700789f15d36889c1f4bcad087c7dea477ed86ffc2e5a02f48",
+  "busWitnessSha256": "d46dcbfc16478a188cab17e1e23fc922a2f4d6fe047adc4ad29fa5b74853ac9d",
+  "nodeObjects": 3490,
+  "busObjects": 15,
+  "maxAuthoredPropertyCount": 4,
+  "pending": [
+    {
+      "seed": "009EEC1C",
+      "address": "009EEC6C",
+      "instruction": "add r3, r2, r3, lsl #2",
+      "known_registers": {
+        "r3": "00000094",
+        "r0": "00000095"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored property index bound"
+    },
+    {
+      "seed": "009EEC1C",
+      "address": "009EEC50",
+      "instruction": "bls #0x9eed58",
+      "known_registers": {
+        "r0": "00000095",
+        "r3": "00000095"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored property index bound"
+    },
+    {
+      "seed": "009EEC1C",
+      "address": "009EEC8C",
+      "instruction": "bl #0x9faec4",
+      "known_registers": {},
+      "nzcv_mask": "0F0F",
+      "disposition": "existing CW/LDRV contract; live input or prior register origin remains explicit"
+    },
+    {
+      "seed": "009EEC1C",
+      "address": "009EECA0",
+      "instruction": "add r3, r7, #0x84",
+      "known_registers": {
+        "r0": "00000094",
+        "r1": "00000001"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored property index bound"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A41F58",
+      "instruction": "mov r3, r0",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r3": "00000043",
+        "r0": "00000044"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored property index bound"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A41F98",
+      "instruction": "strb r2, [sp, #0x1c]",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000043",
+        "r3": "00000000"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing CW/LDRV contract; live input or prior register origin remains explicit"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A41FB4",
+      "instruction": "ldrd r0, r1, [ip]",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000042",
+        "r3": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing CW/LDRV contract; live input or prior register origin remains explicit"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A420FC",
+      "instruction": "ldr r3, [pc, #0x100]",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000042",
+        "r3": "00000000"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing CW/LDRV contract; live input or prior register origin remains explicit"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A42118",
+      "instruction": "ldrb lr, [sb]",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000041",
+        "r3": "0108DB20"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing CW/LDRV contract; live input or prior register origin remains explicit"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A421EC",
+      "instruction": null,
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000041",
+        "r3": "0108DB20"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing CW/LDRV contract; live input or prior register origin remains explicit"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A42150",
+      "instruction": "adds r3, sb, r3",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000041"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored property index bound"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A42134",
+      "instruction": "ldrb r1, [r2, #1]!",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000041",
+        "r3": "00000041"
+      },
+      "nzcv_mask": "0C0C",
+      "disposition": "outside authored property index bound"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A421EC",
+      "instruction": null,
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r0": "00000041",
+        "r3": "00000041"
+      },
+      "nzcv_mask": "F3F3",
+      "disposition": "existing CW/LDRV contract; live input or prior register origin remains explicit"
+    },
+    {
+      "seed": "00A41E64",
+      "address": "00A41F78",
+      "instruction": "add r3, lr, r3, lsl #2",
+      "known_registers": {
+        "r6": "0104028C",
+        "r7": "00FFA6C0",
+        "r3": "00000043",
+        "r0": "00000044"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored property index bound"
+    }
+  ],
+  "boundary": "Only instruction-specific next-index observations are bounded. Later R0 may be an RTPC return or stale prior value; no blanket register-value exclusion, live blob immutability or all-alias claim."
+}
