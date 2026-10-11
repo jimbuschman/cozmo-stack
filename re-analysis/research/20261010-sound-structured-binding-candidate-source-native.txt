@@ -1,0 +1,110 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A672B4..0x00A672D0 exclusive; ARM;
+00A672B4: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00A672B8: mov          r8, r2
+00A672BC: ldr          r4, [r0, #0x80]
+00A672C0: mov          sb, r0
+00A672C4: ldr          r3, [r0, #0x84]
+00A672C8: mov          r7, r1
+00A672CC: mov          r6, #0
+RANGE 0x00A67384..0x00A673A0 exclusive; ARM;
+00A67384: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A67388: sub          sp, sp, #0x1c
+00A6738C: mov          r8, r0
+00A67390: mov          sb, r2
+00A67394: str          r1, [sp, #4]
+00A67398: ldr          r2, [sp, #0x44]
+00A6739C: ldr          r1, [sp, #0x40]
+RANGE 0x00A67344..0x00A67360 exclusive; ARM;
+00A67344: add          r1, r4, #0x20
+00A67348: mov          r0, r4
+00A6734C: rsb          r2, r1, #0x1f
+00A67350: add          r2, r3, r2
+00A67354: bic          r2, r2, #0x1f
+00A67358: add          r2, r2, #0x20
+00A6735C: bl           #0x4d667c
+RANGE 0x00A673CC..0x00A673E0 exclusive; ARM;
+00A673CC: ldr          r2, [sp, #0x4c]
+00A673D0: ldr          r1, [sp, #0x50]
+00A673D4: str          sb, [r4, #4]
+00A673D8: cmp          r2, #0
+00A673DC: cmpne        r1, #0
+RANGE 0x00A6743C..0x00A67450 exclusive; ARM;
+00A6743C: ldr          r0, [r3]
+00A67440: mov          r1, r5
+00A67444: bl           #0xa7a7f4
+00A67448: cmp          r0, #0
+00A6744C: str          r0, [r4, #0x14]
+RANGE 0x00A67540..0x00A675A0 exclusive; ARM;
+00A67540: bne          #0xa673cc
+00A67544: mov          r0, #2
+00A67548: add          sp, sp, #0x1c
+00A6754C: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A67550: subseq       r8, sp, ip, lsl #24
+00A67554: ldrheq       r8, [sp], #-0xb0
+00A67558: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A6755C: mov          r4, r1
+00A67560: vpush        {d8}
+00A67564: mov          r6, r0
+00A67568: ldrb         r2, [r1, #4]
+00A6756C: sub          sp, sp, #0x24
+00A67570: ldrb         r3, [r0, #0x7f]
+00A67574: adds         r2, r2, #0
+00A67578: movne        r2, #1
+00A6757C: bfi          r3, r2, #0, #1
+00A67580: tst          r3, #1
+00A67584: strb         r3, [r0, #0x7f]
+00A67588: addeq        r3, r1, #5
+00A6758C: bne          #0xa677d0
+00A67590: ldrb         r1, [r3]
+00A67594: add          r2, r3, #8
+00A67598: strb         r1, [r6, #0x78]
+00A6759C: ldrb         r1, [r3, #1]
+RANGE 0x00A676D4..0x00A67710 exclusive; ARM;
+00A676D4: ldr          r1, [r3]
+00A676D8: tst          r4, #0x80
+00A676DC: ldrb         r2, [r3, #4]
+00A676E0: and          r4, r4, #0x7f
+00A676E4: ldrb         r3, [r3, #5]
+00A676E8: beq          #0xa67700
+00A676EC: ldrb         r0, [ip], #1
+00A676F0: tst          r0, #0x80
+00A676F4: and          r0, r0, #0x7f
+00A676F8: orr          r4, r0, r4, lsl #7
+00A676FC: bne          #0xa676ec
+00A67700: ldrh         sb, [ip, #5]
+00A67704: mov          r0, r6
+00A67708: str          r4, [sp]
+00A6770C: add          r4, ip, #7
+RANGE 0x00A67D20..0x00A67D38 exclusive; ARM;
+00A67D20: add          r2, r3, #8
+00A67D24: add          r3, r3, #0x14c
+00A67D28: str          r2, [r4]
+00A67D2C: str          r3, [r4, #0x10]
+00A67D30: pop          {r4, pc}
+00A67D34: ldrsbeq      r5, [sp], #-0x34
+RANGE 0x00A67E84..0x00A67E9C exclusive; ARM;
+00A67E84: push         {r3, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A67E88: add          r7, r0, #0xc
+00A67E8C: mov          r5, r0
+00A67E90: mov          r4, r1
+00A67E94: mov          r0, r7
+00A67E98: bl           #0x4d3064
+RANGE 0x00A67F44..0x00A67F84 exclusive; ARM;
+00A67F44: str          r6, [r5, #4]
+00A67F48: beq          #0xa67f60
+00A67F4C: mov          r2, #1
+00A67F50: mov          r3, #0
+00A67F54: str          r4, [sl]
+00A67F58: stmib        sl, {r2, r3}
+00A67F5C: b            #0xa67f00
+00A67F60: mov          r4, #0x34
+00A67F64: b            #0xa67f20
+00A67F68: ldr          sb, [pc, #0x98] ; word[00A68008]=005D80CC
+00A67F6C: add          r8, r8, #1
+00A67F70: add          r1, r8, r8, lsl #1
+00A67F74: ldr          sb, [pc, sb]
+00A67F78: lsl          r1, r1, #2
+00A67F7C: ldr          r0, [sb]
+00A67F80: bl           #0xa7a7f4

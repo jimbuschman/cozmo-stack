@@ -1,0 +1,174 @@
+{
+  "engineSHA256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "rows": [
+    {
+      "candidate": {
+        "address": "0xa67356",
+        "target": "#0xa67ade",
+        "mode": "Thumb",
+        "instruction": "b #0xa67ade",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67354",
+      "bytes": "1f20c2e3",
+      "containingInstruction": "bic r2, r2, #0x1f",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa673da",
+        "target": "#0xa67a82",
+        "mode": "Thumb",
+        "instruction": "b #0xa67a82",
+        "section": ".text"
+      },
+      "containingAddress": "0xa673d8",
+      "bytes": "000052e3",
+      "containingInstruction": "cmp r2, #0",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa6744a",
+        "target": "#0xa67aee",
+        "mode": "Thumb",
+        "instruction": "b #0xa67aee",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67448",
+      "bytes": "000050e3",
+      "containingInstruction": "cmp r0, #0",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa6754a",
+        "target": "#0xa67a68",
+        "mode": "Thumb",
+        "instruction": "b #0xa67a68",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67548",
+      "bytes": "1cd08de2",
+      "containingInstruction": "add sp, sp, #0x1c",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67576",
+        "target": "#0xa67a9e",
+        "mode": "Thumb",
+        "instruction": "b #0xa67a9e",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67574",
+      "bytes": "002092e2",
+      "containingInstruction": "adds r2, r2, #0",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67596",
+        "target": "#0xa67aa0",
+        "mode": "Thumb",
+        "instruction": "b #0xa67aa0",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67594",
+      "bytes": "082083e2",
+      "containingInstruction": "add r2, r3, #8",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa676e2",
+        "target": "#0xa67aee",
+        "mode": "Thumb",
+        "instruction": "b #0xa67aee",
+        "section": ".text"
+      },
+      "containingAddress": "0xa676e0",
+      "bytes": "7f4004e2",
+      "containingInstruction": "and r4, r4, #0x7f",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67702",
+        "target": "#0xa67abe",
+        "mode": "Thumb",
+        "instruction": "b #0xa67abe",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67700",
+      "bytes": "b590dce1",
+      "containingInstruction": "ldrh sb, [ip, #5]",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67d2a",
+        "target": "#0xa67836",
+        "mode": "Thumb",
+        "instruction": "b #0xa67836",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67d28",
+      "bytes": "002084e5",
+      "containingInstruction": "str r2, [r4]",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67d2e",
+        "target": "#0xa6783a",
+        "mode": "Thumb",
+        "instruction": "b #0xa6783a",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67d2c",
+      "bytes": "103084e5",
+      "containingInstruction": "str r3, [r4, #0x10]",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67f56",
+        "target": "#0xa67a6e",
+        "mode": "Thumb",
+        "instruction": "b #0xa67a6e",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67f54",
+      "bytes": "00408ae5",
+      "containingInstruction": "str r4, [sl]",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67f6a",
+        "target": "#0xa67aac",
+        "mode": "Thumb",
+        "instruction": "b #0xa67aac",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67f68",
+      "bytes": "98909fe5",
+      "containingInstruction": "ldr sb, [pc, #0x98]",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    },
+    {
+      "candidate": {
+        "address": "0xa67f7e",
+        "target": "#0xa67ab4",
+        "mode": "Thumb",
+        "instruction": "b #0xa67ab4",
+        "section": ".text"
+      },
+      "containingAddress": "0xa67f7c",
+      "bytes": "000099e5",
+      "containingInstruction": "ldr r0, [sb]",
+      "limit": "Containing ARM instruction interpretation with local primary slices; not every mixed-mode/indirect-source input proved absent."
+    }
+  ]
+}

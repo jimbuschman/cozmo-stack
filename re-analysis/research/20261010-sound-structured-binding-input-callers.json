@@ -1,0 +1,115 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0xa67830",
+    "0xa67a68"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x89d69c",
+      "target": "#0xa67aa8",
+      "mode": "ARM",
+      "instruction": "blle #0xa67aa8",
+      "section": ".text"
+    },
+    {
+      "address": "0x8c12c8",
+      "target": "#0xa67ade",
+      "mode": "ARM",
+      "instruction": "blx #0xa67ade",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67356",
+      "target": "#0xa67ade",
+      "mode": "Thumb",
+      "instruction": "b #0xa67ade",
+      "section": ".text"
+    },
+    {
+      "address": "0xa673da",
+      "target": "#0xa67a82",
+      "mode": "Thumb",
+      "instruction": "b #0xa67a82",
+      "section": ".text"
+    },
+    {
+      "address": "0xa6744a",
+      "target": "#0xa67aee",
+      "mode": "Thumb",
+      "instruction": "b #0xa67aee",
+      "section": ".text"
+    },
+    {
+      "address": "0xa6754a",
+      "target": "#0xa67a68",
+      "mode": "Thumb",
+      "instruction": "b #0xa67a68",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67576",
+      "target": "#0xa67a9e",
+      "mode": "Thumb",
+      "instruction": "b #0xa67a9e",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67596",
+      "target": "#0xa67aa0",
+      "mode": "Thumb",
+      "instruction": "b #0xa67aa0",
+      "section": ".text"
+    },
+    {
+      "address": "0xa676e2",
+      "target": "#0xa67aee",
+      "mode": "Thumb",
+      "instruction": "b #0xa67aee",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67702",
+      "target": "#0xa67abe",
+      "mode": "Thumb",
+      "instruction": "b #0xa67abe",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67d2a",
+      "target": "#0xa67836",
+      "mode": "Thumb",
+      "instruction": "b #0xa67836",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67d2e",
+      "target": "#0xa6783a",
+      "mode": "Thumb",
+      "instruction": "b #0xa6783a",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67f56",
+      "target": "#0xa67a6e",
+      "mode": "Thumb",
+      "instruction": "b #0xa67a6e",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67f6a",
+      "target": "#0xa67aac",
+      "mode": "Thumb",
+      "instruction": "b #0xa67aac",
+      "section": ".text"
+    },
+    {
+      "address": "0xa67f7e",
+      "target": "#0xa67ab4",
+      "mode": "Thumb",
+      "instruction": "b #0xa67ab4",
+      "section": ".text"
+    }
+  ]
+}

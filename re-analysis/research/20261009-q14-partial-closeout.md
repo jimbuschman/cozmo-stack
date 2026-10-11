@@ -554,3 +554,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint798 - conditional descriptor receiver interior inputs
 
 `20261010-sound-descriptor-receiver-interior-disposition.md` attributes all30 immediate encodings into9903F0's body:three actual Thumb instructions and27 upper-halfword ARM encodings with local source entry/edge witnesses. No actual receiver or shared-context4C/50 ID/descriptor consumer supplied;024 PARTIAL, no indirect absence inference.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint799 - structured publisher entry/subscription slices
+
+`20261010-sound-structured-binding-input-disposition.md` restricts caller navigation toA67830 prologue andA67A68 subscription loop, excluding the owner's own sources and intervening positioning payload target.15 encodings:two actual Thumb source instructions,thirteen individually reopened containing ARM words/local slices; mixed-mode/indirect input proof remains limited. No admitted object/property/type input;132 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
