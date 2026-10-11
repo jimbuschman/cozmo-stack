@@ -1,0 +1,50 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A56F30..0x00A56FAC exclusive; ARM;
+00A56F30: mov          r3, sl
+00A56F34: mov          r2, r0
+00A56F38: mov          r0, r4
+00A56F3C: blx          #0x593e58
+00A56F40: subs         r8, r0, #0
+00A56F44: popeq        {r4, r5, r6, r7, r8, sb, sl, pc}
+00A56F48: ldr          ip, [r4]
+00A56F4C: mov          r0, r4
+00A56F50: ldr          r2, [pc, #0x134] ; word[00A5708C]=00550B24
+00A56F54: mov          r1, r7
+00A56F58: ldr          r3, [pc, #0x130] ; word[00A57090]=00550B28
+00A56F5C: add          r2, pc, r2
+00A56F60: ldr          ip, [ip, #0x84]
+00A56F64: add          r3, pc, r3
+00A56F68: blx          ip
+00A56F6C: cmp          r0, #0
+00A56F70: cmpne        sb, #0
+00A56F74: bne          #0xa5700c
+00A56F78: ldr          r6, [pc, #0x114] ; word[00A57094]=00550B40
+00A56F7C: mov          r1, r7
+00A56F80: ldr          r3, [r4]
+00A56F84: mov          r0, r4
+00A56F88: add          r6, pc, r6
+00A56F8C: ldr          r2, [pc, #0x104] ; word[00A57098]=00550B1C
+00A56F90: ldr          r5, [pc, #0x104] ; word[00A5709C]=00636FE8
+00A56F94: ldr          ip, [r3, #0x84]
+00A56F98: add          r2, pc, r2
+00A56F9C: mov          r3, r6
+00A56FA0: add          r5, pc, r5
+00A56FA4: blx          ip
+00A56FA8: mov          r1, r8
+00A57064: raw=00550B5C relocated=00550B5C
+00A57068: raw=0063713C relocated=0063713C
+00A5706C: raw=00550B58 relocated=00550B58
+00A57070: raw=00550B70 relocated=00550B70
+00A57074: raw=00550B40 relocated=00550B40
+00A57078: raw=00550B38 relocated=00550B38
+00A5707C: raw=00550B2C relocated=00550B2C
+00A57080: raw=00550B20 relocated=00550B20
+00A57084: raw=00550B30 relocated=00550B30
+00A57088: raw=00550B3C relocated=00550B3C
+00A5708C: raw=00550B24 relocated=00550B24
+00A57090: raw=00550B28 relocated=00550B28
+00A57094: raw=00550B40 relocated=00550B40
+00A57098: raw=00550B1C relocated=00550B1C
+00A5709C: raw=00636FE8 relocated=00636FE8
+00A570A0: raw=00550B04 relocated=00550B04

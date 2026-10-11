@@ -1,0 +1,15 @@
+{
+  "baseline": "808 literal seeds plus original MOVW filter",
+  "delta": "809 omitted ARM/Thumb MOVW low-half seeds; disjoint from808 seeds",
+  "baselineEvents": 310,
+  "deltaEvents": 3,
+  "combinedEvents": 310,
+  "baselineWindows": 20806,
+  "deltaWindows": 31814,
+  "combinedWindows": 52620,
+  "baselineCaps": 998,
+  "deltaCaps": 1118,
+  "added": [],
+  "sharedIdentities": 3,
+  "limit": "Encoding navigation only; no caller/writer/alias absence or admitted input proof."
+}

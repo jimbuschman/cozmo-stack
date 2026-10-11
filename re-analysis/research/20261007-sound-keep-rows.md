@@ -11695,3 +11695,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint808 - actual GOT section bounds for rate/frame navigation
 
 `20261010-sound-rate-frame-full-got-disposition.md` corrects the original model's1280-byte guessed GOT range to the independently witnessed75892-byte shipped section.20806 windows/998 caps/310 events;zero added or missing versus807. MOVW seed filter remains explicitly limited; no writer/alias/input absence proof or closure. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint809 - omitted MOVW GOT-address seeds
+
+`20261010-sound-rate-frame-movw-got-delta-disposition.md` pays the known narrow MOVW seed-filter limitation with31814 additional disjoint windows/1118 caps. Three events are existing byte controls at108DF98,reopened in primary source;zero new identities. Combined52620 windows/2116 caps/310 events is still bounded navigation,not all-writer/alias/input absence. Original six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
