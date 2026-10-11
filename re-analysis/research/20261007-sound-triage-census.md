@@ -3256,3 +3256,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint802 - mode4 media identity and native ID inputs
 
 `20261010-sound-mode4-media-input-disposition.md` positively joins six inner and five already-authored sibling Sound media IDs to shipped Shared Upgrade Align Frustrated Loop/start metadata, with native source-header geometry and exact payload/text witnesses. No SDK-only or actual Play admission follows. Exact two-ID engine raw-word/MOVW navigation and Unity/source/smali decimal search supply no input; not runtime absence.009/034 PARTIAL for original admitted request/continuation question.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint803 - fair rate/frame navigation and new reads
+
+`20261010-sound-rate-frame-fair-worklist-disposition.md` preserves797's model/cap but uses FIFO to service queued loop exits:6855 windows,310 events versus300,ten additional actual GOT-pointer/read events,zero missing,434 caps unchanged. Primary PC/GOT equations and instructions independently bind all five read pairs. No new writer;9D5B64's actualrate-pointerSP18 save is retained as a concrete next alias step.043/092/099/120/124/130 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
