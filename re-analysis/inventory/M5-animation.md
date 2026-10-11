@@ -842,3 +842,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Defects on open records | M5-003 (log), 005, 011, 014, 017, 020, 022, 027, 031, 032 |
 | RECOVERABLE_GAP read, now IMPLEMENTATION_GAP | M5-037, 038, 039 |
 | New | M5-040 ClipWarn (RG), M5-041 DeviceAudio step (IG), M5-042 SDK/viz calls (CP), M5-043 +0x28 add path (RG), M5-044 TLC teardown (RG) |
+
+
+## Open reads (manager, 2026-10-11; settling-pass section 5)
+
+| Change | Records |
+| --- | --- |
+| Read, now IMPLEMENTATION_GAP | M5-040, M5-043, M5-044 |
+| ProceduralLive only via game-to-engine PushIdleAnimation (stack API input) | M5-030 |

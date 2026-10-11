@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-11",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "ddff6595638365552ba4acc2edb81ab0fa8083ac2907d6df09ba15578c423a69",
+  "inventory_sha256": "84c4d240ff9703e3dc3da5e8228b651e2bf8acdbd5e15d6382bd195c2ee81703",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -391,7 +391,8 @@
       "evidence": [
         "A35 0x0057D5F8..0x0057DA82",
         "gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-030 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-030 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): PL1-PL19, PLU: ProceduralLive 0x198 is pushed only through GameToEngine PushIdleAnimation (tag 174, 0x0057EC1A..0x0057EC32); no fixed native caller or shipped config produces 0x198."
       ],
       "live_path": true,
       "hardware_required": false
@@ -507,11 +508,12 @@
       "hardware_required": false
     },
     "M5-040": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ProceduralFace clip warning: ClipWarnFcn (ProceduralFace.Clip.OutOfRange) and where it is enabled",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261011-m5-settling-pass.md section 2 N1: ClipWarnFcn 0x0105AB20; EnableClippingWarning 0x00584B48; logger 0x00584A41 (0x00584A78; 0x00584ACC/0x00584AEC); no-op 0x00584BE5; Clip call 0x00584880."
+        "re-analysis/research/20261011-m5-settling-pass.md section 2 N1: ClipWarnFcn 0x0105AB20; EnableClippingWarning 0x00584B48; logger 0x00584A41 (0x00584A78; 0x00584ACC/0x00584AEC); no-op 0x00584BE5; Clip call 0x00584880.",
+        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): CW1-CW5, CWU: Enable(0) 0x0051F8A2 before loading, Enable(1) 0x0051F9CE after DispatchWorker::Process 0x0051F9C8; no other caller; unmapped parameter skips clipping 0x00584822/0x0058484E."
       ],
       "live_path": true,
       "hardware_required": false
@@ -537,21 +539,23 @@
       "hardware_required": false
     },
     "M5-043": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "FaceAnimationKeyFrame +0x28 writers on the FlatBuffer/JSON add path (Track::AddKeyFrameToBack(CozmoAnim::FaceAnimation*))",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-013 and section 2 N7: ctor zeroing 0x005642C6..0x005642CC; SetFaceAction::Init 0x00563E48; CannedAnimationContainer ctor 0x00587CCC."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-013 and section 2 N7: ctor zeroing 0x005642C6..0x005642CC; SetFaceAction::Init 0x00563E48; CannedAnimationContainer ctor 0x00587CCC.",
+        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): FK1-FK4: the constructor 0x00564290 zeroes +0x18..+0x28 (0x005642C6..0x005642CC) on both add paths (0x0057669C, 0x0057734C); no later write reaches +0x28; the Track helper copies +0x28 to +0x30 (0x00564612/0x00564616); the order check pops back and returns 1 (0x0057946A..0x005794B6)."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M5-044": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "~TrackLayerComponent internals and the AnimationStreamer +0xC shared object at teardown",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-037: TLC delete 0x0057AF8C..0x0057AF98; shared_ptr +0xC release 0x0057AFD0."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-037: TLC delete 0x0057AF8C..0x0057AF98; shared_ptr +0xC release 0x0057AFD0.",
+        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): TD1-TD8, TDU: ~TrackLayerComponent 0x0064ED8C frees +0x10, +0xC, +8, +4 in order, no send or log; +0xC is the UiMessageHandler subscription container (TD3-TD6, 0x004EF184); libc++_shared.so __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8."
       ],
       "live_path": true,
       "hardware_required": false

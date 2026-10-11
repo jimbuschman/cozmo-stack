@@ -88,3 +88,16 @@ the loop-exhaust branch with an idle on the stack (M5-008/027), and every engine
    named UNKNOWN in its `unresolved`.
 5. Before the build, every LOG row is extracted exactly (level, channel, key, format, arguments, gate, errG) into a
    follow-up rows file, as for M3/M4.
+
+## 5. The M5 open reads (research/20261011-m5-open-reads.md), Opus spot-check 2026-10-11: PASS
+
+26 of the 36 READ rows were checked in the binary (CW1-CW5, FK1-FK4, TD1, TD3-TD7, PL1, PL2, PL6-PL8, PL11, PL15, PL16, PL18, PL19); none is wrong. Settling rows for the STOP items:
+
+- **CWU (M5-040).** A census of BL/BLX/B.W calls to 0x004A88A8 (PLT) and 0x00584B48 finds only 0x0051F8A2 (Enable(0), before loading) and 0x0051F9CE (Enable(1), after DispatchWorker::Process at 0x0051F9C8). The only data word 0x00584B49 is in .dynsym. No runtime toggle; if Process throws, warnings stay off. Also: a parameter missing from the range map skips clipping (0x00584822/0x0058484E). Loading clamps silently; later clamps warn.
+- **FKU (M5-043).** The other keyframe sources (0x00563E48, 0x00587CCC) are outside M5-043's titled path. FK3 also has the Track helper's 1000-keyframe cap (0x00564514, `cmp #0x3e8`), which is M5-029's TooManyFrames.
+- **TDU (M5-044).** libc++_shared.so (DT_NEEDED, shipped in the APK): `__release_shared` 0x5ED6C (atomic decrement of +4; old value 0 calls vtable+8, then `__release_weak`), `__release_weak` 0x5EDC2 (decrement of +8; old value 0 calls vtable+0x10), `lock` 0x5EDE8 (CAS increment of +4 unless -1). The weak reference is released before the ring walk (0x00664EC8).
+- **PLU (M5-030).** No fixed native caller passes ProceduralLive 0x198. The fixed values are 0x137, 0x143, 0xB3..0xB9, 0x213, 0x23F, 0x192 and 0x104. No shipped file has `idleAnimTrigger` or `ProceduralLive`, so the activity default 0x23F holds and PL6 never pushes. The shipped `idle_animName` values are only RequestGame{KeepAway,MemoryMatch,SpeedTap}Idle0/1. The only route is the GameToEngine PushIdleAnimation message (tag 174, PL18), whose only engine-internal sender (SdkStatus 0x0065E1C8) sends Count and is SDK-only.
+
+**Manager rulings:**
+1. M5-040, M5-043 and M5-044 are fully read: they move to IMPLEMENTATION_GAP.
+2. M5-030: ProceduralLive is reached only through the game-to-engine PushIdleAnimation input. Under the app boundary that input comes from the stack's API, as it came from the app; nothing pushes it automatically. M5-030 stays IMPLEMENTATION_GAP and is built behind that message, with the handoff named.

@@ -9,8 +9,8 @@ Manifest of **503 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 151 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 51 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 245 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 48 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 248 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 41 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,7 +28,7 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 54 | 1 | 11 | 0 | 4 | no | no |
 | M4-control — Motion, sensors, lights and cubes | 36 | 0 | 9 | 0 | 3 | yes | no |
-| M5-animation — Animation clips, scheduler and face | 44 | 3 | 30 | 0 | 1 | no | no |
+| M5-animation — Animation clips, scheduler and face | 44 | 0 | 33 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 28 | 0 | 25 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 25 | 3 | 17 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 19 | 5 | 13 | 0 | 0 | no | no |
@@ -83,35 +83,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json.
 * evidence: re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to "event".; re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, "das", "%s%s : %s %s") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets "$game" (0x801C..0x8074).
 * outstanding: RECOVERABLE_GAP: sink (b) queue body 0xB47C unread (the upload is BLOCKED_EXTERNAL); sink (c) is unreachable without the app's "$game". Sink (a) and the level filter are read; the stack's rendered log follows them (operator, 2026-10-11): records M3-053 and M3-054.
-
-### M5-animation — Animation clips, scheduler and face
-
-**M5-040 — ProceduralFace clip warning: ClipWarnFcn (ProceduralFace.Clip.OutOfRange) and where it is enabled** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs`
-* effect: Whether clamped face parameters log a warning.
-* rests on: Opus settling pass (2026-10-11), manager-adopted.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261011-m5-settling-pass.md section 2 N1: ClipWarnFcn 0x0105AB20; EnableClippingWarning 0x00584B48; logger 0x00584A41 (0x00584A78; 0x00584ACC/0x00584AEC); no-op 0x00584BE5; Clip call 0x00584880.
-* outstanding: RECOVERABLE_GAP: the callers of EnableClippingWarning are unread.
-
-**M5-043 — FaceAnimationKeyFrame +0x28 writers on the FlatBuffer/JSON add path (Track::AddKeyFrameToBack(CozmoAnim::FaceAnimation*))** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/FaceAnimationLibrary.cs`
-* effect: The face keyframe streaming state that M5-013 reads.
-* rests on: Opus settling pass (2026-10-11), manager-adopted.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-013 and section 2 N7: ctor zeroing 0x005642C6..0x005642CC; SetFaceAction::Init 0x00563E48; CannedAnimationContainer ctor 0x00587CCC.
-* outstanding: RECOVERABLE_GAP: the FlatBuffer/JSON add path is unread.
-
-**M5-044 — ~TrackLayerComponent internals and the AnimationStreamer +0xC shared object at teardown** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs`
-* effect: What the streamer teardown releases beyond M5-037's read order.
-* rests on: Opus settling pass (2026-10-11), manager-adopted.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-037: TLC delete 0x0057AF8C..0x0057AF98; shared_ptr +0xC release 0x0057AFD0.
-* outstanding: RECOVERABLE_GAP: the TLC destructor body and the +0xC object's type are unread.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -939,8 +910,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: the live idle moves differently
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The ProceduralLive idle is streamed as A29 says (the live animation as +0x34, InitStream(live, 0xFF), UpdateStream(storeFace = 0)); its keyframes come from the M7 idle behaviour through StreamLive. FaceLayerManager.AddOrUpdateEyeShift and GenerateEyeShift(x, y, xMax, yMax, ...) are gap1 K2/K10 (the caller's xMax/yMax replaced by the default face's 17/12). Verify round 1 (2026-09-25, corrections C1..C3, gap4): AnimationScheduler.UpdateLiveAnimationLocked is gap4 L1..L7: the six timers as duration/spacing pairs zeroed by the ctor and kept across idle changes; the gates (+0x194, +0x44 >= GetParam<int>(2) unsigned, picking or placing) returning with no decrement; per track body → lift → head the countdown (duration -= 60 while the MovementComponent flag, a lock, carrying for the lift, or duration + spacing > 0); the draws in the L4..L6 order on the context RNG (RandIntInRange, RandDblInRange(0, 1) for the straight fraction); the LiveIdleTurn eye shift through AddOrUpdateEyeShift and its removal with RemoveEyeShift(tag, 0); the head angle (s8)trunc(robot+0x2FC·57.2958f); keyframes with trigger 0 appended by AddKeyFrameToBack with no order check (L7, a failure logging LiveUpdateFailed). The robot inputs are wired from the last RobotState (status bit 2, IS_MOVING, LIFT_IN_POS, HEAD_IN_POS), MovementComponent's track locks and the head angle (CozmoAnimations). The live idle's wire lifecycle is L8 (M5-027). Verify round 2 (2026-09-25, correction C4): the head angle is (s8)trunc(robot+0x2FC · 0x42652EE1) ([0x0057DB2C], loaded at 0x0057D838); the LiveIdleTurn x sign is the int16 speed's sign bit, so a speed of 0 gives + (verified at 0x0057D790..0x0057D7AA).
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
-* evidence: A35 0x0057D5F8..0x0057DA82; gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4; re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-030 (Opus settling pass, manager-adopted 2026-10-11).
-* outstanding: Settling pass 2026-10-11: reachable only through the unrecovered ProceduralLive pusher; the Animation.AddKeyFrameToBack.Failed error is absent. R-BEH2 batch 2 (2026-10-03): the StreamLive self-push and short-circuit are removed and the UpdateLiveAnimation S4 error path now returns without the tail; carrying is wired at CozmoAnimations from Motion.IsCarryingObject; GetParam/SetParam run the lazy default-set and SetParam clamps to GetParamRange; DesiredFaceDistortion (S1 step 2) has no source. | earlier: CarryingComponent (+0x284, M12) is not on this robot, so the lift's carrying gate reads clear. With ProceduralLive pushed by the StreamLive seam (the M7 idle behaviour, an M7-017 interface) the generator does not run, as that behaviour appends its own keyframes.
+* evidence: A35 0x0057D5F8..0x0057DA82; gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4; re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-030 (Opus settling pass, manager-adopted 2026-10-11).; re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): PL1-PL19, PLU: ProceduralLive 0x198 is pushed only through GameToEngine PushIdleAnimation (tag 174, 0x0057EC1A..0x0057EC32); no fixed native caller or shipped config produces 0x198.
+* outstanding: Ruling 5.2 (2026-10-11): reachable only through the game-to-engine PushIdleAnimation input, which the stack's API supplies under the app boundary; nothing pushes it automatically. Build behind that message. Settling pass 2026-10-11: reachable only through the unrecovered ProceduralLive pusher; the Animation.AddKeyFrameToBack.Failed error is absent. R-BEH2 batch 2 (2026-10-03): the StreamLive self-push and short-circuit are removed and the UpdateLiveAnimation S4 error path now returns without the tail; carrying is wired at CozmoAnimations from Motion.IsCarryingObject; GetParam/SetParam run the lazy default-set and SetParam clamps to GetParamRange; DesiredFaceDistortion (S1 step 2) has no source. | earlier: CarryingComponent (+0x284, M12) is not on this robot, so the lift's carrying gate reads clear. With ProceduralLive pushed by the StreamLive seam (the M7 idle behaviour, an M7-017 interface) the generator does not run, as that behaviour appends its own keyframes.
 
 **M5-031 — Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise** (live path)
 
@@ -1014,6 +985,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * evidence: Ready store 0x0052C3A6; SyncTimeAck 0x0053667E..0x005366AC; streaming gate 0x00513BF2..0x00514470; exact consumer span UNKNOWN (triage N2).; re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-039 (Opus settling pass, manager-adopted 2026-10-11).
 * outstanding: IMPLEMENTATION_GAP (ruling 4.4): Robot::Update gates AnimationStreamer::Update on robot+0x2A and +0x29; return the results of Update/UpdateStream/StreamLayers and log Robot.Update.AnimationStreamer per re-analysis/research/20261011-m5-settling-pass.md row M5-039.
 
+**M5-040 — ProceduralFace clip warning: ClipWarnFcn (ProceduralFace.Clip.OutOfRange) and where it is enabled** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs`
+* effect: Whether clamped face parameters log a warning.
+* rests on: Opus settling pass (2026-10-11), manager-adopted.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261011-m5-settling-pass.md section 2 N1: ClipWarnFcn 0x0105AB20; EnableClippingWarning 0x00584B48; logger 0x00584A41 (0x00584A78; 0x00584ACC/0x00584AEC); no-op 0x00584BE5; Clip call 0x00584880.; re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): CW1-CW5, CWU: Enable(0) 0x0051F8A2 before loading, Enable(1) 0x0051F9CE after DispatchWorker::Process 0x0051F9C8; no other caller; unmapped parameter skips clipping 0x00584822/0x0058484E.
+* outstanding: IMPLEMENTATION_GAP: build ClipWarnFcn exactly: off during clip loading, on afterwards; ProceduralFace.Clip.OutOfRange on both clamp branches (0x00584880, 0x005848AC); no clipping for a parameter outside the range map.
+
 **M5-041 — UpdateStream DeviceAudio wall-clock step: IsTimeToPlay(+0x80, now), PlayOnDevice, MoveToNextKeyFrame** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs`
@@ -1022,6 +1002,24 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-001 and section 2 N2: 0x0057C876..0x0057C8E0.
 * outstanding: IMPLEMENTATION_GAP: build; the device-audio playback itself is M6's, named as a handoff.
+
+**M5-043 — FaceAnimationKeyFrame +0x28 writers on the FlatBuffer/JSON add path (Track::AddKeyFrameToBack(CozmoAnim::FaceAnimation*))** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/FaceAnimationLibrary.cs`
+* effect: The face keyframe streaming state that M5-013 reads.
+* rests on: Opus settling pass (2026-10-11), manager-adopted.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-013 and section 2 N7: ctor zeroing 0x005642C6..0x005642CC; SetFaceAction::Init 0x00563E48; CannedAnimationContainer ctor 0x00587CCC.; re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): FK1-FK4: the constructor 0x00564290 zeroes +0x18..+0x28 (0x005642C6..0x005642CC) on both add paths (0x0057669C, 0x0057734C); no later write reaches +0x28; the Track helper copies +0x28 to +0x30 (0x00564612/0x00564616); the order check pops back and returns 1 (0x0057946A..0x005794B6).
+* outstanding: IMPLEMENTATION_GAP: build per FK1-FK4 (+0x28 is always 0 on the FlatBuffer/JSON add path).
+
+**M5-044 — ~TrackLayerComponent internals and the AnimationStreamer +0xC shared object at teardown** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs`
+* effect: What the streamer teardown releases beyond M5-037's read order.
+* rests on: Opus settling pass (2026-10-11), manager-adopted.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-037: TLC delete 0x0057AF8C..0x0057AF98; shared_ptr +0xC release 0x0057AFD0.; re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): TD1-TD8, TDU: ~TrackLayerComponent 0x0064ED8C frees +0x10, +0xC, +8, +4 in order, no send or log; +0xC is the UiMessageHandler subscription container (TD3-TD6, 0x004EF184); libc++_shared.so __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8.
+* outstanding: IMPLEMENTATION_GAP: build the teardown order (no sends, no logs) together with M5-037.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
