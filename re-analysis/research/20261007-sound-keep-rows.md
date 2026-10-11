@@ -12035,3 +12035,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint893 — original observer paired/block inputs
 
 `20261011-sound-observer-paired-block-disposition.md` checks transfer forms omitted by848 using controlled874.14,878 windows/803 retained caps/zero observations exactly match848. No new registration key/callback/raw-third-word supplier; unsupported/capped/mutable aliases remain unknown.028/029 stay PARTIAL; stop these forms without reopening OR613/MC667.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint894 — original creator modulation-before-append input
+
+`20261011-sound-creator-modulation-append-disposition.md` binds888's concrete97DE38 nodeA8 to paid Sound9F1BE8 and constructs the exact original event/P+34/arg1 input. Twelve native handoff fixtures preserve padding and establish callback-before-append plus the live output-holder reload; callback result is ignored. Deliberate holder replacement is a fixture, not an admitted real mutation. RR583 callback and888 append bodies stay paid.037 PARTIAL for admitted quota and remaining original counter/limiter/policy/collection aliases.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.

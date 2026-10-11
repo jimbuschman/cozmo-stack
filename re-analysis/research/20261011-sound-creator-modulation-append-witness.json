@@ -1,0 +1,618 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "cases": [
+    {
+      "nonempty": false,
+      "holder_replaced_at_callback_fixture": false,
+      "callback_fixture_result": "00000000",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "5A5A5A5A",
+            "00000001",
+            "20001000"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20001000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20001000",
+            "20001000"
+          ]
+        }
+      ],
+      "appended_pointer": "20001000"
+    },
+    {
+      "nonempty": false,
+      "holder_replaced_at_callback_fixture": false,
+      "callback_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "5A5A5A5A",
+            "00000001",
+            "20001000"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20001000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20001000",
+            "20001000"
+          ]
+        }
+      ],
+      "appended_pointer": "20001000"
+    },
+    {
+      "nonempty": false,
+      "holder_replaced_at_callback_fixture": false,
+      "callback_fixture_result": "FFFFFFFF",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "5A5A5A5A",
+            "00000001",
+            "20001000"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20001000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20001000",
+            "20001000"
+          ]
+        }
+      ],
+      "appended_pointer": "20001000"
+    },
+    {
+      "nonempty": false,
+      "holder_replaced_at_callback_fixture": true,
+      "callback_fixture_result": "00000000",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20002000",
+            "5A5A5A5A",
+            "00000001",
+            "20002000"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20002000",
+            "20002000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20002000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20002000",
+            "20002000"
+          ]
+        }
+      ],
+      "appended_pointer": "20002000"
+    },
+    {
+      "nonempty": false,
+      "holder_replaced_at_callback_fixture": true,
+      "callback_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20002000",
+            "5A5A5A5A",
+            "00000001",
+            "20002000"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20002000",
+            "20002000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20002000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20002000",
+            "20002000"
+          ]
+        }
+      ],
+      "appended_pointer": "20002000"
+    },
+    {
+      "nonempty": false,
+      "holder_replaced_at_callback_fixture": true,
+      "callback_fixture_result": "FFFFFFFF",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "00000000",
+            "00000000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20002000",
+            "5A5A5A5A",
+            "00000001",
+            "20002000"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20002000",
+            "20002000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20002000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000001",
+            "20002000",
+            "20002000"
+          ]
+        }
+      ],
+      "appended_pointer": "20002000"
+    },
+    {
+      "nonempty": true,
+      "holder_replaced_at_callback_fixture": false,
+      "callback_fixture_result": "00000000",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "FFFFFFFF",
+            "20004000",
+            "20004000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "5A5A5A5A",
+            "00000000",
+            "20001000"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20001000",
+            "20004000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20001000",
+            "20004000"
+          ]
+        }
+      ],
+      "appended_pointer": "20001000"
+    },
+    {
+      "nonempty": true,
+      "holder_replaced_at_callback_fixture": false,
+      "callback_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "FFFFFFFF",
+            "20004000",
+            "20004000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "5A5A5A5A",
+            "00000000",
+            "20001000"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20001000",
+            "20004000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20001000",
+            "20004000"
+          ]
+        }
+      ],
+      "appended_pointer": "20001000"
+    },
+    {
+      "nonempty": true,
+      "holder_replaced_at_callback_fixture": false,
+      "callback_fixture_result": "FFFFFFFF",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "FFFFFFFF",
+            "20004000",
+            "20004000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "5A5A5A5A",
+            "00000000",
+            "20001000"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20001000",
+            "20004000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20001000",
+            "20004000"
+          ]
+        }
+      ],
+      "appended_pointer": "20001000"
+    },
+    {
+      "nonempty": true,
+      "holder_replaced_at_callback_fixture": true,
+      "callback_fixture_result": "00000000",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "FFFFFFFF",
+            "20004000",
+            "20004000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20002000",
+            "5A5A5A5A",
+            "00000000",
+            "20002000"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20002000",
+            "20004000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20002000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20002000",
+            "20004000"
+          ]
+        }
+      ],
+      "appended_pointer": "20002000"
+    },
+    {
+      "nonempty": true,
+      "holder_replaced_at_callback_fixture": true,
+      "callback_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "FFFFFFFF",
+            "20004000",
+            "20004000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20002000",
+            "5A5A5A5A",
+            "00000000",
+            "20002000"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20002000",
+            "20004000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20002000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20002000",
+            "20004000"
+          ]
+        }
+      ],
+      "appended_pointer": "20002000"
+    },
+    {
+      "nonempty": true,
+      "holder_replaced_at_callback_fixture": true,
+      "callback_fixture_result": "FFFFFFFF",
+      "calls": [
+        {
+          "address": "009F1BE8",
+          "args": [
+            "20000100",
+            "30008064",
+            "20001034",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "FFFFFFFF",
+            "20004000",
+            "20004000"
+          ],
+          "descriptor_hex": "7856341200ffa5a5000000000000000057136824214365870000000000100020"
+        },
+        {
+          "address": "00A00618",
+          "args": [
+            "20002000",
+            "5A5A5A5A",
+            "00000000",
+            "20002000"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20002000",
+            "20004000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20002000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "count_tail_head": [
+            "00000000",
+            "20002000",
+            "20004000"
+          ]
+        }
+      ],
+      "appended_pointer": "20002000"
+    }
+  ],
+  "boundary": "Actual97DDDC..97DE70 instructions and actualA3709C append; explicit Sound table103BAD0 and PBI/frame fixtures. Paid9F1BE8 and Init/Play are opaque ABI boundaries. Callback holder mutation is a deliberate fixture, not an admitted real mutation. Stops before97DE74 outward branch; no whole creator/preparation/modulation body, actual concurrency, arbitrary alias or all-writer proof."
+}

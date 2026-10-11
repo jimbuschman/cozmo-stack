@@ -1,0 +1,19 @@
+# Original037 ordinary-creator modulation/append seam, checkpoint894
+
+Scope guard reread before each step. This follows888's actual97DE38 callback immediately before global PBI append. Its selected node registration/modulation can change parameter values; its ordering relative to membership/Init/Play is retained decision work. RR583C already pays9F1BE8/9F1D04 registration, ancestor/settings propagation and physical modulator dispatch. Those bodies are not re-extracted or executed here; this binds another original concrete caller input and its postcallback reload.
+
+Primary `-native.txt`, engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1: selected instructions97D9A0,97DBC8,97DCD8..97DD58,97DD84..97DE74,99B8F8..99B998 and actual103BB78 word. The complete SHA is retained in `-witness.json`; the engine itself is unchanged.
+
+| Actual creator step | Exact handoff and boundary |
+|---|---|
+| Known non-MIDI clip supplier |SF543A already binds99B968 to97D9A0 and the derived output interface.99B8F8 reads the selected node from clip48,99B934 supplies it as creatorR1;97D9B4 retains that node inR4. This is the node whose table is used below, not the PBI table. No alternate creator-input absence is inferred.|
+| Event pointer continuity |97DBC8 formsSL=currentSP+64. The successful preparation branch97DCE4 goes97DD84, then A36E74 exact1 falls through97DDDC.97DCEC's SL=0 belongs to the failure/cleanup route;97DDD4's SL=1 is conditional on the non1 result and branches away. The selected successful handoff uses the retained event pointer.|
+| Table and arguments |97DDE4 reads live[node],97DE34 reads itsA8,97DE38 calls it. Known Sound table103BAD0 hasA8 at103BB78=9F1BE8, already independently bound RR583B. Arguments are node,SP64,P+34,1. P is the pre-callback pointer read through the current output holder at97DDF4.|
+| Event input bytes |SP64=original creatorR3 (savedR6);SP68 byte0 andSP69 byteFF;SP6A/6B remain unwritten by this construction slice. SP6C/70=0;SP74=P140;SP78=incoming stack14;SP7C=0;SP80=P. No padding normalization, alternate event-source assumption or replacement of the saved raw words.|
+| Reload and append |After the callback,97DE3C reloads the output-holder address fromSP1F4,97DE40 reloads its current PBI pointer,97DE48 saves that pointer,97DE4C appends it. The callback return is not tested. Only then A00618 and A0067C execute on that reloaded pointer. Their return values likewise have no gate before97DE74's outward branch.|
+
+`-witness.py/.json` passes12 independent native handoff fixtures: empty/nonempty acyclic membership, callback result0/1/FFFFFFFF, and original/replaced output-holder pointer. Actual97DDDC..97DE70 and actualA3709C execute.9F1BE8 and Init/Play are explicit opaque ABI boundaries with caller-saved register clobbers. Native construction preserves sentinel bytes6A/6B. In deliberate holder-replacement fixtures the event still names the original PBI, while append and subsequent Init/Play use the reloaded replacement; this establishes the source reload dependency, not that a shipped callback actually performs that mutation. Callback return does not change the observed append ordering.
+
+Stop this supplied callback join and the already-paid registration/modulation/append bodies. Original037 remains PARTIAL/AUDIBLE for actual9A0938 priority/quota admission or positive supported-input exclusion, plus the original unrestricted counter/limiter aliases and policy/collection input proof. A concrete creator seam does not settle all aliases, whole creator preparation, callback mutation, concurrency, graph validity or Init/Play outcomes. No new obligation or extra closure credit.
+
+out of scope: limiter/modulator/list backing, allocator/hash/storage/I-O and per-sample DSP arithmetic.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production/manifest/inventory/PROJECT_STATE/hardware/Q15 edits.
