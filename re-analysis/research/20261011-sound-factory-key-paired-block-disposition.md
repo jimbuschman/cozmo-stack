@@ -1,0 +1,16 @@
+# Q14-024/109/134 controlled paired/block target pass, checkpoint875
+
+Scope guard reread before every step. Original A3B684/A3B694 population inputs and four key bytes108D9A0..AF only. Model874 SHA256ca0f5ef8e468c6263e70c338a2545193991c4a15cbde3f7da0b601eb22219882 adds the five independently native-controlled transfers to812's original maps, scalar-literal/MOVW seed enumeration, flags and finite worklist. No new allocator/registry/DSP/callback recipient body is opened. `-navigation.py/.txt` and `-summary.json` retain every event and cap.
+
+15,280 candidate windows,815 caps,31 observations. The cap set is exactly the union of865 key and870 factory cap sets: no new cap, no cap removed. Seven previous scalar observations remain. The24 additional observations are eight byte-overlap reads at each of two already-rejected callback-array overruns and eight reads of actual K1/K2. No original factory-target observation or fresh key writer appears in this finite model. This is not a writer/caller absence proof; none of the caps is declared resolved merely because it matches an earlier cap.
+
+| Step / observation group | Primary citation | Disposition |
+|---|---|---|
+| Existing callback-array navigation overrun |9A5DAC adds12;9A5DC4 `ldm r4,{r1,sb}`;9A5E38 store.9A74F0 adds12;9A7508 `ldm r4,{r1,r8}`;9A757C store |Same HK643/865 mask-bounded seven-record array at108D878..8C8, exclusive end8CC. The model's arbitrary loop iterations reaching9A4..AB are not admitted key accesses. Stop those already-paid paths. |
+| Actual key base and scalar reads |9B2268 loads6DB72C;9B226C adds PC to108D9A0;9B2270 reads K0;9B2284 reads K3 |Retained865 reader observations; no runtime key value or new writer. |
+| Newly emitted K1/K2 reads |9B227C `ldmib r2,{r0,r1}` |Eight byte observations108D9A4..AB, under existing K0-nonzero gate9B2274/78.874 native fixture checks instruction order and retains mutable values UNKNOWN. PH640/865 already establish this reader behavior; it is not a new obligation or atomic snapshot proof. |
+| Original population inputs |Targets A3B684/A3B694,869/870 |No target observation in these local windows. Actual object/ID/type/caller admission, later payload writes/escape and original getter ID/field consumption remain UNKNOWN. No runtime exclusion inferred. |
+
+Original812 seed enumeration is retained: this pass does not certify a paired/block literal as a new first seed, shifted/computed addressing, unmodelled DA/post-index/user-bank forms, mixed-mode admission, arbitrary copy/stack/foreign aliases, interprocedural input completeness or runtime mutation. GOT bytes are navigation constants, not a runtime resolver binding. Stop this controlled target pass and its31 already-attributed observations; do not repeat paid scalar-only, exact-entry, interior or direct-PC passes as new evidence.
+
+Q14-024/109/134 remain PARTIAL, AUDIBLE. Exactly open: concrete registration object/factory ID/type/caller and later descriptor writes/escape before actual getter consumption; four-key initialization/mutation/escape bound to admitted bank input.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production/manifest/inventory/PROJECT_STATE/hardware/Q15 change. out of scope: registry/hash/backing and per-sample DSP implementations.
