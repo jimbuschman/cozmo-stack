@@ -1,0 +1,14 @@
+{
+  "baseline": "665 executable-only read map; Thumb MOVW/flags/rotated-address limits",
+  "new": "805 full original LOAD data reads; executable-only scan seeds; full ELF GOT bounds; selected Thumb MOVW/flag/width/arithmetic/FIFO model",
+  "baselineWindows": [
+    "12"
+  ],
+  "newWindows": [
+    "14885"
+  ],
+  "newCaps": 791,
+  "baselineEvents": [],
+  "newEvents": [],
+  "limit": "File-backed values and finite selected navigation only; not dynamic loader winner, all-runtime caller/pointer/input absence or unreachable proof."
+}

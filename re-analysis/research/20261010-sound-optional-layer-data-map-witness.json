@@ -1,0 +1,42 @@
+{
+  "engineSHA256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "probes": [
+    {
+      "address": "0x15198",
+      "map": "original ELF32 LOADs",
+      "value": "0x58db55",
+      "outcome": "file-backed word"
+    },
+    {
+      "address": "0x1043b9c",
+      "map": "original ELF32 LOADs",
+      "value": "0x4a4010",
+      "outcome": "file-backed word"
+    },
+    {
+      "address": "0x1040068",
+      "map": "original ELF32 LOADs",
+      "value": "0x105243c",
+      "outcome": "file-backed word"
+    },
+    {
+      "address": "0x15198",
+      "map": "665 EXEC sections",
+      "value": null,
+      "outcome": "unmapped under changed map"
+    },
+    {
+      "address": "0x1043b9c",
+      "map": "665 EXEC sections",
+      "value": null,
+      "outcome": "unmapped under changed map"
+    },
+    {
+      "address": "0x1040068",
+      "map": "665 EXEC sections",
+      "value": null,
+      "outcome": "unmapped under changed map"
+    }
+  ],
+  "limit": "File-byte read-map witness only; raw GOT words do not establish completed runtime binding."
+}

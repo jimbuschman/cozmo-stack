@@ -578,3 +578,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint804 - concrete rate-pointer stack alias
 
 `20261010-sound-rate-stack-alias-disposition.md` follows803's9D5B64 SP18 save through exactly three pointer reloads and live rate dereferences9D5C50/5E58/618C, with local entry/return,861-node graph and all-edge initialization-dominance witnesses. Six existing A11590 query interfaces receiveSP38 scope,not the saved pointer; no new direct rate writer or all-alias exclusion. These three primary reads are beyond the generic310-event model's stack support.043/092/099/120/124/130 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint805 - optional input address-navigation corrections
+
+`20261010-sound-optional-layer-address-fair-disposition.md` corrects665's EXEC-only data-read map,omitted selected Thumb MOVW and partial GOT bounds,with independent original-versus-changed mapping byte probes.14885 windows/791 caps/zero target events; no runtime binding,candidate admission or absence proof. OL664's positive Remove->AddLayer PLT decision remains paid; original021 manager/tag/control/populated-layer input stays UNKNOWN/PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
