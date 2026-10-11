@@ -11635,3 +11635,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint793 - fourth direct VoiceInit caller
 
 `20261010-sound-voice-init-interior-disposition.md` corrects the total from three to four direct Init calls:retained handoffA41C68 already has positive PT540C attachment/Init/stop/start decisions.142 interior/entry encodings:four actual ARM entry calls,ten individually rejected false encodings,128 unattributed Thumb candidates retained for source-boundary checks.033 PARTIAL; no indirect absence or new E0/E4 writer claim.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint794 - VoiceInit candidate source boundaries
+
+`20261010-sound-voice-init-candidate-source-disposition.md` pays793's128 retained encodings using primary local ARM entry/edge/byte witnesses, not a region/address assumption. All142 finite candidates accounted:four actual direct entry calls,138 false encodings.033 retains original indirect/re-init and E0/E4 alias-writer proofs;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

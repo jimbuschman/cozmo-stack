@@ -425,6 +425,8 @@ Checkpoint500 reconciliation: DA498/DT499 now establish original9EB4C8 admission
 
 **Current disposition, checkpoint650:** PARTIAL: Establish indirect VoiceInit/re-init inputs and complete liveE0/E4 alias-writer proof. VW650 binds four immediate stores and two output-pointer writes to actual new-source/retained-source/virtualization paths, preserving unassigned/preserved cases and bitwise retained gate. Bounded scan is not writer absence. out of scope: storage/I-O, per-sample DSP and the census exclusions. See `20261009-q14-partial-closeout.md`; earlier remaining-work prose is historical and superseded.
 
+**Current disposition, checkpoint794:** PARTIAL: four direct VoiceInit entry calls and all142 finite entry/interior encoding candidates are positively reconciled; the original indirect/re-init input and liveE0/E4 alias-writer proofs remain. See `20261010-sound-voice-init-candidate-source-disposition.md`. Earlier three-total and128-unattributed wording is superseded.
+
 ## Q14-034 — triage line 72
 
 > | M6-025 | **KEEP** | 0x009EE9C4..0x009EEA5C;0x009E8940;0x009E8FCC;0x009E8F10;0x009E91F8;0x00A347A8;0x00A0CCF8;0x00A0CD78;0x009D0F3C;0x009EE2D8 | Continuous validation, switch precedence/last-switch state and special Sound dispatch remain exact even on unexercised branches. |
@@ -3218,3 +3220,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint793 - fourth direct VoiceInit caller
 
 `20261010-sound-voice-init-interior-disposition.md` corrects the total from three to four direct Init calls:retained handoffA41C68 already has positive PT540C attachment/Init/stop/start decisions.142 interior/entry encodings:four actual ARM entry calls,ten individually rejected false encodings,128 unattributed Thumb candidates retained for source-boundary checks.033 PARTIAL; no indirect absence or new E0/E4 writer claim.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint794 - VoiceInit candidate source boundaries
+
+`20261010-sound-voice-init-candidate-source-disposition.md` pays793's128 retained encodings using primary local ARM entry/edge/byte witnesses, not a region/address assumption. All142 finite candidates accounted:four actual direct entry calls,138 false encodings.033 retains original indirect/re-init and E0/E4 alias-writer proofs;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
