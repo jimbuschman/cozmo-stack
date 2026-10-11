@@ -1,0 +1,11 @@
+# Q14-119 music-flush nearby-PC input check, checkpoint858
+
+Scope guard reread before every step. Request `requests/20261007-codex-queue-5.md`. Exact targets remainA71634(manager,context) andA716BC(manager,raw mode), plus mode-bit variants. Their selective flush can cut off sound, so caller/address navigation qualifies. MUC9/MUC10/SR756/SF757 local stop/unlink/release contracts stay paid;775/801 and850 input boundaries are retained rather than repeated.
+
+`-navigation.py/.json` substitutes both entries into852's nearby-PC seed method:17639 ARM immediate ADD/SUB-PC,17041 Thumb ADR16 and1073 Thumb ADDW/SUBW-PC forms, selecting results within512 bytes either side of either exact target. Two selected seeds/two unchanged812 propagation windows/zero events/zero caps. Explicit first-destination seeding and possible mode/condition are navigation, not caller admission. Model SHA256917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf. No full850 GOT/MOVW census is repeated.
+
+Primary `-native.txt` individually resolves both apparent ThumbADR seeds. A715B4 would formA717B4 but is actualARM MVN SL,7F. A71624 would formA71658 but is actualARM STRB SL,[SP,C]. Both belong to separately reopenedA71534 PUSH, not staleA71538 or neighboringA71138. ActualA7162C branches backA715C0, then literalA71630 precedes separateA71634 PUSH. No address producer or fallthrough input into either flush body is supplied. Calls remain paid interfaces; no note-release, lifetime-list or allocator descent.
+
+Q14-119 remains PARTIAL, AUDIBLE. Exactly open: positively admitted manager/context and manager/raw-mode inputs or complete bounded supported-input exclusion proof, plus its independent original exhaustive relative/indirect/aliased PBI1F8 writer proof beyond six known production writes. Two false nearby seeds do not exclude distant/variable composed addresses, stack/copy aliases or mutable/foreign inputs. Stop these two windows; preserve zero/nonzero raw-mode and context-selection differences without inventing callers.
+
+out of scope: retained-event/list/pool backing, allocator/copy/free and per-sample DSP.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production, fidelity, inventory, PROJECT_STATE, hardware or Q15 change.

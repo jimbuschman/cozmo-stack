@@ -1,0 +1,46 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "00A71634",
+    "00A716BC"
+  ],
+  "formsExamined": {
+    "ARM immediate ADD/SUB PC": 17639,
+    "Thumb ADR16": 17041,
+    "Thumb ADDW/SUBW PC": 1073
+  },
+  "nearby_seed_count": 2,
+  "propagation_count": 2,
+  "seeds": [
+    {
+      "address": "00A715B4",
+      "mode": "Thumb",
+      "bytes": "7fa0",
+      "value": "00A717B4",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "decoded": [
+        "adr r0, #0x1fc"
+      ],
+      "propagation_start": "00A715B6",
+      "destination": "r0"
+    },
+    {
+      "address": "00A71624",
+      "mode": "Thumb",
+      "bytes": "0ca0",
+      "value": "00A71658",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "decoded": [
+        "adr r0, #0x30"
+      ],
+      "propagation_start": "00A71626",
+      "destination": "r0"
+    }
+  ],
+  "events": [],
+  "cap_log": [],
+  "model_sha256": "917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf",
+  "limit": "Only direct-PC seed values within512 bytes either side of original music-flush inputs then unchanged812 local propagation; explicit destination seed, possible modes/conditions, distant address construction, stack/copy/foreign inputs and caps are not certified."
+}

@@ -1,0 +1,26 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A71534..0x00A71550 exclusive; ARM;
+00A71534: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+00A71538: sub          sp, sp, #0x10
+00A7153C: ldr          r3, [pc, #0xec] ; word[00A71630]=005CEB08
+00A71540: ldr          lr, [r0, #0xc]
+00A71544: ldr          ip, [r0, #8]
+00A71548: ldr          r3, [pc, r3]
+00A7154C: add          lr, ip, lr, lsl #4
+RANGE 0x00A715A8..0x00A715C0 exclusive; ARM;
+00A715A8: mov          r5, r1
+00A715AC: mov          r7, r0
+00A715B0: add          r8, sp, #0xc
+00A715B4: mvn          sl, #0x7f
+00A715B8: mov          sb, #1
+00A715BC: b            #0xa715cc
+RANGE 0x00A71618..0x00A71638 exclusive; ARM;
+00A71618: stm          sp, {sb, ip}
+00A7161C: str          r0, [r8]
+00A71620: mov          r0, r7
+00A71624: strb         sl, [sp, #0xc]
+00A71628: bl           #0xa71138
+00A7162C: b            #0xa715c0
+00A71630: subseq       lr, ip, r8, lsl #22
+00A71634: push         {r3, r4, r5, r6, r7, r8, sb, lr}

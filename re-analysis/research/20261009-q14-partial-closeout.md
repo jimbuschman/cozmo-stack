@@ -790,3 +790,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint857 — command1F nearby-PC input check
 
 `20261011-sound-queue-command31-composed-pc-disposition.md` checks original9A60B8 with852's nearby-PC seed method: zero seeds/windows/events/caps. QC752/843 conditional cancellation/stop payload/root joins and845/849 finite input dispositions retained;104/131 PARTIAL for admitted nonzero caller/three raw inputs and independent original writer/alias proofs. No repeated full pointer, stop body or new family.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint858 — music-flush nearby-PC input check
+
+`20261011-sound-music-flush-composed-pc-disposition.md` substitutesA71634/A716BC into852's nearby-PC seed method: two windows/zero events/zero caps. Apparent ADR seeds are actualARM MVN andSTRB within separateA71534 method; backward branch/literal separatesA71634 entry. MUC/SR756/SF757 and775/801/850 retained;119 PARTIAL for manager/context/mode admission and independent original stop-offset writer/alias proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
