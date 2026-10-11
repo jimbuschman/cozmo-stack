@@ -12027,3 +12027,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint891 — original teardown paired/block inputs
 
 `20261011-sound-teardown-paired-block-disposition.md` applies controlled874 transfers omitted by846 to the five original084/118 inputs.14,898 windows/803 caps/two observations are identical to846, including seed lists; no new paired/block input. KnownTF612 literal/GOT compositions and paid teardown/source bodies are not reopened. Original alias/copy/foreign/capped input proof remains open;084/118 PARTIAL. Stop these forms.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint892 — original alternate Action population
+
+`20261011-sound-mode4-action-input-disposition.md` independently binds all906 shipped Actions and shows the complete723 authored Play ID/target map equals PB647 Event roots: no extra unreferenced Play Action and no original mode4 target word. Under canonical fully read bank-only Action population,886 append supplies no additional authored root. Actual generic factory immediate caller is the known bank9B2FE8; target setter virtual/table aliases and partially read/nonbank/mutated graph/direct input remain open.009/034 PARTIAL; stop this population widening lead.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.

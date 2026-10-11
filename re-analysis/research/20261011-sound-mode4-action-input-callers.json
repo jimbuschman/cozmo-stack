@@ -1,0 +1,134 @@
+{
+  "raw_aligned_pointer_navigation": [
+    {
+      "address": "0x103c9a0",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103c9d8",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103ca10",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103ca58",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103ca90",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cad8",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cb38",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cb80",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cbc0",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cc00",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cc38",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cc80",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103ccc8",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cd10",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cd58",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cdb8",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103ce18",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103ce50",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103ce88",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cee8",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cf30",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103cf68",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103dca0",
+      "target": "0xa60250",
+      "section": ".data.rel.ro"
+    }
+  ],
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0xa60250",
+    "0xa60c1c"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x9b2fe8",
+      "target": "#0xa60c1c",
+      "mode": "ARM",
+      "instruction": "bl #0xa60c1c",
+      "section": ".text"
+    }
+  ]
+}
