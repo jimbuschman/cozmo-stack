@@ -57,6 +57,7 @@ public static class ProceduralFaceRenderer
     private static readonly float LidDegToRad = BitConverter.Int32BitsToSingle(0x3C8EFA35);
 
     /// <summary>C's roundf: half away from zero.</summary>
+    // EQUIVALENT_IMPLEMENTATION: phone system libm rounding/trigonometry is not shipped in the engine.
     private static float RoundF(float v) => MathF.Round(v, MidpointRounding.AwayFromZero);
 
     /// <summary>An eye's box on the canvas (gap1 D5): (minX, minY, maxX − minX, maxY − minY).</summary>
@@ -105,10 +106,11 @@ public static class ProceduralFaceRenderer
         // G9: the kept rows shifted by the face's distorter
         if (face.Distorter is { } d && rowMax > rowMin)
         {
+            float inverseRange = 1f / (rowMax - rowMin); // M5-032: reciprocal once, then f32 multiply.
             for (int row = rowMin; row < rowMax; row++)
             {
                 if ((row & 1) == firstScanLine) continue;
-                float f = (float)(row - rowMin) / (rowMax - rowMin);
+                float f = inverseRange * (float)(row - rowMin);
                 int s = d.GetEyeDistortionAmount(f);
                 ShiftRow(img, row, s);
             }

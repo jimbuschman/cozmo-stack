@@ -23,6 +23,7 @@ internal static class JsonClipLoader
 
     public static AnimationClip? Load(string file, Action<string>? log)
     {
+        using var clipLog = Eye.UseWarningLog(log);
         using var doc = JsonDocument.Parse(File.ReadAllText(file));
         var root = doc.RootElement;
         var names = root.ValueKind == JsonValueKind.Object
@@ -31,6 +32,7 @@ internal static class JsonClipLoader
         if (names.Count == 0)
         {
             log?.Invoke("error: CannedAnimationContainer.DefineFromJson.EmptyFile: Found no animations in JSON");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
         if (names.Count > 1)
@@ -38,11 +40,13 @@ internal static class JsonClipLoader
         string name = names[0];
         if (name == ProceduralAnimName)
         {
-            log?.Invoke($"warning: CannedAnimationContainer.ReservedName: Skipping animation with reserved name '{name}'");
+            log?.Invoke($"error: CannedAnimationContainer.DefineFromJson.ReservedName: Skipping animation with reserved name '{name}'.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
 
-        var probe = new StreamAnimation(name, isLive: false);
+        log?.Invoke($"debug: [Unnamed] CannedAnimationContainer::DefineFromJson: Loading '{name}'");
+        var probe = new StreamAnimation(name, isLive: false) { Log = log };
         var frames = new List<Keyframe>();
         bool failed = false;
         var arr = root.GetProperty(name);
@@ -148,7 +152,7 @@ internal static class JsonClipLoader
             case "BodyMotionKeyFrame":
                 return DefineBody(trigger, el, log, clip, out error);
             case "ProceduralFaceKeyFrame":
-                return DefineFace(trigger, el);
+                return DefineFace(trigger, el, log);
             case "BackpackLightsKeyFrame":
                 return DefineBackpack(trigger, el, log, out error);
             case "RobotAudioKeyFrame":
@@ -163,7 +167,7 @@ internal static class JsonClipLoader
                 // C5 item 1: RecordHeading reads nothing and always succeeds (0x004FBB54).
                 return new RecordHeadingKeyframe(trigger);
             case "TurnToRecordedHeadingKeyFrame":
-                return DefineTurnTo(trigger, el);
+                return DefineTurnTo(trigger, el, log, clip);
             default:
                 error = $"Animation.DefineFromJson.UnrecognizedFrameName: {type}";
                 return null;
@@ -195,10 +199,12 @@ internal static class JsonClipLoader
                 error = $"BodyMotionKeyFrame.ProcessRadiusString: {clip}: unrecognised radius '{raw}'";
                 return null;
             }
+            AnimationLibrary.LogBodyClamp(raw, speed, clip, log);
             BodyKeyframe.CheckSpeedForRadiusString(raw, ref speed);   // B6: the clamps run after the radius decision
             return new BodyKeyframe(trigger, duration, raw, speed);
         }
         short radius = unchecked((short)AsInt(r, "radius_mm"));
+        AnimationLibrary.LogBodyClamp(radius.ToString(System.Globalization.CultureInfo.InvariantCulture), speed, clip, log);
         if (Math.Abs((int)speed) >= 221) speed = (short)Math.Clamp((int)speed, -220, 220);   // CheckTurnSpeed
         return new BodyKeyframe(trigger, duration, radius.ToString(System.Globalization.CultureInfo.InvariantCulture), speed);
     }
@@ -208,13 +214,17 @@ internal static class JsonClipLoader
     /// "faceAngle"; "faceCenterX" and "faceCenterY" only both → SetFacePosition; "faceScaleX" and "faceScaleY" only both,
     /// a negative one 0. Nothing rejects the keyframe; "durationTime_ms" is not read.
     /// </summary>
-    private static Keyframe DefineFace(uint trigger, JsonElement el)
+    private static Keyframe DefineFace(uint trigger, JsonElement el, Action<string>? log)
     {
         var pose = new ProceduralFacePose();
         float[]? Floats(string key) =>
             Present(el, key, out var v) && v.ValueKind == JsonValueKind.Array ? v.EnumerateArray().Select(x => AsFloat(x, key)).ToArray() : null;
-        if (Floats("leftEye") is { Length: Eye.ParamCount } l) pose.Left = Eye.FromAsset(l);
-        if (Floats("rightEye") is { Length: Eye.ParamCount } r) pose.Right = Eye.FromAsset(r);
+        foreach (string eye in new[] { "leftEye", "rightEye" })
+            if (Floats(eye) is { } values)
+            {
+                if (values.Length != 19) log?.Invoke($"warning: ProceduralFace.SetEyeArrayHelper.WrongNumParams: Unexpected number of parameters for {eye} array ({values.Length} vs. 19)");
+                else if (eye == "leftEye") pose.Left = Eye.FromAsset(values); else pose.Right = Eye.FromAsset(values);
+            }
         if (Present(el, "faceAngle", out var a)) pose.FaceAngle = AsFloat(a, "faceAngle");
         if (Present(el, "faceCenterX", out var cx) && Present(el, "faceCenterY", out var cy))
             pose.SetFacePosition(AsFloat(cx, "faceCenterX"), AsFloat(cy, "faceCenterY"));
@@ -249,7 +259,7 @@ internal static class JsonClipLoader
         var back = Color("Back"); var front = Color("Front"); var middle = Color("Middle"); var left = Color("Left"); var right = Color("Right");
         uint duration = unchecked((uint)AsInt(Required(el, "durationTime_ms"), "durationTime_ms"));
         var k = new LightsKeyframe(trigger, duration, left, right, front, middle, back);
-        if (k.EncodedLeds is null) { error = "BackpackLightsKeyFrame: a colour is not an array of 3 or 4 floats"; return null; }
+        if (!BackpackColor.TryReadAll(left, right, front, middle, back, out _, log)) { error = "BackpackLightsKeyFrame: a colour is not an array of 3 or 4 floats"; return null; }
         return k;
     }
 
@@ -355,7 +365,7 @@ internal static class JsonClipLoader
     /// on this path (unlike the FlatBuffer one, C19). Then CheckRotationSpeed (T3): speed |v| &gt; 300 → ±300; accel and
     /// decel |v| ≥ 13637 → ±13636.
     /// </summary>
-    private static Keyframe DefineTurnTo(uint trigger, JsonElement el)
+    private static Keyframe DefineTurnTo(uint trigger, JsonElement el, Action<string>? log, string clip)
     {
         uint duration = unchecked((uint)AsInt(Required(el, "durationTime_ms"), "durationTime_ms"));
         short offset = unchecked((short)AsInt(Required(el, "offset_deg"), "offset_deg"));
@@ -365,6 +375,7 @@ internal static class JsonClipLoader
         ushort tolerance = unchecked((ushort)AsUInt(Required(el, "tolerance_deg"), "tolerance_deg"));
         ushort halfRevs = unchecked((ushort)AsUInt(Required(el, "numHalfRevs"), "numHalfRevs"));
         bool shortest = Required(el, "useShortestDir").ValueKind == JsonValueKind.True;
+        AnimationLibrary.LogTurnClamps(speed, accel, decel, clip, log);
         if (Math.Abs((int)speed) > 300) speed = (short)Math.Clamp((int)speed, -300, 300);
         if (Math.Abs((int)accel) >= 13637) accel = (short)Math.Clamp((int)accel, -13636, 13636);
         if (Math.Abs((int)decel) >= 13637) decel = (short)Math.Clamp((int)decel, -13636, 13636);

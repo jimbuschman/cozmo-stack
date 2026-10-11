@@ -37,6 +37,13 @@ public sealed class Eye
     /// <summary>How many parameters an eye has. Fixed by the engine and by every asset in the OBB.</summary>
     public const int ParamCount = 19;
 
+    // fidelity: M5-040
+    internal static bool ClippingWarningEnabled = true;
+    internal static readonly AsyncLocal<Action<string>?> WarningLog = new();
+    internal static IDisposable UseWarningLog(Action<string>? log)
+    { var old = WarningLog.Value; WarningLog.Value = log; return new WarningScope(old); }
+    private sealed class WarningScope(Action<string>? old) : IDisposable
+    { public void Dispose() => WarningLog.Value = old; }
     private readonly float[] _p = new float[ParamCount];
 
     /// <summary>
@@ -96,24 +103,20 @@ public sealed class Eye
     public static float Clip(EyeParam p, float value)
     {
         if (float.IsNaN(value)) return value;
-        switch (p)
+        (float min, float max)? range = p switch
         {
-            case EyeParam.UpperLidAngle:
-            case EyeParam.LowerLidAngle:
-                return Math.Clamp(value, -45f, 45f);
-            case EyeParam.EyeScaleX:
-            case EyeParam.EyeScaleY:
-                return Math.Clamp(value, 0f, float.MaxValue);
-            case EyeParam.LowerInnerRadiusX: case EyeParam.LowerInnerRadiusY:
-            case EyeParam.UpperInnerRadiusX: case EyeParam.UpperInnerRadiusY:
-            case EyeParam.UpperOuterRadiusX: case EyeParam.UpperOuterRadiusY:
-            case EyeParam.LowerOuterRadiusX: case EyeParam.LowerOuterRadiusY:
-            case EyeParam.UpperLidY: case EyeParam.UpperLidBend:
-            case EyeParam.LowerLidY: case EyeParam.LowerLidBend:
-                return Math.Clamp(value, 0f, 1f);
-            default:
-                return value;
+            EyeParam.UpperLidAngle or EyeParam.LowerLidAngle => (-45f, 45f),
+            EyeParam.EyeScaleX or EyeParam.EyeScaleY => (0f, float.MaxValue),
+            >= EyeParam.LowerInnerRadiusX and <= EyeParam.LowerLidBend => (0f, 1f),
+            _ => null
+        };
+        if (range is not { } bounds) return value;
+        if (value < bounds.min || value > bounds.max)
+        {
+            if (ClippingWarningEnabled) WarningLog.Value?.Invoke(FormattableString.Invariant($"warning: ProceduralFace.Clip.OutOfRange: Value of {value:F6} out of range [{bounds.min:F6},{bounds.max:F6}] for parameter {p}. Clipping."));
+            return value < bounds.min ? bounds.min : bounds.max;
         }
+        return value;
     }
 
     /// <summary>C9 with its NaN rule: a NaN keeps <paramref name="previous"/>, the target's value before the write.</summary>

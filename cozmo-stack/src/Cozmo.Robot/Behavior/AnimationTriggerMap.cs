@@ -100,8 +100,8 @@ public sealed class AnimationTriggerMap
     /// Walks the whole chain for one trigger and records each step:
     /// trigger, group, candidate clips, selection.
     ///
-    /// Selection itself is M5's <see cref="AnimationGroup.Choose"/>, which honours the group's own weights
-    /// and mood, so this adds no policy of its own.
+    /// Selection itself is M5's <see cref="AnimationLibrary.GetAnimationNameFromGroup"/>, with the library generator,
+    /// mood, engine clock and head angle. Legacy random/mood arguments describe the request but do not override those inputs.
     /// </summary>
     public TriggerResolution Resolve(AnimationTrigger trigger, AnimationLibrary library,
                                      Random? random = null, string? mood = null)
@@ -123,14 +123,14 @@ public sealed class AnimationTriggerMap
             };
 
         var candidates = g.Entries.Select(c => c.Name).ToList();
-        var pick = g.Choose(random ?? Random.Shared, mood);
+        var name = library.GetAnimationNameFromGroup(group, strict: false);
         return new TriggerResolution(trigger)
         {
             GroupName = group,
             Candidates = candidates,
-            Selected = pick?.Name,
+            Selected = name.Length == 0 ? null : name,
             Mood = mood,
-            Problem = pick is null
+            Problem = name.Length == 0
                 ? (candidates.Count == 0
                     ? $"group '{group}' is empty"
                     : $"group '{group}' has {candidates.Count} clips but none was selectable" +

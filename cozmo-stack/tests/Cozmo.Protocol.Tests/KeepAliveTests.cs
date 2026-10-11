@@ -300,9 +300,9 @@ public class KeepAliveTests
 
     /// <summary>
     /// M7-008: a streaming Update stores 0 into +0x44 (<c>str r5,[r4,#0x44]</c> at 0x0057D000), so the idle counter restarts after
-    /// a clip. Eleven idle Updates leave +0x44 at 600; a clip then streams, and the live keyframes come 17 Updates after the
-    /// Update that ended it (that Update zeroes +0x44 in its streaming branch and the tail adds 60; 17 x 60 = 1020 >= 1000), not
-    /// at the 18th Update overall, which an un-reset counter would give.
+    /// a clip. Loop exhaustion zeroes +0x44 and bypasses the idle tail (M5 fix rows X3-X5). The next idle Update
+    /// tests zero, then adds 60; the live keyframes come 18 Updates after completion: the eighteenth sees
+    /// 17 x 60 = 1020 >= 1000 before its tail.
     /// </summary>
     [Fact]
     public void M7_008_AClipStreamingZeroesTheIdleCounter()
@@ -317,7 +317,7 @@ public class KeepAliveTests
         int ended = t - 1;                       // the Update on which the clip completed
         Assert.Empty(r.Bodies);
         for (; t < ended + 25; t++) Tick(s, r, t);
-        Assert.Equal(ended + 17, r.Bodies.First().Tick);
+        Assert.Equal(ended + 18, r.Bodies.First().Tick);
     }
 
     /// <summary>

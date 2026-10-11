@@ -107,6 +107,7 @@ public sealed class StreamSendBuffer
         public int Size;
         public bool IsAudio;
         public Func<bool> Send = () => true;
+        public string? TagName;
     }
 
     private readonly object _gate = new();
@@ -161,14 +162,14 @@ public sealed class StreamSendBuffer
     }
 
     /// <summary>BufferMessageToSend: appends a message whose size and kind are given, to be sent by <paramref name="send"/>.</summary>
-    public void Buffer(object? owner, int size, bool isAudio, Func<bool> send)
+    public void Buffer(object? owner, int size, bool isAudio, Func<bool> send, string? tagName = null)
     {
-        lock (_gate) _fifo.AddLast(new Entry { Owner = owner, Size = size, IsAudio = isAudio, Send = send });
+        lock (_gate) _fifo.AddLast(new Entry { Owner = owner, Size = size, IsAudio = isAudio, Send = send, TagName = tagName });
     }
 
     /// <summary>BufferMessageToSend for a message: its size and kind are its own (C11).</summary>
     public void Buffer(object? owner, RobotMessage m, Func<RobotMessage, bool> send)
-        => Buffer(owner, SizeOf(m), IsAudioMessage(m.Id), () => send(m));
+        => Buffer(owner, SizeOf(m), IsAudioMessage(m.Id), () => send(m), MessageCatalog.ById[m.Id].Member);
 
     /// <summary>How a drain ended (C14, A18): the buffer emptied, a budget stopped it, or a send failed.</summary>
     public enum DrainResult { Empty, BudgetStop, SendError }
@@ -252,6 +253,22 @@ public sealed class StreamSendBuffer
         }
     }
 
+    internal string TagNames { get { lock (_gate) return string.Join(",", _fifo.Where(e => e.Size != 0).Select(e => e.TagName ?? "UNKNOWN")); } }
+    // fidelity: M5-024, M5-037
+    internal void ClearSendBuffer()
+    {
+        lock (_gate)
+        {
+            foreach (var entry in _fifo)
+                if (entry.Size != 0)
+                {
+                    if (entry.TagName is { } name) Log?.Invoke($"debug: [Unnamed] AnimationStreamer.ClearSendBuffer: Clearing unsent {name}");
+                    else Log?.Invoke("MISSING: ClearSendBuffer tag for caller-supplied untyped test message");
+                }
+            _fifo.Clear();
+        }
+    }
+
     // fidelity: M1-025, M1-015
     /// <summary>The Robot constructor's state (C13: the counters zeroed), for a removed robot: nothing buffered, no budget.</summary>
     internal void ResetToConstructed()
@@ -316,6 +333,14 @@ public sealed record AnimationHandle(string ClipName, AnimationTrack Tracks)
             try { callback(reason); }
             catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
         }
+    }
+
+    internal void ReleaseHostWaiters()
+    {
+        // Managed API waiters observe that their owned native object was destroyed. This has no native broadcast,
+        // no sink call and no action/end callbacks; AbortAll owns the wire teardown.
+        lock (_onEnd) { _completed = true; _endReason = AnimationEndReason.Cancelled; _onEnd.Clear(); }
+        _done.TrySetResult(AnimationEndReason.Cancelled);
     }
 
     internal void Complete(AnimationEndReason reason)
@@ -622,14 +647,16 @@ public sealed class AnimationScheduler
             var (name, count) = group.Length == 0 || catalog is null ? ("", 0) : catalog.GetFirstAnimationName(group);
             if (count == 0 || name.Length == 0)
             {
-                Log?.Invoke($"error: AnimationStreamer.Constructor.NeutralFaceGroupEmpty: neutral face animation group '{group}' is null or empty");
+                Log?.Invoke($"error: AnimationStreamer.Constructor.BadNeutralAnimGroup: Neutral animation group {group} for trigger NeutralFace is empty or null");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 _tlc.SetResetData(null);
                 _tlc.Init();
                 return;
             }
             if (count > 1)
-                Log?.Invoke($"warning: AnimationStreamer.Constructor.NeutralFaceGroupSize: Neutral face animation group {group} has {count} animations instead of one");
+                Log?.Invoke($"warning: AnimationStreamer.Constructor.MultipleNeutralFaceAnimations: Neutral face animation group {group} has {count} animations instead of one. Using first.");
             _neutral = catalog!.GetAnimation(name);
+            if (_neutral is null) { Log?.Invoke($"error: AnimationStreamer.Constructor.NeutralFaceDataNotFound: Could not find expected neutral face animation file called {name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             var face = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
             _tlc.SetResetData(face);
             _tlc.Init();
@@ -683,12 +710,12 @@ public sealed class AnimationScheduler
         var old = _streaming;
         if (old is not null && clip is not null && !interrupt)
         {
-            Log?.Invoke($"info: AnimationStreamer.SetStreamingAnimation.NotInterrupting: Already streaming {_streamingClip?.Name}, will not interrupt with {clip.Name}");
+            Log?.Invoke($"info: [Unnamed] AnimationStreamer.SetStreamingAnimation.NotInterrupting: Already streaming {_streamingClip?.Name}, will not interrupt with {clip.Name}");
             return 0;
         }
         if (old is not null)
         {
-            Log?.Invoke($"info: AnimationStreamer.SetStreamingAnimation.Aborting: {_streamingClip?.Name}");
+            Log?.Invoke($"info: [Unnamed] AnimationStreamer.SetStreamingAnimation.Aborting: Animation {clip?.Name ?? "NULL"} is interrupting animation {old.Name}");
             AbortLocked();
         }
         else if (clip is null || _idleAnim is not null)
@@ -709,7 +736,9 @@ public sealed class AnimationScheduler
         }
         if (_streaming!.IsLive && numLoops != 1)
         {
-            Log?.Invoke("error: VERIFY failed: a live animation streams one loop");
+            Log?.Invoke($"error: AnimationStreamer.SetStreamingAnimation.LoopingLiveAnimation: VERIFY(numLoops == 1): Animation {clip.Name} is marked 'live' but numLoops={numLoops}. Clamping to 1.");
+            DesiredFaceDistortionComponent.ErrorFlagSet = true; // sVerifyFailedReturnFalse has no debug-break call.
+            Log?.Invoke("MISSING: M5-008 sVerifyFailedReturnFalse callstack dump at 0x0080DA08 and logger-provider flush at 0x0080DA24 have no M3 recipient");
             numLoops = 1;                                          // A8
         }
         _lastStreamedName = clip.Name;
@@ -792,8 +821,8 @@ public sealed class AnimationScheduler
             catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { }
         }
         if (_streaming is null && _idleAnim is null) return;
-        Log?.Invoke($"info: AnimationStreamer.Abort: streaming {_streamingClip?.Name ?? "none"}, {Stream.Count} buffered");
         var anim = _streaming ?? _idleAnim!;
+        Log?.Invoke($"info: [Unnamed] AnimationStreamer.Abort: Tag={_tag} {(_streaming != null ? "Streaming" : "Idle")}:{anim.Name} hasFramesLeft={(anim.HasFramesLeft ? 1 : 0)} audioComplete={(_audio is null || _audio.IsComplete ? 1 : 0)} startSent={(_startSent ? 1 : 0)} endSent={(_endSent ? 1 : 0)} sendBuffer={Stream.TagNames}");
         if (anim.FaceAnim.Current is { } fa) fa.FaceAnimIndex = 0;
         _startSent = false;
         _endSent = false;
@@ -824,12 +853,13 @@ public sealed class AnimationScheduler
         _streamMs = _startMs;
         if (!Stream.IsEmpty)
         {
-            Log?.Invoke("warning: Animation.Init.SendBufferNotEmpty");
-            Stream.Remove(o => o is StreamOwner);      // ClearSendBuffer: dropped, not sent (A12)
+            Log?.Invoke("info: [Unnamed] Animation.Init.SendBufferNotEmpty: Expecting SendBuffer to be empty. Will clear.");
+            Stream.ClearSendBuffer();      // ClearSendBuffer: dropped, not sent (A12)
         }
         _endSent = anim.IsEmpty;
         _startSent = false;
         _audio = CreateAudioAnimationLocked(anim);
+        // M9 owns CreateCustomSong and its "About to play the custom song" info; no M5 custom-song path.
         if (!anim.IsLive) _tlc.RemoveKeepFaceAlive(99);
         _seamDueMs = _nowMs;
     }
@@ -845,7 +875,7 @@ public sealed class AnimationScheduler
     /// so no audio message ever goes to the robot (silence in every frame); its base <c>InitAnimation</c> 0x00596814 runs the RobotAudio track to its end
     /// (<c>MoveToNextKeyFrame</c> until the iterator is the end, 0x00596898..0x00596914). The device-side playback it schedules (the keyframe events posted through
     /// <c>Dispatch::After</c>, 0x00597562..0x005975A2) has no device audio output in this stack and is reported MISSING once per process (ReportMissing dedupes by message); the audio-reference draws InitAnimation
-    /// makes per keyframe are not made.</item>
+    /// makes per keyframe are made here before the M6 playback handoff.</item>
     /// <item>0 (None) clears the animation's RobotAudio track and creates nothing (0x0059A11C..0x0059A12E).</item>
     /// <item>any other value creates nothing and leaves the track (0x0059A07E, 0x0059A130).</item>
     /// </list>
@@ -864,11 +894,11 @@ public sealed class AnimationScheduler
             case 2:
                 return anim.RobotAudio.IsEmpty ? null : new AudioAnimation(this, anim.RobotAudio);
             case 1:
-                anim.RobotAudio.MoveToEnd();
+                _ = new AudioAnimation(this, anim.RobotAudio); // D1 draws also run for the device consumer.
                 if (!_reportedDeviceAudio)
                 {
                     _reportedDeviceAudio = true;
-                    Log?.Invoke("warning: MISSING: RobotAudioClient::CreateAudioAnimation: the output source is 1 (PlayOnDevice): RobotAudioAnimationOnDevice (0x005974B0..0x00597687) posts the keyframe events on the device through Dispatch::After (0x00597562..0x005975A2); this stack has no device audio output, so no sound plays, and no audio is streamed to the robot (M6-028)");
+                    Log?.Invoke("warning: MISSING: RobotAudioClient::CreateAudioAnimation: the output source is 1 (PlayOnDevice): RobotAudioAnimationOnDevice (0x005974B0..0x00597687) posts the keyframe events on the device through Dispatch::After (0x00597562..0x005975A2); this stack has no device audio output, so no sound plays, and no audio is streamed to the robot (M6-028); the M5-017 draws were made at InitStream");
                 }
                 return null;
             case 0:
@@ -887,8 +917,9 @@ public sealed class AnimationScheduler
     {
         lock (_gate)
         {
-            _idleStack.Add((trigger, lockName));
             if (trigger == IdleCount) { _idleAnim = null; _idleInitialised = false; }
+            _idleStack.Add((trigger, lockName));
+            Log?.Invoke($"info: [Animations] AnimationStreamer.PushIdleAnimation: Setting idle animation to '{trigger}'.");
         }
     }
 
@@ -904,15 +935,19 @@ public sealed class AnimationScheduler
         lock (_gate)
         {
             _nowMs = nowMs;
-            if (_idleStack.Count <= 1) return 1;
-            int i = _idleStack.FindLastIndex(e => e.Lock == lockName);
+            if (_idleStack.Count == 1) { Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.WillNotPopLast: Refusing to pop default idle animation '{_idleStack[0].Trigger}' for lockName {lockName}"); return 1; }
+            if (_idleStack.Count == 0) { Log?.Invoke("error: AnimationStreamer.RemoveIdleAnimation.NoStack: Trying to pop an idle animation, but the stack is empty"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return 1; }
+            int i = -1;
+            for (int at = 0; at < _idleStack.Count; at++) if (_idleStack[at].Lock == lockName) i = at;
+            if (_idleStack.Count >= 1000)
+            { Log?.Invoke("error: LoopBoundOverflow: ../../../../engine/animations/animationStreamer.cpp:528"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             if (i < 0)
             {
-                Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.LockNotFound: {lockName}");
+                Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.NoLockNameFoundInStack: Attempted to remove idle with lock name {lockName}, but not found");
                 return 1;
             }
             if (i != _idleStack.Count - 1)
-                Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.RemovingFromMiddle: {lockName}");
+                Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.AnimationRemovedFromMiddleOfStack: The animation {_idleStack[i].Lock} was removed with lock name {lockName}, but other idles were above it");
             _idleStack.RemoveAt(i);
             if (TopTrigger == IdleCount)
             {
@@ -930,7 +965,7 @@ public sealed class AnimationScheduler
     /// <summary>
     /// A test and tool seam: appends a keyframe to the live animation (+0xA8) as UpdateLiveAnimation's AddKeyFrameToBack
     /// does. It does not push ProceduralLive and does not stand in for the streamer's own generator: the engine has no
-    /// pusher of ProceduralLive (0x198; check 2 section 1.8, a RECOVERABLE_GAP), so a caller that wants the live path
+    /// pusher of ProceduralLive (0x198; check 2 section 1.8, a RECOVERABLE_GAP), the app-to-engine PushIdleAnimation message is supplied by the stack API; a caller that wants the live path
     /// pushes it through <see cref="PushIdleAnimation"/>, and the keyframe then goes out in the Updates that follow
     /// (A29). Refused (false) while an animation streams. Nothing is sent here.
     /// </summary>
@@ -941,6 +976,7 @@ public sealed class AnimationScheduler
         {
             _ = nowMs;
             if (_streaming is not null) return false;
+            _live.Log = Log;
             return _live.AddLive(k);
         }
     }
@@ -948,11 +984,13 @@ public sealed class AnimationScheduler
     // ================================================================== Update
 
     /// <summary>One engine Update of the streamer (see the class summary).</summary>
-    public void Advance(double nowMs)
+    public int Advance(double nowMs)
     {
+        using var clipLog = Eye.UseWarningLog(Log);
         lock (_gate)
         {
             _nowMs = nowMs;
+            _live.Log = Log;
             // fidelity: M7-016, M7-017
             // The engine's clock is a float32 (GetCurrentTimeInSeconds returns it in r0, 0x0057D02A..0x0057D02E).
             float nowSec = (float)(nowMs / 1000.0);
@@ -983,24 +1021,25 @@ public sealed class AnimationScheduler
                 {
                     _loopCounter++;
                     if (unchecked((uint)(_numLoops - 1)) >= (uint)_loopCounter)
-                        InitStreamLocked(_streaming, _tagCounter);
+                        { InitStreamLocked(_streaming, _tagCounter); return 0; }
                     else
                     {
                         _streaming = null;
                         EndHandleLocked(AnimationEndReason.Completed);
                         _streamingClip = null;
+                        return LayersOrFlushLocked(); // X3–X5: no idle test in the exhaustion tick.
                     }
                 }
                 else
                 {
-                    UpdateStreamLocked(_streaming, storeFace: true);
+                    int result = UpdateStreamLocked(_streaming, storeFace: true);
                     _idleInitialised = false;
                     _lastStreamSec = nowSec;
+                    return result;
                 }
-                if (_streaming is not null) return;
             }
 
-            NoAnimationPathLocked();
+            return NoAnimationPathLocked();
         }
     }
 
@@ -1020,25 +1059,11 @@ public sealed class AnimationScheduler
     /// more. Any other top goes straight to the idle (0x0057D03A..0x0057D04C branch to 0x0057D064; the flush at 0x0057D122
     /// is reached only from 0x0057D056), which neither flushes nor sends an End: an InitStream drops the leftovers (A12).
     /// </summary>
-    private void NoAnimationPathLocked()
+    private int NoAnimationPathLocked()
     {
         var top = TopTrigger;
-        if (top == IdleCount)
-        {
-            if (_tlc.HaveLayersToSend)
-            {
-                StreamLayersLocked();                     // Q1.7: +0x88 is not updated
-                return;
-            }
-            if (!Stream.IsEmpty)
-            {
-                Log?.Invoke("warning: AnimationStreamer.Update.SendBufferNotEmpty");
-                RefreshBudget();
-                if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return;
-                if (_startSent && Stream.IsEmpty && !_endSent) SendEndOfAnimationLocked();
-            }
-            return;
-        }
+        if (top == IdleCount) return LayersOrFlushLocked();
+        int result = 0;
 
         var old = _idleAnim;
         if (top == AnimationTrigger.ProceduralLive)
@@ -1054,11 +1079,12 @@ public sealed class AnimationScheduler
             // state."), it sets the process-global error flag _errG (GOT 0x0103E790 = 0x0105DD34), then returns
             // straight to the function's epilogue (0x0057D032) with that result: no idle tail (no InitStream, no
             // UpdateStream, no +0x44 change).
-            if (UpdateLiveAnimationLocked() != 0)
+            int liveResult = UpdateLiveAnimationLocked();
+            if (liveResult != 0)
             {
                 Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed: Failed updating live animation from current robot state.");
-                DesiredFaceDistortionComponent.ErrorFlagSet = true;
-                return;
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                return liveResult;
             }
         }
         else
@@ -1073,7 +1099,7 @@ public sealed class AnimationScheduler
                     if (picked is null)
                     {
                         _idleAnim = null;                // Q1: 0x0057D29A, 0x0057D356
-                        return;
+                        return 1;
                     }
                     _idleAnim = picked;
                 }
@@ -1094,12 +1120,26 @@ public sealed class AnimationScheduler
             }
             else
             {
-                UpdateStreamLocked(_idleAnim, storeFace: false);
+                result = UpdateStreamLocked(_idleAnim, storeFace: false);
                 _lastStreamSec = (float)(_nowMs / 1000.0);         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
             }
         }
         _idleMs += 60;
+        return result;
     }
+
+    private int LayersOrFlushLocked()
+    {
+        if (_tlc.HaveLayersToSend) return StreamLayersLocked();
+        if (Stream.IsEmpty) return 0;
+        Log?.Invoke($"warning: AnimationStreamer.Update.SendBufferNotEmpty: Expect send buffer to be emptied by UpdateStream or StreamFaceLayers by now, has {Stream.Count} messages");
+        RefreshBudget();
+        int result = DrainResultCode();
+        if (result != 0) Log?.Invoke($"warning: AnimationStreamer.Update.SendBufferedMessagesFailed: Could not send {Stream.Count} remaining messages in send buffer");
+        if (_startSent && Stream.IsEmpty && !_endSent) return SendEndOfAnimationLocked();
+        return result;
+    }
+    private int DrainResultCode() => Stream.Drain() == StreamSendBuffer.DrainResult.SendError ? 1 : 0; // U5, M3 result interface.
 
     /// <summary>
     /// A29 picking: GetAnimationForTrigger → GetAnimationNameFromGroup(strict = false) → GetAnimation. An empty name or a
@@ -1112,9 +1152,13 @@ public sealed class AnimationScheduler
         var clip = name.Length == 0 ? null : catalog.GetAnimation(name);
         if (clip is null)
         {
-            Log?.Invoke($"error: AnimationStreamer.Update.IdleAnimNotFound: idle group '{group}' gave '{name}'; the idle is cleared, the stack is not popped");
+            Log?.Invoke(name.Length == 0
+                ? $"error: AnimationStreamer.Update.EmptyIdleAnimationFromGroup: Returned empty animation name for group {trigger}. Popping the group."
+                : $"error: AnimationStreamer.Update.InvalidIdleAnimationFromGroup: Returned null animation for name '{name}' from group '{group}'. Popping the group.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
+        Log?.Invoke($"debug: [Unnamed] AnimationStreamer.Update.SelectedNewIdle: Selected idle animation '{name}' from group '{group}'");
         return StreamAnimation.Of(clip);
     }
 
@@ -1176,7 +1220,6 @@ public sealed class AnimationScheduler
             }
             if (!_live.AddLive(new BodyKeyframe(0, unchecked((uint)_bodyDurMs), radius, speed)))
             {
-                Log?.Invoke("error: AnimationStreamer.UpdateLiveAnimation.AddBodyMotionKeyFrameFailed");
                 return 1;
             }
             _bodySpacingMs = rng.RandIntInRange(Pi(LiveIdleParam.BodyMovementSpacingMin_ms), Pi(LiveIdleParam.BodyMovementSpacingMax_ms));
@@ -1189,7 +1232,6 @@ public sealed class AnimationScheduler
             _liftDurMs = rng.RandIntInRange(Pi(LiveIdleParam.LiftMovementDurationMin_ms), Pi(LiveIdleParam.LiftMovementDurationMax_ms));
             if (!_live.AddLive(new LiftKeyframe(0, unchecked((uint)_liftDurMs), Pu8(LiveIdleParam.LiftHeightMean_mm), Pu8(LiveIdleParam.LiftHeightVariability_mm))))
             {
-                Log?.Invoke("error: AnimationStreamer.UpdateLiveAnimation.AddLiftHeightKeyFrameFailed");
                 return 1;
             }
             _liftSpacingMs = rng.RandIntInRange(Pi(LiveIdleParam.LiftMovementSpacingMin_ms), Pi(LiveIdleParam.LiftMovementSpacingMax_ms));
@@ -1203,7 +1245,6 @@ public sealed class AnimationScheduler
             sbyte angle = unchecked((sbyte)VcvtS32(inputs.HeadAngleRad() * RadToDeg));
             if (!_live.AddLive(new HeadKeyframe(0, unchecked((uint)_headDurMs), angle, Pu8(LiveIdleParam.HeadAngleVariability_deg))))
             {
-                Log?.Invoke("error: AnimationStreamer.UpdateLiveAnimation.AddHeadAngleKeyFrameFailed");
                 return 1;
             }
             _headSpacingMs = rng.RandIntInRange(Pi(LiveIdleParam.HeadMovementSpacingMin_ms), Pi(LiveIdleParam.HeadMovementSpacingMax_ms));
@@ -1258,15 +1299,20 @@ public sealed class AnimationScheduler
     /// frames left: with the audio complete, the buffer empty and the end not sent, EndOfAnimation directly when Start was
     /// sent, otherwise AudioSilence and StartOfAnimation buffered and drained (the End follows on a later Update).
     /// </summary>
-    private void UpdateStreamLocked(StreamAnimation anim, bool storeFace)
+    private int UpdateStreamLocked(StreamAnimation anim, bool storeFace)
     {
         if (!anim.Initialised)
         {
-            Log?.Invoke("error: AnimationStreamer.UpdateStream: Animation must be initialized");
-            return;
+            Log?.Invoke($"error: Animation.Update: {anim.Name}: Animation must be initialized before it can be played/updated.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return 1;
         }
+        // M5-041 DA1–DA4: one device keyframe on the wall timestamp, before budgets; PlayOnDevice is BX LR (M6 handoff).
+        uint wall = unchecked((uint)_nowMs);
+        if (anim.DeviceAudio.Current is { } device && unchecked((uint)_startMs + device.Trigger) <= wall)
+            anim.DeviceAudio.MoveToNext();
         RefreshBudget();
-        if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return;       // A14
+        if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return 1;       // A14
 
         int owed = SeamFramesOwed();
         int built = 0;
@@ -1275,37 +1321,38 @@ public sealed class AnimationScheduler
         {
             BuildFrameLocked(anim, storeFace);
             built++;
-            if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return;   // A18: no step on a send error
+            if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return 1;   // A18: no step on a send error
             _streamMs += FrameStepMs;
             _seamDueMs += FrameInterval.TotalMilliseconds;
         }
         // The seam's allowance ran out while frames remain: the engine's next check would have built another.
-        if (processing && Stream.IsEmpty && (_audio is not null || anim.HasFramesLeft)) return;
+        if (processing && Stream.IsEmpty && (_audio is not null || anim.HasFramesLeft)) return 0;
 
         // A20
-        if (anim.HasFramesLeft) return;
+        if (anim.HasFramesLeft) return 0;
         bool audioComplete = _audio is null || _audio.IsComplete;
         if (audioComplete && Stream.IsEmpty && !_endSent)
         {
             if (_startSent)
             {
                 _audio = null;                           // RobotAudioClient::ClearCurrentAnimation
-                SendEndOfAnimationLocked();
+                return SendEndOfAnimationLocked();
             }
             else
             {
                 BufferAudioLocked(null);
                 SendStartOfAnimationLocked();
-                Stream.Drain();
+                return DrainResultCode();
             }
         }
+        return 0;
     }
 
     /// <summary>A21 SendStartOfAnimation: StartOfAnimation{+0xA0} buffered; startSent = 1, endSent = 0.</summary>
     private void SendStartOfAnimationLocked()
     {
         byte tag = _tag;
-        Buffer(StreamSizes.StartOfAnimation, false, () => _sink.AnimationStarted(tag));
+        Buffer(StreamSizes.StartOfAnimation, false, () => _sink.AnimationStarted(tag), tagName: "animStartOfAnimation");
         _startSent = true;
         _endSent = false;
     }
@@ -1314,12 +1361,13 @@ public sealed class AnimationScheduler
     /// SendEndOfAnimation (A20, 0x0057C448..0x0057C496; C12): directly, not budget-gated, counted as a frame plus its
     /// bytes; on success startSent = 0 and endSent = 1.
     /// </summary>
-    private void SendEndOfAnimationLocked()
+    private int SendEndOfAnimationLocked()
     {
         bool sent = Stream.SendDirect(StreamSizes.EndOfAnimation, true, () => SafeSend(_sink.AnimationEnded));
-        if (!sent) return;
+        if (!sent) return 1;
         _startSent = false;
         _endSent = true;
+        return 0;
     }
 
     // ================================================================== one frame (A16, A17, A19)
@@ -1348,21 +1396,21 @@ public sealed class AnimationScheduler
         {
             var h = (HeadKeyframe)k.Source;
             var deg = unchecked((sbyte)WithVariability(h.AngleDeg, h.VariabilityDeg));
-            Buffer(StreamSizes.HeadAngle, false, () => _sink.Head(deg, h.DurationTimeMs), k);
+            Buffer(StreamSizes.HeadAngle, false, () => _sink.Head(deg, h.DurationTimeMs), k, tagName: "animHeadAngle");
             return true;
         });
         Pull(anim.Lift, start, t, k =>                                              // (6)
         {
             var l = (LiftKeyframe)k.Source;
             var mm = unchecked((byte)WithVariability(l.HeightMm, l.VariabilityMm));
-            Buffer(StreamSizes.LiftHeight, false, () => _sink.Lift(mm, l.DurationTimeMs), k);
+            Buffer(StreamSizes.LiftHeight, false, () => _sink.Lift(mm, l.DurationTimeMs), k, tagName: "animLiftHeight");
             return true;
         });
         Pull(anim.Event, start, t, k =>                                             // (7)
         {
             var e = (EventKeyframe)k.Source;
             if (e.Parsed is { } ev)
-                Buffer(StreamSizes.Event, false, () => { _sink.AnimEvent((byte)ev); _sink.Event(e.EventId); }, k);
+                Buffer(StreamSizes.Event, false, () => { _sink.AnimEvent((byte)ev); _sink.Event(e.EventId); }, k, tagName: "animEvent");
             else
                 BufferLocal(() => _sink.Event(e.EventId), k);    // a name the engine rejects at load: no wire message
             return true;
@@ -1380,27 +1428,27 @@ public sealed class AnimationScheduler
         if (!faceAnimBuffered && anim.FaceAnim.AtEnd && layered.Face && layered.FaceOut is { } face)   // (9)
             BufferFaceToSendLocked(face);
         if (layered.Backpack && layered.BackpackLeds is { } leds)                   // (10)
-            Buffer(StreamSizes.BackpackLights, false, () => _sink.BackpackLights(leds));
+            Buffer(StreamSizes.BackpackLights, false, () => _sink.BackpackLights(leds), tagName: "animBackpackLights");
 
         Pull(anim.Body, start, t, k =>                                              // (11)
         {
             var b = (BodyKeyframe)k.Source;
             if (k.Counter == 0)
-                Buffer(StreamSizes.Body(b), false, () => _sink.Body(b), k);
+                Buffer(StreamSizes.Body(b), false, () => _sink.Body(b), k, tagName: "animBodyMotion");
             else if (k.Counter >= b.DurationTimeMs && b.EncodedRadius is not null)
-                Buffer(StreamSizes.BodyStop, false, _sink.BodyStop);    // a radius the load would have rejected sends nothing
+                Buffer(StreamSizes.BodyStop, false, _sink.BodyStop, tagName: "animBodyMotion");    // a radius the load would have rejected sends nothing
             return k.IsDoneHelper(b.DurationTimeMs);
         });
         Pull(anim.RecHeading, start, t, k =>                                        // (12)
         {
-            Buffer(StreamSizes.RecordHeading, false, _sink.RecordHeading, k);
+            Buffer(StreamSizes.RecordHeading, false, _sink.RecordHeading, k, tagName: "animRecordHeading");
             return true;
         });
         Pull(anim.TurnTo, start, t, k =>                                            // (13)
         {
             var tt = (TurnToRecordedHeadingKeyframe)k.Source;
             if (k.Counter == 0)                                                     // gap4 T2: only at counter 0
-                Buffer(StreamSizes.TurnToRecordedHeading, false, () => _sink.TurnToRecordedHeading(tt), k);
+                Buffer(StreamSizes.TurnToRecordedHeading, false, () => _sink.TurnToRecordedHeading(tt), k, tagName: "animTurnToRecordedHeading");
             return k.IsDoneHelper(tt.DurationTimeMs);
         });
     }
@@ -1429,8 +1477,7 @@ public sealed class AnimationScheduler
 
     // fidelity: M5-013
     /// <summary>
-    /// C5 item 5.5/5.6: <c>FaceAnimationKeyFrame::IsDone</c> (0x004F9770). The +0x28 override (IsDone forever false) is
-    /// a RECOVERABLE_GAP and is not built; without it the keyframe is done once the index reaches the frame count.
+    /// C5 item 5.5/5.6: <c>FaceAnimationKeyFrame::IsDone</c> (0x004F9770). The +0x28 override is always zero on the checked FlatBuffer/JSON add path (M5-043); without it the keyframe is done once the index reaches the frame count.
     /// <c>FaceAnimationManager::GetNumFrames</c> (0x005816D8) returns 0 on a map miss (0x0058173A), so an unknown
     /// animation is done at once: the lazy reset consumes the keyframe in one frame and the track does not stall.
     /// </summary>
@@ -1460,7 +1507,7 @@ public sealed class AnimationScheduler
         k.FaceAnimIndex++;
         if (payload.Length == 0) return false;            // an empty vector advances and sends nothing
         var shown = payload;
-        Buffer(StreamSizes.Face(shown), false, () => _sink.FaceImage(shown), k);
+        Buffer(StreamSizes.Face(shown), false, () => _sink.FaceImage(shown), k, tagName: "animFaceImage");
         return true;
     }
 
@@ -1491,7 +1538,7 @@ public sealed class AnimationScheduler
             Log?.Invoke("error: AnimationStreamer.BufferFaceToSend: Failed to get RLE frame from procedural face");
             return;
         }
-        Buffer(StreamSizes.Face(payload), false, () => _sink.FaceImage(payload));
+        Buffer(StreamSizes.Face(payload), false, () => _sink.FaceImage(payload), tagName: "animFaceImage");
     }
 
     private void BufferFaceFired(FaceFrame f)
@@ -1506,7 +1553,7 @@ public sealed class AnimationScheduler
     private void BufferAudioLocked(byte[]? sample)
     {
         Buffer(sample is null ? StreamSizes.AudioSilence : StreamSizes.AudioSample, true,
-               () => _sink.Audio(sample), onSent: () => AudioFramesSent++);
+               () => _sink.Audio(sample), onSent: () => AudioFramesSent++, tagName: sample is null ? "animAudioSilence" : "animAudioSample");
     }
 
     // ================================================================== StreamLayers (A36, Q1.8, Q1.9)
@@ -1517,10 +1564,11 @@ public sealed class AnimationScheduler
     /// BackpackLights, the face (every frame, no de-duplication), a drain, +0x84 += 33, and again only while the buffer
     /// empties. Then the end check: EndOfAnimation when started, no layers, the buffer empty and not ended (Q1.9).
     /// </summary>
-    private void StreamLayersLocked()
+    private int StreamLayersLocked()
     {
+        int result = 0;
         RefreshBudget();
-        if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return;
+        if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return 1;
         if (Stream.IsEmpty)
         {
             if (!_startSent) _seamDueMs = _nowMs;         // the seam's clock starts with a new layer stream
@@ -1536,16 +1584,17 @@ public sealed class AnimationScheduler
                     SendStartOfAnimationLocked();
                 }
                 if (frame.Backpack && frame.BackpackLeds is { } leds)
-                    Buffer(StreamSizes.BackpackLights, false, () => _sink.BackpackLights(leds));
+                    Buffer(StreamSizes.BackpackLights, false, () => _sink.BackpackLights(leds), tagName: "animBackpackLights");
                 if (frame.Face && frame.FaceOut is { } face) BufferFaceToSendLocked(face);
                 built++;
-                if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) return;
+                if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) { result = 1; break; }
                 _streamMs += FrameStepMs;
                 _seamDueMs += FrameInterval.TotalMilliseconds;
                 if (!Stream.IsEmpty) break;
             }
         }
-        if (_startSent && !_tlc.HaveLayersToSend && Stream.IsEmpty && !_endSent) SendEndOfAnimationLocked();
+        if (_startSent && !_tlc.HaveLayersToSend && Stream.IsEmpty && !_endSent) return SendEndOfAnimationLocked();
+        return result;
     }
 
     // ================================================================== buffering
@@ -1555,7 +1604,7 @@ public sealed class AnimationScheduler
     /// robot gone) is a failed send: it stays at the front and is not counted (C14), as MessageHandler's result would be.
     /// A keyframe's KeyframeFired goes when its first message is sent.
     /// </summary>
-    private void Buffer(int size, bool isAudio, Action send, StreamKeyframe? fires = null, Action? onSent = null)
+    private void Buffer(int size, bool isAudio, Action send, StreamKeyframe? fires = null, Action? onSent = null, string? tagName = null)
     {
         Stream.Buffer(_owner, size, isAudio, () =>
         {
@@ -1568,7 +1617,7 @@ public sealed class AnimationScheduler
                 KeyframeFired?.Invoke(fires.Source);
             }
             return true;
-        });
+        }, tagName);
     }
 
     private bool SafeSend(Action send)
@@ -1627,7 +1676,7 @@ public sealed class AnimationScheduler
     private sealed class AudioAnimation
     {
         private readonly AnimationScheduler _s;
-        private readonly StreamTrack<StreamKeyframe> _track;
+        private readonly Queue<(StreamKeyframe Frame, int Index)> _events = new();
         private short[]? _pcm;
         private float[]? _floatPcm;
         private IAnimationFloatAudioSource? _floatSource;
@@ -1637,22 +1686,39 @@ public sealed class AnimationScheduler
         public AudioAnimation(AnimationScheduler s, StreamTrack<StreamKeyframe> track)
         {
             _s = s;
-            _track = track;
+            // M5-017 D0–D4; M6-028 owns consumption of the initialized events on the robot.
+            ushort counter = 0;
+            while (track.Current is { } frame)
+            {
+                var k = (AudioKeyframe)frame.Source;
+                int index = s.GetAudioRefIndex(k, true);
+                if (index >= 0 && index < k.EventIds.Length && k.EventIds[index] != 0)
+                {
+                    counter = unchecked((ushort)(counter + 1));
+                    _events.Enqueue((frame, index));
+                    InitializedEvents.Add(new(counter, unchecked((uint)k.EventIds[index]), k.TriggerTimeMs, k.Volume, 0));
+                    HasAlternatives |= k.HasAlts;
+                }
+                track.MoveToNext();
+            }
         }
 
+        internal sealed record AnimationEvent(ushort Counter, uint EventId, uint TriggerTime, float Volume, uint Unused);
+        internal List<AnimationEvent> InitializedEvents { get; } = new();
+        internal bool HasAlternatives { get; private set; }
+        // M5-018: readiness and completion are the M6-027 handoff.
         public bool IsReady => true;
-        public bool IsComplete => _track.AtEnd && !Streaming;
+        public bool IsComplete => _events.Count == 0 && !Streaming;
         public bool Streaming => _pcm is not null || _floatPcm is not null;
 
         public void Abort() { _pcm = null; _floatPcm = null; _floatSource = null; _eventId = null; _pos = 0; }
 
         public void Update(long start, long streamTime)
         {
-            var k = _track.Current;
-            if (k is null || start + k.Trigger > streamTime) return;
-            Start((AudioKeyframe)k.Source);
-            _s.BufferLocal(null, k);
-            _track.MoveToNext();
+            if (!_events.TryPeek(out var e) || start + e.Frame.Trigger > streamTime) return;
+            Start((AudioKeyframe)e.Frame.Source, e.Index);
+            _s.BufferLocal(null, e.Frame);
+            _events.Dequeue();
         }
 
         /// <summary>
@@ -1660,11 +1726,10 @@ public sealed class AnimationScheduler
         /// skipping |p| &lt; 1e-5; none → the default {event 0, volume 1.0}, which plays nothing. A Stop action ends the
         /// playing sound whose target it covers.
         /// </summary>
-        private void Start(AudioKeyframe k)
+        private void Start(AudioKeyframe k, int chosen)
         {
             var source = _s.AudioSource;
             if (source is null || k.EventIds.Length == 0) return;
-            int chosen = ChooseAlternative(k.EventIds.Length, k.Probabilities, _s._keyframeRng.RandDbl(1));
             if (chosen < 0) return;
             long id = k.EventIds[chosen];
             if (source.IsStopEvent(id))
@@ -1729,27 +1794,35 @@ public sealed class AnimationScheduler
 
     /// <summary>
     /// C14 GetAudioRefIndex(true) over the loaded probabilities (C13: absent probabilities are 1/N; a count mismatch or a
-    /// sum above 1 rejects the keyframe at load, so a keyframe built in code with such probabilities falls back to 1/N
-    /// here): the first alternative whose range [acc, acc + p] holds <paramref name="draw"/>, skipping |p| &lt; 1e-5;
+    /// sum above 1 rejects the keyframe at load): the first alternative whose range [acc, acc + p] holds <paramref name="draw"/>, skipping |p| &lt; 1e-5;
     /// −1 when none does.
     /// </summary>
-    internal static int ChooseAlternative(int count, float[] probabilities, double draw)
+    internal int GetAudioRefIndex(AudioKeyframe k, bool probabilityMode)
+    {
+        if (k.EventIds.Length == 0)
+        {
+            Log?.Invoke("error: RobotAudioKeyFrame.GetAudioRefIndex.EmptyAudioReferences: Check to make sure animation loaded successfully - sound file(s) probably not found.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return -1;
+        }
+        int index = probabilityMode
+            ? ChooseAlternative(k.EventIds.Length, k.Probabilities, _keyframeRng.RandDbl(1), Log)
+            : (k.EventIds.Length == 1 ? 0 : _keyframeRng.RandIntInRange(0, k.EventIds.Length - 1));
+        index = unchecked((sbyte)index);
+        Log?.Invoke($"debug: [Audio] RobotAudioKeyFrame.GetAudioRef.RandomAudioSelection: {(probabilityMode ? "Probability selected" : "Randomly selected")} audio index = {index}");
+        return index;
+    }
+    internal static int ChooseAlternative(int count, float[] probabilities, double draw, Action<string>? log = null)
     {
         if (count <= 0) return -1;
-        float[] p;
-        if (probabilities.Length == count && probabilities.Sum() <= 1f + 1e-4f)
-            p = probabilities;
-        else
-        {
-            p = new float[count];
-            Array.Fill(p, 1f / count);
-        }
-
+        float[] p = probabilities;
+        if (p.Length == 0) { p = new float[count]; Array.Fill(p, 1f / count); }
         float acc = 0f, r = (float)draw;
         for (int i = 0; i < count; i++)
         {
-            if (MathF.Abs(p[i]) < 1e-5f) continue;
+            if (MathF.Abs(p[i]) < BitConverter.Int32BitsToSingle(0x3727C5AC)) continue;
             float next = acc + p[i];
+            log?.Invoke(FormattableString.Invariant($"debug: [Audio] RobotAudioKeyFrame.GetAudioRefIndex.ShowInfo: random value = {r:F6}, idx = {i} and range = {acc:F6} to {next:F6}"));
             if (!(acc > r) && next >= r) return i;
             acc = next;
         }
@@ -1791,6 +1864,23 @@ public sealed class AnimationScheduler
     /// neutral again (A2). <see cref="Generation"/> is not reset (callers hold it), and the catalog, sources and
     /// subscribers are kept.
     /// </summary>
+    // fidelity: M5-037, M5-044
+    internal void Destroy()
+    {
+        lock (_gate)
+        {
+            _handle?.ReleaseHostWaiters(); _handle = null;
+            Stream.ClearSendBuffer(); // TD8: helper-owned debug entries; destructor adds no log or send.
+            _live.Clear();
+            _audio = null;
+            _tlc.Destroy();
+            _idleStack.Clear();
+            _streaming = null; _streamingClip = null; _idleAnim = null;
+            LiveIdleParameters.ResetToConstructed();
+            // MISSING: M5-044 parameter-subscription last release 0x0057AFD4: concrete tag-B4 shared ownership is not represented by this host API.
+        }
+    }
+
     internal void ResetToConstructed()
     {
         lock (_gate)

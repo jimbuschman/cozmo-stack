@@ -11,10 +11,9 @@ public enum SimpleMood : byte { Happy, Sad, Default, Count }
 /// One choice inside an animation group (D4, 0x0058C4C0..0x0058C7BE; C5 item 4): Name, Weight, Mood (SimpleMoodType),
 /// CooldownTime_Sec (default 0), UseHeadAngle and HeadAngleMin/Max_Deg (converted to radians for the gate). There are no
 /// defaults for Weight, Mood or HeadAngle: the loader rejects an entry that omits or mis-types any required one. An entry
-/// without UseHeadAngle has no defined head window (C5 4.11); <see cref="AnimationGroup.GetAnimationName"/>'s backup
-/// treats it as outside every window (forced policy SD2).
+/// without UseHeadAngle inherits the preceding window in its file; before the first window, M5-047 remains unread.
 /// </summary>
-public sealed record AnimationGroupEntry(string Name, float Weight, float CooldownSec, string Mood)
+public sealed record AnimationGroupEntry(string Name, float Weight, double CooldownSec, string Mood)
 {
     /// <summary>Whether this entry is only eligible while the head sits inside its window.</summary>
     public bool UseHeadAngle { get; init; }
@@ -28,8 +27,11 @@ public sealed record AnimationGroupEntry(string Name, float Weight, float Cooldo
     /// <summary>The mood as SimpleMoodType; a name that is none of them matches no request.</summary>
     public SimpleMood MoodType => Enum.TryParse<SimpleMood>(Mood, ignoreCase: false, out var m) ? m : SimpleMood.Count;
 
-    public double HeadAngleMinRad => HeadAngleMinDeg * Math.PI / 180.0;
-    public double HeadAngleMaxRad => HeadAngleMaxDeg * Math.PI / 180.0;
+    public float HeadAngleMinRad => HeadAngleMinDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35);
+    public float HeadAngleMaxRad => HeadAngleMaxDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35);
+    internal bool BackupWindowKnown { get; init; }
+    internal float BackupMinRad { get; init; }
+    internal float BackupMaxRad { get; init; }
 
     /// <summary>D7: on cooldown iff the name's cooldown end (in the container) is after now.</summary>
     public bool IsOnCooldown(double nowSec) => Container.IsOnCooldown(Name, nowSec);
@@ -57,7 +59,7 @@ internal sealed class GroupContainer
     public bool IsOnCooldown(string name, double now) { lock (_gate) return _ends.TryGetValue(name, out var e) && e > now; }
     public double CooldownEnd(string name) { lock (_gate) return _ends.TryGetValue(name, out var e) ? e : double.NegativeInfinity; }
     public void SetCooldown(string name, double end) { lock (_gate) _ends[name] = end; }
-    public double TimeUntilCooldownOver(string name, double now) => CooldownEnd(name) - now;
+    public float TimeUntilCooldownOver(string name, double now) { lock (_gate) return _ends.TryGetValue(name, out var end) ? (float)(end - now) : 0f; }
 }
 
 // fidelity: M5-011, M5-014
@@ -84,22 +86,7 @@ public sealed class AnimationGroup
         foreach (var e in _entries) e.Container = c;
     }
 
-    /// <summary>
-    /// <c>AnimationGroup::GetAnimationName</c> (D5, D6; 0x0058A946..0x0058AE2A):
-    /// <list type="bullet">
-    /// <item>candidates: mood == the requested mood (null asks for Default), inside the head window when UseHeadAngle
-    /// (the robot's head angle in radians), and not on cooldown;</item>
-    /// <item>a weighted draw r = RandDbl(Σw), subtracting each weight and taking the entry where r goes below 0, or the
-    /// last candidate; the pick's cooldown end set to now + CooldownTime_Sec;</item>
-    /// <item>none and the mood not Default: again with Default;</item>
-    /// <item>in Default, when some Default entry exists and not strict: the Default entry with the smallest
-    /// TimeUntilCooldownOver among those whose [min − 0.05, max + 0.05] rad window holds the head angle, with no cooldown
-    /// set; an entry without UseHeadAngle never qualifies (the forced policy SD2 for its uninitialised head-angle
-    /// fields); without a backup, the first entry of the list; otherwise (or strict) an error and nothing.</item>
-    /// </list>
-    /// A null <paramref name="nowSec"/> leaves the cooldown out and a null <paramref name="headAngleDeg"/> the head gate
-    /// (this stack's callers without a clock or a robot).
-    /// </summary>
+    /// <summary>Checked G1–G9 group draw and B1–B6 backup, with f32 time, head and weights.</summary>
     public AnimationGroupEntry? Choose(Random random, string? mood = null, double? nowSec = null, double? headAngleDeg = null,
                                        bool strict = false)
     {
@@ -109,50 +96,69 @@ public sealed class AnimationGroup
         return GetAnimationName(new EngineRandom(random), requested, nowSec, headRad, strict);
     }
 
+    internal Action<string>? Log { get; set; }
     internal AnimationGroupEntry? GetAnimationName(EngineRandom rng, SimpleMood mood, double? nowSec, double? headRad, bool strict)
     {
+        float time = (float)(nowSec ?? 0), head = (float)(headRad ?? 0);
         while (true)
         {
-            var candidates = _entries.Where(e => e.MoodType == mood
-                                                 && (headRad is not { } h || e.HeadAngleAllowsRad(h))
-                                                 && (nowSec is not { } n || !e.IsOnCooldown(n))).ToList();
-            if (candidates.Count > 0)
+            Log?.Invoke($"debug: [Unnamed] AnimationGroup.GetAnimation: getting animation from group '{Name}', simple mood = '{mood}'");
+            bool anyMood = false;
+            float sum = 0;
+            var candidates = new List<AnimationGroupEntry>();
+            foreach (var e in _entries)
             {
-                double total = 0;
-                foreach (var c in candidates) total += c.Weight;
-                double r = rng.RandDbl(total);
-                AnimationGroupEntry pick = candidates[^1];
-                foreach (var c in candidates)
-                {
-                    r -= c.Weight;
-                    if (r < 0) { pick = c; break; }
-                }
-                if (nowSec is { } now) pick.Container.SetCooldown(pick.Name, now + pick.CooldownSec);
+                if (e.MoodType != mood) continue;
+                anyMood = true;
+                if (e.UseHeadAngle && (!(e.HeadAngleMinRad <= head) || e.HeadAngleMaxRad < head)) continue;
+                if (e.IsOnCooldown((double)time)) continue;
+                candidates.Add(e);
+                sum += e.Weight;
+            }
+            if (candidates.Count != 0)
+            {
+                float r = (float)rng.RandDbl((double)sum);
+                var pick = candidates[^1];
+                foreach (var e in candidates) { r -= e.Weight; if (r < 0) { pick = e; break; } }
+                pick.Container.SetCooldown(pick.Name, pick.CooldownSec + (double)time);
+                Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.Found: Group '{Name}' returning animation name '{pick.Name}'");
                 return pick;
             }
             if (mood != SimpleMood.Default)
             {
+                Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.NoMoodMatch: No animations from group '{Name}' selected matching mood '{mood}', trying with default mood");
                 mood = SimpleMood.Default;
                 continue;
             }
-            var defaults = _entries.Where(e => e.MoodType == SimpleMood.Default).ToList();
-            if (defaults.Count > 0 && !strict)
+            if (anyMood && !strict)
             {
+                Log?.Invoke("info: [Animations] AnimationGroup.GetAnimation.AllOnCooldown: All animations are on cooldown. Selecting the one closest to being finished");
+                float best = float.MaxValue;
                 AnimationGroupEntry? backup = null;
-                double best = double.PositiveInfinity;
-                foreach (var e in defaults)
+                foreach (var e in _entries)
                 {
-                    // C5 item 4.11/4.12: the backup loop reads +0x20/+0x24 without testing UseHeadAngle, and for an
-                    // entry without UseHeadAngle those fields are uninitialised stack. Forced policy (SD2): this stack
-                    // treats such an entry as outside every head window, so it never qualifies for the backup and the
-                    // backup falls to the first entry. Deterministic; not observable on the shipped data.
-                    if (!e.UseHeadAngle) continue;
-                    if (headRad is { } h && !(h >= e.HeadAngleMinRad - 0.05 && h <= e.HeadAngleMaxRad + 0.05)) continue;
-                    double left = nowSec is { } n ? e.Container.TimeUntilCooldownOver(e.Name, n) : 0;
-                    if (backup is null || left < best) { backup = e; best = left; }
+                    if (e.MoodType != SimpleMood.Default) continue;
+                    float left = e.Container.TimeUntilCooldownOver(e.Name, (double)time);
+                    if (!(left < best)) continue;
+                    // M5-047: the pre-first-UseHeadAngle stack slot is unread. Stop this choice rather than inventing a window.
+                    if (!e.UseHeadAngle && !e.BackupWindowKnown)
+                    { Log?.Invoke("MISSING: M5-047 AnimationGroup backup head window before the first UseHeadAngle entry; selection undetermined"); return null; }
+                    float min = e.UseHeadAngle ? e.HeadAngleMinRad : e.BackupMinRad;
+                    float max = e.UseHeadAngle ? e.HeadAngleMaxRad : e.BackupMaxRad;
+                    if (!(min + BitConverter.Int32BitsToSingle(unchecked((int)0xBD4CCCCD)) <= head) || max + BitConverter.Int32BitsToSingle(0x3D4CCCCD) < head) continue;
+                    Log?.Invoke(FormattableString.Invariant($"info: [Animations] AnimationGroup.GetAnimation.BackupAnimationChosen: Animation is '{e.Name}' and new min cooldown is '{left:F6}'"));
+                    backup = e; best = left;
                 }
-                return backup ?? _entries[0];
+                if (backup != null)
+                {
+                    Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.BackupAnimationFound: All animations in group '{Name}' were on cooldown / invalid, so selected '{backup.Name}'");
+                    return backup;
+                }
+                Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.NoBackup: All animations in group '{Name}' were on cooldown / invalid nothing could be returned so choosing first in list");
+                return _entries[0];
             }
+            Log?.Invoke($"error: AnimationGroup.GetAnimation.NoAnimation: Could not find a single animation from group '{Name}' to run. Returning empty");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
     }
@@ -202,10 +208,10 @@ public sealed class AnimationTriggerResponses
         string key = trigger.ToString();
         if (_pairs.TryGetValue(key, out var name))
         {
-            Log?.Invoke($"info: AnimationTriggerResponsesContainer.GetResponse: {key} -> {name}");
+            Log?.Invoke($"info: [Animations] GetResponseForAnimationTrigger.Found: {key} -> {name}");
             return name;
         }
-        Log?.Invoke($"warning: AnimationTriggerResponsesContainer.GetResponse: Animation requested for unknown response '{key}'");
+        Log?.Invoke($"warning: AnimationTriggerResponsesContainer::GetResponse: Animation requested for unknown response '{key}'");
         return "";
     }
 
@@ -217,7 +223,7 @@ public sealed class AnimationTriggerResponses
 /// <summary>
 /// Cozmo's own animation assets: the clips (<c>CannedAnimationContainer</c>), the groups (<c>AnimationGroupContainer</c>)
 /// and the trigger map (<see cref="AnimationTriggerResponses"/>). Clips come from assets/animations/ and
-/// config/engine/animations/ (gap1 C5): a ".bin" is FlatBuffer, anything else JSON (C4). Loading is lazy per file.
+/// config/engine/animations/ (gap1 C5): a ".bin" is FlatBuffer, anything else JSON (C4). Every clip is loaded at startup by four contiguous workers.
 /// </summary>
 public sealed class AnimationLibrary : IAnimationCatalog
 {
@@ -235,8 +241,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
     private readonly object _gate = new();
 
     /// <summary>
-    /// The RNG the group draw uses: the context RNG (AnimationGroupContainer+0x28 → context+0x14, gap4 R3), shared with the
-    /// streamer's live idle and layer managers. Unset: an entropy-seeded generator of its own.
+    /// The current generator used while M5-045's AnimationGroupContainer+0x28 ownership remains unread.
+    /// Production names that missing input at construction; no shared-instance provenance is claimed.
     /// </summary>
     public EngineRandom ContextRandom { get; set; } = new();
 
@@ -258,21 +264,21 @@ public sealed class AnimationLibrary : IAnimationCatalog
     public Func<SimpleMood>? CurrentMood { get; set; }
 
     /// <summary>
-    /// The time the group cooldowns use: MoodManager+0x130, its last-update seconds (D5; M7). Unset: this machine's
-    /// monotonic clock in seconds, a stand-in until MoodManager is wired.
+    /// The time the group cooldowns use: MoodManager+0x130, its last-update seconds (G1; M7). Production supplies BaseStationTimer seconds; unset is zero.
     /// </summary>
     public Func<double>? CooldownTimeSec { get; set; }
 
-    /// <summary>The robot's head angle in radians (robot+0x2FC) for the head-angle gate. Unset: no gate.</summary>
+    /// <summary>The robot's head angle in radians (robot+0x2FC) for the head-angle gate. Unset: the constructor head angle zero.</summary>
     public Func<double?>? HeadAngleRad { get; set; }
 
     /// <summary>
     /// Opens a library over an unpacked <c>cozmo_resources</c> tree. Point it at the directory that holds
     /// <c>assets/animations</c>, or directly at either directory.
     /// </summary>
-    public static AnimationLibrary Open(string assetsRoot)
+    public static AnimationLibrary Open(string assetsRoot, Action<string>? log = null)
     {
-        var lib = new AnimationLibrary();
+        var lib = new AnimationLibrary { Log = log };
+        log?.Invoke("MISSING: M5-001 loader main-thread VERIFY gates at 0x0051F3AA/0x00521338: CozmoContext main-thread identity is not represented by the host loader");
         var animations = FindDir(assetsRoot, "animations");
         var groups = FindDir(assetsRoot, "animationGroups");
         if (animations is null && groups is null)
@@ -280,31 +286,43 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 $"no animations or animationGroups directory under {assetsRoot}. Point this at the unpacked " +
                 "cozmo_resources assets directory.");
 
-        // gap1 C5: assets/animations/ then config/engine/animations/, json and bin
+        // L1–L6: unsorted, case-sensitive suffix walk, then four contiguous worker chunks.
+        var files = new List<string>();
         foreach (var dir in new[] { animations, FindConfigAnimations(assetsRoot) })
-        {
-            if (dir is null) continue;
-            foreach (var f in Directory.EnumerateFiles(dir, "*.*", SearchOption.AllDirectories))
-            {
-                string ext = Path.GetExtension(f);
-                if (!ext.Equals(".bin", StringComparison.OrdinalIgnoreCase) && !ext.Equals(".json", StringComparison.OrdinalIgnoreCase))
-                    continue;
-                try
-                {
-                    bool json = !ext.Equals(".bin", StringComparison.OrdinalIgnoreCase);
-                    foreach (var name in ClipNamesIn(f))
+            if (dir != null)
+                foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                    if (f.EndsWith("json", StringComparison.Ordinal) || f.EndsWith("bin", StringComparison.Ordinal))
                     {
-                        // gap1 C3, gap4 P1: FaceAnimationManager::ProceduralAnimName is skipped
-                        if (name.Length == 0 || name == JsonClipLoader.ProceduralAnimName) continue;
-                        lib._clipFiles[name] = f;
-                        if (json) lib._jsonClipFiles[name] = f;
+                        var stat = new FileInfo(f); stat.Refresh();
+                        if (!stat.Exists) log?.Invoke($"warning: RobotDataLoader.WalkAnimationDir: could not get mtime for {f}");
+                        else files.Add(f); // startup mtime map is empty; every successful stat passes.
                     }
-                }
-                catch (Exception) { /* fall back to the filename below */ }
-                if (ext.Equals(".bin", StringComparison.OrdinalIgnoreCase))
-                    lib._clipFiles.TryAdd(Path.GetFileNameWithoutExtension(f), f);
-            }
+        // M5-046: the complete native Results map order is unread; retain the current type-0 order.
+        log?.Invoke("MISSING: M5-046 RobotDataLoader.CollectAnimFiles.Results map iteration order");
+        log?.Invoke($"info: [Animations] RobotDataLoader.CollectAnimFiles.Results: Found {files.Count} animation files of type 0");
+        double started = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        Eye.ClippingWarningEnabled = false;
+        float ratio = 0.7f / files.Count;
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
+        void Load(int begin, int end)
+        {
+            try { for (int i = begin; i < end; i++) lib.LoadAnimationFile(files[i], ratio); }
+            catch (Exception e) { Interlocked.CompareExchange(ref failure, System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e), null); }
         }
+        var workers = new Thread[3];
+        int offset = 0;
+        for (int i = 0; i < 4; i++)
+        {
+            int begin = offset, end = offset + files.Count / 4 + (i < files.Count % 4 ? 1 : 0);
+            offset = end;
+            if (i == 3) Load(begin, end);
+            else { workers[i] = new Thread(() => Load(begin, end)) { IsBackground = true }; workers[i].Start(); }
+        }
+        foreach (var worker in workers) worker.Join();
+        failure?.Throw();
+        Eye.ClippingWarningEnabled = true; // L10: only after Process returns normally.
+        log?.Invoke(FormattableString.Invariant($"info: [Animations] RobotDataLoader.LoadAnimationsInternal.LoadTime: Time to load animations = {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started:F2} ms"));
+        log?.Invoke($"info: [Animations] RobotDataLoader.LoadAnimations.CannedAnimationsCount: Total number of canned animations available = {lib._clipCache.Count}");
 
         if (groups is not null)
             foreach (var f in Directory.EnumerateFiles(groups, "*.json", SearchOption.AllDirectories))
@@ -322,6 +340,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
             }
 
         lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
+        lib.Triggers.Log = log;
         return lib;
     }
 
@@ -379,29 +398,62 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// <summary>True when a clip of this name is present.</summary>
     public bool HasClip(string name) { lock (_gate) return _clipFiles.ContainsKey(name); }
 
-    /// <summary>Loads a clip by name, parsing it the first time and caching it after.</summary>
+    /// <summary>Exact eager-container lookup (L9), without aliases or fallback.</summary>
     public AnimationClip GetClip(string name)
     {
-        lock (_gate)
+        lock (_gate) return _clipCache.TryGetValue(name, out var clip) ? clip
+            : throw new KeyNotFoundException($"no animation called '{name}'. {_clipCache.Count} clips are loaded.");
+    }
+
+    public float LoadingProgress { get; private set; }
+    private void LoadAnimationFile(string path, float ratio)
+    {
+        using var clipLog = Eye.UseWarningLog(Log);
+        Log?.Invoke($"info: [Animations] RobotDataLoader.LoadAnimationFile.LoadingAnimationsFromBinaryOrJson: Loading animations from {path}");
+        bool binary = path.EndsWith("bin", StringComparison.Ordinal);
+        if (binary)
         {
-            if (_clipCache.TryGetValue(name, out var cached)) return cached;
-            if (!_clipFiles.TryGetValue(name, out var path))
-                throw new KeyNotFoundException($"no animation called '{name}'. {_clipFiles.Count} clips are loaded.");
-            if (!path.EndsWith(".bin", StringComparison.OrdinalIgnoreCase))
+            byte[] bytes;
+            try { bytes = File.ReadAllBytes(path); }
+            catch (IOException) { BinaryError("BinaryDataNull", $"Found no data in {path}"); return; }
+            if (bytes.Length == 0) { BinaryError("BinaryDataEmpty", $"Found no data in {path}"); return; }
+            var root = FlatTable.Root(bytes);
+            var tables = root.Tables(ClipsField).ToList();
+            if (!root.Has(ClipsField)) { BinaryError("AllClipsNull", $"Found no animations in {path}"); return; }
+            if (tables.Count == 0) { BinaryError("AnimClipsEmpty", $"Found no animations in {path}"); return; }
+            foreach (var table in tables)
             {
-                // gap2 J1..J4, gap4 J1.1..J1.10: a JSON clip, named by its first key
-                var jc = JsonClipLoader.Load(path, Log) ?? throw new InvalidDataException($"'{path}' defines no animation");
-                _clipCache[name] = jc;
-                return jc;
+                string name = table.String(ClipName) ?? "";
+                Log?.Invoke($"info: [Animations] RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary: Loading '{name}' from {path}");
+                lock (_gate) Register(ParseClip(table, Log), path, false);
             }
-            var all = Parse(File.ReadAllBytes(path), Log);
-            foreach (var c in all)
-                if (c.Name.Length > 0) _clipCache.TryAdd(c.Name, c);
-            var clip = all.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase))
-                       ?? all.FirstOrDefault()
-                       ?? throw new InvalidDataException($"'{path}' holds no animation clips");
-            _clipCache[name] = clip;
-            return clip;
+        }
+        else
+        {
+            try { lock (_gate) { var clip = JsonClipLoader.Load(path, Log); if (clip != null) Register(clip, path, true); } }
+            catch (Exception e) when (e is IOException or JsonException) { } // L6.6: JSON read failure still adds ratio.
+        }
+        lock (_gate) LoadingProgress += ratio;
+    }
+    private void BinaryError(string key, string text)
+    {
+        Log?.Invoke($"error: RobotDataLoader.LoadAnimationFile.{key}: {text}");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+    }
+    private void Register(AnimationClip clip, string path, bool json)
+    {
+        if (clip.Name == JsonClipLoader.ProceduralAnimName)
+        {
+            Log?.Invoke($"error: CannedAnimationContainer.DefineFromJson.ReservedName: Skipping animation with reserved name '{clip.Name}'.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return;
+        }
+        _clipCache[clip.Name] = clip; _clipFiles[clip.Name] = path;
+        if (json) _jsonClipFiles[clip.Name] = path;
+        if (clip.LoadTruncated)
+        {
+            Log?.Invoke($"error: CannedAnimationContainer.DefineFromJson: Failed to define animation '{clip.Name}' from Json.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
         }
     }
 
@@ -418,19 +470,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
     public string GetAnimationNameFromGroup(string group, bool strict)
     {
         var g = GetGroup(group);
-        if (g is null)
-        {
-            Log?.Invoke($"error: AnimationGroupContainer.GetAnimationNameFromGroup: no group '{group}'");
-            return "";
-        }
-        double now = CooldownTimeSec?.Invoke() ?? Environment.TickCount64 / 1000.0;
-        var pick = g.GetAnimationName(ContextRandom, CurrentMood?.Invoke() ?? SimpleMood.Default, now, HeadAngleRad?.Invoke(), strict);
-        if (pick is null)
-        {
-            Log?.Invoke($"error: AnimationGroup.GetAnimationName: no animation in group '{group}'");
-            return "";
-        }
-        return pick.Name;
+        if (g is null || g.Entries.Count == 0) return ""; // G0: silent empty result.
+        g.Log = Log;
+        return g.GetAnimationName(ContextRandom, CurrentMood?.Invoke() ?? SimpleMood.Default,
+            (float)(CooldownTimeSec?.Invoke() ?? 0), HeadAngleRad?.Invoke(), strict)?.Name ?? "";
     }
 
     public (string Name, int Count) GetFirstAnimationName(string group)
@@ -478,7 +521,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     private static AnimationClip ParseClip(FlatTable clip, Action<string>? log)
     {
         var name = clip.String(ClipName) ?? "";
-        var probe = new StreamAnimation(name, isLive: false);
+        var probe = new StreamAnimation(name, isLive: false) { Log = log };
         var frames = new List<Keyframe>();
         var kf = clip.Table(ClipKeyframes);
         bool failed = false;
@@ -487,7 +530,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
         {
             if (k is null || !track.AddNewKeyFrameToBack(item))
             {
-                log?.Invoke($"error: Animation.DefineFromFlatBuf: {name}: Adding {what} frame {index} failed.");
+                log?.Invoke($"error: Animation.DefineFromFlatBuf.AddKeyFrameFailure: Adding {what} frame {index} failed.");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 failed = true;
                 return false;
             }
@@ -504,8 +548,9 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 var k = define(t);
                 if (k is null)
                 {
-                    log?.Invoke($"error: Animation.DefineFromFlatBuf: {name}: Adding {what} frame {i} failed.");
-                    failed = true;
+                    log?.Invoke($"error: Animation.DefineFromFlatBuf.AddKeyFrameFailure: Adding {what} frame {i} failed.");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                failed = true;
                     return;
                 }
                 if (!add(k)) return;
@@ -516,13 +561,13 @@ public sealed class AnimationLibrary : IAnimationCatalog
         int n = 0;
         Each(KfLift, "LiftHeight", DefineLift, k => Add(probe.Lift, new StreamKeyframe(k), k, "LiftHeight", n++));
         n = 0;
-        Each(KfFace, "ProceduralFace", DefineFace, k => Add(probe.ProcFace, new FaceFrame(k.TriggerTimeMs, ((FaceKeyframe)k).Pose), k, "ProceduralFace", n++));
+        Each(KfFace, "ProceduralFace", t => DefineFace(t, log), k => Add(probe.ProcFace, new FaceFrame(k.TriggerTimeMs, ((FaceKeyframe)k).Pose), k, "ProceduralFace", n++));
         n = 0;
         Each(KfHead, "HeadAngle", DefineHead, k => Add(probe.Head, new StreamKeyframe(k), k, "HeadAngle", n++));
         n = 0;
         Each(KfAudio, "RobotAudio", t => DefineAudio(t, log, name), k => Add(probe.RobotAudio, new StreamKeyframe(k), k, "RobotAudio", n++));
         n = 0;
-        Each(KfLights, "BackpackLights", DefineLights, k => Add(probe.Backpack, new StreamKeyframe(k), k, "BackpackLights", n++));
+        Each(KfLights, "BackpackLights", t => DefineLights(t, log), k => Add(probe.Backpack, new StreamKeyframe(k), k, "BackpackLights", n++));
         n = 0;
         Each(KfFaceAnim, "FaceAnimation", t => new FaceAnimationKeyframe(t.U32(0), t.String(1) ?? ""),
              k => Add(probe.FaceAnim, new StreamKeyframe(k), k, "FaceAnimation", n++));
@@ -534,7 +579,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         Each(KfRecordHeading, "RecordHeading", t => new RecordHeadingKeyframe(t.U32(0)),
              k => Add(probe.RecHeading, new StreamKeyframe(k), k, "RecordHeading", n++));
         n = 0;
-        Each(KfTurnToHeading, "TurnToRecordedHeading", DefineTurnTo, k => Add(probe.TurnTo, new StreamKeyframe(k), k, "TurnToRecordedHeading", n++));
+        Each(KfTurnToHeading, "TurnToRecordedHeading", t => DefineTurnTo(t, log, name), k => Add(probe.TurnTo, new StreamKeyframe(k), k, "TurnToRecordedHeading", n++));
 
         var sorted = frames.OrderBy(f => f.TriggerTimeMs).ToList();       // stable: each track keeps its order
         AnimationTrack tracks = 0;
@@ -561,13 +606,15 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// (a wrong-size eye is left unchanged, with a warning); faceAngle f1 (0); scaleX/Y f4/f5 (1), a negative one 0;
     /// the centre f2/f3 through SetFacePosition, before the scale is set (C2).
     /// </summary>
-    private static Keyframe DefineFace(FlatTable t)
+    private static Keyframe DefineFace(FlatTable t, Action<string>? log)
     {
         var pose = new ProceduralFacePose();
         var left = t.Floats(6);
         var right = t.Floats(7);
         if (left.Length == Eye.ParamCount) pose.Left = Eye.FromAsset(left);
+        else log?.Invoke($"warning: ProceduralFace.SetEyeArrayHelper.WrongNumParams: Unexpected number of parameters for leftEye array ({left.Length} vs. 19)");
         if (right.Length == Eye.ParamCount) pose.Right = Eye.FromAsset(right);
+        else log?.Invoke($"warning: ProceduralFace.SetEyeArrayHelper.WrongNumParams: Unexpected number of parameters for rightEye array ({right.Length} vs. 19)");
         pose.FaceAngle = t.F32(1);
         pose.SetFacePosition(t.F32(2), t.F32(3));          // C2: before the scale (0x00583A08 before 0x00583A0C..)
         pose.FaceScaleX = MathF.Max(0f, t.F32(4, 1f));
@@ -591,7 +638,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
         }
         else if (probs.Length != ids.Length)
         {
-            log?.Invoke($"error: RobotAudioKeyFrame.SetMembersFromFlatBuf: {clip}: {ids.Length} events, {probs.Length} probabilities");
+            log?.Invoke($"error: RobotAudioKeyFrame.SetMembersFromFlatBuf.UnknownProbabilities: {clip}: The number of audio event IDs ({ids.Length}) does not match number of probabilities ({probs.Length})");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
         float sum = 0f;
@@ -600,7 +648,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
             sum += p;
             if (sum > 1.0f)
             {
-                log?.Invoke($"error: RobotAudioKeyFrame.SetMembersFromFlatBuf: {clip}: the probabilities sum above 1");
+                log?.Invoke($"error: RobotAudioKeyFrame.SetMembersFromFlatBuf.TotalProbabilitiesTooHigh: {clip}: The total probability of all audio events combined exceeds 1.0");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return null;
             }
         }
@@ -611,10 +660,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// C16: trigger f0, duration f1, Left f2, Right f3, Front f4, Middle f5, Back f6, converted to JSON and read by
     /// SetMembersFromJson (gap4 J1.9): a colour that is not 3 or 4 floats rejects the keyframe.
     /// </summary>
-    private static Keyframe? DefineLights(FlatTable t)
+    private static Keyframe? DefineLights(FlatTable t, Action<string>? log)
     {
         var k = new LightsKeyframe(t.U32(0), t.U32(1), t.Floats(2), t.Floats(3), t.Floats(4), t.Floats(5), t.Floats(6));
-        return k.EncodedLeds is null ? null : k;
+        return BackpackColor.TryReadAll(k.Left, k.Right, k.Front, k.Middle, k.Back, out _, log) ? k : null;
     }
 
     /// <summary>C15: event_id f1 through AnimEventFromString; "Count" (unrecognised) warns and rejects the keyframe.</summary>
@@ -623,7 +672,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         var e = new EventKeyframe(t.U32(0), t.String(1) ?? "");
         if (e.Parsed is null)
         {
-            log?.Invoke($"warning: EventKeyFrame.SetMembersFromFlatBuf: {clip}: unrecognised event '{e.EventId}'");
+            log?.Invoke($"warning: EventKeyFrame.UnrecognizedEventName: {e.EventId}");
             return null;
         }
         return e;
@@ -639,11 +688,14 @@ public sealed class AnimationLibrary : IAnimationCatalog
     {
         var raw = t.String(2) ?? "";
         short speed = t.I16(3);
+        short originalSpeed = speed;
         if (!BodyKeyframe.CheckSpeedForRadiusString(raw, ref speed))
         {
-            log?.Invoke($"error: BodyMotionKeyFrame.ProcessRadiusString: {clip}: unrecognised radius '{raw}'");
+            log?.Invoke($"error: BodyMotionKeyFrame.BadRadiusString: {clip}: Unrecognized string for 'radius_mm' field: {raw}");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
+        LogBodyClamp(raw, originalSpeed, clip, log);
         return new BodyKeyframe(t.U32(0), Duration(t, 1), raw, speed);
     }
 
@@ -652,14 +704,33 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// tolerance f6 (2), numHalfRevs f7 (0), useShortestDir f8 (false); CheckRotationSpeed: speed |v| &gt; 300 → ±300,
     /// accel and decel |v| ≥ 13637 → ±13636.
     /// </summary>
-    private static Keyframe DefineTurnTo(FlatTable t)
+    private static Keyframe DefineTurnTo(FlatTable t, Action<string>? log, string name)
     {
         short speed = t.I16(3), accel = t.I16(4, 1000), decel = t.I16(5, 1000);
+        LogTurnClamps(speed, accel, decel, name, log);
         if (Math.Abs((int)speed) > 300) speed = (short)Math.Clamp((int)speed, -300, 300);
         if (Math.Abs((int)accel) >= 13637) accel = (short)Math.Clamp((int)accel, -13636, 13636);
         if (Math.Abs((int)decel) >= 13637) decel = (short)Math.Clamp((int)decel, -13636, 13636);
         return new TurnToRecordedHeadingKeyframe(t.U32(0), Duration(t, 1), t.I16(2), speed, accel, decel,
                                                  t.U16(6, 2), t.U16(7), t.Bool(8));
+    }
+
+    internal static void LogBodyClamp(string radius, short speed, string name, Action<string>? log)
+    {
+        bool point = !BodyKeyframe.HasDigits(radius) && (radius == "TURN_IN_PLACE" || radius == "POINT_TURN");
+        int abs = Math.Abs((int)speed);
+        if (point ? abs > 300 : abs >= 221)
+        {
+            string kind = point ? "CheckRotationSpeed.PointTurnSpeedExceedsLimit" : radius == "STRAIGHT" ? "CheckStraightSpeed.StraightSpeedExceedsLimit" : "CheckTurnSpeed.ArcSpeedExceedsLimit";
+            string text = point ? $"PointTurn speed {abs} deg/s exceeds limit of 300.000000 deg/s. Clamping" : $"Speed {abs} mm/s exceeds limit of 220.000000 mm/s. Clamping";
+            log?.Invoke($"info: [Animations] BodyMotionKeyFrame.{kind}: {name}: {text}");
+        }
+    }
+    internal static void LogTurnClamps(short speed, short accel, short decel, string name, Action<string>? log)
+    {
+        if (Math.Abs((int)speed) > 300) log?.Invoke($"info: [Animations] TurnToRecordedHeadingKeyFrame.CheckRotationSpeed.PointTurnSpeedExceedsLimit: {name}: PointTurn speed {Math.Abs((int)speed)} deg/s exceeds limit of 300.000000 deg/s. Clamping");
+        if (Math.Abs((int)accel) >= 13637) log?.Invoke($"info: [Animations] TurnToRecordedHeadingKeyFrame.CheckRotationAccel.PointTurnAccelExceedsLimit: {name}: PointTurn accel {Math.Abs((int)accel)} deg/s^2 exceeds limit of 13636.363281 deg/s^2. Clamping");
+        if (Math.Abs((int)decel) >= 13637) log?.Invoke($"info: [Animations] TurnToRecordedHeadingKeyFrame.CheckRotationAccel.PointTurnDecelExceedsLimit: {name}: PointTurn decel {Math.Abs((int)decel)} deg/s^2 exceeds limit of 13636.363281 deg/s^2. Clamping");
     }
 
     // ------------------------------------------------------------------ groups (D4)
@@ -682,6 +753,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 return;
             }
             var entries = new List<AnimationGroupEntry>();
+            bool windowKnown = false;
+            float inheritedMin = 0, inheritedMax = 0;
             foreach (var e in arr.EnumerateArray())
             {
                 // 4.4: Name must be a string, 4.5: and must name a loaded clip; otherwise the entry is rejected and the
@@ -734,9 +807,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
                     minDeg = (float)mn.GetDouble();
                     maxDeg = (float)mx.GetDouble();
                 }
-                entries.Add(new AnimationGroupEntry(name, (float)w.GetDouble(), (float)cooldown, mood)
+                if (useHead) { inheritedMin = minDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35); inheritedMax = maxDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35); windowKnown = true; }
+                entries.Add(new AnimationGroupEntry(name, (float)w.GetDouble(), cooldown, mood)
                 {
                     UseHeadAngle = useHead,
+                    BackupWindowKnown = windowKnown, BackupMinRad = inheritedMin, BackupMaxRad = inheritedMax,
                     HeadAngleMinDeg = minDeg,
                     HeadAngleMaxDeg = maxDeg,
                 });

@@ -852,7 +852,7 @@ public class M8BatchThreeDTests
         e.AIComponentUpdate = () => { order.Add("ai"); ai.Update(fx.Robot); };
         var actions = e.Robot!.ActionList;
         actions.QueueAction(QueueActionPosition.Now, new OrderAction(() => order.Add("actions")), 0);
-        var streamer = e.AnimationStreamerUpdate; e.AnimationStreamerUpdate = () => { order.Add("streamer"); streamer?.Invoke(); };
+        var streamer = e.AnimationStreamerUpdate; e.AnimationStreamerUpdate = () => { order.Add("streamer"); return streamer?.Invoke() ?? 0; };
         var components = e.RobotComponentsUpdate; e.RobotComponentsUpdate = () => { order.Add("components"); components?.Invoke(); };
         IHelper? raw = h;
         Assert.True(ai.Helpers.DelegateToHelper(fx.Robot, ai.Helpers.AddHelperToComponent(ref raw), null, null));

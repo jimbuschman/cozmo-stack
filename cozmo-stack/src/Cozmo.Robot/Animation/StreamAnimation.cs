@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Robot.Animation;
 
@@ -21,6 +22,8 @@ internal sealed class StreamTrack<T> where T : class, IStreamKeyframe
     private int _cur;
 
     public bool IsLive { get; set; }
+    internal Action<string>? Log { get; set; }
+    internal string NativeTypeName { get; set; } = "";
     public int Count => _frames.Count;
     public bool IsEmpty => _frames.Count == 0;
     public bool AtEnd => _cur >= _frames.Count;
@@ -52,7 +55,7 @@ internal sealed class StreamTrack<T> where T : class, IStreamKeyframe
     /// <summary>AddKeyFrameToBackHelper (L4): false (TooManyFrames) above 1000.</summary>
     public bool AddKeyFrameToBack(T kf)
     {
-        if (_frames.Count > 1000) return false;
+        if (_frames.Count > 1000) { Log?.Invoke($"warning: Animation.Track.AddKeyFrameToBack.TooManyFrames: There are already {_frames.Count} frames in track of type {NativeTypeName}. Refusing to add more."); return false; }
         _frames.Add(kf);
         if (_frames.Count == 1) _cur = 0;
         return true;
@@ -78,7 +81,7 @@ internal sealed class StreamTrack<T> where T : class, IStreamKeyframe
     /// <summary>A copy of the track with its iterator on the first keyframe (AddLayer copies the track, L2).</summary>
     public StreamTrack<T> CopyFromBegin(Func<T, T> copy)
     {
-        var t = new StreamTrack<T> { IsLive = IsLive };
+        var t = new StreamTrack<T> { IsLive = IsLive, Log = Log, NativeTypeName = NativeTypeName };
         foreach (var f in _frames) t._frames.Add(copy(f));
         t._cur = 0;
         return t;
@@ -107,6 +110,9 @@ internal sealed class StreamKeyframe : IStreamKeyframe
 
     /// <summary>FaceAnimationKeyFrame +0x2C: the next sprite frame.</summary>
     public int FaceAnimIndex;
+    // fidelity: M5-043
+    // FK1–FK4: +0x28 is zero on both loader/add paths; it is not an asset option.
+    internal byte FaceAnimationOverride => 0;
 
     /// <summary>Whether <see cref="AnimationScheduler.KeyframeFired"/> has been raised for this keyframe in this play.</summary>
     public bool Fired;
@@ -197,7 +203,17 @@ internal sealed class StreamAnimation
         IsLive = isLive;
         foreach (var t in KeyframeTracks) t.IsLive = isLive;
         ProcFace.IsLive = isLive;
+        ProcFace.NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE";
+        var types = new[] { (Head, "HeadAngle"), (Lift, "LiftHeight"), (FaceAnim, "FaceAnimation"), (Event, "Event"), (Backpack, "BackpackLights"), (Body, "BodyMotion"), (RecHeading, "RecordHeading"), (TurnTo, "TurnToRecordedHeading"), (DeviceAudio, "DeviceAudio"), (RobotAudio, "RobotAudio") };
+        foreach (var (track, typeName) in types) track.NativeTypeName = $"N4Anki5Cozmo{typeName.Length + 8}{typeName}KeyFrameE";
     }
+
+    internal Action<string>? Log
+    {
+        set { foreach (var t in KeyframeTracks) t.Log = value; ProcFace.Log = value; _log = value; }
+    }
+    private Action<string>? _log;
+    public void Clear() { foreach (var t in KeyframeTracks) t.Clear(); ProcFace.Clear(); }
 
     public string Name { get; }
     /// <summary>+0xD: SetIsLive.</summary>
@@ -302,6 +318,14 @@ internal sealed class StreamAnimation
     /// 1000 keyframes and does no trigger-order check. False when refused.
     /// </summary>
     public bool AddLive(Keyframe k)
+    {
+        bool ok = AddLiveCore(k);
+        if (!ok && k is FaceKeyframe or FaceAnimationKeyframe or BodyKeyframe or LiftKeyframe or HeadKeyframe)
+        { _log?.Invoke($"error: Animation.AddKeyFrameToBack.Failed: AnimationName:{Name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
+        return ok;
+    }
+
+    private bool AddLiveCore(Keyframe k)
     {
         switch (k)
         {

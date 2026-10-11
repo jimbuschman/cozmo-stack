@@ -320,7 +320,13 @@ public sealed class CozmoRobot : IDisposable
         Engine.RobotRemoved = ResetDevices;
         // fidelity: M4-026, M4-027
         // ~Robot's AbortAll and the component deletions the M4 devices stand for, at the Robot's Lifetime slots.
-        Engine.BindRobotLifetime = Motion.BindRobotLifetime;
+        Engine.BindRobotLifetime = robot =>
+        {
+            Motion.BindRobotLifetime(robot);
+            // MISSING: M5-037 DrivingAnimationHandler destruction 0x00511524..0x00511542:
+            // the host has no concrete +0x4C subscription handles / +8 DrivingAnimations owner to bind.
+            robot.Lifetime.Bind(0x60, _ => Animations.Dispose()); // M5-037/044 source destruction point.
+        };
         // fidelity: M4-011
         // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.
         Engine.BlockFilterInit = LoadBlockPool;
@@ -624,27 +630,15 @@ public sealed class CozmoRobot : IDisposable
     /// robot message (only while connected); the transport's dispose then makes its one DisconnectRequest send
     /// attempt and closes the socket without waiting for anything queued to drain (see
     /// <see cref="ReliableTransport.Dispose"/>).
-    /// NOTE: the StopAllMotors / DriveWheels(0) before disconnecting is this stack's, not the engine's (comparison
-    /// item 4); it is kept pending a safety-policy decision.
+    /// AbortAll precedes streamer destruction (M4-026, M5-022).
     /// </summary>
     public void Dispose()
     {
         // fidelity: M5-022
-        // A37: ~Robot → AbortAll: the actions are cancelled (here: the streaming animation, whose SetStreamingAnimation(null)
-        // broadcasts AnimationAborted, A22/A23), then SendAbortAnimation (0x8D) and MovementComponent::StopAllMotors, all
-        // before the streamer is destroyed. PathComponent::Abort and AbortDocking are M12/M13's and not run here.
-        // A37 (M5 fix B9): the engine tick is stopped first and joined, so no Update streams after the AbortAll sends.
+        // M4-026 owns the complete AbortAll path, before the no-send M5 streamer destruction.
         try { Engine.StopTick(); } catch { }
+        try { if (Engine.Robot is { } robot) Motion.AbortAll(robot); } catch { }
         try { Animations.Dispose(); } catch { }
-        try
-        {
-            if (Engine.ConnectionState == 2)
-            {
-                SendMessage(new AbortAnimation());
-                EmergencyStop();       // StopAllMotors, then this stack's DriveWheels(0) (decision note)
-            }
-        }
-        catch { }
         try { Engine.NvStorage?.Dispose(); } catch { }
         Engine.Dispose();
         Transport.Dispose();

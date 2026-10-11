@@ -62,7 +62,7 @@ public class AnimationGroupGateTests
     /// never qualifies for the Default-mood backup and the backup falls to the first entry.
     /// </summary>
     [Fact]
-    public void AnEntryWithoutUseHeadAngleNeverQualifiesForTheBackup()
+    public void ThePreFirstUseHeadAngleBackupWindowIsMissing()
     {
         var first = new AnimationGroupEntry("first", 1f, 100f, "Default");
         var soon = new AnimationGroupEntry("soon", 1f, 50f, "Default");
@@ -73,7 +73,10 @@ public class AnimationGroupGateTests
         soon.Container.SetCooldown("soon", 50);
 
         // "soon" comes off cooldown first, but it has no window, so the backup takes the first entry
-        Assert.Equal("first", g.Choose(new Random(4), nowSec: 1, headAngleDeg: 0)!.Name);
+        var logs = new List<string>();
+        g.Log = logs.Add;
+        Assert.Null(g.Choose(new Random(4), nowSec: 1, headAngleDeg: 0));
+        Assert.Contains(logs, l => l.StartsWith("MISSING: M5-047"));
     }
 
     /// <summary>

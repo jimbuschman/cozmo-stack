@@ -158,6 +158,7 @@ public sealed class CozmoAnimations : IDisposable
     internal CozmoAnimations(CozmoRobot robot)
     {
         _robot = robot;
+        robot.Engine.EmitStackLog("MISSING: M5-037/044 concrete driving/streamer subscription ownership (0x00511524, 0x0057AF6C, 0x0057AFD4); managed storage teardown is built, native subscription release remains unwired");
         _sink = new RobotAnimationSink(robot);
         _scheduler = new AnimationScheduler(_sink);
         _scheduler.Stream.Log = robot.Engine.Log;
@@ -165,6 +166,7 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M6-028
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
         // a robot with no firmware version yet has the client constructor's 0 (None).
+        robot.Engine.CreateGoToSleepSequence = _ => GoToSleepAnimation.Create(robot, SleepTriggerFactory);
         _scheduler.OutputSource = () => robot.Engine.Robot?.AudioOutputSource;
         _sink.AnimationEvent += e => Event?.Invoke(e);
         _sink.NotImplemented += w => NotImplemented?.Invoke(w);
@@ -173,7 +175,11 @@ public sealed class CozmoAnimations : IDisposable
         // A23: RobotEventHandler subscribes to the E2G AnimationAborted (tag 95); the broadcast is synchronous, and its
         // handler calls Robot::AbortAnimation → SendAbortAnimation: AbortAnimation 0x8D, reliable, sent directly
         // (0x00517DE4..0x00517E0A), not through the stream buffer.
-        _scheduler.AnimationAborted += _ => robot.SendMessage(new AbortAnimation());
+        _scheduler.AnimationAborted += _ =>
+        {
+            if (robot.Engine.Robot is null) robot.Engine.EmitEngineLog(EngineLogLevel.Warning, null, "RobotEventHandler.HandleAnimationAborted.InvalidRobotID", "Failed to find robot.");
+            else { robot.SendMessage(new AbortAnimation()); robot.Engine.EmitEngineLog(EngineLogLevel.Info, "Unnamed", "RobotEventHandler.HandleAnimationAborted.SendingRobotAbortAnimation", ""); }
+        };
         // fidelity: M5-030
         // UpdateLiveAnimation's robot inputs (gap4 L2..L6, gap1 R2..R4), from the last RobotState the robot stored: status bit
         // 2 (DockingComponent+4), IS_MOVING (+9), !LIFT_IN_POS (+0xB), !HEAD_IN_POS (+0xA); the track locks (M4-014); the head
@@ -243,14 +249,15 @@ public sealed class CozmoAnimations : IDisposable
 
     // fidelity: M3-013
     /// <summary>AnimationStreamer::Update for one engine tick (called by Robot::Update only while streaming is open).</summary>
-    internal void EngineUpdate()
+    internal int EngineUpdate()
     {
-        if (!EngineDriven) return;
-        try { _scheduler.Advance(NowMs()); }
+        if (!EngineDriven) return 0;
+        try { return _scheduler.Advance(_robot.Engine.Timer.TimeStampMs); }
         catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
         {
             try { Faulted?.Invoke(ex); } catch { }
             try { _scheduler.Stop(); } catch { }
+            return 1;
         }
     }
 
@@ -263,11 +270,13 @@ public sealed class CozmoAnimations : IDisposable
         // The pre-rendered face animations live beside the clips, and the faceAnimations track names them.
         FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
         _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
-        Library = AnimationLibrary.Open(assetsRoot);
+        Library = AnimationLibrary.Open(assetsRoot, _robot.Engine.Log);
         Library.Log = _robot.Engine.Log;
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)
         Library.HeadAngleRad = () => _robot.State.HeadAngleRad;
-        Library.ContextRandom = _scheduler.ContextRandom;          // R3: the group draw is on the context RNG
+        Library.ContextRandom = _scheduler.ContextRandom; // M5-045: ownership of the native group RNG remains unread.
+        _robot.Engine.EmitStackLog("MISSING: M5-045 AnimationGroupContainer RNG instance ownership; using the current stack generator");
+        Library.CooldownTimeSec = () => _robot.Engine.Timer.Seconds; // G1: f32 BaseStationTimer sampled by Robot::Update.
         // fidelity: M5-010, M5-027
         // The streamer's idle and neutral animations come from the container, the groups and the trigger map (A2, A29).
         _scheduler.Catalog = Library;
@@ -350,9 +359,8 @@ public sealed class CozmoAnimations : IDisposable
     public Task<AnimationEndReason>? PlayGroup(string group, string? mood = null, bool replaceRunning = true)
     {
         var lib = Library ?? throw new InvalidOperationException("no animation assets are loaded; call LoadFrom first");
-        var g = lib.GetGroup(group) ?? throw new KeyNotFoundException($"no animation group called '{group}'");
-        var pick = g.Choose(_random, mood) ?? throw new InvalidOperationException($"group '{group}' is empty");
-        return Play(pick.Name, replaceRunning);
+        string name = lib.GetAnimationNameFromGroup(group, strict: false);
+        return name.Length == 0 ? null : Play(name, replaceRunning);
     }
 
     // fidelity: M5-020
@@ -464,9 +472,11 @@ public sealed class CozmoAnimations : IDisposable
         return new AnimationTicket(handle.Completion, handle.Generation);
     }
 
+    internal Func<SleepAnimationArguments, ActionRunner?>? SleepTriggerFactory { get; set; } // M8 recipient seam, named MISSING when absent.
+
     internal bool ManualTicking { get; set; }
     internal Func<double>? ClockMs { get; set; }
-    private double NowMs() => ClockMs?.Invoke() ?? Environment.TickCount64;
+    private double NowMs() => ClockMs?.Invoke() ?? (EngineDriven ? _robot.Engine.Timer.TimeStampMs : Environment.TickCount64);
     internal event Action? TickObserved;
     internal void WaitForTickerStop()
     {
@@ -549,11 +559,11 @@ public sealed class CozmoAnimations : IDisposable
 
     public void Dispose()
     {
-        _scheduler.Stop();
         _running = false;
         Thread? t;
         lock (_gate) t = _ticker;
-        if (t is not null && t != Thread.CurrentThread) t.Join(TimeSpan.FromSeconds(1));
+        if (t is not null && t != Thread.CurrentThread) t.Join();
+        _scheduler.Destroy();
     }
 }
 
@@ -576,6 +586,7 @@ public sealed class CozmoFace
     /// <summary>Renders a pose and shows it. Returns the bitmap that was sent, for inspection and tests.</summary>
     public FaceBitmap SetParameters(ProceduralFacePose pose)
     {
+        using var clipLog = Eye.UseWarningLog(_robot.Engine.Log);
         Current = pose.Clone();
         var bmp = ProceduralFaceRenderer.Render(pose);
         _robot.Display.Show(bmp);

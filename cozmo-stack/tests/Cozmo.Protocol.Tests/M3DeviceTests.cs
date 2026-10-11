@@ -3823,7 +3823,8 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         int updates = 0;
-        rig.Engine.AnimationStreamerUpdate = () => updates++;
+        var logs = new List<EngineLogEntry>(); rig.Engine.LogEntry += logs.Add;
+        rig.Engine.AnimationStreamerUpdate = () => { updates++; return 7; };
         rig.ToSuccess();
         rig.Tick();
         Assert.Equal(0, updates);                                  // before the first full state, no streamer and no NV send
@@ -3843,6 +3844,9 @@ public class M3DeviceTests
         Assert.Equal(1, updates);
         rig.Tick();
         Assert.Equal(2, updates);
+        var failures = logs.Where(e => e.Name == "Robot.Update.AnimationStreamer").ToArray();
+        Assert.Equal(2, failures.Length);
+        Assert.All(failures, e => { Assert.Equal(EngineLogLevel.Warning, e.Level); Assert.Null(e.Channel); Assert.Empty(e.Data); Assert.EndsWith("Robot 1 had an animation streamer failure (7)", e.Text); });
     }
 
     /// <summary>

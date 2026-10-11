@@ -51,7 +51,7 @@ public sealed class EngineRandom
     public int RandInt(int n) => (int)(GetNextDbl() * n);
 
     /// <summary>RandIntInRange(a, b) = a + trunc(u·(b − a + 1)).</summary>
-    public int RandIntInRange(int a, int b) => a + (int)(GetNextDbl() * ((double)b - a + 1));
+    public int RandIntInRange(int a, int b) => unchecked(a + (int)(GetNextDbl() * unchecked(b - a + 1)));
 
     /// <summary>RandDbl(x) = u·x.</summary>
     public double RandDbl(double x) => GetNextDbl() * x;

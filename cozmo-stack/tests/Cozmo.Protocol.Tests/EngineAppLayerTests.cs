@@ -2270,7 +2270,7 @@ public class EngineAppLayerTests
     /// <summary>
     /// PRIMARY-SOURCE ORACLE. M1-031 CC6/CC7: sleep fires before disconnect in the same update (0x0052CE3C..0x0052CE98);
     /// a 0.0 deadline does nothing and blocks re-arming until a Cancel (CC3 + CC6); Cancel sets −1 (CC5,
-    /// 0x0052D0BE..0x0052D0C4). The go-to-sleep sequence itself is MISSING (CC8, M5 interface).
+    /// 0x0052D0BE..0x0052D0C4). The M5-038 factory is wired; its concrete M8 TriggerAnimationAction recipient remains MISSING.
     /// </summary>
     [Fact]
     public void M1_031_CC6_SleepFiresBeforeDisconnectInOneUpdate()
@@ -2281,14 +2281,19 @@ public class EngineAppLayerTests
         rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
         rig.Tick();
         var order = new List<string>();
-        rig.Engine.GoToSleepRequested += () => order.Add(rig.Port.Calls.Any(c => c.StartsWith("disconnect")) ? "sleep after disconnect" : "sleep first");
+        var factory = rig.Engine.CreateGoToSleepSequence!;
+        rig.Engine.CreateGoToSleepSequence = robot =>
+        {
+            order.Add(rig.Port.Calls.Any(c => c.StartsWith("disconnect")) ? "sleep after disconnect" : "sleep first");
+            return factory(robot);
+        };
         rig.Port.Calls.Clear();
         rig.Engine.StartIdleTimeout(0.01f, 0.01f);
         rig.Tick(1);
         rig.Tick(60);
         Assert.Equal(new[] { "sleep first" }, order);
         Assert.Contains($"disconnect {Rig.RobotEp}", rig.Port.Calls);
-        Assert.True(rig.Logged("MISSING: CreateGoToSleepAnimSequence"));
+        Assert.True(rig.Logged("MISSING: M5-038 -> M8"));
     }
 
     /// <summary>

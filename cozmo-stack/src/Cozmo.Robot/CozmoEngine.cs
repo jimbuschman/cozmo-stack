@@ -1201,10 +1201,14 @@ public sealed partial class EngineRobot
             if (actionResult != 0) Engine.Log("warning: Robot.Update.ActionList failed");
         });
         AnimationStreamingOpen = TimeSynced && ReadyToStream;
-        // fidelity: M3-013
+        // fidelity: M3-013, M5-039
         // CD12: AnimationStreamer::Update runs here, only while synced and ready to stream; each call is one engine
         // Update of the streamer (C15).
-        if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(streamer);
+        if (AnimationStreamingOpen && Engine.AnimationStreamerUpdate is { } streamer) Engine.RunIsolated(() =>
+        {
+            int result = streamer();
+            if (result != 0) Engine.EmitEngineLog(EngineLogLevel.Warning, null, "Robot.Update.AnimationStreamer", $"Robot {CozmoEngine.RobotId} had an animation streamer failure ({result})");
+        });
         // fidelity: M1-041, M3-022, M3-026, M3-031
         // CD12: NVStorage::Update runs here, after the animation streamer. M3-026/M3-027: in state 0 it pops and
         // sends the queued request (the connection reads queue on Read and go out only here) and then runs its
@@ -1648,7 +1652,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// <summary>Raised when a subscriber or handler threw (policy M1-034: isolated, and reported).</summary>
     internal Action<Exception>? Faulted;
     /// <summary>AnimationStreamer::Update, run by Robot::Update while synced and ready to stream (CD12, C15).</summary>
-    internal Action? AnimationStreamerUpdate;
+    internal Func<int>? AnimationStreamerUpdate;
     /// <summary>The VisionComponent's RobotConnectionResponse subscriber, run in its place in the Success broadcast (CD21, 1h). Its argument is the body hardware version (mfgId word 1, the engine Robot's +0x24).</summary>
     internal Action<int>? VisionConnected;
     // fidelity: M3-033, M3-034

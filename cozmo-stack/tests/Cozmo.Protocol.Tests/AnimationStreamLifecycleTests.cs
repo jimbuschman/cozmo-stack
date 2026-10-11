@@ -61,7 +61,7 @@ public class AnimationStreamLifecycleTests
 
     /// <summary>
     /// A clip taking over ends the live stream without an EndOfAnimation (InitStream only drops the buffer, A12); the clip
-    /// ends with its own End (A20), completes on the next Update (A13), and on that Update the live idle is re-initialised
+    /// ends with its own End (A20), completes on the next Update (A13), and on the following Update the live idle is re-initialised
     /// (+0x64 = 0 after the clip's UpdateStream, A13; InitStream(live, 0xFF), A29) with no frame; the Update after streams
     /// the live keyframe with StartOfAnimation 0xFF.
     /// </summary>
@@ -80,7 +80,9 @@ public class AnimationStreamLifecycleTests
         Assert.False(s.IsPlaying);
         Assert.Equal(new[] { "finished" }, sink.Log);
         sink.Log.Clear();
-        s.Advance(68);
+        s.Advance(68); // X5: first tick after exhaustion initializes the idle.
+        Assert.Empty(sink.Log);
+        s.Advance(102);
         Assert.Equal(new[] { "silence", "start:255", "head", "end" }, sink.Log);
     }
 

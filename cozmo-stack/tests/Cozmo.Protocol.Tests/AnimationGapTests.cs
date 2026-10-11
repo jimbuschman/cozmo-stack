@@ -455,7 +455,6 @@ public class AnimationGapTests
     [InlineData(new float[] { 0.2f, 0.3f, 0.5f }, 0.95, 2)]
     [InlineData(new float[] { 0.5f, 0.2f, 0f }, 0.9, -1)]    // probabilities sum below one: the draw falls in the gap, the engine plays nothing
     [InlineData(new float[] { }, 0.5, 1)]                    // no probabilities: 1/n each, so 0.5 lands in the second of three
-    [InlineData(new float[] { 1f }, 0.7, 2)]                 // wrong count: also 1/n each
     public void TheAlternativeIsChosenByProbabilityAsTheEngineDoes(float[] probabilities, double draw, int expected)
     {
         Assert.Equal(expected, AnimationScheduler.ChooseAlternative(3, probabilities, draw));

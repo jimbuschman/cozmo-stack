@@ -116,7 +116,7 @@ public sealed record BodyKeyframe(uint TriggerTimeMs, uint DurationTimeMs, strin
         }
     }
 
-    private static bool HasDigits(string s)
+    internal static bool HasDigits(string s)
     {
         foreach (var c in s) if (c is >= '0' and <= '9') return true;
         return false;
@@ -256,12 +256,13 @@ public static class BackpackColor
     /// vcvt.u32.f32 (truncation, a negative saturating to 0), stored as a u8; alpha only from a 4th element ≥ 0, by the same
     /// rule (so a 3-element array keeps <paramref name="c"/>'s alpha).
     /// </summary>
-    public static bool GetColorOptional(IReadOnlyList<float> v, ref uint c)
+    public static bool GetColorOptional(IReadOnlyList<float> v, ref uint c, Action<string>? log = null)
     {
-        if (v.Count != 3 && v.Count != 4) return false;
+        if (v.Count != 3 && v.Count != 4) { log?.Invoke("warning: JsonTools.GetColorOptional: Expecting color in Json to be a string or 3 or 4 element array"); return false; }
         bool raw = v[0] > 1f || v[1] > 1f || v[2] > 1f;
         byte U8(float x)
         {
+            if (!raw && (x < 0 || x > 1)) log?.Invoke("warning: ColorRGBA.GetU8.OutOfRangeValue: Float RGBA values should be on the interval [0,1]. Will clip.");
             float f = raw ? x : x * 255f;
             uint u = float.IsNaN(f) || f <= 0f ? 0u : f >= 4294967295f ? uint.MaxValue : (uint)f;
             return unchecked((byte)u);
@@ -287,19 +288,19 @@ public static class BackpackColor
     /// Left, Front, Middle, Back, Right (C18).
     /// </summary>
     public static bool TryReadAll(IReadOnlyList<float> left, IReadOnlyList<float> right, IReadOnlyList<float> front,
-                                  IReadOnlyList<float> middle, IReadOnlyList<float> back, out ushort[] leds)
+                                  IReadOnlyList<float> middle, IReadOnlyList<float> back, out ushort[] leds, Action<string>? log = null)
     {
         leds = new ushort[5];
         uint c = Default;
-        if (!GetColorOptional(back, ref c)) return false;
+        if (!GetColorOptional(back, ref c, log)) return false;
         leds[3] = Encode(c);
-        if (!GetColorOptional(front, ref c)) return false;
+        if (!GetColorOptional(front, ref c, log)) return false;
         leds[1] = Encode(c);
-        if (!GetColorOptional(middle, ref c)) return false;
+        if (!GetColorOptional(middle, ref c, log)) return false;
         leds[2] = Encode(c);
-        if (!GetColorOptional(left, ref c)) return false;
+        if (!GetColorOptional(left, ref c, log)) return false;
         leds[0] = Encode(c);
-        if (!GetColorOptional(right, ref c)) return false;
+        if (!GetColorOptional(right, ref c, log)) return false;
         leds[4] = Encode(c);
         return true;
     }

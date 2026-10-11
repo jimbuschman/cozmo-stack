@@ -24,6 +24,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
 {
     protected readonly SortedDictionary<byte, TrackLayer<T>> Layers = new();
     private byte _tagCounter;
+    public Action<string>? Log;
 
     /// <summary>Q1.2: HaveLayersToSend = (layer-map size ≠ 0).</summary>
     public bool HaveLayersToSend => Layers.Count != 0;
@@ -46,6 +47,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
     public int AddLayer(string name, StreamTrack<T> track, int startTime, Func<T, T> copy)
     {
         var t = track.CopyFromBegin(copy);
+        t.Log = Log ?? t.Log;
         t.IsLive = true;
         byte tag = NextTag();
         Layers[tag] = new TrackLayer<T> { Track = t, StartTime = startTime, StreamTime = 0, IsPersistent = false, Tag = tag, Name = name };
@@ -56,6 +58,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
     public byte AddPersistentLayer(string name, StreamTrack<T> track, Func<T, T> copy)
     {
         var t = track.CopyFromBegin(copy);
+        t.Log = Log ?? t.Log;
         t.IsLive = false;
         byte tag = NextTag();
         Layers[tag] = new TrackLayer<T> { Track = t, StartTime = 0, StreamTime = 0, IsPersistent = true, Tag = tag, Name = name };
@@ -96,7 +99,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
             {
                 if (layer.Track.IsEmpty)
                 {
-                    log?.Invoke("warning: AnimationStreamer.UpdateFace.EmptyPersistentLayer");
+                    log?.Invoke($"warning: AnimationStreamer.UpdateFace.EmptyPersistentLayer: Persistent face layer is empty - perhaps live frames were used? (tag={layer.Tag})");
                     layer.IsPersistent = false;
                 }
                 else
@@ -142,8 +145,6 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     public int BlinkTimerMs, DartTimerMs;
     public byte DartTag;
 
-    public Action<string>? Log;
-
     private static FaceFrame CopyFrame(FaceFrame f) => f.Copy();
 
     public int AddLayer(string name, StreamTrack<FaceFrame> track, int startTime) => AddLayer(name, track, startTime, CopyFrame);
@@ -171,7 +172,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
             if (DartTag != 0) AddToPersistentLayer(DartTag, kf);
             else
             {
-                var track = new StreamTrack<FaceFrame>();
+                var track = new StreamTrack<FaceFrame> { NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE" };
                 track.AddKeyFrameToBack(kf);
                 DartTag = AddPersistentLayer("KeepAliveEyeDart", track);
             }
@@ -184,7 +185,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
             int min = (int)p[LiveIdleParam.BlinkSpacingMinTime_ms], max = (int)p[LiveIdleParam.BlinkSpacingMaxTime_ms];
             if (max <= min)
             {
-                Log?.Invoke($"warning: FaceLayerManager.KeepFaceAlive.BadBlinkSpacingParams: min {min}, max {max}");
+                Log?.Invoke($"warning: AnimationStreamer.KeepFaceAlive.BadBlinkSpacingParams: Max ({max}) must be greater than min ({min})");
                 min = 7500;
                 max = 30000;
             }
@@ -237,7 +238,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     {
         var kf = GenerateEyeShift(x, y, xMax, yMax, up, down, outer, dur);
         if (tag != 0) { AddToPersistentLayer(tag, kf); return; }
-        var track = new StreamTrack<FaceFrame>();
+        var track = new StreamTrack<FaceFrame> { NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE" };
         if (dur != 0) track.AddKeyFrameToBack(FaceFrame.Default(0));
         track.AddKeyFrameToBack(kf);
         tag = AddPersistentLayer(name, track);
@@ -251,8 +252,8 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     public void RemovePersistentLayer(byte tag, int dur)
     {
         if (!Layers.TryGetValue(tag, out var layer)) return;
-        Log?.Invoke($"info: FaceLayerManager.RemovePersistentLayer: {layer.Name}, Tag = {tag} (Layers remaining={Layers.Count - 1})");
-        var track = new StreamTrack<FaceFrame>();
+        Log?.Invoke($"info: [Unnamed] ITrackLayerManager.RemovePersistentLayer: {layer.Name}, Tag = {tag} (Layers remaining={Layers.Count - 1})");
+        var track = new StreamTrack<FaceFrame> { NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE" };
         if (dur >= 1 && layer.Track.Current is { } cur)
         {
             var c = cur.Copy();
@@ -369,7 +370,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     {
         lock (BlinkGate)
         {
-            var track = new StreamTrack<FaceFrame>();
+            var track = new StreamTrack<FaceFrame> { NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE" };
             var face = new ProceduralFacePose();
             uint trigger = 0;
             bool more;
@@ -396,7 +397,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     {
         lock (DistortionGate)
         {
-            var track = new StreamTrack<FaceFrame>();
+            var track = new StreamTrack<FaceFrame> { NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE" };
             var face = new ProceduralFacePose();
             uint trigger = 0;
             bool more;
@@ -434,7 +435,7 @@ internal sealed class BackpackLayerManager : TrackLayerManager<BackpackFrame>
     /// </summary>
     public StreamTrack<BackpackFrame> GenerateGlitchLights()
     {
-        var track = new StreamTrack<BackpackFrame>();
+        var track = new StreamTrack<BackpackFrame> { Log = Log, NativeTypeName = "N4Anki5Cozmo22BackpackLightsKeyFrameE" };
         var leds = new ushort[5];
         track.AddKeyFrameToBack(new BackpackFrame(0, 200, (ushort[])leds.Clone()));
         leds[Middle] = Red;
@@ -615,7 +616,7 @@ internal sealed class TrackLayerComponent
     public Action<string>? Log
     {
         get => Face.Log;
-        set => Face.Log = value;
+        set { Face.Log = value; Backpack.Log = value; }
     }
 
     // fidelity: M5-010
@@ -763,7 +764,7 @@ internal sealed class TrackLayerComponent
         }
         else if (start + (long)next.Trigger <= t)
         {
-            log?.Invoke("warning: AnimationStreamer.GetFaceHelper: the next procedural face keyframe is also due");
+            log?.Invoke($"warning: AnimationStreamer.GetFaceHelper.FramesTooClose: currentFrameTriggerTime: {unchecked((int)kf.Trigger)} ms, nextFrameTriggerTime: {unchecked((int)next.Trigger)}, StreamTime: {unchecked(t - start)}");
             track.MoveToNext();
             return false;
         }
@@ -783,6 +784,15 @@ internal sealed class TrackLayerComponent
 
     /// <summary>FaceLayerManager::KeepFaceAlive (A33).</summary>
     public void KeepFaceAlive(LiveIdleParams p) => Face.KeepFaceAlive(p);
+
+    // fidelity: M5-044
+    internal void Destroy()
+    {
+        LastFace = new ProceduralFacePose(); // managed release of +0x10 precedes the three managers.
+        Face.Clear();
+        Backpack.Clear();
+        // +4 audio manager: no M5-owned audio layers. Owned references release without send or logger calls.
+    }
 
     /// <summary>Back to the constructed state (a removed robot): no layers, the default stored face, timers 0.</summary>
     public void Reset()
