@@ -11647,3 +11647,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint796 - FX updater source boundaries
 
 `20261010-sound-fx-updater-candidate-source-disposition.md` pays777's14 retained encodings with primary six-entry local ARM byte/edge witnesses; all15 finite immediate candidates now attributed. Corrects777 minimum source9CDCFE to actual9CDAFE. No admitted settings/property/data/size or notification recipient supplied;016 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint797 - combined arithmetic and memory-width tracking
+
+`20261010-sound-rate-frame-combined-memory-disposition.md` composes791/785 arithmetic and784 scalar spans, corrects1/2/4-byte signed/unsigned literal/GOT propagation with four primary opcode witnesses, and retires unsupported wide-load guesses.6855 windows/300 events/434 caps; no extra/missing key versus either baseline.043/092/099/120/124/130 PARTIAL;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

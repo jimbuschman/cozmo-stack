@@ -1,0 +1,38 @@
+{
+  "engineSHA256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "rows": [
+    {
+      "address": "0x9ce40c",
+      "bytes": "0160dbe4",
+      "instruction": "ldrb r6, [fp], #1",
+      "transferBytes": 1,
+      "signed": false,
+      "writeback": true
+    },
+    {
+      "address": "0x9ce418",
+      "bytes": "b050dbe1",
+      "instruction": "ldrh r5, [fp]",
+      "transferBytes": 2,
+      "signed": false,
+      "writeback": false
+    },
+    {
+      "address": "0xa085b4",
+      "bytes": "f680d4e1",
+      "instruction": "ldrsh r8, [r4, #6]",
+      "transferBytes": 2,
+      "signed": true,
+      "writeback": false
+    },
+    {
+      "address": "0xa55e84",
+      "bytes": "d400dde1",
+      "instruction": "ldrsb r0, [sp, #4]",
+      "transferBytes": 1,
+      "signed": true,
+      "writeback": false
+    }
+  ],
+  "limit": "Instruction decoding witnesses only; no actual input memory value or rate writer is inferred."
+}

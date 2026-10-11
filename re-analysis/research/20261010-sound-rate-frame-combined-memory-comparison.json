@@ -1,0 +1,19 @@
+{
+  "events": 300,
+  "caps": 434,
+  "windows": [
+    "processed candidate windows 6855"
+  ],
+  "comparisons": [
+    {
+      "baseline": "20261010-sound-rate-frame-flag-arithmetic-expansion.txt",
+      "extra": [],
+      "missing": []
+    },
+    {
+      "baseline": "20261010-sound-rate-frame-scalar-width-expansion.txt",
+      "extra": [],
+      "missing": []
+    }
+  ]
+}
