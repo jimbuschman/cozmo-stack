@@ -3491,3 +3491,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint860 — teardown nearby-PC input check
 
 `20261011-sound-teardown-composed-pc-disposition.md` checks the five original084/118 entries in852's nearby-PC method: four windows/zero later events/zero caps. One initial raw ThumbADR equalsA55A84 and is explicitly retained, then primary shows actualARM BL9BDA88; other seeds are anARM MOV and two positively referenced literal words. No actual caller or all-mode/alias exclusion;084/118 PARTIAL. Earlier direct/request/owner/846 contracts retained without full pointer or helper repeat.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint861 — shared descriptor paired slot-load navigation
+
+`20261011-sound-descriptor-paired-slot-disposition.md` checks a different original024 consumer form: ARM LDRD48/4C/50 can select a4C/50 word in either loaded register.23 pairs/zero selected-register calls/zero caps within128-byte straight windows. Primary9AF358 confirms two-word mapping and later overwrite before direct call; no shared receiver/ID or all conditional/block/foreign input exclusion. SI562/760/841/842 retained;024 PARTIAL for actual descriptor-field decision consumer.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

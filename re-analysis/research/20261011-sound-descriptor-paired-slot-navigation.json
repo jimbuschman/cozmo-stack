@@ -1,0 +1,376 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "seeds": [
+    {
+      "address": "009AF358",
+      "instruction": "ldrd r2, r3, [sp, #0x48]",
+      "base": "sp",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r2",
+          "offset": 72
+        },
+        {
+          "register": "r3",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A42E34",
+      "instruction": "ldrd r2, r3, [ip, #0x48]",
+      "base": "ip",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r2",
+          "offset": 72
+        },
+        {
+          "register": "r3",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A42E48",
+      "instruction": "ldrd r0, r1, [ip, #0x48]",
+      "base": "ip",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r0",
+          "offset": 72
+        },
+        {
+          "register": "r1",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A43324",
+      "instruction": "ldrd r2, r3, [r4, #0x48]",
+      "base": "r4",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r2",
+          "offset": 72
+        },
+        {
+          "register": "r3",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A43344",
+      "instruction": "ldrd r2, r3, [r4, #0x48]",
+      "base": "r4",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r2",
+          "offset": 72
+        },
+        {
+          "register": "r3",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A44304",
+      "instruction": "ldrd r2, r3, [r4, #0x48]",
+      "base": "r4",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r2",
+          "offset": 72
+        },
+        {
+          "register": "r3",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A44434",
+      "instruction": "ldrd r0, r1, [r4, #0x48]",
+      "base": "r4",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r0",
+          "offset": 72
+        },
+        {
+          "register": "r1",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A44584",
+      "instruction": "ldrd r2, r3, [r4, #0x48]",
+      "base": "r4",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r2",
+          "offset": 72
+        },
+        {
+          "register": "r3",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A4AFB4",
+      "instruction": "ldrd r6, r7, [r8, #0x48]",
+      "base": "r8",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A4C260",
+      "instruction": "ldrd r0, r1, [r3, #0x48]",
+      "base": "r3",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r0",
+          "offset": 72
+        },
+        {
+          "register": "r1",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A59774",
+      "instruction": "ldrd r6, r7, [ip, #0x48]",
+      "base": "ip",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A59E2C",
+      "instruction": "ldrd r0, r1, [sl, #0x48]",
+      "base": "sl",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r0",
+          "offset": 72
+        },
+        {
+          "register": "r1",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A59F38",
+      "instruction": "ldrd r2, r3, [sl, #0x48]",
+      "base": "sl",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r2",
+          "offset": 72
+        },
+        {
+          "register": "r3",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6B5C0",
+      "instruction": "ldrd r4, r5, [r3, #0x48]",
+      "base": "r3",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r4",
+          "offset": 72
+        },
+        {
+          "register": "r5",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F200",
+      "instruction": "ldrd r6, r7, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F438",
+      "instruction": "ldrd r4, r5, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r4",
+          "offset": 72
+        },
+        {
+          "register": "r5",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F49C",
+      "instruction": "ldrd r6, r7, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F4F8",
+      "instruction": "ldrd r6, r7, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F5A4",
+      "instruction": "ldrd r4, r5, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r4",
+          "offset": 72
+        },
+        {
+          "register": "r5",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F5FC",
+      "instruction": "ldrd r6, r7, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F678",
+      "instruction": "ldrd r6, r7, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A6F704",
+      "instruction": "ldrd r6, r7, [r0, #0x48]",
+      "base": "r0",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r6",
+          "offset": 72
+        },
+        {
+          "register": "r7",
+          "offset": 76
+        }
+      ]
+    },
+    {
+      "address": "00A78478",
+      "instruction": "ldrd r4, r5, [r3, #0x48]",
+      "base": "r3",
+      "displacement": 72,
+      "slots": [
+        {
+          "register": "r4",
+          "offset": 72
+        },
+        {
+          "register": "r5",
+          "offset": 76
+        }
+      ]
+    }
+  ],
+  "candidates": [],
+  "window_caps": [],
+  "limit": "Aligned ARM LDRD immediate48/4C/50 in97D000..ABC000;128-byte straight windows,MOV aliases,first branch/call stops. Conditional alternatives,mixed modes,Thumb,composed bases,block loads,receiver identity and runtime absence not certified."
+}
