@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-11",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "ff7b82a1f172a926f819b3fd66a3fb2e200690ee0446936dff4f8184bf54bee1",
+  "inventory_sha256": "5ad6f10089969307eafb17956efb71c3c0e04196832671a4c4159df4d4ac5313",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -139,7 +139,8 @@
         "C9 UpdateAmountToSend 0x0057C6F6..0x0057C7AC (14 at 0x0057C79E add.w r1,r1,#0xe)",
         "C10 the AnimationState handler writes the played counters (0x00537FD0..0x0053800C)",
         "C11 bytes += EngineToRobot::Size(), frames += 1 for 0x8E/0x8F (0x0057BFB0..0x0057BFCC)",
-        "C12 EndOfAnimation counts one frame plus its bytes (0x0057C464..0x0057C496); C13 the ctor zeroes the counters (0x0050FD0A)"
+        "C12 EndOfAnimation counts one frame plus its bytes (0x0057C464..0x0057C496); C13 the ctor zeroes the counters (0x0050FD0A)",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 1 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -247,7 +248,8 @@
         "1k HandleDefaultCameraParams: no time-sync gate (0x00537114..0x0053712A); needs IsInitialized (0x006B2CD6); min <= init <= max; SetCameraSettings(init, gain) first (0x00657CCA), then SetCameraExposureParams (0x00657D04)",
         "1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166)",
         "1o the engine never requests DefaultCameraParams",
-        "Functions (exports): HandleDefaultCameraParams entry 0x00537114, VisionComponent::HandleDefaultCameraParams 0x00657CA0, VisionComponent::SetCameraSettings 0x006560C8, VisionSystem::SetNextCameraParams 0x006B229C, VisionSystem::SetCameraExposureParams 0x006B92F0. Handoffs: VisionSystem::IsInitialized 0x006B2CD6, true after VisionSystem::Init 0x006B0658: M11-059; the consumer of the SetNextCameraParams slot in VisionSystem::Update: M11-060"
+        "Functions (exports): HandleDefaultCameraParams entry 0x00537114, VisionComponent::HandleDefaultCameraParams 0x00657CA0, VisionComponent::SetCameraSettings 0x006560C8, VisionSystem::SetNextCameraParams 0x006B229C, VisionSystem::SetCameraExposureParams 0x006B92F0. Handoffs: VisionSystem::IsInitialized 0x006B2CD6, true after VisionSystem::Init 0x006B0658: M11-059; the consumer of the SetNextCameraParams slot in VisionSystem::Update: M11-060",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 2 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -330,7 +332,8 @@
       "evidence": [
         "header gate 0x6430A6..0x6430EE (index 0, non-factory base, +0x79 == 0); <16 bytes -> TooLittleReadData, result -3 (0x6430F2..0x643478); magic != 0x435A4D4F -> InvalidHeader, result -1 (0x6430FC..0x643112); size > max-16 -> InvalidDataSize, result -1 (0x6430FE..0x64311C)",
         "fits -> resize to size+16 (0x6438E2..0x643936); otherwise ReadingRestOfData re-requests tag = the reply's tag, op 0, Length = size+16, reliable/not-hot, no re-arm (0x643840..0x6438CA)",
-        "the fits-path resize at 0x643922 targets the reply vector (sp+0x44), not the pending buffer; it is a shrink/no-op, so the reassembly copy is bounded at the header total and the delivered non-factory buffer is exactly that total with no tail (pass 4b Q3)"
+        "the fits-path resize at 0x643922 targets the reply vector (sp+0x44), not the pending buffer; it is a shrink/no-op, so the reassembly copy is bounded at the header total and the delivered non-factory buffer is exactly that total with no tail (pass 4b Q3)",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 10 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -500,7 +503,8 @@
         "re-analysis/research/20261010-nv-write-dispatch-rows.md WA1..WA15: Write overloads 0x006443F4 (vector) and 0x006444FC (pointer); checks, padded size limit 0x00644634, failure exit 0x006446F0..0x0064471E, the preceding ERASE request, the 0x48-byte request.",
         "re-analysis/research/20261010-nv-write-dispatch-rows.md WB1..WB21: ProcessRequest jump table 0x00645032; ERASE send with saved Data copy 0x0064512E; WIPEALL sentinel 0x198000 and stale Length/Data 0x0064521A; WRITE dispatch arming; Update state-1 chunk loop 0x00645816..0x00645920 (0x400/0x3F0, header magic 0x435A4D4F, tag step +1 factory / +0x400, deadline clock+5000).",
         "re-analysis/research/20261010-nv-write-dispatch-rows.md WC1..WC5: write timeout 0x006456F4..0x00645758 (gate +0x48, unsigned clock > deadline, WriteTimeout warning, cb(-4), SetState(0), no retry).",
-        "re-analysis/research/20261010-nv-write-dispatch-rows.md WD1..WD9: HandleNVOpResult WIPEALL sentinel 0x0064302C/0x00643030, mid-write ack, last-chunk delivery order, retryable results {-8,-7,-5,-4} with ResendLastCommand and NumRetriesExceeded."
+        "re-analysis/research/20261010-nv-write-dispatch-rows.md WD1..WD9: HandleNVOpResult WIPEALL sentinel 0x0064302C/0x00643030, mid-write ack, last-chunk delivery order, retryable results {-8,-7,-5,-4} with ResendLastCommand and NumRetriesExceeded.",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 11 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -551,21 +555,23 @@
       "hardware_required": false
     },
     "M3-048": {
-      "status": "RECOVERABLE_GAP",
-      "title": "DAS event emission: the $data pairs of sEventF/sWarningF on M3/M4 paths and where they go",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "DAS/log emission: sEventF/sWarningF/sErrorF/sChanneled* entries (level, channel, key, text with the 1023 cut and the (tc) prefix, structured $data pairs) on M3/M4 paths",
       "authority": "libcozmoEngine.so 3.4.0-1204 DAS logging (sEventF/sWarningF).",
       "evidence": [
-        "Robot::SendMessage sWarningF $data pair key 0x00513550 (M3-047); robot.accessory_powerlevel sEventF 0x005372B2..0x00537324 (M4-008); HandleRobotStopped sEventF $data = to_string(cliff+0x3C) 0x005353A4..0x005353F6 (M4-019)."
+        "Robot::SendMessage sWarningF $data pair key 0x00513550 (M3-047); robot.accessory_powerlevel sEventF 0x005372B2..0x00537324 (M4-008); HandleRobotStopped sEventF $data = to_string(cliff+0x3C) 0x005353A4..0x005353F6 (M4-019).",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 7: sEventF/sErrorF/sWarningF 0x0080D014..0x0080D36E (1024-byte vsnprintf, (tc%04u) prefix for warnings/errors, gTickTimeProvider 0x004EB2DA..0x004EB2EE); MultiLoggerProvider with one DasLoggerProvider (cozmo_startup 0x00665D04..0x00665DAC); level mapping to _DAS_LogKv 0x006671D0..0x00667210; kv passed structured."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M3-049": {
-      "status": "RECOVERABLE_GAP",
-      "title": "Json::LogicError catcher on M3-024's path",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Json::LogicError from HandleFirmwareVersion on a non-object firmware JSON root: no engine catcher (terminate); the stack isolates it under M1-034",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "Catcher range 0x008EADC2..0x008EAE64 (M3-024 unresolved); CozmoEngine.cs:882 MISSING line."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 8: the throw path in Json::Value::resolveReference 0x008EACB8 (0x008EADC2..0x008EAE64), reached from root[\"sim\"] 0x0053692E..0x00536938 before anything is set; no __cxa_begin_catch in any frame up to CozmoInstanceRunner::Run (all 116 catch sites mapped); std::set_terminate only in cozmo_shutdown 0x00667860..0x00667864.",
+        "M1-034 (operator, 2026-10-07): handler exceptions are caught, logged and survived; its ruling covers the M1-029 firmware-JSON handlers."
       ],
       "live_path": true,
       "hardware_required": false
@@ -579,6 +585,16 @@
       ],
       "live_path": true,
       "hardware_required": true
+    },
+    "M3-051": {
+      "status": "RECOVERABLE_GAP",
+      "title": "libDAS processing of engine log entries: DASConfig level filtering, $level/$ts and the three sinks",
+      "authority": "libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json.",
+      "evidence": [
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to \"event\"."
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
   }
 }

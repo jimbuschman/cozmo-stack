@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-11",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "0223cada80de92b7d18a1d41c134b052d6778110a43fa1efdcc808971d65be55",
+  "inventory_sha256": "78742f359e858676b477fa1346777d1d1e43ad0279a21cae41e8bc564d1e6960",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -110,7 +110,8 @@
         "C11.1 DockingComponent+0xC is an ObjectID, the object currently being docked with (the dock target): default -1 (0x0063BA1E/0x0063BA2A); only writer DockWithObject (0x0063BAAC/0x0063BAB6); readers include the Moved 0x0053416E/74 and Stopped 0x0053497C/84 exclusions",
         "Handoff, owned by M11-041 (overlap ruling 2026-10-10: HandleActiveObjectConnectionState 0x00533B3C..0x00533C34 with its slot gate): LC8a 0x00533B56 slot > 4 is ignored; AddConnectedActiveObject rejects activeID >= 5 (0x00623040)",
         "Handoff, owned by M11-013: LC8e SetID gives every ActiveCube of a type the same ObjectID for the process lifetime (0x004EF468..0x004EF52A)",
-        "Moved callees (0x00533E4C..0x005341BA): BlockWorld::FindLocatedMatchingObjects blx 0x4A7084 0x0053401E (M11-004); CarryingComponent::IsCarryingObject blx 0x4A6FAC 0x0053411E/0x0053417C; ObjectPoseConfirmer::MarkObjectDirty blx 0x4A7174 0x0053413C (M11-009); ObjectMoved build/broadcast blx 0x4AA108 0x005341A8, blx 0x4A5B0C 0x005341B0; BlockTapFilterComponent::ShouldIgnoreMovementDueToDoubleTap blx 0x4A7FF0 0x00534278 (M4-023)"
+        "Moved callees (0x00533E4C..0x005341BA): BlockWorld::FindLocatedMatchingObjects blx 0x4A7084 0x0053401E (M11-004); CarryingComponent::IsCarryingObject blx 0x4A6FAC 0x0053411E/0x0053417C; ObjectPoseConfirmer::MarkObjectDirty blx 0x4A7174 0x0053413C (M11-009); ObjectMoved build/broadcast blx 0x4AA108 0x005341A8, blx 0x4A5B0C 0x005341B0; BlockTapFilterComponent::ShouldIgnoreMovementDueToDoubleTap blx 0x4A7FF0 0x00534278 (M4-023)",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 3 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -216,7 +217,8 @@
         "Handoff, owned by M11-061: E6 0x006B4FB6..0x006B4FE4 VisionSystem::Update drains the deque",
         "Handoff, owned by M11-061: E7 0x006B1A76..0x006B1CC6 EnableMode(14) sets/clears mask bit 14 at VisionSystem+0xAC",
         "E8 0x00632368..0x00632380 EngineToRobot(SetHeadlight) then SendMessage reliable, not hot",
-        "Re-read handoff: ldr.w r0,[r0,#0x258]; movs r1,#0xE; blx 0x4A91CC VisionComponent::EnableMode(14, on) at 0x00632350..0x00632364 (M11-061); then SetHeadlight blx 0x4B8E38 0x00632374 and Robot::SendMessage blx 0x4A5368 0x00632380; the LimitedExposure reader (E9): M11-057"
+        "Re-read handoff: ldr.w r0,[r0,#0x258]; movs r1,#0xE; blx 0x4A91CC VisionComponent::EnableMode(14, on) at 0x00632350..0x00632364 (M11-061); then SetHeadlight blx 0x4B8E38 0x00632374 and Robot::SendMessage blx 0x4A5368 0x00632380; the LimitedExposure reader (E9): M11-057",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 4 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -233,7 +235,8 @@
         "C12.2 the enable=1 branch is live: game tag 0xBB EnableLightStates -> 0x0063A48A..0x0063A496 and 0x0063AFF8..0x0063B006 pass enable = (msg.byte0 == 0); the app sends it from Robot.cs:1902-1907",
         "C13.1 EnableGameLayerOnly branch detail: all-objects enable=0 stops layer 0 once (0x00639ADA/DE, 0x00639AE6) and sets comp+0x22 := 0 (0x00639B32); single-object enable=0 stops layers 0 and 2 (0x00639AA2, 0x00639AB0) and does not touch comp+0x22; enable=1 sets ObjectInfo+0x1C := 1 and (all-objects only) comp+0x22 := 1",
         "C13.4 EnableGameLayerOnly returns without acting when comp+0x22 (all-objects, 0x00639A16..0x00639A1C) or ObjectInfo+0x1C (single-object, 0x006399DC..0x006399E0) already equals enable",
-        "Handoffs: PickNextAnimForDefaultLayer's BlockWorld::GetLocatedObjectByIdHelper blx 0x4A7114 at 0x00637DB4 (Visible needs the located object's +0x24 == 1), SetObjectLights' located lookup blx 0x4A7114 0x00637E82 and connected lookup blx 0x4A6FB8 0x00637E96, ActiveCube::MakeStateRelativeToXY blx 0x4B9288 0x00637EE8: M11-004; the +0x2C4 writers: Robot::Delocalize M11-053, SetLocalizedTo M11-044, CheckAndUpdateTreadsState M10-001"
+        "Handoffs: PickNextAnimForDefaultLayer's BlockWorld::GetLocatedObjectByIdHelper blx 0x4A7114 at 0x00637DB4 (Visible needs the located object's +0x24 == 1), SetObjectLights' located lookup blx 0x4A7114 0x00637E82 and connected lookup blx 0x4A6FB8 0x00637E96, ActiveCube::MakeStateRelativeToXY blx 0x4B9288 0x00637EE8: M11-004; the +0x2C4 writers: Robot::Delocalize M11-053, SetLocalizedTo M11-044, CheckAndUpdateTreadsState M10-001",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 5 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -265,7 +268,8 @@
         "C12.4 the stats gate r6=0 is false on the AddRobotStateToHistory failure (0x00512BEE/0x00512BF4/0x00512C38), the GetLastStateWithFrameID failure (0x00513088/0x00513110) and the origin miss (0x00512F0C)",
         "C13.2 the treads-change Delocalize stores +0x2C0 = 0 at 0x00512B9C then b 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch increment; the stats run unconditionally",
         "C13.3 RobotStateHistory ctor sets a 3000 ms retention window at +0x3c (0x0053088D..0x005308C6); the stack's parallel cliff history mirrors it",
-        "Handoffs in HandleRobotStopped: the gate ldrb r0,[r0,#4]; cbz 0x00535436..0x00535438; BehaviorManager::RequestCurrentBehaviorEndImmediately blx 0x4AA1C8 0x00535454 (M8-019); ldr.w r0,[r4,#0x250]; mov.w r1,#-1; blx 0x4A7ABC ActionList::Cancel(-1) 0x00535466..0x0053546E (M8-015); the RobotStopped game message blx 0x4AA1D4 0x00535478 and Robot::Broadcast 0x00535480. In UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4 (M10-015). The history lookups (C12.4): M11-051/M11-053; the charger geometry: M13-009"
+        "Handoffs in HandleRobotStopped: the gate ldrb r0,[r0,#4]; cbz 0x00535436..0x00535438; BehaviorManager::RequestCurrentBehaviorEndImmediately blx 0x4AA1C8 0x00535454 (M8-019); ldr.w r0,[r4,#0x250]; mov.w r1,#-1; blx 0x4A7ABC ActionList::Cancel(-1) 0x00535466..0x0053546E (M8-015); the RobotStopped game message blx 0x4AA1D4 0x00535478 and Robot::Broadcast 0x00535480. In UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4 (M10-015). The history lookups (C12.4): M11-051/M11-053; the charger geometry: M13-009",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 6 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
       ],
       "live_path": true,
       "hardware_required": false
@@ -450,11 +454,12 @@
       "hardware_required": false
     },
     "M4-035": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BlockFilter::SendBlockPoolData: the block-pool broadcast to the game on M4-010's path",
       "authority": "libcozmoEngine.so 3.4.0-1204 BlockFilter.",
       "evidence": [
-        "BlockFilter::SendBlockPoolData 0x0061A9C0; CubeConnections.cs:511-513 MISSING line."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 9: BlockFilter::SendBlockPoolData 0x0061AE54 (the info 0x0061AE5A..0x0061AE78; payload 0x0061AEAA..0x0061AEF4; MessageEngineToGame tag 0x7E via UiMessageHandler::Broadcast, vtable 0x0102FE14 slot 9); M4-010 caller UpdateDiscovering 0x0061A8E6..0x0061A9C4 (call site 0x0061A9C0); game-driven callers 0xE6/0xE7/0xEA/0xEB.",
+        "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/BlockPoolDataMessage.cs:106-123 (wire layout, authority 2)."
       ],
       "live_path": true,
       "hardware_required": false

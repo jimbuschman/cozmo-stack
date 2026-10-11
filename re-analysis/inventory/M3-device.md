@@ -453,3 +453,12 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Reopened | M3-012 (UpdateAmountToSend logs). |
 | Kept IMPLEMENTATION_GAP | M3-021, M3-024, M3-028, M3-032, M3-034, M3-043, M3-045, M3-047 (defects in each record's unresolved). |
 | New | M3-048 DAS $data emission (RECOVERABLE_GAP), M3-049 Json::LogicError catcher (RECOVERABLE_GAP), M3-050 robot use of encodings 5/6/7 (HARDWARE_ONLY, split from M3-045). |
+
+
+## Fix rows (manager, 2026-10-11; research/20261011-m3m4-fix-rows.md)
+
+| Change | Records |
+| --- | --- |
+| Fix rows adopted | M3-012, M3-021, M3-028, M3-043, M3-048 (now IMPLEMENTATION_GAP, engine side) from research/20261011-m3m4-fix-rows.md. |
+| Reclassified | M3-049: retitled; COMPATIBILITY_POLICY under M1-034 (no engine catcher; the original terminates). |
+| New | M3-051 libDAS processing (RECOVERABLE_GAP). |

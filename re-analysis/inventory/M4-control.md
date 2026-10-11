@@ -662,3 +662,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Settled EXACT_SOURCE | M4-001, M4-002, M4-003, M4-016, M4-020, M4-026, M4-028 (lower-layer part), M4-031, M4-033 (M4-002/016 with added evidence). |
 | Kept IMPLEMENTATION_GAP | M4-008, M4-009, M4-010, M4-017, M4-018, M4-019, M4-027 (defects in each record's unresolved). |
 | New | M4-035 BlockFilter::SendBlockPoolData (RECOVERABLE_GAP). |
+
+
+## Fix rows (manager, 2026-10-11; research/20261011-m3m4-fix-rows.md)
+
+| Change | Records |
+| --- | --- |
+| Fix rows adopted | M4-009, M4-017, M4-018, M4-019; M4-035 now IMPLEMENTATION_GAP with the function at 0x0061AE54 (the old evidence cited a call site). |
