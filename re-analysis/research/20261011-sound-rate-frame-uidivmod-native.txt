@@ -1,0 +1,36 @@
+libacattsandroid.so __aeabi_uidivmod 0003FF75 size=26
+0003FF74 0029 cmp r1, #0
+0003FF76 f7d0 beq #0x3ff68
+0003FF78 2de90340 push.w {r0, r1, lr}
+0003FF7C fff7b2ff bl #0x3fee4
+0003FF80 bde80640 pop.w {r1, r2, lr}
+0003FF84 02fb00f3 mul r3, r2, r0
+0003FF88 a1eb0301 sub.w r1, r1, r3
+0003FF8C 7047 bx lr
+libDAS.so __aeabi_uidivmod 00028C55 size=26
+00028C54 0029 cmp r1, #0
+00028C56 f7d0 beq #0x28c48
+00028C58 2de90340 push.w {r0, r1, lr}
+00028C5C fff7b2ff bl #0x28bc4
+00028C60 bde80640 pop.w {r1, r2, lr}
+00028C64 02fb00f3 mul r3, r2, r0
+00028C68 a1eb0301 sub.w r1, r1, r3
+00028C6C 7047 bx lr
+libgnustl_shared.so __aeabi_uidivmod 0009B3F1 size=18
+0009B3F0 0029 cmp r1, #0
+0009B3F2 f4d0 beq #0x9b3de
+0009B3F4 03b5 push {r0, r1, lr}
+0009B3F6 fff7bdff bl #0x9b374
+0009B3FA 0ebc pop {r1, r2, r3}
+0009B3FC 4243 muls r2, r0, r2
+0009B3FE 891a subs r1, r1, r2
+0009B400 1847 bx r3
+libstlport_shared.so __aeabi_uidivmod 0004EEA4 size=32
+0004EEA4 000051e3 cmp r1, #0
+0004EEA8 faffff0a beq #0x4ee98
+0004EEAC 03402de9 push {r0, r1, lr}
+0004EEB0 d1ffffeb bl #0x4edfc
+0004EEB4 0640bde8 pop {r1, r2, lr}
+0004EEB8 920003e0 mul r3, r2, r0
+0004EEBC 031041e0 sub r1, r1, r3
+0004EEC0 1eff2fe1 bx lr

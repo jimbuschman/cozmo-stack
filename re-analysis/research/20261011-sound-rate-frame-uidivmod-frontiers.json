@@ -1,0 +1,317 @@
+[
+  {
+    "library": "libacattsandroid.so",
+    "sha256": "73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698",
+    "start": "0003FF68",
+    "end": "0003FF72",
+    "mode": "Thumb",
+    "instructions": [
+      {
+        "address": "0003FF68",
+        "bytes": "08b1",
+        "instruction": "cbz r0, #0x3ff6e",
+        "reads": [
+          "r0"
+        ],
+        "writes": []
+      },
+      {
+        "address": "0003FF6A",
+        "bytes": "4ff0ff30",
+        "instruction": "mov.w r0, #-1",
+        "reads": [],
+        "writes": [
+          "r0"
+        ]
+      },
+      {
+        "address": "0003FF6E",
+        "bytes": "00f00fb8",
+        "instruction": "b.w #0x3ff90",
+        "reads": [],
+        "writes": []
+      }
+    ]
+  },
+  {
+    "library": "libDAS.so",
+    "sha256": "0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c",
+    "start": "00028C48",
+    "end": "00028C52",
+    "mode": "Thumb",
+    "instructions": [
+      {
+        "address": "00028C48",
+        "bytes": "08b1",
+        "instruction": "cbz r0, #0x28c4e",
+        "reads": [
+          "r0"
+        ],
+        "writes": []
+      },
+      {
+        "address": "00028C4A",
+        "bytes": "4ff0ff30",
+        "instruction": "mov.w r0, #-1",
+        "reads": [],
+        "writes": [
+          "r0"
+        ]
+      },
+      {
+        "address": "00028C4E",
+        "bytes": "01f095be",
+        "instruction": "b.w #0x2a97c",
+        "reads": [],
+        "writes": []
+      }
+    ]
+  },
+  {
+    "library": "libgnustl_shared.so",
+    "sha256": "edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8",
+    "start": "0009B3DE",
+    "end": "0009B3E2",
+    "mode": "Thumb",
+    "instructions": [
+      {
+        "address": "0009B3DE",
+        "bytes": "c046",
+        "instruction": "mov r8, r8",
+        "reads": [
+          "r8"
+        ],
+        "writes": [
+          "r8"
+        ]
+      },
+      {
+        "address": "0009B3E0",
+        "bytes": "7847",
+        "instruction": "bx pc",
+        "reads": [
+          "pc"
+        ],
+        "writes": [
+          "pc"
+        ]
+      }
+    ]
+  },
+  {
+    "library": "libgnustl_shared.so",
+    "sha256": "edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8",
+    "start": "0009B3E4",
+    "end": "0009B3F0",
+    "mode": "ARM",
+    "instructions": [
+      {
+        "address": "0009B3E4",
+        "bytes": "000050e3",
+        "instruction": "cmp r0, #0",
+        "reads": [
+          "r0"
+        ],
+        "writes": [
+          "cpsr"
+        ]
+      },
+      {
+        "address": "0009B3E8",
+        "bytes": "0000e013",
+        "instruction": "mvnne r0, #0",
+        "reads": [],
+        "writes": [
+          "r0"
+        ]
+      },
+      {
+        "address": "0009B3EC",
+        "bytes": "3f0000ea",
+        "instruction": "b #0x9b4f0",
+        "reads": [
+          "pc"
+        ],
+        "writes": [
+          "pc"
+        ]
+      }
+    ]
+  },
+  {
+    "library": "libstlport_shared.so",
+    "sha256": "196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03",
+    "start": "0004EE98",
+    "end": "0004EEA4",
+    "mode": "ARM",
+    "instructions": [
+      {
+        "address": "0004EE98",
+        "bytes": "000050e3",
+        "instruction": "cmp r0, #0",
+        "reads": [
+          "r0"
+        ],
+        "writes": [
+          "cpsr"
+        ]
+      },
+      {
+        "address": "0004EE9C",
+        "bytes": "0000e013",
+        "instruction": "mvnne r0, #0",
+        "reads": [],
+        "writes": [
+          "r0"
+        ]
+      },
+      {
+        "address": "0004EEA0",
+        "bytes": "ba58ffea",
+        "instruction": "b #0x25190",
+        "reads": [
+          "pc"
+        ],
+        "writes": [
+          "pc"
+        ]
+      }
+    ]
+  },
+  {
+    "library": "libacattsandroid.so",
+    "sha256": "73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698",
+    "start": "0003FEE4",
+    "end": "0003FEEA",
+    "mode": "Thumb",
+    "instructions": [
+      {
+        "address": "0003FEE4",
+        "bytes": "4a1e",
+        "instruction": "subs r2, r1, #1",
+        "reads": [
+          "r1"
+        ],
+        "writes": [
+          "r2"
+        ]
+      },
+      {
+        "address": "0003FEE6",
+        "bytes": "08bf",
+        "instruction": "it eq",
+        "reads": [],
+        "writes": [
+          "itstate"
+        ]
+      },
+      {
+        "address": "0003FEE8",
+        "bytes": "7047",
+        "instruction": "bxeq lr",
+        "reads": [
+          "lr"
+        ],
+        "writes": [
+          "pc"
+        ]
+      }
+    ]
+  },
+  {
+    "library": "libDAS.so",
+    "sha256": "0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c",
+    "start": "00028BC4",
+    "end": "00028BCA",
+    "mode": "Thumb",
+    "instructions": [
+      {
+        "address": "00028BC4",
+        "bytes": "4a1e",
+        "instruction": "subs r2, r1, #1",
+        "reads": [
+          "r1"
+        ],
+        "writes": [
+          "r2"
+        ]
+      },
+      {
+        "address": "00028BC6",
+        "bytes": "08bf",
+        "instruction": "it eq",
+        "reads": [],
+        "writes": [
+          "itstate"
+        ]
+      },
+      {
+        "address": "00028BC8",
+        "bytes": "7047",
+        "instruction": "bxeq lr",
+        "reads": [
+          "lr"
+        ],
+        "writes": [
+          "pc"
+        ]
+      }
+    ]
+  },
+  {
+    "library": "libgnustl_shared.so",
+    "sha256": "edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8",
+    "start": "0009B374",
+    "end": "0009B378",
+    "mode": "Thumb",
+    "instructions": [
+      {
+        "address": "0009B374",
+        "bytes": "0123",
+        "instruction": "movs r3, #1",
+        "reads": [],
+        "writes": [
+          "r3"
+        ]
+      },
+      {
+        "address": "0009B376",
+        "bytes": "0022",
+        "instruction": "movs r2, #0",
+        "reads": [],
+        "writes": [
+          "r2"
+        ]
+      }
+    ]
+  },
+  {
+    "library": "libstlport_shared.so",
+    "sha256": "196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03",
+    "start": "0004EDFC",
+    "end": "0004EE04",
+    "mode": "ARM",
+    "instructions": [
+      {
+        "address": "0004EDFC",
+        "bytes": "012051e2",
+        "instruction": "subs r2, r1, #1",
+        "reads": [
+          "r1"
+        ],
+        "writes": [
+          "r2"
+        ]
+      },
+      {
+        "address": "0004EE00",
+        "bytes": "1eff2f01",
+        "instruction": "bxeq lr",
+        "reads": [],
+        "writes": [
+          "pc"
+        ]
+      }
+    ]
+  }
+]

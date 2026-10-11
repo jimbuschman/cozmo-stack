@@ -1,0 +1,43 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009EBE6C..0x009EBEB0 exclusive; ARM;
+009EBE6C: ldr          r2, [pc, #0x4f4] ; word[009EC368]=00654268
+009EBE70: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009EBE74: add          fp, sp, #0x20
+009EBE78: sub          sp, sp, #0x1c
+009EBE7C: ldr          r2, [pc, r2]
+009EBE80: mov          r4, r0
+009EBE84: mov          r0, #0x3e8
+009EBE88: ldr          r6, [pc, #0x4dc] ; word[009EC36C]=00654230
+009EBE8C: ldr          r5, [pc, #0x4dc] ; word[009EC370]=006A1C44
+009EBE90: ldr          r1, [r2]
+009EBE94: bl           #0x4b3e70
+009EBE98: ldr          r6, [pc, r6]
+009EBE9C: add          r5, pc, r5
+009EBEA0: ldr          r7, [r6]
+009EBEA4: mov          r1, r0
+009EBEA8: ldr          r0, [r7, #0x4c]
+009EBEAC: bl           #0x4a6694
+010400EC: raw=01052444 relocated=01052444 
+RANGE 0x009AF994..0x009AF9B0 exclusive; ARM;
+009AF994: vmov         s14, r5
+009AF998: mov          r1, r7
+009AF99C: vmov         r0, s16
+009AF9A0: vcvt.f32.u32 s14, s14
+009AF9A4: vsub.f32     s15, s15, s14
+009AF9A8: vstr         s15, [r4, #0x70]
+009AF9AC: bl           #0x4be310
+RANGE 0x00A58D8C..0x00A58DC0 exclusive; ARM;
+00A58D8C: ldr          r2, [pc, #0xb0] ; word[00A58E44]=FFFFFDCC
+00A58D90: ldr          r3, [pc, #0xa4] ; word[00A58E3C]=FFFFFEF8
+00A58D94: ldr          r2, [r6, r2]
+00A58D98: ldr          r3, [r6, r3]
+00A58D9C: ldrh         r7, [r2]
+00A58DA0: ldr          r5, [r3]
+00A58DA4: add          r0, r7, #0x1fc0
+00A58DA8: mov          r1, r7
+00A58DAC: add          r0, r0, #0x3f
+00A58DB0: bl           #0x4b3e70
+00A58DB4: mov          r1, r5
+00A58DB8: mul          r0, r7, r0
+00A58DBC: bl           #0x4be310

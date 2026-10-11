@@ -3312,3 +3312,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint816 - existing helper post-call register frontiers
 
 `20261011-sound-rate-frame-helper-postcall-disposition.md` pays four concrete branch destinations and the999018 leaf with register definitions before use;consistent NZCV prevents skipping both complementaryEQ/NE definitions. Three later numerical-helper call frontiers remain explicitly named,including source-positiveUIDIVMOD linkage4A6694. No arithmetic/body,selected-provider or all-alias promotion. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint817 - reconcile existing division follow-ups
+
+`20261011-sound-rate-frame-uidivmod-disposition.md` joins816's three call frontiers to existingDZ659/DL754 source:nonzero wrappers/UIDIV entries define retainedR2 before use;zero-handler and external raise inputs stay UNKNOWN. Actual9EBE94 divisor is duration1052444,not rate105243C;UIDIVMOD uses its quotient. No repeated helper-body recovery or input/writer closure. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

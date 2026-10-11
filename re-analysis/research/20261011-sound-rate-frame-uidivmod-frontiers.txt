@@ -1,0 +1,33 @@
+libacattsandroid.so 0003FF68..0003FF72 Thumb
+0003FF68 08b1 cbz r0, #0x3ff6e
+0003FF6A 4ff0ff30 mov.w r0, #-1
+0003FF6E 00f00fb8 b.w #0x3ff90
+libDAS.so 00028C48..00028C52 Thumb
+00028C48 08b1 cbz r0, #0x28c4e
+00028C4A 4ff0ff30 mov.w r0, #-1
+00028C4E 01f095be b.w #0x2a97c
+libgnustl_shared.so 0009B3DE..0009B3E2 Thumb
+0009B3DE c046 mov r8, r8
+0009B3E0 7847 bx pc
+libgnustl_shared.so 0009B3E4..0009B3F0 ARM
+0009B3E4 000050e3 cmp r0, #0
+0009B3E8 0000e013 mvnne r0, #0
+0009B3EC 3f0000ea b #0x9b4f0
+libstlport_shared.so 0004EE98..0004EEA4 ARM
+0004EE98 000050e3 cmp r0, #0
+0004EE9C 0000e013 mvnne r0, #0
+0004EEA0 ba58ffea b #0x25190
+libacattsandroid.so 0003FEE4..0003FEEA Thumb
+0003FEE4 4a1e subs r2, r1, #1
+0003FEE6 08bf it eq
+0003FEE8 7047 bxeq lr
+libDAS.so 00028BC4..00028BCA Thumb
+00028BC4 4a1e subs r2, r1, #1
+00028BC6 08bf it eq
+00028BC8 7047 bxeq lr
+libgnustl_shared.so 0009B374..0009B378 Thumb
+0009B374 0123 movs r3, #1
+0009B376 0022 movs r2, #0
+libstlport_shared.so 0004EDFC..0004EE04 ARM
+0004EDFC 012051e2 subs r2, r1, #1
+0004EE00 1eff2f01 bxeq lr
