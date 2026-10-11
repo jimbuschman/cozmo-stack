@@ -2,7 +2,7 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 108 CHECKED native-row obligations / 8 CHECKED scope exclusions / 24 PARTIAL / 0 NOT DONE; checkpoint790 closes the original twelve-caller114 scope; explicit writer/alias/input proofs remain open |
+| Per-item native rows and production joins | PARTIAL | 108 CHECKED native-row obligations / 8 CHECKED scope exclusions / 24 PARTIAL / 0 NOT DONE; checkpoint835 indexes all231 saved cap states; explicit writer/alias/input proofs remain open |
 
 # Q14 per-item work census
 
@@ -3384,3 +3384,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint834 - pre-play authored ranges and live device cap disposition
 
 `20261011-sound-preplay-cap-disposition.md` checks3490 raw property blocks:12 ranges allID2,no authored3B range,two Sounds author3B raw3DCCCCCD. Five of46 saved ranged indices exceedcount1;13 matched3B range states lack that authored input;other28 and all33 device states remain explicit under ID/DF/DA contracts. DF10 operand label corrected to derivedframe-duration1052444 per817. Allfifteen826 windows now have bounded dispositions,not an all-alias proof.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint835 - complete saved-cap review index
+
+`20261011-sound-rate-cap-review-index.md` indexes all231 states/fifteen windows from826 without changing baseline seeds/events/bounds:3 source-branch/count,59 conditional authored-count,13 conditional authored-ID,156 retained-contract/input. Every state keeps address/register/NZCV/evidence;conditional input identity is explicit. This finishes the saved-cap lead,not original all-writer/alias/admission proofs. Do not repeat its loops/helpers;continue a positive unpaid producer/input edge.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
