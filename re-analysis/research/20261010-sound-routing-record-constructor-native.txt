@@ -1,0 +1,117 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009F3190..0x009F3278 exclusive; ARM;
+009F3190: strh         lr, [r0, #0x20]
+009F3194: strh         lr, [r0, #0x22]
+009F3198: pop          {pc}
+009F319C: push         {r4, r5, r6, r7, lr}
+009F31A0: sub          sp, sp, #0xc
+009F31A4: cmp          r3, #0
+009F31A8: cmpne        r1, #0
+009F31AC: mov          ip, #0
+009F31B0: ldrb         r6, [sp, #0x20]
+009F31B4: mov          r4, r0
+009F31B8: ldrb         lr, [sp, #0x24]
+009F31BC: mov          r5, r1
+009F31C0: strh         r3, [r0, #0x34]
+009F31C4: mvn          r3, #0
+009F31C8: str          r2, [r0, #8]
+009F31CC: strb         r6, [r0, #0x36]
+009F31D0: strb         lr, [r0, #0x37]
+009F31D4: str          ip, [r0, #0xc]
+009F31D8: str          ip, [r0, #0x10]
+009F31DC: str          ip, [r0, #0x1c]
+009F31E0: strb         r3, [r0, #0x14]
+009F31E4: strb         r3, [r0, #0x18]
+009F31E8: bne          #0x9f324c
+009F31EC: ldrb         r3, [r5, #0x46]
+009F31F0: mov          r6, #0
+009F31F4: tst          r3, #4
+009F31F8: ldr          r3, [r5, #0x34]
+009F31FC: moveq        r7, #0x40000000
+009F3200: movne        r7, #0x20000000
+009F3204: cmp          r3, #0
+009F3208: beq          #0x9f3268
+009F320C: mov          r2, #1
+009F3210: b            #0x9f3218
+009F3214: mov          r2, r1
+009F3218: ldr          r3, [r3, #0x34]
+009F321C: add          r1, r2, #1
+009F3220: cmp          r3, #0
+009F3224: bne          #0x9f3214
+009F3228: mov          r1, r2
+009F322C: mov          r0, r3
+009F3230: ldr          ip, [r5, #8]
+009F3234: orr          r3, r7, r1
+009F3238: orr          r2, r6, ip
+009F323C: orr          r2, r2, r0
+009F3240: strd         r2, r3, [r4, #0x40]
+009F3244: add          sp, sp, #0xc
+009F3248: pop          {r4, r5, r6, r7, pc}
+009F324C: add          r2, sp, #8
+009F3250: mov          r6, #0x10000
+009F3254: mov          r7, #0
+009F3258: mov          r3, #1
+009F325C: strd         r6, r7, [r2, #-8]!
+009F3260: bl           #0xa19ecc
+009F3264: b            #0x9f31ec
+009F3268: mov          r0, #0
+009F326C: mov          r1, #0
+009F3270: b            #0x9f3230
+009F3274: add          r3, r1, #0x1c0
+RANGE 0x009F3274..0x009F3350 exclusive; ARM;
+009F3274: add          r3, r1, #0x1c0
+009F3278: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+009F327C: mov          r5, r0
+009F3280: mov          r7, r1
+009F3284: ldr          r6, [r5, #4]
+009F3288: ldm          r3, {r0, r1, r2}
+009F328C: sub          sp, sp, #0x10
+009F3290: add          r3, sp, #0x10
+009F3294: subs         ip, r6, #1
+009F3298: stmdb        r3, {r0, r1, r2}
+009F329C: mov          r1, #0
+009F32A0: vldr         s14, [sp, #4]
+009F32A4: ldr          sb, [sp, #8]
+009F32A8: ldr          r8, [sp, #0xc]
+009F32AC: ldr          r2, [r5]
+009F32B0: bpl          #0x9f32f4
+009F32B4: b            #0x9f33bc
+009F32B8: ldrb         r4, [r5, #0xe]
+009F32BC: cmp          r4, #0
+009F32C0: ldr          r4, [r0, #0x1c8]
+009F32C4: ldr          r0, [r0, #0x1c4]
+009F32C8: beq          #0x9f33fc
+009F32CC: cmp          r8, r4
+009F32D0: beq          #0x9f3414
+009F32D4: blo          #0x9f33b0
+009F32D8: movhi        r1, #1
+009F32DC: movls        r1, #0
+009F32E0: cmp          r1, #0
+009F32E4: beq          #0x9f3334
+009F32E8: add          r1, r3, #1
+009F32EC: cmp          ip, r1
+009F32F0: blt          #0x9f33bc
+009F32F4: rsb          r3, r1, ip
+009F32F8: add          r3, r3, r3, lsr #31
+009F32FC: add          r3, r1, r3, asr #1
+009F3300: ldr          r0, [r2, r3, lsl #2]
+009F3304: add          lr, r2, r3, lsl #2
+009F3308: vldr         s15, [r0, #0x1c0]
+009F330C: vcmp.f32     s14, s15
+009F3310: vmrs         apsr_nzcv, fpscr
+009F3314: beq          #0x9f32b8
+009F3318: vcmpe.f32    s14, s15
+009F331C: vmrs         apsr_nzcv, fpscr
+009F3320: bgt          #0x9f33b0
+009F3324: movmi        r1, #1
+009F3328: movpl        r1, #0
+009F332C: cmp          r1, #0
+009F3330: bne          #0x9f32e8
+009F3334: ldr          r8, [r5, #8]
+009F3338: rsb          r4, r2, lr
+009F333C: cmp          r6, r8
+009F3340: movlo        r1, r6
+009F3344: bhs          #0x9f3424
+009F3348: add          r3, r2, r1, lsl #2
+009F334C: add          r2, r2, r4

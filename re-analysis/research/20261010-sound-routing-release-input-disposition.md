@@ -1,0 +1,11 @@
+# Q14-104/131: release destination input boundary
+
+Checkpoint782; scope guard reread. Engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Reproducible `20261010-sound-routing-release-interior-callers.py/.json` checks external immediate branches into9D2410..9D24C8. Primary `-candidate-boundaries-native.txt` reopens every candidate locally; shared `20261010-sound-routing-input-literal-boundaries-native.txt` confirms the two PC literals and predecessor boundaries. Existing parent34/outputbus38 proof, rather than a new unrelated family, supplies this concrete destination question.
+
+There are33 Thumb encodings and no ARM candidate. 9D23EC is literal0066E01C, loaded at9D225C. All other32 candidates begin two bytes into aligned ARM words; their containing word and neighbors are preserved individually. The predecessor restores its frame and unconditionally tails9F5274 at9D240C before separate PUSH9D2410. This body either tails9E87BC after restoring its frame at9D249C, or returns internally from9D24C4 to9D246C; its following PC literals are not alternate inputs. These are bounded local encoding dispositions; they do not prove computed/copied/relative/interior or foreign inputs absent. No actual input supplier is established. The aligned section search also finds no exact9D2410/11 word in `20261010-sound-routing-release-input-references.json`; that is navigation, not unreachability.
+
+The exact conditional binding remains second incoming argument retained in R4 at9D241C, then cleared at38 by9D2490. These stores are not universally reclassified as node publication just because their offsets match node fields; neither are they universally excluded without the admitted destination. The admitted destination remains UNKNOWN. Existing local recipient, reference, default and inheritance decisions remain paid. Stop these input leads without adding new recipient families or descending into backing/free mechanics.
+
+Original104/131 remain PARTIAL for their original writer/alias proof and remaining named inputs, including this destination.107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Research only; no production or fidelity edits.
+
+out of scope: allocation/copy/free infrastructure and per-sample arithmetic.

@@ -3153,3 +3153,18 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint780 — Named input self-relative pointer disposition
 
 `20261010-sound-specific-input-relative-disposition.md` records the bounded search and explicit limits. Five named input targets yield no address-relative/PREL31 candidates; arbitrary table bases, copied and external pointers remain UNKNOWN. Original obligations remain PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint781 — observer wrapper interior-entry inputs
+
+`20261010-sound-observer-interior-disposition.md` reopens all18 encoded candidates into both actual wrapper bodies:16 are parts of ARM instructions and2 are PC literals, supplying no observer input. Separate wrapper returns/tails/literals retained. Original key/callback/raw thirdword and callback-body admissions remain UNKNOWN,028/029 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint782 — release destination input boundary
+
+`20261010-sound-routing-release-input-disposition.md` checks9D2410..9D24C8;33 encoded Thumb candidates reopen as ARM word pieces or literal data, with no ARM branch candidate. Exact conditional destination binding and separate predecessor/frame exits retained; no admitted destination or universal alias exclusion.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint783 — record destination input boundary
+
+`20261010-sound-routing-record-input-disposition.md` checks9F319C..9F3274;34 encoded Thumb candidates reopen as ARM word pieces or literal data, with no ARM branch candidate. Exact conditional destination binding and separate predecessor/frame exits retained; no admitted destination or universal alias exclusion.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

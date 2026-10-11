@@ -1,0 +1,54 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D2400..0x009D24E0 exclusive; ARM;
+009D2400: bl           #0x9d224c
+009D2404: mov          r0, r4
+009D2408: pop          {r4, lr}
+009D240C: b            #0x9f5274
+009D2410: push         {r3, r4, r5, r6, r7, lr}
+009D2414: mov          r6, r0
+009D2418: ldr          r5, [pc, #0xa8] ; word[009D24C8]=0066DE60
+009D241C: mov          r4, r1
+009D2420: ldr          r3, [pc, #0xa4] ; word[009D24CC]=FFFFFDD4
+009D2424: add          r5, pc, r5
+009D2428: ldr          r1, [r1, #0x30]
+009D242C: ldr          r3, [r5, r3]
+009D2430: ldr          r0, [r3]
+009D2434: bl           #0xa04f54
+009D2438: ldr          r3, [r6]
+009D243C: mov          r0, r6
+009D2440: mov          r1, #3
+009D2444: ldr          r3, [r3, #0x9c]
+009D2448: blx          r3
+009D244C: ldr          r6, [r4, #4]
+009D2450: ldr          r3, [r6, #0x7c]
+009D2454: sub          r2, r3, #0xc0000001
+009D2458: bic          r2, r2, #0xc0000000
+009D245C: cmp          r2, #0
+009D2460: bfi          r3, r2, #0, #0x1e
+009D2464: str          r3, [r6, #0x7c]
+009D2468: beq          #0x9d24a4
+009D246C: ldr          r1, [r4, #0x38]
+009D2470: cmp          r1, #0
+009D2474: beq          #0x9d2498
+009D2478: ldr          r3, [pc, #0x50] ; word[009D24D0]=FFFFFDBC
+009D247C: mov          r6, #0
+009D2480: str          r6, [r4, #0x3c]
+009D2484: ldr          r3, [r5, r3]
+009D2488: ldr          r0, [r3]
+009D248C: bl           #0xa7a988
+009D2490: str          r6, [r4, #0x38]
+009D2494: str          r6, [r4, #0x40]
+009D2498: add          r0, r4, #0x44
+009D249C: pop          {r3, r4, r5, r6, r7, lr}
+009D24A0: b            #0x9e87bc
+009D24A4: ldr          r3, [pc, #0x24] ; word[009D24D0]=FFFFFDBC
+009D24A8: mov          r0, r6
+009D24AC: ldr          r3, [r5, r3]
+009D24B0: ldr          r7, [r3]
+009D24B4: bl           #0xa0b600
+009D24B8: mov          r1, r6
+009D24BC: mov          r0, r7
+009D24C0: bl           #0xa7a988
+009D24C4: b            #0x9d246c
+009D24C8: rsbeq        sp, r6, r0, ror #28
