@@ -1,0 +1,26 @@
+0x009877B4: ldr      ip, [r1]
+0x009877B8: mov      r3, #0
+0x009877BC: push     {r4, r5, r6, r7, r8, sb, sl, lr}
+0x009877C0: add      lr, ip, #4
+0x009877C4: str      lr, [r1]
+0x009877C8: add      ip, ip, #5
+0x009877CC: ldrb     lr, [ip, #-1]
+0x009877D0: sub      sp, sp, #8
+0x009877D4: str      ip, [r1]
+0x009877D8: mov      r4, r1
+0x009877DC: ldrb     ip, [r0, #0x7c]
+0x009877E0: mov      r6, r0
+0x009877E4: asr      r8, lr, #1
+0x009877E8: asr      r7, lr, #2
+0x009877EC: bfi      ip, r8, #0, #1
+0x009877F0: asr      lr, lr, #3
+0x009877F4: bfi      ip, r7, #1, #1
+0x009877F8: ldr      r5, [pc, #0x2f8]   ; [pc->0x00987AF8] = 0x006B8A7C
+0x009877FC: bfi      ip, lr, #3, #1
+0x00987800: strb     ip, [r0, #0x7c]
+0x00987804: bl       #0x9f6ef8   ; ->0x009F6EF8
+0x00987808: add      r5, pc, r5
+0x0098780C: cmp      r0, #1
+0x00987810: beq      #0x98781c
+0x00987814: add      sp, sp, #8
+0x00987818: pop      {r4, r5, r6, r7, r8, sb, sl, pc}
