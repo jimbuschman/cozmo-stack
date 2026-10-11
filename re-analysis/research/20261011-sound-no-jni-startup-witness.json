@@ -1,0 +1,42 @@
+{
+  "scope": "Approved no-JNI input branch only;required fields supplied from native constructor values;stops at existing final setup interface,no full-init/implementation result or all-writer claim.",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "native_calls": [
+    {
+      "entry": "00A1C75C",
+      "argument_r0": 48000
+    },
+    {
+      "entry": "00A1C7D4",
+      "argument_r0": 1024
+    }
+  ],
+  "branch_entries": [
+    "00A578A0",
+    "00A578B4",
+    "00A57848",
+    "00A57850"
+  ],
+  "setting_words_hex": [
+    "0000BB80",
+    "00000400",
+    "00000015",
+    "00000005",
+    "00000080"
+  ],
+  "query_block_words_hex": [
+    "0000BB80",
+    "00000000",
+    "00000000"
+  ],
+  "stop": [
+    "final setup interface"
+  ],
+  "fixture_platform_address": "0108DA38",
+  "fixture_engine_config_address": "0108D90C",
+  "initial_platform_vm": 0,
+  "initial_platform_rate": 0,
+  "initial_engine_frame_request": 1024,
+  "initial_fpscr_hex": "00000000",
+  "unicorn_version": "2.1.4"
+}

@@ -3324,3 +3324,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint819 - publication observations at existing rate/frame seeds
 
 `20261011-sound-rate-frame-publication-disposition.md` checks stored/returned full pointer values at160 existing observation seeds only:one candidate,the already-paid804 stack alias9D5B64. All310 predecessor identities retained;15 local caps and other alias/input limitations stay explicit. No new receiver/writer,unreachability or scope-based promotion. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint820 - approved no-JNI startup input branch
+
+`20261011-sound-no-jni-startup-disposition.md` quotes currentM6-018 and the existing operator-directedMD1/C33.5 input boundary. NativeA57724 with required default fields reaches orderedSetRate48000/SetFrame1024 and exact words48000,1024,21,5,128;no numerical import during startup. ConditionalJNI zero cases remain distinct;later/alternate input and all-writer/alias proofs remain open. Six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

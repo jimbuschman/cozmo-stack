@@ -1,0 +1,21 @@
+{
+  "manifest_sha256": "74660415edd9a6bcd57cd5a85f2955fa1e0a6e88c03540cda1cc994ba0f75458",
+  "record": {
+    "id": "M6-018",
+    "subsystem": "M6-wwise-bank",
+    "title": "Mix rate 48000 Hz and frame 1024 samples (phone-dependent in the original: min(native, 48000) and hardware rounding)",
+    "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseRuntimeSettings.cs",
+    "evidence": [
+      "platform init 0x00A57724: rate cache 0x0108DF90 = min(getNativeOutputSampleRate, 48000), 48000 default 0x00A578B4..0x00A578C8",
+      "frame rounding 0x00A577B8..0x00A57830; SetRate 0xA1C75C / SetFrame 0xA1C7D4"
+    ],
+    "effect": "derived timings and resampling differ",
+    "authority": "libcozmoEngine.so 3.4.0-1204 (statically linked Wwise 2016.2 runtime, ARM 0x0095E540..0x00AE2E40)",
+    "status": "IMPLEMENTATION_GAP",
+    "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M6-wwise-bank.md",
+    "unresolved": "compare the code against the inventory rows (the step after approval)",
+    "hardware_required": false,
+    "live_path": true,
+    "test": ""
+  }
+}
