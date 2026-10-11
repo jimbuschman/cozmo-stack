@@ -442,3 +442,13 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint774 — known integer comparison constraints
 
 `20261010-sound-rate-frame-compare-disposition.md` adds exact CMP/CMN flags for established unshifted operands;300 events restore ten old events and remove one bounded-array read, with326 capped windows and14 baseline events retained for independent evidence. No additional writer/alias or zero/provider proof; real scalar/ABI contracts remain paid. Original rate/frame groups PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint775 — music flush interior-entry input disposition
+
+`20261010-sound-stop-offset-flush-interior-disposition.md` checks both actual flush-body ranges, with53 external encoding candidates; all three ARM candidates reopen as actual Thumb instructions, while50 Thumb encodings provide no established music-body input. Separate PUSH/return/literal boundaries retained. A71634 context andA716BC raw-mode admission remain UNKNOWN,119 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint776 — runtime weight setter interior-entry disposition
+
+`20261010-sound-weight-setter-interior-disposition.md` checks A08024..A080CC, with30 external encoding candidates. The sole ARM candidate is actual ThumbVSTR;29 Thumb encodings provide no established input. Separate branch/literal/PUSH/return boundaries retain actual node/childID/weight admission as UNKNOWN,008 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
