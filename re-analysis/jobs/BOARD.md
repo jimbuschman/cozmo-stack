@@ -1,5 +1,7 @@
 # Job board
 
+**Live queue from 2026-10-11: [QUEUE.md](QUEUE.md).** The rounds below are history.
+
 Read `README.md` first. Each job's status is in `status/<job>.md`: no file means the job is open.
 
 ## Three windows, each running a chain unattended
