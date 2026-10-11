@@ -3272,3 +3272,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint806 - direct-post mode4 event gate
 
 `20261010-sound-mode4-event-input-gate-disposition.md` positively joins knownPostEvent's exact event-registry lookup/miss0 to type4 publication and the separate type5 node table. Independent5350-payload/six-bank check finds835 Events and neither originalmode4 ID among Event own-IDs. Direct posting either containerID cannot queue under this checked event population; alternate/internal/mutable admission remains unproved.009/034 PARTIAL;no all-runtime or SDK-only exclusion.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint807 - explicit Thumb compare-and-branch navigation
+
+`20261010-sound-rate-frame-cbz-disposition.md` fixes the803 model's omitted CBZ/CBNZ target successors using primary shipped audio-control opcode witnesses. Same6855 windows/310 events,zero added or missing;caps434->435. No writer/admission/alias absence proof;804's independently recovered stack-alias reads remain outside this generic model. Original six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

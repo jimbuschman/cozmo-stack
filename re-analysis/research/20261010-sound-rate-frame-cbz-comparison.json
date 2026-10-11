@@ -1,0 +1,16 @@
+{
+  "baseline": "803 FIFO without CBZ/CBNZ",
+  "new": "807 FIFO with explicit CBZ/CBNZ successors; same seeds and limits",
+  "baselineEvents": 310,
+  "newEvents": 310,
+  "baselineCaps": 434,
+  "newCaps": 435,
+  "baselineWindowCount": [
+    "6855"
+  ],
+  "newWindowCount": [
+    "6855"
+  ],
+  "added": [],
+  "missing": []
+}

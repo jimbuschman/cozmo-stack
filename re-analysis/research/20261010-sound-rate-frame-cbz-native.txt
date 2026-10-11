@@ -1,0 +1,40 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x005968B2..0x005968BE exclusive; Thumb;
+005968B2: ldr          r0, [r5]
+005968B4: str          r0, [sp, #0x10]
+005968B6: cbz          r0, #0x596908
+005968B8: ldrh.w       r1, [sp, #0xe]
+005968BC: adds         r7, r5, #4
+RANGE 0x005968F8..0x00596916 exclusive; Thumb;
+005968F8: ldrb.w       r0, [fp, #0x3d]
+005968FC: cbnz         r0, #0x596908
+005968FE: ldrb         r0, [r5, #0xc]
+00596900: cbz          r0, #0x596908
+00596902: movs         r0, #1
+00596904: strb.w       r0, [fp, #0x3d]
+00596908: mov          r0, r6
+0059690A: blx          #0x4af448
+0059690E: ldr.w        sb, [r6, #0xc]
+00596912: cmp          sb, r6
+00596914: bne          #0x596898
+RANGE 0x0058EED0..0x0058EF02 exclusive; Thumb;
+0058EED0: add          r2, sp, #0x30
+0058EED2: blx          #0x4a505c
+0058EED6: ldr          r0, [sp, #0x30]
+0058EED8: cbz          r0, #0x58eef8
+0058EEDA: ldr          r1, [sp, #0x34]
+0058EEDC: cmp          r1, r0
+0058EEDE: itttt        ne
+0058EEE0: subne.w      r2, r1, #8
+0058EEE4: subne        r2, r2, r0
+0058EEE6: mvnne        r3, #7
+0058EEEA: bicne.w      r2, r3, r2
+0058EEEE: itt          ne
+0058EEF0: addne        r1, r1, r2
+0058EEF2: strne        r1, [sp, #0x34]
+0058EEF4: blx          #0x4a40cc
+0058EEF8: add          r0, sp, #0x18
+0058EEFA: movs         r1, #0
+0058EEFC: cmp          r7, #1
+0058EEFE: strd         r0, r0, [sp, #0x18]

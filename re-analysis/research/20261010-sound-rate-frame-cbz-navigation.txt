@@ -1,0 +1,750 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+BREADTH-FIRST worklist: queued loop exits are serviced before repeated backedges; 4096-state cap unchanged.
+NAVIGATION ONLY: ARM/Thumb PC literals and selected MOVW/MOVT propagation; 768-byte local possible-branch windows, conditional instructions possible, call-clobbers; actual bodies must be reopened.
+LIMIT local state cap at 00902958
+LIMIT local state cap at 00902960
+LIMIT local state cap at 00902984
+LIMIT local state cap at 00915D80
+LIMIT local state cap at 00923D04
+LIMIT local state cap at 00926EE8
+LIMIT local state cap at 00931250
+LIMIT local state cap at 00932230
+LIMIT local state cap at 00932980
+LIMIT local state cap at 00936CF8
+LIMIT local state cap at 00936D34
+LIMIT local state cap at 00938AB0
+LIMIT local state cap at 0093ADBC
+LIMIT local state cap at 0093FA44
+LIMIT local state cap at 00955ABC
+LIMIT local state cap at 00955C00
+LIMIT local state cap at 00955EF8
+LIMIT local state cap at 00956064
+LIMIT local state cap at 00959920
+LIMIT local state cap at 009599D8
+LIMIT local state cap at 00959A98
+LIMIT local state cap at 00959B78
+LIMIT local state cap at 00960084
+LIMIT local state cap at 0096026C
+LIMIT local state cap at 00960870
+LIMIT local state cap at 00961364
+LIMIT local state cap at 00969FC0
+LIMIT local state cap at 00980144
+LIMIT local state cap at 00980290
+LIMIT local state cap at 00981CFC
+LIMIT local state cap at 00982F2C
+LIMIT local state cap at 00987574
+LIMIT local state cap at 009877F8
+LIMIT local state cap at 00987C18
+LIMIT local state cap at 00989088
+LIMIT local state cap at 00989FF4
+LIMIT local state cap at 0098A190
+LIMIT local state cap at 0098A1F4
+LIMIT local state cap at 0098A6EC
+LIMIT local state cap at 0098B264
+LIMIT local state cap at 0098FFE4
+LIMIT local state cap at 00990050
+LIMIT local state cap at 00990DAC
+LIMIT local state cap at 00990DEC
+LIMIT local state cap at 009911F8
+LIMIT local state cap at 009912E8
+LIMIT local state cap at 00991A04
+LIMIT local state cap at 00991C64
+LIMIT local state cap at 00991E2C
+LIMIT local state cap at 00992648
+LIMIT local state cap at 009928CC
+LIMIT local state cap at 0099290C
+LIMIT local state cap at 00992BE8
+LIMIT local state cap at 009933C4
+LIMIT local state cap at 00994D44
+LIMIT local state cap at 0099504C
+LIMIT local state cap at 00995380
+LIMIT local state cap at 0099920C
+LIMIT local state cap at 0099BA38
+LIMIT local state cap at 0099D0A0
+LIMIT local state cap at 0099D158
+LIMIT local state cap at 009A48F8
+LIMIT local state cap at 009A4D24
+LIMIT local state cap at 009A5B60
+LIMIT local state cap at 009A5B78
+LIMIT local state cap at 009A65C8
+LIMIT local state cap at 009A6608
+LIMIT local state cap at 009A76EC
+LIMIT local state cap at 009A7704
+LIMIT local state cap at 009A7910
+LIMIT local state cap at 009A842C
+LIMIT local state cap at 009A8794
+LIMIT local state cap at 009AF7F0
+LIMIT local state cap at 009B0214
+LIMIT local state cap at 009B0230
+LIMIT local state cap at 009B08F4
+LIMIT local state cap at 009B0B20
+LIMIT local state cap at 009B1C14
+LIMIT local state cap at 009B42C8
+LIMIT local state cap at 009B49B8
+LIMIT local state cap at 009B50E0
+LIMIT local state cap at 009B54D8
+LIMIT local state cap at 009B5810
+LIMIT local state cap at 009B5814
+LIMIT local state cap at 009B5C20
+LIMIT local state cap at 009B5E50
+LIMIT local state cap at 009B6C54
+LIMIT local state cap at 009B8EE8
+LIMIT local state cap at 009B8FA8
+LIMIT local state cap at 009B965C
+LIMIT local state cap at 009B9988
+LIMIT local state cap at 009B9F8C
+LIMIT local state cap at 009BA948
+LIMIT local state cap at 009BAB50
+LIMIT local state cap at 009BF900
+LIMIT local state cap at 009C1C7C
+LIMIT local state cap at 009C1FAC
+LIMIT local state cap at 009C2AE4
+LIMIT local state cap at 009C3AC0
+LIMIT local state cap at 009C4094
+LIMIT local state cap at 009C40C0
+LIMIT local state cap at 009C5E70
+LIMIT local state cap at 009C7CD0
+LIMIT local state cap at 009C7F2C
+LIMIT local state cap at 009C8F00
+LIMIT local state cap at 009C94A4
+LIMIT local state cap at 009C9578
+LIMIT local state cap at 009CA034
+LIMIT local state cap at 009CA110
+LIMIT local state cap at 009CBD28
+LIMIT local state cap at 009CBDE4
+LIMIT local state cap at 009CC050
+LIMIT local state cap at 009CC200
+LIMIT local state cap at 009CC9C4
+LIMIT local state cap at 009CCAA0
+LIMIT local state cap at 009CD054
+LIMIT local state cap at 009CDF54
+LIMIT local state cap at 009CE280
+LIMIT local state cap at 009CE3D8
+LIMIT local state cap at 009CE580
+LIMIT local state cap at 009CE810
+LIMIT local state cap at 009CEA30
+LIMIT local state cap at 009CEA58
+LIMIT local state cap at 009CED38
+LIMIT local state cap at 009CED60
+LIMIT local state cap at 009CF040
+LIMIT local state cap at 009CF068
+LIMIT local state cap at 009CFF5C
+LIMIT local state cap at 009D26B0
+LIMIT local state cap at 009D48B4
+LIMIT local state cap at 009D4B40
+LIMIT local state cap at 009D5710
+LIMIT local state cap at 009D5974
+LIMIT local state cap at 009D675C
+LIMIT local state cap at 009D790C
+LIMIT local state cap at 009D79E8
+LIMIT local state cap at 009D94E8
+LIMIT local state cap at 009DEE68
+LIMIT local state cap at 009DF300
+LIMIT local state cap at 009DF70C
+LIMIT local state cap at 009DFAA4
+LIMIT local state cap at 009E176C
+LIMIT local state cap at 009E1B90
+LIMIT local state cap at 009E1CE4
+LIMIT local state cap at 009E60C8
+LIMIT local state cap at 009E6D2C
+LIMIT local state cap at 009E6D3C
+LIMIT local state cap at 009E8C44
+LIMIT local state cap at 009E8D24
+LIMIT local state cap at 009E90C4
+LIMIT local state cap at 009EA370
+LIMIT local state cap at 009EBE6C
+LIMIT local state cap at 009EBE88
+LIMIT local state cap at 009EBEB0
+LIMIT local state cap at 009ECC38
+LIMIT local state cap at 009EDF5C
+LIMIT local state cap at 009EE0F8
+LIMIT local state cap at 009EE1A0
+LIMIT local state cap at 009EE258
+LIMIT local state cap at 009EE314
+LIMIT local state cap at 009EE3B8
+LIMIT local state cap at 009EE45C
+LIMIT local state cap at 009EEC1C
+LIMIT local state cap at 009EF268
+LIMIT local state cap at 009F12E8
+LIMIT local state cap at 009F15D0
+LIMIT local state cap at 009F2770
+LIMIT local state cap at 009F2E3C
+LIMIT local state cap at 009F40F4
+LIMIT local state cap at 009F41D8
+LIMIT local state cap at 009F6288
+LIMIT local state cap at 009F6C18
+LIMIT local state cap at 009F6F1C
+LIMIT local state cap at 009F95E4
+LIMIT local state cap at 009F9724
+LIMIT local state cap at 009F99F0
+LIMIT local state cap at 009F9B34
+LIMIT local state cap at 009FA418
+LIMIT local state cap at 009FAEF4
+LIMIT local state cap at 009FBBBC
+LIMIT local state cap at 009FC290
+LIMIT local state cap at 009FC8C0
+LIMIT local state cap at 009FE7F4
+LIMIT local state cap at 009FE8F8
+LIMIT local state cap at 009FEAB4
+LIMIT local state cap at 00A00D54
+LIMIT local state cap at 00A00F98
+LIMIT local state cap at 00A03110
+LIMIT local state cap at 00A045D4
+LIMIT local state cap at 00A04744
+LIMIT local state cap at 00A04A34
+LIMIT local state cap at 00A04BA0
+LIMIT local state cap at 00A05440
+LIMIT local state cap at 00A056B8
+LIMIT local state cap at 00A05B28
+LIMIT local state cap at 00A062EC
+LIMIT local state cap at 00A06550
+LIMIT local state cap at 00A08454
+LIMIT local state cap at 00A087F4
+LIMIT local state cap at 00A08DBC
+LIMIT local state cap at 00A09278
+LIMIT local state cap at 00A0970C
+LIMIT local state cap at 00A09A50
+LIMIT local state cap at 00A0A89C
+LIMIT local state cap at 00A0B2A8
+LIMIT local state cap at 00A0BDC8
+LIMIT local state cap at 00A0C2F0
+LIMIT local state cap at 00A0CE28
+LIMIT local state cap at 00A0D0A8
+LIMIT local state cap at 00A0D37C
+LIMIT local state cap at 00A0D82C
+LIMIT local state cap at 00A0E95C
+LIMIT local state cap at 00A0F0B0
+LIMIT local state cap at 00A0F764
+LIMIT local state cap at 00A109DC
+LIMIT local state cap at 00A15814
+LIMIT local state cap at 00A15E48
+LIMIT local state cap at 00A160A4
+LIMIT local state cap at 00A16EEC
+LIMIT local state cap at 00A18104
+LIMIT local state cap at 00A18360
+LIMIT local state cap at 00A185B4
+LIMIT local state cap at 00A18CD0
+LIMIT local state cap at 00A19FE8
+LIMIT local state cap at 00A1B3D8
+LIMIT local state cap at 00A1B47C
+LIMIT local state cap at 00A1B60C
+LIMIT local state cap at 00A1BE2C
+LIMIT local state cap at 00A23814
+LIMIT local state cap at 00A26D4C
+LIMIT local state cap at 00A26E28
+LIMIT local state cap at 00A279A8
+LIMIT local state cap at 00A27E04
+LIMIT local state cap at 00A27EE0
+LIMIT local state cap at 00A287D0
+LIMIT local state cap at 00A28AFC
+LIMIT local state cap at 00A2ED50
+LIMIT local state cap at 00A2EF04
+LIMIT local state cap at 00A2F1FC
+LIMIT local state cap at 00A2F9DC
+LIMIT local state cap at 00A2FBD4
+LIMIT local state cap at 00A30BC0
+LIMIT local state cap at 00A30DCC
+LIMIT local state cap at 00A3107C
+LIMIT local state cap at 00A31680
+LIMIT local state cap at 00A317EC
+LIMIT local state cap at 00A322E4
+LIMIT local state cap at 00A325EC
+LIMIT local state cap at 00A3293C
+LIMIT local state cap at 00A36C44
+LIMIT local state cap at 00A36D48
+LIMIT local state cap at 00A379EC
+LIMIT local state cap at 00A38CA0
+LIMIT local state cap at 00A3A76C
+LIMIT local state cap at 00A3B434
+LIMIT local state cap at 00A3B510
+LIMIT local state cap at 00A3C3E4
+LIMIT local state cap at 00A3DE18
+LIMIT local state cap at 00A413B8
+LIMIT local state cap at 00A41428
+LIMIT local state cap at 00A41E64
+LIMIT local state cap at 00A437F0
+LIMIT local state cap at 00A447C4
+LIMIT local state cap at 00A4627C
+LIMIT local state cap at 00A46400
+LIMIT local state cap at 00A490A0
+LIMIT local state cap at 00A4AFA0
+LIMIT local state cap at 00A526F8
+LIMIT local state cap at 00A56A84
+LIMIT local state cap at 00A56AD0
+LIMIT local state cap at 00A56BCC
+LIMIT local state cap at 00A590C4
+LIMIT local state cap at 00A5A3E4
+LIMIT local state cap at 00A5A414
+LIMIT local state cap at 00A5B9EC
+LIMIT local state cap at 00A5F094
+LIMIT local state cap at 00A602D4
+LIMIT local state cap at 00A6077C
+LIMIT local state cap at 00A60DF8
+LIMIT local state cap at 00A60ED0
+LIMIT local state cap at 00A61110
+LIMIT local state cap at 00A61260
+LIMIT local state cap at 00A613F8
+LIMIT local state cap at 00A62130
+LIMIT local state cap at 00A622CC
+LIMIT local state cap at 00A66A44
+LIMIT local state cap at 00A66E90
+LIMIT local state cap at 00A66F6C
+LIMIT local state cap at 00A67480
+LIMIT local state cap at 00A67604
+LIMIT local state cap at 00A67638
+LIMIT local state cap at 00A67840
+LIMIT local state cap at 00A67F68
+LIMIT local state cap at 00A6861C
+LIMIT local state cap at 00A68D18
+LIMIT local state cap at 00A69024
+LIMIT local state cap at 00A69310
+LIMIT local state cap at 00A6996C
+LIMIT local state cap at 00A6BAEC
+LIMIT local state cap at 00A6BBE4
+LIMIT local state cap at 00A6C318
+LIMIT local state cap at 00A6CCF4
+LIMIT local state cap at 00A6CD84
+LIMIT local state cap at 00A6CF7C
+LIMIT local state cap at 00A6D058
+LIMIT local state cap at 00A6DD88
+LIMIT local state cap at 00A6DF3C
+LIMIT local state cap at 00A6E858
+LIMIT local state cap at 00A6F4EC
+LIMIT local state cap at 00A6FF34
+LIMIT local state cap at 00A70014
+LIMIT local state cap at 00A7255C
+LIMIT local state cap at 00A7256C
+LIMIT local state cap at 00A73DBC
+LIMIT local state cap at 00A73DC4
+LIMIT local state cap at 00A79FA4
+LIMIT local state cap at 00A81DEC
+LIMIT local state cap at 00A91814
+LIMIT local state cap at 00AB2DB0
+LIMIT local state cap at 00AB2FA0
+LIMIT local state cap at 00AB326C
+LIMIT local state cap at 00AB39E8
+LIMIT local state cap at 00AB4E3C
+LIMIT local state cap at 00AB6134
+LIMIT local state cap at 00AB6460
+LIMIT local state cap at 00AB6488
+LIMIT local state cap at 004F2198
+LIMIT local state cap at 004F219E
+LIMIT local state cap at 004F2890
+LIMIT local state cap at 0050FEEA
+LIMIT local state cap at 0053A48E
+LIMIT local state cap at 00580A00
+LIMIT local state cap at 005933BE
+LIMIT local state cap at 00596EB6
+LIMIT local state cap at 005B162C
+LIMIT local state cap at 005DF976
+LIMIT local state cap at 005E691E
+LIMIT local state cap at 005E8472
+LIMIT local state cap at 005FAD32
+LIMIT local state cap at 00631D38
+LIMIT local state cap at 0063241C
+LIMIT local state cap at 00632470
+LIMIT local state cap at 00682A9A
+LIMIT local state cap at 006A9248
+LIMIT local state cap at 006A989C
+LIMIT local state cap at 006AA19C
+LIMIT local state cap at 006BA0EC
+LIMIT local state cap at 006BC1F8
+LIMIT local state cap at 006E5E46
+LIMIT local state cap at 006E6BCA
+LIMIT local state cap at 006E7ED2
+LIMIT local state cap at 006E8AA4
+LIMIT local state cap at 006F1A8A
+LIMIT local state cap at 006FC7B8
+LIMIT local state cap at 006FD69C
+LIMIT local state cap at 007644C6
+LIMIT local state cap at 007644F8
+LIMIT local state cap at 00764520
+LIMIT local state cap at 0076457C
+LIMIT local state cap at 007645AE
+LIMIT local state cap at 007645D6
+LIMIT local state cap at 00764632
+LIMIT local state cap at 00764664
+LIMIT local state cap at 0076468C
+LIMIT local state cap at 007646E8
+LIMIT local state cap at 0076471A
+LIMIT local state cap at 00764740
+LIMIT local state cap at 007BAE20
+LIMIT local state cap at 007CA37E
+LIMIT local state cap at 007CA3D2
+LIMIT local state cap at 007CA986
+LIMIT local state cap at 007EE50C
+LIMIT local state cap at 007FAF40
+LIMIT local state cap at 008249D4
+LIMIT local state cap at 00826D68
+LIMIT local state cap at 00835DC6
+LIMIT local state cap at 00841984
+LIMIT local state cap at 00843208
+LIMIT local state cap at 00844C18
+LIMIT local state cap at 008504C6
+LIMIT local state cap at 00850C62
+LIMIT local state cap at 0086433E
+LIMIT local state cap at 0086EAA6
+LIMIT local state cap at 0086FD56
+LIMIT local state cap at 00871006
+LIMIT local state cap at 00872510
+LIMIT local state cap at 00883EB2
+LIMIT local state cap at 008843B4
+LIMIT local state cap at 00884A70
+LIMIT local state cap at 00884A98
+LIMIT local state cap at 00884FDE
+LIMIT local state cap at 00885426
+LIMIT local state cap at 0088933A
+LIMIT local state cap at 00889366
+LIMIT local state cap at 00889378
+LIMIT local state cap at 0088937C
+LIMIT local state cap at 0088937E
+LIMIT local state cap at 008893DA
+LIMIT local state cap at 008893E8
+LIMIT local state cap at 00889404
+LIMIT local state cap at 0088951A
+LIMIT local state cap at 0088959A
+LIMIT local state cap at 0088FA94
+LIMIT local state cap at 0088FB7E
+LIMIT local state cap at 0088FB90
+LIMIT local state cap at 0088FBA2
+LIMIT local state cap at 00893FCE
+LIMIT local state cap at 008943D0
+LIMIT local state cap at 008944B8
+LIMIT local state cap at 0089B36E
+LIMIT local state cap at 0089B5C8
+LIMIT local state cap at 0089BAB8
+LIMIT local state cap at 0089BFA6
+LIMIT local state cap at 0089E574
+LIMIT local state cap at 0089EF5E
+LIMIT local state cap at 0089EF64
+LIMIT local state cap at 0089EF92
+LIMIT local state cap at 0089EFDC
+LIMIT local state cap at 0089EFE2
+LIMIT local state cap at 0089F034
+LIMIT local state cap at 0089F03C
+LIMIT local state cap at 0089F17E
+LIMIT local state cap at 0089F194
+LIMIT local state cap at 0089F35C
+LIMIT local state cap at 0089F510
+LIMIT local state cap at 0089F8FE
+LIMIT local state cap at 0089F90C
+LIMIT local state cap at 0089F990
+LIMIT local state cap at 008C05C8
+LIMIT local state cap at 008C0B7A
+LIMIT local state cap at 008C17AC
+LIMIT local state cap at 008C9468
+LIMIT local state cap at 00947ADC
+LIMIT local state cap at 0094FD08
+LIMIT local state cap at 009502A2
+processed candidate windows 6855
+{"address":"0097D184","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r6, [pc, r6]","seeds":["0097D174"]}
+{"address":"0097D194","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r6]","seeds":["0097D174"]}
+{"address":"0097D2FC","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [sl, r3]","seeds":["0097D264"]}
+{"address":"0097D300","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r2, [r3]","seeds":["0097D264"]}
+{"address":"0097ED00","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [r8, r3]","seeds":["0097EBEC"]}
+{"address":"0097ED04","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r2, [r3]","seeds":["0097EBEC"]}
+{"address":"0097F040","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["0097F038"]}
+{"address":"0097F044","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r3]","seeds":["0097F038"]}
+{"address":"009825C8","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr lr, [pc, lr]","seeds":["009825B4"]}
+{"address":"009825D4","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [lr]","seeds":["009825B4"]}
+{"address":"009826F0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r7, [pc, r7]","seeds":["009826E0"]}
+{"address":"009826F8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s15, [r7]","seeds":["009826E0"]}
+{"address":"00982738","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s15, [r7]","seeds":["009826E0"]}
+{"address":"00982780","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s15, [r7]","seeds":["009826E0"]}
+{"address":"0098281C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s11, [r7]","seeds":["009826E0"]}
+{"address":"00982AB8","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r4, [pc, r4]","seeds":["00982AAC"]}
+{"address":"00982AC0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [r4]","seeds":["00982AAC"]}
+{"address":"00982BEC","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["00982BD8"]}
+{"address":"00982BFC","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [ip]","seeds":["00982BD8"]}
+{"address":"00982D7C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["00982D64"]}
+{"address":"00982D84","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [ip]","seeds":["00982D64"]}
+{"address":"009838AC","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [pc, r1]","seeds":["0098383C","0098389C"]}
+{"address":"009838B8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [r1]","seeds":["0098383C","0098389C"]}
+{"address":"00986384","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [r6, r3]","seeds":["00986284"]}
+{"address":"00986388","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r3]","seeds":["00986284"]}
+{"address":"0098638C","mode":"ARM","kind":"live-r3-at-call","effective":"01052440","instruction":"bl #0x4b3e70","seeds":["00986284"]}
+{"address":"00987454","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["00987444"]}
+{"address":"00987464","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["00987444"]}
+{"address":"00987A1C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [r5, r3]","seeds":["009877F8"]}
+{"address":"00987A28","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["009877F8"]}
+{"address":"009884FC","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009884EC"]}
+{"address":"00988504","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["009884EC"]}
+{"address":"00989F98","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [pc, r1]","seeds":["00989F8C"]}
+{"address":"00989FA0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r1, [r1]","seeds":["00989F8C"]}
+{"address":"0098A0AC","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [sl, r3]","seeds":["00989FF4"]}
+{"address":"0098A0B0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s15, [r3]","seeds":["00989FF4"]}
+{"address":"0098A1A0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["0098A190"]}
+{"address":"0098A1B0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [ip]","seeds":["0098A190"]}
+{"address":"0098C31C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["0098C308"]}
+{"address":"0098C330","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["0098C308"]}
+{"address":"0098CB18","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["0098CB10"]}
+{"address":"0098CB20","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["0098CB10"]}
+{"address":"0098CB80","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["0098CB74"]}
+{"address":"0098D7FC","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["0098D7EC"]}
+{"address":"0098D814","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [ip]","seeds":["0098D7EC"]}
+{"address":"0098D8A0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [pc, r1]","seeds":["0098D890"]}
+{"address":"0098D8A8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r8, [r1]","seeds":["0098D890"]}
+{"address":"0098D9E4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [ip, r3]","seeds":["0098D984"]}
+{"address":"0098D9F0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr lr, [r3]","seeds":["0098D984"]}
+{"address":"0098DC04","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [ip, r3]","seeds":["0098D984"]}
+{"address":"0098DC18","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["0098D984"]}
+{"address":"0098FA68","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["0098FA58"]}
+{"address":"0098FA7C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [ip]","seeds":["0098FA58"]}
+{"address":"00991014","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["00990FFC"]}
+{"address":"00991024","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r8, [ip]","seeds":["00990FFC"]}
+{"address":"00991118","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["0099110C"]}
+{"address":"00991128","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["0099110C"]}
+{"address":"00991710","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [sl, r3]","seeds":["00991590"]}
+{"address":"00991718","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r3]","seeds":["00991590"]}
+{"address":"009920D4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["009920BC","009920C4"]}
+{"address":"009920E0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["009920BC","009920C4"]}
+{"address":"00992800","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["009927E8"]}
+{"address":"00992814","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r6, [ip]","seeds":["009927E8"]}
+{"address":"00992B34","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["00992B1C"]}
+{"address":"00992B44","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r8, [ip]","seeds":["00992B1C"]}
+{"address":"0099356C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["00993550"]}
+{"address":"00993584","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r6, [ip]","seeds":["00993550"]}
+{"address":"0099956C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [pc, r1]","seeds":["00999554"]}
+{"address":"0099957C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr lr, [r1]","seeds":["00999554"]}
+{"address":"00999E50","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r4, [pc, r4]","seeds":["00999E38"]}
+{"address":"00999E5C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [r4]","seeds":["00999E38"]}
+{"address":"00999EC8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r4]","seeds":["00999E38"]}
+{"address":"0099A1D8","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [pc, r1]","seeds":["0099A1C4"]}
+{"address":"0099A1E8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r5, [r1]","seeds":["0099A1C4"]}
+{"address":"0099CC80","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["0099CC6C"]}
+{"address":"0099CC90","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r7, [r3]","seeds":["0099CC6C"]}
+{"address":"0099CCA0","mode":"ARM","kind":"live-r3-at-call","effective":"01052440","instruction":"bl #0x4be310","seeds":["0099CC6C"]}
+{"address":"0099F108","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r1, [pc, r1]","seeds":["0099F0FC"]}
+{"address":"0099F10C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [pc, r2]","seeds":["0099F0FC","0099F104"]}
+{"address":"0099F110","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r1]","seeds":["0099F0FC"]}
+{"address":"0099F114","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["0099F0FC","0099F104"]}
+{"address":"009A6C24","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009A6C20"]}
+{"address":"009A6C28","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r3]","seeds":["009A6C20"]}
+{"address":"009A6C38","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["009A6C34"]}
+{"address":"009A6C3C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r0, [r3]","seeds":["009A6C34"]}
+{"address":"009A9B80","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr lr, [r4, r2]","seeds":["009A9B44"]}
+{"address":"009A9B84","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr ip, [r4, r3]","seeds":["009A9B44"]}
+{"address":"009A9B90","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r8, [lr]","seeds":["009A9B44"]}
+{"address":"009A9B94","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r7, [ip]","seeds":["009A9B44"]}
+{"address":"009AA144","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [r6, r3]","seeds":["009AA104"]}
+{"address":"009AA148","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r8, [r3]","seeds":["009AA104"]}
+{"address":"009AA154","mode":"ARM","kind":"live-r3-at-call","effective":"01052440","instruction":"bl #0x4be310","seeds":["009AA104"]}
+{"address":"009AF92C","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [r6, r3]","seeds":["009AF8B4"]}
+{"address":"009AF930","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [r6, r2]","seeds":["009AF8B4"]}
+{"address":"009AF938","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r7, [r3]","seeds":["009AF8B4"]}
+{"address":"009AF93C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s16, [r2]","seeds":["009AF8B4"]}
+{"address":"009AF948","mode":"ARM","kind":"live-r2-at-call","effective":"0105243C","instruction":"bl #0x4baa40","seeds":["009AF8B4"]}
+{"address":"009AF948","mode":"ARM","kind":"live-r3-at-call","effective":"01052440","instruction":"bl #0x4baa40","seeds":["009AF8B4"]}
+{"address":"009AFAF8","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r3, [r6, r3]","seeds":["009AF8B4"]}
+{"address":"009AFB00","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r1, [r3]","seeds":["009AF8B4"]}
+{"address":"009AFB0C","mode":"ARM","kind":"live-r3-at-call","effective":"01052444","instruction":"bl #0x4be310","seeds":["009AF8B4"]}
+{"address":"009B0824","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r3, [r4, r3]","seeds":["009B0804"]}
+{"address":"009B082C","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r1, [r3]","seeds":["009B0804"]}
+{"address":"009B0834","mode":"ARM","kind":"live-r3-at-call","effective":"01052444","instruction":"bl #0x4be310","seeds":["009B0804"]}
+{"address":"009C40A4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [pc, r1]","seeds":["009C4094"]}
+{"address":"009C40AC","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [r1]","seeds":["009C4094"]}
+{"address":"009C40D0","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009C4094","009C40C0"]}
+{"address":"009C40DC","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["009C4094","009C40C0"]}
+{"address":"009C44C4","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009C44C0"]}
+{"address":"009C44C8","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["009C44C0"]}
+{"address":"009C9C4C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [r4, r1]","seeds":["009C9A4C"]}
+{"address":"009C9C54","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [r1]","seeds":["009C9A4C"]}
+{"address":"009CB7D0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [r5, r1]","seeds":["009CB5BC"]}
+{"address":"009CB7D4","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [r1]","seeds":["009CB5BC"]}
+{"address":"009D5B54","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r0, [r7, r0]","seeds":["009D5974"]}
+{"address":"009D5B6C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r0, [r0]","seeds":["009D5974"]}
+{"address":"009E1F80","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009E1F74"]}
+{"address":"009E1F88","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["009E1F74"]}
+{"address":"009E1FE4","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009E1FD8"]}
+{"address":"009E1FE8","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["009E1FD8"]}
+{"address":"009E20A4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["009E2098"]}
+{"address":"009E20A8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["009E2098"]}
+{"address":"009E6D38","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009E6D2C"]}
+{"address":"009E6D44","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r3]","seeds":["009E6D2C"]}
+{"address":"009E6D48","mode":"ARM","kind":"live-r3-at-call","effective":"01052440","instruction":"bl #0x9e2bd0","seeds":["009E6D2C"]}
+{"address":"009E9388","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r3, [pc, r3]","seeds":["009E9378"]}
+{"address":"009E9394","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r3, [r3]","seeds":["009E9378"]}
+{"address":"009E94B8","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr sb, [pc, sb]","seeds":["009E947C","009E94A4"]}
+{"address":"009E94C8","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [sb]","seeds":["009E947C","009E94A4"]}
+{"address":"009E9504","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [sb]","seeds":["009E947C","009E94A4"]}
+{"address":"009E9538","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [pc, r2]","seeds":["009E947C","009E94A4","009E9528"]}
+{"address":"009E953C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["009E947C","009E94A4","009E9528"]}
+{"address":"009E9D10","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr sb, [pc, sb]","seeds":["009E9CD4","009E9CFC"]}
+{"address":"009E9D20","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [sb]","seeds":["009E9CD4","009E9CFC"]}
+{"address":"009E9D5C","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [sb]","seeds":["009E9CD4","009E9CFC"]}
+{"address":"009E9D90","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [pc, r2]","seeds":["009E9CD4","009E9CFC","009E9D80"]}
+{"address":"009E9D94","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["009E9CD4","009E9CFC","009E9D80"]}
+{"address":"009EBE7C","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r2, [pc, r2]","seeds":["009EBE6C"]}
+{"address":"009EBE90","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r1, [r2]","seeds":["009EBE6C"]}
+{"address":"009EBE94","mode":"ARM","kind":"live-r2-at-call","effective":"01052444","instruction":"bl #0x4b3e70","seeds":["009EBE6C"]}
+{"address":"009EC448","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r3, [r5, r3]","seeds":["009EC428"]}
+{"address":"009EC450","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r3, [r3]","seeds":["009EC428"]}
+{"address":"009EE018","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [pc, r2]","seeds":["009EDF5C","009EE004"]}
+{"address":"009EE01C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["009EDF5C","009EE004"]}
+{"address":"009EECC8","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["009EEC1C","009EECC0"]}
+{"address":"009EECCC","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r2, [r3]","seeds":["009EEC1C","009EECC0"]}
+{"address":"009EECE8","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["009EEC1C","009EECC0","009EECDC"]}
+{"address":"009EECEC","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["009EEC1C","009EECC0","009EECDC"]}
+{"address":"009F150C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [r4, r3]","seeds":["009F12E8"]}
+{"address":"009F1510","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["009F12E8"]}
+{"address":"009FD538","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r3, [r8, r3]","seeds":["009FD4DC"]}
+{"address":"009FD53C","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r1, [r3]","seeds":["009FD4DC"]}
+{"address":"009FD548","mode":"ARM","kind":"live-r3-at-call","effective":"01052444","instruction":"bl #0x4b3e70","seeds":["009FD4DC"]}
+{"address":"009FDB38","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r3, [r8, r3]","seeds":["009FD928"]}
+{"address":"009FDB3C","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r1, [r3]","seeds":["009FD928"]}
+{"address":"009FF5F4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr ip, [pc, ip]","seeds":["009FF5E8"]}
+{"address":"009FF608","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [ip]","seeds":["009FF5E8"]}
+{"address":"00A0A178","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["00A09FA8","00A0A168"]}
+{"address":"00A0A184","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["00A09FA8","00A0A168"]}
+{"address":"00A1C778","mode":"ARM","kind":"read","effective":"01052440","instruction":"vldr s15, [r3, #4]","seeds":["00A1C75C"]}
+{"address":"00A1C784","mode":"ARM","kind":"write","effective":"0105243C","instruction":"str r0, [r3]","seeds":["00A1C75C"]}
+{"address":"00A1C794","mode":"ARM","kind":"write","effective":"0105244C","instruction":"str r2, [r3, #0x10]","seeds":["00A1C75C"]}
+{"address":"00A1C7C0","mode":"ARM","kind":"write","effective":"01052444","instruction":"vstr s13, [r3, #8]","seeds":["00A1C75C"]}
+{"address":"00A1C7C4","mode":"ARM","kind":"write","effective":"01052448","instruction":"vstr s14, [r3, #0xc]","seeds":["00A1C75C"]}
+{"address":"00A1C7E4","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s13, [r3]","seeds":["00A1C7D4"]}
+{"address":"00A1C7E8","mode":"ARM","kind":"write","effective":"01052440","instruction":"str r0, [r3, #4]","seeds":["00A1C7D4"]}
+{"address":"00A1C818","mode":"ARM","kind":"write","effective":"01052444","instruction":"vstr s13, [r3, #8]","seeds":["00A1C7D4"]}
+{"address":"00A1C81C","mode":"ARM","kind":"write","effective":"01052448","instruction":"vstr s14, [r3, #0xc]","seeds":["00A1C7D4"]}
+{"address":"00A1CDB4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [pc, r1]","seeds":["00A1CD28","00A1CD84","00A1CDA0"]}
+{"address":"00A1CDC8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr lr, [r1]","seeds":["00A1CD28","00A1CD84","00A1CDA0"]}
+{"address":"00A3592C","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A35920"]}
+{"address":"00A35938","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["00A35920"]}
+{"address":"00A35E6C","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r1, [pc, r1]","seeds":["00A35E60"]}
+{"address":"00A35E80","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r1, [r1]","seeds":["00A35E60"]}
+{"address":"00A35F4C","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A35E60","00A35F44"]}
+{"address":"00A35F58","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["00A35E60","00A35F44"]}
+{"address":"00A36840","mode":"ARM","kind":"GOT-pointer","effective":"01052444","instruction":"ldr r2, [pc, r2]","seeds":["00A36834"]}
+{"address":"00A36848","mode":"ARM","kind":"read","effective":"01052444","instruction":"ldr r1, [r2]","seeds":["00A36834"]}
+{"address":"00A3685C","mode":"ARM","kind":"live-r2-at-call","effective":"01052444","instruction":"bl #0x4b3e70","seeds":["00A36834"]}
+{"address":"00A3C50C","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr sb, [r7, r3]","seeds":["00A3C4C0"]}
+{"address":"00A3C520","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s15, [sb]","seeds":["00A3C4C0"]}
+{"address":"00A3C61C","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s14, [sb]","seeds":["00A3C4C0"]}
+{"address":"00A3C6F0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s14, [sb]","seeds":["00A3C4C0"]}
+{"address":"00A3CDB0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["00A3CDA4"]}
+{"address":"00A3CDB8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["00A3CDA4"]}
+{"address":"00A3EAD0","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r2, [pc, r2]","seeds":["00A3EAC8"]}
+{"address":"00A3EAD4","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r2, [r2]","seeds":["00A3EAC8"]}
+{"address":"00A41C94","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr ip, [pc, ip]","seeds":["00A41C80"]}
+{"address":"00A41CA0","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh sb, [ip]","seeds":["00A41C80"]}
+{"address":"00A420C0","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [r6, r3]","seeds":["00A41E64"]}
+{"address":"00A420C8","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["00A41E64"]}
+{"address":"00A42314","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [r7, r3]","seeds":["00A4221C"]}
+{"address":"00A4231C","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["00A4221C"]}
+{"address":"00A430A0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["00A43064","00A43078","00A43098"]}
+{"address":"00A430A4","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r1, [r3]","seeds":["00A43064","00A43078","00A43098"]}
+{"address":"00A430A8","mode":"ARM","kind":"live-r3-at-call","effective":"0105243C","instruction":"bl #0xa548b8","seeds":["00A43064","00A43078","00A43098"]}
+{"address":"00A44760","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r4, [pc, r4]","seeds":["00A4475C"]}
+{"address":"00A44794","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldr r2, [r4]","seeds":["00A4475C"]}
+{"address":"00A44970","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r5, [pc, r5]","seeds":["00A44948","00A4496C"]}
+{"address":"00A44974","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r5]","seeds":["00A44948","00A4496C"]}
+{"address":"00A44A28","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldr r3, [r5]","seeds":["00A44948","00A4496C"]}
+{"address":"00A4D5C4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [r7, ip]","seeds":["00A4D500"]}
+{"address":"00A4D5CC","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["00A4D500"]}
+{"address":"00A4D730","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [sl, r1]","seeds":["00A4D650"]}
+{"address":"00A4D738","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["00A4D650"]}
+{"address":"00A4D848","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [sl, lr]","seeds":["00A4D650"]}
+{"address":"00A4D850","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["00A4D650"]}
+{"address":"00A4E4CC","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r0, [r6, r1]","seeds":["00A4E334"]}
+{"address":"00A4E4E0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r0, [r0]","seeds":["00A4E334"]}
+{"address":"00A4EC74","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr ip, [pc, ip]","seeds":["00A4EA2C","00A4EB14","00A4EC5C"]}
+{"address":"00A4EC7C","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldr r6, [ip]","seeds":["00A4EA2C","00A4EB14","00A4EC5C"]}
+{"address":"00A4F7CC","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["00A4F7B4"]}
+{"address":"00A4F7D8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr lr, [r3]","seeds":["00A4F7B4"]}
+{"address":"00A515AC","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A515A8"]}
+{"address":"00A515B0","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r3]","seeds":["00A515A8"]}
+{"address":"00A53068","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A5305C"]}
+{"address":"00A53070","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["00A5305C"]}
+{"address":"00A54528","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r1, [r5, r3]","seeds":["00A544CC"]}
+{"address":"00A54534","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r1]","seeds":["00A544CC"]}
+{"address":"00A56EA4","mode":"ARM","kind":"write","effective":"0108DF90","instruction":"str r3, [r6]","seeds":["00A56E3C"]}
+{"address":"00A56FDC","mode":"ARM","kind":"write","effective":"0108DF98","instruction":"strb lr, [r5, #8]","seeds":["00A56E3C","00A56F90"]}
+{"address":"00A56FF4","mode":"ARM","kind":"read","effective":"0108DF98","instruction":"ldrb r3, [r5, #8]","seeds":["00A56E3C","00A56F90"]}
+{"address":"00A57004","mode":"ARM","kind":"write","effective":"0108DF98","instruction":"strb r3, [r5, #8]","seeds":["00A56E3C","00A56F90"]}
+{"address":"00A57054","mode":"ARM","kind":"write","effective":"0108DF94","instruction":"str r0, [r6, #4]","seeds":["00A56E3C"]}
+{"address":"00A57428","mode":"ARM","kind":"live-r3-at-call","effective":"0108DF90","instruction":"blx #0x593e58","seeds":["00A57238","00A57374","00A573BC","00A57418"]}
+{"address":"00A576EC","mode":"ARM","kind":"read","effective":"0108DF90","instruction":"ldr ip, [r3]","seeds":["00A576E0"]}
+{"address":"00A576F4","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r1, [r3, #4]","seeds":["00A576E0"]}
+{"address":"00A577AC","mode":"ARM","kind":"read","effective":"0108DF90","instruction":"ldr r3, [r3]","seeds":["00A5772C","00A57798","00A577A4"]}
+{"address":"00A577D4","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r6, [r3, #4]","seeds":["00A5772C","00A57798","00A577A4","00A577CC"]}
+{"address":"00A577E0","mode":"ARM","kind":"live-r3-at-call","effective":"0108DF90","instruction":"bl #0x4a6694","seeds":["00A5772C","00A57798","00A577A4","00A577CC"]}
+{"address":"00A57848","mode":"ARM","kind":"live-r3-at-call","effective":"0108DF90","instruction":"bl #0xa1c75c","seeds":["00A5772C","00A57798","00A577A4","00A577CC"]}
+{"address":"00A578C8","mode":"ARM","kind":"write","effective":"0108DF90","instruction":"str r2, [r3]","seeds":["00A5772C","00A57798","00A577A4","00A577CC","00A578B4"]}
+{"address":"00A578D8","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r6, [r3, #4]","seeds":["00A5772C","00A57798","00A577A4","00A578D0"]}
+{"address":"00A578F4","mode":"ARM","kind":"read","effective":"0108DF90","instruction":"ldr r3, [r3]","seeds":["00A5772C","00A57798","00A577A4","00A577CC","00A578E8"]}
+{"address":"00A5792C","mode":"ARM","kind":"write","effective":"0108DF94","instruction":"str r7, [r3, #4]","seeds":["00A5772C","00A57798","00A577A4","00A577CC","00A57924"]}
+{"address":"00A579EC","mode":"ARM","kind":"live-r3-at-call","effective":"0108DF90","instruction":"bl #0xa40c30","seeds":["00A57968","00A5797C","00A579DC"]}
+{"address":"00A57EE4","mode":"ARM","kind":"read","effective":"0108DF98","instruction":"ldrb r3, [r8, #8]","seeds":["00A57D6C","00A57D80","00A57D94","00A57DEC"]}
+{"address":"00A57F04","mode":"ARM","kind":"write","effective":"0108DF98","instruction":"strb r5, [r8, #8]","seeds":["00A57D6C","00A57D80","00A57D94","00A57DEC"]}
+{"address":"00A57F68","mode":"ARM","kind":"read","effective":"0108DF98","instruction":"ldrb r0, [r3, #8]","seeds":["00A57D6C","00A57D80","00A57D94","00A57F60"]}
+{"address":"00A57FB4","mode":"ARM","kind":"read","effective":"0108DF98","instruction":"ldrb r0, [r8, #8]","seeds":["00A57D6C","00A57D80"]}
+{"address":"00A58060","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A58054"]}
+{"address":"00A58070","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r3]","seeds":["00A58054"]}
+{"address":"00A58074","mode":"ARM","kind":"live-r3-at-call","effective":"01052440","instruction":"bl #0x4be310","seeds":["00A58054"]}
+{"address":"00A58188","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A58178"]}
+{"address":"00A5818C","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r3]","seeds":["00A58178"]}
+{"address":"00A581AC","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r3]","seeds":["00A58178"]}
+{"address":"00A5831C","mode":"ARM","kind":"GOT-pointer","effective":"0108DF94","instruction":"ldr r8, [pc, r8]","seeds":["00A58304"]}
+{"address":"00A58328","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r6, [r8]","seeds":["00A58304"]}
+{"address":"00A583E8","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r2, [pc, r2]","seeds":["00A58304","00A583DC"]}
+{"address":"00A583F0","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r2, [r2]","seeds":["00A58304","00A583DC"]}
+{"address":"00A58404","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r6, [r8]","seeds":["00A58304"]}
+{"address":"00A584A4","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A5849C"]}
+{"address":"00A584A8","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r3]","seeds":["00A5849C"]}
+{"address":"00A584C8","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r3]","seeds":["00A5849C"]}
+{"address":"00A584F4","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r5, [pc, r5]","seeds":["00A584E4"]}
+{"address":"00A58500","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r2, [r5]","seeds":["00A584E4"]}
+{"address":"00A58528","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r5]","seeds":["00A584E4"]}
+{"address":"00A5899C","mode":"ARM","kind":"GOT-pointer","effective":"0108DF94","instruction":"ldr ip, [pc, ip]","seeds":["00A58970","00A58978","00A58980"]}
+{"address":"00A58A04","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r1, [ip]","seeds":["00A58970","00A58978","00A58980"]}
+{"address":"00A58B7C","mode":"ARM","kind":"GOT-pointer","effective":"0108DF94","instruction":"ldr r2, [pc, r2]","seeds":["00A58B50","00A58B58","00A58B60"]}
+{"address":"00A58BB0","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r1, [r2]","seeds":["00A58B50","00A58B58","00A58B60"]}
+{"address":"00A58BEC","mode":"ARM","kind":"live-r2-at-call","effective":"0108DF94","instruction":"bl #0x4be310","seeds":["00A58B50","00A58B58","00A58B60"]}
+{"address":"00A58CD4","mode":"ARM","kind":"GOT-pointer","effective":"0108DF98","instruction":"ldr r3, [r6, r3]","seeds":["00A58C40"]}
+{"address":"00A58CD8","mode":"ARM","kind":"read","effective":"0108DF98","instruction":"ldrb r3, [r3]","seeds":["00A58C40"]}
+{"address":"00A58CEC","mode":"ARM","kind":"GOT-pointer","effective":"0108DF94","instruction":"ldr r3, [r6, r3]","seeds":["00A58C40"]}
+{"address":"00A58CF0","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r5, [r3]","seeds":["00A58C40"]}
+{"address":"00A58D94","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r2, [r6, r2]","seeds":["00A58C40"]}
+{"address":"00A58D98","mode":"ARM","kind":"GOT-pointer","effective":"0108DF94","instruction":"ldr r3, [r6, r3]","seeds":["00A58C40"]}
+{"address":"00A58D9C","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r7, [r2]","seeds":["00A58C40"]}
+{"address":"00A58DA0","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r5, [r3]","seeds":["00A58C40"]}
+{"address":"00A58DB0","mode":"ARM","kind":"live-r2-at-call","effective":"01052440","instruction":"bl #0x4b3e70","seeds":["00A58C40"]}
+{"address":"00A58DB0","mode":"ARM","kind":"live-r3-at-call","effective":"0108DF94","instruction":"bl #0x4b3e70","seeds":["00A58C40"]}
+{"address":"00A58F04","mode":"ARM","kind":"GOT-pointer","effective":"0108DF94","instruction":"ldr r3, [r6, r3]","seeds":["00A58E50"]}
+{"address":"00A58F0C","mode":"ARM","kind":"read","effective":"0108DF94","instruction":"ldr r1, [r3]","seeds":["00A58E50"]}
+{"address":"00A58F14","mode":"ARM","kind":"live-r3-at-call","effective":"0108DF94","instruction":"bl #0x4be310","seeds":["00A58E50"]}
+{"address":"00A58FB4","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr ip, [pc, ip]","seeds":["00A58FA4"]}
+{"address":"00A58FC0","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh ip, [ip]","seeds":["00A58FA4"]}
+{"address":"00A615C0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [r5, r1]","seeds":["00A613F8"]}
+{"address":"00A615C8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr ip, [r1]","seeds":["00A613F8"]}
+{"address":"00A61638","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [r5, r1]","seeds":["00A613F8"]}
+{"address":"00A61640","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r5, [r1]","seeds":["00A613F8"]}
+{"address":"00A6A6E8","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [r7, r3]","seeds":["00A6A588"]}
+{"address":"00A6A6F0","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r3, [r3]","seeds":["00A6A588"]}
+{"address":"00A6A830","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [r7, r3]","seeds":["00A6A588"]}
+{"address":"00A6A834","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r3, [r3]","seeds":["00A6A588"]}
+{"address":"00A6AFCC","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r1, [r5, r3]","seeds":["00A6ACE0"]}
+{"address":"00A6AFD8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r1, [r1]","seeds":["00A6ACE0"]}
+{"address":"00A6C2A8","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A6C2A4"]}
+{"address":"00A6C2AC","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r3]","seeds":["00A6C2A4"]}
+{"address":"00A71548","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A7153C"]}
+{"address":"00A71558","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r6, [r3]","seeds":["00A7153C"]}
+{"address":"00A72574","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr lr, [pc, lr]","seeds":["00A7255C"]}
+{"address":"00A72584","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [lr]","seeds":["00A7255C"]}
+{"address":"00A73870","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [pc, r2]","seeds":["00A73860"]}
+{"address":"00A73878","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["00A73860"]}
+{"address":"00A73DD4","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r6, [pc, r6]","seeds":["00A73DBC"]}
+{"address":"00A73DE4","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r1, [r6]","seeds":["00A73DBC"]}
+{"address":"00A78320","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r2, [pc, r2]","seeds":["00A78318"]}
+{"address":"00A78328","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr r2, [r2]","seeds":["00A78318"]}
+{"address":"00A78AE4","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr sb, [pc, sb]","seeds":["00A78964","00A78AC8"]}
+{"address":"00A78AF8","mode":"ARM","kind":"read","effective":"0105243C","instruction":"ldr sb, [sb]","seeds":["00A78964","00A78AC8"]}
+{"address":"00A78EA0","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r3, [pc, r3]","seeds":["00A78E9C"]}
+{"address":"00A78EA4","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh r0, [r3]","seeds":["00A78E9C"]}
+{"address":"00A7999C","mode":"ARM","kind":"GOT-pointer","effective":"01052440","instruction":"ldr r5, [pc, r5]","seeds":["00A7998C"]}
+{"address":"00A799B0","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh ip, [r5]","seeds":["00A7998C"]}
+{"address":"00A799F0","mode":"ARM","kind":"read","effective":"01052440","instruction":"ldrh ip, [r5]","seeds":["00A7998C"]}
+{"address":"00A7A404","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["00A7A3FC"]}
+{"address":"00A7A408","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s14, [r3]","seeds":["00A7A3FC"]}
+{"address":"00A7A4E0","mode":"ARM","kind":"GOT-pointer","effective":"0105243C","instruction":"ldr r3, [pc, r3]","seeds":["00A7A4D8"]}
+{"address":"00A7A4E4","mode":"ARM","kind":"read","effective":"0105243C","instruction":"vldr s14, [r3]","seeds":["00A7A4D8"]}
+LIMIT: encoding/navigation local windows only; mixed-mode false candidates, shifted index, unmodelled branch flags/loop bounds, path merge, stack aliases, external mutation, computed/indirect inputs and pointer escape need primary checks. No exhaustive runtime writer absence.
