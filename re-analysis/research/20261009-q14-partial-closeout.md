@@ -774,3 +774,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint853 — updater composed nearby-PC addresses
 
 `20261011-sound-fx-updater-composed-pc-disposition.md` substitutes original9CDFE4 into852's nearby-PC seed method: four windows/zero events/zero caps. Every apparent Thumb ADR is an actual ARM association-helper or next-entry instruction; primary return/literal/PUSH separation retained. FA563/AR648 paid control/reader contracts unchanged;016 PARTIAL for admitted settings/property/data/size and actual notification recipient or supported-input exclusion. No full847 pointer repeat or new family.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint854 — optional-layer nearby-PC input check
+
+`20261011-sound-optional-layer-composed-pc-disposition.md` checks originalRemovePersistentLayer58EE4C with852's nearby-PC seed method: zero seeds/windows/events/caps. OL664 conditional matched-layer dispatch, OL649/661 finite native/managed inputs and844 fixed lookup names remain paid. No dynamic/all-input absence or new optional family;021 PARTIAL for actual admitted manager/tag/control/populated layer or another original optional input.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

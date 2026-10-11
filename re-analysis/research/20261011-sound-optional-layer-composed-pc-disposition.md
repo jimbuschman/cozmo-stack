@@ -1,0 +1,11 @@
+# Q14-021 RemovePersistentLayer nearby-PC input check, checkpoint854
+
+Scope guard reread before every step. Request `requests/20261007-codex-queue-5.md`. Target is only originalRemovePersistentLayer58EE4C and mode-bit variant. A positively supplied manager/tag/control and populated matching layer can change composition and sound cutoff, so this input/address check qualifies. OL664's conditional Remove→AddLayer PLT raw input/order, LI455/LF454 compositor, and844's two fixed dlsym names remain paid. No optional generator, loader or compositor body is reopened.
+
+`-navigation.py/.json` substitutes58EE4C into852's bounded nearby-PC seed method. It checks17639 ARM immediate ADD/SUB-PC,17041 Thumb ADR16 and1073 Thumb ADDW/SUBW-PC forms for seed values within512 bytes either side of that entry. Zero nearby seeds, zero propagation windows/events/caps. The unchanged812 local model would receive only a decoded first destination and retains its full flags/width/call-clobber/LOAD/window limits; no805 full pointer census is repeated. Model SHA256917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf.
+
+This checks a specific immediate-PC-plus-later-adjustment frontier; it does not check every alternative function, indirect/computed/copied/foreign input or dynamic companion message. No all-input absence or empty-layer claim follows. OL649's27 companion inputs, OL661's78 managed assemblies/91 imports, OL664's five exact export bindings and844's two engine lookup names remain their own bounded evidence. Only AddLayer has the known matched JUMP_SLOT/PLT; no new PLT family is invented from this zero result.
+
+Q14-021 remains PARTIAL, AUDIBLE. Exactly open: positively admitted shipped manager/tag/control and populated matching layer to58EE4C, or another original optional-layer input with its exact conditional decisions, or complete bounded supported-input exclusion proof. Stop this zero-seed method before arbitrary callback/generator or loader-family descent; further work needs a positive original input or stronger supported-input proof.
+
+out of scope: layer backing/copy/free, loader/storage infrastructure and per-sample composition/mixing/noise arithmetic.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production, fidelity, inventory, PROJECT_STATE, hardware or Q15 change.
