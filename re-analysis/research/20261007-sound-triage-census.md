@@ -3392,3 +3392,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint836 — wider exact-offset voice-policy writer screen
 
 `20261011-sound-voice-policy-expanded-store-disposition.md` indexes50 aligned ARM E0/E4 stores beyond the prior voice-method region:18 direct stack,4 paid voice,4 separate allocation,7 current108D904 registry,2 fixed global defaults,2 known embedded-stage offset stores,and13 explicit receiver-dependent seams. ActualA76280(V+1D0/V+3A0) writesV+2B0/2B4 or480/484,notV+E0/E4. No complete alias/caller absence claim;033 PARTIAL. Counts116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Next the13 named receiver seams;Q15 remains behindQ14.
+
+### Checkpoint837 — thirteen policy-offset receiver seams reconciled
+
+`20261011-sound-voice-policy-receiver-seams.md` accounts for836’s13 retained encodings through selected manager cleanup,Play request,music-context allocation/array andline FX products. Indexed slot destinations preserve28-byte stride and supplied input bounds;known line allocation andmusic factory products are distinct from thevoice. All50 exact-offset candidates nowhave bounded dispositions;no complete composed/overlapping/block/copy/escaped alias orindirect re-init proof.033 PARTIAL;116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Continue original policy-writer census;Q15 remains behindQ14.
