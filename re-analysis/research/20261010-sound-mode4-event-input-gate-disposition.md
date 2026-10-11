@@ -1,0 +1,19 @@
+# Q14-009/034: exact direct-PostEvent gate for the two mode4 IDs
+
+Checkpoint806; scope guard reread before each step. Engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Coverage116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL. Exactly the original725225627/196431345 admission question; not a new caller/family census.
+
+Primary `20261010-sound-mode4-event-input-gate-native.txt` reopens the existing app PostEvent core,typed bank-reader dispatch and registry publication interfaces. Reproducible `-event-input-population-witness.py/.json` independently reads all six banks,validates complete chunk/HIRC extents and5350 payload hashes,and preserves every type4 Event own-ID plus ordered action words. It counts835 Events:Cozmo546,SFX171,Music83,UI21,Dev_Debug14,Init0. Both queried IDs belong to the two known type5 objects and match no type4 Event own-ID.
+
+| Positive gate | Native/bank contract |
+| --- | --- |
+|Existing app wrapper|PE416 forwards eventID through9A6704->9A0EF8; it does not invoke a generic node Play using that ID. Existing UE/E/PE416 entry and flag/callback/order facts remain paid.|
+|PostEvent membership|9A0F08 saves requestedR0 ID toSL.9A0F0C resolves current global108D8E0 index via9A0F00+8+6EC960+78. It locks index3C and searches event40/count44/chains4/key8. Zero bucketcount or no exact key follows9A0F38 unlock,9A0F40 R0=0,return9A0F48. Only an exact matched event gets refC++ then message allocation/publication. No generic-node fallback occurs on miss.|
+|Type4 bank publication|HIRC reader9B3380 type byte minus1 andADD PC at9B338C selectsbranch9B33A0 for type4 (ARMPC+8 plus3*4),then9B3DAC->9B3DB8 calls9B3100. A missing event is created9CC96C,read9CD01C,and ONLY result1 invokes9CC9C4. Actual publication uses current index3C/40/44/4C and event ID8; rawGOT104006C=108D8E0 independently matches the PostEvent index. Backing growth/hash/storage interfaces are not traced.|
+|Type5 separate node route|The same jump selects9B33A4->9B3CDC for type5. It asks9A80B8(currentIndex,0),then locks returnedindex0 and searches table4/count8,not event3C/40/44.9A80B8's literal contract is selector0 returns suppliedbase;nonzero adds14. Known missing type5 factoryA07114/readerA0828C remain their existing bank/node contracts. The mode4 node ID is not automatically entered into the event registry because it is a loaded HIRC object.|
+|Bounded direct-post conclusion|If the event registry consists of the events published from the six checked banks through that factory/reader path,passing either original mode4 ID itself to ordinary appPostEvent cannot advance to queueing/Play:there is no matching event key and the native miss returns0. This is a positive typed lookup failure rule plus exact shipped input IDs,not a generic all-runtime mutation/registry absence claim.|
+
+This rules out direct posting of these two container IDs through the known app event interface under the checked bank-created population. It does not rule out an admitted event/action selecting a container after graph mutation,alternate event publication,an internal/direct-node caller,or mutable target/attachment/child inputs. PB647's723 ordinary Play-root expansion,MT651's authored MIDI expansion,789's13 serialized node-ID references,and802's media identity remain paid; those finite facts do not alone prove the full supported-input frontier.
+
+Still open:bind an actual outer mode4 runtime request and its context/continuation/depth/default values,or prove the remaining admitted internal/direct-node and mutable input frontiers excluded. Q14-009/034 remain PARTIAL/AUDIBLE;no SDK-only inference or all-input unreachability upgrade. Q15 stays behind Q14.
+
+out of scope: event/node index backing/hash/allocation and media/DSP; logical registry identity,ID match,return value and publication order are exact retained decisions. Research only;no production,fidelity,inventory or hardware changes.

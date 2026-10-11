@@ -11683,3 +11683,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint805 - optional input address-navigation corrections
 
 `20261010-sound-optional-layer-address-fair-disposition.md` corrects665's EXEC-only data-read map,omitted selected Thumb MOVW and partial GOT bounds,with independent original-versus-changed mapping byte probes.14885 windows/791 caps/zero target events; no runtime binding,candidate admission or absence proof. OL664's positive Remove->AddLayer PLT decision remains paid; original021 manager/tag/control/populated-layer input stays UNKNOWN/PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint806 - direct-post mode4 event gate
+
+`20261010-sound-mode4-event-input-gate-disposition.md` positively joins knownPostEvent's exact event-registry lookup/miss0 to type4 publication and the separate type5 node table. Independent5350-payload/six-bank check finds835 Events and neither originalmode4 ID among Event own-IDs. Direct posting either containerID cannot queue under this checked event population; alternate/internal/mutable admission remains unproved.009/034 PARTIAL;no all-runtime or SDK-only exclusion.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
