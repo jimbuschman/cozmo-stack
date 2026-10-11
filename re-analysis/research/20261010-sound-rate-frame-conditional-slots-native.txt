@@ -1,0 +1,28 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+01040040: raw=00000000 relocated=00000000
+01040044: raw=00000000 relocated=00000000
+01040048: raw=01052418 relocated=01052418
+0104004C: raw=0108D990 relocated=0108D990
+RANGE 0x0098D508..0x0098D530 exclusive; ARM;
+0098D508: ldrne        r0, [r4, #4]
+0098D50C: cmp          r3, ip
+0098D510: ldrne        r3, [pc, #0x64] ; word[0098D57C]=006B2B2C
+0098D514: ldrne        r3, [pc, r3]
+0098D518: ldrne        r8, [r3]
+0098D51C: ldreq        r3, [pc, #0x5c] ; word[0098D580]=006B2B1C
+0098D520: streq        r2, [r5, #0x5c]
+0098D524: ldreq        r3, [pc, r3]
+0098D528: ldreq        r8, [r3]
+0098D52C: cmp          r0, #0
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+01040048: raw=01052418 relocated=01052418
+0104004C: raw=0108D990 relocated=0108D990
+01040050: raw=01052414 relocated=01052414
+01040054: raw=0097C804 relocated=0097C804
+01040058: raw=01052440 relocated=01052440
+RANGE 0x00A7A9EC..0x00A7A9F8 exclusive; ARM;
+00A7A9EC: pop          {r4, r5, r6, pc}
+00A7A9F0: mov          r0, #1
+00A7A9F4: bx           lr

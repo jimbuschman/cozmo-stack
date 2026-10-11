@@ -1,0 +1,176 @@
+[
+  {
+    "address": "00987A1C",
+    "mode": "ARM",
+    "kind": "GOT-pointer",
+    "effective": "0105243C",
+    "instruction": "ldr r3, [r5, r3]",
+    "seeds": [
+      "009877F8"
+    ],
+    "capped_seeds": [
+      "009877F8"
+    ]
+  },
+  {
+    "address": "00987A28",
+    "mode": "ARM",
+    "kind": "read",
+    "effective": "0105243C",
+    "instruction": "ldr r3, [r3]",
+    "seeds": [
+      "009877F8"
+    ],
+    "capped_seeds": [
+      "009877F8"
+    ]
+  },
+  {
+    "address": "0099DD88",
+    "mode": "ARM",
+    "kind": "read",
+    "effective": "0108DF98",
+    "instruction": "ldr r1, [r4]",
+    "seeds": [
+      "0099DD48"
+    ],
+    "capped_seeds": []
+  },
+  {
+    "address": "0099DD94",
+    "mode": "ARM",
+    "kind": "write",
+    "effective": "0108DF90",
+    "instruction": "str r5, [r4, #4]",
+    "seeds": [
+      "0099DD48"
+    ],
+    "capped_seeds": []
+  },
+  {
+    "address": "0099DDA0",
+    "mode": "ARM",
+    "kind": "write",
+    "effective": "0108DF98",
+    "instruction": "str r5, [r4]",
+    "seeds": [
+      "0099DD48"
+    ],
+    "capped_seeds": []
+  },
+  {
+    "address": "0099DDA4",
+    "mode": "ARM",
+    "kind": "write",
+    "effective": "0108DF94",
+    "instruction": "str r5, [r4, #8]",
+    "seeds": [
+      "0099DD48"
+    ],
+    "capped_seeds": []
+  },
+  {
+    "address": "009D5B54",
+    "mode": "ARM",
+    "kind": "GOT-pointer",
+    "effective": "0105243C",
+    "instruction": "ldr r0, [r7, r0]",
+    "seeds": [
+      "009D5974"
+    ],
+    "capped_seeds": [
+      "009D5974"
+    ]
+  },
+  {
+    "address": "009D5B6C",
+    "mode": "ARM",
+    "kind": "read",
+    "effective": "0105243C",
+    "instruction": "ldr r0, [r0]",
+    "seeds": [
+      "009D5974"
+    ],
+    "capped_seeds": [
+      "009D5974"
+    ]
+  },
+  {
+    "address": "00A420C0",
+    "mode": "ARM",
+    "kind": "GOT-pointer",
+    "effective": "01052440",
+    "instruction": "ldr r3, [r6, r3]",
+    "seeds": [
+      "00A41E64"
+    ],
+    "capped_seeds": [
+      "00A41E64"
+    ]
+  },
+  {
+    "address": "00A420C8",
+    "mode": "ARM",
+    "kind": "read",
+    "effective": "01052440",
+    "instruction": "ldrh r3, [r3]",
+    "seeds": [
+      "00A41E64"
+    ],
+    "capped_seeds": [
+      "00A41E64"
+    ]
+  },
+  {
+    "address": "00A615C0",
+    "mode": "ARM",
+    "kind": "GOT-pointer",
+    "effective": "0105243C",
+    "instruction": "ldr r1, [r5, r1]",
+    "seeds": [
+      "00A613F8"
+    ],
+    "capped_seeds": [
+      "00A613F8"
+    ]
+  },
+  {
+    "address": "00A615C8",
+    "mode": "ARM",
+    "kind": "read",
+    "effective": "0105243C",
+    "instruction": "ldr ip, [r1]",
+    "seeds": [
+      "00A613F8"
+    ],
+    "capped_seeds": [
+      "00A613F8"
+    ]
+  },
+  {
+    "address": "00A61638",
+    "mode": "ARM",
+    "kind": "GOT-pointer",
+    "effective": "0105243C",
+    "instruction": "ldr r1, [r5, r1]",
+    "seeds": [
+      "00A613F8"
+    ],
+    "capped_seeds": [
+      "00A613F8"
+    ]
+  },
+  {
+    "address": "00A61640",
+    "mode": "ARM",
+    "kind": "read",
+    "effective": "0105243C",
+    "instruction": "ldr r5, [r1]",
+    "seeds": [
+      "00A613F8"
+    ],
+    "capped_seeds": [
+      "00A613F8"
+    ]
+  }
+]

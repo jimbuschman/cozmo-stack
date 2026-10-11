@@ -427,3 +427,18 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint771 — rate/frame NEON full-register overlap disposition
 
 `20261010-sound-rate-frame-neon-store-disposition.md` adds established-base VST1..4 full-register byte spans;4392 bounded windows yield no additional overlap and unchanged314 navigation events. Lane forms/unknown bases/copied/relative aliases and zero/provider inputs remain explicit,043/092/099/120/124/130 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint772 — conditional candidate flag correlation
+
+`20261010-sound-rate-frame-conditional-disposition.md` rejects four new apparent rate/frame events: actual NE/EQ sequences share unchanged CMP flags and both select pool1052418; the forked tool mixed incompatible predicates to reach frame1052440. Callees also overwrite/nonconsumeR3.281 capped windows keep navigation incomplete; original rate/frame/zero/provider gaps remain PARTIAL.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint773 — predicate correlation and callback-array write exclusion
+
+`20261010-sound-rate-frame-predicate-disposition.md` records291 bounded correlated-predicate events,344 capped windows and23 prior events retained as unassessed by this run. Independent native seven-record bounds reject three old99DD94/A0/A4 apparent108DF90/94/98 writes; they end at108D8C8.770's17-known-store wording is corrected to17 apparent events/three rejected. Original rate/frame/zero/provider gaps remain PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint774 — known integer comparison constraints
+
+`20261010-sound-rate-frame-compare-disposition.md` adds exact CMP/CMN flags for established unshifted operands;300 events restore ten old events and remove one bounded-array read, with326 capped windows and14 baseline events retained for independent evidence. No additional writer/alias or zero/provider proof; real scalar/ABI contracts remain paid. Original rate/frame groups PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
