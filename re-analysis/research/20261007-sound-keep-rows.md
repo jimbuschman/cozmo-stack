@@ -1,3 +1,9 @@
+# Q14 final wrap-up — checkpoint895
+
+Operator-directed stop: **117 CHECKED (109 native +8 scope),23 UNKNOWN (stopped),0 PARTIAL,0 NOT DONE;140 AUDIBLE,0 INTERNAL.** The23 unknowns retain their evidence limits and receive no CHECKED or unreachable credit. Final individual dispositions, established facts, exact unknowns, prior bounded-search checkpoints and reasons for stopping are in [the close-out file](20261009-q14-partial-closeout.md#final-stopped-dispositions--checkpoint895-operator-directed-q14-wrap-up). No new search/tooling or Q15 continuation; no production/fidelity/approval changes. Historical checkpoint counts and quotations below are preserved, and prior continuation instructions are superseded by this stop.
+
+## Historical category summary (category rows predate the final per-item dispositions)
+
 | Q14 coverage | Status | Evidence / remaining work |
 | --- | --- | --- |
 | Approved reachability exclusions on resumption | CHECKED | Operator resume instruction adopts the five exclusions from `20261007-sound-reachability.md`; scope is listed below. Existing historical rows for excluded bodies do not reopen that work. |
@@ -9,7 +15,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 109 native-row obligations CHECKED, 8 CHECKED scope exclusions, 23 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | UNKNOWN (stopped) | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. Final checkpoint895:109 native CHECKED,8 scope CHECKED,23 UNKNOWN (stopped),0 PARTIAL,0 NOT DONE;140 AUDIBLE/0 INTERNAL. Searches stopped; unknowns are not CHECKED. |
 
 ## Checkpoint 610 — modulator joins and positive-context item frontier
 
