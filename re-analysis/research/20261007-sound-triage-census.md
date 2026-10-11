@@ -3316,3 +3316,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint817 - reconcile existing division follow-ups
 
 `20261011-sound-rate-frame-uidivmod-disposition.md` joins816's three call frontiers to existingDZ659/DL754 source:nonzero wrappers/UIDIV entries define retainedR2 before use;zero-handler and external raise inputs stay UNKNOWN. Actual9EBE94 divisor is duration1052444,not rate105243C;UIDIVMOD uses its quotient. No repeated helper-body recovery or input/writer closure. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint818 - native startup zero-input conditions
+
+`20261011-sound-startup-frame-zero-disposition.md` joins the adapter's1024-frame/rounding1 product to11 original rounding cases and8 native setter/query cases. Conditional quantum2049 rounds to0;positive duration1001 yields second divisor0;binary32 rate1024/frame1024 stores999. External phone inputs and actual provider/raise binding remain UNKNOWN;fixtures are not actual-input admission proof. Six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

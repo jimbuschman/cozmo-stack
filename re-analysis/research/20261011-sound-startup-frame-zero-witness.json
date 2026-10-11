@@ -1,0 +1,488 @@
+{
+  "scope": "Native startup rounding and timing-parameter stores only. External return fixtures are not proof of actual Android values or shipped request admission. Selected acatts helper is a harness binding, not the runtime winner. No zero-handler/raise behavior is simulated.",
+  "initial_fpscr_hex": "00000000",
+  "unicorn_version": "2.1.4",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "provider_sha256": "73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698",
+  "rounding_cases": [
+    {
+      "external_quantum_fixture": 0,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 1024,
+      "final_query_quantum": 0,
+      "stop": [
+        "2003FF90"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 0
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 1,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 1024,
+      "final_query_quantum": 1,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 1
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 128,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 1024,
+      "final_query_quantum": 128,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 128
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 256,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 1024,
+      "final_query_quantum": 256,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 256
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 512,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 1024,
+      "final_query_quantum": 512,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 512
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 1024,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 1024,
+      "final_query_quantum": 1024,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 1024
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 2048,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 2048,
+      "final_query_quantum": 2048,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 2048
+        },
+        {
+          "site": "00A57800",
+          "interface": "uidiv",
+          "r0": 1024,
+          "r1": 2048
+        },
+        {
+          "site": "00A57814",
+          "interface": "uidiv",
+          "r0": 3071,
+          "r1": 2048
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 2049,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 0,
+      "final_query_quantum": 2049,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 2049
+        },
+        {
+          "site": "00A57800",
+          "interface": "uidiv",
+          "r0": 1024,
+          "r1": 2049
+        },
+        {
+          "site": "00A57814",
+          "interface": "uidiv",
+          "r0": 3072,
+          "r1": 2049
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 4096,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 0,
+      "final_query_quantum": 4096,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 4096
+        },
+        {
+          "site": "00A57800",
+          "interface": "uidiv",
+          "r0": 1024,
+          "r1": 4096
+        },
+        {
+          "site": "00A57814",
+          "interface": "uidiv",
+          "r0": 5119,
+          "r1": 4096
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 65535,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 0,
+      "final_query_quantum": 65535,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 65535
+        },
+        {
+          "site": "00A57800",
+          "interface": "uidiv",
+          "r0": 1024,
+          "r1": 65535
+        },
+        {
+          "site": "00A57814",
+          "interface": "uidiv",
+          "r0": 66558,
+          "r1": 65535
+        }
+      ]
+    },
+    {
+      "external_quantum_fixture": 4294967295,
+      "initial_request": 1024,
+      "rounding_enabled": 1,
+      "final_request": 0,
+      "final_query_quantum": 4294967295,
+      "stop": [
+        "00A57834"
+      ],
+      "helper_calls": [
+        {
+          "site": "00A577E0",
+          "interface": "uidivmod",
+          "r0": 1024,
+          "r1": 4294967295
+        },
+        {
+          "site": "00A57800",
+          "interface": "uidiv",
+          "r0": 1024,
+          "r1": 4294967295
+        },
+        {
+          "site": "00A57814",
+          "interface": "uidiv",
+          "r0": 1022,
+          "r1": 4294967295
+        }
+      ]
+    }
+  ],
+  "setter_cases": [
+    {
+      "rate_fixture": 48000,
+      "frame_fixture": 0,
+      "native_setting_words_hex": [
+        "0000BB80",
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000080"
+      ],
+      "duration_word": 0,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 0
+        }
+      ],
+      "query_stop": [
+        "zero-handler entry frontier"
+      ]
+    },
+    {
+      "rate_fixture": 48000,
+      "frame_fixture": 1024,
+      "native_setting_words_hex": [
+        "0000BB80",
+        "00000400",
+        "00000015",
+        "00000005",
+        "00000080"
+      ],
+      "duration_word": 21,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 21
+        },
+        {
+          "interface": "uidivmod",
+          "r0": 37,
+          "r1": 47
+        }
+      ],
+      "query_stop": [
+        "uidivmod call frontier"
+      ]
+    },
+    {
+      "rate_fixture": 22320,
+      "frame_fixture": 1024,
+      "native_setting_words_hex": [
+        "00005730",
+        "00000400",
+        "0000002D",
+        "0000000B",
+        "0000003B"
+      ],
+      "duration_word": 45,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 45
+        },
+        {
+          "interface": "uidivmod",
+          "r0": 37,
+          "r1": 22
+        }
+      ],
+      "query_stop": [
+        "uidivmod call frontier"
+      ]
+    },
+    {
+      "rate_fixture": 1,
+      "frame_fixture": 1024,
+      "native_setting_words_hex": [
+        "00000001",
+        "00000400",
+        "000F9FFF",
+        "0003E800",
+        "00000000"
+      ],
+      "duration_word": 1023999,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 1023999
+        },
+        {
+          "interface": "uidivmod",
+          "r0": 37,
+          "r1": 0
+        }
+      ],
+      "query_stop": [
+        "uidivmod call frontier"
+      ]
+    },
+    {
+      "rate_fixture": 1022,
+      "frame_fixture": 1024,
+      "native_setting_words_hex": [
+        "000003FE",
+        "00000400",
+        "000003E9",
+        "000000FA",
+        "00000002"
+      ],
+      "duration_word": 1001,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 1001
+        },
+        {
+          "interface": "uidivmod",
+          "r0": 37,
+          "r1": 0
+        }
+      ],
+      "query_stop": [
+        "uidivmod call frontier"
+      ]
+    },
+    {
+      "rate_fixture": 1023,
+      "frame_fixture": 1024,
+      "native_setting_words_hex": [
+        "000003FF",
+        "00000400",
+        "000003E8",
+        "000000FA",
+        "00000002"
+      ],
+      "duration_word": 1000,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 1000
+        },
+        {
+          "interface": "uidivmod",
+          "r0": 37,
+          "r1": 1
+        }
+      ],
+      "query_stop": [
+        "uidivmod call frontier"
+      ]
+    },
+    {
+      "rate_fixture": 1024,
+      "frame_fixture": 1024,
+      "native_setting_words_hex": [
+        "00000400",
+        "00000400",
+        "000003E7",
+        "000000FA",
+        "00000002"
+      ],
+      "duration_word": 999,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 999
+        },
+        {
+          "interface": "uidivmod",
+          "r0": 37,
+          "r1": 1
+        }
+      ],
+      "query_stop": [
+        "uidivmod call frontier"
+      ]
+    },
+    {
+      "rate_fixture": 48000,
+      "frame_fixture": 2048,
+      "native_setting_words_hex": [
+        "0000BB80",
+        "00000800",
+        "0000002A",
+        "0000000A",
+        "00000080"
+      ],
+      "duration_word": 42,
+      "queue_count_fixture": 37,
+      "query_calls": [
+        {
+          "interface": "idiv",
+          "r0": 1000,
+          "r1": 42
+        },
+        {
+          "interface": "uidivmod",
+          "r0": 37,
+          "r1": 23
+        }
+      ],
+      "query_stop": [
+        "uidivmod call frontier"
+      ]
+    }
+  ]
+}

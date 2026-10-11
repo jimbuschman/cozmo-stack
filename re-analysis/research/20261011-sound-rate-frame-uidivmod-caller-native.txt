@@ -18,7 +18,7 @@ RANGE 0x009EBE6C..0x009EBEB0 exclusive; ARM;
 009EBEA4: mov          r1, r0
 009EBEA8: ldr          r0, [r7, #0x4c]
 009EBEAC: bl           #0x4a6694
-010400EC: raw=01052444 relocated=01052444 
+010400EC: raw=01052444 relocated=01052444
 RANGE 0x009AF994..0x009AF9B0 exclusive; ARM;
 009AF994: vmov         s14, r5
 009AF998: mov          r1, r7
