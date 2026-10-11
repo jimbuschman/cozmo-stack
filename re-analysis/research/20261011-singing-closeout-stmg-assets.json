@@ -1,0 +1,48 @@
+{
+  "archiveSha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145",
+  "method": "Raw bank chunk walk and STMG counted-field walk; native 009B0B14 read widths/order, no candidate C# parser executed.",
+  "banks": [
+    {
+      "bank": "Dev_Debug.bnk",
+      "bankSha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "stmgChunks": 0
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bankSha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "stmgChunks": 0
+    },
+    {
+      "bank": "Init.bnk",
+      "bankSha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "bodyOffset": 257,
+      "bodyLength": 1095,
+      "stateCount": 6,
+      "switchCountOffset": 82,
+      "switchCount": 4,
+      "parameterCountOffset": 306,
+      "parameterCount": 37,
+      "listACountOffset": 1087,
+      "listACount": 0,
+      "listBCountOffset": 1091,
+      "listBCount": 0,
+      "consumed": 1095,
+      "countBytes": "0000000000000000"
+    },
+    {
+      "bank": "Music.bnk",
+      "bankSha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "stmgChunks": 0
+    },
+    {
+      "bank": "SFX.bnk",
+      "bankSha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "stmgChunks": 0
+    },
+    {
+      "bank": "UI.bnk",
+      "bankSha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "stmgChunks": 0
+    }
+  ]
+}

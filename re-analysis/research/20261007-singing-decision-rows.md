@@ -1,4 +1,8 @@
-## Q15 Step 2 — coverage after batch 3 (2026-10-11)
+## Q15 close-out — final coverage (2026-10-11)
+
+Final tally after the D07 correction: **30 locally CHECKED, 2 PARTIAL** (S06/D03), **0 unstarted READ, 28 STOP/UNKNOWN, 9 out-of-scope items**, total69. Dispositions: **32 READ processed / 28 STOP / 9 out of scope**. All seven categories remain PARTIAL. The manager reports Opus's batch3 spot-check PASS; this close-out changes D07's scope and B3ROOT1's notation, with no new singing body rows. Final remaining needs are listed in the close-out section at the end.
+
+## Q15 Step 2 — retained batch 3 coverage
 
 | Batch 3 ordered item | Batch status | Rows / boundary |
 |---|---|---|
@@ -13,7 +17,7 @@
 | D02 | CHECKED join locally | B3J24–29, B3FAN1–2; RTPC/scoped parameter fanout. |
 | S05 | CHECKED release locally | B3REL1–8, B3ROOT1, B3CACHE1, B3RENDER1–4, B3STATE1; recursive lifetime and concrete retirement joins; unproved virtual receivers remain STOP. |
 
-Batch3 tally: **10 ordered items processed, all locally CHECKED; 54 rows added** (29 B3J mapping rows and25 other decision/value/lifetime/join rows). Checkpoints B3.1/B3.2/B3.3/B3.4 contain16/7/16/15 rows respectively. Across batches1–3: **30 locally CHECKED, 2 PARTIAL** (S06/D03), **1 unstarted READ** (D07), **28 STOP/UNKNOWN**, **8 out-of-scope items**, total69. Cumulative dispositions remain33READ/28STOP/8out-of-scope. Overall **0 CHECKED categories / 7 PARTIAL**. No complete production path, fidelity settlement or hardware acceptance is claimed. Stop for batch4.
+Batch3 tally: **10 ordered items processed, all locally CHECKED; 54 rows added** (29 B3J mapping rows and25 other decision/value/lifetime/join rows). Checkpoints B3.1/B3.2/B3.3/B3.4 contain16/7/16/15 rows respectively. Final corrected cumulative tally: **30 locally CHECKED, 2 PARTIAL** (S06/D03), **0 unstarted READ, 28 STOP/UNKNOWN, 9 out-of-scope items**, total69; **32 READ / 28 STOP / 9 out of scope**. Overall **0 CHECKED categories / 7 PARTIAL**. D07 is excluded by the verified STMG correction below. Stop after this close-out.
 
 Batch 2 retained local coverage:
 
@@ -51,13 +55,13 @@ Batch 1 retained local coverage:
 
 All seven overall Q15 categories remain PARTIAL. Batch CHECKED is local research coverage, not production acceptance or a fidelity-manifest status. Step 1's S06 and D03 STOP entries are superseded by the manager's bounded READ instructions; unproved receivers still stop as UNKNOWN. No hardware work.
 
-| Q15 category | Current status | Remaining READ items after batch 3; retained STOP / scope boundaries |
+| Q15 category | Current status | Final remaining STOP / scope boundaries; no unstarted READ |
 |---|---|---|
 | Segment selection | PARTIAL | S06 unproved receiver groups; S07/S10–S14/T08 STOP; O01/O03–O07 out of scope. |
 | Playlist selection | PARTIAL | S06 unproved receiver groups; S07/S10–S14/P04–P07/T08 STOP; O01–O07 out of scope. |
 | Transitions, switch and meter state | PARTIAL | S06 unproved receiver groups; S07/S10–S14/T04–T08 STOP; O01–O07 out of scope. |
-| MIDI dispatch and target inheritance | PARTIAL | D07; D03 unproved receiver inputs; D01/D08/D09/T08 STOP; O01–O07 out of scope. |
-| Note-on/off and held-note timing | PARTIAL | D07; S06/D03 unproved receivers; S07/S11/S14/D01/D08/D09/H08/H09/A02–A04 STOP; O01–O07 out of scope. |
+| MIDI dispatch and target inheritance | PARTIAL | D03 unproved receiver inputs; D01/D08/D09/T08 STOP; D07/O01–O07 out of scope. |
+| Note-on/off and held-note timing | PARTIAL | S06/D03 unproved receivers; S07/S11/S14/D01/D08/D09/H08/H09/A02–A04 STOP; D07/O01–O07 out of scope. |
 | Envelope parameters and trigger state | PARTIAL | E05/E06/D01/A02–A04 STOP; O01/O02 out of scope. |
 | Vibrato/LFO parameters and state | PARTIAL | E05/E06/V01/V03/V04/D01/A02–A04 STOP; V05/O01/O02 out of scope. |
 
@@ -116,7 +120,7 @@ The tables below supersede the old **remaining-work** wording, not the historica
 | D04 / MIDI, held timing | Sampler continuous recipient (LN1), target descendants/ancestor parameter joins, get-in audibility and velocity-to-gain composition (LN7/SN) | (a) READ | `0x009D0758` (retained continuous branch), `0x009E8DC0`, `0x00A379D8` — only the concrete Layer/context/voice-production joins; use Q14 LN/LCP/SW231 and SP216/PA491/BI425/CA496 rows already present. No global audibility or absence claim. |
 | D05 / MIDI, held timing | Concrete node submission/preparation joins (MD6/NS/NE/DG) | (a) READ | `0x009F12E0`, `0x009EE454`, `0x009EDEB8` — reconcile actual per-note preparation/delay path with existing Q14 ID/NE/DQ/TC rows; no prewarm or fresh note-off draw inferred. |
 | D06 / MIDI, held timing | Note/frequency/controller RTPC store/reset consumers (SN2/MCC) | (a) READ | `0x00A14494`, `0x00A14098` — join existing Q14 SS218/RTPC rows using concrete MIDI scope and values. |
-| D07 / MIDI, held timing | External MIDI command/registry leads and message producer/dispatch binding (checkpoint63, EXMB) | (a) READ | `0x00A3BA44`, `0x00A3B84C` — already named concrete command/registry bodies; retained command/identity decisions only, no search for hypothetical callers. |
+| D07 / corrected STMG scope | Two trailing STMG counted-list registration bodies, misidentified as external MIDI at checkpoint63 | (c) OUT OF SCOPE | out of scope: not MIDI and dead for shipped banks. STMG parser `0x009B0B14` calls `0x00A3B84C` at `0x009B127C` and `0x00A3BA44` at `0x009B1410`; dispatch `0x009B7860..0x009B7868` → `0x009B7AC8..0x009B7AD8`. Init.bnk body257, size1095, counts at body1087/1091 both0, consumed1095/1095; verification and captures in the close-out section. |
 | D08 / MIDI, held timing | Whether additional external MIDI callers/inputs/production registrations exist | (b) STOP | UNKNOWN: no new concrete caller/input is named beyond EMC/EXC/EXP/EXSTOP/EXMB; no external-input or SDK reachability census. |
 | D09 / MIDI, held timing | Full attachment/caller closure beyond concrete note/event/context paths | (b) STOP | UNKNOWN: no further concrete attachment producer/caller is identified; MAT/NSP/IST/PZR/MUC/CCF/CDF/SX/MSF/AF already close their local paths; no open-ended closure search. |
 | H01 / held timing, MIDI, modulation | PBI/source/voice attachment and release association (HP5/13, SN/MH) | (a) READ | `0x00A379D8`, `0x00A023D4`, `0x00A41854`, `0x00A533FC`, `0x00A01840` — join existing Q14 creation/owner/source/voice rows to the recorded-note path; shared with D04. |
@@ -160,7 +164,7 @@ The tables below supersede the old **remaining-work** wording, not the historica
 | MIDI header/property55/tempo, complete reader/seek/controller restoration, frame units/flags/clip-offset and stored-scale caller | RI/TP/PD/SK/CRS/MAT/MCC/CWT/OEND/NQ/CCF/CDF/SX/MSF/AF; no additional decoder extraction from stale MR/FC notes. |
 | PBI `vt1C`, Vorbis `vt38`, voice `vt48`; note-state allocation/destruction and owner stop/restore | HP/NSP/IST/PZR/MAT; named downstream joins remain H01–H09. |
 | Modulator defaults, concrete state allocation/`vtC/10/14`, initialization, stop callbacks, parameter setters/evaluator/publication/registration/consumer | MG9/MI/EP/LP8–12/MU/SV plus Q14 MP/ML/RH/ES/LS/LB/HI/PR/IC/RP/OA/RC/SRG/SU/MC (checkpoints37/38). Remaining bounded joins are E01–E04; hypothetical additions are E05–E06. |
-| External MIDI singleton/frame-step/construction/dispatch/stop/shutdown and base-array cleanup | EMC/EXC/EXQ/EXP/EXSTOP/EXD/EXMEND/EXMB/EXUN; command leads D07 and unknown additional inputs D08 remain separate. |
+| External MIDI singleton/frame-step/construction/dispatch/stop/shutdown and base-array cleanup | EMC/EXC/EXQ/EXP/EXSTOP/EXD/EXMEND/EXMB/EXUN; D08 retains unknown additional inputs. D07's misidentified leads are STMG registration, out of scope under the final correction. |
 | NS3 local request-pointer alternative | Existing checkpoint652 correction: local request `sp1C` is always submitted; `E18` is copied to request `74`, not an alternative request pointer. |
 
 Step 1 ends here. No Step 2 extraction until the manager replies with an order.
@@ -1356,7 +1360,7 @@ AF1–5 settle local per-frame automation cadence, retention and control math. R
 
 ### Retained command/registry navigation lead
 
-`20261008-singing-midi-manager-command-lead-native.txt` preserves reopenedA3BA44/A3B84C command/registry bodies encountered duringthecontext-factorysearch. Theyare**not** theclipcontextfactory (CCF'sfactoryisA3D234), andthiscaptureisnotcountedasclosedrowsorareachabilitywitness. Itsmanagerhash/counter/command-allocationcallersandproductionregistrationrelationshipremainretainedleadstocheckbeforeincludinganynewclaim.
+`20261008-singing-midi-manager-command-lead-native.txt` preserves reopenedA3BA44/A3B84C bodies encountered during the context-factory search. **Close-out correction:** these are the two trailing STMG list registration bodies, not external MIDI commands or the clip-context factory (A3D234). D07 is out of scope for Q15 and unexercised by shipped STMG data; this historical capture is not a singing reachability witness. See final verification below; no further descent.
 
 
 ### External MIDI callback registration and strict frame boundary (checkpoint63)
@@ -1948,7 +1952,7 @@ Stop rule applied before each recipient: context membership/counts, observer mem
 
 | Retirement row / S05 | Call site → existing row or new body citation | Decision carried / exact local order |
 |---|---|---|
-| B3ROOT1 | `00985E58;00985E7C;00985EC4;00985244` → B1ROOTEND (`0097E774..0097E8A8`); `0097E7F4` → Q14 PB2/E14–16 (`00A04DE8..00A04E64;00A03618`); `0097E888` → B3CACHE1; `0097E840` → B3RENDER1–4 | Root removal attempts G8 identity/48 unlink and G4 tail repair before renderer gate. Missing root membership still reaches C38. Nullrenderer returns; renderer28 ID0 skips playing-count/reservation work. Nonzero ID: C10bit21 optionally removes cache entry, then **reloads** renderer28 before PB2(manager,ID,C+C). PB2 decrements the matching outstanding count and may synchronously deliver completion. First C58 virtual query at97E804 gates a second query97E81C; its returned node receives9C(3) at97E82C. Saved renderer is destroyed thenfreed, even when ID0; C38 is not cleared locally. |
+| B3ROOT1 | `00985E58;00985E7C;00985EC4;00985244` → B1ROOTEND (`0097E774..0097E8A8`); `0097E7F4` → Q14 PB2/E14–16 (`00A04DE8..00A04E64;00A03618`); `0097E888` → B3CACHE1; `0097E840` → B3RENDER1–4 | Root removal attempts Root+8 identity/child48 unlink and Root+4 tail repair before renderer gate, where **Root=0108D7D8**, distinct from grandparent context G=P8. Missing root membership still reaches C38. Nullrenderer returns; renderer28 ID0 skips playing-count/reservation work. Nonzero ID: C10bit21 optionally removes cache entry, then **reloads** renderer28 before PB2(manager,ID,C+C). PB2 decrements the matching outstanding count and may synchronously deliver completion. First C58 virtual query at97E804 gates a second query97E81C; its returned node receives9C(3) at97E82C. Saved renderer is destroyed thenfreed, even when ID0; C38 is not cleared locally. |
 | B3CACHE1 | `00981F7C..00981FE0;00981FE4..00982030` | Under cache+C lock, snapshot base0/count4; scan stride38 for first record's word0==playingID. Empty/missing unlocks and returns. Found beforelast physically shifts following records left; always count4−1 at982028 before unlock. Logical ordered removal is exact; raw move/lock implementations are not descended into. No capacity shrink or record destructor synthesized. |
 | B3RENDER1 | `00983204..00983298` | Restore table101BE88. Loop saved entry/headR34: load saved head's next0; mismatch between saved current and livehead writes through0 at983248 thenUDF. On match publish savednext to R34; load old entry4 child, clearentry4 before release. Oldchildnonnull calls985CAC at983270, then reloadentry4; a newly nonnull value receives a **second**985CAC at983280. Free entry, reload live R34, repeat while nonnull, retaining savednext for next head-identity comparison. No third child-release loop is inserted. |
 | B3RENDER2 | `0098329C..009832E0;00983304..00983324` → Q14 DC4–6/DC8–10 (`00A0B600`), OB354/OR545/RC546/CJ547/MN552/MT553 | After children: A292E8(stateManager,R) first; then load R2C and clearR34. Nonnull object decrements low30bits ofobject7C, preserving upper2bits. New lowcount0 invokesA0B600 at983314 thenfree; nonzero skips destructor/free. Afterwards clearR2C. Q14 owns exact game-object teardown and its retained virtual-recipient boundaries; no duplicate body extraction or whole-recipient closure. |
@@ -1960,4 +1964,26 @@ STOP/UNKNOWN: ancestor/helper live28 receivers are not proved segment/playlist i
 
 out of scope: allocation/free-list/backing-storage and I/O implementations; lock/memory-move infrastructure; per-sample DSP arithmetic. The caller's membership, count, lifetime and notification decisions above remain exact.
 
-S05 locally CHECKED for its named release bodies and concrete retirement joins:15 rows on one checkpoint. No item reached three checkpoints without a new row. Coverage above now records30 locally CHECKED items,2 bounded PARTIAL items,1 remaining unstarted READ (D07),28 STOP and8 out-of-scope; all seven categories remain PARTIAL. Only research answer/captures changed; no implementation, manifest or hardware work. Batch3 stops here for the manager's batch4 order.
+S05 locally CHECKED for its named release bodies and concrete retirement joins:15 rows on one checkpoint. No item reached three checkpoints without a new row. Final corrected coverage above records30 locally CHECKED items,2 bounded PARTIAL items,0 unstarted READ,28 STOP and9 out-of-scope; all seven categories remain PARTIAL. Only research answer/captures changed; no implementation, manifest or hardware work. The following manager-directed close-out is the last Q15 step.
+
+## Q15 close-out — corrections and remaining UNKNOWN needs
+
+Final tally: **30 locally CHECKED / 2 PARTIAL (S06,D03) / 0 unstarted READ / 28 STOP/UNKNOWN / 9 OUT OF SCOPE = 69 items**; processed READ32. All seven categories remain PARTIAL. Batch3's54 rows are unchanged in count. This is a research disposition only, with no fidelity claims.
+
+D07 verification: `20261011-singing-closeout-stmg-native.txt` rechecks the named parser and dispatch instructions from the shipped engine (SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1). `009B7790/009B77A8` form sl=474D5453; `009B7860..009B7868` compares the chunk tag with sl and branches to `009B7AC8`. Nonzero chunk size calls parser009B0B14 at009B7AD8. Its first trailing count read009B0FC4 and zero gate009B0FDC/0FE8 control the A3B84C registration call at009B127C; the second read009B12B0 and zero gate009B12C0/12C8 control A3BA44 at009B1410. These are STMG list registrations, not external MIDI. No further recipient descent or caller-exclusion search was performed.
+
+`20261011-singing-closeout-stmg-assets.json` independently re-walks the existing six-bank census's raw chunk envelopes and STMG field widths/order. Init.bnk SHA256fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283: body starts at bank byte257;6 state groups,4 switch groups,37 parameters; trailing A/B count words at body bytes1087/1091 are00000000/00000000; consumption1095/1095. All byte offsets/counts in this asset paragraph are decimal. The other five named banks have no STMG chunk. Thus neither registration body runs from these shipped banks. out of scope: D07 is not MIDI and its two counted-list paths are dead for shipped bank inputs.
+
+B3ROOT1 now uses **Root=0x0108D7D8** for the static list, distinct from context grandparent G=P8: primary0097E77C+8+0070F054 and0097E868+8+0070EF68 both produce Root; Root+8 is the head and Root+4 the tail. Child links remain48. Only notation changed.
+
+| Category (all PARTIAL) | What remains needed, retained STOP/UNKNOWN IDs |
+|---|---|
+| Segment selection | Concrete bindings for S06's unproved receivers (U1–U5); child attachment S07; additional graph/state/admission/caller/context inputs S10–S14; notification/selection input T08. |
+| Playlist selection | S06 unproved receivers; attachment S07 and graph/state/caller/context inputs S10–S14; additional shared-state lifetime, C8C writer, external selection callback and schedule callers P04–P07; notification/selection input T08. |
+| Transitions, switch and meter state | S06 unproved receivers; S07/S10–S14; global/cache flags, request-pool inputs, meter overrides, additional recipients and notification input T04–T08. |
+| MIDI dispatch and target inheritance | D03's unproved receiver inputs; frame/rate/factor producers D01; additional external MIDI message/caller inputs D08–D09; notification input T08. D07 is excluded, not an UNKNOWN MIDI need. |
+| Note-on/off and held-note timing | S06/D03 unproved receivers; S07/S11/S14; producers D01/D08–D09; alternate voice/codec bindings and final-output writer H08–H09; automation bindings, unwritten fields and applicability inputs A02–A04. |
+| Envelope parameters and trigger state | Additional trigger/registration/consumer inputs and RNG/property/recipient/scope bindings E05–E06; factor producers D01; automation bindings/fields/applicability A02–A04. |
+| Vibrato/LFO parameters and state | E05–E06/D01/A02–A04; smoothing initializer V01, wrapper vt18 recipient V03, listener/event/return-state inputs V04. V03 remains STOP with no target resolution. |
+
+These needs retain their Step1 item names and one-line UNKNOWN dispositions; S06/D03 retain the bounded receiver-proof limits in batches1/2. Previously named concrete unpaid interfaces remain recorded with their local rows; this table does not promote local checks to whole-path closure. Storage/I/O, sample arithmetic and the adopted census exclusions remain out of scope (O01–O07/V05), alongside corrected D07. Research files only. Stop here.
