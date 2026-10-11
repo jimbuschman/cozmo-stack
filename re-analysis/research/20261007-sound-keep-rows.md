@@ -11883,3 +11883,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint855 — quota nearby-PC input check
 
 `20261011-sound-quota-composed-pc-disposition.md` checks original9A0938 in852's nearby-PC seed method: one window/zero events/zero caps. Sole apparent Thumb ADR9A0534 is actual ARM LDR SL,[PC,198] after separate9A0524 PUSH; no caller supplied and no surrounding/mutex descent. GU505/NE662/786/811 retained;037 PARTIAL for admitted priority/quota input or supported-input exclusion.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint856 — observer nearby-PC input check
+
+`20261011-sound-observer-composed-pc-disposition.md` substitutes9A03DC/9A040C into852's nearby-PC seed method: one window/zero events/zero caps. Sole Thumb ADR9A0548 is actual ARM ADD SL,PC,SL, independently captured at855 after separate9A0524 entry; no callback input supplied. OR613/MC667/787 paid contracts retained;028/029 PARTIAL for caller/key/callback/rawthirdword and callback body or supported-input exclusion. No848 full pointer or781 interior repeat.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

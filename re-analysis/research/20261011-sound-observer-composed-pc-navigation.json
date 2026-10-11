@@ -1,0 +1,33 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "009A03DC",
+    "009A040C"
+  ],
+  "formsExamined": {
+    "ARM immediate ADD/SUB PC": 17639,
+    "Thumb ADR16": 17041,
+    "Thumb ADDW/SUBW PC": 1073
+  },
+  "nearby_seed_count": 1,
+  "propagation_count": 1,
+  "seeds": [
+    {
+      "address": "009A0548",
+      "mode": "Thumb",
+      "bytes": "0aa0",
+      "value": "009A0574",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "decoded": [
+        "adr r0, #0x28"
+      ],
+      "propagation_start": "009A054A",
+      "destination": "r0"
+    }
+  ],
+  "events": [],
+  "cap_log": [],
+  "model_sha256": "917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf",
+  "limit": "Only direct-PC seed values within512 bytes either side of original observer inputs then unchanged812 local propagation; explicit destination seed, possible modes/conditions, distant address construction, stack/copy/foreign inputs and caps are not certified."
+}
