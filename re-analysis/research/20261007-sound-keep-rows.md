@@ -11971,3 +11971,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint877 — original weight input with controlled paired/block loads
 
 `20261011-sound-weight-paired-block-disposition.md` applies874's new constant transfers to originalA08024:14,887 windows/807 caps/zero target observations, cap set exactly812. Separate876 paired-PC first-seed check selects none of four encodings; no scalar rescan in that check. No admitted node/childID/weight input or complete alias exclusion;008 PARTIAL. Native9903F0 entry remains correct and live50 return is forwarded, with no new descriptor receiver or repetition of660/798. Stop these transfer/seed forms and continue a concrete remaining destination input.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint878 — original member destination interior attributions
+
+`20261011-sound-routing-member-interior-disposition.md` retains all33 original755 candidates into9D2410:32 upper halves of different ARM instructions on recovered Layer paths and literal9D23EC read by actual9D225C LDR after9D23E0 POP-PC. No new scan/callee/body or admitted second-argument destination; no arbitrary alternate-mode/indirect alias absence claim. Stop these33 candidates. The other34 into9F319C remain separate;104/131 PARTIAL for original destination and unrestricted writer/alias questions.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
