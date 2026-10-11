@@ -1,0 +1,59 @@
+{
+  "raw_aligned_pointer_navigation": [],
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0xa01768"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0xa37258",
+      "target": "#0xa01768",
+      "mode": "ARM",
+      "instruction": "bl #0xa01768",
+      "section": ".text"
+    },
+    {
+      "address": "0xa373b4",
+      "target": "#0xa01768",
+      "mode": "ARM",
+      "instruction": "bl #0xa01768",
+      "section": ".text"
+    },
+    {
+      "address": "0xa37578",
+      "target": "#0xa01768",
+      "mode": "ARM",
+      "instruction": "bl #0xa01768",
+      "section": ".text"
+    },
+    {
+      "address": "0xa37650",
+      "target": "#0xa01768",
+      "mode": "ARM",
+      "instruction": "bl #0xa01768",
+      "section": ".text"
+    },
+    {
+      "address": "0xa37944",
+      "target": "#0xa01768",
+      "mode": "ARM",
+      "instruction": "bl #0xa01768",
+      "section": ".text"
+    },
+    {
+      "address": "0xa559c4",
+      "target": "#0xa01768",
+      "mode": "ARM",
+      "instruction": "bl #0xa01768",
+      "section": ".text"
+    },
+    {
+      "address": "0xa55b54",
+      "target": "#0xa01768",
+      "mode": "ARM",
+      "instruction": "bl #0xa01768",
+      "section": ".text"
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "pointer_controls": [
+    {
+      "formation": "00A371E4..00A371F0",
+      "handoff": "00A37234..00A3723C",
+      "call": "00A37258",
+      "R1": "30008014",
+      "destination": "currentSP+14",
+      "scope": "Actual small instruction slices and one BL; stops before paid query body, not complete caller/admission or later local copy/escape proof."
+    },
+    {
+      "formation": "00A37358..00A3735C",
+      "handoff": "00A37390..00A37398",
+      "call": "00A373B4",
+      "R1": "30008014",
+      "destination": "currentSP+14",
+      "scope": "Actual small instruction slices and one BL; stops before paid query body, not complete caller/admission or later local copy/escape proof."
+    },
+    {
+      "formation": "00A3751C..00A37520",
+      "handoff": "00A37560..00A37568",
+      "call": "00A37578",
+      "R1": "3000800C",
+      "destination": "currentSP+C",
+      "scope": "Actual small instruction slices and one BL; stops before paid query body, not complete caller/admission or later local copy/escape proof."
+    },
+    {
+      "formation": "00A37634..00A37638",
+      "handoff": "00A37644..00A3764C",
+      "call": "00A37650",
+      "R1": "3000800C",
+      "destination": "currentSP+C",
+      "scope": "Actual small instruction slices and one BL; stops before paid query body, not complete caller/admission or later local copy/escape proof."
+    },
+    {
+      "formation": "00A378E4..00A378E8",
+      "handoff": "00A37930..00A37934",
+      "call": "00A37944",
+      "R1": "3000800C",
+      "destination": "currentSP+C",
+      "scope": "Actual small instruction slices and one BL; stops before paid query body, not complete caller/admission or later local copy/escape proof."
+    },
+    {
+      "formation": "00A559C0..00A559C4",
+      "handoff": null,
+      "call": "00A559C4",
+      "R1": "200010E0",
+      "destination": "suppliedV+E0",
+      "scope": "Actual small instruction slices and one BL; stops before paid query body, not complete caller/admission or later local copy/escape proof."
+    },
+    {
+      "formation": "00A55B50..00A55B54",
+      "handoff": null,
+      "call": "00A55B54",
+      "R1": "200010E0",
+      "destination": "suppliedV+E0",
+      "scope": "Actual small instruction slices and one BL; stops before paid query body, not complete caller/admission or later local copy/escape proof."
+    }
+  ],
+  "retained_carrier_intervals": [
+    {
+      "interval": "00A37358..00A373B4",
+      "carrier": "r6",
+      "writes": [
+        "00A37358"
+      ],
+      "SP_writes": 0,
+      "boundary": "Static primary interval; no alternate incoming branch or complete path feasibility claim."
+    },
+    {
+      "interval": "00A3751C..00A37578",
+      "carrier": "r8",
+      "writes": [
+        "00A3751C"
+      ],
+      "SP_writes": 0,
+      "boundary": "Static primary interval; no alternate incoming branch or complete path feasibility claim."
+    },
+    {
+      "interval": "00A37634..00A37650",
+      "carrier": "r8",
+      "writes": [
+        "00A37634"
+      ],
+      "SP_writes": 0,
+      "boundary": "Static primary interval; no alternate incoming branch or complete path feasibility claim."
+    },
+    {
+      "interval": "00A378E4..00A37944",
+      "carrier": "sb",
+      "writes": [
+        "00A378E4"
+      ],
+      "SP_writes": 0,
+      "boundary": "Static primary interval; no alternate incoming branch or complete path feasibility claim."
+    }
+  ],
+  "first_stack_pointer_slot_writes": [
+    "00A371EC"
+  ],
+  "boundary": "Seven actual immediate call/pointer controls, primary retained-carrier intervals. No query-body reexecution, complete caller/runtime admission, unrestricted alias or later stack-value copy/escape exclusion."
+}

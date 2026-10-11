@@ -3603,3 +3603,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint888 — original quota/process-counter suppliers
 
 `20261011-sound-quota-counter-disposition.md` binds15 actual scalar writer sites across original priority/quota/virtual/PBI counters in15,142 selected windows/113 observations/819 unproved caps. Two additional global-count append bodies are positively paid: actual ordinary creator97DE4C appends before Init/Play,97DEA4 wrapper likewise;A36FE0 appends only on Play1.36 native ABI fixtures pass, including count wrap/failures/rawthird normalization. Supplied default-limiter active/virtual aliases are not scanner negatives or absent.037 stays PARTIAL for admitted quota and remaining original alias/policy/collection inputs; stop paid bodies.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint889 — original policy-query output destinations
+
+`20261011-sound-voice-policy-output-disposition.md` accounts for seven actual A01768 direct ARM calls: two paid suppliedV+E0 destinations and five current-frame SP+14/C words. Seven independent native pointer/BL controls and five primary retained-carrier intervals pass without query-body reexecution. Later local copy/escape and unrestricted indirect/re-init/writer aliases stay open;033 PARTIAL, no all-writer absence or new family. Stop these direct handoffs.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
