@@ -69,6 +69,9 @@ public sealed class CozmoEngineOptions
     /// <summary>Where the block pool is kept (<see cref="CubeConnections.Init"/>); an empty path turns persistence off.</summary>
     public string? BlockPoolPath { get; init; }
 
+    // fidelity: M3-054
+    public bool VerboseLogDisplay { get; init; } // off by default; presentation only
+
     // fidelity: M3-041
     /// <summary>
     /// The directory DataPlatform resolves as its string at +0xC, under which the IMU logger's scope-2 "imu_logs"
@@ -1789,6 +1792,9 @@ public sealed partial class CozmoEngine : IDisposable
     {
         _t = transport;
         Options = options ?? new CozmoEngineOptions();
+        // fidelity: M3-052, M3-053
+        _logDisplay.Configure(DasLogDisplay.ShippedConfiguration(), line => DisplayLogLine(line.Line));
+        VerboseLogDisplay = Options.VerboseLogDisplay;
         _nowNs = nowNs ?? EngineTickRunner.HostNowNs;
         // Every MISSING report (SteppedBehavior.ReportMissing, once per process per message) reaches this engine's log, so a handoff to an unbuilt record is visible
         // in production. The event add/remove is atomic and the callback may run on any thread: Log invokes the LogLine subscribers as for any engine line.

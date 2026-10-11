@@ -46,7 +46,7 @@ public class M3ImuLogLiveTests
             Root = persistentPath ?? Path.Combine(Path.GetTempPath(), "cozmo-imu-" + Guid.NewGuid().ToString("N"));
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs,
                 new CozmoEngineOptions { BlockPoolPath = "", DataPlatformPersistentPath = Root });
-            Engine.LogLine += l => { lock (Log) Log.Add(l); };
+            Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
             Engine.ConnectToRobot(RobotIp); Tick();
             Port.Raise(ReceiverMarker.OnConnected, RobotEp); Tick();
             Data(new RobotAvailable { SerialNumberHead = 0x1234, HwVersion = 5 });
@@ -141,7 +141,7 @@ public class M3ImuLogLiveTests
         rig.Data(Chunk(48, 7, 1, 2)); rig.Tick();                       // same sequence: no reopen, no second header
         Assert.False(rig.Imu.IsOpen);                                   // the final chunk closed it
         Assert.Equal(1, rig.Log.Count(l => l.Contains("OpeningLogFile")));
-        Assert.True(rig.Logged("info: [Unnamed] Robot.HandleImuData.ClosingLogFile: "));
+        Assert.True(rig.Logged("info: [Unnamed] Robot.HandleImuData.ClosingLogFile"));
         Assert.Equal(ProcessedHeader + Rows(0) + Rows(48), rig.Read("imuLog_7.dat"));
         Assert.Equal(7u, rig.Imu.Counter);                              // L15: not reset
     }
@@ -197,7 +197,7 @@ public class M3ImuLogLiveTests
         Assert.True(rig.Imu.IsOpen);
         rig.Data(Raw(2, 1, new short[] { -5, -6, -7 }, new short[] { -8, -9, -10 })); rig.Tick();
         Assert.False(rig.Imu.IsOpen);
-        Assert.True(rig.Logged("info: [Unnamed] Robot.HandleImuRawData.ClosingLogFile: "));
+        Assert.True(rig.Logged("info: [Unnamed] Robot.HandleImuRawData.ClosingLogFile"));
         Assert.Equal(RawHeader + "255 -32768 32767 0 -1 1 12345\n0 5 6 7 8 9 10\n1 -5 -6 -7 -8 -9 -10\n", rig.Read("imuRawLog_1.dat"));
         Assert.Equal(new[] { "imuRawLog_1.dat" }, rig.Files());
         // L18: the counter is retained; the next burst takes the next number.
@@ -385,9 +385,9 @@ public class M3ImuLogLiveTests
         rig.Data(Raw(0, 0, ZeroA, ZeroA)); rig.Data(Raw(2, 0, ZeroA, ZeroA)); rig.Tick();
         List<string> log; lock (rig.Log) log = rig.Log.ToList();
         Assert.Contains("info: [Unnamed] Robot.HandleImuData.OpeningLogFile: " + rig.LogsDir + "/imuLog_3.dat", log);
-        Assert.Contains("info: [Unnamed] Robot.HandleImuData.ClosingLogFile: ", log);
+        Assert.Contains("info: [Unnamed] Robot.HandleImuData.ClosingLogFile", log);
         Assert.Contains("info: [Unnamed] Robot.HandleImuRawData.OpeningLogFile: " + rig.LogsDir + "/imuRawLog_4.dat", log);
-        Assert.Contains("info: [Unnamed] Robot.HandleImuRawData.ClosingLogFile: ", log);
+        Assert.Contains("info: [Unnamed] Robot.HandleImuRawData.ClosingLogFile", log);
     }
 
     private static int PrefixCount(string path) => path.Where((c, i) => c == '/' && i > 0).Count() + 1;

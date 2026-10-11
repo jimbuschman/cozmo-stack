@@ -209,7 +209,7 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         rig.SendFirstFullState();
         var calls = new List<string>();
-        rig.Engine.LogLine += line => { if (line == "warning: Robot.GetRobotState.BadOriginID") calls.Add("warning"); };
+        rig.Engine.CaptureSourceLogs(line => { if (line == "warning: Robot.GetRobotState.BadOriginID") calls.Add("warning"); });
         rig.Engine.PublicationPose = () => { calls.Add("pose"); return new(10, 20, 30, 1, 0, 0, 0, 0); };
         rig.Engine.PublicationHeadAngle = () => { calls.Add("head"); return 0; };
         EngineRobotState? output = null;
@@ -487,21 +487,21 @@ public class EngineAppLayerTests
         rig.SendFirstFullState(1000);
         var connections = rig.Robot.Cubes.Connections;
         connections.ConnectToObjects(new uint[] { 0xAB, 0, 0, 0, 0 });
-        Assert.Contains("info: Robot.ConnectToObjects: Connecting objects with factoryID = 0xab, 0x0, 0x0, 0x0, 0x0, ", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.ConnectToObjects: Connecting objects with factoryID = 0xab, 0x0, 0x0, 0x0, 0x0, ", rig.Log);
         // B2/B4 (0x0051720C..0x00517354): the pre-loop line, both streams in lower-case hex with trailing ", " and the pending byte as 0 or 1
-        int pre = rig.Log.FindIndex(l => l == "info: Robot.ConnectToObjects: Before processing factory_ids = 0xab, 0x0, 0x0, 0x0, 0x0, . _objectsToConnectTo = 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, ");
-        Assert.True(pre >= 0 && pre < rig.Log.FindIndex(pre, l => l.StartsWith("info: Robot.ConnectToObjects: Connecting objects")), "the pre-loop line precedes the loop's");
+        int pre = rig.Log.FindIndex(l => l == "info: [BlockPool] Robot.ConnectToObjects: Before processing factory_ids = 0xab, 0x0, 0x0, 0x0, 0x0, . _objectsToConnectTo = 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, 0x0, pending = 0, ");
+        Assert.True(pre >= 0 && pre < rig.Log.FindIndex(pre, l => l.StartsWith("info: [BlockPool] Robot.ConnectToObjects: Connecting objects")), "the pre-loop line precedes the loop's");
         rig.Data(new ObjectAvailable { FactoryId = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
         rig.Tick();
-        Assert.Contains("info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot 0 with factory ID = 0xab", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.ConnectToRequestedObjects.Sending: Sending message for slot 0 with factory ID = 0xab", rig.Log);
 
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAC, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
         rig.Tick();
-        Assert.Contains("info: Robot.HandleConnectedToObject: Ignoring connection to object 0xac of type Block_LIGHTCUBE2 with active ID 0 because expecting connection to 0xab of type Block_LIGHTCUBE1", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.HandleConnectedToObject: Ignoring connection to object 0xac of type Block_LIGHTCUBE2 with active ID 0 because expecting connection to 0xab of type Block_LIGHTCUBE1", rig.Log);
 
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
         rig.Tick();
-        Assert.Contains("info: Robot.HandleConnectToObject: Connected to active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 1", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.HandleConnectToObject: Connected to active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 1", rig.Log);
         Assert.DoesNotContain(rig.Log, l => l.Contains("InvalidState"));
 
         // a second connection report finds state 2, which is neither 1 nor 4 (0x005179E2..0x005179E8): the error, the stored flag, then the same handling
@@ -516,17 +516,17 @@ public class EngineAppLayerTests
         // marks the slot Disconnected (4) with the BaseStationTimer time
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAD, ObjectType = ObjectType.Block_LIGHTCUBE3, Connected = false });
         rig.Tick();
-        Assert.Contains("info: Robot.HandleDisconnectedFromObject: Ignoring disconnection from object 0xad of type Block_LIGHTCUBE3 with active ID 0 because expecting connection to 0xab of type Block_LIGHTCUBE1", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.HandleDisconnectedFromObject: Ignoring disconnection from object 0xad of type Block_LIGHTCUBE3 with active ID 0 because expecting connection to 0xab of type Block_LIGHTCUBE1", rig.Log);
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
         rig.Tick();
-        Assert.Contains("info: Robot.HandleDisconnectedFromObject: Disconnected from active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 2", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.HandleDisconnectedFromObject: Disconnected from active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 2", rig.Log);
         Assert.DoesNotContain(rig.Log, l => l.Contains("HandleDisconnectedFromObject.InvalidState"));
         Assert.Equal(ActiveObjectSlotState.Disconnected, connections.Slots[0].State);
 
         // two seconds later CheckDisconnectedObjects resets the slot and logs the three doubles as %f
         rig.Tick(3000);
         rig.Tick(60);
-        var reset = Assert.Single(rig.Log, l => l.StartsWith("info: Robot.CheckDisconnectedObjects: Resetting slot 0 with factory ID 0xab, connection state 4. Object disconnected at "));
+        var reset = Assert.Single(rig.Log, l => l.StartsWith("info: [BlockPool] Robot.CheckDisconnectedObjects: Resetting slot 0 with factory ID 0xab, connection state 4. Object disconnected at "));
         Assert.EndsWith(" with max delay 2.000000 seconds", reset);
         Assert.Matches(@"current time is \d+\.\d{6} with max delay", reset);
         Assert.Equal(0u, connections.Slots[0].FactoryId);
@@ -554,7 +554,7 @@ public class EngineAppLayerTests
         rig.Port.Sent.Clear();
         rig.Tick();
         Assert.Contains("warning: Robot.ConnectToRequestedObjects.SameTypeAlreadyConnected: Object with factory ID 0xcd matches type (Block_LIGHTCUBE1) of another connected object. Only one of each type may be connected.", rig.Log);
-        Assert.Contains("info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot 1 with factory ID = 0x0", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.ConnectToRequestedObjects.Sending: Sending message for slot 1 with factory ID = 0x0", rig.Log);
         // P3/P4: despite warning, a zero id goes on the wire; the advertised id is retained in the pending slot.
         var duplicateSend = Assert.Single(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>());
         Assert.Equal((byte)1, duplicateSend.Slot);
@@ -564,7 +564,7 @@ public class EngineAppLayerTests
         // emptying slot 0
         connections.ConnectToObjects(new uint[] { 0, 0xCD, 0, 0, 0 });
         rig.Tick();
-        Assert.Contains("info: Robot.ConnectToRequestedObjects.Sending: Sending message for slot 0 with factory ID = 0", rig.Log);
+        Assert.Contains("info: [BlockPool] Robot.ConnectToRequestedObjects.Sending: Sending message for slot 0 with factory ID = 0", rig.Log);
     }
 
     /// <summary>
@@ -589,12 +589,12 @@ public class EngineAppLayerTests
         var lines = rig.Log.Where(l => l.Contains("BlockFilter.UpdateDiscovering") || l.Contains("BlockFilter.HandleGameEvents")).ToList();
         Assert.Equal(new[]
         {
-            "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE1 with RSSI < 150",
-            "info: BlockFilter.UpdateDiscovering: Discovered closer object 0x10",
-            "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE2 with RSSI < 150",
-            "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE3 with RSSI < 150",
-            "info: BlockFilter.UpdateDiscovering: Discovered closer object 0x30",
-            "info: BlockFilter.UpdateDiscovering: Connecting to discovered objects",
+            "info: [BlockPool] BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE1 with RSSI < 150",
+            "info: [BlockPool] BlockFilter.UpdateDiscovering: Discovered closer object 0x10",
+            "info: [BlockPool] BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE2 with RSSI < 150",
+            "info: [BlockPool] BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE3 with RSSI < 150",
+            "info: [BlockPool] BlockFilter.UpdateDiscovering: Discovered closer object 0x30",
+            "info: [BlockPool] BlockFilter.UpdateDiscovering: Connecting to discovered objects",
             "info: [BlockPool] BlockFilter.HandleGameEvents: Sending blockpool data",
         }, lines);
         // AddObjectToPersistentPool takes the first empty entry, in the tree's type order (P14)
@@ -624,9 +624,9 @@ public class EngineAppLayerTests
             rig.Tick(3000);
             Assert.DoesNotContain(rig.Log, l => l.Contains("BlockFilter.UpdateConnecting"));   // 5 s after the enable have not passed
             rig.Tick(6000);
-            Assert.Contains("info: BlockFilter.UpdateConnecting: Looking for a replacement for object 0x10 of type Block_LIGHTCUBE1", rig.Log);
-            Assert.Contains("info: BlockFilter.UpdateConnecting: Found replacement object 0x11", rig.Log);
-            Assert.Contains("info: Robot.ConnectToObjects: Connecting objects with factoryID = 0x11, 0x0, 0x0, 0x0, 0x0, ", rig.Log);
+            Assert.Contains("info: [BlockPool] BlockFilter.UpdateConnecting: Looking for a replacement for object 0x10 of type Block_LIGHTCUBE1", rig.Log);
+            Assert.Contains("info: [BlockPool] BlockFilter.UpdateConnecting: Found replacement object 0x11", rig.Log);
+            Assert.Contains("info: [BlockPool] Robot.ConnectToObjects: Connecting objects with factoryID = 0x11, 0x0, 0x0, 0x0, 0x0, ", rig.Log);
         }
         finally { File.Delete(path); }
     }
@@ -660,7 +660,7 @@ public class EngineAppLayerTests
             var sent = Assert.Single(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>());
             Assert.Equal(0x11u, sent.FactoryId);
             Assert.Equal((byte)0, sent.Slot);
-            Assert.Contains("info: BlockFilter.UpdateConnecting: Found replacement object 0x11", rig.Log);
+            Assert.Contains("info: [BlockPool] BlockFilter.UpdateConnecting: Found replacement object 0x11", rig.Log);
             Assert.Equal(0x10u, rig.Robot.Cubes.Connections.PersistentPool[0].FactoryId);
             Assert.Equal("0x10,1\n", File.ReadAllText(path));
         }
@@ -703,7 +703,7 @@ public class EngineAppLayerTests
         {
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, options ?? new CozmoEngineOptions { BlockPoolPath = "" });
             Engine.PublicationCounter = new RobotStatePublicationCounter();
-            Engine.LogLine += l => { lock (Log) Log.Add(l); };
+            Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
             Engine.ConnectionResponse += Responses.Add;
             Engine.RobotDisconnected += Disconnects.Add;
             Engine.RobotErrorPassThrough += PassThroughs.Add;
@@ -1571,7 +1571,7 @@ public class EngineAppLayerTests
         Assert.True(rig.Log.IndexOf(sending) < rig.Log.IndexOf(queueing));
         Assert.DoesNotContain(setting, rig.Log);
         bool? readyAtLog = null;
-        rig.Engine.LogLine += line => { if (line == setting) readyAtLog = rig.Engine.Robot!.ReadyToStream; };
+        rig.Engine.CaptureSourceLogs(line => { if (line == setting) readyAtLog = rig.Engine.Robot!.ReadyToStream; });
         rig.DrainConnectionQueue();
         Assert.Equal(1, rig.Log.Count(l => l == "info: Robot.HandleSyncTimeAck"));
         Assert.True(rig.Log.IndexOf(queueing) < rig.Log.IndexOf(setting));

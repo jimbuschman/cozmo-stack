@@ -9594,7 +9594,7 @@
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: cozmo_startup DASConfigure(DataPlatformResourcesBasePath + \"/DASConfig.json\", ...) 0x00665974..0x0066598E; Unity sets the base path to persistentDataPath + \"/cozmo\" (unity/scripts/csharp/RobotEngineManager.cs:537-543); re-analysis/obb/assets/DASConfig.json:3-11. The app's copy of the file to that path was not found in the app source."
       ],
-      "unresolved": "COMPATIBILITY_POLICY: input = the OBB's assets/DASConfig.json; DataCollectionEnabled (DASEnableNetwork) is the stack's setting, network upload external.",
+      "unresolved": "COMPATIBILITY_POLICY: input = the OBB's assets/DASConfig.json; DataCollectionEnabled (DASEnableNetwork) is the stack's setting, network upload external. Built B-M3M4-4: exact shipped DASConfig bytes embedded and supplied at CozmoEngine construction; no upload built.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9611,7 +9611,7 @@
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: _DAS_GetLevel 0x73A4..0x73F0, 0x11758..0x11866 (override tree on '.' segments, else localMinLogLevel); core 0x742E..0x75EE (null/blank name -> \"DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED ...\" and \"noname\"); sink (a) vtable 0x36A8C, gate 0x75F2..0x7666, right-trim 0x25984..0x259D0, __android_log_print(prio, \"das\", \"%s%s : %s %s\", \"\", name, text, \"\") 0x27D98..0x27E20, prio by level 0..4 = 3,4,4,5,6."
       ],
-      "unresolved": "IMPLEMENTATION_GAP: build on M3-048's structured entry. Levels come from the M3-052 DASConfig input (DASConfigure defaults and parse-failure levels per 13.5). The logcat priority is carried on the rendered line. $level/$ts insertion is metadata, not displayed by sink (a).",
+      "unresolved": "built, awaiting strong verification: B-M3M4-4 supplies shipped/default levels, dot-segment override filter, right-trim/trailing-space sink (a), priority/tag, noname fallback and unchanged structured entries. MISSING: section 13.5 abbreviates the null-name diagnostic literal; JsonCpp formatted parse-error argument bytes are unread. These paths emit visible MISSING rather than invented native text. Previous instructions: IMPLEMENTATION_GAP: build on M3-048's structured entry. Levels come from the M3-052 DASConfig input (DASConfigure defaults and parse-failure levels per 13.5). The logcat priority is carried on the rendered line. $level/$ts insertion is metadata, not displayed by sink (a).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9628,7 +9628,7 @@
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md sections 13.5 and 14.6 (what sink (a) drops); AGENTS.md approved departures (operator, 2026-10-11)."
       ],
-      "unresolved": "COMPATIBILITY_POLICY: input = the stack's verbose-log setting (default off). It changes only the display; the structured entries (M3-048) and every engine-side effect are unchanged.",
+      "unresolved": "COMPATIBILITY_POLICY: input = the stack's verbose-log setting (default off). It changes only the display; the structured entries (M3-048) and every engine-side effect are unchanged. Built B-M3M4-4: default-off setting and live toggle affect display only, including channels; structured entries unchanged.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9770,7 +9770,7 @@
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.3: LoadNonConfigData order 0x0051F3B0..0x0051F3CE; WalkAnimationDir 0x0051F600..0x0051F62C, 0x00520E5A..0x005211BC; FilesInDirectory 0x00802D70..0x00802E10, suffixes 0x0101FF68; Results 0x0051F6A4..0x0051F6EA; LoadBackpackLightAnimationFile 0x00521CE4..0x00521D42; readAsJson 0x0084C090..0x0084C15C; LoadTime 0x005200DE, 0x00520184..0x005201AA."
       ],
-      "unresolved": "built, awaiting strong verification: loader order/collection/error flag/empty skip and logs built per 13.3; MISSING: JsonCpp formatted reader-error bytes for readAsJson debug argument are not settled by the adopted rows. Non-object isolation follows in job 4. built, awaiting strong verification: B-M3M4-3: recursive enumeration-order json/bin suffix loader, per-load mtime gate/stat warning, readAsJson error/debug/errG, empty skip, Results and LoadTime. Non-object handling remains for B-M3M4-4 per 13.4. Previous manager-adopted instructions: IMPLEMENTATION_GAP: build per ruling 14.3 (directory-enumeration order stands for readdir). The non-object JSON throw (13.4), unreachable with the shipped file, is handled under M1-034 (operator, 2026-10-11): the loader catches it per file, logs it in M1-034's isolation form and continues with the next file; the states inserted before the throw point stay (13.4).",
+      "unresolved": "built, awaiting strong verification: B-M3M4-4 isolates non-object root/state JsonLogicError per file under M1-034; preserves earlier inserted states and continues subsequent files. MISSING inherited: JsonCpp formatted reader-error bytes. Previous build notes: built, awaiting strong verification: loader order/collection/error flag/empty skip and logs built per 13.3; MISSING: JsonCpp formatted reader-error bytes for readAsJson debug argument are not settled by the adopted rows. Non-object isolation follows in job 4. built, awaiting strong verification: B-M3M4-3: recursive enumeration-order json/bin suffix loader, per-load mtime gate/stat warning, readAsJson error/debug/errG, empty skip, Results and LoadTime. Non-object handling remains for B-M3M4-4 per 13.4. Previous manager-adopted instructions: IMPLEMENTATION_GAP: build per ruling 14.3 (directory-enumeration order stands for readdir). The non-object JSON throw (13.4), unreachable with the shipped file, is handled under M1-034 (operator, 2026-10-11): the loader catches it per file, logs it in M1-034's isolation form and continues with the next file; the states inserted before the throw point stay (13.4).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

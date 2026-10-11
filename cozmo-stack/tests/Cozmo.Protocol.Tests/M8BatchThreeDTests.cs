@@ -69,7 +69,7 @@ public class M8BatchThreeDTests
 
         public Fx()
         {
-            Rig.Robot.Engine.LogLine += l => { lock (Log) Log.Add(l); };
+            Rig.Robot.Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
             Component = new BehaviorHelperComponent(() => { OriginReads++; return Origin; }, l => { lock (Log) Log.Add(l); });
             var ctx = new BehaviorContext { Robot = Rig.Robot, Triggers = new AnimationTriggerMap(), ClockSec = () => 1 };
             Behavior.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
@@ -874,7 +874,7 @@ public class M8BatchThreeDTests
     {
         using var robot = CozmoRobot.CreateOffline();
         var log = new List<string>();
-        robot.Engine.LogLine += l => { lock (log) log.Add(l); };
+        robot.Engine.CaptureSourceLogs(l => { lock (log) log.Add(l); });
         var missing = new List<string>();
         void onMissing(string m) { lock (missing) missing.Add(m); }
         SteppedBehavior.MissingReported += onMissing;
@@ -894,7 +894,7 @@ public class M8BatchThreeDTests
         e.Tick();
         Assert.Equal(2, ticks);                             // non-zero result: warns and returns, the helper tick is skipped
         // 0x00513C8C..0x00513C92 (M3-032 G2): the warning's key is Robot.Update.VisionComponentUpdateFail and its format is empty (0x00BE3F00)
-        lock (log) Assert.Contains("warning: Robot.Update.VisionComponentUpdateFail: ", log);
+        lock (log) Assert.Contains("warning: Robot.Update.VisionComponentUpdateFail", log);
         e.VisionUpdateAllResultsFailed = () => false;
         e.Tick();
         Assert.Equal(3, ticks);

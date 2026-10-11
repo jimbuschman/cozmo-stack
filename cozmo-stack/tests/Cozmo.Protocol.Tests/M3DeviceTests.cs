@@ -556,7 +556,7 @@ public class M3DeviceTests
         using var rig = new Rig();
         rig.ToSuccess();
         var logs = new List<string>();
-        rig.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
         rig.Tick();
         Assert.Contains("debug: Robot.Update: Waiting for first full robot state to be handled", logs);
         logs.Clear();
@@ -566,13 +566,13 @@ public class M3DeviceTests
         Assert.DoesNotContain("debug: Robot.Update: Waiting for first full robot state to be handled", logs);
         rig.Engine.VisionUpdateAllResultsFailed = () => true;
         rig.Tick();
-        Assert.DoesNotContain("warning: Robot.Update.VisionComponentUpdateFail: ", logs); // null calibration skips Gate B
+        Assert.DoesNotContain("warning: Robot.Update.VisionComponentUpdateFail", logs); // null calibration skips Gate B
         while (NvCommands(rig)[^1].Tag != 0x80000001) AnswerInFlight(rig);
         rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Data = Calibration56() });
         rig.Tick();
         Assert.NotNull(rig.Robot.CameraSettings.Calibration);
         rig.Tick();
-        Assert.Contains("warning: Robot.Update.VisionComponentUpdateFail: ", logs);
+        Assert.Contains("warning: Robot.Update.VisionComponentUpdateFail", logs);
     }
 
     /// <summary>
@@ -3281,7 +3281,7 @@ public class M3DeviceTests
         Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
         using var rig = new Rig();
         var missing = new List<string>();
-        rig.Engine.LogLine += missing.Add;
+        rig.Engine.CaptureSourceLogs(missing.Add);
         var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
         needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
@@ -3404,7 +3404,7 @@ public class M3DeviceTests
     {
         using var rig = new Rig();
         var logs = new List<string>();
-        rig.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
         rig.ToSuccess();
         SendFirstFullState(rig);
         var nv = rig.Robot.Engine.NvStorage!;

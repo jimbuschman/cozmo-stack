@@ -17,14 +17,14 @@ public class M4PowerLevelTests
         using var rig = new Rig();
         var logs = new List<string>();
         var sent = new List<ObjectPowerLevel>();
-        rig.Robot.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.Robot.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
         rig.Robot.Cubes.PowerLevelBroadcast += sent.Add;
         uint objectId = rig.Vision.World.ConnectedObjectIdForActiveId(2)!.Value;
         Assert.NotEqual(2u, objectId);                                           // the rig seeds world IDs 7, 8, 9 for slots 1..3
         rig.Send(new ObjectPowerLevel { ObjectID = 2, MissedPackets = 5, BatteryLevel = 120 });
         var b = Assert.Single(sent);
         Assert.Equal((objectId, 5u, (byte)120), (b.ObjectID, b.MissedPackets, b.BatteryLevel));
-        Assert.Contains($"debug: RobotToEngine.ObjectPowerLevel.Broadcast: RobotID 1 activeID 2 objectID {objectId} at 120 cv", logs);
+        Assert.Contains($"debug: [Unnamed] RobotToEngine.ObjectPowerLevel.Broadcast: RobotID 1 activeID 2 objectID {objectId} at 120 cv", logs);
         sent.Clear();
         logs.Clear();
         rig.Send(new ObjectPowerLevel { ObjectID = 4, MissedPackets = 0, BatteryLevel = 120 });   // no connected object in slot 4

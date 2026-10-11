@@ -13,6 +13,20 @@ public sealed record EngineLogEntry(EngineLogLevel Level, string? Channel, strin
 public sealed partial class CozmoEngine
 {
     public event Action<EngineLogEntry>? LogEntry;
+    // fidelity: M3-053, M3-054
+    public event Action<DisplayedEngineLog>? DisplayedLog;
+    public bool VerboseLogDisplay { get; set; }
+    private readonly DasLogDisplay _logDisplay = new();
+    internal DasLogDisplay LogDisplay => _logDisplay;
+    private void DisplayEngineEntry(EngineLogEntry entry)
+    {
+        var line = _logDisplay.Render(entry, VerboseLogDisplay, DisplayLogLine);
+        if (line is null) return;
+        if (DisplayedLog is { } displayed)
+            foreach (Action<DisplayedEngineLog> subscriber in displayed.GetInvocationList())
+                try { subscriber(line); } catch (Exception e) { ReportFault(e); }
+        DisplayLogLine(line.Line);
+    }
     // fidelity: M4-035
     public event Action<BlockPoolDataMessage>? BlockPoolData;
     internal void DeliverBlockPoolData(BlockPoolDataMessage m) => FanOut(BlockPoolData, m);
@@ -30,7 +44,7 @@ public sealed partial class CozmoEngine
         if (LogEntry is { } entries)
             foreach (Action<EngineLogEntry> subscriber in entries.GetInvocationList())
                 try { subscriber(entry); } catch (Exception e) { ReportFault(e); }
-        DisplayLogLine(legacyLine ?? $"{level.ToString().ToLowerInvariant()}: {(channel is null ? "" : "[" + channel + "] ")}{name}: {text}");
+        DisplayEngineEntry(entry);
     }
 
     // The existing Action<string> component boundary funnels each call into one structured entry.

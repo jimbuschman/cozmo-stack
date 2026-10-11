@@ -5,6 +5,41 @@ using Xunit;
 namespace Cozmo.Protocol.Tests;
 public class BackpackLoaderTests
 {
+    [Theory]
+    [InlineData("[1]", false)]
+    [InlineData("\"bad\"", false)]
+    [InlineData("7", false)]
+    [InlineData("[1]", true)]
+    [InlineData("\"bad\"", true)]
+    [InlineData("7", true)]
+    public void NonObjectThrowIsIsolatedPerFileAndKeepsEarlierStates(string value, bool stateValue)
+    {
+        string root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string dir = Path.Combine(root, BackpackLightAnimations.ResourceDirectory);
+        Directory.CreateDirectory(dir);
+        static string Pattern(int red, int green) => System.Text.Json.JsonSerializer.Serialize(new
+        {
+            onColors = Enumerable.Repeat(new[] { red, green, 0, 1 }, 5),
+            offColors = Enumerable.Repeat(new[] { 0, 0, 0, 1 }, 5),
+            onPeriod_ms = new int[5], offPeriod_ms = new int[5],
+            transitionOnPeriod_ms = new int[5], transitionOffPeriod_ms = new int[5], offset = new int[5]
+        });
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "01-bad.json"), stateValue
+                ? "{\"charging\":" + Pattern(1, 0) + ",\"charged\":" + value + "}" : value);
+            File.WriteAllText(Path.Combine(dir, "02-good.json"), "{\"charging\":" + Pattern(0, 1) + ",\"charged\":" + Pattern(0, 1) + ",\"badCharger\":" + Pattern(0, 1) + "}");
+            var logs = new List<string>();
+            var patterns = BackpackLightAnimations.Load(root, logs.Add);
+            Assert.Equal(new[] { "OffCharger", "Charging", "Charged", "BadCharger" }, patterns.Names);
+            Assert.Equal(stateValue ? LedColor.Red : LedColor.Green, patterns.Get("Charging")![0].OnColor);
+            Assert.Equal(LedColor.Green, patterns.Get("BadCharger")![0].OnColor);
+            Assert.Contains("warning: event handler threw: JsonLogicError: in Json::Value::find(key, end, found): requires objectValue or nullValue", logs);
+            Assert.DoesNotContain(logs, line => line.Contains("InvalidJson")); // throw precedes the first isMember error report
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
     // Sections 4/13.3: all fields read, two size failures then one InvalidJson per state.
     [Fact]
     public void InvalidPatternReadsBothColorsBeforeOneStateError()

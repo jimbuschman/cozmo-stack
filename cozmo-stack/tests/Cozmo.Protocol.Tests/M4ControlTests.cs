@@ -68,7 +68,7 @@ public class M4ControlTests
         public Rig(string? resources = null)
         {
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources });
-            Engine.LogLine += l => { lock (Log) Log.Add(l); };
+            Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
         }
 
         public void Tick(double ms = 60) { NowNs += (long)(ms * 1_000_000); Engine.Tick(); }

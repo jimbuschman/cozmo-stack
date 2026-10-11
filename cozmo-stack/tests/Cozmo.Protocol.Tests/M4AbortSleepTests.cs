@@ -43,7 +43,7 @@ public class M4AbortSleepTests
         public Rig()
         {
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, new CozmoEngineOptions { BlockPoolPath = "" });
-            Engine.LogLine += l => { lock (Log) Log.Add(l); };
+            Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
         }
 
         public void Tick(double ms = 60) { NowNs += (long)(ms * 1_000_000); Engine.Tick(); }
@@ -153,7 +153,7 @@ public class M4AbortSleepTests
         Assert.Equal("error: MovementComponent.DirectDriveCheckSpeedAndLockTracks: Locks left on tracks BODY_TRACK [0x4] after DirectDriveWheels[DirectDriveWheels] unlocked", error);
         Assert.True(EngineErrorState.ErrorFlagSet);
         Assert.Equal(2, lines.Count(l => l == "info: [Unnamed] MovementComponent.UnlockTracks: Tracks 0x4 are not currently locked by DirectDriveWheels"));
-        Assert.Equal(2, lines.Count(l => l.StartsWith("debug: [Unnamed] MovementComponent.LockState: ")));
+        Assert.Equal(2, lines.Count(l => l.StartsWith("debug: [Unnamed] MovementComponent.LockState")));
     }
 
     /// <summary>
@@ -720,7 +720,7 @@ public class M4AbortSleepTests
         rig.State();
         int logMark = rig.LogLines().Count;
         rig.Robot.Motion.PrintLockState();
-        Assert.Equal(new[] { "debug: [Unnamed] MovementComponent.LockState: " }, rig.LogLines().Skip(logMark).ToList());
+        Assert.Equal(new[] { "debug: [Unnamed] MovementComponent.LockState" }, rig.LogLines().Skip(logMark).ToList());
     }
 
     /// <summary>

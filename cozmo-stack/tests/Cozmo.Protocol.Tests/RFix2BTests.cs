@@ -376,7 +376,7 @@ public class RFix2BTests
         Assert.NotNull(provider);
         Assert.Null(provider!());
         var log = new List<string>();
-        robot.Engine.LogLine += log.Add;
+        robot.Engine.CaptureSourceLogs(log.Add);
         FirmwareVersion Fw(string json) => new() { Signature = System.Text.Encoding.UTF8.GetBytes(json) };
 
         engineRobot.HandleFirmwareVersion(Fw("{not json"));                       // parse failure: nothing, no log

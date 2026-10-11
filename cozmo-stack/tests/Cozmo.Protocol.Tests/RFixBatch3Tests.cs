@@ -293,7 +293,7 @@ public class RFixBatch3Tests : IDisposable
         Assert.Single(rig.Vision.World.LocatedObjects);
         int delocalized = 0;
         var engineLog = new List<string>();
-        rig.Robot.Engine.LogLine += l => { lock (engineLog) engineLog.Add(l); };
+        rig.Robot.Engine.CaptureSourceLogs(l => { lock (engineLog) engineLog.Add(l); });
         rig.Vision.RobotDelocalized += _ => delocalized++;
         void Mismatch() { rig.T += 33; rig.Send(new RobotState { Timestamp = rig.T, PoseFrameId = 5, Pose = new RobotPose(), HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos, Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() }); }
         for (int i = 0; i < 100; i++) Mismatch();

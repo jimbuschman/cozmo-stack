@@ -657,7 +657,7 @@ public class WwiseSongTests
     {
         using var robot = CozmoRobot.CreateOffline();
         var log = new List<string>();
-        robot.Engine.LogLine += l => { lock (log) log.Add(l); };
+        robot.Engine.CaptureSourceLogs(l => { lock (log) log.Add(l); });
         var ctx = new BehaviorContext { Robot = robot, Triggers = null! };
         var b = new SingingBehavior("Singing_AbaDaba", "Cozmo_Sings_80Bpm", "Cozmo_Sings_Aba_Daba");
 

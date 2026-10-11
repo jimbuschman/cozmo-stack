@@ -853,7 +853,7 @@ public class M7BatchThreeBTests
     {
         using var rig = new Rig();
         var lines = new List<string>();
-        rig.Robot.Engine.LogLine += lines.Add;
+        rig.Robot.Engine.CaptureSourceLogs(lines.Add);
         Assert.Empty(ShippedBehaviors.Reactions(rig.Robot));
         Assert.Contains(lines, l => l.StartsWith("error:") && l.Contains("Failed to read '") && l.Contains("reactionTrigger_behavior_map.json"));
     }

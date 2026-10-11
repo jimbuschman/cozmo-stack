@@ -347,7 +347,7 @@ public class M7BatchThreeATests
         var ctx = Ctx(rig, () => null);                       // [[[robot+0x264]+0x30]+0x14] == 3: none
         var b = new ReactToCliffBehavior(rig.Robot);
         var lines = new List<string>();
-        rig.Robot.Engine.LogLine += lines.Add;
+        rig.Robot.Engine.CaptureSourceLogs(lines.Add);
         using var m = NewManager(ctx, b);
         Assert.True(m.StartAsync("ReactToCliff", 0).GetAwaiter().GetResult());
         Assert.Equal("", b.StateName);                        // empty from the constructor
@@ -539,7 +539,7 @@ public class M7BatchThreeATests
         using var rig = new Rig();
         var b = new ReactToCliffBehavior(rig.Robot);
         var lines = new List<string>();
-        rig.Robot.Engine.LogLine += lines.Add;
+        rig.Robot.Engine.CaptureSourceLogs(lines.Add);
         rig.Send(new CliffEvent { Timestamp = rig.T, DetectedFlags = 0 });
         Assert.Equal(0u, b.State); Assert.False(b.ReactNow);
 
@@ -776,7 +776,7 @@ public class M7BatchThreeATests
         using var rig = new Rig();
         PickUp(rig, onChargerContacts: true);
         var lines = new List<string>();
-        rig.Robot.Engine.LogLine += lines.Add;
+        rig.Robot.Engine.CaptureSourceLogs(lines.Add);
         var b = new ReactToPickupBehavior(rig.Vision, rng: new EngineRandom(7));
         var ctx = Ctx(rig);
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();

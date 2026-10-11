@@ -108,7 +108,12 @@ public sealed class BackpackLightAnimations
             try { doc = JsonDocument.Parse(bytes, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }); }
             catch (JsonException e) { ReadFailure(f, e.Message); continue; }
             using (doc)
-                if (!JsonEmpty(doc.RootElement)) c.DefineFromJson(doc.RootElement, log);
+            {
+                // fidelity: M1-034, M4-036 — section 13.4, operator pin: the native loader terminates;
+                // isolate this file and keep states already inserted, then continue the enumeration.
+                try { if (!JsonEmpty(doc.RootElement)) c.DefineFromJson(doc.RootElement, log); }
+                catch (JsonLogicError e) { log?.Invoke($"warning: event handler threw: {e.GetType().Name}: {e.Message}"); }
+            }
         }
         log?.Invoke($"info: [Animations] RobotDataLoader.LoadBackpackLightAnimations.LoadTime: Time to load backpack light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
         return c;
@@ -168,9 +173,13 @@ public sealed class BackpackLightAnimations
     /// </summary>
     private void AddStateValues(string name, JsonElement root, string key, Action<string>? log)
     {
-        // Section 13.4: non-object roots/states throw in the engine; current containment retained until job 4.
+        // Section 13.4: root["charging"] const/find and the state's first isMember require object or null.
+        if (root.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null or JsonValueKind.Undefined))
+            throw new JsonLogicError("in Json::Value::find(key, end, found): requires objectValue or nullValue");
         JsonElement e = default;
         if (root.ValueKind == JsonValueKind.Object) root.TryGetProperty(key, out e);
+        if (e.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null or JsonValueKind.Undefined))
+            throw new JsonLogicError("in Json::Value::find(key, end, found): requires objectValue or nullValue");
         bool valid = true;
         string[] fields = { "onColors", "offColors", "onPeriod_ms", "offPeriod_ms", "transitionOnPeriod_ms", "transitionOffPeriod_ms", "offset" };
         foreach (var f in fields)

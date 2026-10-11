@@ -43,6 +43,9 @@
     <EmbeddedResource Include="Vision\Data\marker_nn_library.bin" LogicalName="Cozmo.Robot.Vision.marker_nn_library.bin" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Data\DASConfig.json" LogicalName="Cozmo.Robot.DASConfig.json" />
+  </ItemGroup>
+  <ItemGroup>
     <!-- The codec internals are tested directly; QuantVals in particular guards a regression that hung the decoder. -->
     <InternalsVisibleTo Include="Cozmo.Protocol.Tests" />
   </ItemGroup>

@@ -605,16 +605,16 @@ public class ControlTests
     {
         var rig = new Rig();
         var logs = new List<string>();
-        rig.Robot.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.Robot.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
         void Power(uint active, uint missed, byte cv = 140) => rig.Send(new ObjectPowerLevel { ObjectID = active, MissedPackets = missed, BatteryLevel = cv });
-        int Reports() { lock (logs) return logs.Count(l => l.StartsWith("debug: RobotToEngine.ObjectPowerLevel.Report:")); }
+        int Reports() { lock (logs) return logs.Count(l => l.StartsWith("debug: [Unnamed] RobotToEngine.ObjectPowerLevel.Report:")); }
         void At(float seconds) => rig.Robot.Cubes.Seconds = () => seconds;
 
         At(100.9f);
         Power(7, 10);                                                       // first sighting: the stored time is 0
-        Assert.Contains("debug: RobotToEngine.ObjectPowerLevel.Log: RobotID 1 activeID 7 at 1.40V 80.00%", logs);
-        Assert.Contains("debug: RobotToEngine.ObjectPowerLevel.Report: Sending DAS report for robotID 1 activeID 7 now 100 then 0", logs);   // 100.9 truncates to 100
-        Assert.Contains("debug: [Events] robot.accessory_powerlevel: 7 1.40V (10 lost)", logs);
+        Assert.Contains("debug: [Unnamed] RobotToEngine.ObjectPowerLevel.Log: RobotID 1 activeID 7 at 1.40V 80.00%", logs);
+        Assert.Contains("debug: [Unnamed] RobotToEngine.ObjectPowerLevel.Report: Sending DAS report for robotID 1 activeID 7 now 100 then 0", logs);   // 100.9 truncates to 100
+        Assert.Contains("event: robot.accessory_powerlevel: 7 1.40V (10 lost)", logs);
         Assert.Equal(1, Reports());
 
         At(699f);  Power(7, 10);  Assert.Equal(1, Reports());               // 599 s: (599 >> 3) = 0x4A, skipped
@@ -637,7 +637,7 @@ public class ControlTests
         var rig = new Rig();
         var logs = new List<string>();
         var sent = new List<ObjectPowerLevel>();
-        rig.Robot.Engine.LogLine += l => { lock (logs) logs.Add(l); };
+        rig.Robot.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
         rig.Robot.Cubes.PowerLevelBroadcast += sent.Add;
         rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
         rig.Send(new ObjectPowerLevel { ObjectID = 3, MissedPackets = 2, BatteryLevel = 120 });
