@@ -11508,3 +11508,13 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint767 — output callback constructed-pointer disposition
 
 `20261010-sound-routing-output-pointer-input-disposition.md` records six bounded literal/MOVW windows with no formed/live callback target and no exact ARM PC-ADD/SUB target candidate. Corrected third-stack destination/second-stack value remains UNKNOWN; stop this input lead without converting navigation absence to reachability.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint768 — curve evaluator pointer input disposition
+
+`20261010-sound-curve-evaluator-pointer-input-disposition.md` records six bounded address-construction windows with no positive additional formed/liveA14E28 target. AC1–12/CR645 remain paid; computed/relative/stack/copied aliases remain UNKNOWN,114 PARTIAL. Stop this lead without re-extracting the curve body.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint769 — voice-region VFP/vector store attribution
+
+`20261010-sound-voice-policy-vector-store-dispositions.md` binds all nine aligned candidate stores to eight retained-receiver parameter words340..524 and one stack scalar. Each is four-byte VSTR, with no regional VSTM/VST1..4 candidate; no receiver-relativeE0/E4 overlap. Broader computed caller/writer aliases remain open,033 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

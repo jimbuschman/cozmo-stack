@@ -1,0 +1,66 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A550A0..0x00A5519C exclusive; ARM;
+00A550A0: vmov         s15, r3
+00A550A4: vcvt.f32.u32 s15, s15
+00A550A8: vmul.f32     s15, s15, s13
+00A550AC: vmov.f32     s16, #-5.000000e-01
+00A550B0: vcmpe.f32    s15, #0
+00A550B4: vmrs         apsr_nzcv, fpscr
+00A550B8: vmovgt.f32   s16, s14
+00A550BC: cmp          r5, #0
+00A550C0: vadd.f32     s16, s15, s16
+00A550C4: vcvt.s32.f32 s16, s16
+00A550C8: beq          #0xa5532c
+00A550CC: ldr          r3, [r4, #0x28]
+00A550D0: cmp          r3, #0
+00A550D4: beq          #0xa551f0
+00A550D8: vldr         s15, [sp, #0x30]
+00A550DC: vcmpe.f32    s15, #0
+00A550E0: vmrs         apsr_nzcv, fpscr
+00A550E4: bmi          #0xa554ac
+00A550E8: vldr         s14, [pc, #0x270] ; word[00A55360]=42C80000
+00A550EC: vcmp.f32     s15, s14
+00A550F0: vmrs         apsr_nzcv, fpscr
+00A550F4: vmovgt.f32   s15, s14
+00A550F8: vldr         s14, [r4, #0x344]
+00A550FC: vcmp.f32     s14, s15
+00A55100: vmrs         apsr_nzcv, fpscr
+00A55104: bne          #0xa55444
+00A55108: vldr         s15, [sp, #0x34]
+00A5510C: vldr         s14, [r6, #0x68]
+00A55110: vcmpe.f32    s15, s14
+00A55114: vmrs         apsr_nzcv, fpscr
+00A55118: vmovle.f32   s15, s14
+00A5511C: vcmpe.f32    s15, #0
+00A55120: vmrs         apsr_nzcv, fpscr
+00A55124: bmi          #0xa554c4
+00A55128: vldr         s14, [pc, #0x230] ; word[00A55360]=42C80000
+00A5512C: vcmp.f32     s15, s14
+00A55130: vmrs         apsr_nzcv, fpscr
+00A55134: vmovgt.f32   s15, s14
+00A55138: add          r3, r4, #0x510
+00A5513C: vldr         s14, [r3, #4]
+00A55140: vcmp.f32     s14, s15
+00A55144: vmrs         apsr_nzcv, fpscr
+00A55148: bne          #0xa55410
+00A5514C: vldr         s15, [sp, #0x38]
+00A55150: vcmpe.f32    s15, #0
+00A55154: vmrs         apsr_nzcv, fpscr
+00A55158: bmi          #0xa554bc
+00A5515C: vldr         s14, [pc, #0x1fc] ; word[00A55360]=42C80000
+00A55160: vcmp.f32     s15, s14
+00A55164: vmrs         apsr_nzcv, fpscr
+00A55168: vmovgt.f32   s15, s14
+00A5516C: vldr         s14, [r4, #0x354]
+00A55170: vcmp.f32     s14, s15
+00A55174: vmrs         apsr_nzcv, fpscr
+00A55178: bne          #0xa553d8
+00A5517C: vldr         s15, [sp, #0x3c]
+00A55180: vldr         s14, [r6, #0x6c]
+00A55184: vcmpe.f32    s15, s14
+00A55188: vmrs         apsr_nzcv, fpscr
+00A5518C: vmovle.f32   s15, s14
+00A55190: vcmpe.f32    s15, #0
+00A55194: vmrs         apsr_nzcv, fpscr
+00A55198: bmi          #0xa554b4

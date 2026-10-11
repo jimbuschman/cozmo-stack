@@ -1,0 +1,69 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A54F1C..0x00A55024 exclusive; ARM;
+00A54F1C: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A54F20: ldr          r5, [r0, #0xd4]
+00A54F24: vpush        {d8}
+00A54F28: ldr          r8, [r0, #0xf0]
+00A54F2C: ldr          r6, [r5, #0xc]
+00A54F30: sub          sp, sp, #0x5c
+00A54F34: ldr          r2, [r6, #0x1f8]
+00A54F38: cmn          r2, #1
+00A54F3C: beq          #0xa54f50
+00A54F40: cmp          r2, #0
+00A54F44: mov          r3, #1
+00A54F48: strb         r3, [r1, #0x2c]
+00A54F4C: beq          #0xa5531c
+00A54F50: vldr         s15, [r6, #0x54]
+00A54F54: add          sb, r6, #0xc
+00A54F58: ldr          r3, [r6, #0x140]
+00A54F5C: str          r8, [sp, #0x4c]
+00A54F60: vldr         s14, [r6, #0x11c]
+00A54F64: str          r8, [r1, #4]
+00A54F68: str          r3, [sp, #0x48]
+00A54F6C: vldr         s16, [pc, #0x3e4] ; word[00A55358]=3D4CCCCD
+00A54F70: ldr          r2, [r5, #8]
+00A54F74: vadd.f32     s15, s15, s14
+00A54F78: vldr         s14, [pc, #0x3dc] ; word[00A5535C]=C2140000
+00A54F7C: vmul.f32     s16, s15, s16
+00A54F80: vcmpe.f32    s16, s14
+00A54F84: vmrs         apsr_nzcv, fpscr
+00A54F88: bmi          #0xa552a8
+00A54F8C: vldr         s14, [pc, #0x3d8] ; word[00A5536C]=4BD49A78
+00A54F90: vldr         s15, [pc, #0x3d8] ; word[00A55370]=4E7E0000
+00A54F94: vldr         s13, [pc, #0x3d8] ; word[00A55374]=3EA67F46
+00A54F98: vmla.f32     s15, s16, s14
+00A54F9C: vldr         s14, [pc, #0x3d8] ; word[00A5537C]=3CAA70DE
+00A54FA0: vldr         s16, [pc, #0x3d0] ; word[00A55378]=3F272DDB
+00A54FA4: vcvt.u32.f32 s15, s15
+00A54FA8: vmov         r3, s15
+00A54FAC: ubfx         ip, r3, #0, #0x17
+00A54FB0: lsr          r3, r3, #0x17
+00A54FB4: add          ip, ip, #0x3f800000
+00A54FB8: lsl          r3, r3, #0x17
+00A54FBC: vmov         s15, ip
+00A54FC0: vmla.f32     s14, s15, s13
+00A54FC4: vmla.f32     s16, s15, s14
+00A54FC8: vmov         s15, r3
+00A54FCC: vmul.f32     s16, s16, s15
+00A54FD0: cmp          r2, #0
+00A54FD4: beq          #0xa54ff0
+00A54FD8: vldr         s15, [r2, #4]
+00A54FDC: ldrb         r3, [r6, #0x58]
+00A54FE0: tst          r3, #1
+00A54FE4: vmul.f32     s16, s16, s15
+00A54FE8: vldrne       s15, [r2]
+00A54FEC: vmulne.f32   s16, s16, s15
+00A54FF0: ldr          r3, [r5]
+00A54FF4: mov          r4, r0
+00A54FF8: mov          r0, r5
+00A54FFC: mov          r7, r1
+00A55000: add          sl, sp, #0x2e
+00A55004: add          fp, sp, #0x2f
+00A55008: ldr          r3, [r3, #0x4c]
+00A5500C: blx          r3
+00A55010: ldr          r3, [r6, #4]
+00A55014: mov          r1, sb
+00A55018: stmib        sp, {sl, fp}
+00A5501C: ands         r3, r3, #0x10
+00A55020: mov          r2, r8
