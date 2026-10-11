@@ -686,3 +686,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint831 - continuous/reduction property-cap register reconciliation
 
 `20261011-sound-control-property-cap-disposition.md` reuses positive3490-node/fifteen-bus propertycount<=4 to bound3 of4 CW and4 of10 LDRV saved states. Seven others remain explicit;post-query R0 is not blindly treated as an index,CW mode1 requiresR1=1. Existing CW/LDRV timing/parameter contracts credited,no new all-runtime input/alias claim.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint832 - authored Action property-count cap bound
+
+`20261011-sound-action-property-cap-disposition.md` checks906 shipped Action payload hashes/blocks:ordinary counts0..2,range counts0,and27 raw0F delay inputs. Four of19 saved ordinary-scan states have nextindex37 beyond that finite bound;other15 remain explicit,including legitimate scalar rate loads/quotients and unresolved callback/live blob inputs. Zero authored ranges are not universal unreachability.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

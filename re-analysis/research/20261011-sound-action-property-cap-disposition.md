@@ -1,0 +1,11 @@
+# Q14 rate/frame: actual Action property input bound
+
+Checkpoint832; guard reread before each step; decisions only.116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL unchanged.
+
+The witness reads all906 shipped type3 payloads from their ID/type/target/selector prefix through the ordinary and ranged property blocks. Every payload hash is rechecked. Ordinary counts are0(781),1(113),2(12);all906 range counts are0.27 ordinary blocks contain property0F,the authored signed32 millisecond delay. Companion JSON retains every nonempty property block and every0F raw input. No decoder or source sample data is inspected.
+
+Existing AH413A-C already own target/selector publication,old blob release,new property publication and derived28 callback before conversion. AH413D owns first0F conversion then optional ranged endpoints,even on a saved non1 reader result. Primary companion reopens the exact scan and native conversion boundaries. Ordinary scanR3 starts0 atA61578,R0=R3+1 atA61590,count exitA61580/88. Four of nineteen826 savedA613F8 states(A61584/88/A0/A4) still have nextindex37;they are outside the authored ordinary count<=2 bound.
+
+The other fifteen are retained explicitly. In particular,A615C0 is a legitimate scalar rate-load boundary:the raw delay was already loaded intoR0 andR3 reset0,so it cannot be rejected as an oversized index. After division,R0 can be a quotient. On ranged-scan entry,R0 may retain a prior scalar/index until the next local assignment;the mere value36 is not enough to declare that state impossible. All authored range counts0 are a positive serialized input fact,not universal proof that a derived callback or later mutable input cannot publish a ranged blob. No all-callback mutation proof is inferred from the zero counts.
+
+This pays the actual finite Action property-count lead and retains the already-source-backed signed64/1000 conversion and result order. It adds no global rate/frame writer and does not close original043/092/099/120/124/130 runtime input/relative/indirect/stack/copy alias requirements. They stay PARTIAL/AUDIBLE. out of scope:property backing allocation/free/copy implementation,storage/I-O,per-sample DSP and excluded branches. No production,manifest,inventory,PROJECT_STATE,hardware or Q15 edits.

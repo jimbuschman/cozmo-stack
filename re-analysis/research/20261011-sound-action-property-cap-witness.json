@@ -1,0 +1,3297 @@
+{
+  "actionCount": 906,
+  "ordinaryHistogram": {
+    "0": 781,
+    "1": 113,
+    "2": 12
+  },
+  "rangeHistogram": {
+    "0": 906
+  },
+  "actionsWithProperties": [
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 67989478,
+      "payloadSha256": "a73dd1783de059a3a2a1659bc3b55aa71a2412f7070d8e4eaeab87b7f643949d",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6214764,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "f4010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6214770,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1060354318,
+      "payloadSha256": "88dcd72ae4789a510eb918506ceed582fb9de00a8cf3d3ebdadc3ef428549f39",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6214889,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6214895,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1018488696,
+      "payloadSha256": "ec923d864469f66bcb756fef8424a58783f4d021943bc6c83ece8a55e3b24d42",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6214934,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6214940,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 822642529,
+      "payloadSha256": "019d33506411c5e6a47ad80c837b7e79fac2cf197a691429caf59d3c1f88c6c1",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6215086,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6215092,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 494613401,
+      "payloadSha256": "b05e6767f3ab2dab256a0a62edbdcbc91f034f3cac5a12d4c73ce0775461f07d",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6215371,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6215377,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 314352914,
+      "payloadSha256": "049f9611d7a68ad44b3444cb043ead5786a603e8f57a6f9e1647a56954b092dd",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6215416,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6215422,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 244234915,
+      "payloadSha256": "8c6d199864fa7093ff903d174ab5131617e00f5237175f6e2e6990d6d00606ea",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6215741,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6215747,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 490947672,
+      "payloadSha256": "cbc5da5bcfaf0a1d5d1aca0dffe2842f9cdfeee2a0901d644d18a42db849441d",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6218226,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6218232,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 904666427,
+      "payloadSha256": "1c2d9f7d830008a64c132d2ab71d0ffb362abb3e010ae12559c00fc2f0d46c76",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6218431,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6218437,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 255191501,
+      "payloadSha256": "822851ab4c6c96050e6e141a3275ff0d4b390a8f397bd5ed18ce8bfda321b46e",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6219756,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6219762,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 781766699,
+      "payloadSha256": "aa59ceee321d699ef305fc57b914e2628de59ea2e4c28acb868835d5228f6c46",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6220281,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "f4010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6220287,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 360895911,
+      "payloadSha256": "890a66a799c5f0e1b5a7778776fb3f642e333a9de4017bd2c074b551c0c29bd2",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6220486,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6220492,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 696294912,
+      "payloadSha256": "8477d4ef64e0a99023472dea0cfd6586bd3f94f81c2c456efcde54e6d4f04fd3",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6220691,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6220697,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1020882847,
+      "payloadSha256": "0a58e7950a27cf9a577beaef9823a4882659af416d94cf711d3c07281ac04b5d",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6221016,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "f4010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6221022,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 354268926,
+      "payloadSha256": "dc805e10790fe756ef0fb597fe8b484fa585e3cc6603876f42ed70d81a46761e",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6221421,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6221427,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1054360080,
+      "payloadSha256": "40cdaa62a4358350ef174ca45b386d062255a893683038b3049d7b2050da18ee",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6221466,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6221472,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 932334010,
+      "payloadSha256": "2d05027f42176c2f7a7bbd4550c69eba8b9095a0dc6b559130d214f76c9fc395",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6221511,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6221517,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 292451756,
+      "payloadSha256": "2eb31d5e41ca16bdd7e57e657d068ccd72101f84e30ab192a355ea9ef38dcf14",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6222716,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "2c010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6222722,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 761970178,
+      "payloadSha256": "7384ffde7930322a04e0a30406df27a0c53f47acfabf473b684e0a26f6722284",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6223121,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6223127,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 932537008,
+      "payloadSha256": "609ef9bd9010982a2b094fab900e8ed1b7ca71932abcdf3ce95f5a677be82c53",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6223206,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6223212,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 187778772,
+      "payloadSha256": "39a2a4c77105d17473f8dc934026676cf0a94f5917a8e4079165a6f2a870ed67",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6223651,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "50000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6223657,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 681899481,
+      "payloadSha256": "137cd1c64938470da90a128c9aa7cb937cf7c334cc39b34abec69f0389f18a58",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6225163,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6225169,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 945051917,
+      "payloadSha256": "c9fec280fe0b2f316efee6fc38c284e83b7e83b236d735ac74991899fbf703aa",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6228408,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "f4010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6228414,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 871155662,
+      "payloadSha256": "13d2f19d19aa36ab0b0712746c9ebde7050fd7750ca19abb35ddc277008372b8",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6228813,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6228819,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1067487170,
+      "payloadSha256": "4a00f1bbd5fb23340c9578f12a2bd847c155b339318406444917638a6ac9688e",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6229338,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6229344,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 908129897,
+      "payloadSha256": "f82f8b93472b94ca5f29dde9e8a12e5058b791d78b177dcdaf4b66ca32a0efee",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6230183,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6230189,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 42403382,
+      "payloadSha256": "cb20d75ee29a1969729a8cf99915a4034d2e2e37a1326981c4827506df4beb2d",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6230335,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6230341,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 685425544,
+      "payloadSha256": "86b5ef145e4c0ea9beb3db31995f97a2e7a6fb5c4d30971876401e92600ea6dc",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6231820,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "dc050000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6231826,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 198003458,
+      "payloadSha256": "60cec1fd5949a57c1f5551880e17d16ee866f2b798a98aae770789a32b564707",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6232265,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "f4010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6232271,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 510393526,
+      "payloadSha256": "694a05587acfd61e064eea5ef91595d7166310df5afa7e821fdbe627dd6ef4ae",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6232550,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6232556,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 83389073,
+      "payloadSha256": "b39778f0f94055f0af529a28471c601f87dfbc5e051e50ae2535b8899467feb2",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6232875,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6232881,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 245834445,
+      "payloadSha256": "1faf9ad58c0dd75a6696dafaceface1891cbd2d900ff02888a5318f1d68598bb",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6234534,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6234540,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 161422857,
+      "payloadSha256": "90d7e17405e8e29d67ee04def8babf041eeb1f041badcd63b55cb8aece25ae0c",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6234779,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6234785,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 234517524,
+      "payloadSha256": "9b34697c874236b6e54f8b5b2702b0d0cb05f1c6a3191fbd2484df43d825be73",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6234864,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6234870,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 601019078,
+      "payloadSha256": "9537088aa3548ae9eef318448c50736769420fb9f1f3b24735139d6ad71db500",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 6234949,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "c8000000",
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6234960,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 625129883,
+      "payloadSha256": "e179b87c19d4913f962fb2cf9a66401cd9f3faca61b0da303b6c8cde4298cc8b",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6235119,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6235125,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 722744461,
+      "payloadSha256": "3ddda7485d4d07b4d8a3ea0ff9796d0257335967c61eb351251dc8e003c05173",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6235804,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6235810,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 1012942789,
+      "payloadSha256": "71dc09dba08bfcdcd5a671514d70f599c900793eeb272baeb25256e4d9855525",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6236049,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "dc050000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6236055,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "id": 633771220,
+      "payloadSha256": "fe1d8c023fea3f6e1d9aea8bb3b258444c23e9b72d2cd0b17bf71feec6d29026",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 6236374,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 6236380,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 656467845,
+      "payloadSha256": "c6c53c4a050f32dfd490a17f3dd940c9a751258adfcdba021069add15dbff27b",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1066110,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1066116,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 650118968,
+      "payloadSha256": "de64d7902882173d21c8e7d41046e79747eb067ae0b5b36e4e8e837c57558cec",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1066238,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "f4010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1066244,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 411879828,
+      "payloadSha256": "43169f43b934804ab15cfa6cf6ead8d7ced836be83db3d9cbfb1cf28371ba3e3",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1066835,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1066841,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 817774724,
+      "payloadSha256": "b52a8467e3e5aa3d397fdf37640ab2230e4afdd6cabc7c1c99906eb23a6d0b38",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1066880,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1066886,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 341396711,
+      "payloadSha256": "85d73fee8e6f46534f0196f14e6e0a37ff8ec730ee72089d2336f4394ff100b3",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1066965,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1066971,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 889075790,
+      "payloadSha256": "bd25f4976f3db11b84bad681c453427dec24459e10e4be4f3fc9654de5da6fd9",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067136,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067142,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 628753973,
+      "payloadSha256": "fd00969dcd4e6ddf4675cce6088f8ed5fed57c098d2356be10d3ed4e00c05db6",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067267,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067273,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1008362985,
+      "payloadSha256": "34fde3b085d8ee34de9bfe856af288f94e32718ffb5d814ee5a2729715f3584c",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067315,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067321,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 765069134,
+      "payloadSha256": "b709f101bb4109b8682a6462057fd0039a0cd024f86e84576ac7895555ed1bc0",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067363,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067369,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 874964881,
+      "payloadSha256": "1f9cf38ff50ec257431ec896b013cf080839093e0347c2580e567aec064bca8c",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067494,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067500,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 237745864,
+      "payloadSha256": "94cfce4a156a76dd52c8436a71a3cf10565b3bcf09906cd8194b9d0de388dadd",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067579,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067585,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 651273108,
+      "payloadSha256": "4fcdd86ce73c21d251774b41996f52280db373a2603a929ac88c2dae813c7f86",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067624,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067630,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 857171176,
+      "payloadSha256": "baffd92f86c3517440c3f1bdc590e72c8f725ccdee74e1a34e8c51dfdb297c10",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067789,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067795,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 934990719,
+      "payloadSha256": "04cf17765a4298b23938fca18dfba79f213096a70aea845af0e62ac6391faa54",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067837,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067843,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 652370520,
+      "payloadSha256": "9e6b49065fcecb849a057f98ee62b542fccf49e4a7cd4ad9356a17cd3da2ce13",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1067885,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1067891,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 997793968,
+      "payloadSha256": "a3172e7b78f4e5a8476b7bced953c91783589d1332ac4037c680bfa7d6a8d250",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068056,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068062,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 964846618,
+      "payloadSha256": "778da3903cbe4235f6141d7f4b66d1a70f2d442429d1622d91228ee3f7eb5fbe",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068221,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068227,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 951991733,
+      "payloadSha256": "6e8974c730af9f9d3445b1b01693b6c9d2537179132b805e5c0b75c99229857f",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068249,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068255,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 183829848,
+      "payloadSha256": "b2b9acef3ef2a91bc0531138a3b6ee0926550fd7caf146a62df323f7a6055918",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068277,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068283,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 628158004,
+      "payloadSha256": "77630057935619007a89b1e79451d2522c24ac94c6bc3d727cd003ccc157060a",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068305,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068311,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 586243251,
+      "payloadSha256": "bf337ed992a2c3e79908a0d6ed8f0f161b894db15a17a57b5ff13b36e9113d73",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068384,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068390,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 424594040,
+      "payloadSha256": "53fe6dfb996867f1cc30c0f3450bd1a8434e363eadf71dcb92e3cf8f29abe981",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068429,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068435,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 674959921,
+      "payloadSha256": "df702d7e3dbd4fe32b12d0fdb5467d6a2d1f4c7aea4550cfbe67165a064f78e7",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068713,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068719,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 922914540,
+      "payloadSha256": "c7d793b05ea08bcdb70ababdab4ec94bba87fc5ede1411a11d822b940021d291",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068758,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068764,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 228360104,
+      "payloadSha256": "0d6c403ca769d77d508ce6dfdd0216b38a4a2d2fe9acb58f80fea380728456d0",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068803,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068809,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 891260832,
+      "payloadSha256": "1588e8852059c2811eaf15be1a5257029a2cadd50efcb58031f33ff1fdc4cd00",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068848,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068854,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 351176757,
+      "payloadSha256": "9a391b820ddbfb667f486358f0128bbd048ff8477ccaf9be482c88480812a29e",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068893,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068899,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 284234596,
+      "payloadSha256": "a745ec0e6a61a1b7417e8906a6e8fae6a4c1c5e2a0f7c9e8bb99348e27f22a0c",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068938,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068944,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 351214659,
+      "payloadSha256": "6a087670af221c9623c6d94c6fa338a633d945f7317f367424761d0ef06a814f",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1068986,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1068992,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1060526025,
+      "payloadSha256": "66d8e9315776c39a1e4f995251edce613f377852385b826b36049c0af13531ba",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1069034,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "0a000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1069040,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 208450518,
+      "payloadSha256": "12af6fc16b135db4297b9d1292fcd7f2cbb07c0fccb7f186e29a231dce7d99db",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1069165,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1069171,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 560985873,
+      "payloadSha256": "76f6a1fbdb66332ef1bd46b384059ee1694fa813a0c05e087aaf1ce5ff319d80",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1069425,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1069431,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 736332341,
+      "payloadSha256": "0744ceaa9e0ce65a2a592dcd5d6ea526572a4bdaf6a316ec95bcabe1954e4867",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1069799,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1069805,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1033921788,
+      "payloadSha256": "861dc4b6cc2df3826874e03a85f4ce5f76e16f2355c3764c88e893ea96f025d6",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070453,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070459,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 910415014,
+      "payloadSha256": "1dc607f6bcfc724c57afec9b38a838a297660afb584a5a40bf1e78a7e79d92d5",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070481,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070487,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 594340486,
+      "payloadSha256": "d9aec072758007e2f170ab16e06e974bbf2ca1a328ce4ebc728ea0d4f5a98935",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070509,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070515,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 798522658,
+      "payloadSha256": "f2bab8003878aa7259138967386bf38cce6e622a1d89261882f087f9917a3102",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070537,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070543,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 300461300,
+      "payloadSha256": "5395cdbdbf8bf7d8773abb7ac70fb71d66badd30b7736b254633d822c23b050f",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070565,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070571,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 328819377,
+      "payloadSha256": "f9fe0d2b86ce5577bb5c40f207ab3bc308e98f2852dbc9e46277853daf52af0c",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070593,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070599,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 523582070,
+      "payloadSha256": "fdf529c4a78adb5c26e081e8b2e86b9107919eb53b4ddc8932143d6f4de670bd",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070621,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070627,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 1027729535,
+      "payloadSha256": "b9e2ae15b6d4d3c3585568f50c195b846cae73a6fd561f643acab49cf7046525",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070649,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070655,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "id": 373832418,
+      "payloadSha256": "490e1b119f9c2167b571e5685b9c417a9dc9eeeb756de28842d6a564a1ee9c4e",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 1070677,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 1070683,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 706046978,
+      "payloadSha256": "b8f73cb7a07cbd67c01d6978ae87c69150015b5c10d61afbe1470742f5b4e9a5",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 93321,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 93327,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 3264870,
+      "payloadSha256": "bcd1ba0fd9ca0ab39bed4a5526e66cc0e0a0a44eaa0d3c2f46a8d3be948f070f",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 93526,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 93532,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 494588737,
+      "payloadSha256": "72fcfc66b8ce0caf3163b7f2c31482be9ce64f85320341466264e2a6ff420648",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 93811,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 93817,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 607509433,
+      "payloadSha256": "ef16cb30c97ea5abe281168ff6e1a2b2f23461f0d157783fb451629b727a3862",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 93856,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 93862,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 384232393,
+      "payloadSha256": "f8c944978fc465a31986c70bfc532498f1fd5c92c295823623cebb9bfe1126e6",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 94021,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 94027,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 966893363,
+      "payloadSha256": "c3e0f957920a30606fb38740c28fe369f173101d24bd867b908356f6d7d47925",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 94319,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 94325,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 107705852,
+      "payloadSha256": "e372e3211533421ace08cecf1675923c795563842d16dd55a3a3031ac35f5ac7",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 94484,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 94490,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 870676526,
+      "payloadSha256": "4d4c1f06354afe762c04a14d77facc807e4f47c3acaa15748049389a1fb9553e",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 95009,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 95015,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 226564852,
+      "payloadSha256": "60541e811ed297055fb855899058af17a9934c75edefac5fb2ac73280fc9563f",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 95174,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 95180,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 832721391,
+      "payloadSha256": "8e41770f1169adbdb29c5c3e3fe499a632c3d0801305db24414932461e24d6a8",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 95753,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 95759,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 698619923,
+      "payloadSha256": "67717abdc76980c29e253e6fafb447e31bdf89fab65818c9d7e53fb16ffe6d02",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 95798,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "c8000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 95804,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 159462912,
+      "payloadSha256": "6a91137a64a6f0e3adf2e94fb157db9ed88e335fc90a3d0ad8b821f482f1b0c4",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 96390,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 96396,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 808569690,
+      "payloadSha256": "26633a1e60904d0b25d5f7af8d4844b5138d97b0f7378f2b87a680ad8dfef0c1",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 96418,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "40060000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 96424,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 312626992,
+      "payloadSha256": "b20694ed51699c408893804e31a1f9f70f7d29d3fd8ea1b6f73491c74f914072",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 96507,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "2c010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 96513,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 718390732,
+      "payloadSha256": "10d652198ce95a9d81b4c27d4e3a6c023abd7514b33fa4dcd93170852f5c434e",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 96552,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 96558,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 247426322,
+      "payloadSha256": "e1b891cdbb446ca8ce792c3a6d62d7bbf3e7680e58e17854081d5e06fd253c21",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 96717,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 96723,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 932015769,
+      "payloadSha256": "80b66e902a87c5a77b0c346d4428d8f9fd8fac7210e423b28812f5eb3adcbd6d",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 97176,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 97182,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 544328059,
+      "payloadSha256": "bf46af23c9d76121b56a93b090d34ac15ece10efeec71ca2ece93bbf6e8501cc",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 97244,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "40060000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 97250,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 142840816,
+      "payloadSha256": "da515b0e06652e68b10f3e44ff3184006831de6eec71a29d031c07af6b9b2a26",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 97493,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 97499,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 500775473,
+      "payloadSha256": "ac8fc63d1d1f652df9eabcb6ebad786557196a810a293c74c2b2f05170f07d4c",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 97538,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "20030000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 97544,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 74194135,
+      "payloadSha256": "6ab4b3406eb8108473d2174c79b6846c96d89de6ee48837ddb8eea9a89baecce",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 97783,
+          "ids": [
+            15
+          ],
+          "rawValues": [
+            "f4010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 97789,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 398248702,
+      "payloadSha256": "251d29bdddbb358fa56b84660658d3cef623cd696160576daa554cd237e7ed14",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 98188,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 98194,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 186261031,
+      "payloadSha256": "3383f6c1914656d6a69005e5207b79f42f3800900ac0a4accddd53f2b9c42f7d",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 98793,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 98799,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 777424845,
+      "payloadSha256": "57d0799fa454e16e3cde983059b4fea4e986617aa70a02248d0f30385df34eb8",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 98838,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 98844,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 981662977,
+      "payloadSha256": "23d8f13e7809963d906d01e1a2ccc6c8b73ea6fe8bf61fdaf91fa6b06f0cf513",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 98883,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 98889,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 19672861,
+      "payloadSha256": "9b4d94fc920b31d8c93de5b6c0f4eec797a3d5d40d9668d805f3b70c4a3f5b00",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99231,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "64000000",
+            "2c010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99242,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 245580468,
+      "payloadSha256": "7cb0ba69a4fdfca03a6a6c67e667ebe2012bc186515d5388a5438a073492b3c3",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99264,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "64000000",
+            "2c010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99275,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 75853678,
+      "payloadSha256": "c2d3c302c77bbd6f5a83daa611ae39a09d4af8eb5e1d9c9eff7921c143eeb654",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99297,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "64000000",
+            "2c010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99308,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 50193826,
+      "payloadSha256": "e12713613a563b79950b881fe7269eb381af78fcc14fba58a0d2823f2604f72c",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99330,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "64000000",
+            "2c010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99341,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 954940060,
+      "payloadSha256": "89b8bdb2f58a0595d08c7977a26b012846651a4aea4a304bfcf1206a20be0ff8",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99363,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "64000000",
+            "2c010000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99374,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 600862162,
+      "payloadSha256": "f43d8711a2823aedd16e60a7af26427e3056abea760be5855cb60405ec06872c",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99710,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "0a000000",
+            "bc020000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99721,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 795228498,
+      "payloadSha256": "31fdbdf7be399867d3a82d9b9ec620b1eee657cf991eda8b4395603811378aa6",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99743,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "0a000000",
+            "bc020000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99754,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 752301281,
+      "payloadSha256": "9b44dda7645d27b8cc8fa20eae6fb3bb16e88124698a9ea70f781f72d3e7efff",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99776,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "0a000000",
+            "bc020000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99787,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 451723416,
+      "payloadSha256": "ac27e30d22a7f00c36e33ca0dc064d0d5630aa73c6472dc3154d0c449923d35d",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99809,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "0a000000",
+            "bc020000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99820,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 944484477,
+      "payloadSha256": "f3e4ec2b3e986a21a70370dd34376faa90f43ca172b33f748283789d92a34c0e",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 99842,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "0a000000",
+            "bc020000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99853,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 691921969,
+      "payloadSha256": "c89ca9afc5ef0a69db6e7e260f94b46d07c3691979dd9badec3d32ef94f8a7c3",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 99992,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 99998,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 428709466,
+      "payloadSha256": "d45d9f301c1d0b1a2f9dcbbe71f1c5affabfcd59fb859483cdf52a9363f37337",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 100157,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 100163,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 526266819,
+      "payloadSha256": "36e2c6b49e03adcf46507e2b33cf698d8605da302aece7dea429a9ee7aa127d7",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 100185,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 100191,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 938075678,
+      "payloadSha256": "0ddd61df4b060c80fb72badfa08333a2a7f7e791ca727e03dc3ca80b6317cfb9",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 100213,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 100219,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 963092143,
+      "payloadSha256": "2729ba2a50ace4668515a32c32b3db9f5aba8d23b2836437a7269c9939fed11a",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 100241,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 100247,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "id": 633394202,
+      "payloadSha256": "c71dbd0c962ad7e5a34f54d6f11033c4b50ca36e6c089aa2791a01ded84f1dba",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 100269,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "64000000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 100275,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "id": 12128787,
+      "payloadSha256": "4ba9defb543f2fb2042514a5157d21df77f9132fbb6f9aec2065e3e641e2c996",
+      "blocks": [
+        {
+          "count": 2,
+          "offset": 42404,
+          "ids": [
+            15,
+            16
+          ],
+          "rawValues": [
+            "64000000",
+            "dc050000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 42415,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "id": 495584207,
+      "payloadSha256": "5f6e817304a3e4f4c1a7a837c3c73ebdd35c7d3f02ab1c6511b7121f29b54bca",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 42655,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "dc050000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 42661,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "id": 22968474,
+      "payloadSha256": "cf1bd20e50fa540baef2b3220c75adceb5d70bf23d8c38efed291f9cb51e619a",
+      "blocks": [
+        {
+          "count": 1,
+          "offset": 42684,
+          "ids": [
+            16
+          ],
+          "rawValues": [
+            "dc050000"
+          ]
+        },
+        {
+          "count": 0,
+          "offset": 42690,
+          "ids": [],
+          "rawValues": []
+        }
+      ]
+    }
+  ],
+  "delayInputs": [
+    {
+      "id": 601019078,
+      "width": 4,
+      "rawHex": "c8000000",
+      "signedMilliseconds": 200
+    },
+    {
+      "id": 628753973,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 1008362985,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 765069134,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 857171176,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 934990719,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 652370520,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 284234596,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 351214659,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 1060526025,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 159462912,
+      "width": 4,
+      "rawHex": "64000000",
+      "signedMilliseconds": 100
+    },
+    {
+      "id": 808569690,
+      "width": 4,
+      "rawHex": "40060000",
+      "signedMilliseconds": 1600
+    },
+    {
+      "id": 312626992,
+      "width": 4,
+      "rawHex": "2c010000",
+      "signedMilliseconds": 300
+    },
+    {
+      "id": 544328059,
+      "width": 4,
+      "rawHex": "40060000",
+      "signedMilliseconds": 1600
+    },
+    {
+      "id": 500775473,
+      "width": 4,
+      "rawHex": "20030000",
+      "signedMilliseconds": 800
+    },
+    {
+      "id": 74194135,
+      "width": 4,
+      "rawHex": "f4010000",
+      "signedMilliseconds": 500
+    },
+    {
+      "id": 19672861,
+      "width": 4,
+      "rawHex": "64000000",
+      "signedMilliseconds": 100
+    },
+    {
+      "id": 245580468,
+      "width": 4,
+      "rawHex": "64000000",
+      "signedMilliseconds": 100
+    },
+    {
+      "id": 75853678,
+      "width": 4,
+      "rawHex": "64000000",
+      "signedMilliseconds": 100
+    },
+    {
+      "id": 50193826,
+      "width": 4,
+      "rawHex": "64000000",
+      "signedMilliseconds": 100
+    },
+    {
+      "id": 954940060,
+      "width": 4,
+      "rawHex": "64000000",
+      "signedMilliseconds": 100
+    },
+    {
+      "id": 600862162,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 795228498,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 752301281,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 451723416,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 944484477,
+      "width": 4,
+      "rawHex": "0a000000",
+      "signedMilliseconds": 10
+    },
+    {
+      "id": 12128787,
+      "width": 4,
+      "rawHex": "64000000",
+      "signedMilliseconds": 100
+    }
+  ],
+  "savedPending": [
+    {
+      "address": "00A61674",
+      "instruction": "mov r0, r4",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000023",
+        "r0": "00000024"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A615A0",
+      "instruction": "bic sl, ip, #3",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000024",
+        "r0": "00000025"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored ordinary property index bound"
+    },
+    {
+      "address": "00A61584",
+      "instruction": "mov r3, r0",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000024",
+        "r0": "00000025"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored ordinary property index bound"
+    },
+    {
+      "address": "00A615F0",
+      "instruction": "mov r3, #0",
+      "known_registers": {
+        "r5": "0104028C",
+        "r0": "00000024",
+        "r3": "00000024"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A6167C",
+      "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000024"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A61628",
+      "instruction": "ldr r1, [pc, #0x58]",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000023",
+        "r0": "00000024"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A61674",
+      "instruction": "mov r0, r4",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000023",
+        "r0": "00000024"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A6160C",
+      "instruction": "cmp r1, #0xf",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000024",
+        "r0": "00000025"
+      },
+      "nzcv_mask": "0C0C",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A6167C",
+      "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000024"
+      },
+      "nzcv_mask": "F3F3",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A615C0",
+      "instruction": "ldr r1, [r5, r1]",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r1": "FFFFFDDC",
+        "r2": "000003E8",
+        "r3": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A615EC",
+      "instruction": "mov r2, r7",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r3": "00000023",
+        "r0": "00000024"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A61678",
+      "instruction": "add sp, sp, #0x14",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r3": "00000023",
+        "r0": "00000034"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A615A4",
+      "instruction": "add sl, sl, r3, lsl #2",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r3": "00000024",
+        "r0": "00000025"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored ordinary property index bound"
+    },
+    {
+      "address": "00A61588",
+      "instruction": "bls #0xa615dc",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r0": "00000025",
+        "r3": "00000025"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored ordinary property index bound"
+    },
+    {
+      "address": "00A615F4",
+      "instruction": "b #0xa61604",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r0": "00000024",
+        "r3": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A6162C",
+      "instruction": "mov r2, #0x3e8",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r3": "00000023",
+        "r0": "00000024",
+        "r1": "FFFFFDDC"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A61610",
+      "instruction": "bne #0xa615f8",
+      "known_registers": {
+        "r5": "0104028C",
+        "r4": "00000034",
+        "r3": "00000024",
+        "r0": "00000025"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A615C0",
+      "instruction": "ldr r1, [r5, r1]",
+      "known_registers": {
+        "r5": "0104028C",
+        "r1": "FFFFFDDC",
+        "r2": "000003E8",
+        "r3": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    },
+    {
+      "address": "00A615EC",
+      "instruction": "mov r2, r7",
+      "known_registers": {
+        "r5": "0104028C",
+        "r3": "00000023",
+        "r0": "00000024"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing AH413D boundary; register origin or callback/live blob input remains explicit"
+    }
+  ],
+  "boundary": "Positive serialized Action inputs only. Derived callback writes/later mutation and arbitrary alternate inputs are not excluded; no generic zero-range unreachable claim."
+}
