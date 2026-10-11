@@ -11879,3 +11879,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint854 — optional-layer nearby-PC input check
 
 `20261011-sound-optional-layer-composed-pc-disposition.md` checks originalRemovePersistentLayer58EE4C with852's nearby-PC seed method: zero seeds/windows/events/caps. OL664 conditional matched-layer dispatch, OL649/661 finite native/managed inputs and844 fixed lookup names remain paid. No dynamic/all-input absence or new optional family;021 PARTIAL for actual admitted manager/tag/control/populated layer or another original optional input.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint855 — quota nearby-PC input check
+
+`20261011-sound-quota-composed-pc-disposition.md` checks original9A0938 in852's nearby-PC seed method: one window/zero events/zero caps. Sole apparent Thumb ADR9A0534 is actual ARM LDR SL,[PC,198] after separate9A0524 PUSH; no caller supplied and no surrounding/mutex descent. GU505/NE662/786/811 retained;037 PARTIAL for admitted priority/quota input or supported-input exclusion.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
