@@ -11518,3 +11518,13 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint769 — voice-region VFP/vector store attribution
 
 `20261010-sound-voice-policy-vector-store-dispositions.md` binds all nine aligned candidate stores to eight retained-receiver parameter words340..524 and one stack scalar. Each is four-byte VSTR, with no regional VSTM/VST1..4 candidate; no receiver-relativeE0/E4 overlap. Broader computed caller/writer aliases remain open,033 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint770 — rate/frame block-store overlap disposition
+
+`20261010-sound-rate-frame-block-store-disposition.md` adds bounded STM/VSTM byte-range overlap checks for the existing globals, with4392 windows and no additional overlap event; existing314 scalar/navigation events are unchanged. Unknown bases, NEON structure forms, copied/relative aliases and zero/provider inputs remain explicit;043/092/099/120/124/130 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint771 — rate/frame NEON full-register overlap disposition
+
+`20261010-sound-rate-frame-neon-store-disposition.md` adds established-base VST1..4 full-register byte spans;4392 bounded windows yield no additional overlap and unchanged314 navigation events. Lane forms/unknown bases/copied/relative aliases and zero/provider inputs remain explicit,043/092/099/120/124/130 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
