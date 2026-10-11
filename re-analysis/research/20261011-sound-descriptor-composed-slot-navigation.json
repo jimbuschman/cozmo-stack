@@ -1,0 +1,1539 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "limit": "Aligned ARM immediate ADD4C/50 seeds in97D000..ABC000,128-byte straight windows, simpleMOV aliases, zero-displacementLDR and firstBX/BLX. No conditional merge, shifted index, block load, Thumb, receiver binding or absence proof.",
+  "seeds": [
+    {
+      "address": "0x97d9d4",
+      "instruction": "add fp, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x97d9f0",
+      "instruction": "add r3, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f27c",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f2dc",
+      "instruction": "add r4, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f2e0",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f370",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f3d0",
+      "instruction": "add r4, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f3d4",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f484",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f4e4",
+      "instruction": "add r4, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x97f4e8",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9805b8",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x980618",
+      "instruction": "add r8, r8, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x98061c",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x980d24",
+      "instruction": "add r5, r1, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x980d84",
+      "instruction": "add r4, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x980d88",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x980e08",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x980e58",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x980eb0",
+      "instruction": "add r4, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x983d1c",
+      "instruction": "add r3, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x983df8",
+      "instruction": "add r3, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x983ebc",
+      "instruction": "add r1, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x984fd0",
+      "instruction": "add r2, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x985124",
+      "instruction": "add r2, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x985a58",
+      "instruction": "add r0, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99833c",
+      "instruction": "add r1, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9983e4",
+      "instruction": "add r1, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99848c",
+      "instruction": "add r2, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99afd0",
+      "instruction": "add r1, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99aff4",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99b084",
+      "instruction": "add r2, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99b0f0",
+      "instruction": "add r1, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99b114",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99b1a4",
+      "instruction": "add r2, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99b1c4",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99b248",
+      "instruction": "add r3, r1, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99b268",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99cd84",
+      "instruction": "add r2, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99e274",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x99e7c4",
+      "instruction": "add r0, r7, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9a5628",
+      "instruction": "add lr, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9a570c",
+      "instruction": "add sl, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9aa0e4",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9ad41c",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9ad438",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9ad700",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9af2e4",
+      "instruction": "add r3, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9afda8",
+      "instruction": "add r3, r5, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9b0314",
+      "instruction": "add r3, r5, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9b09c4",
+      "instruction": "add r3, r5, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9b1130",
+      "instruction": "add r1, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b1148",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9b1314",
+      "instruction": "add r1, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b132c",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9b1958",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b2fb0",
+      "instruction": "add sl, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9b43d8",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b52f8",
+      "instruction": "add r3, r8, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b6098",
+      "instruction": "add r2, fp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b63c8",
+      "instruction": "add r3, r8, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b7768",
+      "instruction": "add r1, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b7f68",
+      "instruction": "add r3, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b8044",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b8060",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b8074",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b860c",
+      "instruction": "add r3, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b87c4",
+      "instruction": "add r3, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9b996c",
+      "instruction": "add ip, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9bf920",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9c04ac",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9c219c",
+      "instruction": "add lr, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9c3bdc",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9ca670",
+      "instruction": "add r3, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9ccd80",
+      "instruction": "add r8, r6, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9cce44",
+      "instruction": "add r8, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9ccefc",
+      "instruction": "add r7, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9cd070",
+      "instruction": "add fp, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9d15b0",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9da0ac",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9da1b0",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9da4c0",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9da5cc",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9da864",
+      "instruction": "add r2, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dafa0",
+      "instruction": "add r2, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9daff0",
+      "instruction": "add r2, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9db158",
+      "instruction": "add r1, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9db5a8",
+      "instruction": "add r2, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9db6e4",
+      "instruction": "add r2, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc07c",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc0d8",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc12c",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc15c",
+      "instruction": "add r4, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc4b8",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc4e8",
+      "instruction": "add r5, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc620",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc65c",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc6b8",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc6e8",
+      "instruction": "add r5, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc8e4",
+      "instruction": "add r7, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc95c",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dc98c",
+      "instruction": "add r6, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dcae4",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dcb44",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dcb68",
+      "instruction": "add r7, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dcbe4",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dcc10",
+      "instruction": "add sb, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dccc4",
+      "instruction": "add r3, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dccec",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dcd4c",
+      "instruction": "add r1, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dcd78",
+      "instruction": "add sb, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dce28",
+      "instruction": "add r2, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dce70",
+      "instruction": "add ip, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0x9dd514",
+      "instruction": "add r2, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9dd564",
+      "instruction": "add r2, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9dd5ec",
+      "instruction": "add r2, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9dd980",
+      "instruction": "add sl, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9de0ec",
+      "instruction": "add r2, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9de1c8",
+      "instruction": "add r5, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9de3cc",
+      "instruction": "add r6, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9de4f8",
+      "instruction": "add r5, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9e336c",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9e37f0",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0x9f660c",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa1a29c",
+      "instruction": "add r2, ip, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa1a3f4",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa1a424",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa1a5a8",
+      "instruction": "add r2, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa1f670",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa1f9e0",
+      "instruction": "addne r0, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa1fd60",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa27490",
+      "instruction": "add r0, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa284f8",
+      "instruction": "addeq r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa285d4",
+      "instruction": "addeq sb, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa29f64",
+      "instruction": "add r2, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa332c0",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa34110",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa379f8",
+      "instruction": "add r3, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa381bc",
+      "instruction": "add r2, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa3bd98",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa3bf58",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa3cb44",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa3cc38",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa4115c",
+      "instruction": "add r8, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa41454",
+      "instruction": "add r7, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4195c",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa423f4",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa42580",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa42698",
+      "instruction": "add r0, r7, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa427a4",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa42a68",
+      "instruction": "add r0, sl, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa42bb0",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa42cec",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa434a4",
+      "instruction": "add r0, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa436ec",
+      "instruction": "add r0, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa440f4",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa44200",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4481c",
+      "instruction": "add r8, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa46a60",
+      "instruction": "add r3, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa46d20",
+      "instruction": "add ip, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa4b010",
+      "instruction": "add r5, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b05c",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b1c4",
+      "instruction": "add r2, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b210",
+      "instruction": "add r2, r2, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b228",
+      "instruction": "add sl, sl, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b2ec",
+      "instruction": "add r2, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b338",
+      "instruction": "add r2, r2, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b8d4",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4b8dc",
+      "instruction": "add sb, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4bbf0",
+      "instruction": "add r6, r6, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4bbf8",
+      "instruction": "add sb, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4c1d0",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4c224",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4caa4",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4e980",
+      "instruction": "add sl, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4f0f8",
+      "instruction": "add r6, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4f67c",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4f6d4",
+      "instruction": "add r1, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4f738",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4f760",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa4f9b8",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa539ec",
+      "instruction": "add sl, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa54308",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa543e0",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa55704",
+      "instruction": "addne r3, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa557d4",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa55fc8",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5610c",
+      "instruction": "add r3, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa58640",
+      "instruction": "add r0, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa58688",
+      "instruction": "add r1, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa58728",
+      "instruction": "add r2, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa58ba0",
+      "instruction": "add r6, r6, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa58ea0",
+      "instruction": "add r7, r7, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa59ac4",
+      "instruction": "add r7, r7, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa59d9c",
+      "instruction": "add r7, r7, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa59e88",
+      "instruction": "addne r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa59f9c",
+      "instruction": "add r3, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5a0e4",
+      "instruction": "add r5, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5a1a8",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5a238",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5a2f4",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5a3d8",
+      "instruction": "add sb, r3, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5a730",
+      "instruction": "add sb, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5baec",
+      "instruction": "add r0, r8, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5bb40",
+      "instruction": "add ip, r8, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5bd0c",
+      "instruction": "add ip, ip, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5c370",
+      "instruction": "add ip, ip, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5e73c",
+      "instruction": "add r5, ip, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5e9d4",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5f080",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa5f298",
+      "instruction": "add r5, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa602a0",
+      "instruction": "add r5, r5, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa60664",
+      "instruction": "add r7, r7, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa606d0",
+      "instruction": "add r5, sb, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa60e10",
+      "instruction": "add r7, sl, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa61078",
+      "instruction": "add r6, r5, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa6c240",
+      "instruction": "add ip, ip, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa6e390",
+      "instruction": "addne ip, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa6e3b4",
+      "instruction": "add ip, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa6e580",
+      "instruction": "add r1, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa6e5f8",
+      "instruction": "add ip, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa73f88",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa74090",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa740ac",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa7886c",
+      "instruction": "add r0, r5, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa78c5c",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa78ce0",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa81488",
+      "instruction": "add r4, r0, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa8148c",
+      "instruction": "add lr, r1, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa814e4",
+      "instruction": "add r4, sl, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa816fc",
+      "instruction": "add r4, r0, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa81704",
+      "instruction": "add sl, r1, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa82e74",
+      "instruction": "add r5, fp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa830fc",
+      "instruction": "add r2, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa836dc",
+      "instruction": "add sb, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa83784",
+      "instruction": "add r3, r8, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa85544",
+      "instruction": "add r1, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa86418",
+      "instruction": "add r1, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa872ec",
+      "instruction": "add r1, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa8c708",
+      "instruction": "add fp, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa8ff7c",
+      "instruction": "add r3, r6, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa905fc",
+      "instruction": "add r3, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa92198",
+      "instruction": "add r0, r6, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa9219c",
+      "instruction": "add r1, r6, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa922dc",
+      "instruction": "add r3, r8, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa92740",
+      "instruction": "add sp, sp, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa927e8",
+      "instruction": "add r3, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa92d58",
+      "instruction": "add r3, sb, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa95810",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa95874",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa95964",
+      "instruction": "add r7, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa96660",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa967c0",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa967d0",
+      "instruction": "add r0, r5, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa96d30",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa96e54",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa96f24",
+      "instruction": "add sl, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa974dc",
+      "instruction": "add r2, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa9994c",
+      "instruction": "add r2, sb, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa99a08",
+      "instruction": "add r2, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa99b90",
+      "instruction": "add r3, sb, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa99c90",
+      "instruction": "add r2, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa99e70",
+      "instruction": "add r3, sl, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa99fb0",
+      "instruction": "add r3, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9a820",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9a884",
+      "instruction": "add r0, r0, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9aed4",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9bd4c",
+      "instruction": "add r0, r7, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9e9a8",
+      "instruction": "add r2, r8, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9ea68",
+      "instruction": "add r2, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9eb98",
+      "instruction": "add r4, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa9ed74",
+      "instruction": "add r2, r8, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9ee3c",
+      "instruction": "add r2, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9ef80",
+      "instruction": "add r7, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xa9ef84",
+      "instruction": "add r6, r0, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9f1a8",
+      "instruction": "add r2, r8, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa9f270",
+      "instruction": "add r2, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaa09cc",
+      "instruction": "add fp, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaa1478",
+      "instruction": "add fp, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaa3300",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xaa3548",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xaa4284",
+      "instruction": "add r5, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xaab9e0",
+      "instruction": "add fp, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaad908",
+      "instruction": "add r1, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaade8c",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaadf90",
+      "instruction": "add r0, r4, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xab036c",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab039c",
+      "instruction": "add ip, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab0624",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab0764",
+      "instruction": "add r6, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab0a9c",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab0de0",
+      "instruction": "add r0, r4, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab0e1c",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab0fc8",
+      "instruction": "add r0, r0, #0x4c",
+      "slot": "0x4c"
+    },
+    {
+      "address": "0xab435c",
+      "instruction": "add r5, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xab4868",
+      "instruction": "add fp, sl, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xab52d8",
+      "instruction": "add r2, r3, #0x50",
+      "slot": "0x50"
+    }
+  ],
+  "candidates": [],
+  "window_caps": [
+    {
+      "address": "0xa46a60",
+      "instruction": "add r3, r2, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa814e4",
+      "instruction": "add r4, sl, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa816fc",
+      "instruction": "add r4, r0, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa81704",
+      "instruction": "add sl, r1, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xa82e74",
+      "instruction": "add r5, fp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaa09cc",
+      "instruction": "add fp, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xaa1478",
+      "instruction": "add fp, sp, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xab435c",
+      "instruction": "add r5, r3, #0x50",
+      "slot": "0x50"
+    },
+    {
+      "address": "0xab4868",
+      "instruction": "add fp, sl, #0x50",
+      "slot": "0x50"
+    }
+  ]
+}

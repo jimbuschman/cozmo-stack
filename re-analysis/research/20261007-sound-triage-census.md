@@ -3415,3 +3415,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint841 — shared-context provider interfaces attributed
 
 `20261011-sound-shared-context-provider-disposition.md` binds PR4’s actual callback gate and four return-only provider entries to device, line and selected wrapper-context tables. Both native Hijack/WavePortal registration constructors explicitly zero callback20/cookie24; this pays those records only, not other callback/input absence. Seven real branch encodings and one false mixed-mode candidate are individually disposed.024 remains PARTIAL for actual4C/50 descriptor ID/input and trailing-field consumer; do not repeat these paid provider interfaces.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint842 — composed descriptor-slot call form bounded
+
+`20261011-sound-descriptor-composed-slot-disposition.md` checks297 finite ARM ADD4C/50 address seeds with128-byte windows;0 candidate calls,9 explicit caps. Primary seams distinguish known stack/mixing/conversion gates without an all-caller absence claim or a WEM arithmetic waiver.024 keeps actual getter-ID/field-consumer input UNKNOWN; no new obligation family.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Continue a different positive original input;Q15 stays behindQ14.
