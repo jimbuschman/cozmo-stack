@@ -1,0 +1,67 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+
+RANGE 0x004A71C8..0x004A71DC exclusive; ARM;
+
+004A71C8: add          ip, pc, #0xb00000
+
+004A71CC: add          ip, ip, #0x9a000
+
+004A71D0: ldr          pc, [ip, #0x154]!
+
+004A71D4: add          ip, pc, #0xb00000
+
+004A71D8: add          ip, ip, #0x9a000
+
+RANGE 0x004BF1EC..0x004BF200 exclusive; ARM;
+
+004BF1EC: add          ip, pc, #0xb00000
+
+004BF1F0: add          ip, ip, #0x8a000
+
+004BF1F4: ldr          pc, [ip, #0x13c]!
+
+004BF1F8: add          ip, pc, #0xb00000
+
+004BF1FC: add          ip, ip, #0x8a000
+
+RANGE 0x00647C6C..0x00647CA8 exclusive; Thumb;
+
+00647C6C: lsrs         r6, r4, #0x1e
+
+00647C6E: lsl.w        r7, r5, #3
+
+00647C72: add.w        r1, r3, lr
+
+00647C76: sub.w        r7, r7, r6, asr #2
+
+00647C7A: it           ne
+
+00647C7C: addne.w      r5, ip, r7, lsl #3
+
+00647C80: cmp          r5, r1
+
+00647C82: bne          #0x647c92
+
+00647C84: mov          r0, r4
+
+00647C86: blx          #0x4b9b4c
+
+00647C8A: ldrd         r0, r2, [r4, #4]
+
+00647C8E: ldrd         lr, r3, [r4, #0x10]
+
+00647C92: ldr.w        sl, [sp, #0x48]
+
+00647C96: cmp          r2, r0
+
+00647C98: beq          #0x647cc2
+
+00647C9A: add.w        r1, lr, r3
+
+00647C9E: movw         r3, #0x4925
+
+00647CA2: movt         r3, #0x2492
+
+00647CA6: lsrs         r2, r1, #3

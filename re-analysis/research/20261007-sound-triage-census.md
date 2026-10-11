@@ -3188,3 +3188,13 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint787 — observer line-array global address correction
 
 `20261010-sound-observer-line-global-correction.md` corrects OR613's line-array descriptor from108DF4C to108DF54/count108DF58, independently confirmed by all three observer PC-relative equations.108DF4C remains the audio-thread identity; NTHREAD1/Q15 MNREG3 stay correct. Actual key/bit mutation and callback-reload order retained.028/029 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint788 — output-query input and zero-fill boundary
+
+`20261010-sound-routing-query-input-disposition.md` retains second register output destination and exact3C-byte zero-fill request, including34/38. External-body navigation gives143 encodings:three apparent ARM branches are actual Thumb fragments, two below-boundary Thumb candidates are ARM PLT loads; remaining138 are not admitted or used as absence proof. No exact pointer reference or positive supplier;104/131 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint789 — all serialized mode4 ID references
+
+`20261010-sound-mode4-serialized-reference-disposition.md` verifies5350 HIRC payloads/all byte alignments and attributes all13 exact-ID hits:2 own IDs,2 child-vector IDs,8 second-parent fields and1 playlist entry. No extra raw serialized entry supplier; runtime admission/mutation is not excluded.009/034 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

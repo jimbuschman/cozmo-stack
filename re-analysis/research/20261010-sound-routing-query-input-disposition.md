@@ -1,0 +1,13 @@
+# Q14-104/131: output-query input and zero-fill boundary
+
+Checkpoint788; scope guard reread. Engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Named original destination9FBB30, not a new writer family. Primary `20261010-sound-routing-query-input-native.txt`, `-false-branch-native.txt` and `-plt-boundaries-native.txt`; reproducible `-interior-callers.py/.json` and aligned/raw section value navigation `-input-references.json`.
+
+At9FBB34, R6 retains incoming SECOND register argumentR1 as the output destination.9FBB40/44/48 pass raw0, that destination, and3C bytes to9FBB4C's already bound memset PLT4D36DC. Thus this is a zero-fill request over destination0..3B, including34/38, before node/null/inheritance gates; it is not exclusively the later immediate stores that would overlap a node if a caller supplied an aliased destination. The backing implementation stops at the interface. No arbitrary node pointer is substituted for the missing output input.
+
+External-to-body immediate navigation covers9FBB30..9FBE68:143 encoding candidates, three ARM and140 Thumb. ARM57B54C is inside actual four-byte Thumb SUBNE.W57B54A; ARM647C98 spans actual narrow BEQ647C98 and ADD.W647C9A (the wider capture corrects a misleading start at647C88 inside another Thumb instruction); ARM783D34 is actual narrow Thumb B to783D3A and the following wide AND. The two Thumb candidates below95E540 are PLT4A71D0/4BF1F4, each an actual ARM LDR PC,[IP,...], not a BLX into this query. Remaining138 Thumb encodings lie in the ARM runtime region and are not promoted to admitted inputs; this location is not itself a proof of every exact boundary or indirect path. The all-section exact9FBB30/31 word search yields no reference, also navigation only.
+
+Predecessor9FBB24 branches back to9FBA7C, followed by its literal island9FBB28/2C before separate PUSH9FBB30. The query restores its frame and returns at9FBE2C/30. Its out-of-line cases9FBE34..64 branch back into the same query; literal island9FBE68..70 then separate PUSH9FBE74. No ordinary preceding fallthrough or positive output supplier is established.
+
+Actual output destination remains UNKNOWN. The existing local query, property/inheritance and raw publication decisions remain paid; this interval/exact-word search is not complete caller or alias exclusion. Stop these leads without recipient-family/DSP descent.104/131 remain PARTIAL for their original alias proof and named admitted destinations.107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Research only.
+
+out of scope: memset/backing/copy/free implementations and per-sample DSP; request pointer/value/span remain exact interface facts.
