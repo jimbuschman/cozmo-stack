@@ -1,0 +1,11 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "model_sha256": "ca0f5ef8e468c6263e70c338a2545193991c4a15cbde3f7da0b601eb22219882",
+  "targets": [
+    "009A03DC",
+    "009A040C"
+  ],
+  "windows": 14878,
+  "events": [],
+  "boundary": "Original028/029 selected paired/block constant transfer extension over848. Mutable values remain unknown. No stack/copy/computed/foreign/capped input exclusion, actual key/callback/rawthirdword admission or callback/registration/sample/storage body execution."
+}
