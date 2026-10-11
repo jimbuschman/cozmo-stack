@@ -1,0 +1,50 @@
+{
+  "raw_aligned_pointer_navigation": [
+    {
+      "address": "0x5ee7cc",
+      "target": "0xa3bb94",
+      "section": ".text"
+    },
+    {
+      "address": "0x101bff0",
+      "target": "0x9a6cdc",
+      "section": ".data.rel.ro.local"
+    },
+    {
+      "address": "0x101bfec",
+      "target": "0x9a6ce4",
+      "section": ".data.rel.ro.local"
+    }
+  ],
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0x9a6cdc",
+    "0x9a6ce4",
+    "0xa3b9ac",
+    "0xa3bb94"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x9a6846",
+      "target": "#0x9a6ce4",
+      "mode": "Thumb",
+      "instruction": "b #0x9a6ce4",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a6ce0",
+      "target": "#0xa3bb94",
+      "mode": "ARM",
+      "instruction": "b #0xa3bb94",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a6ce8",
+      "target": "#0xa3b9ac",
+      "mode": "ARM",
+      "instruction": "b #0xa3b9ac",
+      "section": ".text"
+    }
+  ]
+}

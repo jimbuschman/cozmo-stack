@@ -826,3 +826,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint866 — header-key added cap origins
 
 `20261011-sound-header-key-cap-origins.md` checks the ten previously unattributed added865 seed origins: two initially form108D81C, five108D868, three108D9B0 (the exclusive key-range end). Immediate fields and receiver boundaries recorded from primary literals/adds; later aliases/variable indexes/escape remain unproved, so these initial origins do not close the caps or exclude writers. The other two added caps retain HK643. No generic body family opened; stop these paid seed-origin checks.109/134 PARTIAL for actual key mutation/escape and admitted bank input.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint867 — original descriptor getter direct inputs
+
+`20261011-sound-descriptor-direct-getter-disposition.md` checks the four original getters/thunks, distinct from paid provider/slot searches: three branch and three aligned pointer candidates, all attributed by primary instructions. Two existing ID-forwarding tails/two existing table slots; false Thumb upper-halfword9A6846 and relative table displacement5EE7CC (actual102A2F0), no fresh getter input. No new recipient family or all-indirect absence claim; stop these six candidates.024 PARTIAL for actual ID/field decision consumer or supported-input exclusion.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
