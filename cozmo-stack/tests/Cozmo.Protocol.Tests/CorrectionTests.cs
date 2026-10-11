@@ -514,7 +514,7 @@ public class CorrectionTests
         {
             try
             {
-                while (!stop)
+                while (!Volatile.Read(ref stop))
                 {
                     var bases = manager.PyramidBases;
                     foreach (var p in manager.Pyramids)
@@ -524,8 +524,8 @@ public class CorrectionTests
             catch (Exception e) { failure = e; }
         });
         for (int i = 0; i < 400; i++) { clock = i; manager.Update(); }
-        stop = true;
-        reader.Wait(TimeSpan.FromSeconds(10));
+        Volatile.Write(ref stop, true);
+        Assert.True(reader.Wait(TimeSpan.FromSeconds(10)), "the snapshot reader did not stop");
         Assert.Null(failure);
         Assert.NotEmpty(manager.PyramidBases);
     }

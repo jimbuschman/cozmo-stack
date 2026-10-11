@@ -215,9 +215,10 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         var sw = switches is null ? Switches : new Dictionary<uint, uint>(switches);
         // Keyed by the node the switch selected, not by the event: the same tempo event plays a different
         // song for every Cozmo_Sings switch value, and preparing one must not answer for another.
-        var key = (eventId, _library.ResolveMusic(eventId, sw) is { } p ? p.SelectedNodeId ?? p.TargetId : 0u);
         lock (_gate)
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            var key = (eventId, _library.ResolveMusic(eventId, sw) is { } p ? p.SelectedNodeId ?? p.TargetId : 0u);
             // A stream that has already been played is not reused: Wwise draws a note's recording again
             // on every play, so preparing the same song a second time prepares it again.
             if (_streams.TryGetValue(key, out var existing))
@@ -229,21 +230,28 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
             if (_prewarms.TryGetValue(key, out var running)) return running;
             var task = Task.Run(() =>
             {
-                var stream = BuildStream(eventId, sw, 1f);
-                lock (_gate)
+                try
                 {
-                    _prewarms.Remove(key);
-                    if (stream is null) return;
-                    if (_streams.TryGetValue(key, out var old)) old.Dispose();
-                    _streams[key] = stream;
+                    var stream = BuildStream(eventId, sw, 1f);
+                    lock (_gate)
+                    {
+                        if (stream is null) return;
+                        if (_disposed) { stream.Dispose(); return; }
+                        if (_streams.TryGetValue(key, out var old)) old.Dispose();
+                        _streams[key] = stream;
+                    }
+                    // Keep the render outside the source lock, as before; Dispose joins this
+                    // task before disposing its published stream or the decoding library.
+                    stream.Start();
                 }
-                stream.Start();
+                finally { lock (_gate) _prewarms.Remove(key); }
             });
             _prewarms[key] = task;
             return task;
         }
     }
 
+    private bool _disposed; // host resource lifetime; no change to playback/Stop rendering
     private readonly Dictionary<(uint Event, uint Node), Task> _prewarms = new();
     private readonly Dictionary<(uint Event, uint Node), WwiseMusicStream> _streams = new();
 
@@ -723,11 +731,25 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
 
     public void Dispose()
     {
+        Task[] preparing;
         lock (_gate)
         {
-            foreach (var stream in _streams.Values) stream.Dispose();
-            _streams.Clear();
+            if (_disposed) return;
+            _disposed = true;
+            preparing = _prewarms.Values.ToArray();
         }
-        if (_ownsLibrary) _library.Dispose();
+        // BuildStream uses the library. Join outside _gate so its completion can retire the task;
+        // it cannot publish/start a new stream after the disposed flag was set.
+        try { Task.WhenAll(preparing).GetAwaiter().GetResult(); }
+        finally
+        {
+            lock (_gate)
+            {
+                foreach (var stream in _streams.Values) stream.Dispose();
+                _streams.Clear();
+                _prewarms.Clear();
+            }
+            if (_ownsLibrary) _library.Dispose();
+        }
     }
 }

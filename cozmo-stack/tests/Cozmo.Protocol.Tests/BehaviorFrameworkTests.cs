@@ -1545,11 +1545,16 @@ public class BehaviorFrameworkTests
         public void BehaviorSwitched(IBehavior? desired, bool started, double nowSec) => _calls.Add($"Activity.Switched:{desired?.Id ?? "null"}:{started}");
     }
 
-    private static (CozmoRobot Robot, BehaviorContext Ctx) Offline(BehaviorArbiter? arbiter = null)
+    private sealed record OfflineContext(CozmoRobot Robot, BehaviorContext Ctx) : IDisposable
+    {
+        public void Dispose() => Robot.Dispose();
+    }
+
+    private static OfflineContext Offline(BehaviorArbiter? arbiter = null)
     {
         var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
-        return (robot, new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Random = new Random(1), Arbiter = arbiter });
+        return new OfflineContext(robot, new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Random = new Random(1), Arbiter = arbiter });
     }
 
     /// <summary>
@@ -1560,8 +1565,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void TheTickRunsTheActivityThenReactionsThenTheScoredChoice()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         var calls = new List<string>();
         var strategy = new AlwaysTriggerStrategy(order: calls) { Fire = false };
@@ -1589,8 +1594,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void TheScoredChoiceIsGatedByReactionsTheUiGameBehaviourAndTheRunningTrigger()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         var calls = new List<string>();
         var strategy = new AlwaysTriggerStrategy(order: calls) { Fire = false };
@@ -1652,8 +1657,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void AnUninitialisedManagerTicksNothingAndAUiGameRequestIsSelectedOnce()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         var calls = new List<string>();
         var log = new List<string>();
@@ -1690,8 +1695,8 @@ public class BehaviorFrameworkTests
     {
         foreach (bool tryToResume in new[] { true, false })
         {
-            var (robot, ctx) = Offline();
-            using var holder = robot;
+            using var offline = Offline();
+            var (robot, ctx) = offline;
             using var m = new BehaviorManager(ctx);
             var parked = new LifecycleProbe();
             m.Add(parked);
@@ -1730,8 +1735,8 @@ public class BehaviorFrameworkTests
     {
         // a stepped behaviour whose vptr+0x50 says no: ResumeInternal fails, the manager switches to the empty info
         {
-            var (robot, ctx) = Offline();
-            using var holder = robot;
+            using var offline = Offline();
+            var (robot, ctx) = offline;
             using var m = new BehaviorManager(ctx);
             var parked = new LifecycleProbe { InternalRunnable = false };
             m.Add(parked);
@@ -1752,8 +1757,8 @@ public class BehaviorFrameworkTests
         // runnable: it runs again.
         foreach (bool runnable in new[] { false, true })
         {
-            var (robot, ctx) = Offline();
-            using var holder = robot;
+            using var offline = Offline();
+            var (robot, ctx) = offline;
             using var m = new BehaviorManager(ctx);
             var parked = new OneShotBehavior("parked") { Runnable = true };
             m.Add(parked);
@@ -1776,8 +1781,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void TheHeadAndLiftRestoreRunsEvenWhenNothingIsParked()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         bool empty = false;
         using var m = new BehaviorManager(ctx) { ActionListIsEmpty = () => empty };
         var log = new List<string>();
@@ -1803,8 +1808,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void AFailedInitStillStoresTheRunningInfo()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         var log = new List<string>();
         m.Log += log.Add;
@@ -1837,8 +1842,8 @@ public class BehaviorFrameworkTests
     public void ReactionsAreConsultedEveryTickAndOnlyAPerTriggerLockSkipsOne()
     {
         var arbiter = new BehaviorArbiter();
-        var (robot, ctx) = Offline(arbiter);
-        using var holder = robot;
+        using var offline = Offline(arbiter);
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         var cliff = new AlwaysTriggerStrategy(ReactionTrigger.CliffDetected) { Fire = false };
         var shaken = new AlwaysTriggerStrategy(ReactionTrigger.RobotShaken) { Fire = false };
@@ -1876,8 +1881,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void TheManagerStopsABehaviourOnlyWhileItsRunningFlagIsSet()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         var stoppedItself = new LifecycleProbe("a");
         var running = new LifecycleProbe("b");
@@ -1898,8 +1903,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void InitRunsBeforeTheManagerStoresTheRunningInfo()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         IBehavior? seenCurrent = new OneShotBehavior("sentinel");
         var p = new LifecycleProbe { OnStartHook = _ => seenCurrent = m.Current };
@@ -1913,8 +1918,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void AFailedInitLeavesItsScopeHeldUntilTheNextStop()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         bool released = false;
         var p = new LifecycleProbe { FailInit = true, OnStartHook = x => x.ScopeSeen!.OnRelease(() => released = true) };
@@ -1932,8 +1937,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void ANonSteppedBehaviourGetsTheResumeCounterAndRefusal()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         using var m = new BehaviorManager(ctx);
         var parked = new OneShotBehavior("parked");
         m.Add(parked);
@@ -1972,8 +1977,8 @@ public class BehaviorFrameworkTests
         SteppedBehavior.MissingReported += On;
         try
         {
-            var (robot, ctx) = Offline();
-            using var holder = robot;
+            using var offline = Offline();
+            var (robot, ctx) = offline;
             using var m = new BehaviorManager(ctx);
             var strategy = new AlwaysTriggerStrategy();
             m.AddReaction(strategy, new OneShotBehavior("react"));
@@ -2005,8 +2010,8 @@ public class BehaviorFrameworkTests
     [Fact]
     public void TheCarryingGateIsReadFromTheRobot()
     {
-        var (robot, ctx) = Offline();
-        using var holder = robot;
+        using var offline = Offline();
+        var (robot, ctx) = offline;
         var p = new LifecycleProbe { Gate28 = false };
         Assert.True(p.IsRunnableBase(ctx));
         robot.Motion.IsCarryingObject = () => true;

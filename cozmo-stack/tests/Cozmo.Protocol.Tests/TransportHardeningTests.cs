@@ -260,26 +260,28 @@ public class TransportHardeningTests
         t.Disconnect();                                     // after Dispose: nothing to do
     }
 
-    /// <summary>
-    /// REGRESSION ONLY (host structure, M1-014). A post the executor refuses (it has been completed) fails
-    /// visibly: Connect throws and puts the link state back, so the next Connect is refused the same way; a
-    /// send throws instead of being dropped. (Connect opens no socket since M1-019 R38 / R39.)
-    /// </summary>
+    /// <summary>Host hygiene: Dispose posts teardown before completing the executor.
+    /// Executor refusal itself is checked separately without stranding a transport dispatch thread.</summary>
     [Fact]
-    public void APostTheExecutorRefusesFailsVisiblyAndReleasesTheLink()
+    public void DisposalClosesTheTransportBeforeTheExecutorRefusesFurtherPosts()
     {
         using var t = new ReliableTransport();
-        t.Executor.Complete();                              // test seam: the executor accepts nothing more
+        t.Connect(Nowhere, 59991);
+        Assert.True(t.Flush(TimeSpan.FromSeconds(5)));
+        t.Dispose();
+        t.Executor.Complete();
+        Assert.False(t.Executor.Post(() => { }));
         Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59992));
-        Assert.Equal(LinkState.Idle, t.State);
-        Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59992));
-        Assert.Throws<ObjectDisposedException>(() => t.Disconnect());
 
-        using var s = new ReliableTransport();
-        s.Connect(Nowhere, 59991);
-        Assert.True(s.Flush(TimeSpan.FromSeconds(5)));
-        s.Executor.Complete();
-        Assert.Throws<ObjectDisposedException>(() => s.SendData(new GetManufacturingInfo().ToBytes()));
+        var executor = new SerialExecutor("test-completed-executor");
+        executor.Start();
+        try
+        {
+            executor.Complete();
+            Assert.False(executor.Post(() => { }));
+        }
+        finally { executor.Complete(); executor.Join(TimeSpan.FromSeconds(5)); }
+        Assert.False(executor.WorkerThread.IsAlive);
     }
 
     [Fact]

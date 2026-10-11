@@ -349,6 +349,37 @@ public class WwiseSongTests
         Assert.InRange(sink.Frames, 290, 300);                         // about 9.8 s of frames carried sound
     }
 
+    [Fact]
+    public async Task DisposeJoinsAnInFlightPrewarmAndPreventsPublishingItsStream()
+    {
+        if (Library.Value is not { } lib) return;
+        using var preparing = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        using var disposing = new ManualResetEventSlim();
+        using var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(5));
+        var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm")!.Value;
+        source.SetSwitch(SingingBehavior.Group100, WwiseHash.Of("Cozmo_Sings_Bingo"));
+        source.MusicPreparationObserved = () =>
+        {
+            preparing.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(30)), "prewarm was not released");
+        };
+        var prewarm = source.Prewarm(ev);
+        Assert.True(preparing.Wait(TimeSpan.FromSeconds(10)));
+        var dispose = Task.Run(() => { disposing.Set(); source.Dispose(); });
+        try
+        {
+            Assert.True(disposing.Wait(TimeSpan.FromSeconds(10)));
+            Assert.NotSame(dispose, await Task.WhenAny(dispose, Task.Delay(100)));
+        }
+        finally { release.Set(); }
+        await dispose.WaitAsync(TimeSpan.FromSeconds(30));
+        Assert.True(prewarm.IsCompletedSuccessfully);
+        Assert.Null(source.StreamFor(ev));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await source.Prewarm(ev));
+        source.Dispose(); // idempotent
+    }
+
     /// <summary>
     /// Preparation happens on a worker and the scheduler's GetPcm is cheap, which is the property the
     /// animation timeline depends on: a song that took seconds to produce on the scheduler's thread

@@ -23,11 +23,13 @@ public class ControlTests
 
     // ------------------------------------------------------------------ harness
 
-    private sealed class Rig
+    private sealed class Rig : IDisposable
     {
         public readonly CozmoRobot Robot;
         private readonly ManualClock _clock = new() { NowMs = 1000 };
         private ushort _seq = 1;
+
+        public void Dispose() => Robot.Dispose();
 
         public Rig()
         {
@@ -168,7 +170,7 @@ public class ControlTests
     [Fact]
     public async Task MotionIsSentBeforeTheRobotHasReportedAnything()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var r = await rig.Robot.Motion.DriveWheelsAsync(50, 50, confirmWithin: TimeSpan.FromMilliseconds(1));
         Assert.NotEqual(MotionResult.Refused, r.Result);
         Assert.Single(rig.Sent.OfType<DriveWheels>());      // the command went out
@@ -181,7 +183,7 @@ public class ControlTests
     [Fact]
     public async Task MotionIsSentWhileTheHeadAndLiftAreStillCalibrating()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(Rig.StateWith());
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
 
@@ -196,7 +198,7 @@ public class ControlTests
     [Fact]
     public async Task StopAllIsNeverGatedOnCalibration()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = true });
         rig.Send(Rig.StateWith());       // stopped, so the confirmation is already satisfied
 
@@ -219,7 +221,7 @@ public class ControlTests
         Assert.Equal(10f, CozmoMotion.DefaultLiftSpeedRadPerSec);
         Assert.Equal(20f, CozmoMotion.DefaultLiftAccelRadPerSec2);
 
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.MakeReady();
         _ = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromMilliseconds(200));
         var head = await WaitFor(() => rig.LastSent<SetHeadAngle>());
@@ -237,7 +239,7 @@ public class ControlTests
     [Fact]
     public async Task SetHeadAngleWaitsForTheRobotToAcknowledgeThatExactAction()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.MakeReady();
 
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.3f, timeout: TimeSpan.FromSeconds(5));
@@ -258,7 +260,7 @@ public class ControlTests
     [Fact]
     public async Task AnUnacknowledgedActionTimesOutRatherThanReportingSuccess()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.MakeReady();
         var pending = rig.Robot.Motion.SetHeadAngleAsync(0.2f, timeout: TimeSpan.FromMilliseconds(250));
         rig.Advance(0);                                    // M4-003/Q4: the first tick sends and stamps the start
@@ -273,7 +275,7 @@ public class ControlTests
     [Fact]
     public async Task ActionIdsAreDistinctPerAction()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.MakeReady();
         var ids = new List<byte>();
         for (int i = 0; i < 6; i++)
@@ -291,7 +293,7 @@ public class ControlTests
     [Fact]
     public async Task HeadAngleAndLiftHeightAreClampedToTheRobotsRange()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.MakeReady();
 
         // M4-001 (2026-09-29 audit): the angle is rescaled into (−π, π] first, so 99 rad → 99 − 16·2π = −1.5310,
@@ -309,7 +311,7 @@ public class ControlTests
     [Fact]
     public async Task DrivingIsConfirmedFromTheReportedWheelSpeedsNotFromTheSend()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.MakeReady();
 
         var pending = rig.Robot.Motion.DriveWheelsAsync(60, 60, confirmWithin: TimeSpan.FromSeconds(5));
@@ -327,7 +329,7 @@ public class ControlTests
     [Fact]
     public async Task StopAllWaitsForTheRobotToReportTheWheelsStopped()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.MakeReady();
         rig.Send(Rig.StateWith(RobotStatusFlag.AreWheelsMoving, left: 80, right: 80));
 
@@ -344,7 +346,7 @@ public class ControlTests
     [Fact]
     public void EmergencyStopSendsStopAllAndAZeroWheelCommand()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Robot.EmergencyStop();
         Assert.Single(rig.Sent.OfType<StopAllMotors>());
         var wheels = Assert.Single(rig.Sent.OfType<DriveWheels>());
@@ -361,7 +363,7 @@ public class ControlTests
     [Fact]
     public void BackpackColoursArePackedAndRememberedAsSent()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(Rig.StateWith());
         rig.Robot.Lights.SetBackpack(LedColor.Red, LedColor.Green, LedColor.Blue);
         rig.Send(Rig.StateWith());                // the next Robot::Update
@@ -376,7 +378,7 @@ public class ControlTests
     [Fact]
     public void ABlinkCarriesTheRobotsOwnFrameTimingRatherThanALoopHere()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(Rig.StateWith());
         rig.Robot.Lights.BlinkBackpack(LedColor.Red, LedColor.Off, onFrames: 10, offFrames: 20);
         rig.Send(Rig.StateWith());                // M4-017: sent at the next Robot::Update
@@ -390,7 +392,7 @@ public class ControlTests
     [Fact]
     public void TheHeadlightTracksWhatItWasToldBecauseTheRobotNeverReportsIt()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         Assert.False(rig.Robot.Lights.HeadlightOn);
         rig.Robot.Lights.SetHeadlight(true);
         Assert.True(rig.Robot.Lights.HeadlightOn);
@@ -411,7 +413,7 @@ public class ControlTests
     [Fact]
     public void SensorsReadThroughToTheLatestReportedState()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(Rig.StateWith(RobotStatusFlag.IsOnCharger | RobotStatusFlag.IsCharging,
                                battery: 4.05f, head: 0.25f, cliffs: new ushort[] { 11, 22, 33, 44 }));
 
@@ -429,7 +431,7 @@ public class ControlTests
     [Fact]
     public void ACliffEventIsRecordedWithWhichSensorsTrippedAndWhetherTheRobotStopped()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var seen = new List<CliffReport>();
         rig.Robot.Sensors.CliffDetected += seen.Add;
 
@@ -445,7 +447,7 @@ public class ControlTests
     [Fact]
     public void PickedUpAndChargerChangesRaiseEventsOnlyWhenTheyActuallyChange()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var picked = new List<bool>();
         var charger = new List<bool>();
         rig.Robot.Sensors.PickedUpChanged += picked.Add;
@@ -463,7 +465,7 @@ public class ControlTests
     [Fact]
     public void StopOnCliffAndImuBurstsGoOutAsTheirOwnMessages()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Robot.Sensors.SetStopOnCliff(true);
         rig.Robot.Sensors.RequestImuBurst(TimeSpan.FromMilliseconds(750));
 
@@ -476,7 +478,7 @@ public class ControlTests
     [Fact]
     public void ACubeIsTrackedFromItsAdvertisementAndThenItsConnection()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var discovered = new List<Cube>();
         var connections = new List<Cube>();
         rig.Robot.Cubes.CubeDiscovered += discovered.Add;
@@ -517,7 +519,7 @@ public class ControlTests
     [Fact]
     public void OnlyLightCubesAndTheChargerAreTrackedFromAnAdvertisement()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(new ObjectAvailable { FactoryId = 1, ObjectType = ObjectType.Block_LIGHTCUBE3, Rssi = -40 });
         rig.Send(new ObjectAvailable { FactoryId = 2, ObjectType = ObjectType.Block_LIGHTCUBE_GHOST, Rssi = -40 });
         rig.Send(new ObjectAvailable { FactoryId = 3, ObjectType = ObjectType.Charger_Basic, Rssi = -40 });
@@ -539,7 +541,7 @@ public class ControlTests
     [Fact]
     public void TheAvailabilityNoticeIsGatedOnRobot490()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var discovered = new List<Cube>();
         rig.Robot.Cubes.CubeDiscovered += discovered.Add;
         rig.Send(new ObjectAvailable { FactoryId = 0xAABBCCDD, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = -55 });
@@ -558,7 +560,7 @@ public class ControlTests
     public void TheConnectionIdIsKeptAsTheObjectIdWhateverItIs()
     {
         Assert.Equal(4u, CozmoCubes.MaxActiveObjectSlot);
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(new ObjectConnectionState
         {
             ObjectID = 7, FactoryID = 0x1234, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true,
@@ -586,7 +588,7 @@ public class ControlTests
     [InlineData((byte)255, 0x40233333u, 0x42C80000u)]
     public void M4_008_U4_U5_TheCubeBatteryByteIsHundredthsOfAVoltAndTheEnginesPercentage(byte raw, uint voltBits, uint percentBits)
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
         rig.Send(new ObjectPowerLevel { ObjectID = 3, BatteryLevel = raw, MissedPackets = 0 });
         var cube = rig.Robot.Cubes.ByObjectId(3)!;
@@ -603,7 +605,7 @@ public class ControlTests
     [Fact]
     public void M4_008_A4_A11_TheDasReportGateAndItsMaps()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var logs = new List<string>();
         rig.Robot.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
         void Power(uint active, uint missed, byte cv = 140) => rig.Send(new ObjectPowerLevel { ObjectID = active, MissedPackets = missed, BatteryLevel = cv });
@@ -634,7 +636,7 @@ public class ControlTests
     [Fact]
     public void M4_008_A12_WithoutAWorldNothingIsBroadcastAndTheGapIsVisible()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var logs = new List<string>();
         var sent = new List<ObjectPowerLevel>();
         rig.Robot.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
@@ -649,7 +651,7 @@ public class ControlTests
     [Fact]
     public void CubeTelemetryLandsOnTheConnectedCube()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
 
         rig.Send(new ObjectPowerLevel { ObjectID = 3, BatteryLevel = 140, MissedPackets = 9 });
@@ -678,7 +680,7 @@ public class ControlTests
     [Fact]
     public void TelemetryForAnUnknownCubeIsIgnoredRatherThanInventingOne()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(new ObjectTapped { ObjectID = 99, Timestamp = 1, NumTaps = 1 });
         Assert.Empty(rig.Robot.Cubes.DiscoveredCubes);
     }
@@ -686,7 +688,7 @@ public class ControlTests
     [Fact]
     public void TurningDiscoveryOnSendsTheAccessoryDiscoveryMessage()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Robot.Cubes.SetDiscovery(true);
         Assert.True(Assert.Single(rig.Sent.OfType<SetAccessoryDiscovery>()).Enable);
         Assert.True(rig.Robot.Cubes.DiscoveryEnabled);
@@ -697,7 +699,7 @@ public class ControlTests
     [Fact]
     public async Task ReadinessReportsWhatItIsStillWaitingFor()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var (ready, why) = await rig.Robot.WaitUntilReadyAsync(TimeSpan.FromMilliseconds(200), describe: true);
         Assert.False(ready);
         Assert.Contains("no telemetry", why);
@@ -708,7 +710,7 @@ public class ControlTests
     [Fact]
     public async Task ReadinessSucceedsOnceTelemetryAnimationAndCalibrationAreAllIn()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         rig.Send(Rig.StateWith());
         rig.Send(new AnimationState { EnabledAnimTracks = 0xFF });
         rig.Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = true });
@@ -738,7 +740,7 @@ public class ControlTests
     public void TheControlLayerReadsTheHardwareCaptureCorrectly()
     {
         var clock = new ManualClock { NowMs = 1000 };
-        var robot = CozmoRobot.CreateOffline(TransportOptions.EngineDefaults, clock);
+        using var robot = CozmoRobot.CreateOffline(TransportOptions.EngineDefaults, clock);
         var path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "hw_fw2457_full.log");
         foreach (var l in File.ReadAllLines(path))
         {

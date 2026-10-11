@@ -90,11 +90,16 @@ public class M8BatchThreeCTests
         return chooser;
     }
 
-    private static BehaviorContext Ctx()
+    private sealed record ContextOwner(BehaviorContext Context) : IDisposable
+    {
+        public void Dispose() => Context.Robot.Dispose();
+    }
+
+    private static ContextOwner Ctx()
     {
         var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
-        return new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Random = new Random(1) };
+        return new ContextOwner(new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Random = new Random(1) });
     }
 
     /// <summary>
@@ -105,7 +110,8 @@ public class M8BatchThreeCTests
     [Fact]
     public void AnExecuteBehaviorByIdMessageSelectsTheBehaviourAndStoresNumRuns()
     {
-        var ctx = Ctx();
+        using var owner = Ctx();
+        var ctx = owner.Context;
         var wait = new Fake("Wait"); var ack = new Fake("AcknowledgeFace");
         var bound = new Dictionary<string, IBehavior> { ["Wait"] = wait, ["AcknowledgeFace"] = ack };
         using var cfg = JsonDocument.Parse("{\"type\":\"Selection\"}");
@@ -543,7 +549,8 @@ public class M8BatchThreeCTests
     [Fact]
     public void ABehaviourBuiltInCodeScoresZeroLikeTheEngineDefault()
     {
-        var ctx = Ctx();
+        using var owner = Ctx();
+        var ctx = owner.Context;
         var probe = new ScoreProbe();
         Assert.Equal(0.0, probe.Score);
         Assert.Equal(0.0, probe.EvaluateScore(ctx));

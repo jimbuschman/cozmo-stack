@@ -159,7 +159,7 @@ public class DerivedStateTests
     [Fact]
     public void M4_008_U1_U3_TheImuFiltersUseTheEnginesLiteralBits()
     {
-        var rig = new Rig();
+        using var rig = new Rig();
         var c = rig.Robot.Sensors.OffTreads;
         var expected = new (float x, float y, float z, uint raw, uint mag, uint ax, uint ay, uint az)[]
         {
