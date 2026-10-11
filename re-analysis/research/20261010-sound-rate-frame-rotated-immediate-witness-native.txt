@@ -1,0 +1,9 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x004D36DC..0x004D36E8 exclusive; ARM;
+004D36DC: add          ip, pc, #0xb00000
+004D36E0: add          ip, ip, #124, #20
+004D36E4: ldr          pc, [ip, #0x89c]!
+RANGE 0x009F31FC..0x009F3204 exclusive; ARM;
+009F31FC: moveq        r7, #0x40000000
+009F3200: movne        r7, #0x20000000

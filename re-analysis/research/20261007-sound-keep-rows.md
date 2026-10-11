@@ -11588,3 +11588,18 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint783 — record destination input boundary
 
 `20261010-sound-routing-record-input-disposition.md` checks9F319C..9F3274;34 encoded Thumb candidates reopen as ARM word pieces or literal data, with no ARM branch candidate. Exact conditional destination binding and separate predecessor/frame exits retained; no admitted destination or universal alias exclusion.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint784 — Scalar store spans across rate/frame boundaries
+
+`20261010-sound-rate-frame-scalar-width-disposition.md` retains explicit primary/navigation limits. 6855 windows retain all300 prior events and338 caps, with no additional writer or input. Original obligations stay PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint785 — ARM rotated-immediate propagation
+
+`20261010-sound-rate-frame-rotated-immediate-disposition.md` retains explicit primary/navigation limits. 6855 windows retain all300 prior events and338 caps, with no additional writer or input. Original obligations stay PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint786 — Quota setter interior-entry inputs
+
+`20261010-sound-quota-interior-disposition.md` retains explicit primary/navigation limits. All21 immediate-body candidates are instruction fragments, not admitted quota inputs; source returns/literals and raw gate/order retained. Original obligations stay PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

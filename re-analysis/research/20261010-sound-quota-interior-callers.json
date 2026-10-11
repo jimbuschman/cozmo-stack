@@ -1,0 +1,156 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0x9a0938"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x565100",
+      "target": "#0x9a0948",
+      "mode": "ARM",
+      "instruction": "bhs #0x9a0948",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0202",
+      "target": "#0x9a0946",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0946",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0212",
+      "target": "#0x9a0956",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0956",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a022a",
+      "target": "#0x9a096e",
+      "mode": "Thumb",
+      "instruction": "b #0x9a096e",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a05f6",
+      "target": "#0x9a093a",
+      "mode": "Thumb",
+      "instruction": "b #0x9a093a",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a05fe",
+      "target": "#0x9a0942",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0942",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0602",
+      "target": "#0x9a0946",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0946",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a060e",
+      "target": "#0x9a0952",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0952",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0612",
+      "target": "#0x9a0956",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0956",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a062a",
+      "target": "#0x9a096e",
+      "mode": "Thumb",
+      "instruction": "b #0x9a096e",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a06f6",
+      "target": "#0x9a0958",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0958",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a083a",
+      "target": "#0x9a095c",
+      "mode": "Thumb",
+      "instruction": "b #0x9a095c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0a22",
+      "target": "#0x9a0964",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0964",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e02",
+      "target": "#0x9a0944",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0944",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e12",
+      "target": "#0x9a093c",
+      "mode": "Thumb",
+      "instruction": "b #0x9a093c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e32",
+      "target": "#0x9a0970",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0970",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e3a",
+      "target": "#0x9a0950",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0950",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e3e",
+      "target": "#0x9a0954",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0954",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e42",
+      "target": "#0x9a0958",
+      "mode": "Thumb",
+      "instruction": "b #0x9a0958",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e46",
+      "target": "#0x9a095c",
+      "mode": "Thumb",
+      "instruction": "b #0x9a095c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9a0e52",
+      "target": "#0x9a097c",
+      "mode": "Thumb",
+      "instruction": "b #0x9a097c",
+      "section": ".text"
+    }
+  ]
+}
