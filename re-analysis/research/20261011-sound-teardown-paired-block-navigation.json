@@ -1,0 +1,38 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "model_sha256": "ca0f5ef8e468c6263e70c338a2545193991c4a15cbde3f7da0b601eb22219882",
+  "targets": [
+    "00A0228C",
+    "00A022E8",
+    "00A370E4",
+    "00A55A84",
+    "00A55D04"
+  ],
+  "windows": 14898,
+  "events": [
+    {
+      "address": "005E8D18",
+      "mode": "Thumb",
+      "kind": "formed-r1",
+      "effective": "00A55A84",
+      "instruction": "ldr r1, [pc, #0x24]",
+      "seeds": [
+        "005E8D00",
+        "005E8D18"
+      ]
+    },
+    {
+      "address": "005E8D1A",
+      "mode": "Thumb",
+      "kind": "formed-r2",
+      "effective": "00A55A84",
+      "instruction": "ldr r2, [pc, #0x28]",
+      "seeds": [
+        "005E8D00",
+        "005E8D18",
+        "005E8D1A"
+      ]
+    }
+  ],
+  "boundary": "Original084/118 selected paired/block constant transfer extension over846. Mutable values remain unknown. No stack/copy/computed/foreign/capped input exclusion, real callback admission, or new teardown/sample/storage body execution."
+}
