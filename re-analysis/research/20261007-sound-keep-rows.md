@@ -11815,3 +11815,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint838 — byte overlaps and composed block destinations
 
 `20261011-sound-voice-policy-composed-store-disposition.md` records four nonexact-starting byte overlaps,478 finite address seeds,10 positive events/eight distinct stores andfive explicit32-instruction frontiers. Actual9F7CE0 copies16bytes toSP+D8..E7; neighbouringE1 global-default/E5/E6/E7 request stores retain theirpositive receiver identities. No newly admitted policy writer orcomplete alias/caller proof;033 PARTIAL. Counts116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;Q15 stays behindQ14.
+
+### Checkpoint839 — vector-store widths and alignment checked
+
+`20261011-sound-voice-policy-vector-overlap-disposition.md` adds onlyvector extents to838’sunchanged finite seeds/windows andasserts actualA0B01C transfers16bytes atSP;its40hex annotation isalignment,not displacement. No added finite overlap event;all prior events/frontiers preserved. No exhaustive alias/writer/caller absence inference.033 PARTIAL;116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Stop this finite lead andcontinue otherpositive original inputs;Q15 stays behindQ14.
