@@ -11639,3 +11639,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint794 - VoiceInit candidate source boundaries
 
 `20261010-sound-voice-init-candidate-source-disposition.md` pays793's128 retained encodings using primary local ARM entry/edge/byte witnesses, not a region/address assumption. All142 finite candidates accounted:four actual direct entry calls,138 false encodings.033 retains original indirect/re-init and E0/E4 alias-writer proofs;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint795 - weight-setter source boundaries
+
+`20261010-sound-weight-candidate-source-disposition.md` pays776's29 retained encodings with primary local ARM entry/edge witnesses:28 upper-halfword code encodings and one exact ARM NOP after a terminal backward branch. Together with776's ThumbVSTR,all30 finite candidates attributed; no runtime node/childID/weight admission or indirect absence proof.008 PARTIAL;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
