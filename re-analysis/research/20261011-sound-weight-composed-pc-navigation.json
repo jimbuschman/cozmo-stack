@@ -1,0 +1,56 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "target": "00A08024",
+  "formsExamined": {
+    "ARM immediate ADD/SUB PC": 17639,
+    "Thumb ADR16": 17041,
+    "Thumb ADDW/SUBW PC": 1073
+  },
+  "nearby_seed_count": 3,
+  "propagation_count": 3,
+  "seeds": [
+    {
+      "address": "00A07F98",
+      "mode": "Thumb",
+      "bytes": "7da0",
+      "value": "00A08190",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "decoded": [
+        "adr r0, #0x1f4"
+      ],
+      "propagation_start": "00A07F9A",
+      "destination": "r0"
+    },
+    {
+      "address": "00A0800C",
+      "mode": "Thumb",
+      "bytes": "6aa0",
+      "value": "00A081B8",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "decoded": [
+        "adr r0, #0x1a8"
+      ],
+      "propagation_start": "00A0800E",
+      "destination": "r0"
+    },
+    {
+      "address": "00A080FC",
+      "mode": "Thumb",
+      "bytes": "00a0",
+      "value": "00A08100",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "decoded": [
+        "adr r0, #0"
+      ],
+      "propagation_start": "00A080FE",
+      "destination": "r0"
+    }
+  ],
+  "events": [],
+  "cap_log": [],
+  "model_sha256": "917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf",
+  "limit": "Only direct-PC seed values within512 bytes either side of original setter then unchanged812 local propagation; explicit destination seed, possible modes/conditions, distant address construction, stack/copy/foreign inputs and caps are not certified."
+}

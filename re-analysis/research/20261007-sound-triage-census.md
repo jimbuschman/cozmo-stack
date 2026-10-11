@@ -3455,3 +3455,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint851 — structured-subscription pointer input
 
 `20261011-sound-structured-binding-formed-pointer-disposition.md` checks originalA67830 in unchanged812 model:14881 windows/806 explicit caps/zero events; separate direct-PC forms also yield zero candidates. Three extra cap seeds lie in799's excluded positioning interval: out of scope, no payload/callee trace. PI611/799 subscription and bounded candidate contracts retained;132 PARTIAL for actual structured ID/property/type input and control recipient or supported-input exclusion proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint852 — weight-setter composed nearby-PC addresses
+
+`20261011-sound-weight-composed-pc-disposition.md` checks a seed form absent from810/812 selection: PC-immediate result within512 bytes of originalA08024, followed by unchanged812 local propagation. Three windows/zero events/zero caps. All three apparent Thumb ADR seeds are individually actual ARM words (two calls, one load), with separate primary entries and literal/branch boundary retained.008 PARTIAL for original admitted node/childID/weight or complete supported-input exclusion; no repeat of paid full pointer/chooser helpers.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
