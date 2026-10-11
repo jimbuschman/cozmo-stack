@@ -1,0 +1,466 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LOCAL ARM SOURCE BOUNDARIES; no callee descent; not input/alias absence proof
+ENTRY 0x98fcf8 navigation bound 0x98fdf0
+0x98fcf8 f0309fe5 ldr r3, [pc, #0xf0] predecessor None
+0x98fcfc 30402de9 push {r4, r5, lr} predecessor 0x98fcf8
+0x98fd00 0040a0e1 mov r4, r0 predecessor 0x98fcfc
+0x98fd04 03309fe7 ldr r3, [pc, r3] predecessor 0x98fd00
+0x98fd08 2cd04de2 sub sp, sp, #0x2c predecessor 0x98fd04
+0x98fd0c 0150a0e1 mov r5, r1 predecessor 0x98fd08
+0x98fd10 5010a0e3 mov r1, #0x50 predecessor 0x98fd0c
+0x98fd14 000093e5 ldr r0, [r3] predecessor 0x98fd10
+0x98fd18 b5aa03eb bl #0xa7a7f4 predecessor 0x98fd14
+0x98fd1c 000050e3 cmp r0, #0 predecessor 0x98fd18
+0x98fd20 2c00000a beq #0x98fdd8 predecessor 0x98fd1c
+0x98fd24 000055e3 cmp r5, #0 predecessor 0x98fd20
+0x98fd28 0030a0e3 mov r3, #0 predecessor 0x98fd24
+0x98fd2c 003080e5 str r3, [r0] predecessor 0x98fd28
+0x98fd30 0020a0e3 mov r2, #0 predecessor 0x98fd2c
+0x98fd34 24309515 ldrne r3, [r5, #0x24] predecessor 0x98fd30
+0x98fd38 1000c0f2 vmov.i32 d16, #0 predecessor 0x98fd34
+0x98fd3c 601094e5 ldr r1, [r4, #0x60] predecessor 0x98fd38
+0x98fd40 00c0a0e3 mov ip, #0 predecessor 0x98fd3c
+0x98fd44 045080e5 str r5, [r0, #4] predecessor 0x98fd40
+0x98fd48 01308312 addne r3, r3, #1 predecessor 0x98fd44
+0x98fd4c 24308515 strne r3, [r5, #0x24] predecessor 0x98fd48
+0x98fd50 020051e1 cmp r1, r2 predecessor 0x98fd4c
+0x98fd54 4830d0e5 ldrb r3, [r0, #0x48] predecessor 0x98fd50
+0x98fd58 0c10a0e1 mov r1, ip predecessor 0x98fd54
+0x98fd5c 1020c0e5 strb r2, [r0, #0x10] predecessor 0x98fd58
+0x98fd60 fc3003e2 and r3, r3, #0xfc predecessor 0x98fd5c
+0x98fd64 382080e5 str r2, [r0, #0x38] predecessor 0x98fd60
+0x98fd68 1231c2e7 bfi r3, r2, #2, #1 predecessor 0x98fd64
+0x98fd6c 4830c0e5 strb r3, [r0, #0x48] predecessor 0x98fd68
+0x98fd70 0430a0e3 mov r3, #4 predecessor 0x98fd6c
+0x98fd74 3c3080e5 str r3, [r0, #0x3c] predecessor 0x98fd70
+0x98fd78 5c309415 ldrne r3, [r4, #0x5c] predecessor 0x98fd74
+0x98fd7c 0030a001 moveq r3, r0 predecessor 0x98fd78
+0x98fd80 4020c0e5 strb r2, [r0, #0x40] predecessor 0x98fd7c
+0x98fd84 1c208de2 add r2, sp, #0x1c predecessor 0x98fd80
+0x98fd88 020bc0ed vstr d16, [r0, #8] predecessor 0x98fd84
+0x98fd8c 00008315 strne r0, [r3] predecessor 0x98fd88
+0x98fd90 60309415 ldrne r3, [r4, #0x60] predecessor 0x98fd8c
+0x98fd94 00e094e5 ldr lr, [r4] predecessor 0x98fd90
+0x98fd98 60008405 streq r0, [r4, #0x60] predecessor 0x98fd94
+0x98fd9c 5c0084e5 str r0, [r4, #0x5c] predecessor 0x98fd98
+0x98fda0 0400a0e1 mov r0, r4 predecessor 0x98fd9c
+0x98fda4 643084e5 str r3, [r4, #0x64] predecessor 0x98fda0
+0x98fda8 14308de2 add r3, sp, #0x14 predecessor 0x98fda4
+0x98fdac 04c08de5 str ip, [sp, #4] predecessor 0x98fda8
+0x98fdb0 08c08de5 str ip, [sp, #8] predecessor 0x98fdac
+0x98fdb4 1cc08de5 str ip, [sp, #0x1c] predecessor 0x98fdb0
+0x98fdb8 20c0cde5 strb ip, [sp, #0x20] predecessor 0x98fdb4
+0x98fdbc 24c08de5 str ip, [sp, #0x24] predecessor 0x98fdb8
+0x98fdc0 18c08de2 add ip, sp, #0x18 predecessor 0x98fdbc
+0x98fdc4 00c08de5 str ip, [sp] predecessor 0x98fdc0
+0x98fdc8 48c09ee5 ldr ip, [lr, #0x48] predecessor 0x98fdc4
+0x98fdcc 3cff2fe1 blx ip predecessor 0x98fdc8
+0x98fdd0 000050e3 cmp r0, #0 predecessor 0x98fdcc
+0x98fdd4 0200001a bne #0x98fde4 predecessor 0x98fdd0
+0x98fdd8 0200a0e3 mov r0, #2 predecessor 0x98fdd4
+0x98fddc 2cd08de2 add sp, sp, #0x2c predecessor 0x98fdd8
+0x98fde0 3080bde8 pop {r4, r5, pc} predecessor 0x98fddc
+0x98fde4 0100a0e3 mov r0, #1 predecessor 0x98fdd4
+0x98fde8 2cd08de2 add sp, sp, #0x2c predecessor 0x98fde4
+0x98fdec 3080bde8 pop {r4, r5, pc} predecessor 0x98fde8
+ENTRY 0x98ff80 navigation bound 0x99034c
+0x98ff80 f04f2de9 push {r4, r5, r6, r7, r8, sb, sl, fp, lr} predecessor None
+0x98ff84 44d04de2 sub sp, sp, #0x44 predecessor 0x98ff80
+0x98ff88 0040a0e1 mov r4, r0 predecessor 0x98ff84
+0x98ff8c 96c8ffeb bl #0x9821ec predecessor 0x98ff88
+0x98ff90 010050e3 cmp r0, #1 predecessor 0x98ff8c
+0x98ff94 00a0a0e1 mov sl, r0 predecessor 0x98ff90
+0x98ff98 0200000a beq #0x98ffa8 predecessor 0x98ff94
+0x98ff9c 0a00a0e1 mov r0, sl predecessor 0x98ff98
+0x98ffa0 44d08de2 add sp, sp, #0x44 predecessor 0x98ff9c
+0x98ffa4 f08fbde8 pop {r4, r5, r6, r7, r8, sb, sl, fp, pc} predecessor 0x98ffa0
+0x98ffa8 505094e5 ldr r5, [r4, #0x50] predecessor 0x98ff98
+0x98ffac 000055e3 cmp r5, #0 predecessor 0x98ffa8
+0x98ffb0 1400000a beq #0x990008 predecessor 0x98ffac
+0x98ffb4 546094e5 ldr r6, [r4, #0x54] predecessor 0x98ffb0
+0x98ffb8 066285e0 add r6, r5, r6, lsl #4 predecessor 0x98ffb4
+0x98ffbc 060055e1 cmp r5, r6 predecessor 0x98ffb8
+0x98ffc0 0700000a beq #0x98ffe4 predecessor 0x98ffbc
+0x98ffc4 003095e5 ldr r3, [r5] predecessor 0x98ffc0
+0x98ffc8 0500a0e1 mov r0, r5 predecessor 0x98ffc4
+0x98ffcc 105085e2 add r5, r5, #0x10 predecessor 0x98ffc8
+0x98ffd0 003093e5 ldr r3, [r3] predecessor 0x98ffcc
+0x98ffd4 33ff2fe1 blx r3 predecessor 0x98ffd0
+0x98ffd8 050056e1 cmp r6, r5 predecessor 0x98ffd4
+0x98ffdc f8ffff1a bne #0x98ffc4 predecessor 0x98ffd8
+0x98ffe0 506094e5 ldr r6, [r4, #0x50] predecessor 0x98ffdc
+0x98ffe4 60339fe5 ldr r3, [pc, #0x360] predecessor 0x98ffe0
+0x98ffe8 0050a0e3 mov r5, #0 predecessor 0x98ffe4
+0x98ffec 0610a0e1 mov r1, r6 predecessor 0x98ffe8
+0x98fff0 545084e5 str r5, [r4, #0x54] predecessor 0x98ffec
+0x98fff4 03309fe7 ldr r3, [pc, r3] predecessor 0x98fff0
+0x98fff8 000093e5 ldr r0, [r3] predecessor 0x98fff4
+0x98fffc 61aa03eb bl #0xa7a988 predecessor 0x98fff8
+0x990000 505084e5 str r5, [r4, #0x50] predecessor 0x98fffc
+0x990004 585084e5 str r5, [r4, #0x58] predecessor 0x990000
+0x990008 4c3094e5 ldr r3, [r4, #0x4c] predecessor 0x990004
+0x99000c 9cb093e5 ldr fp, [r3, #0x9c] predecessor 0x990008
+0x990010 00005be3 cmp fp, #0 predecessor 0x99000c
+0x990014 0d00001a bne #0x990050 predecessor 0x990010
+0x990018 085094e5 ldr r5, [r4, #8] predecessor 0x990014
+0x99001c 0400a0e1 mov r0, r4 predecessor 0x990018
+0x990020 242094e5 ldr r2, [r4, #0x24] predecessor 0x99001c
+0x990024 7830d4e5 ldrb r3, [r4, #0x78] predecessor 0x990020
+0x990028 000055e3 cmp r5, #0 predecessor 0x990024
+0x99002c 012082e2 add r2, r2, #1 predecessor 0x990028
+0x990030 242084e5 str r2, [r4, #0x24] predecessor 0x99002c
+0x990034 023083e3 orr r3, r3, #2 predecessor 0x990030
+0x990038 7830c4e5 strb r3, [r4, #0x78] predecessor 0x990034
+0x99003c b000000a beq #0x990304 predecessor 0x990038
+0x990040 0010a0e3 mov r1, #0 predecessor 0x99003c
+0x990044 6affffeb bl #0x98fdf4 predecessor 0x990040
+0x990048 00a0a0e1 mov sl, r0 predecessor 0x990044
+0x99004c d2ffffea b #0x98ff9c predecessor 0x990048
+0x990050 f8329fe5 ldr r3, [pc, #0x2f8] predecessor 0x990014
+0x990054 0b12a0e1 lsl r1, fp, #4 predecessor 0x990050
+0x990058 03309fe7 ldr r3, [pc, r3] predecessor 0x990054
+0x99005c 000093e5 ldr r0, [r3] predecessor 0x990058
+0x990060 10308de5 str r3, [sp, #0x10] predecessor 0x99005c
+0x990064 e2a903eb bl #0xa7a7f4 predecessor 0x990060
+0x990068 000050e3 cmp r0, #0 predecessor 0x990064
+0x99006c 500084e5 str r0, [r4, #0x50] predecessor 0x990068
+0x990070 34a0a003 moveq sl, #0x34 predecessor 0x99006c
+0x990074 c8ffff0a beq #0x98ff9c predecessor 0x990070
+0x990078 d4229fe5 ldr r2, [pc, #0x2d4] predecessor 0x990074
+0x99007c 28908de2 add sb, sp, #0x28 predecessor 0x990078
+0x990080 d0329fe5 ldr r3, [pc, #0x2d0] predecessor 0x99007c
+0x990084 0060a0e3 mov r6, #0 predecessor 0x990080
+0x990088 cc129fe5 ldr r1, [pc, #0x2cc] predecessor 0x990084
+0x99008c 02208fe0 add r2, pc, r2 predecessor 0x990088
+0x990090 03308fe0 add r3, pc, r3 predecessor 0x99008c
+0x990094 082082e2 add r2, r2, #8 predecessor 0x990090
+0x990098 01108fe0 add r1, pc, r1 predecessor 0x990094
+0x99009c 083083e2 add r3, r3, #8 predecessor 0x990098
+0x9900a0 04208de5 str r2, [sp, #4] predecessor 0x99009c
+0x9900a4 0c108de5 str r1, [sp, #0xc] predecessor 0x9900a0
+0x9900a8 1c308de5 str r3, [sp, #0x1c] predecessor 0x9900a4
+0x9900ac 58b084e5 str fp, [r4, #0x58] predecessor 0x9900a8
+0x9900b0 08208de5 str r2, [sp, #8] predecessor 0x9900ac
+0x9900b4 20b08de5 str fp, [sp, #0x20] predecessor 0x9900b0
+0x9900b8 0900a0e1 mov r0, sb predecessor 0x9900b4
+0x9900bc 0080e0e3 mvn r8, #0 predecessor 0x9900b8
+0x9900c0 e56e02eb bl #0xa2bc5c predecessor 0x9900bc
+0x9900c4 545094e5 ldr r5, [r4, #0x54] predecessor 0x9900c0
+0x9900c8 583094e5 ldr r3, [r4, #0x58] predecessor 0x9900c4
+0x9900cc 0070a0e3 mov r7, #0 predecessor 0x9900c8
+0x9900d0 04209de5 ldr r2, [sp, #4] predecessor 0x9900cc
+0x9900d4 030055e1 cmp r5, r3 predecessor 0x9900d0
+0x9900d8 30808de5 str r8, [sp, #0x30] predecessor 0x9900d4
+0x9900dc 34708de5 str r7, [sp, #0x34] predecessor 0x9900d8
+0x9900e0 28208de5 str r2, [sp, #0x28] predecessor 0x9900dc
+0x9900e4 3000002a bhs #0x9901ac predecessor 0x9900e0
+0x9900e8 507094e5 ldr r7, [r4, #0x50] predecessor 0x9900e4
+0x9900ec 058297e0 adds r8, r7, r5, lsl #4 predecessor 0x9900e8
+0x9900f0 013085e2 add r3, r5, #1 predecessor 0x9900ec
+0x9900f4 543084e5 str r3, [r4, #0x54] predecessor 0x9900f0
+0x9900f8 0e00000a beq #0x990138 predecessor 0x9900f4
+0x9900fc 0800a0e1 mov r0, r8 predecessor 0x9900f8
+0x990100 d56e02eb bl #0xa2bc5c predecessor 0x9900fc
+0x990104 0c309de5 ldr r3, [sp, #0xc] predecessor 0x990100
+0x990108 0020a0e3 mov r2, #0 predecessor 0x990104
+0x99010c 083083e2 add r3, r3, #8 predecessor 0x990108
+0x990110 053287e7 str r3, [r7, r5, lsl #4] predecessor 0x99010c
+0x990114 0030e0e3 mvn r3, #0 predecessor 0x990110
+0x990118 083088e5 str r3, [r8, #8] predecessor 0x990114
+0x99011c 2c309de5 ldr r3, [sp, #0x2c] predecessor 0x990118
+0x990120 0c2088e5 str r2, [r8, #0xc] predecessor 0x99011c
+0x990124 34209de5 ldr r2, [sp, #0x34] predecessor 0x990120
+0x990128 043088e5 str r3, [r8, #4] predecessor 0x990124
+0x99012c 30309de5 ldr r3, [sp, #0x30] predecessor 0x990128
+0x990130 0c2088e5 str r2, [r8, #0xc] predecessor 0x99012c
+0x990134 083088e5 str r3, [r8, #8] predecessor 0x990130
+0x990138 08309de5 ldr r3, [sp, #8] predecessor 0x990134
+0x99013c 0900a0e1 mov r0, sb predecessor 0x990138
+0x990140 28308de5 str r3, [sp, #0x28] predecessor 0x99013c
+0x990144 d06e02eb bl #0xa2bc8c predecessor 0x990140
+0x990148 0900a0e1 mov r0, sb predecessor 0x990144
+0x99014c c86e02eb bl #0xa2bc74 predecessor 0x990148
+0x990150 505094e5 ldr r5, [r4, #0x50] predecessor 0x99014c
+0x990154 4c7094e5 ldr r7, [r4, #0x4c] predecessor 0x990150
+0x990158 0030a0e3 mov r3, #0 predecessor 0x990154
+0x99015c 065285e0 add r5, r5, r6, lsl #4 predecessor 0x990158
+0x990160 0c4085e5 str r4, [r5, #0xc] predecessor 0x99015c
+0x990164 0500a0e1 mov r0, r5 predecessor 0x990160
+0x990168 ac8097e5 ldr r8, [r7, #0xac] predecessor 0x990164
+0x99016c b07097e5 ldr r7, [r7, #0xb0] predecessor 0x990168
+0x990170 030058e1 cmp r8, r3 predecessor 0x99016c
+0x990174 086085e5 str r6, [r5, #8] predecessor 0x990170
+0x990178 043085e5 str r3, [r5, #4] predecessor 0x990174
+0x99017c 06819817 ldrne r8, [r8, r6, lsl #2] predecessor 0x990178
+0x990180 000057e3 cmp r7, #0 predecessor 0x99017c
+0x990184 0670d717 ldrbne r7, [r7, r6] predecessor 0x990180
+0x990188 0810a0e1 mov r1, r8 predecessor 0x990184
+0x99018c 0720a0e1 mov r2, r7 predecessor 0x990188
+0x990190 cc6e02eb bl #0xa2bcc8 predecessor 0x99018c
+0x990194 010050e3 cmp r0, #1 predecessor 0x990190
+0x990198 3f00000a beq #0x99029c predecessor 0x990194
+0x99019c 00a0a0e1 mov sl, r0 predecessor 0x990198
+0x9901a0 0a00a0e1 mov r0, sl predecessor 0x99019c
+0x9901a4 44d08de2 add sp, sp, #0x44 predecessor 0x9901a0
+0x9901a8 f08fbde8 pop {r4, r5, r6, r7, r8, sb, sl, fp, pc} predecessor 0x9901a4
+0x9901ac 10209de5 ldr r2, [sp, #0x10] predecessor 0x9900e4
+0x9901b0 013083e2 add r3, r3, #1 predecessor 0x9901ac
+0x9901b4 14308de5 str r3, [sp, #0x14] predecessor 0x9901b0
+0x9901b8 0312a0e1 lsl r1, r3, #4 predecessor 0x9901b4
+0x9901bc 000092e5 ldr r0, [r2] predecessor 0x9901b8
+0x9901c0 8ba903eb bl #0xa7a7f4 predecessor 0x9901bc
+0x9901c4 003050e2 subs r3, r0, #0 predecessor 0x9901c0
+0x9901c8 18308de5 str r3, [sp, #0x18] predecessor 0x9901c4
+0x9901cc d9ffff0a beq #0x990138 predecessor 0x9901c8
+0x9901d0 501094e5 ldr r1, [r4, #0x50] predecessor 0x9901cc
+0x9901d4 54b094e5 ldr fp, [r4, #0x54] predecessor 0x9901d0
+0x9901d8 000051e3 cmp r1, #0 predecessor 0x9901d4
+0x9901dc 2500000a beq #0x990278 predecessor 0x9901d8
+0x9901e0 00005be3 cmp fp, #0 predecessor 0x9901dc
+0x9901e4 2000000a beq #0x99026c predecessor 0x9901e0
+0x9901e8 00808de5 str r8, [sp] predecessor 0x9901e4
+0x9901ec 07a0a0e1 mov sl, r7 predecessor 0x9901e8
+0x9901f0 1c809de5 ldr r8, [sp, #0x1c] predecessor 0x9901ec
+0x9901f4 0370a0e1 mov r7, r3 predecessor 0x9901f0
+0x9901f8 24508de5 str r5, [sp, #0x24] predecessor 0x9901f4
+0x9901fc 000057e3 cmp r7, #0 predecessor 0x9901f8
+0x990200 0a52a0e1 lsl r5, sl, #4 predecessor 0x9901fc
+0x990204 0700a0e1 mov r0, r7 predecessor 0x990200
+0x990208 01a08ae2 add sl, sl, #1 predecessor 0x990204
+0x99020c 0500000a beq #0x990228 predecessor 0x990208
+0x990210 916e02eb bl #0xa2bc5c predecessor 0x99020c
+0x990214 00309de5 ldr r3, [sp] predecessor 0x990210
+0x990218 008087e5 str r8, [r7] predecessor 0x990214
+0x99021c 083087e5 str r3, [r7, #8] predecessor 0x990218
+0x990220 0030a0e3 mov r3, #0 predecessor 0x99021c
+0x990224 0c3087e5 str r3, [r7, #0xc] predecessor 0x990220
+0x990228 501094e5 ldr r1, [r4, #0x50] predecessor 0x990224
+0x99022c 107087e2 add r7, r7, #0x10 predecessor 0x990228
+0x990230 053081e0 add r3, r1, r5 predecessor 0x99022c
+0x990234 04c093e5 ldr ip, [r3, #4] predecessor 0x990230
+0x990238 0300a0e1 mov r0, r3 predecessor 0x990234
+0x99023c 0ce093e5 ldr lr, [r3, #0xc] predecessor 0x990238
+0x990240 0cc007e5 str ip, [r7, #-0xc] predecessor 0x99023c
+0x990244 08c093e5 ldr ip, [r3, #8] predecessor 0x990240
+0x990248 04e007e5 str lr, [r7, #-4] predecessor 0x990244
+0x99024c 053091e7 ldr r3, [r1, r5] predecessor 0x990248
+0x990250 08c007e5 str ip, [r7, #-8] predecessor 0x99024c
+0x990254 003093e5 ldr r3, [r3] predecessor 0x990250
+0x990258 33ff2fe1 blx r3 predecessor 0x990254
+0x99025c 0b005ae1 cmp sl, fp predecessor 0x990258
+0x990260 e5ffff1a bne #0x9901fc predecessor 0x99025c
+0x990264 24509de5 ldr r5, [sp, #0x24] predecessor 0x990260
+0x990268 501094e5 ldr r1, [r4, #0x50] predecessor 0x990264
+0x99026c 10309de5 ldr r3, [sp, #0x10] predecessor 0x990268
+0x990270 000093e5 ldr r0, [r3] predecessor 0x99026c
+0x990274 c3a903eb bl #0xa7a988 predecessor 0x990270
+0x990278 14309de5 ldr r3, [sp, #0x14] predecessor 0x990274
+0x99027c 18209de5 ldr r2, [sp, #0x18] predecessor 0x990278
+0x990280 030055e1 cmp r5, r3 predecessor 0x99027c
+0x990284 583084e5 str r3, [r4, #0x58] predecessor 0x990280
+0x990288 502084e5 str r2, [r4, #0x50] predecessor 0x990284
+0x99028c a9ffff2a bhs #0x990138 predecessor 0x990288
+0x990290 545094e5 ldr r5, [r4, #0x54] predecessor 0x99028c
+0x990294 0270a0e1 mov r7, r2 predecessor 0x990290
+0x990298 93ffffea b #0x9900ec predecessor 0x990294
+0x99029c 381094e5 ldr r1, [r4, #0x38] predecessor 0x990198
+0x9902a0 0730a0e1 mov r3, r7 predecessor 0x99029c
+0x9902a4 0820a0e1 mov r2, r8 predecessor 0x9902a0
+0x9902a8 0500a0e1 mov r0, r5 predecessor 0x9902a4
+0x9902ac 016086e2 add r6, r6, #1 predecessor 0x9902a8
+0x9902b0 2cc091e5 ldr ip, [r1, #0x2c] predecessor 0x9902ac
+0x9902b4 28e091e5 ldr lr, [r1, #0x28] predecessor 0x9902b0
+0x9902b8 0910a0e1 mov r1, sb predecessor 0x9902b4
+0x9902bc 28c08de5 str ip, [sp, #0x28] predecessor 0x9902b8
+0x9902c0 00c0a0e3 mov ip, #0 predecessor 0x9902bc
+0x9902c4 2ce08de5 str lr, [sp, #0x2c] predecessor 0x9902c0
+0x9902c8 30c08de5 str ip, [sp, #0x30] predecessor 0x9902c4
+0x9902cc 3cc08de5 str ip, [sp, #0x3c] predecessor 0x9902c8
+0x9902d0 00c0e0e3 mvn ip, #0 predecessor 0x9902cc
+0x9902d4 34c0cde5 strb ip, [sp, #0x34] predecessor 0x9902d0
+0x9902d8 38c0cde5 strb ip, [sp, #0x38] predecessor 0x9902d4
+0x9902dc 9d6e02eb bl #0xa2bd58 predecessor 0x9902d8
+0x9902e0 db3b03e3 movw r3, #0x3bdb predecessor 0x9902dc
+0x9902e4 a33c42e3 movt r3, #0x2ca3 predecessor 0x9902e0
+0x9902e8 000050e3 cmp r0, #0 predecessor 0x9902e4
+0x9902ec 0300a001 moveq r0, r3 predecessor 0x9902e8
+0x9902f0 20309de5 ldr r3, [sp, #0x20] predecessor 0x9902ec
+0x9902f4 040085e5 str r0, [r5, #4] predecessor 0x9902f0
+0x9902f8 030056e1 cmp r6, r3 predecessor 0x9902f4
+0x9902fc 6dffff3a blo #0x9900b8 predecessor 0x9902f8
+0x990300 44ffffea b #0x990018 predecessor 0x9902fc
+0x990304 0110a0e3 mov r1, #1 predecessor 0x99003c
+0x990308 b9feffeb bl #0x98fdf4 predecessor 0x990304
+0x99030c 010050e3 cmp r0, #1 predecessor 0x990308
+0x990310 00a0a0e1 mov sl, r0 predecessor 0x99030c
+0x990314 20ffff1a bne #0x98ff9c predecessor 0x990310
+0x990318 3630d4e5 ldrb r3, [r4, #0x36] predecessor 0x990314
+0x99031c 7820d4e5 ldrb r2, [r4, #0x78] predecessor 0x990318
+0x990320 0f3003e2 and r3, r3, #0xf predecessor 0x99031c
+0x990324 28508de5 str r5, [sp, #0x28] predecessor 0x990320
+0x990328 010053e3 cmp r3, #1 predecessor 0x990324
+0x99032c 1520c0e7 bfi r2, r5, #0, #1 predecessor 0x990328
+0x990330 2c50cde5 strb r5, [sp, #0x2c] predecessor 0x99032c
+0x990334 7820c4e5 strb r2, [r4, #0x78] predecessor 0x990330
+0x990338 17ffff8a bhi #0x98ff9c predecessor 0x990334
+0x99033c 0400a0e1 mov r0, r4 predecessor 0x990338
+0x990340 28108de2 add r1, sp, #0x28 predecessor 0x99033c
+0x990344 9ffcffeb bl #0x98f5c8 predecessor 0x990340
+0x990348 13ffffea b #0x98ff9c predecessor 0x990344
+ENTRY 0x9904a8 navigation bound 0x990504
+0x9904a8 3630d0e5 ldrb r3, [r0, #0x36] predecessor None
+0x9904ac 0f3003e2 and r3, r3, #0xf predecessor 0x9904a8
+0x9904b0 010053e3 cmp r3, #1 predecessor 0x9904ac
+0x9904b4 0100009a bls #0x9904c0 predecessor 0x9904b0
+0x9904b8 0200a0e3 mov r0, #2 predecessor 0x9904b4
+0x9904bc 1eff2fe1 bx lr predecessor 0x9904b8
+0x9904c0 083090e5 ldr r3, [r0, #8] predecessor 0x9904b4
+0x9904c4 000053e3 cmp r3, #0 predecessor 0x9904c0
+0x9904c8 faffff1a bne #0x9904b8 predecessor 0x9904c4
+0x9904cc 04e02de5 str lr, [sp, #-4]! predecessor 0x9904c8
+0x9904d0 14d04de2 sub sp, sp, #0x14 predecessor 0x9904cc
+0x9904d4 01c0a0e1 mov ip, r1 predecessor 0x9904d0
+0x9904d8 78e0d0e5 ldrb lr, [r0, #0x78] predecessor 0x9904d4
+0x9904dc 10108de2 add r1, sp, #0x10 predecessor 0x9904d8
+0x9904e0 0830cde5 strb r3, [sp, #8] predecessor 0x9904dc
+0x9904e4 13e0c0e7 bfi lr, r3, #0, #1 predecessor 0x9904e0
+0x9904e8 78e0c0e5 strb lr, [r0, #0x78] predecessor 0x9904e4
+0x9904ec 0cc021e5 str ip, [r1, #-0xc]! predecessor 0x9904e8
+0x9904f0 34fcffeb bl #0x98f5c8 predecessor 0x9904ec
+0x9904f4 0100a0e3 mov r0, #1 predecessor 0x9904f0
+0x9904f8 14d08de2 add sp, sp, #0x14 predecessor 0x9904f4
+0x9904fc 04f09de4 pop {pc} predecessor 0x9904f8
+ENTRY 0x990820 navigation bound 0x990a34
+0x990820 f04f2de9 push {r4, r5, r6, r7, r8, sb, sl, fp, lr} predecessor None
+0x990824 14d04de2 sub sp, sp, #0x14 predecessor 0x990820
+0x990828 604090e5 ldr r4, [r0, #0x60] predecessor 0x990824
+0x99082c 38c0dde5 ldrb ip, [sp, #0x38] predecessor 0x990828
+0x990830 5c3090e5 ldr r3, [r0, #0x5c] predecessor 0x99082c
+0x990834 04c08de5 str ip, [sp, #4] predecessor 0x990830
+0x990838 84c1b0e1 lsls ip, r4, #3 predecessor 0x990834
+0x99083c 2300000a beq #0x9908d0 predecessor 0x990838
+0x990840 0280a0e1 mov r8, r2 predecessor 0x99083c
+0x990844 0170a0e1 mov r7, r1 predecessor 0x990840
+0x990848 0090a0e1 mov sb, r0 predecessor 0x990844
+0x99084c 084083e2 add r4, r3, #8 predecessor 0x990848
+0x990850 0320a0e1 mov r2, r3 predecessor 0x99084c
+0x990854 030000ea b #0x990868 predecessor 0x990850
+0x990858 0c3082e0 add r3, r2, ip predecessor 0x990998
+0x99085c 084084e2 add r4, r4, #8 predecessor 0x990858
+0x990860 030056e1 cmp r6, r3 predecessor 0x99085c
+0x990864 1900000a beq #0x9908d0 predecessor 0x990860
+0x990868 045014e5 ldr r5, [r4, #-4] predecessor 0x990854
+0x99086c 0460a0e1 mov r6, r4 predecessor 0x990868
+0x990870 0c30d5e5 ldrb r3, [r5, #0xc] predecessor 0x99086c
+0x990874 7c3003e2 and r3, r3, #0x7c predecessor 0x990870
+0x990878 040053e3 cmp r3, #4 predecessor 0x990874
+0x99087c f5ffff1a bne #0x990858 predecessor 0x990878
+0x990880 04309de5 ldr r3, [sp, #4] predecessor 0x99087c
+0x990884 000053e3 cmp r3, #0 predecessor 0x990880
+0x990888 1200000a beq #0x9908d8 predecessor 0x990884
+0x99088c 001497e9 ldmib r7, {sl, ip} predecessor 0x990888
+0x990890 0c005ae1 cmp sl, ip predecessor 0x99088c
+0x990894 1a00002a bhs #0x990904 predecessor 0x990890
+0x990898 002097e5 ldr r2, [r7] predecessor 0x990894
+0x99089c 0a3182e0 add r3, r2, sl, lsl #2 predecessor 0x990898
+0x9908a0 01108ae2 add r1, sl, #1 predecessor 0x99089c
+0x9908a4 000053e3 cmp r3, #0 predecessor 0x9908a0
+0x9908a8 041087e5 str r1, [r7, #4] predecessor 0x9908a4
+0x9908ac 603099e5 ldr r3, [sb, #0x60] predecessor 0x9908a8
+0x9908b0 0000000a beq #0x9908b8 predecessor 0x9908ac
+0x9908b4 0a5182e7 str r5, [r2, sl, lsl #2] predecessor 0x9908b0
+0x9908b8 5c2099e5 ldr r2, [sb, #0x5c] predecessor 0x9908b4
+0x9908bc 83c1a0e1 lsl ip, r3, #3 predecessor 0x9908b8
+0x9908c0 084084e2 add r4, r4, #8 predecessor 0x9908bc
+0x9908c4 0c3082e0 add r3, r2, ip predecessor 0x9908c0
+0x9908c8 030056e1 cmp r6, r3 predecessor 0x9908c4
+0x9908cc e5ffff1a bne #0x990868 predecessor 0x9908c8
+0x9908d0 14d08de2 add sp, sp, #0x14 predecessor 0x9908cc
+0x9908d4 f08fbde8 pop {r4, r5, r6, r7, r8, sb, sl, fp, pc} predecessor 0x9908d0
+0x9908d8 001498e9 ldmib r8, {sl, ip} predecessor 0x990888
+0x9908dc 0c005ae1 cmp sl, ip predecessor 0x9908d8
+0x9908e0 2d00002a bhs #0x99099c predecessor 0x9908dc
+0x9908e4 002098e5 ldr r2, [r8] predecessor 0x9908e0
+0x9908e8 0a3182e0 add r3, r2, sl, lsl #2 predecessor 0x9908e4
+0x9908ec 01108ae2 add r1, sl, #1 predecessor 0x9908e8
+0x9908f0 000053e3 cmp r3, #0 predecessor 0x9908ec
+0x9908f4 041088e5 str r1, [r8, #4] predecessor 0x9908f0
+0x9908f8 603099e5 ldr r3, [sb, #0x60] predecessor 0x9908f4
+0x9908fc ecffff1a bne #0x9908b4 predecessor 0x9908f8
+0x990900 ecffffea b #0x9908b8 predecessor 0x9908fc
+0x990904 28b19fe5 ldr fp, [pc, #0x128] predecessor 0x990894
+0x990908 01c08ce2 add ip, ip, #1 predecessor 0x990904
+0x99090c 08c08de5 str ip, [sp, #8] predecessor 0x990908
+0x990910 0c11a0e1 lsl r1, ip, #2 predecessor 0x99090c
+0x990914 0bb09fe7 ldr fp, [pc, fp] predecessor 0x990910
+0x990918 00009be5 ldr r0, [fp] predecessor 0x990914
+0x99091c b4a703eb bl #0xa7a7f4 predecessor 0x990918
+0x990920 08c09de5 ldr ip, [sp, #8] predecessor 0x99091c
+0x990924 002050e2 subs r2, r0, #0 predecessor 0x990920
+0x990928 1700000a beq #0x99098c predecessor 0x990924
+0x99092c 024097e8 ldm r7, {r1, lr} predecessor 0x990928
+0x990930 000051e3 cmp r1, #0 predecessor 0x99092c
+0x990934 0f00000a beq #0x990978 predecessor 0x990930
+0x990938 00005ee3 cmp lr, #0 predecessor 0x990934
+0x99093c 0700000a beq #0x990960 predecessor 0x990938
+0x990940 0ee182e0 add lr, r2, lr, lsl #2 predecessor 0x99093c
+0x990944 0230a0e1 mov r3, r2 predecessor 0x990940
+0x990948 030062e0 rsb r0, r2, r3 predecessor 0x990944
+0x99094c 001091e7 ldr r1, [r1, r0] predecessor 0x990948
+0x990950 041083e4 str r1, [r3], #4 predecessor 0x99094c
+0x990954 0e0053e1 cmp r3, lr predecessor 0x990950
+0x990958 001097e5 ldr r1, [r7] predecessor 0x990954
+0x99095c f9ffff1a bne #0x990948 predecessor 0x990958
+0x990960 00009be5 ldr r0, [fp] predecessor 0x99095c
+0x990964 0c208de5 str r2, [sp, #0xc] predecessor 0x990960
+0x990968 08c08de5 str ip, [sp, #8] predecessor 0x990964
+0x99096c 05a803eb bl #0xa7a988 predecessor 0x990968
+0x990970 0c209de5 ldr r2, [sp, #0xc] predecessor 0x99096c
+0x990974 08c09de5 ldr ip, [sp, #8] predecessor 0x990970
+0x990978 0c005ae1 cmp sl, ip predecessor 0x990974
+0x99097c 002087e5 str r2, [r7] predecessor 0x990978
+0x990980 08c087e5 str ip, [r7, #8] predecessor 0x99097c
+0x990984 04a09735 ldrlo sl, [r7, #4] predecessor 0x990980
+0x990988 c3ffff3a blo #0x99089c predecessor 0x990984
+0x99098c 603099e5 ldr r3, [sb, #0x60] predecessor 0x990988
+0x990990 5c2099e5 ldr r2, [sb, #0x5c] predecessor 0x99098c
+0x990994 83c1a0e1 lsl ip, r3, #3 predecessor 0x990990
+0x990998 aeffffea b #0x990858 predecessor 0x990994
+0x99099c 94b09fe5 ldr fp, [pc, #0x94] predecessor 0x9908e0
+0x9909a0 01c08ce2 add ip, ip, #1 predecessor 0x99099c
+0x9909a4 08c08de5 str ip, [sp, #8] predecessor 0x9909a0
+0x9909a8 0c11a0e1 lsl r1, ip, #2 predecessor 0x9909a4
+0x9909ac 0bb09fe7 ldr fp, [pc, fp] predecessor 0x9909a8
+0x9909b0 00009be5 ldr r0, [fp] predecessor 0x9909ac
+0x9909b4 8ea703eb bl #0xa7a7f4 predecessor 0x9909b0
+0x9909b8 08c09de5 ldr ip, [sp, #8] predecessor 0x9909b4
+0x9909bc 002050e2 subs r2, r0, #0 predecessor 0x9909b8
+0x9909c0 f1ffff0a beq #0x99098c predecessor 0x9909bc
+0x9909c4 024098e8 ldm r8, {r1, lr} predecessor 0x9909c0
+0x9909c8 000051e3 cmp r1, #0 predecessor 0x9909c4
+0x9909cc 0f00000a beq #0x990a10 predecessor 0x9909c8
+0x9909d0 00005ee3 cmp lr, #0 predecessor 0x9909cc
+0x9909d4 0700000a beq #0x9909f8 predecessor 0x9909d0
+0x9909d8 0ee182e0 add lr, r2, lr, lsl #2 predecessor 0x9909d4
+0x9909dc 0230a0e1 mov r3, r2 predecessor 0x9909d8
+0x9909e0 030062e0 rsb r0, r2, r3 predecessor 0x9909dc
+0x9909e4 001091e7 ldr r1, [r1, r0] predecessor 0x9909e0
+0x9909e8 041083e4 str r1, [r3], #4 predecessor 0x9909e4
+0x9909ec 0e0053e1 cmp r3, lr predecessor 0x9909e8
+0x9909f0 001098e5 ldr r1, [r8] predecessor 0x9909ec
+0x9909f4 f9ffff1a bne #0x9909e0 predecessor 0x9909f0
+0x9909f8 00009be5 ldr r0, [fp] predecessor 0x9909f4
+0x9909fc 0c208de5 str r2, [sp, #0xc] predecessor 0x9909f8
+0x990a00 08c08de5 str ip, [sp, #8] predecessor 0x9909fc
+0x990a04 dfa703eb bl #0xa7a988 predecessor 0x990a00
+0x990a08 0c209de5 ldr r2, [sp, #0xc] predecessor 0x990a04
+0x990a0c 08c09de5 ldr ip, [sp, #8] predecessor 0x990a08
+0x990a10 0c005ae1 cmp sl, ip predecessor 0x990a0c
+0x990a14 002088e5 str r2, [r8] predecessor 0x990a10
+0x990a18 08c088e5 str ip, [r8, #8] predecessor 0x990a14
+0x990a1c 04a09835 ldrlo sl, [r8, #4] predecessor 0x990a18
+0x990a20 b0ffff3a blo #0x9908e8 predecessor 0x990a1c
+0x990a24 603099e5 ldr r3, [sb, #0x60] predecessor 0x990a20
+0x990a28 5c2099e5 ldr r2, [sb, #0x5c] predecessor 0x990a24
+0x990a2c 83c1a0e1 lsl ip, r3, #3 predecessor 0x990a28
+0x990a30 88ffffea b #0x990858 predecessor 0x990a2c

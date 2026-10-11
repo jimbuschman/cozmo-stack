@@ -1,0 +1,55 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00514E1A..0x00514E46 exclusive; Thumb;
+00514E1A: vneg.f32     s2, s0
+00514E1E: add          r6, sp, #0x10
+00514E20: add          r0, sp, #8
+00514E22: add          r1, sp, #0x44
+00514E24: add          r2, sp, #0x3c
+00514E26: add          r3, sp, #0x34
+00514E28: str          r0, [sp]
+00514E2A: mov          r0, r6
+00514E2C: vstr         s0, [sp, #0x44]
+00514E30: vstr         s0, [sp, #0x40]
+00514E34: vstr         s0, [sp, #0xc]
+00514E38: vstr         s2, [sp, #0x38]
+00514E3C: vstr         s2, [sp, #0x48]
+00514E40: vstr         s0, [sp, #0x3c]
+RANGE 0x00652A9E..0x00652AD0 exclusive; Thumb;
+00652A9E: sub.w        r2, r1, #8
+00652AA2: mvn          r3, #7
+00652AA6: subs         r2, r2, r0
+00652AA8: bic.w        r2, r3, r2
+00652AAC: add          r1, r2
+00652AAE: str          r1, [sp, #8]
+00652AB0: blx          #0x4a40cc
+00652AB4: mov          r0, r4
+00652AB6: blx          #0x4a40a8
+00652ABA: nop
+00652ABC: asrs         r6, r6, #0x12
+00652ABE: lsls         r1, r3, #1
+00652AC0: ldr          r6, [r2, #0x14]
+00652AC2: ldr          r3, [r6, #0x14]
+00652AC4: ldr          r7, [r5, #0x64]
+00652AC6: ldr          r3, [r0, #0x74]
+00652AC8: strb         r5, [r5, #1]
+00652ACA: ldr          r7, [r5, #0x64]
+00652ACC: ldr          r5, [r4, #0x64]
+00652ACE: cmp          r6, #0x74
+RANGE 0x00885C34..0x00885C56 exclusive; Thumb;
+00885C34: mov          r0, r4
+00885C36: blx          #0x4d067c
+00885C3A: ldr          r1, [r4, #0x18]
+00885C3C: cmp          r1, #1
+00885C3E: blt          #0x885c50
+00885C40: ldr          r2, [r4, #0x1c]
+00885C42: movs         r0, #0
+00885C44: cmp          r2, #1
+00885C46: blt          #0x885c52
+00885C48: muls         r1, r2, r1
+00885C4A: cbz          r1, #0x885c52
+00885C4C: ldr          r0, [r4, #0x28]
+00885C4E: b            #0x885c52
+00885C50: movs         r0, #0
+00885C52: str          r0, [r4, #0x30]
+00885C54: add          r0, sp, #0x3c

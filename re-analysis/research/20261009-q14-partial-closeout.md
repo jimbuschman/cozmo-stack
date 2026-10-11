@@ -550,3 +550,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint797 - combined arithmetic and memory-width tracking
 
 `20261010-sound-rate-frame-combined-memory-disposition.md` composes791/785 arithmetic and784 scalar spans, corrects1/2/4-byte signed/unsigned literal/GOT propagation with four primary opcode witnesses, and retires unsupported wide-load guesses.6855 windows/300 events/434 caps; no extra/missing key versus either baseline.043/092/099/120/124/130 PARTIAL;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint798 - conditional descriptor receiver interior inputs
+
+`20261010-sound-descriptor-receiver-interior-disposition.md` attributes all30 immediate encodings into9903F0's body:three actual Thumb instructions and27 upper-halfword ARM encodings with local source entry/edge witnesses. No actual receiver or shared-context4C/50 ID/descriptor consumer supplied;024 PARTIAL, no indirect absence inference.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
