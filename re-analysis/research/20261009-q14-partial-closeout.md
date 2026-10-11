@@ -754,3 +754,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint848 — observer input pointer-model correction
 
 `20261011-sound-observer-formed-pointer-disposition.md` corrects666's executable-only data mappings/narrow GOT/no Thumb MOVW/DFS for original9A03DC/9A040C inputs. Unchanged812 model:14878 windows/803 explicit caps/zero events; separate direct-PC forms also yield zero candidates. OP666 canary-GOT use and781's18 interior candidates remain paid. OR613/MC667/787 actual propagation/construction/address contracts retained; no new callback family.028/029 PARTIAL for actual caller/key/callback/rawthirdword and callback body or supported-input exclusion proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint849 — command1F producer pointer input
+
+`20261011-sound-queue-command31-formed-pointer-disposition.md` checks original9A60B8 in unchanged812 model:14885 windows/805 explicit caps/zero events. Both extra Thumb MOVW60B8 cap seeds immediately form BA7B60B8 with MOVTBA7B and store stack data; no target pointer is supplied. Separate direct-PC forms yield zero candidates.843 conditional stop payload/root join and845 interior dispositions retained; actual nonzero caller/three input values and original unrestricted writer/alias proofs remain open,104/131 PARTIAL.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

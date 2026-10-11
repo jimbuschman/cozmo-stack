@@ -1,0 +1,35 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x006F2616..0x006F2646 exclusive; Thumb;
+006F2616: movw         r0, #0x60b8
+006F261A: movt         r0, #0xba7b
+006F261E: movs         r7, #0
+006F2620: add          r1, pc
+006F2622: str          r0, [sp, #0x3c]
+006F2624: str          r7, [sp, #0x48]
+006F2626: strd         r7, r7, [sp, #0x40]
+006F262A: add.w        r0, r6, #0x40
+006F262E: movs         r2, #5
+006F2630: bl           #0x4e02b2
+006F2634: ldr          r1, [pc, #0x194] ; word[006F27CC]=0051CB85
+006F2636: movw         r0, #0x36d6
+006F263A: movt         r0, #0xedf0
+006F263E: strd         r7, r7, [sp, #0x54]
+006F2642: add          r1, pc
+RANGE 0x006FD0DC..0x006FD110 exclusive; Thumb;
+006FD0DC: movw         r0, #0x60b8
+006FD0E0: movt         r0, #0xba7b
+006FD0E4: movs         r5, #0
+006FD0E6: add          r1, pc
+006FD0E8: str          r0, [sp, #0x15c]
+006FD0EA: str          r5, [sp, #0x168]
+006FD0EC: strd         r5, r5, [sp, #0x160]
+006FD0F0: add.w        r0, r4, #0x160
+006FD0F4: movs         r2, #0xc
+006FD0F6: bl           #0x4e02b2
+006FD0FA: ldr          r1, [pc, #0x250] ; word[006FD34C]=00513396
+006FD0FC: movw         r0, #0xde47
+006FD100: movt         r0, #0xddeb
+006FD104: strd         r5, r5, [sp, #0x174]
+006FD108: add          r1, pc
+006FD10A: strd         r0, r5, [sp, #0x16c]
