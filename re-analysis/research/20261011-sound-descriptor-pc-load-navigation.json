@@ -1,0 +1,6 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "direct_slot_pc_loads": [],
+  "zero_displacement_pc_loads": [],
+  "boundary": "Aligned ARM97D000..ABC000 LDR-PC immediate unindexed4C/50 and zero-displacement forms only; raw candidates can be mixed words. Direct PC transfer was a stop in842/861. No actual receiver, preceding composed ADD, branch alternatives, Thumb or all-input exclusion proof."
+}

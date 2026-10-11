@@ -11931,3 +11931,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint867 — original descriptor getter direct inputs
 
 `20261011-sound-descriptor-direct-getter-disposition.md` checks the four original getters/thunks, distinct from paid provider/slot searches: three branch and three aligned pointer candidates, all attributed by primary instructions. Two existing ID-forwarding tails/two existing table slots; false Thumb upper-halfword9A6846 and relative table displacement5EE7CC (actual102A2F0), no fresh getter input. No new recipient family or all-indirect absence claim; stop these six candidates.024 PARTIAL for actual ID/field decision consumer or supported-input exclusion.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint868 — selected-slot direct PC-load boundary
+
+`20261011-sound-descriptor-pc-load-disposition.md` checks the LDR-PC transfer form previously stopped by842/861, without repeating297/385 seed windows: aligned ARM97D000..ABC000 contains zero unindexed immediate4C/50 or zero-displacement LDR-PC candidates. No new body or all-input exclusion;024 PARTIAL. Bank-key decrementing bulk-overlap is already covered by812/865;866 adjacent-global seeds join paid NB16/DF42/BU370A rather than a new family, with later aliases still unproved.109/134 PARTIAL. Stop these paid forms.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
