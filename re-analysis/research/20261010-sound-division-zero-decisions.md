@@ -17,3 +17,5 @@ DZ659B: the engine's primary imported signed/unsigned division and quotient/rema
 DZ659C: Q14-099/130 remain PARTIAL: establish the actual admitted zero-divisor input and engine/zero-handler binding, then retain the selected provider's positive path and external raise input. Shipped definitions alone do not establish load/interposition order. Q14-092/124 retain their explicit unrestricted writer/alias proof; the query-to-renderer transfer is already paid by QT560, and the21 concrete call-pointer candidates by RC654. Those stale transfer placeholders are removed from the current close-out table. This is research evidence, not a fidelity status or production implementation.
 
 out of scope: phone raise implementation, unrelated storage/I-O, per-sample DSP and census-excluded payloads. No production, manifest, inventory, hardware or Q15 edits. Counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+DL754 follow-up: `20261010-sound-division-load-boundary.md` supplies engine eager-binding flags, finite shipped dependency membership and exact activity/Java load orders. Selected symbol winner and external signal outcome remain UNKNOWN.

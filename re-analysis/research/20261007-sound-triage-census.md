@@ -3018,3 +3018,8 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint753 — remaining queue input stop dispositions
 
 `20261010-sound-remaining-queue-entry-input-dispositions.md` confirms actual9ADC30/9AFE08 ARM entries and retains exact conditional contracts; immediate/raw-word/symbol-relocation navigation supplies no positive input. Both stay UNKNOWN, without a computed-call absence or unreachable claim. Stop these leads and return to another original obligation.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint754 — division provider dependency/load boundary
+
+`20261010-sound-division-load-boundary.md` adds22-member shipped engine DT_NEEDED closure, eager-binding flags, actual activity DAS-before-engine clinit and separate DAS/TTS class orders. Only DAS/acatts provide selected division names in that shipped closure; process interposition/zero-handler/raise and actual zero input remain UNKNOWN. No inferred symbol winner or phone linker descent.099/130 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
