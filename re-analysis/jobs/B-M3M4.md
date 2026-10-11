@@ -538,4 +538,24 @@ M8-015/M13-029 status unchanged with a note; M3-034 retired into M15-034/035/036
 - An M1 note: connect-time RequestCrashReports{0} is gated on `[r4+0x28] >= 4` (0x0053D3C6..0x0053D3DC), not on the SetAppRunID result. The stack returns early when that send fails.
 - Each engine logs every process-wide MISSING report.
 
-**Next:** Codex job `jobs/B-M3M4-2.md` (M3-045, M4-033, M4-010 tests), then the final Opus pass and the robot run.
+**B-M3M4-2 (Codex, 726c3b33):** Opus check PASS, no blocking findings. Queued: the PxM space-set comment should name the
+phone's `_ctype_` import (GOT 0x174934, unshipped libc) instead of "shipped"; M3-045's unresolved attributes the WebP
+withdrawal to the operator, but it was a manager ruling (Part C.5).
+
+## Final settling pass (Opus, 2026-10-11, HEAD 8f035387): FAIL, applied
+
+- **Settled EXACT_SOURCE (19):** M3-001, M3-010, M3-013, M3-018, M3-022, M3-023, M3-025, M3-026, M3-031, M3-033, M3-038,
+  M4-001, M4-002, M4-003, M4-016, M4-020, M4-026, M4-028 (lower-layer part), M4-031, M4-033. The evidence the pass added
+  (O8 closed; the ~NVStorageComponent reading; the M4-002 variability sweep; the M4-016 clip) is now in those records.
+- **Reopened:** M3-012 (UpdateAmountToSend's logs).
+- **Kept IMPLEMENTATION_GAP:** M3-021, M3-024, M3-028, M3-032, M3-034, M3-043, M3-045, M3-047, M4-008, M4-009, M4-010,
+  M4-017, M4-018, M4-019, M4-027. Each record's `unresolved` now starts with the defect. Most are log keys and texts that
+  differ from the binary (M3-012, M3-021, M4-009, M4-017, M4-018); the manager re-read the M3-021 strings and Camera.cs.
+- **New:** M3-048 (the DAS $data emission), M3-049 (the Json::LogicError catcher), M3-050 (HARDWARE_ONLY: the robot's
+  use of encodings 5/6/7, split from M3-045), M4-035 (BlockFilter::SendBlockPoolData).
+- **Robot script gaps:** M3-050 must be observed (record every frame's encoding); CUBE_TELEM's auto-pool path is
+  M4-010's; the HARDWARE_ONLY `test` fields should name M3M4HwTests.
+- M3/M4 source_investigation_exhausted is false again. Both inventories are re-approved.
+
+**Next:** Opus extraction of the fix rows (all log rows, M3-048, M3-049, M4-035, M3-028 reachability, M3-043 callers),
+then one Codex fix job (B-M3M4-3), an Opus check, and the robot run.

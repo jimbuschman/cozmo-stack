@@ -57,7 +57,7 @@ stands. Nothing new starts outside the current layer.
 - The JPEG decode is a port checked against an emulator oracle.
 
 **Left for M3+M4 ACCEPTED:**
-- the final Opus pass that settles the IMPLEMENTATION_GAP records;
+- the final Opus pass ran 2026-10-11: 19 settled, M3-012 reopened, 15 kept open on concrete defects (mostly log texts), 4 new records (see `jobs/B-M3M4.md`, "Final settling pass"); fix rows are being extracted for a Codex job B-M3M4-3;
 - the verification packets;
 - the operator's robot run for the HARDWARE_ONLY records.
 

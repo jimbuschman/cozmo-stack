@@ -1,11 +1,11 @@
 {
   "subsystem": "M3-device",
-  "approved": "2026-10-10",
+  "approved": "2026-10-11",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "1789b8cd64266bf5ac4ae53c15075760b16e0b79b46f13e04bd45dbf6fa47fa6",
+  "inventory_sha256": "ff7b82a1f172a926f819b3fd66a3fb2e200690ee0446936dff4f8184bf54bee1",
   "records": {
     "M3-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Camera frame reconstruction and gray decode: mini-JPEG headers, BE size fields, the DecodeImageHelper<Image> dispatch, the libjpeg 9 / OpenCV 3.1 imdecode port, the 240x320 check, DecodeImageHelper's logs",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -13,7 +13,8 @@
         "A12 MiniToJpegHelper writes height BE at 0x5E/0x5F and width BE at 0x60/0x61 (0x004F31C4..0x004F32CC)",
         "A8 gray dispatch tbh 0x004F2898; A11 rows==240, cols==320 else BadDecode (0x004F2CDA..0x004F2D34); ts = EncodedImage+0xC",
         "JPEG port rows: re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md and re-analysis/jobs/B-M3M4.md \"JPEG unblocked\" (J/L/D/O rows)",
-        "Handoffs: a cv::Exception leaves DecodeImageHelper at the imdecode call 0x004F28C6, whose landing pad 0x004F2EA0 only cleans up and ends in _Unwind_Resume: M11-058; the decoded Image, with the J38 +0x3C timestamp copy, goes to VisionSystem::Update(PoseData, ImageCache) 0x006B4C78: M11-033"
+        "Handoffs: a cv::Exception leaves DecodeImageHelper at the imdecode call 0x004F28C6, whose landing pad 0x004F2EA0 only cleans up and ends in _Unwind_Resume: M11-058; the decoded Image, with the J38 +0x3C timestamp copy, goes to VisionSystem::Update(PoseData, ImageCache) 0x006B4C78: M11-033",
+        "O8 closed (Opus final settling pass (2026-10-11, HEAD 8f035387; jobs/B-M3M4.md \"Final settling pass\")): libopencv_java3.so imports cv::redirectError only as JUMP_SLOT 0x7A9E4 with no BL/BLX to its stub 0x231A0; libopencv_calib3d.so calls it only inside cv::findCirclesGrid (0xBEF2/0xBF08, scoped set/restore), which the engine does not import (only calibrateCamera and solvePnP)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -108,7 +109,7 @@
       "hardware_required": false
     },
     "M3-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "encodeMuLaw(float) exactly: the per-sample encoder (PopRobotAudioMessage's loop, zero pad and AudioSample build are M6-016's)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -131,7 +132,7 @@
       "hardware_required": false
     },
     "M3-012": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The engine send budgets: 14 unplayed audio frames; min(8192 - unplayed bytes, 30000); counters from AnimationState and every send",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -144,7 +145,7 @@
       "hardware_required": false
     },
     "M3-013": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "SendBufferedMessages: FIFO drain under the byte and audio-frame budgets, and the stream counters",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -201,14 +202,15 @@
       "hardware_required": false
     },
     "M3-018": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Colour decode and IsColor: the DecodeImageHelper<ImageRGB> dispatch, imdecode(1), cvtColor 4, the half-width resize, IsColor, the RGB logs",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "A9 RGB dispatch tbh 0x004F21AE, case 9 MiniToJpegHelper(h, w/2, 0x00C48D84), imdecode(1), cvtColor(4) (0x004F237E..0x004F2440)",
         "A10 Resize -> cv::resize(..., m) with m = 1 = INTER_LINEAR (0x00870486..0x008704D6)",
         "A7 IsColor tbb 0x004F2110 (0x004F2102..0x004F211E)",
-        "Handoffs: a cv::Exception from imdecode: M11-058 (as M3-001); the caller VisionSystem::Update 0x006B4B68 (IsColor 0x006B4B7C, DecodeImageRGB 0x006B4B90): M11-033. A25 (EncodedImage::Save, unreachable) moved to M3-046"
+        "Handoffs: a cv::Exception from imdecode: M11-058 (as M3-001); the caller VisionSystem::Update 0x006B4B68 (IsColor 0x006B4B7C, DecodeImageRGB 0x006B4B90): M11-033. A25 (EncodedImage::Save, unreachable) moved to M3-046",
+        "O8 closed (Opus final settling pass (2026-10-11, HEAD 8f035387; jobs/B-M3M4.md \"Final settling pass\")): see M3-001; no redirectError installer is reachable from the engine."
       ],
       "live_path": true,
       "hardware_required": false
@@ -251,7 +253,7 @@
       "hardware_required": false
     },
     "M3-022": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The connection-time CameraCalib read and its callback: the Failed/SizeMismatch/Recvd logs, the distortion zeroing for body hardware <= 6, the +0x48 store",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -264,7 +266,7 @@
       "hardware_required": false
     },
     "M3-023": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "EnableColorImages is never sent at connection; it stores and sends the flag; only BehaviorTrackLaser reads it",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -288,7 +290,7 @@
       "hardware_required": false
     },
     "M3-025": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV entry-tag validity and the size tables: a valid non-factory tag is a _maxSizeTable key; factory tags take their table value",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -300,7 +302,7 @@
       "hardware_required": false
     },
     "M3-026": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV Read(): tag validation, the invalid-tag callback (-6), and the FIFO queue with one request in flight",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -357,7 +359,7 @@
       "hardware_required": false
     },
     "M3-031": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV read retry (7 resends / 8 transmissions, identical resend) and the 5 s timeout (-4, no retry)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -380,7 +382,7 @@
       "hardware_required": false
     },
     "M3-033": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The connection-time NV read order and ready-to-stream after the queue drains",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -436,13 +438,14 @@
       "hardware_required": false
     },
     "M3-038": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "~NVStorageComponent and the drop of queued/active callbacks without invocation",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0050FD8C..0x0050FD90; 0x005112D6..0x005112E4; Virtual NV deletion, pending requests and callbacks. Constructor/store identity is checked; descendant destructor effects UNKNOWN.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
-        "Handoff: the RobotDataBackupManager destruction reached at 0x00643F48 (per the record, not re-read): M15-033 (destructor 0x0051A5F0); the captured objects' own destructors belong to their producers"
+        "Handoff: the RobotDataBackupManager destruction reached at 0x00643F48 (per the record, not re-read): M15-033 (destructor 0x0051A5F0); the captured objects' own destructors belong to their producers",
+        "~NVStorageComponent 0x00643EC4..0x00643F8C (Opus final settling pass (2026-10-11, HEAD 8f035387; jobs/B-M3M4.md \"Final settling pass\")): releases handles, destroys the deques, +0xE8 and the hash table, calls the RobotDataBackupManager dtor 0x00643F48 (M15-033) and destroys the +0x28 function without invoking it; no send, log or callback."
       ],
       "live_path": true,
       "hardware_required": false
@@ -546,6 +549,36 @@
       ],
       "live_path": true,
       "hardware_required": false
+    },
+    "M3-048": {
+      "status": "RECOVERABLE_GAP",
+      "title": "DAS event emission: the $data pairs of sEventF/sWarningF on M3/M4 paths and where they go",
+      "authority": "libcozmoEngine.so 3.4.0-1204 DAS logging (sEventF/sWarningF).",
+      "evidence": [
+        "Robot::SendMessage sWarningF $data pair key 0x00513550 (M3-047); robot.accessory_powerlevel sEventF 0x005372B2..0x00537324 (M4-008); HandleRobotStopped sEventF $data = to_string(cliff+0x3C) 0x005353A4..0x005353F6 (M4-019)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-049": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Json::LogicError catcher on M3-024's path",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "Catcher range 0x008EADC2..0x008EAE64 (M3-024 unresolved); CozmoEngine.cs:882 MISSING line."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-050": {
+      "status": "HARDWARE_ONLY",
+      "title": "Whether the robot ever sends an ImageChunk in encodings 5/6/7",
+      "authority": "Robot firmware (not readable); libcozmoEngine.so DecodeImageHelper dispatch.",
+      "evidence": [
+        "Encodings 5/6/7 reach imdecode from DecodeImageHelper (gray tbh 0x004F2898, RGB tbh 0x004F21AE); the encoding byte comes only from the robot's ImageChunk; ImageRequest cannot ask for 5/6/7 (research/20261010-m3045-m4033-rows.md A.3)."
+      ],
+      "live_path": true,
+      "hardware_required": true
     }
   }
 }

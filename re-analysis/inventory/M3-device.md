@@ -443,3 +443,13 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | M3-047 | IMPLEMENTATION_GAP: Robot::SendMessage failure warning on every engine-to-robot send (0x0051349C; 73 call sites via PLT 0x004A5368). | Opus check, 2026-10-10. |
 
 M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m4033-rows.md Part C): the signature window is always 32 bytes padded with 0x20, not min(32,size); decoder 4 is WebP by RTTI; the WebP probe 0x375A6 rules added. Status unchanged (IMPLEMENTATION_GAP).
+
+
+## Final settling pass (manager, 2026-10-11; Opus pass at HEAD 8f035387)
+
+| Change | Records |
+| --- | --- |
+| Settled EXACT_SOURCE | M3-001, M3-010, M3-013, M3-018, M3-022, M3-023, M3-025, M3-026, M3-031, M3-033, M3-038 (M3-001/018/038 with added evidence). |
+| Reopened | M3-012 (UpdateAmountToSend logs). |
+| Kept IMPLEMENTATION_GAP | M3-021, M3-024, M3-028, M3-032, M3-034, M3-043, M3-045, M3-047 (defects in each record's unresolved). |
+| New | M3-048 DAS $data emission (RECOVERABLE_GAP), M3-049 Json::LogicError catcher (RECOVERABLE_GAP), M3-050 robot use of encodings 5/6/7 (HARDWARE_ONLY, split from M3-045). |

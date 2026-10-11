@@ -653,3 +653,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M4-034 | NEW: the app's head/lift defaults 10/20/0 as the C# API's defaults (manager ruling on MA11; app-boundary input). | COMPATIBILITY_POLICY |
 
 M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-10; rows research/20261010-m3045-m4033-rows.md). M3-045 ports the imdecode signature dispatch; non-JPEG matches are a visible MISSING. M4-033 builds the store; its logging branch is unreachable.
+
+
+## Final settling pass (manager, 2026-10-11; Opus pass at HEAD 8f035387)
+
+| Change | Records |
+| --- | --- |
+| Settled EXACT_SOURCE | M4-001, M4-002, M4-003, M4-016, M4-020, M4-026, M4-028 (lower-layer part), M4-031, M4-033 (M4-002/016 with added evidence). |
+| Kept IMPLEMENTATION_GAP | M4-008, M4-009, M4-010, M4-017, M4-018, M4-019, M4-027 (defects in each record's unresolved). |
+| New | M4-035 BlockFilter::SendBlockPoolData (RECOVERABLE_GAP). |
