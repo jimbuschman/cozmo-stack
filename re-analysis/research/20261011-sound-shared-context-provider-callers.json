@@ -1,0 +1,94 @@
+{
+  "raw_aligned_pointer_navigation": [
+    {
+      "address": "0x103b4a0",
+      "target": "0x9ec634",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103c35c",
+      "target": "0xa51710",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103c4d4",
+      "target": "0xa51710",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103d540",
+      "target": "0xa6c2c0",
+      "section": ".data.rel.ro"
+    },
+    {
+      "address": "0x103d4f8",
+      "target": "0xa6c2c4",
+      "section": ".data.rel.ro"
+    }
+  ],
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0x99f148",
+    "0xa7900c",
+    "0xa79010"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x9cbc00",
+      "target": "#0x99f148",
+      "mode": "ARM",
+      "instruction": "bl #0x99f148",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ec634",
+      "target": "#0x99f148",
+      "mode": "ARM",
+      "instruction": "b #0x99f148",
+      "section": ".text"
+    },
+    {
+      "address": "0xa51710",
+      "target": "#0x99f148",
+      "mode": "ARM",
+      "instruction": "b #0x99f148",
+      "section": ".text"
+    },
+    {
+      "address": "0xa6c2c0",
+      "target": "#0x99f148",
+      "mode": "ARM",
+      "instruction": "b #0x99f148",
+      "section": ".text"
+    },
+    {
+      "address": "0xa6c2c4",
+      "target": "#0x99f148",
+      "mode": "ARM",
+      "instruction": "b #0x99f148",
+      "section": ".text"
+    },
+    {
+      "address": "0xa7900c",
+      "target": "#0x99f148",
+      "mode": "ARM",
+      "instruction": "b #0x99f148",
+      "section": ".text"
+    },
+    {
+      "address": "0xa79014",
+      "target": "#0xa7900c",
+      "mode": "ARM",
+      "instruction": "b #0xa7900c",
+      "section": ".text"
+    },
+    {
+      "address": "0xa790ca",
+      "target": "#0xa7900c",
+      "mode": "Thumb",
+      "instruction": "b #0xa7900c",
+      "section": ".text"
+    }
+  ]
+}

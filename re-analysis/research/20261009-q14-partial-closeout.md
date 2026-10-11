@@ -722,3 +722,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint840 — original MIDI scheduling scope reconciled
 
 `20261011-sound-midi-clock-scope-recheck.md` reopens043 original reader/tempo/clock andconcrete input/recipient contracts.043 CHECKED foritsbounded original scheduling obligation;separate duration/per-event live-rate reloads remainexact inputs,not default/immutability assumptions.092/099/120/124/130 keepall explicit writer/alias/zero-input gaps PARTIAL. Current117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. CurrentM9-005 IMPLEMENTATION_GAP unchanged;no production/fidelity/hardware/Q15 acceptance. Continue original genuinely open inputs.
+
+### Checkpoint841 — shared-context provider interfaces attributed
+
+`20261011-sound-shared-context-provider-disposition.md` binds PR4’s actual callback gate and four return-only provider entries to device, line and selected wrapper-context tables. Both native Hijack/WavePortal registration constructors explicitly zero callback20/cookie24; this pays those records only, not other callback/input absence. Seven real branch encodings and one false mixed-mode candidate are individually disposed.024 remains PARTIAL for actual4C/50 descriptor ID/input and trailing-field consumer; do not repeat these paid provider interfaces.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
