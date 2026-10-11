@@ -1,0 +1,15 @@
+0x00993EA0: vmov.i32 q8, #0
+0x00993EA4: add      ip, r0, #0xc
+0x00993EA8: mov      r2, #0
+0x00993EAC: str      r1, [r0]
+0x00993EB0: str      r2, [r0, #8]
+0x00993EB4: vst1.32  {d16, d17}, [ip]
+0x00993EB8: ldrb     r1, [r0, #0x2c]
+0x00993EBC: strb     r2, [r0, #0x1c]
+0x00993EC0: orr      r1, r1, #1
+0x00993EC4: str      r2, [r0, #0x20]
+0x00993EC8: str      r2, [r0, #0x24]
+0x00993ECC: str      r2, [r0, #0x28]
+0x00993ED0: strh     r2, [r0, #0x2e]
+0x00993ED4: strb     r1, [r0, #0x2c]
+0x00993ED8: bx       lr

@@ -1,0 +1,72 @@
+0x00989500: push     {r4, r5, r6, r7, r8, lr}
+0x00989504: sub      sp, sp, #8
+0x00989508: mov      r3, #0
+0x0098950C: mov      r4, r0
+0x00989510: str      r1, [sp, #4]
+0x00989514: add      r1, sp, #4
+0x00989518: str      r2, [sp]
+0x0098951C: mov      r2, sp
+0x00989520: bl       #0x97f424   ; ->0x0097F424
+0x00989524: cmp      r0, #1
+0x00989528: beq      #0x989534
+0x0098952C: add      sp, sp, #8
+0x00989530: pop      {r4, r5, r6, r7, r8, pc}
+0x00989534: ldr      r3, [sp, #4]
+0x00989538: ldr      r5, [r3], #4
+0x0098953C: cmp      r5, #0
+0x00989540: str      r3, [sp, #4]
+0x00989544: beq      #0x98952c
+0x00989548: ldr      r6, [pc, #0xd0]   ; [pc->0x00989620] = 0x006B6AEC
+0x0098954C: lsl      r8, r5, #5
+0x00989550: mov      r1, r8
+0x00989554: ldr      r6, [pc, r6]   ; [pc->0x0098955C] = 0xEB03C4A4
+0x00989558: ldr      r0, [r6]
+0x0098955C: bl       #0xa7a7f4   ; ->0x00A7A7F4
+0x00989560: subs     r7, r0, #0
+0x00989564: moveq    r0, #2
+0x00989568: beq      #0x98952c
+0x0098956C: ldr      ip, [sp, #4]
+0x00989570: add      r0, r7, r8
+0x00989574: mov      r3, r7
+0x00989578: mov      r2, ip
+0x0098957C: ldr      lr, [r2]
+0x00989580: add      r3, r3, #0x20
+0x00989584: ldrsh    r1, [r2, #0x10]
+0x00989588: add      r2, r2, #0x1e
+0x0098958C: str      lr, [r3, #-0x20]
+0x00989590: ldr      lr, [r2, #-0x1a]
+0x00989594: str      lr, [r3, #-0x1c]
+0x00989598: ldr      lr, [r2, #-0x16]
+0x0098959C: str      lr, [r3, #-0x18]
+0x009895A0: ldr      r8, [r2, #-0x12]
+0x009895A4: strh     r1, [r3, #-0x10]
+0x009895A8: ldrsh    r1, [r2, #-0xc]
+0x009895AC: ldr      lr, [r2, #-8]
+0x009895B0: str      r8, [r3, #-0x14]
+0x009895B4: strh     r1, [r3, #-0xe]
+0x009895B8: ldrsh    r1, [r2, #-0xa]
+0x009895BC: str      lr, [r3, #-8]
+0x009895C0: strh     r1, [r3, #-0xc]
+0x009895C4: ldrh     r1, [r2, #-4]
+0x009895C8: strh     r1, [r3, #-4]
+0x009895CC: ldrb     r1, [r2, #-2]
+0x009895D0: adds     r1, r1, #0
+0x009895D4: movne    r1, #1
+0x009895D8: strb     r1, [r3, #-2]
+0x009895DC: ldrb     r1, [r2, #-1]
+0x009895E0: adds     r1, r1, #0
+0x009895E4: movne    r1, #1
+0x009895E8: strb     r1, [r3, #-1]
+0x009895EC: cmp      r3, r0
+0x009895F0: bne      #0x98957c
+0x009895F4: rsb      r5, r5, r5, lsl #4
+0x009895F8: mov      r1, r7
+0x009895FC: mov      r0, r4
+0x00989600: add      ip, ip, r5, lsl #1
+0x00989604: str      ip, [sp, #4]
+0x00989608: bl       #0x989400   ; ->0x00989400
+0x0098960C: ldr      r0, [r6]
+0x00989610: mov      r1, r7
+0x00989614: bl       #0xa7a988   ; ->0x00A7A988
+0x00989618: mov      r0, #1
+0x0098961C: b        #0x98952c   ; ->0x0098952C

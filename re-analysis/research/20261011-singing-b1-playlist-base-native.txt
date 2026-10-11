@@ -1,0 +1,17 @@
+0x0097F1F4: push     {r4, lr}
+0x0097F1F8: mov      r4, r0
+0x0097F1FC: bl       #0x987174   ; ->0x00987174
+0x0097F200: ldr      r3, [pc, #0x28]   ; [pc->0x0097F230] = 0x006BA4A8
+0x0097F204: mov      r2, #0
+0x0097F208: mov      r0, r4
+0x0097F20C: str      r2, [r4, #0x84]
+0x0097F210: add      r3, pc, r3
+0x0097F214: str      r2, [r4, #0x88]
+0x0097F218: add      r1, r3, #8
+0x0097F21C: str      r2, [r4, #0x8c]
+0x0097F220: add      r3, r3, #0x164
+0x0097F224: str      r1, [r4]
+0x0097F228: str      r3, [r4, #0x10]
+0x0097F22C: pop      {r4, pc}
+0x009886F0: mov      r0, #8
+0x009886F4: bx       lr
