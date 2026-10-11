@@ -11747,3 +11747,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint821 - original mode4 own control-registration gates
 
 `20261011-sound-mode4-control-bindings-disposition.md` joins exactly725225627/196431345 payload hashes and successful native reader order to zero own state-group/RTPC counts. Native9F7180/9F7250 skip their registration loops; prior-reader callbacks, inherited/later bindings and direct-node admission remain explicit. This is not runtime unreachability. Q14-009/034 remain PARTIAL/AUDIBLE;116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only. Next bounded lead: actual second-parent62050212 registration/recipient path.
+
+### Checkpoint822 - actual mode4 parent has one authored RTPC binding
+
+`20261011-sound-mode4-parent-rtpc-disposition.md` binds parent62050212 full payload and298-child vector to oneD2687048/property0 curve input,state-group count0,and concrete post-registration callback980EE8 BX LR. Serialized source type0 remains distinct from core subscriber type2. This positive parent input prevents treating821 own-zero counts as inherited-control absence;actual live input/recipient/admission remain open. Q14-009/034 stay PARTIAL/AUDIBLE;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

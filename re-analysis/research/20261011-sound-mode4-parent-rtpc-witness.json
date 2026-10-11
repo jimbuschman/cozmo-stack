@@ -1,0 +1,46 @@
+{
+  "id": 62050212,
+  "bank": "English(US)/Cozmo.bnk",
+  "payloadOffset": 6155722,
+  "payloadSha256": "f10a810bddd568446b68a24ffd9f1ac374b04ecc1d09a7b92e0ca1a92e9d3aa1",
+  "commonPrefixHex": "a4cfb203000100003bc0dd890100008a9cba660000000000020003000000c00000704100c302040101000000000000000100487068d20001009a36220602020000000000000080bf010000000000803f0000000004000000",
+  "fxID": 2313011259,
+  "firstParentBusID": 1723505802,
+  "secondParentID": 0,
+  "properties": [
+    {
+      "id": 0,
+      "raw": "C0000000"
+    },
+    {
+      "id": 3,
+      "raw": "41700000"
+    }
+  ],
+  "stateGroupCount": 0,
+  "rtpcCount": 1,
+  "rtpc": {
+    "sourceID": 3530059848,
+    "sourceHex": "D2687048",
+    "type": 0,
+    "accumulation": 1,
+    "propertyID": 0,
+    "curveID": 102905498,
+    "scaling": 2,
+    "pointWords": [
+      [
+        "00000000",
+        "BF800000",
+        "00000001"
+      ],
+      [
+        "3F800000",
+        "00000000",
+        "00000004"
+      ]
+    ]
+  },
+  "childCount": 298,
+  "outerMode4ChildIndex": 191,
+  "boundary": "Positive authored parent binding only; no assertion of actual RTPC request, inherited recipient admission or inability of all runtime callbacks to start playback."
+}
