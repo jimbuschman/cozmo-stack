@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-11",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "78742f359e858676b477fa1346777d1d1e43ad0279a21cae41e8bc564d1e6960",
+  "inventory_sha256": "ae8c6f254958c3245b4d5c1d4d4c909ffbd019e2ca892f43e585b9cfc28b4312",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -111,7 +111,8 @@
         "Handoff, owned by M11-041 (overlap ruling 2026-10-10: HandleActiveObjectConnectionState 0x00533B3C..0x00533C34 with its slot gate): LC8a 0x00533B56 slot > 4 is ignored; AddConnectedActiveObject rejects activeID >= 5 (0x00623040)",
         "Handoff, owned by M11-013: LC8e SetID gives every ActiveCube of a type the same ObjectID for the process lifetime (0x004EF468..0x004EF52A)",
         "Moved callees (0x00533E4C..0x005341BA): BlockWorld::FindLocatedMatchingObjects blx 0x4A7084 0x0053401E (M11-004); CarryingComponent::IsCarryingObject blx 0x4A6FAC 0x0053411E/0x0053417C; ObjectPoseConfirmer::MarkObjectDirty blx 0x4A7174 0x0053413C (M11-009); ObjectMoved build/broadcast blx 0x4AA108 0x005341A8, blx 0x4A5B0C 0x005341B0; BlockTapFilterComponent::ShouldIgnoreMovementDueToDoubleTap blx 0x4A7FF0 0x00534278 (M4-023)",
-        "re-analysis/research/20261011-m3m4-fix-rows.md section 3 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 3 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#.",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.1 (follow-up Opus extraction, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -218,7 +219,8 @@
         "Handoff, owned by M11-061: E7 0x006B1A76..0x006B1CC6 EnableMode(14) sets/clears mask bit 14 at VisionSystem+0xAC",
         "E8 0x00632368..0x00632380 EngineToRobot(SetHeadlight) then SendMessage reliable, not hot",
         "Re-read handoff: ldr.w r0,[r0,#0x258]; movs r1,#0xE; blx 0x4A91CC VisionComponent::EnableMode(14, on) at 0x00632350..0x00632364 (M11-061); then SetHeadlight blx 0x4B8E38 0x00632374 and Robot::SendMessage blx 0x4A5368 0x00632380; the LimitedExposure reader (E9): M11-057",
-        "re-analysis/research/20261011-m3m4-fix-rows.md section 4 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 4 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#.",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.4 (follow-up Opus extraction, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -236,7 +238,8 @@
         "C13.1 EnableGameLayerOnly branch detail: all-objects enable=0 stops layer 0 once (0x00639ADA/DE, 0x00639AE6) and sets comp+0x22 := 0 (0x00639B32); single-object enable=0 stops layers 0 and 2 (0x00639AA2, 0x00639AB0) and does not touch comp+0x22; enable=1 sets ObjectInfo+0x1C := 1 and (all-objects only) comp+0x22 := 1",
         "C13.4 EnableGameLayerOnly returns without acting when comp+0x22 (all-objects, 0x00639A16..0x00639A1C) or ObjectInfo+0x1C (single-object, 0x006399DC..0x006399E0) already equals enable",
         "Handoffs: PickNextAnimForDefaultLayer's BlockWorld::GetLocatedObjectByIdHelper blx 0x4A7114 at 0x00637DB4 (Visible needs the located object's +0x24 == 1), SetObjectLights' located lookup blx 0x4A7114 0x00637E82 and connected lookup blx 0x4A6FB8 0x00637E96, ActiveCube::MakeStateRelativeToXY blx 0x4B9288 0x00637EE8: M11-004; the +0x2C4 writers: Robot::Delocalize M11-053, SetLocalizedTo M11-044, CheckAndUpdateTreadsState M10-001",
-        "re-analysis/research/20261011-m3m4-fix-rows.md section 5 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 5 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#.",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.2 (follow-up Opus extraction, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -460,6 +463,16 @@
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 9: BlockFilter::SendBlockPoolData 0x0061AE54 (the info 0x0061AE5A..0x0061AE78; payload 0x0061AEAA..0x0061AEF4; MessageEngineToGame tag 0x7E via UiMessageHandler::Broadcast, vtable 0x0102FE14 slot 9); M4-010 caller UpdateDiscovering 0x0061A8E6..0x0061A9C4 (call site 0x0061A9C0); game-driven callers 0xE6/0xE7/0xEA/0xEB.",
         "unity/scripts/csharp/Anki.Cozmo.ExternalInterface/BlockPoolDataMessage.cs:106-123 (wire layout, authority 2)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-036": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotDataLoader backpack-light loader: WalkAnimationDir, FilesInDirectory, the mtime gate, readAsJson, the empty() skip and the Results/LoadTime logs",
+      "authority": "libcozmoEngine.so 3.4.0-1204 RobotDataLoader, FileUtils, DataPlatform.",
+      "evidence": [
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.3: LoadNonConfigData order 0x0051F3B0..0x0051F3CE; WalkAnimationDir 0x0051F600..0x0051F62C, 0x00520E5A..0x005211BC; FilesInDirectory 0x00802D70..0x00802E10, suffixes 0x0101FF68; Results 0x0051F6A4..0x0051F6EA; LoadBackpackLightAnimationFile 0x00521CE4..0x00521D42; readAsJson 0x0084C090..0x0084C15C; LoadTime 0x005200DE, 0x00520184..0x005201AA."
       ],
       "live_path": true,
       "hardware_required": false

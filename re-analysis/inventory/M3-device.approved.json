@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-11",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "5ad6f10089969307eafb17956efb71c3c0e04196832671a4c4159df4d4ac5313",
+  "inventory_sha256": "319daa325463e19b79e0b12428f24be8934aec4c84feeee1ba0fa9e999bddb95",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -249,7 +249,8 @@
         "1l SetCameraSettings: IsExposureValid/IsGainValid (0x006B9DAA..0x006B9DBE, 0x006B9E80..0x006B9EA8), sends {f32 g, u16 e, false} reliable (0x0065614A..0x00656166)",
         "1o the engine never requests DefaultCameraParams",
         "Functions (exports): HandleDefaultCameraParams entry 0x00537114, VisionComponent::HandleDefaultCameraParams 0x00657CA0, VisionComponent::SetCameraSettings 0x006560C8, VisionSystem::SetNextCameraParams 0x006B229C, VisionSystem::SetCameraExposureParams 0x006B92F0. Handoffs: VisionSystem::IsInitialized 0x006B2CD6, true after VisionSystem::Init 0x006B0658: M11-059; the consumer of the SetNextCameraParams slot in VisionSystem::Update: M11-060",
-        "re-analysis/research/20261011-m3m4-fix-rows.md section 2 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 2 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#.",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.6 (follow-up Opus extraction, manager-adopted 2026-10-11)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -591,7 +592,18 @@
       "title": "libDAS processing of engine log entries: DASConfig level filtering, $level/$ts and the three sinks",
       "authority": "libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json.",
       "evidence": [
-        "re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to \"event\"."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to \"event\".",
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, \"das\", \"%s%s : %s %s\") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets \"$game\" (0x801C..0x8074)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-052": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "DASConfigure input: the stack supplies the shipped OBB assets/DASConfig.json as the engine's DAS configuration",
+      "authority": "libcozmoEngine.so cozmo_startup; Unity RobotEngineManager.cs; the shipped OBB.",
+      "evidence": [
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: cozmo_startup DASConfigure(DataPlatformResourcesBasePath + \"/DASConfig.json\", ...) 0x00665974..0x0066598E; Unity sets the base path to persistentDataPath + \"/cozmo\" (unity/scripts/csharp/RobotEngineManager.cs:537-543); re-analysis/obb/assets/DASConfig.json:3-11. The app's copy of the file to that path was not found in the app source."
       ],
       "live_path": true,
       "hardware_required": false

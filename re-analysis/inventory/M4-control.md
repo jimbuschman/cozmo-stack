@@ -669,3 +669,11 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | Fix rows adopted | M4-009, M4-017, M4-018, M4-019; M4-035 now IMPLEMENTATION_GAP with the function at 0x0061AE54 (the old evidence cited a call site). |
+
+
+## Follow-up rows (manager, 2026-10-11; research/20261011-m3m4-fix-rows.md sections 13-14)
+
+| Change | Records |
+| --- | --- |
+| Follow-up rows | M4-009 (robot+0x334 charger id), M4-018 (SetObjectLights return), M4-017 (non-object JSON terminates; unreachable with the shipped file). |
+| New | M4-036 backpack-light loader path (IMPLEMENTATION_GAP). |

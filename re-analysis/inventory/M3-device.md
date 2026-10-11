@@ -462,3 +462,11 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Fix rows adopted | M3-012, M3-021, M3-028, M3-043, M3-048 (now IMPLEMENTATION_GAP, engine side) from research/20261011-m3m4-fix-rows.md. |
 | Reclassified | M3-049: retitled; COMPATIBILITY_POLICY under M1-034 (no engine catcher; the original terminates). |
 | New | M3-051 libDAS processing (RECOVERABLE_GAP). |
+
+
+## Follow-up rows (manager, 2026-10-11; research/20261011-m3m4-fix-rows.md sections 13-14)
+
+| Change | Records |
+| --- | --- |
+| Follow-up rows | M3-021 (BadGammaCurve unreachable), M3-051 (libDAS sinks read; queue body open). |
+| New | M3-052 DASConfig.json input (COMPATIBILITY_POLICY, app-boundary ruling). |
