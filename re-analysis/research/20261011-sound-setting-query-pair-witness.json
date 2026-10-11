@@ -1,0 +1,400 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "boundary": "NativeA57604 gates, VM/query ABI arguments, raw copy/store/detach order and results. VM/query callbacks are explicit fixtures, not phone implementations or admitted shipped caller/settings invariants. No numerical helper orA57724 startup body rerun.",
+  "cases": [
+    {
+      "case": "missing VM",
+      "fixtures": {
+        "vm": false,
+        "activity": true,
+        "env_first": false,
+        "env_attached": false,
+        "rate": 0,
+        "frames": 0
+      },
+      "returnR0": 31,
+      "platform38": "11111111",
+      "engine20": "22222222",
+      "trace": []
+    },
+    {
+      "case": "missing activity",
+      "fixtures": {
+        "vm": true,
+        "activity": false,
+        "env_first": false,
+        "env_attached": false,
+        "rate": 0,
+        "frames": 0
+      },
+      "returnR0": 31,
+      "platform38": "11111111",
+      "engine20": "22222222",
+      "trace": []
+    },
+    {
+      "case": "attachment returns0 but env remains null",
+      "fixtures": {
+        "vm": true,
+        "activity": true,
+        "env_first": false,
+        "env_attached": false,
+        "rate": 0,
+        "frames": 0
+      },
+      "returnR0": 2,
+      "platform38": "11111111",
+      "engine20": "22222222",
+      "trace": [
+        {
+          "step": "GetEnv",
+          "callee": "20008000",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "FFFFFFFF"
+        },
+        {
+          "step": "AttachCurrentThread",
+          "callee": "20008004",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "00000000"
+        }
+      ]
+    },
+    {
+      "case": "existing env",
+      "fixtures": {
+        "vm": true,
+        "activity": true,
+        "env_first": true,
+        "env_attached": false,
+        "rate": 48000,
+        "frames": 1024
+      },
+      "returnR0": 1,
+      "platform38": "0000BB80",
+      "engine20": "00000400",
+      "trace": [
+        {
+          "step": "GetEnv",
+          "callee": "20008000",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "FFFFFFFF"
+        },
+        {
+          "step": "query ABI fixture",
+          "callee": "00A56E20",
+          "R0": "20005000",
+          "R1": "20006000",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "DEADBEEF"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57680",
+          "platform38": "11111111",
+          "engine20": "22222222"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57684",
+          "platform38": "0000BB80",
+          "engine20": "22222222"
+        }
+      ]
+    },
+    {
+      "case": "attached env",
+      "fixtures": {
+        "vm": true,
+        "activity": true,
+        "env_first": false,
+        "env_attached": true,
+        "rate": 48000,
+        "frames": 1024
+      },
+      "returnR0": 1,
+      "platform38": "0000BB80",
+      "engine20": "00000400",
+      "trace": [
+        {
+          "step": "GetEnv",
+          "callee": "20008000",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "FFFFFFFF"
+        },
+        {
+          "step": "AttachCurrentThread",
+          "callee": "20008004",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "00000000"
+        },
+        {
+          "step": "query ABI fixture",
+          "callee": "00A56E20",
+          "R0": "20005000",
+          "R1": "20006000",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "DEADBEEF"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A576FC",
+          "platform38": "11111111",
+          "engine20": "22222222"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57700",
+          "platform38": "0000BB80",
+          "engine20": "22222222"
+        },
+        {
+          "step": "DetachCurrentThread",
+          "callee": "20008008",
+          "R0": "20003000",
+          "R1": "00000400",
+          "platform38": "0000BB80",
+          "engine20": "00000400",
+          "fixture_return": "FFFFFFFF"
+        }
+      ]
+    },
+    {
+      "case": "existing env",
+      "fixtures": {
+        "vm": true,
+        "activity": true,
+        "env_first": true,
+        "env_attached": false,
+        "rate": 0,
+        "frames": 0
+      },
+      "returnR0": 1,
+      "platform38": "00000000",
+      "engine20": "00000000",
+      "trace": [
+        {
+          "step": "GetEnv",
+          "callee": "20008000",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "FFFFFFFF"
+        },
+        {
+          "step": "query ABI fixture",
+          "callee": "00A56E20",
+          "R0": "20005000",
+          "R1": "20006000",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "DEADBEEF"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57680",
+          "platform38": "11111111",
+          "engine20": "22222222"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57684",
+          "platform38": "00000000",
+          "engine20": "22222222"
+        }
+      ]
+    },
+    {
+      "case": "attached env",
+      "fixtures": {
+        "vm": true,
+        "activity": true,
+        "env_first": false,
+        "env_attached": true,
+        "rate": 0,
+        "frames": 0
+      },
+      "returnR0": 1,
+      "platform38": "00000000",
+      "engine20": "00000000",
+      "trace": [
+        {
+          "step": "GetEnv",
+          "callee": "20008000",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "FFFFFFFF"
+        },
+        {
+          "step": "AttachCurrentThread",
+          "callee": "20008004",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "00000000"
+        },
+        {
+          "step": "query ABI fixture",
+          "callee": "00A56E20",
+          "R0": "20005000",
+          "R1": "20006000",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "DEADBEEF"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A576FC",
+          "platform38": "11111111",
+          "engine20": "22222222"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57700",
+          "platform38": "00000000",
+          "engine20": "22222222"
+        },
+        {
+          "step": "DetachCurrentThread",
+          "callee": "20008008",
+          "R0": "20003000",
+          "R1": "00000000",
+          "platform38": "00000000",
+          "engine20": "00000000",
+          "fixture_return": "FFFFFFFF"
+        }
+      ]
+    },
+    {
+      "case": "existing env",
+      "fixtures": {
+        "vm": true,
+        "activity": true,
+        "env_first": true,
+        "env_attached": false,
+        "rate": 22320,
+        "frames": 4096
+      },
+      "returnR0": 1,
+      "platform38": "00005730",
+      "engine20": "00001000",
+      "trace": [
+        {
+          "step": "GetEnv",
+          "callee": "20008000",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "FFFFFFFF"
+        },
+        {
+          "step": "query ABI fixture",
+          "callee": "00A56E20",
+          "R0": "20005000",
+          "R1": "20006000",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "DEADBEEF"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57680",
+          "platform38": "11111111",
+          "engine20": "22222222"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57684",
+          "platform38": "00005730",
+          "engine20": "22222222"
+        }
+      ]
+    },
+    {
+      "case": "attached env",
+      "fixtures": {
+        "vm": true,
+        "activity": true,
+        "env_first": false,
+        "env_attached": true,
+        "rate": 22320,
+        "frames": 4096
+      },
+      "returnR0": 1,
+      "platform38": "00005730",
+      "engine20": "00001000",
+      "trace": [
+        {
+          "step": "GetEnv",
+          "callee": "20008000",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "FFFFFFFF"
+        },
+        {
+          "step": "AttachCurrentThread",
+          "callee": "20008004",
+          "R0": "20003000",
+          "R1": "30007FD8",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "00000000"
+        },
+        {
+          "step": "query ABI fixture",
+          "callee": "00A56E20",
+          "R0": "20005000",
+          "R1": "20006000",
+          "platform38": "11111111",
+          "engine20": "22222222",
+          "fixture_return": "DEADBEEF"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A576FC",
+          "platform38": "11111111",
+          "engine20": "22222222"
+        },
+        {
+          "step": "before native setting store",
+          "pc": "00A57700",
+          "platform38": "00005730",
+          "engine20": "22222222"
+        },
+        {
+          "step": "DetachCurrentThread",
+          "callee": "20008008",
+          "R0": "20003000",
+          "R1": "00001000",
+          "platform38": "00005730",
+          "engine20": "00001000",
+          "fixture_return": "FFFFFFFF"
+        }
+      ]
+    }
+  ]
+}

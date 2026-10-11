@@ -1,0 +1,150 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "controls": [
+    {
+      "instruction": "008FD678",
+      "stub": "004D36DC",
+      "interval": [
+        "0105243C",
+        "01052450"
+      ],
+      "destination": "01052434",
+      "count": 28,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "008FD678",
+      "stub": "004D36DC",
+      "interval": [
+        "0105243C",
+        "01052450"
+      ],
+      "destination": "01052434",
+      "count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "008FD678",
+      "stub": "004D36DC",
+      "interval": [
+        "0105243C",
+        "01052450"
+      ],
+      "destination": "0105243C",
+      "count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "008FD678",
+      "stub": "004D36DC",
+      "interval": [
+        "0108DF90",
+        "0108DF99"
+      ],
+      "destination": "0108DF88",
+      "count": 17,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "008FD678",
+      "stub": "004D36DC",
+      "interval": [
+        "0108DF90",
+        "0108DF99"
+      ],
+      "destination": "0108DF88",
+      "count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "008FD678",
+      "stub": "004D36DC",
+      "interval": [
+        "0108DF90",
+        "0108DF99"
+      ],
+      "destination": "0108DF90",
+      "count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "009096F0",
+      "stub": "004D36DC",
+      "interval": [
+        "0105243C",
+        "01052450"
+      ],
+      "destination": "01052434",
+      "count": 28,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "009096F0",
+      "stub": "004D36DC",
+      "interval": [
+        "0105243C",
+        "01052450"
+      ],
+      "destination": "01052434",
+      "count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "009096F0",
+      "stub": "004D36DC",
+      "interval": [
+        "0105243C",
+        "01052450"
+      ],
+      "destination": "0105243C",
+      "count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "009096F0",
+      "stub": "004D36DC",
+      "interval": [
+        "0108DF90",
+        "0108DF99"
+      ],
+      "destination": "0108DF88",
+      "count": 17,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "009096F0",
+      "stub": "004D36DC",
+      "interval": [
+        "0108DF90",
+        "0108DF99"
+      ],
+      "destination": "0108DF88",
+      "count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "instruction": "009096F0",
+      "stub": "004D36DC",
+      "interval": [
+        "0108DF90",
+        "0108DF99"
+      ],
+      "destination": "0108DF90",
+      "count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    }
+  ],
+  "boundary": "Actual memset BL/B instructions with explicit setting-address/count fixtures; no actual admitted destination or performed writes.883 certifies imported length-register distinctions; unknown/computed targets remain unknown."
+}
