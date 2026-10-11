@@ -11871,3 +11871,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint852 — weight-setter composed nearby-PC addresses
 
 `20261011-sound-weight-composed-pc-disposition.md` checks a seed form absent from810/812 selection: PC-immediate result within512 bytes of originalA08024, followed by unchanged812 local propagation. Three windows/zero events/zero caps. All three apparent Thumb ADR seeds are individually actual ARM words (two calls, one load), with separate primary entries and literal/branch boundary retained.008 PARTIAL for original admitted node/childID/weight or complete supported-input exclusion; no repeat of paid full pointer/chooser helpers.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint853 — updater composed nearby-PC addresses
+
+`20261011-sound-fx-updater-composed-pc-disposition.md` substitutes original9CDFE4 into852's nearby-PC seed method: four windows/zero events/zero caps. Every apparent Thumb ADR is an actual ARM association-helper or next-entry instruction; primary return/literal/PUSH separation retained. FA563/AR648 paid control/reader contracts unchanged;016 PARTIAL for admitted settings/property/data/size and actual notification recipient or supported-input exclusion. No full847 pointer repeat or new family.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
