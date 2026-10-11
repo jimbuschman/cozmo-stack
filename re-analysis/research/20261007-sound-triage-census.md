@@ -3423,3 +3423,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint843 — command1F cancellation-to-active-stop join
 
 `20261011-sound-queue-command31-stop-descriptor.md` follows actual9AEA30..80 beyondQC752 cancellation: record4/8/C become descriptor8/C/10, exact partial initialization precedes ordinary9C3790 dispatch to known bus roots. A21/BR366 gate/order/live-reload contracts reused; no blank stack padding, all-input admission or alias absence claim.104/131 retain nonzero9A60B8 caller/values and original unrestricted writer/input proofs PARTIAL; conditional payload/recipient join paid.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint844 — optional-layer dynamic lookup names bounded
+
+`20261011-sound-optional-layer-symbol-lookup-disposition.md` proves actualdlsym PLT/GOT binding and individually reopens both immediate engine callers: fixedAndroid logging name andfixedWwise plug-in-list name. Neither selects one ofthefive optional-layer exports. Loader bodiesstopoutofscope; alternate/computed/companion/message input remainsunproved.021 PARTIAL fororiginal admitted layer producer;no optional generator/family descent.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

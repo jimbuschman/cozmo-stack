@@ -1,0 +1,51 @@
+{
+  "fixed_lookup_names": [
+    {
+      "call": "0x953174",
+      "pc_join": "0x95316c",
+      "literal_address": "0x953198",
+      "literal_value": "0x2f2561",
+      "name_address": "0xc456d5",
+      "name_ascii": "__android_log_buf_write",
+      "name_hex": "5f5f616e64726f69645f6c6f675f6275665f7772697465"
+    },
+    {
+      "call": "0xa5733c",
+      "pc_join": "0xa57338",
+      "literal_address": "0xa575d4",
+      "literal_value": "0x550848",
+      "name_address": "0xfa7b88",
+      "name_ascii": "g_pAKPluginList",
+      "name_hex": "675f70414b506c7567696e4c697374"
+    }
+  ],
+  "dlsym_relocation": [
+    {
+      "address": "0x1050df8",
+      "type": "TYPE.ARM_JUMP_SLOT",
+      "symbol": "dlsym"
+    }
+  ],
+  "raw_aligned_pointer_navigation": [],
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0x4d6244"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x953174",
+      "target": "#0x4d6244",
+      "mode": "ARM",
+      "instruction": "bl #0x4d6244",
+      "section": ".text"
+    },
+    {
+      "address": "0xa5733c",
+      "target": "#0x4d6244",
+      "mode": "ARM",
+      "instruction": "bl #0x4d6244",
+      "section": ".text"
+    }
+  ]
+}
