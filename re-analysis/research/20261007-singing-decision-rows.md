@@ -1,4 +1,21 @@
-## Q15 Step 2 — coverage after batch 2 (2026-10-11)
+## Q15 Step 2 — coverage after batch 3 (2026-10-11)
+
+| Batch 3 ordered item | Batch status | Rows / boundary |
+|---|---|---|
+| E01 | CHECKED join locally | B3J01–02; MG1 registry-publication correction per MT10. |
+| E02 | CHECKED join locally | B3J03–05; state acquisition and binding hierarchy. |
+| E03 | CHECKED join locally | B3J06–13; publication, attachment, consumption and retirement joins. |
+| E04 | CHECKED join locally | B3J14–16; envelope/LFO parameter joins. |
+| A01 | CHECKED locally | B3AUTO1–5; exact period/remainder adjustment and flag publication. |
+| V02 | CHECKED wrapper locally | B3VIB1–2; selector6/7 and raw value; V03 vt18 remains STOP/UNKNOWN. |
+| T01 | CHECKED join locally | B3J17–20, B3OBS1; observer construction/subscription/query. |
+| T02 | CHECKED join locally | B3J21–23; music parser and registration joins. |
+| D02 | CHECKED join locally | B3J24–29, B3FAN1–2; RTPC/scoped parameter fanout. |
+| S05 | CHECKED release locally | B3REL1–8, B3ROOT1, B3CACHE1, B3RENDER1–4, B3STATE1; recursive lifetime and concrete retirement joins; unproved virtual receivers remain STOP. |
+
+Batch3 tally: **10 ordered items processed, all locally CHECKED; 54 rows added** (29 B3J mapping rows and25 other decision/value/lifetime/join rows). Checkpoints B3.1/B3.2/B3.3/B3.4 contain16/7/16/15 rows respectively. Across batches1–3: **30 locally CHECKED, 2 PARTIAL** (S06/D03), **1 unstarted READ** (D07), **28 STOP/UNKNOWN**, **8 out-of-scope items**, total69. Cumulative dispositions remain33READ/28STOP/8out-of-scope. Overall **0 CHECKED categories / 7 PARTIAL**. No complete production path, fidelity settlement or hardware acceptance is claimed. Stop for batch4.
+
+Batch 2 retained local coverage:
 
 | Batch 2 ordered item | Batch status | Rows / boundary |
 |---|---|---|
@@ -14,7 +31,7 @@
 | H07 | CHECKED endpoint locally | B2END07–09; secondary close and retirement order. |
 | D03 | PARTIAL, bounded READ processed | B2TR1–6, B2J25–28; constructed-track98/9C/AC and established Layer44; other receiver inputs STOP/UNKNOWN. |
 
-Batch2 tally: **11 ordered items processed: 10 locally CHECKED, 1 PARTIAL**. Added **28 Q14 mapping rows, 18 decision/receiver-proof rows and 2 out-of-scope boundary rows** (48 total). Across batches1–2: **20 locally CHECKED, 2 PARTIAL** (S06/D03), **11 unstarted READ**, **28 STOP/UNKNOWN**, **8 out-of-scope items**, total69. Both manager corrections move one original STOP to bounded READ; cumulative dispositions33READ/28STOP/8out-of-scope. Overall **0 CHECKED categories / 7 PARTIAL**. Remaining READ: S05,T01,T02,D02,D07,A01,E01–E04,V02. No complete production path, fidelity settlement or hardware acceptance is claimed. Stop for batch3.
+Historical batch2 tally: **11 ordered items processed: 10 locally CHECKED, 1 PARTIAL**. Added **28 Q14 mapping rows, 18 decision/receiver-proof rows and 2 out-of-scope boundary rows** (48 total). Both manager corrections move one original STOP to bounded READ; unproved receiver inputs retain UNKNOWN. The batch3 table above supersedes this checkpoint's remaining-work tally.
 
 Batch 1 retained local coverage:
 
@@ -34,15 +51,15 @@ Batch 1 retained local coverage:
 
 All seven overall Q15 categories remain PARTIAL. Batch CHECKED is local research coverage, not production acceptance or a fidelity-manifest status. Step 1's S06 and D03 STOP entries are superseded by the manager's bounded READ instructions; unproved receivers still stop as UNKNOWN. No hardware work.
 
-| Q15 category | Current status | Remaining READ items after batch 2; retained STOP / scope boundaries |
+| Q15 category | Current status | Remaining READ items after batch 3; retained STOP / scope boundaries |
 |---|---|---|
-| Segment selection | PARTIAL | S05; S06 unproved receiver groups; S07/S10–S14/T08 STOP; O01/O03–O07 out of scope. |
-| Playlist selection | PARTIAL | S05; S06 unproved receiver groups; S07/S10–S14/P04–P07/T08 STOP; O01–O07 out of scope. |
-| Transitions, switch and meter state | PARTIAL | T01/T02; S06 unproved receiver groups; S07/S10–S14/T04–T08 STOP; O01–O07 out of scope. |
-| MIDI dispatch and target inheritance | PARTIAL | D02/D07/E02–E04; D03 unproved receiver inputs; D01/D08/D09/T08 STOP; O01–O07 out of scope. |
-| Note-on/off and held-note timing | PARTIAL | S05/D02/D07/A01/E02–E04; S06/D03 unproved receivers; S07/S11/S14/D01/D08/D09/H08/H09/A02–A04 STOP; O01–O07 out of scope. |
-| Envelope parameters and trigger state | PARTIAL | E01–E04/D02/A01; E05/E06/D01/A02–A04 STOP; O01/O02 out of scope. |
-| Vibrato/LFO parameters and state | PARTIAL | E01–E04/V02/D02/A01; E05/E06/V01/V03/V04/D01/A02–A04 STOP; V05/O01/O02 out of scope. |
+| Segment selection | PARTIAL | S06 unproved receiver groups; S07/S10–S14/T08 STOP; O01/O03–O07 out of scope. |
+| Playlist selection | PARTIAL | S06 unproved receiver groups; S07/S10–S14/P04–P07/T08 STOP; O01–O07 out of scope. |
+| Transitions, switch and meter state | PARTIAL | S06 unproved receiver groups; S07/S10–S14/T04–T08 STOP; O01–O07 out of scope. |
+| MIDI dispatch and target inheritance | PARTIAL | D07; D03 unproved receiver inputs; D01/D08/D09/T08 STOP; O01–O07 out of scope. |
+| Note-on/off and held-note timing | PARTIAL | D07; S06/D03 unproved receivers; S07/S11/S14/D01/D08/D09/H08/H09/A02–A04 STOP; O01–O07 out of scope. |
+| Envelope parameters and trigger state | PARTIAL | E05/E06/D01/A02–A04 STOP; O01/O02 out of scope. |
+| Vibrato/LFO parameters and state | PARTIAL | E05/E06/V01/V03/V04/D01/A02–A04 STOP; V05/O01/O02 out of scope. |
 
 These remaining item IDs retain their names and bounded addresses in the Step 1 disposition table below. Newly encountered concrete decision interfaces are separately named at the end of B1.5; they remain unpaid, including for locally CHECKED items. The original Step 1 tables are historical, with S06/D03's original STOP explicitly superseded above. No category or complete production path is declared closed.
 
@@ -1855,7 +1872,7 @@ PROJECT_STATE and queue5 Q15/guard/stop rule re-read. Ordered batch: E01/E02/E03
 | B3J02 / E01 | `009D7C04` (shared factory return path) → MT10/11 (`009D790C..009D7B48`) | **Registry publication**, correcting MG1's stale payload-reader description. Publication is attempted after field/table initialization; factory returns the allocated node independently of registration outcome. Retain visible admission/publication and result omissions. out of scope: backing hash/rehash, bucket growth/storage and allocator internals; no descent. |
 | B3J03 / E02 | `009DD2A0` → SA1–4, HI1–21, MG6–8 (`0103B204/0103B234=009D7FC0`) | Hierarchy supplies the selected prior-state slot before concrete1C trigger/reuse/create. Trigger false may reject even an existing state. A different nonnull state is retained before old reference release/destruction and slot publication; same pointer changes no reference. Null result with existing prior returns2; null without prior enters key-directed pruning. Attachment follows the optional output-owner gate, not every successful state acquisition. |
 | B3J04 / E02 | `009DD5C8` → PR1–4 (`009DFF24..009E01C0`, with9DFE90 leaf helper) | Failed-factory pruning uses the remaining original key and active/empty gates; it is not wildcard invalidation. Leaf erase shifts identity/state pairs without state release. No speculative rollback of a previous published active bit or uniform factory-error cleanup. |
-| B3J05 / E02 | `009DD9DC`, callback address=`009DD9CC+8+FFFF7B00=009D54D4` → IC1/IC9–22 (`009D54D4..009D5528;009DD950..009DDA54`) | Publication failure enters normalized selected/wildcard invalidation. The bound callback writes state44=3, decrements40, and destroys/frees only atzero; returns1 without clearing slot. Traversal owns active-byte clearing and ordered pruning/research-by-key. Missing/unselected hierarchy inputs are not invented. |
+| B3J05 / E02 | `009DD9DC`, callback address=`009DD9CC+8+FFFF7B00=009D54D4` → IC1/IC9–22 (`009D54D4..009D5528;009DD950..009DDA54`) | Publication failure enters normalized selected/wildcard invalidation. The bound callback writes state44=3, decrements40, and destroys/frees only atzero; returns1 without clearing slot. Traversal owns active-byte clearing and ordered pruning/re-search by key. Missing/unselected hierarchy inputs are not invented. |
 | B3J06 / E03 | `009DD940` → RP1–3 (`00A1BE1C..00A1C630`), IC8 | Newly created state publication chooses K14 recipient first, then K4 global route, then K0 root; all absent returns1 without publication. Only raw1 appends/retains into active list. Other results cause the E02 invalidation branch, rather than raw error propagation or unconditional append. |
 | B3J07 / E03 | `00A1BF04` → RP4/5 (`00A048EC..00A04D40`) | Keyed global route requires an existing key recipient; missing returns0 and caller maps it2. Existing ID is success without duplicate. Result/unlock and count-before-ID-store failure boundaries remain native; backing hash/array storage is out of scope. |
 | B3J08 / E03 | `009DD304` → OA3–5 (`009E7EA8..009E8024`), SA4 | Optional output owner receives the state plus original descriptor/scope. Existing attachment uses the last identity match; new attachment appends physical list and increments state40 then50. Descriptor type2/4 selects its concrete parameter-registration route after attachment; unsupported descriptor still returns1. Failure does not undo prior hierarchy retain/publication. |
@@ -1913,3 +1930,34 @@ Primary recheck: `20261011-singing-b3-switch-observer-native.txt`, `-music-parse
 | B3FAN2 / D02 | `00A1DE5C..00A1DEAC` | Nonzero owner: compare tolink8, callA00A3C(link−C,value,descriptor,fifthbyte) only on equality. Owner0 calls it for everylink. Both passes load next24 **after** callback/skip; continue untilnull. No result folding, early callback-failure return or retaining snapshot. | PE372 owns concrete updater; no callee descent into backing allocation or unrelated recipient families. |
 
 T01/T02/D02 locally CHECKED at the requested joins:13 mapping rows and3 newly rowed local decisions. Literal/GOT claims use explicit address arithmetic rather than the disassembler's register-indexed PC annotation. out of scope: storage/I/O/backing, allocator internals and per-sample DSP; no new search tooling or absence proof. Next and last in batch3: S05, lifetime/release only.
+
+## Step 2 batch 3 — checkpoint B3.4: S05 and coverage update
+
+Stop rule applied before each recipient: context membership/counts, observer membership, playing-ID retirement, held-note shutdown and reference-release order can change scheduling or lifetime. Primary: `20261011-singing-b3-context-release-native.txt`, complete ARM985CAC..985ED4,9851A0..985254,983204..983324,981F7C..982030,A292E8..A29398,A3D20C..A3D22C and rechecked97E774..97E8A8. Same shipped engine/hash as B3.1. Endpoints here are last instructions, not literal pools. Existing Q14 and Q15 bodies below are reused. C is the initial context, P=C8, G=P8, A=G8; offsets/count arithmetic are hexadecimal/U32 unless stated.
+
+| Release row / S05 | Instruction citations | Exact membership, count and lifetime decision | Stop-rule boundary |
+|---|---|---|---|
+| B3REL1 | `00985CAC..00985CD8` | Write wrap32(C24−1); return immediately unless newcount exactly0. Atzero save C and load P=C8. Pnull selects root retirement; nonnull selects physical parent-list removal. Originalcount0 wrapsFFFFFFFF and returns. | No saturation, zero-before-decrement shortcut or allocator descent. Existing CS6 entry is retained; remaining inline branches follow. |
+| B3REL2 | `00985CDC..00985D0C;00985D3C..00985D5C;00985E60..00985E68` | Walk P18 head using child4 links, identity-match C. Empty/missing C goes directly to C destruction without decrementing P24. Found: publish C4 into head or predecessor4, then P24−1; nonzero destroys C, zero enters P release. | No clearing C4/C8 or repairing counts on failed membership. Membership mutation precedes ancestor decrement. |
+| B3REL3 | `00985D60..00985D98;00985E04..00985E20;00985E84..00985E8C` | Pzero: G=P8null selects root retirement of P. Nonnull G18 is searched for P by identity/next4. Empty/missing P destroys P then C without decrementing G24. Found P is unlinked before G24−1. Nonzero Gcount destroys P then C; zero proceeds to G release. | Second inline level is conditional on both preceding membership and count gates; no generic parent-count assumption. |
+| B3REL4 | `00985D9C..00985DD4;00985E90..00985EB0;00985ECC..00985ED4` | Gzero: A=G8null selects root retirement of G. Nonnull A18 search empty/missing G goes to G destruction. Found G publishes G4 to head/predecessor4 then A24−1. Nonzero destroys G; zero calls9851A0(A) at985EAC before G destruction. | Recursive helper receives an **already-zero** ancestor. No duplicate decrement of that ancestor on entry. |
+| B3REL5 | `00985E48..00985E5C;00985E6C..00985E80;00985EB4..00985EC8` | Root callbacks97E774 receive respectively C/P/G only when that context's parent8 isnull. After each callback, return to the respective destruction/unwind stage. A missing parent-list membership alone does not call root retirement. | B1ROOTEND owns root local decisions; concrete recipients joined below. No root-list caller census. |
+| B3REL6 | `00985DD8..00985E00;00985E24..00985E44;00985D10..00985D38` | Unwind deepest first: G live28 at985DF0 thenfree G; P live28 at985E34 thenfree P; C live28 at985D28 then tailfree C. Each stage snapshots its pool argument before the virtual callback and preserves the context pointer for its subsequent free. Ancestors are destroyed before the child that released them. | Positive segment/playlist table28 bodies are B1DTOR1/2. Arbitrary ancestor receiver tables remain S06 U3 UNKNOWN; no descent. Free implementation out of scope. |
+| B3REL7 | `009851A0..009851E0;00985210..00985230;0098524C..00985254` | Helper9851A0 saves already-zero N, loads P=N8, searches P18 via4. Empty/missing N proceeds to N destruction only. Found N is unlinked first, then P24−1; zero recursively calls9851A0(P) at98522C, nonzero skips recursion. Entry never decrements N24. | No arbitrary recursion limit, count repair or failure rollback. Concrete recursive call is this same checked helper. |
+| B3REL8 | `009851E4..0098520C;00985234..00985248` | N8null invokes97E774(N) at985244; every normal helper cleanup reads N's live28, snapshots pool before dispatch9851FC, then tailfrees N at98520C. Root callback precedes destructor; recursively released parents finish before N's destructor. | Unproved N28 receiver stays UNKNOWN as S06 U3; no target search. Allocator body out of scope. |
+
+| Retirement row / S05 | Call site → existing row or new body citation | Decision carried / exact local order |
+|---|---|---|
+| B3ROOT1 | `00985E58;00985E7C;00985EC4;00985244` → B1ROOTEND (`0097E774..0097E8A8`); `0097E7F4` → Q14 PB2/E14–16 (`00A04DE8..00A04E64;00A03618`); `0097E888` → B3CACHE1; `0097E840` → B3RENDER1–4 | Root removal attempts G8 identity/48 unlink and G4 tail repair before renderer gate. Missing root membership still reaches C38. Nullrenderer returns; renderer28 ID0 skips playing-count/reservation work. Nonzero ID: C10bit21 optionally removes cache entry, then **reloads** renderer28 before PB2(manager,ID,C+C). PB2 decrements the matching outstanding count and may synchronously deliver completion. First C58 virtual query at97E804 gates a second query97E81C; its returned node receives9C(3) at97E82C. Saved renderer is destroyed thenfreed, even when ID0; C38 is not cleared locally. |
+| B3CACHE1 | `00981F7C..00981FE0;00981FE4..00982030` | Under cache+C lock, snapshot base0/count4; scan stride38 for first record's word0==playingID. Empty/missing unlocks and returns. Found beforelast physically shifts following records left; always count4−1 at982028 before unlock. Logical ordered removal is exact; raw move/lock implementations are not descended into. No capacity shrink or record destructor synthesized. |
+| B3RENDER1 | `00983204..00983298` | Restore table101BE88. Loop saved entry/headR34: load saved head's next0; mismatch between saved current and livehead writes through0 at983248 thenUDF. On match publish savednext to R34; load old entry4 child, clearentry4 before release. Oldchildnonnull calls985CAC at983270, then reloadentry4; a newly nonnull value receives a **second**985CAC at983280. Free entry, reload live R34, repeat while nonnull, retaining savednext for next head-identity comparison. No third child-release loop is inserted. |
+| B3RENDER2 | `0098329C..009832E0;00983304..00983324` → Q14 DC4–6/DC8–10 (`00A0B600`), OB354/OR545/RC546/CJ547/MN552/MT553 | After children: A292E8(stateManager,R) first; then load R2C and clearR34. Nonnull object decrements low30bits ofobject7C, preserving upper2bits. New lowcount0 invokesA0B600 at983314 thenfree; nonzero skips destructor/free. Afterwards clearR2C. Q14 owns exact game-object teardown and its retained virtual-recipient boundaries; no duplicate body extraction or whole-recipient closure. |
+| B3RENDER3 | `009832E4..009832FC;00A3D20C..00A3D22C` → Q15 EXMB1/2 (`00A709EC..00A70B30`), MAT12/MAT9 | Embedded R44 destructorA3D20C writes103C0A0 thencallsA709EC atA3D224 and returnsoriginalpointer. EXMB1 physically erases empty held-head targets before optional whole-array count-clear/free; EXMB2 unlinks lifetime queue, clears note-state.C, stops linked PBI viaA3EB4C thenreleases eventA3E3C0. Preserve its native head-identity trap and callback order. No new manager body extraction. |
+| B3RENDER4 | `009832EC..00983300` → Q14 DC3 (`009A6988..009A69F8`) | After embedded manager teardown, R14nonnull receives9A6988 at9832F8; nullskips. DC3 decrements event reference and frees authored payloads/event only atzero; it does not execute actions. Return rendererpointer; no R14clear added. |
+| B3STATE1 | `00A292E8..00A29324;00A29328..00A29398` | Remove **every** notification node whose word4 equals incoming renderer R from manager2C head/next0 chain. For each match save next before removal, repair head or predecessor0; matchedtail repairs manager30 topredecessor. Reclaim node, then decrement manager40; resume savednext with predecessor unchanged. Nonmatches advance predecessor. Empty/exhausted returns1. This removes future notification recipients; node pool/free internals are out of scope. |
+
+STOP/UNKNOWN: ancestor/helper live28 receivers are not proved segment/playlist instances (S06 U3); root C58 getter and its returned-node9C receiver at97E804/97E81C/97E82C are not bound here. Preserve the caller's dispatch/order only, with no target search or descent.
+
+out of scope: allocation/free-list/backing-storage and I/O implementations; lock/memory-move infrastructure; per-sample DSP arithmetic. The caller's membership, count, lifetime and notification decisions above remain exact.
+
+S05 locally CHECKED for its named release bodies and concrete retirement joins:15 rows on one checkpoint. No item reached three checkpoints without a new row. Coverage above now records30 locally CHECKED items,2 bounded PARTIAL items,1 remaining unstarted READ (D07),28 STOP and8 out-of-scope; all seven categories remain PARTIAL. Only research answer/captures changed; no implementation, manifest or hardware work. Batch3 stops here for the manager's batch4 order.
