@@ -29,17 +29,13 @@ rules.
 7. **Log each batch in `status/<job>.md`:** the commit, the records touched, and every MISSING.
 8. **Stop** when the job is DONE, or BLOCKED on a decision the source can't settle. Don't start another job without
    the operator.
-9. **When a layer's build is finished** (DONE, or BLOCKED only on items outside the layer), prepare the Opus
-   verification packet before stopping. It goes in `re-analysis/research/<date>-<layer>-verify-packet/`, one file per
-   record that is built and has no open MISSING. Each file holds:
-   - the record's current manifest text;
-   - the commits and the exact diff hunks that implement it;
-   - the rows it was built from, quoted, with their source file;
-   - the native instruction text for every cited address range;
-   - any emulator or oracle test that covers it, with its result.
-
-   List the excluded records, and why. Give no verdicts. The packet keeps the Opus pass short: it compares, it doesn't
-   rediscover.
+9. **No verification packets** (manager, 2026-10-11).
+   - Don't write `*-verify-packet/` directories. The Opus pass checks the binary itself, and a packet only enlarges the
+     diff it reads.
+   - Put what the verifier needs in `status/<job>.md`: per record, the files and lines changed and the binary ranges
+     they follow.
+   - **When the manager runs you on its machine,** `.git` is read-only in your sandbox. The manager pulls, commits and
+     pushes. Skip rule 6 and the claim step, and run no git command.
 10. **Port every engine log and side effect inside the cited ranges.** The Opus passes found the same misses more
     than once. Before committing, list every call inside each cited instruction range and account for each one in the
     C#:
