@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 108 native-row obligations CHECKED, 8 CHECKED scope exclusions, 24 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 109 native-row obligations CHECKED, 8 CHECKED scope exclusions, 23 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
 ## Checkpoint 610 — modulator joins and positive-context item frontier
 
@@ -11819,3 +11819,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint839 — vector-store widths and alignment checked
 
 `20261011-sound-voice-policy-vector-overlap-disposition.md` adds onlyvector extents to838’sunchanged finite seeds/windows andasserts actualA0B01C transfers16bytes atSP;its40hex annotation isalignment,not displacement. No added finite overlap event;all prior events/frontiers preserved. No exhaustive alias/writer/caller absence inference.033 PARTIAL;116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Stop this finite lead andcontinue otherpositive original inputs;Q15 stays behindQ14.
+
+### Checkpoint840 — original MIDI scheduling scope reconciled
+
+`20261011-sound-midi-clock-scope-recheck.md` reopens043 original reader/tempo/clock andconcrete input/recipient contracts.043 CHECKED foritsbounded original scheduling obligation;separate duration/per-event live-rate reloads remainexact inputs,not default/immutability assumptions.092/099/120/124/130 keepall explicit writer/alias/zero-input gaps PARTIAL. Current117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. CurrentM9-005 IMPLEMENTATION_GAP unchanged;no production/fidelity/hardware/Q15 acceptance. Continue original genuinely open inputs.

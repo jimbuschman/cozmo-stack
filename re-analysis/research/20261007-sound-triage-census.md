@@ -2,7 +2,7 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 108 CHECKED native-row obligations / 8 CHECKED scope exclusions / 24 PARTIAL / 0 NOT DONE; checkpoint835 indexes all231 saved cap states; explicit writer/alias/input proofs remain open |
+| Per-item native rows and production joins | PARTIAL | 109 CHECKED native-row obligations / 8 CHECKED scope exclusions / 23 PARTIAL / 0 NOT DONE; checkpoint840 reconciles043 original scheduling scope; explicit writer/alias/input proofs remain open |
 
 # Q14 per-item work census
 
@@ -54,7 +54,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-040 | 78 | CHECKED | AUDIBLE | Trigger failure, compound results and timeout/render waits change robot action and singing timing. |
 | Q14-041 | 79 | CHECKED | AUDIBLE | Rolling means, vibrato posts and preserved smoothing alter singing parameters and behaviour. |
 | Q14-042 | 80 | CHECKED | AUDIBLE | Nearest overridden MIDI target and table choice determine the sound receiving notes. |
-| Q14-043 | 81 | PARTIAL | AUDIBLE | Tempo, division and tick/frame conversion determine when notes are played. |
+| Q14-043 | 81 | CHECKED | AUDIBLE | Tempo, division and tick/frame conversion determine when notes are played. |
 | Q14-044 | 82 | CHECKED | AUDIBLE | Modulator trigger and stop selectors determine which parameter state starts or stops. |
 | Q14-045 | 83 | CHECKED | AUDIBLE | Note gates, control curves and envelope trigger timing change level and note lifetime. |
 | Q14-046 | 84 | CHECKED | AUDIBLE | Shake RTPC and per-voice LFO depth cadence change singing modulation. |
@@ -526,6 +526,9 @@ PARTIAL: Q15 report MT1–7 checks track/parent property56, override flags, targ
 PARTIAL: Q15 report RI1–5, TP1–5, MR1–8 and FC1–6 checks packed header/division/tempo, property55, clock arithmetic and frame offset conversion. MJ515B–E reconcile positive PD1–7 normal/system decoder completion, SK1–6 seek/advance, CRS1–7 restore/query, CX/CD context and NQ/CWT post/lifecycle writers. Remaining concrete registry/property/meter/rate/provider input closure and queued event/target/lifetime recipients stay distinct; no generic unread decoder/seek claim.
 
 **Current disposition, checkpoint591:** PARTIAL: Complete inherited unrestricted live renderer-rate writer/alias proof (same original092/099); duration and each event separately reload105243C. TE591A–F/TI590 bind property55/meter producers and successful initialization; fresh three-parent100/120/80 tempo witnesses. Queued target/held-state recipients paid574/585/587/589; no unpaid051/053. out of scope: storage/I/O/backing and per-sample DSP. Older remaining-work prose above is historical and superseded.
+
+
+**Current disposition, checkpoint840:** CHECKED for the original header/property55/effective-tempo/tick-time/frame conversion and concrete recipient decision contracts. Live105243C stays independently reloaded for duration and each event; no fixed/default rate or writer absence is claimed. Explicit complete writer/alias proofs remain092/099/120/124/130 PARTIAL. See `20261011-sound-midi-clock-scope-recheck.md`; the inherited-census remainder591 is superseded, without fidelity/production acceptance.
 
 ## Q14-044 — triage line 82
 
@@ -3404,3 +3407,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint839 — vector-store widths and alignment checked
 
 `20261011-sound-voice-policy-vector-overlap-disposition.md` adds onlyvector extents to838’sunchanged finite seeds/windows andasserts actualA0B01C transfers16bytes atSP;its40hex annotation isalignment,not displacement. No added finite overlap event;all prior events/frontiers preserved. No exhaustive alias/writer/caller absence inference.033 PARTIAL;116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Stop this finite lead andcontinue otherpositive original inputs;Q15 stays behindQ14.
+
+### Checkpoint840 — original MIDI scheduling scope reconciled
+
+`20261011-sound-midi-clock-scope-recheck.md` reopens043 original reader/tempo/clock andconcrete input/recipient contracts.043 CHECKED foritsbounded original scheduling obligation;separate duration/per-event live-rate reloads remainexact inputs,not default/immutability assumptions.092/099/120/124/130 keepall explicit writer/alias/zero-input gaps PARTIAL. Current117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. CurrentM9-005 IMPLEMENTATION_GAP unchanged;no production/fidelity/hardware/Q15 acceptance. Continue original genuinely open inputs.
