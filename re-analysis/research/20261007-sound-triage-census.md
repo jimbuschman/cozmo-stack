@@ -3583,3 +3583,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint883 — original key bulk-call byte spans
 
 `20261011-sound-header-key-bulk-span-disposition.md` adds BL/BLX destination/count overlap for14 actual imported primitive boundaries;36 native argument fixtures pass across12 ARM sites without helper execution.15,275 original key windows yield zero bulk events/815 caps; existing31 observations remain paid865/875. Unknown arguments, unselected origins, B/BX tails and aliases remain open.109/134 PARTIAL; stop this call form.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint884 — original key bulk-tail byte spans
+
+`20261011-sound-header-key-bulk-tail-disposition.md` checks883-omitted B/BX spans at the same14 primitive interfaces; six actual ARM B argument fixtures pass without helper execution.15,275 original windows/815 caps yield zero bulk-tail events. Reused at-call diagnostic labels on branches are pointer liveness, not actual primitive calls or new decision facts. Unknown arguments/aliases/origins/caps remain open; stop these forms.109/134 PARTIAL.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.

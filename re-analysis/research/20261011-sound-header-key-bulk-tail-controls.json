@@ -1,0 +1,60 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "controls": [
+    {
+      "actual_B": "009096F0",
+      "stub": "004D36DC",
+      "name": "memset",
+      "destination": "0108D998",
+      "count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_B": "009096F0",
+      "stub": "004D36DC",
+      "name": "memset",
+      "destination": "0108D998",
+      "count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_B": "009096F0",
+      "stub": "004D36DC",
+      "name": "memset",
+      "destination": "0108D9A0",
+      "count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_B": "00A4CA00",
+      "stub": "004D37F0",
+      "name": "memcpy",
+      "destination": "0108D998",
+      "count": 24,
+      "overlap": true,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_B": "00A4CA00",
+      "stub": "004D37F0",
+      "name": "memcpy",
+      "destination": "0108D998",
+      "count": 8,
+      "overlap": false,
+      "stopped_before_primitive": true
+    },
+    {
+      "actual_B": "00A4CA00",
+      "stub": "004D37F0",
+      "name": "memcpy",
+      "destination": "0108D9A0",
+      "count": 0,
+      "overlap": false,
+      "stopped_before_primitive": true
+    }
+  ],
+  "boundary": "Actual unconditional ARM B instructions with explicit argument fixtures; no helper execution, actual caller input or performed write certification. BX/computed targets remain navigation only."
+}
