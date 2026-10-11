@@ -1,0 +1,13 @@
+# Q14 rate/frame: deferred-property scan bound and modulator cap boundary
+
+Checkpoint830; guard reread before each step; decisions only.116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL unchanged.
+
+`20261011-sound-property-scan-cap-witness.py/.json` independently checks every raw ordinary-property ID/value block from3490 shipped node payloads against its payload hash and existing hashed navigation. Counts are0(2941),1(346),2(101),3(89),4(13). Only Layer774902407 has property2E,raw word02000000 at bank offset6030411. This is an authored property-block census,not a proof that live blocks cannot be replaced or mutated.
+
+Existing TC9 selects the ancestor whose override bit stops traversal,then searches its current3C property blob for2E. Primary companion reopens9EDF78's U8 count,9EDF80's scan index0,9EDF98's next indexR0=R3+1,and9EDF88/90's count-bound exit. A matching ID computes its raw value from the aligned count and previous zero-based index;mode selection/callbacks remain TC9. All six826 saved9EDF5C states have the still-unoverwritten next indexR0=94/95(148/149),outside physical index1..count<=4 for the authored blocks. The whole inherited-node search is not declared impossible;these particular long property-scan states are outside the finite bank input bound. Actual mode1 from property value2 remains an audible scheduling decision.
+
+The other smallest six-state cap,9E6D2C,is credited to existing MTK1-2/ER538. Its frame pointer is loaded9E6D38,dereferenced asU16 scalar9E6D44,and passedR1 to9E2BD0 at9E6D48. Later registry bucket traversal and callbacks use other live inputs. Saved bucket indices126/127 are not excluded by a guessed authored-state count:the registry is live,and no actual bucket-count bound was recovered here. All six saved states remain available in826 JSON;none is promoted to unreachable. Parameter delivery,ordering,eligibility and retirement were already paid by MTK/RH/ER538;the numeric bucket frontier does not itself identify a new frame writer or pointer escape.
+
+out of scope: registry hash/storage/growth implementation. Stop that infrastructure lead without descending into bucket allocation or hashing;the exact recipient and callback order remains the existing control contract. No general empty-registry or inert-modulator claim.
+
+This checkpoint excludes only six selected authored property-scan states and records the separate live-registry boundary. It does not prove universal rate/frame writers,relative/indirect/stack/copy aliases,property mutation or runtime input admission.043/092/099/120/124/130 remain PARTIAL/AUDIBLE. No production,manifest,inventory,PROJECT_STATE,hardware or Q15 edits.

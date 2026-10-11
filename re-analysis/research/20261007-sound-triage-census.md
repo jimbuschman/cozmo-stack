@@ -3364,3 +3364,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint829 - authored bus duck/subscription cap bounds
 
 `20261011-sound-bus-reader-cap-disposition.md` independently parses15 shipped Bus control prefixes:duck counts0/1,subscription counts0/1. Five of14 saved states exceed the exact native loop counters;other nine remain explicit. Bus104 uses ordinary properties plus nine control bytes,no fictitious range section;later R4 roles are not mistaken for duck counters. No all-runtime input/alias proof or status promotion;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint830 - authored property-scan bound and live modulator cap boundary
+
+`20261011-sound-property-scan-cap-disposition.md` independently checks3490 shipped ordinary-property blocks,maxcount4. All six9EDF5C saved nextindices148/149 exceed those authored bounds;actual2E raw2 exists on Layer774902407.9E6D2C saved bucketindices126/127 remain explicit live-registry inputs under paid MTK/ER538;out of scope:hash/storage/growth implementation. No all-runtime input/alias proof or status promotion;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

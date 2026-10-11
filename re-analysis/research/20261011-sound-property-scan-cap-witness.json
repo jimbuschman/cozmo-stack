@@ -1,0 +1,76 @@
+{
+  "objectCount": 3490,
+  "maxPropertyCount": 4,
+  "histogram": {
+    "0": 2941,
+    "1": 346,
+    "2": 101,
+    "3": 89,
+    "4": 13
+  },
+  "navigationSha256": "6df3bd1e333bfdf331457bc0657d40ac815f9cccbe81ffe2901565e88a50846a",
+  "property46": [
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectID": 774902407,
+      "type": 9,
+      "id": 46,
+      "offset": 6030411,
+      "rawHex": "02000000"
+    }
+  ],
+  "savedPending": [
+    {
+      "address": "009EDF88",
+      "instruction": "cmp ip, r0",
+      "known_registers": {
+        "r3": "00000094",
+        "r0": "00000095"
+      },
+      "nzcv_mask": "0F0F"
+    },
+    {
+      "address": "009EDFC0",
+      "instruction": "moveq r1, #1",
+      "known_registers": {
+        "r0": "00000094"
+      },
+      "nzcv_mask": "FFFF"
+    },
+    {
+      "address": "009EDFC4",
+      "instruction": "beq #0x9edfdc",
+      "known_registers": {
+        "r0": "00000094"
+      },
+      "nzcv_mask": "0F0F"
+    },
+    {
+      "address": "009EDFC4",
+      "instruction": "beq #0x9edfdc",
+      "known_registers": {
+        "r0": "00000094",
+        "r1": "00000001"
+      },
+      "nzcv_mask": "F0F0"
+    },
+    {
+      "address": "009EDFBC",
+      "instruction": "cmp r3, #2",
+      "known_registers": {
+        "r0": "00000094"
+      },
+      "nzcv_mask": "F0F0"
+    },
+    {
+      "address": "009EDFA8",
+      "instruction": "bic ip, ip, #3",
+      "known_registers": {
+        "r3": "00000094",
+        "r0": "00000095"
+      },
+      "nzcv_mask": "F0F0"
+    }
+  ],
+  "boundary": "Actual node property blocks only; arbitrary later property replacement/mutation or pointer identity not excluded. All source rows independently checked, navigation retained in cited hashed input file."
+}
