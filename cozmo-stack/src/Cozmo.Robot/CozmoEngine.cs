@@ -874,13 +874,10 @@ public sealed partial class EngineRobot
             var root = doc.RootElement;
             bool simIsNull;
             try { simIsNull = Json.IsNull(Json.Member(root, "sim")); }
-            catch (JsonLogicError)
+            catch (JsonLogicError e)
             {
-                if (!_reportedFirmwareRootThrow)
-                {
-                    _reportedFirmwareRootThrow = true;
-                    Engine.Log("warning: MISSING: HandleFirmwareVersion: the firmware JSON root is not an object or null, so Json::Value::operator[] throws Json::LogicError (0x008EADC2..0x008EAE64) out of the handler; where the engine catches it is not established and has no record yet (M3-024 owns this parse, M10-010 the physical flag; M1-029 row 11o); nothing is set");
-                }
+                // fidelity: M3-049, M1-034 — rows section 8 / ruling 12.4: isolate every throw before any stores.
+                Engine.Log($"warning: event handler threw: {e.GetType().Name}: {e.Message}");
                 return;
             }
             // fidelity: M4-011
@@ -901,7 +898,6 @@ public sealed partial class EngineRobot
         }
     }
 
-    private bool _reportedFirmwareRootThrow;
     private int _physicalRobotRecorded;
     /// <summary>True once <c>Robot::SetPhysicalRobot</c> ran (this stack's record of it, for a vision system built after the firmware version; M11-037). <see cref="IsPhysicalRobot"/> is the value.</summary>
     internal bool PhysicalRobotRecorded => Volatile.Read(ref _physicalRobotRecorded) != 0;
@@ -1022,6 +1018,7 @@ public sealed partial class EngineRobot
         _bodyNotInAccModeCount = 0;
     }
 
+    // fidelity: M3-047
     private bool Send(RobotMessage m, string what)
     {
         // A test seam (not a production path): a non-null result forces that send's outcome so a test can make
@@ -1033,7 +1030,9 @@ public sealed partial class EngineRobot
         // (0x00513558), format "Robot %d failed to send a message type %s" (0x0051356C), with Robot+0x10 (the
         // robot id) and EngineToRobotTagToString(tag) (0x007AF8D0, the catalog's CLAD member name).
         string tag = MessageCatalog.ById.TryGetValue(m.Id, out var info) ? info.Member : what;
-        Engine.Log($"warning: Robot.SendMessage: Robot {CozmoEngine.RobotId} failed to send a message type {tag}");
+        Engine.EmitEngineLog(EngineLogLevel.Warning, null, "Robot.SendMessage", $"Robot {CozmoEngine.RobotId} failed to send a message type {tag}",
+            new Dictionary<string, string> { ["$data"] = tag },
+            $"warning: Robot.SendMessage: Robot {CozmoEngine.RobotId} failed to send a message type {tag}");
         return false;
     }
 
@@ -1164,7 +1163,7 @@ public sealed partial class EngineRobot
         // fidelity: M3-032
         // 0x00513C76..0x00513C9A: VisionComponent::UpdateAllResults() non-zero warns and returns, skipping everything below. No source for that result exists in this
         // stack (see CozmoEngine.VisionUpdateAllResultsFailed), so with no hook the gate is reported MISSING once and the tick continues.
-        if (Engine.VisionUpdateAllResultsFailed is { } visionGate)
+        if (Engine.HasCameraCalibration?.Invoke() == true && Engine.VisionUpdateAllResultsFailed is { } visionGate)
         {
             if (visionGate())
             {
@@ -1174,10 +1173,10 @@ public sealed partial class EngineRobot
                 return;
             }
         }
-        else
+        else if (Engine.HasCameraCalibration?.Invoke() == true)
         {
             // reported once per process (ReportMissing de-duplicates), not once per engine robot
-            Behavior.SteppedBehavior.ReportMissing("M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: this stack has neither status on the engine tick, so neither gate is applied");
+            Behavior.SteppedBehavior.ReportMissing("M11-035 (owner of the UpdateAllResults result; the gate is M3-032) | Robot::Update 0x00513C76..0x00513C9A tests the VisionComponent::UpdateAllResults result and returns when it is non-zero, and 0x00513C6E..0x00513C74 tests [[robot+0x258]+0x28] != 0 before it: the real calibration gate is applied; M11-035 has no UpdateAllResults status hook");
         }
         // fidelity: M4-019
         // 0x00513CD8..0x00513E2A: the charger-platform step (the platform flag's clear) follows UpdateAllResults / SendAbsLocalizationUpdate / MapComponent::UpdateRobotPose
@@ -2116,7 +2115,7 @@ public sealed partial class CozmoEngine : IDisposable
         foreach (var t in h.GetInvocationList()) Isolated((Action)t);
     }
 
-    internal void Log(string line)
+    private void DisplayLogLine(string line)
     {
         var h = LogLine;
         if (h is null) return;

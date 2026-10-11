@@ -298,7 +298,7 @@ public sealed class CubeConnections
     /// the enum's own spelling and anything else returns null, which the phone's printf renders (not settled here).
     /// </summary>
     internal static string ObjectTypeName(ObjectType type) =>
-        (int)type is >= -1 and <= 37 ? type.ToString() : "<null: the phone's rendering of a null %s is open (MISSING)>";
+        (int)type is >= -1 and <= 37 ? type.ToString() : "(null)";
 
     // ------------------------------------------------------------------ Robot
 
@@ -508,10 +508,20 @@ public sealed class CubeConnections
         _discovering.Clear();
         Array.Copy(_persistentPool, _runtimePool, SlotCount);
         ConnectToObjectsLocked(_runtimePool.Select(p => p.FactoryId).ToArray());
-        // MISSING (P14, 0x0061A9C0): BlockFilter::SendBlockPoolData, the game-bound BlockPoolData broadcast, is a step of this path whose
-        // body has no inventory row, so nothing is sent here.
-        Queue("MISSING: BlockFilter::SendBlockPoolData (0x0061A9C0): no inventory row for the BlockPoolData broadcast");
+        SendBlockPoolData();
         _lastConnectTime = now;
+    }
+
+    // fidelity: M4-035
+    public event Action<BlockPoolDataMessage>? BlockPoolData;
+    private void SendBlockPoolData()
+    {
+        FlushLogs(); // connect diagnostics precede the broadcast, as in section 9
+        _log?.Invoke("info: [BlockPool] BlockFilter.HandleGameEvents: Sending blockpool data");
+        var slots = _persistentPool.Where(p => p.FactoryId != 0)
+            .Select(p => new BlockPoolBlockData(p.FactoryId, (int)p.Type)).ToArray();
+        BlockPoolData?.Invoke(new BlockPoolDataMessage(_poolEnabled, slots));
+        // Game tags E6/E7/EA/EB have no corresponding stack game-message handlers: named handoffs under M4-035 section 9.
     }
 
     private void UpdateConnecting()

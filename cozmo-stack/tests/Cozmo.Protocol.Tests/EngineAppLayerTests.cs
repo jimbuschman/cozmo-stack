@@ -578,13 +578,15 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         rig.ToSuccess();
         rig.SendFirstFullState(1000);
+        var poolMessages = new List<BlockPoolDataMessage>();
+        rig.Engine.BlockPoolData += poolMessages.Add;
         rig.Log.Clear();                       // the live engine already runs BlockFilter::Update before the first advertisement
         rig.Data(new ObjectAvailable { FactoryId = 0x10, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
         rig.Data(new ObjectAvailable { FactoryId = 0x30, ObjectType = ObjectType.Block_LIGHTCUBE3, Rssi = unchecked((sbyte)150) });   // the RSSI byte 150 is inside the "<=" predicate
         rig.Tick();
         rig.Robot.Cubes.EnableAutoBlockPool(true);
         rig.Tick(3000);
-        var lines = rig.Log.Where(l => l.Contains("BlockFilter.UpdateDiscovering") || l.Contains("SendBlockPoolData")).ToList();
+        var lines = rig.Log.Where(l => l.Contains("BlockFilter.UpdateDiscovering") || l.Contains("BlockFilter.HandleGameEvents")).ToList();
         Assert.Equal(new[]
         {
             "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE1 with RSSI < 150",
@@ -593,10 +595,12 @@ public class EngineAppLayerTests
             "info: BlockFilter.UpdateDiscovering: Looking for objects of type Block_LIGHTCUBE3 with RSSI < 150",
             "info: BlockFilter.UpdateDiscovering: Discovered closer object 0x30",
             "info: BlockFilter.UpdateDiscovering: Connecting to discovered objects",
-            "MISSING: BlockFilter::SendBlockPoolData (0x0061A9C0): no inventory row for the BlockPoolData broadcast",
+            "info: [BlockPool] BlockFilter.HandleGameEvents: Sending blockpool data",
         }, lines);
         // AddObjectToPersistentPool takes the first empty entry, in the tree's type order (P14)
         Assert.Equal(new uint[] { 0x10, 0x30, 0, 0, 0 }, rig.Robot.Cubes.Connections.PooledFactoryIds.ToArray());
+        var payload = Assert.Single(poolMessages).ToBytes();
+        Assert.Equal(Convert.FromHexString("7E010210000000010000003000000003000000"), payload); // section 9 / Unity wire rows
     }
 
     /// <summary>

@@ -674,10 +674,15 @@ public sealed class CameraSettings
         {
             if (!(MaxExposureMs >= exposureMs && MinExposureMs <= exposureMs))
             {
-                Emit($"warning: VisionSystem.IsExposureValid: Exposure {exposureMs}ms not in range {MinExposureMs} to {MaxExposureMs}");
+                Emit($"warning: VisionSystem.IsExposureValid.OOR: Exposure {exposureMs}ms not in range {MinExposureMs}ms to {MaxExposureMs}ms");
                 return false;
             }
-            if (!(gain >= MinGain && gain <= MaxGain)) return false;      // IsGainValid: vcmpe, NaN fails both
+            if (!(gain >= MinGain && gain <= MaxGain))
+            {
+                Emit($"warning: VisionSystem.IsGainValid.OOR: Gain {F(gain, 6)} not in range {F(MinGain, 6)} to {F(MaxGain, 6)}");
+                return false;
+            }
+            Emit($"info: [VisionComponent] VisionComponent.SetCameraSettings: Exp:{exposureMs}ms Gain:{F(gain, 6)}");
             _send(new SetCameraParams { Gain = gain, ExposureMs = exposureMs, AutoExposureEnabled = false });
             SetNextCameraParamsLocked(exposureMs, gain);
             info = new CurrentCameraParams(gain, exposureMs, AutoExposureEnabled);
@@ -687,9 +692,11 @@ public sealed class CameraSettings
     }
 
     /// <summary>VisionSystem::SetNextCameraParams (1d): queues the params, warning when some are already pending.</summary>
+    private static string F(double value, int digits) => double.IsNaN(value) ? "nan" : double.IsPositiveInfinity(value) ? "inf" : double.IsNegativeInfinity(value) ? "-inf" : value.ToString("F" + digits, System.Globalization.CultureInfo.InvariantCulture);
+
     private void SetNextCameraParamsLocked(int exposureMs, float gain)
     {
-        if (NextCameraParams is not null) Emit("warning: VisionSystem.SetNextCameraParams.OverwritingPreviousParams");
+        if (NextCameraParams is { } old) Emit($"warning: VisionSystem.SetNextCameraParams.OverwritingPreviousParams: Params already requested ({old.Item1}ms,{F(old.Item2, 2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain, 2)})");
         NextCameraParams = (exposureMs, gain);
     }
 
@@ -708,22 +715,26 @@ public sealed class CameraSettings
         // MISSING: M11-059 | VisionSystem::IsInitialized (0x006B2CD6) and the initial exposure (vision_config.json InitialExposureTime_ms, read by
         // VisionComponent::Init 0x00650DAE..0x00650DCA) are M11-059's; this stack holds the constants 16 and true.
         Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (unread); this stack uses the constants true and 16");
-        if (!VisionSystemInitialized) { Emit("error: VisionComponent.HandleDefaultCameraParams: VisionSystem not initialized"); return; }
+        if (!VisionSystemInitialized) { Emit("error: VisionComponent.HandleDefaultCameraParams.NotInitialized: "); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return; }
         ushort min = m.Field2, max = m.Field3;
         if (!(min <= InitialExposureTimeMs && InitialExposureTimeMs <= max))
         {
-            Emit($"error: VisionComponent.HandleDefaultCameraParams.BadInitialExposureTime: {InitialExposureTimeMs} not in [{min}, {max}]");
+            Emit($"error: VisionComponent.HandleDefaultCameraParams.BadInitialExposureTime: Initial exp time {InitialExposureTimeMs}ms outside range [{min},{max}]");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return;
         }
         SetCameraSettings(InitialExposureTimeMs, m.Field1);
         lock (_gate)
         {
+            // 13.6: SetGammaTable 0x0085F594..0x0085F5B6 always returns 0; BadGammaCurve is unreachable.
+            GammaTable = (byte[])m.Field4.Clone();
+            if (min == 0) Emit("debug: [VisionSystem] VisionSystem.SetCameraExposureParams.ZeroMinExposureTime: Will use 1.");
             MaxExposureMs = max;
             MinExposureMs = min <= 0 ? 1 : min;
             MinGain = DefaultParamsMinGain;
             MaxGain = m.Field0;
-            GammaTable = (byte[])m.Field4.Clone();
             SetNextCameraParamsLocked(InitialExposureTimeMs, m.Field1);
+            Emit($"info: [VisionSystem] VisionSystem.SetCameraExposureParams.Success: Current Gain:{InitialExposureTimeMs}ms Limits:[{min} {max}], Current Exposure:{F(m.Field1, 3)} Limits:[{F(DefaultParamsMinGain, 3)} {F(m.Field0, 3)}]");
         }
     }
 

@@ -242,6 +242,7 @@ public sealed class CozmoRobot : IDisposable
                                    Transport.Options.MaxFramePayloadBytes - CozmoDisplay.MessageOverhead);
         Audio = new CozmoAudio(m => SendMessage(m, flush: true));
         CameraSettings = new CameraSettings(this, m => SendMessage(m));
+        Engine.HasCameraCalibration = () => CameraSettings.Calibration is not null;
         // Each raw face frame is paired with an audio frame, unless a Play is feeding audio frames (MD3, M3-017).
         Display.BeforeFrame = () => { if (!Audio.Busy) SendStreamDirect(new AudioSilence()); };
         Motion = new CozmoMotion(this);

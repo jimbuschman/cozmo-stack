@@ -18,6 +18,88 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class M3DeviceTests
 {
+    // Adopted sections 2, 6, 7 and ruling 12.5; expected strings are source rows.
+    [Fact]
+    public void M3_012_OverflowAndNegativeFreeLogBeforeBudgetStores()
+    {
+        var stream = new StreamSendBuffer();
+        var lines = new List<string>();
+        stream.Log = lines.Add;
+        // Section 1: signed wrap gives free=-2147475455 for played=1, streamed=-2147483648.
+        var field = typeof(StreamSendBuffer).GetField("_bytesStreamed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        field.SetValue(stream, int.MinValue);
+        stream.UpdateAmountToSend(1, 0);
+        Assert.Equal(new[] {
+            "info: [Unnamed] AnimationStreamer.UpdateAmountToSend.BytesStreamedOverflow: free -2147475455 (streamed = -2147483648, played 1)",
+            "warning: AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot: minBytesFree:-2147475455 numBytesStreamed:-2147483648 numBytesPlayed:1"
+        }, lines);
+        Assert.Equal(0, stream.NumBytesToSend);
+    }
+
+    [Fact]
+    public void M3_048_OneEntryPerCallKeepsPairsOutsideTextAndPrefixesAfterTheCut()
+    {
+        using var rig = new Rig();
+        var entries = new List<EngineLogEntry>();
+        rig.Engine.LogEntry += entries.Add;
+        rig.Engine.EmitEngineLog(EngineLogLevel.Warning, null, "Robot.SendMessage", new string('x', 1030),
+            new Dictionary<string, string> { ["$data"] = "CubeLights" });
+        var e = Assert.Single(entries);
+        Assert.Equal(EngineLogLevel.Warning, e.Level);
+        Assert.Null(e.Channel);
+        Assert.Equal("Robot.SendMessage", e.Name);
+        Assert.Equal("(tc0000) : " + new string('x', 1023), e.Text);
+        Assert.Equal("CubeLights", e.Data["$data"]);
+        Assert.DoesNotContain("CubeLights", e.Text);
+    }
+
+    [Fact]
+    public void M3_021_ExactStructuredSettingsWarningsAndInfoPrecedeTheSend()
+    {
+        using var rig = new Rig();
+        var entries = new List<EngineLogEntry>();
+        rig.Engine.LogEntry += entries.Add;
+        Assert.False(rig.Robot.CameraSettings.SetCameraSettings(0, 2));
+        var exposure = Assert.Single(entries);
+        Assert.Equal("VisionSystem.IsExposureValid.OOR", exposure.Name);
+        Assert.Equal("(tc0000) : Exposure 0ms not in range 1ms to 66ms", exposure.Text);
+        entries.Clear();
+        Assert.False(rig.Robot.CameraSettings.SetCameraSettings(16, 5));
+        Assert.Equal("(tc0000) : Gain 5.000000 not in range 0.100000 to 4.000000", Assert.Single(entries).Text);
+        entries.Clear();
+        rig.Robot.CameraSettings.SetCameraSettings(16, 2);
+        Assert.Equal("VisionComponent.SetCameraSettings", entries[0].Name);
+        Assert.Equal("VisionComponent", entries[0].Channel);
+        Assert.Equal("Exp:16ms Gain:2.000000", entries[0].Text);
+        Assert.Single(entries); // no EngineRobot exists yet: direct handler send, no Robot.SendMessage call
+    }
+
+    [Fact]
+    public void M4_009_UnknownMovementRunsToSecondWarningAndUpAxisStoresError()
+    {
+        using var rig = new Rig();
+        var entries = new List<EngineLogEntry>();
+        rig.Engine.LogEntry += entries.Add;
+        rig.Robot.Cubes.Handle(new ObjectMoved { ObjectID = 4 });
+        Assert.Equal(new[] { "Robot.ActiveObjectMoved.UnknownActiveID", "ObjectMovedOrStoppedHelper.UnknownActiveID" }, entries.Select(e => e.Name));
+        rig.Robot.Cubes.Handle(new ObjectUpAxisChanged { ObjectID = 4 });
+        Assert.Equal("Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID", entries[^1].Name);
+        Assert.True(EngineErrorState.ErrorFlagSet);
+    }
+
+    [Fact]
+    public void M4_019_RobotStoppedEventIsFirstEvenWithDisabledSensor()
+    {
+        using var rig = new Rig();
+        var entries = new List<EngineLogEntry>();
+        rig.Engine.LogEntry += entries.Add;
+        rig.Robot.Sensors.Handle(new RobotStopped { Field0 = 7 });
+        Assert.Equal("RobotImplMessaging.HandleRobotStopped", entries[0].Name);
+        Assert.Equal(EngineLogLevel.Event, entries[0].Level);
+        Assert.Equal("7", entries[0].Text);
+        Assert.Equal("0.000000", entries[0].Data["$data"]);
+    }
+
     [Fact]
     public async Task M3_040_CompetingHostRegistrationDoesNotInvokeTheExecutingFrontTwice()
     {
@@ -484,6 +566,12 @@ public class M3DeviceTests
         Assert.DoesNotContain("debug: Robot.Update: Waiting for first full robot state to be handled", logs);
         rig.Engine.VisionUpdateAllResultsFailed = () => true;
         rig.Tick();
+        Assert.DoesNotContain("warning: Robot.Update.VisionComponentUpdateFail: ", logs); // null calibration skips Gate B
+        while (NvCommands(rig)[^1].Tag != 0x80000001) AnswerInFlight(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Data = Calibration56() });
+        rig.Tick();
+        Assert.NotNull(rig.Robot.CameraSettings.Calibration);
+        rig.Tick();
         Assert.Contains("warning: Robot.Update.VisionComponentUpdateFail: ", logs);
     }
 
@@ -564,13 +652,13 @@ public class M3DeviceTests
         Assert.Contains("warning: NVStorageComponent.Write.FactoryTagNotAllowed: Tag: NVEntry_CameraCalib (0x80000001)", LogSince(nv, start));
 
         start = nv.Log.Count;
-        Assert.Equal(0, nv.Write(0x182000, (byte[]?)null, _ => called++));      // the vector overload: info, no broadcast, no callback
-        Assert.Equal(1, called);
-        Assert.Equal(new[] { "info: NVStorageComponent.Write.NullData: NVEntry_GameUnlocks" }, LogSince(nv, start));
+        Assert.Equal(0, nv.Write(0x182000, (byte[]?)null, _ => called++)); // section 11: pointer overload, all checks continue
+        Assert.Equal(2, called);
+        Assert.Equal(new[] { "warning: NVStorageComponent.Write.NullData: NVEntry_GameUnlocks", "warning: NVStorageComponent.Write.InvalidSize: Tag: NVEntry_GameUnlocks, 0 bytes (limit 4080 bytes)" }, LogSince(nv, start));
 
         start = nv.Log.Count;
         Assert.Equal(0, nv.Write(0x182000, null, 4, _ => called++));             // the pointer overload: a warning, and the failure exit
-        Assert.Equal(2, called);
+        Assert.Equal(3, called);
         Assert.Contains("warning: NVStorageComponent.Write.NullData: NVEntry_GameUnlocks", LogSince(nv, start));
     }
 
@@ -3188,9 +3276,12 @@ public class M3DeviceTests
     /// only the two layers that exist (FaceAlbum/Enrollment, Needs).
     /// </summary>
     [Fact]
-    public void M3_034_TheConnectionReadCallbacksReachTheirLayers()
+    public void M3_034_TheConnectionReadCallbacksReportAllNoSinkHandoffs()
     {
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
         using var rig = new Rig();
+        var missing = new List<string>();
+        rig.Engine.LogLine += missing.Add;
         var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
         needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
@@ -3229,6 +3320,11 @@ public class M3DeviceTests
             Assert.Equal(enrollment, gotEnrollment);
             Assert.True(needs.RobotReadSucceeded);
             Assert.True(needs.HasRobotCopy);
+            Assert.Contains(missing, line => line.Contains("M15-034 | ProgressionUnlockComponent's NV read callback 0x0064CE34: this stack has no component for it, so the read completes and its result is dropped"));
+            Assert.Contains(missing, line => line.Contains("M15-035 | InventoryComponent's NV read callback 0x0063D7C4: this stack has no component for it, so the read completes and its result is dropped"));
+            foreach (var tag in new[] { "180000", "181000", "182000", "183000", "184000", "194000", "195000", "196000" })
+                Assert.Contains(missing, line => line.Contains($"M15-033 | RobotDataBackupManager's backup read callback for tag 0x{tag}: this stack has no component for it, so the read completes and its result is dropped"));
+            Assert.Contains(missing, line => line.Contains("M15-036 | the Lab read's callback 0x006A6486 into CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34: this stack has no component for it, so the read completes and its result is dropped"));
         }
         finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }
     }

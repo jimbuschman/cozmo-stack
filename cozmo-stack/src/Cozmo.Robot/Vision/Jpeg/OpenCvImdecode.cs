@@ -93,7 +93,7 @@ internal static class OpenCvImage
             // C.4: WebPDecoder is identified by RTTI at 0xCE2D8. C.2: probe status 0 alone matches.
             if (WebPProbe(signature, 0x201) == 0) return Unported("WebP");
             if (window.StartsWith(new byte[] { 0x59, 0xA6, 0x6A, 0x95 })) return Unported("SunRaster");
-            // 0x17A04: the shipped ctype isspace check, including the signed-char EOF exclusion.
+            // 0x17A04: the phone libc _ctype_ isspace check (GOT 0x174934, R_ARM_GLOB_DAT; libc is unshipped), including the signed-char EOF exclusion.
             if (window.Length > 2 && window[0] == 'P' && window[1] is >= (byte)'1' and <= (byte)'6'
                 && window[2] is 9 or 10 or 11 or 12 or 13 or 32) return Unported("PxM");
             if (window.StartsWith(new byte[] { 0x49, 0x49, 0x2A, 0 })

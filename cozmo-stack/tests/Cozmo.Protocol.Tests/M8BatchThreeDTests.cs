@@ -881,6 +881,7 @@ public class M8BatchThreeDTests
         using var unsub = new Unsub(() => SteppedBehavior.MissingReported -= onMissing);
         SteppedBehavior.ResetMissingForTests();
         var e = robot.Engine;
+        e.HasCameraCalibration = () => true; // M3-032: this scenario explicitly models a non-null calibration pointer; live installation is tested in M3DeviceTests.
         int ticks = 0;
         e.AIComponentUpdate = () => ticks++;
         e.Tick();

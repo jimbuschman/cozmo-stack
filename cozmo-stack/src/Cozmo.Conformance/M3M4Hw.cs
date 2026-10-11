@@ -15,8 +15,8 @@ using StbImageSharp;
 namespace Cozmo.Conformance;
 
 /// <summary>
-/// <c>m3m4-hw</c>: DRAFT hardware acceptance run M3M4-HW for the six HARDWARE_ONLY records of M3-device and
-/// M4-control (M3-008, M3-016, M3-036, M4-013, M4-021, M4-024). The manager must approve it before the operator runs
+/// <c>m3m4-hw</c>: DRAFT hardware acceptance run M3M4-HW for the seven HARDWARE_ONLY records of M3-device and
+/// M4-control (M3-008, M3-016, M3-036, M3-050, M4-013, M4-021, M4-024). The manager must approve it before the operator runs
 /// it (re-analysis/acceptance/hardware/scripts/m3m4-hw-draft.md). It connects through the production engine
 /// (<see cref="CozmoRobot.Create"/> + ConnectToRobot, as <c>control-check</c> does), runs one observation procedure per
 /// record, and writes one self-contained bundle. It never commits, never writes the manifest, and never writes the
@@ -30,8 +30,8 @@ public static class M3M4Hw
 {
     public const string TestId = "M3M4-HW";
 
-    /// <summary>The six records this run is about. All must exist in re-analysis/fidelity_manifest.json or the run stops before touching the network.</summary>
-    public static readonly string[] RecordIds = { "M3-008", "M3-016", "M3-036", "M4-013", "M4-021", "M4-024" };
+    /// <summary>The seven records this run is about. All must exist in re-analysis/fidelity_manifest.json or the run stops before touching the network.</summary>
+    public static readonly string[] RecordIds = { "M3-008", "M3-016", "M3-036", "M4-013", "M4-021", "M4-024", "M3-050" };
 
     public sealed record CheckDef(string Id, string Title, string[] Records, bool Moves, bool NeedsOperator, bool NeedsCube);
 
@@ -40,7 +40,7 @@ public static class M3M4Hw
     {
         new("ORIGIN", "Origin id and frame the robot reports in RobotState before and after the connection-time AbsoluteLocalizationUpdate", new[] { "M4-021" }, false, false, false),
         new("NV_READS", "Factory NV reads with Length = 1 (raw replies) and non-factory reads, looking for a Length = size+16 re-request; read-only", new[] { "M3-036" }, false, false, false),
-        new("COLOR_IMAGES", "Camera frames with the colour flag off, with EnableColorImages on (and on again with an ImageRequest), then off: encoding, geometry, saved frames", new[] { "M3-016" }, false, true, false),
+        new("COLOR_IMAGES", "Camera frames with the colour flag off, with EnableColorImages on (and on again with an ImageRequest), then off: encoding, geometry, saved frames", new[] { "M3-016", "M3-050" }, false, true, false),
         new("FACE_ROWS", "Known face patterns that separate pair-bit to display-row mappings, plus face-frame sweeps for the playback period; the operator answers what the face showed", new[] { "M3-008" }, false, true, false),
         new("MOTOR_CAL", "StartMotorCalibration (head) after the connection-time calibration has finished: reports and head motion after the request only", new[] { "M4-013" }, true, true, false),
         new("CUBE_TELEM", "Cube telemetry before and after the cube connects, with and without StreamObjectAccel; what precedes it", new[] { "M4-024" }, false, true, true),
@@ -64,7 +64,7 @@ public static class M3M4Hw
     // ------------------------------------------------------------------ record validation (fail fast)
 
     /// <summary>
-    /// Reads the manifest and returns the six records. Throws with every missing id named; a record whose status is no longer
+    /// Reads the manifest and returns the seven records. Throws with every missing id named; a record whose status is no longer
     /// HARDWARE_ONLY is returned too and listed in <paramref name="warnings"/> (the run's premise has changed; the manager decides).
     /// </summary>
     public static List<JsonObject> LoadRecords(string manifestPath, List<string> warnings)
@@ -88,7 +88,7 @@ public static class M3M4Hw
     {
         var named = Checks.SelectMany(c => c.Records).ToList();
         var stray = named.Except(RecordIds).ToList();
-        if (stray.Count > 0) return "a check names a record outside the six: " + string.Join(", ", stray);
+        if (stray.Count > 0) return "a check names a record outside the seven: " + string.Join(", ", stray);
         var unnamed = RecordIds.Except(named).ToList();
         return unnamed.Count > 0 ? "a record no check names: " + string.Join(", ", unnamed) : null;
     }
@@ -139,7 +139,7 @@ public static class M3M4Hw
 
         if (CheckDefinitionProblem() is { } problem) { Console.Error.WriteLine("m3m4-hw: " + problem); return 2; }
         string? repoRoot = LinkCheck.FindRepoRoot();
-        if (repoRoot is null && outParent is null) return Usage("the repository root was not found (the manifest is needed to validate the six records); pass --out and run inside the repository");
+        if (repoRoot is null && outParent is null) return Usage("the repository root was not found (the manifest is needed to validate the seven records); pass --out and run inside the repository");
         var warnings = new List<string>();
         List<JsonObject> records;
         try
@@ -310,6 +310,8 @@ internal sealed class M3M4Run
     {
         res["id"] = def.Id; res["title"] = def.Title;
         res["records"] = new JsonArray(def.Records.Select(r => (JsonNode)r).ToArray());
+        if (def.Id == "CUBE_TELEM") res["contextRecords"] = new JsonArray(new JsonObject
+            { ["id"] = "M4-010", ["status"] = "IMPLEMENTATION_GAP", ["uncertainty"] = "auto-pool connection path is awaiting strong verification" });
         res["moves"] = def.Moves; res["startMs"] = Num(from); res["endMs"] = Num(Now());
         res["settlesNoRecord"] = "an observation, not a verdict on the record: no verdict here changes the manifest or raises provenance";
         lock (_checkResults) _checkResults.Add(res);
@@ -992,6 +994,12 @@ internal sealed class M3M4Run
 
     // ------------------------------------------------------------------ bundle
 
+    internal static JsonObject ImageEncodingObservation(ImageChunk chunk) => new()
+    {
+        ["record"] = "M3-050", ["imageId"] = chunk.ImageId, ["chunkId"] = chunk.ChunkId,
+        ["encoding"] = chunk.ImageEncoding, ["flag567"] = chunk.ImageEncoding is 5 or 6 or 7,
+    };
+
     private string WriteBundle()
     {
         if (Interlocked.Exchange(ref _written, 1) == 1) return "ERROR";
@@ -1028,6 +1036,19 @@ internal sealed class M3M4Run
         File.WriteAllText(Path.Combine(_bundle, "events.jsonl"), ev.ToString(), Encoding.UTF8);
         File.WriteAllText(Path.Combine(_bundle, "records.json"), new JsonArray(_records.Select(r => (JsonNode)r.DeepClone()).ToArray()).ToJsonString(new JsonSerializerOptions { WriteIndented = true }), Encoding.UTF8);
 
+        // M3-050: inspect every received ImageChunk in every phase, including retransmissions.
+        var encodings = new StringBuilder();
+        foreach (var frame in Frames().Where(f => !f.Out && f.Frame is not null).OrderBy(f => f.T))
+            foreach (var message in frame.Frame!.Messages)
+                if (message.Payload.Length > 0 && message.Payload[0] == Tag(RobotMessageId.Image) && Parse(message.Payload) is ImageChunk chunk)
+                {
+                    var row = ImageEncodingObservation(chunk);
+                    row["t"] = Num(frame.T);
+                    row["phase"] = inWindows.FirstOrDefault(w => frame.T >= w.From && frame.T <= w.To).Name ?? "outside-check-windows";
+                    encodings.AppendLine(row.ToJsonString());
+                }
+        File.WriteAllText(Path.Combine(_bundle, "image-encodings.jsonl"), encodings.ToString(), Encoding.UTF8);
+        _warnings.Add("CUBE_TELEM context: M4-010 remains IMPLEMENTATION_GAP; the auto-pool connection path is awaiting strong verification.");
         JsonObject[] checks; lock (_checkResults) checks = _checkResults.ToArray();
         string overall = _exceptions.Count > 0 && checks.Length == 0 ? "ERROR" : checks.Any(c => c["verdict"]!.GetValue<string>() == "INCONCLUSIVE") ? "REVIEW_REQUIRED_SOME_INCONCLUSIVE" : "REVIEW_REQUIRED";
         var result = new JsonObject

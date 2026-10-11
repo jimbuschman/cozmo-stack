@@ -1422,7 +1422,7 @@ public class M4ControlTests
         rig.ToSynced();
         rig.State(flags: RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsOnCharger | RobotStatusFlag.IsCharging);
         Assert.Equal(1, rig.Robot.Lights.Body.ChargingState);
-        Assert.True(rig.Logged("no pattern \"Charging\""));
+        Assert.True(rig.Logged("Got null anim for state Charging"));
         rig.Robot.Lights.SetBackpack(LedColor.Red);
         int mark = rig.Mark();
         rig.Tick();
@@ -1498,9 +1498,9 @@ public class M4ControlTests
             Assert.Equal(Hex("10 02000000 00"), fade[0]);
             Assert.Equal(Hex("04" + string.Concat(Enumerable.Repeat("E0830080226404220000", 4))), fade[1]);
 
-            Assert.False(rig.Logged("NoAnimForTrigger Connected"));
+            Assert.False(rig.Logged("CubeLightComponent.NoAnimForTrigger: No animation found for trigger "));
             for (int i = 0; i < 86; i++) rig.Tick();                     // 5160 ms more
-            Assert.True(rig.Logged("NoAnimForTrigger Connected"));        // LC3: the default layer-2 pick is Connected
+            Assert.True(rig.Logged("CubeLightComponent.NoAnimForTrigger: No animation found for trigger "));        // LC3: the default layer-2 pick is Connected
         }
         finally { Directory.Delete(res, true); }
     }
@@ -1628,8 +1628,8 @@ public class M4ControlTests
         rig.Tick();
         Assert.Equal(new[] { true, true, false }, moved);
         Assert.Equal(12u, rig.Robot.Cubes.ByObjectId(0)!.MovingChangedAt);
-        Assert.True(rig.Logged("HandleActiveObjectMoved: unknown active id 3"));
-        Assert.True(rig.Logged("HandleActiveObjectUpAxisChanged: unknown active id 3"));
+        Assert.True(rig.Logged("Robot.ActiveObjectMoved.UnknownActiveID: Could not find match for active object ID 3"));
+        Assert.True(rig.Logged("Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID: Could not find match for active object ID 3"));
     }
 
     /// <summary>

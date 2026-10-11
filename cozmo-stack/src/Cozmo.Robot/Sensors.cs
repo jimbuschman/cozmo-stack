@@ -496,18 +496,19 @@ public sealed class CozmoSensors
     /// </summary>
     internal void ClearCliffRunningStats()
     {
-        bool send;
         lock (_gate)
         {
             _cliffSuspiciousCount = 0;
-            send = _cliffThresholdCache != DefaultCliffThreshold;
-            if (send) _cliffThresholdCache = DefaultCliffThreshold;
+            if (_cliffThresholdCache != DefaultCliffThreshold)
+            {
+                _cliffThresholdCache = DefaultCliffThreshold;
+                _robot.Engine.EmitEngineLog(EngineLogLevel.Event, null,
+                    "CliffSensorComponent.ClearCliffRunningStats.RestoringCliffDetectThreshold", "400");
+                SendCliffDetectThresholdToRobot(DefaultCliffThreshold);
+            }
             _cliffSamples.Clear();
             _cliffMean = _cliffVariance = _cliffM2 = 0f;
         }
-        if (!send) return;
-        _robot.Engine.Log("info: CliffSensorComponent.ClearCliffRunningStats.RestoringCliffDetectThreshold");
-        SendCliffDetectThresholdToRobot(DefaultCliffThreshold);
     }
 
     /// <summary>Whether the engine's cliff sensor component is enabled (+4); set by the game EnableCliffSensor (SC6).</summary>
@@ -811,6 +812,9 @@ public sealed class CozmoSensors
                 // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; MISSING: M8-019, reported below),
                 // ActionList::Cancel(-1) (0x00535466..0x0053546E; M8-015's ActionList, the robot's own) and the RobotStopped broadcast (0x00535480).
                 // Nothing is sent to the robot by this handler.
+                _robot.Engine.EmitEngineLog(EngineLogLevel.Event, null, "RobotImplMessaging.HandleRobotStopped",
+                    rs.Field0.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    new Dictionary<string, string> { ["$data"] = _cliffVariance.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) });
                 EvaluateCliffSuspiciousnessWhenStopped(_robot.Engine.Robot?.StoredState?.Timestamp ?? _cliffTimestamp);
                 bool stoppedEnabled;
                 lock (_gate) stoppedEnabled = _cliffEnabled;

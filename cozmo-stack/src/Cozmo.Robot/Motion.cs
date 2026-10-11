@@ -1160,7 +1160,7 @@ bool requireCalibration = true)
         return child;
     }
 
-    // fidelity: M4-028
+    // fidelity: M8-017
     /// <summary>
     /// L1: the child is added to the sleep sequence's parallel parent with both flags zero (AddAction 0x0052CFB0; the returned
     /// weak handle is released).
