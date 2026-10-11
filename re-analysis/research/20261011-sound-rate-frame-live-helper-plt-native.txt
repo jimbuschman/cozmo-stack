@@ -1,0 +1,13 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+RANGE 0x004B3E70..0x004B3E7C exclusive; ARM;
+004B3E70: add          ip, pc, #0xb00000
+004B3E74: add          ip, ip, #0x91000
+004B3E78: ldr          pc, [ip, #0x8e4]!
+RANGE 0x004BE310..0x004BE31C exclusive; ARM;
+004BE310: add          ip, pc, #0xb00000
+004BE314: add          ip, ip, #0x8a000
+004BE318: ldr          pc, [ip, #0xb24]!
+RANGE 0x004BAA40..0x004BAA4C exclusive; ARM;
+004BAA40: add          ip, pc, #0xb00000
+004BAA44: add          ip, ip, #0x8d000
+004BAA48: ldr          pc, [ip, #0x104]!

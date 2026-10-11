@@ -11715,3 +11715,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint813 - native live-register argument checks
 
 `20261011-sound-rate-frame-live-register-disposition.md` positively pays two existing liveR3 pointer observations:actualA548B8 reads/stores only scalarR1 intovoiceEC,and9E2BD0 saves scalar frameR1 then overwritesR3 before any read. Neither is a pointer escape;no per-sample evaluator descent or new scalar writer. Other original writer/alias/input proofs remain open;all six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint814 - numerical-helper identities and shipped source availability
+
+`20261011-sound-rate-frame-live-helper-disposition.md` binds the remaining12 existing rate/frame register observations at11 calls to three exact ELF helper imports. Authority6 ArmABI scalar-interface cross-check is separated from primary evidence. Exactly3-name/28-shipped-ELF metadata lookup finds10 exported definitions,including direct engine dependencies;no unshipped-code,selected-runtime-provider or alias-absence inference. All six original rate/frame proofs remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

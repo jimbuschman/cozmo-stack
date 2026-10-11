@@ -1,0 +1,199 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "helper_linkage": [
+    {
+      "plt": "004B3E70",
+      "plt_bytes": "0bc68fe291ca8ce2e4f8bce5",
+      "slot": "0104575C",
+      "raw_word": "004A4010",
+      "relocation": "ARM_JUMP_SLOT",
+      "symbol": "__aeabi_idiv",
+      "symbol_value": "00000000",
+      "section_index": 0
+    },
+    {
+      "plt": "004BE310",
+      "plt_bytes": "0bc68fe28aca8ce224fbbce5",
+      "slot": "01048E3C",
+      "raw_word": "004A4010",
+      "relocation": "ARM_JUMP_SLOT",
+      "symbol": "__aeabi_uidiv",
+      "symbol_value": "00000000",
+      "section_index": 0
+    },
+    {
+      "plt": "004BAA40",
+      "plt_bytes": "0bc68fe28dca8ce204f1bce5",
+      "slot": "01047B4C",
+      "raw_word": "004A4010",
+      "relocation": "ARM_JUMP_SLOT",
+      "symbol": "__aeabi_l2f",
+      "symbol_value": "00000000",
+      "section_index": 0
+    }
+  ],
+  "rate_frame_live_observations": [
+    {
+      "address": "0098638C",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052440",
+      "instruction": "bl #0x4b3e70",
+      "seeds": [
+        "00986284"
+      ],
+      "callee_identity": "__aeabi_idiv"
+    },
+    {
+      "address": "0099CCA0",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052440",
+      "instruction": "bl #0x4be310",
+      "seeds": [
+        "0099CC6C"
+      ],
+      "callee_identity": "__aeabi_uidiv"
+    },
+    {
+      "address": "009AA154",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052440",
+      "instruction": "bl #0x4be310",
+      "seeds": [
+        "009AA104"
+      ],
+      "callee_identity": "__aeabi_uidiv"
+    },
+    {
+      "address": "009AF948",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "0105243C",
+      "instruction": "bl #0x4baa40",
+      "seeds": [
+        "009AF8B4"
+      ],
+      "callee_identity": "__aeabi_l2f"
+    },
+    {
+      "address": "009AF948",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052440",
+      "instruction": "bl #0x4baa40",
+      "seeds": [
+        "009AF8B4"
+      ],
+      "callee_identity": "__aeabi_l2f"
+    },
+    {
+      "address": "009AFB0C",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052444",
+      "instruction": "bl #0x4be310",
+      "seeds": [
+        "009AF8B4"
+      ],
+      "callee_identity": "__aeabi_uidiv"
+    },
+    {
+      "address": "009B0834",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052444",
+      "instruction": "bl #0x4be310",
+      "seeds": [
+        "009B0804"
+      ],
+      "callee_identity": "__aeabi_uidiv"
+    },
+    {
+      "address": "009E6D48",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052440",
+      "instruction": "bl #0x9e2bd0",
+      "seeds": [
+        "009E6D2C"
+      ],
+      "callee_identity": "813 incomingR3 killed before read"
+    },
+    {
+      "address": "009EBE94",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "01052444",
+      "instruction": "bl #0x4b3e70",
+      "seeds": [
+        "009EBE6C"
+      ],
+      "callee_identity": "__aeabi_idiv"
+    },
+    {
+      "address": "009FD548",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052444",
+      "instruction": "bl #0x4b3e70",
+      "seeds": [
+        "009FD4DC"
+      ],
+      "callee_identity": "__aeabi_idiv"
+    },
+    {
+      "address": "00A3685C",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "01052444",
+      "instruction": "bl #0x4b3e70",
+      "seeds": [
+        "00A36834"
+      ],
+      "callee_identity": "__aeabi_idiv"
+    },
+    {
+      "address": "00A430A8",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0105243C",
+      "instruction": "bl #0xa548b8",
+      "seeds": [
+        "00A43064",
+        "00A43078",
+        "00A43098"
+      ],
+      "callee_identity": "813 scalar-only leaf"
+    },
+    {
+      "address": "00A58074",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "01052440",
+      "instruction": "bl #0x4be310",
+      "seeds": [
+        "00A58054"
+      ],
+      "callee_identity": "__aeabi_uidiv"
+    },
+    {
+      "address": "00A58DB0",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "01052440",
+      "instruction": "bl #0x4b3e70",
+      "seeds": [
+        "00A58C40"
+      ],
+      "callee_identity": "__aeabi_idiv"
+    }
+  ],
+  "counts": {
+    "register_observations": 14,
+    "unique_calls": 13,
+    "helper_register_observations": 12
+  },
+  "limit": "Identity/navigation only; standard ABI cross-check is external. Runtime resolver winner and actual helper algorithm/memory effects are not certified."
+}
