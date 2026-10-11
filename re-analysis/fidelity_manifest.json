@@ -6791,7 +6791,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): BodyLightComponent: sources in priority {1,0,2}, Off resent every Robot::Update while no source (LB1, LB2, LB4h); the charging state machine with the engine's own OffCharger and the JSON's Charging/Charged/BadCharger (LB4, LB4a..LB4e, loaded from config/engine/lights/backpackLights under CozmoEngineOptions.ResourcesPath); the shared locator at source 2 (LB4i, LB5: CozmoLights.SetBackpack/SetBackpackPattern/BlinkBackpack); the wire conversion to 0x03 (LEDs 1..3) then 0x11 (LEDs 0 and 4) with no white balance (LB3, LB4f, LB4g).",
-      "unresolved": "Follow-up rows 13.4, ruling 14.4. IMPLEMENTATION_GAP: build from re-analysis/research/20261011-m3m4-fix-rows.md section 4 and the rulings in section 12. Before: Final settling pass: KEEP. Contradicted logs: NullAnim \"BodyLightComponent.UpdateChargingLightConfig.NullAnim\" / \"Got null anim for state %s\" (0x00631C4C..0x00631C52) vs Lights.cs:243; loader texts Lights.cs:121/128 vs \"BackpackLightAnimationContainer.AddBackpackLightStateValues.InvalidJson\" / \"Missing member field in pattern definition for BackpackLightsState %s\". Holds: the state^2 name table 0x0102EA18 and the 3.5 V bpl at 0x00631BC0. Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed. The vision-mode request queue (E4..E7) is M11-061's (new); the LimitedExposure reader M11-057's. The NullVisionSystem text below is stale (fix round 1 item 3 applied, Lights.cs). Build round: the VisionSystem code tagged M4-017 (Vision/VisionSystem.cs: the mode-14 queue, the drain, EnablingMode/DisablingMode) is retagged M11-061; SetHeadlight's send (Lights.cs) lacks Robot::SendMessage's failure warning. Before: built, awaiting strong verification: checked E2-E8 LimitedExposure caller slice, 2026-10-09. SetHeadlight queues mode14 on the actual VisionSystem before reliable/not-hot send, ignores the recipient result, and when absent emits the empty-format NullVisionSystem sErrorF, stores _errG then evaluates the shipped no-op debug-break gate. Vision image update enables/disables before popping each queued request, logs native EnablingMode/DisablingMode only on a changed bit, joins ascending native mode names with +, clears Idle on enable and restores Idle for empty mask. Live image-update regression covers delayed application, idempotence, null error and continued wire send. MISSING: E9 LimitedExposure reader/effect remains M11; other mode queue producers and their special FaceTracker recipients are outside this bounded mode14 caller slice, not supplied by a no-op stand-in.",
+      "unresolved": "Follow-up rows 13.4, ruling 14.4; pin 14.4 decided: M1-034 covers the loader's non-object JSON throw (built under M4-036). IMPLEMENTATION_GAP: build from re-analysis/research/20261011-m3m4-fix-rows.md section 4 and the rulings in section 12. Before: Final settling pass: KEEP. Contradicted logs: NullAnim \"BodyLightComponent.UpdateChargingLightConfig.NullAnim\" / \"Got null anim for state %s\" (0x00631C4C..0x00631C52) vs Lights.cs:243; loader texts Lights.cs:121/128 vs \"BackpackLightAnimationContainer.AddBackpackLightStateValues.InvalidJson\" / \"Missing member field in pattern definition for BackpackLightsState %s\". Holds: the state^2 name table 0x0102EA18 and the 3.5 V bpl at 0x00631BC0. Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed. The vision-mode request queue (E4..E7) is M11-061's (new); the LimitedExposure reader M11-057's. The NullVisionSystem text below is stale (fix round 1 item 3 applied, Lights.cs). Build round: the VisionSystem code tagged M4-017 (Vision/VisionSystem.cs: the mode-14 queue, the drain, EnablingMode/DisablingMode) is retagged M11-061; SetHeadlight's send (Lights.cs) lacks Robot::SendMessage's failure warning. Before: built, awaiting strong verification: checked E2-E8 LimitedExposure caller slice, 2026-10-09. SetHeadlight queues mode14 on the actual VisionSystem before reliable/not-hot send, ignores the recipient result, and when absent emits the empty-format NullVisionSystem sErrorF, stores _errG then evaluates the shipped no-op debug-break gate. Vision image update enables/disables before popping each queued request, logs native EnablingMode/DisablingMode only on a changed bit, joins ascending native mode names with +, clears Idle on enable and restores Idle for empty mask. Live image-update regression covers delayed application, idempotence, null error and continued wire send. MISSING: E9 LimitedExposure reader/effect remains M11; other mode queue producers and their special FaceTracker recipients are outside this bounded mode14 caller slice, not supplied by a no-op stand-in.",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_017_LB1_LB2_LB3_TheOffLightsGoOutEveryTickWhileThereIsNoSource, M4ControlTests.M4_017_LB4_LB4i_LB5_TheChargingStateSharesTheLocatorWithSetBackpack, M4ControlTests.M4_017_LB4g_ChargingOnTheWireFromTheShippedPatterns, ControlTests.BackpackColoursArePackedAndRememberedAsSent"
@@ -9540,7 +9540,7 @@
         "re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to \"event\".",
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, \"das\", \"%s%s : %s %s\") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets \"$game\" (0x801C..0x8074)."
       ],
-      "unresolved": "RECOVERABLE_GAP (ruling 14.6): sink (b) queue body 0xB47C unread (the upload is BLOCKED_EXTERNAL); sink (c) is unreachable without the app's \"$game\". Sink (a) and the level filter are read; whether the stack's rendered log follows them is an operator pin (the queued channel/prefix decision).",
+      "unresolved": "RECOVERABLE_GAP: sink (b) queue body 0xB47C unread (the upload is BLOCKED_EXTERNAL); sink (c) is unreachable without the app's \"$game\". Sink (a) and the level filter are read; the stack's rendered log follows them (operator, 2026-10-11): records M3-053 and M3-054.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9558,6 +9558,40 @@
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: cozmo_startup DASConfigure(DataPlatformResourcesBasePath + \"/DASConfig.json\", ...) 0x00665974..0x0066598E; Unity sets the base path to persistentDataPath + \"/cozmo\" (unity/scripts/csharp/RobotEngineManager.cs:537-543); re-analysis/obb/assets/DASConfig.json:3-11. The app's copy of the file to that path was not found in the app source."
       ],
       "unresolved": "COMPATIBILITY_POLICY: input = the OBB's assets/DASConfig.json; DataCollectionEnabled (DASEnableNetwork) is the stack's setting, network upload external.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-053",
+      "subsystem": "M3-device",
+      "title": "Rendered engine log: libDAS sink (a) exactly (the DASConfig level filter, \"name : text \" with right-trim and trailing space, the logcat priority, the null-name \"noname\" path)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "effect": "Which engine log entries the stack displays and how: with the shipped DASConfig.json only events, warnings and errors, as on the phone; the stack currently prints every entry in its own format.",
+      "provenance": "Follow-up Opus extraction (2026-10-11) section 13.5; Operator ruling 2026-10-11 on pins 14.4/14.6 (AGENTS.md \"Other approved departures\").",
+      "authority": "libDAS (shipped in the APK) DasLocalAppenderImpl and _DAS_GetLevel; libcozmoEngine.so DasLoggerProvider.",
+      "evidence": [
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: _DAS_GetLevel 0x73A4..0x73F0, 0x11758..0x11866 (override tree on '.' segments, else localMinLogLevel); core 0x742E..0x75EE (null/blank name -> \"DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED ...\" and \"noname\"); sink (a) vtable 0x36A8C, gate 0x75F2..0x7666, right-trim 0x25984..0x259D0, __android_log_print(prio, \"das\", \"%s%s : %s %s\", \"\", name, text, \"\") 0x27D98..0x27E20, prio by level 0..4 = 3,4,4,5,6."
+      ],
+      "unresolved": "IMPLEMENTATION_GAP: build on M3-048's structured entry. Levels come from the M3-052 DASConfig input (DASConfigure defaults and parse-failure levels per 13.5). The logcat priority is carried on the rendered line. $level/$ts insertion is metadata, not displayed by sink (a).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-054",
+      "subsystem": "M3-device",
+      "title": "Verbose log display: a stack setting, off by default, that also shows the entries libDAS sink (a) drops",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "effect": "With the setting on, info and debug entries (and their channels) are displayed for debugging; off, the display is M3-053 exactly.",
+      "provenance": "Operator ruling 2026-10-11 on pins 14.4/14.6 (AGENTS.md \"Other approved departures\").",
+      "authority": "Operator decision; no engine counterpart.",
+      "evidence": [
+        "re-analysis/research/20261011-m3m4-fix-rows.md sections 13.5 and 14.6 (what sink (a) drops); AGENTS.md approved departures (operator, 2026-10-11)."
+      ],
+      "unresolved": "COMPATIBILITY_POLICY: input = the stack's verbose-log setting (default off). It changes only the display; the structured entries (M3-048) and every engine-side effect are unchanged.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9699,7 +9733,7 @@
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.3: LoadNonConfigData order 0x0051F3B0..0x0051F3CE; WalkAnimationDir 0x0051F600..0x0051F62C, 0x00520E5A..0x005211BC; FilesInDirectory 0x00802D70..0x00802E10, suffixes 0x0101FF68; Results 0x0051F6A4..0x0051F6EA; LoadBackpackLightAnimationFile 0x00521CE4..0x00521D42; readAsJson 0x0084C090..0x0084C15C; LoadTime 0x005200DE, 0x00520184..0x005201AA."
       ],
-      "unresolved": "IMPLEMENTATION_GAP: build per ruling 14.3 (directory-enumeration order stands for readdir). The non-object JSON throw (13.4) is unreachable with the shipped file; operator pin 14.4.",
+      "unresolved": "IMPLEMENTATION_GAP: build per ruling 14.3 (directory-enumeration order stands for readdir). The non-object JSON throw (13.4), unreachable with the shipped file, is handled under M1-034 (operator, 2026-10-11): the loader catches it per file, logs it in M1-034's isolation form and continues with the next file; the states inserted before the throw point stay (13.4).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

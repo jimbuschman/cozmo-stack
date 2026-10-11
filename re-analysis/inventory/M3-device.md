@@ -470,3 +470,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | --- | --- |
 | Follow-up rows | M3-021 (BadGammaCurve unreachable), M3-051 (libDAS sinks read; queue body open). |
 | New | M3-052 DASConfig.json input (COMPATIBILITY_POLICY, app-boundary ruling). |
+
+
+## Operator pins (2026-10-11)
+
+| Change | Records |
+| --- | --- |
+| Pin 14.6 | Rendered log follows libDAS sink (a): new M3-053 (IMPLEMENTATION_GAP); verbose switch new M3-054 (COMPATIBILITY_POLICY, operator). M3-051 unresolved updated. |

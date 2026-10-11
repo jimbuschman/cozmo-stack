@@ -57,7 +57,7 @@ stands. Nothing new starts outside the current layer.
 - The JPEG decode is a port checked against an emulator oracle.
 
 **Left for M3+M4 ACCEPTED:**
-- the final Opus pass ran 2026-10-11: 19 settled, M3-012 reopened, 15 kept open on concrete defects (mostly log texts), 4 new records (see `jobs/B-M3M4.md`, "Final settling pass"); fix rows are being extracted for a Codex job B-M3M4-3;
+- the final Opus pass ran 2026-10-11: 19 settled, M3-012 reopened, 15 kept open on concrete defects (mostly log texts), 4 new records (see `jobs/B-M3M4.md`, "Final settling pass"); fix rows adopted; Codex job B-M3M4-3, then B-M3M4-4 (operator pins 2026-10-11: log display = libDAS sink (a) with a verbose switch, M3-053/M3-054; M1-034 covers the backpack-light loader's non-object JSON, M4-036);
 - the verification packets;
 - the operator's robot run for the HARDWARE_ONLY records.
 
@@ -67,7 +67,7 @@ stands. Nothing new starts outside the current layer.
 - the other OpenCV decoders for encodings 5/6/7;
 - the DAS `$data` sink;
 - the higher-layer lock callers' debug names (M5/M7/M8);
-- a stack-wide decision on channel prefixes.
+- (decided 2026-10-11) channel prefixes: the display follows libDAS sink (a), M3-053.
 
 **Queued cleanup:** see the "Queued" lines in `jobs/B-M3M4.md`.
 

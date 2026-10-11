@@ -677,3 +677,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | --- | --- |
 | Follow-up rows | M4-009 (robot+0x334 charger id), M4-018 (SetObjectLights return), M4-017 (non-object JSON terminates; unreachable with the shipped file). |
 | New | M4-036 backpack-light loader path (IMPLEMENTATION_GAP). |
+
+
+## Operator pins (2026-10-11)
+
+| Change | Records |
+| --- | --- |
+| Pin 14.4 | M1-034 extends to the backpack-light loader's non-object JSON throw: M4-017 and M4-036 unresolved updated. |

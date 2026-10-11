@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-11",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "319daa325463e19b79e0b12428f24be8934aec4c84feeee1ba0fa9e999bddb95",
+  "inventory_sha256": "38503509be3124cc6bdb79dc1179ec0b5dc56e289e8fd8619f6e7f1b3b9ea247",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -604,6 +604,26 @@
       "authority": "libcozmoEngine.so cozmo_startup; Unity RobotEngineManager.cs; the shipped OBB.",
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: cozmo_startup DASConfigure(DataPlatformResourcesBasePath + \"/DASConfig.json\", ...) 0x00665974..0x0066598E; Unity sets the base path to persistentDataPath + \"/cozmo\" (unity/scripts/csharp/RobotEngineManager.cs:537-543); re-analysis/obb/assets/DASConfig.json:3-11. The app's copy of the file to that path was not found in the app source."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-053": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Rendered engine log: libDAS sink (a) exactly (the DASConfig level filter, \"name : text \" with right-trim and trailing space, the logcat priority, the null-name \"noname\" path)",
+      "authority": "libDAS (shipped in the APK) DasLocalAppenderImpl and _DAS_GetLevel; libcozmoEngine.so DasLoggerProvider.",
+      "evidence": [
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: _DAS_GetLevel 0x73A4..0x73F0, 0x11758..0x11866 (override tree on '.' segments, else localMinLogLevel); core 0x742E..0x75EE (null/blank name -> \"DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED ...\" and \"noname\"); sink (a) vtable 0x36A8C, gate 0x75F2..0x7666, right-trim 0x25984..0x259D0, __android_log_print(prio, \"das\", \"%s%s : %s %s\", \"\", name, text, \"\") 0x27D98..0x27E20, prio by level 0..4 = 3,4,4,5,6."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-054": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Verbose log display: a stack setting, off by default, that also shows the entries libDAS sink (a) drops",
+      "authority": "Operator decision; no engine counterpart.",
+      "evidence": [
+        "re-analysis/research/20261011-m3m4-fix-rows.md sections 13.5 and 14.6 (what sink (a) drops); AGENTS.md approved departures (operator, 2026-10-11)."
       ],
       "live_path": true,
       "hardware_required": false
