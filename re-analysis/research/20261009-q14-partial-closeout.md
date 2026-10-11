@@ -662,3 +662,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint825 - current mode4 remaining-work table reconciliation
 
 Close-out rows009/034 now name the alternative direct/internal or mutable event/action/child admission still required,then actual continuation/context/child-depth/defaults.821-824 own registration,parent event-volume input/default/producer and known recipient effects are explicitly paid;no generic repeat of those control bodies is requested. UNKNOWN admission is not unreachability.116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint826 - saved rate/frame cap states and retained channel-loop bounds
+
+`20261011-sound-rate-frame-cap-disposition.md` retains all231 pending states from819 fifteen local caps without changing any456 event records. Two smallest source-loop frontiers have counters252/285,excluded by actual U8 sourcecount and retained mono/stereo1/2 loop bounds;ABI preservation verified without tracing sample reconstruction. Other13 caps/228 states remain explicit;no all-alias absence or status promotion. Six rate/frame obligations stay PARTIAL;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.

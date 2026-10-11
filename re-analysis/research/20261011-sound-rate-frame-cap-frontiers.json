@@ -1,0 +1,2515 @@
+{
+  "frontiers": [
+    {
+      "seed": "009877F8",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 2,
+      "pending": [
+        {
+          "address": "00987838",
+          "instruction": "ldr r8, [r3, #8]",
+          "known_registers": {
+            "r5": "0104028C",
+            "sb": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009879C8",
+          "instruction": "ldr r2, [r3], #4",
+          "known_registers": {
+            "r5": "0104028C",
+            "sb": "00000000",
+            "r7": "000000B9"
+          },
+          "nzcv_mask": "0F0F"
+        }
+      ]
+    },
+    {
+      "seed": "00989FF4",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 4,
+      "pending": [
+        {
+          "address": "0098A0D4",
+          "instruction": "vcvt.f64.u32 d16, s15",
+          "known_registers": {
+            "sl": "0104028C",
+            "sb": "01052418",
+            "ip": "0000002E"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A130",
+          "instruction": "mov r3, #0",
+          "known_registers": {
+            "sl": "0104028C",
+            "sb": "01052418",
+            "ip": "0000002E"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A10C",
+          "instruction": "cmp ip, r8",
+          "known_registers": {
+            "sl": "0104028C",
+            "ip": "0000002F"
+          },
+          "nzcv_mask": "0A05"
+        },
+        {
+          "address": "0098A10C",
+          "instruction": "cmp ip, r8",
+          "known_registers": {
+            "sl": "0104028C",
+            "ip": "0000002F"
+          },
+          "nzcv_mask": "F5FA"
+        }
+      ]
+    },
+    {
+      "seed": "0098A190",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 52,
+      "pending": [
+        {
+          "address": "0098A2DC",
+          "instruction": "bl #0xa7a988",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000006",
+            "r5": "00000009"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2FC",
+          "instruction": "cmp r1, #0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000006",
+            "r5": "0000000A"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A2D8",
+          "instruction": "ldr r1, [sp, #4]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000006",
+            "r4": "00000002",
+            "r5": "00000007"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F8",
+          "instruction": "add r7, r7, #0x18",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000006",
+            "r4": "00000002",
+            "r5": "00000008"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A30C",
+          "instruction": "cmp r5, r6",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000007",
+            "r5": "00000007"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A314",
+          "instruction": "b #0x98a2d4",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000007",
+            "r5": "00000007"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F0",
+          "instruction": "ldr r1, [r7, #0x10]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000007",
+            "r5": "00000007"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A188",
+          "instruction": null,
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000007",
+            "r4": "00000002",
+            "r5": "00000004",
+            "r0": "00000002"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A308",
+          "instruction": "bl #0xa7a988",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000007",
+            "r4": "00000002",
+            "r5": "00000005"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A310",
+          "instruction": "bne #0x98a2f0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000007",
+            "r4": "00000002",
+            "r5": "00000005"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A2E0",
+          "instruction": "mov r0, r4",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000008",
+            "r5": "00000004"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A300",
+          "instruction": "beq #0x98a30c",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000008",
+            "r5": "00000005"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A2DC",
+          "instruction": "bl #0xa7a988",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000008",
+            "r4": "00000002",
+            "r5": "00000002"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2FC",
+          "instruction": "cmp r1, #0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000008",
+            "r4": "00000002",
+            "r5": "00000003"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A310",
+          "instruction": "bne #0x98a2f0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000009",
+            "r5": "00000002"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A2D4",
+          "instruction": "ldr r0, [r8]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000009",
+            "r5": "00000002"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F4",
+          "instruction": "add r5, r5, #1",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000009",
+            "r5": "00000002"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A2A0",
+          "instruction": "mov r3, #0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000009"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A2F0",
+          "instruction": "ldr r1, [r7, #0x10]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000009",
+            "r4": "00000002",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2D0",
+          "instruction": "bne #0x98a2ec",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "0000000A"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A25C",
+          "instruction": "ldr r5, [ip, #0xc]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "0000000A"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A274",
+          "instruction": "beq #0x98a2a8",
+          "known_registers": {
+            "r8": "01052418",
+            "r3": "00000000",
+            "fp": "00000009"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A274",
+          "instruction": "beq #0x98a2a8",
+          "known_registers": {
+            "r8": "01052418",
+            "r3": "00000000",
+            "fp": "00000009"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A30C",
+          "instruction": "cmp r5, r6",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000000",
+            "r4": "00000002",
+            "r5": "00000016"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A314",
+          "instruction": "b #0x98a2d4",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000000",
+            "r4": "00000002",
+            "r5": "00000016"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F0",
+          "instruction": "ldr r1, [r7, #0x10]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000000",
+            "r4": "00000002",
+            "r5": "00000016"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A2E4",
+          "instruction": "b #0x98a188",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000001",
+            "r5": "00000015"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A304",
+          "instruction": "ldr r0, [r8]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000001",
+            "r5": "00000016"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A30C",
+          "instruction": "cmp r5, r6",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000001",
+            "r5": "00000016"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2E0",
+          "instruction": "mov r0, r4",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000001",
+            "r4": "00000002",
+            "r5": "00000013"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A300",
+          "instruction": "beq #0x98a30c",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000001",
+            "r4": "00000002",
+            "r5": "00000014"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A2D8",
+          "instruction": "ldr r1, [sp, #4]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000002",
+            "r5": "00000013"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F8",
+          "instruction": "add r7, r7, #0x18",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000002",
+            "r5": "00000014"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A310",
+          "instruction": "bne #0x98a2f0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000002",
+            "r4": "00000002",
+            "r5": "00000011"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A2D4",
+          "instruction": "ldr r0, [r8]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000002",
+            "r4": "00000002",
+            "r5": "00000011"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F4",
+          "instruction": "add r5, r5, #1",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000002",
+            "r4": "00000002",
+            "r5": "00000011"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A188",
+          "instruction": null,
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000003",
+            "r5": "00000010"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A308",
+          "instruction": "bl #0xa7a988",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000003",
+            "r5": "00000011"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A310",
+          "instruction": "bne #0x98a2f0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000003",
+            "r5": "00000011"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A2E4",
+          "instruction": "b #0x98a188",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000003",
+            "r4": "00000002",
+            "r5": "0000000E",
+            "r0": "00000002"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A304",
+          "instruction": "ldr r0, [r8]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000003",
+            "r4": "00000002",
+            "r5": "0000000F"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A30C",
+          "instruction": "cmp r5, r6",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000003",
+            "r4": "00000002",
+            "r5": "0000000F"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2DC",
+          "instruction": "bl #0xa7a988",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000004",
+            "r5": "0000000E"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2FC",
+          "instruction": "cmp r1, #0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000004",
+            "r5": "0000000F"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A2D8",
+          "instruction": "ldr r1, [sp, #4]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000004",
+            "r4": "00000002",
+            "r5": "0000000C"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F8",
+          "instruction": "add r7, r7, #0x18",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000004",
+            "r4": "00000002",
+            "r5": "0000000D"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A30C",
+          "instruction": "cmp r5, r6",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000005",
+            "r5": "0000000C"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A314",
+          "instruction": "b #0x98a2d4",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000005",
+            "r5": "0000000C"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "0098A2F0",
+          "instruction": "ldr r1, [r7, #0x10]",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000005",
+            "r5": "0000000C"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A188",
+          "instruction": null,
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000005",
+            "r4": "00000002",
+            "r5": "00000009",
+            "r0": "00000002"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "0098A308",
+          "instruction": "bl #0xa7a988",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000005",
+            "r4": "00000002",
+            "r5": "0000000A"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "0098A310",
+          "instruction": "bne #0x98a2f0",
+          "known_registers": {
+            "r8": "01052418",
+            "fp": "00000005",
+            "r4": "00000002",
+            "r5": "0000000A"
+          },
+          "nzcv_mask": "FFFF"
+        }
+      ]
+    },
+    {
+      "seed": "009C4094",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 6,
+      "pending": [
+        {
+          "address": "009C4300",
+          "instruction": "bl #0x9f7364",
+          "known_registers": {
+            "r4": "00000022"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009C42B8",
+          "instruction": "cmp r7, r6",
+          "known_registers": {
+            "r6": "00000011"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009C4140",
+          "instruction": "beq #0x9c40fc",
+          "known_registers": {
+            "r4": "00000024"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009C4208",
+          "instruction": "str r2, [sp, #0x24]",
+          "known_registers": {
+            "r4": "00000023"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009C4250",
+          "instruction": "ldrb r0, [ip], #1",
+          "known_registers": {
+            "r4": "00000022",
+            "r6": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009C4268",
+          "instruction": "ldr r0, [ip]",
+          "known_registers": {
+            "r4": "00000022",
+            "r6": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        }
+      ]
+    },
+    {
+      "seed": "009C40C0",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 8,
+      "pending": [
+        {
+          "address": "009C4254",
+          "instruction": "tst r0, #0x80",
+          "known_registers": {
+            "r4": "00000022",
+            "r6": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009C426C",
+          "instruction": "add ip, ip, #7",
+          "known_registers": {
+            "r4": "00000022",
+            "r6": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009C4308",
+          "instruction": "mov r0, sl",
+          "known_registers": {
+            "r4": "00000022"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009C42C0",
+          "instruction": "lsl r4, r4, #2",
+          "known_registers": {
+            "r6": "00000011"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009C4148",
+          "instruction": "b #0x9c41ac",
+          "known_registers": {
+            "r4": "00000024"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009C4100",
+          "instruction": "beq #0x9c41cc",
+          "known_registers": {
+            "r4": "00000024"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009C4210",
+          "instruction": "ldrh r7, [r3, #1]",
+          "known_registers": {
+            "r4": "00000023"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009C41C0",
+          "instruction": "mov r0, sl",
+          "known_registers": {
+            "r4": "00000023"
+          },
+          "nzcv_mask": "0F0F"
+        }
+      ]
+    },
+    {
+      "seed": "009D5974",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 32,
+      "pending": [
+        {
+          "address": "009D59F8",
+          "instruction": "ldr r2, [r4, #0x1c]",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000019"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D59DC",
+          "instruction": "add lr, lr, #4",
+          "known_registers": {
+            "r7": "0104028C",
+            "r2": "00000019",
+            "ip": "0000001A"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D59C0",
+          "instruction": "cmp lr, ip",
+          "known_registers": {
+            "r7": "0104028C",
+            "r2": "00000019",
+            "ip": "0000001A"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5C44",
+          "instruction": "ldr r0, [r0]",
+          "known_registers": {
+            "r7": "0104028C",
+            "s14": "7F7FFFFF",
+            "lr": "00000007",
+            "r2": "0000000A",
+            "r0": "0108D908"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5C28",
+          "instruction": "orrs r1, r0, r1",
+          "known_registers": {
+            "r7": "0104028C",
+            "s14": "7F7FFFFF",
+            "lr": "00000008",
+            "r1": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5C0C",
+          "instruction": "beq #0x9d66e4",
+          "known_registers": {
+            "r7": "0104028C",
+            "s14": "7F7FFFFF",
+            "r1": "00000008",
+            "lr": "00000009"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009D5BF0",
+          "instruction": "cmp ip, #0xb",
+          "known_registers": {
+            "r7": "0104028C",
+            "s14": "7F7FFFFF",
+            "r1": "00000009",
+            "lr": "0000000A"
+          },
+          "nzcv_mask": "0C0C"
+        },
+        {
+          "address": "009D5C34",
+          "instruction": "mov r2, #0xa",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "0000000F",
+            "r0": "FFFFFDFC"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5BD0",
+          "instruction": "mov r0, r3",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000010",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5C18",
+          "instruction": "vmov sl, fp, d18",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000010",
+            "r1": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5BB4",
+          "instruction": "vcvt.s32.f64 s15, d16",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000011",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009D5B98",
+          "instruction": "strb r0, [sp, #0x48]",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000012",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5B7C",
+          "instruction": "ldr r0, [sp, #4]",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000013",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5ACC",
+          "instruction": "movw lr, #0xf42d",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000014",
+            "r1": "FFFFFE04"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5B60",
+          "instruction": "str r8, [sp, #0x3c]",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000014",
+            "r0": "0105243C",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5AB0",
+          "instruction": "vldr s13, [r1]",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000015"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5B44",
+          "instruction": "vcvt.f64.f32 d16, s15",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000015"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5A94",
+          "instruction": "bne #0x9d5a7c",
+          "known_registers": {
+            "r7": "0104028C",
+            "r1": "00000015",
+            "lr": "00000016"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009D5C18",
+          "instruction": "vmov sl, fp, d18",
+          "known_registers": {
+            "r7": "0104028C",
+            "lr": "00000010",
+            "r1": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5BFC",
+          "instruction": "str fp, [sp]",
+          "known_registers": {
+            "r7": "0104028C",
+            "r1": "00000010",
+            "lr": "00000011"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5BE0",
+          "instruction": "mov r1, lr",
+          "known_registers": {
+            "r7": "0104028C",
+            "r1": "00000010",
+            "lr": "00000011"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009D5C38",
+          "instruction": "add r3, sp, #0x38",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000011",
+            "r0": "FFFFFDFC",
+            "r2": "0000000A"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5BD4",
+          "instruction": "mov r1, #0",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000012",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5C1C",
+          "instruction": "lsr r0, sl, #0xa",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000012",
+            "r1": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5BB8",
+          "instruction": "vstr s15, [r5, #0x1c]",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000013",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009D5B9C",
+          "instruction": "vmov.f64 d20, #-5.000000e-01",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000014",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5B80",
+          "instruction": "str r0, [sp, #0x40]",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000015",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5B64",
+          "instruction": "str r0, [sp, #0x18]",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000016",
+            "r0": "0105243C",
+            "r1": "0108DAA8"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5A34",
+          "instruction": "ldr r0, [r7, r0]",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000017",
+            "r0": "FFFFFDFC",
+            "r2": "00000008"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5A6C",
+          "instruction": "mov r0, r2",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000017",
+            "r1": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009D5B48",
+          "instruction": "ldr fp, [sp]",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000017",
+            "r1": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009D5A18",
+          "instruction": "and r0, r0, #1",
+          "known_registers": {
+            "r7": "0104028C",
+            "ip": "00000018",
+            "r1": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        }
+      ]
+    },
+    {
+      "seed": "009E6D2C",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 6,
+      "pending": [
+        {
+          "address": "009E6DC0",
+          "instruction": "b #0x9e2ae4",
+          "known_registers": {},
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009E6D7C",
+          "instruction": "cmp r4, #0",
+          "known_registers": {
+            "r8": "0000007F"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009E6DFC",
+          "instruction": "cmp r4, #0",
+          "known_registers": {
+            "r8": "0000007F"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009E6DB0",
+          "instruction": "mov r0, r6",
+          "known_registers": {
+            "r8": "0000007E"
+          },
+          "nzcv_mask": "CCCC"
+        },
+        {
+          "address": "009E6DC4",
+          "instruction": "ldr r2, [r5]",
+          "known_registers": {
+            "r8": "0000007E"
+          },
+          "nzcv_mask": "3333"
+        },
+        {
+          "address": "009E6D98",
+          "instruction": "cmp r4, #0",
+          "known_registers": {
+            "r8": "0000007E"
+          },
+          "nzcv_mask": "FFFF"
+        }
+      ]
+    },
+    {
+      "seed": "009EBE6C",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 33,
+      "pending": [
+        {
+          "address": "009EC144",
+          "instruction": "ldr r3, [r4, #0x48]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000001",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EC06C",
+          "instruction": "mov r0, r4",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000001",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EC09C",
+          "instruction": "movne r6, #1",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006",
+            "r5": "00000001"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EBFFC",
+          "instruction": "bne #0x9ebf64",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC098",
+          "instruction": "cmp r0, #0",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC078",
+          "instruction": "bic r2, r3, #2",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000000",
+            "r6": "00000002",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC150",
+          "instruction": "beq #0x9ebff4",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000000",
+            "r6": "00000002",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EBFCC",
+          "instruction": "beq #0x9ec06c",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000000",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC140",
+          "instruction": "beq #0x9ec06c",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000000",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EBFC0",
+          "instruction": "beq #0x9ec138",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC084",
+          "instruction": "mov r5, #1",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EC01C",
+          "instruction": "ldrne r3, [r3, #0x1c]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006",
+            "r3": "0108DAE8"
+          },
+          "nzcv_mask": "0004"
+        },
+        {
+          "address": "009EBF80",
+          "instruction": "ldr r3, [r4, #0x48]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EBFB0",
+          "instruction": "ldr r3, [r0]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EC12C",
+          "instruction": "bne #0x9ebfe0",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EBFF0",
+          "instruction": "bne #0x9ec090",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EBFFC",
+          "instruction": "bne #0x9ebf64",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC16C",
+          "instruction": null,
+          "known_registers": {
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006",
+            "r5": "00000000",
+            "sl": "00000000"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EBFF0",
+          "instruction": "bne #0x9ec090",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC080",
+          "instruction": "bne #0x9ebfe0",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000001",
+            "r6": "00000002",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC158",
+          "instruction": "beq #0x9ebff4",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000001",
+            "r6": "00000002",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC0B0",
+          "instruction": "ldr r0, [r4, #0x10]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r7": "00000006",
+            "r5": "00000001",
+            "r6": "00000002"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EC0BC",
+          "instruction": "beq #0x9ec234",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r7": "00000006",
+            "r5": "00000001",
+            "r6": "00000001"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EBF78",
+          "instruction": "cmp r3, #0",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006",
+            "r5": "00000001"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EC124",
+          "instruction": "bic r2, r3, #2",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006",
+            "r5": "00000001"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EBF74",
+          "instruction": "ldrb r3, [r8, #0x20]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EC120",
+          "instruction": "ldr r3, [r4, #0x48]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000002",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EC0AC",
+          "instruction": "bl #0x9e9564",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r7": "00000006",
+            "r5": "00000000",
+            "r6": "00000002"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EC0B8",
+          "instruction": "cmp r0, #3",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r7": "00000006",
+            "r5": "00000000",
+            "r6": "00000001"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EBFA4",
+          "instruction": "cmp r2, #2",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EC15C",
+          "instruction": "ldr r3, [fp, #-0x28]",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r6": "00000001",
+            "r7": "00000006",
+            "r5": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EBFD4",
+          "instruction": "bic r5, r3, #2",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000001",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EC070",
+          "instruction": "bl #0x9e9564",
+          "known_registers": {
+            "sl": "00000001",
+            "r8": "0108DAE8",
+            "r5": "00000001",
+            "r6": "00000001",
+            "r7": "00000006"
+          },
+          "nzcv_mask": "F0F0"
+        }
+      ]
+    },
+    {
+      "seed": "009EDF5C",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 6,
+      "pending": [
+        {
+          "address": "009EDF88",
+          "instruction": "cmp ip, r0",
+          "known_registers": {
+            "r3": "00000094",
+            "r0": "00000095"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EDFC0",
+          "instruction": "moveq r1, #1",
+          "known_registers": {
+            "r0": "00000094"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EDFC4",
+          "instruction": "beq #0x9edfdc",
+          "known_registers": {
+            "r0": "00000094"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EDFC4",
+          "instruction": "beq #0x9edfdc",
+          "known_registers": {
+            "r0": "00000094",
+            "r1": "00000001"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EDFBC",
+          "instruction": "cmp r3, #2",
+          "known_registers": {
+            "r0": "00000094"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EDFA8",
+          "instruction": "bic ip, ip, #3",
+          "known_registers": {
+            "r3": "00000094",
+            "r0": "00000095"
+          },
+          "nzcv_mask": "F0F0"
+        }
+      ]
+    },
+    {
+      "seed": "009EEC1C",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 4,
+      "pending": [
+        {
+          "address": "009EEC6C",
+          "instruction": "add r3, r2, r3, lsl #2",
+          "known_registers": {
+            "r3": "00000094",
+            "r0": "00000095"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009EEC50",
+          "instruction": "bls #0x9eed58",
+          "known_registers": {
+            "r0": "00000095",
+            "r3": "00000095"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009EEC8C",
+          "instruction": "bl #0x9faec4",
+          "known_registers": {},
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009EECA0",
+          "instruction": "add r3, r7, #0x84",
+          "known_registers": {
+            "r0": "00000094",
+            "r1": "00000001"
+          },
+          "nzcv_mask": "F0F0"
+        }
+      ]
+    },
+    {
+      "seed": "009F12E8",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 46,
+      "pending": [
+        {
+          "address": "009F1490",
+          "instruction": "movt ip, #0x4c95",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000C",
+            "r2": "FFFFFE04",
+            "r3": "5851F42D",
+            "ip": "00007F2D"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F14E4",
+          "instruction": "vcmpe.f32 s16, #0",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000C"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009F1474",
+          "instruction": "vcmp.f32 s14, #0",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000D"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F14F0",
+          "instruction": "ldr r3, [r5, #0x7c]",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000D"
+          },
+          "nzcv_mask": "0A05"
+        },
+        {
+          "address": "009F1328",
+          "instruction": "mov r0, #1",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000D"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F1458",
+          "instruction": "bic r1, r1, #3",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "r3": "0000000D",
+            "lr": "0000000E"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009F143C",
+          "instruction": "mov r3, lr",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "r3": "0000000D",
+            "lr": "0000000E"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F14F8",
+          "instruction": "beq #0x9f155c",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000D"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F1330",
+          "instruction": "vpop {d8}",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000D",
+            "r3": "0000000D",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F1514",
+          "instruction": "vmov.f64 d16, #5.000000e-01",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000C",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F1530",
+          "instruction": "vmovle.f64 d16, d18",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000B",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F131C",
+          "instruction": "add sp, sp, #0x20",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000A",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0A05"
+        },
+        {
+          "address": "009F131C",
+          "instruction": "add sp, sp, #0x20",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000A",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F1544",
+          "instruction": "str r3, [r5, #0x74]",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "00000007",
+            "ip": "4C957F2D",
+            "r1": "0108D868",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0A05"
+        },
+        {
+          "address": "009F1544",
+          "instruction": "str r3, [r5, #0x74]",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "00000007",
+            "ip": "4C957F2D",
+            "r1": "0108D868",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F1528",
+          "instruction": "vcmpe.f64 d17, #0",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "00000008",
+            "ip": "4C957F2D",
+            "r1": "0108D868",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F150C",
+          "instruction": "ldr r3, [r4, r3]",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "00000009",
+            "ip": "4C957F2D",
+            "r1": "0108D868",
+            "r3": "FFFFFDDC",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F156C",
+          "instruction": "cmp r0, #1",
+          "known_registers": {
+            "r4": "0104028C"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F14F0",
+          "instruction": "ldr r3, [r5, #0x7c]",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000A",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "0A05"
+        },
+        {
+          "address": "009F1328",
+          "instruction": "mov r0, #1",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000A",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F14D4",
+          "instruction": "vmul.f64 d16, d16, d17",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000B",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F14B8",
+          "instruction": "add r3, r0, r3",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000C",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F149C",
+          "instruction": "vcvt.f64.f32 d17, s14",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000D",
+            "r2": "FFFFFE04",
+            "r3": "5851F42D",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F1480",
+          "instruction": "ldr r2, [pc, #0x110]",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000E"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F1554",
+          "instruction": "vldr s15, [pc, #0x2c]",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000E"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009F1334",
+          "instruction": "pop {r4, r5, r6, pc}",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000E",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F1464",
+          "instruction": "beq #0x9f14e4",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000F"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F1448",
+          "instruction": "add lr, r3, #1",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000F",
+            "r3": "0000000F"
+          },
+          "nzcv_mask": "0C0C"
+        },
+        {
+          "address": "009F14E8",
+          "instruction": "vmrs apsr_nzcv, fpscr",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000F",
+            "r3": "0000000F"
+          },
+          "nzcv_mask": "F3F3"
+        },
+        {
+          "address": "009F1504",
+          "instruction": "ldr r2, [r5, #0x74]",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000E",
+            "r3": "FFFFFDDC"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F1564",
+          "instruction": "vmov r1, s16",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000E"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009F1520",
+          "instruction": "vmul.f64 d17, d17, d18",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000D",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F153C",
+          "instruction": "vmov r3, s15",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000C",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0A05"
+        },
+        {
+          "address": "009F153C",
+          "instruction": "vmov r3, s15",
+          "known_registers": {
+            "r4": "0104028C",
+            "lr": "0000000C",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F14C0",
+          "instruction": "strd r2, r3, [r1]",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000A",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F14A4",
+          "instruction": "ldr r0, [r1, #4]",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000B",
+            "r3": "5851F42D",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F1488",
+          "instruction": "movt r3, #0x5851",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000C",
+            "r2": "FFFFFE04",
+            "r3": "0000F42D"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F146C",
+          "instruction": "vldr s14, [r3, #4]",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000D"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F14E8",
+          "instruction": "vmrs apsr_nzcv, fpscr",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000D"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "009F1450",
+          "instruction": "bne #0x9f1438",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "r3": "0000000D",
+            "lr": "0000000E"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F14F0",
+          "instruction": "ldr r3, [r5, #0x7c]",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000D",
+            "r3": "0000000D"
+          },
+          "nzcv_mask": "0A05"
+        },
+        {
+          "address": "009F1328",
+          "instruction": "mov r0, #1",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000D",
+            "r3": "0000000D"
+          },
+          "nzcv_mask": "F5FA"
+        },
+        {
+          "address": "009F150C",
+          "instruction": "ldr r3, [r4, r3]",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000",
+            "lr": "0000000C",
+            "r3": "FFFFFDDC",
+            "r0": "00000001"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "009F156C",
+          "instruction": "cmp r0, #1",
+          "known_registers": {
+            "r4": "0104028C",
+            "s15": "00000000"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F14CC",
+          "instruction": "vcvt.f64.s32 d16, s15",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000A",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "009F14B0",
+          "instruction": "umull r2, r3, r2, ip",
+          "known_registers": {
+            "r4": "0104028C",
+            "s16": "00000000",
+            "lr": "0000000B",
+            "ip": "4C957F2D",
+            "r1": "0108D868"
+          },
+          "nzcv_mask": "0F0F"
+        }
+      ]
+    },
+    {
+      "seed": "00A41E64",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 10,
+      "pending": [
+        {
+          "address": "00A41F58",
+          "instruction": "mov r3, r0",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r3": "00000043",
+            "r0": "00000044"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "00A41F98",
+          "instruction": "strb r2, [sp, #0x1c]",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000043",
+            "r3": "00000000"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "00A41FB4",
+          "instruction": "ldrd r0, r1, [ip]",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000042",
+            "r3": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A420FC",
+          "instruction": "ldr r3, [pc, #0x100]",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000042",
+            "r3": "00000000"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A42118",
+          "instruction": "ldrb lr, [sb]",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000041",
+            "r3": "0108DB20"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A421EC",
+          "instruction": null,
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000041",
+            "r3": "0108DB20"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A42150",
+          "instruction": "adds r3, sb, r3",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000041"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A42134",
+          "instruction": "ldrb r1, [r2, #1]!",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000041",
+            "r3": "00000041"
+          },
+          "nzcv_mask": "0C0C"
+        },
+        {
+          "address": "00A421EC",
+          "instruction": null,
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r0": "00000041",
+            "r3": "00000041"
+          },
+          "nzcv_mask": "F3F3"
+        },
+        {
+          "address": "00A41F78",
+          "instruction": "add r3, lr, r3, lsl #2",
+          "known_registers": {
+            "r6": "0104028C",
+            "r7": "00FFA6C0",
+            "r3": "00000043",
+            "r0": "00000044"
+          },
+          "nzcv_mask": "F0F0"
+        }
+      ]
+    },
+    {
+      "seed": "00A613F8",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 19,
+      "pending": [
+        {
+          "address": "00A61674",
+          "instruction": "mov r0, r4",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000023",
+            "r0": "00000024"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A615A0",
+          "instruction": "bic sl, ip, #3",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000024",
+            "r0": "00000025"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A61584",
+          "instruction": "mov r3, r0",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000024",
+            "r0": "00000025"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "00A615F0",
+          "instruction": "mov r3, #0",
+          "known_registers": {
+            "r5": "0104028C",
+            "r0": "00000024",
+            "r3": "00000024"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A6167C",
+          "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000024"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A61628",
+          "instruction": "ldr r1, [pc, #0x58]",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000023",
+            "r0": "00000024"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A61674",
+          "instruction": "mov r0, r4",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000023",
+            "r0": "00000024"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A6160C",
+          "instruction": "cmp r1, #0xf",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000024",
+            "r0": "00000025"
+          },
+          "nzcv_mask": "0C0C"
+        },
+        {
+          "address": "00A6167C",
+          "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000024"
+          },
+          "nzcv_mask": "F3F3"
+        },
+        {
+          "address": "00A615C0",
+          "instruction": "ldr r1, [r5, r1]",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r1": "FFFFFDDC",
+            "r2": "000003E8",
+            "r3": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A615EC",
+          "instruction": "mov r2, r7",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r3": "00000023",
+            "r0": "00000024"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A61678",
+          "instruction": "add sp, sp, #0x14",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r3": "00000023",
+            "r0": "00000034"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A615A4",
+          "instruction": "add sl, sl, r3, lsl #2",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r3": "00000024",
+            "r0": "00000025"
+          },
+          "nzcv_mask": "F0F0"
+        },
+        {
+          "address": "00A61588",
+          "instruction": "bls #0xa615dc",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r0": "00000025",
+            "r3": "00000025"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "00A615F4",
+          "instruction": "b #0xa61604",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r0": "00000024",
+            "r3": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A6162C",
+          "instruction": "mov r2, #0x3e8",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r3": "00000023",
+            "r0": "00000024",
+            "r1": "FFFFFDDC"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A61610",
+          "instruction": "bne #0xa615f8",
+          "known_registers": {
+            "r5": "0104028C",
+            "r4": "00000034",
+            "r3": "00000024",
+            "r0": "00000025"
+          },
+          "nzcv_mask": "FFFF"
+        },
+        {
+          "address": "00A615C0",
+          "instruction": "ldr r1, [r5, r1]",
+          "known_registers": {
+            "r5": "0104028C",
+            "r1": "FFFFFDDC",
+            "r2": "000003E8",
+            "r3": "00000000"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A615EC",
+          "instruction": "mov r2, r7",
+          "known_registers": {
+            "r5": "0104028C",
+            "r3": "00000023",
+            "r0": "00000024"
+          },
+          "nzcv_mask": "0F0F"
+        }
+      ]
+    },
+    {
+      "seed": "00A7255C",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 2,
+      "pending": [
+        {
+          "address": "00A725FC",
+          "instruction": "add r0, r4, r4, lsl #3",
+          "known_registers": {
+            "r4": "000000FC"
+          },
+          "nzcv_mask": "0F0F"
+        },
+        {
+          "address": "00A72630",
+          "instruction": "mov r2, sb",
+          "known_registers": {
+            "r4": "000000FC"
+          },
+          "nzcv_mask": "F0F0"
+        }
+      ]
+    },
+    {
+      "seed": "00A73DBC",
+      "mode": "ARM",
+      "visited": 4096,
+      "pending_count": 1,
+      "pending": [
+        {
+          "address": "00A73E9C",
+          "instruction": "mov r2, r6",
+          "known_registers": {
+            "r7": "0000011D"
+          },
+          "nzcv_mask": "0F0F"
+        }
+      ]
+    }
+  ],
+  "boundary": "Same160 observation seeds and4096 local bound;pending states are navigation,not runtime paths or absence proof."
+}
