@@ -11627,3 +11627,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint791 - flag-setting address arithmetic
 
 `20261010-sound-rate-frame-flag-arithmetic-disposition.md` extends785 with instruction-ID-checked ADDS/SUBS/MOVS propagation while keeping S-bit flags conservative. Four primary encoding witnesses;6855 windows/same300 events/no added or removed keys. Caps increase338 to434, explicitly preventing an exhaustive proof.043/092/099/120/124/130 PARTIAL;108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint792 - direct descriptor-getter consumers
+
+`20261010-sound-descriptor-direct-getter-disposition.md` checks exact immediate branches to both descriptor getters and their4C/50 wrappers:two existing ARM forwarding tails and one individually rejected upper-halfword ARM stack-adjustment encoding. No new admitted ID/field consumer;024 remains PARTIAL, no indirect absence inference.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
