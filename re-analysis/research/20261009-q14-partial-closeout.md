@@ -694,3 +694,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint833 - envelope-specific property-cap bound
 
 `20261011-sound-envelope-property-cap-disposition.md` checks allseven shipped type22 payloads to exact ends:ordinary counts6/7,firstproperty9 nextindex2,second11 nextindex4,ownranges/subscriptions0. Seven of32 saved explicit ordinary indices exceed7;other25 and post-query table mutation remain explicit. No Action/node bound reused for envelopes;804 rate-pointerSP18 contract remains paid.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint834 - pre-play authored ranges and live device cap disposition
+
+`20261011-sound-preplay-cap-disposition.md` checks3490 raw property blocks:12 ranges allID2,no authored3B range,two Sounds author3B raw3DCCCCCD. Five of46 saved ranged indices exceedcount1;13 matched3B range states lack that authored input;other28 and all33 device states remain explicit under ID/DF/DA contracts. DF10 operand label corrected to derivedframe-duration1052444 per817. Allfifteen826 windows now have bounded dispositions,not an all-alias proof.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
