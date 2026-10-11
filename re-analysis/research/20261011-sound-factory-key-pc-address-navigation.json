@@ -1,0 +1,37 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "00A3B684",
+    "00A3B694",
+    "0108D9A0",
+    "0108D9A1",
+    "0108D9A2",
+    "0108D9A3",
+    "0108D9A4",
+    "0108D9A5",
+    "0108D9A6",
+    "0108D9A7",
+    "0108D9A8",
+    "0108D9A9",
+    "0108D9AA",
+    "0108D9AB",
+    "0108D9AC",
+    "0108D9AD",
+    "0108D9AE",
+    "0108D9AF"
+  ],
+  "formsExamined": {
+    "ARM immediate ADD/SUB PC": 17639,
+    "Thumb ADR16": 17041,
+    "Thumb ADDW/SUBW PC": 1073
+  },
+  "candidates": [],
+  "limit": "Encoding and arithmetic candidates only; modes, input bindings, computed/table-relative/copy/foreign call edges are not certified.",
+  "single_thumb_pc_immediate_key_bound": {
+    "executable_low": "004A4010",
+    "executable_exclusive_high": "00AE3682",
+    "conservative_pc_plus_imm12_high": "00AE4685",
+    "key_low": "0108D9A0",
+    "boundary": "Single Thumb ADR16/ADDW/SUBW PC immediate only. No wrap possible at these image bounds; loads, later arithmetic and indirect/copy/foreign aliases are not excluded."
+  }
+}
