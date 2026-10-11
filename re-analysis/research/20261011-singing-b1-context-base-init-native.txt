@@ -1,0 +1,25 @@
+0x009821EC: push     {r4, r5, r6, r7, lr}
+0x009821F0: mov      r4, r0
+0x009821F4: sub      sp, sp, #0xc
+0x009821F8: mov      r5, r3
+0x009821FC: mov      r6, r1
+0x00982200: mov      r7, r2
+0x00982204: bl       #0x985aa0   ; ->0x00985AA0
+0x00982208: ldr      r3, [r4, #8]
+0x0098220C: cmp      r3, #0
+0x00982210: beq      #0x982228
+0x00982214: ldr      r3, [r3, #0x38]
+0x00982218: mov      r0, #1
+0x0098221C: str      r3, [r4, #0x38]
+0x00982220: add      sp, sp, #0xc
+0x00982224: pop      {r4, r5, r6, r7, pc}
+0x00982228: ldr      r0, [pc, #0x20]   ; [pc->0x00982250] = 0x006BDE30
+0x0098222C: mov      r1, r4
+0x00982230: mov      r2, r7
+0x00982234: mov      r3, r6
+0x00982238: ldr      r0, [pc, r0]   ; [pc->0x00982240] = 0xE58D5000
+0x0098223C: ldr      r0, [r0]
+0x00982240: str      r5, [sp]
+0x00982244: bl       #0x97e5ec   ; ->0x0097E5EC
+0x00982248: add      sp, sp, #0xc
+0x0098224C: pop      {r4, r5, r6, r7, pc}

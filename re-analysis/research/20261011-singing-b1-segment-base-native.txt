@@ -1,0 +1,28 @@
+0x00987174: push     {r4, lr}
+0x00987178: mov      r4, r0
+0x0098717C: bl       #0x9edc84   ; ->0x009EDC84
+0x00987180: ldrb     r1, [r4, #0x7c]
+0x00987184: mov      r3, #0
+0x00987188: ldr      r2, [pc, #0x4c]   ; [pc->0x009871DC] = 0x006B2A80
+0x0098718C: mov      ip, #0
+0x00987190: and      r1, r1, #0xf8
+0x00987194: mov      r0, r4
+0x00987198: add      r2, pc, r2
+0x0098719C: bfi      r1, r3, #3, #1
+0x009871A0: add      lr, r2, #8
+0x009871A4: str      r3, [r4, #0x5c]
+0x009871A8: add      r2, r2, #0x164
+0x009871AC: str      lr, [r4]
+0x009871B0: str      r2, [r4, #0x10]
+0x009871B4: str      ip, [r4, #0x68]
+0x009871B8: strb     r1, [r4, #0x7c]
+0x009871BC: str      r3, [r4, #0x60]
+0x009871C0: str      r3, [r4, #0x64]
+0x009871C4: str      r3, [r4, #0x6c]
+0x009871C8: str      r3, [r4, #0x70]
+0x009871CC: str      r3, [r4, #0x74]
+0x009871D0: str      r3, [r4, #0x78]
+0x009871D4: str      r3, [r4, #0x80]
+0x009871D8: pop      {r4, pc}
+0x00989868: mov      r0, #7
+0x0098986C: bx       lr
