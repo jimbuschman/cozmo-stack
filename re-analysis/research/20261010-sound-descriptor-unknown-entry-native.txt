@@ -1,0 +1,43 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009903B0..0x00990450 exclusive; ARM;
+009903B0: cmp          r0, #0
+009903B4: moveq        r5, r4
+009903B8: beq          #0x9903d4
+009903BC: ldr          r3, [r4, #4]
+009903C0: ldrb         r3, [r3, #0x36]
+009903C4: tst          r3, #3
+009903C8: beq          #0x9903d4
+009903CC: tst          r3, #0x10
+009903D0: moveq        r5, r4
+009903D4: ldr          r3, [r4]
+009903D8: mov          r2, r4
+009903DC: cmp          r3, #0
+009903E0: mov          r4, r3
+009903E4: bne          #0x9903a0
+009903E8: mov          r0, r5
+009903EC: pop          {r3, r4, r5, pc}
+009903F0: push         {r4, r5, r6, lr}
+009903F4: mov          ip, r1
+009903F8: ldr          r4, [r0, #0x60]
+009903FC: mov          r1, r3
+00990400: cmp          r4, #0
+00990404: beq          #0x99042c
+00990408: cmp          ip, r4
+0099040C: mov          lr, r4
+00990410: bne          #0x990420
+00990414: b            #0x99043c
+00990418: cmp          ip, lr
+0099041C: beq          #0x99043c
+00990420: ldr          lr, [lr]
+00990424: cmp          lr, #0
+00990428: bne          #0x990418
+0099042C: ldr          r2, [r0]
+00990430: pop          {r4, r5, r6, lr}
+00990434: ldr          r3, [r2, #0x50]
+00990438: bx           r3
+0099043C: ldr          ip, [lr]
+00990440: cmp          ip, #0
+00990444: beq          #0x99042c
+00990448: mov          r6, #0
+0099044C: b            #0x990454

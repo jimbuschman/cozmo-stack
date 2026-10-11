@@ -367,3 +367,8 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint759 — regional memory destinations and layout gate
 
 `20261010-sound-voice-policy-memory-dispositions.md` corrects ARM rotated-immediate PLT navigation, binds all twelve memory slots and four regional calls: one contiguous-pad call is positively unreachable because actual layout query returns0; selected planar padding retains exact geometry, two9C-byte fills target their separately returned helper products. No whole-voice default/global alias inference.033 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint760 — positive shared-context provider route
+
+`20261010-sound-descriptor-context-provider-boundary.md` binds two actual table8 providers through their exact thunk/99F148 singleton construction to101BFA0, independently confirming4C/50 wrapper exposure. Known selected101 consumer uses global54 RNG; getter ID/descriptor decision consumer remains UNKNOWN, and9903F0 is not substituted.024 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

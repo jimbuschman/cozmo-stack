@@ -1,0 +1,15 @@
+{
+  "scope": "Two positively returning frame-context provider entries; aligned raw pointer navigation only",
+  "rows": [
+    {
+      "slot": "0x103daa4",
+      "value": "0xa7900c",
+      "section": ".data.rel.ro"
+    },
+    {
+      "slot": "0x103db14",
+      "value": "0xa79010",
+      "section": ".data.rel.ro"
+    }
+  ]
+}
