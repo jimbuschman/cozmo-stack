@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-10",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "a84c8f9ecaf96df4a9addaa9d5516993dfdadf970b39370eb243d2342d9686cf",
+  "inventory_sha256": "1789b8cd64266bf5ac4ae53c15075760b16e0b79b46f13e04bd45dbf6fa47fa6",
   "records": {
     "M3-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -520,7 +520,8 @@
       "evidence": [
         "Encodings 5/6/7 reach imdecode from DecodeImageHelper (gray dispatch tbh 0x004F2898, RGB dispatch tbh 0x004F21AE; imdecode call 0x004F28C6; M3-001/M3-018)",
         "re-analysis/jobs/B-M3M4.md \"JPEG port: Opus check (2026-10-10)\": other OpenCV decoders (PNG/TIFF) for non-JPEG payloads in encodings 5/6/7 pinned; the J rows say only 'none -> empty' (J114)",
-        "re-analysis/research/20261010-m3045-m4033-rows.md Part A (manager-adopted 2026-10-10): imdecode 0xFAC4 -> imdecode_ 0xF6AC: empty-buffer cv::error -215 line 490; window min(32,size) from each decoder's signatureLength (slot 0x24); first checkSignature (slot 0x28) match in registration order BMP, HDR, JPEG, WebP, SunRaster, PxM, TIFF, PNG, JPEG2000, EXR (list 0x178E28, init 0x10684); no match -> the pre-built empty Mat, no log (0xF822..0xF830, 0xFA24); readHeader/readData failure -> empty Mat. Engine: encodings 5/6 and 7 call imdecode flags 0 (gray 0x4F28C6, 0x4F2C4C) / 1 (RGB 0x4F21DC, 0x4F25AE); the encoding byte comes only from the robot's ImageChunk; ImageRequest cannot ask for 5/6/7."
+        "re-analysis/research/20261010-m3045-m4033-rows.md Part A (manager-adopted 2026-10-10): imdecode 0xFAC4 -> imdecode_ 0xF6AC: empty-buffer cv::error -215 line 490; window always 32 bytes (max signatureLength, slot 0x24): allocate(32) 0xF78A, memset 0x20 0xF78E..0xF792, min(32,size) payload bytes copied 0xF7B8..0xF7C8 (corrected in Part C.1); first checkSignature (slot 0x28) match in registration order BMP, HDR, JPEG, WebP, SunRaster, PxM, TIFF, PNG, JPEG2000, EXR (list 0x178E28, init 0x10684); no match -> the pre-built empty Mat, no log (0xF822..0xF830, 0xFA24); readHeader/readData failure -> empty Mat. Engine: encodings 5/6 and 7 call imdecode flags 0 (gray 0x4F28C6, 0x4F2C4C) / 1 (RGB 0x4F21DC, 0x4F25AE); the encoding byte comes only from the robot's ImageChunk; ImageRequest cannot ask for 5/6/7.",
+        "re-analysis/research/20261010-m3045-m4033-rows.md Part C (manager-checked 2026-10-10): decoder 4 is WebP (RTTI 0xCE2D8 \"N2cv11WebPDecoderE\"); checkSignature 0x1A520 calls the probe 0x375A6(window, 0x20, sp+4, 0x201) and accepts only status 0; the probe rules P1..P13 (RIFF/WEBP, VP8X, ALPH chain, VP8/VP8L headers, 0x37088, 0x36DC0, 0x3C25C, 0x3A912); readHeader 0x1A5E4 re-probes 32 bytes of the real buffer (over-read for a payload under 32 bytes: UNKNOWN)."
       ],
       "live_path": true,
       "hardware_required": false

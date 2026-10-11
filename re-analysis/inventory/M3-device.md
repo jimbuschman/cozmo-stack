@@ -441,3 +441,5 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-10; rows research/20261010-m3045-m4033-rows.md). M3-045 ports the imdecode signature dispatch; non-JPEG matches are a visible MISSING. M4-033 builds the store; its logging branch is unreachable.
 
 | M3-047 | IMPLEMENTATION_GAP: Robot::SendMessage failure warning on every engine-to-robot send (0x0051349C; 73 call sites via PLT 0x004A5368). | Opus check, 2026-10-10. |
+
+M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m4033-rows.md Part C): the signature window is always 32 bytes padded with 0x20, not min(32,size); decoder 4 is WebP by RTTI; the WebP probe 0x375A6 rules added. Status unchanged (IMPLEMENTATION_GAP).
