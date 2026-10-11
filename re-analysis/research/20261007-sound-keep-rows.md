@@ -9,7 +9,7 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 107 native-row obligations CHECKED, 8 CHECKED scope exclusions, 25 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 108 native-row obligations CHECKED, 8 CHECKED scope exclusions, 24 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
 
 ## Checkpoint 610 — modulator joins and positive-context item frontier
 
@@ -11618,3 +11618,8 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint789 — all serialized mode4 ID references
 
 `20261010-sound-mode4-serialized-reference-disposition.md` verifies5350 HIRC payloads/all byte alignments and attributes all13 exact-ID hits:2 own IDs,2 child-vector IDs,8 second-parent fields and1 playlist entry. No extra raw serialized entry supplier; runtime admission/mutation is not excluded.009/034 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint790 — original twelve-curve-caller scope closure
+
+`20261010-sound-curve-twelve-caller-scope-closure.md` reconciles unchanged C35.3's sum/product, hints and twelve-caller request against AC/R/CR645's complete named caller/recipient joins.114 CHECKED; no extra address-taken caller is declared absent or unreachable. The unsupported broader hypothesis stays UNKNOWN outside the original bounded closure.108 native+8 scope CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only, no fidelity/production acceptance.

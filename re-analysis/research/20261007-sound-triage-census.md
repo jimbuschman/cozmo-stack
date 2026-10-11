@@ -2,7 +2,7 @@
 | --- | --- | --- |
 | All KEEP/VERIFY triage lines indexed | CHECKED | 140 |
 | Whole-obligation impact tags | CHECKED | 140 AUDIBLE / 0 INTERNAL; individual reasons in the coverage table |
-| Per-item native rows and production joins | PARTIAL | 107 CHECKED native-row obligations / 8 CHECKED scope exclusions / 25 PARTIAL / 0 NOT DONE; checkpoint658 closes088;657 closes121; explicit writer/alias/input proofs remain open |
+| Per-item native rows and production joins | PARTIAL | 108 CHECKED native-row obligations / 8 CHECKED scope exclusions / 24 PARTIAL / 0 NOT DONE; checkpoint790 closes the original twelve-caller114 scope; explicit writer/alias/input proofs remain open |
 
 # Q14 per-item work census
 
@@ -125,7 +125,7 @@ Each quoted triage line is an independent obligation. Row presence, a disassembl
 | Q14-111 | 160 | CHECKED | AUDIBLE | Override/priority/scheduling-control helpers can affect voice admission and timing. |
 | Q14-112 | 161 | CHECKED | AUDIBLE | Curve interpolation/scaling produces RTPC values controlling the played sound. |
 | Q14-113 | 162 | CHECKED | AUDIBLE | Curve key/point ordering/replacement and subscription failure change delivered sound parameters. |
-| Q14-114 | 163 | PARTIAL | AUDIBLE | Sum/product order and actual evaluator recipients change sound-control values. |
+| Q14-114 | 163 | CHECKED | AUDIBLE | Sum/product order and actual evaluator recipients change sound-control values. |
 | Q14-115 | 164 | CHECKED | AUDIBLE | Shipped curve shape/scaling/accumulate values and numeric defects can change sound levels/parameters. |
 | Q14-116 | 172 | CHECKED | AUDIBLE | Pre-limiter/media/playing-manager and source-type publication affect admission, content and lifetime. |
 | Q14-117 | 173 | CHECKED | AUDIBLE | FX wrapper format/bypass/lifetime controls affect audible processing; mixed PCM arithmetic is excluded. |
@@ -1043,6 +1043,9 @@ PARTIAL: AC1–AC12 re-open both accumulators and all twelve direct evaluator ca
 
 **Current disposition, checkpoint645:** PARTIAL: Establish computed/address-taken A14E28 callers beyond twelve direct sites, then positive caller inputs/hints/decision recipients. CR645 pays actual holder0/4/C/14, filter, switch/modulator and node/PBI products. Limited pointer navigation does not prove indirect absence. out of scope: storage/I-O, per-sample DSP and the census exclusions. See `20261009-q14-partial-closeout.md`; earlier remaining-work prose is historical and superseded.
 
+
+
+**Current disposition, checkpoint790:** CHECKED: no unpaid sum/product, hint or original twelve-caller decision remains; AC/R/CR645 bind the named caller and recipient seams. Additional computed/address-taken callers remain UNKNOWN, with no absence/unreachability claim, and are not a concrete unpaid step in this bounded original obligation. See `20261010-sound-curve-twelve-caller-scope-closure.md`. Earlier remaining-work prose is historical and superseded.
 
 
 ## Q14-115 — triage line 164
@@ -3198,3 +3201,8 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint789 — all serialized mode4 ID references
 
 `20261010-sound-mode4-serialized-reference-disposition.md` verifies5350 HIRC payloads/all byte alignments and attributes all13 exact-ID hits:2 own IDs,2 child-vector IDs,8 second-parent fields and1 playlist entry. No extra raw serialized entry supplier; runtime admission/mutation is not excluded.009/034 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint790 — original twelve-curve-caller scope closure
+
+`20261010-sound-curve-twelve-caller-scope-closure.md` reconciles unchanged C35.3's sum/product, hints and twelve-caller request against AC/R/CR645's complete named caller/recipient joins.114 CHECKED; no extra address-taken caller is declared absent or unreachable. The unsupported broader hypothesis stays UNKNOWN outside the original bounded closure.108 native+8 scope CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only, no fidelity/production acceptance.

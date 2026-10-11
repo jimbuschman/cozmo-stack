@@ -1,0 +1,15 @@
+# Q14-114: closure of the original twelve-caller obligation
+
+Checkpoint790; scope guard reread. This is a scope reconciliation against the unchanged original triage quotation, not an inference of indirect-call absence. Research CHECKED does not settle a fidelity record or claim every possible production path.
+
+> | C35.3 accumulators / hints | M6-009 | **KEEP** | 0x00A17724;0x00A17878;0x00A14E28 | Sum/product, curve hints and twelve caller census affect control values/order. |
+
+The original obligation names sum/product, hints and the twelve-caller census. AC1/2 recover both accumulators' identities, default/skip/resolver order, physical binary32 fold and live reload semantics; AC3â€“12 cover every required direct evaluation/accumulation branch, including differing old/new order and zero/discarded hints. R1â€“52 retain the evaluator's actual search/interpolation/scaling controls. `20261007-sound-curve-callers-native.txt` records and individually reopens all twelve original evaluator links: A0E89C; A10D60/A10D80/A10FD8/A1110C/A11128/A11298/A11318/A11494; A1232C; A1784C/A179A0. It also checks the five accumulator links and their containing bodies.
+
+CR645's `20261010-sound-curve-receiver-reconciliation.md` and `20261010-sound-curve-receiver-reconciliation-native.txt` reconciles the original unpaid receiver/filter seams: PL616/HP617/SP618/CI619/MH622 holder0/4; actual tables101C428/101C488 C/14; NF224 notification filter; OD470/RD2 switch and MR517/MC610 modulator delivery; LN/LM429/RD5/6/LD428 node/PBI, threshold and bypass recipients. The preserved HP617/PP438/PP435 serialized parameter inputs and actual clone/null/result gates bind the claimed paths. No receiver or filter body in those twelve original branches remains generically unread.
+
+The sole remaining line in the current closeout was a question about hypothetical computed/address-taken callers BEYOND those twelve. CR645/CP768/PR780 searches established no positive additional edge or publisher. Their absence is not unreachability. The wider hypothesis remains UNKNOWN; it supplies no concrete unpaid decision in the original bounded twelve-caller obligation. Keeping114 PARTIAL solely for an unbounded additional-caller census had widened the task. The correction closes only the original named work and preserves every conditional input/recipient caveat. A future positive extra caller would need its own concrete scoped reconciliation; no arbitrary new receiver family is requested here.
+
+Q14-114 CHECKED: no unpaid sum/product, hint-ownership or original twelve-caller decision remains. out of scope: storage/hash/allocator backing, excluded positioning payloads and per-sample DSP. No broader caller-unreachability, global receiver/writer closure, production or fidelity acceptance claim.
+
+Current coverage:108 native+8 scope CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. The other original obligations keep their independent scopes and remaining proofs. Q14 remains incomplete; Q15 follows Q14.
