@@ -107,7 +107,7 @@ public sealed class CubeConnections
     private readonly Action<SetPropSlot> _send;
     private readonly Func<float> _seconds;
     private readonly Action<string>? _log;
-    private readonly List<string> _pendingLogs = new();     // appended under _gate, delivered outside it (FlushLogs)
+    private readonly List<Action> _pendingLogs = new();     // appended under _gate, delivered outside it (FlushLogs)
 
     // Robot
     private readonly ActiveObjectTable<Info> _available = new();     // Robot+0x47C, libc++ unordered_map order
@@ -278,19 +278,18 @@ public sealed class CubeConnections
 
     // The channeled info, warning and error calls of the connection path. A line is queued where the engine logs it
     // and delivered when the entry point has left the lock, in order.
-    private void Queue(string line) { if (_log is not null) _pendingLogs.Add(line); }
+    private void Queue(string line) { if (_log is not null) _pendingLogs.Add(() => _log(line)); }
 
     private void FlushLogs()
     {
-        if (_log is null) return;
-        string[] lines;
+        Action[] lines;
         lock (_gate)
         {
             if (_pendingLogs.Count == 0) return;
             lines = _pendingLogs.ToArray();
             _pendingLogs.Clear();
         }
-        foreach (var l in lines) _log(l);
+        foreach (var l in lines) l();
     }
 
     /// <summary>
@@ -516,11 +515,11 @@ public sealed class CubeConnections
     public event Action<BlockPoolDataMessage>? BlockPoolData;
     private void SendBlockPoolData()
     {
-        FlushLogs(); // connect diagnostics precede the broadcast, as in section 9
-        _log?.Invoke("info: [BlockPool] BlockFilter.HandleGameEvents: Sending blockpool data");
+        Queue("info: [BlockPool] BlockFilter.HandleGameEvents: Sending blockpool data");
         var slots = _persistentPool.Where(p => p.FactoryId != 0)
             .Select(p => new BlockPoolBlockData(p.FactoryId, (int)p.Type)).ToArray();
-        BlockPoolData?.Invoke(new BlockPoolDataMessage(_poolEnabled, slots));
+        var message = new BlockPoolDataMessage(_poolEnabled, slots);
+        _pendingLogs.Add(() => BlockPoolData?.Invoke(message));
         // Game tags E6/E7/EA/EB have no corresponding stack game-message handlers: named handoffs under M4-035 section 9.
     }
 

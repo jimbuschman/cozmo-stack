@@ -880,7 +880,7 @@ public sealed partial class EngineRobot
             catch (JsonLogicError e)
             {
                 // fidelity: M3-049, M1-034 — rows section 8 / ruling 12.4: isolate every throw before any stores.
-                Engine.Log($"warning: event handler threw: {e.GetType().Name}: {e.Message}");
+                Engine.EmitStackLog($"warning: event handler threw: {e.GetType().Name}: {e.Message}");
                 return;
             }
             // fidelity: M4-011
@@ -1034,8 +1034,7 @@ public sealed partial class EngineRobot
         // robot id) and EngineToRobotTagToString(tag) (0x007AF8D0, the catalog's CLAD member name).
         string tag = MessageCatalog.ById.TryGetValue(m.Id, out var info) ? info.Member : what;
         Engine.EmitEngineLog(EngineLogLevel.Warning, null, "Robot.SendMessage", $"Robot {CozmoEngine.RobotId} failed to send a message type {tag}",
-            new Dictionary<string, string> { ["$data"] = tag },
-            $"warning: Robot.SendMessage: Robot {CozmoEngine.RobotId} failed to send a message type {tag}");
+            new Dictionary<string, string> { ["$data"] = tag });
         return false;
     }
 

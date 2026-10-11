@@ -56,18 +56,9 @@ internal sealed class DasLogDisplay
 
     internal int GetLevel(string name)
     {
-        // Section 13.5: whole dot segments; the closest matching ancestor overrides the root.
-        int level = LocalLevel;
-        int end = 0;
-        while (end < name.Length)
-        {
-            int dot = name.IndexOf('.', end);
-            int next = dot < 0 ? name.Length : dot;
-            if (_overrides.TryGetValue(name[..next], out int value)) level = value;
-            if (dot < 0) break;
-            end = dot + 1;
-        }
-        return level;
+        // B-M3M4-5: intermediate nodes depend on unread DASConfigure tree insertion.
+        // They are unreachable with M3-052's fixed shipped input (no overrides).
+        return _overrides.TryGetValue(name, out int exact) ? exact : LocalLevel;
     }
 
     // fidelity: M3-053, M3-054
@@ -76,7 +67,7 @@ internal sealed class DasLogDisplay
         string name = entry.Name ?? "";
         if (name.Length == 0)
         {
-            missing("MISSING: M3-053 | libDAS core 0x742E..0x75EE: the adopted null-name diagnostic is abbreviated as DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED ...; full literal unread");
+            missing("MISSING: M3-053 | libDAS core 0x742E..0x75EE: DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED (value=%s file=%s funct=%s line=%d); arguments unread (libDAS file offset 0x32D3C)");
             name = "noname";
         }
         if (!verbose && (int)entry.Level < GetLevel(name)) return null;

@@ -72,8 +72,8 @@ public class EngineDisplayTests
         display.Configure("{}", _ => { });
         Assert.Equal((1, 2, 1, 5, 0x19000, 0x190), (display.LocalLevel, display.RemoteLevel, display.GameLevel, display.FlushInterval, display.MaxLogLength, display.MaxLogFiles));
         display.Configure("{\"dasConfig\":{\"localMinLogLevel\":\"event\",\"localMinLogLevelOverrides\":{\"robot.camera\":\"debug\",\"robot.camera.bad\":\"error\"}}}", _ => { });
-        Assert.Equal(0, display.GetLevel("robot.camera.capture"));
-        Assert.Equal(4, display.GetLevel("robot.camera.bad.capture"));
+        Assert.Equal(0, display.GetLevel("robot.camera"));
+        Assert.Equal(4, display.GetLevel("robot.camera.bad"));
         Assert.Equal(2, display.GetLevel("robot.cameras.capture")); // no partial segment match
     }
 

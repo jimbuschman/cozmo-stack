@@ -662,31 +662,8 @@ public sealed class VisionSystem : IDisposable
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
             // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
             // fidelity: M11-009
-            case ObjectMoved mv:
-            {
-                // fidelity: M4-009, M4-023
-                // HandleActiveObjectMoved (CD10a, 0x00533E4C..0x005341BA): an unknown active id, the charger's garbage
-                // moves and a movement inside the double-tap window (step 3) return before SetIsMoving and MarkObjectDirty.
-                if (_robot.Cubes.MovedStopsBeforeTheWorld(mv.ObjectID)) break;
-                // fidelity: M11-041
-                // The message names the cube by its radio slot; the engine finds the connected object of that slot
-                // (GetConnectedActiveObjectByActiveIdHelper) and works on its ObjectID. No connected object: nothing more.
-                if (World.ConnectedObjectIdForActiveId(mv.ObjectID) is not { } movedId) break;
-                World.SetMoving(movedId, true);
-                if (!Carrying(movedId)) World.MarkDirty(movedId);
-                break;
-            }
-            case ObjectStoppedMoving sm:
-            {
-                // fidelity: M4-009
-                // HandleActiveObjectStopped (CD10b, 0x00534636..0x00534AA4): the same lookup and charger filter as Moved;
-                // the double-tap test's result is discarded.
-                if (_robot.Cubes.StoppedStopsBeforeTheWorld(sm.ObjectID)) break;
-                // fidelity: M11-041
-                if (World.ConnectedObjectIdForActiveId(sm.ObjectID) is not { } stoppedId) break;
-                World.SetMoving(stoppedId, false);
-                break;
-            }
+            // M4-009: CozmoCubes owns the complete Moved/Stopped located-object update,
+            // including its matched-object dirty operation. Do not repeat it here.
             // fidelity: M11-041
             // HandleActiveObjectConnectionState 0x00533B3C: a connection registers the connected object (AddConnectedActiveObject), a
             // disconnection erases it (RemoveConnectedActiveObject).

@@ -492,7 +492,12 @@ public sealed class CozmoCubes
     internal int ChargerObjectId { get; private set; } = -1;
     internal void SetChargerObjectIdFromMountInit(uint id) => ChargerObjectId = unchecked((int)id);
     // Whether connected ObjectID -1 is possible belongs to M11-013/M11-041.
-    private int WorldId(Cube c) => unchecked((int)(ConnectedObjectIdForActiveId?.Invoke(c.ObjectId ?? uint.MaxValue) ?? c.ObjectId ?? uint.MaxValue));
+    private int? WorldId(Cube c)
+    {
+        var id = ConnectedObjectIdForActiveId?.Invoke(c.ObjectId ?? uint.MaxValue);
+        if (id is null) Log("MISSING: M4-009 / M11-004 | connected BlockWorld ObjectID lookup unavailable; id-dependent work skipped");
+        return id is { } value ? unchecked((int)value) : null;
+    }
     private bool IsCharger(Cube c) => WorldId(c) == ChargerObjectId;
     private string F6(float v) => float.IsNaN(v) ? "nan" : float.IsPositiveInfinity(v) ? "inf" : float.IsNegativeInfinity(v) ? "-inf" : v.ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
 
@@ -582,8 +587,7 @@ public sealed class CozmoCubes
                         Log($"debug: RobotToEngine.ObjectPowerLevel.Report: Sending DAS report for robotID {robotId} activeID {p.ObjectID} now {now} then {then}");   // A9
                         _robot.Engine.EmitEngineLog(EngineLogLevel.Event, null, "robot.accessory_powerlevel",
                             $"{p.ObjectID} {F2(volts)}V ({unchecked((int)p.MissedPackets)} lost)",
-                            new Dictionary<string, string> { ["$data"] = $"{F2(volts)},{F2(percent)}" },
-                            $"debug: [Events] robot.accessory_powerlevel: {p.ObjectID} {F2(volts)}V ({unchecked((int)p.MissedPackets)} lost)");
+                            new Dictionary<string, string> { ["$data"] = $"{F2(volts)},{F2(percent)}" });
                         _lastReportTime[p.ObjectID] = now;                                    // A11, report path only
                         _lastReportMissed[p.ObjectID] = p.MissedPackets;
                     }
@@ -644,14 +648,16 @@ public sealed class CozmoCubes
                     }
                     var d = TapInfo(c);
                     if (d.WindowEnd == 0) d.Moving = true;
+                    if (WorldId(c) is not { } movedWorldId) break;
                     if (IsCharger(c)) { Log("info: [Unnamed] Robot.ActiveObjectMoved.Charger: Charger sending garbage move messages"); break; }
-                    Log($"info: [Unnamed] Robot.ActiveObjectMoved.ObjectMovedOrStopped: ObjectID: {WorldId(c)} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {mv.AxisOfAccel}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
-                    if (ShouldIgnoreMovementDueToDoubleTap(c)) { Log($"info: [Unnamed] Robot.ActiveObjectMoved.IgnoringMessage: Waiting for double tap id:{WorldId(c)} ignoring movement message"); break; }
+                    Log($"info: [Unnamed] Robot.ActiveObjectMoved.ObjectMovedOrStopped: ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {mv.AxisOfAccel}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
+                    if (ShouldIgnoreMovementDueToDoubleTap(c)) { Log($"info: [Unnamed] Robot.ActiveObjectMoved.IgnoringMessage: Waiting for double tap id:{movedWorldId} ignoring movement message"); break; }
                     if (!c.Moving) { c.Moving = true; c.MovingChangedAt = mv.Timestamp; }
+                    _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)movedWorldId), true);
                     c.Accel = new Vector3(mv.Accel.X, mv.Accel.Y, mv.Accel.Z);
                     c.UpAxis = mv.AxisOfAccel;
                     c.LastSeenUtc = DateTime.UtcNow;
-                    MovementLocatedLoop(mv.ObjectID, WorldId(c), true, mv.Timestamp, "Robot.ActiveObjectMoved.");
+                    MovementLocatedLoop(mv.ObjectID, movedWorldId, true, mv.Timestamp, "Robot.ActiveObjectMoved.");
                     if (ExcludeFromMovedBroadcast?.Invoke(c) != true) moved = c;
                     break;
                 }
@@ -668,12 +674,14 @@ public sealed class CozmoCubes
                         Log($"warning: ObjectMovedOrStoppedHelper.UnknownActiveID: Could not find match for active object ID {unchecked((int)sm.ObjectID)}"); break;
                     }
                     TapInfo(c).Moving = false;
+                    if (WorldId(c) is not { } stoppedWorldId) break;
                     if (IsCharger(c)) { Log("info: [Unnamed] Robot.ActiveObjectStopped.Charger: Charger sending garbage move messages"); break; }
-                    Log($"info: [Unnamed] Robot.ActiveObjectStopped.ObjectMovedOrStopped: ObjectID: {WorldId(c)} (Active ID {unchecked((int)sm.ObjectID)}), type: {c.Type}, axisOfAccel: <unknown>, accel: 0.000000 0.000000 0.000000, time: {unchecked((int)sm.Timestamp)} ms");
+                    Log($"info: [Unnamed] Robot.ActiveObjectStopped.ObjectMovedOrStopped: ObjectID: {stoppedWorldId} (Active ID {unchecked((int)sm.ObjectID)}), type: {c.Type}, axisOfAccel: <unknown>, accel: 0.000000 0.000000 0.000000, time: {unchecked((int)sm.Timestamp)} ms");
                     _ = ShouldIgnoreMovementDueToDoubleTap(c);
                     if (c.Moving) { c.Moving = false; c.MovingChangedAt = sm.Timestamp; }
+                    _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)stoppedWorldId), false);
                     c.LastSeenUtc = DateTime.UtcNow;
-                    MovementLocatedLoop(sm.ObjectID, WorldId(c), false, sm.Timestamp, "Robot.ActiveObjectStopped.");
+                    MovementLocatedLoop(sm.ObjectID, stoppedWorldId, false, sm.Timestamp, "Robot.ActiveObjectStopped.");
                     if (ExcludeFromMovedBroadcast?.Invoke(c) != true) moved = c;
                     break;
                 }
@@ -684,7 +692,8 @@ public sealed class CozmoCubes
                     // broadcast with the object's id. Nothing is stored on the engine's object; UpAxis here is the
                     // receiver's record of the broadcast.
                     if (Connected(ua.ObjectID) is not { } c) { Log($"error: Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID: Could not find match for active object ID {unchecked((int)ua.ObjectID)}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); break; }
-                    Log($"info: [Unnamed] Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged: Type: {c.Type}, ObjectID: {WorldId(c)}, UpAxis: {ua.UpAxis}");
+                    if (WorldId(c) is not { } upWorldId) break;
+                    Log($"info: [Unnamed] Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged: Type: {c.Type}, ObjectID: {upWorldId}, UpAxis: {ua.UpAxis}");
                     c.UpAxis = ua.UpAxis;
                     c.LastSeenUtc = DateTime.UtcNow;
                     break;
@@ -714,15 +723,14 @@ public sealed class CozmoCubes
         {
             Log("MISSING: M4-009 / M11-004 | FindLocatedMatchingObjects needs the attached BlockWorld"); return;
         }
-        var filter = new Vision.BlockWorldFilter { OriginMode = (Vision.OriginMode)3 };
+        var filter = new Vision.BlockWorldFilter { OriginMode = Vision.OriginMode.InAnyFrame };
         filter.Predicates.Add(o => o.ActiveId == unchecked((int)activeId));
         var objects = world.FindLocatedMatchingObjects(filter);
         foreach (var o in objects)
         {
             if (unchecked((int)o.ObjectId) != objectId)
                 Log($"MISSING: M4-009 / M11-004 | {prefix}ActiveObjectInDifferentFramesWithDifferentIDs 0x00534042..0x005340CC: root-pose names are not represented by the attached BlockWorld; first ID {objects[0].ObjectId}, this ID {o.ObjectId}");
-            if (moving && world.IsCarryingObject?.Invoke(o.ObjectId) != true && o.PoseState == Vision.PoseState.Known) world.MarkDirty(o.ObjectId);
-            o.IsMoving = moving;
+            world.ApplyMovedOrStopped(o, moving);
         }
     }
 

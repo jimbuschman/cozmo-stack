@@ -96,7 +96,10 @@ public sealed class BackpackLightAnimations
         var files = new List<string>();
         var mtimes = new Dictionary<string, long>(StringComparer.Ordinal);
         Collect(dir);
-        log?.Invoke($"info: [Animations] RobotDataLoader.CollectAnimFiles.Results: Found {files.Count} animation files of type 3");
+        if (Directory.Exists(dir))
+            log?.Invoke($"info: [Animations] RobotDataLoader.CollectAnimFiles.Results: Found {files.Count} animation files of type 3");
+        else
+            log?.Invoke("MISSING: M4-036 RobotDataLoader.CollectAnimFiles.Results type argument for a missing directory is unread");
         var time = System.Diagnostics.Stopwatch.StartNew();
         foreach (var f in files)
         {
@@ -621,6 +624,9 @@ public sealed class CubeLightComponent
         public bool CanBeOverridden;
         /// <summary>node+0x41 (CurrentAnimInfo+0x39): the stop flag. W2: only StopAllAnimsOnLayer and StopLightAnim set it.</summary>
         public bool Stop;
+        // Host atomicity: Update cannot advance this push until SetObjectLights' result has
+        // committed its timer. The synchronous send/callouts remain outside the state lock.
+        public bool PendingSend;
     }
 
     private sealed class ObjectInfo
@@ -736,8 +742,10 @@ public sealed class CubeLightComponent
         CubeLightPattern first;
         lock (_gate)
         {
-            uint id = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type)?.ObjectId
-                ?? _robot.Cubes.ConnectedCubes.FirstOrDefault(c => c.Type == type)?.ObjectId ?? uint.MaxValue;
+            var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type);
+            if (connected is null)
+            { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real connected BlockWorld ObjectID; active-slot fallback is not used"); return false; }
+            uint id = connected.ObjectId;
             string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
             if (!_infos.TryGetValue(type, out var info)) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.InvalidObjectID: No object with id {id} exists in _objectInfo map can't play animation"); return false; }
             var stack = info.Layers[layer];
@@ -759,11 +767,19 @@ public sealed class CubeLightComponent
             if (layer > info.CurrentLayer) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.LightsNotSet: Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
             Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.SettingLights: Playing trigger {trigger} on layer {layerName} for object {id}");
             info.CurrentLayer = layer;
+            pushed.PendingSend = true;
             // SendTransitionMessage is an unread engine-to-game handoff on this path.
             Log("MISSING: M4-018 | SendTransitionMessage 0x00638758..0x006387D8 game payload has no adopted row");
         }
         // Do not hold _gate while taking _sendGate: SetLights takes those in the opposite order.
-        if (SetObjectLights(type, first) != 0) lock (_gate) pushed.TimerMs = 0;
+        uint result;
+        try { result = SetObjectLights(type, first); }
+        catch { lock (_gate) pushed.PendingSend = false; throw; }
+        lock (_gate)
+        {
+            if (result != 0) pushed.TimerMs = 0;
+            pushed.PendingSend = false; // timer clear + exposing the completed push are one locked commit
+        }
         // Section 13.2: Update's treatment of the cleared timer is unread; its existing behavior stays.
         return true;
     }
@@ -803,6 +819,7 @@ public sealed class CubeLightComponent
                 if (stack.Count > 0)
                 {
                     var top = stack[^1];
+                    if (top.PendingSend) continue;
                     var cur = top.Anim[top.Index];
                     bool waiting = cur.DurationMs == 0 || unchecked((int)(now - top.TimerMs)) < 0;
                     if (waiting && !top.Stop) continue;                 // W4: holds

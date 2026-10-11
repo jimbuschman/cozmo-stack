@@ -137,19 +137,21 @@ public sealed class StreamSendBuffer
     /// <summary>UpdateAmountToSend (C9), from the played counters AnimationState last reported (C10).</summary>
     public void UpdateAmountToSend(int bytesPlayed, int framesPlayed)
     {
+        var logs = new List<string>();
         lock (_gate)
         {
             int bytes = unchecked(bytesPlayed - _bytesStreamed + BytesAhead);
             if (_bytesStreamed < 0 && bytesPlayed >= 1)
-                Log?.Invoke($"info: [Unnamed] AnimationStreamer.UpdateAmountToSend.BytesStreamedOverflow: free {bytes} (streamed = {_bytesStreamed}, played {bytesPlayed})");
+                logs.Add($"info: [Unnamed] AnimationStreamer.UpdateAmountToSend.BytesStreamedOverflow: free {bytes} (streamed = {_bytesStreamed}, played {bytesPlayed})");
             if (bytes < 0)
             {
-                Log?.Invoke($"warning: AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot: minBytesFree:{bytes} numBytesStreamed:{_bytesStreamed} numBytesPlayed:{bytesPlayed}");
+                logs.Add($"warning: AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot: minBytesFree:{bytes} numBytesStreamed:{_bytesStreamed} numBytesPlayed:{bytesPlayed}");
                 bytes = 0;
             }
             _bytesToSend = Math.Min(bytes, MaxBytesPerUpdate);
             _framesToSend = Math.Max(unchecked(framesPlayed - _framesStreamed + AudioFramesAhead), 0);
         }
+        foreach (var line in logs) Log?.Invoke(line);
     }
 
     /// <summary>The test seam's budget (a sink that models no robot): nothing is held back.</summary>

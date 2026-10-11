@@ -2478,6 +2478,17 @@ public sealed class BlockWorld
     /// motion does not dirty the pose the lift is holding it at.
     /// </summary>
     // fidelity: M11-009
+    // fidelity: M4-009, M11-009 — manager-checked 0x00534924..0x0053494A.
+    internal void ApplyMovedOrStopped(ObservableObject matched, bool moving)
+    {
+        lock (_gate)
+        {
+            if (IsCarryingObject?.Invoke(matched.ObjectId) != true && matched.PoseState == PoseState.Known)
+                MarkObjectDirty(matched, false);
+            matched.IsMoving = moving;
+        }
+    }
+
     public void MarkDirty(uint objectId)
     {
         var o = GetLocatedObjectByIdHelper(objectId);
@@ -2537,6 +2548,13 @@ public sealed class BlockWorld
     /// Records what the cube's radio says about its own motion; see <see cref="ObservableObject.IsMoving"/>. It is set on the connected object (the one
     /// <c>HandleActiveObjectMoved</c> finds, whose <c>IsMoving</c> <c>UpdatePoseInInstance</c> reads) and on the located objects with the ID.
     /// </summary>
+    // fidelity: M4-009 — connected-object SetIsMoving 0x005343C8..0x00534402 / 0x00534A62..0x00534AA0.
+    internal void SetConnectedMoving(uint objectId, bool moving)
+    {
+        lock (_gate)
+            foreach (var o in _connectedObjects.Values) if (o.ObjectId == objectId) o.IsMoving = moving;
+    }
+
     public void SetMoving(uint objectId, bool moving)
     {
         lock (_gate)

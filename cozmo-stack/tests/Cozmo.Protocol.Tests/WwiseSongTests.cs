@@ -376,8 +376,22 @@ public class WwiseSongTests
         await dispose.WaitAsync(TimeSpan.FromSeconds(30));
         Assert.True(prewarm.IsCompletedSuccessfully);
         Assert.Null(source.StreamFor(ev));
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await source.Prewarm(ev));
+        await source.Prewarm(ev); // disposed sources quietly refuse preparation
         source.Dispose(); // idempotent
+    }
+
+    [Fact]
+    public async Task FailedPrewarmDoesNotEscapeDisposalOrLaterPrewarm()
+    {
+        if (Library.Value is not { } lib) return;
+        var source = new WwiseAudioSource(lib, ownsLibrary: false, random: new WwiseRng(5));
+        var ev = lib.IdOf("Play__Robot_VO__Cozmo_Singing_100bpm")!.Value;
+        source.SetSwitch(SingingBehavior.Group100, WwiseHash.Of("Cozmo_Sings_Bingo"));
+        source.MusicPreparationObserved = () => throw new InvalidOperationException("preparation failed");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => source.Prewarm(ev));
+        source.Dispose();
+        await source.Prewarm(ev);
+        Assert.Null(source.StreamFor(ev));
     }
 
     /// <summary>

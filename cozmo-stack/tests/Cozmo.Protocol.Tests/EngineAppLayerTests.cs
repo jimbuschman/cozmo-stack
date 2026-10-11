@@ -570,7 +570,7 @@ public class EngineAppLayerTests
     /// <summary>
     /// P12..P14 and P27 (0x0061A836..0x0061A926): the discovery diagnostics - one "Looking for objects of type %s with RSSI &lt; %d" per unpooled type in
     /// kObjectTypes order {1, 2, 3}, "Discovered closer object 0x%x" for each candidate, then "Connecting to discovered objects" before the pool is
-    /// filled - and the P14 step the inventory leaves open (SendBlockPoolData) stays visible as MISSING.
+    /// filled, then SendBlockPoolData's info precedes the external-interface message.
     /// </summary>
     [Fact]
     public void M4_010_P14_P27_TheDiscoveryDiagnosticsFollowTheTypeOrder()
@@ -580,6 +580,18 @@ public class EngineAppLayerTests
         rig.SendFirstFullState(1000);
         var poolMessages = new List<BlockPoolDataMessage>();
         rig.Engine.BlockPoolData += poolMessages.Add;
+        var delivery = new List<string>(); bool logUnlocked = false, eventUnlocked = false;
+        rig.Engine.LogEntry += e =>
+        {
+            if (e.Name != "BlockFilter.HandleGameEvents") return;
+            delivery.Add("info");
+            logUnlocked = Task.Run(() => rig.Robot.Cubes.Connections.Slots).Wait(TimeSpan.FromSeconds(2));
+        };
+        rig.Engine.BlockPoolData += _ =>
+        {
+            delivery.Add("message");
+            eventUnlocked = Task.Run(() => rig.Robot.Cubes.Connections.Slots).Wait(TimeSpan.FromSeconds(2));
+        };
         rig.Log.Clear();                       // the live engine already runs BlockFilter::Update before the first advertisement
         rig.Data(new ObjectAvailable { FactoryId = 0x10, ObjectType = ObjectType.Block_LIGHTCUBE1, Rssi = 40 });
         rig.Data(new ObjectAvailable { FactoryId = 0x30, ObjectType = ObjectType.Block_LIGHTCUBE3, Rssi = unchecked((sbyte)150) });   // the RSSI byte 150 is inside the "<=" predicate
@@ -601,6 +613,8 @@ public class EngineAppLayerTests
         Assert.Equal(new uint[] { 0x10, 0x30, 0, 0, 0 }, rig.Robot.Cubes.Connections.PooledFactoryIds.ToArray());
         var payload = Assert.Single(poolMessages).ToBytes();
         Assert.Equal(Convert.FromHexString("7E010210000000010000003000000003000000"), payload); // section 9 / Unity wire rows
+        Assert.Equal(new[] { "info", "message" }, delivery);
+        Assert.True(logUnlocked); Assert.True(eventUnlocked);
     }
 
     /// <summary>

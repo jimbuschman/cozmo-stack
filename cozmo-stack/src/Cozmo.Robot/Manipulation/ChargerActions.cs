@@ -346,7 +346,7 @@ public sealed class MountChargerAction
             _trace.Add($"warning: MountChargerAction.Init.InvalidCharger: No charger object with ID {ChargerId} in block world!");
             return ActionResult.BadObject;                                            // 0x03000004 (0x0054E166..0x0054E16C)
         }
-        SteppedBehavior.ReportMissing("MountChargerAction::Init stores the charger id at robot+0x334 (0x0054E11C..0x0054E120): no counterpart in this stack (its readers are not in the M13 inventory)");
+            SteppedBehavior.ReportMissing("M13-008 MountChargerAction::Init charger id writer at robot+0x334 (0x0054E11C..0x0054E120) is unwired; Cubes.ChargerObjectId reader and hook exist");
 
         // ---- ConfigureAlignWithChargerAction 0x0054E1C4: [AlignWithObjectAction, MoveHeadToAngleAction]
         var align = new AlignWithObjectAction(_m, ChargerId, AlignDistanceMm, AlignmentType.Custom, Flag81)

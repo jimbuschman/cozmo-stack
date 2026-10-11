@@ -18,6 +18,6 @@ internal static class EngineLogAssertions
             capture(level + ": " + channel + entry.Name + (text.Length == 0 ? "" : ": " + text));
         };
         // MISSING and other host diagnostics are separate from engine log calls.
-        engine.LogLine += line => { if (line.Contains("MISSING:", StringComparison.Ordinal) || !line.Contains(" : ", StringComparison.Ordinal)) capture(line); };
+        engine.StackLogLine += capture;
     }
 }

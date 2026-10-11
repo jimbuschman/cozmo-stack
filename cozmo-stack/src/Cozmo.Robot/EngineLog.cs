@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Text;
 
 namespace Cozmo.Robot;
 
@@ -8,11 +9,22 @@ public enum EngineLogLevel { Debug, Info, Event, Warning, Error }
 
 /// <summary>One engine logger call, before any libDAS processing or display.</summary>
 public sealed record EngineLogEntry(EngineLogLevel Level, string? Channel, string? Name, string Text,
-    IReadOnlyDictionary<string, string> Data);
+    IReadOnlyDictionary<string, string> Data)
+{
+    /// <summary>The vsnprintf output bytes, including a possible incomplete UTF-8 sequence at the bound.</summary>
+    public ReadOnlyMemory<byte> TextUtf8 { get; init; }
+}
 
 public sealed partial class CozmoEngine
 {
     public event Action<EngineLogEntry>? LogEntry;
+    /// <summary>Stack diagnostics, including isolation and MISSING; independent of DAS level filtering.</summary>
+    public event Action<string>? StackLogLine;
+    internal void EmitStackLog(string line)
+    {
+        FanOut(StackLogLine, line);
+        DisplayLogLine(line);
+    }
     // fidelity: M3-053, M3-054
     public event Action<DisplayedEngineLog>? DisplayedLog;
     public bool VerboseLogDisplay { get; set; }
@@ -20,7 +32,7 @@ public sealed partial class CozmoEngine
     internal DasLogDisplay LogDisplay => _logDisplay;
     private void DisplayEngineEntry(EngineLogEntry entry)
     {
-        var line = _logDisplay.Render(entry, VerboseLogDisplay, DisplayLogLine);
+        var line = _logDisplay.Render(entry, VerboseLogDisplay, EmitStackLog);
         if (line is null) return;
         if (DisplayedLog is { } displayed)
             foreach (Action<DisplayedEngineLog> subscriber in displayed.GetInvocationList())
@@ -34,13 +46,19 @@ public sealed partial class CozmoEngine
 
     // fidelity: M3-048
     internal void EmitEngineLog(EngineLogLevel level, string? channel, string? name, string text,
-        IReadOnlyDictionary<string, string>? data = null, string? legacyLine = null)
+        IReadOnlyDictionary<string, string>? data = null)
     {
-        if (text.Length > 1023) text = text[..1023];
+        byte[] utf8 = Encoding.UTF8.GetBytes(text);
+        if (utf8.Length > 1023) utf8 = utf8[..1023];
+        text = Encoding.UTF8.GetString(utf8);
         if (level is EngineLogLevel.Warning or EngineLogLevel.Error)
-            text = "(tc" + unchecked((uint)Timer.TickCount).ToString("D4", CultureInfo.InvariantCulture) + ") : " + text;
+        {
+            string prefix = "(tc" + unchecked((uint)Timer.TickCount).ToString("D4", CultureInfo.InvariantCulture) + ") : ";
+            text = prefix + text;
+            utf8 = Encoding.UTF8.GetBytes(prefix).Concat(utf8).ToArray();
+        }
         var pairs = new ReadOnlyDictionary<string, string>(data is null ? new() : new Dictionary<string, string>(data));
-        var entry = new EngineLogEntry(level, channel, name, text, pairs);
+        var entry = new EngineLogEntry(level, channel, name, text, pairs) { TextUtf8 = utf8 };
         if (LogEntry is { } entries)
             foreach (Action<EngineLogEntry> subscriber in entries.GetInvocationList())
                 try { subscriber(entry); } catch (Exception e) { ReportFault(e); }
@@ -53,12 +71,12 @@ public sealed partial class CozmoEngine
     internal void LogWithChannel(string line, string? suppliedChannel)
     {
         int split = line.IndexOf(": ", StringComparison.Ordinal);
-        string levelName = split < 0 ? "info" : line[..split];
+        string levelName = split < 0 ? "" : line[..split];
         EngineLogLevel level = levelName switch { "debug" => EngineLogLevel.Debug, "info" => EngineLogLevel.Info,
             "event" => EngineLogLevel.Event, "warning" => EngineLogLevel.Warning, "error" => EngineLogLevel.Error, _ => EngineLogLevel.Info };
         // Host diagnostics, including MISSING, remain visible and are not engine logger calls.
-        if (line.Contains("MISSING:", StringComparison.Ordinal) || levelName is not ("debug" or "info" or "event" or "warning" or "error"))
-        { DisplayLogLine(line); return; }
+        if (line.Contains("MISSING:", StringComparison.Ordinal) || line.StartsWith("warning: event handler threw:", StringComparison.Ordinal) || levelName is not ("debug" or "info" or "event" or "warning" or "error"))
+        { EmitStackLog(line); return; }
         string rest = line[(split + 2)..];
         string? channel = level is EngineLogLevel.Debug or EngineLogLevel.Info ? suppliedChannel : null;
         if (rest.StartsWith('[') && rest.IndexOf("] ", StringComparison.Ordinal) is var end && end > 0)
@@ -66,6 +84,9 @@ public sealed partial class CozmoEngine
         int keyEnd = rest.IndexOf(": ", StringComparison.Ordinal);
         string key = keyEnd < 0 ? rest : rest[..keyEnd];
         string text = keyEnd < 0 ? "" : rest[(keyEnd + 2)..];
-        EmitEngineLog(level, channel, key, text, legacyLine: line);
+        // Diagnostic sentences are host lines, not recovered printf keys. The explicit entry API
+        // is used for new ports; this adapter serves the existing source-keyed component delegates.
+        if (key.Contains(' ') && !key.StartsWith("DAS ", StringComparison.Ordinal)) { EmitStackLog(line); return; }
+        EmitEngineLog(level, channel, key, text);
     }
 }

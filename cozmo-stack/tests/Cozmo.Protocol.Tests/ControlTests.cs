@@ -652,6 +652,7 @@ public class ControlTests
     public void CubeTelemetryLandsOnTheConnectedCube()
     {
         using var rig = new Rig();
+        using var world = new Cozmo.Robot.Vision.VisionSystem(rig.Robot, Cozmo.Robot.Vision.CameraCalibration.Nominal()) { Enabled = false };
         rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
 
         rig.Send(new ObjectPowerLevel { ObjectID = 3, BatteryLevel = 140, MissedPackets = 9 });

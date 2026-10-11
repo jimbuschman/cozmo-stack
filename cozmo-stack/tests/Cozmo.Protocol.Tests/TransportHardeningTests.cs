@@ -295,6 +295,26 @@ public class TransportHardeningTests
         Assert.Empty(reasons);          // nothing was ever up, so there is nothing to report
     }
 
+    [Fact]
+    public void RefusedConnectPostRestoresIdleAndSendDataThrows()
+    {
+        using var t = new ReliableTransport();
+        t.Start();
+        // Substitute a refused-post executor, then restore the live executor for ordinary teardown.
+        var field = typeof(ReliableTransport).GetField("_exec", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var original = t.Executor;
+        var refused = new SerialExecutor("test-refused-post");
+        refused.Complete();
+        field.SetValue(t, refused);
+        try
+        {
+            Assert.Throws<ObjectDisposedException>(() => t.Connect(Nowhere, 59989));
+            Assert.Equal(LinkState.Idle, t.State);
+            Assert.Throws<InvalidOperationException>(() => t.SendData(new byte[] { 1 }));
+        }
+        finally { field.SetValue(t, original); }
+    }
+
     /// <summary>
     /// Updated for M1-035: Disconnect is a queued action (R38, B21; R37), so the test waits for it to have run
     /// before it sends; otherwise the refusal would only be the Connecting-state refusal.

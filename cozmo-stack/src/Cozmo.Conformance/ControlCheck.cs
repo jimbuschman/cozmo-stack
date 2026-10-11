@@ -691,7 +691,7 @@ internal sealed class ControlRun
         robot.Transport.Warning += w => Event("transport-warning", new JsonObject { ["text"] = w });
         robot.Transport.Disconnected += r => Event("transport-disconnected", new JsonObject { ["reason"] = r });
         robot.Transport.Connected += () => Event("transport-connected", new JsonObject());
-        robot.Engine.LogLine += l => { _engineLog.Enqueue((Now(), l)); Event("engine-log", new JsonObject { ["line"] = l }); };
+        EngineEvidence.Subscribe(robot.Engine, l => _engineLog.Enqueue((Now(), l)), (kind, value) => Event(kind, value));
         robot.Engine.ConnectionResponse += r =>
         {
             _responseT = Now();

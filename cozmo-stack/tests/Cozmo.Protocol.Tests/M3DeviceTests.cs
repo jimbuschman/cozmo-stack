@@ -18,6 +18,63 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class M3DeviceTests
 {
+    [Fact]
+    public void B5_StackDiagnosticsAreVisibleWithoutEngineEntriesAndUtf8CutUsesBytes()
+    {
+        using var rig = new Rig();
+        var entries = new List<EngineLogEntry>(); var stack = new List<string>(); var shown = new List<string>();
+        rig.Engine.LogEntry += entries.Add; rig.Engine.StackLogLine += stack.Add; rig.Engine.LogLine += shown.Add;
+        foreach (string line in new[] { "no terminal NVOpResult", "MISSING: unread", "warning: event handler threw: boom" })
+            rig.Engine.Log(line);
+        Assert.Empty(entries); Assert.Equal(stack, shown); Assert.Equal("no terminal NVOpResult", stack[0]);
+        rig.Engine.EmitEngineLog(EngineLogLevel.Info, "Unnamed", "test", new string('a', 1022) + "é");
+        var e = Assert.Single(entries);
+        Assert.Equal(1023, e.TextUtf8.Length); Assert.Equal((byte)0xc3, e.TextUtf8.Span[^1]);
+    }
+
+    [Fact]
+    public void B5_CameraZeroMinimumAndSuccessUseTheCheckedTexts()
+    {
+        using var rig = new Rig();
+        var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        rig.Robot.CameraSettings.Handle(Defaults(3f, 1.5f, 0, 50));
+        Assert.Equal(new[] { "VisionComponent.SetCameraSettings", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", "VisionSystem.SetCameraExposureParams.Success" }, entries.Select(e => e.Name));
+        Assert.Equal(EngineLogLevel.Debug, entries[1].Level); Assert.Equal("Will use 1.", entries[1].Text);
+        Assert.Equal("Current Gain:16ms Limits:[0 50], Current Exposure:1.500 Limits:[0.100 3.000]", entries[3].Text);
+        Assert.Equal(1, rig.Robot.CameraSettings.MinExposureMs);
+    }
+
+    [Fact]
+    public void B5_BundleCaptureIncludesAllLevelsAndStackDiagnostics()
+    {
+        using var rig = new Rig();
+        var entries = new List<System.Text.Json.Nodes.JsonObject>(); var lines = new List<string>();
+        Cozmo.Conformance.EngineEvidence.Subscribe(rig.Engine, lines.Add, (_, value) => entries.Add(value));
+        rig.ToSuccess(bodyHw: 6);
+        SendConnectionReadsUntilCalibration(rig);
+        rig.Data(new NVOpResult { Tag = 0x80000001, Op = 0, Result = 0, Length = 0, Data = Calibration56() });
+        rig.Tick();
+        rig.Robot.CameraSettings.SetCameraSettings(16, 2);
+        rig.Engine.EmitStackLog("MISSING: evidence");
+        Assert.Equal(entries.Count, lines.Count);
+        foreach (string name in new[] { "VisionComponent.ReadCameraCalibration.Recvd", "VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs", "VisionComponent.SetCameraSettings" })
+            Assert.Contains(entries, e => e["name"]?.GetValue<string>() == name && e["level"]!.GetValue<string>() == "info");
+        Assert.Contains(entries, e => e["line"]!.GetValue<string>().Contains("robot firmware"));
+        Assert.Equal("MISSING: evidence", entries[^1]["line"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void B5_StreamAndNvLogSubscribersCanReachTheirLocksFromAnotherThread()
+    {
+        var stream = new StreamSendBuffer(); bool reached = false;
+        stream.Log = _ => reached = Task.Run(() => stream.NumBytesToSend).Wait(TimeSpan.FromSeconds(2));
+        typeof(StreamSendBuffer).GetField("_bytesStreamed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(stream, int.MinValue);
+        stream.UpdateAmountToSend(1, 0); Assert.True(reached);
+        using var rig = new Rig(); bool nvReached = false;
+        rig.Engine.LogEntry += e => { if (e.Name == "NVStorageComponent.Read.QueueingReadRequest") nvReached = Task.Run(() => rig.Engine.NvStorage!.Read(0, null)).Wait(TimeSpan.FromSeconds(2)); };
+        rig.Engine.NvStorage!.Read(0x80000001, null); Assert.True(nvReached);
+    }
+
     // Adopted sections 2, 6, 7 and ruling 12.5; expected strings are source rows.
     [Fact]
     public void M3_012_OverflowAndNegativeFreeLogBeforeBudgetStores()

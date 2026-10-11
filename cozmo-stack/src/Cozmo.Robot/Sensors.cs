@@ -496,16 +496,21 @@ public sealed class CozmoSensors
     /// </summary>
     internal void ClearCliffRunningStats()
     {
+        bool restore;
         lock (_gate)
         {
             _cliffSuspiciousCount = 0;
-            if (_cliffThresholdCache != DefaultCliffThreshold)
-            {
-                _cliffThresholdCache = DefaultCliffThreshold;
-                _robot.Engine.EmitEngineLog(EngineLogLevel.Event, null,
-                    "CliffSensorComponent.ClearCliffRunningStats.RestoringCliffDetectThreshold", "400");
-                SendCliffDetectThresholdToRobot(DefaultCliffThreshold);
-            }
+            restore = _cliffThresholdCache != DefaultCliffThreshold;
+            if (restore) _cliffThresholdCache = DefaultCliffThreshold;
+        }
+        if (restore)
+        {
+            _robot.Engine.EmitEngineLog(EngineLogLevel.Event, null,
+                "CliffSensorComponent.ClearCliffRunningStats.RestoringCliffDetectThreshold", "400");
+            SendCliffDetectThresholdToRobot(DefaultCliffThreshold);
+        }
+        lock (_gate)
+        {
             _cliffSamples.Clear();
             _cliffMean = _cliffVariance = _cliffM2 = 0f;
         }

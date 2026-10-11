@@ -215,10 +215,13 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         var sw = switches is null ? Switches : new Dictionary<uint, uint>(switches);
         // Keyed by the node the switch selected, not by the event: the same tempo event plays a different
         // song for every Cozmo_Sings switch value, and preparing one must not answer for another.
+        lock (_gate) { if (_disposed) return Task.CompletedTask; _prewarmReaders++; }
+        (uint Event, uint Node) key;
+        try { key = (eventId, _library.ResolveMusic(eventId, sw) is { } p ? p.SelectedNodeId ?? p.TargetId : 0u); }
+        finally { lock (_gate) { _prewarmReaders--; Monitor.PulseAll(_gate); } }
         lock (_gate)
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            var key = (eventId, _library.ResolveMusic(eventId, sw) is { } p ? p.SelectedNodeId ?? p.TargetId : 0u);
+            if (_disposed) return Task.CompletedTask;
             // A stream that has already been played is not reused: Wwise draws a note's recording again
             // on every play, so preparing the same song a second time prepares it again.
             if (_streams.TryGetValue(key, out var existing))
@@ -251,6 +254,7 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         }
     }
 
+    private int _prewarmReaders;
     private bool _disposed; // host resource lifetime; no change to playback/Stop rendering
     private readonly Dictionary<(uint Event, uint Node), Task> _prewarms = new();
     private readonly Dictionary<(uint Event, uint Node), WwiseMusicStream> _streams = new();
@@ -736,11 +740,13 @@ public sealed class WwiseAudioSource : IAnimationAudioSource, IAudioSwitchStates
         {
             if (_disposed) return;
             _disposed = true;
+            while (_prewarmReaders != 0) Monitor.Wait(_gate);
             preparing = _prewarms.Values.ToArray();
         }
         // BuildStream uses the library. Join outside _gate so its completion can retire the task;
         // it cannot publish/start a new stream after the disposed flag was set.
         try { Task.WhenAll(preparing).GetAwaiter().GetResult(); }
+        catch { /* A failed prewarm is already a failed task; host teardown must still release all resources. */ }
         finally
         {
             lock (_gate)

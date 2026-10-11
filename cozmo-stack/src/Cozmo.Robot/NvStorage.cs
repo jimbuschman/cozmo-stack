@@ -241,19 +241,39 @@ public sealed class NvStorageComponent : IDisposable
     private readonly List<Action> _onIdle = new();
     private readonly object _idleExecution = new();
     private readonly List<string> _log = new();
+    private readonly Queue<Action> _pendingLogCalls = new();
+    private sealed class LogEmission(NvStorageComponent owner) : IDisposable
+    { public void Dispose() => owner.FlushLogCalls(); }
+    private void FlushLogCalls()
+    {
+        if (Monitor.IsEntered(_gate)) return; // the outer entry owns delivery
+        while (true)
+        {
+            Action call;
+            lock (_gate) { if (_pendingLogCalls.Count == 0) return; call = _pendingLogCalls.Dequeue(); }
+            call();
+        }
+    }
 
     internal NvStorageComponent(CozmoRobot robot)
     {
+        using var logEmission = new LogEmission(this);
         _robot = robot;
         ConstructedSetStateLocked();
         robot.Message += OnMessage;
     }
 
     // fidelity: M3-048
+    private void QueueSendLocked(NVCommand command)
+    {
+        // Saved command is snapshotted by ToCommand. Preserve log/send order outside the NV state lock.
+        _pendingLogCalls.Enqueue(() => _robot.SendMessage(command, flush: true));
+    }
+
     private void LogCall(string line)
     {
         _log.Add(line);
-        _robot.Engine.LogWithChannel(line, "NVStorage");
+        _pendingLogCalls.Enqueue(() => _robot.Engine.LogWithChannel(line, "NVStorage"));
     }
 
     /// <summary>The read request lines, for the conformance log.</summary>
@@ -440,9 +460,11 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public int Read(uint tag, Action<NvResult>? callback, List<byte>? sink = null, bool broadcast = false)
     {
+        using var logEmission = new LogEmission(this);
         if (!IsValidEntryTag(tag))
         {
             lock (_gate) LogCall($"warning: NVStorageComponent.Read.InvalidTag: Tag: 0x{tag:x}");
+            FlushLogCalls();
             if (broadcast)
                 NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpRead, -6, 0, Array.Empty<byte>()));
             callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
@@ -465,6 +487,7 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public void Request(uint tag, int length, byte op, byte[] data, Action<NvResult> callback, bool broadcast = false)
     {
+        using var logEmission = new LogEmission(this);
         switch (op)
         {
             case OpWrite: Write(tag, data, callback, broadcast); break;
@@ -494,6 +517,7 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public int Write(uint tag, byte[]? data, uint numBytes, Action<NvResult>? callback, bool broadcast = false)
     {
+        using var logEmission = new LogEmission(this);
         bool valid = true;
         lock (_gate)
         {
@@ -536,6 +560,7 @@ public sealed class NvStorageComponent : IDisposable
                 LogCall($"debug: NVStorageComponent.Write.DataQueued: {name} - numBytes: {n}");
             }
         }
+        FlushLogCalls();
         if (valid) return 1;
         if (broadcast) NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpWrite, -6, 0, Array.Empty<byte>()));
         callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
@@ -550,6 +575,7 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public int Erase(uint tag, Action<NvResult>? callback, bool broadcast = false, uint size = 0)
     {
+        using var logEmission = new LogEmission(this);
         bool valid = true;
         lock (_gate)
         {
@@ -570,6 +596,7 @@ public sealed class NvStorageComponent : IDisposable
                 LogCall($"debug: NVStorageComponent.Erase.Queued: {name}");
             }
         }
+        FlushLogCalls();
         if (valid) return 1;
         if (broadcast) NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpErase, -6, 0, Array.Empty<byte>()));
         callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
@@ -580,6 +607,7 @@ public sealed class NvStorageComponent : IDisposable
     /// <summary>WipeAll (0x00644C10): no tag or flag checks; the WIPEALL is queued and logged WipeAll.Queued (empty format).</summary>
     public int WipeAll(Action<NvResult>? callback, bool broadcast = false)
     {
+        using var logEmission = new LogEmission(this);
         lock (_gate)
         {
             _queue.Enqueue(new PendingRequest { Tag = 0, Op = OpWipeAll, Callback = callback, Broadcast = broadcast });
@@ -592,8 +620,10 @@ public sealed class NvStorageComponent : IDisposable
     /// <summary>WipeFactory (0x00644CB8): without +0x15C it logs the error "Must be allowed to write to factory addresses", stores the error flag and returns false.</summary>
     public int WipeFactory(Action<NvResult>? callback)
     {
+        using var logEmission = new LogEmission(this);
         lock (_gate)
             LogCall("error: NVStorageComponent.WipeFactory.NotAllowed: Must be allowed to write to factory addresses");
+        FlushLogCalls();
         Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
         return 0;
     }
@@ -601,6 +631,7 @@ public sealed class NvStorageComponent : IDisposable
     /// <summary>Queues a READ and waits for its terminal result (the request length is computed by the component).</summary>
     public async Task<NvResult> ReadAsync(uint tag, TimeSpan? timeout = null)
     {
+        using var logEmission = new LogEmission(this);
         var tcs = new TaskCompletionSource<NvResult>(TaskCreationOptions.RunContinuationsAsynchronously);
         Read(tag, r => tcs.TrySetResult(r));
         var t = timeout ?? TimeSpan.FromSeconds(3);
@@ -644,7 +675,7 @@ public sealed class NvStorageComponent : IDisposable
         var command = _saved.ToCommand();
         // M3-027: the command is reliable and not hot. MessageHandler::SendMessage ignores those arguments
         // (M1-026) and the transport frames robot-bound messages reliably, so flush: true is the existing call.
-        _robot.SendMessage(command, flush: true);
+        QueueSendLocked(command);
     }
 
     // fidelity: M3-043, M3-037
@@ -813,7 +844,7 @@ public sealed class NvStorageComponent : IDisposable
             return false;
         }
         LogCall($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{_saved.Tag:x}, Op: {NvOpName(_saved.Op)}, Attempt: {req.Retries}");
-        _robot.SendMessage(_saved.ToCommand(), flush: true);       // the saved header and a copy of the saved Data, for every op
+        QueueSendLocked(_saved.ToCommand());       // the saved header and a copy of the saved Data, for every op
         return true;
     }
 
@@ -861,6 +892,7 @@ public sealed class NvStorageComponent : IDisposable
 
     private void ProcessOnIdleCore()
     {
+        using var logEmission = new LogEmission(this);
         lock (_gate)
         {
             if (_inFlight is not null || _queue.Count != 0 || _onIdle.Count == 0) return;
@@ -877,6 +909,7 @@ public sealed class NvStorageComponent : IDisposable
                 callback = _onIdle[0];
                 LogCall("debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ");
             }
+            FlushLogCalls();
             callback();
             lock (_gate)
             {
@@ -898,6 +931,7 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public void Update()
     {
+        using var logEmission = new LogEmission(this);
         Action<NvResult>? timeoutCallback = null;
         NvResult timeoutResult = default;
         PendingRequest? timeoutRequest = null;
@@ -948,6 +982,7 @@ public sealed class NvStorageComponent : IDisposable
         }
         // M3-030: on timeout only the callback runs; there is no broadcast chunk and no sink fill.
         timeoutCallback?.Invoke(timeoutResult);
+        FlushLogCalls();
         if (timeoutRequest is not null)
             lock (_gate)
                 if (ReferenceEquals(_inFlight, timeoutRequest)) { SetStateLocked(0); _inFlight = null; }
@@ -961,6 +996,7 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     public void OnDisconnected()
     {
+        using var logEmission = new LogEmission(this);
         // fidelity: M3-038
         // 00643F22..00643F6A: idle functions, queued requests, then active request
         // functions are destroyed without invocation. Managed references are released
@@ -981,6 +1017,7 @@ public sealed class NvStorageComponent : IDisposable
 
     private void OnResult(NVOpResult r)
     {
+        using var logEmission = new LogEmission(this);
         Completion? completion;
         lock (_gate)
         {
@@ -1083,7 +1120,7 @@ public sealed class NvStorageComponent : IDisposable
                                 _saved.Tag = r.Tag;
                                 _saved.Op = OpRead;
                                 _saved.Length = (int)total + NvHeaderSize;
-                                _robot.SendMessage(_saved.ToCommand(), flush: true);
+                                QueueSendLocked(_saved.ToCommand());
                                 return;
                             }
                             // Fits in the first blob: 0x643922 resizes the reply vector to total+16 (pass 4b Q3).
@@ -1228,6 +1265,7 @@ public sealed class NvStorageComponent : IDisposable
 
     private void Deliver(Completion c)
     {
+        using var logEmission = new LogEmission(this);
         if (!c.ReadCallback)
         {
             // fidelity: M3-031
@@ -1239,6 +1277,7 @@ public sealed class NvStorageComponent : IDisposable
             if (c.Callback is not null)
             {
                 lock (_gate) LogCall($"debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: {TagNameOrUnreachable(c.NameTag)}");
+                FlushLogCalls();
                 c.Callback.Invoke(c.Result);
             }
             lock (_gate)
@@ -1254,6 +1293,7 @@ public sealed class NvStorageComponent : IDisposable
             {
                 lock (_gate) LogCall($"debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: {TagNameOrUnreachable(c.NameTag)}");
             }
+            FlushLogCalls();
             c.Callback?.Invoke(c.Result);
             if (c.Broadcasts is not null)
                 foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
@@ -1317,6 +1357,7 @@ public sealed class NvStorageComponent : IDisposable
     // fidelity: M3-038
     public void Dispose()
     {
+        using var logEmission = new LogEmission(this);
         _robot.Message -= OnMessage;
         lock (_gate) DestroyLocked();
     }

@@ -28,11 +28,16 @@ public class BackpackLoaderTests
         {
             File.WriteAllText(Path.Combine(dir, "01-bad.json"), stateValue
                 ? "{\"charging\":" + Pattern(1, 0) + ",\"charged\":" + value + "}" : value);
+            // With one file the earlier valid state survives its later exception, independent of NTFS order.
+            var partial = BackpackLightAnimations.Load(root);
+            if (stateValue) Assert.Equal(LedColor.Red, partial.Get("Charging")![0].OnColor);
+            else Assert.Null(partial.Get("Charging"));
             File.WriteAllText(Path.Combine(dir, "02-good.json"), "{\"charging\":" + Pattern(0, 1) + ",\"charged\":" + Pattern(0, 1) + ",\"badCharger\":" + Pattern(0, 1) + "}");
             var logs = new List<string>();
             var patterns = BackpackLightAnimations.Load(root, logs.Add);
-            Assert.Equal(new[] { "OffCharger", "Charging", "Charged", "BadCharger" }, patterns.Names);
-            Assert.Equal(stateValue ? LedColor.Red : LedColor.Green, patterns.Get("Charging")![0].OnColor);
+            Assert.Equal(new[] { "BadCharger", "Charged", "Charging", "OffCharger" }, patterns.Names.Order());
+            if (stateValue) Assert.Contains(patterns.Get("Charging")![0].OnColor, new[] { LedColor.Red, LedColor.Green });
+            else Assert.Equal(LedColor.Green, patterns.Get("Charging")![0].OnColor);
             Assert.Equal(LedColor.Green, patterns.Get("BadCharger")![0].OnColor);
             Assert.Contains("warning: event handler threw: JsonLogicError: in Json::Value::find(key, end, found): requires objectValue or nullValue", logs);
             Assert.DoesNotContain(logs, line => line.Contains("InvalidJson")); // throw precedes the first isMember error report

@@ -17,7 +17,108 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class M4ControlTests
 {
+    // B-M3M4-5 checked Stopped body 0x534924..53494A and the shared Moved body.
+    [Theory]
+    [InlineData(false, false)] [InlineData(true, false)] [InlineData(false, true)] [InlineData(true, true)]
+    public void B5_MovementDirtiesMatchedLocatedInstanceExceptWhenCarried(bool moving, bool carried)
+    {
+        using var rig = new Rig(); using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        rig.ToSynced(); rig.State(); ConnectCube(rig);
+        uint id = vision.World.ConnectedObjectIdForActiveId(0)!.Value;
+        var located = new ObservableObject(id, ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        { Pose = Pose3d.Identity, PoseState = PoseState.Known, OriginId = vision.World.CurrentOriginId, IsMoving = !moving };
+        vision.World.AddLocatedObject(located); vision.World.IsCarryingObject = _ => carried;
+        rig.Data(moving ? new ObjectMoved { ObjectID = 0, Timestamp = 44 } : new ObjectStoppedMoving { ObjectID = 0, Timestamp = 44 });
+        rig.Tick();
+        Assert.Equal(carried ? PoseState.Known : PoseState.Dirty, located.PoseState); Assert.Equal(moving, located.IsMoving);
+        Assert.Equal(moving, Assert.Single(vision.World.ConnectedObjects, o => o.ObjectId == id).IsMoving);
+        Assert.Contains(rig.Log, l => l.Contains($"ObjectMovedOrStopped: ObjectID: {id} (Active ID 0)"));
+    }
+
+    [Fact]
+    public void B5_ChargerHookFiltersBothMovementReports()
+    {
+        using var rig = new Rig(); using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        rig.ToSynced(); rig.State(); ConnectCube(rig);
+        uint id = vision.World.ConnectedObjectIdForActiveId(0)!.Value;
+        rig.Robot.Cubes.SetChargerObjectIdFromMountInit(id);
+        rig.Data(new ObjectMoved { ObjectID = 0 }); rig.Data(new ObjectStoppedMoving { ObjectID = 0 });
+        rig.Tick();
+        Assert.Contains("info: [Unnamed] Robot.ActiveObjectMoved.Charger: Charger sending garbage move messages", rig.Log);
+        Assert.Contains("info: [Unnamed] Robot.ActiveObjectStopped.Charger: Charger sending garbage move messages", rig.Log);
+        Assert.False(rig.Robot.Cubes.ByObjectId(0)!.Moving);
+    }
+
+    [Fact]
+    public void B5_NoWorldIdSkipsMovementAndLightPlayWithVisibleMissing()
+    {
+        string res = CubeLightResources();
+        try {
+            using var rig = new Rig(res, attachWorld: false); rig.ToSynced(); rig.State(); ConnectCube(rig);
+            rig.Data(new ObjectMoved { ObjectID = 0 });
+            rig.Tick();
+            Assert.False(rig.Robot.Cubes.ByObjectId(0)!.Moving);
+            Assert.False(rig.Robot.Lights.Cubes.PlayLightAnim(ObjectType.Block_LIGHTCUBE1, "WakeUp", CubeLightComponent.StateLayer));
+            Assert.Contains(rig.Log, l => l.Contains("MISSING: M4-009 / M11-004"));
+        } finally { Directory.Delete(res, true); }
+    }
+
+    [Fact]
+    public void B5_CliffRestoreLogsThenSendsThenClearsWithoutHoldingSensorLock()
+    {
+        using var rig = new Rig(); rig.ToSynced(); var sensor = rig.Robot.Sensors;
+        sensor.SendCliffDetectThresholdToRobot(50);
+        var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var samples = (Queue<ushort>)typeof(CozmoSensors).GetField("_cliffSamples", flags)!.GetValue(sensor)!; samples.Enqueue(500);
+        bool callback = false, lockReleased = false; int beforeSamples = -1, beforeSends = -1; int mark = rig.Mark();
+        rig.Engine.LogEntry += e => {
+            if (e.Name != "CliffSensorComponent.ClearCliffRunningStats.RestoringCliffDetectThreshold") return;
+            callback = true; beforeSamples = samples.Count; beforeSends = rig.SentSince(mark).OfType<SetCliffDetectThreshold>().Count();
+            lockReleased = Task.Run(() => sensor.CliffDetectThreshold).Wait(TimeSpan.FromSeconds(2));
+        };
+        sensor.ClearCliffRunningStats(); Assert.True(callback); Assert.Empty(samples);
+        Assert.Equal(1, beforeSamples); Assert.Equal(0, beforeSends); Assert.True(lockReleased);
+        Assert.Equal((ushort)400, Assert.Single(rig.SentSince(mark).OfType<SetCliffDetectThreshold>()).Field0);
+    }
+
     // Opus M4-001: literal strings BEA11C/BEA169; getDegrees f32 0084CD40.
+    [Fact]
+    public void B5_LightNullActiveObjectClearsTimerAndUpdateCannotAdvancePendingPush()
+    {
+        string res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res);
+            var world = rig.Robot.VisionModeRecipient!.World;
+            int id = world.AddConnectedActiveObject(0, 0x1000, ObjectType.Block_LIGHTCUBE1);
+            var lights = rig.Robot.Lights.Cubes;
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public;
+            bool pendingSeen = false, updateFinished = false; object? observedIndex = null;
+            object Top()
+            {
+                var infos = (System.Collections.IDictionary)typeof(CubeLightComponent).GetField("_infos", flags)!.GetValue(lights)!;
+                var info = infos[ObjectType.Block_LIGHTCUBE1]!;
+                var layers = (Array)info.GetType().GetField("Layers", flags)!.GetValue(info)!;
+                var stack = (System.Collections.IList)layers.GetValue(CubeLightComponent.StateLayer)!;
+                return stack[stack.Count - 1]!;
+            }
+            rig.Engine.LogEntry += e =>
+            {
+                if (e.Name != "CubeLightController.SetObjectLights.NullActiveObject") return;
+                var top = Top(); pendingSeen = (bool)top.GetType().GetField("PendingSend", flags)!.GetValue(top)!;
+                updateFinished = Task.Run(() => lights.Update()).Wait(TimeSpan.FromSeconds(2));
+                observedIndex = top.GetType().GetField("Index", flags)!.GetValue(top);
+            };
+            lights.OnObjectConnectionState(ObjectType.Block_LIGHTCUBE1, true);
+            Assert.True(pendingSeen);
+            Assert.True(updateFinished); Assert.Equal(0, observedIndex);
+            var final = Top(); Assert.Equal(0u, final.GetType().GetField("TimerMs", flags)!.GetValue(final));
+            Assert.False((bool)final.GetType().GetField("PendingSend", flags)!.GetValue(final)!);
+            Assert.Contains($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.SettingLights: Playing trigger WakeUp on layer State for object {id}", rig.Log);
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
     [Fact]
     public void M4_001_CheckedClipWarningsUseRescaledDegreesAndInvariantOneDecimal()
     {
@@ -65,14 +166,22 @@ public class M4ControlTests
         public static readonly IPEndPoint RobotEp = new(RobotIp, 5551);
         private uint _ts = 100;
 
-        public Rig(string? resources = null)
+        private readonly VisionSystem? _fixtureWorld;
+        public Rig(string? resources = null, bool attachWorld = true)
         {
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources });
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
+            if (attachWorld && resources is not null) _fixtureWorld = new VisionSystem(Robot, CameraCalibration.Nominal()) { Enabled = false };
         }
 
         public void Tick(double ms = 60) { NowNs += (long)(ms * 1_000_000); Engine.Tick(); }
-        public void Data(RobotMessage m) => Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
+        public void Data(RobotMessage m)
+        {
+            // Light tests provide the native caller's connected-world precondition before its game-side broadcast.
+            if (m is ObjectConnectionState cs && _fixtureWorld is not null)
+                _fixtureWorld.World.HandleActiveObjectConnectionState(cs.ObjectID, cs.FactoryID, cs.ObjectType, cs.Connected);
+            Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
+        }
 
         /// <summary>Connected, validated, Success, SyncTimeAck: the robot is time synced (no state yet).</summary>
         public void ToSynced()
@@ -117,7 +226,7 @@ public class M4ControlTests
         public List<byte[]> RawSince(int mark) { lock (Port.Sent) return Port.Sent.Skip(mark).ToList(); }
         public List<RobotMessage> SentSince(int mark) => RawSince(mark).Select(b => RobotMessage.Parse(b)).ToList();
         public bool Logged(string part) { lock (Log) return Log.Any(l => l.Contains(part)); }
-        public void Dispose() => Robot.Dispose();
+        public void Dispose() { _fixtureWorld?.Dispose(); Robot.Dispose(); }
     }
 
     private static byte[] Hex(string s) => Convert.FromHexString(s.Replace(" ", ""));
@@ -1615,6 +1724,7 @@ public class M4ControlTests
     public void M4_009_CD10a_CD10b_CD10c_MovedAndStoppedAreBroadcastPerMessage()
     {
         using var rig = new Rig();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
         rig.ToSynced();
         rig.State();
         ConnectCube(rig);
@@ -1669,6 +1779,7 @@ public class M4ControlTests
     public void M4_023_CD10d_CD10g_TheDoubleTapWindowSuppressesMovement()
     {
         using var rig = new Rig();
+        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
         rig.ToSynced();
         rig.State();
         ConnectCube(rig);
@@ -2331,6 +2442,8 @@ public class M4ControlTests
 
             // A commit to OnTreads sets robot+0x2C4 = 1 (M10-001 A11 / C11.2 L4).
             var off = rig.Robot.Sensors.OffTreads;
+            // This test drives OffTreads' flag owner; the world fixture supplies IDs only.
+            cubes.IsLocalized = () => off.Robot2C4 != 0;
             off.HeadCalibrated = true; off.IsPhysical = true;
             off.Update(rig.MakeState(), 0);
             off.Update(rig.MakeState(RobotStatusFlag.IsPickedUp), 0);  // InAir
