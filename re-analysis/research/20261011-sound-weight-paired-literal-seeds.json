@@ -1,0 +1,62 @@
+{
+  "model_sha256": "ca0f5ef8e468c6263e70c338a2545193991c4a15cbde3f7da0b601eb22219882",
+  "baseline_sha256": "917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "00A08024"
+  ],
+  "scope": "Paired PC-literal first seeds only, excluding writeback/indexed forms. Existing scalar seeds not repeated. ARM/Thumb encoding candidates do not certify mode, caller admission or absence of indirect/aliased inputs.",
+  "paired_literals": [
+    {
+      "address": "00656934",
+      "mode": "ARM",
+      "instruction": "ldrdeq lr, pc, [pc, #0x93]",
+      "instruction_hex": "d3e9cf01",
+      "literal_address": "006569CF",
+      "words": [
+        "08428199",
+        "08F1A1D0"
+      ],
+      "selected_first_seed": false
+    },
+    {
+      "address": "008A5568",
+      "mode": "ARM",
+      "instruction": "ldrdeq lr, pc, [pc, #-0x9d]",
+      "instruction_hex": "dde94f01",
+      "literal_address": "008A54D3",
+      "words": [
+        "831A43EE",
+        "830A00ED"
+      ],
+      "selected_first_seed": false
+    },
+    {
+      "address": "0076B428",
+      "mode": "Thumb",
+      "instruction": "ldrd r0, r0, [pc, #0x128]",
+      "instruction_hex": "dfe94a00",
+      "literal_address": "0076B554",
+      "words": [
+        "FEADF574",
+        "11ECF85F"
+      ],
+      "selected_first_seed": false
+    },
+    {
+      "address": "00A665B8",
+      "mode": "Thumb",
+      "instruction": "ldrd lr, fp, [pc, #-0x3fc]",
+      "instruction_hex": "5fe9ffeb",
+      "literal_address": "00A661C0",
+      "words": [
+        "EAFFFF9E",
+        "E597301C"
+      ],
+      "selected_first_seed": false
+    }
+  ],
+  "selected_first_seeds": [],
+  "local_limits": [],
+  "events": []
+}

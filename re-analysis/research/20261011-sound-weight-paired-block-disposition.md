@@ -1,0 +1,11 @@
+# Q14-008 controlled paired/block input navigation, checkpoint877
+
+Scope guard reread before every step. Original A08024 node/childID/weight input only. Newly controlled874 literal/GOT constant LDRD and LDM IA/IB/DB transfers, with812 maps, scalar-literal/MOVW seeds, flags and finite worklist unchanged. `-navigation.py/.txt` and `-summary.json` retain14,887 windows,807 caps,zero target observations. Cap set exactly812: no new or removed cap. These are retained finite limits, not certified absent callers. No paid setter/RNG/reset or backing body is reopened. Mutable data supplies no constants.
+
+`-paired-literal-seeds.py/.json` separately applies876's omitted paired-PC first-seed check to this original setter: same four encoding candidates,zero selected seeds,zero local executions/events/caps. Their native attributions remain876; no scalar pass is repeated by the first-seed check. Exact target/GOT-vicinity heuristics do not exclude arbitrary subsequent table-base arithmetic, shifted index, indirect/copied/stack/foreign values, unmodelled forms or alternate inputs.
+
+The targeted descriptor boundary check during this pass adds no new input: native9903EC is the preceding function's POP-PC,9903F0 its own PUSH, and990438/9904A4 tail the live50 method after restoring the frame. The return is forwarded; no unused-result rejection or receiver binding is inferred. Previous660/798 entry/interior candidates are not repeated. Original024 remains open for actual receiver/ID/field consumption and869 population inputs.
+
+Exactly open for008 remains an admitted shipped caller/indirect node,childID,weight input toA08024, or a complete bounded input/call-edge exclusion. WI609/CA153/PW152/RJ423's local and authored weights remain positive, not a runtime setter producer. Stop these controlled transfer/seed passes; do not reopen them after zero hits. Move to a concrete remaining destination question rather than a generic family audit.
+
+Q14-008 remains PARTIAL, AUDIBLE; counts117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production/manifest/inventory/PROJECT_STATE/hardware/Q15 changes. out of scope: playlist/bitmap backing and bit5 ping-pong.

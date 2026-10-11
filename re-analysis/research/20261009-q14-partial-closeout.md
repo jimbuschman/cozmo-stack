@@ -866,3 +866,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint876 — paired literal first-seed boundary
 
 `20261011-sound-factory-key-paired-literal-disposition.md` checks874/875's omitted paired-PC first-seed form only:four encoding candidates,zero original-target/GOT-vicinity seeds,zero execution/events/caps. Three candidates are different actual Thumb/ARM instructions; duplicate-destination76B428 remains a navigation encoding with nonmatching words, without mode/admission claim. No new callee/family or arbitrary later/alias exclusion. Stop these four candidates.024/109/134 PARTIAL;117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint877 — original weight input with controlled paired/block loads
+
+`20261011-sound-weight-paired-block-disposition.md` applies874's new constant transfers to originalA08024:14,887 windows/807 caps/zero target observations, cap set exactly812. Separate876 paired-PC first-seed check selects none of four encodings; no scalar rescan in that check. No admitted node/childID/weight input or complete alias exclusion;008 PARTIAL. Native9903F0 entry remains correct and live50 return is forwarded, with no new descriptor receiver or repetition of660/798. Stop these transfer/seed forms and continue a concrete remaining destination input.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
