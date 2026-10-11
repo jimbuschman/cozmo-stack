@@ -702,3 +702,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint835 - complete saved-cap review index
 
 `20261011-sound-rate-cap-review-index.md` indexes all231 states/fifteen windows from826 without changing baseline seeds/events/bounds:3 source-branch/count,59 conditional authored-count,13 conditional authored-ID,156 retained-contract/input. Every state keeps address/register/NZCV/evidence;conditional input identity is explicit. This finishes the saved-cap lead,not original all-writer/alias/admission proofs. Do not repeat its loops/helpers;continue a positive unpaid producer/input edge.116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint836 — wider exact-offset voice-policy writer screen
+
+`20261011-sound-voice-policy-expanded-store-disposition.md` indexes50 aligned ARM E0/E4 stores beyond the prior voice-method region:18 direct stack,4 paid voice,4 separate allocation,7 current108D904 registry,2 fixed global defaults,2 known embedded-stage offset stores,and13 explicit receiver-dependent seams. ActualA76280(V+1D0/V+3A0) writesV+2B0/2B4 or480/484,notV+E0/E4. No complete alias/caller absence claim;033 PARTIAL. Counts116 CHECKED/24 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL unchanged. Next the13 named receiver seams;Q15 remains behindQ14.

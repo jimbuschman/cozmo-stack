@@ -1,0 +1,369 @@
+{
+  "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "interval": [
+    "0097D000",
+    "00A7AA00"
+  ],
+  "limit": "Aligned ARM STR/VSTR with literal starting displacement E0/E4 in this interval only. Thumb, literal/code boundaries, overlapping/block stores, composed/indexed addresses, copies, escaped pointers and other intervals are not certified absent.",
+  "counts": {
+    "direct-stack-store": 18,
+    "fixed-global-registry-product": 7,
+    "fixed-global-settings-address": 2,
+    "known-embedded-stage-offset": 2,
+    "paid-voice-writer": 4,
+    "retained-receiver-frontier": 13,
+    "separate-allocation-product": 4
+  },
+  "candidates": [
+    {
+      "address": "0098E510",
+      "instruction": "str r4, [sp, #0xe0]",
+      "bytes": "e0408de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "0098E544",
+      "instruction": "strb r4, [sp, #0xe4]",
+      "bytes": "e440cde5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "0099E95C",
+      "instruction": "str r4, [r7, #0xe0]",
+      "bytes": "e04087e5",
+      "disposition": "separate-allocation-product",
+      "reason": "R7 is the successful 0x118-byte allocation at99E6AC..B8, retained through startup initialization."
+    },
+    {
+      "address": "0099E960",
+      "instruction": "str r4, [r7, #0xe4]",
+      "bytes": "e44087e5",
+      "disposition": "separate-allocation-product",
+      "reason": "R7 is the successful 0x118-byte allocation at99E6AC..B8, retained through startup initialization."
+    },
+    {
+      "address": "0099EAB4",
+      "instruction": "str r5, [r4, #0xe4]",
+      "bytes": "e45084e5",
+      "disposition": "fixed-global-settings-address",
+      "reason": "99E40C forms R4=108D868. These writes are defaults at that fixed global address, rather than the voice argument; they do not prove its settings immutable."
+    },
+    {
+      "address": "0099EAD4",
+      "instruction": "strb r3, [r4, #0xe0]",
+      "bytes": "e030c4e5",
+      "disposition": "fixed-global-settings-address",
+      "reason": "99E40C forms R4=108D868. These writes are defaults at that fixed global address, rather than the voice argument; they do not prove its settings immutable."
+    },
+    {
+      "address": "009A7B0C",
+      "instruction": "str r6, [r4, #0xe4]",
+      "bytes": "e46084e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "009A7B1C",
+      "instruction": "str r6, [r4, #0xe0]",
+      "bytes": "e06084e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "009AA7F4",
+      "instruction": "str r2, [sp, #0xe0]",
+      "bytes": "e0208de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "009AA7F8",
+      "instruction": "str r2, [sp, #0xe4]",
+      "bytes": "e4208de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "009C9B34",
+      "instruction": "strb r0, [sp, #0xe4]",
+      "bytes": "e400cde5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "009C9B6C",
+      "instruction": "str r2, [sp, #0xe0]",
+      "bytes": "e0208de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "009CB6D4",
+      "instruction": "str r2, [sp, #0xe0]",
+      "bytes": "e0208de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "009CB6D8",
+      "instruction": "str r2, [sp, #0xe4]",
+      "bytes": "e4208de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "009CF118",
+      "instruction": "str r3, [fp, #0xe0]",
+      "bytes": "e0308be5",
+      "disposition": "fixed-global-registry-product",
+      "reason": "9CF07C indexes GOT1040074 whose raw value is108D904;9CF090 loads current registry FP from that global. E0/E4 are bucket pointer/count backing fields on that selected product, not new settings R4."
+    },
+    {
+      "address": "009CF11C",
+      "instruction": "str r3, [fp, #0xe4]",
+      "bytes": "e4308be5",
+      "disposition": "fixed-global-registry-product",
+      "reason": "9CF07C indexes GOT1040074 whose raw value is108D904;9CF090 loads current registry FP from that global. E0/E4 are bucket pointer/count backing fields on that selected product, not new settings R4."
+    },
+    {
+      "address": "009CF178",
+      "instruction": "str sl, [fp, #0xe0]",
+      "bytes": "e0a08be5",
+      "disposition": "fixed-global-registry-product",
+      "reason": "9CF07C indexes GOT1040074 whose raw value is108D904;9CF090 loads current registry FP from that global. E0/E4 are bucket pointer/count backing fields on that selected product, not new settings R4."
+    },
+    {
+      "address": "009CF194",
+      "instruction": "str r1, [fp, #0xe4]",
+      "bytes": "e4108be5",
+      "disposition": "fixed-global-registry-product",
+      "reason": "9CF07C indexes GOT1040074 whose raw value is108D904;9CF090 loads current registry FP from that global. E0/E4 are bucket pointer/count backing fields on that selected product, not new settings R4."
+    },
+    {
+      "address": "009CF2A8",
+      "instruction": "str sl, [fp, #0xe4]",
+      "bytes": "e4a08be5",
+      "disposition": "fixed-global-registry-product",
+      "reason": "9CF07C indexes GOT1040074 whose raw value is108D904;9CF090 loads current registry FP from that global. E0/E4 are bucket pointer/count backing fields on that selected product, not new settings R4."
+    },
+    {
+      "address": "009CF2B8",
+      "instruction": "str r6, [fp, #0xe4]",
+      "bytes": "e4608be5",
+      "disposition": "fixed-global-registry-product",
+      "reason": "9CF07C indexes GOT1040074 whose raw value is108D904;9CF090 loads current registry FP from that global. E0/E4 are bucket pointer/count backing fields on that selected product, not new settings R4."
+    },
+    {
+      "address": "009CF2C0",
+      "instruction": "str r3, [fp, #0xe0]",
+      "bytes": "e0308be5",
+      "disposition": "fixed-global-registry-product",
+      "reason": "9CF07C indexes GOT1040074 whose raw value is108D904;9CF090 loads current registry FP from that global. E0/E4 are bucket pointer/count backing fields on that selected product, not new settings R4."
+    },
+    {
+      "address": "00A0259C",
+      "instruction": "str r5, [r4, #0xe0]",
+      "bytes": "e05084e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A025A0",
+      "instruction": "strb r6, [r4, #0xe4]",
+      "bytes": "e460c4e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A2E5C8",
+      "instruction": "str r4, [sp, #0xe0]",
+      "bytes": "e0408de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A2E5CC",
+      "instruction": "str r4, [sp, #0xe4]",
+      "bytes": "e4408de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A354AC",
+      "instruction": "strb r2, [r3, #0xe0]",
+      "bytes": "e020c3e5",
+      "disposition": "separate-allocation-product",
+      "reason": "R3 is the successful 0x208-byte allocation atA353B4..D4, published to incoming managerBC; not the incoming receiver."
+    },
+    {
+      "address": "00A354B0",
+      "instruction": "str r2, [r3, #0xe4]",
+      "bytes": "e42083e5",
+      "disposition": "separate-allocation-product",
+      "reason": "R3 is the successful 0x208-byte allocation atA353B4..D4, published to incoming managerBC; not the incoming receiver."
+    },
+    {
+      "address": "00A3BFD4",
+      "instruction": "str r5, [r4, #0xe4]",
+      "bytes": "e45084e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A3C45C",
+      "instruction": "str r7, [r4, #0xe4]",
+      "bytes": "e47084e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A3DC38",
+      "instruction": "str ip, [sp, #0xe0]",
+      "bytes": "e0c08de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A3DC3C",
+      "instruction": "str ip, [sp, #0xe4]",
+      "bytes": "e4c08de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A4D2A4",
+      "instruction": "strbne r3, [r1, #0xe0]",
+      "bytes": "e030c115",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A4E18C",
+      "instruction": "str lr, [r4, #0xe4]",
+      "bytes": "e4e084e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A4E2BC",
+      "instruction": "strb fp, [r4, #0xe0]",
+      "bytes": "e0b0c4e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A4E58C",
+      "instruction": "strbne r3, [r0, #0xe0]",
+      "bytes": "e030c015",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A4EA44",
+      "instruction": "strb r3, [sb, #0xe0]",
+      "bytes": "e030c9e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A4FE98",
+      "instruction": "strb r3, [r4, #0xe0]",
+      "bytes": "e030c4e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A51078",
+      "instruction": "strb r3, [r4, #0xe0]",
+      "bytes": "e030c4e5",
+      "disposition": "retained-receiver-frontier",
+      "reason": "Positive exact-offset encoding; receiver/admitted input must be attributed before any voice-alias exclusion. Existing local contracts are not reopened solely by offset coincidence."
+    },
+    {
+      "address": "00A557A8",
+      "instruction": "str r2, [r4, #0xe4]",
+      "bytes": "e42084e5",
+      "disposition": "paid-voice-writer",
+      "reason": "VW650 owns this actual voice policy write and its selected new/retained/virtualizing input."
+    },
+    {
+      "address": "00A557AC",
+      "instruction": "str r3, [r4, #0xe0]",
+      "bytes": "e03084e5",
+      "disposition": "paid-voice-writer",
+      "reason": "VW650 owns this actual voice policy write and its selected new/retained/virtualizing input."
+    },
+    {
+      "address": "00A559D0",
+      "instruction": "str r0, [r4, #0xe4]",
+      "bytes": "e40084e5",
+      "disposition": "paid-voice-writer",
+      "reason": "VW650 owns this actual voice policy write and its selected new/retained/virtualizing input."
+    },
+    {
+      "address": "00A55B60",
+      "instruction": "str r0, [r4, #0xe4]",
+      "bytes": "e40084e5",
+      "disposition": "paid-voice-writer",
+      "reason": "VW650 owns this actual voice policy write and its selected new/retained/virtualizing input."
+    },
+    {
+      "address": "00A62B3C",
+      "instruction": "str r4, [sp, #0xe0]",
+      "bytes": "e0408de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A62B40",
+      "instruction": "str r4, [sp, #0xe4]",
+      "bytes": "e4408de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A63018",
+      "instruction": "strb r0, [sp, #0xe4]",
+      "bytes": "e400cde5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A6304C",
+      "instruction": "str r3, [sp, #0xe0]",
+      "bytes": "e0308de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A6E290",
+      "instruction": "str sb, [sp, #0xe0]",
+      "bytes": "e0908de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A6E294",
+      "instruction": "str sb, [sp, #0xe4]",
+      "bytes": "e4908de5",
+      "disposition": "direct-stack-store",
+      "reason": "This instruction addresses current SP plus its literal displacement, not a formed voice receiver; subsequent copying/escape is not excluded."
+    },
+    {
+      "address": "00A76408",
+      "instruction": "str r0, [ip, #0xe0]",
+      "bytes": "e0008ce5",
+      "disposition": "known-embedded-stage-offset",
+      "reason": "A76284 retains incoming receiver IP; actual voice constructor calls it with V+1D0 and V+3A0. These stores therefore address V+2B0/2B4 and V+480/484 for those two calls, not V+E0/E4. Alternate calls are not excluded."
+    },
+    {
+      "address": "00A7640C",
+      "instruction": "str r1, [ip, #0xe4]",
+      "bytes": "e4108ce5",
+      "disposition": "known-embedded-stage-offset",
+      "reason": "A76284 retains incoming receiver IP; actual voice constructor calls it with V+1D0 and V+3A0. These stores therefore address V+2B0/2B4 and V+480/484 for those two calls, not V+E0/E4. Alternate calls are not excluded."
+    }
+  ]
+}
