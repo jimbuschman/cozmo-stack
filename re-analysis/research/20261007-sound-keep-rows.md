@@ -11707,3 +11707,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint811 - quota pointer data-read map correction
 
 `20261010-sound-quota-address-fair-disposition.md` corrects668's EXEC-only data-read map using independent raw LOAD/GOT probes and the repaired local navigation model.14885 windows/803 caps/zero target events;old8-window no-hit search was limited,not absence proof. Its source-attributed false seeds remain paid.037 stays PARTIAL/AUDIBLE for actual U32 quota input or original bounded exclusion.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint812 - weight pointer-value publication observations
+
+`20261010-sound-weight-formed-pointer-disposition.md` retains the repaired model's existing formed/indirect observations and adds stored/returned values for exactlyA08024/25.14887 windows/807 caps/zero target events. Three existing760/761 primary pointer handoff/publication/return controls pass;none is a weight input. No runtime node/childID/weight or complete exclusion proof;008 remains PARTIAL/AUDIBLE.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
