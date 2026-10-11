@@ -11895,3 +11895,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint858 — music-flush nearby-PC input check
 
 `20261011-sound-music-flush-composed-pc-disposition.md` substitutesA71634/A716BC into852's nearby-PC seed method: two windows/zero events/zero caps. Apparent ADR seeds are actualARM MVN andSTRB within separateA71534 method; backward branch/literal separatesA71634 entry. MUC/SR756/SF757 and775/801/850 retained;119 PARTIAL for manager/context/mode admission and independent original stop-offset writer/alias proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint859 — structured nearby-PC input check
+
+`20261011-sound-structured-binding-composed-pc-disposition.md` checks originalA67830 in852's nearby-PC method: four seeds/two permitted windows/zero events/zero caps. Two seeds inside799's positioning interval are excluded without instruction decode/propagation; permitted byte windows end before that interval. Two other apparent ADR words are localARM LDR/ADD interpretations, not admitted input or full mode exclusion. PI611/799/851 retained;132 PARTIAL for structured ID/property/type and actual control recipient or supported-input exclusion.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
