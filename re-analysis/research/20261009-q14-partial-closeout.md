@@ -874,3 +874,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint878 — original member destination interior attributions
 
 `20261011-sound-routing-member-interior-disposition.md` retains all33 original755 candidates into9D2410:32 upper halves of different ARM instructions on recovered Layer paths and literal9D23EC read by actual9D225C LDR after9D23E0 POP-PC. No new scan/callee/body or admitted second-argument destination; no arbitrary alternate-mode/indirect alias absence claim. Stop these33 candidates. The other34 into9F319C remain separate;104/131 PARTIAL for original destination and unrestricted writer/alias questions.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint879 — original constructor destination interior attributions
+
+`20261011-sound-routing-constructor-interior-disposition.md` retains other34 original755 candidates into9F319C:32 upper-half ARM words, lower half9F318C actual prior-constructor store, and literal9F3164 read by9F2E3C after9F315C branch. No admitted constructor destination or alternate-mode/indirect absence. Actual9F2F88 liveC4 tail retains incoming receiver and R1=0; its target stays UNKNOWN despite rejected Thumb9F2F8A. No new family/callee or755 rescan. Stop these34 leads;104/131 PARTIAL.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.

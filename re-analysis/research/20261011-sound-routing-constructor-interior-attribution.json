@@ -1,0 +1,984 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "original755_candidates_sha256": "8f6d986be6f8caf2a4b07bb5354e655543d69ea6f01454d086be775bcb46f2c5",
+  "scope": "Only34 existing755 candidates into9F319C;32 upper-half ARM words, one lower half of9F318C STR and one literal. No new branch search, function/receiver admission, global alternate-mode/indirect/copied/relative alias exclusion or descendant body extraction. Other33 candidates into9D2410 were separately retained878. Actual9F2F88 ARM BX target from incoming receiver liveC4 remains UNKNOWN; no target exclusion inferred from rejecting its Thumb interpretation.",
+  "literal3164_readers": [
+    {
+      "address": "009F2E3C",
+      "hex": "20939fe5",
+      "instruction": "ldr sb, [pc, #0x320]"
+    }
+  ],
+  "attributions": [
+    {
+      "original_candidate": {
+        "address": "0x9f2a4e",
+        "target": "#0x9f3212",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3212",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2A48",
+          "hex": "045084e5",
+          "instruction": "str r5, [r4, #4]"
+        },
+        {
+          "address": "009F2A4C",
+          "hex": "0070e0e3",
+          "instruction": "mvn r7, #0"
+        },
+        {
+          "address": "009F2A50",
+          "hex": "085084e5",
+          "instruction": "str r5, [r4, #8]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2ae6",
+        "target": "#0x9f322a",
+        "mode": "Thumb",
+        "instruction": "b #0x9f322a",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2AE0",
+          "hex": "010880e1",
+          "instruction": "orr r0, r0, r1, lsl #16"
+        },
+        {
+          "address": "009F2AE4",
+          "hex": "0010a0e3",
+          "instruction": "mov r1, #0"
+        },
+        {
+          "address": "009F2AE8",
+          "hex": "010000e2",
+          "instruction": "and r0, r0, #1"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2afa",
+        "target": "#0x9f31a4",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31a4",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2AF4",
+          "hex": "4550d6e5",
+          "instruction": "ldrb r5, [r6, #0x45]"
+        },
+        {
+          "address": "009F2AF8",
+          "hex": "000053e3",
+          "instruction": "cmp r3, #0"
+        },
+        {
+          "address": "009F2AFC",
+          "hex": "0020a0e3",
+          "instruction": "mov r2, #0"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2afe",
+        "target": "#0x9f3242",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3242",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2AF8",
+          "hex": "000053e3",
+          "instruction": "cmp r3, #0"
+        },
+        {
+          "address": "009F2AFC",
+          "hex": "0020a0e3",
+          "instruction": "mov r2, #0"
+        },
+        {
+          "address": "009F2B00",
+          "hex": "b434c4e1",
+          "instruction": "strh r3, [r4, #0x44]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2b52",
+        "target": "#0x9f31fc",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31fc",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2B4C",
+          "hex": "0292a013",
+          "instruction": "movne sb, #0x20000000"
+        },
+        {
+          "address": "009F2B50",
+          "hex": "000053e3",
+          "instruction": "cmp r3, #0"
+        },
+        {
+          "address": "009F2B54",
+          "hex": "6500000a",
+          "instruction": "beq #0x9f2cf0"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2b6e",
+        "target": "#0x9f3218",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3218",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2B68",
+          "hex": "011082e2",
+          "instruction": "add r1, r2, #1"
+        },
+        {
+          "address": "009F2B6C",
+          "hex": "000053e3",
+          "instruction": "cmp r3, #0"
+        },
+        {
+          "address": "009F2B70",
+          "hex": "faffff1a",
+          "instruction": "bne #0x9f2b60"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2bce",
+        "target": "#0x9f3272",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3272",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2BC8",
+          "hex": "000893e5",
+          "instruction": "ldr r0, [r3, #0x800]"
+        },
+        {
+          "address": "009F2BCC",
+          "hex": "000050e3",
+          "instruction": "cmp r0, #0"
+        },
+        {
+          "address": "009F2BD0",
+          "hex": "033a80e2",
+          "instruction": "add r3, r0, #0x3000"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2bde",
+        "target": "#0x9f31e8",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31e8",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2BD8",
+          "hex": "34319fe5",
+          "instruction": "ldr r3, [pc, #0x134]"
+        },
+        {
+          "address": "009F2BDC",
+          "hex": "0c1803e3",
+          "instruction": "movw r1, #0x380c"
+        },
+        {
+          "address": "009F2BE0",
+          "hex": "03309fe7",
+          "instruction": "ldr r3, [pc, r3]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2c8e",
+        "target": "#0x9f319e",
+        "mode": "Thumb",
+        "instruction": "b #0x9f319e",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2C88",
+          "hex": "0830a0e1",
+          "instruction": "mov r3, r8"
+        },
+        {
+          "address": "009F2C8C",
+          "hex": "101086e2",
+          "instruction": "add r1, r6, #0x10"
+        },
+        {
+          "address": "009F2C90",
+          "hex": "1020a0e3",
+          "instruction": "mov r2, #0x10"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2ed2",
+        "target": "#0x9f3216",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3216",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2ECC",
+          "hex": "2400000a",
+          "instruction": "beq #0x9f2f64"
+        },
+        {
+          "address": "009F2ED0",
+          "hex": "0290a0e1",
+          "instruction": "mov sb, r2"
+        },
+        {
+          "address": "009F2ED4",
+          "hex": "10e09be5",
+          "instruction": "ldr lr, [fp, #0x10]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2eee",
+        "target": "#0x9f3232",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3232",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2EE8",
+          "hex": "0050dee5",
+          "instruction": "ldrb r5, [lr]"
+        },
+        {
+          "address": "009F2EEC",
+          "hex": "0e10a0e1",
+          "instruction": "mov r1, lr"
+        },
+        {
+          "address": "009F2EF0",
+          "hex": "0020a0e3",
+          "instruction": "mov r2, #0"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2efa",
+        "target": "#0x9f31a8",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31a8",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2EF4",
+          "hex": "020000ea",
+          "instruction": "b #0x9f2f04"
+        },
+        {
+          "address": "009F2EF8",
+          "hex": "0c0055e1",
+          "instruction": "cmp r5, ip"
+        },
+        {
+          "address": "009F2EFC",
+          "hex": "0c20a0e1",
+          "instruction": "mov r2, ip"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2efe",
+        "target": "#0x9f3242",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3242",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2EF8",
+          "hex": "0c0055e1",
+          "instruction": "cmp r5, ip"
+        },
+        {
+          "address": "009F2EFC",
+          "hex": "0c20a0e1",
+          "instruction": "mov r2, ip"
+        },
+        {
+          "address": "009F2F00",
+          "hex": "2100009a",
+          "instruction": "bls #0x9f2f8c"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2f0e",
+        "target": "#0x9f31b2",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31b2",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2F08",
+          "hex": "01c082e2",
+          "instruction": "add ip, r2, #1"
+        },
+        {
+          "address": "009F2F0C",
+          "hex": "040050e1",
+          "instruction": "cmp r0, r4"
+        },
+        {
+          "address": "009F2F10",
+          "hex": "f8ffff1a",
+          "instruction": "bne #0x9f2ef8"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2f5e",
+        "target": "#0x9f3210",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3210",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2F58",
+          "hex": "e50d01eb",
+          "instruction": "bl #0xa366f4"
+        },
+        {
+          "address": "009F2F5C",
+          "hex": "060057e1",
+          "instruction": "cmp r7, r6"
+        },
+        {
+          "address": "009F2F60",
+          "hex": "dbffff1a",
+          "instruction": "bne #0x9f2ed4"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f2f8a",
+        "target": "#0x9f31ec",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31ec",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F2F84",
+          "hex": "f04fbde8",
+          "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, lr}"
+        },
+        {
+          "address": "009F2F88",
+          "hex": "13ff2fe1",
+          "instruction": "bx r3"
+        },
+        {
+          "address": "009F2F8C",
+          "hex": "011085e2",
+          "instruction": "add r1, r5, #1"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f30a2",
+        "target": "#0x9f31ac",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31ac",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F309C",
+          "hex": "040081e2",
+          "instruction": "add r0, r1, #4"
+        },
+        {
+          "address": "009F30A0",
+          "hex": "055083e0",
+          "instruction": "add r5, r3, r5"
+        },
+        {
+          "address": "009F30A4",
+          "hex": "0300c0e3",
+          "instruction": "bic r0, r0, #3"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f30ae",
+        "target": "#0x9f31b8",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31b8",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F30A8",
+          "hex": "050056e1",
+          "instruction": "cmp r6, r5"
+        },
+        {
+          "address": "009F30AC",
+          "hex": "004083e0",
+          "instruction": "add r4, r3, r0"
+        },
+        {
+          "address": "009F30B0",
+          "hex": "abffff0a",
+          "instruction": "beq #0x9f2f64"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f311a",
+        "target": "#0x9f3224",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3224",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F3114",
+          "hex": "042082e2",
+          "instruction": "add r2, r2, #4"
+        },
+        {
+          "address": "009F3118",
+          "hex": "011083e0",
+          "instruction": "add r1, r3, r1"
+        },
+        {
+          "address": "009F311C",
+          "hex": "0300c2e3",
+          "instruction": "bic r0, r2, #3"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f3136",
+        "target": "#0x9f3240",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3240",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F3130",
+          "hex": "011081e2",
+          "instruction": "add r1, r1, #1"
+        },
+        {
+          "address": "009F3134",
+          "hex": "003083e0",
+          "instruction": "add r3, r3, r0"
+        },
+        {
+          "address": "009F3138",
+          "hex": "087adfed",
+          "instruction": "vldr s15, [pc, #0x20]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f3164",
+        "target": "#0x9f31e8",
+        "mode": "Thumb",
+        "instruction": "bmi #0x9f31e8",
+        "section": ".text"
+      },
+      "disposition": "Literal read on existing9F2E34 ARM path, after9F315C branch; not a fresh caller input.",
+      "primary_context": [
+        {
+          "address": "009F3158",
+          "hex": "3fffff1a",
+          "instruction": "bne #0x9f2e5c"
+        },
+        {
+          "address": "009F315C",
+          "hex": "83ffffea",
+          "instruction": "b #0x9f2f70"
+        },
+        {
+          "address": "009F3164",
+          "hex": "40d46400",
+          "literal_word": "0064D440"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f318c",
+        "target": "#0x9f31a0",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31a0",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F3188",
+          "hex": "04e080e5",
+          "instruction": "str lr, [r0, #4]"
+        },
+        {
+          "address": "009F318C",
+          "hex": "08e080e5",
+          "instruction": "str lr, [r0, #8]"
+        },
+        {
+          "address": "009F3190",
+          "hex": "b0e2c0e1",
+          "instruction": "strh lr, [r0, #0x20]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f3302",
+        "target": "#0x9f322a",
+        "mode": "Thumb",
+        "instruction": "b #0x9f322a",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F32FC",
+          "hex": "c33081e0",
+          "instruction": "add r3, r1, r3, asr #1"
+        },
+        {
+          "address": "009F3300",
+          "hex": "030192e7",
+          "instruction": "ldr r0, [r2, r3, lsl #2]"
+        },
+        {
+          "address": "009F3304",
+          "hex": "03e182e0",
+          "instruction": "add lr, r2, r3, lsl #2"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36ae",
+        "target": "#0x9f31d2",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31d2",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36A8",
+          "hex": "0280a0e1",
+          "instruction": "mov r8, r2"
+        },
+        {
+          "address": "009F36AC",
+          "hex": "042090e5",
+          "instruction": "ldr r2, [r0, #4]"
+        },
+        {
+          "address": "009F36B0",
+          "hex": "24d04de2",
+          "instruction": "sub sp, sp, #0x24"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36c2",
+        "target": "#0x9f31e0",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31e0",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36BC",
+          "hex": "02c0a0e1",
+          "instruction": "mov ip, r2"
+        },
+        {
+          "address": "009F36C0",
+          "hex": "0c208de5",
+          "instruction": "str r2, [sp, #0xc]"
+        },
+        {
+          "address": "009F36C4",
+          "hex": "070093e8",
+          "instruction": "ldm r3, {r0, r1, r2}"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36ce",
+        "target": "#0x9f3202",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3202",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36C8",
+          "hex": "01704ce2",
+          "instruction": "sub r7, ip, #1"
+        },
+        {
+          "address": "009F36CC",
+          "hex": "c43198e5",
+          "instruction": "ldr r3, [r8, #0x1c4]"
+        },
+        {
+          "address": "009F36D0",
+          "hex": "000057e3",
+          "instruction": "cmp r7, #0"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36d6",
+        "target": "#0x9f31f4",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31f4",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36D0",
+          "hex": "000057e3",
+          "instruction": "cmp r7, #0"
+        },
+        {
+          "address": "009F36D4",
+          "hex": "08308de5",
+          "instruction": "str r3, [sp, #8]"
+        },
+        {
+          "address": "009F36D8",
+          "hex": "c83198e5",
+          "instruction": "ldr r3, [r8, #0x1c8]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36da",
+        "target": "#0x9f320e",
+        "mode": "Thumb",
+        "instruction": "b #0x9f320e",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36D4",
+          "hex": "08308de5",
+          "instruction": "str r3, [sp, #8]"
+        },
+        {
+          "address": "009F36D8",
+          "hex": "c83198e5",
+          "instruction": "ldr r3, [r8, #0x1c8]"
+        },
+        {
+          "address": "009F36DC",
+          "hex": "04308de5",
+          "instruction": "str r3, [sp, #4]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36de",
+        "target": "#0x9f31fc",
+        "mode": "Thumb",
+        "instruction": "b #0x9f31fc",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36D8",
+          "hex": "c83198e5",
+          "instruction": "ldr r3, [r8, #0x1c8]"
+        },
+        {
+          "address": "009F36DC",
+          "hex": "04308de5",
+          "instruction": "str r3, [sp, #4]"
+        },
+        {
+          "address": "009F36E0",
+          "hex": "20308de2",
+          "instruction": "add r3, sp, #0x20"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36ee",
+        "target": "#0x9f322c",
+        "mode": "Thumb",
+        "instruction": "b #0x9f322c",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36E8",
+          "hex": "057a9ded",
+          "instruction": "vldr s14, [sp, #0x14]"
+        },
+        {
+          "address": "009F36EC",
+          "hex": "18a09de5",
+          "instruction": "ldr sl, [sp, #0x18]"
+        },
+        {
+          "address": "009F36F0",
+          "hex": "1c109de5",
+          "instruction": "ldr r1, [sp, #0x1c]"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36f2",
+        "target": "#0x9f3230",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3230",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36EC",
+          "hex": "18a09de5",
+          "instruction": "ldr sl, [sp, #0x18]"
+        },
+        {
+          "address": "009F36F0",
+          "hex": "1c109de5",
+          "instruction": "ldr r1, [sp, #0x1c]"
+        },
+        {
+          "address": "009F36F4",
+          "hex": "1b0000ba",
+          "instruction": "blt #0x9f3768"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f36fa",
+        "target": "#0x9f3228",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3228",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F36F4",
+          "hex": "1b0000ba",
+          "instruction": "blt #0x9f3768"
+        },
+        {
+          "address": "009F36F8",
+          "hex": "004095e5",
+          "instruction": "ldr r4, [r5]"
+        },
+        {
+          "address": "009F36FC",
+          "hex": "0760a0e1",
+          "instruction": "mov r6, r7"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f3732",
+        "target": "#0x9f3256",
+        "mode": "Thumb",
+        "instruction": "b #0x9f3256",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F372C",
+          "hex": "0e90d5e5",
+          "instruction": "ldrb sb, [r5, #0xe]"
+        },
+        {
+          "address": "009F3730",
+          "hex": "c4b190e5",
+          "instruction": "ldr fp, [r0, #0x1c4]"
+        },
+        {
+          "address": "009F3734",
+          "hex": "000059e3",
+          "instruction": "cmp sb, #0"
+        }
+      ]
+    },
+    {
+      "original_candidate": {
+        "address": "0x9f373a",
+        "target": "#0x9f325e",
+        "mode": "Thumb",
+        "instruction": "b #0x9f325e",
+        "section": ".text"
+      },
+      "disposition": "Halfword of different ARM instruction on recovered voice/limiter path; no Thumb caller admitted or receiver supplied.",
+      "primary_context": [
+        {
+          "address": "009F3734",
+          "hex": "000059e3",
+          "instruction": "cmp sb, #0"
+        },
+        {
+          "address": "009F3738",
+          "hex": "c89190e5",
+          "instruction": "ldr sb, [r0, #0x1c8]"
+        },
+        {
+          "address": "009F373C",
+          "hex": "3e00000a",
+          "instruction": "beq #0x9f383c"
+        }
+      ]
+    }
+  ],
+  "actual_indirect_tail_context": [
+    {
+      "address": "009F2E34",
+      "hex": "f04f2de9",
+      "instruction": "push {r4, r5, r6, r7, r8, sb, sl, fp, lr}"
+    },
+    {
+      "address": "009F2E38",
+      "hex": "34d04de2",
+      "instruction": "sub sp, sp, #0x34"
+    },
+    {
+      "address": "009F2E48",
+      "hex": "2c008de5",
+      "instruction": "str r0, [sp, #0x2c]"
+    },
+    {
+      "address": "009F2F70",
+      "hex": "2c009de5",
+      "instruction": "ldr r0, [sp, #0x2c]"
+    },
+    {
+      "address": "009F2F74",
+      "hex": "0010a0e3",
+      "instruction": "mov r1, #0"
+    },
+    {
+      "address": "009F2F78",
+      "hex": "003090e5",
+      "instruction": "ldr r3, [r0]"
+    },
+    {
+      "address": "009F2F7C",
+      "hex": "c43093e5",
+      "instruction": "ldr r3, [r3, #0xc4]"
+    },
+    {
+      "address": "009F2F80",
+      "hex": "34d08de2",
+      "instruction": "add sp, sp, #0x34"
+    },
+    {
+      "address": "009F2F84",
+      "hex": "f04fbde8",
+      "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, lr}"
+    },
+    {
+      "address": "009F2F88",
+      "hex": "13ff2fe1",
+      "instruction": "bx r3"
+    }
+  ]
+}
