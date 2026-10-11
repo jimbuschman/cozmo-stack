@@ -730,3 +730,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint842 — composed descriptor-slot call form bounded
 
 `20261011-sound-descriptor-composed-slot-disposition.md` checks297 finite ARM ADD4C/50 address seeds with128-byte windows;0 candidate calls,9 explicit caps. Primary seams distinguish known stack/mixing/conversion gates without an all-caller absence claim or a WEM arithmetic waiver.024 keeps actual getter-ID/field-consumer input UNKNOWN; no new obligation family.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Continue a different positive original input;Q15 stays behindQ14.
+
+### Checkpoint843 — command1F cancellation-to-active-stop join
+
+`20261011-sound-queue-command31-stop-descriptor.md` follows actual9AEA30..80 beyondQC752 cancellation: record4/8/C become descriptor8/C/10, exact partial initialization precedes ordinary9C3790 dispatch to known bus roots. A21/BR366 gate/order/live-reload contracts reused; no blank stack padding, all-input admission or alias absence claim.104/131 retain nonzero9A60B8 caller/values and original unrestricted writer/input proofs PARTIAL; conditional payload/recipient join paid.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
