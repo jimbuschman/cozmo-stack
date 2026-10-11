@@ -30,7 +30,8 @@ anything. BOARD.md is history; this file is the live queue.
 
 | # | job | status |
 | --- | --- | --- |
-| 1 | [B-M5-2](B-M5-2.md) | open |
+| 1 | [B-M3M4-6](B-M3M4-6.md) | open |
+| 2 | [B-M5-2](B-M5-2.md) | open |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
