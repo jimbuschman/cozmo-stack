@@ -3427,3 +3427,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint844 — optional-layer dynamic lookup names bounded
 
 `20261011-sound-optional-layer-symbol-lookup-disposition.md` proves actualdlsym PLT/GOT binding and individually reopens both immediate engine callers: fixedAndroid logging name andfixedWwise plug-in-list name. Neither selects one ofthefive optional-layer exports. Loader bodiesstopoutofscope; alternate/computed/companion/message input remainsunproved.021 PARTIAL fororiginal admitted layer producer;no optional generator/family descent.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint845 — command1F interior entries checked
+
+`20261011-sound-queue-command31-producer-interior-disposition.md` individually attributes19 external immediate encoding candidates into9A60B8..6120 toactualARM containing words. Corrects stale nearest-owner57D4/5E64 spillover withseparateprimaryentries/returns/literals;precedingStopAll returnsbeforeitsliteral andnewproducerentry. No nonzeroinput or complete caller/alias absence proof;104/131 PARTIAL.843 conditionalstopdescriptor/root joinstaypaid.117 CHECKED (109 native+8scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
