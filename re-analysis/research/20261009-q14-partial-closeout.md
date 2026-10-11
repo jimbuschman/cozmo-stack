@@ -762,3 +762,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint850 — music-flush pointer inputs
 
 `20261011-sound-music-flush-formed-pointer-disposition.md` checks originalA71634/A716BC in unchanged812 model:14892 windows/803 explicit caps/zero events; separate direct-PC forms also yield zero candidates. SF757 and775/801 exact/interior dispositions remain paid. Known context-selective versus raw-mode-selective flush/stop/release contracts are not reopened or mistaken for caller admission.119 PARTIAL for actual manager/context/mode inputs and its independent original stop-offset writer/alias proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint851 — structured-subscription pointer input
+
+`20261011-sound-structured-binding-formed-pointer-disposition.md` checks originalA67830 in unchanged812 model:14881 windows/806 explicit caps/zero events; separate direct-PC forms also yield zero candidates. Three extra cap seeds lie in799's excluded positioning interval: out of scope, no payload/callee trace. PI611/799 subscription and bounded candidate contracts retained;132 PARTIAL for actual structured ID/property/type input and control recipient or supported-input exclusion proof.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
