@@ -1,0 +1,44 @@
+libacattsandroid.so __aeabi_uidiv 0003FEE4 Thumb
+0003FEE4 4a1e subs r2, r1, #1
+0003FEE6 08bf it eq
+0003FEE8 7047 bxeq lr
+STOP first control frontier
+libacattsandroid.so __aeabi_idiv 000F4408 Thumb
+000F4408 0029 cmp r1, #0
+000F440A 56d0 beq #0xf44ba
+STOP first control frontier
+libBlueDoveMediaRender.so __aeabi_idiv 0000DE34 Thumb
+0000DE34 0029 cmp r1, #0
+0000DE36 56d0 beq #0xdee6
+STOP first control frontier
+libDAS.so __aeabi_l2f 00029180 Thumb
+00029180 50ea0102 orrs.w r2, r0, r1
+00029184 08bf it eq
+00029186 7047 bxeq lr
+STOP first control frontier
+libDAS.so __aeabi_uidiv 00028BC4 Thumb
+00028BC4 4a1e subs r2, r1, #1
+00028BC6 08bf it eq
+00028BC8 7047 bxeq lr
+STOP first control frontier
+libgnustl_shared.so __aeabi_uidiv 0009B370 Thumb
+0009B370 0029 cmp r1, #0
+0009B372 34d0 beq #0x9b3de
+STOP first control frontier
+libgnustl_shared.so __aeabi_idiv 0009B404 Thumb
+0009B404 0029 cmp r1, #0
+0009B406 41d0 beq #0x9b48c
+STOP first control frontier
+libopencv_imgcodecs.so __aeabi_l2f 000B6968 Thumb
+000B6968 50ea0102 orrs.w r2, r0, r1
+000B696C 08bf it eq
+000B696E 7047 bxeq lr
+STOP first control frontier
+libstlport_shared.so __aeabi_uidiv 0004EDFC ARM
+0004EDFC 012051e2 subs r2, r1, #1
+0004EE00 1eff2f01 bxeq lr
+STOP first control frontier
+libstlport_shared.so __aeabi_idiv 0004EEC4 ARM
+0004EEC4 000051e3 cmp r1, #0
+0004EEC8 3000000a beq #0x4ef90
+STOP first control frontier

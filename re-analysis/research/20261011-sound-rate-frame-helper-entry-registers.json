@@ -1,0 +1,323 @@
+{
+  "scope": "Exactly10 existing helper definitions; argument-entry bytes only,not runtime binding or whole-callee alias absence.",
+  "entries": [
+    {
+      "library": "libacattsandroid.so",
+      "library_sha256": "73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698",
+      "symbol": "__aeabi_uidiv",
+      "entry": "0003FEE4",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "0003FEE4",
+          "bytes": "4a1e",
+          "instruction": "subs r2, r1, #1",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": [
+            "r2"
+          ]
+        },
+        {
+          "address": "0003FEE6",
+          "bytes": "08bf",
+          "instruction": "it eq",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "0003FEE8",
+          "bytes": "7047",
+          "instruction": "bxeq lr",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [
+        "r2"
+      ],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libacattsandroid.so",
+      "library_sha256": "73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698",
+      "symbol": "__aeabi_idiv",
+      "entry": "000F4408",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "000F4408",
+          "bytes": "0029",
+          "instruction": "cmp r1, #0",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "000F440A",
+          "bytes": "56d0",
+          "instruction": "beq #0xf44ba",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libBlueDoveMediaRender.so",
+      "library_sha256": "2524d61faec2013daab4036db590bdb3c3af18aacd9c82def0cb434520a99a07",
+      "symbol": "__aeabi_idiv",
+      "entry": "0000DE34",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "0000DE34",
+          "bytes": "0029",
+          "instruction": "cmp r1, #0",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "0000DE36",
+          "bytes": "56d0",
+          "instruction": "beq #0xdee6",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libDAS.so",
+      "library_sha256": "0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c",
+      "symbol": "__aeabi_l2f",
+      "entry": "00029180",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "00029180",
+          "bytes": "50ea0102",
+          "instruction": "orrs.w r2, r0, r1",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": [
+            "r2"
+          ]
+        },
+        {
+          "address": "00029184",
+          "bytes": "08bf",
+          "instruction": "it eq",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "00029186",
+          "bytes": "7047",
+          "instruction": "bxeq lr",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [
+        "r2"
+      ],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libDAS.so",
+      "library_sha256": "0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c",
+      "symbol": "__aeabi_uidiv",
+      "entry": "00028BC4",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "00028BC4",
+          "bytes": "4a1e",
+          "instruction": "subs r2, r1, #1",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": [
+            "r2"
+          ]
+        },
+        {
+          "address": "00028BC6",
+          "bytes": "08bf",
+          "instruction": "it eq",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "00028BC8",
+          "bytes": "7047",
+          "instruction": "bxeq lr",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [
+        "r2"
+      ],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libgnustl_shared.so",
+      "library_sha256": "edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8",
+      "symbol": "__aeabi_uidiv",
+      "entry": "0009B370",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "0009B370",
+          "bytes": "0029",
+          "instruction": "cmp r1, #0",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "0009B372",
+          "bytes": "34d0",
+          "instruction": "beq #0x9b3de",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libgnustl_shared.so",
+      "library_sha256": "edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8",
+      "symbol": "__aeabi_idiv",
+      "entry": "0009B404",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "0009B404",
+          "bytes": "0029",
+          "instruction": "cmp r1, #0",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "0009B406",
+          "bytes": "41d0",
+          "instruction": "beq #0x9b48c",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libopencv_imgcodecs.so",
+      "library_sha256": "4bdf5a45023c7938924f6c0018bf20774ebb5f7c0b2a637c93fe9e61b1f87218",
+      "symbol": "__aeabi_l2f",
+      "entry": "000B6968",
+      "mode": "Thumb",
+      "instructions": [
+        {
+          "address": "000B6968",
+          "bytes": "50ea0102",
+          "instruction": "orrs.w r2, r0, r1",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": [
+            "r2"
+          ]
+        },
+        {
+          "address": "000B696C",
+          "bytes": "08bf",
+          "instruction": "it eq",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "000B696E",
+          "bytes": "7047",
+          "instruction": "bxeq lr",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [
+        "r2"
+      ],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libstlport_shared.so",
+      "library_sha256": "196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03",
+      "symbol": "__aeabi_uidiv",
+      "entry": "0004EDFC",
+      "mode": "ARM",
+      "instructions": [
+        {
+          "address": "0004EDFC",
+          "bytes": "012051e2",
+          "instruction": "subs r2, r1, #1",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": [
+            "r2"
+          ]
+        },
+        {
+          "address": "0004EE00",
+          "bytes": "1eff2f01",
+          "instruction": "bxeq lr",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [
+        "r2"
+      ],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    },
+    {
+      "library": "libstlport_shared.so",
+      "library_sha256": "196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03",
+      "symbol": "__aeabi_idiv",
+      "entry": "0004EEC4",
+      "mode": "ARM",
+      "instructions": [
+        {
+          "address": "0004EEC4",
+          "bytes": "000051e3",
+          "instruction": "cmp r1, #0",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        },
+        {
+          "address": "0004EEC8",
+          "bytes": "3000000a",
+          "instruction": "beq #0x4ef90",
+          "new_incoming_register_reads": [],
+          "unconditional_definitions": []
+        }
+      ],
+      "incoming_reads_before_unconditional_definition": [],
+      "defined_registers": [],
+      "stop": "first control frontier",
+      "limit": "Straight-line entry witness only; conditional branches,tails,callee inputs,private register saves and arithmetic bodies are not settled."
+    }
+  ]
+}

@@ -618,3 +618,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint814 - numerical-helper identities and shipped source availability
 
 `20261011-sound-rate-frame-live-helper-disposition.md` binds the remaining12 existing rate/frame register observations at11 calls to three exact ELF helper imports. Authority6 ArmABI scalar-interface cross-check is separated from primary evidence. Exactly3-name/28-shipped-ELF metadata lookup finds10 exported definitions,including direct engine dependencies;no unshipped-code,selected-runtime-provider or alias-absence inference. All six original rate/frame proofs remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint815 - ten shipped helper entry gates
+
+`20261011-sound-rate-frame-helper-entry-disposition.md` preserves exact divisor1,divisor0,andzero64-bit entry gates from814's10 source-defined candidates. No incomingR2/R3 read occurs before the first control frontier;only five prefixes defineR2. No full-helper,selected-provider,zero-input reachability or alias-absence promotion. Next bounded lead is the existing callers' post-call register use/scalar inputs. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
