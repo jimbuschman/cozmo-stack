@@ -1,0 +1,26 @@
+0x0099A000: push     {r3, r4, r5, lr}
+0x0099A004: add      r5, r0, #0x5c
+0x0099A008: ldr      r3, [pc, #0x54]   ; [pc->0x0099A064] = 0x006A07A8
+0x0099A00C: mov      r4, r0
+0x0099A010: add      r3, pc, r3
+0x0099A014: add      r1, r3, #8
+0x0099A018: add      r2, r3, #0xa0
+0x0099A01C: str      r1, [r0]
+0x0099A020: add      r3, r3, #0xb4
+0x0099A024: str      r2, [r0, #0xc]
+0x0099A028: mov      r0, r5
+0x0099A02C: str      r3, [r4, #0x14]
+0x0099A030: bl       #0x993f40   ; ->0x00993F40
+0x0099A034: ldr      r0, [r4, #0x58]
+0x0099A038: cmp      r0, #0
+0x0099A03C: beq      #0x99a04c
+0x0099A040: ldr      r3, [r0]
+0x0099A044: ldr      r3, [r3, #0xc]
+0x0099A048: blx      r3
+0x0099A04C: mov      r0, r5
+0x0099A050: bl       #0x993edc   ; ->0x00993EDC
+0x0099A054: mov      r0, r4
+0x0099A058: bl       #0x997f70   ; ->0x00997F70
+0x0099A05C: mov      r0, r4
+0x0099A060: pop      {r3, r4, r5, pc}
+0x0099A064: rsbeq    r0, sl, r8, lsr #15

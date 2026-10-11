@@ -1,0 +1,63 @@
+0x0097D14C: ldr      r3, [pc, #0xe4]   ; [pc->0x0097D238] = 0x00710680
+0x0097D150: add      r3, pc, r3
+0x0097D154: ldrb     r2, [r3]
+0x0097D158: ldr      r0, [r3, #8]
+0x0097D15C: cmp      r2, #0
+0x0097D160: bne      #0x97d1ec
+0x0097D164: cmp      r0, #0
+0x0097D168: bxeq     lr
+0x0097D16C: push     {r4, r5, r6, r7, r8, lr}
+0x0097D170: sub      sp, sp, #0x28
+0x0097D174: ldr      r6, [pc, #0xc0]   ; [pc->0x0097D23C] = 0x006C2ECC
+0x0097D178: add      r8, sp, #4
+0x0097D17C: ldr      r7, [pc, #0xbc]   ; [pc->0x0097D240] = 0x00710650
+0x0097D180: add      r7, pc, r7
+0x0097D184: ldr      r6, [pc, r6]   ; [pc->0x0097D18C] = 0xEA000004
+0x0097D188: add      r7, r7, #0x10
+0x0097D18C: b        #0x97d1a4   ; ->0x0097D1A4
+0x0097D190: mov      r0, r5
+0x0097D194: ldrh     r1, [r6]
+0x0097D198: bl       #0x983620   ; ->0x00983620
+0x0097D19C: subs     r0, r4, #0
+0x0097D1A0: beq      #0x97d1e4
+0x0097D1A4: ldr      r3, [r0, #0x10]
+0x0097D1A8: ldr      r4, [r0, #0x48]
+0x0097D1AC: tst      r3, #0x200000
+0x0097D1B0: ldr      r5, [r0, #0x38]
+0x0097D1B4: beq      #0x97d190
+0x0097D1B8: ldr      r3, [r0]
+0x0097D1BC: mov      r1, r8
+0x0097D1C0: ldr      r3, [r3, #0x70]
+0x0097D1C4: blx      r3
+0x0097D1C8: cmp      r0, #1
+0x0097D1CC: bne      #0x97d190
+0x0097D1D0: mov      r0, r7
+0x0097D1D4: ldr      r1, [r5, #0x28]
+0x0097D1D8: mov      r2, r8
+0x0097D1DC: bl       #0x981dbc   ; ->0x00981DBC
+0x0097D1E0: b        #0x97d190   ; ->0x0097D190
+0x0097D1E4: add      sp, sp, #0x28
+0x0097D1E8: pop      {r4, r5, r6, r7, r8, pc}
+0x0097D1EC: cmp      r0, #0
+0x0097D1F0: beq      #0x97d218
+0x0097D1F4: ldrb     ip, [r3, #0xc]
+0x0097D1F8: mov      r1, #0
+0x0097D1FC: mov      r3, r0
+0x0097D200: ldr      r2, [r3, #0x38]
+0x0097D204: ldr      r3, [r3, #0x48]
+0x0097D208: cmp      r3, #0
+0x0097D20C: strb     r1, [r2, #0x40]
+0x0097D210: strb     ip, [r2, #0x41]
+0x0097D214: bne      #0x97d200
+0x0097D218: ldr      r3, [pc, #0x24]   ; [pc->0x0097D244] = 0x007105AC
+0x0097D21C: cmp      r0, #0
+0x0097D220: mov      r2, #0
+0x0097D224: add      r3, pc, r3
+0x0097D228: strb     r2, [r3]
+0x0097D22C: strb     r2, [r3, #0xc]
+0x0097D230: bne      #0x97d16c
+0x0097D234: bx       lr
+0x0097D238: rsbseq   r0, r1, r0, lsl #13
+0x0097D23C: rsbeq    r2, ip, ip, asr #29
+0x0097D240: rsbseq   r0, r1, r0, asr r6
+0x0097D244: rsbseq   r0, r1, ip, lsr #11

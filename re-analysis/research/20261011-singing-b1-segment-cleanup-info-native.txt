@@ -1,0 +1,76 @@
+0x009998A8: push     {r4, lr}
+0x009998AC: mov      r4, r0
+0x009998B0: ldr      r0, [r0, #0x58]
+0x009998B4: ldr      r3, [pc, #0x3c]   ; [pc->0x009998F8] = 0x006A0E44
+0x009998B8: cmp      r0, #0
+0x009998BC: add      r3, pc, r3
+0x009998C0: add      r1, r3, #8
+0x009998C4: add      r2, r3, #0xa0
+0x009998C8: str      r1, [r4]
+0x009998CC: add      r3, r3, #0xb4
+0x009998D0: str      r2, [r4, #0xc]
+0x009998D4: str      r3, [r4, #0x14]
+0x009998D8: beq      #0x9998e8
+0x009998DC: ldr      r3, [r0]
+0x009998E0: ldr      r3, [r3, #0xc]
+0x009998E4: blx      r3
+0x009998E8: mov      r0, r4
+0x009998EC: bl       #0x997f70   ; ->0x00997F70
+0x009998F0: mov      r0, r4
+0x009998F4: pop      {r4, pc}
+0x009998F8: rsbeq    r0, sl, r4, asr #28
+0x009998FC: sub      r0, r0, #0xc
+0x00999900: b        #0x9998a8   ; ->0x009998A8
+0x00999904: push     {r4, r5, r6, r7, r8, sb, lr}
+0x00999908: mov      r2, #1
+0x0099990C: vpush    {d8, d9}
+0x00999910: mov      r4, r0
+0x00999914: mov      r8, r1
+0x00999918: mov      r1, r0
+0x0099991C: sub      sp, sp, #0xa4
+0x00999920: mov      r0, sp
+0x00999924: mov      r5, sp
+0x00999928: bl       #0x996d60   ; ->0x00996D60
+0x0099992C: ldr      sb, [sp, #0x84]
+0x00999930: cmp      sb, #0
+0x00999934: moveq    r4, #2
+0x00999938: beq      #0x9999c0
+0x0099993C: ldr      r3, [r4, #8]
+0x00999940: vmov.i32 d8, #0
+0x00999944: ldr      ip, [r4, #0x38]
+0x00999948: cmp      r3, #0
+0x0099994C: vldr     d9, [r4, #0x40]
+0x00999950: ldrd     r6, r7, [ip, #8]
+0x00999954: beq      #0x99996c
+0x00999958: vadd.i64 d8, d8, d9
+0x0099995C: vldr     d9, [r3, #0x40]
+0x00999960: ldr      r3, [r3, #8]
+0x00999964: cmp      r3, #0
+0x00999968: bne      #0x999958
+0x0099996C: ldr      r1, [sb, #0x14]
+0x00999970: cmp      r1, #0
+0x00999974: beq      #0x9999ac
+0x00999978: mov      r0, r5
+0x0099997C: mov      r1, #0
+0x00999980: bl       #0x9974f8   ; ->0x009974F8
+0x00999984: vadd.i64 d8, d8, d9
+0x00999988: vmov     r2, r3, d8
+0x0099998C: subs     r2, r6, r2
+0x00999990: sbc      r3, r7, r3
+0x00999994: subs     r2, r2, r0
+0x00999998: sbc      r3, r3, r1
+0x0099999C: add      r0, sp, #0x84
+0x009999A0: bl       #0x997ee8   ; ->0x00997EE8
+0x009999A4: ldr      ip, [r4, #0x38]
+0x009999A8: mov      r1, r0
+0x009999AC: mov      r0, sb
+0x009999B0: mov      r2, r8
+0x009999B4: ldr      r3, [ip, #0x3c]
+0x009999B8: bl       #0x9826b8   ; ->0x009826B8
+0x009999BC: mov      r4, r0
+0x009999C0: mov      r0, r5
+0x009999C4: bl       #0x996dc4   ; ->0x00996DC4
+0x009999C8: mov      r0, r4
+0x009999CC: add      sp, sp, #0xa4
+0x009999D0: vpop     {d8, d9}
+0x009999D4: pop      {r4, r5, r6, r7, r8, sb, pc}

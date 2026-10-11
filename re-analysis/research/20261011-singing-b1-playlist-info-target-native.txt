@@ -1,0 +1,53 @@
+0x00982048: push     {r4, r5, r6, r7, r8, sb, lr}
+0x0098204C: mov      r2, #0
+0x00982050: vpush    {d8, d9}
+0x00982054: mov      r4, r0
+0x00982058: mov      r8, r1
+0x0098205C: mov      r1, r0
+0x00982060: sub      sp, sp, #0xa4
+0x00982064: mov      r0, sp
+0x00982068: mov      r5, sp
+0x0098206C: bl       #0x996d60   ; ->0x00996D60
+0x00982070: ldr      sb, [sp, #0x84]
+0x00982074: cmp      sb, #0
+0x00982078: moveq    r4, #2
+0x0098207C: beq      #0x982104
+0x00982080: ldr      r3, [r4, #8]
+0x00982084: vmov.i32 d8, #0
+0x00982088: ldr      ip, [r4, #0x38]
+0x0098208C: cmp      r3, #0
+0x00982090: vldr     d9, [r4, #0x40]
+0x00982094: ldrd     r6, r7, [ip, #8]
+0x00982098: beq      #0x9820b0
+0x0098209C: vadd.i64 d8, d8, d9
+0x009820A0: vldr     d9, [r3, #0x40]
+0x009820A4: ldr      r3, [r3, #8]
+0x009820A8: cmp      r3, #0
+0x009820AC: bne      #0x98209c
+0x009820B0: ldr      r1, [sb, #0x14]
+0x009820B4: cmp      r1, #0
+0x009820B8: beq      #0x9820f0
+0x009820BC: mov      r0, r5
+0x009820C0: mov      r1, #0
+0x009820C4: bl       #0x9974f8   ; ->0x009974F8
+0x009820C8: vadd.i64 d8, d8, d9
+0x009820CC: vmov     r2, r3, d8
+0x009820D0: subs     r2, r6, r2
+0x009820D4: sbc      r3, r7, r3
+0x009820D8: subs     r2, r2, r0
+0x009820DC: sbc      r3, r3, r1
+0x009820E0: add      r0, sp, #0x84
+0x009820E4: bl       #0x997ee8   ; ->0x00997EE8
+0x009820E8: ldr      ip, [r4, #0x38]
+0x009820EC: mov      r1, r0
+0x009820F0: mov      r0, sb
+0x009820F4: mov      r2, r8
+0x009820F8: ldr      r3, [ip, #0x3c]
+0x009820FC: bl       #0x9826b8   ; ->0x009826B8
+0x00982100: mov      r4, r0
+0x00982104: mov      r0, r5
+0x00982108: bl       #0x996dc4   ; ->0x00996DC4
+0x0098210C: mov      r0, r4
+0x00982110: add      sp, sp, #0xa4
+0x00982114: vpop     {d8, d9}
+0x00982118: pop      {r4, r5, r6, r7, r8, sb, pc}

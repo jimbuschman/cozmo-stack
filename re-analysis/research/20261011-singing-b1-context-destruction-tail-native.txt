@@ -1,0 +1,64 @@
+0x00997F70: ldr      r3, [r0, #0x50]
+0x00997F74: ldr      r2, [pc, #0x5c]   ; [pc->0x00997FD8] = 0x006A2648
+0x00997F78: cmp      r3, #0
+0x00997F7C: push     {r4, lr}
+0x00997F80: add      r2, pc, r2
+0x00997F84: mov      r4, r0
+0x00997F88: add      r1, r2, #0xa0
+0x00997F8C: add      r0, r2, #8
+0x00997F90: str      r1, [r4, #0xc]
+0x00997F94: add      r2, r2, #0xb4
+0x00997F98: str      r0, [r4]
+0x00997F9C: str      r2, [r4, #0x14]
+0x00997FA0: beq      #0x997fc8
+0x00997FA4: mov      r0, r3
+0x00997FA8: ldr      r3, [r3]
+0x00997FAC: cmp      r3, #0
+0x00997FB0: str      r3, [r4, #0x50]
+0x00997FB4: streq    r3, [r4, #0x4c]
+0x00997FB8: bl       #0x982edc   ; ->0x00982EDC
+0x00997FBC: ldr      r3, [r4, #0x50]
+0x00997FC0: cmp      r3, #0
+0x00997FC4: bne      #0x997fa4
+0x00997FC8: mov      r0, r4
+0x00997FCC: bl       #0x982164   ; ->0x00982164
+0x00997FD0: mov      r0, r4
+0x00997FD4: pop      {r4, pc}
+0x00993EDC: bx       lr
+0x00993EE0: ldr      r3, [r0, #0x24]
+0x00993EE4: push     {r4, r5, r6, lr}
+0x00993EE8: lsls     r3, r3, #3
+0x00993EEC: ldr      r4, [r0, #0x20]
+0x00993EF0: mov      r6, r0
+0x00993EF4: addne    r4, r4, #8
+0x00993EF8: beq      #0x993f28
+0x00993EFC: ldr      r0, [r4, #-4]
+0x00993F00: mov      r5, r4
+0x00993F04: ldr      r3, [r0]
+0x00993F08: ldr      r3, [r3, #8]
+0x00993F0C: blx      r3
+0x00993F10: ldr      r2, [r6, #0x24]
+0x00993F14: ldr      r3, [r6, #0x20]
+0x00993F18: add      r3, r3, r2, lsl #3
+0x00993F1C: cmp      r4, r3
+0x00993F20: add      r4, r4, #8
+0x00993F24: bne      #0x993efc
+0x00993F28: ldrb     r3, [r6, #0x2c]
+0x00993F2C: mov      r2, #0
+0x00993F30: str      r2, [r6, #0x24]
+0x00993F34: bfi      r3, r2, #0, #1
+0x00993F38: strb     r3, [r6, #0x2c]
+0x00993F3C: pop      {r4, r5, r6, pc}
+0x00982164: ldr      r3, [pc, #0x2c]   ; [pc->0x00982198] = 0x006B76BC
+0x00982168: push     {r4, lr}
+0x0098216C: add      r3, pc, r3
+0x00982170: add      r1, r3, #8
+0x00982174: add      r2, r3, #0x84
+0x00982178: mov      r4, r0
+0x0098217C: add      r3, r3, #0x98
+0x00982180: str      r1, [r0]
+0x00982184: str      r2, [r0, #0xc]
+0x00982188: str      r3, [r0, #0x14]
+0x0098218C: bl       #0x984fb8   ; ->0x00984FB8
+0x00982190: mov      r0, r4
+0x00982194: pop      {r4, pc}
