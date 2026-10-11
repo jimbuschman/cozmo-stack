@@ -1,0 +1,21 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "probe": [
+    {
+      "address": "01040068",
+      "original_LOAD_read": "0105243C",
+      "old_EXEC_only_read": "unmapped"
+    },
+    {
+      "address": "01040058",
+      "original_LOAD_read": "01052440",
+      "old_EXEC_only_read": "unmapped"
+    },
+    {
+      "address": "01043B9C",
+      "original_LOAD_read": "004A4010",
+      "old_EXEC_only_read": "unmapped"
+    }
+  ],
+  "limit": "Read-map navigation only; these probe pointers are not quota callers or runtime resolver bindings."
+}

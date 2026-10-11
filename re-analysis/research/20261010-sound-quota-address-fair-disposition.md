@@ -1,0 +1,11 @@
+# Q14-037: corrected quota pointer read map and local navigation
+
+Checkpoint811; guard reread before each step. Engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1.
+
+668's quota-input-pointer-expansion.py overwrites native.loads with executable sections. The helper's read/word use that same array,so non-executable data and GOT words become unreadable. Independent -address-fair-map-witness.json reads the original raw LOAD mapping versus that EXEC-only replacement:1040068=105243C,1040058=1052440,and1043B9C=4A4010 are all unmapped by the replacement. These are read-map probes,not quota callers or runtime resolver bindings.805 identified the same defect in the optional-input model;this pass corrects the concrete original quota-input lead.
+
+-address-fair-navigation.py keeps original LOAD data reads and separate executable-section seed enumeration. It reuses805's actual ELF GOT bounds103E78C..1051000,Thumb MOVW decoding,width-aware selected loads,raw rotated ARM immediates,flag handling and FIFO worklist;807's explicit CBZ/CBNZ successors are included. Only target9A0938/39 is selected. It is still a selected-low-half MOVW/literal-seed local model,not an exhaustive pointer-formation,publication,stack-alias or indirect-input proof.
+
+Reproducible -address-fair-comparison.py/.json records8->14885 candidate windows,0->803 capped windows,and0->0 target events. The old8-window negative search was especially limited by its data map and instruction/seed model.668's individually reopened false seeds remain paid independently:canary/data addresses and actual Thumb CBNZ are not quota inputs.786's21 finite interior-call candidates remain paid. Neither finite result establishes an admitted U32 quota supplier or proves the entry unreachable.
+
+Q14-037 stays PARTIAL/AUDIBLE for the original actual wrapper/internal/computed input or complete bounded exclusion proof. GU505's zero/nonzero,priority gate,priority-clear-before-low16-quota publication and return controls remain positive;no new limiter/provider family is extracted. Stop this corrected navigation lead. Coverage116 CHECKED /24 PARTIAL /0 NOT DONE;140 AUDIBLE /0 INTERNAL. Research only;Q15 stays behindQ14. out of scope: resolver implementation,canary/registry/backing storage and per-sample DSP.

@@ -1,0 +1,16 @@
+{
+  "baseline": "668 EXEC-only read map, selected seed forms",
+  "new": "811 original LOAD reads, full GOT, Thumb MOVW, width/flag/FIFO/CBZ local navigation",
+  "baselineEvents": 0,
+  "newEvents": 0,
+  "baselineCaps": 0,
+  "newCaps": 803,
+  "baselineWindowCount": [
+    "8"
+  ],
+  "newWindowCount": [
+    "14885"
+  ],
+  "added": [],
+  "missing": []
+}

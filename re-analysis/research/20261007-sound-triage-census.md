@@ -3288,3 +3288,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint810 - weight-setter PC-relative address forms
 
 `20261010-sound-weight-pc-address-disposition.md` pays the explicit direct-PC address-construction lead forA08024:17639 ARM immediateADD/SUB,17041 ThumbADR16,and1073 ThumbADDW/SUBW candidates;zero selected target values. This bounded encoding result supplies no runtime node/childID/weight or indirect absence proof.008 remains PARTIAL/AUDIBLE;stop the finite lead.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint811 - quota pointer data-read map correction
+
+`20261010-sound-quota-address-fair-disposition.md` corrects668's EXEC-only data-read map using independent raw LOAD/GOT probes and the repaired local navigation model.14885 windows/803 caps/zero target events;old8-window no-hit search was limited,not absence proof. Its source-attributed false seeds remain paid.037 stays PARTIAL/AUDIBLE for actual U32 quota input or original bounded exclusion.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
