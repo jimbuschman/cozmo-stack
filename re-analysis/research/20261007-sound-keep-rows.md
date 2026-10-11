@@ -11493,3 +11493,18 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint764 — alternate unload input disposition
 
 `20261010-sound-bank-unload-producer-input-dispositions.md` retains UC763's actual8D897E supplier, rejects Thumb9A3F22 inside ARM ADD and confirms separate9A4134 entry after9A4044 return/literal. Actual ID/auxiliary/output inputs remain UNKNOWN; immediate/raw/export navigation is not unreachability.109/134 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint765 — header-key setter context disposition
+
+`20261010-sound-header-key-setter-context-disposition.md` confirms actual platform7C publication and immediate returning stubs do not supply a key writer; adjacent separate product is not a positive key input. Four-word key/escaped input and encrypted admission remain UNKNOWN,109/134 PARTIAL. Stop this lead;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint766 — output stack-map correction
+
+`20261010-sound-routing-output-stack-correction.md` corrects A0423C: five-register frame means third original stackargument is output destination, second is value atoutput34; descriptor24 is stored atoutput4. Prior second-destination/descriptor-at34 wording is superseded. Actual destination/value admission stays UNKNOWN,104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint767 — output callback constructed-pointer disposition
+
+`20261010-sound-routing-output-pointer-input-disposition.md` records six bounded literal/MOVW windows with no formed/live callback target and no exact ARM PC-ADD/SUB target candidate. Corrected third-stack destination/second-stack value remains UNKNOWN; stop this input lead without converting navigation absence to reachability.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
