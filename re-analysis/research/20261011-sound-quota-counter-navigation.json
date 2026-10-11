@@ -1,0 +1,1309 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "model_sha256": "ca0f5ef8e468c6263e70c338a2545193991c4a15cbde3f7da0b601eb22219882",
+  "fields": {
+    "global_virtual": {
+      "address": "0108DE78",
+      "size": 4
+    },
+    "global_PBI_count": {
+      "address": "0108DEC0",
+      "size": 4
+    },
+    "default_quota": {
+      "address": "0108DEA4",
+      "size": 2
+    },
+    "default_active": {
+      "address": "0108DEB8",
+      "size": 2
+    },
+    "default_virtual": {
+      "address": "0108DEBA",
+      "size": 2
+    },
+    "quota_priority": {
+      "address": "01052420",
+      "size": 4
+    }
+  },
+  "windows": 15142,
+  "events": [
+    {
+      "address": "004DE2D0",
+      "mode": "ARM",
+      "kind": "formed-r4",
+      "effective": "0108DE78",
+      "instruction": "add r4, pc, r4",
+      "seeds": [
+        "004DE2C0",
+        "004DE2C4"
+      ]
+    },
+    {
+      "address": "004DE2DC",
+      "mode": "ARM",
+      "kind": "formed-r0",
+      "effective": "0108DEC0",
+      "instruction": "add r0, r4, #0x48",
+      "seeds": [
+        "004DE2C0",
+        "004DE2C4"
+      ]
+    },
+    {
+      "address": "004DE2E0",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEC0",
+      "instruction": "str r5, [r4, #0x48]",
+      "seeds": [
+        "004DE2C0",
+        "004DE2C4"
+      ]
+    },
+    {
+      "address": "004DE2F0",
+      "mode": "ARM",
+      "kind": "live-r0-at-call",
+      "effective": "0108DEC0",
+      "instruction": "bl #0x4d6688",
+      "seeds": [
+        "004DE2C0",
+        "004DE2C4"
+      ]
+    },
+    {
+      "address": "0099E418",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "01052420",
+      "instruction": "str r2, [r3, #8]",
+      "seeds": [
+        "0099E3F4"
+      ]
+    },
+    {
+      "address": "009A0950",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "01052420",
+      "instruction": "ldr r1, [r2, #8]",
+      "seeds": [
+        "009A0948"
+      ]
+    },
+    {
+      "address": "009A0968",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "01052420",
+      "instruction": "str ip, [r2, #8]",
+      "seeds": [
+        "009A0948"
+      ]
+    },
+    {
+      "address": "009A0970",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEA4",
+      "instruction": "strh r3, [r1, #0xc]",
+      "seeds": [
+        "009A0948",
+        "009A095C"
+      ]
+    },
+    {
+      "address": "009A0EBC",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "01052420",
+      "instruction": "ldr r0, [r2, #8]",
+      "seeds": [
+        "009A0EB4"
+      ]
+    },
+    {
+      "address": "009A0ED0",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "01052420",
+      "instruction": "str r1, [r2, #8]",
+      "seeds": [
+        "009A0EB4"
+      ]
+    },
+    {
+      "address": "009A0ED8",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEA4",
+      "instruction": "strh r3, [ip, #0xc]",
+      "seeds": [
+        "009A0EB4",
+        "009A0EC8"
+      ]
+    },
+    {
+      "address": "00A022D0",
+      "mode": "ARM",
+      "kind": "GOT-pointer",
+      "effective": "0108DE78",
+      "instruction": "ldr r3, [pc, r3]",
+      "seeds": [
+        "00A022CC"
+      ]
+    },
+    {
+      "address": "00A022D0",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "ldr r3, [pc, r3]",
+      "seeds": [
+        "00A022CC"
+      ]
+    },
+    {
+      "address": "00A022D4",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DE78",
+      "instruction": "ldr r2, [r3]",
+      "seeds": [
+        "00A022CC"
+      ]
+    },
+    {
+      "address": "00A022DC",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DE78",
+      "instruction": "str r2, [r3]",
+      "seeds": [
+        "00A022CC"
+      ]
+    },
+    {
+      "address": "00A36B1C",
+      "mode": "ARM",
+      "kind": "formed-r4",
+      "effective": "0108DE78",
+      "instruction": "add r4, pc, r4",
+      "seeds": [
+        "00A36B00",
+        "00A36B10"
+      ]
+    },
+    {
+      "address": "00A36B28",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DE78",
+      "instruction": "str r3, [r4]",
+      "seeds": [
+        "00A36B00",
+        "00A36B10"
+      ]
+    },
+    {
+      "address": "00A36B7C",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A36B00",
+        "00A36B10",
+        "00A36B6C"
+      ]
+    },
+    {
+      "address": "00A37024",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A37018"
+      ]
+    },
+    {
+      "address": "00A37040",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A37018",
+        "00A3703C"
+      ]
+    },
+    {
+      "address": "00A37044",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEC0",
+      "instruction": "ldr r2, [r3, #0x48]",
+      "seeds": [
+        "00A37018",
+        "00A3703C"
+      ]
+    },
+    {
+      "address": "00A37050",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEC0",
+      "instruction": "str r2, [r3, #0x48]",
+      "seeds": [
+        "00A37018",
+        "00A3703C"
+      ]
+    },
+    {
+      "address": "00A3706C",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A37068"
+      ]
+    },
+    {
+      "address": "00A37084",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa01480",
+      "seeds": [
+        "00A37068"
+      ]
+    },
+    {
+      "address": "00A370A8",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A3709C"
+      ]
+    },
+    {
+      "address": "00A370C4",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A3709C",
+        "00A370C0"
+      ]
+    },
+    {
+      "address": "00A370C8",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEC0",
+      "instruction": "ldr r2, [r3, #0x48]",
+      "seeds": [
+        "00A3709C",
+        "00A370C0"
+      ]
+    },
+    {
+      "address": "00A370D4",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEC0",
+      "instruction": "str r2, [r3, #0x48]",
+      "seeds": [
+        "00A3709C",
+        "00A370C0"
+      ]
+    },
+    {
+      "address": "00A370E8",
+      "mode": "ARM",
+      "kind": "formed-r2",
+      "effective": "0108DE78",
+      "instruction": "add r2, pc, r2",
+      "seeds": [
+        "00A370E4"
+      ]
+    },
+    {
+      "address": "00A370EC",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DE78",
+      "instruction": "ldr r3, [r2]",
+      "seeds": [
+        "00A370E4"
+      ]
+    },
+    {
+      "address": "00A370F4",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DE78",
+      "instruction": "str r3, [r2]",
+      "seeds": [
+        "00A370E4"
+      ]
+    },
+    {
+      "address": "00A373FC",
+      "mode": "ARM",
+      "kind": "formed-ip",
+      "effective": "0108DE78",
+      "instruction": "add ip, pc, ip",
+      "seeds": [
+        "00A373F4"
+      ]
+    },
+    {
+      "address": "00A377C4",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A376CC",
+        "00A377BC"
+      ]
+    },
+    {
+      "address": "00A3788C",
+      "mode": "ARM",
+      "kind": "formed-r4",
+      "effective": "0108DE78",
+      "instruction": "add r4, pc, r4",
+      "seeds": [
+        "00A37884"
+      ]
+    },
+    {
+      "address": "00A37890",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEC0",
+      "instruction": "ldr r3, [r4, #0x48]",
+      "seeds": [
+        "00A37884"
+      ]
+    },
+    {
+      "address": "00A37894",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DE78",
+      "instruction": "ldr r2, [r4]",
+      "seeds": [
+        "00A37884"
+      ]
+    },
+    {
+      "address": "00A378A0",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEA4",
+      "instruction": "ldrh sl, [r4, #0x2c]",
+      "seeds": [
+        "00A37884"
+      ]
+    },
+    {
+      "address": "00A380B0",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A380A4"
+      ]
+    },
+    {
+      "address": "00A380CC",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A380A4",
+        "00A380C8"
+      ]
+    },
+    {
+      "address": "00A380D0",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEC0",
+      "instruction": "ldr r2, [r3, #0x48]",
+      "seeds": [
+        "00A380A4",
+        "00A380C8"
+      ]
+    },
+    {
+      "address": "00A380DC",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEC0",
+      "instruction": "str r2, [r3, #0x48]",
+      "seeds": [
+        "00A380A4",
+        "00A380C8"
+      ]
+    },
+    {
+      "address": "00A3826C",
+      "mode": "ARM",
+      "kind": "formed-r0",
+      "effective": "0108DE78",
+      "instruction": "add r0, pc, r0",
+      "seeds": [
+        "00A38204",
+        "00A38260"
+      ]
+    },
+    {
+      "address": "00A38270",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEC0",
+      "instruction": "ldr r3, [r0, #0x48]",
+      "seeds": [
+        "00A38204",
+        "00A38260"
+      ]
+    },
+    {
+      "address": "00A38274",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DE78",
+      "instruction": "ldr r2, [r0]",
+      "seeds": [
+        "00A38204",
+        "00A38260"
+      ]
+    },
+    {
+      "address": "00A38278",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEA4",
+      "instruction": "ldrh r1, [r0, #0x2c]",
+      "seeds": [
+        "00A38204",
+        "00A38260"
+      ]
+    },
+    {
+      "address": "00A38358",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A38204",
+        "00A38350"
+      ]
+    },
+    {
+      "address": "00A38428",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A38420"
+      ]
+    },
+    {
+      "address": "00A38438",
+      "mode": "ARM",
+      "kind": "formed-r6",
+      "effective": "0108DE78",
+      "instruction": "add r6, pc, r6",
+      "seeds": [
+        "00A38420",
+        "00A3842C"
+      ]
+    },
+    {
+      "address": "00A38440",
+      "mode": "ARM",
+      "kind": "formed-r8",
+      "effective": "0108DE78",
+      "instruction": "add r8, pc, r8",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430"
+      ]
+    },
+    {
+      "address": "00A38448",
+      "mode": "ARM",
+      "kind": "formed-r7",
+      "effective": "0108DE78",
+      "instruction": "add r7, pc, r7",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430",
+        "00A38434"
+      ]
+    },
+    {
+      "address": "00A3844C",
+      "mode": "ARM",
+      "kind": "formed-sb",
+      "effective": "0108DE78",
+      "instruction": "add sb, pc, sb",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430",
+        "00A38434",
+        "00A3843C"
+      ]
+    },
+    {
+      "address": "00A38454",
+      "mode": "ARM",
+      "kind": "formed-r5",
+      "effective": "0108DE78",
+      "instruction": "add r5, pc, r5",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430",
+        "00A38434",
+        "00A3843C",
+        "00A38450"
+      ]
+    },
+    {
+      "address": "00A38534",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430",
+        "00A38434",
+        "00A3843C",
+        "00A38450",
+        "00A384E4",
+        "00A38530"
+      ]
+    },
+    {
+      "address": "00A3858C",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEC0",
+      "instruction": "ldr r3, [r7, #0x48]",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430",
+        "00A38434"
+      ]
+    },
+    {
+      "address": "00A38598",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEC0",
+      "instruction": "str r3, [r7, #0x48]",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430",
+        "00A38434"
+      ]
+    },
+    {
+      "address": "00A3855C",
+      "mode": "ARM",
+      "kind": "formed-r2",
+      "effective": "0108DE78",
+      "instruction": "add r2, pc, r2",
+      "seeds": [
+        "00A38420",
+        "00A3842C",
+        "00A38430",
+        "00A38434",
+        "00A3843C",
+        "00A38450",
+        "00A384E4",
+        "00A38530",
+        "00A38548",
+        "00A38558"
+      ]
+    },
+    {
+      "address": "00A38614",
+      "mode": "ARM",
+      "kind": "formed-r5",
+      "effective": "0108DE78",
+      "instruction": "add r5, pc, r5",
+      "seeds": [
+        "00A38608"
+      ]
+    },
+    {
+      "address": "00A38628",
+      "mode": "ARM",
+      "kind": "formed-r0",
+      "effective": "0108DE78",
+      "instruction": "add r0, pc, r0",
+      "seeds": [
+        "00A38608",
+        "00A38624"
+      ]
+    },
+    {
+      "address": "00A38640",
+      "mode": "ARM",
+      "kind": "formed-r0",
+      "effective": "0108DE78",
+      "instruction": "add r0, pc, r0",
+      "seeds": [
+        "00A38608",
+        "00A38624",
+        "00A3863C"
+      ]
+    },
+    {
+      "address": "00A38698",
+      "mode": "ARM",
+      "kind": "formed-r5",
+      "effective": "0108DE78",
+      "instruction": "add r5, pc, r5",
+      "seeds": [
+        "00A38608",
+        "00A3868C"
+      ]
+    },
+    {
+      "address": "00A386B0",
+      "mode": "ARM",
+      "kind": "formed-r0",
+      "effective": "0108DE78",
+      "instruction": "add r0, pc, r0",
+      "seeds": [
+        "00A38608",
+        "00A3868C",
+        "00A386AC"
+      ]
+    },
+    {
+      "address": "00A386C8",
+      "mode": "ARM",
+      "kind": "formed-r0",
+      "effective": "0108DE78",
+      "instruction": "add r0, pc, r0",
+      "seeds": [
+        "00A38608",
+        "00A3868C",
+        "00A386AC",
+        "00A386C4"
+      ]
+    },
+    {
+      "address": "00A38678",
+      "mode": "ARM",
+      "kind": "possible-returned-pointer",
+      "effective": "0108DE78",
+      "instruction": "pop {r4, r5, r6, r7, pc}",
+      "seeds": [
+        "00A38608",
+        "00A38624",
+        "00A3863C"
+      ]
+    },
+    {
+      "address": "00A387E4",
+      "mode": "ARM",
+      "kind": "formed-r5",
+      "effective": "0108DE78",
+      "instruction": "add r5, pc, r5",
+      "seeds": [
+        "00A387E0"
+      ]
+    },
+    {
+      "address": "00A38800",
+      "mode": "ARM",
+      "kind": "formed-r8",
+      "effective": "0108DE78",
+      "instruction": "add r8, pc, r8",
+      "seeds": [
+        "00A387E0",
+        "00A387F4",
+        "00A387F8"
+      ]
+    },
+    {
+      "address": "00A38814",
+      "mode": "ARM",
+      "kind": "read",
+      "effective": "0108DEC0",
+      "instruction": "ldr r3, [r5, #0x48]",
+      "seeds": [
+        "00A387E0"
+      ]
+    },
+    {
+      "address": "00A38830",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEC0",
+      "instruction": "str r3, [r5, #0x48]",
+      "seeds": [
+        "00A387E0"
+      ]
+    },
+    {
+      "address": "00A388A8",
+      "mode": "ARM",
+      "kind": "formed-r2",
+      "effective": "0108DE78",
+      "instruction": "add r2, pc, r2",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A388C0",
+      "mode": "ARM",
+      "kind": "write",
+      "effective": "0108DEC0",
+      "instruction": "str r6, [r2, #0x48]",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A388CC",
+      "mode": "ARM",
+      "kind": "formed-r4",
+      "effective": "0108DE78",
+      "instruction": "add r4, pc, r4",
+      "seeds": [
+        "00A388A0",
+        "00A388A4",
+        "00A388C8"
+      ]
+    },
+    {
+      "address": "00A38944",
+      "mode": "ARM",
+      "kind": "formed-r4",
+      "effective": "0108DE78",
+      "instruction": "mov r4, r2",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A389B8",
+      "mode": "ARM",
+      "kind": "formed-r6",
+      "effective": "0108DE78",
+      "instruction": "add r6, pc, r6",
+      "seeds": [
+        "00A388A0",
+        "00A388A4",
+        "00A38940",
+        "00A389B4"
+      ]
+    },
+    {
+      "address": "00A38948",
+      "mode": "ARM",
+      "kind": "formed-r8",
+      "effective": "0108DE78",
+      "instruction": "mov r8, r2",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A38900",
+      "mode": "ARM",
+      "kind": "formed-r4",
+      "effective": "0108DE78",
+      "instruction": "add r4, pc, r4",
+      "seeds": [
+        "00A388A0",
+        "00A388A4",
+        "00A388C8",
+        "00A388FC"
+      ]
+    },
+    {
+      "address": "00A3894C",
+      "mode": "ARM",
+      "kind": "formed-sb",
+      "effective": "0108DE78",
+      "instruction": "mov sb, r2",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A38950",
+      "mode": "ARM",
+      "kind": "formed-r7",
+      "effective": "0108DE78",
+      "instruction": "add r7, pc, r7",
+      "seeds": [
+        "00A388A0",
+        "00A388A4",
+        "00A38940"
+      ]
+    },
+    {
+      "address": "00A388F0",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa7a988",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A389D4",
+      "mode": "ARM",
+      "kind": "formed-r7",
+      "effective": "0108DE78",
+      "instruction": "add r7, pc, r7",
+      "seeds": [
+        "00A388A0",
+        "00A388A4",
+        "00A38940",
+        "00A389B4",
+        "00A389CC"
+      ]
+    },
+    {
+      "address": "00A38A44",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A388A0",
+        "00A388A4",
+        "00A38940",
+        "00A389B4",
+        "00A389CC",
+        "00A38A3C"
+      ]
+    },
+    {
+      "address": "00A38924",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa7a988",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A38A38",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa7a988",
+      "seeds": [
+        "00A388A0"
+      ]
+    },
+    {
+      "address": "00A38A9C",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A38A94"
+      ]
+    },
+    {
+      "address": "00A38B28",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa41100",
+      "seeds": [
+        "00A38A94"
+      ]
+    },
+    {
+      "address": "00A38AD8",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa020a4",
+      "seeds": [
+        "00A38A94"
+      ]
+    },
+    {
+      "address": "00A38B44",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A38B3C"
+      ]
+    },
+    {
+      "address": "00A38B60",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa01edc",
+      "seeds": [
+        "00A38B3C"
+      ]
+    },
+    {
+      "address": "00A38BD0",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A38BAC",
+        "00A38BC8"
+      ]
+    },
+    {
+      "address": "00A38C90",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A38C88"
+      ]
+    },
+    {
+      "address": "00A39260",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39254"
+      ]
+    },
+    {
+      "address": "00A39324",
+      "mode": "ARM",
+      "kind": "formed-r8",
+      "effective": "0108DE78",
+      "instruction": "add r8, pc, r8",
+      "seeds": [
+        "00A39254",
+        "00A39320"
+      ]
+    },
+    {
+      "address": "00A392CC",
+      "mode": "ARM",
+      "kind": "formed-sl",
+      "effective": "0108DE78",
+      "instruction": "add sl, pc, sl",
+      "seeds": [
+        "00A39254",
+        "00A392C4"
+      ]
+    },
+    {
+      "address": "00A39340",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39254",
+        "00A39320",
+        "00A39334"
+      ]
+    },
+    {
+      "address": "00A393FC",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa7a7f4",
+      "seeds": [
+        "00A39254"
+      ]
+    },
+    {
+      "address": "00A392EC",
+      "mode": "ARM",
+      "kind": "formed-r1",
+      "effective": "0108DE78",
+      "instruction": "add r1, pc, r1",
+      "seeds": [
+        "00A39254",
+        "00A392C4",
+        "00A392DC"
+      ]
+    },
+    {
+      "address": "00A39360",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa7a7f4",
+      "seeds": [
+        "00A39254"
+      ]
+    },
+    {
+      "address": "00A39468",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39254",
+        "00A39320",
+        "00A393E8",
+        "00A39420",
+        "00A3944C",
+        "00A39460"
+      ]
+    },
+    {
+      "address": "00A393CC",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39254",
+        "00A392C4",
+        "00A3934C",
+        "00A39384",
+        "00A393B0",
+        "00A393C4"
+      ]
+    },
+    {
+      "address": "00A3942C",
+      "mode": "ARM",
+      "kind": "formed-ip",
+      "effective": "0108DE78",
+      "instruction": "add ip, pc, ip",
+      "seeds": [
+        "00A39254",
+        "00A39320",
+        "00A393E8",
+        "00A39420"
+      ]
+    },
+    {
+      "address": "00A39390",
+      "mode": "ARM",
+      "kind": "formed-ip",
+      "effective": "0108DE78",
+      "instruction": "add ip, pc, ip",
+      "seeds": [
+        "00A39254",
+        "00A392C4",
+        "00A3934C",
+        "00A39384"
+      ]
+    },
+    {
+      "address": "00A39450",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39254",
+        "00A39320",
+        "00A393E8",
+        "00A39420",
+        "00A3944C"
+      ]
+    },
+    {
+      "address": "00A393B4",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39254",
+        "00A392C4",
+        "00A3934C",
+        "00A39384",
+        "00A393B0"
+      ]
+    },
+    {
+      "address": "00A3945C",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa7a988",
+      "seeds": [
+        "00A39254",
+        "00A39320",
+        "00A393E8",
+        "00A39420",
+        "00A3944C"
+      ]
+    },
+    {
+      "address": "00A393C0",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa7a988",
+      "seeds": [
+        "00A39254",
+        "00A392C4",
+        "00A3934C",
+        "00A39384",
+        "00A393B0"
+      ]
+    },
+    {
+      "address": "00A394C8",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A394C4"
+      ]
+    },
+    {
+      "address": "00A39550",
+      "mode": "ARM",
+      "kind": "formed-r2",
+      "effective": "0108DE78",
+      "instruction": "add r2, pc, r2",
+      "seeds": [
+        "00A394C4",
+        "00A39548"
+      ]
+    },
+    {
+      "address": "00A3956C",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39568"
+      ]
+    },
+    {
+      "address": "00A3958C",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39568",
+        "00A39588"
+      ]
+    },
+    {
+      "address": "00A39610",
+      "mode": "ARM",
+      "kind": "live-r3-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0xa00494",
+      "seeds": [
+        "00A39568"
+      ]
+    },
+    {
+      "address": "00A395B4",
+      "mode": "ARM",
+      "kind": "formed-r2",
+      "effective": "0108DE78",
+      "instruction": "add r2, pc, r2",
+      "seeds": [
+        "00A39568",
+        "00A39588",
+        "00A395B0"
+      ]
+    },
+    {
+      "address": "00A39634",
+      "mode": "ARM",
+      "kind": "formed-r2",
+      "effective": "0108DE78",
+      "instruction": "add r2, pc, r2",
+      "seeds": [
+        "00A39568",
+        "00A39620",
+        "00A3962C"
+      ]
+    },
+    {
+      "address": "00A39624",
+      "mode": "ARM",
+      "kind": "formed-r3",
+      "effective": "0108DE78",
+      "instruction": "add r3, pc, r3",
+      "seeds": [
+        "00A39568",
+        "00A39620"
+      ]
+    },
+    {
+      "address": "00A395D0",
+      "mode": "ARM",
+      "kind": "formed-r5",
+      "effective": "0108DE78",
+      "instruction": "add r5, pc, r5",
+      "seeds": [
+        "00A39568",
+        "00A39588",
+        "00A395B0",
+        "00A395C8"
+      ]
+    },
+    {
+      "address": "00A395E0",
+      "mode": "ARM",
+      "kind": "live-r2-at-call",
+      "effective": "0108DE78",
+      "instruction": "bl #0x9f3ba4",
+      "seeds": [
+        "00A39568",
+        "00A39588",
+        "00A395B0"
+      ]
+    }
+  ],
+  "boundary": "Original037 selected scalar/paired/block/NEON constant-origin read/write/address navigation. Mutable values remain unknown. No all-writer/copy/stack/computed/foreign/capped-window exclusion, actual quota setter admission, or policy/collection recipient census."
+}

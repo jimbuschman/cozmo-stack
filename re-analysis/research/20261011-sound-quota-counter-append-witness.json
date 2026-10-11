@@ -1,0 +1,1770 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "cases": [
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000001",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000002",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000002",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "FFFFFFFF",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "FFFFFFFF",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000001",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000002",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000002",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "FFFFFFFF",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "FFFFFFFF",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000001",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000002",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000002",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "FFFFFFFF",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "FFFFFFFF",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "00000000",
+            "00000000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000001",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000002",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000002",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "FFFFFFFF",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "FFFFFFFF",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000001",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000002",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000002",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "FFFFFFFF",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "FFFFFFFF",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000001",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000002",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000002",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "00A36FE0",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "FFFFFFFF",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "FFFFFFFF",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000000"
+          ],
+          "counter_list_before_boundary": [
+            "FFFFFFFF",
+            "20002000",
+            "20002000",
+            "A5A5A5A5",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "FFFFFFFF",
+        "20002000",
+        "20002000",
+        "A5A5A5A5",
+        "00000000"
+      ],
+      "appended": false
+    },
+    {
+      "entry": "0097DEA4",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "0108DE78"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DEA4",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "0108DE78"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DEA4",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "0108DE78"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DEA4",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "0108DE78"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DEA4",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "0108DE78"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DEA4",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "0108DE78"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000001"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DE3C",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "20001000"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000003"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DE3C",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "20001000"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000003"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DE3C",
+      "nonempty": false,
+      "initial_count": "00000000",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000001",
+            "20001000"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000003"
+          ],
+          "counter_list_before_boundary": [
+            "00000001",
+            "20001000",
+            "20001000",
+            "00000000",
+            "00000000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000001",
+        "20001000",
+        "20001000",
+        "00000000",
+        "00000000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DE3C",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000001",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "20001000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000003"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DE3C",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000002",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "20001000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000003"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    },
+    {
+      "entry": "0097DE3C",
+      "nonempty": true,
+      "initial_count": "FFFFFFFF",
+      "incoming_third": "00000000",
+      "Play_fixture_result": "00000050",
+      "calls": [
+        {
+          "address": "00A00618",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "20001000"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        },
+        {
+          "address": "00A0067C",
+          "args": [
+            "20001000",
+            "11223344",
+            "00000000",
+            "00000003"
+          ],
+          "counter_list_before_boundary": [
+            "00000000",
+            "20001000",
+            "20002000",
+            "00000000",
+            "20001000"
+          ]
+        }
+      ],
+      "final_counter_tail_head_Pnext_oldnext": [
+        "00000000",
+        "20001000",
+        "20002000",
+        "00000000",
+        "20001000"
+      ],
+      "appended": true
+    }
+  ],
+  "boundary": "ActualA36FE0/97DEA4 and97DE3C..74 instructions, including actualA3709C. A00618/A0067C are opaque ABI fixtures, not complete Init/Play execution or a claim about callback mutations;97DE3C starts after live virtualA8, not whole creator. Empty/nonempty acyclic lists and explicit PBI/arguments only. No admitted complete supplier, duplicate/cycle/concurrency or all-writer closure."
+}

@@ -1,0 +1,25 @@
+{
+  "raw_aligned_pointer_navigation": [],
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0xa36fe0",
+    "0xa3709c"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x97de4c",
+      "target": "#0xa3709c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3709c",
+      "section": ".text"
+    },
+    {
+      "address": "0x97deb0",
+      "target": "#0xa3709c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3709c",
+      "section": ".text"
+    }
+  ]
+}
