@@ -1,0 +1,139 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "archive_sha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145",
+  "unicorn_version": "2.1.4",
+  "boundary": "Only key-base carrier control slices9B2274 onward/9B2294 and caller9B7770. Six actual hashed bank-prefix shapes, explicit K0/header/frame/caller-result fixtures. No read/decrypt/skip/cleanup implementations, runtime key values, buffer immutability, actual extra caller/admission, or all writer/foreign alias absence proof. Only the originally formed R2 address is tracked; coincidental encrypted scalar values are not address provenance.",
+  "cases": [
+    {
+      "declared_chunk_size": 24,
+      "fixture_K0_loaded_value": 0,
+      "R2_before_gate": "0108D9A0",
+      "stop_PC": "009BBF9C",
+      "R2_at_stop": "30004004",
+      "R0_at_stop": 536875012,
+      "R1_at_stop": 4,
+      "stop_before_skip_body": true,
+      "stack_header_fixture": "30004074",
+      "case": "actual shipped prefix, explicit zero-key loaded fixture",
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "payload_hex": "780000006e9c9b5600000000000000006b0a0000"
+    },
+    {
+      "declared_chunk_size": 32,
+      "fixture_K0_loaded_value": 0,
+      "R2_before_gate": "0108D9A0",
+      "stop_PC": "009BBF9C",
+      "R2_at_stop": "30004004",
+      "R0_at_stop": 536875012,
+      "R1_at_stop": 12,
+      "stop_before_skip_body": true,
+      "stack_header_fixture": "30004074",
+      "case": "actual shipped prefix, explicit zero-key loaded fixture",
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "payload_hex": "780000000ba5398e0c000000000000006b0a0000"
+    },
+    {
+      "declared_chunk_size": 32,
+      "fixture_K0_loaded_value": 0,
+      "R2_before_gate": "0108D9A0",
+      "stop_PC": "009BBF9C",
+      "R2_at_stop": "30004004",
+      "R0_at_stop": 536875012,
+      "R1_at_stop": 12,
+      "stop_before_skip_body": true,
+      "stack_header_fixture": "30004074",
+      "case": "actual shipped prefix, explicit zero-key loaded fixture",
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "payload_hex": "78000000233ac65000000000000000006b0a0000"
+    },
+    {
+      "declared_chunk_size": 32,
+      "fixture_K0_loaded_value": 0,
+      "R2_before_gate": "0108D9A0",
+      "stop_PC": "009BBF9C",
+      "R2_at_stop": "30004004",
+      "R0_at_stop": 536875012,
+      "R1_at_stop": 12,
+      "stop_before_skip_body": true,
+      "stack_header_fixture": "30004074",
+      "case": "actual shipped prefix, explicit zero-key loaded fixture",
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "payload_hex": "78000000d636f0ed00000000000000006b0a0000"
+    },
+    {
+      "declared_chunk_size": 24,
+      "fixture_K0_loaded_value": 0,
+      "R2_before_gate": "0108D9A0",
+      "stop_PC": "009BBF9C",
+      "R2_at_stop": "30004004",
+      "R0_at_stop": 536875012,
+      "R1_at_stop": 4,
+      "stop_before_skip_body": true,
+      "stack_header_fixture": "30004074",
+      "case": "actual shipped prefix, explicit zero-key loaded fixture",
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "payload_hex": "780000003e5d701700000000000000006b0a0000"
+    },
+    {
+      "declared_chunk_size": 24,
+      "fixture_K0_loaded_value": 0,
+      "R2_before_gate": "0108D9A0",
+      "stop_PC": "009BBF9C",
+      "R2_at_stop": "30004004",
+      "R0_at_stop": 536875012,
+      "R1_at_stop": 4,
+      "stop_before_skip_body": true,
+      "stack_header_fixture": "30004074",
+      "case": "actual shipped prefix, explicit zero-key loaded fixture",
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "payload_hex": "78000000b70d775c00000000000000006b0a0000"
+    },
+    {
+      "declared_chunk_size": 20,
+      "fixture_K0_loaded_value": 0,
+      "R2_before_gate": "0108D9A0",
+      "stop_PC": "40000000",
+      "R2_at_stop": "0108D9A0",
+      "R0_at_stop": 1,
+      "R1_at_stop": 0,
+      "stop_before_skip_body": false,
+      "stack_header_fixture": "30004074",
+      "case": "explicit20-byte edge, not a shipped declared chunk size"
+    },
+    {
+      "case": "nonzero-key branch actual LDRH pointer kill, explicit header-half fixture",
+      "header_half_fixture": 0,
+      "R2_before": "0108D9A0",
+      "R2_after": "00000000",
+      "instruction_address": "009B2294"
+    },
+    {
+      "case": "nonzero-key branch actual LDRH pointer kill, explicit header-half fixture",
+      "header_half_fixture": 65535,
+      "R2_before": "0108D9A0",
+      "R2_after": "0000FFFF",
+      "instruction_address": "009B2294"
+    },
+    {
+      "case": "actual caller success branch, explicit returned-key R2 fixture",
+      "returnR0_fixture": 1,
+      "R2_before": "0108D9A0",
+      "first_R2_definition": "009B7788 MOVW R2,4E49",
+      "R2_after": "00004E49",
+      "stopped_before_next_instruction": true
+    },
+    {
+      "case": "explicit error+key carrier edge; not proof of shipped admission",
+      "returnR0_fixture": 64,
+      "R2_at_cleanup_boundary": "0108D9A0",
+      "stop_PC": "009BBBA4",
+      "cleanup_body_not_executed": true
+    }
+  ]
+}
