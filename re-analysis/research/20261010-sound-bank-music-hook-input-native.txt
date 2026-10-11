@@ -1,0 +1,55 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+010400F8: raw=0108D968 relocated=0108D968
+RANGE 0x009B3340..0x009B33F0 exclusive; ARM;
+009B3340: cmp          r3, #0
+009B3344: str          r8, [r2, #0x3c]
+009B3348: str          r6, [r2, #0x44]
+009B334C: beq          #0x9b32a8
+009B3350: add          r7, sp, #0x30
+009B3354: mov          r8, #0
+009B3358: add          r3, sp, #0x2c
+009B335C: str          r8, [sp, #0x24]
+009B3360: str          r3, [sp, #0x18]
+009B3364: mov          r0, r5
+009B3368: mov          r1, r7
+009B336C: mov          r2, #5
+009B3370: bl           #0x9bbf64
+009B3374: cmp          r0, #1
+009B3378: mov          r4, r0
+009B337C: bne          #0x9b32a8
+009B3380: ldrb         r2, [sp, #0x30]
+009B3384: sub          r6, r2, #1
+009B3388: cmp          r6, #0x16
+009B338C: addls        pc, pc, r6, lsl #2
+009B3390: b            #0x9b3ebc
+009B3394: b            #0x9b3e98
+009B3398: b            #0x9b3df4
+009B339C: b            #0x9b3dd0
+009B33A0: b            #0x9b3dac
+009B33A4: b            #0x9b3cdc
+009B33A8: b            #0x9b3c10
+009B33AC: b            #0x9b3b00
+009B33B0: b            #0x9b3adc
+009B33B4: b            #0x9b39fc
+009B33B8: b            #0x9b3ebc
+009B33BC: b            #0x9b3ebc
+009B33C0: b            #0x9b3ebc
+009B33C4: b            #0x9b3ebc
+009B33C8: b            #0x9b392c
+009B33CC: b            #0x9b385c
+009B33D0: b            #0x9b3824
+009B33D4: b            #0x9b3824
+009B33D8: b            #0x9b376c
+009B33DC: b            #0x9b36a4
+009B33E0: b            #0x9b3664
+009B33E4: b            #0x9b3568
+009B33E8: b            #0x9b34a8
+009B33EC: b            #0x9b33f0
+RANGE 0x00984C10..0x00984C28 exclusive; ARM;
+00984C10: add          sp, sp, #0x14
+00984C14: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00984C18: mov          r5, #2
+00984C1C: mov          r0, r5
+00984C20: add          sp, sp, #0x14
+00984C24: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}

@@ -11473,3 +11473,13 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint760 — positive shared-context provider route
 
 `20261010-sound-descriptor-context-provider-boundary.md` binds two actual table8 providers through their exact thunk/99F148 singleton construction to101BFA0, independently confirming4C/50 wrapper exposure. Known selected101 consumer uses global54 RNG; getter ID/descriptor decision consumer remains UNKNOWN, and9903F0 is not substituted.024 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint761 — actual HIRC music handler join
+
+`20261010-sound-bank-music-hook-reconciliation.md` joins successful music initialization GOT984930 ->9A5E64 ->108D968 with J9's actual reload/call, five-byte header, unchanged originalsecond/thirdarguments and exact result3 versus1 skip/continuation handling. Known types10..13 recipients remain MB/MP; no global hook/key/command-mode closure.109/134 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint762 — unload packet-to-recipient inputs
+
+`20261010-sound-bank-unload-input-reconciliation.md` binds actual9BA35C/9BB86C to unchanged packet fields and UD261 mode/key/callback/cookie/selector inputs, preserving worker raw result versus immediate acceptance1. SL42–48 startup/submission/worker contracts reused; two Thumb matches are ARM interior encodings.109/134 retain actual producer/global/key/writer gaps, not unread local unload bodies.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
