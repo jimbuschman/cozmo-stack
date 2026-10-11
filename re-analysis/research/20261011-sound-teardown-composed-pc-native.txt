@@ -1,0 +1,47 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A3711C..0x00A37138 exclusive; ARM;
+00A3711C: beq          #0xa371d0
+00A37120: ldm          r0, {r4, r5}
+00A37124: mov          r6, r3
+00A37128: mov          sl, r1
+00A3712C: vldr         s17, [pc, #0x2bc] ; word[00A373F0]=42CA0000
+00A37130: add          r5, r4, r5, lsl #2
+00A37134: cmp          r4, r5
+RANGE 0x00A557F4..0x00A55814 exclusive; ARM;
+00A557F4: cmp          r3, r5
+00A557F8: beq          #0xa55880
+00A557FC: mov          r0, r6
+00A55800: bl           #0x9bda88
+00A55804: cmp          r0, #0
+00A55808: beq          #0xa55880
+00A5580C: ldrb         r2, [r4, #0xcd]
+00A55810: add          r3, r4, #0xcc
+RANGE 0x00A55C68..0x00A55C88 exclusive; ARM;
+00A55C68: b            #0xa0428c
+00A55C6C: ldr          r3, [r3, #0x140]
+00A55C70: udf          #0
+00A55C74: subseq       sl, lr, ip, lsl #8
+00A55C78: push         {r4, lr}
+00A55C7C: mov          r4, r0
+00A55C80: ldr          r3, [r4, #8]
+00A55C84: sub          sp, sp, #8
+RANGE 0x00A55DE4..0x00A55E08 exclusive; ARM;
+00A55DE4: strb         r3, [r6, #0xcd]
+00A55DE8: pop          {r3, r4, r5, r6, r7, r8, sb, pc}
+00A55DEC: subseq       sl, lr, ip, ror r3
+00A55DF0: subseq       sl, lr, r8, lsl r3
+00A55DF4: ldr          r3, [r0, #8]
+00A55DF8: ldr          r3, [r3, #8]
+00A55DFC: ldr          r0, [r3, #0x74]
+00A55E00: bx           lr
+00A55E04: ldr          r3, [r0, #8]
+00A55C40: ARM PC-literal load ->00A55C74, rawword=005EA40C
+00A55D80: ARM PC-literal load ->00A55DF0, rawword=005EA318
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A3710C..0x00A3711C exclusive; ARM;
+00A3710C: vmov         s16, r2
+00A37110: sub          sp, sp, #0x1c
+00A37114: ldrb         r2, [sp, #0x50]
+00A37118: ldrb         fp, [sp, #0x54]

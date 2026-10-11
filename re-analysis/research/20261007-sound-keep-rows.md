@@ -11899,3 +11899,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint859 — structured nearby-PC input check
 
 `20261011-sound-structured-binding-composed-pc-disposition.md` checks originalA67830 in852's nearby-PC method: four seeds/two permitted windows/zero events/zero caps. Two seeds inside799's positioning interval are excluded without instruction decode/propagation; permitted byte windows end before that interval. Two other apparent ADR words are localARM LDR/ADD interpretations, not admitted input or full mode exclusion. PI611/799/851 retained;132 PARTIAL for structured ID/property/type and actual control recipient or supported-input exclusion.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint860 — teardown nearby-PC input check
+
+`20261011-sound-teardown-composed-pc-disposition.md` checks the five original084/118 entries in852's nearby-PC method: four windows/zero later events/zero caps. One initial raw ThumbADR equalsA55A84 and is explicitly retained, then primary shows actualARM BL9BDA88; other seeds are anARM MOV and two positively referenced literal words. No actual caller or all-mode/alias exclusion;084/118 PARTIAL. Earlier direct/request/owner/846 contracts retained without full pointer or helper repeat.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

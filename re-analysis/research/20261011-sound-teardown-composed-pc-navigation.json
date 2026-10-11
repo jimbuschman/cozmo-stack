@@ -1,0 +1,79 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "00A0228C",
+    "00A022E8",
+    "00A370E4",
+    "00A55A84",
+    "00A55D04"
+  ],
+  "formsExamined": {
+    "ARM immediate ADD/SUB PC": 17639,
+    "Thumb ADR16": 17041,
+    "Thumb ADDW/SUBW PC": 1073
+  },
+  "nearby_seed_count": 4,
+  "propagation_count": 4,
+  "seeds": [
+    {
+      "address": "00A37128",
+      "mode": "Thumb",
+      "bytes": "01a0",
+      "value": "00A37130",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "seed_target_match": false,
+      "decoded": [
+        "adr r0, #4"
+      ],
+      "propagation_start": "00A3712A",
+      "destination": "r0"
+    },
+    {
+      "address": "00A55800",
+      "mode": "Thumb",
+      "bytes": "a0a0",
+      "value": "00A55A84",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "seed_target_match": true,
+      "decoded": [
+        "adr r0, #0x280"
+      ],
+      "propagation_start": "00A55802",
+      "destination": "r0"
+    },
+    {
+      "address": "00A55C74",
+      "mode": "Thumb",
+      "bytes": "0ca4",
+      "value": "00A55CA8",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "seed_target_match": false,
+      "decoded": [
+        "adr r4, #0x30"
+      ],
+      "propagation_start": "00A55C76",
+      "destination": "r4"
+    },
+    {
+      "address": "00A55DF0",
+      "mode": "Thumb",
+      "bytes": "18a3",
+      "value": "00A55E54",
+      "form": "Thumb ADR16",
+      "section": ".text",
+      "seed_target_match": false,
+      "decoded": [
+        "adr r3, #0x60"
+      ],
+      "propagation_start": "00A55DF2",
+      "destination": "r3"
+    }
+  ],
+  "events": [],
+  "cap_log": [],
+  "model_sha256": "917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf",
+  "limit": "Only direct-PC seed values within512 bytes either side of original teardown inputs then unchanged812 local propagation; explicit destination seed, possible modes/conditions, distant address construction, stack/copy/foreign inputs and caps are not certified."
+}
