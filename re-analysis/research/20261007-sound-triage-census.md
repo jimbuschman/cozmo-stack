@@ -3475,3 +3475,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint856 — observer nearby-PC input check
 
 `20261011-sound-observer-composed-pc-disposition.md` substitutes9A03DC/9A040C into852's nearby-PC seed method: one window/zero events/zero caps. Sole Thumb ADR9A0548 is actual ARM ADD SL,PC,SL, independently captured at855 after separate9A0524 entry; no callback input supplied. OR613/MC667/787 paid contracts retained;028/029 PARTIAL for caller/key/callback/rawthirdword and callback body or supported-input exclusion. No848 full pointer or781 interior repeat.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.
+
+### Checkpoint857 — command1F nearby-PC input check
+
+`20261011-sound-queue-command31-composed-pc-disposition.md` checks original9A60B8 with852's nearby-PC seed method: zero seeds/windows/events/caps. QC752/843 conditional cancellation/stop payload/root joins and845/849 finite input dispositions retained;104/131 PARTIAL for admitted nonzero caller/three raw inputs and independent original writer/alias proofs. No repeated full pointer, stop body or new family.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Q15 stays behindQ14.

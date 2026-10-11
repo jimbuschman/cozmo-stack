@@ -1,0 +1,9 @@
+# Q14-104/131 command1F nearby-PC input check, checkpoint857
+
+Scope guard reread before every step. Request `requests/20261007-codex-queue-5.md`. Target is original9A60B8 and mode-bit variant. Nonzero input can cancel pending actions and stop active sound, so the address-input check qualifies. QC752/843 exact queue, payload, cancellation and ordinary root/child dispatch remain paid.845's19 interior encodings and849's full pointer/cap dispositions remain paid; no generic stop recipient is reopened.
+
+`-navigation.py/.json` substitutes9A60B8 into852's nearby-PC seed method:17639 ARM immediate ADD/SUB-PC,17041 Thumb ADR16 and1073 Thumb ADDW/SUBW-PC forms, selecting values within512 bytes either side of this exact entry. Zero seeds/windows/events/caps. The unchanged812 local propagation model would receive only a decoded first destination; actual modes/conditions and unknown initial inputs remain limits. Model SHA256917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf. No849 full GOT/MOVW or845 interior pass is repeated.
+
+104/131 remain PARTIAL, AUDIBLE. Exactly open for this producer: positively admitted nonzero9A60B8 caller and three raw inputs, or complete bounded supported-input exclusion proof. Preserve zero input's immediate return and nonzero record4/8/C→descriptor8/C/10 conditional contracts. Also retain the independent original parent34/output38 writer/alias and other named receiver proofs. Zero nearby seeds do not certify distant/variable composed addresses, stack/copy aliases or mutable/foreign input absence. Stop this finite method before another source or callback family.
+
+out of scope: queue/registry backing, hash/allocator/loader bodies and per-sample DSP.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no production, fidelity, inventory, PROJECT_STATE, hardware or Q15 change.
