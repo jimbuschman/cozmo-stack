@@ -1,0 +1,58 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009AD258..0x009AD29C exclusive; ARM;
+009AD258: mov          r0, r4
+009AD25C: bl           #0x9a950c
+009AD260: b            #0x9ad088
+009AD264: mov          r0, r4
+009AD268: bl           #0x9a9404
+009AD26C: b            #0x9ad07c
+009AD270: ldr          r3, [r4, #0x38]
+009AD274: cmp          r3, #0
+009AD278: bne          #0x9ad11c
+009AD27C: ldr          ip, [r4, #0x48]
+009AD280: b            #0x9ad160
+009AD284: ldr          r3, [r4, #0x1c]
+009AD288: cmp          r3, #0
+009AD28C: bne          #0x9ad1e8
+009AD290: ldr          ip, [r4, #0x2c]
+009AD294: b            #0x9ad22c
+009AD298: strhteq      r2, [sb], #-0xf0
+RANGE 0x009A9404..0x009A9450 exclusive; ARM;
+009A9404: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009A9408: sub          sp, sp, #0x54
+009A940C: ldr          r5, [r0, #0x30]
+009A9410: cmp          r5, #0
+009A9414: beq          #0x9a94fc
+009A9418: ldr          sb, [pc, #0xe4] ; word[009A9504]=00696C24
+009A941C: add          r3, sp, #0xc
+009A9420: ldr          r8, [pc, #0xe0] ; word[009A9508]=00696C08
+009A9424: mov          r6, r0
+009A9428: mov          r7, #0
+009A942C: movw         sl, #0x403
+009A9430: str          r3, [sp, #4]
+009A9434: ldr          sb, [pc, sb]
+009A9438: ldr          r8, [pc, r8]
+009A943C: b            #0x9a9444
+009A9440: mov          r5, fp
+009A9444: ldr          r4, [r5, #8]
+009A9448: str          r7, [sp, #0xc]
+009A944C: ldr          r0, [r4, #4]
+RANGE 0x009A9494..0x009A94D8 exclusive; ARM;
+009A9494: cmp          r5, r3
+009A9498: strne        fp, [r7]
+009A949C: ldr          r1, [r6, #0x38]
+009A94A0: ldr          r3, [r6, #0x34]
+009A94A4: streq        fp, [r6, #0x30]
+009A94A8: cmp          r5, r3
+009A94AC: ldr          r3, [r6, #0x44]
+009A94B0: streq        r7, [r6, #0x34]
+009A94B4: str          r1, [r5]
+009A94B8: sub          r3, r3, #1
+009A94BC: str          r5, [r6, #0x38]
+009A94C0: ldr          r0, [r4, #4]
+009A94C4: str          r3, [r6, #0x44]
+009A94C8: ldr          r3, [r0]
+009A94CC: ldr          r3, [r3, #0xc]
+009A94D0: blx          r3
+009A94D4: ldr          r3, [r4]

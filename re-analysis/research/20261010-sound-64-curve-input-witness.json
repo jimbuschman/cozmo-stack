@@ -1,0 +1,2070 @@
+{
+  "archiveSha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145",
+  "banks": [
+    {
+      "bank": "Dev_Debug.bnk",
+      "sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "objects": 58,
+      "curves": 2
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "objects": 4055,
+      "curves": 39
+    },
+    {
+      "bank": "Init.bnk",
+      "sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "objects": 28,
+      "curves": 5
+    },
+    {
+      "bank": "Music.bnk",
+      "sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "objects": 674,
+      "curves": 4
+    },
+    {
+      "bank": "SFX.bnk",
+      "sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "objects": 476,
+      "curves": 14
+    },
+    {
+      "bank": "UI.bnk",
+      "sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "objects": 59,
+      "curves": 0
+    }
+  ],
+  "entries": [
+    {
+      "bank": "Dev_Debug.bnk",
+      "objectId": 121198006,
+      "objectType": 7,
+      "ordinal": 0,
+      "offset": 1609,
+      "end": 1647,
+      "sourceId": 3530059848,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 385078160,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          1
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "487068d200010090d3f31602020000000000000080bf010000000000803f0000000004000000",
+      "sha256": "bc73a3d18584d20570081c125396f13ad2d76932ab468df8c27b76bd5811a6f6"
+    },
+    {
+      "bank": "Dev_Debug.bnk",
+      "objectId": 290021808,
+      "objectType": 19,
+      "ordinal": 0,
+      "offset": 1869,
+      "end": 1907,
+      "sourceId": 2324555758,
+      "sourceType": 0,
+      "accumulate": 0,
+      "parameter": 1,
+      "curveId": 1062641094,
+      "scaling": 0,
+      "points": [
+        [
+          "41A00000",
+          "41A00000",
+          4
+        ],
+        [
+          "469C4000",
+          "469C4000",
+          4
+        ]
+      ],
+      "rawHex": "eee78d8a000001c69d563f0002000000a0410000a0410400000000409c4600409c4604000000",
+      "sha256": "bb3f62830c71360c07ecdf950cf0c65bdb7e5d223d492055774adb6d7a6df416"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 528935089,
+      "objectType": 21,
+      "ordinal": 0,
+      "offset": 6006724,
+      "end": 6006762,
+      "sourceId": 3255781855,
+      "sourceType": 0,
+      "accumulate": 0,
+      "parameter": 0,
+      "curveId": 460532349,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "42C80000",
+          4
+        ]
+      ],
+      "rawHex": "df490fc20000007d2a731b0002000000000000000000040000000000803f0000c84204000000",
+      "sha256": "77a989d73e011bcef6850eedf38624c6715682d888ef32f928e22079d43d3b76"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 462443456,
+      "objectType": 9,
+      "ordinal": 0,
+      "offset": 6026521,
+      "end": 6026559,
+      "sourceId": 381606890,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 565623349,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "BF800000",
+          4
+        ]
+      ],
+      "rawHex": "eadbbe1602010035bab6210202000000000000000000040000000000803f000080bf04000000",
+      "sha256": "1367ba20754a046aa56d2ae7eb7e7efe1fab0ebde8940d9c56a82f05df1a8b92"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 110896138,
+      "objectType": 9,
+      "ordinal": 0,
+      "offset": 6030532,
+      "end": 6030570,
+      "sourceId": 528935089,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 821385825,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "44110000",
+          4
+        ]
+      ],
+      "rawHex": "b1e8861f020102615af5300002000000000000000000040000000000803f0000114404000000",
+      "sha256": "4b6a295aeaaf458672a32ddb7aeedce21eb1eeee960add9772e29f6e8b408a70"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 62050212,
+      "objectType": 7,
+      "ordinal": 0,
+      "offset": 6155772,
+      "end": 6155810,
+      "sourceId": 3530059848,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 102905498,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          1
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "487068d20001009a36220602020000000000000080bf010000000000803f0000000004000000",
+      "sha256": "30fa618c4cf6f813db010f63c09289d4c842c42a8e425656defca305c142bb51"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 562241620,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6165206,
+      "end": 6165256,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 581973346,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "C2C80000",
+          4
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43D20000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001026235b022000300000080bf0000c8c2040000000000000000000000040000000000803f0000d24304000000",
+      "sha256": "e19db13f1047b730aa8a0b9ade9b8ec28d0dfc87b184daf11de3e81094bc8f5c"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 562241620,
+      "objectType": 6,
+      "ordinal": 1,
+      "offset": 6165256,
+      "end": 6165294,
+      "sourceId": 823049354,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 195356631,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BC30A715",
+          4
+        ],
+        [
+          "3F800000",
+          "3EBCF329",
+          4
+        ]
+      ],
+      "rawHex": "8abc0e31020100d7e7a40b0202000000000015a730bc040000000000803f29f3bc3e04000000",
+      "sha256": "ac500deccdc00d16b28b3c8a64a05c0bd4a64498539693dd3e4033384272c683"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 562241620,
+      "objectType": 6,
+      "ordinal": 2,
+      "offset": 6165294,
+      "end": 6165332,
+      "sourceId": 756127569,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 346630796,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "42880000",
+          4
+        ]
+      ],
+      "rawHex": "5197112d0201028c2aa9140002000000000000000000040000000000803f0000884204000000",
+      "sha256": "3d822db4405269c1d19ec45cfb4e20931a255d0d86238efde29fc39ec6c0fd8f"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 663268476,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6165696,
+      "end": 6165746,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 473214223,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "C2C80000",
+          4
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43D20000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001020fad341c000300000080bf0000c8c2040000000000000000000000040000000000803f0000d24304000000",
+      "sha256": "229e8f59de03db4062f38df0197ad9c4fd088e1f3373ad0eedaa1ae1b5923639"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 912656189,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6166028,
+      "end": 6166066,
+      "sourceId": 756127569,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 475526035,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "42880000",
+          4
+        ]
+      ],
+      "rawHex": "5197112d02010293f3571c0002000000000000000000040000000000803f0000884204000000",
+      "sha256": "36ef6d4b407a80accf3f5924ae57c225a096d996a98190dc81fae6902036ae74"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 912656189,
+      "objectType": 6,
+      "ordinal": 1,
+      "offset": 6166066,
+      "end": 6166104,
+      "sourceId": 823049354,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 913200768,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BC30A715",
+          4
+        ],
+        [
+          "3F800000",
+          "3EBCF329",
+          4
+        ]
+      ],
+      "rawHex": "8abc0e3102010080566e360202000000000015a730bc040000000000803f29f3bc3e04000000",
+      "sha256": "a5fc23994a73cefda6f3833a0dc3ae0fa4374bb0dce34ac5913f645eba976006"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 912656189,
+      "objectType": 6,
+      "ordinal": 2,
+      "offset": 6166104,
+      "end": 6166154,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 709259817,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "C2C80000",
+          4
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43D20000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001022972462a000300000080bf0000c8c2040000000000000000000000040000000000803f0000d24304000000",
+      "sha256": "a2163f4ca690f0cca52612ad55e4053ef3c052860e6cd59c55289c97ab59a90e"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 912656189,
+      "objectType": 6,
+      "ordinal": 3,
+      "offset": 6166154,
+      "end": 6166192,
+      "sourceId": 272427499,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 2840521,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          9
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "ebe93c10020102c9572b000002000000000000000000090000000000803f0000000004000000",
+      "sha256": "1bde6d75b99a3eefcc12d7ef12b0c93305aeea877215b446c3657796e3b89ec0"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 398651049,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6173820,
+      "end": 6173870,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 717046187,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde78000102ab41bd2a000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "0b4768c05f4f966a379347f8f8c9f63c0345261a3e4da06514a00c46184a74d8"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 708936835,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6174254,
+      "end": 6174304,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 96607992,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde78000102f81ec205000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "e617a09150771c5f503d6d5f817e31d74d4062501c29b9eeb3ddf1ef01f93066"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 744947571,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6174631,
+      "end": 6174681,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 1061051245,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001026d5b3e3f000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "1422f8ba0656b9e911c9890d14eb70ac57044bbe274487664517c0568e3d1324"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 53142486,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6174934,
+      "end": 6174972,
+      "sourceId": 865077387,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 916992272,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BC30A715",
+          4
+        ],
+        [
+          "3F800000",
+          "3EBCF329",
+          4
+        ]
+      ],
+      "rawHex": "8b0890330201001031a8360202000000000015a730bc040000000000803f29f3bc3e04000000",
+      "sha256": "ba551e110701b79e6596c6f185e265d738785ae13f000cbbf3784baf92260575"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 70808982,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6175318,
+      "end": 6175368,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 250151951,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001020f04e90e000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "0ba5cecf5e2f0454312df57a70e5cd3cf15b87efe107a111bec14d82233a3444"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 70808982,
+      "objectType": 6,
+      "ordinal": 1,
+      "offset": 6175368,
+      "end": 6175418,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 664910723,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "C2C80000",
+          4
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43D20000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde7800010283bba127000300000080bf0000c8c2040000000000000000000000040000000000803f0000d24304000000",
+      "sha256": "373985986654abbc625f7428fb0c1ebaf1d0cdad519ecd764cecdb82f6a959e0"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 152131813,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6175656,
+      "end": 6175694,
+      "sourceId": 604656094,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 577954642,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          9
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "de510a2402010252e372220002000000000000000000090000000000803f0000000004000000",
+      "sha256": "d6219caabf7f32bc12ff66eec0a64062eacaaa698da7bcfea4414e1aa5f24b10"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 152131813,
+      "objectType": 6,
+      "ordinal": 1,
+      "offset": 6175694,
+      "end": 6175744,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 904532,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde7800010254cd0d00000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "1f003f598e9264abf6709cc2589fdfaeb7299a8db74b2d32c75ed2daa6974887"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 259796656,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6176115,
+      "end": 6176153,
+      "sourceId": 604656094,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 294904119,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          9
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "de510a2402010237e193110002000000000000000000090000000000803f0000000004000000",
+      "sha256": "a4aae4653cd7436c008f871afbaea9b1b280b3ba8a63300f99c1e8196a7c2af2"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 259796656,
+      "objectType": 6,
+      "ordinal": 1,
+      "offset": 6176153,
+      "end": 6176203,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 1014469240,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001027892773c000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "318d786721bca83cbeab85ae57e5a0231524c8cd381a0ade8e04f44bab68fd9d"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 114912805,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6176475,
+      "end": 6176513,
+      "sourceId": 823049354,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 968619729,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "3EBCF329",
+          4
+        ]
+      ],
+      "rawHex": "8abc0e31020100d1f6bb390202000000000000000000040000000000803f29f3bc3e04000000",
+      "sha256": "7a3b82e941926c54ac979c1a0dedee38022d2fd278482944d92ea6d6cbac0cec"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 519811384,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6176859,
+      "end": 6176909,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 333315618,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "C2C80000",
+          4
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde7800010222fedd13000300000080bf0000c8c2040000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "75f129f70ce8a50427fe74a26d0f52302c53005e77f30e41f88b5ab473da27cc"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 705165251,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6177236,
+      "end": 6177274,
+      "sourceId": 242033262,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 45183369,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "42880000",
+          4
+        ]
+      ],
+      "rawHex": "6e226d0e0201028971b1020002000000000000000000040000000000803f0000884204000000",
+      "sha256": "6bd0996c8a2a577221695bdb504d0ab14c2cd7d4d6db1097ad8b1b6ec0343a28"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 705165251,
+      "objectType": 6,
+      "ordinal": 1,
+      "offset": 6177274,
+      "end": 6177324,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 677436764,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001025cdd6028000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "20a5015ec367372841d98483cc2eeabce3f18887e094a81b82a05b7f326bc29f"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 705165251,
+      "objectType": 6,
+      "ordinal": 2,
+      "offset": 6177324,
+      "end": 6177362,
+      "sourceId": 870948569,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 711221067,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BC30A715",
+          4
+        ],
+        [
+          "3F800000",
+          "3EBCF329",
+          4
+        ]
+      ],
+      "rawHex": "d99ee9330201004b5f642a0202000000000015a730bc040000000000803f29f3bc3e04000000",
+      "sha256": "0d7a386714f7ce8a2dd93aad705bcbc5d08cc10f9538f47bbd209c676a6f9bb6"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 1042141457,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6177652,
+      "end": 6177702,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 838723823,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde78000102efe8fd31000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "7d965fe18ad032a8343773ff277b31692bdc1e0f6b4d1e3217e6d58ac92c28cf"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 315546930,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6177933,
+      "end": 6177971,
+      "sourceId": 870948569,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 260431088,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BC30A715",
+          4
+        ],
+        [
+          "3F800000",
+          "3EBCF329",
+          4
+        ]
+      ],
+      "rawHex": "d99ee933020100f0dc850f0202000000000015a730bc040000000000803f29f3bc3e04000000",
+      "sha256": "0621126efb3c227257e0c71f5450830a69650cd1ff345ac3ed0a6f63abe6f1ad"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 485805870,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6178295,
+      "end": 6178345,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 824672908,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde780001028c822731000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "4d354196ff0219a9e213e8407ba1d8ae8fceff03d74cd39177f3e9f47dd4a6f0"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 703213608,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6178737,
+      "end": 6178787,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 485816372,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde7800010234f8f41c000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "47ca2c55445cd7a70691429eeea7341452bf68c043410ff7888115f8d063628f"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 736611133,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6179030,
+      "end": 6179080,
+      "sourceId": 2027863301,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 525160257,
+      "scaling": 0,
+      "points": [
+        [
+          "BF800000",
+          "00000000",
+          9
+        ],
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "43C80000",
+          4
+        ]
+      ],
+      "rawHex": "05bdde78000102414f4d1f000300000080bf00000000090000000000000000000000040000000000803f0000c84304000000",
+      "sha256": "e5de41db9e39cffba5927badaa76ad66d467c225bf14196f12c33edd18ad8094"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 681861550,
+      "objectType": 6,
+      "ordinal": 0,
+      "offset": 6179292,
+      "end": 6179330,
+      "sourceId": 655524060,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 784229404,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BC30A715",
+          4
+        ],
+        [
+          "3F800000",
+          "3EBCF329",
+          4
+        ]
+      ],
+      "rawHex": "dc8012270201001c64be2e0202000000000015a730bc040000000000803f29f3bc3e04000000",
+      "sha256": "b3955d4cfb8d85328cbc578d6487112ebb4c17940a97b09f37d4caf217eae471"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 642872386,
+      "objectType": 7,
+      "ordinal": 0,
+      "offset": 6192319,
+      "end": 6192357,
+      "sourceId": 3081923682,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 1032361063,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          9
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "626cb2b70001006794883d0202000000000000000000090000000000803f0000000004000000",
+      "sha256": "d53a45559d2973d84651793752bce1b042623cf3e2c76d9ee59a092f55868999"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 488456281,
+      "objectType": 5,
+      "ordinal": 0,
+      "offset": 6204388,
+      "end": 6204426,
+      "sourceId": 3081923682,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 711736235,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "3E3464B7",
+          4
+        ]
+      ],
+      "rawHex": "626cb2b7000100ab3b6c2a0202000000000000000000040000000000803fb764343e04000000",
+      "sha256": "5b31e5be4d5ba48a7b1556dbf8eb8bff71fd64f40277704ea7150130646b9ee6"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 1000217986,
+      "objectType": 7,
+      "ordinal": 0,
+      "offset": 6205674,
+      "end": 6205712,
+      "sourceId": 680645904,
+      "sourceType": 2,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 20533817,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          9
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "10d59128020102395239010002000000000000000000090000000000803f0000000004000000",
+      "sha256": "290d59a2c3fc7f930cdc528149b18530288d0fbae0dd874347e61a4647f10195"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 1000217986,
+      "objectType": 7,
+      "ordinal": 1,
+      "offset": 6205712,
+      "end": 6205750,
+      "sourceId": 3081923682,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 1010615495,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "3E226950",
+          4
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "626cb2b7000100c7c43c3c020200000000005069223e040000000000803f0000000004000000",
+      "sha256": "540383bf1c2f073e07af0c28aed3ae76d860be24bc432acdde39b8c84dc6e14a"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 682998829,
+      "objectType": 7,
+      "ordinal": 0,
+      "offset": 6206023,
+      "end": 6206061,
+      "sourceId": 3530059848,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 520590715,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          1
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "487068d20001007b95071f02020000000000000080bf010000000000803f0000000004000000",
+      "sha256": "45492a6505d03e70f2184923d798773675dc68789de9e3930d901e7bb7743f5e"
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "objectId": 2196628262,
+      "objectType": 18,
+      "ordinal": 0,
+      "offset": 6213526,
+      "end": 6213564,
+      "sourceId": 3081923682,
+      "sourceType": 0,
+      "accumulate": 0,
+      "parameter": 4,
+      "curveId": 55303899,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "BF7FFEF6",
+          4
+        ]
+      ],
+      "rawHex": "626cb2b7000004dbde4b030202000000000000000000040000000000803ff6fe7fbf04000000",
+      "sha256": "1e923cb5d9c6c79a44ee9454e597c5eb56dad18ba36c990d139fed186641d61f"
+    },
+    {
+      "bank": "Init.bnk",
+      "objectId": 393239870,
+      "objectType": 8,
+      "ordinal": 0,
+      "offset": 1519,
+      "end": 1557,
+      "sourceId": 1564184899,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 569137423,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          4
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "43913b5d0001000f59ec2102020000000000000080bf040000000000803f0000000004000000",
+      "sha256": "47e77a6bc6c65d93c5010f20f7ed309e86e50ecc0d85e75b8c505b9a96fc0cf3"
+    },
+    {
+      "bank": "Init.bnk",
+      "objectId": 1534528548,
+      "objectType": 8,
+      "ordinal": 0,
+      "offset": 1744,
+      "end": 1782,
+      "sourceId": 2295491857,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 1033327194,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          4
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "116dd2880001005a52973d02020000000000000080bf040000000000803f0000000004000000",
+      "sha256": "c27ad6979bdb8523b58bfc0f082fdf5ac354be1288939f8cea8b6c1d704dda3a"
+    },
+    {
+      "bank": "Init.bnk",
+      "objectId": 1551306167,
+      "objectType": 8,
+      "ordinal": 0,
+      "offset": 1865,
+      "end": 1903,
+      "sourceId": 1719345792,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 876013502,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          4
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "80227b66000100bee7363402020000000000000080bf040000000000803f0000000004000000",
+      "sha256": "499dc5c9f68b04aa7bc791e83a90fa155e6c13ae2d61c83596ab386592ea69d3"
+    },
+    {
+      "bank": "Init.bnk",
+      "objectId": 1723505802,
+      "objectType": 8,
+      "ordinal": 0,
+      "offset": 1986,
+      "end": 2024,
+      "sourceId": 1669075520,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 5,
+      "curveId": 183055749,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "C3480000",
+          6
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "40127c630001058535e90a00020000000000000048c3060000000000803f0000000004000000",
+      "sha256": "060db49b87cef00aee2185b9eb4d4d365d7537f287a1c0cd0a2bd846d83460e3"
+    },
+    {
+      "bank": "Init.bnk",
+      "objectId": 3991942870,
+      "objectType": 8,
+      "ordinal": 0,
+      "offset": 2591,
+      "end": 2629,
+      "sourceId": 1006694123,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 134572302,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          7
+        ],
+        [
+          "3F800000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "ebee003c0001000e69050802020000000000000080bf070000000000803f0000000004000000",
+      "sha256": "f5e6ebab876b8c2abb659f43b378dc84d9fcbfcd3c5da8f6447f703cafef799c"
+    },
+    {
+      "bank": "Music.bnk",
+      "objectId": 617874334,
+      "objectType": 13,
+      "ordinal": 0,
+      "offset": 1003560,
+      "end": 1003598,
+      "sourceId": 3919823198,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 3,
+      "curveId": 75313583,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "42200000",
+          4
+        ]
+      ],
+      "rawHex": "5ec1a3e9000103af317d040002000000000000000000040000000000803f0000204204000000",
+      "sha256": "27b62c34a01e1bc402aa21ef435d1f56ab80d22c7aad694e8abb5e7a9e48712d"
+    },
+    {
+      "bank": "Music.bnk",
+      "objectId": 617874334,
+      "objectType": 13,
+      "ordinal": 1,
+      "offset": 1003598,
+      "end": 1003636,
+      "sourceId": 3919823198,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 663008154,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "BF252AF3",
+          4
+        ]
+      ],
+      "rawHex": "5ec1a3e90001009ab384270202000000000000000000040000000000803ff32a25bf04000000",
+      "sha256": "5baf713d3a07ec31c4c07d8450f3387cd63032f0ba7423dd93a0ef17a4aeae15"
+    },
+    {
+      "bank": "Music.bnk",
+      "objectId": 1035231231,
+      "objectType": 13,
+      "ordinal": 0,
+      "offset": 1033686,
+      "end": 1033724,
+      "sourceId": 3919823198,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 3,
+      "curveId": 652330538,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "42200000",
+          4
+        ]
+      ],
+      "rawHex": "5ec1a3e90001032ac6e1260002000000000000000000040000000000803f0000204204000000",
+      "sha256": "fa96c29072beac90a8b3da6afabbb810b11c595481c1407131d326060f2a578b"
+    },
+    {
+      "bank": "Music.bnk",
+      "objectId": 1035231231,
+      "objectType": 13,
+      "ordinal": 1,
+      "offset": 1033724,
+      "end": 1033762,
+      "sourceId": 3919823198,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 825768256,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "3F800000",
+          "BF252AF3",
+          4
+        ]
+      ],
+      "rawHex": "5ec1a3e9000100403938310202000000000000000000040000000000803ff32a25bf04000000",
+      "sha256": "e2affc29cd2801e11cac44e62fef5369c561e0c59c40fa20dc590534bc21d8e2"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 16595295,
+      "objectType": 2,
+      "ordinal": 0,
+      "offset": 85816,
+      "end": 85902,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 707887632,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "40A0B478",
+          "4489A000",
+          4
+        ],
+        [
+          "4120B471",
+          "44C66000",
+          4
+        ],
+        [
+          "41708755",
+          "4516F000",
+          4
+        ],
+        [
+          "41C00000",
+          "452BF000",
+          9
+        ],
+        [
+          "41F00000",
+          "452BF000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e800001021082312a00060000000000000000000400000078b4a04000a089440400000071b420410060c644040000005587704100f01645040000000000c04100f02b45090000000000f04100f02b4504000000",
+      "sha256": "cfec07ae49d99a32cade9831e52937cfd7f649060fb993ace93d7968dd55f756"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 16595295,
+      "objectType": 2,
+      "ordinal": 1,
+      "offset": 85902,
+      "end": 85964,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 242287191,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BEBF016F",
+          4
+        ],
+        [
+          "40B3C2CE",
+          "00000000",
+          9
+        ],
+        [
+          "41B40FFC",
+          "00000000",
+          4
+        ],
+        [
+          "41F00000",
+          "BEA9C845",
+          4
+        ]
+      ],
+      "rawHex": "f7296e800001005702710e020400000000006f01bfbe04000000cec2b3400000000009000000fc0fb44100000000040000000000f04145c8a9be04000000",
+      "sha256": "e8dd25795ca7637339390958af5a4fb005105381926a9e3a5e8d81435f84e6b2"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 151388137,
+      "objectType": 2,
+      "ordinal": 0,
+      "offset": 86035,
+      "end": 86097,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 679665524,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "3EF95E29",
+          4
+        ],
+        [
+          "40B3C2CE",
+          "00000000",
+          9
+        ],
+        [
+          "41B40FFC",
+          "00000000",
+          4
+        ],
+        [
+          "41F00000",
+          "BEA9C845",
+          4
+        ]
+      ],
+      "rawHex": "f7296e8000010074df822802040000000000295ef93e04000000cec2b3400000000009000000fc0fb44100000000040000000000f04145c8a9be04000000",
+      "sha256": "27eab92d4982f0007366f0979f0672669138b9ab5dfc7805d98f3924419526b4"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 151388137,
+      "objectType": 2,
+      "ordinal": 1,
+      "offset": 86097,
+      "end": 86147,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 770430967,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "41C00000",
+          "452BF000",
+          9
+        ],
+        [
+          "41F00000",
+          "452BF000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e80000102f7d7eb2d0003000000000000000000040000000000c04100f02b45090000000000f04100f02b4504000000",
+      "sha256": "fe005cddd6236f25748db5a2c46f6fe00c23960d175aa849aef0f582de6beac5"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 215479071,
+      "objectType": 2,
+      "ordinal": 0,
+      "offset": 86218,
+      "end": 86292,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 3,
+      "curveId": 313420454,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "42C80000",
+          9
+        ],
+        [
+          "4066A9BD",
+          "42C80000",
+          4
+        ],
+        [
+          "411E2B8A",
+          "42180000",
+          4
+        ],
+        [
+          "419C2AC8",
+          "BF800000",
+          4
+        ],
+        [
+          "41F00000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e80000103a66aae12000500000000000000c84209000000bda966400000c842040000008a2b1e410000184204000000c82a9c41000080bf040000000000f0410000000004000000",
+      "sha256": "bfc9db1fe58012f9ab52d350b4427a4532eaf1ce25c369da302cd59c78233978"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 215479071,
+      "objectType": 2,
+      "ordinal": 1,
+      "offset": 86292,
+      "end": 86354,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 293084204,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "BF800000",
+          4
+        ],
+        [
+          "41474ECF",
+          "BC29C8D9",
+          4
+        ],
+        [
+          "41B40FFC",
+          "00000000",
+          4
+        ],
+        [
+          "41F00000",
+          "BEA9C845",
+          4
+        ]
+      ],
+      "rawHex": "f7296e800001002c1c781102040000000000000080bf04000000cf4e4741d9c829bc04000000fc0fb44100000000040000000000f04145c8a9be04000000",
+      "sha256": "f4ce2e25b079a19d07a6401e9c4f7faf6b3211e0fe9f4be9fe785b99f016c86b"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 215479071,
+      "objectType": 2,
+      "ordinal": 2,
+      "offset": 86354,
+      "end": 86416,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 957373450,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "4147D2E7",
+          "44758000",
+          4
+        ],
+        [
+          "41C00000",
+          "44B54000",
+          9
+        ],
+        [
+          "41F00000",
+          "44B54000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e800001020a5c1039000400000000000000000004000000e7d2474100807544040000000000c0410040b544090000000000f0410040b54404000000",
+      "sha256": "30fcc0fc41c5f17a31405da488ecd1725fd1a2b3bd2420b79d03b83283c881c8"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 674023042,
+      "objectType": 2,
+      "ordinal": 0,
+      "offset": 86487,
+      "end": 86573,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 3,
+      "curveId": 40784312,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "42C80000",
+          9
+        ],
+        [
+          "400DDA27",
+          "42C80000",
+          4
+        ],
+        [
+          "411F3A34",
+          "42540000",
+          4
+        ],
+        [
+          "41A05431",
+          "41B80000",
+          4
+        ],
+        [
+          "41D00000",
+          "41700000",
+          4
+        ],
+        [
+          "41F00000",
+          "41300000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e80000103b8516e02000600000000000000c8420900000027da0d400000c84204000000343a1f4100005442040000003154a0410000b841040000000000d04100007041040000000000f0410000304104000000",
+      "sha256": "4d6d98f1d19dc077481ec859b977cbdad127faf985d819c07348652b419e1eb6"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 674023042,
+      "objectType": 2,
+      "ordinal": 1,
+      "offset": 86573,
+      "end": 86623,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 530683033,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "41C00000",
+          "448B4000",
+          9
+        ],
+        [
+          "41F00000",
+          "448B4000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e800001029994a11f0003000000000000000000040000000000c04100408b44090000000000f04100408b4404000000",
+      "sha256": "cfe3cb765eebeaef98a4bd698a28c48cf684c1082e0513a0132e754b779af7ce"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 674023042,
+      "objectType": 2,
+      "ordinal": 2,
+      "offset": 86623,
+      "end": 86661,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 854997663,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          9
+        ],
+        [
+          "41F00000",
+          "00000000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e800001009f3af6320202000000000000000000090000000000f0410000000004000000",
+      "sha256": "d88ef610eb312ea031c8c5fed7b5968d57cec118bd9392f67893f5d557276d54"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 1042803677,
+      "objectType": 2,
+      "ordinal": 0,
+      "offset": 86732,
+      "end": 86806,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 530693599,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "43C80000",
+          4
+        ],
+        [
+          "414849AB",
+          "447C0000",
+          4
+        ],
+        [
+          "418C1A51",
+          "44F9C000",
+          4
+        ],
+        [
+          "41C00000",
+          "452F0000",
+          9
+        ],
+        [
+          "41F00000",
+          "452F0000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e80000102dfbda11f000500000000000000c84304000000ab49484100007c4404000000511a8c4100c0f944040000000000c04100002f45090000000000f04100002f4504000000",
+      "sha256": "1e4709d7980c8c02b9919ce5067bc42618da1fd9a388a58468844c632b0f42e5"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 1042803677,
+      "objectType": 2,
+      "ordinal": 1,
+      "offset": 86806,
+      "end": 86892,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 312738799,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "3E69739D",
+          4
+        ],
+        [
+          "41334990",
+          "3D29C81B",
+          4
+        ],
+        [
+          "41863E87",
+          "BD29C81B",
+          4
+        ],
+        [
+          "41A0E8B7",
+          "BE8E6CF0",
+          4
+        ],
+        [
+          "41D00000",
+          "BF16418E",
+          4
+        ],
+        [
+          "41F00000",
+          "BF19DD7A",
+          4
+        ]
+      ],
+      "rawHex": "f7296e80000100ef03a412020600000000009d73693e04000000904933411bc8293d04000000873e86411bc829bd04000000b7e8a041f06c8ebe040000000000d0418e4116bf040000000000f0417add19bf04000000",
+      "sha256": "184be6daae7f2209e5aedf2834373e882237e680d41da93fcf8c93d218bd4296"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 908307247,
+      "objectType": 2,
+      "ordinal": 0,
+      "offset": 92243,
+      "end": 92293,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 2,
+      "curveId": 37030127,
+      "scaling": 0,
+      "points": [
+        [
+          "00000000",
+          "00000000",
+          4
+        ],
+        [
+          "41C00000",
+          "452BF000",
+          9
+        ],
+        [
+          "41F00000",
+          "452BF000",
+          4
+        ]
+      ],
+      "rawHex": "f7296e80000102ef0835020003000000000000000000040000000000c04100f02b45090000000000f04100f02b4504000000",
+      "sha256": "a486a4b0a15736e439b2fc6d2bd9fe42afd8f81527bfe9325debfc074bcd08a3"
+    },
+    {
+      "bank": "SFX.bnk",
+      "objectId": 908307247,
+      "objectType": 2,
+      "ordinal": 1,
+      "offset": 92293,
+      "end": 92355,
+      "sourceId": 2154703351,
+      "sourceType": 0,
+      "accumulate": 1,
+      "parameter": 0,
+      "curveId": 158377260,
+      "scaling": 2,
+      "points": [
+        [
+          "00000000",
+          "3EF95E29",
+          4
+        ],
+        [
+          "40B3C2CE",
+          "00000000",
+          9
+        ],
+        [
+          "41B40FFC",
+          "00000000",
+          4
+        ],
+        [
+          "41F00000",
+          "BEA9C845",
+          4
+        ]
+      ],
+      "rawHex": "f7296e800001002ca5700902040000000000295ef93e04000000cec2b3400000000009000000fc0fb44100000000040000000000f04145c8a9be04000000",
+      "sha256": "f951b74838734e2f2b1d552610dcfefc3bb826862731b33612c798eca34bb99f"
+    }
+  ]
+}

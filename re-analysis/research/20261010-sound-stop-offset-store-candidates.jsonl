@@ -1,0 +1,9 @@
+{"address": "00988264", "word": "358031F8", "base": 0, "source": 3, "positive": true, "navigation": null}
+{"address": "009886D0", "word": "E58021F8", "base": 0, "source": 2, "positive": true, "navigation": null}
+{"address": "009CBAD8", "word": "E58321F8", "base": 3, "source": 2, "positive": true, "navigation": null}
+{"address": "00A00318", "word": "E58471F8", "base": 4, "source": 7, "positive": true, "navigation": "00a0/00a000e8.c"}
+{"address": "00A3E958", "word": "E58571F8", "base": 5, "source": 7, "positive": true, "navigation": "00a3/00a3e920.c"}
+{"address": "00A3EB88", "word": "E58071F8", "base": 0, "source": 7, "positive": true, "navigation": "00a3/00a3eb4c.c"}
+{"address": "00A90278", "word": "E50A41F8", "base": 10, "source": 4, "positive": false, "navigation": "00a8/00a8fef4.c"}
+{"address": "00A902DC", "word": "E50951F8", "base": 9, "source": 5, "positive": false, "navigation": "00a8/00a8fef4.c"}
+{"address": "00A90338", "word": "E504A1F8", "base": 4, "source": 10, "positive": false, "navigation": "00a8/00a8fef4.c"}

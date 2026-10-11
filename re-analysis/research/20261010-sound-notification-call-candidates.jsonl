@@ -1,0 +1,9 @@
+{"address": "00A01814", "word": "EA00DB79", "navigation": "00a0/00a01800.c"}
+{"address": "00A0183C", "word": "EA00DB6F", "navigation": "00a0/00a01818.c"}
+{"address": "009AFA94", "word": "EB022261", "target": "00A38420"}
+{"address": "009D3814", "word": "EB00B7F9", "target": "00A01800"}
+{"address": "00A38694", "word": "EBFFFF61", "target": "00A38420"}
+{"address": "00A43168", "word": "EBFEF9A4", "target": "00A01800"}
+{"address": "00A559AC", "word": "EBFEAF93", "target": "00A01800"}
+{"address": "00A5643C", "word": "EBFEACEF", "target": "00A01800"}
+{"address": "00A564E4", "word": "EBFEACCB", "target": "00A01818"}

@@ -1,0 +1,120 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D27CC..0x009D2870 exclusive; ARM;
+009D27CC: rsbeq        r8, r6, r8, asr #17
+009D27D0: ldr          r0, [r0, #0x80]
+009D27D4: cmp          r0, #0
+009D27D8: bxeq         lr
+009D27DC: cmp          r1, #0
+009D27E0: beq          #0x9d283c
+009D27E4: cmp          r2, #0
+009D27E8: bne          #0x9d2820
+009D27EC: ldr          r2, [r0, #4]
+009D27F0: cmp          r2, r1
+009D27F4: streq        r3, [r0, #0x34]
+009D27F8: ldr          r0, [r0]
+009D27FC: cmp          r0, #0
+009D2800: bne          #0x9d27ec
+009D2804: bx           lr
+009D2808: ldr          ip, [r0, #0x30]
+009D280C: cmp          r2, ip
+009D2810: streq        r3, [r0, #0x34]
+009D2814: ldr          r0, [r0]
+009D2818: cmp          r0, #0
+009D281C: beq          #0x9d2838
+009D2820: ldr          ip, [r0, #4]
+009D2824: cmp          ip, r1
+009D2828: beq          #0x9d2808
+009D282C: ldr          r0, [r0]
+009D2830: cmp          r0, #0
+009D2834: bne          #0x9d2820
+009D2838: bx           lr
+009D283C: cmp          r2, #0
+009D2840: beq          #0x9d2860
+009D2844: ldr          r1, [r0, #0x30]
+009D2848: cmp          r2, r1
+009D284C: streq        r3, [r0, #0x34]
+009D2850: ldr          r0, [r0]
+009D2854: cmp          r0, #0
+009D2858: bne          #0x9d2844
+009D285C: bx           lr
+009D2860: str          r3, [r0, #0x34]
+009D2864: ldr          r0, [r0]
+009D2868: cmp          r0, #0
+009D286C: bne          #0x9d2860
+RANGE 0x009C9FB0..0x009CA018 exclusive; ARM;
+009C9FB0: mov          r0, r6
+009C9FB4: mov          r1, #1
+009C9FB8: bl           #0x4d66a0
+009C9FBC: mov          r1, r6
+009C9FC0: add          r0, r4, #0x1c
+009C9FC4: bl           #0x4d66ac
+009C9FC8: mov          r0, r6
+009C9FCC: bl           #0x4d66b8
+009C9FD0: mov          r0, r4
+009C9FD4: str          r8, [r4, #0x44]
+009C9FD8: str          r5, [r4, #0x20]
+009C9FDC: str          r5, [r4, #0x24]
+009C9FE0: str          r5, [r4, #0x30]
+009C9FE4: str          r5, [r4, #0x34]
+009C9FE8: str          r5, [r4, #0x38]
+009C9FEC: str          r5, [r4, #0x28]
+009C9FF0: strb         r5, [r4, #0x40]
+009C9FF4: str          r5, [r4, #0x48]
+009C9FF8: str          r5, [r4, #0x4c]
+009C9FFC: str          r5, [r4, #0x50]
+009CA000: str          r5, [r4, #0x54]
+009CA004: str          r5, [r4, #0x58]
+009CA008: str          r5, [r4, #0x5c]
+009CA00C: str          r5, [r4, #0x60]
+009CA010: str          r5, [r4, #0x64]
+009CA014: str          r5, [r4, #0x68]
+RANGE 0x009CA2E0..0x009CA350 exclusive; ARM;
+009CA2E0: add          r3, r3, #8
+009CA2E4: str          r5, [r4, #0x14]
+009CA2E8: str          r3, [r4]
+009CA2EC: str          r5, [r4, #0x18]
+009CA2F0: bl           #0x4d6694
+009CA2F4: mov          r1, #1
+009CA2F8: mov          r0, r6
+009CA2FC: bl           #0x4d66a0
+009CA300: mov          r1, r6
+009CA304: add          r0, r4, #0x1c
+009CA308: bl           #0x4d66ac
+009CA30C: mov          r0, r6
+009CA310: bl           #0x4d66b8
+009CA314: str          r5, [r4, #0x20]
+009CA318: str          r5, [r4, #0x24]
+009CA31C: mov          r0, r4
+009CA320: str          r5, [r4, #0x30]
+009CA324: str          r5, [r4, #0x34]
+009CA328: str          r5, [r4, #0x38]
+009CA32C: str          r5, [r4, #0x28]
+009CA330: strb         r5, [r4, #0x40]
+009CA334: str          r5, [r4, #0x48]
+009CA338: str          r5, [r4, #0x4c]
+009CA33C: str          r5, [r4, #0x50]
+009CA340: str          r5, [r4, #0x54]
+009CA344: str          r5, [r4, #0x58]
+009CA348: str          r5, [r4, #0x5c]
+009CA34C: str          r5, [r4, #0x60]
+RANGE 0x009CDC08..0x009CDC54 exclusive; ARM;
+009CDC08: str          r3, [r4, #0x14]
+009CDC0C: add          r2, pc, r2
+009CDC10: str          r1, [r4, #0x10]
+009CDC14: add          r2, r2, #8
+009CDC18: mov          r0, r4
+009CDC1C: str          r2, [r4]
+009CDC20: str          r3, [r4, #0x18]
+009CDC24: str          r3, [r4, #0x1c]
+009CDC28: str          r3, [r4, #0x20]
+009CDC2C: str          r3, [r4, #0x24]
+009CDC30: str          r3, [r4, #0x28]
+009CDC34: str          r3, [r4, #0x2c]
+009CDC38: str          r3, [r4, #0x30]
+009CDC3C: str          r3, [r4, #0x34]
+009CDC40: str          r3, [r4, #0x38]
+009CDC44: pop          {r4, pc}
+009CDC48: rsbeq        sp, r6, ip, ror r3
+009CDC4C: ldr          r1, [r0, #0x28]
+009CDC50: ldr          r3, [pc, #0x128] ; word[009CDD80]=0066D328

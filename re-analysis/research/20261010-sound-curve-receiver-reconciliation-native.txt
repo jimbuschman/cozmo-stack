@@ -1,0 +1,29 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+0101C428: raw=00A515F0 relocated=00A515F0
+0101C42C: raw=00A515F4 relocated=00A515F4
+0101C430: raw=009EC5FC relocated=009EC5FC
+0101C434: raw=009EC5E4 relocated=009EC5E4
+0101C438: raw=009EC5AC relocated=009EC5AC
+0101C43C: raw=009EC5BC relocated=009EC5BC
+0101C488: raw=00A55ED0 relocated=00A55ED0
+0101C48C: raw=00A55ED4 relocated=00A55ED4
+0101C490: raw=009EC5FC relocated=009EC5FC
+0101C494: raw=009EC5E4 relocated=009EC5E4
+0101C498: raw=009EC5AC relocated=009EC5AC
+0101C49C: raw=009EC5BC relocated=009EC5BC
+RANGE 0x009EC5BC..0x009EC5D8 exclusive; ARM;
+009EC5BC: ldr          r0, [r0, #4]
+009EC5C0: cmp          r0, #0
+009EC5C4: bxeq         lr
+009EC5C8: ldr          ip, [r0]
+009EC5CC: sxth         r1, r1
+009EC5D0: ldr          ip, [ip, #8]
+009EC5D4: bx           ip
+RANGE 0x009EC5E4..0x009EC5FC exclusive; ARM;
+009EC5E4: ldr          r0, [r0, #8]
+009EC5E8: cmp          r0, #0
+009EC5EC: beq          #0x9ec5f4
+009EC5F0: b            #0x9ce73c
+009EC5F4: mov          r0, #0
+009EC5F8: bx           lr

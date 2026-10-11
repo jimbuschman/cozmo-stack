@@ -1,0 +1,13 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+NAVIGATION ONLY: ARM/Thumb PC literals and selected MOVW/MOVT propagation; 768-byte local possible-branch windows, conditional instructions possible, call-clobbers; actual bodies must be reopened.
+processed candidate windows 413
+{"address":"0099DD88","mode":"ARM","kind":"read","effective":"0108D9A4","instruction":"ldr r1, [r4]","seeds":["0099DCF4","0099DD10","0099DD30","0099DD6C"]}
+{"address":"0099DD94","mode":"ARM","kind":"write","effective":"0108D9A8","instruction":"str r5, [r4, #4]","seeds":["0099DCF4","0099DD10","0099DD30","0099DD6C"]}
+{"address":"0099DDA0","mode":"ARM","kind":"write","effective":"0108D9A4","instruction":"str r5, [r4]","seeds":["0099DCF4","0099DD10","0099DD30","0099DD6C"]}
+{"address":"0099DDA4","mode":"ARM","kind":"write","effective":"0108D9A0","instruction":"str r5, [r4, #8]","seeds":["0099DCF4","0099DD10","0099DD30","0099DD6C"]}
+{"address":"0099DDA4","mode":"ARM","kind":"write","effective":"0108D9AC","instruction":"str r5, [r4, #8]","seeds":["0099DCF4","0099DD10","0099DD30","0099DD6C"]}
+{"address":"009A5E38","mode":"ARM","kind":"write","effective":"0108D9A8","instruction":"str sb, [r4, #4]","seeds":["009A5D50"]}
+{"address":"009A757C","mode":"ARM","kind":"write","effective":"0108D9A8","instruction":"str r8, [r4, #4]","seeds":["009A7494"]}
+{"address":"009B2270","mode":"ARM","kind":"read","effective":"0108D9A0","instruction":"ldr r3, [r2]","seeds":["009B2268"]}
+{"address":"009B2284","mode":"ARM","kind":"read","effective":"0108D9AC","instruction":"ldr lr, [r2, #0xc]","seeds":["009B2268"]}
+LIMIT: encoding/navigation local windows only; mixed-mode false candidates, shifted index, unmodelled branch flags/loop bounds, path merge, stack aliases, external mutation, computed/indirect inputs and pointer escape need primary checks. No exhaustive runtime writer absence.

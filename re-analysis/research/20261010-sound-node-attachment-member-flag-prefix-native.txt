@@ -1,0 +1,25 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+009F68D0: raw=00649FF8 relocated=00649FF8
+009F68D4: raw=FFFFFDBC relocated=FFFFFDBC
+009F68D8: raw=E5D03045 relocated=E5D03045
+009F68DC: raw=E7E021D3 relocated=E7E021D3
+009F68E0: raw=E1520001 relocated=E1520001
+009F68E4: raw=012FFF1E relocated=012FFF1E
+009F68E8: raw=E5902030 relocated=E5902030
+009F68EC: raw=E7C33191 relocated=E7C33191
+009F68F0: raw=E5C03045 relocated=E5C03045
+009F68F4: raw=E3520000 relocated=E3520000
+009F68F8: raw=012FFF1E relocated=012FFF1E
+009F68FC: raw=E5920004 relocated=E5920004
+RANGE 0x009F68D8..0x009F6900 exclusive; ARM;
+009F68D8: ldrb         r3, [r0, #0x45]
+009F68DC: ubfx         r2, r3, #3, #1
+009F68E0: cmp          r2, r1
+009F68E4: bxeq         lr
+009F68E8: ldr          r2, [r0, #0x30]
+009F68EC: bfi          r3, r1, #3, #1
+009F68F0: strb         r3, [r0, #0x45]
+009F68F4: cmp          r2, #0
+009F68F8: bxeq         lr
+009F68FC: ldr          r0, [r2, #4]

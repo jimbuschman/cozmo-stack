@@ -1,0 +1,58 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009EF8B0..0x009EF900 exclusive; ARM;
+009EF8B0: b            #0x9ef8c0
+009EF8B4: cmp          lr, r1
+009EF8B8: mov          r0, lr
+009EF8BC: bhs          #0x9ef96c
+009EF8C0: ldrb         ip, [r3, #1]!
+009EF8C4: add          lr, r0, #1
+009EF8C8: cmp          ip, #6
+009EF8CC: bne          #0x9ef8b4
+009EF8D0: add          r1, r1, #4
+009EF8D4: bic          r1, r1, #3
+009EF8D8: add          r0, r1, r0, lsl #3
+009EF8DC: adds         r2, r2, r0
+009EF8E0: beq          #0x9ef96c
+009EF8E4: vldr         s14, [r2]
+009EF8E8: vldr         s15, [r2, #4]
+009EF8EC: vsub.f32     s15, s15, s14
+009EF8F0: vcmp.f32     s15, #0
+009EF8F4: vmrs         apsr_nzcv, fpscr
+009EF8F8: beq          #0x9f0b04
+009EF8FC: ldr          r1, [pc, #0xc8] ; word[009EF9CC]=FFFFFE04
+RANGE 0x009F6388..0x009F63D0 exclusive; ARM;
+009F6388: add          r0, ip, r3, lsl #2
+009F638C: vldr         s15, [r1, #0x1c0]
+009F6390: vcmp.f32     s14, s15
+009F6394: vmrs         apsr_nzcv, fpscr
+009F6398: beq          #0x9f633c
+009F639C: vcmpe.f32    s14, s15
+009F63A0: vmrs         apsr_nzcv, fpscr
+009F63A4: bgt          #0x9f6754
+009F63A8: movmi        r2, #1
+009F63AC: movpl        r2, #0
+009F63B0: cmp          r2, #0
+009F63B4: bne          #0x9f636c
+009F63B8: ldr          sl, [sb, #0x40]
+009F63BC: rsb          r7, ip, r0
+009F63C0: cmp          sl, r4
+009F63C4: bls          #0x9f67b8
+009F63C8: add          r2, ip, r4, lsl #2
+009F63CC: add          r3, ip, r7
+RANGE 0x009F627C..0x009F62B8 exclusive; ARM;
+009F627C: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009F6280: sub          sp, sp, #0x4c
+009F6284: ldrb         r3, [r0, #0x45]
+009F6288: ldr          r2, [pc, #0x640] ; word[009F68D0]=00649FF8
+009F628C: add          r2, pc, r2
+009F6290: str          r2, [sp, #0x18]
+009F6294: ubfx         r2, r3, #2, #1
+009F6298: cmp          r2, r1
+009F629C: beq          #0x9f660c
+009F62A0: ldr          sb, [r0, #0x30]
+009F62A4: mov          r2, r3
+009F62A8: bfi          r2, r1, #2, #1
+009F62AC: strb         r2, [r0, #0x45]
+009F62B0: cmp          sb, #0
+009F62B4: beq          #0x9f660c

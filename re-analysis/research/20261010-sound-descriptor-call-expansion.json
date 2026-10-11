@@ -1,0 +1,799 @@
+{
+  "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "limit": "Encoded immediate word loads4C/50 in both alignments, 80-byte linear window, move aliases/clobbers, BX/BLX tails. Mixed-mode/data false candidates remain; no receiver identity, complete path merge, indirect absence or unreachability proof.",
+  "seedCount": 2232,
+  "candidates": [
+    {
+      "load": "0x951dd8",
+      "call": "0x951de4",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r5, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x983d8c",
+      "call": "0x983d90",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x983f00",
+      "call": "0x983f04",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98445c",
+      "call": "0x984460",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9846e8",
+      "call": "0x9846ec",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9848d0",
+      "call": "0x9848d4",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x986d94",
+      "call": "0x986d98",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x986fcc",
+      "call": "0x986fd0",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x988050",
+      "call": "0x988054",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9880ec",
+      "call": "0x9880f0",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98813c",
+      "call": "0x988140",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98c3e8",
+      "call": "0x98c3ec",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98c430",
+      "call": "0x98c434",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98c538",
+      "call": "0x98c53c",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98d198",
+      "call": "0x98d19c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98d1fc",
+      "call": "0x98d200",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98db28",
+      "call": "0x98db2c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98dde0",
+      "call": "0x98dde4",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98dec0",
+      "call": "0x98dec4",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98e048",
+      "call": "0x98e04c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98e768",
+      "call": "0x98e76c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98e85c",
+      "call": "0x98e860",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x98e994",
+      "call": "0x98e998",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr ip, [ip, #0x4c]",
+      "callInstruction": "blx ip"
+    },
+    {
+      "load": "0x98eb00",
+      "call": "0x98eb04",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x990434",
+      "call": "0x990438",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r2, #0x50]",
+      "callInstruction": "bx r3"
+    },
+    {
+      "load": "0x9904a0",
+      "call": "0x9904a4",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r2, #0x50]",
+      "callInstruction": "bx r3"
+    },
+    {
+      "load": "0x996da0",
+      "call": "0x996db4",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr ip, [ip, #0x4c]",
+      "callInstruction": "blx ip"
+    },
+    {
+      "load": "0x9980a0",
+      "call": "0x9980a4",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9ac5b8",
+      "call": "0x9ac5bc",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9ae698",
+      "call": "0x9ae6a0",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r2, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9ae7a4",
+      "call": "0x9ae7a8",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r2, [r2, #0x4c]",
+      "callInstruction": "blx r2"
+    },
+    {
+      "load": "0x9c112c",
+      "call": "0x9c1130",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9c1168",
+      "call": "0x9c116c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9c3808",
+      "call": "0x9c380c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9c386c",
+      "call": "0x9c3870",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9c3938",
+      "call": "0x9c393c",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9c399c",
+      "call": "0x9c39a0",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9c6d5c",
+      "call": "0x9c6d60",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "bx r3"
+    },
+    {
+      "load": "0x9c7640",
+      "call": "0x9c7644",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9c76ec",
+      "call": "0x9c76f0",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9d2b40",
+      "call": "0x9d2b44",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9d2de0",
+      "call": "0x9d2de4",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9d3acc",
+      "call": "0x9d3ad0",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9d3b90",
+      "call": "0x9d3b94",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9d3bac",
+      "call": "0x9d3bb0",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9ed514",
+      "call": "0x9ed518",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "bx r3"
+    },
+    {
+      "load": "0x9f4a8c",
+      "call": "0x9f4aa8",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [lr, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9f4ae0",
+      "call": "0x9f4afc",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r4, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x9f4b34",
+      "call": "0x9f4b50",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r4, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa00828",
+      "call": "0xa0082c",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [ip, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa009ec",
+      "call": "0xa009f4",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa011d8",
+      "call": "0xa011dc",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa013ec",
+      "call": "0xa013f0",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa01598",
+      "call": "0xa0159c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa1d430",
+      "call": "0xa1d434",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "bx r3"
+    },
+    {
+      "load": "0xa2dd78",
+      "call": "0xa2dd7c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa2e034",
+      "call": "0xa2e038",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa2e8b4",
+      "call": "0xa2e8bc",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r2, [r2, #0x4c]",
+      "callInstruction": "blx r2"
+    },
+    {
+      "load": "0xa41be4",
+      "call": "0xa41be8",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "bx r3"
+    },
+    {
+      "load": "0xa449d8",
+      "call": "0xa449dc",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa55008",
+      "call": "0xa5500c",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa556e8",
+      "call": "0xa556ec",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa59b5c",
+      "call": "0xa59b60",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa5a464",
+      "call": "0xa5a468",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa5bad8",
+      "call": "0xa5badc",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa61760",
+      "call": "0xa61784",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r2, [r2, #0x4c]",
+      "callInstruction": "blx r2"
+    },
+    {
+      "load": "0xa646dc",
+      "call": "0xa646e4",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r2, [r2, #0x4c]",
+      "callInstruction": "blx r2"
+    },
+    {
+      "load": "0xa65d7c",
+      "call": "0xa65d80",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa65e08",
+      "call": "0xa65e0c",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa66000",
+      "call": "0xa66004",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa6608c",
+      "call": "0xa66090",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa662d4",
+      "call": "0xa662d8",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa66344",
+      "call": "0xa66348",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa6ac00",
+      "call": "0xa6ac04",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa6ac30",
+      "call": "0xa6ac34",
+      "mode": "ARM",
+      "slot": "0x50",
+      "loadInstruction": "ldr r3, [r3, #0x50]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa6e5a4",
+      "call": "0xa6e5b4",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0xa79f78",
+      "call": "0xa79f84",
+      "mode": "ARM",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r3, [r3, #0x4c]",
+      "callInstruction": "blx r3"
+    },
+    {
+      "load": "0x4df51c",
+      "call": "0x4df520",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r6, [r3, #0x50]",
+      "callInstruction": "blx r6"
+    },
+    {
+      "load": "0x513dfc",
+      "call": "0x513e04",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r7, [r0, #0x50]",
+      "callInstruction": "blx r7"
+    },
+    {
+      "load": "0x528f82",
+      "call": "0x528f8a",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r7, [r0, #0x50]",
+      "callInstruction": "blx r7"
+    },
+    {
+      "load": "0x55a108",
+      "call": "0x55a116",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r4, [r0, #0x50]",
+      "callInstruction": "blx r4"
+    },
+    {
+      "load": "0x5bcf94",
+      "call": "0x5bcf96",
+      "mode": "Thumb",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r2, [r2, #0x4c]",
+      "callInstruction": "blx r2"
+    },
+    {
+      "load": "0x5bdaa8",
+      "call": "0x5bdaac",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r2, [r0, #0x50]",
+      "callInstruction": "blx r2"
+    },
+    {
+      "load": "0x5befb2",
+      "call": "0x5befb6",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r2, [r0, #0x50]",
+      "callInstruction": "blx r2"
+    },
+    {
+      "load": "0x5e0af8",
+      "call": "0x5e0afc",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r7, [r0, #0x50]",
+      "callInstruction": "blx r7"
+    },
+    {
+      "load": "0x5e0bfe",
+      "call": "0x5e0c08",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r5, [r0, #0x50]",
+      "callInstruction": "blx r5"
+    },
+    {
+      "load": "0x5e0cc4",
+      "call": "0x5e0ccc",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r5, [r0, #0x50]",
+      "callInstruction": "blx r5"
+    },
+    {
+      "load": "0x61781c",
+      "call": "0x617824",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r6, [r0, #0x50]",
+      "callInstruction": "blx r6"
+    },
+    {
+      "load": "0x625a5a",
+      "call": "0x625a64",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r7, [r0, #0x50]",
+      "callInstruction": "blx r7"
+    },
+    {
+      "load": "0x62604e",
+      "call": "0x62605c",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r6, [r0, #0x50]",
+      "callInstruction": "blx r6"
+    },
+    {
+      "load": "0x62b832",
+      "call": "0x62b83c",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r7, [r0, #0x50]",
+      "callInstruction": "blx r7"
+    },
+    {
+      "load": "0x62ba7c",
+      "call": "0x62ba86",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r6, [r0, #0x50]",
+      "callInstruction": "blx r6"
+    },
+    {
+      "load": "0x62c28e",
+      "call": "0x62c294",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr.w ip, [r0, #0x50]",
+      "callInstruction": "blx ip"
+    },
+    {
+      "load": "0x6692c8",
+      "call": "0x6692cc",
+      "mode": "Thumb",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r1, [r0, #0x4c]",
+      "callInstruction": "blx r1"
+    },
+    {
+      "load": "0x67eece",
+      "call": "0x67eeda",
+      "mode": "Thumb",
+      "slot": "0x50",
+      "loadInstruction": "ldr r4, [r0, #0x50]",
+      "callInstruction": "blx r4"
+    },
+    {
+      "load": "0x67f0b0",
+      "call": "0x67f0bc",
+      "mode": "Thumb",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r7, [r1, #0x4c]",
+      "callInstruction": "blx r7"
+    },
+    {
+      "load": "0x67f5a0",
+      "call": "0x67f5ac",
+      "mode": "Thumb",
+      "slot": "0x4c",
+      "loadInstruction": "ldr.w ip, [r1, #0x4c]",
+      "callInstruction": "blx ip"
+    },
+    {
+      "load": "0x68039e",
+      "call": "0x6803aa",
+      "mode": "Thumb",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r7, [r1, #0x4c]",
+      "callInstruction": "blx r7"
+    },
+    {
+      "load": "0x7f4426",
+      "call": "0x7f442a",
+      "mode": "Thumb",
+      "slot": "0x4c",
+      "loadInstruction": "ldr r1, [r0, #0x4c]",
+      "callInstruction": "blx r1"
+    }
+  ]
+}

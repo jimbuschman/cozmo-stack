@@ -1,0 +1,779 @@
+[
+  {
+    "address": "0x4d9848",
+    "mode": "Thumb",
+    "instruction": "add.w r5, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": []
+  },
+  {
+    "address": "0x51eef6",
+    "mode": "Thumb",
+    "instruction": "add.w sb, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15RobotDataLoaderC1EPKNS0_12CozmoContextE",
+        "entry": "0x51ed30",
+        "size": 918
+      },
+      {
+        "name": "_ZN4Anki5Cozmo15RobotDataLoaderC2EPKNS0_12CozmoContextE",
+        "entry": "0x51ed30",
+        "size": 918
+      }
+    ]
+  },
+  {
+    "address": "0x51f118",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15RobotDataLoaderD1Ev",
+        "entry": "0x51f0c6",
+        "size": 710
+      },
+      {
+        "name": "_ZN4Anki5Cozmo15RobotDataLoaderD2Ev",
+        "entry": "0x51f0c6",
+        "size": 710
+      }
+    ]
+  },
+  {
+    "address": "0x51f26a",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15RobotDataLoaderD1Ev",
+        "entry": "0x51f0c6",
+        "size": 710
+      },
+      {
+        "name": "_ZN4Anki5Cozmo15RobotDataLoaderD2Ev",
+        "entry": "0x51f0c6",
+        "size": 710
+      }
+    ]
+  },
+  {
+    "address": "0x522e1a",
+    "mode": "Thumb",
+    "instruction": "add.w r3, r7, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15RobotDataLoader16LoadRobotConfigsEv",
+        "entry": "0x522280",
+        "size": 4848
+      }
+    ]
+  },
+  {
+    "address": "0x5c1cf8",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r5, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo17BehaviorFindFaces21TransitionToBaseClassERNS0_5RobotE",
+        "entry": "0x5c1c90",
+        "size": 216
+      }
+    ]
+  },
+  {
+    "address": "0x5e1dc6",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceC1ERNS0_5RobotERKN4Json5ValueE",
+        "entry": "0x5e1d80",
+        "size": 320
+      },
+      {
+        "name": "_ZN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceC2ERNS0_5RobotERKN4Json5ValueE",
+        "entry": "0x5e1d80",
+        "size": 320
+      }
+    ]
+  },
+  {
+    "address": "0x5e1dd0",
+    "mode": "Thumb",
+    "instruction": "strd r8, r8, [r4, #0x1e4]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceC1ERNS0_5RobotERKN4Json5ValueE",
+        "entry": "0x5e1d80",
+        "size": 320
+      },
+      {
+        "name": "_ZN4Anki5Cozmo32BehaviorExploreLookAroundInPlaceC2ERNS0_5RobotERKN4Json5ValueE",
+        "entry": "0x5e1d80",
+        "size": 320
+      }
+    ]
+  },
+  {
+    "address": "0x5e2720",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo32BehaviorExploreLookAroundInPlace12InitInternalERNS0_5RobotE",
+        "entry": "0x5e2684",
+        "size": 404
+      }
+    ]
+  },
+  {
+    "address": "0x5e29aa",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo32BehaviorExploreLookAroundInPlace12AlwaysHandleERKNS0_9AnkiEventINS0_17ExternalInterface19MessageEngineToGameEEERKNS0_5RobotE",
+        "entry": "0x5e297c",
+        "size": 60
+      }
+    ]
+  },
+  {
+    "address": "0x5e373c",
+    "mode": "Thumb",
+    "instruction": "add.w r2, r5, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo32BehaviorExploreLookAroundInPlace27TransitionToS7_IterationEndERNS0_5RobotE",
+        "entry": "0x5e3568",
+        "size": 1236
+      }
+    ]
+  },
+  {
+    "address": "0x60786e",
+    "mode": "Thumb",
+    "instruction": "subs.w r2, r0, #0x1f4",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo21BehaviorReactToPickup9StartAnimERNS0_5RobotE",
+        "entry": "0x607820",
+        "size": 904
+      }
+    ]
+  },
+  {
+    "address": "0x631630",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r8, #0x1f4",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo23BlockTapFilterComponent17CheckForDoubleTapERKNS_8ObjectIDE",
+        "entry": "0x631594",
+        "size": 292
+      }
+    ]
+  },
+  {
+    "address": "0x65014e",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r6, #0x1f8",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentC1ERNS0_5RobotEPKNS0_12CozmoContextE",
+        "entry": "0x6500a8",
+        "size": 768
+      },
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentC2ERNS0_5RobotEPKNS0_12CozmoContextE",
+        "entry": "0x6500a8",
+        "size": 768
+      }
+    ]
+  },
+  {
+    "address": "0x6502cc",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r6, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentC1ERNS0_5RobotEPKNS0_12CozmoContextE",
+        "entry": "0x6500a8",
+        "size": 768
+      },
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentC2ERNS0_5RobotEPKNS0_12CozmoContextE",
+        "entry": "0x6500a8",
+        "size": 768
+      }
+    ]
+  },
+  {
+    "address": "0x651fd6",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r8, #0x1f8",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponent9ProcessorEv",
+        "entry": "0x651f08",
+        "size": 1432
+      }
+    ]
+  },
+  {
+    "address": "0x652654",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentD2Ev",
+        "entry": "0x652554",
+        "size": 576
+      },
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentD1Ev",
+        "entry": "0x652554",
+        "size": 576
+      }
+    ]
+  },
+  {
+    "address": "0x65274c",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f8",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentD2Ev",
+        "entry": "0x652554",
+        "size": 576
+      },
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponentD1Ev",
+        "entry": "0x652554",
+        "size": 576
+      }
+    ]
+  },
+  {
+    "address": "0x652d40",
+    "mode": "Thumb",
+    "instruction": "add.w r7, r4, #0x1f8",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo15VisionComponent12SetNextImageERNS0_12EncodedImageE",
+        "entry": "0x652b04",
+        "size": 2240
+      }
+    ]
+  },
+  {
+    "address": "0x695350",
+    "mode": "Thumb",
+    "instruction": "vstr s4, [r0, #0x1e4]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager37ApplyDecayForTimeSinceLastDeviceWriteEb",
+        "entry": "0x695304",
+        "size": 120
+      }
+    ]
+  },
+  {
+    "address": "0x695368",
+    "mode": "Thumb",
+    "instruction": "vstrne s2, [r0, #0x1fc]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager37ApplyDecayForTimeSinceLastDeviceWriteEb",
+        "entry": "0x695304",
+        "size": 120
+      }
+    ]
+  },
+  {
+    "address": "0x695d6a",
+    "mode": "Thumb",
+    "instruction": "vstr s0, [r0, #0x1e4]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager18ApplyDecayAllNeedsEb",
+        "entry": "0x695cfe",
+        "size": 198
+      }
+    ]
+  },
+  {
+    "address": "0x695f3c",
+    "mode": "Thumb",
+    "instruction": "vstr s4, [r1, #0x1e4]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager9SetPausedEb",
+        "entry": "0x695e04",
+        "size": 572
+      }
+    ]
+  },
+  {
+    "address": "0x695f40",
+    "mode": "Thumb",
+    "instruction": "vstr s6, [r1, #0x1f0]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager9SetPausedEb",
+        "entry": "0x695e04",
+        "size": 572
+      }
+    ]
+  },
+  {
+    "address": "0x695f58",
+    "mode": "Thumb",
+    "instruction": "vstrne s2, [r1, #0x1fc]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager9SetPausedEb",
+        "entry": "0x695e04",
+        "size": 572
+      }
+    ]
+  },
+  {
+    "address": "0x6970f8",
+    "mode": "Thumb",
+    "instruction": "addeq.w r0, r0, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager28StartFullnessCooldownForNeedENS0_6NeedIdE",
+        "entry": "0x6970ac",
+        "size": 100
+      }
+    ]
+  },
+  {
+    "address": "0x698a2c",
+    "mode": "Thumb",
+    "instruction": "vstr s0, [r1, #0x1e4]",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12NeedsManager13HandleMessageINS0_17ExternalInterface19SetNeedsPauseStatesEEEvRKT_",
+        "entry": "0x698918",
+        "size": 692
+      }
+    ]
+  },
+  {
+    "address": "0x69e3f4",
+    "mode": "Thumb",
+    "instruction": "add.w r2, sl, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo21TextToSpeechComponentC1EPKNS0_12CozmoContextE",
+        "entry": "0x69e3b4",
+        "size": 176
+      },
+      {
+        "name": "_ZN4Anki5Cozmo21TextToSpeechComponentC2EPKNS0_12CozmoContextE",
+        "entry": "0x69e3b4",
+        "size": 176
+      }
+    ]
+  },
+  {
+    "address": "0x6b00ae",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12VisionSystemC1EPKNS0_12CozmoContextE",
+        "entry": "0x6affd0",
+        "size": 1304
+      },
+      {
+        "name": "_ZN4Anki5Cozmo12VisionSystemC2EPKNS0_12CozmoContextE",
+        "entry": "0x6affd0",
+        "size": 1304
+      }
+    ]
+  },
+  {
+    "address": "0x6b24de",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12VisionSystem14UpdatePoseDataERKNS0_14VisionPoseDataE",
+        "entry": "0x6b24d0",
+        "size": 1056
+      }
+    ]
+  },
+  {
+    "address": "0x6b357a",
+    "mode": "Thumb",
+    "instruction": "add.w r4, r5, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12VisionSystem11DetectFacesERKNS_6Vision5ImageERNSt6__ndk16vectorINS_9RectangleIiEENS6_9allocatorIS9_EEEE",
+        "entry": "0x6b3548",
+        "size": 1016
+      }
+    ]
+  },
+  {
+    "address": "0x6b3ba8",
+    "mode": "Thumb",
+    "instruction": "add.w r3, r0, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12VisionSystem12DetectMotionERNS_6Vision10ImageCacheE",
+        "entry": "0x6b3b90",
+        "size": 40
+      }
+    ]
+  },
+  {
+    "address": "0x6b510e",
+    "mode": "Thumb",
+    "instruction": "add.w r2, fp, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12VisionSystem6UpdateERKNS0_14VisionPoseDataERNS_6Vision10ImageCacheE",
+        "entry": "0x6b4d5c",
+        "size": 3240
+      }
+    ]
+  },
+  {
+    "address": "0x6b535a",
+    "mode": "Thumb",
+    "instruction": "add.w r3, fp, #0x1fc",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo12VisionSystem6UpdateERKNS0_14VisionPoseDataERNS_6Vision10ImageCacheE",
+        "entry": "0x6b4d5c",
+        "size": 3240
+      }
+    ]
+  },
+  {
+    "address": "0x6c5c6a",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki13AudioMetaData9GameEvent17CodelabFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x6c5658",
+        "size": 8532
+      }
+    ]
+  },
+  {
+    "address": "0x6cff16",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki13AudioMetaData9GameEvent22GenericEventFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x6cf904",
+        "size": 46868
+      }
+    ]
+  },
+  {
+    "address": "0x6dca92",
+    "mode": "Thumb",
+    "instruction": "add.w r7, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki13AudioMetaData9GameEvent19Robot_SfxFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x6dc558",
+        "size": 6192
+      }
+    ]
+  },
+  {
+    "address": "0x6e1806",
+    "mode": "Thumb",
+    "instruction": "add.w r7, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki13AudioMetaData9GameEvent18Robot_VoFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x6e1200",
+        "size": 21836
+      }
+    ]
+  },
+  {
+    "address": "0x6e7c8c",
+    "mode": "Thumb",
+    "instruction": "add.w r7, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki13AudioMetaData9GameEvent13SfxFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x6e7824",
+        "size": 3300
+      }
+    ]
+  },
+  {
+    "address": "0x6eee08",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki13AudioMetaData13GameParameter23ParameterTypeFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x6ee9dc",
+        "size": 2020
+      }
+    ]
+  },
+  {
+    "address": "0x6f1ada",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki13AudioMetaData9GameState15MusicFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x6f16bc",
+        "size": 1952
+      }
+    ]
+  },
+  {
+    "address": "0x758c82",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo22ActionResultFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x7588d4",
+        "size": 2112
+      }
+    ]
+  },
+  {
+    "address": "0x75a7fa",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo25RobotActionTypeFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x75a448",
+        "size": 2408
+      }
+    ]
+  },
+  {
+    "address": "0x75e85c",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo26AnimationTriggerFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x75e2b0",
+        "size": 28952
+      }
+    ]
+  },
+  {
+    "address": "0x765984",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo30CubeAnimationTriggerFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x765608",
+        "size": 1904
+      }
+    ]
+  },
+  {
+    "address": "0x76700a",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo20ActivityIDFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x766c68",
+        "size": 1620
+      }
+    ]
+  },
+  {
+    "address": "0x7698d4",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo27BehaviorObjectiveFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x769558",
+        "size": 1952
+      }
+    ]
+  },
+  {
+    "address": "0x76a6de",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo23BehaviorClassFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x76a2f4",
+        "size": 3600
+      }
+    ]
+  },
+  {
+    "address": "0x76b8e0",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo20BehaviorIDFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x76b340",
+        "size": 8100
+      }
+    ]
+  },
+  {
+    "address": "0x777f82",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo31FactoryTestResultCodeFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x777b98",
+        "size": 3280
+      }
+    ]
+  },
+  {
+    "address": "0x783192",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo23NeedsActionIdFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x782de4",
+        "size": 3832
+      }
+    ]
+  },
+  {
+    "address": "0x795132",
+    "mode": "Thumb",
+    "instruction": "add.w r6, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo18UnlockIdFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x794d84",
+        "size": 3568
+      }
+    ]
+  },
+  {
+    "address": "0x7cf4f4",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo9NVStorage20NVEntryTagFromStringERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE",
+        "entry": "0x7cf144",
+        "size": 1860
+      }
+    ]
+  },
+  {
+    "address": "0x7d1730",
+    "mode": "Thumb",
+    "instruction": "add.w r0, r4, #0x1f0",
+    "kind": "near-field-address-arithmetic",
+    "symbols": [
+      {
+        "name": "_ZN4Anki5Cozmo20ObjectTypeFromStringERKNSt6__ndk112basic_stringIcNS1_11char_traitsIcEENS1_9allocatorIcEEEE",
+        "entry": "0x7d13b8",
+        "size": 1832
+      }
+    ]
+  },
+  {
+    "address": "0x88ffe4",
+    "mode": "Thumb",
+    "instruction": "strd r0, r0, [ip, #0x1e8]!",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZNKSt6__ndk18functionIFvRKN4Anki8Embedded5ArrayIhEERNS2_15FixedLengthListIS4_EEiiPhEEclES6_S9_iiSA_",
+        "entry": "0x88ff9c",
+        "size": 84
+      }
+    ]
+  },
+  {
+    "address": "0x88ffe8",
+    "mode": "Thumb",
+    "instruction": "strd r0, r0, [lr, #0x1e8]!",
+    "kind": "near-field-wide-store",
+    "symbols": [
+      {
+        "name": "_ZNKSt6__ndk18functionIFvRKN4Anki8Embedded5ArrayIhEERNS2_15FixedLengthListIS4_EEiiPhEEclES6_S9_iiSA_",
+        "entry": "0x88ff9c",
+        "size": 84
+      }
+    ]
+  }
+]

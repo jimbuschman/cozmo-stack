@@ -1,0 +1,130 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "range": [
+    "0xa53000",
+    "0xa56600"
+  ],
+  "limit": "Aligned ARM related-method-region near-field navigation only. Literal/mode/receiver identity, composed offsets, arbitrary register block stores, copies, computed callers and escaped aliases remain unproven.",
+  "candidates": [
+    {
+      "address": "0xa53418",
+      "instruction": "str r3, [r4, #0xdc]",
+      "bytes": "dc3084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa53584",
+      "instruction": "str r3, [r4, #0xdc]",
+      "bytes": "dc3084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa535c4",
+      "instruction": "str r3, [r4, #0xdc]",
+      "bytes": "dc3084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa53650",
+      "instruction": "str r3, [r4, #0xd8]",
+      "bytes": "d83084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa537e8",
+      "instruction": "add r3, r1, #0xe0",
+      "bytes": "e03081e2",
+      "kind": "near-field-address"
+    },
+    {
+      "address": "0xa53fe4",
+      "instruction": "str r3, [r5, #0xd8]",
+      "bytes": "d83085e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa542a8",
+      "instruction": "str r2, [r0, #0xdc]",
+      "bytes": "dc2080e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa542b0",
+      "instruction": "str r2, [r0, #0xd8]",
+      "bytes": "d82080e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa544b4",
+      "instruction": "str r3, [r4, #0xdc]",
+      "bytes": "dc3084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa54798",
+      "instruction": "str r5, [r4, #0xdc]",
+      "bytes": "dc5084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa547a0",
+      "instruction": "str r5, [r4, #0xd8]",
+      "bytes": "d85084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa549f8",
+      "instruction": "str r5, [r4, #0xd8]",
+      "bytes": "d85084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa557a8",
+      "instruction": "str r2, [r4, #0xe4]",
+      "bytes": "e42084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa557ac",
+      "instruction": "str r3, [r4, #0xe0]",
+      "bytes": "e03084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa5592c",
+      "instruction": "streq r5, [r4, #0xd8]",
+      "bytes": "d8508405",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa559c0",
+      "instruction": "add r1, r4, #0xe0",
+      "bytes": "e01084e2",
+      "kind": "near-field-address"
+    },
+    {
+      "address": "0xa559d0",
+      "instruction": "str r0, [r4, #0xe4]",
+      "bytes": "e40084e5",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa55adc",
+      "instruction": "streq r5, [r4, #0xd8]",
+      "bytes": "d8508405",
+      "kind": "near-field-store"
+    },
+    {
+      "address": "0xa55b50",
+      "instruction": "add r1, r4, #0xe0",
+      "bytes": "e01084e2",
+      "kind": "near-field-address"
+    },
+    {
+      "address": "0xa55b60",
+      "instruction": "str r0, [r4, #0xe4]",
+      "bytes": "e40084e5",
+      "kind": "near-field-store"
+    }
+  ]
+}

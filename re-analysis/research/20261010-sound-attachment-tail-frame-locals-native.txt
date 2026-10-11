@@ -1,0 +1,26 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A69820..0x00A6984C exclusive; ARM;
+00A69820: mov          r2, #0x18
+00A69824: ldr          lr, [ip, r4]
+00A69828: add          r4, r4, #0xc
+00A6982C: ldr          ip, [r0]
+00A69830: str          lr, [fp, #-0x3c]
+00A69834: ldr          r3, [r3, #4]
+00A69838: ldr          ip, [ip, #0xc]
+00A6983C: str          sb, [fp, #-0x34]
+00A69840: str          r3, [fp, #-0x38]
+00A69844: str          r3, [fp, #-0x28]
+00A69848: str          sl, [fp, #-0x30]
+RANGE 0x00A698BC..0x00A698E8 exclusive; ARM;
+00A698BC: add          r7, r7, r7, lsl #1
+00A698C0: movw         r3, #0x494c
+00A698C4: mov          r1, r8
+00A698C8: add          sb, r4, r7, lsl #2
+00A698CC: movt         r3, #0x5453
+00A698D0: ldr          ip, [r0]
+00A698D4: mov          r2, #8
+00A698D8: str          r3, [fp, #-0x3c]
+00A698DC: str          sb, [fp, #-0x38]
+00A698E0: ldr          r3, [ip, #0xc]
+00A698E4: blx          r3

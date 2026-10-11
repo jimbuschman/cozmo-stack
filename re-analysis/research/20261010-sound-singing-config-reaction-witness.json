@@ -1,0 +1,429 @@
+{
+  "trigger_enum": [
+    {
+      "value": 511,
+      "value_hex": "0x1ff",
+      "native_cell": "0x1032e8c",
+      "native_string_address": "0xc19127",
+      "name": "Singing_80bpm"
+    },
+    {
+      "value": 512,
+      "value_hex": "0x200",
+      "native_cell": "0x1032e90",
+      "native_string_address": "0xc19135",
+      "name": "Singing_100bpm"
+    },
+    {
+      "value": 513,
+      "value_hex": "0x201",
+      "native_cell": "0x1032e94",
+      "native_string_address": "0xc19144",
+      "name": "Singing_120bpm"
+    },
+    {
+      "value": 514,
+      "value_hex": "0x202",
+      "native_cell": "0x1032e98",
+      "native_string_address": "0xc19153",
+      "name": "Singing_GetIn"
+    },
+    {
+      "value": 515,
+      "value_hex": "0x203",
+      "native_cell": "0x1032e9c",
+      "native_string_address": "0xc19161",
+      "name": "Singing_GetOut"
+    }
+  ],
+  "mapping": {
+    "path": "re-analysis/obb/assets/cozmo_resources/assets/animationGroupMaps/AnimationTriggerMap.json",
+    "sha256": "c39d6a3ffe1512721360af57430ecb318b631dbed6ebd2c5cdb968e86e6c0f76",
+    "selected": [
+      {
+        "CladEvent": "Singing_80bpm",
+        "AnimName": "ag_cozmosings_80bpm"
+      },
+      {
+        "CladEvent": "Singing_100bpm",
+        "AnimName": "ag_cozmosings_100bpm"
+      },
+      {
+        "CladEvent": "Singing_120bpm",
+        "AnimName": "ag_cozmosings_120bpm"
+      },
+      {
+        "CladEvent": "Singing_GetIn",
+        "AnimName": "ag_cozmosings_getin"
+      },
+      {
+        "CladEvent": "Singing_GetOut",
+        "AnimName": "ag_cozmosings_getout"
+      }
+    ]
+  },
+  "songs": [
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_AbaDaba.json",
+      "sha256": "0c14a282c9feb9a00bff2d3650c11369ae93e9c203e981ac002629628dc859d6",
+      "behaviorID": "Singing_AbaDaba",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Aba_Daba"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_BeautifulDreamer.json",
+      "sha256": "f25d94c957f3e913c40be12b6820976a01a44556ddaba5fe073ea706dd888e45",
+      "behaviorID": "Singing_BeautifulDreamer",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Beautiful_Dreamer"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_Beethovens5th.json",
+      "sha256": "fa64abecbb62256a927224db4b941b7527eca862fb7b6ca7b848e62bf2235823",
+      "behaviorID": "Singing_Beethovens5th",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Beethovens_5Th"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_Bingo.json",
+      "sha256": "6e6408ca836de53fcc75628fcf9e0c4082fa90a326ae7904fa2e9c6fc70a2115",
+      "behaviorID": "Singing_Bingo",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Bingo"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_BuffaloGals.json",
+      "sha256": "3bba1d2b99f38a95c2875bb4eec0212d7f84dacf549a4c2ff6bcaf424f591b22",
+      "behaviorID": "Singing_BuffaloGals",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Buffalo_Gals"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_Camptown.json",
+      "sha256": "2b2d541ff124c129aa6062b1593fe48ea6581d56355b11cf998293c10cc01908",
+      "behaviorID": "Singing_Camptown",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Camptown_Races"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_CanCan1.json",
+      "sha256": "bfbe427e968b79ddfe4cca337e2f8d3adf98cbf544f06d02c684900ff6ef30fe",
+      "behaviorID": "Singing_CanCan1",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Can_Can_1"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_CanCan2.json",
+      "sha256": "533ab3d24a9d24f583c91448b5744c7ad2fb9019843de7efcc1c6d1f4f69aa21",
+      "behaviorID": "Singing_CanCan2",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Can_Can_2"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_DannyBoy.json",
+      "sha256": "7c7bc92b78f1e04639e0ce1af45db5bd74f15dd89aaa5d74b87b416df241b8e3",
+      "behaviorID": "Singing_DannyBoy",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Danny_Boy"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_EntryOfTheGladiators.json",
+      "sha256": "2af965250dd439e8023cdf9472fe2734b202ecff2373897f4b3301a6c38f8128",
+      "behaviorID": "Singing_EntryOfTheGladiators",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Entry_Of_The_Gladiators"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_FarmerInTheDell.json",
+      "sha256": "d57db3ec8bdecfd76e6ad35e0d9fb1b704059bf9df86c0b9fcec58632abb1408",
+      "behaviorID": "Singing_FarmerInTheDell",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Farmer_In_The_Dell"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_FrereJacques.json",
+      "sha256": "ac49746f0fdd2e5e6ced096fa7f1b43089710cdccd4d9f9dcfc0d643ee397e34",
+      "behaviorID": "Singing_FrereJacques",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Frere_Jacques"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_HelloMyBaby.json",
+      "sha256": "cbdab86ada83a17d1536ac78e55f8d0a579fb8b6f70b7752d8d7c4ab460aa42a",
+      "behaviorID": "Singing_HelloMyBaby",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Hello_My_Baby"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_ItsyBitsySpider.json",
+      "sha256": "67d08051cb85b745463b60906a976178b994fb37cc3899bf973ffa1229cc5195",
+      "behaviorID": "Singing_ItsyBitsySpider",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Itsy_Bitsy_Spider"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_LaPaloma.json",
+      "sha256": "de2b4212ac34aa99242b62259fcdd8747ecf323db4984c2ac0f98db8e0200b6e",
+      "behaviorID": "Singing_LaPaloma",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_La_Paloma"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_LondonBridge.json",
+      "sha256": "34fab54bf383350a872963c2a7a82a29808af8091b498cb4e8d0d300f902a621",
+      "behaviorID": "Singing_LondonBridge",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_London_Bridge"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_MaryHadALittleLamb.json",
+      "sha256": "8eb675656c3de96cbfeab023ac9a1c63cb4da5638915b80c15ab6a92b78d95fe",
+      "behaviorID": "Singing_MaryHadALittleLamb",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Mary_Had_A_Little_Lamb"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_MountainKing.json",
+      "sha256": "3d636b7d10831eb209dc965e87ee0c5868bd5f332f9458dc15d733d50f437468",
+      "behaviorID": "Singing_MountainKing",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Mountain_King"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_MuffinMan.json",
+      "sha256": "ef1b94fa3b04995b8ba81d43d267e7ce59f102172fc9f15640d6309eab52cabb",
+      "behaviorID": "Singing_MuffinMan",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Muffin_Man"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_MulberryBush.json",
+      "sha256": "dd3b53c8c5dde56466d2587674eed06d830f77dc601c3dccfe77913867aea84f",
+      "behaviorID": "Singing_MulberryBush",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Mulberry_Bush"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_MussIDenn.json",
+      "sha256": "4b8d6b1d0cae811e8792affc23682fc8e60de209740a24fbe240c3c53704b007",
+      "behaviorID": "Singing_MussIDenn",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Muss_I_Denn"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_OdeToJoy.json",
+      "sha256": "1338ea8fe6b8de93256fb7dc19c9cc2ed6e5c0fa19a4dac479d271d86d3451d8",
+      "behaviorID": "Singing_OdeToJoy",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Ode_To_Joy"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_PachebelCanon.json",
+      "sha256": "2e232d6f265440b0dc718e1dbc9ca29c7cc3f428a29c5a3d294cfc95ae1e0e30",
+      "behaviorID": "Singing_PachebelCanon",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Pachebel_Canon"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_PopGoesTheWeasel.json",
+      "sha256": "3dcbec0e85b8d771c9201f09d22c0853dd046d11911f5759ae9220862c917d18",
+      "behaviorID": "Singing_PopGoesTheWeasel",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Pop_Goes_The_Weasel"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_RowYourBoat.json",
+      "sha256": "55a1510f1d180f2780d917d19cd04a5166ba38e349567bf1f4425480a44804df",
+      "behaviorID": "Singing_RowYourBoat",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Row_Your_Boat"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_Sakura.json",
+      "sha256": "91794d9c8f9ce9310379c303548ce36d2064c775af58ff9964e92654839c65ca",
+      "behaviorID": "Singing_Sakura",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Sakura"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_SilveryMoon.json",
+      "sha256": "e463074302ff89191d0551fa8d9668bbea9f0c83ac2240fd753d65fb7e4cf7cc",
+      "behaviorID": "Singing_SilveryMoon",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Silvery_Moon"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_TakeMeOutToTheBallgame.json",
+      "sha256": "be7d3f1bc9ef073e7b55efa72c42391bb5343882b41321531afe789881ecfaa7",
+      "behaviorID": "Singing_TakeMeOutToTheBallgame",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Take_Me_Out_To_The_Ballgame"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_TaRaRaBoom.json",
+      "sha256": "81555190b159a0662be0dec50e78748d65a0fed1d19c9e37c5396059a683e739",
+      "behaviorID": "Singing_TaRaRaBoom",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Ta_Ra_Ra_Boom"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_TisketTasket.json",
+      "sha256": "427d529471080df7c1208c2d8962cff034f9575591ecf3f35e464151134ad96a",
+      "behaviorID": "Singing_TisketTasket",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Tisket_Tasket"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_Toccata.json",
+      "sha256": "6ec858e39e93237b3cb00b4d8e6c1c6a3eb440a90888fe29806b3c52b54f17a7",
+      "behaviorID": "Singing_Toccata",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Toccata"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_TurkeyInTheStraw.json",
+      "sha256": "02c9f4165408eb9cd866b4e13326e265e44aaaab4b895a6711b624f3197758c3",
+      "behaviorID": "Singing_TurkeyInTheStraw",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Turkey_In_The_Straw"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_TwinkleTwinkle.json",
+      "sha256": "a9539cc715cbcdf17cde746fb3c7819132f22cec24548f75cbd9f204e46e2221",
+      "behaviorID": "Singing_TwinkleTwinkle",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Twinkle_Twinkle"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_VivaldiSpring.json",
+      "sha256": "5ff33dabd78c9be86ac504e52e586773891931f11f84c8d351378d4c41eda219",
+      "behaviorID": "Singing_VivaldiSpring",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Vivaldi_Spring"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_WaterMusic.json",
+      "sha256": "3f5b342ee03070ccf77f4416801b24b8da01603a5d98544002ff7309480ba307",
+      "behaviorID": "Singing_WaterMusic",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Water_Music"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_WildAboutHarry.json",
+      "sha256": "f00c1fe315f5618800e5849d5d40ca942f8a16d81adfc03be78045277d9cb7ec",
+      "behaviorID": "Singing_WildAboutHarry",
+      "audioSwitchGroup": "Cozmo_Sings_120Bpm",
+      "audioSwitch": "Cozmo_Sings_Wild_About_Harry"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_WilliamTell.json",
+      "sha256": "0c0c1864f60ac2cebeaee9d36c38a22ac6051263dfc90dbd1d740fad89231614",
+      "behaviorID": "Singing_WilliamTell",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_William_Tell"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_YankeeDoodle.json",
+      "sha256": "33f7ab59d533c11969eeb11fa9dc2334bb68b47ecfe91bdf94fa74332eabfcce",
+      "behaviorID": "Singing_YankeeDoodle",
+      "audioSwitchGroup": "Cozmo_Sings_80Bpm",
+      "audioSwitch": "Cozmo_Sings_Yankee_Doodle"
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/behaviors/freeplay/singing/Singing_YellowRose.json",
+      "sha256": "f1cea6d77a9a06a9ed8b080402eb244a0f3b1cc138be9ca697cef1198f5fbc9b",
+      "behaviorID": "Singing_YellowRose",
+      "audioSwitchGroup": "Cozmo_Sings_100Bpm",
+      "audioSwitch": "Cozmo_Sings_Yellow_Rose"
+    }
+  ],
+  "group_counts": {
+    "Cozmo_Sings_80Bpm": 12,
+    "Cozmo_Sings_100Bpm": 17,
+    "Cozmo_Sings_120Bpm": 10
+  },
+  "groups": [
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/assets/animationGroups/CozmoSings/ag_cozmosings_100bpm.json",
+      "sha256": "a96108d06178980782c6305ded1977366c2ae24ab81ac1d74dfc215f3245bbf4",
+      "data": {
+        "Animations": [
+          {
+            "Name": "anim_cozmosings_100_song_01",
+            "Weight": 1.0,
+            "CooldownTime_Sec": 0.0,
+            "Mood": "Default"
+          }
+        ]
+      }
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/assets/animationGroups/CozmoSings/ag_cozmosings_120bpm.json",
+      "sha256": "b20f1c4a82bb2a09bb067ceb37d3bf34be6f29e62e52f439dcf69978dfe063e8",
+      "data": {
+        "Animations": [
+          {
+            "Name": "anim_cozmosings_120_song_01",
+            "Weight": 1.0,
+            "CooldownTime_Sec": 0.0,
+            "Mood": "Default"
+          }
+        ]
+      }
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/assets/animationGroups/CozmoSings/ag_cozmosings_80bpm.json",
+      "sha256": "1be223cdc47adff1b11efa849b48d5eb85f1428b532a2cf901fabfdaf04e4ba1",
+      "data": {
+        "Animations": [
+          {
+            "Name": "anim_cozmosings_80_song_01",
+            "Weight": 1.0,
+            "CooldownTime_Sec": 0.0,
+            "Mood": "Default"
+          }
+        ]
+      }
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/assets/animationGroups/CozmoSings/ag_cozmosings_getin.json",
+      "sha256": "03c339522bc9c04b338adcdcae8b12a633b27596e90d11189974f99aaf78c0c2",
+      "data": {
+        "Animations": [
+          {
+            "Name": "anim_cozmosings_getin_01",
+            "Weight": 1.0,
+            "CooldownTime_Sec": 0.0,
+            "Mood": "Default"
+          },
+          {
+            "Name": "anim_cozmosings_getin_02",
+            "Weight": 1.0,
+            "CooldownTime_Sec": 0.0,
+            "Mood": "Default"
+          },
+          {
+            "Name": "anim_cozmosings_getin_03",
+            "Weight": 1.0,
+            "CooldownTime_Sec": 0.0,
+            "Mood": "Default"
+          }
+        ]
+      }
+    },
+    {
+      "path": "re-analysis/obb/assets/cozmo_resources/assets/animationGroups/CozmoSings/ag_cozmosings_getout.json",
+      "sha256": "0386a283db39b6601d85989f95a014a9288be8c8c0671106885116462efd8dd7",
+      "data": {
+        "Animations": [
+          {
+            "Name": "anim_cozmosings_getout_01",
+            "Weight": 1.0,
+            "CooldownTime_Sec": 0.0,
+            "Mood": "Default"
+          }
+        ]
+      }
+    }
+  ]
+}

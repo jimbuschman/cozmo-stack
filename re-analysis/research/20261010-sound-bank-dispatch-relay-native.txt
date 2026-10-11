@@ -1,0 +1,46 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009BA334..0x009BA370 exclusive; ARM;
+009BA334: add          r5, r1, #0xc
+009BA338: mov          lr, sp
+009BA33C: ldm          r5!, {r0, r1, r2, r3}
+009BA340: stm          lr!, {r0, r1, r2, r3}
+009BA344: ldm          r5!, {r0, r1, r2, r3}
+009BA348: ldr          r5, [r5]
+009BA34C: stm          lr!, {r0, r1, r2, r3}
+009BA350: mov          r0, r4
+009BA354: str          r5, [lr]
+009BA358: ldm          ip, {r1, r2, r3}
+009BA35C: bl           #0x9b1f70
+009BA360: mov          r5, r0
+009BA364: mov          r0, r5
+009BA368: add          sp, sp, #0x6c
+009BA36C: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+RANGE 0x009BB844..0x009BB874 exclusive; ARM;
+009BB844: add          lr, sp, #0x98
+009BB848: mov          ip, sp
+009BB84C: ldm          lr!, {r0, r1, r2, r3}
+009BB850: stm          ip!, {r0, r1, r2, r3}
+009BB854: ldm          lr!, {r0, r1, r2, r3}
+009BB858: ldr          lr, [lr]
+009BB85C: stm          ip!, {r0, r1, r2, r3}
+009BB860: mov          r0, r4
+009BB864: str          lr, [ip]
+009BB868: ldm          r5, {r1, r2, r3}
+009BB86C: bl           #0x9b1f70
+009BB870: b            #0x9bb74c
+RANGE 0x009B2420..0x009B2458 exclusive; ARM;
+009B2420: beq          #0x9b2924
+009B2424: vldr         s16, [pc, #0x304] ; word[009B2730]=3F666666
+009B2428: add          r5, r0, #4
+009B242C: ldr          r3, [pc, #0x300] ; word[009B2734]=00647E04
+009B2430: mov          fp, sl
+009B2434: mov          sb, r0
+009B2438: mov          sl, r0
+009B243C: add          r3, pc, r3
+009B2440: add          r2, sp, #0x38
+009B2444: str          r3, [sp, #0x10]
+009B2448: add          r3, r3, #0x68
+009B244C: str          r2, [sp]
+009B2450: str          r3, [sp, #0x14]
+009B2454: mov          r0, r5

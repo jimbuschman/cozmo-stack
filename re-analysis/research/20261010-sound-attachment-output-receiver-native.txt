@@ -1,0 +1,58 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009FBB50..0x009FBBB0 exclusive; ARM;
+009FBB50: cmp          r5, #0
+009FBB54: beq          #0x9fbe58
+009FBB58: ldr          r2, [r5, #0x40]
+009FBB5C: movw         r3, #0xffe
+009FBB60: ldr          r4, [r5, #0x34]
+009FBB64: and          r3, r3, r2
+009FBB68: adds         r3, r3, #0
+009FBB6C: movne        r3, #1
+009FBB70: cmp          r4, #0
+009FBB74: orreq        r3, r3, #1
+009FBB78: cmp          r3, #0
+009FBB7C: beq          #0x9fbb88
+009FBB80: b            #0x9fbe44
+009FBB84: mov          r4, r2
+009FBB88: ldr          r1, [r4, #0x40]
+009FBB8C: movw         r3, #0xffe
+009FBB90: ldr          r2, [r4, #0x34]
+009FBB94: and          r3, r3, r1
+009FBB98: adds         r3, r3, #0
+009FBB9C: movne        r3, #1
+009FBBA0: cmp          r2, #0
+009FBBA4: orreq        r3, r3, #1
+009FBBA8: cmp          r3, #0
+009FBBAC: beq          #0x9fbb84
+RANGE 0x009FBE74..0x009FBEEC exclusive; ARM;
+009FBE74: push         {r4, r5, r6, lr}
+009FBE78: mov          r6, r1
+009FBE7C: mov          r5, r3
+009FBE80: mov          r4, r0
+009FBE84: b            #0x9fbe8c
+009FBE88: mov          r4, r1
+009FBE8C: ldr          r0, [r4, #0x40]
+009FBE90: movw         r3, #0xffe
+009FBE94: ldr          r1, [r4, #0x34]
+009FBE98: and          r3, r3, r0
+009FBE9C: adds         r3, r3, #0
+009FBEA0: movne        r3, #1
+009FBEA4: cmp          r1, #0
+009FBEA8: orreq        r3, r3, #1
+009FBEAC: cmp          r3, #0
+009FBEB0: beq          #0x9fbe88
+009FBEB4: mov          r0, r4
+009FBEB8: mov          r1, r6
+009FBEBC: bl           #0x9faee8
+009FBEC0: cmp          r5, #0
+009FBEC4: beq          #0x9fbee8
+009FBEC8: mov          r0, r4
+009FBECC: mov          r1, r6
+009FBED0: add          r2, r5, #0x18
+009FBED4: bl           #0x9fb17c
+009FBED8: ldrb         r3, [r5, #0x3c]
+009FBEDC: bfi          r3, r0, #2, #1
+009FBEE0: strb         r3, [r5, #0x3c]
+009FBEE4: pop          {r4, r5, r6, pc}
+009FBEE8: pop          {r4, r5, r6, pc}

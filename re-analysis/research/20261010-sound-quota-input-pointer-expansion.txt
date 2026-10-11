@@ -1,0 +1,12 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+NAVIGATION ONLY: ARM/Thumb PC literals and selected MOVW/MOVT propagation; 768-byte local possible-branch windows, conditional instructions possible, call-clobbers; actual bodies must be reopened.
+candidate-window 008E18C4 ARM
+candidate-window 0069DF6C Thumb
+candidate-window 006B0808 Thumb
+candidate-window 006B0842 Thumb
+candidate-window 006B087C Thumb
+candidate-window 006B08B6 Thumb
+candidate-window 006B08F0 Thumb
+candidate-window 006B092A Thumb
+processed candidate windows 8
+LIMIT: encoding/navigation local windows only; mixed-mode false candidates, shifted index, unmodelled branch flags/loop bounds, path merge, stack aliases, external mutation, computed/indirect inputs and pointer escape need primary checks. No exhaustive runtime writer absence.

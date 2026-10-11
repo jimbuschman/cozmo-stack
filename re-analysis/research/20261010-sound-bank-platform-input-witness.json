@@ -1,0 +1,219 @@
+{
+  "boundary": "Six shipped bank files, raw bounded chunk walk; no runtime key-writer or encrypted-input absence proof.",
+  "banks": [
+    {
+      "path": "re-analysis/obb/sound_meta/Init.bnk",
+      "sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "bytes": 3473,
+      "chunks": [
+        {
+          "tag": "BKHD",
+          "offset": 0,
+          "bytes": 32,
+          "raw_words": [
+            120,
+            1355168291,
+            0,
+            0,
+            2667
+          ],
+          "raw_version": 120
+        },
+        {
+          "tag": "INIT",
+          "offset": 40,
+          "bytes": 201
+        },
+        {
+          "tag": "STMG",
+          "offset": 249,
+          "bytes": 1095
+        },
+        {
+          "tag": "HIRC",
+          "offset": 1352,
+          "bytes": 1917
+        },
+        {
+          "tag": "ENVS",
+          "offset": 3277,
+          "bytes": 168
+        },
+        {
+          "tag": "PLAT",
+          "offset": 3453,
+          "bytes": 12,
+          "length": 8,
+          "raw_bytes_hex": "416e64726f696400",
+          "c_string": "Android",
+          "tail_bytes": 0
+        }
+      ]
+    },
+    {
+      "path": "re-analysis/obb/sound_meta/Music.bnk",
+      "sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "bytes": 1071008,
+      "chunks": [
+        {
+          "tag": "BKHD",
+          "offset": 0,
+          "bytes": 32,
+          "raw_words": [
+            120,
+            3991942870,
+            0,
+            0,
+            2667
+          ],
+          "raw_version": 120
+        },
+        {
+          "tag": "DIDX",
+          "offset": 40,
+          "bytes": 1512
+        },
+        {
+          "tag": "DATA",
+          "offset": 1560,
+          "bytes": 954555
+        },
+        {
+          "tag": "HIRC",
+          "offset": 956123,
+          "bytes": 114877
+        }
+      ]
+    },
+    {
+      "path": "re-analysis/obb/sound_meta/SFX.bnk",
+      "sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "bytes": 100795,
+      "chunks": [
+        {
+          "tag": "BKHD",
+          "offset": 0,
+          "bytes": 24,
+          "raw_words": [
+            120,
+            393239870,
+            0,
+            0,
+            2667
+          ],
+          "raw_version": 120
+        },
+        {
+          "tag": "DIDX",
+          "offset": 32,
+          "bytes": 288
+        },
+        {
+          "tag": "DATA",
+          "offset": 328,
+          "bytes": 85112
+        },
+        {
+          "tag": "HIRC",
+          "offset": 85448,
+          "bytes": 15339
+        }
+      ]
+    },
+    {
+      "path": "re-analysis/obb/sound_meta/UI.bnk",
+      "sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "bytes": 42962,
+      "chunks": [
+        {
+          "tag": "BKHD",
+          "offset": 0,
+          "bytes": 24,
+          "raw_words": [
+            120,
+            1551306167,
+            0,
+            0,
+            2667
+          ],
+          "raw_version": 120
+        },
+        {
+          "tag": "DIDX",
+          "offset": 32,
+          "bytes": 48
+        },
+        {
+          "tag": "DATA",
+          "offset": 88,
+          "bytes": 41037
+        },
+        {
+          "tag": "HIRC",
+          "offset": 41133,
+          "bytes": 1821
+        }
+      ]
+    },
+    {
+      "path": "re-analysis/obb/sound_meta/Dev_Debug.bnk",
+      "sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "bytes": 2573,
+      "chunks": [
+        {
+          "tag": "BKHD",
+          "offset": 0,
+          "bytes": 24,
+          "raw_words": [
+            120,
+            1453038702,
+            0,
+            0,
+            2667
+          ],
+          "raw_version": 120
+        },
+        {
+          "tag": "HIRC",
+          "offset": 32,
+          "bytes": 2533
+        }
+      ]
+    },
+    {
+      "path": "re-analysis/obb/sound_meta/English(US)/Cozmo.bnk",
+      "sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "bytes": 6236403,
+      "chunks": [
+        {
+          "tag": "BKHD",
+          "offset": 0,
+          "bytes": 32,
+          "raw_words": [
+            120,
+            2386142475,
+            12,
+            0,
+            2667
+          ],
+          "raw_version": 120
+        },
+        {
+          "tag": "DIDX",
+          "offset": 40,
+          "bytes": 24504
+        },
+        {
+          "tag": "DATA",
+          "offset": 24552,
+          "bytes": 5981962
+        },
+        {
+          "tag": "HIRC",
+          "offset": 6006522,
+          "bytes": 229873
+        }
+      ]
+    }
+  ]
+}

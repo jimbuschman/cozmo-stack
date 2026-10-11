@@ -1,0 +1,107 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099AFDC..0x0099B02C exclusive; ARM;
+0099AFDC: str          r1, [r4, #0xc]
+0099AFE0: str          r3, [r4, #0x14]
+0099AFE4: beq          #0x99aff4
+0099AFE8: ldr          r3, [r0]
+0099AFEC: ldr          r3, [r3, #0xc]
+0099AFF0: blx          r3
+0099AFF4: add          r0, r4, #0x50
+0099AFF8: bl           #0x9e8738
+0099AFFC: ldr          r3, [pc, #0x24] ; word[0099B028]=00680F54
+0099B000: mov          r0, r4
+0099B004: add          r3, pc, r3
+0099B008: add          r3, r3, #8
+0099B00C: str          r3, [r0, #0x38]!
+0099B010: bl           #0x99d5dc
+0099B014: mov          r0, r4
+0099B018: bl           #0x984fb8
+0099B01C: mov          r0, r4
+0099B020: pop          {r4, pc}
+0099B024: rsbeq        pc, sb, ip, lsr #17
+0099B028: rsbeq        r0, r8, r4, asr pc
+RANGE 0x0099B0FC..0x0099B150 exclusive; ARM;
+0099B0FC: str          r1, [r4, #0xc]
+0099B100: str          r3, [r4, #0x14]
+0099B104: beq          #0x99b114
+0099B108: ldr          r3, [r0]
+0099B10C: ldr          r3, [r3, #0xc]
+0099B110: blx          r3
+0099B114: add          r0, r4, #0x50
+0099B118: bl           #0x9e8738
+0099B11C: ldr          r3, [pc, #0x2c] ; word[0099B150]=00680E34
+0099B120: mov          r0, r4
+0099B124: add          r3, pc, r3
+0099B128: add          r3, r3, #8
+0099B12C: str          r3, [r0, #0x38]!
+0099B130: bl           #0x99d5dc
+0099B134: mov          r0, r4
+0099B138: bl           #0x984fb8
+0099B13C: mov          r0, r4
+0099B140: bl           #0x4a40cc
+0099B144: mov          r0, r4
+0099B148: pop          {r4, pc}
+0099B14C: rsbeq        pc, sb, ip, lsl #15
+RANGE 0x0099B1A8..0x0099B1F4 exclusive; ARM;
+0099B1A8: str          r1, [r4]
+0099B1AC: add          r3, r3, #0x64
+0099B1B0: str          r2, [r4, #0xc]
+0099B1B4: str          r3, [r4, #0x14]
+0099B1B8: bl           #0x99d5f4
+0099B1BC: ldr          r3, [pc, #0x58] ; word[0099B21C]=00680D90
+0099B1C0: str          r6, [r4, #0x48]
+0099B1C4: add          r0, r4, #0x50
+0099B1C8: add          r3, pc, r3
+0099B1CC: str          r5, [r4, #0x4c]
+0099B1D0: add          r3, r3, #8
+0099B1D4: str          r7, [r4, #0x44]
+0099B1D8: str          r3, [r4, #0x38]
+0099B1DC: bl           #0x9e8728
+0099B1E0: ldr          r0, [r4, #0x48]
+0099B1E4: ldrb         r3, [r4, #0x60]
+0099B1E8: cmp          r0, r7
+0099B1EC: str          r7, [r4, #0x5c]
+0099B1F0: and          r3, r3, #0xfe
+RANGE 0x0099B24C..0x0099B298 exclusive; ARM;
+0099B24C: str          r2, [r4]
+0099B250: add          r1, r1, #0x64
+0099B254: str          r3, [r4, #0xc]
+0099B258: str          r1, [r4, #0x14]
+0099B25C: bl           #0x99d5f4
+0099B260: ldr          r1, [pc, #0x54] ; word[0099B2BC]=00680CEC
+0099B264: str          r7, [r4, #0x48]
+0099B268: add          r0, r4, #0x50
+0099B26C: add          r1, pc, r1
+0099B270: str          r6, [r4, #0x4c]
+0099B274: add          r3, r1, #8
+0099B278: str          r5, [r4, #0x44]
+0099B27C: str          r3, [r4, #0x38]
+0099B280: bl           #0x9e8728
+0099B284: ldr          r0, [r4, #0x48]
+0099B288: ldrb         r3, [r4, #0x60]
+0099B28C: cmp          r0, r5
+0099B290: str          r5, [r4, #0x5c]
+0099B294: and          r3, r3, #0xfe
+RANGE 0x0099DC70..0x0099DCC4 exclusive; ARM;
+0099DC70: mov          lr, #0x3f800000
+0099DC74: mov          r2, #0xff
+0099DC78: mov          r1, #0x1000000
+0099DC7C: str          r2, [r0, #4]
+0099DC80: str          r1, [r0, #8]
+0099DC84: mvn          r2, #0
+0099DC88: mov          r1, #0x400
+0099DC8C: str          r2, [r0, #0x14]
+0099DC90: str          r1, [r0, #0x20]
+0099DC94: mov          r2, #0x10000
+0099DC98: mov          r1, #0x3e8
+0099DC9C: str          r2, [r0, #0x28]
+0099DCA0: str          r1, [r0, #0x38]
+0099DCA4: mov          r2, #0
+0099DCA8: mov          r1, #1
+0099DCAC: str          r2, [r0]
+0099DCB0: strb         r2, [r0, #0x18]
+0099DCB4: mov          ip, #0x40000
+0099DCB8: str          lr, [r3, #0xc]
+0099DCBC: add          r0, r0, #0x2c
+0099DCC0: str          r2, [r3, #0x40]

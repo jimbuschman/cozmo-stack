@@ -1,0 +1,90 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A18EE8..0x00A18F3C exclusive; ARM;
+00A18EE8: add          ip, pc, ip
+00A18EEC: strb         r3, [r7, #8]
+00A18EF0: add          ip, ip, #8
+00A18EF4: str          r3, [r7, #0xc]
+00A18EF8: str          r3, [r7, #0x10]
+00A18EFC: str          r3, [r7, #0x14]
+00A18F00: str          ip, [r2, r1]
+00A18F04: bls          #0xa18f50
+00A18F08: ldr          ip, [r7, #-0x10]
+00A18F0C: sub          r7, r7, #0x1c
+00A18F10: ldr          r1, [r7, #0x10]
+00A18F14: ldr          r2, [r7, #0x14]
+00A18F18: ldr          sl, [r7, #0x18]
+00A18F1C: ldr          r6, [r7, #4]
+00A18F20: ldrb         lr, [r7, #8]
+00A18F24: str          sl, [r7, #0x34]
+00A18F28: str          r6, [r7, #0x20]
+00A18F2C: strb         lr, [r7, #0x24]
+00A18F30: str          ip, [r7, #0x28]
+00A18F34: str          r3, [r7, #0xc]
+00A18F38: str          r1, [r7, #0x2c]
+RANGE 0x00A1C9F8..0x00A1CA24 exclusive; ARM;
+00A1C9F8: ldr          lr, [fp, #-0x30]
+00A1C9FC: cmp          r1, #2
+00A1CA00: sub          r4, fp, #0x44
+00A1CA04: mov          r1, #0x2b
+00A1CA08: bfi          lr, sb, #0xc, #0x14
+00A1CA0C: mov          r5, r0
+00A1CA10: str          lr, [fp, #-0x30]
+00A1CA14: str          sb, [fp, #-0x34]
+00A1CA18: strh         sb, [fp, #-0x26]
+00A1CA1C: strh         sb, [fp, #-0x28]
+00A1CA20: stm          r4, {r2, r3}
+RANGE 0x00A1CA64..0x00A1CA94 exclusive; ARM;
+00A1CA64: ldrb         ip, [fp, #-0x2f]
+00A1CA68: strb         r3, [fp, #-0x30]
+00A1CA6C: ldr          r2, [pc, r2]
+00A1CA70: bfi          ip, r3, #0, #4
+00A1CA74: strh         r3, [fp, #-0x28]
+00A1CA78: strh         r3, [fp, #-0x26]
+00A1CA7C: ldr          r0, [r2]
+00A1CA80: strb         ip, [fp, #-0x2f]
+00A1CA84: ldr          r2, [fp, #-0x30]
+00A1CA88: str          r3, [fp, #-0x34]
+00A1CA8C: bfi          r2, r3, #0xc, #0x14
+00A1CA90: str          r2, [fp, #-0x30]
+RANGE 0x00A1CBE8..0x00A1CC24 exclusive; ARM;
+00A1CBE8: cmp          r7, #0xa
+00A1CBEC: add          ip, r8, r2
+00A1CBF0: movw         r0, #0xe89b
+00A1CBF4: movt         r0, #0x3fa1
+00A1CBF8: str          r0, [ip, #0x3c]
+00A1CBFC: beq          #0xa1cc7c
+00A1CC00: add          r2, r3, r2
+00A1CC04: cmp          r7, #0xb
+00A1CC08: add          lr, r8, r2
+00A1CC0C: movw         ip, #0xbae3
+00A1CC10: movt         ip, #0x3fab
+00A1CC14: str          ip, [lr, #0x34]
+00A1CC18: beq          #0xa1cc7c
+00A1CC1C: add          r2, r3, r2
+00A1CC20: cmp          r7, #0xc
+RANGE 0x00A1CC58..0x00A1CCB8 exclusive; ARM;
+00A1CC58: add          sl, r8, r2
+00A1CC5C: str          lr, [sl, #0x28]
+00A1CC60: beq          #0xa1cc7c
+00A1CC64: add          r3, r3, r2
+00A1CC68: cmp          r7, #0xf
+00A1CC6C: add          r2, r8, r3
+00A1CC70: str          ip, [r2, #0x30]
+00A1CC74: addne        r3, r1, r3
+00A1CC78: strne        r0, [r3, #0x38]
+00A1CC7C: ldrh         ip, [r5, #0xc]
+00A1CC80: vmov.f32     s15, #1.000000e+00
+00A1CC84: ldr          r7, [r5, #4]
+00A1CC88: sub          r1, fp, #0x34
+00A1CC8C: ldr          lr, [fp, #-0x48]
+00A1CC90: mov          r0, r5
+00A1CC94: vmov         s14, ip
+00A1CC98: str          r8, [sp]
+00A1CC9C: str          ip, [sp, #8]
+00A1CCA0: mov          r3, r8
+00A1CCA4: sub          r2, fp, #0x3c
+00A1CCA8: str          lr, [fp, #-0x34]
+00A1CCAC: mov          r5, r1
+00A1CCB0: mov          lr, #0
+00A1CCB4: strh         ip, [fp, #-0x28]

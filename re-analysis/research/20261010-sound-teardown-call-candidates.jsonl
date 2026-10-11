@@ -1,0 +1,14 @@
+{"address": "00A016D0", "target": "00A370E4", "kind": "ARM immediate B/BL candidate", "navigation": "00a0/00a01684.c"}
+{"address": "00A02328", "target": "00A370E4", "kind": "ARM immediate B/BL candidate", "navigation": "00a0/00a022e8.c"}
+{"address": "00A41C30", "target": "00A55D04", "kind": "ARM immediate B/BL candidate", "navigation": null}
+{"address": "00A41C44", "target": "00A55A84", "kind": "ARM immediate B/BL candidate", "navigation": null}
+{"address": "00A44ABC", "target": "00A55D04", "kind": "ARM immediate B/BL candidate", "navigation": "00a4/00a44948.c"}
+{"address": "00A44AD0", "target": "00A55A84", "kind": "ARM immediate B/BL candidate", "navigation": "00a4/00a44948.c"}
+{"address": "00A5463C", "target": "00A022E8", "kind": "ARM immediate B/BL candidate", "navigation": "00a5/00a545f0.c"}
+{"address": "00A54648", "target": "00A0228C", "kind": "ARM immediate B/BL candidate", "navigation": "00a5/00a545f0.c"}
+{"address": "00A55398", "target": "00A022E8", "kind": "ARM immediate B/BL candidate", "navigation": "00a5/00a54f1c.c"}
+{"address": "00A55484", "target": "00A0228C", "kind": "ARM immediate B/BL candidate", "navigation": "00a5/00a54f1c.c"}
+{"address": "00A55A58", "target": "00A0228C", "kind": "ARM immediate B/BL candidate", "navigation": "00a5/00a558ac.c"}
+{"address": "00A55BE8", "target": "00A0228C", "kind": "ARM immediate B/BL candidate", "navigation": "00a5/00a55a84.c"}
+{"address": "005E8D40", "target": "00A55A84", "kind": "raw absolute word candidate", "navigation": null}
+{"address": "005E8D44", "target": "00A55A84", "kind": "raw absolute word candidate", "navigation": null}

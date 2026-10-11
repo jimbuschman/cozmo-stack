@@ -1,0 +1,6 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+NAVIGATION ONLY: ARM/Thumb PC literals and selected MOVW/MOVT propagation; 768-byte local possible-branch windows, conditional instructions possible, call-clobbers; actual bodies must be reopened.
+processed candidate windows 23
+{"address":"005E8D18","mode":"Thumb","kind":"formed-r1","effective":"00A55A84","instruction":"ldr r1, [pc, #0x24]","seeds":["005E8D18"]}
+{"address":"005E8D1A","mode":"Thumb","kind":"formed-r2","effective":"00A55A84","instruction":"ldr r2, [pc, #0x28]","seeds":["005E8D18","005E8D1A"]}
+LIMIT: encoding/navigation local windows only; mixed-mode false candidates, shifted index, unmodelled branch flags/loop bounds, path merge, stack aliases, external mutation, computed/indirect inputs and pointer escape need primary checks. No exhaustive runtime writer absence.

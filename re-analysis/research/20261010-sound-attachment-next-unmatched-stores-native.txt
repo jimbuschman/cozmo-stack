@@ -1,0 +1,72 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0097F150..0x0097F1A0 exclusive; ARM;
+0097F150: cmp          r3, r1
+0097F154: bhi          #0x97f164
+0097F158: add          r3, r3, r2, lsl #4
+0097F15C: cmp          r1, r3
+0097F160: blo          #0x97f190
+0097F164: ldr          r3, [pc, #0x48] ; word[0097F1B4]=006C0ED8
+0097F168: ldr          r3, [pc, r3]
+0097F16C: ldr          r0, [r3]
+0097F170: bl           #0xa7a988
+0097F174: ldr          r3, [r6, #0x34]
+0097F178: mov          r1, sb
+0097F17C: cmp          r1, #0
+0097F180: sub          r3, r3, #1
+0097F184: str          r3, [r6, #0x34]
+0097F188: bne          #0x97f11c
+0097F18C: pop          {r3, r4, r5, r6, r7, r8, sb, pc}
+0097F190: ldr          r3, [r4, #0x28]
+0097F194: str          r3, [r1]
+0097F198: str          r1, [r4, #0x28]
+0097F19C: b            #0x97f174
+RANGE 0x0097F424..0x0097F480 exclusive; ARM;
+0097F424: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0097F428: sub          sp, sp, #0x2c
+0097F42C: mov          fp, r1
+0097F430: str          r0, [sp, #8]
+0097F434: bl           #0x9877b4
+0097F438: ldr          r3, [pc, #0x814] ; word[0097FC54]=006C0E48
+0097F43C: add          r3, pc, r3
+0097F440: str          r3, [sp, #0x10]
+0097F444: cmp          r0, #1
+0097F448: beq          #0x97f454
+0097F44C: add          sp, sp, #0x2c
+0097F450: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+0097F454: ldr          r3, [sp, #8]
+0097F458: ldr          r5, [r3, #0x84]
+0097F45C: cmp          r5, #0
+0097F460: beq          #0x97f518
+0097F464: ldr          r4, [r3, #0x88]
+0097F468: ldr          r3, [pc, #0x7e8] ; word[0097FC58]=FFFFFDBC
+0097F46C: add          r7, r4, r4, lsl #3
+0097F470: add          r7, r4, r7, lsl #1
+0097F474: add          r7, r5, r7, lsl #2
+0097F478: cmp          r5, r7
+0097F47C: beq          #0x97fc44
+RANGE 0x0097F630..0x0097F690 exclusive; ARM;
+0097F630: strb         ip, [r4, #0x28]
+0097F634: bl           #0x4a685c
+0097F638: ldr          r3, [r6, #0x25]
+0097F63C: ldr          r2, [r6, #0x21]
+0097F640: add          lr, r6, #0x2b
+0097F644: ldrh         r5, [r6, #0x29]
+0097F648: add          ip, r6, #0x2c
+0097F64C: str          r3, [r4, #0x3c]
+0097F650: add          r1, r6, #0x2d
+0097F654: ldrb         r3, [r4, #0x40]
+0097F658: str          r2, [r4, #0x38]
+0097F65C: add          r2, r6, #0x2e
+0097F660: bfi          r3, r5, #0, #3
+0097F664: str          r0, [r4, #0x34]
+0097F668: str          lr, [fp]
+0097F66C: strb         r3, [r4, #0x40]
+0097F670: uxtb         r3, r3
+0097F674: ldrb         r0, [r6, #0x2b]
+0097F678: str          ip, [fp]
+0097F67C: bfi          r3, r0, #3, #1
+0097F680: strb         r3, [r4, #0x40]
+0097F684: ldrb         r0, [r6, #0x2c]
+0097F688: uxtb         r3, r3
+0097F68C: str          r1, [fp]

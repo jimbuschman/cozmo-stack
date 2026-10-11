@@ -1,0 +1,24 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A46D70..0x00A46D90 exclusive; ARM;
+00A46D70: str          lr, [sp, #-4]!
+00A46D74: mov          r1, #0x3f800000
+00A46D78: mov          ip, #0
+00A46D7C: mov          lr, #1
+00A46D80: mov          r2, #0x10000
+00A46D84: strb         lr, [r0, #0x57]
+00A46D88: str          r2, [r0, #0x2c]
+00A46D8C: mov          r2, #0
+RANGE 0x00A47384..0x00A473B0 exclusive; ARM;
+00A47384: push         {r3, r4, r5, lr}
+00A47388: mov          r4, r0
+00A4738C: ldrb         r3, [r0, #0x57]
+00A47390: mov          r5, r2
+00A47394: vpush        {d8}
+00A47398: cmp          r3, #0
+00A4739C: vmov         s17, r1
+00A473A0: bne          #0xa47474
+00A473A4: vldr         s15, [r0, #0x50]
+00A473A8: vcmp.f32     s17, s15
+00A473AC: vmrs         apsr_nzcv, fpscr
+RANGE 0x00A47758..0x00A47784 exclusive; ARM;

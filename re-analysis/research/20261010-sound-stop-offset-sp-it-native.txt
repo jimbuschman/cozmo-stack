@@ -1,0 +1,26 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0050745A..0x00507478 exclusive; Thumb;
+0050745A: ands.w       r8, sl, pc, lsl #17
+0050745E: ldr          r1, [sp, #0x1f8]
+00507460: add          r0, pc
+00507462: ldr          r0, [r0]
+00507464: ldr          r0, [r0]
+00507466: subs         r0, r0, r1
+00507468: itt          eq
+0050746A: addeq.w      sp, sp, #0x1fc
+0050746E: popeq.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00507472: blx          #0x4a4fe4
+RANGE 0x00623B58..0x00623B7A exclusive; Thumb;
+00623B58: blx          #0x4a5890
+00623B5C: ldr.w        r0, [pc, #0x7e0] ; word[00624340]=00A1ACE6
+00623B60: ldr          r1, [sp, #0x1f0]
+00623B62: add          r0, pc
+00623B64: ldr          r0, [r0]
+00623B66: ldr          r0, [r0]
+00623B68: subs         r0, r0, r1
+00623B6A: itt          eq
+00623B6C: addeq        sp, #0x1f4
+00623B6E: popeq.w      {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00623B72: blx          #0x4a4fe4
+00623B76: movs         r0, #0

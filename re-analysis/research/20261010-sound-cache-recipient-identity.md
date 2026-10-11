@@ -1,0 +1,22 @@
+# Q14-113 / Q14-136: cache recipient identity closes loader reconciliation
+
+Checkpoint619; decisions only; scope guard reread before each step. Fresh primary `20261010-sound-cache-recipient-identity-native.txt`, engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Existing RW1-10/R46-52 native companions establish every physical registration branch; LS581/LT1 establish the positively supplied subscriber products.
+
+SP618's proposed bus-recipient frontier was too broad and named the wrong body.9C6440..9C6660 is the already recovered BH548A bus **serialized control reader**, not a cache-record subscriber publisher.9F4BB8 is SL288F's direct parent/bus pointer resolver, not a virtual factory. Neither creates a new subscriber class merely because registration walks a bus. This correction removes that invented dependency without asserting runtime absence.
+
+| Positive join | Primary | Exact result |
+| --- | --- | --- |
+| Subscriber input identity |9F7390..9F73B0 | Save incomingr1 subscriber atSP28 before either route. Savedmask pointer is independentlySP40. Node/bus route changes do not manufacture another subscriber. |
+| Actual record constructor ABI |9F74D4..9F74E4;RW3/4 other repeated branches | Load savedSP28 subscriber into stack argument forA1973C, pass current intersection mask separately inr2/r3. Existing RW3-4 establishes the same generated record/owner comparison and physical copy in node14/20 andbus14/C8/20. |
+| Published record identity |A1973C..A19774;R46 | Load original subscriber from incomingstackarg intor5; copy24 bytes fromsubscriber+8 torecordkey0..17; copy mask to18/1C; store **the same subscriber pointer** atrecord20. No class lookup, bus-context creation, callback, new input or indirect resolver in this constructor. |
+| Actual admitted callers/products |R27/LW/LS581;LT1-3;RW1-10;HP617;SP618 | New property mask re-registers each currently published context using its existing20 owner and concrete10/14 masks. Voice initialization supplies the base/continuous or temporary context subscriber, limiter initialization supplies the limit subscriber. Registration on parent/bus caches preserves that identity, so delivery selects the already bound context8/C products rather than an unexplained bus-specific receiver. Failed/partial insertion, existing record replacement, mask intersections and live callback side effects retain RW/R27/LW exact rules. This is a positive selected-path join, not a global no-other-caller assertion. |
+
+## Original obligation disposition
+
+Q14-113 **CHECKED**: PL616 individually reconciles all eleven original addresses (including actualA10C84 entry for quotedA10C98); R28-44/LW/AC establish raw keys, point order, replacement-before-validation,1F/34 and failure retention, physical curve storage and synchronous initial delivery. CC615 independently binds all64 shipped raw point/scaling/source inputs. SRG/SU/MR517/TG592/ER538/MC610 settle ordinary/modulator source attachment and recipients. HP617/SP618/this positive cache-identity join settle actual node/bus holder callbacks, context/mask/value/filter order and the two serialized type1 parameter products. No unpaid decision remains in that named loader reconciliation; out of scope: hash/backing/allocator internals, excluded coordinate payload and per-sample DSP.
+
+Q14-136 **CHECKED**: currentC35.1-4 exists and is independently checked: evaluator R/CL/QE, named loader113 above, direct accumulatorsAC and64-input/currentD1-D9 CC615. Original114 separately requests address-taken/indirect evaluator caller proof, and104/131 separately request shipped bus ancestor/attachment writer census; they retain their original PARTIAL status. This disposition does not settle them, infer unreachability from navigation, accept the legacy double helper, or mark the whole production RTPC path/fidelity complete.
+
+Counts100 native CHECKED+8 scope CHECKED/32 PARTIAL/140;140 AUDIBLE/0 INTERNAL. Research only; no production/fidelity/inventory/PROJECT_STATE/hardware/Q15 changes. Next bounded work: smallest remaining original decision obligation; explicit bus104/131 census uses its own supplied-input/writer requirement.
+
+Supplement622: `20261010-sound-music-holder-callbacks.md` positively checks playlist/segment/MusicSwitch derived0/4 holders and track0/4; common9F402C alone was insufficient for these overrides. PropertyD and active-child notification controls are explicit. Original113/136 CHECKED dispositions include that supplement; no whole-music claim.

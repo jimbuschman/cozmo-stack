@@ -1,0 +1,112 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A0B370..0x00A0B3F8 exclusive; ARM;
+00A0B370: str          sb, [r4, #0x74]
+00A0B374: bfi          r7, r3, #0, #3
+00A0B378: str          r3, [r4, #0x18]
+00A0B37C: strb         r7, [r4, #0x23]
+00A0B380: bfi          ip, r3, #1, #1
+00A0B384: str          r3, [r4, #0x1c]
+00A0B388: mov          r0, r4
+00A0B38C: strh         r3, [r4, #0x20]
+00A0B390: str          r3, [r4, #0x44]
+00A0B394: str          r3, [r4, #0x48]
+00A0B398: str          r3, [r4, #0x4c]
+00A0B39C: str          r3, [r4, #0x68]
+00A0B3A0: str          r3, [r4, #0x6c]
+00A0B3A4: str          r3, [r4, #0x70]
+00A0B3A8: str          r3, [r4, #0x24]
+00A0B3AC: str          r3, [r4, #0x2c]
+00A0B3B0: str          r3, [r4, #0x34]
+00A0B3B4: str          r3, [r4, #0x3c]
+00A0B3B8: strb         r3, [r4, #0x50]
+00A0B3BC: strb         r3, [r4, #0x51]
+00A0B3C0: strb         r3, [r4, #0x52]
+00A0B3C4: strb         r3, [r4, #0x53]
+00A0B3C8: str          r8, [r4, #0x78]
+00A0B3CC: strb         r6, [r4, #0x22]
+00A0B3D0: strb         r1, [r4, #0x7f]
+00A0B3D4: strb         ip, [r4, #0x80]
+00A0B3D8: str          r5, [r4, #0x60]
+00A0B3DC: str          r5, [r4, #0x64]
+00A0B3E0: str          r2, [r4, #0x28]
+00A0B3E4: str          r2, [r4, #0x30]
+00A0B3E8: str          r2, [r4, #0x38]
+00A0B3EC: str          r2, [r4, #0x40]
+00A0B3F0: strb         r3, [r4, #0x54]
+00A0B3F4: strb         r3, [r4, #0x55]
+RANGE 0x00A0BEF0..0x00A0BF50 exclusive; ARM;
+00A0BEF0: add          r6, sb, sb, lsl #2
+00A0BEF4: add          r4, lr, #0xc
+00A0BEF8: mov          r7, #0x3f800000
+00A0BEFC: mvn          r8, #0
+00A0BF00: add          sb, sb, #1
+00A0BF04: strb         r3, [lr, #0x44]
+00A0BF08: ldr          r3, [fp, #0x1c]
+00A0BF0C: str          sl, [lr, #0x30]
+00A0BF10: add          r6, r3, r6, lsl #3
+00A0BF14: str          sl, [lr]
+00A0BF18: mov          r5, r6
+00A0BF1C: ldm          r5!, {r0, r1, r2, r3}
+00A0BF20: str          sl, [lr, #4]
+00A0BF24: str          r8, [lr, #0x40]
+00A0BF28: str          sl, [lr, #8]
+00A0BF2C: str          r7, [lr, #0x34]
+00A0BF30: str          r7, [lr, #0x38]
+00A0BF34: str          r7, [lr, #0x3c]
+00A0BF38: stm          r4!, {r0, r1, r2, r3}
+00A0BF3C: ldm          r5!, {r0, r1, r2, r3}
+00A0BF40: ldr          r5, [r5]
+00A0BF44: stm          r4!, {r0, r1, r2, r3}
+00A0BF48: mov          r3, lr
+00A0BF4C: str          r5, [r4]
+RANGE 0x00A0BFCC..0x00A0C030 exclusive; ARM;
+00A0BFCC: ldr          r7, [fp, #0x6c]
+00A0BFD0: cmp          r1, #0
+00A0BFD4: beq          #0xa0c05c
+00A0BFD8: cmp          r7, #0
+00A0BFDC: beq          #0xa0c050
+00A0BFE0: add          r7, r7, r7, lsl #3
+00A0BFE4: mov          r8, #0x3f800000
+00A0BFE8: mov          r4, r3
+00A0BFEC: mov          r6, #0
+00A0BFF0: lsl          r7, r7, #3
+00A0BFF4: cmp          r4, #0
+00A0BFF8: beq          #0xa0c028
+00A0BFFC: mvn          r3, #0
+00A0C000: str          sl, [r4, #0x30]
+00A0C004: str          r3, [r4, #0x40]
+00A0C008: mov          r3, #0
+00A0C00C: str          r8, [r4, #0x34]
+00A0C010: strb         r3, [r4, #0x44]
+00A0C014: str          r8, [r4, #0x38]
+00A0C018: str          r8, [r4, #0x3c]
+00A0C01C: str          sl, [r4]
+00A0C020: str          sl, [r4, #4]
+00A0C024: str          sl, [r4, #8]
+00A0C028: ldr          r1, [fp, #0x68]
+00A0C02C: mov          r0, r4
+RANGE 0x00A0C110..0x00A0C168 exclusive; ARM;
+00A0C110: beq          #0xa0c1a0
+00A0C114: cmp          r5, #0
+00A0C118: beq          #0xa0c190
+00A0C11C: add          r2, r5, r5, lsl #3
+00A0C120: mov          r5, r6
+00A0C124: ldr          r6, [sp, #4]
+00A0C128: mov          r8, #0x3f800000
+00A0C12C: lsl          r7, r2, #3
+00A0C130: mov          sl, #0
+00A0C134: mvn          sb, #0
+00A0C138: cmp          r6, #0
+00A0C13C: beq          #0xa0c168
+00A0C140: mov          r3, #0
+00A0C144: str          sl, [r6, #0x30]
+00A0C148: str          sb, [r6, #0x40]
+00A0C14C: strb         r3, [r6, #0x44]
+00A0C150: str          r8, [r6, #0x34]
+00A0C154: str          r8, [r6, #0x38]
+00A0C158: str          r8, [r6, #0x3c]
+00A0C15C: str          sl, [r6]
+00A0C160: str          sl, [r6, #4]
+00A0C164: str          sl, [r6, #8]
+RANGE 0x00A0C1CC..0x00A0C20C exclusive; ARM;

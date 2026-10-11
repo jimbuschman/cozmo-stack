@@ -1,0 +1,12 @@
+# Q14-104/131: separate manager arrays, free heads and frame locals
+
+Checkpoint725; guard reread before each step. Primary evidence: global-queue-fields-native.txt, global-queue-inputs-native.txt, global-queue-products-native.txt, global-queue-constructor-native.txt and global-queue-retirement-input-native.txt (20261010-sound-attachment- prefix). Engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1.
+
+| Original candidates | Destination and decision boundary |
+| --- | --- |
+| 9A6F08 / 9A6F0C | Actual9A6CEC setsFP=SP+28 at9A6D08; negative34/38 are frame locals, including across dynamic SP allocation. Not parent/bus fields. out of scope: per-sample DSP arithmetic in surrounding body under ADP-1; no descent. |
+| 9A7994 / 9A8A20 / 9A8ED4 | Actual9A7904/9A8904 retain incomingr0 inR4. Startup99E6AC/B0's independent118 product→R7 passes to9A8904 at99E9D4/E4. Teardown99E200+8+6EF660 resolves108D868;78 loads same global108D8E0 before9A7904 at99E210. Original stores affect separate manager array2C/count30/cap34 or member38 initialization; cleanup clearscount30 before freeing old2C, then base2C/cap34; replacement publishes2C before cap34. Supplied product path positive; alternate caller inputs remain conditional. |
+| 9A94B0 / 9A94BC | Actual9A9404 incomingr0→R6. CompletionA04F54 precedes unlink; last-element test conditionally writes tail34, then removed element0 links prior free-head38, then new free-head38 publishes removed element, then count44 decrements, before associated-object virtual release. Retain exact completion/retirement decisions. GQT750 binds this direct9AD064 receiver to fixed108D870 on Term; inputs beyond that known product remain conditional; do not call this a node without a receiver proof. |
+| 9A9AB0 / 9A9AD8 / 9A9B04 | Startup99EF48/54 allocates separate78 product→R4, calls9A9984, publishes toglobal slot before9A99E0 at99EF6C. Init9A99E0 preserves incomingr0→R4; clearsfree-head38/count44, allocates180-byte block into48, publishesfree-head38=block/cap3C=20 only on success, initializesC-stride links, then clearsactive30/34. Allocation failure and clock sampling remain distinct. Concrete78 product is separate from HIRC-node attachments. |
+
+out of scope: backing allocation, copying and free-list infrastructure arithmetic; no descent. This does not exclude audible completion or timing decisions. Counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Research only.

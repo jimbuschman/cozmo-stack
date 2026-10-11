@@ -1,0 +1,45 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009E1E5C..0x009E1EB8 exclusive; ARM;
+009E1E5C: vldr         s14, [pc, #0xec] ; word[009E1F50]=42C80000
+009E1E60: mov          r0, #1
+009E1E64: vdiv.f32     s15, s15, s14
+009E1E68: vstr         s15, [ip, #0x7c]
+009E1E6C: pop          {r3, pc}
+009E1E70: ldr          r2, [pc, #0xe0] ; word[009E1F58]=FFFFFDDC
+009E1E74: vcvt.f64.f32 d16, s15
+009E1E78: ldr          r1, [r0]
+009E1E7C: ldr          r3, [r3, r2]
+009E1E80: ldr          r2, [r1, #0x10]
+009E1E84: ldr          r3, [r3]
+009E1E88: vmov.f64     d17, #5.000000e-01
+009E1E8C: vmov         s15, r3
+009E1E90: vcvt.f64.u32 d18, s15
+009E1E94: vmul.f64     d16, d16, d18
+009E1E98: vmov.f64     d18, #-5.000000e-01
+009E1E9C: vcmpe.f64    d16, #0
+009E1EA0: vmrs         apsr_nzcv, fpscr
+009E1EA4: vmovle.f64   d17, d18
+009E1EA8: vadd.f64     d16, d16, d17
+009E1EAC: vcvt.s32.f64 s15, d16
+009E1EB0: vstr         s15, [ip, #0x84]
+009E1EB4: blx          r2
+RANGE 0x009E2D9C..0x009E2DE4 exclusive; ARM;
+009E2D9C: ldr          r3, [r6, #0x48]
+009E2DA0: cmp          r3, #3
+009E2DA4: bne          #0x9e2c88
+009E2DA8: ldr          r0, [r6, #0x30]
+009E2DAC: cmp          r0, #0
+009E2DB0: bne          #0x9e2ca4
+009E2DB4: ldr          r3, [r6, #0x3c]
+009E2DB8: ldr          r2, [sp, #4]
+009E2DBC: add          r3, r3, r2
+009E2DC0: str          r3, [r6, #0x3c]
+009E2DC4: ldr          r3, [r6, #8]
+009E2DC8: ldr          r3, [r3, #0x10]
+009E2DCC: cmp          r3, #0
+009E2DD0: bne          #0x9e2cf0
+009E2DD4: cmp          sl, #0
+009E2DD8: beq          #0x9e501c
+009E2DDC: ldr          r5, [sl, #8]
+009E2DE0: ldr          r3, [sl, #0xc]

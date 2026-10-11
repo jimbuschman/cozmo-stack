@@ -1,0 +1,9 @@
+# Q14-104/131: first remaining store candidate's actual settings destination
+
+Checkpoint671; decisions only; guard reread before each step. Primary `20261010-sound-attachment-first-unmatched-store-native.txt`, `20261010-sound-attachment-first-unmatched-store-base-native.txt`, `20261010-sound-attachment-first-unmatched-store-callers.json`, `20261010-sound-attachment-first-unmatched-store-caller-native.txt`. Engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Existing Z3/SL startup and BACKBIND1 own the actual settings adapter and device initializer interface; no new infrastructure descent.
+
+AW671A: original candidate9606A4 writes rawFFFFFFFF to incoming object34 in initializer96060C. Its r4 is saved incomingr0 at960610, not a node inferred from the field offset. Positive Thumb caller8D8170 saves actual stackargument[entrySP] inr6 after the16-byte push, passes that exact output pointer to96060C, then overwrites its30 from app71 and its4 from app64. Separate stack arguments receive stream-manager settings via960600, engine settings via99DC68 and platform settings via99DCE8; none is conflated with this output.
+
+BACKBIND1 separately establishes that this actual deviceSettings is passed by app startup8D81EA..F6 to8D6C02: settings14 must be1, then conditional resolver registration and961168(settings,hook) produce deviceID. Thus9606A4's destination is the I/O device settings structure, not audio-node parent34 or outputbus38. No class identity is inferred merely from allocation size, field34, defaultFFFFFFFF or missing export.
+
+out of scope: I/O device/resolver/scheduler settings and infrastructure. Stop at the positive settings handoff; allocator, scheduler and OS-default descendants are not traced. 104/131 remain PARTIAL for genuinely unresolved node/bus writers, aliases and admitted9FBB30 destination. Counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL. No production/fidelity/inventory/hardware/Q15 edits.

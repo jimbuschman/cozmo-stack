@@ -1,0 +1,45 @@
+{
+  "limit": "Known ordinary-node core only; other-width immediate stores, not mode/object/alias absence proof.",
+  "candidates": [
+    {
+      "address": "0x9f0994",
+      "instruction": "vstr s15, [r4, #0x34]"
+    },
+    {
+      "address": "0x9f09b0",
+      "instruction": "vstr s14, [r4, #0x38]"
+    },
+    {
+      "address": "0x9f0a54",
+      "instruction": "vstr s15, [r4, #0x38]"
+    },
+    {
+      "address": "0x9f0bdc",
+      "instruction": "vstr s15, [r4, #0x38]"
+    },
+    {
+      "address": "0x9f0ec0",
+      "instruction": "vstr s15, [r4, #0x38]"
+    },
+    {
+      "address": "0x9f31c0",
+      "instruction": "strh r3, [r0, #0x34]"
+    },
+    {
+      "address": "0x9f31cc",
+      "instruction": "strb r6, [r0, #0x36]"
+    },
+    {
+      "address": "0x9f31d0",
+      "instruction": "strb lr, [r0, #0x37]"
+    },
+    {
+      "address": "0x9f645c",
+      "instruction": "strb r3, [r4, #0x36]"
+    },
+    {
+      "address": "0x9f6920",
+      "instruction": "strbne r1, [r2, #0x37]"
+    }
+  ]
+}

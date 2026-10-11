@@ -1,0 +1,27 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099EC38..0x0099EC7C exclusive; ARM;
+0099EC38: bl           #0x9cc510
+0099EC3C: cmp          r0, #1
+0099EC40: mov          r4, r0
+0099EC44: bne          #0x99eb60
+0099EC48: b            #0x99e508
+0099EC4C: ldr          r3, [pc, #0x45c] ; word[0099F0B0]=006B37BC
+0099EC50: mov          r1, #0x74
+0099EC54: add          r3, pc, r3
+0099EC58: ldr          r0, [r3]
+0099EC5C: bl           #0xa7a7f4
+0099EC60: subs         r6, r0, #0
+0099EC64: beq          #0x99ef8c
+0099EC68: bl           #0xa0e12c
+0099EC6C: mov          r0, r6
+0099EC70: str          r6, [r4, #0xa0]
+0099EC74: bl           #0xa0f368
+0099EC78: cmp          r0, #1
+RANGE 0x00A0DEC4..0x00A0DED0 exclusive; ARM;
+00A0DEC4: bne          #0xa0dee0
+00A0DEC8: bx           lr
+00A0DECC: str          r3, [r2, #4]
+RANGE 0x00A0DEC8..0x00A0DECE exclusive; Thumb;
+00A0DEC8: vrhadd.u16   d14, d14, d31
+00A0DECC: adds         r0, #4

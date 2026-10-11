@@ -1,0 +1,1753 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "target": "PBI1F8",
+  "limit": "Bounded near-field immediates and wide-memory encodings in principal mode regions. Navigation only; mixed-mode/literal false candidates, composed offsets, arbitrary register-index/block writes and escaped pointer mutation UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x4d8014",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x4d9848",
+      "mode": "Thumb",
+      "instruction": "add.w r5, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x4d9854",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4d9872",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4dc0f6",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4dc10e",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4e1498",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4e149c",
+      "mode": "Thumb",
+      "instruction": "strd r7, r5, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4e2418",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4e241c",
+      "mode": "Thumb",
+      "instruction": "strd r5, r6, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4feb72",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4feba6",
+      "mode": "Thumb",
+      "instruction": "strd r6, r7, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x4fece8",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x4ff410",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x50712c",
+      "mode": "Thumb",
+      "instruction": "sub.w sp, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x50746a",
+      "mode": "Thumb",
+      "instruction": "addeq.w sp, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x509924",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1f8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50992c",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x509938",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x509940",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x509954",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a0d6",
+      "mode": "Thumb",
+      "instruction": "vstr d1, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a0f6",
+      "mode": "Thumb",
+      "instruction": "vstr d1, [sp, #0x1f8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a10e",
+      "mode": "Thumb",
+      "instruction": "vstr d1, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a12e",
+      "mode": "Thumb",
+      "instruction": "vstr d1, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a146",
+      "mode": "Thumb",
+      "instruction": "vstr d1, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a262",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a276",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a27e",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a28a",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x50a292",
+      "mode": "Thumb",
+      "instruction": "vstr d10, [sp, #0x1f8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x51eef6",
+      "mode": "Thumb",
+      "instruction": "add.w sb, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x51f118",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x51f26a",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5209aa",
+      "mode": "Thumb",
+      "instruction": "addw r8, pc, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x522e1a",
+      "mode": "Thumb",
+      "instruction": "add.w r3, r7, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x564108",
+      "mode": "Thumb",
+      "instruction": "add r4, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x564128",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x592ca6",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5b46b0",
+      "mode": "Thumb",
+      "instruction": "add r2, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5c1940",
+      "mode": "Thumb",
+      "instruction": "add.w r2, r4, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5c1cf8",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r5, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5c3c90",
+      "mode": "Thumb",
+      "instruction": "add r3, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5cbe8a",
+      "mode": "Thumb",
+      "instruction": "add r6, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5e1dc6",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5e1dd0",
+      "mode": "Thumb",
+      "instruction": "strd r8, r8, [r4, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5e2720",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5e29aa",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5e373c",
+      "mode": "Thumb",
+      "instruction": "add.w r2, r5, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5ea1fe",
+      "mode": "Thumb",
+      "instruction": "strd r7, r2, [r4, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5ea206",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [r4, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5ea35a",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [r4, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5ea390",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [r4, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5ea3ca",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [r4, #0x1f8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5ea3fc",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [r4, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x5ef458",
+      "mode": "Thumb",
+      "instruction": "add r7, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x5fb8c4",
+      "mode": "Thumb",
+      "instruction": "add r4, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x60786e",
+      "mode": "Thumb",
+      "instruction": "subs.w r2, r0, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x623030",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x623308",
+      "mode": "Thumb",
+      "instruction": "strd r0, r1, [sp, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x623b6c",
+      "mode": "Thumb",
+      "instruction": "addeq sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x631630",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r8, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6415bc",
+      "mode": "Thumb",
+      "instruction": "addw r8, pc, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x65014e",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r6, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6502cc",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r6, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x651fd6",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r8, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x652654",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x65274c",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x652d40",
+      "mode": "Thumb",
+      "instruction": "add.w r7, r4, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x663b58",
+      "mode": "Thumb",
+      "instruction": "add r4, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x673c94",
+      "mode": "Thumb",
+      "instruction": "add r5, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x695350",
+      "mode": "Thumb",
+      "instruction": "vstr s4, [r0, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x695368",
+      "mode": "Thumb",
+      "instruction": "vstrne s2, [r0, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x695d6a",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [r0, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x695f3c",
+      "mode": "Thumb",
+      "instruction": "vstr s4, [r1, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x695f40",
+      "mode": "Thumb",
+      "instruction": "vstr s6, [r1, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x695f58",
+      "mode": "Thumb",
+      "instruction": "vstrne s2, [r1, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6970f8",
+      "mode": "Thumb",
+      "instruction": "addeq.w r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x698a2c",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [r1, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x69e3f4",
+      "mode": "Thumb",
+      "instruction": "add.w r2, sl, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b00ae",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b24de",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b24f0",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b24f8",
+      "mode": "Thumb",
+      "instruction": "add r5, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b357a",
+      "mode": "Thumb",
+      "instruction": "add.w r4, r5, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b3ba8",
+      "mode": "Thumb",
+      "instruction": "add.w r3, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b510e",
+      "mode": "Thumb",
+      "instruction": "add.w r2, fp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b535a",
+      "mode": "Thumb",
+      "instruction": "add.w r3, fp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b689c",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6b68a4",
+      "mode": "Thumb",
+      "instruction": "vstr s4, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6b6af0",
+      "mode": "Thumb",
+      "instruction": "add.w ip, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b6af8",
+      "mode": "Thumb",
+      "instruction": "add.w sl, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b6b1a",
+      "mode": "Thumb",
+      "instruction": "strd r6, r6, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6b85e6",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [sp, #0x1f8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6b87f2",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b896e",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b8cde",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6b91d2",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6c5c56",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6c5c6a",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6c5c74",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6c5c78",
+      "mode": "Thumb",
+      "instruction": "strd r0, r5, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6c5c9c",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6ca580",
+      "mode": "Thumb",
+      "instruction": "add r7, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6cff02",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6cff16",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6cff20",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6cff24",
+      "mode": "Thumb",
+      "instruction": "strd r0, r5, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6cff48",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6dca7e",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6dca92",
+      "mode": "Thumb",
+      "instruction": "add.w r7, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6dca9c",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6dcaa0",
+      "mode": "Thumb",
+      "instruction": "strd r0, r5, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6dcac4",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6e17f6",
+      "mode": "Thumb",
+      "instruction": "strd r0, r5, [sp, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6e1806",
+      "mode": "Thumb",
+      "instruction": "add.w r7, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6e180a",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6e1810",
+      "mode": "Thumb",
+      "instruction": "strd r6, r5, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6e7c78",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6e7c8c",
+      "mode": "Thumb",
+      "instruction": "add.w r7, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6e7c96",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6e7c9a",
+      "mode": "Thumb",
+      "instruction": "strd r0, r5, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6e7cbe",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6eede6",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6eedfe",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6eee04",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6eee08",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6eee24",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6f1ab8",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6f1ad0",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1f4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6f1ad6",
+      "mode": "Thumb",
+      "instruction": "strd r0, r5, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6f1ada",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x6f1af6",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x6f52ec",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x70e536",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x70e548",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x70e54e",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x70e8d4",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x72c12c",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x72c13e",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x72c144",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x72c524",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x758c7e",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x758c82",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x758c9c",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x75a7fa",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x75a806",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x75a824",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x75e85c",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x75e868",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x75e886",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x765980",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x765984",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x76599a",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x766fe8",
+      "mode": "Thumb",
+      "instruction": "strd r6, r6, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x767002",
+      "mode": "Thumb",
+      "instruction": "strd r6, r6, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x76700a",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7698d0",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x7698d4",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7698ec",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x76a6ca",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x76a6de",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x76a6e8",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x76a708",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x76b8cc",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x76b8e0",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x76b8ea",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x76b90a",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x777f6e",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x777f82",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x777f8c",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x1f0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x777fac",
+      "mode": "Thumb",
+      "instruction": "strd r7, r7, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x77f122",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x77f498",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [sp, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x77f56c",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x783192",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x78319e",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x7831bc",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x793f44",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x795132",
+      "mode": "Thumb",
+      "instruction": "add.w r6, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x79513e",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x79515c",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x7ad07a",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7ad08c",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7ad092",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7adab4",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7b6104",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7b6116",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7b611c",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7b62a2",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7c3a18",
+      "mode": "Thumb",
+      "instruction": "add r7, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7cf4f0",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x7cf4f4",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7cf50c",
+      "mode": "Thumb",
+      "instruction": "strd r0, r7, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x7d172c",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x7d1730",
+      "mode": "Thumb",
+      "instruction": "add.w r0, r4, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7d1746",
+      "mode": "Thumb",
+      "instruction": "strd r0, r6, [sp, #0x1fc]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x7d748c",
+      "mode": "Thumb",
+      "instruction": "add r5, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7d79ec",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7e9c06",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7e9c18",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7e9c1e",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x7e9fac",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x802a64",
+      "mode": "Thumb",
+      "instruction": "addw fp, pc, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x83505c",
+      "mode": "Thumb",
+      "instruction": "add r5, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x850044",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [lr, #0x1f8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x850048",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [r8, #0x1f8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x873e54",
+      "mode": "Thumb",
+      "instruction": "add r3, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x873e58",
+      "mode": "Thumb",
+      "instruction": "add r3, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x879d22",
+      "mode": "Thumb",
+      "instruction": "add r4, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x879df4",
+      "mode": "Thumb",
+      "instruction": "vstr s4, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x879e90",
+      "mode": "Thumb",
+      "instruction": "add.w fp, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x87a09c",
+      "mode": "Thumb",
+      "instruction": "vstr s0, [sp, #0x200]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x87a5e6",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x882810",
+      "mode": "Thumb",
+      "instruction": "add r5, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x882acc",
+      "mode": "Thumb",
+      "instruction": "add r4, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8851b4",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [sp, #0x1ec]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x885a20",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x886da4",
+      "mode": "Thumb",
+      "instruction": "add r4, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x88afd4",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x88b016",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x88b134",
+      "mode": "Thumb",
+      "instruction": "strd r5, r5, [sp, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x88c0de",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x88c23c",
+      "mode": "Thumb",
+      "instruction": "add r1, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x88ffe4",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [ip, #0x1e8]!",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x88ffe8",
+      "mode": "Thumb",
+      "instruction": "strd r0, r0, [lr, #0x1e8]!",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x898d66",
+      "mode": "Thumb",
+      "instruction": "add r7, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8a92b6",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8a9980",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b0766",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b077c",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b07da",
+      "mode": "Thumb",
+      "instruction": "add r3, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b08be",
+      "mode": "Thumb",
+      "instruction": "add r7, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b14f0",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b6dba",
+      "mode": "Thumb",
+      "instruction": "add r3, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b6fa8",
+      "mode": "Thumb",
+      "instruction": "add.w fp, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b705a",
+      "mode": "Thumb",
+      "instruction": "add r5, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8b7140",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8c3cd2",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8c3cde",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8c3d08",
+      "mode": "Thumb",
+      "instruction": "add r3, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8c3d32",
+      "mode": "Thumb",
+      "instruction": "add r3, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8c42d4",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8c5df8",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8c7384",
+      "mode": "Thumb",
+      "instruction": "add r6, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8d3f48",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8d3f4c",
+      "mode": "Thumb",
+      "instruction": "add r0, sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x8fe554",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9051a4",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x909584",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x909fcc",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x90cc80",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x91668c",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9220e8",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x925ffc",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x92bcac",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9303bc",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9394d4",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x93eda4",
+      "mode": "Thumb",
+      "instruction": "add sp, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x93f408",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f0",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x93f4e0",
+      "mode": "Thumb",
+      "instruction": "sub sp, #0x1f4",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x93fb04",
+      "mode": "Thumb",
+      "instruction": "add r6, sp, #0x1f8",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x988128",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x988160",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x98816c",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x988178",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x988198",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9881b8",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x988208",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9882a0",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9882d8",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x98839c",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9883e4",
+      "mode": "ARM",
+      "instruction": "add r0, r4, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9885e0",
+      "mode": "ARM",
+      "instruction": "add r5, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x988620",
+      "mode": "ARM",
+      "instruction": "add r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9886ac",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x9886b8",
+      "mode": "ARM",
+      "instruction": "sub r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x98f344",
+      "mode": "ARM",
+      "instruction": "vstr s15, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x98f58c",
+      "mode": "ARM",
+      "instruction": "vstr s15, [sp, #0x1e8]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0x99b974",
+      "mode": "ARM",
+      "instruction": "addne r3, r3, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x99bb0c",
+      "mode": "ARM",
+      "instruction": "addne r2, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x99bc28",
+      "mode": "ARM",
+      "instruction": "subne r0, r0, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x99c2b0",
+      "mode": "ARM",
+      "instruction": "subne r0, r2, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x99c308",
+      "mode": "ARM",
+      "instruction": "subne r0, r2, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0x99cbf8",
+      "mode": "ARM",
+      "instruction": "add r2, r3, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0xa4203c",
+      "mode": "ARM",
+      "instruction": "vstr s15, [r4, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0xa43924",
+      "mode": "ARM",
+      "instruction": "vstrne s16, [r5, #0x1e0]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0xa4394c",
+      "mode": "ARM",
+      "instruction": "vstrne s14, [r5, #0x1e4]",
+      "kind": "near-field-wide-store"
+    },
+    {
+      "address": "0xa6a334",
+      "mode": "ARM",
+      "instruction": "add r2, r4, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0xa6a600",
+      "mode": "ARM",
+      "instruction": "add r2, r4, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    },
+    {
+      "address": "0xa6adb0",
+      "mode": "ARM",
+      "instruction": "add r2, r4, #0x1fc",
+      "kind": "near-field-address-arithmetic"
+    }
+  ]
+}

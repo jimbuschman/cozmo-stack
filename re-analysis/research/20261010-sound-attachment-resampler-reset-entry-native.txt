@@ -1,0 +1,24 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A4775C..0x00A477B0 exclusive; ARM;
+00A4775C: ldrbtmi      pc, [pc], r0, lsl #28 ; word[00A47764]=005B5DA4
+00A47760: strgt        r0, [r0, -r0]
+00A47764: subseq       r5, fp, r4, lsr #27
+00A47768: subseq       r5, fp, r0, lsr #26
+00A4776C: push         {r3, r4, r5, lr}
+00A47770: vmov         s15, r1
+00A47774: ldrb         r3, [r0, #0x57]
+00A47778: vpush        {d8}
+00A4777C: cmp          r3, #0
+00A47780: bne          #0xa47794
+00A47784: vldr         s14, [r0, #0x50]
+00A47788: vcmp.f32     s14, s15
+00A4778C: vmrs         apsr_nzcv, fpscr
+00A47790: beq          #0xa47814
+00A47794: vmov         r5, s15
+00A47798: mov          r4, r0
+00A4779C: vldr         s15, [pc, #0x78] ; word[00A4781C]=44960000
+00A477A0: mov          r0, #0x40000000
+00A477A4: vldr         s16, [r4, #0x4c]
+00A477A8: vmov         s14, r5
+00A477AC: vdiv.f32     s15, s14, s15

@@ -1,0 +1,26 @@
+[
+  {
+    "plt": "0x4ac6f4",
+    "slot": "0x1042f88",
+    "type": "ARM_JUMP_SLOT",
+    "name": "_ZNK4Anki5Cozmo5Robot21GetLastImageTimeStampEv",
+    "value": "0x516ec1",
+    "size": 8
+  },
+  {
+    "plt": "0x4a7b58",
+    "slot": "0x1041654",
+    "type": "ARM_JUMP_SLOT",
+    "name": "_ZNK4Anki16BaseStationTimer19GetCurrentTimeStampEv",
+    "value": "0x84bcc1",
+    "size": 32
+  },
+  {
+    "plt": "0x4be2b0",
+    "slot": "0x1048e1c",
+    "type": "ARM_JUMP_SLOT",
+    "name": "_ZN4Anki5Cozmo12TextToSpeech20TextToSpeechProviderC1EPKNS0_12CozmoContextERKN4Json5ValueE",
+    "value": "0x69f7d5",
+    "size": 124
+  }
+]

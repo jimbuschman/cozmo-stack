@@ -1,0 +1,11 @@
+# Q14-016: actual trailing-association reader
+
+Checkpoint648; scope guard reread before every step; decisions only. Request `requests/20261007-codex-queue-5.md`. Primary `20261010-sound-fx-association-reader-native.txt`, engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1; FA563/FS432/SL433/HP617/CR645 retain their primary joins.
+
+The old563 remainder “actual reader of S30/S34 associations” is superseded: 9CE73C..78C is exactly that reader. It loads S34 count, shifts3 modulo32; wrapped zero gives raw+0. Otherwise scans S30 eight-byte entries in physical order for the first full property-key equality; returns raw entry4 for a match and raw+0 at exhaustion. No sorting, float conversion, clamp, nonzero filter or last-writer merge. Its actual caller9EC5E4 loads holder8 settings, null returns0, nonnull tails9CE73C with the incoming property unchanged. Both constructor-bound tables101C428/101C488 slotC bind this caller (CR645). Thus this list supplies the type1 base-value getter used by AC7/AC11's nonzero accumulation modes; it is not an opaque modulator-ID list or a generic sample buffer.
+
+FA563's updater9CDFE4 calls parameter8 first, then exactsize4 forwards the full incoming property ID/rawU32 into9CDEC4's same S30/S34 first-key update/append. That establishes the positive writer-to-reader ABI; no runtime producer for9CDFE4 is inferred from this join. All89 serialized settings have zero trailing associations, while the two admitted bank type1 bindings retain HP617/PP435/PP438's concrete clone parameter recipients and actual authored accumulation modes. Conditional runtime accumulation and mutable association values remain source-defined inputs.
+
+Q14-016 stays PARTIAL solely for a positively admitted shipped caller/input of9CDFE4 (settings identity, property/data/size) or bounded exclusion proof, then bind that actual input's FA563 notification recipient. S30/S34 meaning, read order/default and concrete holderC are paid. Do not descend into a new notification family without that input; do not call bank count0 a runtime absence proof.
+
+out of scope: association backing allocation/free/copy and per-sample FX arithmetic. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. No production, manifest, inventory, hardware or Q15 change.

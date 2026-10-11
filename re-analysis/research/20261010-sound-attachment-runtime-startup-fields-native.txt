@@ -1,0 +1,109 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099E728..0x0099E790 exclusive; ARM;
+0099E728: bl           #0x4d66b8
+0099E72C: str          r4, [r7, #0x18]
+0099E730: str          r4, [r7, #0x1c]
+0099E734: mov          r0, r8
+0099E738: str          r4, [r7, #0x20]
+0099E73C: str          r4, [r7, #0x24]
+0099E740: bl           #0x4d6694
+0099E744: mov          r1, #1
+0099E748: mov          r0, r8
+0099E74C: bl           #0x4d66a0
+0099E750: mov          r1, r8
+0099E754: add          r0, r7, #0x28
+0099E758: bl           #0x4d66ac
+0099E75C: mov          r0, r8
+0099E760: bl           #0x4d66b8
+0099E764: str          r4, [r7, #0x2c]
+0099E768: str          r4, [r7, #0x30]
+0099E76C: mov          r0, r8
+0099E770: str          r4, [r7, #0x34]
+0099E774: str          r4, [r7, #0x38]
+0099E778: bl           #0x4d6694
+0099E77C: mov          r1, #1
+0099E780: mov          r0, r8
+0099E784: bl           #0x4d66a0
+0099E788: mov          r1, r8
+0099E78C: add          r0, r7, #0x3c
+RANGE 0x0099EBE0..0x0099EC38 exclusive; ARM;
+0099EBE0: mov          r2, #0x50
+0099EBE4: bl           #0x4d36dc
+0099EBE8: str          r4, [r6, #8]
+0099EBEC: str          r4, [r6, #0xc]
+0099EBF0: mov          r0, r6
+0099EBF4: str          r4, [r6, #0x10]
+0099EBF8: str          r4, [r6, #0x14]
+0099EBFC: str          r4, [r6, #0x18]
+0099EC00: str          r4, [r6, #0x1c]
+0099EC04: str          r4, [r6, #0x20]
+0099EC08: str          r4, [r6, #0x24]
+0099EC0C: str          r4, [r6, #0x28]
+0099EC10: str          r4, [r6, #0x2c]
+0099EC14: str          r4, [r6, #0x30]
+0099EC18: str          r4, [r6, #0x34]
+0099EC1C: str          r4, [r6, #0x38]
+0099EC20: str          r4, [r6, #0x3c]
+0099EC24: str          r4, [r6, #0x40]
+0099EC28: str          r4, [r6, #0x44]
+0099EC2C: str          r4, [r6, #0x48]
+0099EC30: str          r4, [r6, #0x4c]
+0099EC34: str          r6, [r7, #0x94]
+RANGE 0x0099ED30..0x0099ED8C exclusive; ARM;
+0099ED30: str          r4, [r6, #0x10]
+0099ED34: str          r4, [r6]
+0099ED38: str          r4, [r6, #0x14]
+0099ED3C: mov          r0, r8
+0099ED40: str          r4, [r6, #0x18]
+0099ED44: str          r4, [r6, #4]
+0099ED48: str          r4, [r6, #8]
+0099ED4C: str          r4, [r6, #0xc]
+0099ED50: strb         r4, [r6, #0x1c]
+0099ED54: str          r4, [r6, #0x20]
+0099ED58: str          r4, [r6, #0x24]
+0099ED5C: str          r4, [r6, #0x28]
+0099ED60: str          r4, [r6, #0x2c]
+0099ED64: str          r4, [r6, #0x30]
+0099ED68: str          r4, [r6, #0x34]
+0099ED6C: str          r4, [r6, #0x38]
+0099ED70: bl           #0x4d6694
+0099ED74: mov          r1, #1
+0099ED78: mov          r0, r8
+0099ED7C: bl           #0x4d66a0
+0099ED80: mov          r1, r8
+0099ED84: add          r0, r6, #0x10
+0099ED88: bl           #0x4d66ac
+RANGE 0x0099F318..0x0099F398 exclusive; ARM;
+0099F318: mov          r6, r2
+0099F31C: movne        r3, #1
+0099F320: str          r3, [fp, #-0x2c]
+0099F324: mov          r4, r3
+0099F328: cmp          r1, #0
+0099F32C: movne        r4, #0
+0099F330: andeq        r4, r4, #1
+0099F334: cmp          r4, #0
+0099F338: bne          #0x99f304
+0099F33C: mov          r2, r3
+0099F340: add          r3, r6, r6, lsl #2
+0099F344: cmp          r2, #0
+0099F348: lsl          r3, r3, #3
+0099F34C: str          r3, [fp, #-0x34]
+0099F350: add          r3, r3, #8
+0099F354: sub          sp, sp, r3
+0099F358: str          sp, [fp, #-0x30]
+0099F35C: beq          #0x99f3b8
+0099F360: movw         r3, #0xff3f
+0099F364: mov          r5, sp
+0099F368: movt         r3, #3
+0099F36C: mov          sb, r4
+0099F370: mov          sl, r3
+0099F374: str          r7, [fp, #-0x38]
+0099F378: add          lr, r8, r4
+0099F37C: mov          ip, r5
+0099F380: add          sb, sb, #1
+0099F384: add          r4, r4, #0x24
+0099F388: ldm          lr!, {r0, r1, r2, r3}
+0099F38C: uxth         r7, sb
+0099F390: cmp          r6, r7
+0099F394: add          r5, r5, #0x28

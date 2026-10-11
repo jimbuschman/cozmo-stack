@@ -1,0 +1,42 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "limit": "Aligned executable Thumb32 immediate store navigation; not object identity, mode or alias absence proof.",
+  "candidates": [
+    {
+      "address": "0x5c1924",
+      "instruction": "str.w r1, [r4, #0x1f8]",
+      "section": ".text",
+      "bytes": "c4f8f811"
+    },
+    {
+      "address": "0x6b85e6",
+      "instruction": "strd r0, r0, [sp, #0x1f8]",
+      "section": ".text",
+      "bytes": "cde97e00"
+    },
+    {
+      "address": "0x797d22",
+      "instruction": "strd r6, r0, [r2, #0x1f8]",
+      "section": ".text",
+      "bytes": "c2e97e60"
+    },
+    {
+      "address": "0x7adc68",
+      "instruction": "strd lr, r0, [r4, #0x1f8]",
+      "section": ".text",
+      "bytes": "c4e97ee0"
+    },
+    {
+      "address": "0x850044",
+      "instruction": "strd r0, r0, [lr, #0x1f8]",
+      "section": ".text",
+      "bytes": "cee97e00"
+    },
+    {
+      "address": "0x850048",
+      "instruction": "strd r0, r0, [r8, #0x1f8]",
+      "section": ".text",
+      "bytes": "c8e97e00"
+    }
+  ]
+}

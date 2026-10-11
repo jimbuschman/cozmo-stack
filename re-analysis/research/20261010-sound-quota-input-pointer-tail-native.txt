@@ -1,0 +1,60 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x008E18B8..0x008E1900 exclusive; Thumb;
+008E18B8: cbz          r0, #0x8e1906
+008E18BA: ldrb.w       r0, [r4, #0x60]
+008E18BE: cbz          r0, #0x8e1902
+008E18C0: ldr          r0, [r4, #0x48]
+008E18C2: subs         r1, r6, #1
+008E18C4: cbnz         r0, #0x8e18d6
+008E18C6: movs         r3, #0
+008E18C8: b            #0x8e18fa
+008E18CA: ldrb         r2, [r0]
+008E18CC: cmp          r2, #0xa
+008E18CE: it           ne
+008E18D0: cmpne        r2, #0xd
+008E18D2: beq          #0x8e18c6
+008E18D4: adds         r0, #1
+008E18D6: cmp          r0, r1
+008E18D8: blo          #0x8e18ca
+008E18DA: cmp          r5, #0x2a
+008E18DC: bne          #0x8e18f8
+008E18DE: ldr          r0, [r4, #0x44]
+008E18E0: cmp          r1, r0
+008E18E2: bhs          #0x8e18f8
+008E18E4: mov          r2, r1
+008E18E6: movs         r3, #0
+008E18E8: ldrb         r6, [r2]
+008E18EA: cmp          r6, #0xa
+008E18EC: it           ne
+008E18EE: cmpne        r6, #0xd
+008E18F0: beq          #0x8e18fa
+008E18F2: adds         r2, #1
+008E18F4: cmp          r2, r0
+008E18F6: blo          #0x8e18e8
+008E18F8: movs         r3, #1
+008E18FA: ldr          r2, [r4, #0x44]
+008E18FC: mov          r0, r4
+008E1960: raw=4770BF18 relocated=4770BF18
+008E1964: raw=6C026441 relocated=6C026441
+008E1968: raw=D20D4291 relocated=D20D4291
+008E196C: raw=F81C468C relocated=F81C468C
+008E1970: raw=2B2D3B01 relocated=2B2D3B01
+008E1974: raw=2B2BBF18 relocated=2B2BBF18
+008E1978: raw=4594D109 relocated=4594D109
+008E197C: raw=C044F8C0 relocated=C044F8C0
+008E1980: raw=784BD204 relocated=784BD204
+008E1984: raw=E00A3102 relocated=E00A3102
+008E1988: raw=E0082300 relocated=E0082300
+008E198C: raw=46612300 relocated=46612300
+008E1990: raw=6441E005 relocated=6441E005
+008E1994: raw=42912300 relocated=42912300
+008E1998: raw=F811BF38 relocated=F811BF38
+008E199C: raw=3B303B01 relocated=3B303B01
+008E19A0: raw=2B09B2DB relocated=2B09B2DB
+008E19A4: raw=4770D9F5 relocated=4770D9F5
+008E19A8: raw=E9D0B510 relocated=E9D0B510
+008E19AC: raw=EBA33C10 relocated=EBA33C10
+0103E848: raw=00000000 relocated=00000000
+0103E84C: raw=00000000 relocated=00000000
+0103E850: raw=00000000 relocated=00000000

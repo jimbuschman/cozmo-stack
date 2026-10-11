@@ -1,0 +1,63 @@
+{
+  "scope": "Exact five Q14-021 symbols only: engine symbol relocations and raw mapped absolute pointer word encodings. No relative/computed pointer or caller/input absence proof.",
+  "matchingRelocations": [
+    {
+      "address": "0x1043b9c",
+      "kind": "TYPE.ARM_JUMP_SLOT",
+      "symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE8AddLayerERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEERKNS0_10Animations5TrackIS3_EEj",
+      "addend": 0
+    }
+  ],
+  "rawPointerCandidates": [
+    {
+      "address": "0x15198",
+      "encoded": "0x58db55",
+      "symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE8AddLayerERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEERKNS0_10Animations5TrackIS3_EEj",
+      "aligned": true,
+      "section": ".dynsym",
+      "sectionOffset": "0x15084",
+      "entrySize": 16,
+      "entryFieldOffset": 4
+    },
+    {
+      "address": "0x15208",
+      "encoded": "0x58dcc9",
+      "symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE18AddPersistentLayerERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEERKNS0_10Animations5TrackIS3_EE",
+      "aligned": true,
+      "section": ".dynsym",
+      "sectionOffset": "0x150f4",
+      "entrySize": 16,
+      "entryFieldOffset": 4
+    },
+    {
+      "address": "0x15458",
+      "encoded": "0x58edfd",
+      "symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE20AddToPersistentLayerEhRS3_",
+      "aligned": true,
+      "section": ".dynsym",
+      "sectionOffset": "0x15344",
+      "entrySize": 16,
+      "entryFieldOffset": 4
+    },
+    {
+      "address": "0x15468",
+      "encoded": "0x58ee4d",
+      "symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE21RemovePersistentLayerEhi",
+      "aligned": true,
+      "section": ".dynsym",
+      "sectionOffset": "0x15354",
+      "entrySize": 16,
+      "entryFieldOffset": 4
+    },
+    {
+      "address": "0x14f78",
+      "encoded": "0x58c969",
+      "symbol": "_ZNK4Anki5Cozmo17AudioLayerManager19GenerateGlitchAudioEjRNS0_10Animations5TrackINS0_12AnimKeyFrame11AudioSampleEEE",
+      "aligned": true,
+      "section": ".dynsym",
+      "sectionOffset": "0x14e64",
+      "entrySize": 16,
+      "entryFieldOffset": 4
+    }
+  ]
+}

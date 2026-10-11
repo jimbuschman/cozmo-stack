@@ -1,0 +1,44 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009B4A10..0x009B4AB4 exclusive; ARM;
+009B4A10: mov          r6, r2
+009B4A14: b            #0x9b4a34
+009B4A18: add          r7, r7, #1
+009B4A1C: ldr          r3, [r8, #0x2c]
+009B4A20: cmp          r7, r4
+009B4A24: add          r3, r3, #1
+009B4A28: str          r3, [r8, #0x2c]
+009B4A2C: bhs          #0x9b4ce4
+009B4A30: ldr          r3, [r8, #0x18]
+009B4A34: add          sl, r7, r7, lsl #1
+009B4A38: add          sl, r3, sl, lsl #2
+009B4A3C: ldr          r3, [sl]
+009B4A40: cmp          r3, #0
+009B4A44: beq          #0x9b4a18
+009B4A48: add          r3, sb, #0x2c
+009B4A4C: str          r3, [sp, #4]
+009B4A50: mov          r0, r3
+009B4A54: bl           #0x4d3064
+009B4A58: ldr          r3, [sb, #0x38]
+009B4A5C: ldr          r5, [sl]
+009B4A60: cmp          r3, #0
+009B4A64: beq          #0x9b4a88
+009B4A68: vldr         s15, [sb, #0x40]
+009B4A6C: vcvt.f32.u32 s14, s15
+009B4A70: vmov         s15, r3
+009B4A74: vcvt.f32.u32 s15, s15
+009B4A78: vdiv.f32     s15, s14, s15
+009B4A7C: vcmpe.f32    s15, s16
+009B4A80: vmrs         apsr_nzcv, fpscr
+009B4A84: ble          #0x9b4ab8
+009B4A88: ldr          r2, [sp, #0xc]
+009B4A8C: sub          r2, r2, #4
+009B4A90: b            #0x9b4a9c
+009B4A94: cmp          r2, r6
+009B4A98: beq          #0x9b4ab0
+009B4A9C: ldr          fp, [r2, #4]!
+009B4AA0: cmp          r3, fp
+009B4AA4: bhs          #0x9b4a94
+009B4AA8: cmp          fp, #0
+009B4AAC: bne          #0x9b4d04
+009B4AB0: cmp          r3, #0

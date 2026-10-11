@@ -1,0 +1,12 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "00A39674",
+    "00A541A0",
+    "00A58960",
+    "00A58B40",
+    "00A59028"
+  ],
+  "limit": "Aligned raw section words only; relative/encoded/computed/copied references and indirect inputs remain UNKNOWN. No reachability or alias absence proof.",
+  "hits": []
+}

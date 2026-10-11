@@ -1,0 +1,88 @@
+[
+  {
+    "add": "0x642d56",
+    "literal": "0x9fbaf2",
+    "actualAddress": "0x103e84c",
+    "section": ".got",
+    "relocations": [
+      {
+        "type": "TYPE.ARM_GLOB_DAT",
+        "symbol": "__stack_chk_guard"
+      }
+    ]
+  },
+  {
+    "add": "0x642dc6",
+    "literal": "0x9fba82",
+    "actualAddress": "0x103e84c",
+    "section": ".got",
+    "relocations": [
+      {
+        "type": "TYPE.ARM_GLOB_DAT",
+        "symbol": "__stack_chk_guard"
+      }
+    ]
+  },
+  {
+    "add": "0x642e16",
+    "literal": "0x9fba32",
+    "actualAddress": "0x103e84c",
+    "section": ".got",
+    "relocations": [
+      {
+        "type": "TYPE.ARM_GLOB_DAT",
+        "symbol": "__stack_chk_guard"
+      }
+    ]
+  },
+  {
+    "add": "0x642e86",
+    "literal": "0x9fb9c2",
+    "actualAddress": "0x103e84c",
+    "section": ".got",
+    "relocations": [
+      {
+        "type": "TYPE.ARM_GLOB_DAT",
+        "symbol": "__stack_chk_guard"
+      }
+    ]
+  },
+  {
+    "add": "0x642ed6",
+    "literal": "0x9fb972",
+    "actualAddress": "0x103e84c",
+    "section": ".got",
+    "relocations": [
+      {
+        "type": "TYPE.ARM_GLOB_DAT",
+        "symbol": "__stack_chk_guard"
+      }
+    ]
+  },
+  {
+    "add": "0x643ece",
+    "literal": "0x9fb992",
+    "actualAddress": "0x103f864",
+    "section": ".got",
+    "relocations": [
+      {
+        "type": "TYPE.ARM_GLOB_DAT",
+        "symbol": "_ZTVN4Anki5Cozmo18NVStorageComponentE"
+      }
+    ]
+  },
+  {
+    "add": "0x6555e8",
+    "literal": "0x9fba60",
+    "actualAddress": "0x105104c",
+    "section": ".data",
+    "relocations": []
+  },
+  {
+    "add": "0x6556de",
+    "literal": "0x9fb96e",
+    "actualAddress": "0x1051050",
+    "section": ".data",
+    "relocations": []
+  }
+]

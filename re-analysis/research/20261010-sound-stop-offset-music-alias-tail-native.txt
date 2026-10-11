@@ -1,0 +1,43 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099BAEC..0x0099BB30 exclusive; ARM;
+0099BAEC: ldr          r6, [r2, r3]
+0099BAF0: vldr         s20, [pc, #0x340] ; word[0099BE38]=4BD49A78
+0099BAF4: vldr         s19, [pc, #0x3a4] ; word[0099BEA0]=4E7E0000
+0099BAF8: vldr         s17, [pc, #0x3a4] ; word[0099BEA4]=3EA67F46
+0099BAFC: vldr         s16, [pc, #0x3a4] ; word[0099BEA8]=3CAA70DE
+0099BB00: ldr          r0, [r4, #4]
+0099BB04: ldr          r3, [r5, #0xc]
+0099BB08: cmp          r0, #0
+0099BB0C: addne        r2, r0, #0x1fc
+0099BB10: moveq        r2, r0
+0099BB14: cmp          r2, r3
+0099BB18: movne        r7, r4
+0099BB1C: ldrne        r4, [r4, #0xc]
+0099BB20: beq          #0x99c0e4
+0099BB24: cmp          r4, #0
+0099BB28: bne          #0x99bb00
+0099BB2C: ldr          r4, [sp, #0x30]
+RANGE 0x0098F328..0x0098F350 exclusive; ARM;
+0098F328: vdiv.f64     d16, d16, d18
+0098F32C: vmov.f64     d18, #-5.000000e-01
+0098F330: vcmpe.f64    d16, #0
+0098F334: vmrs         apsr_nzcv, fpscr
+0098F338: vmovle.f64   d17, d18
+0098F33C: vadd.f64     d16, d16, d17
+0098F340: vcvt.s32.f64 s15, d16
+0098F344: vstr         s15, [sp, #0x1e8]
+0098F348: bl           #0x986278
+0098F34C: ldrb         r3, [r4, #0x48]
+RANGE 0x0098F570..0x0098F59C exclusive; ARM;
+0098F570: vdiv.f64     d16, d16, d18
+0098F574: vmov.f64     d18, #-5.000000e-01
+0098F578: vcmpe.f64    d16, #0
+0098F57C: vmrs         apsr_nzcv, fpscr
+0098F580: vmovle.f64   d17, d18
+0098F584: vadd.f64     d16, d16, d17
+0098F588: vcvt.s32.f64 s15, d16
+0098F58C: vstr         s15, [sp, #0x1e8]
+0098F590: bl           #0x986278
+0098F594: b            #0x98f388
+0098F598: mov          sb, r4

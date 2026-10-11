@@ -1,0 +1,847 @@
+LIBRARY libacattsandroid.so SHA256 73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698
+__aeabi_uidivmod entry 0003FF75 Thumb range 0003FF74..0003FF8E
+0003FF74: cmp          r1, #0
+0003FF76: beq          #0x3ff68
+0003FF78: push.w       {r0, r1, lr}
+0003FF7C: bl           #0x3fee4
+0003FF80: pop.w        {r1, r2, lr}
+0003FF84: mul          r3, r2, r0
+0003FF88: sub.w        r1, r1, r3
+0003FF8C: bx           lr
+__aeabi_uidiv entry 0003FEE5 Thumb range 0003FEE4..0003FFE4
+0003FEE4: subs         r2, r1, #1
+0003FEE6: it           eq
+0003FEE8: bxeq         lr
+0003FEEA: blo          #0x3ff68
+0003FEEC: cmp          r0, r1
+0003FEEE: bls          #0x3ff52
+0003FEF0: tst          r1, r2
+0003FEF2: beq          #0x3ff5a
+0003FEF4: clz          r3, r1
+0003FEF8: clz          r2, r0
+0003FEFC: sub.w        r2, r3, r2
+0003FF00: mov.w        r3, #1
+0003FF04: lsl.w        r1, r1, r2
+0003FF08: lsl.w        r3, r3, r2
+0003FF0C: mov.w        r2, #0
+0003FF10: cmp          r0, r1
+0003FF12: itt          hs
+0003FF14: subhs        r0, r0, r1
+0003FF16: orrhs        r2, r3
+0003FF18: cmp.w        r0, r1, lsr #1
+0003FF1C: itt          hs
+0003FF1E: subhs.w      r0, r0, r1, lsr #1
+0003FF22: orrhs.w      r2, r2, r3, lsr #1
+0003FF26: cmp.w        r0, r1, lsr #2
+0003FF2A: itt          hs
+0003FF2C: subhs.w      r0, r0, r1, lsr #2
+0003FF30: orrhs.w      r2, r2, r3, lsr #2
+0003FF34: cmp.w        r0, r1, lsr #3
+0003FF38: itt          hs
+0003FF3A: subhs.w      r0, r0, r1, lsr #3
+0003FF3E: orrhs.w      r2, r2, r3, lsr #3
+0003FF42: cmp          r0, #0
+0003FF44: itt          ne
+0003FF46: lsrsne.w     r3, r3, #4
+0003FF4A: lsrne        r1, r1, #4
+0003FF4C: bne          #0x3ff10
+0003FF4E: mov          r0, r2
+0003FF50: bx           lr
+0003FF52: ite          eq
+0003FF54: moveq        r0, #1
+0003FF56: movne        r0, #0
+0003FF58: bx           lr
+0003FF5A: clz          r2, r1
+0003FF5E: rsb.w        r2, r2, #0x1f
+0003FF62: lsr.w        r0, r0, r2
+0003FF66: bx           lr
+0003FF68: cbz          r0, #0x3ff6e
+0003FF6A: mov.w        r0, #-1
+0003FF6E: b.w          #0x3ff90
+0003FF72: nop
+0003FF74: cmp          r1, #0
+0003FF76: beq          #0x3ff68
+0003FF78: push.w       {r0, r1, lr}
+0003FF7C: bl           #0x3fee4
+0003FF80: pop.w        {r1, r2, lr}
+0003FF84: mul          r3, r2, r0
+0003FF88: sub.w        r1, r1, r3
+0003FF8C: bx           lr
+0003FF8E: nop
+0003FF90: push         {r1, lr}
+0003FF92: mov.w        r0, #8
+0003FF96: blx          #0x1fca4
+0003FF9A: pop          {r1, pc}
+0003FF9C: ldr          r3, [r0]
+0003FF9E: lsls         r2, r3, #1
+0003FFA0: ite          mi
+0003FFA2: orrmi        r3, r3, #0x80000000
+0003FFA6: bicpl        r3, r3, #0x80000000
+0003FFAA: add          r0, r3
+0003FFAC: bx           lr
+0003FFAE: push.w       {r0, r1, r2, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+0003FFB2: mov          sb, r0
+0003FFB4: mov          r6, r2
+0003FFB6: cbz          r1, #0x40002
+0003FFB8: add.w        r8, r1, #-1
+0003FFBC: movs         r7, #0
+0003FFBE: mov          sl, r8
+0003FFC0: add.w        r4, r7, sl
+0003FFC4: add.w        r4, r4, r4, lsr #31
+0003FFC8: asrs         r4, r4, #1
+0003FFCA: lsls         r3, r4, #3
+0003FFCC: str          r3, [sp, #4]
+0003FFCE: add.w        r5, sb, r3
+0003FFD2: mov          r0, r5
+0003FFD4: bl           #0x3ff9c
+0003FFD8: cmp          r4, r8
+0003FFDA: ldr          r3, [sp, #4]
+0003FFDC: mov          fp, r0
+0003FFDE: beq          #0x4000a
+0003FFE0: add.w        r0, r3, #8
+__aeabi_idiv0 entry 0003FF91 Thumb range 0003FF90..0003FF9C
+0003FF90: push         {r1, lr}
+0003FF92: mov.w        r0, #8
+0003FF96: blx          #0x1fca4
+0003FF9A: pop          {r1, pc}
+__aeabi_ldiv0 entry 0003FF91 Thumb range 0003FF90..0003FF9C
+0003FF90: push         {r1, lr}
+0003FF92: mov.w        r0, #8
+0003FF96: blx          #0x1fca4
+0003FF9A: pop          {r1, pc}
+__aeabi_idiv entry 000F4409 Thumb range 000F4408..000F4508
+000F4408: cmp          r1, #0
+000F440A: beq          #0xf44ba
+000F440C: eor.w        ip, r0, r1
+000F4410: it           mi
+000F4412: rsbmi        r1, r1, #0
+000F4414: subs         r2, r1, #1
+000F4416: beq          #0xf448a
+000F4418: movs         r3, r0
+000F441A: it           mi
+000F441C: rsbmi        r3, r0, #0
+000F441E: cmp          r3, r1
+000F4420: bls          #0xf4494
+000F4422: tst          r1, r2
+000F4424: beq          #0xf44a4
+000F4426: clz          r2, r1
+000F442A: clz          r0, r3
+000F442E: sub.w        r0, r2, r0
+000F4432: mov.w        r2, #1
+000F4436: lsl.w        r1, r1, r0
+000F443A: lsl.w        r2, r2, r0
+000F443E: mov.w        r0, #0
+000F4442: cmp          r3, r1
+000F4444: itt          hs
+000F4446: subhs        r3, r3, r1
+000F4448: orrhs        r0, r2
+000F444A: cmp.w        r3, r1, lsr #1
+000F444E: itt          hs
+000F4450: subhs.w      r3, r3, r1, lsr #1
+000F4454: orrhs.w      r0, r0, r2, lsr #1
+000F4458: cmp.w        r3, r1, lsr #2
+000F445C: itt          hs
+000F445E: subhs.w      r3, r3, r1, lsr #2
+000F4462: orrhs.w      r0, r0, r2, lsr #2
+000F4466: cmp.w        r3, r1, lsr #3
+000F446A: itt          hs
+000F446C: subhs.w      r3, r3, r1, lsr #3
+000F4470: orrhs.w      r0, r0, r2, lsr #3
+000F4474: cmp          r3, #0
+000F4476: itt          ne
+000F4478: lsrsne.w     r2, r2, #4
+000F447C: lsrne        r1, r1, #4
+000F447E: bne          #0xf4442
+000F4480: cmp.w        ip, #0
+000F4484: it           mi
+000F4486: rsbmi        r0, r0, #0
+000F4488: bx           lr
+000F448A: teq.w        ip, r0
+000F448E: it           mi
+000F4490: rsbmi        r0, r0, #0
+000F4492: bx           lr
+000F4494: it           lo
+000F4496: movlo        r0, #0
+000F4498: itt          eq
+000F449A: asreq.w      r0, ip, #0x1f
+000F449E: orreq        r0, r0, #1
+000F44A2: bx           lr
+000F44A4: clz          r2, r1
+000F44A8: rsb.w        r2, r2, #0x1f
+000F44AC: cmp.w        ip, #0
+000F44B0: lsr.w        r0, r3, r2
+000F44B4: it           mi
+000F44B6: rsbmi        r0, r0, #0
+000F44B8: bx           lr
+000F44BA: cmp          r0, #0
+000F44BC: it           gt
+000F44BE: mvngt        r0, #0x80000000
+000F44C2: it           lt
+000F44C4: movlt.w      r0, #-0x80000000
+000F44C8: b.w          #0x3ff90
+000F44CC: cmp          r1, #0
+000F44CE: beq          #0xf44ba
+000F44D0: push.w       {r0, r1, lr}
+000F44D4: bl           #0xf440c
+000F44D8: pop.w        {r1, r2, lr}
+000F44DC: mul          r3, r2, r0
+000F44E0: sub.w        r1, r1, r3
+000F44E4: bx           lr
+000F44E6: nop
+000F44E8: cbnz         r3, #0xf4508
+000F44EA: cbnz         r2, #0xf4508
+000F44EC: cmp          r1, #0
+000F44EE: it           eq
+000F44F0: cmpeq        r0, #0
+000F44F2: itt          lt
+000F44F4: movlt        r0, #0
+000F44F6: movlt.w      r1, #-0x80000000
+000F44FA: itt          gt
+000F44FC: mvngt        r1, #0x80000000
+000F4500: movgt.w      r0, #-1
+000F4504: b.w          #0x3ff90
+__aeabi_idivmod entry 000F44CD Thumb range 000F44CC..000F44E6
+000F44CC: cmp          r1, #0
+000F44CE: beq          #0xf44ba
+000F44D0: push.w       {r0, r1, lr}
+000F44D4: bl           #0xf440c
+000F44D8: pop.w        {r1, r2, lr}
+000F44DC: mul          r3, r2, r0
+000F44E0: sub.w        r1, r1, r3
+000F44E4: bx           lr
+LIBRARY libBlueDoveMediaRender.so SHA256 2524d61faec2013daab4036db590bdb3c3af18aacd9c82def0cb434520a99a07
+__aeabi_idiv entry 0000DE35 Thumb range 0000DE34..0000DF34
+0000DE34: cmp          r1, #0
+0000DE36: beq          #0xdee6
+0000DE38: eor.w        ip, r0, r1
+0000DE3C: it           mi
+0000DE3E: rsbmi        r1, r1, #0
+0000DE40: subs         r2, r1, #1
+0000DE42: beq          #0xdeb6
+0000DE44: movs         r3, r0
+0000DE46: it           mi
+0000DE48: rsbmi        r3, r0, #0
+0000DE4A: cmp          r3, r1
+0000DE4C: bls          #0xdec0
+0000DE4E: tst          r1, r2
+0000DE50: beq          #0xded0
+0000DE52: clz          r2, r1
+0000DE56: clz          r0, r3
+0000DE5A: sub.w        r0, r2, r0
+0000DE5E: mov.w        r2, #1
+0000DE62: lsl.w        r1, r1, r0
+0000DE66: lsl.w        r2, r2, r0
+0000DE6A: mov.w        r0, #0
+0000DE6E: cmp          r3, r1
+0000DE70: itt          hs
+0000DE72: subhs        r3, r3, r1
+0000DE74: orrhs        r0, r2
+0000DE76: cmp.w        r3, r1, lsr #1
+0000DE7A: itt          hs
+0000DE7C: subhs.w      r3, r3, r1, lsr #1
+0000DE80: orrhs.w      r0, r0, r2, lsr #1
+0000DE84: cmp.w        r3, r1, lsr #2
+0000DE88: itt          hs
+0000DE8A: subhs.w      r3, r3, r1, lsr #2
+0000DE8E: orrhs.w      r0, r0, r2, lsr #2
+0000DE92: cmp.w        r3, r1, lsr #3
+0000DE96: itt          hs
+0000DE98: subhs.w      r3, r3, r1, lsr #3
+0000DE9C: orrhs.w      r0, r0, r2, lsr #3
+0000DEA0: cmp          r3, #0
+0000DEA2: itt          ne
+0000DEA4: lsrsne.w     r2, r2, #4
+0000DEA8: lsrne        r1, r1, #4
+0000DEAA: bne          #0xde6e
+0000DEAC: cmp.w        ip, #0
+0000DEB0: it           mi
+0000DEB2: rsbmi        r0, r0, #0
+0000DEB4: bx           lr
+0000DEB6: teq.w        ip, r0
+0000DEBA: it           mi
+0000DEBC: rsbmi        r0, r0, #0
+0000DEBE: bx           lr
+0000DEC0: it           lo
+0000DEC2: movlo        r0, #0
+0000DEC4: itt          eq
+0000DEC6: asreq.w      r0, ip, #0x1f
+0000DECA: orreq        r0, r0, #1
+0000DECE: bx           lr
+0000DED0: clz          r2, r1
+0000DED4: rsb.w        r2, r2, #0x1f
+0000DED8: cmp.w        ip, #0
+0000DEDC: lsr.w        r0, r3, r2
+0000DEE0: it           mi
+0000DEE2: rsbmi        r0, r0, #0
+0000DEE4: bx           lr
+0000DEE6: cmp          r0, #0
+0000DEE8: it           gt
+0000DEEA: mvngt        r0, #0x80000000
+0000DEEE: it           lt
+0000DEF0: movlt.w      r0, #-0x80000000
+0000DEF4: b.w          #0xdf14
+0000DEF8: cmp          r1, #0
+0000DEFA: beq          #0xdee6
+0000DEFC: push.w       {r0, r1, lr}
+0000DF00: bl           #0xde38
+0000DF04: pop.w        {r1, r2, lr}
+0000DF08: mul          r3, r2, r0
+0000DF0C: sub.w        r1, r1, r3
+0000DF10: bx           lr
+0000DF12: nop
+0000DF14: push         {r1, lr}
+0000DF16: mov.w        r0, #8
+0000DF1A: blx          #0x7e6c
+0000DF1E: pop          {r1, pc}
+0000DF20: ldr          r3, [r0]
+0000DF22: lsls         r2, r3, #1
+0000DF24: ite          mi
+0000DF26: orrmi        r3, r3, #0x80000000
+0000DF2A: bicpl        r3, r3, #0x80000000
+0000DF2E: add          r0, r3
+0000DF30: bx           lr
+__aeabi_idivmod entry 0000DEF9 Thumb range 0000DEF8..0000DF12
+0000DEF8: cmp          r1, #0
+0000DEFA: beq          #0xdee6
+0000DEFC: push.w       {r0, r1, lr}
+0000DF00: bl           #0xde38
+0000DF04: pop.w        {r1, r2, lr}
+0000DF08: mul          r3, r2, r0
+0000DF0C: sub.w        r1, r1, r3
+0000DF10: bx           lr
+__aeabi_idiv0 entry 0000DF15 Thumb range 0000DF14..0000DF20
+0000DF14: push         {r1, lr}
+0000DF16: mov.w        r0, #8
+0000DF1A: blx          #0x7e6c
+0000DF1E: pop          {r1, pc}
+__aeabi_ldiv0 entry 0000DF15 Thumb range 0000DF14..0000DF20
+0000DF14: push         {r1, lr}
+0000DF16: mov.w        r0, #8
+0000DF1A: blx          #0x7e6c
+0000DF1E: pop          {r1, pc}
+LIBRARY libDAS.so SHA256 0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c
+__aeabi_uidivmod entry 00028C55 Thumb range 00028C54..00028C6E
+00028C54: cmp          r1, #0
+00028C56: beq          #0x28c48
+00028C58: push.w       {r0, r1, lr}
+00028C5C: bl           #0x28bc4
+00028C60: pop.w        {r1, r2, lr}
+00028C64: mul          r3, r2, r0
+00028C68: sub.w        r1, r1, r3
+00028C6C: bx           lr
+__aeabi_uidiv entry 00028BC5 Thumb range 00028BC4..00028CC4
+00028BC4: subs         r2, r1, #1
+00028BC6: it           eq
+00028BC8: bxeq         lr
+00028BCA: blo          #0x28c48
+00028BCC: cmp          r0, r1
+00028BCE: bls          #0x28c32
+00028BD0: tst          r1, r2
+00028BD2: beq          #0x28c3a
+00028BD4: clz          r3, r1
+00028BD8: clz          r2, r0
+00028BDC: sub.w        r2, r3, r2
+00028BE0: mov.w        r3, #1
+00028BE4: lsl.w        r1, r1, r2
+00028BE8: lsl.w        r3, r3, r2
+00028BEC: mov.w        r2, #0
+00028BF0: cmp          r0, r1
+00028BF2: itt          hs
+00028BF4: subhs        r0, r0, r1
+00028BF6: orrhs        r2, r3
+00028BF8: cmp.w        r0, r1, lsr #1
+00028BFC: itt          hs
+00028BFE: subhs.w      r0, r0, r1, lsr #1
+00028C02: orrhs.w      r2, r2, r3, lsr #1
+00028C06: cmp.w        r0, r1, lsr #2
+00028C0A: itt          hs
+00028C0C: subhs.w      r0, r0, r1, lsr #2
+00028C10: orrhs.w      r2, r2, r3, lsr #2
+00028C14: cmp.w        r0, r1, lsr #3
+00028C18: itt          hs
+00028C1A: subhs.w      r0, r0, r1, lsr #3
+00028C1E: orrhs.w      r2, r2, r3, lsr #3
+00028C22: cmp          r0, #0
+00028C24: itt          ne
+00028C26: lsrsne.w     r3, r3, #4
+00028C2A: lsrne        r1, r1, #4
+00028C2C: bne          #0x28bf0
+00028C2E: mov          r0, r2
+00028C30: bx           lr
+00028C32: ite          eq
+00028C34: moveq        r0, #1
+00028C36: movne        r0, #0
+00028C38: bx           lr
+00028C3A: clz          r2, r1
+00028C3E: rsb.w        r2, r2, #0x1f
+00028C42: lsr.w        r0, r0, r2
+00028C46: bx           lr
+00028C48: cbz          r0, #0x28c4e
+00028C4A: mov.w        r0, #-1
+00028C4E: b.w          #0x2a97c
+00028C52: nop
+00028C54: cmp          r1, #0
+00028C56: beq          #0x28c48
+00028C58: push.w       {r0, r1, lr}
+00028C5C: bl           #0x28bc4
+00028C60: pop.w        {r1, r2, lr}
+00028C64: mul          r3, r2, r0
+00028C68: sub.w        r1, r1, r3
+00028C6C: bx           lr
+00028C6E: nop
+00028C70: eor          r1, r1, #0x80000000
+00028C74: b            #0x28c7c
+00028C76: nop
+00028C78: eor          r3, r3, #0x80000000
+00028C7C: push         {r4, r5, lr}
+00028C7E: lsl.w        r4, r1, #1
+00028C82: lsl.w        r5, r3, #1
+00028C86: teq.w        r4, r5
+00028C8A: it           eq
+00028C8C: teqeq.w      r0, r2
+00028C90: itttt        ne
+00028C92: orrsne.w     ip, r4, r0
+00028C96: orrsne.w     ip, r5, r2
+00028C9A: mvnsne.w     ip, r4, asr #21
+00028C9E: mvnsne.w     ip, r5, asr #21
+00028CA2: beq.w        #0x28e6a
+00028CA6: lsr.w        r4, r4, #0x15
+00028CAA: rsbs         r5, r4, r5, lsr #21
+00028CAE: it           lt
+00028CB0: rsblt        r5, r5, #0
+00028CB2: ble          #0x28cce
+00028CB4: add          r4, r5
+00028CB6: eor.w        r2, r0, r2
+00028CBA: eor.w        r3, r1, r3
+00028CBE: eor.w        r0, r2, r0
+__aeabi_idiv0 entry 00029261 Thumb range 00029260..0002926C
+00029260: push         {r1, lr}
+00029262: mov.w        r0, #8
+00029266: blx          #0x5dd8
+0002926A: pop          {r1, pc}
+__aeabi_ldiv0 entry 00029261 Thumb range 00029260..0002926C
+00029260: push         {r1, lr}
+00029262: mov.w        r0, #8
+00029266: blx          #0x5dd8
+0002926A: pop          {r1, pc}
+LIBRARY libgnustl_shared.so SHA256 edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8
+__aeabi_uidiv entry 0009B371 Thumb range 0009B370..0009B470
+0009B370: cmp          r1, #0
+0009B372: beq          #0x9b3de
+0009B374: movs         r3, #1
+0009B376: movs         r2, #0
+0009B378: push         {r4}
+0009B37A: cmp          r0, r1
+0009B37C: blo          #0x9b3d8
+0009B37E: movs         r4, #1
+0009B380: lsls         r4, r4, #0x1c
+0009B382: cmp          r1, r4
+0009B384: bhs          #0x9b390
+0009B386: cmp          r1, r0
+0009B388: bhs          #0x9b390
+0009B38A: lsls         r1, r1, #4
+0009B38C: lsls         r3, r3, #4
+0009B38E: b            #0x9b382
+0009B390: lsls         r4, r4, #3
+0009B392: cmp          r1, r4
+0009B394: bhs          #0x9b3a0
+0009B396: cmp          r1, r0
+0009B398: bhs          #0x9b3a0
+0009B39A: lsls         r1, r1, #1
+0009B39C: lsls         r3, r3, #1
+0009B39E: b            #0x9b392
+0009B3A0: cmp          r0, r1
+0009B3A2: blo          #0x9b3a8
+0009B3A4: subs         r0, r0, r1
+0009B3A6: orrs         r2, r3
+0009B3A8: lsrs         r4, r1, #1
+0009B3AA: cmp          r0, r4
+0009B3AC: blo          #0x9b3b4
+0009B3AE: subs         r0, r0, r4
+0009B3B0: lsrs         r4, r3, #1
+0009B3B2: orrs         r2, r4
+0009B3B4: lsrs         r4, r1, #2
+0009B3B6: cmp          r0, r4
+0009B3B8: blo          #0x9b3c0
+0009B3BA: subs         r0, r0, r4
+0009B3BC: lsrs         r4, r3, #2
+0009B3BE: orrs         r2, r4
+0009B3C0: lsrs         r4, r1, #3
+0009B3C2: cmp          r0, r4
+0009B3C4: blo          #0x9b3cc
+0009B3C6: subs         r0, r0, r4
+0009B3C8: lsrs         r4, r3, #3
+0009B3CA: orrs         r2, r4
+0009B3CC: cmp          r0, #0
+0009B3CE: beq          #0x9b3d8
+0009B3D0: lsrs         r3, r3, #4
+0009B3D2: beq          #0x9b3d8
+0009B3D4: lsrs         r1, r1, #4
+0009B3D6: b            #0x9b3a0
+0009B3D8: adds         r0, r2, #0
+0009B3DA: pop          {r4}
+0009B3DC: bx           lr
+0009B3DE: mov          r8, r8
+0009B3E0: bx           pc
+0009B3E2: mov          r8, r8
+0009B3E4: movs         r0, r0
+0009B3E6: b            #0x9ba8a
+0009B3E8: movs         r0, r0
+0009B3EA: asrs         r0, r4, #0xf
+0009B3EC: movs         r7, r7
+0009B3EE: and.w        sb, r0, r0, lsl #8
+0009B3F2: beq          #0x9b3de
+0009B3F4: push         {r0, r1, lr}
+0009B3F6: bl           #0x9b374
+0009B3FA: pop          {r1, r2, r3}
+0009B3FC: muls         r2, r0, r2
+0009B3FE: subs         r1, r1, r2
+0009B400: bx           r3
+0009B402: mov          r8, r8
+0009B404: cmp          r1, #0
+0009B406: beq          #0x9b48c
+0009B408: push         {r4}
+0009B40A: adds         r4, r0, #0
+0009B40C: eors         r4, r1
+0009B40E: mov          ip, r4
+0009B410: movs         r3, #1
+0009B412: movs         r2, #0
+0009B414: cmp          r1, #0
+0009B416: bpl          #0x9b41a
+0009B418: rsbs         r1, r1, #0
+0009B41A: cmp          r0, #0
+0009B41C: bpl          #0x9b420
+0009B41E: rsbs         r0, r0, #0
+0009B420: cmp          r0, r1
+0009B422: blo          #0x9b47e
+0009B424: movs         r4, #1
+0009B426: lsls         r4, r4, #0x1c
+0009B428: cmp          r1, r4
+0009B42A: bhs          #0x9b436
+0009B42C: cmp          r1, r0
+0009B42E: bhs          #0x9b436
+0009B430: lsls         r1, r1, #4
+0009B432: lsls         r3, r3, #4
+0009B434: b            #0x9b428
+0009B436: lsls         r4, r4, #3
+0009B438: cmp          r1, r4
+0009B43A: bhs          #0x9b446
+0009B43C: cmp          r1, r0
+0009B43E: bhs          #0x9b446
+0009B440: lsls         r1, r1, #1
+0009B442: lsls         r3, r3, #1
+0009B444: b            #0x9b438
+0009B446: cmp          r0, r1
+0009B448: blo          #0x9b44e
+0009B44A: subs         r0, r0, r1
+0009B44C: orrs         r2, r3
+0009B44E: lsrs         r4, r1, #1
+0009B450: cmp          r0, r4
+0009B452: blo          #0x9b45a
+0009B454: subs         r0, r0, r4
+0009B456: lsrs         r4, r3, #1
+0009B458: orrs         r2, r4
+0009B45A: lsrs         r4, r1, #2
+0009B45C: cmp          r0, r4
+0009B45E: blo          #0x9b466
+0009B460: subs         r0, r0, r4
+0009B462: lsrs         r4, r3, #2
+0009B464: orrs         r2, r4
+0009B466: lsrs         r4, r1, #3
+0009B468: cmp          r0, r4
+0009B46A: blo          #0x9b472
+0009B46C: subs         r0, r0, r4
+0009B46E: lsrs         r4, r3, #3
+__aeabi_idiv entry 0009B405 Thumb range 0009B404..0009B504
+0009B404: cmp          r1, #0
+0009B406: beq          #0x9b48c
+0009B408: push         {r4}
+0009B40A: adds         r4, r0, #0
+0009B40C: eors         r4, r1
+0009B40E: mov          ip, r4
+0009B410: movs         r3, #1
+0009B412: movs         r2, #0
+0009B414: cmp          r1, #0
+0009B416: bpl          #0x9b41a
+0009B418: rsbs         r1, r1, #0
+0009B41A: cmp          r0, #0
+0009B41C: bpl          #0x9b420
+0009B41E: rsbs         r0, r0, #0
+0009B420: cmp          r0, r1
+0009B422: blo          #0x9b47e
+0009B424: movs         r4, #1
+0009B426: lsls         r4, r4, #0x1c
+0009B428: cmp          r1, r4
+0009B42A: bhs          #0x9b436
+0009B42C: cmp          r1, r0
+0009B42E: bhs          #0x9b436
+0009B430: lsls         r1, r1, #4
+0009B432: lsls         r3, r3, #4
+0009B434: b            #0x9b428
+0009B436: lsls         r4, r4, #3
+0009B438: cmp          r1, r4
+0009B43A: bhs          #0x9b446
+0009B43C: cmp          r1, r0
+0009B43E: bhs          #0x9b446
+0009B440: lsls         r1, r1, #1
+0009B442: lsls         r3, r3, #1
+0009B444: b            #0x9b438
+0009B446: cmp          r0, r1
+0009B448: blo          #0x9b44e
+0009B44A: subs         r0, r0, r1
+0009B44C: orrs         r2, r3
+0009B44E: lsrs         r4, r1, #1
+0009B450: cmp          r0, r4
+0009B452: blo          #0x9b45a
+0009B454: subs         r0, r0, r4
+0009B456: lsrs         r4, r3, #1
+0009B458: orrs         r2, r4
+0009B45A: lsrs         r4, r1, #2
+0009B45C: cmp          r0, r4
+0009B45E: blo          #0x9b466
+0009B460: subs         r0, r0, r4
+0009B462: lsrs         r4, r3, #2
+0009B464: orrs         r2, r4
+0009B466: lsrs         r4, r1, #3
+0009B468: cmp          r0, r4
+0009B46A: blo          #0x9b472
+0009B46C: subs         r0, r0, r4
+0009B46E: lsrs         r4, r3, #3
+0009B470: orrs         r2, r4
+0009B472: cmp          r0, #0
+0009B474: beq          #0x9b47e
+0009B476: lsrs         r3, r3, #4
+0009B478: beq          #0x9b47e
+0009B47A: lsrs         r1, r1, #4
+0009B47C: b            #0x9b446
+0009B47E: adds         r0, r2, #0
+0009B480: mov          r4, ip
+0009B482: cmp          r4, #0
+0009B484: bpl          #0x9b488
+0009B486: rsbs         r0, r0, #0
+0009B488: pop          {r4}
+0009B48A: bx           lr
+0009B48C: bx           pc
+0009B48E: mov          r8, r8
+0009B490: movs         r0, r0
+0009B492: b            #0x9bb36
+0009B494: lsls         r2, r0, #4
+0009B496: stm          r3!, {r5, r6, r7}
+0009B498: lsls         r2, r0, #4
+0009B49A: cbz          r0, #0x9b506
+0009B49C: movs         r3, r2
+0009B49E: and.w        sb, r0, r0, lsl #8
+0009B4A2: beq          #0x9b48c
+0009B4A4: push         {r0, r1, lr}
+0009B4A6: bl           #0x9b408
+0009B4AA: pop          {r1, r2, r3}
+0009B4AC: muls         r2, r0, r2
+0009B4AE: subs         r1, r1, r2
+0009B4B0: bx           r3
+0009B4B2: mov          r8, r8
+0009B4B4: movs         r0, r0
+0009B4B6: b            #0x9bb60
+0009B4B8: movs         r0, r0
+0009B4BA: lsls         r2, r2, #0xd
+0009B4BC: movs         r4, r0
+0009B4BE: subs         r0, r0, r0
+0009B4C0: movs         r0, r0
+0009B4C2: b            #0x9bb68
+0009B4C4: movs         r0, r0
+0009B4C6: lsls         r0, r2, #0xd
+0009B4C8: asrs         r0, r0, #0x20
+0009B4CA: asrs         r0, r4, #0xf
+0009B4CC: movs         r0, r0
+0009B4CE: asrs         r0, r4, #0xf
+0009B4D0: movs         r6, r0
+0009B4D2: and.w        r0, r0, r8, lsl #20
+0009B4D6: b            #0x9b974
+0009B4D8: str          r0, [r0]
+0009B4DA: push.w       {r2, r4}
+__aeabi_idiv0 entry 0009B4F0 ARM range 0009B4F0..0009B500
+0009B4F0: push         {r1, lr}
+0009B4F4: mov          r0, #8
+0009B4F8: bl           #0x4d518
+0009B4FC: pop          {r1, pc}
+__aeabi_uidivmod entry 0009B3F1 Thumb range 0009B3F0..0009B402
+0009B3F0: cmp          r1, #0
+0009B3F2: beq          #0x9b3de
+0009B3F4: push         {r0, r1, lr}
+0009B3F6: bl           #0x9b374
+0009B3FA: pop          {r1, r2, r3}
+0009B3FC: muls         r2, r0, r2
+0009B3FE: subs         r1, r1, r2
+0009B400: bx           r3
+__aeabi_idivmod entry 0009B4A1 Thumb range 0009B4A0..0009B4B2
+0009B4A0: cmp          r1, #0
+0009B4A2: beq          #0x9b48c
+0009B4A4: push         {r0, r1, lr}
+0009B4A6: bl           #0x9b408
+0009B4AA: pop          {r1, r2, r3}
+0009B4AC: muls         r2, r0, r2
+0009B4AE: subs         r1, r1, r2
+0009B4B0: bx           r3
+__aeabi_ldiv0 entry 0009B4F0 ARM range 0009B4F0..0009B500
+0009B4F0: push         {r1, lr}
+0009B4F4: mov          r0, #8
+0009B4F8: bl           #0x4d518
+0009B4FC: pop          {r1, pc}
+LIBRARY libstlport_shared.so SHA256 196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03
+__aeabi_uidiv entry 0004EDFC ARM range 0004EDFC..0004EEFC
+0004EDFC: subs         r2, r1, #1
+0004EE00: bxeq         lr
+0004EE04: blo          #0x4ee98
+0004EE08: cmp          r0, r1
+0004EE0C: bls          #0x4ee7c
+0004EE10: tst          r1, r2
+0004EE14: beq          #0x4ee88
+0004EE18: clz          r3, r1
+0004EE1C: clz          r2, r0
+0004EE20: sub          r2, r3, r2
+0004EE24: mov          r3, #1
+0004EE28: lsl          r1, r1, r2
+0004EE2C: lsl          r3, r3, r2
+0004EE30: mov          r2, #0
+0004EE34: cmp          r0, r1
+0004EE38: subhs        r0, r0, r1
+0004EE3C: orrhs        r2, r2, r3
+0004EE40: cmp          r0, r1, lsr #1
+0004EE44: subhs        r0, r0, r1, lsr #1
+0004EE48: orrhs        r2, r2, r3, lsr #1
+0004EE4C: cmp          r0, r1, lsr #2
+0004EE50: subhs        r0, r0, r1, lsr #2
+0004EE54: orrhs        r2, r2, r3, lsr #2
+0004EE58: cmp          r0, r1, lsr #3
+0004EE5C: subhs        r0, r0, r1, lsr #3
+0004EE60: orrhs        r2, r2, r3, lsr #3
+0004EE64: cmp          r0, #0
+0004EE68: lsrsne       r3, r3, #4
+0004EE6C: lsrne        r1, r1, #4
+0004EE70: bne          #0x4ee34
+0004EE74: mov          r0, r2
+0004EE78: bx           lr
+0004EE7C: moveq        r0, #1
+0004EE80: movne        r0, #0
+0004EE84: bx           lr
+0004EE88: clz          r2, r1
+0004EE8C: rsb          r2, r2, #0x1f
+0004EE90: lsr          r0, r0, r2
+0004EE94: bx           lr
+0004EE98: cmp          r0, #0
+0004EE9C: mvnne        r0, #0
+0004EEA0: b            #0x25190
+0004EEA4: cmp          r1, #0
+0004EEA8: beq          #0x4ee98
+0004EEAC: push         {r0, r1, lr}
+0004EEB0: bl           #0x4edfc
+0004EEB4: pop          {r1, r2, lr}
+0004EEB8: mul          r3, r2, r0
+0004EEBC: sub          r1, r1, r3
+0004EEC0: bx           lr
+0004EEC4: cmp          r1, #0
+0004EEC8: beq          #0x4ef90
+0004EECC: eor          ip, r0, r1
+0004EED0: rsbmi        r1, r1, #0
+0004EED4: subs         r2, r1, #1
+0004EED8: beq          #0x4ef5c
+0004EEDC: movs         r3, r0
+0004EEE0: rsbmi        r3, r0, #0
+0004EEE4: cmp          r3, r1
+0004EEE8: bls          #0x4ef68
+0004EEEC: tst          r1, r2
+0004EEF0: beq          #0x4ef78
+0004EEF4: clz          r2, r1
+0004EEF8: clz          r0, r3
+__aeabi_uidivmod entry 0004EEA4 ARM range 0004EEA4..0004EEC4
+0004EEA4: cmp          r1, #0
+0004EEA8: beq          #0x4ee98
+0004EEAC: push         {r0, r1, lr}
+0004EEB0: bl           #0x4edfc
+0004EEB4: pop          {r1, r2, lr}
+0004EEB8: mul          r3, r2, r0
+0004EEBC: sub          r1, r1, r3
+0004EEC0: bx           lr
+__aeabi_idiv entry 0004EEC4 ARM range 0004EEC4..0004EFC4
+0004EEC4: cmp          r1, #0
+0004EEC8: beq          #0x4ef90
+0004EECC: eor          ip, r0, r1
+0004EED0: rsbmi        r1, r1, #0
+0004EED4: subs         r2, r1, #1
+0004EED8: beq          #0x4ef5c
+0004EEDC: movs         r3, r0
+0004EEE0: rsbmi        r3, r0, #0
+0004EEE4: cmp          r3, r1
+0004EEE8: bls          #0x4ef68
+0004EEEC: tst          r1, r2
+0004EEF0: beq          #0x4ef78
+0004EEF4: clz          r2, r1
+0004EEF8: clz          r0, r3
+0004EEFC: sub          r0, r2, r0
+0004EF00: mov          r2, #1
+0004EF04: lsl          r1, r1, r0
+0004EF08: lsl          r2, r2, r0
+0004EF0C: mov          r0, #0
+0004EF10: cmp          r3, r1
+0004EF14: subhs        r3, r3, r1
+0004EF18: orrhs        r0, r0, r2
+0004EF1C: cmp          r3, r1, lsr #1
+0004EF20: subhs        r3, r3, r1, lsr #1
+0004EF24: orrhs        r0, r0, r2, lsr #1
+0004EF28: cmp          r3, r1, lsr #2
+0004EF2C: subhs        r3, r3, r1, lsr #2
+0004EF30: orrhs        r0, r0, r2, lsr #2
+0004EF34: cmp          r3, r1, lsr #3
+0004EF38: subhs        r3, r3, r1, lsr #3
+0004EF3C: orrhs        r0, r0, r2, lsr #3
+0004EF40: cmp          r3, #0
+0004EF44: lsrsne       r2, r2, #4
+0004EF48: lsrne        r1, r1, #4
+0004EF4C: bne          #0x4ef10
+0004EF50: cmp          ip, #0
+0004EF54: rsbmi        r0, r0, #0
+0004EF58: bx           lr
+0004EF5C: teq          ip, r0
+0004EF60: rsbmi        r0, r0, #0
+0004EF64: bx           lr
+0004EF68: movlo        r0, #0
+0004EF6C: asreq        r0, ip, #0x1f
+0004EF70: orreq        r0, r0, #1
+0004EF74: bx           lr
+0004EF78: clz          r2, r1
+0004EF7C: rsb          r2, r2, #0x1f
+0004EF80: cmp          ip, #0
+0004EF84: lsr          r0, r3, r2
+0004EF88: rsbmi        r0, r0, #0
+0004EF8C: bx           lr
+0004EF90: cmp          r0, #0
+0004EF94: mvngt        r0, #0x80000000
+0004EF98: movlt        r0, #0x80000000
+0004EF9C: b            #0x25190
+0004EFA0: cmp          r1, #0
+0004EFA4: beq          #0x4ef90
+0004EFA8: push         {r0, r1, lr}
+0004EFAC: bl           #0x4eecc
+0004EFB0: pop          {r1, r2, lr}
+0004EFB4: mul          r3, r2, r0
+0004EFB8: sub          r1, r1, r3
+0004EFBC: bx           lr
+0004EFC0: cmp          r3, #0
+__aeabi_idiv0 entry 0004F040 ARM range 0004F040..0004F050
+0004F040: push         {r1, lr}
+0004F044: mov          r0, #8
+0004F048: bl           #0x251c0
+0004F04C: pop          {r1, pc}
+__aeabi_idivmod entry 0004EFA0 ARM range 0004EFA0..0004EFC0
+0004EFA0: cmp          r1, #0
+0004EFA4: beq          #0x4ef90
+0004EFA8: push         {r0, r1, lr}
+0004EFAC: bl           #0x4eecc
+0004EFB0: pop          {r1, r2, lr}
+0004EFB4: mul          r3, r2, r0
+0004EFB8: sub          r1, r1, r3
+0004EFBC: bx           lr
+__aeabi_ldiv0 entry 0004F040 ARM range 0004F040..0004F050
+0004F040: push         {r1, lr}
+0004F044: mov          r0, #8
+0004F048: bl           #0x251c0
+0004F04C: pop          {r1, pc}

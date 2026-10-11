@@ -1,0 +1,36 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D4228..0x009D42A4 exclusive; ARM;
+009D4228: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009D422C: sub          sp, sp, #0x6c
+009D4230: ldrb         r6, [r3]
+009D4234: ldr          r5, [sp, #0x90]
+009D4238: cmp          r6, #0
+009D423C: beq          #0x9d4680
+009D4240: add          r6, r6, r6, lsl #2
+009D4244: mov          ip, r1
+009D4248: mov          lr, #0
+009D424C: add          r6, r1, r6, lsl #2
+009D4250: vldr         s15, [ip]
+009D4254: add          r4, lr, lr, lsl #1
+009D4258: add          r7, sp, #0x68
+009D425C: add          r4, r7, r4, lsl #2
+009D4260: vcmpe.f32    s15, #0
+009D4264: vmrs         apsr_nzcv, fpscr
+009D4268: ble          #0x9d4284
+009D426C: vstr         s15, [r4, #-0x5c]
+009D4270: add          lr, lr, #1
+009D4274: ldr          r8, [ip, #0xc]
+009D4278: ldr          r7, [ip, #0x10]
+009D427C: str          r8, [r4, #-0x60]
+009D4280: str          r7, [r4, #-0x58]
+009D4284: add          ip, ip, #0x14
+009D4288: cmp          ip, r6
+009D428C: bne          #0x9d4250
+009D4290: cmp          r2, #0
+009D4294: ldr          r7, [r0]
+009D4298: beq          #0x9d4408
+009D429C: cmp          r7, #0
+009D42A0: beq          #0x9d466c
+010400B8: raw=0108DAFC relocated=0108DAFC
+009D4748: raw=0066B9B4 relocated=0066B9B4

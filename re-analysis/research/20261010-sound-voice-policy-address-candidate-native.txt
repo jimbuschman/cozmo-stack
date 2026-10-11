@@ -1,0 +1,111 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A536D0..0x00A53880 exclusive; ARM;
+00A536D0: add          r5, r0, #0x1c0
+00A536D4: mov          r4, r0
+00A536D8: ldr          r3, [r3, #0xc]
+00A536DC: mov          r0, r5
+00A536E0: blx          r3
+00A536E4: ldr          r2, [r4, #0x28]
+00A536E8: cmp          r2, #0
+00A536EC: beq          #0xa5370c
+00A536F0: ldrb         r3, [r2, #0x6c]
+00A536F4: ubfx         r1, r3, #1, #1
+00A536F8: bfi          r3, r1, #2, #1
+00A536FC: strb         r3, [r2, #0x6c]
+00A53700: ldr          r2, [r2, #0x28]
+00A53704: cmp          r2, #0
+00A53708: bne          #0xa536f0
+00A5370C: ldr          r3, [r4, #0x1c0]
+00A53710: mov          r0, r5
+00A53714: ldr          r3, [r3, #0x1c]
+00A53718: blx          r3
+00A5371C: cmp          r0, #1
+00A53720: popeq        {r4, r5, r6, pc}
+00A53724: ldr          r3, [r4]
+00A53728: mov          r0, r4
+00A5372C: pop          {r4, r5, r6, lr}
+00A53730: ldr          r3, [r3, #0x48]
+00A53734: bx           r3
+00A53738: ldr          r2, [r0, #8]
+00A5373C: cmp          r2, #0
+00A53740: bxeq         lr
+00A53744: cmp          r2, #0xc
+00A53748: bxeq         lr
+00A5374C: ldrb         r1, [r2, #0x1b2]
+00A53750: ldrb         r0, [r2, #0x1b1]
+00A53754: bfi          r1, r3, #0, #1
+00A53758: str          r3, [r2, #0x1a8]
+00A5375C: bfi          r0, r3, #7, #1
+00A53760: bfi          r1, r3, #1, #1
+00A53764: strb         r0, [r2, #0x1b1]
+00A53768: strb         r1, [r2, #0x1b2]
+00A5376C: bx           lr
+00A53770: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A53774: cmn          r1, #1
+00A53778: sub          sp, sp, #0x54
+00A5377C: ldr          r3, [pc, #0x708] ; word[00A53E8C]=005ECB04
+00A53780: add          r3, pc, r3
+00A53784: str          r3, [sp, #8]
+00A53788: beq          #0xa53a80
+00A5378C: add          r3, r1, #1
+00A53790: str          r3, [sp, #0x10]
+00A53794: cmp          r3, #3
+00A53798: bgt          #0xa53814
+00A5379C: add          r3, r1, #0xdd
+00A537A0: ldr          r6, [r0, r3, lsl #2]
+00A537A4: cmp          r6, #0
+00A537A8: bne          #0xa53a88
+00A537AC: ldr          r3, [sp, #0x10]
+00A537B0: cmp          r3, #3
+00A537B4: beq          #0xa53814
+00A537B8: add          r3, r1, #0xde
+00A537BC: ldr          r6, [r0, r3, lsl #2]
+00A537C0: cmp          r6, #0
+00A537C4: bne          #0xa53a88
+00A537C8: cmp          r1, #1
+00A537CC: beq          #0xa53814
+00A537D0: add          r3, r1, #0xdf
+00A537D4: ldr          r6, [r0, r3, lsl #2]
+00A537D8: cmp          r6, #0
+00A537DC: bne          #0xa53a88
+00A537E0: cmp          r1, #0
+00A537E4: beq          #0xa53814
+00A537E8: add          r3, r1, #0xe0
+00A537EC: ldr          r6, [r0, r3, lsl #2]
+00A537F0: cmp          r6, #0
+00A537F4: bne          #0xa53a88
+00A537F8: add          r3, r1, #5
+00A537FC: cmp          r3, #4
+00A53800: beq          #0xa53814
+00A53804: add          r3, r1, #0xe1
+00A53808: ldr          r6, [r0, r3, lsl #2]
+00A5380C: cmp          r6, #0
+00A53810: bne          #0xa53a88
+00A53814: add          r6, r0, #0x1c0
+00A53818: mov          r3, #0
+00A5381C: str          r3, [sp, #0x1c]
+00A53820: subs         r3, r1, #1
+00A53824: mov          r5, r0
+00A53828: mov          r4, r1
+00A5382C: bmi          #0xa538a0
+00A53830: add          r2, r1, #0xdb
+00A53834: ldr          r7, [r0, r2, lsl #2]
+00A53838: cmp          r7, #0
+00A5383C: bne          #0xa53a94
+00A53840: cmp          r3, #0
+00A53844: beq          #0xa538a0
+00A53848: add          r3, r1, #0xda
+00A5384C: ldr          r7, [r0, r3, lsl #2]
+00A53850: cmp          r7, #0
+00A53854: bne          #0xa53a94
+00A53858: cmp          r1, #2
+00A5385C: beq          #0xa538a0
+00A53860: add          r3, r1, #0xd9
+00A53864: ldr          r7, [r0, r3, lsl #2]
+00A53868: cmp          r7, #0
+00A5386C: bne          #0xa53a94
+00A53870: cmp          r1, #3
+00A53874: beq          #0xa538a0
+00A53878: add          r3, r1, #0xd8
+00A5387C: ldr          r7, [r0, r3, lsl #2]

@@ -1,0 +1,29 @@
+{
+  "scope": "Aligned ARM immediate STR/VSTR E0/E4 only in A53000..A55C10; offsets do not establish object identity or exhaust aliases/STMs/call-mediated writes.",
+  "candidates": [
+    {
+      "address": "00A557A8",
+      "instruction": "str r2, [r4, #0xe4]",
+      "base": "r4",
+      "offset": 228
+    },
+    {
+      "address": "00A557AC",
+      "instruction": "str r3, [r4, #0xe0]",
+      "base": "r4",
+      "offset": 224
+    },
+    {
+      "address": "00A559D0",
+      "instruction": "str r0, [r4, #0xe4]",
+      "base": "r4",
+      "offset": 228
+    },
+    {
+      "address": "00A55B60",
+      "instruction": "str r0, [r4, #0xe4]",
+      "base": "r4",
+      "offset": 228
+    }
+  ]
+}

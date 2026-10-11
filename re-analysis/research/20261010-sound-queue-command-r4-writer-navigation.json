@@ -1,0 +1,22 @@
+[
+  {
+    "address": "0x9ae06c",
+    "instruction": "mov r4, r8"
+  },
+  {
+    "address": "0x9ae1ac",
+    "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}"
+  },
+  {
+    "address": "0x9ae374",
+    "instruction": "pop {r4, r5, r6, r7, r8, sb, sl, fp, pc}"
+  },
+  {
+    "address": "0x9ae6f8",
+    "instruction": "mov r4, r3"
+  },
+  {
+    "address": "0x9ae7d8",
+    "instruction": "ldr r4, [sp, #0x40]"
+  }
+]

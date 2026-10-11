@@ -1,0 +1,34 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009FD834..0x009FD848 exclusive; ARM;
+009FD834: add          r7, r3, r7
+009FD838: adds         r6, r6, #1
+009FD83C: adc          r7, r7, #0
+009FD840: strd         r6, r7, [r8]
+009FD844: lsr          r3, r7, #1
+RANGE 0x009FD83C..0x009FD844 exclusive; Thumb;
+009FD83C: strb         r0, [r0]
+009FD83E: b            #0x9fdd90
+009FD840: str          r0, [r6, #0xc]
+009FD842: b            #0x9fdbd6
+RANGE 0x009FF308..0x009FF358 exclusive; ARM;
+009FF308: ldr          r3, [r0, #4]
+009FF30C: push         {r4, r5, r6, lr}
+009FF310: lsls         r2, r3, #2
+009FF314: ldr          r4, [r0]
+009FF318: popeq        {r4, r5, r6, pc}
+009FF31C: mov          r5, r1
+009FF320: mov          r6, r0
+009FF324: mov          r1, r4
+009FF328: b            #0x9ff338
+009FF32C: add          r0, r1, r2
+009FF330: cmp          r4, r0
+009FF334: beq          #0x9ff364
+009FF338: ldr          r0, [r4], #4
+009FF33C: ldr          r3, [r0]
+009FF340: cmp          r3, #1
+009FF344: bne          #0x9ff32c
+009FF348: mov          r1, r5
+009FF34C: bl           #0x9fdd90
+009FF350: ldm          r6, {r1, r3}
+009FF354: lsl          r2, r3, #2

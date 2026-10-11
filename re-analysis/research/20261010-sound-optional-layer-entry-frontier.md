@@ -1,0 +1,9 @@
+# Q14-021: optional entry follow-up boundary
+
+Checkpoint665; decisions only; scope guard reread before each step. Reproducible `20261010-sound-optional-layer-branch-expansion.py/.json` covers only the five original named optional-layer inputs plus OL664's exact AddLayer PLT. Executable-section dual-alignment ARM B/BL/BLX and Thumb narrow/wide immediate branch encodings produce one candidate, the already paid58EF4A→4AEB30. All other exact entry input candidates remain UNKNOWN; this does not prove runtime unreachability or no other wrapper/computed edge.
+
+`20261010-sound-optional-layer-pointer-expansion.py/.txt` checks12 local PC-literal/MOVW windows for those same five entries, yielding no actual formed-target/indirect-target event. Unmodelled Thumb MOVW, ADR variants, shifted/indexed/stack/copied/relative inputs and instruction-mode/data ambiguity remain navigation limits. The earlier raw mapped address matches are all exact .dynsym st_value fields, per OL664's section witnesses; they supply exported definitions rather than active callback tables.
+
+This completes the specific immediate/address-taking follow-up from OL664. Its conditional RemovePersistentLayer→AddLayer native input/order is retained. The remaining admitted manager/tag/control and prior persistent audio-layer population input into RemovePersistentLayer is UNKNOWN, as are other original optional producers. Stop this lead without optional creator/generator descendant extraction; the missing entry is not filled by the export's existence or by inventing a fade AudioSample. LI455/LF454 and finite OL649/OL661 checks remain paid.
+
+Q14-021 PARTIAL; counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL. out of scope: ELF/loader/storage/backing implementations, per-sample DSP/noise and excluded payload branches. No production/fidelity/inventory/hardware/Q15 edit.

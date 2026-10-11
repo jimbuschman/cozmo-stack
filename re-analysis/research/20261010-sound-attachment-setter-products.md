@@ -1,0 +1,20 @@
+# Q14-104 / Q14-131: concrete attachment setter products
+
+Checkpoint621; decisions only, scope guard reread before each step. Primary `20261010-sound-attachment-setter-products-native.txt`, engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. BA620's finite authored bus/ordinary-parent graph remains the actual serialized input census. Existing OR545/RC546/NJ149/LI1/CF/ROOT/LF native companions own the named setter collaborators. This pass binds the three music-node products below; MH622 additionally binds the14 positively supplied MusicSwitch nodes without new family speculation.
+
+| Native product | Slots / exact primary | Decision join |
+| --- | --- | --- |
+| Playlist1039EA8 |1C9F1C40 at1039EC4;209F1EE8 at1039EC8;1249F45C4 at1039FCC;74981338 at1039F1C;C498154C at1039F6C | Actual MN552 node constructor/table, ordinary parent/bus setters and pre/post hook controls are same selected recipients as already recovered ordinary containers. No new music scheduling callback is inferred from the class name. |
+| Segment103A018 |1C9F1C40 at103A034;209F1EE8 at103A038;1249F45C4 at103A13C;74981338 at103A08C;C498154C at103A0DC | Same exact shared container callback body and scalar/dirty ordering. Context tables103A710/103A7C8 are distinct and must not be used for these node slots. |
+| Track103A470 |1C9F1C40 at103A48C;209F1EE8 at103A490;1249F45C4 at103A594;74A1E01C at103A4E4;C4A1DFE0 at103A534 | Positively published TN602 track node uses the already recovered Sound-style voice list callbacks for74/C4. Do not replace them with container child recursion or a synthetic MIDI event. |
+| Two bus products103ACE0/103D100 |1C9C0A6C at103ACFC/103D11C;209C581C at103AD00/103D120;1249C6D54 at103AE04/103D224 | Both1C and124 bodies are BX LR, not constant success. CF17 ignores the1C return. Shared20 wrapper preserves original incoming pointer separately, invokes9F1EE8 then applies original-nonnull/CCbit6 comparison and possible9C5598. No hook local-pointer rewrite inside the known bus124 no-op. |
+
+LI1's9F1C40 stores incoming ordinaryparent34 and returns; no callback, retain, value normalization or failure. Common constructor9F402C explicitly initializes34/38zero.9F1EE8 saves incomingbus in a local, invokes actual124, reloads the possibly cleared local, publishes global null flag and node40 mask1C000000, then only changed38 stores the pointer before optional route-dirty/contextC4 work. OR545/RC546 recover exact reservation-count/undo/no-context/rawzero local-clear and route-removal/reconnect controls. Positive three music124/74/C4 bindings therefore settle the previously unspecified selected music products in this setter path. Raw no-context branch and callback live-state changes remain native conditional behavior, not successful placeholders.
+
+BA620 supplies all3490 serialized common prefixes and15 bus parents; NB2/NB16/CF/ROOT/LF establish selector/missing-ID/validation/attachment publication. These two input routes and exact known products are positive. They do not prove that all pointer writes elsewhere use these setter methods.
+
+Correction at622: the serialized graph has nine ordinary node classes, not eight. MusicSwitch103A198 is the fourth music-node product; MH622 proves the same1C/20/124/74/C4 container bindings and its distinct secondary holder callbacks.
+
+Current104/131 remain PARTIAL for the original explicitly complete34/38 writer/alias and admitted runtime caller/input census. No generic unread resolver/setter/hook recipient remains on these known products. A missing direct-call scan cannot settle virtual or address-taken setters, aliased pointer stores or a positively identified additional writer. Stop an unestablished input rather than invent its route.
+
+out of scope: storage/hash/allocator/graph backing, positioning payload and per-sample DSP. Counts100 native+8 scope CHECKED/32 PARTIAL/140;140 AUDIBLE/0 INTERNAL. Research only; no production/fidelity/inventory/PROJECT_STATE/hardware/Q15 edits. Next bounded step: specific writer/caller candidates for these two actual fields, with each ambiguity attributed before any absence claim.

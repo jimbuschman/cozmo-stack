@@ -1,0 +1,11 @@
+# Q14-008: runtime weight-setter input frontier
+
+Checkpoint609; PARTIAL / AUDIBLE. Decisions only; scope guard reread before each step. Primary `20261010-sound-weight-setter-input-frontier-native.txt`, engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1.
+
+Actual A08024 receives node r0, childID r1 and weight r2. CA153B/C and PW152B/E establish mode91&7==0, output index initialized0, first physical ID lookup, incomingweight0/equal-weight no mutation, selected indexed weight store, weighted flagbit3 thenorderedA07DDC reset. Random selector raw101C598/59C/5A0/5A4 binds ID lookup/weight get/weight store/total to concrete methods; sequence103D608/60C/610/614 separately has fixedweight/no-op store/null total. Getter callbacks do not license replacing saved selector pointer at the later weight store. No RNG draw or immediate cached-total update is invented.
+
+Specific target navigation examined actual encoded ARM B/BL, Thumb BLX-to-ARM, raw absolute word references and ELF symbol tables for A08024. None yielded a positive caller/export/table pointer. That is a search result, NOT proof of unreachability: computed/relative/indirect aliases are not certified absent. Ghidra's empty caller list is likewise not source evidence. A08024 cannot currently be described as a witnessed runtime virtual dispatch; only its own selector calls are positively virtual.
+
+Original Q14-008 remains PARTIAL. Specific remaining decision: establish the actual shipped caller/indirect input that supplies node, childID and weight to A08024, or provide a complete bounded input/call-edge proof of unreachability. RJ423's468 serialized controls and unequal80000/50000 weighted witness establish AUTHORED weights, not a runtime call to this method. Do not turn authored default/static weight into its missing runtime input, or reopen global RNG/seed/family census.
+
+out of scope: playlist/bitmap backing storage and bit5 ping-pong. All local selector, mutation, total, reset and retirement controls remain CA153/PW152/TR18/CJ/CO/CP/PR; no new unpaid local method is introduced. Counts96 native CHECKED+8 scope CHECKED/36 PARTIAL/140;140 AUDIBLE/0 INTERNAL. Research only; no production/fidelity/inventory/PROJECT_STATE/hardware/Q15 edits. Continue another positively bound remaining item while this input is unestablished.

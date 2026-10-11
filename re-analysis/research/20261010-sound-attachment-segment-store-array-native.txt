@@ -1,0 +1,50 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0097F6C0..0x0097F738 exclusive; ARM;
+0097F6C0: beq          #0x97f920
+0097F6C4: ldr          r3, [sp, #8]
+0097F6C8: ldr          r2, [r3, #0x8c]
+0097F6CC: mov          ip, r3
+0097F6D0: ldr          r3, [ip, #0x88]
+0097F6D4: cmp          r3, r2
+0097F6D8: bhs          #0x97fc3c
+0097F6DC: add          r2, r3, r3, lsl #3
+0097F6E0: add          r0, r3, #1
+0097F6E4: ldr          r1, [ip, #0x84]
+0097F6E8: add          r3, r3, r2, lsl #1
+0097F6EC: str          r0, [ip, #0x88]
+0097F6F0: adds         r2, r1, r3, lsl #2
+0097F6F4: moveq        r4, r2
+0097F6F8: beq          #0x97f720
+0097F6FC: mov          r4, r2
+0097F700: mov          r0, #0
+0097F704: str          r0, [r1, r3, lsl #2]
+0097F708: str          r0, [r2, #4]
+0097F70C: str          r0, [r2, #8]
+0097F710: str          r0, [r2, #0xc]
+0097F714: str          r0, [r2, #0x10]
+0097F718: str          r0, [r2, #0x14]
+0097F71C: str          r0, [r2, #0x44]
+0097F720: ldr          r6, [fp]
+0097F724: ldr          sb, [r6], #4
+0097F728: cmp          sb, #0
+0097F72C: str          r6, [fp]
+0097F730: beq          #0x97f584
+0097F734: ldr          r3, [sp, #4]
+RANGE 0x0097F0E0..0x0097F120 exclusive; ARM;
+0097F0E0: popeq        {r3, r4, r5, r6, r7, r8, sb, pc}
+0097F0E4: ldr          r8, [pc, #0xb8] ; word[0097F1A4]=0070E6DC
+0097F0E8: mov          r5, #0
+0097F0EC: ldr          r7, [pc, #0xb4] ; word[0097F1A8]=0070E6D4
+0097F0F0: ldr          r4, [pc, #0xb4] ; word[0097F1AC]=0070E6D0
+0097F0F4: add          r8, pc, r8
+0097F0F8: ldr          r6, [pc, #0xb0] ; word[0097F1B0]=0070E6CC
+0097F0FC: add          r7, pc, r7
+0097F100: add          r4, pc, r4
+0097F104: add          r6, pc, r6
+0097F108: b            #0x97f11c
+0097F10C: mov          r5, r1
+0097F110: ldr          r1, [r1]
+0097F114: cmp          r1, #0
+0097F118: beq          #0x97f18c
+0097F11C: ldrb         r3, [r1, #0xc]

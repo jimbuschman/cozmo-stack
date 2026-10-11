@@ -1,0 +1,12 @@
+[
+  {
+    "section": ".data.rel.ro",
+    "address": "0x103aa04",
+    "target": "0x9bb4a4"
+  },
+  {
+    "section": ".data.rel.ro",
+    "address": "0x103bf6c",
+    "target": "0xa3582c"
+  }
+]

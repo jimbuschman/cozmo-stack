@@ -1,0 +1,13 @@
+{
+  "limit": "Known ordinary-node core only; immediate ADD address candidates, not pointer identity/alias absence proof.",
+  "candidates": [
+    {
+      "address": "0x9f1820",
+      "instruction": "add sp, sp, #0x34"
+    },
+    {
+      "address": "0x9f2f80",
+      "instruction": "add sp, sp, #0x34"
+    }
+  ]
+}

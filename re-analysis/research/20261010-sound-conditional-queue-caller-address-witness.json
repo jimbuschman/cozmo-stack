@@ -1,0 +1,108 @@
+[
+  {
+    "instruction": "0xa07438",
+    "literal": "0x638c90",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa07544",
+    "literal": "0x638b84",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa07630",
+    "literal": "0x638a98",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa07720",
+    "literal": "0x6389a8",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa07810",
+    "literal": "0x6388b8",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa07ae8",
+    "literal": "0x6385e0",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa07bc8",
+    "literal": "0x638500",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa07e58",
+    "literal": "0x638270",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa3ec88",
+    "literal": "0x601440",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0x9b07cc",
+    "literal": "0x68f8fc",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0x9ca97c",
+    "literal": "0x67574c",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0x9ac548",
+    "literal": "0x693d3c",
+    "base": "0x104028c",
+    "raw_offset": "0xfffffe44",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0xa64250",
+    "literal": "0x5dc034",
+    "base": "0x104028c",
+    "raw_offset": "0xfffffe44",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0x9ca7dc",
+    "literal": "0x675aa8",
+    "base": "0x104028c",
+    "raw_offset": "0xfffffe44",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0x9caa04",
+    "literal": "0x675880",
+    "base": "0x104028c",
+    "raw_offset": "0xfffffe44",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  },
+  {
+    "instruction": "0x9ad904",
+    "literal": "0x692980",
+    "base": "0x104028c",
+    "raw_offset": "0xfffffe44",
+    "slot": "0x10400d0",
+    "slot_word": "0x108d870"
+  }
+]

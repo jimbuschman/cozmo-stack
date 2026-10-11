@@ -1,0 +1,78 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A4B7C0..0x00A4B7F8 exclusive; ARM;
+00A4B7C0: ldr          r3, [r0]
+00A4B7C4: ldr          r3, [r3, #0x24]
+00A4B7C8: blx          r3
+00A4B7CC: ldr          r4, [r6, #8]
+00A4B7D0: b            #0xa4b608
+00A4B7D4: ldr          sb, [r6, #0x18]
+00A4B7D8: cmp          sb, #0
+00A4B7DC: ldrne        r8, [r6, #0x10]
+00A4B7E0: beq          #0xa4b838
+00A4B7E4: add          r3, r5, r5, lsl #3
+00A4B7E8: add          r2, r5, #1
+00A4B7EC: str          r2, [r6, #0x14]
+00A4B7F0: add          r5, r5, r3, lsl #1
+00A4B7F4: adds         r5, r8, r5, lsl #2
+RANGE 0x00A4B868..0x00A4B88C exclusive; ARM;
+00A4B868: moveq        r5, r7
+00A4B86C: beq          #0xa4b900
+00A4B870: cmp          r7, #0
+00A4B874: beq          #0xa4b8f0
+00A4B878: add          r2, r7, r7, lsl #3
+00A4B87C: mov          fp, #0x3f800000
+00A4B880: mov          r8, #0
+00A4B884: mov          r5, r3
+00A4B888: add          r7, r7, r2, lsl #1
+RANGE 0x00A4BAD8..0x00A4BB14 exclusive; ARM;
+00A4BAD8: beq          #0xa4ba58
+00A4BADC: mov          r0, r6
+00A4BAE0: mov          r2, r7
+00A4BAE4: mov          r1, r5
+00A4BAE8: bl           #0xa5e694
+00A4BAEC: b            #0xa4ba58
+00A4BAF0: ldr          sb, [r4, #0x18]
+00A4BAF4: cmp          sb, #0
+00A4BAF8: ldrne        r8, [r4, #0x10]
+00A4BAFC: beq          #0xa4bb54
+00A4BB00: add          r3, r6, r6, lsl #3
+00A4BB04: add          r2, r6, #1
+00A4BB08: str          r2, [r4, #0x14]
+00A4BB0C: add          r6, r6, r3, lsl #1
+00A4BB10: adds         r6, r8, r6, lsl #2
+RANGE 0x00A4BB84..0x00A4BBA8 exclusive; ARM;
+00A4BB84: moveq        r6, r7
+00A4BB88: beq          #0xa4bc1c
+00A4BB8C: cmp          r7, #0
+00A4BB90: beq          #0xa4bc0c
+00A4BB94: add          r2, r7, r7, lsl #3
+00A4BB98: mov          fp, #0x3f800000
+00A4BB9C: mov          r8, #0
+00A4BBA0: mov          r6, r3
+00A4BBA4: add          r7, r7, r2, lsl #1
+RANGE 0x00A4DFC0..0x00A4E020 exclusive; ARM;
+00A4DFC0: mov          r4, r0
+00A4DFC4: add          r1, sp, #8
+00A4DFC8: mov          r2, #1
+00A4DFCC: mov          r5, #0
+00A4DFD0: mvn          r6, #0
+00A4DFD4: str          r5, [sp, #8]
+00A4DFD8: str          r5, [sp, #0xc]
+00A4DFDC: mov          r8, #0
+00A4DFE0: str          r5, [sp, #0x10]
+00A4DFE4: movt         r8, #0x42c8
+00A4DFE8: str          r5, [sp, #0x1c]
+00A4DFEC: mov          sl, #0x3f000000
+00A4DFF0: strb         r6, [sp, #0x14]
+00A4DFF4: mov          fp, #0
+00A4DFF8: strb         r6, [sp, #0x18]
+00A4DFFC: bl           #0xa19cdc
+00A4E000: ldrb         r2, [r4, #0x45]
+00A4E004: vmov.i32     d16, #0
+00A4E008: ldr          r7, [pc, #0x308] ; word[00A4E318]=005EE1FC
+00A4E00C: add          r0, r4, #0x58
+00A4E010: strb         r5, [r4, #0x44]
+00A4E014: bfi          r2, r5, #0, #4
+00A4E018: strb         r2, [r4, #0x45]
+00A4E01C: add          r7, pc, r7

@@ -1,0 +1,11 @@
+{
+  "target": "009EE230",
+  "scope": "Raw aligned ARM BL and Thumb BL/BLX encodings in ELF .text. Mixed-mode candidates require native attribution; no computed/indirect caller absence proof.",
+  "hits": [
+    {
+      "address": "00A1D488",
+      "mode": "ARM",
+      "kind": "BL"
+    }
+  ]
+}

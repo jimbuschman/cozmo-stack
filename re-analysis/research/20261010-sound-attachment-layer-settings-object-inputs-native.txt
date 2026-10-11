@@ -1,0 +1,68 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009C9F6C..0x009C9FB0 exclusive; ARM;
+009C9F6C: push         {r4, r5, r6, r7, r8, lr}
+009C9F70: sub          sp, sp, #8
+009C9F74: mov          r4, r0
+009C9F78: mov          r8, r2
+009C9F7C: mov          r7, r1
+009C9F80: bl           #0x9d0418
+009C9F84: ldr          r3, [pc, #0xa4] ; word[009CA030]=00670EFC
+009C9F88: add          r6, sp, #4
+009C9F8C: mov          r5, #0
+009C9F90: str          r5, [r4, #0x10]
+009C9F94: add          r3, pc, r3
+009C9F98: mov          r0, r6
+009C9F9C: add          r3, r3, #8
+009C9FA0: str          r5, [r4, #0x14]
+009C9FA4: str          r3, [r4]
+009C9FA8: str          r5, [r4, #0x18]
+009C9FAC: bl           #0x4d6694
+RANGE 0x009CA278..0x009CA2E8 exclusive; ARM;
+009CA278: rsbeq        r6, r7, r4, lsr #32
+009CA27C: mlseq        r3, r0, r2, r0
+009CA280: rsbeq        r5, r7, ip, lsl pc
+009CA284: push         {r3, lr}
+009CA288: bl           #0x9ca034
+009CA28C: mov          r0, #1
+009CA290: pop          {r3, pc}
+009CA294: ldr          r3, [pc, #0xe0] ; word[009CA37C]=00675DA0
+009CA298: push         {r4, r5, r6, r7, r8, lr}
+009CA29C: mov          r7, r0
+009CA2A0: ldr          r3, [pc, r3]
+009CA2A4: sub          sp, sp, #8
+009CA2A8: mov          r8, r1
+009CA2AC: mov          r1, #0x78
+009CA2B0: ldr          r0, [r3]
+009CA2B4: bl           #0xa7a7f4
+009CA2B8: subs         r4, r0, #0
+009CA2BC: beq          #0x9ca370
+009CA2C0: mov          r1, r7
+009CA2C4: add          r6, sp, #4
+009CA2C8: bl           #0x9d0418
+009CA2CC: ldr          r3, [pc, #0xac] ; word[009CA380]=00670BB8
+009CA2D0: mov          r5, #0
+009CA2D4: mov          r0, r6
+009CA2D8: add          r3, pc, r3
+009CA2DC: str          r5, [r4, #0x10]
+009CA2E0: add          r3, r3, #8
+009CA2E4: str          r5, [r4, #0x14]
+RANGE 0x009CDBDC..0x009CDC10 exclusive; ARM;
+009CDBDC: ldr          r2, [r2, #4]
+009CDBE0: str          r2, [r3, r1, lsl #2]
+009CDBE4: b            #0x9cdbcc
+009CDBE8: rsbeq        r2, r7, r0, ror r5
+009CDBEC: mlseq        r7, ip, r4, r2
+009CDBF0: push         {r4, lr}
+009CDBF4: mov          r4, r0
+009CDBF8: bl           #0x9d0418
+009CDBFC: ldr          r2, [pc, #0x44] ; word[009CDC48]=0066D37C
+009CDC00: mov          r3, #0
+009CDC04: mvn          r1, #0
+009CDC08: str          r3, [r4, #0x14]
+009CDC0C: add          r2, pc, r2
+009CA030: raw=00670EFC relocated=00670EFC
+009CA364: raw=E5848044 relocated=E5848044
+009CA368: raw=E584703C relocated=E584703C
+009CA36C: raw=EBFFFF30 relocated=EBFFFF30
+009CDC48: raw=0066D37C relocated=0066D37C

@@ -1,0 +1,8 @@
+{
+  "engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "target": "00A14E28",
+  "scope": "All file-backed PT_LOAD bytes for exact entry/entry+1 words; symbol values; relocation values resolved for ARM_ABS32, GLOB_DAT, JUMP_SLOT and RELATIVE. Navigation only: computed relative pointers, interior entries, stack aliases and external mutation are not excluded.",
+  "rawCandidates": [],
+  "symbolCandidates": [],
+  "relocationCandidates": []
+}

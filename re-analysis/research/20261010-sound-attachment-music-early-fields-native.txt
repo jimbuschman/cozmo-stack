@@ -1,0 +1,32 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00980098..0x009800D0 exclusive; ARM;
+00980098: str          r1, [r4, #0x24]
+0098009C: strb         r3, [r4, #0x28]
+009800A0: beq          #0x9800dc
+009800A4: ldr          r0, [pc, #0x384] ; word[00980430]=0070D768
+009800A8: mov          r3, #0
+009800AC: add          r0, pc, r0
+009800B0: ldrb         r2, [r0, #0x40]
+009800B4: str          r3, [r0, #0x2c]
+009800B8: and          r2, r2, #0xf0
+009800BC: str          r3, [r0, #0x34]
+009800C0: bfi          r2, r3, #4, #1
+009800C4: str          r3, [r0, #0x38]
+009800C8: strb         r2, [r0, #0x40]
+009800CC: str          r3, [r0, #0x3c]
+RANGE 0x00980734..0x0098076C exclusive; ARM;
+00980734: ldr          r0, [fp, #0x30]
+00980738: asr          r7, r0, #0x1f
+0098073C: umull        r0, r1, r4, r0
+00980740: mla          r1, r4, r7, r1
+00980744: bl           #0x4a685c
+00980748: ldrh         r3, [fp, #0x3c]
+0098074C: ldrb         r2, [sl, #0x40]
+00980750: bfi          r2, r3, #0, #3
+00980754: mov          r3, r2
+00980758: str          r0, [sl, #0x34]
+0098075C: ldr          r1, [fp, #0x34]
+00980760: str          r1, [sl, #0x38]
+00980764: ldr          r1, [fp, #0x38]
+00980768: strb         r2, [sl, #0x40]

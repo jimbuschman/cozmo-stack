@@ -1,0 +1,20 @@
+{"engineSha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1", "boundary": "positive ARM immediate candidates only; not writer-absence proof"}
+{"candidate": "009918F8", "rawWord": "EB0233DC", "target": "00A1E870", "purpose": "descriptor-init", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00991B54", "rawWord": "EB023345", "target": "00A1E870", "purpose": "descriptor-init", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00991B80", "rawWord": "EB0233B8", "target": "00A1EA68", "purpose": "descriptor-copy", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00991D54", "rawWord": "EB0232C5", "target": "00A1E870", "purpose": "descriptor-init", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00991D6C", "rawWord": "EB023379", "target": "00A1EB58", "purpose": "descriptor-id", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "009AE284", "rawWord": "EB01C233", "target": "00A1EB58", "purpose": "descriptor-id", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "009BB3B0", "rawWord": "EBFFFF90", "target": "009BB1F8", "purpose": "media-select", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A01F9C", "rawWord": "EB00732C", "target": "00A1EC54", "purpose": "media-query", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A02934", "rawWord": "EB0070C6", "target": "00A1EC54", "purpose": "media-query", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A1D804", "rawWord": "EB000419", "target": "00A1E870", "purpose": "descriptor-init", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A1D85C", "rawWord": "EB000403", "target": "00A1E870", "purpose": "descriptor-init", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A1DA60", "rawWord": "EB00043C", "target": "00A1EB58", "purpose": "descriptor-id", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A1DAA0", "rawWord": "EB0003F0", "target": "00A1EA68", "purpose": "descriptor-copy", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A1EC9C", "rawWord": "EBFE719F", "target": "009BB320", "purpose": "media-lookup", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A37FC8", "rawWord": "EBFF9AA6", "target": "00A1EA68", "purpose": "descriptor-copy", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A381EC", "rawWord": "EBFF9A3B", "target": "00A1EAE0", "purpose": "descriptor-pointer", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A3CC60", "rawWord": "EBFF87FB", "target": "00A1EC54", "purpose": "media-query", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A6BB14", "rawWord": "EBFD3E01", "target": "009BB320", "purpose": "media-lookup", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}
+{"candidate": "00A6C090", "rawWord": "EBFD3CA2", "target": "009BB320", "purpose": "media-lookup", "scope": "ARM immediate branch candidate; verify containing instructions; no Thumb/alias absence claim"}

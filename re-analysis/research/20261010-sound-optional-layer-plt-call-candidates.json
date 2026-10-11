@@ -1,0 +1,8 @@
+[
+  {
+    "address": "0x58ef4a",
+    "mode": "Thumb",
+    "instruction": "blx #0x4aeb30",
+    "section": ".text"
+  }
+]

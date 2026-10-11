@@ -1,0 +1,63 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009927D8..0x00992800 exclusive; ARM;
+009927D8: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+009927DC: ldr          r5, [r0, #0x90]
+009927E0: cmp          r5, #0
+009927E4: beq          #0x992870
+009927E8: ldr          ip, [pc, #0x88] ; word[00992878]=006AD860
+009927EC: mov          r4, r1
+009927F0: ldm          r1, {r0, r1, r2}
+009927F4: add          r3, r5, #0x20
+009927F8: ldr          r7, [r4, #0x10]
+009927FC: add          r4, r4, #0x14
+RANGE 0x00993548..0x0099356C exclusive; ARM;
+00993548: b            #0x9933b4
+0099354C: rsbeq        ip, sl, r0, ror ip
+00993550: ldr          ip, [pc, #0x90] ; word[009935E8]=006ACAF4
+00993554: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00993558: mov          r5, r0
+0099355C: ldr          r7, [r1, #0x10]
+00993560: mov          r4, r1
+00993564: ldm          r1, {r0, r1, r2}
+00993568: add          r3, r5, #0x20
+RANGE 0x00989EF8..0x00989F94 exclusive; ARM;
+00989EF8: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00989EFC: ldr          r4, [r0, #0x88]
+00989F00: ldrb         r8, [sp, #0x20]
+00989F04: cmp          r4, #0
+00989F08: beq          #0x989f7c
+00989F0C: ldr          r4, [pc, #0x74] ; word[00989F88]=006B611C
+00989F10: mov          sb, r1
+00989F14: mov          r5, r0
+00989F18: mov          r1, #0x5c
+00989F1C: mov          r6, r3
+00989F20: mov          r7, r2
+00989F24: ldr          r4, [pc, r4]
+00989F28: ldr          r0, [r4]
+00989F2C: bl           #0xa7a7f4
+00989F30: subs         r4, r0, #0
+00989F34: beq          #0x989f7c
+00989F38: mov          r1, r5
+00989F3C: mov          r2, sb
+00989F40: bl           #0x99846c
+00989F44: ldr          ip, [r4, #0x24]
+00989F48: mov          r1, r7
+00989F4C: mov          r2, r6
+00989F50: add          ip, ip, #1
+00989F54: mov          r3, r8
+00989F58: mov          r0, r4
+00989F5C: str          ip, [r4, #0x24]
+00989F60: bl           #0x9985b0
+00989F64: cmp          r0, #1
+00989F68: mov          r0, r4
+00989F6C: beq          #0x989f84
+00989F70: bl           #0x986560
+00989F74: mov          r0, r4
+00989F78: bl           #0x985cac
+00989F7C: mov          r0, #0
+00989F80: pop          {r3, r4, r5, r6, r7, r8, sb, pc}
+00989F84: pop          {r3, r4, r5, r6, r7, r8, sb, pc}
+00989F88: rsbeq        r6, fp, ip, lsl r1
+00989F8C: ldr          r1, [pc, #0x4c] ; word[00989FE0]=006B60C8
+00989F90: vmov         d19, r2, r3

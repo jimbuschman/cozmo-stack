@@ -1,0 +1,32 @@
+[
+  {
+    "candidate": "0x6c5c6a",
+    "entry": "0x6c5658",
+    "branch_target": "0x6c5828"
+  },
+  {
+    "candidate": "0x6cff16",
+    "entry": "0x6cf904",
+    "branch_target": "0x6cfae0"
+  },
+  {
+    "candidate": "0x6dca92",
+    "entry": "0x6dc558",
+    "branch_target": "0x6dc658"
+  },
+  {
+    "candidate": "0x6e1806",
+    "entry": "0x6e1200",
+    "branch_target": "0x6e13e4"
+  },
+  {
+    "candidate": "0x75e85c",
+    "entry": "0x75e2b0",
+    "branch_target": "0x75e4cc"
+  },
+  {
+    "candidate": "0x76b8e0",
+    "entry": "0x76b340",
+    "branch_target": "0x76b514"
+  }
+]

@@ -1,0 +1,57 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A1C9CC..0x00A1C9F8 exclusive; ARM;
+00A1C9CC: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A1C9D0: add          fp, sp, #0x20
+00A1C9D4: mov          r6, r1
+00A1C9D8: sub          sp, sp, #0x3c
+00A1C9DC: ldrb         lr, [fp, #-0x2f]
+00A1C9E0: ldrb         r1, [r1, #5]
+00A1C9E4: mov          sb, #0
+00A1C9E8: bfi          lr, sb, #0, #4
+00A1C9EC: strb         sb, [fp, #-0x30]
+00A1C9F0: strb         lr, [fp, #-0x2f]
+00A1C9F4: and          r1, r1, #0xf
+RANGE 0x00A1CB00..0x00A1CB58 exclusive; ARM;
+00A1CB00: mul          r2, r7, sl
+00A1CB04: add          r3, r3, #8
+00A1CB08: sub          sp, sp, r3
+00A1CB0C: cmp          r2, sb
+00A1CB10: add          r8, sp, #0x10
+00A1CB14: bne          #0xa1ccdc
+00A1CB18: cmp          r7, #0
+00A1CB1C: beq          #0xa1cc7c
+00A1CB20: cmp          r7, #1
+00A1CB24: movw         r2, #0x4f3
+00A1CB28: movt         r2, #0x3f35
+00A1CB2C: lsl          r3, sl, #2
+00A1CB30: str          r2, [r8]
+00A1CB34: beq          #0xa1cc7c
+00A1CB38: add          r1, r8, r3
+00A1CB3C: cmp          r7, #2
+00A1CB40: mov          ip, #1
+00A1CB44: movt         ip, #0x3f80
+00A1CB48: str          ip, [r1, #8]
+00A1CB4C: beq          #0xa1cc7c
+00A1CB50: lsl          r2, sl, #3
+00A1CB54: cmp          r7, #3
+RANGE 0x00A18E9C..0x00A18EE8 exclusive; ARM;
+00A18E9C: cmp          r2, #0
+00A18EA0: beq          #0xa193c0
+00A18EA4: rsb          r3, r3, r3, lsl #3
+00A18EA8: lsl          r8, r3, #2
+00A18EAC: adds         r0, r2, r8
+00A18EB0: beq          #0xa193c0
+00A18EB4: ldr          r3, [r4, #0x14]
+00A18EB8: cmp          r6, r3
+00A18EBC: bhs          #0xa19390
+00A18EC0: rsb          r1, r6, r6, lsl #3
+00A18EC4: add          r3, r6, #1
+00A18EC8: str          r3, [r4, #0x10]
+00A18ECC: lsl          r1, r1, #2
+00A18ED0: adds         r7, r2, r1
+00A18ED4: beq          #0xa18f50
+00A18ED8: ldr          ip, [pc, #0x7c4] ; word[00A196A4]=00603480
+00A18EDC: cmp          r7, r0
+00A18EE0: mov          r3, #0
+00A18EE4: str          r3, [r7, #4]

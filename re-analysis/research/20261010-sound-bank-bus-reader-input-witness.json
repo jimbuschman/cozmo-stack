@@ -1,0 +1,192 @@
+[
+  {
+    "path": "re-analysis/obb/sound_meta/Init.bnk",
+    "sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+    "counts": {
+      "1": 4,
+      "8": 15,
+      "18": 5,
+      "19": 4
+    },
+    "selected_type8_20": [
+      {
+        "ordinal": 0,
+        "offset": 1364,
+        "type": 8,
+        "bytes": 63,
+        "id": 3803692087
+      },
+      {
+        "ordinal": 2,
+        "offset": 1447,
+        "type": 8,
+        "bytes": 124,
+        "id": 393239870
+      },
+      {
+        "ordinal": 3,
+        "offset": 1576,
+        "type": 8,
+        "bytes": 81,
+        "id": 2459405053
+      },
+      {
+        "ordinal": 4,
+        "offset": 1662,
+        "type": 8,
+        "bytes": 119,
+        "id": 1534528548
+      },
+      {
+        "ordinal": 6,
+        "offset": 1801,
+        "type": 8,
+        "bytes": 116,
+        "id": 1551306167
+      },
+      {
+        "ordinal": 7,
+        "offset": 1922,
+        "type": 8,
+        "bytes": 101,
+        "id": 1723505802
+      },
+      {
+        "ordinal": 8,
+        "offset": 2028,
+        "type": 8,
+        "bytes": 71,
+        "id": 2476517424
+      },
+      {
+        "ordinal": 9,
+        "offset": 2104,
+        "type": 8,
+        "bytes": 92,
+        "id": 2678428985
+      },
+      {
+        "ordinal": 10,
+        "offset": 2201,
+        "type": 8,
+        "bytes": 92,
+        "id": 2678428988
+      },
+      {
+        "ordinal": 11,
+        "offset": 2298,
+        "type": 8,
+        "bytes": 92,
+        "id": 2678428990
+      },
+      {
+        "ordinal": 12,
+        "offset": 2395,
+        "type": 8,
+        "bytes": 92,
+        "id": 2678428991
+      },
+      {
+        "ordinal": 15,
+        "offset": 2527,
+        "type": 8,
+        "bytes": 131,
+        "id": 3991942870
+      },
+      {
+        "ordinal": 16,
+        "offset": 2663,
+        "type": 8,
+        "bytes": 63,
+        "id": 792781730
+      },
+      {
+        "ordinal": 17,
+        "offset": 2731,
+        "type": 8,
+        "bytes": 81,
+        "id": 3829101743
+      },
+      {
+        "ordinal": 18,
+        "offset": 2817,
+        "type": 8,
+        "bytes": 63,
+        "id": 805203703
+      }
+    ]
+  },
+  {
+    "path": "re-analysis/obb/sound_meta/Music.bnk",
+    "sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+    "counts": {
+      "3": 128,
+      "4": 83,
+      "10": 163,
+      "11": 212,
+      "12": 11,
+      "13": 77
+    },
+    "selected_type8_20": []
+  },
+  {
+    "path": "re-analysis/obb/sound_meta/SFX.bnk",
+    "sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+    "counts": {
+      "2": 101,
+      "3": 190,
+      "4": 171,
+      "7": 8,
+      "9": 1,
+      "18": 1,
+      "19": 4
+    },
+    "selected_type8_20": []
+  },
+  {
+    "path": "re-analysis/obb/sound_meta/UI.bnk",
+    "sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+    "counts": {
+      "2": 14,
+      "3": 22,
+      "4": 21,
+      "7": 1,
+      "19": 1
+    },
+    "selected_type8_20": []
+  },
+  {
+    "path": "re-analysis/obb/sound_meta/Dev_Debug.bnk",
+    "sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+    "counts": {
+      "2": 14,
+      "3": 14,
+      "4": 14,
+      "7": 2,
+      "19": 14
+    },
+    "selected_type8_20": []
+  },
+  {
+    "path": "re-analysis/obb/sound_meta/English(US)/Cozmo.bnk",
+    "sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+    "counts": {
+      "2": 2231,
+      "3": 552,
+      "4": 546,
+      "5": 468,
+      "6": 21,
+      "7": 20,
+      "9": 5,
+      "10": 46,
+      "11": 46,
+      "12": 3,
+      "13": 46,
+      "18": 18,
+      "19": 42,
+      "21": 4,
+      "22": 7
+    },
+    "selected_type8_20": []
+  }
+]

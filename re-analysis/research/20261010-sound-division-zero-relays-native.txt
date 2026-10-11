@@ -1,0 +1,65 @@
+libacattsandroid.so SHA256 73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698
+0001FCA4..0001FCB0 ARM
+0001FCA4: add ip, pc, #0x100000
+0001FCA8: add ip, ip, #0xc5000
+0001FCAC: ldr pc, [ip, #0x330]!
+GOT 001E4FDC raise TYPE.ARM_JUMP_SLOT
+libBlueDoveMediaRender.so SHA256 2524d61faec2013daab4036db590bdb3c3af18aacd9c82def0cb434520a99a07
+00007E6C..00007E78 ARM
+00007E6C: add ip, pc, #0, #12
+00007E70: add ip, ip, #0xb000
+00007E74: ldr pc, [ip, #0x184]!
+GOT 00012FF8 raise TYPE.ARM_JUMP_SLOT
+libDAS.so SHA256 0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c
+0002A97C..0002A988 Thumb
+0002A97C: bx pc
+0002A97E: mov r8, r8
+00005DD8..00005DE4 ARM
+00005DD8: add ip, pc, #0, #12
+00005DDC: add ip, ip, #0x31000
+00005DE0: ldr pc, [ip, #0x188]!
+GOT 00036F58 __aeabi_idiv0 TYPE.ARM_JUMP_SLOT
+GOT 00036F60 __aeabi_ldiv0 TYPE.ARM_JUMP_SLOT
+GOT 00036F68 raise TYPE.ARM_JUMP_SLOT
+libgnustl_shared.so SHA256 edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8
+0009B3E4..0009B3F0 ARM
+0009B3E4: cmp r0, #0
+0009B3E8: mvnne r0, #0
+0009B3EC: b #0x9b4f0
+0009B490..0009B4A0 ARM
+0009B490: cmp r0, #0
+0009B494: mvngt r0, #0x80000000
+0009B498: movlt r0, #0x80000000
+0009B49C: b #0x9b4f0
+0004D518..0004D524 ARM
+0004D518: add ip, pc, #0, #12
+0004D51C: add ip, ip, #0x62000
+0004D520: ldr pc, [ip, #0xad8]!
+GOT 000AFFF8 raise TYPE.ARM_JUMP_SLOT
+libstlport_shared.so SHA256 196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03
+00025190..000251A0 ARM
+00025190: add ip, pc, #0, #12
+00025194: add ip, ip, #0x3d000
+00025198: ldr pc, [ip, #0xf4]!
+0002519C: add ip, pc, #0, #12
+000251C0..000251D0 ARM
+000251C0: add ip, pc, #0, #12
+000251C4: add ip, ip, #0x3d000
+000251C8: ldr pc, [ip, #0xd4]!
+000251CC: add ip, pc, #0, #12
+GOT 0006228C __aeabi_idiv0 TYPE.ARM_JUMP_SLOT
+GOT 00062290 __aeabi_ldiv0 TYPE.ARM_JUMP_SLOT
+GOT 0006229C raise TYPE.ARM_JUMP_SLOT
+libDAS.so relay ARM after BX PC at2A97C
+0002A980: ldr ip, [pc]
+0002A984: add pc, ip, pc
+00005DC0: add ip, pc, #0, #12
+00005DC4: add ip, ip, #0x31000
+00005DC8: ldr pc, [ip, #0x198]!
+00005DCC: add ip, pc, #0, #12
+00005DD0: add ip, ip, #0x31000
+00005DD4: ldr pc, [ip, #0x190]!
+libDAS.so2A988=FFFDB41C;2A984+8+signedliteral=00005DA8
+00005DA8: add ip, pc, #0, #12
+00005DAC: add ip, ip, #0x31000
+00005DB0: ldr pc, [ip, #0x1a8]!

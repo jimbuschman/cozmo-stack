@@ -1,0 +1,59 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D78A8..0x009D790C exclusive; ARM;
+009D78A8: ldr          r2, [pc, #0x58] ; word[009D7908]=00644820
+009D78AC: mvn          r0, #0
+009D78B0: add          r1, pc, r1
+009D78B4: str          r0, [r4, #0x10]
+009D78B8: add          r2, pc, r2
+009D78BC: add          r1, r1, #8
+009D78C0: add          r2, r2, #8
+009D78C4: str          r1, [r4]
+009D78C8: str          r3, [r4, #0x14]
+009D78CC: mov          r0, r4
+009D78D0: str          r2, [r4, #0x20]
+009D78D4: str          r3, [r4, #0x18]
+009D78D8: str          r3, [r4, #0x1c]
+009D78DC: str          r3, [r4, #0x24]
+009D78E0: strb         r3, [r4, #0x28]
+009D78E4: str          r3, [r4, #0x2c]
+009D78E8: str          r3, [r4, #0x30]
+009D78EC: str          r3, [r4, #0x34]
+009D78F0: str          r3, [r4, #0x38]
+009D78F4: str          r3, [r4, #0x3c]
+009D78F8: str          r3, [r4, #0x40]
+009D78FC: strb         r3, [r4, #0x44]
+009D7900: pop          {r4, pc}
+RANGE 0x009D7C88..0x009D7CB0 exclusive; ARM;
+009D7C88: str          r5, [r4, #0x10]
+009D7C8C: str          r2, [r4, #0x20]
+009D7C90: str          r3, [r4]
+009D7C94: b            #0x9d7c00
+009D7C98: strhteq      r8, [r6], #-0x44
+009D7C9C: rsbeq        r4, r4, r4, lsr #10
+009D7CA0: rsbeq        r3, r6, ip, ror #11
+009D7CA4: rsbeq        r8, r6, ip, lsl r4
+009D7CA8: mlseq        r4, r0, r4, r4
+009D7CAC: rsbeq        r3, r6, r8, asr r5
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D7890..0x009D78AC exclusive; ARM;
+009D7904: raw=006638F8 relocated=006638F8
+009D7908: raw=00644820 relocated=00644820
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+009D788C: raw=00644988 relocated=00644988
+009D7890: raw=006687DC relocated=006687DC
+009D7894: raw=E92D4010 relocated=E92D4010
+009D7898: raw=E1A04000 relocated=E1A04000
+009D789C: raw=EBFFE2DD relocated=EBFFE2DD
+009D78A0: raw=E59F105C relocated=E59F105C
+009D78A4: raw=E3A03000 relocated=E3A03000
+009D78A8: raw=E59F2058 relocated=E59F2058
+RANGE 0x009D7894..0x009D78AC exclusive; ARM;
+009D7894: push         {r4, lr}
+009D7898: mov          r4, r0
+009D789C: bl           #0x9d0418
+009D78A0: ldr          r1, [pc, #0x5c] ; word[009D7904]=006638F8
+009D78A4: mov          r3, #0
+009D78A8: ldr          r2, [pc, #0x58] ; word[009D7908]=00644820

@@ -1,0 +1,21 @@
+# Q14-040: singing compound and resolver interfaces
+
+| Obligation | Status | Remaining decision |
+| --- | --- | --- |
+| Q14-040 | PARTIAL | Selected trigger-group mapping/animation Init and behaviour reaction-lock/StartActing input joins. Compound append, zero ignore-policy, selected timeout/render providers and local result handling are now positive. |
+
+Checkpoint632, queue5 decisions only; scope guard reread every step. Primary `20261010-sound-singing-compound-input-native.txt`; same engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. AG631 gives actual three child args,60-second timeout and result gates.
+
+| Step | Primary | Exact decision / boundary |
+| --- | --- | --- |
+| CP632A selected compound product |5EEDA6..B8;GOT1041DB8=54F4C9;54F4C8..E8;GOT1042A9C=54F4F9;54F4F8..54C;GOT1042AA0=54E991 | Singing calls constructor with actualrobot and initiallyemptychildlist. ICompound constructor creates emptychildlist70, emptycompletiontree7C and emptyignore-policytree88. Derivedsequential ctor storesbetween-stepdelay9C=0, resetmarkerA8=1 andnext-startA0=-1. Actualderivedtable viaGOT103EB94=1022044 plus8 publishes102204C. |
+| CP632B selected append dispatch |102206C.slot20=54EC7D;1022068.slot1C=54ED91;54EC7C..ED20;54ED64..8C | Actual singing append invokes54EC7C with sret outputref, compound, child, ignorebool0 and finalstackbool0. Ignorebool unequal1 leaves function10 null; shippedfunctioncopy retainsnull. It then dispatchescompoundslot1C to54ED90 with that nullfunction. This corrects potential signature confusion from the decompiler's hidden sret argument. |
+| CP632C policy stays empty |54ED90..EEAC;54EE58..84;AG631H | Append publisheschildsharedref viaactualchildlist, then checksignorefunction10. Null skips policy insertion entirely. Allthreeactual singing appends supplynull; constructor policytreeempty. Therefore the selected child's ShouldIgnoreFailure returns0 at54F1BA, giving originalchildfailure aftercompletionstore. No inferred ignore-all or generic missingpolicywriter requirement. |
+| CP632D next-action cadence |54F5A0..697 | Between-stepdelay9C>0 would storeF32(delay+incomingnow)A0; actualconstructor0 skips. StoreUnionAndDelete executes beforetestingupdatedcurrentA4 againstsentinel70. Emptyreturns0 andrunscompoundcallbacks. Nonempty andnativeA0>now returns1000000. Otherwiseupdatesnextchildimmediately once. Exactrunning1000000 returns; anyotherresultstores/completesnextchild too. If morechildrenremain, result0 istranslated1000000,nonzero retained; exhaustedrunscompoundcallbacks withthatresult. No while-loop drainsallremainingchildren inonecall. |
+| CP632E completion before advancement |54F050..135 | ActualchildvirtualslotC suppliescompletionunion, whose snapshot andcompletedactiontype44 arestored undertag60 incompoundcompletiontree; PrepForCompletion follows. Flags98/99 choose savedcompletion44 anderase-versus-retainedchild branch. Defaultctor98=0,99=1 (STRH0100), so actualnormalcompletion takeslisterase beforeadvancingcurrent. Backingrecordstorage isexcluded; snapshot/cleanup/advancement order retained. |
+| CP632F resolver missing/empty gate |GOT1042754=57AE75;57AE74..AF02;GOT1042E54=58B6F5;GOT1042E58=58A939;58A938..44 | GetAnimationNameFromGroup queriesactualstreamergroupcontainer30. Nullgroup OR physicalbegin10==end14 returnssharedemptystring. Nonempty passesactualrobotMoodManager440,robot2FC rawfloat,groupcontainer30 and incomingbool toselectedGetAnimationName. The detailed nonempty animation-choice algorithm remains its higher-layer interface; this row onlysettles the original empty-resolution result, not a newanimation-RNG census. |
+| CP632G selected mood/interface |GOT1042E5C=58A947;58A946..96E | RetrievesactualMoodManager GetSimpleMood result andrawfield130, forwardscontainerandoriginalfloat/bool togroupchoice. No assumeddefaultmood ornewnormalization. Groupmapping/PlayAnimation Init still explicitlyopen ratherthan inventing itsselectedanimation. |
+
+out of scope: temporarysharedref/string/list/tree allocation and free backing; exact nullpolicy gates, callback order, retained completion snapshot and advancement decisions remainabove.
+
+Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue named trigger-mapping/animation Init and reaction-lock/StartActing joins; no whole M7/M12 or Q15 acceptance.

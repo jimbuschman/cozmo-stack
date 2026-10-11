@@ -1,0 +1,60 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009AD8F0..0x009AD930 exclusive; ARM;
+009AD8F0: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009AD8F4: sub          sp, sp, #0x24
+009AD8F8: ldr          r5, [r1, #0x10]
+009AD8FC: ldr          sb, [pc, #0x320] ; word[009ADC24]=00692980
+009AD900: cmp          r5, #0
+009AD904: add          sb, pc, sb
+009AD908: beq          #0x9ada38
+009AD90C: mov          r6, r2
+009AD910: movw         r8, #0x403
+009AD914: movw         fp, #0x2103
+009AD918: str          r3, [sp, #0x14]
+009AD91C: str          r0, [sp, #0x10]
+009AD920: ldrh         r3, [r5, #0x20]
+009AD924: cmp          r3, r8
+009AD928: beq          #0x9ada5c
+009AD92C: cmp          r3, fp
+RANGE 0x009ADB64..0x009ADBAC exclusive; ARM;
+009ADB64: ldr          r5, [sp, #0x18]
+009ADB68: ldr          r6, [sp, #0x1c]
+009ADB6C: b            #0x9ada2c
+009ADB70: str          r5, [sp, #0x18]
+009ADB74: mov          r5, sl
+009ADB78: mov          sl, r7
+009ADB7C: mov          r7, r2
+009ADB80: b            #0x9adb94
+009ADB84: mov          r7, r4
+009ADB88: ldr          r4, [r4]
+009ADB8C: cmp          r4, #0
+009ADB90: beq          #0x9adbcc
+009ADB94: ldr          r1, [r4, #8]
+009ADB98: ldr          r3, [r1, #4]
+009ADB9C: ldr          r3, [r3, #8]
+009ADBA0: cmp          r5, r3
+009ADBA4: bne          #0x9adb84
+009ADBA8: ldr          r3, [r1, #0x2c]
+RANGE 0x009ADC30..0x009ADC64 exclusive; ARM;
+009ADC30: push         {r4, r5, r6, r7, r8, lr}
+009ADC34: ldr          r4, [r0, #0x30]
+009ADC38: cmp          r4, #0
+009ADC3C: beq          #0x9adcb0
+009ADC40: cmp          r2, #0
+009ADC44: mov          r7, r2
+009ADC48: mov          r6, r1
+009ADC4C: mov          r5, r0
+009ADC50: beq          #0x9adcc8
+009ADC54: mov          r8, #0
+009ADC58: b            #0x9adc6c
+009ADC5C: mov          r8, r4
+009ADC60: ldr          r4, [r4]
+RANGE 0x009ADD28..0x009ADD44 exclusive; ARM;
+009ADD28: streq        r7, [r5, #0x34]
+009ADD2C: sub          r3, r3, #1
+009ADD30: str          r1, [r4]
+009ADD34: str          r4, [r5, #0x38]
+009ADD38: mov          r4, r2
+009ADD3C: str          r3, [r5, #0x44]
+009ADD40: b            #0x9adcc0

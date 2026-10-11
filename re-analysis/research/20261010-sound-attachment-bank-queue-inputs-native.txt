@@ -1,0 +1,102 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009B04F8..0x009B052C exclusive; ARM;
+009B04F8: push         {r4, r5, r6, r7, r8, lr}
+009B04FC: cmp          r1, #0
+009B0500: ldr          r7, [pc, #0x234] ; word[009B073C]=0068FD7C
+009B0504: sub          sp, sp, #0x48
+009B0508: add          r7, pc, r7
+009B050C: beq          #0x9b0588
+009B0510: ldr          r6, [r0, #0x30]
+009B0514: mov          r8, r0
+009B0518: mov          r5, r1
+009B051C: cmp          r6, #0
+009B0520: beq          #0x9b0550
+009B0524: ldr          r3, [r6, #8]
+009B0528: cmp          r1, r3
+RANGE 0x009B0A60..0x009B0A84 exclusive; ARM;
+009B0A60: ldr          r3, [pc, #0x74] ; word[009B0ADC]=00689F68
+009B0A64: push         {r4, lr}
+009B0A68: add          r3, pc, r3
+009B0A6C: mov          r4, r0
+009B0A70: add          r3, r3, #8
+009B0A74: str          r3, [r0], #0x7c
+009B0A78: bl           #0xa67e28
+009B0A7C: ldr          r1, [r4, #0x54]
+009B0A80: cmp          r1, #0
+RANGE 0x009B1450..0x009B147C exclusive; ARM;
+009B1450: ldr          r2, [sp, #0x5c]
+009B1454: bl           #0xa0f678
+009B1458: b            #0x9b0f94
+009B145C: ldr          r3, [pc, #0x4c] ; word[009B14B0]=FFFFFE08
+009B1460: ldr          r0, [sp, #0x10]
+009B1464: ldr          ip, [sp, #0x68]
+009B1468: ldr          r1, [sp, #0x60]
+009B146C: ldr          r0, [r0, r3]
+009B1470: ldr          r2, [sp, #0x64]
+009B1474: ldrb         r3, [sp, #0x5c]
+009B1478: ldr          r0, [r0]
+RANGE 0x009B1830..0x009B189C exclusive; ARM;
+009B1830: push         {r4, r5, r6, r7, r8, sb, lr}
+009B1834: sub          sp, sp, #0xc
+009B1838: add          r4, sp, #8
+009B183C: mov          lr, #0
+009B1840: ldr          r5, [sp, #0x28]
+009B1844: stmdb        r4, {r1, r2}
+009B1848: ldrb         r6, [r0, #0x50]
+009B184C: subs         r2, r5, lr
+009B1850: ldrb         r4, [r0, #4]
+009B1854: movne        r2, #1
+009B1858: bfi          r6, r2, #0, #1
+009B185C: ldr          r8, [sp, #0x30]
+009B1860: and          r2, r6, #0xfd
+009B1864: ldr          r7, [sp]
+009B1868: and          r4, r4, #0xfe
+009B186C: ldr          r6, [sp, #4]
+009B1870: orr          r4, r4, #2
+009B1874: ldr          r1, [pc, #0x6c] ; word[009B18E8]=0066A798
+009B1878: bfi          r2, lr, #2, #1
+009B187C: ldr          sb, [sp, #0x2c]
+009B1880: add          r1, pc, r1
+009B1884: str          r3, [r0, #0x24]
+009B1888: add          r1, r1, #8
+009B188C: add          sb, sb, r8
+009B1890: strb         r4, [r0, #4]
+009B1894: str          r1, [r0]
+009B1898: str          r7, [r0, #8]
+RANGE 0x009B1A10..0x009B1A48 exclusive; ARM;
+009B1A10: b            #0x9b19a8
+009B1A14: mov          r1, r4
+009B1A18: cmp          r1, #0
+009B1A1C: popeq        {r3, r4, r5, r6, r7, pc}
+009B1A20: ldr          r3, [pc, #0x20] ; word[009B1A48]=0068E614
+009B1A24: mov          r4, #0
+009B1A28: str          r4, [r5, #0x40]
+009B1A2C: ldr          r3, [pc, r3]
+009B1A30: ldr          r0, [r3]
+009B1A34: bl           #0xa7a988
+009B1A38: str          r4, [r5, #0x3c]
+009B1A3C: str          r4, [r5, #0x44]
+009B1A40: pop          {r3, r4, r5, r6, r7, pc}
+RANGE 0x009B1B50..0x009B1B80 exclusive; ARM;
+009B1B50: ldr          r3, [pc, #0xac] ; word[009B1C04]=00688E70
+009B1B54: push         {r4, r5, lr}
+009B1B58: sub          sp, sp, #0xc
+009B1B5C: add          r5, sp, #4
+009B1B60: add          r3, pc, r3
+009B1B64: mov          r4, r0
+009B1B68: add          r3, r3, #8
+009B1B6C: str          r3, [r0], #4
+009B1B70: bl           #0x9bba84
+009B1B74: mov          r0, r5
+009B1B78: bl           #0x4d6694
+009B1B7C: mov          r0, r5
+RANGE 0x0099EB84..0x0099EBA4 exclusive; ARM;
+0099EB84: mov          r4, #0x34
+0099EB88: b            #0x99eb60
+0099EB8C: ldr          r2, [pc, #0x510] ; word[0099F0A4]=006B3878
+0099EB90: mov          r1, #0x98
+0099EB94: str          r0, [r3, #0xf0]
+0099EB98: add          r2, pc, r2
+0099EB9C: ldr          r0, [r2]
+0099EBA0: bl           #0xa7a7f4

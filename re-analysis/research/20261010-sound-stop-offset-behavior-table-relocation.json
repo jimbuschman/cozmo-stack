@@ -1,0 +1,17 @@
+[
+  {
+    "address": "0x103ee20",
+    "type": "TYPE.ARM_GLOB_DAT",
+    "symbol": "_ZTVNSt6__ndk120__shared_ptr_pointerIPN4Anki5Cozmo25BehaviorRequestGameSimpleENS_14default_deleteIS3_EENS_9allocatorIS3_EEEE"
+  },
+  {
+    "address": "0x103f42c",
+    "type": "TYPE.ARM_GLOB_DAT",
+    "symbol": "_ZTVN4Anki5Cozmo25BehaviorRequestGameSimpleE"
+  },
+  {
+    "address": "0x103f434",
+    "type": "TYPE.ARM_GLOB_DAT",
+    "symbol": "_ZTVNSt6__ndk110__function6__funcINS_6__bindIRMN4Anki5Cozmo25BehaviorRequestGameSimpleEFvRNS4_5RobotEEJPS5_RNS_12placeholders4__phILi1EEEEEENS_9allocatorISG_EEFvS7_EEE"
+  }
+]

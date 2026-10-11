@@ -1,0 +1,143 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0058EE4C..0x0058EF9C exclusive; Thumb;
+0058EE4C: push.w       {r4, r5, r6, r7, r8, sb, lr}
+0058EE50: sub.w        sp, sp, #0x31c
+0058EE54: mov          r6, r0
+0058EE56: ldr          r0, [pc, #0x174] ; word[0058EFCC]=00AAF9EE
+0058EE58: mov          r7, r2
+0058EE5A: add          r0, pc
+0058EE5C: ldr          r0, [r0]
+0058EE5E: ldr          r0, [r0]
+0058EE60: str          r0, [sp, #0x318]
+0058EE62: mov          r0, r6
+0058EE64: ldr          r3, [r0, #8]!
+0058EE68: cmp          r3, #0
+0058EE6A: beq          #0x58ef6a
+0058EE6C: sub.w        r8, r0, #4
+0058EE70: mov          r2, r0
+0058EE72: mov          r5, r3
+0058EE74: ldrb         r3, [r5, #0x10]
+0058EE76: cmp          r3, r1
+0058EE78: bhs          #0x58ee82
+0058EE7A: ldr          r5, [r5, #4]
+0058EE7C: cmp          r5, #0
+0058EE7E: bne          #0x58ee74
+0058EE80: b            #0x58ee8c
+0058EE82: ldr          r3, [r5]
+0058EE84: mov          r2, r5
+0058EE86: cmp          r3, #0
+0058EE88: bne          #0x58ee72
+0058EE8A: b            #0x58ee8e
+0058EE8C: mov          r5, r2
+0058EE8E: cmp          r5, r0
+0058EE90: beq          #0x58ef6a
+0058EE92: ldrb         r2, [r5, #0x10]
+0058EE94: cmp          r2, r1
+0058EE96: bhi          #0x58ef6a
+0058EE98: cmp          r5, r0
+0058EE9A: beq          #0x58ef6a
+0058EE9C: movs         r0, #0
+0058EE9E: mov          sb, r5
+0058EEA0: strd         r0, r0, [sp, #0x30]
+0058EEA4: str          r0, [sp, #0x38]
+0058EEA6: ldrb         r0, [sb, #0x34]!
+0058EEAA: ldr          r1, [pc, #0x128] ; word[0058EFD4]=006610FB
+0058EEAC: tst.w        r0, #1
+0058EEB0: ldr          r0, [pc, #0x11c] ; word[0058EFD0]=00655132
+0058EEB2: ldr          r3, [pc, #0x124] ; word[0058EFD8]=00661114
+0058EEB4: add          r1, pc
+0058EEB6: add          r0, pc
+0058EEB8: ite          eq
+0058EEBA: addeq.w      ip, sb, #1
+0058EEBE: ldrne.w      ip, [r5, #0x3c]
+0058EEC2: ldrb         r4, [r5, #0x10]
+0058EEC4: add          r3, pc
+0058EEC6: ldr          r2, [r6, #0xc]
+0058EEC8: subs         r2, #1
+0058EECA: strd         ip, r4, [sp]
+0058EECE: str          r2, [sp, #8]
+0058EED0: add          r2, sp, #0x30
+0058EED2: blx          #0x4a505c
+0058EED6: ldr          r0, [sp, #0x30]
+0058EED8: cbz          r0, #0x58eef8
+0058EEDA: ldr          r1, [sp, #0x34]
+0058EEDC: cmp          r1, r0
+0058EEDE: itttt        ne
+0058EEE0: subne.w      r2, r1, #8
+0058EEE4: subne        r2, r2, r0
+0058EEE6: mvnne        r3, #7
+0058EEEA: bicne.w      r2, r3, r2
+0058EEEE: itt          ne
+0058EEF0: addne        r1, r1, r2
+0058EEF2: strne        r1, [sp, #0x34]
+0058EEF4: blx          #0x4a40cc
+0058EEF8: add          r0, sp, #0x18
+0058EEFA: movs         r1, #0
+0058EEFC: cmp          r7, #1
+0058EEFE: strd         r0, r0, [sp, #0x18]
+0058EF02: strd         r1, r0, [sp, #0x20]
+0058EF06: mov.w        r0, #1
+0058EF0A: strb.w       r0, [sp, #0x28]
+0058EF0E: blt          #0x58ef2c
+0058EF10: ldr          r0, [r5, #0x20]
+0058EF12: add          r7, sp, #0x30
+0058EF14: mov.w        r2, #0x2e8
+0058EF18: add.w        r1, r0, #8
+0058EF1C: mov          r0, r7
+0058EF1E: blx          #0x4a42ac
+0058EF22: add          r0, sp, #0x18
+0058EF24: add          r2, sp, #0xc
+0058EF26: mov          r1, r7
+0058EF28: blx          #0x4ae944
+0058EF2C: add          r0, sp, #0x18
+0058EF2E: add          r1, sp, #0x30
+0058EF30: add          r2, sp, #0x2c
+0058EF32: blx          #0x4ae944
+0058EF36: ldr          r1, [pc, #0xa4] ; word[0058EFDC]=006610C4
+0058EF38: add          r1, pc
+0058EF3A: add          r0, sp, #0xc
+0058EF3C: mov          r2, sb
+0058EF3E: blx          #0x4a7330
+0058EF42: add          r1, sp, #0xc
+0058EF44: add          r2, sp, #0x18
+0058EF46: mov          r0, r6
+0058EF48: movs         r3, #0
+0058EF4A: blx          #0x4aeb30
+0058EF4E: ldrb.w       r0, [sp, #0xc]
+0058EF52: lsls         r0, r0, #0x1f
+0058EF54: itt          ne
+0058EF56: ldrne        r0, [sp, #0x14]
+0058EF58: blxne        #0x4a40cc
+0058EF5C: mov          r0, r8
+0058EF5E: mov          r1, r5
+0058EF60: blx          #0x4aeb3c
+0058EF64: add          r0, sp, #0x18
+0058EF66: blx          #0x4aea64
+0058EF6A: ldr          r0, [pc, #0x74] ; word[0058EFE0]=00AAF8DA
+0058EF6C: ldr          r1, [sp, #0x318]
+0058EF6E: add          r0, pc
+0058EF70: ldr          r0, [r0]
+0058EF72: ldr          r0, [r0]
+0058EF74: subs         r0, r0, r1
+0058EF76: itt          eq
+0058EF78: addeq.w      sp, sp, #0x31c
+0058EF7C: popeq.w      {r4, r5, r6, r7, r8, sb, pc}
+0058EF80: blx          #0x4a4fe4
+0058EF84: b            #0x58efbe
+0058EF86: mov          r4, r0
+0058EF88: ldrb.w       r0, [sp, #0xc]
+0058EF8C: lsls         r0, r0, #0x1f
+0058EF8E: itt          ne
+0058EF90: ldrne        r0, [sp, #0x14]
+0058EF92: blxne        #0x4a40cc
+0058EF96: b            #0x58efc0
+0058EF98: b            #0x58efbe
+0058EF9A: mov          r4, r0
+RANGE 0x004AEB30..0x004AEB3C exclusive; ARM;
+004AEB30: add          ip, pc, #0xb00000
+004AEB34: add          ip, ip, #0x95000
+004AEB38: ldr          pc, [ip, #0x64]!
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+00BF0000: bytes=b'Remove'

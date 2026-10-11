@@ -1,0 +1,62 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A59110..0x00A59150 exclusive; ARM;
+00A59110: vstr         d16, [ip, #0x60]
+00A59114: strb         sb, [ip, #0x38]
+00A59118: bfc          r2, #0, #4
+00A5911C: strb         r2, [ip, #0x39]
+00A59120: ldr          r2, [ip, #0x38]
+00A59124: str          r8, [ip, #0x24]
+00A59128: bfc          r2, #0xc, #0x14
+00A5912C: strb         sl, [ip, #0x28]
+00A59130: str          sb, [ip, #0x2c]
+00A59134: str          sb, [ip, #0x30]
+00A59138: str          sb, [ip, #0x34]
+00A5913C: strb         sl, [ip, #0x68]
+00A59140: str          r2, [ip, #0x38]
+00A59144: ldm          r6, {r0, r1, r2}
+00A59148: add          ip, ip, #0x70
+00A5914C: ldr          r3, [sp, #0xc]
+RANGE 0x00A5919C..0x00A591D0 exclusive; ARM;
+00A5919C: ldr          r3, [ip, #-0x70]
+00A591A0: ldr          r0, [ip, #-0x64]
+00A591A4: ldr          r1, [ip, #-0x60]
+00A591A8: str          r3, [ip, #-0x1c]
+00A591AC: ldr          r3, [ip, #-0x68]
+00A591B0: ldr          r2, [ip, #-0x5c]
+00A591B4: ldr          lr, [ip, #-0x6c]
+00A591B8: str          r3, [ip, #-0x14]
+00A591BC: ldr          r3, [sp, #4]
+00A591C0: str          r8, [ip, #-0x34]
+00A591C4: str          r5, [ip, #-0x30]
+00A591C8: str          r5, [ip, #-0x2c]
+00A591CC: str          r0, [ip, #-0x28]
+RANGE 0x00A59548..0x00A5957C exclusive; ARM;
+00A59548: ldr          r1, [r4, #0x2c]
+00A5954C: cmp          r1, #0
+00A59550: beq          #0xa59574
+00A59554: ldr          r3, [pc, #0x154] ; word[00A596B0]=005E6B48
+00A59558: ldr          r3, [pc, r3]
+00A5955C: ldr          r0, [r3]
+00A59560: bl           #0xa7a914
+00A59564: mov          r3, #0
+00A59568: str          r3, [r4, #0x2c]
+00A5956C: str          r3, [r4, #0x34]
+00A59570: str          r3, [r4, #0x30]
+00A59574: cmp          r8, #0
+00A59578: beq          #0xa5967c
+RANGE 0x00A595B4..0x00A595EC exclusive; ARM;
+00A595B4: bl           #0xa7a894
+00A595B8: cmp          r0, #0
+00A595BC: str          r0, [sb, #0x2c]
+00A595C0: beq          #0xa59684
+00A595C4: lsl          r5, r7, #2
+00A595C8: add          r4, r0, r4
+00A595CC: mov          r1, r8
+00A595D0: str          r0, [sb, #0x30]
+00A595D4: mov          r2, r5
+00A595D8: str          r6, [sb, #0x38]
+00A595DC: str          r4, [sb, #0x34]
+00A595E0: add          r7, sb, #0x30
+00A595E4: bl           #0x4d37f0
+00A595E8: ldr          r1, [sb, #0x30]

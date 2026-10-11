@@ -1,0 +1,33 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A4AA24..0x00A4AA9C exclusive; ARM;
+00A4AA24: movhs        r1, r0
+00A4AA28: cmp          r1, #0
+00A4AA2C: beq          #0xa4abb4
+00A4AA30: mov          r0, r1
+00A4AA34: ldr          r1, [sp, #8]
+00A4AA38: add          r2, fp, sb
+00A4AA3C: vldr         s13, [pc, #0x1bc] ; word[00A4AC00]=37800000
+00A4AA40: mul          lr, fp, r8
+00A4AA44: ldr          r6, [sp, #0x10]
+00A4AA48: mla          r1, r8, r2, r1
+00A4AA4C: str          r0, [sp]
+00A4AA50: vcvt.f32.s32 s14, s16
+00A4AA54: add          r4, r4, r1, lsr #10
+00A4AA58: vldr         s15, [ip, #4]
+00A4AA5C: mov          sb, r2
+00A4AA60: uxth         r0, r4
+00A4AA64: lsrs         r5, r4, #0x10
+00A4AA68: add          r1, r1, lr
+00A4AA6C: vmov         s16, r0
+00A4AA70: vmul.f32     s14, s14, s13
+00A4AA74: vsub.f32     s15, s15, s17
+00A4AA78: vmov.f32     s12, s17
+00A4AA7C: vmla.f32     s12, s14, s15
+00A4AA80: vstmia       r6!, {s12}
+00A4AA84: beq          #0xa4abd4
+00A4AA88: rsb          r0, r2, #0x400
+00A4AA8C: mov          r1, fp
+00A4AA90: stm          sp, {r3, ip}
+00A4AA94: bl           #0x4be310
+00A4AA98: ldm          sp, {r3, ip}

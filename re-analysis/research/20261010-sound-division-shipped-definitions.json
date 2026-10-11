@@ -1,0 +1,281 @@
+{
+  "scope": "Exact named timing division ABI exports in the28 supplied APK libraries. Definitions alone do not establish Android dynamic binding order or zero-divisor output.",
+  "rows": [
+    {
+      "file": "resources\\lib\\armeabi-v7a\\libacattsandroid.so",
+      "sha256": "73c4db9455e1cc0235f731ab110194dbfb7aa44974af7ac74c11de382f135698",
+      "definitions": [
+        {
+          "name": "__aeabi_uidivmod",
+          "value": "0x3ff75",
+          "size": 26,
+          "section": 8,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_uidiv",
+          "value": "0x3fee5",
+          "size": 0,
+          "section": 8,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv0",
+          "value": "0x3ff91",
+          "size": 12,
+          "section": 8,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_ldiv0",
+          "value": "0x3ff91",
+          "size": 12,
+          "section": 8,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv",
+          "value": "0xf4409",
+          "size": 0,
+          "section": 8,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idivmod",
+          "value": "0xf44cd",
+          "size": 26,
+          "section": 8,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        }
+      ],
+      "libraries": [
+        "liblog.so",
+        "libstdc++.so",
+        "libm.so",
+        "libc.so",
+        "libdl.so"
+      ]
+    },
+    {
+      "file": "resources\\lib\\armeabi-v7a\\libBlueDoveMediaRender.so",
+      "sha256": "2524d61faec2013daab4036db590bdb3c3af18aacd9c82def0cb434520a99a07",
+      "definitions": [
+        {
+          "name": "__aeabi_idiv",
+          "value": "0xde35",
+          "size": 0,
+          "section": 8,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idivmod",
+          "value": "0xdef9",
+          "size": 26,
+          "section": 8,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv0",
+          "value": "0xdf15",
+          "size": 12,
+          "section": 8,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_ldiv0",
+          "value": "0xdf15",
+          "size": 12,
+          "section": 8,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        }
+      ],
+      "libraries": [
+        "libEGL.so",
+        "libGLESv2.so",
+        "libdl.so",
+        "libstdc++.so",
+        "liblog.so",
+        "libz.so",
+        "libandroid.so",
+        "libjnigraphics.so",
+        "libc.so",
+        "libm.so"
+      ]
+    },
+    {
+      "file": "resources\\lib\\armeabi-v7a\\libDAS.so",
+      "sha256": "0a0bc63b301fb7f9ffb559462f712a8bf9dd4954b11c43face8f4783852f496c",
+      "definitions": [
+        {
+          "name": "__aeabi_uidivmod",
+          "value": "0x28c55",
+          "size": 26,
+          "section": 10,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_uidiv",
+          "value": "0x28bc5",
+          "size": 0,
+          "section": 10,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv0",
+          "value": "0x29261",
+          "size": 12,
+          "section": 10,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_ldiv0",
+          "value": "0x29261",
+          "size": 12,
+          "section": 10,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        }
+      ],
+      "libraries": [
+        "libc.so",
+        "libm.so",
+        "libc++_shared.so",
+        "libandroid.so",
+        "liblog.so",
+        "libstdc++.so",
+        "libdl.so"
+      ]
+    },
+    {
+      "file": "resources\\lib\\armeabi-v7a\\libgnustl_shared.so",
+      "sha256": "edce2517ec94031244078f0b40d762e178840894c8ad0b692ec38d195a3f79e8",
+      "definitions": [
+        {
+          "name": "__aeabi_uidiv",
+          "value": "0x9b371",
+          "size": 0,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv",
+          "value": "0x9b405",
+          "size": 0,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv0",
+          "value": "0x9b4f0",
+          "size": 16,
+          "section": 12,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_uidivmod",
+          "value": "0x9b3f1",
+          "size": 18,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idivmod",
+          "value": "0x9b4a1",
+          "size": 18,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_ldiv0",
+          "value": "0x9b4f0",
+          "size": 16,
+          "section": 12,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        }
+      ],
+      "libraries": [
+        "libm.so",
+        "libc.so",
+        "libdl.so"
+      ]
+    },
+    {
+      "file": "resources\\lib\\armeabi-v7a\\libstlport_shared.so",
+      "sha256": "196d8198f29570fcde10bfab611bb1745db7e3383cc999f54cc4b016e6ea4d03",
+      "definitions": [
+        {
+          "name": "__aeabi_uidiv",
+          "value": "0x4edfc",
+          "size": 0,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_uidivmod",
+          "value": "0x4eea4",
+          "size": 32,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv",
+          "value": "0x4eec4",
+          "size": 0,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idiv0",
+          "value": "0x4f040",
+          "size": 16,
+          "section": 12,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_idivmod",
+          "value": "0x4efa0",
+          "size": 32,
+          "section": 12,
+          "binding": "BINDING.GLOBAL",
+          "visibility": "VISIBILITY.DEFAULT"
+        },
+        {
+          "name": "__aeabi_ldiv0",
+          "value": "0x4f040",
+          "size": 16,
+          "section": 12,
+          "binding": "BINDING.WEAK",
+          "visibility": "VISIBILITY.DEFAULT"
+        }
+      ],
+      "libraries": [
+        "libm.so",
+        "libc.so",
+        "libdl.so"
+      ]
+    }
+  ]
+}

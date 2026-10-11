@@ -1,0 +1,23 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0x9fdd90"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x9fd83e",
+      "target": "#0x9fdd90",
+      "mode": "Thumb",
+      "instruction": "b #0x9fdd90",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ff34c",
+      "target": "#0x9fdd90",
+      "mode": "ARM",
+      "instruction": "bl #0x9fdd90",
+      "section": ".text"
+    }
+  ]
+}

@@ -1,0 +1,818 @@
+{
+  "scope": "All shipped Managed/*.dll: ImplMap exact five optional-audio-layer mangled imports, MethodDef/MemberRef exact simple or mangled names, and ASCII/UTF16 raw name navigation. No dynamic lookup/reflection/CLAD/native-pointer producer absence proof.",
+  "assemblies": [
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\AnkiAutomation.dll",
+      "sha256": "f1676f2f7850fa74970ae00e4bda9c59224180fd4246bb37c3797f58c9b410ed",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\Assembly-CSharp-firstpass.dll",
+      "sha256": "6b85e1bb37a36f2bb69a360a7205fe55a690c980f81e3b8946113a2a34ca6989",
+      "implMapCount": 2,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\Assembly-CSharp.dll",
+      "sha256": "dda77a5202b45a00eff40925624a1275b76ba1743e9412fd2d1e88091e618274",
+      "implMapCount": 24,
+      "matchingExactImports": [],
+      "engineImports": [
+        {
+          "importName": "cozmo_startup",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_startup"
+        },
+        {
+          "importName": "cozmo_shutdown",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_shutdown"
+        },
+        {
+          "importName": "cozmo_wifi_setup",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_wifi_setup"
+        },
+        {
+          "importName": "cozmo_send_to_clipboard",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_send_to_clipboard"
+        },
+        {
+          "importName": "cozmo_transmit_engine_to_game",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_transmit_engine_to_game"
+        },
+        {
+          "importName": "cozmo_transmit_game_to_engine",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_transmit_game_to_engine"
+        },
+        {
+          "importName": "cozmo_transmit_viz_to_game",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_transmit_viz_to_game"
+        },
+        {
+          "importName": "cozmo_execute_background_transfers",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_execute_background_transfers"
+        },
+        {
+          "importName": "cozmo_activate_experiment",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_activate_experiment"
+        },
+        {
+          "importName": "cozmo_install_google_breakpad",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_install_google_breakpad"
+        },
+        {
+          "importName": "cozmo_uninstall_google_breakpad",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_uninstall_google_breakpad"
+        },
+        {
+          "importName": "cozmo_get_device_id_file_path",
+          "module": "cozmoEngine",
+          "managedMethod": "cozmo_get_device_id_file_path"
+        },
+        {
+          "importName": "Unity_DAS_Event",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_Event"
+        },
+        {
+          "importName": "Unity_DAS_LogE",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_LogE"
+        },
+        {
+          "importName": "Unity_DAS_LogW",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_LogW"
+        },
+        {
+          "importName": "Unity_DAS_LogI",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_LogI"
+        },
+        {
+          "importName": "Unity_DAS_LogD",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_LogD"
+        },
+        {
+          "importName": "Unity_DAS_Ch_LogI",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_Ch_LogI"
+        },
+        {
+          "importName": "Unity_DAS_Ch_LogD",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_Ch_LogD"
+        },
+        {
+          "importName": "Unity_DAS_SetGlobal",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_SetGlobal"
+        },
+        {
+          "importName": "Unity_DAS_GetGlobalSize",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_GetGlobalSize"
+        },
+        {
+          "importName": "Unity_DAS_GetGlobal",
+          "module": "cozmoEngine",
+          "managedMethod": "Unity_DAS_GetGlobal"
+        }
+      ],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\DemiLib.dll",
+      "sha256": "d09fdebed0b6ddf946cc04fac72754ac7737811ec84153fd8e68810d2635e09e",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\DOTween.dll",
+      "sha256": "aea194f88a50bc6e4a31fd3cd676cf54402536842e5fd246c8f1891efab30fa2",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\DOTween43.dll",
+      "sha256": "79666ac2027e93ebc2d3ae4a20536d9e04303e301912f855f3cdc90bfc52b986",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\DOTween46.dll",
+      "sha256": "8e243a95c8e77b120f417e6ff92732fe90544b35dfbeb0c24611c2387dcc2ea4",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\DOTween50.dll",
+      "sha256": "424bc852e0456e7897ea573dc67671cd29130ec36ae53ec6dba3e1a5c6546ea4",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\DOTweenPro.dll",
+      "sha256": "c064ef2efea9499e98ab61036f2d2077a91d8ace6e11652f29a98b04df1762a7",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\Mono.Security.dll",
+      "sha256": "0cf2b386bc2235dc14c40c97b82c75d450ef3792c1f52b1661e7fbc91fdc4cb5",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\mscorlib.dll",
+      "sha256": "31bacc6d2f885d102a0f6fbfd331320dc55b240cab2473ddd68795ebf324f1d0",
+      "implMapCount": 16,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\Newtonsoft.Json.dll",
+      "sha256": "5a66778d1cd89fd49c8e16daf3ce48ae2932b0407442aa7866d97e242e237604",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\System.Core.dll",
+      "sha256": "de666bcd56fe70a2ef5ce5fa22f3eb4bce5d8fddadb76e2c36e767494c35b3c2",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\System.dll",
+      "sha256": "749157ec376391a0af0d1b50ddc43831c474570c099c49a98f8db1c4f6953524",
+      "implMapCount": 49,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\System.Xml.dll",
+      "sha256": "c457118a42dca9221029434a7789c56023aeb40ee96e0c38d4d3806a074e6879",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UIComponents.dll",
+      "sha256": "3a0fd4f3037013b85814e13cfe59f1c82cbcf368979c1b42acd282e615b46610",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\Unity.TextMeshPro.dll",
+      "sha256": "eaff52b6bfbfcbac91bb8560931770e6c721f11431af53571b6df8a58d13e906",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityDASDll.dll",
+      "sha256": "4853d6474b26aa54778fb2687a188423766c1863c566299d37ee9665fbf76129",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.AccessibilityModule.dll",
+      "sha256": "9e78f76c290e32accc3468c1491f0d0412715f223b260710b4dc0a257bdf09ff",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.AIModule.dll",
+      "sha256": "a69f2837fe64494c58c3664519170792368eede43ac5f9ac6851e719a7ff01a2",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.AnimationModule.dll",
+      "sha256": "d6fdcbeb75ae34147d8847ed6db2589d113d106efececba61f6cd275e664cd77",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.ARModule.dll",
+      "sha256": "8942c932c368da1e36899365102b9aaf2e1af5fe936d08d4f37a8faf90ace1a8",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.AssetBundleModule.dll",
+      "sha256": "e94094dab40b0931153010133aa57d87a2246e8dcf684cf25eeacd2b7c64d1ae",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.AudioModule.dll",
+      "sha256": "16398cb71d06db7f9c48330bb75bfbba74b9cac97c5a04b54ca605cf592425e1",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.BaselibModule.dll",
+      "sha256": "47acd5c8781c43c11f76edae2c2445d65236de65d8b9335c07451c57022627e9",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.ClothModule.dll",
+      "sha256": "31478c9531fe1185e69e647cf3d497d684ef6dc484f82cd820ba1900c5a6bdff",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.CloudWebServicesModule.dll",
+      "sha256": "724a68e3275501b12dad794fbb1e4c57e2e391dc6f9088b2c16a9a72b25ade83",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.CoreModule.dll",
+      "sha256": "3a3c29e7278cb8bf883afa1973e5641029a78265cf2d34712944e823e315a267",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.CrashReportingModule.dll",
+      "sha256": "ed608bd8eab865362b9b34dac899ebcba5c5f3a3cbae073567d810af0b61eaf8",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.DirectorModule.dll",
+      "sha256": "cb940839c703a4b5155891acb2dcf05dce0aa03feb509403fb753d06301bc273",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.dll",
+      "sha256": "c559655494d57d89adeb88cf4781d92070ad5d5637c482c3d526679f0cb60dd5",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.FacebookModule.dll",
+      "sha256": "751e36105866a9dc071768fa0f1d38876ba801a89ff181738000ebbe834d47b4",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.GameCenterModule.dll",
+      "sha256": "588e44df7ec900782fad3f8fb5fdfe7d548b4fab414896f5bf2037f9d4aa695e",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.GridModule.dll",
+      "sha256": "6756bd05fdbc193d9661ff28ef9f1d0e3414a10d46a48567ad20bfd33712f9b8",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.HotReloadModule.dll",
+      "sha256": "4ac2e78659f1599367803bb4bba6dcde60433b9f12fb41a25dfc34ed6e40a5ca",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.ImageConversionModule.dll",
+      "sha256": "f30a142e0dc9ddb4bbe8964b7a307ee5ca161df02516cff8e2ee562b5296c28d",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.IMGUIModule.dll",
+      "sha256": "a50f56e7d0a791ebeb0d24605845d2ec3309aded52d79291ddf8e7345fd84326",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.InputModule.dll",
+      "sha256": "713932a3b39898a8475d51f9ae89cac2491159449025fac38aac4b98ced0e790",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.JSONSerializeModule.dll",
+      "sha256": "149898734d467c302070c3577ce8225194437e2bead0da5dcc6f40d9c3fb149a",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.Networking.dll",
+      "sha256": "d548f5bdee41be51d3dbdc3292fb55c0869581fe2c4113a287a482428fbf4722",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.ParticlesLegacyModule.dll",
+      "sha256": "fb722c401586c332acc7152aa1188eca04e1f044ae8f0d5055ef05167f9dbb8c",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.ParticleSystemModule.dll",
+      "sha256": "c95aaa308ac98b95d0e35d4b2b724386d49be9ae9768e12d16a3dad71aa4fb4a",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.PerformanceReportingModule.dll",
+      "sha256": "d59b980ac10cbeeef5170786f58504d8c8b2fe24fa8fc79d4779c61cdcb3c431",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.Physics2DModule.dll",
+      "sha256": "431d152be8ef62252c9f83cc517bfcfc42596d339841de6a0dde06b6f32f6087",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.PhysicsModule.dll",
+      "sha256": "0d5924f018fdc853bc80ddc949a1ee8bc61e4c93a60449cd27bf64e351492efd",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.ScreenCaptureModule.dll",
+      "sha256": "3962cfcd889d52ee52eef2c0db59d663070ff9cd5b1b842247f100d1c56a4957",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.SharedInternalsModule.dll",
+      "sha256": "61da2171e1ddde5b424190cc0661f44f0922cb738e41ccc6b16ab53042e16abe",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.SpatialTracking.dll",
+      "sha256": "e4465e451e7d93a383c171b7d93b11be3ec218b5157e5a366e9dd731cfec8303",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.SpatialTrackingModule.dll",
+      "sha256": "3aa103d96f4c137fcc56bf576c6cff1ca094350bc73bdbc304a3d27a50def846",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.SpriteMaskModule.dll",
+      "sha256": "5453919b4add513065ed59de9692ab4d2957c78c0f63b3ed9b11eb01a54b50cb",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.SpriteShapeModule.dll",
+      "sha256": "2e8a3f952c23db7abf4e24ba739a8a2ded6b804cf86f0f702fa4acb0a2210088",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.StyleSheetsModule.dll",
+      "sha256": "a9bbdd9bf092e14ee0dff729e201628de72ed6067f251c0aba3679912236ee21",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.SubstanceModule.dll",
+      "sha256": "d26439f9ffd0ebca7f343e46784f38ba79f503b3a570394f2d50cc48e146f7c6",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.TerrainModule.dll",
+      "sha256": "78b18d63507b402139344b80c9d2f6ee2ebb6c3a3a7100a6a5d3c7c28e73f8b1",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.TerrainPhysicsModule.dll",
+      "sha256": "3cca197e577f50cf2635fe999c2516e93f0a848158e81891900318881f4ebe4f",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.TextRenderingModule.dll",
+      "sha256": "dc96425a39049b259f2beb4787eb8268f87f43541c7e9a435157a558f647f946",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.TilemapModule.dll",
+      "sha256": "9c1fc89c38b2635b8e67477542801b10edcf68e23009117ddf3e4ef9176c7514",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.Timeline.dll",
+      "sha256": "51735d9f165413b4d09e435b3132061ecdfab116346af110ad80ca382566ec4f",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.TimelineModule.dll",
+      "sha256": "20d2f6eab2bd101a61e1a6af24b5186b1baaf46c7ca8e90a87302d22499c614e",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.TLSModule.dll",
+      "sha256": "56e1ecbfbd936f81f1af171eb4ebc1ee690bcf3e46992e9ab99f5d55a51b2c7e",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UI.dll",
+      "sha256": "c0571e6ac29655c3d477347f1bb506f42ddf838d6991ccc8bae7cd9693567889",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UIElementsModule.dll",
+      "sha256": "35bc8e63c540dc799ddebeb0e96393d6a7ba608931c043eacbf744d68191c91b",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UIModule.dll",
+      "sha256": "42f3ac2efc449d0ae490220355fda1aec2babc6ac24e53c8e5f7b85df9495b7a",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UmbraModule.dll",
+      "sha256": "ef937e4c14d77236b2cf79a81b2c78403afb80d00b19b6864a294d77af4f114f",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UNETModule.dll",
+      "sha256": "e4678dec484ec336666cb501091181ed683050f57eb7a74e25075a3e873dd357",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UnityAnalyticsModule.dll",
+      "sha256": "f7f7437d84aa3517158b702a5f4f54d8f24d5649653f6ae0bfabd2f127461530",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UnityConnectModule.dll",
+      "sha256": "63c99f38a7cd206992fc806593c443f5f969bf61a2f12cb04ed1bd21a6e538e8",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UnityWebRequestAssetBundleModule.dll",
+      "sha256": "dac3f40e5f92ddba730811b4625af26a7ecc3e9aec73298ab4013d1f5d71234e",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UnityWebRequestAudioModule.dll",
+      "sha256": "ebb5ed7657b95dace6f94b2d7e4455d0ff9bd50f78c55bbb1f88bc90a8482da9",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UnityWebRequestModule.dll",
+      "sha256": "da98f5b3e57ea006da5454d800af5b29daebcb8dfd03f0b158a0f12e185736cc",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UnityWebRequestTextureModule.dll",
+      "sha256": "0bf70d040d4a6add2e985e67c9c1dc8187a0d20868b129290052d3ec7b6916b3",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.UnityWebRequestWWWModule.dll",
+      "sha256": "bc1d6a736ba9504b884a24d3693f26af2c7f6dfba5ad20bd3d92ab626f755e90",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.VehiclesModule.dll",
+      "sha256": "1bd9e8f2fd496f6fabab9405b9303f1420f3ce58fe0ec79f3f329a75e1788a44",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.VideoModule.dll",
+      "sha256": "1d48f41d1cc2155ec3a4af8054638b72cb970f4be6dd07f8f331c084b0a5df0d",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.VRModule.dll",
+      "sha256": "4eae9c097d1af8d25b4671a55ec632a683c08cdc16781a89b97aec0e899c45ae",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.WebModule.dll",
+      "sha256": "e946db4a2f703fbd44b0df36d13b8cabb34b5c7dced438f446e1bca05d49188b",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.WindModule.dll",
+      "sha256": "a60f911a760293f6e9027e0ff578013a5adae42264f8695ee7acf136934856c4",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    },
+    {
+      "file": "resources\\assets\\bin\\Data\\Managed\\UnityEngine.XRModule.dll",
+      "sha256": "76fc6341367ba615fb16882ad1b9f26baccdac579fc4e48794391c926196b8ae",
+      "implMapCount": 0,
+      "matchingExactImports": [],
+      "engineImports": [],
+      "matchingManagedNames": [],
+      "literalNameCandidates": []
+    }
+  ]
+}

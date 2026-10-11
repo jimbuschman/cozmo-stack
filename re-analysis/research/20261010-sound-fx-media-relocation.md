@@ -1,0 +1,16 @@
+# Q14-076: selected FX media relocation gate
+
+| Coverage | Status | Specific remaining decision |
+| --- | --- | --- |
+| Original076 media writer/recipient obligation | PARTIAL / AUDIBLE | Descriptor/table writer/alias census; common line processing object1A8.C and its producer/capability14/rebind18 path. |
+
+Checkpoint601; decisions only, scope guard reread before each step. Primary companion `20261010-sound-fx-media-relocation-native.txt`, engine SHA256 `02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1`. Existing FS432/PM536 positively selects six admitted FX products, not an all-registered-family guess.
+
+| Step | Primary citation / retained joins | Exact control boundary |
+| --- | --- | --- |
+| FM601A six selected FX products | raw tables103DF28/58/88/DFB8,103E260,10387F4 at14/18;Thumb8DBF38..3E;B7/F1/F8/P109523A/P138525A/H/PM536 | Compressor108, limiter110, EQ105/109/138 and Hijack all have14raw8DBF39 and18raw8DBF3D; bit0 positively selects Thumb. Both bodies return0, with no memory reads/stores/callback. AtA6C03C actual14 result0 returns0 before media lookup/18. No invented successful relocation or processor media support inferred from bank/plugin names. |
+| FM601B effect context matching | A6C148..A6C1D4;A41100..A4124C;PM536E | Walk physical20-byte context8/countC entries; only entry10 owner identity match attempts relocation of entry+4. First rebind return0 returns1 to caller; no match returns0. These actual six FX match would therefore drop the line's entire FX chain. Positive constructor and selected Init/Execute PM536E retain empty media vector on that bounded path; neither this fact nor a missing caller is used to exclude general media users. |
+| FM601C ordered drop | A4E64C..A4E7BC;BR142R/LREL295/IC9–10/VF/WV/PM536 | Optional line34 shared list cleanup precedes four ascending1C-stride slots. For each current effect pointer invokeactual8 Term then clear; parameter0/destructor/free/clear andIDFFFFFFFF precede9CF820 holder subscriptions/parameter retirement. Output/auxiliary/cache reset decisions retain positively boundLREL/IC rows. One failed association drops all slots; no per-bank slot filter or partial replacement invented. Selected Term and params/holder/destructor recipients already positivePM536/P109/P138/CP/F/H/WV; no sample arithmetic descent. |
+| FM601D common-processing branch retained | A68B38..A68BA0;CR143D/HBIND2/HS551;A41198..A41234 | Gate requires actual line4C wrapper0, wrapper0.54 descriptor anddescriptor4 allnonnull/nonzero. Matching line1AC media owner thenA68B60 optional retained registry context query, actual processor=line1A8.C, A6C03C and current contextC release before advancing or whole-FX drop. Context query uses positiveHBIND/HS551 selected registry and exactref/lifetime, but the common processor is a distinct product from the four FX-slot effects; sixFX14=0 must not be substituted for its table. |
+
+No unpaid selected sixFX relocation callback remains. Q14-076 remains PARTIAL for named common processor and the original explicit writer/alias census. out of scope: list/media/hash/cache/allocator/free/I-O backing, per-sample DSP and census source exclusions. Counts88 native CHECKED+8 scope CHECKED/44 PARTIAL/140;140 AUDIBLE/0 INTERNAL. No production/fidelity/inventory/PROJECT_STATE/hardware/Q15 edits.

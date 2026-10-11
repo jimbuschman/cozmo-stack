@@ -1,0 +1,35 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0069F7D4..0x0069F824 exclusive; Thumb;
+0069F7D4: push         {r4, r5, r6, lr}
+0069F7D6: sub          sp, #0x18
+0069F7D8: mov          r4, r0
+0069F7DA: movs         r0, #0
+0069F7DC: mov          r5, r1
+0069F7DE: str          r0, [r4]
+0069F7E0: adr          r1, #0x64
+0069F7E2: mov          r0, r2
+0069F7E4: blx          #0x4a5f2c
+0069F7E8: mov          r1, r0
+0069F7EA: mov          r0, sp
+0069F7EC: blx          #0x4a5068
+0069F7F0: movs         r0, #0x30
+0069F7F2: blx          #0x4a42a0
+0069F7F6: mov          r6, r0
+0069F7F8: mov          r2, sp
+0069F7FA: mov          r0, r6
+0069F7FC: mov          r1, r5
+0069F7FE: blx          #0x4be394
+0069F802: ldr          r0, [r4]
+0069F804: str          r6, [r4]
+0069F806: cbz          r0, #0x69f810
+0069F808: blx          #0x4be3a0
+0069F80C: blx          #0x4a40cc
+0069F810: mov          r0, sp
+0069F812: blx          #0x4a4ff0
+0069F816: mov          r0, r4
+0069F818: add          sp, #0x18
+0069F81A: pop          {r4, r5, r6, pc}
+0069F81C: mov          r5, r0
+0069F81E: mov          r0, r6
+0069F820: blx          #0x4a40cc

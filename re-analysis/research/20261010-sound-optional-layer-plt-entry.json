@@ -1,0 +1,11 @@
+[
+  {
+    "entry": "0x4aeb30",
+    "got": "0x1043b9c",
+    "instructions": [
+      "004AEB30: add ip, pc, #0xb00000",
+      "004AEB34: add ip, ip, #0x95000",
+      "004AEB38: ldr pc, [ip, #0x64]!"
+    ]
+  }
+]

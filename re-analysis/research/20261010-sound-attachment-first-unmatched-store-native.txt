@@ -1,0 +1,51 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00960640..0x00960700 exclusive; ARM;
+00960640: str          r7, [r4]
+00960644: str          r6, [r4, #0xc]
+00960648: str          r6, [r4, #0x14]
+0096064C: str          r6, [r4, #0x20]
+00960650: bl           #0x4cd124
+00960654: mov          r5, r0
+00960658: mov          r0, r6
+0096065C: bl           #0x4cd118
+00960660: mov          r8, r0
+00960664: mov          r0, r6
+00960668: bl           #0x4cd118
+0096066C: rsb          r3, r8, r5
+00960670: movw         r2, #0xffff
+00960674: str          r2, [r4, #0x24]
+00960678: add          r3, r3, r3, lsr #31
+0096067C: add          r3, r0, r3, asr r6
+00960680: mov          r0, r6
+00960684: str          r3, [r4, #0x18]
+00960688: bl           #0x4cd124
+0096068C: mov          r3, #0
+00960690: movt         r3, #0x43be
+00960694: mov          r1, #8
+00960698: mvn          r2, #0
+0096069C: strb         r7, [r4, #0x30]
+009606A0: str          r1, [r4, #0x2c]
+009606A4: str          r2, [r4, #0x34]
+009606A8: str          r3, [r4, #0x28]
+009606AC: str          r0, [r4, #0x18]
+009606B0: pop          {r4, r5, r6, r7, r8, pc}
+009606B4: ldr          r3, [pc, #4] ; word[009606C0]=0072D0D8
+009606B8: ldr          r0, [pc, r3]
+009606BC: bx           lr
+009606C0: ldrsbteq     sp, [r2], #-8
+009606C4: ldr          r3, [pc, #8] ; word[009606D4]=0072D0C8
+009606C8: add          r3, pc, r3
+009606CC: str          r0, [r3]
+009606D0: bx           lr
+009606D4: rsbseq       sp, r2, r8, asr #1
+009606D8: ldr          r3, [pc, #4] ; word[009606E4]=006F1D30
+009606DC: ldr          r0, [pc, r3]
+009606E0: bx           lr
+009606E4: rsbeq        r1, pc, r0, lsr sp
+009606E8: push         {r3, r4, r5, lr}
+009606EC: ldr          r5, [pc, #0x4c] ; word[00960740]=0072D0A0
+009606F0: add          r5, pc, r5
+009606F4: ldr          r3, [r5, #8]
+009606F8: cmp          r0, r3
+009606FC: bhs          #0x960738

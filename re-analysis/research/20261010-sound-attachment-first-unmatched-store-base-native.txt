@@ -1,0 +1,41 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009605F0..0x00960640 exclusive; ARM;
+009605F0: rsbseq       sp, r2, r4, lsr #4
+009605F4: mlseq        fp, r4, r8, fp
+009605F8: rsbeq        r1, pc, ip, lsr lr
+009605FC: ldrhteq      sp, [r2], #-0x14
+00960600: mov          r3, #0x10000
+00960604: str          r3, [r0]
+00960608: bx           lr
+0096060C: push         {r4, r5, r6, r7, r8, lr}
+00960610: mov          r4, r0
+00960614: mov          r6, #1
+00960618: mov          r2, #0x200000
+0096061C: mov          r3, #4
+00960620: str          r2, [r0, #4]
+00960624: str          r3, [r0, #8]
+00960628: mov          r2, #0x4000
+0096062C: mov          r3, #0x10000
+00960630: str          r2, [r0, #0x10]
+00960634: str          r3, [r0, #0x1c]
+00960638: mov          r7, #0
+0096063C: mov          r0, r6
+00960610: raw=E1A04000 relocated=E1A04000
+00960614: raw=E3A06001 relocated=E3A06001
+00960618: raw=E3A02602 relocated=E3A02602
+0096061C: raw=E3A03004 relocated=E3A03004
+00960620: raw=E5802004 relocated=E5802004
+00960624: raw=E5803008 relocated=E5803008
+00960628: raw=E3A02901 relocated=E3A02901
+0096062C: raw=E3A03801 relocated=E3A03801
+00960630: raw=E5802010 relocated=E5802010
+00960634: raw=E580301C relocated=E580301C
+00960638: raw=E3A07000 relocated=E3A07000
+RANGE 0x004CD118..0x004CD130 exclusive; ARM;
+004CD118: add          ip, pc, #0xb00000
+004CD11C: add          ip, ip, #128, #20
+004CD120: ldr          pc, [ip, #0xc74]!
+004CD124: add          ip, pc, #0xb00000
+004CD128: add          ip, ip, #128, #20
+004CD12C: ldr          pc, [ip, #0xc6c]!

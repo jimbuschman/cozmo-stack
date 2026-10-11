@@ -1,0 +1,54 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009CA950..0x009CA998 exclusive; ARM;
+009CA950: mov          r5, #0
+009CA954: ldr          r3, [r0, #0x20]
+009CA958: str          r5, [r0, #0x74]
+009CA95C: cmp          r3, r5
+009CA960: bne          #0x9ca96c
+009CA964: mov          r0, #1
+009CA968: pop          {r3, r4, r5, pc}
+009CA96C: ldr          r3, [pc, #0x70] ; word[009CA9E4]=0067574C
+009CA970: mov          r4, r0
+009CA974: ldr          r1, [r0, #0x3c]
+009CA978: str          r5, [r0, #0x20]
+009CA97C: ldr          r3, [pc, r3]
+009CA980: str          r5, [r0, #0x68]
+009CA984: ldr          r0, [r3]
+009CA988: bl           #0x9add94
+009CA98C: ldr          r1, [r4, #0x48]
+009CA990: cmp          r1, r5
+009CA994: beq          #0x9ca964
+RANGE 0x009AC4FC..0x009AC574 exclusive; ARM;
+009AC4FC: str          r1, [sl]
+009AC500: str          sl, [r5, #0x38]
+009AC504: mov          sl, r2
+009AC508: str          r3, [r5, #0x44]
+009AC50C: b            #0x9ac478
+009AC510: cmp          r2, #0
+009AC514: bne          #0x9ac528
+009AC518: b            #0x9ac4b8
+009AC51C: ldr          r2, [r2, #0x38]
+009AC520: cmp          r2, #0
+009AC524: beq          #0x9ac4b8
+009AC528: cmp          r4, r2
+009AC52C: bne          #0x9ac51c
+009AC530: b            #0x9ac430
+009AC534: push         {r4, lr}
+009AC538: cmp          r1, #0
+009AC53C: sub          sp, sp, #0x28
+009AC540: ldr          ip, [pc, #0x118] ; word[009AC660]=00693D3C
+009AC544: ldr          r0, [sp, #0x38]
+009AC548: add          ip, pc, ip
+009AC54C: beq          #0x9ac5c0
+009AC550: mov          r4, r1
+009AC554: ldr          lr, [sp, #0x30]
+009AC558: ldr          r1, [sp, #0x34]
+009AC55C: str          r2, [sp, #0xc]
+009AC560: str          r0, [sp, #0x10]
+009AC564: str          r1, [sp, #0x18]
+009AC568: mov          r1, #0
+009AC56C: str          lr, [sp, #0x14]
+009AC570: str          r4, [sp, #0x24]
+RANGE 0x00A64228..0x00A64260 exclusive; ARM;
+010400D0: raw=0108D870 relocated=0108D870

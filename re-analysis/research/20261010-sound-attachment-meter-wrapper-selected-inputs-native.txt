@@ -1,0 +1,61 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A51AE4..0x00A51B14 exclusive; ARM;
+00A51AE4: adds         ip, ip, r6
+00A51AE8: beq          #0xa51bf8
+00A51AEC: mov          sl, r4
+00A51AF0: mov          lr, #0
+00A51AF4: str          lr, [sp, #0x10]
+00A51AF8: mov          r7, r4
+00A51AFC: str          lr, [sp, #0x14]
+00A51B00: vmov.f32     q8, #1.000000e+00
+00A51B04: str          lr, [sp, #0x18]
+00A51B08: mov          fp, #0x3f800000
+00A51B0C: str          lr, [sp, #0x1c]
+00A51B10: ldm          sl!, {r0, r1, r2, r3}
+RANGE 0x00A51BB4..0x00A51BE0 exclusive; ARM;
+00A51BB4: str          sl, [sp, #0x10]
+00A51BB8: str          r0, [ip, #0x50]
+00A51BBC: str          r1, [ip, #0x54]
+00A51BC0: str          r2, [ip, #0x58]
+00A51BC4: str          r3, [ip, #0x5c]
+00A51BC8: ldm          r7!, {r0, r1, r2, r3}
+00A51BCC: str          r0, [ip, #0x60]
+00A51BD0: str          r1, [ip, #0x64]
+00A51BD4: str          r2, [ip, #0x68]
+00A51BD8: str          r3, [ip, #0x6c]
+00A51BDC: ldm          lr!, {r0, r1, r2, r3}
+RANGE 0x00A51F60..0x00A51F94 exclusive; ARM;
+00A51F60: vstr         s10, [sp, #0x1c]
+00A51F64: mov          lr, r4
+00A51F68: ldr          r2, [sp, #4]
+00A51F6C: add          r8, r8, #1
+00A51F70: mov          r3, #0
+00A51F74: str          r3, [sp, #0x18]
+00A51F78: str          r3, [sp, #0x14]
+00A51F7C: cmp          r8, r2
+00A51F80: str          r3, [sp, #0x10]
+00A51F84: mov          r6, r4
+00A51F88: ldm          lr!, {r0, r1, r2, r3}
+00A51F8C: vadd.f32     s11, s17, s19
+00A51F90: vstr         s10, [sp, #0x18]
+RANGE 0x00A53D44..0x00A53D90 exclusive; ARM;
+00A53D44: ldr          r0, [sp, #0x2c]
+00A53D48: ldr          r3, [pc, #0x14c] ; word[00A53E9C]=FFFFFE90
+00A53D4C: ldr          r1, [sp, #8]
+00A53D50: ldr          r2, [r0]
+00A53D54: ldr          r1, [r1, r3]
+00A53D58: ldr          r3, [r2, #8]
+00A53D5C: blx          r3
+00A53D60: b            #0xa53a54
+00A53D64: ldr          r2, [pc, #0x124] ; word[00A53E90]=FFFFFE1C
+00A53D68: mov          r1, #0x9c
+00A53D6C: ldr          sb, [sp, #8]
+00A53D70: str          r3, [sp, #0x24]
+00A53D74: ldr          r8, [sb, r2]
+00A53D78: ldr          r0, [r8]
+00A53D7C: bl           #0xa7a7f4
+00A53D80: subs         fp, r0, #0
+00A53D84: beq          #0xa53a54
+00A53D88: ldr          r3, [sp, #0x24]
+00A53D8C: mov          r2, #0x9c

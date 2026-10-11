@@ -1,0 +1,10 @@
+{
+  "targets": [
+    "0x9adc30",
+    "0x9afe08"
+  ],
+  "aligned_raw_words": [],
+  "symbol_relocations": [],
+  "symbols": [],
+  "limit": "Aligned raw words and symbol relocation navigation only; relative/computed/copied pointers and instruction boundaries remain unknown."
+}

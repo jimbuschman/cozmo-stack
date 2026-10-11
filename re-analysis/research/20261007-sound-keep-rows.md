@@ -9,7 +9,147 @@
 | Playback limits, ducking and routing | PARTIAL | L1–L14, LR1–7, LS1–16, LT1–9, LC1–6, LV1–7 and X1/X3–X7; remaining limiter production/writer closure, ducking and connection/lifetime bodies pending. |
 | Bank dispatcher and control-data readers | PARTIAL | J1–J12/U1–U27/NB1–NB25; resumption RB1–18/CF1–18/LI1–11/LR1–7/TR1–18/SWR1–8 close local reader and callback contracts. UD261–AU278 add known unload/event/action/target/group preparation, deferred media and Switch member joins; remaining reachable families and public input/provider/writer closure stay open. |
 | Scheduling, timing and source contracts | PARTIAL | E30–E32, TT1–TT22, H1–H14 and G1–G13; exact source/kernel geometry and sound scheduling remain. Storage/I/O infrastructure is out of scope under the 2026-10-08 guard. |
-| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 77 native-row obligations CHECKED, 8 CHECKED scope exclusions, 55 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+| Every KEEP/VERIFY triage obligation | PARTIAL | 140 original KEEP/VERIFY obligations; per-item mapping is in `20261007-sound-triage-census.md`. After the 2026-10-08 guard: 107 native-row obligations CHECKED, 8 CHECKED scope exclusions, 25 PARTIAL, 0 NOT DONE; impact tags:140 AUDIBLE/0 INTERNAL. No completed-Q14 claim. |
+
+## Checkpoint 610 — modulator joins and positive-context item frontier
+
+`20261010-sound-modulator-context-reconciliation.md` MC610 closes105 original fallback/reset/list/trigger/subscriber/apply contract using actual RV/MV/RC/OA/MR517/MT/TG592/ER538 products/inputs.132 retains its distinct positive D0 item40 ID/type and item80/count84 RTPC record producer, with fresh exact output/dirty/setup/registration/result gates. Do not label that complete loop pure3D without field/recipient proof. Counts97nativeCHECKED+8scopeCHECKED/35PARTIAL/140;140AUDIBLE/0INTERNAL. Continue specific item publisher.
+
+## Checkpoint 609 — weight-setter runtime input frontier
+
+`20261010-sound-weight-setter-input-frontier.md` WI609 rechecks actualA08024 raw node/childID/weight and selected selector lookup/get/store/total. Specific direct/Thumb/raw-pointer/export navigation yielded no positive caller, which is UNKNOWN, not an unreachable proof.008 remains PARTIAL for an actual supplied runtime input or bounded complete call-edge proof; authored RJ423 weights cannot substitute. Counts96nativeCHECKED+8scopeCHECKED/36PARTIAL/140;140AUDIBLE/0INTERNAL. Stop this unestablished input and continue another bounded remaining item.
+
+## Checkpoint 608 — original descriptor and source-type setter reconciliation
+
+`20261010-sound-source-setter-closeout.md` SS608 checks116 original playing-record/descriptor/PBI/table/Term and123 packed source-type/format/result remainder against actual E29/TR/MR600/ES494/DM603/BI604/PW605 and complete admitted SF/G100/G101/G102/WP/ADM570 products. Both CHECKED, with renderer-rate original census remaining092/099/120/124/130. Counts96nativeCHECKED+8scopeCHECKED/36PARTIAL/140;140AUDIBLE/0INTERNAL. No global writer-absence or fidelity acceptance. Continue smallest original open obligation.
+
+## Checkpoint 607 — source close and S8 notification joins
+
+`20261010-sound-notification-closeout.md` NC607 separately checks107/108/133 original remainders against actual two wrappers/five producer joins, Perform/synchronous flush and NF/LC599/MF597/MC598/TN602 concrete base/continuous/music cleanup. SC and complete admitted source contracts retain duration/close/reset/destruction/results; stream/storage/codec-workspace/allocator/free bodies stop under the guard. All three CHECKED;counts94nativeCHECKED+8scopeCHECKED/38PARTIAL/140;140AUDIBLE/0INTERNAL. No global caller-absence or fidelity acceptance. Continue smallest original open obligation.
+
+## Checkpoint 606 — original media-table loading proof close-out
+
+`20261010-sound-media-table-closeout.md` MT606 checks089 and122 separately against their native input/writer/alias/owner/release/FX-bank-stop remainders, retaining the complete prefix/asset and46 admitted mode2 source witnesses. Known positive contracts, rather than076's status alone, pay these duplicates. Both CHECKED;counts91nativeCHECKED+8scopeCHECKED/41PARTIAL/140;140AUDIBLE/0INTERNAL. No global writer absence or fidelity acceptance. Continue S8 notification caller remainder.
+
+## Checkpoint 605 — original PBI media writer close-out
+
+`20261010-sound-pbi-pair-writer-attribution.md` PW605 identifies the original same-offset candidates as repeated list records, concrete derived lines, a distinct type2 source's embedded state, EQ138 auxiliary storage and stack locals; no PBI alias is inferred from matching an offset. Rechecks constructor/query/rebind/Term pair writers and joins actual media/bank/source/FX controls toMS141/BR142/MR600/FM601/DM603/BI604/checked074/087/090/091. Original076 CHECKED, without global writer-absence or fidelity promotion. Counts89nativeCHECKED+8scopeCHECKED/43PARTIAL/140;140AUDIBLE/0INTERNAL. Continue smallest original open obligation.
+
+## Checkpoint 604 — bank inputs and original writer-census boundary
+
+`20261010-sound-bank-media-input-joins.md` BI604 re-verifies K7–9 DIDX/DATA inputs, borrowed versus owned pointer publication and preparation-mode gates. Current074/087 are already CHECKED; generic helper-input remainders in602/603 are superseded, not new unpaid callbacks.076's actual next step is originalR1.2 named same-offset writer-candidate object attribution and PBI pair aliases. Counts88nativeCHECKED+8scopeCHECKED/44PARTIAL/140;140AUDIBLE/0INTERNAL unchanged.
+
+## Checkpoint 603 — direct-media publication and descriptor reset writers
+
+`20261010-sound-direct-media-publication.md` DM603 binds direct-pair producer9B6C34, first-alias copy versus largest-eligible query, ordered size/pointer/progress publication, conversion result retention, reverse failure rollback and prepared flag. Adds distinct reset writers and positive track name-source registration.076 remains PARTIAL for explicit census, bank index/DATA/owner inputs and common-helper producer invocation/settings replacement inputs shared074/087. Counts88nativeCHECKED+8scopeCHECKED/44PARTIAL/140;140AUDIBLE/0INTERNAL unchanged. Continue bounded bank producer fields.
+
+## Checkpoint 602 — actual track node retirement and helper input frontier
+
+`20261010-sound-music-track-node-retirement.md` TN602 bindsMC598A's track node0=990A3C, exact descriptor cleanup/storage tail/common9EDCE4 separately from segment/playlistMN552/MT553.076's common helper has existing positive authored0/five shared settings type6 rejectionHS551; remaining concrete producer invocation/settings-replacement inputs074/087 and explicit writer/alias census stay open. Counts88nativeCHECKED+8scopeCHECKED/44PARTIAL/140 unchanged;140AUDIBLE/0INTERNAL. Continue076 original writer/alias census.
+
+## Checkpoint 601 — actual selected FX relocation gate
+
+`20261010-sound-fx-media-relocation.md` FM601 binds all six previously admitted effect tables14/18 to concrete Thumb return0, actual owner-match→failed rebind→whole-chain drop and existing selected Term/parameter/holder/auxiliary cleanup.076 retains original descriptor/table writer/alias census and distinct common processing object1A8.C producer/14/18; no FX-table substitution for that product. Counts88nativeCHECKED+8scopeCHECKED/44PARTIAL/140 unchanged;140AUDIBLE/0INTERNAL. Continue bounded common processor input.
+
+## Checkpoint 600 — media query inputs and rebind recipients
+
+`20261010-sound-media-rebind-inputs.md` MR600 binds original076 pointer/size/owner caller outputs, positive descriptor setters and actual direct Vorbis/ADPCM, streamed codec and mode2 generator rebind gates.076 retains explicitly requested writer/alias census and concrete FX-bank processor rebind/drop recipients; no absent-writer or empty-media inference. Counts88nativeCHECKED+8scopeCHECKED/44PARTIAL/140 unchanged;140AUDIBLE/0INTERNAL. Continue those bounded inputs/products.
+
+## Checkpoint 599 — original live composition close-out
+
+`20261010-sound-live-composition-closeout.md` LC599 reconciles original075 render/prepass/node cleanup/Play/voice/flush order with actual base/continuous/music PBI products, newMF597/MC598 and already-paid mode2 endpoints565–570.075 CHECKED/AUDIBLE. Counts88nativeCHECKED+8scopeCHECKED/44PARTIAL/140;140AUDIBLE/0INTERNAL. Continue076 explicit media descriptor/table writer census; no Q15 or production/fidelity acceptance.
+
+## Checkpoint 598 — concrete music context retirement
+
+`20261010-sound-music-context-retirement.md` MC598 binds597's actual node releases, iterator random/sequence states, attachment state destructor/stop, child reference recursion, root completion/counter callbacks and renderer registration/gameobject/event cleanup.075 remains PARTIAL only for final named composition reconciliation. Counts87nativeCHECKED+8scopeCHECKED/45PARTIAL/140 unchanged;140AUDIBLE/0INTERNAL.
+
+## Checkpoint 597 — concrete music PBI flush cleanup
+
+`20261010-sound-music-flush-cleanup.md` MF597 binds actual music PBI18/38/10/4, matching kind1 stop retirement, all matching clip-list entries and empty-context detach before common PBI Term.075 retains only named context/node retirement recipients;565–570 already pay mode2 generators. Counts87nativeCHECKED+8scopeCHECKED/45PARTIAL/140;140AUDIBLE/0INTERNAL. Continue those bounded retirement callbacks.
+
+## Checkpoint 596 — admitted music-track priority producer close-out
+
+`20261010-sound-track-priority-producer.md` PW596 closes067 with604 independently hash-checked primary track/ancestor prefixes, priority7/8/override inputs, native50/-10 defaults and no authored positioning descriptor allocation gate. Exact conditional live query/scalar/pressure/quota/limiter/replay recipients retain PI595/HN587/RR583. Counts87nativeCHECKED+8scopeCHECKED/45PARTIAL/140;140AUDIBLE/0INTERNAL. Continue075 bounded render/flush composition.
+
+## Checkpoint 595 — actual music-track priority inputs
+
+`20261010-sound-music-priority-input.md` PI595 binds ordinary clip source branch→track PBI caller, inherited priority query and actual84 scalar, raw admission value, pressure thresholds/pools, quota and exact A37100 flags/arguments.067 remains PARTIAL only for specific admitted descriptor/priority producers. Native MIDI format10 instead creates its separate context; never conflate these paths. Counts86nativeCHECKED+8scopeCHECKED/46PARTIAL/140;140AUDIBLE/0INTERNAL. Continue those bounded producer inputs.
+
+## Checkpoints 593/594 — envelope curve and LFO depth cadence
+
+`20261010-sound-envelope-curve-trigger-closeout.md` EC593 and `20261010-sound-lfo-depth-trigger-closeout.md` LD594 bind the original045/046 control scaling/gate and posted shake/depth/initialization cadence to actual592 acquisition/attachment/stop and prior live-delivery joins. Both CHECKED; counts86nativeCHECKED+8scopeCHECKED/46PARTIAL/140;140AUDIBLE/0INTERNAL. Control arithmetic remains exact; no production test/fidelity/Q15 change. Continue048 smallest remaining.
+
+## Checkpoint 592 — modulator trigger and stop close-out
+
+`20261010-sound-modulator-trigger-closeout.md` TG592A–F joins actual serialized LFO/envelope products, predicate/reuse/create, scope and attachment, direct-before-recursive order and concrete voice/action stop/lifetime recipients. Q14-044 CHECKED; counts84nativeCHECKED+8scopeCHECKED/48PARTIAL/140;140AUDIBLE/0INTERNAL. No production/fidelity/Q15 acceptance. Continue045 smallest remaining bounded step.
+
+## Checkpoint 591 — effective MIDI tempo and meter inputs
+
+`20261010-sound-midi-tempo-input.md` TE591A–F pays property55 flags/blob, separate nearest-meter lookup, serialized meter writer, actual successful reader handoff and fresh100/120/80 parent tempo witnesses. Concrete live-rate reloads are bound;043 retains only inherited unrestricted settings writer/alias proof092/099. Target/held-state consumers already paid574/585/587/589. Counts83nativeCHECKED+8scopeCHECKED/49PARTIAL/140;140AUDIBLE/0INTERNAL unchanged. Continue044 bounded trigger state/scope/stop recipients.
+
+## Checkpoint 590 — MIDI target input and registry close-out
+
+`20261010-sound-midi-target-input.md` TI590A–G binds serialized track/parent override/table bits, common property56 blob writer, exact nearest override/zero/missing target behavior, actual Layer/table0 and bus/table1 publication, and three fresh positive singing target witnesses. Q14-042 CHECKED; counts83nativeCHECKED+8scopeCHECKED/49PARTIAL/140;140AUDIBLE/0INTERNAL. Hash/backing excluded. Continue043 effective tempo/meter/rate inputs; queued selector/target consumers already paid574/585. No production/fidelity/Q15 acceptance.
+
+## Checkpoint 589 — finite clip boundary and held-note close-out
+
+`20261010-sound-midi-clip-boundary-closeout.md` CB589A–F binds actual track time/start virtual, finite F8 list-empty stopped-bit/reference transition, exact pending80 boundary flags and same-target stopped sibling cleanup to RR583/HN587. Empty event list produces no synthetic release; sentinel immediate-owner-stop remains distinct. Q14-056 CHECKED; counts82nativeCHECKED+8scopeCHECKED/50PARTIAL/140;140AUDIBLE/0INTERNAL. CP588's producer/seek/attachment joins preserved. Continue remaining Q14 smallest first; no production/fidelity/Q15 acceptance.
+
+## Checkpoint 588 — authored MIDI clip producer and concrete cutoff callback
+
+`20261010-sound-midi-clip-cutoff-producer.md` CP588A–F pays clip selection/seek/remaining-operation fields, actual MIDI factory F0/F4 inputs, positive format10 automation skip and installed stop table101BF50/secondary44→primary2C=A3BD68 finite cutoff route. Original056 stays PARTIAL: finite F8 publication does not itself set FCbit2; subscription/frame/first boundary event and no-event alternative still require the bounded join. Counts81nativeCHECKED+8scopeCHECKED/51PARTIAL/140;140AUDIBLE/0INTERNAL. Continue that transition; no acceptance or Q15 change.
+
+## Checkpoint 587 — held-note release and selected source endpoints
+
+`20261010-sound-held-note-endpoint-closeout.md` HN587 reconciliation binds recorded Sound/owner/PBI1C, queued primary/secondary source38, corrected FC streamed/D0 direct Vorbis full-file byte/trim geometry, actual sample completion/loop ABI, admitted generator/provider endpoints and held lifetime/forced-stop order. Q14-049 CHECKED for original bounded lifetime/replay/fade obligation; counts81nativeCHECKED+8scopeCHECKED/51PARTIAL/140;140AUDIBLE/0INTERNAL. No immediate-end or full clip-path assumption; original056 clip producer/attachment remains. No production/fidelity/Q15 acceptance.
+
+## Checkpoint 586 — candidate/state/replay close-out and shared RNG
+
+`20261010-sound-midi-eligibility-replay.md` ER586A–E binds actual Sound48 sourceID test/RanSeq48 success,138 nonzero primary sourceIDs and59 concrete selector products to existing exact state/block/refill/retry and recorded selected-Sound replay. Q14-057 CHECKED; counts80nativeCHECKED+8scopeCHECKED/52PARTIAL/140;140AUDIBLE/0INTERNAL. Raw GOT1040090=108D868 proves marker and RanSeq draws share the SAME64-bit state; earlier584/585 wording corrected in place. Preserve interleaved consumption and distinct selector gates. No wider MIDI/fidelity/Q15 acceptance.
+
+## Checkpoint 585 — sequence advance and random continuation cadence
+
+`20261010-sound-midi-continuation-draw.md` CD585A–F binds nine actual mode1 sequence→18 random-child graphs, initial private-state sequence selection, duration/60 next-identity preparation, exact gap/loop draw gates, deferred action24→A62ED4→actual random-child128 and recorded Sound replay. Q14-053 CHECKED for bounded cadence: random sample draws occur at actual selector invocation, including later continuation; sequence identity may be prepared earlier. No universal one-draw-per-note or zero-PCM-offset claim. Counts79nativeCHECKED+8scopeCHECKED/53PARTIAL/140;140AUDIBLE/0INTERNAL. No wider MIDI/fidelity/Q15 acceptance.
+
+## Checkpoint 584 — note dispatch and finite sampler selector inputs
+
+`20261010-sound-midi-draw-cadence.md` DC584A–F binds actual pending-to-target consumption, channel-mask dispatch flag, once-bit0 recipient, fresh/replay distinctions and59 complete primary RanSeq control/playlists. Fifty random single-step and nine continuous sequence products are distinct; marker98A6D4 has separately rowed selection gates on the shared64-bit RNG. Q14-053 remains PARTIAL specifically for the nine admitted continuous mode1 advance/continuation joins. No one-draw-per-note, zero-offset, prewarm or release-no-draw assumption. Counts unchanged78nativeCHECKED+8scopeCHECKED/54PARTIAL/140;140AUDIBLE/0INTERNAL.
+
+## Checkpoint 583 — actual release recipients and velocity close-out
+
+`20261010-sound-midi-release-recipients.md` RR583A–E binds selected Sound→PBI.E0, actual ownerA8→9F1BE8, original event/velocity plus saved channel/note, ordered own/link/settings registry propagation, concrete envelope acceptance/reinitialization and attachment deadline-before-stop route. NS/NE and VH575–RR583 now cover original Q14-052's velocity/control recipients; CHECKED/AUDIBLE. Counts78nativeCHECKED+8scopeCHECKED/54PARTIAL/140;140AUDIBLE/0INTERNAL. Conditional runtime membership retained; no wider MIDI/RNG/held-note/fidelity acceptance. Continue053.
+
+## Checkpoint 582 — packed MIDI source-context and admitted products
+
+`20261010-sound-midi-source-context.md` SC582A–E rechecks actual packed-event getter/table and138 fresh sampler Sound source payloads. Authored mode1/optional3 Vorbis path does not hand mode2's MIDI interface to sampler codecs; complete four admitted generator products already bound in ADM570 do not consume event slot34. No missing-caller unreachability or new global family census. Release owner/deadline remainder settled at583.
+
+## Checkpoint 581 — actual voice subscription and receiver route
+
+`20261010-sound-midi-live-subscription.md` LS581A–F binds actual initializerC, voice context/mask00003FE3FFFE67BD, parent/bus cache intersections, live binding record source ID, exact root40→root34 membership gate and known conditional PBI receiver. Constructor source81 publication precedes initialization; property mask does not manufacture source81 bindings. Q14-052 remains PARTIAL for retained source-context velocity/release inputs; further receiver families require an actual live binding. Counts unchanged77nativeCHECKED+8scopeCHECKED/55PARTIAL/140;140AUDIBLE/0INTERNAL. No runtime-absence or production/fidelity/hardware/Q15 acceptance; uncommitted research checkpoint for manager.
+
+## Checkpoint 580 — velocity setter publication and delivery gates
+
+`20261010-sound-midi-velocity-setter.md` VS580A–F joins concrete source81/rawU8 F32/scope/descriptor inputs through the already rowed full setter, exact current/inherited selection, live automatic timing, publication/no-write outcomes and subscriber snapshot/type gates. Success does not imply write or notification; constructor ignores results. Q14-052 remains PARTIAL for concrete live source81 registration/receiver identity and retained source-context velocity/release controls; local setter body is settled. Counts unchanged77nativeCHECKED+8scopeCHECKED/55PARTIAL/140;140AUDIBLE/0INTERNAL. No runtime-absence or production/fidelity/hardware/Q15 acceptance; uncommitted research checkpoint for manager.
+
+## Checkpoint 579 — remaining sampler authored recipients
+
+`20261010-sound-midi-sampler-bindings.md` SB579A–F verifies117 complete primary payloads: both known sampler branches plus shared ancestors and explicit envelope381606890. Branch462443456 binds envelope→volume0; branch774902407 has ordinary volume−14 and no own authored RTPC. Concrete type22/selector2 accepts80 orzero-velocity90, rejectsnonzero90; envelope reuse may reinitialize under its explicit event18 gate. No source81 binding in bounded authored set. Q14-052 remains PARTIAL for live source81 registration/delivery and retained source-context velocity/release controls. Counts unchanged77nativeCHECKED+8scopeCHECKED/55PARTIAL/140;140AUDIBLE/0INTERNAL. No global runtime-absence or production/fidelity/hardware/Q15 acceptance; uncommitted research checkpoint for manager.
+
+## Checkpoint 578 — get-in LFO state selection and attachment
+
+`20261010-sound-midi-getin-state-attachment.md` GA578A–H joins authored scope1 to the actual object/node/channel/note slot, velocity-gated reuse/create, ordered state publication, node owner attachment, conditional mask/deadline route, root recipient and active-list/failure tail. Velocity magnitude is absent from the lookup key; the nonzero gate remains exact. Q14-052 stays PARTIAL for known sampler children462443456/774902407 and live source81/source-context recipients. Counts unchanged77nativeCHECKED+8scopeCHECKED/55PARTIAL/140;140AUDIBLE/0INTERNAL. No whole027/runtime-absence or production/fidelity/hardware/Q15 acceptance. Uncommitted research checkpoint for manager.
+
+## Checkpoint 577 — get-in authored bindings and concrete LFO recipient
+
+`20261010-sound-midi-getin-modulator.md` GB577A–G verifies88 complete primary payloads and structurally parses every authored RTPC record: target528935089→pitch2, ancestor3530059848→volume0, LFO3255781855→property0; no source81 binding in this bounded set. Concrete type21 LFO product, scope1/channel/note identity, nonzero-velocity gate, reuse/new-state gates and parameter/pitch recipient are joined. Q14-052 remains PARTIAL for actual hierarchical state selection/created attachment, the two other known sampler branches and live source81/source-context recipients. Counts unchanged77nativeCHECKED+8scopeCHECKED/55PARTIAL/140;140AUDIBLE/0INTERNAL. No global runtime absence or production/fidelity/hardware/Q15 acceptance. Uncommitted research checkpoint for manager.
+
+## Checkpoint 576 — velocity cache consumer and shared modulator gate
+
+`20261010-sound-midi-velocity-cache.md` VC576A–F closes575's cache-consumer alternative: pointer/flag eligibility, scalar/range/factor copy and growth failure, shared node query and packed-event modulator gate. Corrects historical V6: node query is skipped on equality with the selected stop pointer, which cache88 may supply nonzero, not a blanket null-node test. Q14-052 remains PARTIAL for concrete source81/parameter/factor products, actual modulator state/trigger products and source-context velocity inputs. Counts unchanged77nativeCHECKED+8scopeCHECKED/55PARTIAL/140;140AUDIBLE/0INTERNAL. No production/fidelity/hardware/Q15 changes; uncommitted checkpoint for manager.
+
+## Checkpoint 575 — transformed velocity reaches RTPC and packed-event triggers
+
+`20261010-sound-midi-velocity-handoff.md` VH575A–G binds prepared R87 through actual creator/request arguments to V1E7 and conditional scoped source81 publication. Effective-parameter initialization also forwards the whole V1E4 packed event to concrete modulator trigger walkers; a sole-byte-read argument cannot establish absence of implicit velocity effects. Q14-052 remains PARTIAL for concrete source81 parameter/factor subscriptions, cache alternative, packed-event state/trigger products and retained source-context recipients. Counts unchanged77nativeCHECKED+8scopeCHECKED/55PARTIAL/140;140AUDIBLE/0INTERNAL. No production/fidelity/hardware/Q15 edits. Uncommitted research checkpoint for manager under replacement lane instructions.
 
 ## Checkpoint 574 — inherited MIDI controls close051 routing obligation
 
@@ -6877,8 +7017,8 @@ These rows concern parsing, allocation and ownership. ADP-1 does not exempt any 
 | Step | Address | Behaviour | Gates | Order / failure results | Float bits / uncertainty |
 | --- | --- | --- | --- | --- | --- |
 | K1 | 0x009B21F4..0x009B2260 | Read eight-byte chunk header, require BKHD, then read the twenty-byte fixed header. | The first read must return 1; tag must match. | First-read failure and wrong tag return 7. The fixed-header read propagates its result. | No DSP. |
-| K2 | 0x009B2264..0x009B22AC | When global key 0x0108D9A0 is nonzero, XOR the first sixteen bytes of the fixed header with that word. Leave the final word unchanged. | Nonzero key only. | Happens before header-size/version checks. | Key-writer census remains UNKNOWN, recoverable; no claim that the key is always zero. |
-| K3 | 0x009B22B0..0x009B230C | Skip declared header size minus twenty; require actual skipped count to match. Require version 0x78. Store parser+64 from `(header halfword +0C != 0)`. | Nonzero excess size calls skip; version check follows successful skip. | Skip error propagates; short skip returns 0x38; wrong version returns 0x40; success 1. The parser flag store also occurs on error exits. | Do not replace the actual-count comparison with unconditional failure for an extended header. |
+| K2 | 0x009B2264..0x009B22BC | When global key 0x0108D9A0 is nonzero, XOR the first sixteen bytes of the fixed header with four separate words at108D9A0..AC (PH640D). Leave the final word unchanged. | Nonzero key only. | Happens before header-size/version checks. | Key-writer census remains UNKNOWN, recoverable; no claim that the key is always zero. |
+| K3 | 0x009B22C0..0x009B230C | Skip declared header size minus twenty; require actual skipped count to match. Require version 0x78. Store parser+64 from `(header halfword +0C != 0)`. | Nonzero excess size calls skip; version check follows successful skip. | Skip error propagates; short skip returns 0x38; wrong version returns 0x40; success 1. The parser flag store also occurs on error exits. | Do not replace the actual-count comparison with unconditional failure for an extended header. |
 | K4 | 0x009B74D8..0x009B7688 | Find an existing bank under the global bank mutex. An existing bank whose +50 bit1 is set is rejected; otherwise publish it and optionally increment +54. New-bank path allocates 0x58 and initializes fields before opening its reader. | Existing key includes the mode-2 memory-window identity. | Existing pending bank returns 0x45. Allocation failure returns 0x34 after reader reset/close. | The allocator and reader results remain native inputs. |
 | K5 | 0x009B768C..0x009B78BC | Open the selected reader, require BKHD success, then repeatedly read eight-byte chunk headers. Dispatch STMG, ENVS, PLAT, INIT, DIDX, HIRC, STID and DATA by the exact four-byte tag. | Actual count 0 ends the bank; counts 1..7 are invalid. | Reader error propagates; short header returns 7. Each selected chunk handler must return 1 before the next header. | Tags are raw little-endian words, not case-folded strings. |
 | K6 | 0x009B78C0..0x009B78E8 | Unknown chunk: skip its declared byte count and compare the actual count. | Used for unknown tags and selected skip modes. | Mismatched actual count returns 7. The skip helper's return value is not tested in this slice. | Preserve the distinction between return status and actual count. |
@@ -7190,7 +7330,7 @@ The dispatcher has no PCM input. Every branch below is KEEP. Its child readers r
 | --- | --- | --- | --- | --- | --- |
 | J1 | 0x009B3260..0x009B335C | Read u32 object count through exact-read helper9BBF64. Non1 returns unchanged; zero count returns1. Allocate pointer storage of wrapping(existing capacity+count)*4, copy existing count pointers, free old storage, publish new pointer+3C and capacity+44. | New allocation null returns2 without replacing old storage. Copy only when old pointer and old count nonzero. | Allocate -> copy -> old free -> publication. | Allocation arithmetic is u32, no overflow guard. Existing count+40 is retained. |
 | J2 | 0x009B3364..0x009B33EC | For each object exact-read five bytes: u8 type followed by unaligned u32 payload length. Dispatch unsigned(type-1)<=22 through23 branches. | Header result !=1 exits immediately. Type0 underflows and goes to extension/skip branch. | Physical bank order, no ID sort. | Exact dispatch destinations are J3/J4. |
-| J3 | 0x009B33F0..0x009B3EBC | Types1,3,4,8,20 invoke dedicated readers9B2B98,9B2F64,9B3100,9B2CE8,9B2E60 respectively. Types16/17 skip payload; types10..13/default extension path J9. | Dedicated reader continuation only result1. | See explicit mapping table below; this row records the branch mechanism, not a generalized factory. | Full child-reader bodies pending. No floats in dispatcher header. |
+| J3 | 0x009B33F0..0x009B3EBC | Types1,3,4,8,20 invoke dedicated readers9B2B98,9B2F64,9B3100,9B2CE8,9B2E60 respectively. Types16/17 skip payload; types10..13/default extension path J9. | Dedicated reader continuation only result1. | See explicit mapping table below; this row records the branch mechanism, not a generalized factory. | Concrete dedicated type1/3/4/8/20 readers are SO376/BA414/EL251/BB641; remaining original key/input questions stay explicit. No floats in dispatcher header. |
 | J4 | 0x009B3CDC..0x009B3DAC;0x009B3C10..0x009B3CDC;0x009B3B00..0x009B3C10;0x009B39FC..0x009B3ADC | Types5/6/7/9 obtain the general object-index lock through9A80B8(0). Acquire payload through9BBE5C, extract first u32 ID, lock index, find ID by unsigned remainder/bucket traversal. Existing ID increments object+C before unlock and attachment. Missing ID unlocks index, locks creation mutex and calls corresponding factory/reader. | Null payload or factory returns2. Reader result!=1 calls object vt+C destructor before creation-mutex unlock and payload cleanup. | Lookup -> reuse or create -> read -> unlock -> append -> release temporary payload. | Factory/reader pairs: type5 A07114(ID,1)/A0828C;6 A2D9A8/A2F1D0;7 A66950/A669EC;9 9D273C/9D24D4. |
 | J5 | 0x009B385C..0x009B39FC;0x009B376C..0x009B3824;0x009B36A4..0x009B376C;0x009B3568..0x009B3664;0x009B34A8..0x009B3568;0x009B33F0..0x009B34A8 | Types14,15,18,19,21,22,23 use registry-specific mutex and bucket-table layouts. First payload word is ID; same-ID object+C increments on reuse. Otherwise unlock registry, lock shared creation mutex, construct and read. | Missing factory returns2; reader !=1 destroys through vt+C. | Reuse bypasses reader entirely. Registry lock is released before taking creation lock. | Registry offsets:14 +78/+7C/+80;15 +B4/+B8/+BC;18 +C8/+CC/+D0;19 +DC/+E0/+E4;21 and22 +8C/+90/+94;23 +F0/+F4/+F8. |
 | J6 | 0x009B3FBC..0x009B3FE8;0x009B3734..0x009B3768;0x009B3BD0..0x009B3C0C | Increment existing-object reference+C under lookup mutex and unlock before bank attachment. Attach only if bank count+40 < capacity+44: increment count first, then store pointer when computed slot address nonzero. Call9BBBE0 after attachment even if capacity gate skipped store. | Capacity exhaustion does not change successful result. | Ref increment -> unlock -> bank count increment -> pointer store -> temporary payload release. | J6 preserves the native null computed-slot gate, rather than adding an allocation retry. |
@@ -10927,3 +11067,374 @@ Primary: full `20261008-sound-buddy-extent-release-native.txt` reopened through9
 | EXTSUF5 | 0097A550..0097A590;0097B234..0097B260;0097B778..0097B7F0;0097BDA8..0097BDAC;0097BFD4..0097BFDC;0097C338..0097C33C;0097C678..0097C684;0097AA04..0097AA14 | Initial/newcandidate publication completion resumes original ascending extentwalk with carry0; it reloadslastgroup anduses preservedoriginalnextindex. Terminal-leftover publication returns directly (some paths tailcall979B98 after restoringstack). No failure code or output parameter is assigned: callers do not consume status. | Continue paths are distinct from true terminaltailcalls. Do not advance extentwalk by number of buddy promotions. | Publication → carry0/lastreload → originalindexgate OR functionreturn/tailhelper. | No lock; nofloat; zero-extent nontermination fromEXTREL1 still applies. |
 
 EXTREL1–3 plus EXTSUF/EXTRIGHT/EXTPUB now close97A1E8 locally, with its successor-only carry stages and normal terminal merges distinguished. The inlined cache-release96FE70 and unequal-cache-request9716F0 copies still require their own reconciliation; code similarity is not being used to settle those. Q14-100 remains PARTIAL for those copies and remaining production/writer joins.
+
+
+## Checkpoint611: Q14-132 positive-context object publisher
+
+See `20261010-sound-positive-context-item-producer.md` and native companion. Concrete HIRC14 factory and both packed/structured subscription input ABIs now recovered, including same-property/curve removal before append and failure publication. Q14-132 remains PARTIAL only for a shipped alternate structured-input producer/actual property recipients or bounded exclusion proof. Zero authored type14 is not runtime-absence proof. Counts97 native CHECKED+8 scope CHECKED/35 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+
+## Checkpoint612: Q14-084/118 teardown input frontier
+
+`20261010-sound-teardown-input-frontier.md` and native companion reconcile the actual twelve calls, two positively attributed PC-relative raw-word candidates, mode2 destructor source50 cleanup and media-owner record publication. Both original obligations remain PARTIAL for named indirect aliases/admitted request inputs/concrete owner recipients. Counts unchanged97 native+8 scope CHECKED/35 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+
+## Checkpoint613: Q14-028/029 observer registration
+
+`20261010-sound-observer-registration-input.md` and native companion establish actual native wrappers, registry add/replace/remove/failure publication, post-unlock line flag propagation and live meter virtual recipient. Remaining actual shipped caller/callback inputs are explicit; both original obligations remain PARTIAL. Counts97 native+8 scope CHECKED/35 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+
+## Checkpoint614: Q14-119 stop-offset writer frontier
+
+`20261010-sound-stop-offset-writer-frontier.md` and native companion reconcile six actual stop-offset writes/getters/emit inputs and positively identify three SP-derived local-store candidates. Original exhaustive alias/input obligation remains PARTIAL. Counts97 native+8 scope CHECKED/35 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+
+## Checkpoint615: Q14-115 census/current binary32 comparison
+
+`20261010-sound-64-curve-comparison.md` and its raw-bank/native-replay/current-port witnesses independently check all64 entries and2405 native-vs-current-port cases with0 bit/idx/NaN-payload differences. Original115 CHECKED for the requested comparison; current legacy double helper/MusicStream caller remain explicit findings. Original136 retains113 loader/subscription reconciliation. Counts98 native+8 scope CHECKED/34 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+## Checkpoint 616 — point-loader and concrete holder recipient frontier
+
+`20261010-sound-point-loader-reconciliation.md` PL616 separately maps all eleven original113 entries, source registration/retirement and raw64 point/scaling inputs. Fresh native corrects A10C98 to interior of A10C84, proves admitted node80 results and expands concrete A196D0 initial-recompute versus A1B254 value/delta dispatch.113/136 retain specific current holder publisher/context C/8/10/14 and type1 FX parameter product joins. Counts98 native+8 scope CHECKED/34 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue the smallest retained recipient link.
+
+## Checkpoint 617 — actual property-holder and parameter products
+
+`20261010-sound-property-holder-products.md` HP617 proves node10 table103B758 and concrete bus override103AE24, bus dirty-before-recompute/value dispatch, base/continuous/temporary contextC differences, exact context10/14 mask, and bus/wrapper parameter-holder C/14 forwarding to the two serialized PP438/PP435 products.113/136 retain only actual scoped/filter dispatch/context links;104/131 retain their independent population requests. Counts98 native+8 scope CHECKED/34 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue those bounded dispatch recipients.
+
+## Checkpoint 618 — scoped/filter dispatch and bus subscriber frontier
+
+`20261010-sound-scoped-property-dispatch.md` SP618 recovers full A1A6A4/A1AC40/A1AD68 including projected-byte/raw-equality comparator, first mismatch terminates run, mask miss advances, filter-before-recipient reload, fixed physical extent and branch-specific cursor order. Concrete current five-node owner tables corroborate HP617 after overrides.113/136 retain the named bus/attachment cache-record20 actual product/input join shared104/131, not generic unread loader/scoped dispatch. Counts98 native+8 scope CHECKED/34 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue named bus publisher.
+
+## Checkpoint 619 — actual cache subscriber identity closes113/136
+
+`20261010-sound-cache-recipient-identity.md` CI619 positively joins9F7390 saved subscriber→A1973C raw key/record20→RW physical node/bus cache publication→known LS581/LT/HP617 recipients. SP618 mistakenly named9C6440 reader as publisher and invented a new bus subscriber merely from a bus walk; that premise is corrected, not turned into an absence proof.113/136 CHECKED for their original named loader/currentC35 requests;114 and104/131 keep independent original scope. Counts100 native+8 scope CHECKED/32 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue smallest remaining original decision.
+
+## Checkpoint 620 — raw shipped bus and node attachment inputs
+
+`20261010-sound-bus-ancestor-input.md` BA620 independently records15 Init buses,3490 audio-node common prefixes, exact raw bus/ordinary-parent fields and every authored first-bus walk. No missing ID/cycle in that finite input graph; all3490 resolve to a bus.104/131 keep original explicit runtime34/38 writer/alias/caller-input proof, not generic unread9F4BB8 or stale absent census. Counts100 native+8 scope CHECKED/32 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue concrete pointer-setter input/alias census.
+
+## Checkpoint 621 — concrete music and bus attachment setters
+
+`20261010-sound-attachment-setter-products.md` AS621 binds actual playlist/segment/track1C/20/124/74/C4 to the known ordinary setter/reservation/list/dirty control products; both bus1C/124 are proven BX LR, with distinct20 wrapper.104/131 keep original explicit exhaustive34/38 writer/alias/runtime-input proof, not generic unread setter/hook or census inputs. Counts100 native+8 scope CHECKED/32 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue specific candidate attribution.
+
+## Checkpoint 622 — omitted MusicSwitch and derived holder callbacks
+
+`20261010-sound-music-holder-callbacks.md` MH622 binds all14 positive MusicSwitch nodes to actual103A198 setters and103A2F8 holder; playlist/segment derived holders share9868E4/980F30, track retainsA1B254/A196D0. Exact propertyD invalidation and non-D active-childC4 notification replace any common-base-only inference. AS621 omission is corrected;113/136 CHECKED supplemented,104/131 original writer/alias/runtime-input requirement remains PARTIAL. Counts100 native+8 scope CHECKED/32 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue bounded specific writer attribution.
+
+## Checkpoint 623 — first concrete attachment writer candidates
+
+`20261010-sound-attachment-writer-attribution.md` AW623 confirms parent/setter/constructor stores and positively separates limiter-state38 buffer writers throughnode30 identity.9FBB30 second-argument34/38 output destinations remain the next concrete ambiguity. Raw554 encoding candidates are navigation, not obligations or an absence proof.104/131 remain PARTIAL; counts100 native+8 scope CHECKED/32 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue that destination/input join.
+
+## Checkpoint 624 — concrete buffer, resolver and positioning destinations
+
+`20261010-sound-attachment-storage-attribution.md` AX624 attributes two50-byte buffer initializers, resolver-global string indices and position-entry initialization/endpoint stores; scope-guard excluded backing/coordinate paths stop at their interfaces.9FBB30 navigation found no positivecaller, which leavesUNKNOWN rather than proving absence.9EB250 newly allocated103B498 object is the next positiveidentity to check.104/131 remain PARTIAL;100 native+8 scope CHECKED/32 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+## Checkpoint 625 — actual device descriptor writer identity
+
+`20261010-sound-attachment-device-identity.md` AD625 binds9EB250 toDA498 actual90-byte device constructor and descriptorword0, not nodeparent34; metadata/table calculation corrected to103B498.9FBB30 output alias remainsUNKNOWN, not unreachability.104/131 retain original runtime writer/input proof;100 native+8 scope CHECKED/32 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue positively supplied candidates only.
+
+## Checkpoint 626 — frame position-manager producer and stop boundary
+
+`20261010-sound-frame-position-boundary.md` FP626 reconciles RP473/RA475 actual108D8E8 position-entry publication/conditionaltag1 activation withRC463 exactframe consumer. Remaining recipient is the positively identified excluded3D positioning payload, not an optional unknown sound producer.022 CHECKED;101 native+8 scope CHECKED/31 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue smallest genuinely open decision.
+
+## Checkpoint 627 — singing rolling entry and listener controls
+
+`20261010-sound-singing-rolling-entry.md` RE627 positively binds shippedmap5EF370 mean0/count1 default, signedID insertion, selected functor18 callback and exactmean store order; Add/Remove parent first/lastlistener controls and StreamObjectAccel boolean inputs are explicit.041 retains particular cube-sample/history/ownership helper joins, not generic unread map/default/callback.101 native+8 scope CHECKED/31 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue exact selected helper/input.
+
+## Checkpoint 628 — selected sample and listener membership controls
+
+`20261010-sound-singing-sample-membership.md` SM628 checks signedID history lookup/creation, unsignedrawpointer listener equality, count-before-release erase, actualrelocated Shake/HPF tables, firstsample suppression and exactcubeHPF association/output stores.041 nowretains particularReceiveObjectAccelData/getter/connectedobjectID and active-sample/cull input contracts; no generic unread map/listener/filter body.101 native+8 scope CHECKED/31 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue named sample input.
+
+## Checkpoint 629 — actual cube sample message and identity input
+
+`20261010-sound-singing-sample-input.md` IN629 binds uniongetter7B50AE, duplicate-timestamp currentvector delivery, post-callback unsignedwindow cull, actualactiveID predicate627F1A and mode1 firstaccepted connectedworld walk.041 retains selectedembeddedObjectID14 publisher andactualpredicatefiltercopy/dispatch only; no constructor/tablefromRTTI assumption.101 native+8 scope CHECKED/31 PARTIAL;140 AUDIBLE/0 INTERNAL. Continue those concrete input products.
+
+Checkpoint630: ID630 closes041 selected cube embeddedID publisher and exact filter/predicate copy/dispatch. RE627/SM628/IN629 hold the remaining original singing decision path. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL. Q15 stays parked.
+
+Checkpoint631: AG631 narrows040 to actualresolver/animation Init, selectedcompound append/policy/move-next and behaviour lock/start interfaces; concrete60-second timeout and zero start-delay/render-wait products are positively joined. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+Checkpoint632: CP632 pays040 actualcompound ctor/append/nullignore policy andsingle-step MoveToNextAction, plusresolvermissing/empty interfaces.040 retains selectedtrigger-mapping/animation Init and behaviour lock/StartActing joins. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+Checkpoint633: AF633 binds040 actualreaction-lock wrapper andStartActing localadmission/tag-before-queue gates plusanimation Init state/admission/subscription interfaces. Selectedmask/lockrecipient, queue/slot80 andtrigger/animation admission inputs remainexplicit. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+Checkpoint634: RM634 pays040 exact21-pair reaction mask (true1/2/8/10/20), first-lock disable callback gate, unique-name lock insertion and active-matching stop-switch inputs. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL. Selectedqueue/slot80, trigger/animation admission-completion andpositive reactionrecipient joins remainexplicit.
+
+Checkpoint635: SQ635 pays040 actualbehavior slot80, queue0 selection andduplicate/clearing rejection. SelectedQueueNow cancel/delete/front, trigger/animation admission-completion andpositive reaction recipients remainopen. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+Checkpoint636: QR636 corrects040 queue tail to QueueAtEnd and pays actual cancellation, reentrant retiring-tag gate, completion snapshot/destruction/unlink/report order and append-tail publication.040 retains selected trigger/animation admission-completion and positive reaction disable/start-switch inputs. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+Checkpoint637: AN637 joins040 trigger response lookup, concrete animation admission/tag result and four actual callback products. Matching start then matching end completes the actual one-loop child; matching abort sets failure independently of start.040 remains PARTIAL for selected mapping/configuration and positive reaction disable/start-switch inputs. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+Checkpoint638: SC638 joins040 all39 shipped singing configurations, native five-trigger names/mappings, five actual disable recipients and selected null behavior switch/publication.040 retains selected generic-stop cancellation and named-lock removal decisions. Counts102 native+8 scope CHECKED/30 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+Checkpoint639: ST639 closes original040 trigger-failure/compound/timeout/render-wait question with exact cancellation and last-lock enable ordering, preserving named M5/M7/M8/M10/M12 input interfaces. Counts103 native+8 scope CHECKED/29 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+
+### Bank platform/header reconciliation (checkpoint640)
+
+`20261010-sound-bank-platform-header.md` records PH640A–E. Checkpoint640: PH640 reconciles109/134 PLAT reader/platform-name setter and positive Init Android input; corrects K2 to four independent key words gated by K0. Both remain PARTIAL for explicit key writer/admitted encrypted input and any unpaid concrete J/UD/BA/FS creator/hook/mode/unload seam. Counts103 native+8 scope CHECKED/29 PARTIAL;140 AUDIBLE/0 INTERNAL.
+
+
+Checkpoint641: BB641 pays complete local type8/type20 dedicated reader controls and actual type20 derived-bus creator/130 product, with fifteen shipped type8 witnesses. Known type1/3/4 products reuse SO376/BA414/EL251.109/134 remain PARTIAL; next positive bank hook is config tag36 consumer9EBC50, plus independent PH640 four-word key writer/input. Counts103 native+8 scope CHECKED/29 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-bank-bus-reader.md`.
+
+
+Checkpoint642: RD642 pays BB641 selected tag36 consumer, first root-device removal/invalidation-before-construction, empty-list advance gate, concrete settings{1,3102,0} and independent startup producer.109/134 retain PH640 four-word key writer/admitted encrypted input and any concrete unpaid original J/UD/BA/FS seam, not an unread PLAT/unload or root-config hook. Counts103 native+8 scope CHECKED/29 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-bank-root-device-replacement.md`.
+
+
+Checkpoint643: HK643 attributes all expanded key-store candidates to seven-record callback arrays108D878..8C8, bounded by end108D8CC ormask7F, rather than108D9A0..AC. No key writer or encrypted-input unreachability proof recovered;109/134 stay PARTIAL. Counts103 native+8 scope CHECKED/29 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-header-key-candidate-attribution.md`.
+
+
+Checkpoint644: DC644 rejects apparent shared-descriptor consumers that actually dispatch node command pointers or read globals/next-function fields. Limited67 ARM/24 Thumb candidate navigation does not prove missing-caller exclusion.024 retains its specific actual frame-context4C/50 ID/descriptor/decision join. Counts103 native+8 scope CHECKED/29 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-shared-descriptor-candidate-attribution.md`.
+
+
+Checkpoint645: CR645 reconciles114 actual holder0/4/C/14, NF224 filter and switch/modulator/node/PBI recipients with already-positive native products. Bounded raw/symbol/relocation and six local pointer-construction windows find no extra evaluator pointer; no indirect absence proof.114 retains computed/address-taken caller/input/hint closure, rather than stale unread body placeholders. Counts103 native+8 scope CHECKED/29 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-curve-receiver-reconciliation.md`.
+
+
+Checkpoint646: MP646 closes110/135 original alternate90-poster and Sound policy-route questions with positive music-note/replay packed-word supplier, spA0−sp1C=request84 writer, prepared shipped sampler/Sound128 route and actualA1D488→9EE230. Policy saved before RTPC/context effects; reject52 does not roll them back. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-midi-alternate-poster.md`.
+
+
+Checkpoint647: PB647 repeats six-bank5350-payload/723 Play-action structural census, retaining2797 candidate IDs and44 unresolved target paths. Actual five-node84=9F1F80 scalar query and HIRC14 release product are bound; corrects generic PBI/state attribution.088/121 retain runtime branch/input conjunction proof; mode4 missing finite paths are not unreachability. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-play-branch-reconciliation.md`.
+
+
+Checkpoint648: AR648 pays016 former unknown S30/S34 reader: actual9CE73C first-key raw base value/default0, reached by both known FX holderC9EC5E4 products. FA5639CDFE4 size4 writes the same property/raw list after parameter setter.016 retains admitted updater input and its concrete notification recipient, not unread association meaning. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-fx-association-reader.md`.
+
+
+Checkpoint649: OL649 checks five exact optional audio-layer exported input symbols against all27 shipped companion APK libraries; no matching import. This finite import absence is not dynamic/internal caller exclusion.021 retains shipped input UNKNOWN; no optional creator/generator descent without positive producer. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-optional-layer-import-check.md`.
+
+
+Checkpoint650: VW650 attributes all four bounded voice-method E0/E4 immediate stores to new-source, retained-source and virtualization products, with two actual output-pointer E0 writes throughPC2. Preserves bitwise retained gate and no fabricated constructor zeros.033 retains explicit indirect/alias writer proof; bounded scan is not absence. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-voice-policy-writer-frontier.md`.
+
+
+Checkpoint651: MI651 checks all604 authored music target property/flag inputs: six nonzero properties all target110896138/table0, two override-with-missing-property inputs0. Verified structural MIDI expansion has200 IDs (3 Layer/59 RanSeq/138 Sound), no missing IDs or mode4 outer/inner.009/034 retain runtime entry/mutation/depth proof; finite absence is not global unreachability. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-midi-branch-target-input.md`.
+
+
+Checkpoint652: NR652 corrects sharedNS3: every status submits localP=sp1C; event18→request74 is a timing value, not a request-pointer alternate. ExactADDNE ordinary path and unconditionalADD before90 velocitygate preserve MP646 positive writer/admission proof. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-note-request-pointer-correction.md`.
+
+Checkpoint653: PT653 binds all723 raw Play target/selector handoffs (all selector0), including44 absent-bank IDs, to actual header/setter/ordinary-registry lookup and exact null→0F pre-request exit. Missing targets retain conditional runtime lookup, not unreachability.088/121 remain PARTIAL for original branch/input conjunction reconciliation. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-play-target-handoff.md`.
+
+Checkpoint654: RC654 attributes21 candidate live-register events at19 rate/frame calls: fourteen arithmetic ABI boundaries, actual scalar modulator/voice/setter inputs, cleanup scratch register and zero-argument JNI getApplicationInfo. No consumed writable global alias among these candidates; bounded enumeration is not global writer absence.043/092/099/120/124/130 stay PARTIAL. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-rate-call-alias-dispositions.md`.
+
+Checkpoint655: MR655 applies ADM570 positive complete context-call proof: source14slot10 media request unreachable for all46 shipped mode2 source lifecycles. Corrects TF612 thunk toA788E8 (A78E4C is loop), joins actual normal queried bank owner101C028.0=9B47D8 to MS141/BR142 exact retirement/completion.084/118 now retain only original five-entry indirect/relative caller proof; no arbitrary new source family or writer absence. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-mode2-media-reconciliation.md`.
+
+Checkpoint656: DE656 expands specific4C/50 navigation to wide Thumb loads/BX tails and clobber checks;99 candidates,11 additional calls, three older false targets removed. Actual node/bus/voice/Breakpad/data candidates attributed;9903F0 receiver remains UNKNOWN.024 retains actual shared-context ID/descriptor consumer join. Original five-entry teardown pointer expansion23 windows adds no positive beyond TF612 relative data. Counts105 native+8 scope CHECKED/27 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-descriptor-expanded-attribution.md`.
+
+Checkpoint657: PC657 independently binds3490 raw node control prefixes to repeated Play/MIDI candidates:2869 present union nodes, explicit priorities99/99/70, no authored distance-priority bit and positionC0/C3 gates.121 CHECKED for original repeated census with called-path uncertainty preserved; actual9F1F80 scalar product and producer joins paid.088 retains broader branch conjunction work. Counts106 native+8 scope CHECKED/26 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-play-control-input-reconciliation.md`.
+
+Checkpoint658: PB658 reconciles every original088 named boundary with PC657 independent input census and actual policy/scalar/priority/admission/audibility/association/fade/MIDI contracts;088 CHECKED with runtime called-path uncertainty retained. No unidentified broader-branch placeholder remains, no whole production/fidelity acceptance or global writer proof. Counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-play-branch-closeout.md`.
+
+Checkpoint659: DZ659 corrects blanket phone-only division exclusions: five supplied APK libraries define the exact named division helpers, all five shipped zero handlers call raise(8), and two division edges use imported zero-handler bindings. Engine/provider binding, admitted zero-divisor input and external raise control/result remain UNKNOWN;099/130 stay PARTIAL. QT560/RC654 already pay transfer/concrete call-pointer candidates, so092/124 stale transfer remainders are removed. Counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-division-zero-decisions.md`.
+
+Checkpoint660: bounded executable-section ARM/Thumb immediate branch navigation adds no candidate for9903F0/9FBB30/A67830. Their specific receiver/output-alias/structured-input gaps remain UNKNOWN, not unreachable;024/104/131/132 remain PARTIAL. See `20261010-sound-three-input-branch-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint661: OL661 checks all78 shipped managed assemblies/91 native-import records for the five optional layer entry names, with no declared import/name candidate. Actual22 cozmoEngine imports in Assembly-CSharp remain positive app-input interfaces.021 stays PARTIAL for its specific admitted producer; finite name/import absence does not prove no messages/computed/other wrapper inputs. See `20261010-sound-optional-layer-managed-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint662: NE662 checks dynamic definitions at seven original unresolved entry addresses; none is directly exported. Wrapper/internal/computed input gaps remain UNKNOWN, not unreachable. Primary DT_NEEDED includes DAS/Acapela division providers, reinforcing DZ659 without inventing dynamic selection. Counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL. See `20261010-sound-named-input-export-dispositions.md`.
+
+Checkpoint663: VI663 rejects the sole bounded VoiceInit address-taking candidateA54BC4 using actual saved GOT base104028C and signed offsetFFFFFE1C→slot10400A8; it is a pool input, not a formedA54A30 callback.033 stays PARTIAL for complete indirect caller/E0/E4 aliases, with known direct/error/re-init and VW650 writer paths retained. See `20261010-sound-voice-init-pointer-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint664: OL664 finds actual engine AddLayer PLT4AEB30/GOT1043B9C and conditional58EF4A caller from audio RemovePersistentLayer. Matched-manager/tag/control, copied2E8 sample versus nonpositive omitted initialization, raw fourth argument0 and AddLayer-before-persistent-erase order are retained without invented fade semantics.021 stays PARTIAL for admitted producer/populated audio layer into that caller. See `20261010-sound-optional-layer-native-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint665: OL665 finite branch/address-taking follow-up adds only OL664 known58EF4A AddLayer PLT call;12 local pointer windows emit no formed-target event.021 admitted manager/tag/control/prior populated audio-layer input remains UNKNOWN, not unreachable. Stop this lead without optional creator/generator descent. See `20261010-sound-optional-layer-entry-frontier.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint666: OP666 rejects observer pointer lead69E4D6: actual ThumbPC-relative103E84C ELF slot names __stack_chk_guard, not registration9A03DC/9A040C.028/029 admitted key/callback/rawthirdword and callback recipients remain UNKNOWN;028 distinct meter filter/parameter construction/input remainder retained. See `20261010-sound-observer-pointer-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint667: MC667 binds actual line20 products to meter construction, descending four-slot/fallback selection, equal-mask cache preservation, live renderer-rate/channel inputs, two exact coefficient parameter graphs and destructor order.028 separate construction remainder paid; admitted observer caller/key/callback/rawthirdword and callback body remain UNKNOWN. See `20261010-sound-meter-construction-decisions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint668: GQ668 checks the original9A0938 quota input: no new immediate branch; eight pointer-navigation seeds are actual Thumb byte/control, canary103E84C, or six unrelated .data parameter addresses.037 admitted wrapper/internal/computed quota input remains UNKNOWN, not unreachable. See `20261010-sound-quota-input-frontier.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint669: SW669 checks six Thumb32 immediate stop-offset store candidates: concrete BehaviorFindFaces constructor, SP-local zeroing, two second-halfword misalignments and two inline literal words. No new PBI1F8 writer;119 explicit relative/indirect/alias and music-input remainder remains UNKNOWN. See `20261010-sound-stop-offset-thumb-store-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint670: AO670 resolves eight9FBB30 pointer seeds to five canary slots, an actual NVStorageComponent table and two unrelated .data inputs; no actual helper target or output destination established.104/131 remain PARTIAL for admitted destination/alias and original writer proof. See `20261010-sound-attachment-output-input-frontier.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint671: AW671 binds first remaining immediate candidate9606A4 to actual startup-adapter output/deviceSettings and BACKBIND1 device initialization; it is I/O settings34, not audio-node parent34. out of scope: I/O resolver/scheduler settings; stop without infrastructure descent.104/131 original aliases/input proof remains PARTIAL. See `20261010-sound-attachment-first-unmatched-store-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint672: AW672 identifies six original34/38 store candidates970ED0/970EDC/97101C/9712C8/971384/9713AC as actual I/O memory-manager group/free-list fields. out of scope: buddy/free-list/coalescing infrastructure; stop these candidates.104/131 genuinely open node/bus aliases/input remain PARTIAL. See `20261010-sound-attachment-allocator-store-exclusions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint673: AW673 positively binds97D7EC/97D7F4/97D8CC/97D8D4 to fixed global108D7D8→fields108D810/814, not incoming/allocated audio-node fields. No semantic class name or whole-global harmlessness inferred; stop unrelated descendants.104/131 genuine alias/input remainder stays PARTIAL. See `20261010-sound-attachment-global-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint674: AW674 binds five further34/38 candidates97D374/97D3E4/97D64C/97D938/97D940 to the same exact fixed global108D7D8 using actual PC additions and saved-register association. No new node/bus writer or semantic harmlessness claim. See `20261010-sound-attachment-global-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint675: AW675 binds four more original34 candidates97E9F4/97EBA0/97EE40/97EEFC to fixed global108D810 through actual PC-relative bases. No incoming/allocated node destination or global semantic name inferred. See `20261010-sound-attachment-global-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint676: AW676 binds97F184 to fixed global108D810 and97F658/97F664 to separately allocated76-byte owner84 array records, with physical index/count-before-slot provenance. They are not owner/audio-node parent34/outputbus38; no music semantic name or harmlessness inferred. See `20261010-sound-attachment-record-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint677: AA677 supplements original attachment writer proof with ten other-width candidates and two ADD candidates in shared node core. Known AUX output float writes and separate array-member bytes are kept distinct from node fields; actual9F319C destination for34/36/37 remains a concrete UNKNOWN input, not a guessed limiter/node. See `20261010-sound-node-attachment-other-width-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint678: AA678 correctly reopens9F68D8 after its preceding literal: actual incoming node30 supplies the pointer array for9F6920 member37 publication. The specific prefix/array join is paid;9F319C constructor destination and9FBB30 output destination remain UNKNOWN. See `20261010-sound-node-attachment-other-width-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint679: AW679 attributes six original34/38 stores9C01AC/9C01B0/9C02D4/9C02DC/9C05F4/9C05F8 to separately allocated/selected76-byte array records, preserving raw unity initialization3F800000. Not node/bus pointer writes; allocator/copy mechanics excluded. See `20261010-sound-attachment-record-unity-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint680: AA680 immediate branch follow-up supplies no admitted9F319C constructor destination. Overlapping34/36/37 writes remain a specific UNKNOWN within original104/131 alias proof, not an unreachable/harmless node or invented limiter class. See `20261010-sound-node-attachment-other-width-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint681: AW681 attributes ten original34/38 candidates to actual LayerN80 pool members, registered-entry103AEA0 constructor/factory and settings103AF98 fields. Preserves four exact member filters/raw updates; no class-name guessing, whole-alias absence or INTERNAL claim. See `20261010-sound-attachment-layer-settings-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint682: AW682 binds twelve original34/38 stores to constructor-defined settings tables103AFB8/103AFD8/103AFF8. Ten other candidates are NB10/NB21 positioning-owner payload/backing: out of scope; stop their descendants. No whole-alias absence claim. See `20261010-sound-attachment-settings-position-store-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint683: AW683 attributes five original34/38 candidates to actual N80 pool members or their separately allocated buffers. Actual9D2410 second argument for9D2490 remains UNKNOWN; matching field geometry and absent immediate/raw references do not prove a member or unreachable input. See `20261010-sound-attachment-layer-member-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint684: AW684 binds twenty original34/38 candidates to actual N80 list members. Retains filtered raw0/1 member34 updates and unlink-before-buffer-clear order; these are not owner parent/outputbus writes. See `20261010-sound-attachment-layer-update-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint685: AW685 attributes four original34/38 stores to voice2C send records and one34 store to actual108DAFC device-list membership. Exact raw fields, first-key-match update and downstream decision boundary retained; no whole-routing/alias closure. See `20261010-sound-attachment-route-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint686: AW686 binds six original34/38 zero stores to actual modulator base103B1B8 and independently allocated MT9 LFO/envelope products. Literal-island entry corrected to9D7894; no whole-caller alias exclusion or registration-success inference. See `20261010-sound-attachment-modulator-field-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint687: AW687 attributes five original34 candidates to modulator storage capacity, three adjacent hierarchy-slot identity transfers and actual stackSP4C. Preserves1C-stride address arithmetic; no whole hierarchy/caller-alias closure. See `20261010-sound-attachment-hierarchy-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint688: AW688 attributes ten original34/38 candidates to positively constructed modulator state deadlines/control fields and4C-byte evaluator slots. Existing exact setter/initialization order retained; no ordinary-node attachment or whole-alias absence claim. See `20261010-sound-attachment-modulator-state-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint689: AW689 attributes three original34/38 candidates to an actual envelope stack local and the third separately allocated14-byte link record. No owner attachment write or DSP-equivalence claim. See `20261010-sound-attachment-e-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint690: AW690 attributes constructor9E9BF8 to actual103B498 device descriptor and four candidates to native frame locals; reconciles five already paid AX624/AD625 sites without new completion credit. Resolver-string descendants stop out of scope. See `20261010-sound-attachment-device-stack-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint691: AW691 binds six original34/38 candidates to actual SB380 frame locals, reconciles eight already paid node-core sites and stops excluded position payload/backing.9FD910 receiver for9FDB60/9FDBCC remains a concrete UNKNOWN; B16 timing stays exact. See `20261010-sound-attachment-group-local-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint692: AT692 binds actual9FDE30→9FD910 receiver through manager array/state1 tick and existing74-byte publisher. Two Thumb edges are ARM instruction halves. Known product destination paid; alternate manager/indirect inputs remain UNKNOWN and excluded coordinates stop. See `20261010-sound-attachment-timing-receiver-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint693: AW693 attributes three original34 stores to owned runtime-bus link freeheads and four34/38 stores to newly allocated registration records. A0423C second stackargument forA04284 remains an explicit UNKNOWN output destination. See `20261010-sound-attachment-pbi-registry-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint694: AW694 binds three original34/38 defaults to positive game-object/registry-manager construction; six others are existingA0BDC0 excluded positioning/listener payload and their descendants stop. See `20261010-sound-attachment-game-object-store-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint695: AW695 attributes five original34/38 candidates to actual registry retired-array capacities and separately allocated startup manager defaults. Preserves publication-before-initialization and retirement order; rejects ThumbhalfBXLR candidate. See `20261010-sound-attachment-registry-retirement-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint696: AW696 attributes five original34/38 candidates to separately created RTPC record membership fields and growth publication. Preserves exact veto/order/count/failure boundaries without all-caller alias closure. See `20261010-sound-attachment-rtpc-member-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint697: AW697 attributes twelve original34/38 candidates to RTPC cleanup/binding/scope-array fields, two separately allocated root products and a frame local. Preserves exact membership collection/retirement order and1C-stride identity moves. See `20261010-sound-attachment-rtpc-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint698: AW698 binds one original34 candidate to adjacent scope-slot identity transfer; five recorder-conversion locals stop at existing299 exclusion. Current104/131 close-out rows now include concrete9D2410/A0423C destinations and AT692 alternate-input limit. See `20261010-sound-attachment-scope-recorder-store-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint699: AW699 records twelve original34/38 candidates as selected state registry hash/count/capacity and manager pool defaults/freeheads: out of scope, stop descendants. State selection/reference/notification decisions retain existing exact rows; no alias closure. See `20261010-sound-attachment-state-manager-store-exclusions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint700: AW700 records six original34 list-freehead write contracts with exact append/recycle/count order. Admitted registration/removal owner destinations remain conditional; no caller/alias absence or node exclusion inferred from geometry. See `20261010-sound-attachment-state-subscription-store-contracts.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint701: AS701 binds four realA29228/A292E8 callers to GOT1040074→108D904 state manager. Corrected actual entriesA29098/A2915C lack immediate callers; owner inputs remain UNKNOWN, not unreachable. See `20261010-sound-attachment-state-subscription-owner-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint702: AW702 attributes seven original34/38 candidates to independently allocated40-byte switch groups and their scoped membership/cleanup fields. fp atA31F1C is the group receiver, not a frame local. Existing default/binding decisions retained; storage descendants stop. See `20261010-sound-attachment-switch-manager-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint703: AW703 attributes ten original candidates to switch-group scoped membership/base publication, adjacent-slot identity moves and reset cleanup. Existing failure/notification decisions retained; storage descendants stop. See `20261010-sound-attachment-switch-scope-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint704: AW704 attributes seven original candidates to excluded threaded-I/O records and exact transition coefficient controls. A35404 is post-index offset0, not38; coefficient controls are not per-sample DSP. See `20261010-sound-attachment-transition-threaded-store-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint705: AW705 attributes thirteen original candidates to geometry headers, STMG products, retained MIDI targets and a conditionalA39674 default receiver. The last receiver remains UNKNOWN; no zero-default or proximity proof. See `20261010-sound-attachment-geometry-stmg-midi-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint706: AW706 attributes ten original candidates to note-state pool fields, exact PBI timing and embedded MIDI reader tempo. Reuses positive MAT/NSP/MH/RI/CWT products; timing is not DSP-excluded. See `20261010-sound-attachment-midi-member-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint707: AW707 attributes ten original candidates to two frame locals and embedded resampler target/ramp controls. Timing/phase stays exact; per-sample descendants stop. See `20261010-sound-attachment-resampler-control-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint708: AW708 attributes sixteen original candidates to kernel frame/scratch locals and incoming resampler ramp fields. A4AAAC receiver follows live SP slot overwrite/restore, not its older outputpointer/count contents. Sample arithmetic descendants stop; phase/count controls retained. See `20261010-sound-attachment-kernel-local-ramp-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint709: AW709 attributes ten original candidates to voice route gain defaults and positive line constructor fields. Independent4C route allocation and count/null order retained; no sample-history interpretation. Coverage check at708:140 unique,107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL, original quotations unchanged; diff whitespace check passes. See `20261010-sound-attachment-route-line-default-store-attribution.md`.
+
+Checkpoint710: AW710 attributes sixteen original candidates to separate meter coefficient banks,9C FX wrappers, positive voice defaults and conditionalA541A0 input. Matching constructor fields do not prove that last receiver. See `20261010-sound-attachment-meter-wrapper-voice-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint711: AW711 attributes eighteen original candidates to platform settings/rates, positiveOpenSL sink product, stack local and conditionalA58960/A58B40/A59028 receivers. Nine Thumb caller candidates reject on ARM reopen; no absence proof. See `20261010-sound-attachment-output-settings-sink-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint712: AW712 binds six original candidates to fixed108DFA8 listener records. A591C0 negative34 after70 advancement is currentrecord3C; packed format and buffer geometry remain exact. See `20261010-sound-attachment-listener-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint713: AW713 attributes ten original candidates to action scalar/default and deferred-context ownership fields. Positive38/D4 factories retained; alternate reader/setter/constructor receivers remain conditional. See `20261010-sound-attachment-action-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint714: AW714 attributes eleven original candidates to action context ownership and shipped seek parameter fields. Concrete PR161/SE410 products paid; alternate constructor/setter receivers stay conditional. See `20261010-sound-attachment-action-context-seek-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint715: AW715 attributes final twenty-four original candidates to action scalars, independent8C modulator product and frame locals. Concrete supplied products remain separate from alternate reader/constructor/setter input proofs. See `20261010-sound-attachment-action-scalar-final-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint716: Constructor pointer navigation adds no admitted input for five conditional receivers; their UNKNOWN limits remain. Textual raw-store reconciliation is navigation only, not a completed554-candidate alias proof. See `20261010-sound-attachment-constructor-reference-disposition.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint717: AW717 binds9800BC/C4 to fixed108D81C global and980758/760 to separate4C member records; FP is incoming descriptor, not stack. Alternate outer inputs remain UNKNOWN. See `20261010-sound-attachment-early-global-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint718: AW718 records six early context/command candidates. Factory998188 proves independent40 command destinations and999BF8 supplies its result to timing setter982A90; alternate constructor/copy/setter receivers stay conditional. See `20261010-sound-attachment-early-command-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint719: AW719 attributes eight early state/context list candidates, proves independent60 product via97E5EC and narrows one9822E4 setter input; alternate constructor/list-owner inputs stay conditional. See `20261010-sound-attachment-early-state-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint720: AW720 attributes seven original candidates to context retirement, frame locals and independent50 product defaults, retaining conditional constructor/setter receivers. See `20261010-sound-attachment-early-context-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint721: AW721 attributes five separate50 command defaults and retains two conditional timing destinations (owner5C/90). See `20261010-sound-attachment-early-music-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint722: AW722 records three conditional timing scalar destinations and three embedded-table writes, with positive independent5C factory989EF8. See `20261010-sound-attachment-music-scalar-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint723: AW723 records four embedded-table candidates with independent64 factory99B15C and one paid engine-settings default. Alternate constructor/destructor receivers stay conditional. See `20261010-sound-attachment-music-timing-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint724: AW724 attributes eight original candidates to separate118/50/3C startup products or frame locals; publication order retained without infrastructure descent. See `20261010-sound-attachment-runtime-startup-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint725: AW725 attributes ten original candidates to separate startup manager arrays/free heads and frame locals, retaining completion-before-retirement and conditional alternate inputs. See `20261010-sound-attachment-global-queue-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint726: AW726 attributes two independent38 queued-record stores and five conditional sorted queue tail/free-head writes; unsigned comparison and equal-key order retained. See `20261010-sound-attachment-queue-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint727: AW727 records ten conditional tail/free-head stores across five queue retirement inputs, retaining four completion-before-unlink contracts and the fifth distinct9AB048-before-unlink contract. See `20261010-sound-attachment-queue-retirement-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint728: AW728 records thirteen conditional queue retirement/cleanup stores, separating completion-bearing paths from9AB048 and bare cleanup ordering; corrected9ACCD8 entry. See `20261010-sound-attachment-queue-recycle-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint729: AW729 positively binds four retirement stores to fixedglobal108D870 queue viaGOT10400D0; two direct9ADC30 input stores remain conditional. See `20261010-sound-attachment-queue-final-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint730: AW730 records seven conditional retirement/constructor stores and three positive stack output destinations. See `20261010-sound-attachment-queue-bank-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint731: AW731 records nine original candidates, including positive independent98 startup product and conditional queue/default/buffer-transfer receiver inputs. See `20261010-sound-attachment-bank-queue-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint732: AW732 retains two conditional bank lifetime handoff stores and stops seven hash/rehash backing candidates under the scope guard. See `20261010-sound-attachment-bank-owner-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint733: AW733 records one frame local and two independent58 product defaults, and stops nine hash backing-array candidates. See `20261010-sound-attachment-bank-hash-tail-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint734: AW734 stops fourteen hash/rehash backing candidates under the guard; reset branch reopened after literal island. See `20261010-sound-attachment-bank-index-store-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint735: AW735 retains four conditional callback value/publication stores and stops seven hash backing-array stores. See `20261010-sound-attachment-bank-final-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint736: AW736 records ten callback/76-entry/settings candidates, with positive settings table identity and independent replacement buffer, retaining conditional alternate inputs. See `20261010-sound-attachment-final-reader-store-attribution.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint737: AW737 resolves two rebased record0 stores and reconciles24 compact-address entries. All554 raw immediate-STR entries represented textually; this is not all-alias/receiver closure. See `20261010-sound-attachment-compact-candidate-reconciliation.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint738: FI738 checks specific9CDFE4 immediate branches, absolute references and limited pointer construction; no positive input found. AW736 settings ownership is not updater admission.016 stays PARTIAL for actual input/notification recipient. See `20261010-sound-fx-updater-input-frontier.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint739: BC739 binds the known58 bank-owner product to collection44 publication and reverse9BA124 callback input;9B1F70 supplies exact selected-record/live24 ABI, with positive startup103A9E0.24=9BB4A4 and alternate103BF48.24→A3582C→9BA624. Callback receiver inputs narrowed, alternate publishers/managers retained. See `20261010-sound-bank-callback-receiver-reconciliation.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint740: BP740 supplies both98 andC0 startup bank managers, concrete103A9E0/103BF48 slot24 callback targets and commandkind1→9B1F70 manager-preserving relays. Supersedes BC739 alternate table product UNKNOWN for this startup path; other original alias/input remainders retained. See `20261010-sound-bank-manager-callback-products.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint741: SI741 reconciles15 derived-PBI1FC adjustment/registration addresses and3 separate Continuous PBI deferred-action input aliases.9882A0 reaches the already counted988264 stop-offset writer; A6361C reads the supplied listword into a freshD4 action, not PBI1F8. Remaining address/block navigation is not exclusion proof. See `20261010-sound-stop-offset-interior-alias-reconciliation.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint742: MA742 reconciles six music interface reconstruction/match/publication candidates, two explicit frame stores and three narrow controlVSTR stores. All29 principal ARM near-field entries from SI741 navigation attributed, with262 Thumb/navigation and unrestricted alias/input proof retained. See `20261010-sound-stop-offset-music-address-reconciliation.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint743: TA743 binds six nearby scalar/double stores to BehaviorRequestGameSimple via actual103F42C GLOB_DAT and reconciles one known FindFaces address plus two known literal matches. Nine Thumb navigation candidates disposed without behavior descent; original119 stays PARTIAL for complete alias/input proof. See `20261010-sound-stop-offset-thumb-address-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actualSP-derived R4, plus one separate frame alias and two consumed literal words. Literal islands reopened at real initializer branches. Original119 full alias/input proof retained. See `20261010-sound-stop-offset-enum-frame-dispositions.md`; counts107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL.
+
+
+### Checkpoint745 — remaining near-field component receivers (Q14-119)
+
+`20261010-sound-stop-offset-component-receiver-dispositions.md` pairs the finite SI741 candidates with primary register origins:32 are component members or scalar timestamps, and69E3F4 supplies context1C+1F0 as a Json::Value reference with its context product still UNKNOWN. No unrelated callee expansion, global writer-absence claim, or new obligation.29 ARM+64 Thumb navigation entries attributed;197 explicitSP/PC and one context-product lead remain unreconciled. Q14-119 PARTIAL and107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint746 — finite near-field navigation reconciliation (Q14-119)
+
+`20261010-sound-stop-offset-frame-encoding-dispositions.md` gives197 raw-byte operand screens (102 SP arithmetic,92 SP stores,3 PC addresses), explicit code-boundary/escaped-consumer limits, preserved IT conditions, and69F7D4 JSON-reference use. All291 SI741 entries have bounded navigation dispositions, without exhaustive alias/writer claims or new obligations. Stop unrelated frame/component leads and return to original positive frontiers. Q14-119 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint747 — known manager retirement recipients and corrected transfer entry
+
+`20261010-sound-bank-manager-retirement-reconciliation.md` binds103A9E0 slots0/4 to9B0A60/9B14B4 on BP740's known ordinary startup product, and derived103BF48 slots0/4 toA34D38/A34D68 with actual base9B0A60 calls. Their34/38 are known manager backing/count. Corrects AW731's9B1AFC origin to separate entry9B1AAC, rather than preceding9B1A4C; that actual transfer input and separate9B1830 constructor still UNKNOWN. No global dispatch/alias closure.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint748 — admitted Term receiver for manager retirement
+
+`20261010-sound-bank-manager-term-receiver-join.md` binds UT1's current108D8D8.live1C and UT3's liveC, **post-callback singleton reload**, currenttable.0, destructor-before-poolfree-before-global-clear. Known ordinary0=9B0A60; known derived0=A34D38 calls that same base with unchanged receiver. Term never uses deleting slot4. This pays known product dispatch without assuming callbacks preserve global pointer/table; alternate products and slot4 inputs remain conditional.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint749 — related voice-policy near-field writer screen
+
+`20261010-sound-voice-policy-near-field-dispositions.md` disposes20 regional encodings:VW650's four E0/E4 writes/two output aliases,13 adjacent D8/DC word stores, andA537E8 argument-dependent **scaled read index**, not a formed receiver+E0 output address. Preserve arbitrary-input and regional/code-boundary limits; no global indirect/writer absence claim.033 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint750 — fixed queue Term receiver and completion-helper order
+
+`20261010-sound-global-queue-term-receiver-join.md` binds Term108D870->9AD064, then same-R4 guarded9A9404/9A950C calls **before** raw recycle/backing retirement. Known9A94B0/BC and9AD0F4/10C/184 destinations now have this supplied product; post-callback global reload remains explicit. Other queue receivers/aliases stay open; no “no completion anywhere” or stable-global assumption.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint751 — original conditional queue receiver inputs
+
+`20261010-sound-conditional-queue-receiver-joins.md` reconciles22 immediate candidates:18 actual fixed108D870 queue calls across seven selected helper methods, one real9AEA38 retainedR4 input UNKNOWN, three wrong-mode false candidates. Companion queue reloads and exact args preserved; selector body also positively binds9AB8AC/9AAB88/9AB498 receiver.9ADC30/9AFE08 input remains UNKNOWN; no absence or all-alias claim.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint752 — command31 queue receiver and admission boundary
+
+`20261010-sound-queue-command31-receiver-join.md` binds workerA408C0 ->9AF8A8 ->9AFA08 ->9ADFD8's retained queue and conditional kind1F branch9AEA38 ->9ADD94, preserving the temporaryR4 save/restore. Actual9A60B8 producer publishes kind1F and unchanged arguments through fixed108D870; its nonzero runtime admission remains UNKNOWN. No computed-call absence or complete caller census claim.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint753 — remaining queue input stop dispositions
+
+`20261010-sound-remaining-queue-entry-input-dispositions.md` confirms actual9ADC30/9AFE08 ARM entries and retains exact conditional contracts; immediate/raw-word/symbol-relocation navigation supplies no positive input. Both stay UNKNOWN, without a computed-call absence or unreachable claim. Stop these leads and return to another original obligation.104/131 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

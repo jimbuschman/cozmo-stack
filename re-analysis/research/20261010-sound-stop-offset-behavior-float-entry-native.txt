@@ -1,0 +1,50 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x005EA168..0x005EA1B4 exclusive; Thumb;
+005EA168: push.w       {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+005EA16C: sub          sp, #0x4c
+005EA16E: mov          sb, r2
+005EA170: mov          r4, r0
+005EA172: blx          #0x4b5064
+005EA176: ldr.w        r2, [pc, #0x478] ; word[005EA5F0]=00A552A6
+005EA17A: movs         r0, #0
+005EA17C: movw         r3, #0x23f
+005EA180: movs         r7, #0
+005EA182: add          r2, pc
+005EA184: strd         r0, r3, [r4, #0x158]
+005EA188: strd         r3, r3, [r4, #0x160]
+005EA18C: movt         r7, #0x42c8
+005EA190: strd         r3, r3, [r4, #0x168]
+005EA194: movs         r6, #0
+005EA196: strd         r3, r3, [r4, #0x178]
+005EA19A: movs         r5, #0
+005EA19C: strd         r3, r3, [r4, #0x180]
+005EA1A0: mov.w        ip, #0x40000000
+005EA1A4: str.w        r3, [r4, #0x188]
+005EA1A8: movs         r3, #0
+005EA1AA: ldr          r2, [r2]
+005EA1AC: movt         r3, #0x4348
+005EA1B0: ldr.w        r1, [pc, #0x440] ; word[005EA5F4]=005F9D2C
+RANGE 0x005EA32C..0x005EA368 exclusive; Thumb;
+005EA32C: add.w        r0, r4, #0x1c4
+005EA330: blx          #0x4b507c
+005EA334: vmov.f64     d0, #1.000000e+01
+005EA338: vmov         r2, r3, d0
+005EA33C: add          r0, sp, #0x30
+005EA33E: blx          #0x4a724c
+005EA342: add          r0, sp, #0x10
+005EA344: adr          r2, #0x32c
+005EA346: add          r3, sp, #0x30
+005EA348: mov          r1, sb
+005EA34A: blx          #0x4a7258
+005EA34E: add          r0, sp, #0x10
+005EA350: blx          #0x4a7264
+005EA354: vmov         s0, r0
+005EA358: add          r0, sp, #0x10
+005EA35A: vstr         s0, [r4, #0x1f0]
+005EA35E: blx          #0x4a4ff0
+005EA362: add          r0, sp, #0x30
+005EA364: blx          #0x4a4ff0
+005EA5EC: raw=40540000 relocated=40540000
+005EA5F0: raw=00A552A6 relocated=00A552A6
+005EA5F4: raw=005F9D2C relocated=005F9D2C

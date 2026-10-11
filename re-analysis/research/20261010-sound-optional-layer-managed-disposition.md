@@ -1,0 +1,11 @@
+# Q14-021: shipped managed optional-layer entry check
+
+Checkpoint661; queue5, decisions only, scope guard reread before each step. Primary `20261010-sound-optional-layer-managed-check.json`; reproducible metadata/name extraction `20261010-sound-optional-layer-managed-check.py`. The managed assemblies are authority2 evidence for app inputs; this does not reproduce Unity screens or flows. Each of all78 shipped Managed/*.dll assemblies has its SHA256 and import counts in the witness.
+
+OL661A: all91 ImplMap native-import records contain zero of the five exact mangled optional audio-layer entries identified by OL649. Exact MethodDef/MemberRef simple or mangled names and raw ASCII/UTF16 name navigation likewise yield no candidate. This proves only absence of those declared imports/names in that finite shipped managed population; reflection, computed pointers, messages, other wrapper names and engine-internal paths are not excluded.
+
+OL661B: Assembly-CSharp.dll SHA256dda77a5202b45a00eff40925624a1275b76ba1743e9412fd2d1e88091e618274 positively declares24 native imports,22 into cozmoEngine: startup/shutdown/wifi, clipboard, game/viz transport, background transfers, experiment, Breakpad, device-ID path and Unity_DAS operations. The other two imports are BlueDoveMediaRender InitNDK/EasyMovieTextureRender. No optional layer manager producer is identified by these declaration records; ordinary game-to-engine messages remain an input boundary rather than an absence argument.
+
+Q14-021 remains PARTIAL: establish an admitted shipped producer into one of AddLayer/AddPersistentLayer/AddToPersistentLayer/RemovePersistentLayer/GenerateGlitchAudio, or a complete bounded exclusion proof. OL649's27-companion-library check and OL661's78-managed-assembly check are now explicit finite evidence, not a global “app never supplies audio layers” claim. LI455/LF454 selected constructor/compositor/conditional dispatch are retained; no optional generator/creator descendant is newly extracted without a positive input.
+
+out of scope: loader/metadata infrastructure, layer backing/storage and per-sample noise/mixing bodies. Counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL. No production, manifest, inventory, hardware or Q15 edit.

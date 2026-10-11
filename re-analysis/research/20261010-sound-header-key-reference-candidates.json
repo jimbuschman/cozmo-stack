@@ -1,0 +1,13 @@
+{
+  "target": "0x108d9a0",
+  "scope": "ARM literal-load plus same-register PC add within80 bytes; navigation only, no absence proof",
+  "candidates": [
+    {
+      "load": "0x9b2268",
+      "literal": "0x9b2310",
+      "value": "0x6db72c",
+      "add_pc": "0x9b226c",
+      "kind": "pc-relative"
+    }
+  ]
+}

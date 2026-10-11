@@ -1,0 +1,47 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A54A30..0x00A54AB8 exclusive; ARM;
+00A54A30: ldr          r2, [r0, #0xd4]
+00A54A34: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A54A38: sub          sp, sp, #0x74
+00A54A3C: ldr          r7, [r2, #0xc]
+00A54A40: add          sl, r0, #0x100
+00A54A44: str          r2, [sp, #0x4c]
+00A54A48: mov          r5, r0
+00A54A4C: ldr          r1, [pc, #0x4ac] ; word[00A54F00]=005EB828
+00A54A50: add          r2, r7, #0x158
+00A54A54: ldr          r3, [r0, #0xec]
+00A54A58: add          r4, sp, #0x34
+00A54A5C: add          r1, pc, r1
+00A54A60: str          r1, [sp, #0xc]
+00A54A64: ldm          r2, {r0, r1, r2}
+00A54A68: stm          r4, {r0, r1, r2}
+00A54A6C: mov          r2, r7
+00A54A70: mov          r0, sl
+00A54A74: mov          r1, r4
+00A54A78: bl           #0xa5321c
+00A54A7C: cmp          r0, #1
+00A54A80: mov          r6, r0
+00A54A84: beq          #0xa54a98
+00A54A88: mov          r6, #2
+00A54A8C: mov          r0, r6
+00A54A90: add          sp, sp, #0x74
+00A54A94: pop          {r4, r5, r6, r7, r8, sb, sl, fp, pc}
+00A54A98: ldr          r3, [pc, #0x464] ; word[00A54F04]=005C79CC
+00A54A9C: add          r1, sp, #0x2c
+00A54AA0: ldr          r2, [r5, #0xec]
+00A54AA4: add          sb, r5, #0x370
+00A54AA8: ldr          r0, [pc, #0x458] ; word[00A54F08]=005C79B8
+00A54AAC: add          r3, pc, r3
+00A54AB0: str          sl, [sp, #0x50]
+00A54AB4: mov          r8, #0
+01040100: raw=0108D9DC relocated=0108D9DC
+01040104: raw=0099D8E8 relocated=0099D8E8
+01040108: raw=0108DFA8 relocated=0108DFA8
+0104010C: raw=0101C400 relocated=0101C400
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+010400A8: raw=01052428 relocated=01052428
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+01052428: raw=FFFFFFFF relocated=FFFFFFFF

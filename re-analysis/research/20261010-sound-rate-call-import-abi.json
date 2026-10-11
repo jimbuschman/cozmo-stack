@@ -1,0 +1,26 @@
+[
+  {
+    "thunk": "0x4b3e70",
+    "slot": "0x104575c",
+    "relocation": "TYPE.ARM_JUMP_SLOT",
+    "symbol": "__aeabi_idiv"
+  },
+  {
+    "thunk": "0x4be310",
+    "slot": "0x1048e3c",
+    "relocation": "TYPE.ARM_JUMP_SLOT",
+    "symbol": "__aeabi_uidiv"
+  },
+  {
+    "thunk": "0x4baa40",
+    "slot": "0x1047b4c",
+    "relocation": "TYPE.ARM_JUMP_SLOT",
+    "symbol": "__aeabi_l2f"
+  },
+  {
+    "thunk": "0x4a6694",
+    "slot": "0x1040f68",
+    "relocation": "TYPE.ARM_JUMP_SLOT",
+    "symbol": "__aeabi_uidivmod"
+  }
+]

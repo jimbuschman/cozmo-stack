@@ -1,0 +1,9 @@
+{
+  "literalInstruction": "69E4D6 LDR.W r0,[PC,3A8]",
+  "literalAddress": "69E880",
+  "rawLiteral": "009A036A",
+  "actualAddInstruction": "69E4DE ADD r0,PC (Thumb PC=instruction+4)",
+  "computedAddress": "0x103e84c",
+  "relocationType": "TYPE.ARM_GLOB_DAT",
+  "symbol": "__stack_chk_guard"
+}

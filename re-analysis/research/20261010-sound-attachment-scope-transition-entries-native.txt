@@ -1,0 +1,56 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A33BF0..0x00A33C20 exclusive; ARM;
+00A33BF0: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+00A33BF4: sub          sp, sp, #0x4c
+00A33BF8: ldr          r8, [pc, #0x650] ; word[00A34250]=0060C684
+00A33BFC: ldr          r3, [pc, #0x650] ; word[00A34254]=FFFFFE08
+00A33C00: add          r8, pc, r8
+00A33C04: str          r0, [sp, #0x14]
+00A33C08: str          r1, [sp, #0x20]
+00A33C0C: ldr          r3, [r8, r3]
+00A33C10: ldr          r2, [r3]
+00A33C14: str          r3, [sp, #0x24]
+00A33C18: ldr          r3, [r2, #0x2c]
+00A33C1C: add          r3, r3, #1
+RANGE 0x00A3538C..0x00A353D8 exclusive; ARM;
+00A3538C: push         {r4, r5, r6, lr}
+00A35390: mov          r4, r0
+00A35394: bl           #0x9b0ae8
+00A35398: cmp          r0, #1
+00A3539C: popne        {r4, r5, r6, pc}
+00A353A0: ldr          r3, [pc, #0x260] ; word[00A35608]=0060AC88
+00A353A4: mov          r5, #0
+00A353A8: mvn          r6, #0
+00A353AC: str          r5, [r4, #0xb8]
+00A353B0: str          r5, [r4, #0xac]
+00A353B4: mov          r1, #0x208
+00A353B8: ldr          r3, [pc, r3]
+00A353BC: str          r6, [r4, #0xb4]
+00A353C0: ldr          r0, [r3]
+00A353C4: bl           #0xa7a7f4
+00A353C8: cmp          r0, r5
+00A353CC: mov          r3, r0
+00A353D0: str          r0, [r4, #0xbc]
+00A353D4: beq          #0xa355d4
+RANGE 0x00A35838..0x00A35844 exclusive; ARM;
+00A35838: ldrb         r1, [r0, #0x34]
+00A3583C: mov          r2, #0
+00A35840: mov          ip, #0
+RANGE 0x00A35D44..0x00A35D84 exclusive; ARM;
+00A35D44: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+00A35D48: mov          r5, r1
+00A35D4C: ldrb         r1, [r1, #0x18]
+00A35D50: mov          r4, r0
+00A35D54: ldrb         r3, [r0, #0x34]
+00A35D58: ldr          r0, [r5, #4]
+00A35D5C: cmp          r1, #0
+00A35D60: ldrb         r6, [r5, #0x1a]
+00A35D64: bfi          r3, r1, #0, #1
+00A35D68: vldr         s15, [r5, #8]
+00A35D6C: bfi          r3, r6, #2, #1
+00A35D70: str          r0, [r4]
+00A35D74: strb         r3, [r4, #0x34]
+00A35D78: vldr         s14, [r5, #0xc]
+00A35D7C: beq          #0xa35e38
+00A35D80: vldr         s12, [pc, #0x284] ; word[00A3600C]=3D4CCCCD
