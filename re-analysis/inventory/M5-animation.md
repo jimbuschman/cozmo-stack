@@ -831,3 +831,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M5-018 | Note: owner of ShouldProcessAnimationFrame (overlap with M3-013); readiness tail -> M6-027. | IMPLEMENTATION_GAP |
 | M5-022 | Title narrowed: AbortAll is M4-026's (overlap ruling); keeps SendAbortAnimation and the failed send; handoff evidence added. | IMPLEMENTATION_GAP |
 | M5-038 | Note: owner of the sleep factory; lift child M4-028, AddAction M8-017. | RECOVERABLE_GAP |
+
+
+## Final settling pass (manager, 2026-10-11; research/20261011-m5-settling-pass.md)
+
+| Change | Records |
+| --- | --- |
+| Hold EXACT_SOURCE | M5-004, 007, 012, 015, 019, 025, 026 |
+| Back to IMPLEMENTATION_GAP (defects, mostly logs) | M5-001, 002, 006, 008, 009, 010, 016, 023, 024, 028, 029, 033, 034 |
+| Defects on open records | M5-003 (log), 005, 011, 014, 017, 020, 022, 027, 031, 032 |
+| RECOVERABLE_GAP read, now IMPLEMENTATION_GAP | M5-037, 038, 039 |
+| New | M5-040 ClipWarn (RG), M5-041 DeviceAudio step (IG), M5-042 SDK/viz calls (CP), M5-043 +0x28 add path (RG), M5-044 TLC teardown (RG) |

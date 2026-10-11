@@ -61,6 +61,8 @@ stands. Nothing new starts outside the current layer.
 - the verification packets;
 - the operator's robot run for the HARDWARE_ONLY records.
 
+**M5 (prepared in parallel, 2026-10-11):** the Opus settling pass FAILED (`research/20261011-m5-settling-pass.md`): 7 hold, 13 EXACT_SOURCE back to IMPLEMENTATION_GAP (mostly unported logs), behaviour fixes in M5-001/005/008/011/014/017/022/027/032, M5-037/038/039 read, 5 new records (M5-040..044). M5 re-approved. Log/fix rows are being extracted (Opus); the research Codex reads M5-030/040/043/044. The M5 build job follows M3+M4 acceptance.
+
 **Pinned:**
 - M4-027's Touch/Cliff teardown (no C# objects yet);
 - the cv::Exception catcher (M11);
