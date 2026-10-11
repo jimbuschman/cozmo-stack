@@ -1,0 +1,17 @@
+# Q14-024/109/134 paired/block constant-load controls, checkpoint874
+
+Scope guard reread before every step. The original descriptor population and key inputs can change parameter values; this is navigation for those inputs only. No storage/DSP body descent. Baseline812's original LOAD maps, literal/GOT reads, seed enumeration, flags and finite worklist are retained verbatim apart from the documented transfer extension and terminal PC-load handling. Baseline SHA256917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf.
+
+`-model.py` adds unindexed, non-writeback LDRD and LDM IA/IB/DB. Constants come only from literal/GOT words: never initial BSS, object, stack or heap contents. A known mutable address can emit a read-overlap observation but supplies no register value. LDM base-in-list is supported without writeback; writeback/base-in-list, user-bank forms, DA and unmodelled layouts remain unknown. PC loaded by a block terminates local navigation instead of inventing fallthrough. Seed enumeration remains812's scalar-literal/MOVW enumeration: a pair/block that needs a different first seed is not certified covered. This is a bounded model, not a complete alias analysis or actual mode/admission proof.
+
+| Step | Primary evidence / fixture | Result / remaining boundary |
+|---|---|---|
+| Paired load |9AF358 `ldrd r2,r3,[sp,48]`; SP explicitly10400A0 |Actual Unicorn count1 and model both read GOT10400E8/EC as108D8DC/1052444. This is an instruction control, not actual SP admission. |
+| Increment-before |9B227C `ldmib r2,{r0,r1}`; R2 explicitly10400E4 |Both read the same two GOT words in the actual architectural register order. No key value inferred. |
+| Increment-after with writeback |9A5658 `ldm lr!,{r0-r3}`; LR explicitly10400E8 |Both read four GOT words E8..F4, including108E330/108D8FC, and advance LR to10400F8. |
+| Decrement-before / base in list |9B7EE8 `ldmdb r2,{r1,r2}`; R2 explicitly10400F0 |Both read E8/EC into R1/R2; no writeback. The newly loaded R2 replaces the old base. |
+| Mutable key guard |9B227C; R2 actual key address108D9A0 with explicit nonzero four-word fixture |Native reads fixture K1/K2=55667788/99AABBCC; the model leaves R0/R1 UNKNOWN. Thus the model does not turn shipped BSS bytes into runtime key constants. |
+
+`-native-witness.py/.json` maps actual ELF LOAD bytes and runs one actual ARM instruction per case with Unicorn2.1.4. All five independent native controls pass. Engine SHA25602263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1. Three existing760/761 primary pointer-observation regressions also pass under the extended model; these check retained navigation, not actual factory/key admission. No per-sample body or allocator/registry implementation was run.
+
+Exactly open remains024's concrete A3B684 object/caller or A3B694 ID/type/caller and later descriptor writes/escape before actual getter ID/field consumption;109/134's four-key initialization/mutation/escape bound to admitted bank input. Neither raw ELF GOT words nor fixture bases certify runtime binding. Q14-024/109/134 remain PARTIAL, AUDIBLE.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; no manifest/inventory/production/PROJECT_STATE/hardware/Q15 changes. The next bounded target pass uses this newly controlled transfer form; paid scalar-only entry/interior/direct-PC fronts stay stopped. out of scope: registry/hash/backing and per-sample DSP implementations.

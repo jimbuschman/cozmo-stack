@@ -1,0 +1,189 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "model_sha256": "ca0f5ef8e468c6263e70c338a2545193991c4a15cbde3f7da0b601eb22219882",
+  "baseline_sha256": "917ad4ba4a8d896fba5993581c99af2dcfcf98062e234c7c930724f07aa9c5cf",
+  "unicorn_version": "2.1.4",
+  "GOT_words": {
+    "010400E8": "0108D8DC",
+    "010400EC": "01052444",
+    "010400F0": "0108E330",
+    "010400F4": "0108D8FC"
+  },
+  "boundary": "One shipped ARM instruction per case; explicit base fixtures and raw mapped ELF GOT. Native values checked independently by Unicorn. No caller admission, full alias completeness, key initialization or atomic snapshot claim. Mutable key loads emit navigation reads but never constant values.",
+  "cases": [
+    {
+      "instruction_address": "009AF358",
+      "instruction_hex": "d824cde1",
+      "fixture": "paired GOT fixture",
+      "base_register": "sp",
+      "base_value": "010400A0",
+      "native": {
+        "r2": "0108D8DC",
+        "r3": "01052444"
+      },
+      "model": {
+        "r2": "0108D8DC",
+        "r3": "01052444"
+      }
+    },
+    {
+      "instruction_address": "009B227C",
+      "instruction_hex": "030092e9",
+      "fixture": "IB GOT fixture",
+      "base_register": "r2",
+      "base_value": "010400E4",
+      "native": {
+        "r0": "0108D8DC",
+        "r1": "01052444"
+      },
+      "model": {
+        "r0": "0108D8DC",
+        "r1": "01052444"
+      }
+    },
+    {
+      "instruction_address": "009A5658",
+      "instruction_hex": "0f00bee8",
+      "fixture": "IA/writeback GOT fixture",
+      "base_register": "lr",
+      "base_value": "010400E8",
+      "native": {
+        "r0": "0108D8DC",
+        "r1": "01052444",
+        "r2": "0108E330",
+        "r3": "0108D8FC",
+        "lr": "010400F8"
+      },
+      "model": {
+        "r0": "0108D8DC",
+        "r1": "01052444",
+        "r2": "0108E330",
+        "r3": "0108D8FC",
+        "lr": "010400F8"
+      }
+    },
+    {
+      "instruction_address": "009B7EE8",
+      "instruction_hex": "060012e9",
+      "fixture": "DB/base-in-list without writeback GOT fixture",
+      "base_register": "r2",
+      "base_value": "010400F0",
+      "native": {
+        "r1": "0108D8DC",
+        "r2": "01052444"
+      },
+      "model": {
+        "r1": "0108D8DC",
+        "r2": "01052444"
+      }
+    },
+    {
+      "instruction_address": "009B227C",
+      "instruction_hex": "030092e9",
+      "fixture": "mutable keys must stay unknown",
+      "base_register": "r2",
+      "base_value": "0108D9A0",
+      "native": {
+        "r0": "55667788",
+        "r1": "99AABBCC"
+      },
+      "model": {
+        "r0": "UNKNOWN",
+        "r1": "UNKNOWN"
+      }
+    }
+  ],
+  "existing_primary_pointer_regressions": [
+    {
+      "label": "761 existing hook load/call",
+      "target": "00984930",
+      "seed": "0097D778",
+      "events": [
+        {
+          "address": "0097D77C",
+          "mode": "ARM",
+          "kind": "GOT-pointer",
+          "effective": "00984930",
+          "instruction": "ldr r0, [pc, r0]",
+          "seeds": [
+            "0097D778"
+          ]
+        },
+        {
+          "address": "0097D77C",
+          "mode": "ARM",
+          "kind": "formed-r0",
+          "effective": "00984930",
+          "instruction": "ldr r0, [pc, r0]",
+          "seeds": [
+            "0097D778"
+          ]
+        },
+        {
+          "address": "0097D780",
+          "mode": "ARM",
+          "kind": "live-r0-at-call",
+          "effective": "00984930",
+          "instruction": "bl #0x9a5e64",
+          "seeds": [
+            "0097D778"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "761 supplied hook publication",
+      "target": "00984930",
+      "seed": "009A5E64",
+      "events": [
+        {
+          "address": "009A5E6C",
+          "mode": "ARM",
+          "kind": "possible-stored-pointer-value",
+          "effective": "00984930",
+          "instruction": "str r0, [r3, #0x100]",
+          "seeds": [
+            "009A5E64"
+          ]
+        },
+        {
+          "address": "009A5E70",
+          "mode": "ARM",
+          "kind": "possible-returned-pointer",
+          "effective": "00984930",
+          "instruction": "bx lr",
+          "seeds": [
+            "009A5E64"
+          ]
+        }
+      ]
+    },
+    {
+      "label": "760 initialized context return",
+      "target": "0108D8D0",
+      "seed": "0099F164",
+      "events": [
+        {
+          "address": "0099F16C",
+          "mode": "ARM",
+          "kind": "formed-r0",
+          "effective": "0108D8D0",
+          "instruction": "add r0, r0, #0x68",
+          "seeds": [
+            "0099F164"
+          ]
+        },
+        {
+          "address": "0099F170",
+          "mode": "ARM",
+          "kind": "possible-returned-pointer",
+          "effective": "0108D8D0",
+          "instruction": "pop {r3, r4, r5, pc}",
+          "seeds": [
+            "0099F164"
+          ]
+        }
+      ]
+    }
+  ]
+}
