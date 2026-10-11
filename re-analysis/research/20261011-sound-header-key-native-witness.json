@@ -1,0 +1,1436 @@
+{
+  "boundary": "Actual 9B21F4 instructions; six shipped headers, controlled key words. Reader and skip are ABI fixtures returning exact bytes/count and preserving header during skip. No runtime key, buffer immutability, encrypted-input admission, file-loader or all-caller proof. K3 exit flag already paid; this is a reference witness, not a new obligation.",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "archive_sha256": "d889b6e82606be8e284fedde44daecdbd5406f72bf5c68a1396f319eeecf6145",
+  "unicorn_version": "2.1.4",
+  "cases": [
+    {
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "header_after_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000000",
+        "FFFFFFFF",
+        "12345678",
+        "FFFFFFFF"
+      ],
+      "header_before_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "header_after_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000001",
+        "89ABCDEF",
+        "76543210",
+        "12345678"
+      ],
+      "header_before_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "header_after_hex": "79000000815130df10325476785634126b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000078",
+        "00000001",
+        "00000002",
+        "00010000"
+      ],
+      "header_before_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "header_after_hex": "000000006f9c9b5602000000000001006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "chunk_size": 24,
+      "keys_hex": [
+        "FFFFFFFF",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "header_after_hex": "87ffffff6e9c9b5600000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "chunk_size": 24,
+      "keys_hex": [
+        "80000000",
+        "00000000",
+        "00000000",
+        "00000001"
+      ],
+      "header_before_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "header_after_hex": "780000806e9c9b5600000000010000006b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Dev_Debug.bnk",
+      "bank_sha256": "8385b5a53b7e60a6d5e0a34c68dc35ee41ad92768e6565d6fb9885966fddbf71",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00010000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000006e9c9b5600000000000000006b0a0000",
+      "header_after_hex": "780001006e9c9b5600000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "header_after_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000000",
+        "FFFFFFFF",
+        "12345678",
+        "FFFFFFFF"
+      ],
+      "header_before_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "header_after_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000001",
+        "89ABCDEF",
+        "76543210",
+        "12345678"
+      ],
+      "header_before_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "header_after_hex": "79000000e46892071c325476785634126b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000078",
+        "00000001",
+        "00000002",
+        "00010000"
+      ],
+      "header_before_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "header_after_hex": "000000000aa5398e0e000000000001006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "chunk_size": 32,
+      "keys_hex": [
+        "FFFFFFFF",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "header_after_hex": "87ffffff0ba5398e0c000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "chunk_size": 32,
+      "keys_hex": [
+        "80000000",
+        "00000000",
+        "00000000",
+        "00000001"
+      ],
+      "header_before_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "header_after_hex": "780000800ba5398e0c000000010000006b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "English(US)/Cozmo.bnk",
+      "bank_sha256": "7a2770c62f3bf31ee4f77389d3a147c85768034bb29c9c84e913a3284a5efbe8",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00010000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000000ba5398e0c000000000000006b0a0000",
+      "header_after_hex": "780001000ba5398e0c000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000233ac65000000000000000006b0a0000",
+      "header_after_hex": "78000000233ac65000000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000000",
+        "FFFFFFFF",
+        "12345678",
+        "FFFFFFFF"
+      ],
+      "header_before_hex": "78000000233ac65000000000000000006b0a0000",
+      "header_after_hex": "78000000233ac65000000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000001",
+        "89ABCDEF",
+        "76543210",
+        "12345678"
+      ],
+      "header_before_hex": "78000000233ac65000000000000000006b0a0000",
+      "header_after_hex": "79000000ccf76dd910325476785634126b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000078",
+        "00000001",
+        "00000002",
+        "00010000"
+      ],
+      "header_before_hex": "78000000233ac65000000000000000006b0a0000",
+      "header_after_hex": "00000000223ac65002000000000001006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "chunk_size": 32,
+      "keys_hex": [
+        "FFFFFFFF",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000233ac65000000000000000006b0a0000",
+      "header_after_hex": "87ffffff233ac65000000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "chunk_size": 32,
+      "keys_hex": [
+        "80000000",
+        "00000000",
+        "00000000",
+        "00000001"
+      ],
+      "header_before_hex": "78000000233ac65000000000000000006b0a0000",
+      "header_after_hex": "78000080233ac65000000000010000006b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Init.bnk",
+      "bank_sha256": "fc4a48e1562875b045aa026e90c4389344410545a89bccd4725ab8c7141e2283",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00010000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000233ac65000000000000000006b0a0000",
+      "header_after_hex": "78000100233ac65000000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "header_after_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000000",
+        "FFFFFFFF",
+        "12345678",
+        "FFFFFFFF"
+      ],
+      "header_before_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "header_after_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000001",
+        "89ABCDEF",
+        "76543210",
+        "12345678"
+      ],
+      "header_before_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "header_after_hex": "7900000039fb5b6410325476785634126b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00000078",
+        "00000001",
+        "00000002",
+        "00010000"
+      ],
+      "header_before_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "header_after_hex": "00000000d736f0ed02000000000001006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "chunk_size": 32,
+      "keys_hex": [
+        "FFFFFFFF",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "header_after_hex": "87ffffffd636f0ed00000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "chunk_size": 32,
+      "keys_hex": [
+        "80000000",
+        "00000000",
+        "00000000",
+        "00000001"
+      ],
+      "header_before_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "header_after_hex": "78000080d636f0ed00000000010000006b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "Music.bnk",
+      "bank_sha256": "424eace23a070f216ea81572fbfbf2f35cf0248d26287e26a9b72c3d39b4a77c",
+      "chunk_size": 32,
+      "keys_hex": [
+        "00010000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000d636f0ed00000000000000006b0a0000",
+      "header_after_hex": "78000100d636f0ed00000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 12,
+          "actual_fixture": 12,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000003e5d701700000000000000006b0a0000",
+      "header_after_hex": "780000003e5d701700000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000000",
+        "FFFFFFFF",
+        "12345678",
+        "FFFFFFFF"
+      ],
+      "header_before_hex": "780000003e5d701700000000000000006b0a0000",
+      "header_after_hex": "780000003e5d701700000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000001",
+        "89ABCDEF",
+        "76543210",
+        "12345678"
+      ],
+      "header_before_hex": "780000003e5d701700000000000000006b0a0000",
+      "header_after_hex": "79000000d190db9e10325476785634126b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000078",
+        "00000001",
+        "00000002",
+        "00010000"
+      ],
+      "header_before_hex": "780000003e5d701700000000000000006b0a0000",
+      "header_after_hex": "000000003f5d701702000000000001006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "chunk_size": 24,
+      "keys_hex": [
+        "FFFFFFFF",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000003e5d701700000000000000006b0a0000",
+      "header_after_hex": "87ffffff3e5d701700000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "chunk_size": 24,
+      "keys_hex": [
+        "80000000",
+        "00000000",
+        "00000000",
+        "00000001"
+      ],
+      "header_before_hex": "780000003e5d701700000000000000006b0a0000",
+      "header_after_hex": "780000803e5d701700000000010000006b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "SFX.bnk",
+      "bank_sha256": "f805b233934e8079ea9f2645c6d941e229a9248b3d25599fe469bbc24f1171f4",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00010000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "780000003e5d701700000000000000006b0a0000",
+      "header_after_hex": "780001003e5d701700000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000b70d775c00000000000000006b0a0000",
+      "header_after_hex": "78000000b70d775c00000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000000",
+        "FFFFFFFF",
+        "12345678",
+        "FFFFFFFF"
+      ],
+      "header_before_hex": "78000000b70d775c00000000000000006b0a0000",
+      "header_after_hex": "78000000b70d775c00000000000000006b0a0000",
+      "return": 1,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000001",
+        "89ABCDEF",
+        "76543210",
+        "12345678"
+      ],
+      "header_before_hex": "78000000b70d775c00000000000000006b0a0000",
+      "header_after_hex": "7900000058c0dcd510325476785634126b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00000078",
+        "00000001",
+        "00000002",
+        "00010000"
+      ],
+      "header_before_hex": "78000000b70d775c00000000000000006b0a0000",
+      "header_after_hex": "00000000b60d775c02000000000001006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "chunk_size": 24,
+      "keys_hex": [
+        "FFFFFFFF",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000b70d775c00000000000000006b0a0000",
+      "header_after_hex": "87ffffffb70d775c00000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "chunk_size": 24,
+      "keys_hex": [
+        "80000000",
+        "00000000",
+        "00000000",
+        "00000001"
+      ],
+      "header_before_hex": "78000000b70d775c00000000000000006b0a0000",
+      "header_after_hex": "78000080b70d775c00000000010000006b0a0000",
+      "return": 64,
+      "manager64": 1,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    },
+    {
+      "bank": "UI.bnk",
+      "bank_sha256": "6ff4cba498fec24c8d1c68e1c946a0a6f378e67af93d26eb67cce74966f46301",
+      "chunk_size": 24,
+      "keys_hex": [
+        "00010000",
+        "00000000",
+        "00000000",
+        "00000000"
+      ],
+      "header_before_hex": "78000000b70d775c00000000000000006b0a0000",
+      "header_after_hex": "78000100b70d775c00000000000000006b0a0000",
+      "return": 64,
+      "manager64": 0,
+      "interface_fixtures": [
+        {
+          "interface": "read",
+          "length": 8,
+          "return": 1
+        },
+        {
+          "interface": "read",
+          "length": 20,
+          "return": 1
+        },
+        {
+          "interface": "skip",
+          "requested": 4,
+          "actual_fixture": 4,
+          "return": 1,
+          "header_unmodified_by_fixture": true
+        }
+      ]
+    }
+  ]
+}
