@@ -1,0 +1,93 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "navigation_seed_count": 51,
+  "navigation_event_count": 6,
+  "cap_diagnostics": [
+    "LIMIT local state cap at 0059347C",
+    "LIMIT local state cap at 00593494",
+    "LIMIT local state cap at 005934AC",
+    "LIMIT local state cap at 005934C6",
+    "LIMIT local state cap at 005934DE"
+  ],
+  "attributions": [
+    {
+      "remove_entry": "0058E391",
+      "remove_dynamic_symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_22BackpackLightsKeyFrameEE21RemovePersistentLayerEhi",
+      "prefix_control": {
+        "start": "0058E4A2 Thumb",
+        "stop": "0058E4A6",
+        "R1": "00BF0000",
+        "instruction_count": 2
+      },
+      "add_call": "0058E4B6",
+      "plt": "004AEAC4",
+      "plt_words": [
+        "E28FC60B",
+        "E28CCA95",
+        "E5BCF0AC"
+      ],
+      "got": "01043B78",
+      "relocation_type": "TYPE.ARM_JUMP_SLOT",
+      "add_import_symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_22BackpackLightsKeyFrameEE8AddLayerERKNSt6__ndk112basic_stringIcNS4_11char_traitsIcEENS4_9allocatorIcEEEERKNS0_10Animations5TrackIS2_EEj",
+      "add_defined_symbols": [
+        {
+          "value": "0058E0A9",
+          "name": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_22BackpackLightsKeyFrameEE8AddLayerERKNSt6__ndk112basic_stringIcNS4_11char_traitsIcEENS4_9allocatorIcEEEERKNS0_10Animations5TrackIS2_EEj"
+        }
+      ]
+    },
+    {
+      "remove_entry": "0058EB01",
+      "remove_dynamic_symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_22ProceduralFaceKeyFrameEE21RemovePersistentLayerEhi",
+      "prefix_control": {
+        "start": "0058EC24 Thumb",
+        "stop": "0058EC28",
+        "R1": "00BF0000",
+        "instruction_count": 2
+      },
+      "add_call": "0058EC38",
+      "plt": "004AE9F8",
+      "plt_words": [
+        "E28FC60B",
+        "E28CCA95",
+        "E5BCF134"
+      ],
+      "got": "01043B34",
+      "relocation_type": "TYPE.ARM_JUMP_SLOT",
+      "add_import_symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_22ProceduralFaceKeyFrameEE8AddLayerERKNSt6__ndk112basic_stringIcNS4_11char_traitsIcEENS4_9allocatorIcEEEERKNS0_10Animations5TrackIS2_EEj",
+      "add_defined_symbols": [
+        {
+          "value": "0058E815",
+          "name": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_22ProceduralFaceKeyFrameEE8AddLayerERKNSt6__ndk112basic_stringIcNS4_11char_traitsIcEENS4_9allocatorIcEEEERKNS0_10Animations5TrackIS2_EEj"
+        }
+      ]
+    },
+    {
+      "remove_entry": "0058EE4D",
+      "remove_dynamic_symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE21RemovePersistentLayerEhi",
+      "prefix_control": {
+        "start": "0058EF36 Thumb",
+        "stop": "0058EF3A",
+        "R1": "00BF0000",
+        "instruction_count": 2
+      },
+      "add_call": "0058EF4A",
+      "plt": "004AEB30",
+      "plt_words": [
+        "E28FC60B",
+        "E28CCA95",
+        "E5BCF064"
+      ],
+      "got": "01043B9C",
+      "relocation_type": "TYPE.ARM_JUMP_SLOT",
+      "add_import_symbol": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE8AddLayerERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEERKNS0_10Animations5TrackIS3_EEj",
+      "add_defined_symbols": [
+        {
+          "value": "0058DB55",
+          "name": "_ZN4Anki5Cozmo18ITrackLayerManagerINS0_12AnimKeyFrame11AudioSampleEE8AddLayerERKNSt6__ndk112basic_stringIcNS5_11char_traitsIcEENS5_9allocatorIcEEEERKNS0_10Animations5TrackIS3_EEj"
+        }
+      ]
+    }
+  ],
+  "boundary": "Primary dynamic symbols and actual caller PLT relocation bind BackpackLights, ProceduralFace and AudioSample template identities. Three two-instruction native prefix controls only; no complete removal or AddLayer body, real manager/tag/control input, or all-alias/capped-window exclusion."
+}

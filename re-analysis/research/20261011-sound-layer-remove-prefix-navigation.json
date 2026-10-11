@@ -1,0 +1,395 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "model_sha256": "ca0f5ef8e468c6263e70c338a2545193991c4a15cbde3f7da0b601eb22219882",
+  "target": "00BF0000",
+  "literal_hex": "52656d6f766500",
+  "native_control": {
+    "start": "0058EF36 Thumb",
+    "stop": "0058EF3A",
+    "R1": "00BF0000",
+    "instructions": 2
+  },
+  "seeds": [
+    {
+      "address": "0058C5DA",
+      "mode": "Thumb",
+      "literal_address": "0058C958",
+      "literal_word": "00663827"
+    },
+    {
+      "address": "0058C5E0",
+      "mode": "Thumb",
+      "literal_address": "0058C95C",
+      "literal_word": "00663847"
+    },
+    {
+      "address": "0058C706",
+      "mode": "Thumb",
+      "literal_address": "0058C92C",
+      "literal_word": "006637A1"
+    },
+    {
+      "address": "0058C730",
+      "mode": "Thumb",
+      "literal_address": "0058C930",
+      "literal_word": "00663780"
+    },
+    {
+      "address": "0058C770",
+      "mode": "Thumb",
+      "literal_address": "0058C934",
+      "literal_word": "00663755"
+    },
+    {
+      "address": "0058C77A",
+      "mode": "Thumb",
+      "literal_address": "0058C938",
+      "literal_word": "0066375A"
+    },
+    {
+      "address": "0058C7D6",
+      "mode": "Thumb",
+      "literal_address": "0058C93C",
+      "literal_word": "00663661"
+    },
+    {
+      "address": "0058C7DA",
+      "mode": "Thumb",
+      "literal_address": "0058C948",
+      "literal_word": "006636F8"
+    },
+    {
+      "address": "0058C7DC",
+      "mode": "Thumb",
+      "literal_address": "0058C940",
+      "literal_word": "00663699"
+    },
+    {
+      "address": "0058C7E0",
+      "mode": "Thumb",
+      "literal_address": "0058C944",
+      "literal_word": "006636DF"
+    },
+    {
+      "address": "0058CDD0",
+      "mode": "Thumb",
+      "literal_address": "0058CF4C",
+      "literal_word": "00663113"
+    },
+    {
+      "address": "0058D9D6",
+      "mode": "Thumb",
+      "literal_address": "0058DACC",
+      "literal_word": "00662558"
+    },
+    {
+      "address": "0058D9DA",
+      "mode": "Thumb",
+      "literal_address": "0058DAD0",
+      "literal_word": "00662588"
+    },
+    {
+      "address": "0058DF60",
+      "mode": "Thumb",
+      "literal_address": "0058E050",
+      "literal_word": "00661FCE"
+    },
+    {
+      "address": "0058DF64",
+      "mode": "Thumb",
+      "literal_address": "0058E054",
+      "literal_word": "00661FFE"
+    },
+    {
+      "address": "0058E3E8",
+      "mode": "Thumb",
+      "literal_address": "0058E538",
+      "literal_word": "00661BBD"
+    },
+    {
+      "address": "0058E3F0",
+      "mode": "Thumb",
+      "literal_address": "0058E53C",
+      "literal_word": "00661BD6"
+    },
+    {
+      "address": "0058E4A2",
+      "mode": "Thumb",
+      "literal_address": "0058E548",
+      "literal_word": "00661B58"
+    },
+    {
+      "address": "0058E6CC",
+      "mode": "Thumb",
+      "literal_address": "0058E7BC",
+      "literal_word": "00661862"
+    },
+    {
+      "address": "0058E6D0",
+      "mode": "Thumb",
+      "literal_address": "0058E7C0",
+      "literal_word": "00661892"
+    },
+    {
+      "address": "0058EB58",
+      "mode": "Thumb",
+      "literal_address": "0058ECF8",
+      "literal_word": "0066144D"
+    },
+    {
+      "address": "0058EB60",
+      "mode": "Thumb",
+      "literal_address": "0058ECFC",
+      "literal_word": "00661468"
+    },
+    {
+      "address": "0058EC24",
+      "mode": "Thumb",
+      "literal_address": "0058ED0C",
+      "literal_word": "006613D6"
+    },
+    {
+      "address": "0058EEAA",
+      "mode": "Thumb",
+      "literal_address": "0058EFD4",
+      "literal_word": "006610FB"
+    },
+    {
+      "address": "0058EEB2",
+      "mode": "Thumb",
+      "literal_address": "0058EFD8",
+      "literal_word": "00661114"
+    },
+    {
+      "address": "0058EF36",
+      "mode": "Thumb",
+      "literal_address": "0058EFDC",
+      "literal_word": "006610C4"
+    },
+    {
+      "address": "005920BE",
+      "mode": "Thumb",
+      "literal_address": "00592164",
+      "literal_word": "0065DF43"
+    },
+    {
+      "address": "0059242E",
+      "mode": "Thumb",
+      "literal_address": "005924A8",
+      "literal_word": "0065DC09"
+    },
+    {
+      "address": "00592432",
+      "mode": "Thumb",
+      "literal_address": "005924AC",
+      "literal_word": "0065DC46"
+    },
+    {
+      "address": "00592D92",
+      "mode": "Thumb",
+      "literal_address": "00593B34",
+      "literal_word": "0065D329"
+    },
+    {
+      "address": "00592E06",
+      "mode": "Thumb",
+      "literal_address": "00593B5C",
+      "literal_word": "0065D2D4"
+    },
+    {
+      "address": "00592E20",
+      "mode": "Thumb",
+      "literal_address": "00593B60",
+      "literal_word": "0065D2C7"
+    },
+    {
+      "address": "00592E24",
+      "mode": "Thumb",
+      "literal_address": "00593B64",
+      "literal_word": "0065D2D3"
+    },
+    {
+      "address": "00592E58",
+      "mode": "Thumb",
+      "literal_address": "00593B6C",
+      "literal_word": "0065D2B4"
+    },
+    {
+      "address": "00592EA2",
+      "mode": "Thumb",
+      "literal_address": "00593B70",
+      "literal_word": "0065D279"
+    },
+    {
+      "address": "00592EAE",
+      "mode": "Thumb",
+      "literal_address": "00593B74",
+      "literal_word": "0065D274"
+    },
+    {
+      "address": "00592F7A",
+      "mode": "Thumb",
+      "literal_address": "00593B88",
+      "literal_word": "0065D1BC"
+    },
+    {
+      "address": "00593036",
+      "mode": "Thumb",
+      "literal_address": "00593B28",
+      "literal_word": "0065D186"
+    },
+    {
+      "address": "005930A2",
+      "mode": "Thumb",
+      "literal_address": "00593B98",
+      "literal_word": "0065D0F0"
+    },
+    {
+      "address": "005930E0",
+      "mode": "Thumb",
+      "literal_address": "00593B7C",
+      "literal_word": "0065D094"
+    },
+    {
+      "address": "00593136",
+      "mode": "Thumb",
+      "literal_address": "00593B90",
+      "literal_word": "0065D02F"
+    },
+    {
+      "address": "005931F8",
+      "mode": "Thumb",
+      "literal_address": "00593B9C",
+      "literal_word": "0065CFA6"
+    },
+    {
+      "address": "005931FC",
+      "mode": "Thumb",
+      "literal_address": "00593BA0",
+      "literal_word": "0065CEFB"
+    },
+    {
+      "address": "00593220",
+      "mode": "Thumb",
+      "literal_address": "00593BA4",
+      "literal_word": "0065CF1C"
+    },
+    {
+      "address": "0059325C",
+      "mode": "Thumb",
+      "literal_address": "00593BAC",
+      "literal_word": "0065CF57"
+    },
+    {
+      "address": "0059347C",
+      "mode": "Thumb",
+      "literal_address": "00593BB8",
+      "literal_word": "0065CD5F"
+    },
+    {
+      "address": "00593494",
+      "mode": "Thumb",
+      "literal_address": "00593BBC",
+      "literal_word": "0065CD50"
+    },
+    {
+      "address": "005934AC",
+      "mode": "Thumb",
+      "literal_address": "00593BC0",
+      "literal_word": "0065CD40"
+    },
+    {
+      "address": "005934C6",
+      "mode": "Thumb",
+      "literal_address": "00593BC4",
+      "literal_word": "0065CD2F"
+    },
+    {
+      "address": "005934DE",
+      "mode": "Thumb",
+      "literal_address": "00593BC8",
+      "literal_word": "0065CD1D"
+    },
+    {
+      "address": "0067AB3C",
+      "mode": "Thumb",
+      "literal_address": "0067ACB0",
+      "literal_word": "005752E9"
+    }
+  ],
+  "events": [
+    {
+      "address": "0058E4A4",
+      "mode": "Thumb",
+      "kind": "formed-r1",
+      "effective": "00BF0000",
+      "instruction": "add r1, pc",
+      "seeds": [
+        "0058E3E8",
+        "0058E3F0",
+        "0058E4A2"
+      ]
+    },
+    {
+      "address": "0058E4AA",
+      "mode": "Thumb",
+      "kind": "live-r1-at-call",
+      "effective": "00BF0000",
+      "instruction": "blx #0x4a7330",
+      "seeds": [
+        "0058E3E8",
+        "0058E3F0",
+        "0058E4A2"
+      ]
+    },
+    {
+      "address": "0058EC26",
+      "mode": "Thumb",
+      "kind": "formed-r1",
+      "effective": "00BF0000",
+      "instruction": "add r1, pc",
+      "seeds": [
+        "0058EB58",
+        "0058EB60",
+        "0058EC24"
+      ]
+    },
+    {
+      "address": "0058EC2C",
+      "mode": "Thumb",
+      "kind": "live-r1-at-call",
+      "effective": "00BF0000",
+      "instruction": "blx #0x4a7330",
+      "seeds": [
+        "0058EB58",
+        "0058EB60",
+        "0058EC24"
+      ]
+    },
+    {
+      "address": "0058EF38",
+      "mode": "Thumb",
+      "kind": "formed-r1",
+      "effective": "00BF0000",
+      "instruction": "add r1, pc",
+      "seeds": [
+        "0058EEAA",
+        "0058EEB2",
+        "0058EF36"
+      ]
+    },
+    {
+      "address": "0058EF3E",
+      "mode": "Thumb",
+      "kind": "live-r1-at-call",
+      "effective": "00BF0000",
+      "instruction": "blx #0x4a7330",
+      "seeds": [
+        "0058EEAA",
+        "0058EEB2",
+        "0058EF36"
+      ]
+    }
+  ],
+  "limit": "Exact original Remove-prefix PC-literal/composed-PC supplier navigation only. MOVW/MOVT, distant/computed/copied/GOT/string-content aliases and capped windows are not excluded. No callee bodies or actual manager/tag/control admission certified."
+}

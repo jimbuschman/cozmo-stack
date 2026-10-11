@@ -1,0 +1,47 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x004AEAC4..0x004AEAD0 exclusive; ARM;
+004AEAC4: add          ip, pc, #0xb00000
+004AEAC8: add          ip, ip, #0x95000
+004AEACC: ldr          pc, [ip, #0xac]!
+RANGE 0x004AE9F8..0x004AEA04 exclusive; ARM;
+004AE9F8: add          ip, pc, #0xb00000
+004AE9FC: add          ip, ip, #0x95000
+004AEA00: ldr          pc, [ip, #0x134]!
+RANGE 0x004AEB30..0x004AEB3C exclusive; ARM;
+004AEB30: add          ip, pc, #0xb00000
+004AEB34: add          ip, ip, #0x95000
+004AEB38: ldr          pc, [ip, #0x64]!
+RANGE 0x0058E4A2..0x0058E4BA exclusive; Thumb;
+0058E4A2: ldr          r1, [pc, #0xa4] ; word[0058E548]=00661B58
+0058E4A4: add          r1, pc
+0058E4A6: add          r0, sp, #0xc
+0058E4A8: mov          r2, sl
+0058E4AA: blx          #0x4a7330
+0058E4AE: add          r1, sp, #0xc
+0058E4B0: add          r2, sp, #0x34
+0058E4B2: mov          r0, r6
+0058E4B4: movs         r3, #0
+0058E4B6: blx          #0x4aeac4
+RANGE 0x0058EC24..0x0058EC3C exclusive; Thumb;
+0058EC24: ldr          r1, [pc, #0xe4] ; word[0058ED0C]=006613D6
+0058EC26: add          r1, pc
+0058EC28: add          r0, sp, #0xd0
+0058EC2A: mov          r2, sl
+0058EC2C: blx          #0x4a7330
+0058EC30: add          r1, sp, #0xd0
+0058EC32: add          r2, sp, #0x190
+0058EC34: mov          r0, r6
+0058EC36: movs         r3, #0
+0058EC38: blx          #0x4ae9f8
+RANGE 0x0058EF36..0x0058EF4E exclusive; Thumb;
+0058EF36: ldr          r1, [pc, #0xa4] ; word[0058EFDC]=006610C4
+0058EF38: add          r1, pc
+0058EF3A: add          r0, sp, #0xc
+0058EF3C: mov          r2, sb
+0058EF3E: blx          #0x4a7330
+0058EF42: add          r1, sp, #0xc
+0058EF44: add          r2, sp, #0x18
+0058EF46: mov          r0, r6
+0058EF48: movs         r3, #0
+0058EF4A: blx          #0x4aeb30

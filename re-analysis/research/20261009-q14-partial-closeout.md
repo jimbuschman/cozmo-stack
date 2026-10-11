@@ -906,3 +906,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint886 — original alternative event-population decisions
 
 `20261011-sound-mode4-event-population-disposition.md` finds actual publication supplier9CCC14 in addition to paid bank9B3248. Native empty-event factory and six fixtures bind18-byte product/table103AF78,ID/ref,zero10/14,publication attempt and saved-pointer return; three paidE22 empty-branch controls schedule no action. Original mutable-input question also pays concrete9CCD20 action-ID append and eight fixtures:lookup/failure/refcount/link order,first key and conditional same-tail self-link. Both entries have no immediate/raw-pointer/export supplier in this finite check; admission remainsUNKNOWN,not absent.009/034 PARTIAL;stop these bodies/metadata leads.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint887 — original AudioSample removal-prefix suppliers
+
+`20261011-sound-layer-remove-prefix-disposition.md` checks51 original prefix seeds/six observations/five unproved caps. Primary dynamic symbols, actual PLT relocations and three two-instruction native controls attribute two additional handoffs to BackpackLights/ProceduralFace, outside this sound input; stop without tracing their bodies. Audio58EF4A remains paid OL664. No new admitted manager/tag/control/populated-layer input;021 PARTIAL.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
