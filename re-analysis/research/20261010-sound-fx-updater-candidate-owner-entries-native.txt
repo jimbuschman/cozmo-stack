@@ -1,0 +1,50 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009CDAE8..0x009CDB04 exclusive; ARM;
+009CDAE8: push         {r3, r4, r5, r6, r7, r8, sb, lr}
+009CDAEC: mov          r7, r0
+009CDAF0: ldr          r6, [pc, #0xf0] ; word[009CDBE8]=00672570
+009CDAF4: ldr          r6, [pc, r6]
+009CDAF8: ldr          r5, [r6]
+009CDAFC: add          r5, r5, #0xc8
+009CDB00: mov          r0, r5
+RANGE 0x009CDC4C..0x009CDC68 exclusive; ARM;
+009CDC4C: ldr          r1, [r0, #0x28]
+009CDC50: ldr          r3, [pc, #0x128] ; word[009CDD80]=0066D328
+009CDC54: push         {r4, r5, r6, r7, r8, lr}
+009CDC58: lsls         r1, r1, #5
+009CDC5C: ldr          r8, [pc, #0x120] ; word[009CDD84]=00672614
+009CDC60: add          r3, pc, r3
+009CDC64: add          r3, r3, #8
+RANGE 0x009CDDAC..0x009CDDC8 exclusive; ARM;
+009CDDAC: push         {r4, r5, r6, lr}
+009CDDB0: mov          r4, r0
+009CDDB4: ldr          r0, [r0, #0x14]
+009CDDB8: mov          r6, r1
+009CDDBC: mov          r5, r2
+009CDDC0: cmp          r0, #0
+009CDDC4: beq          #0x9cdddc
+RANGE 0x009CDEC4..0x009CDEE0 exclusive; ARM;
+009CDEC4: push         {r3, r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009CDEC8: ldr          r6, [r0, #0x34]
+009CDECC: ldr          r5, [r0, #0x30]
+009CDED0: lsls         sb, r6, #3
+009CDED4: beq          #0x9cdf08
+009CDED8: ldr          r3, [r5]
+009CDEDC: cmp          r3, r1
+RANGE 0x009CE068..0x009CE084 exclusive; ARM;
+009CE068: push         {r4, r5, r6, r7, r8, sb, sl, lr}
+009CE06C: mov          sl, r0
+009CE070: ldr          r4, [sl, #0x24]
+009CE074: mov          r7, r1
+009CE078: ldr          r1, [sl, #0x28]
+009CE07C: mov          r0, #0
+009CE080: mov          r8, r2
+RANGE 0x009CE3B8..0x009CE3D4 exclusive; ARM;
+009CE3B8: push         {r4, r5, r6, r7, r8, sb, sl, fp, lr}
+009CE3BC: mov          r7, r0
+009CE3C0: ldr          r6, [r1, #4]
+009CE3C4: sub          sp, sp, #0x34
+009CE3C8: add          r4, r1, #0xc
+009CE3CC: ldr          r5, [r1, #8]
+009CE3D0: cmn          r6, #1
