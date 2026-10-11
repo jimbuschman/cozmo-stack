@@ -1,0 +1,53 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x00A52CD0..0x00A52D30 exclusive; ARM;
+00A52CD0: beq          #0xa52ce4
+00A52CD4: ldr          r3, [r5, #0xc]
+00A52CD8: ldr          r3, [r3, #0x28]
+00A52CDC: blx          r3
+00A52CE0: ldr          r0, [r4, #4]
+00A52CE4: ldr          r3, [r0]
+00A52CE8: ldr          r3, [r3, #0x20]
+00A52CEC: blx          r3
+00A52CF0: ldr          ip, [r4, #0xb0]
+00A52CF4: add          r3, r4, #0x88
+00A52CF8: mov          r1, r6
+00A52CFC: ldr          ip, [ip, #0xec]
+00A52D00: str          ip, [sp]
+00A52D04: mov          r2, r0
+00A52D08: add          r0, r4, #8
+00A52D0C: bl           #0xa47528
+00A52D10: ldr          r0, [r4, #0x48]
+00A52D14: ldrh         r3, [r4, #0x96]
+00A52D18: mov          r2, #0
+00A52D1C: strb         r2, [r4, #0xb8]
+00A52D20: cmp          r3, r0
+00A52D24: movne        r0, #0x2b
+00A52D28: moveq        r0, #0x2d
+00A52D2C: b            #0xa52c00
+RANGE 0x00A53D54..0x00A53D88 exclusive; ARM;
+00A53D54: ldr          r1, [r1, r3]
+00A53D58: ldr          r3, [r2, #8]
+00A53D5C: blx          r3
+00A53D60: b            #0xa53a54
+00A53D64: ldr          r2, [pc, #0x124] ; word[00A53E90]=FFFFFE1C
+00A53D68: mov          r1, #0x9c
+00A53D6C: ldr          sb, [sp, #8]
+00A53D70: str          r3, [sp, #0x24]
+00A53D74: ldr          r8, [sb, r2]
+00A53D78: ldr          r0, [r8]
+00A53D7C: bl           #0xa7a7f4
+00A53D80: subs         fp, r0, #0
+00A53D84: beq          #0xa53a54
+RANGE 0x00A54BC0..0x00A54BEC exclusive; ARM;
+00A54BC0: bne          #0xa54dd0
+00A54BC4: ldr          r2, [pc, #0x340] ; word[00A54F0C]=FFFFFE1C
+00A54BC8: mov          r1, #0x9c
+00A54BCC: ldr          r4, [sp, #0xc]
+00A54BD0: str          r3, [sp, #0x24]
+00A54BD4: ldr          r3, [r4, r2]
+00A54BD8: ldr          r0, [r3]
+00A54BDC: str          r3, [sp, #0x20]
+00A54BE0: bl           #0xa7a7f4
+00A54BE4: subs         fp, r0, #0
+00A54BE8: beq          #0xa54ec8

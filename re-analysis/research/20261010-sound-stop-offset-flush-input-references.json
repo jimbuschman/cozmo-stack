@@ -1,0 +1,9 @@
+{
+  "targets": [
+    "0xa71634",
+    "0xa716bc"
+  ],
+  "raw_aligned_words": [],
+  "symbols": [],
+  "limit": "Aligned raw-word and exact symbol navigation only; no relative/computed/indirect absence proof."
+}

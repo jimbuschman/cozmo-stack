@@ -3033,3 +3033,18 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint756 — named music stop-offset operation inputs
 
 `20261010-sound-stop-offset-release-input-reconciliation.md`: Seven actual ARM calls bind timed-release event and forced-stop lifetime entries, preserving context/mode/count gates and unlink/owner-clear/stop/release order. These named music contracts are paid;119 retains exhaustive writer/alias proof.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint757 — exact remaining music flush inputs
+
+`20261010-sound-stop-offset-flush-input-dispositions.md` names A71634 manager/context and A716BC manager/raw-mode admission as UNKNOWN; the lone immediate encoding lies inside actual ARM CMP, with no positive aligned raw-entry/symbol reference. Conditional MUC9/MUC10 bodies and SR756 recipients remain paid.119 retains writer/alias and named flush-input gaps, without unreachable or all-caller inference.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint758 — related voice-policy block stores
+
+`20261010-sound-voice-policy-block-store-dispositions.md` binds six regional STM/STRD destinations to local descriptors/argument words, including VoiceInit's PBI158 ->SP34 copy before selected-format setup. Partial memory-PLT navigation remains explicitly limited; no broad copy or alias absence claim.033 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint759 — regional memory destinations and layout gate
+
+`20261010-sound-voice-policy-memory-dispositions.md` corrects ARM rotated-immediate PLT navigation, binds all twelve memory slots and four regional calls: one contiguous-pad call is positively unreachable because actual layout query returns0; selected planar padding retains exact geometry, two9C-byte fills target their separately returned helper products. No whole-voice default/global alias inference.033 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

@@ -1,0 +1,324 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "range": [
+    "0xa53000",
+    "0xa56600"
+  ],
+  "memory_plt_entries": {
+    "0x4a403c": {
+      "slot": "0x10402a0",
+      "name": "__aeabi_memclr4",
+      "instructions": [
+        {
+          "address": "0x4a403c",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4a4040",
+          "bytes": "9cca8ce2",
+          "instruction": "add ip, ip, #156, #20"
+        },
+        {
+          "address": "0x4a4044",
+          "bytes": "5cf2bce5",
+          "instruction": "ldr pc, [ip, #0x25c]!"
+        }
+      ]
+    },
+    "0x4a42ac": {
+      "slot": "0x1040370",
+      "name": "__aeabi_memcpy",
+      "instructions": [
+        {
+          "address": "0x4a42ac",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4a42b0",
+          "bytes": "9cca8ce2",
+          "instruction": "add ip, ip, #156, #20"
+        },
+        {
+          "address": "0x4a42b4",
+          "bytes": "bcf0bce5",
+          "instruction": "ldr pc, [ip, #0xbc]!"
+        }
+      ]
+    },
+    "0x4a4354": {
+      "slot": "0x10403a8",
+      "name": "__aeabi_memcpy4",
+      "instructions": [
+        {
+          "address": "0x4a4354",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4a4358",
+          "bytes": "9cca8ce2",
+          "instruction": "add ip, ip, #156, #20"
+        },
+        {
+          "address": "0x4a435c",
+          "bytes": "4cf0bce5",
+          "instruction": "ldr pc, [ip, #0x4c]!"
+        }
+      ]
+    },
+    "0x4a45dc": {
+      "slot": "0x1040480",
+      "name": "__aeabi_memset",
+      "instructions": [
+        {
+          "address": "0x4a45dc",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4a45e0",
+          "bytes": "9bca8ce2",
+          "instruction": "add ip, ip, #0x9b000"
+        },
+        {
+          "address": "0x4a45e4",
+          "bytes": "9cfebce5",
+          "instruction": "ldr pc, [ip, #0xe9c]!"
+        }
+      ]
+    },
+    "0x4a48ac": {
+      "slot": "0x1040570",
+      "name": "__aeabi_memclr8",
+      "instructions": [
+        {
+          "address": "0x4a48ac",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4a48b0",
+          "bytes": "9bca8ce2",
+          "instruction": "add ip, ip, #0x9b000"
+        },
+        {
+          "address": "0x4a48b4",
+          "bytes": "bcfcbce5",
+          "instruction": "ldr pc, [ip, #0xcbc]!"
+        }
+      ]
+    },
+    "0x4abb00": {
+      "slot": "0x1042b8c",
+      "name": "__aeabi_memset8",
+      "instructions": [
+        {
+          "address": "0x4abb00",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4abb04",
+          "bytes": "97ca8ce2",
+          "instruction": "add ip, ip, #0x97000"
+        },
+        {
+          "address": "0x4abb08",
+          "bytes": "84f0bce5",
+          "instruction": "ldr pc, [ip, #0x84]!"
+        }
+      ]
+    },
+    "0x4ae1e8": {
+      "slot": "0x1043884",
+      "name": "__aeabi_memclr",
+      "instructions": [
+        {
+          "address": "0x4ae1e8",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4ae1ec",
+          "bytes": "95ca8ce2",
+          "instruction": "add ip, ip, #0x95000"
+        },
+        {
+          "address": "0x4ae1f0",
+          "bytes": "94f6bce5",
+          "instruction": "ldr pc, [ip, #0x694]!"
+        }
+      ]
+    },
+    "0x4b150c": {
+      "slot": "0x1044990",
+      "name": "__aeabi_memcpy8",
+      "instructions": [
+        {
+          "address": "0x4b150c",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4b1510",
+          "bytes": "93ca8ce2",
+          "instruction": "add ip, ip, #0x93000"
+        },
+        {
+          "address": "0x4b1514",
+          "bytes": "7cf4bce5",
+          "instruction": "ldr pc, [ip, #0x47c]!"
+        }
+      ]
+    },
+    "0x4b855c": {
+      "slot": "0x1046f00",
+      "name": "__aeabi_memset4",
+      "instructions": [
+        {
+          "address": "0x4b855c",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4b8560",
+          "bytes": "8eca8ce2",
+          "instruction": "add ip, ip, #0x8e000"
+        },
+        {
+          "address": "0x4b8564",
+          "bytes": "9cf9bce5",
+          "instruction": "ldr pc, [ip, #0x99c]!"
+        }
+      ]
+    },
+    "0x4d36dc": {
+      "slot": "0x104ff80",
+      "name": "memset",
+      "instructions": [
+        {
+          "address": "0x4d36dc",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4d36e0",
+          "bytes": "7cca8ce2",
+          "instruction": "add ip, ip, #124, #20"
+        },
+        {
+          "address": "0x4d36e4",
+          "bytes": "9cf8bce5",
+          "instruction": "ldr pc, [ip, #0x89c]!"
+        }
+      ]
+    },
+    "0x4d37f0": {
+      "slot": "0x104ffdc",
+      "name": "memcpy",
+      "instructions": [
+        {
+          "address": "0x4d37f0",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4d37f4",
+          "bytes": "7cca8ce2",
+          "instruction": "add ip, ip, #124, #20"
+        },
+        {
+          "address": "0x4d37f8",
+          "bytes": "e4f7bce5",
+          "instruction": "ldr pc, [ip, #0x7e4]!"
+        }
+      ]
+    },
+    "0x4d667c": {
+      "slot": "0x1050f60",
+      "name": "memmove",
+      "instructions": [
+        {
+          "address": "0x4d667c",
+          "bytes": "0bc68fe2",
+          "instruction": "add ip, pc, #0xb00000"
+        },
+        {
+          "address": "0x4d6680",
+          "bytes": "7aca8ce2",
+          "instruction": "add ip, ip, #0x7a000"
+        },
+        {
+          "address": "0x4d6684",
+          "bytes": "dcf8bce5",
+          "instruction": "ldr pc, [ip, #0x8dc]!"
+        }
+      ]
+    }
+  },
+  "candidates": [
+    {
+      "address": "0xa530d4",
+      "instruction": "bl #0x4d36dc",
+      "kind": "memory-interface-call",
+      "target": "0x4d36dc",
+      "name": "memset"
+    },
+    {
+      "address": "0xa5311c",
+      "instruction": "bl #0x4d36dc",
+      "kind": "memory-interface-call",
+      "target": "0x4d36dc",
+      "name": "memset"
+    },
+    {
+      "address": "0xa538c0",
+      "instruction": "stm ip, {r0, r1, r2}",
+      "kind": "multiword-store"
+    },
+    {
+      "address": "0xa53ab8",
+      "instruction": "stm ip, {r0, r1, r2}",
+      "kind": "multiword-store"
+    },
+    {
+      "address": "0xa53d98",
+      "instruction": "bl #0x4d36dc",
+      "kind": "memory-interface-call",
+      "target": "0x4d36dc",
+      "name": "memset"
+    },
+    {
+      "address": "0xa54a68",
+      "instruction": "stm r4, {r0, r1, r2}",
+      "kind": "multiword-store"
+    },
+    {
+      "address": "0xa54bf8",
+      "instruction": "bl #0x4d36dc",
+      "kind": "memory-interface-call",
+      "target": "0x4d36dc",
+      "name": "memset"
+    },
+    {
+      "address": "0xa55018",
+      "instruction": "stmib sp, {sl, fp}",
+      "kind": "multiword-store"
+    },
+    {
+      "address": "0xa55724",
+      "instruction": "stm sp, {r0, sl}",
+      "kind": "multiword-store"
+    },
+    {
+      "address": "0xa55c90",
+      "instruction": "strd r0, r1, [sp]",
+      "kind": "multiword-store"
+    }
+  ],
+  "limit": "Regional aligned ARM encodings; actual code/mode, receiver, memory extent and unmodelled internal wrappers require primary checking. No absence proof.",
+  "unmapped_named_slots": [],
+  "immediate_decode": "Actual ARM imm8 rotated right by 2*rotate4; explicit Capstone rotation operands are not dropped."
+}
