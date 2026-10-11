@@ -1,0 +1,14 @@
+0x009A80B8: cmp      r1, #0
+0x009A80BC: addne    r0, r0, #0x14
+0x009A80C0: bx       lr
+0x009B21B8: ldr      r3, [r1, #0x40]
+0x009B21BC: ldr      r0, [r1, #0x44]
+0x009B21C0: cmp      r3, r0
+0x009B21C4: bxhs     lr
+0x009B21C8: ldr      r0, [r1, #0x3c]
+0x009B21CC: add      ip, r3, #1
+0x009B21D0: str      ip, [r1, #0x40]
+0x009B21D4: add      r1, r0, r3, lsl #2
+0x009B21D8: cmp      r1, #0
+0x009B21DC: strne    r2, [r0, r3, lsl #2]
+0x009B21E0: bx       lr

@@ -11,7 +11,7 @@
 | P01 | CHECKED locally | B1PLBASE1–2; playlist base/predicate/publication. |
 | P02 | CHECKED local tree path | B1PLPAY1–3/B1TREE1–7; shared97F424 decision reader remains unpaid. |
 | P03 | CHECKED locally | B1SEL1; exact selector defaults and preserved fields. |
-| T03 | NOT DONE | Await ordered extraction. |
+| T03 | CHECKED locally | B1TAB1–3; exact namespace/association and failure omissions. |
 | S06 | READ, NOT DONE | Manager correction: bounded receiver proof, then slots `8/28/30/34/40/70` of the two already-established context tables; no other-family search. |
 
 All seven overall Q15 categories remain PARTIAL. Batch CHECKED is local research coverage, not production acceptance or a fidelity-manifest status. Step 1's S06 STOP is superseded by the manager's bounded READ instruction; unproved receivers still stop as UNKNOWN. No hardware work.
@@ -1648,3 +1648,15 @@ Primary: `20261011-singing-b1-playlist-base-native.txt`, `-playlist-payload-nati
 | B1SEL1 / P03 | `00993EA0..00993ED8` | Selector I: I0=playlist node; I8=0; raw16 zero toI.C/10/14/18; I1Cbyte0; I20/I24/I28=0; I2E U16=0; I2Cbyte preservesupper7bits and OR1. I4 is **not written** in this constructor. No retain, allocation, selection or RNG call. |NEON is integer/field initialization, not ADP-1. Selection14/18 start0; exact authored choices are made later by existing IT/SEL/PS rows. |
 
 Checkpoint B1.3: 9/11 ordered items rowed locally. P02 covers positive root/group/leaf construction, cursor widths and failure masking; common transition reader97F424 remains an explicitly unpaid shared decision body. No broader playlist input census or whole-subsystem completion. out of scope: storage/I-O, vector/hash backing and per-sample DSP.
+
+## Step 2 batch 1 — checkpoint B1.4: T03
+
+Primary: `20261011-singing-b1-table-association-native.txt`, and B1.1/B1.2 handler/publication captures. Stop rule applied before each callee: table **choice**, object identity/reuse and association order are retained; backing hash/rehash and stream I/O stop at one line.
+
+| Row / item | Instruction citation | Recovered decision and order | Scope boundary |
+|---|---|---|---|
+| B1TAB1 / T03 | `009A80B8..009A80C0` | Selector0 returns incoming index pointer unchanged; **any nonzero** selector returns index+14hex. No allocation, lock, normalization or failure result.9F40F4 passes node46bit2; music playlist/segment/switch handlers pass0. |This is namespace selection, not storage implementation. MT7 uses same two table bases for lookup. |
+| B1TAB2 / T03 | `009B21B8..009B21E0` | First argument r0 stream is unused. Work uses original handler r1 owner: count40/capacity44 unsigned count>=capacity ->return without insertion/status. Spare capacity incrementscount40 before computed slotnull gate; nonnull stores incoming objectr2 at owner3C+oldCount*4. Null slot retains incrementedcount. No growth, retain, duplicate/type check, callback or replacement. |Caller has already retained/created the object; this association helper's omission is not rewritten as a loader error or automatic retry. |
+| B1TAB3 / T03 | `00984C5C..00984C94;00984D1C..00984D30;009F40F4..009F4120` | Existing segment/playlist/switch ID matches retain before association; new successful reader unlocks before association. Track success/reuse likewise calls9B21B8, then frees temporarypayload and returns1 regardless association capacity/null-slot outcome. Fresh constructors call9F40F4 before returning to the payload reader. Namespace publication and bank association are distinct steps, not one atomic operation. |out of scope: hash/rehash, temporary payload storage/I-O and allocation backing; preserve caller outcomes and timing/order at their interfaces. |
+
+Checkpoint B1.4: 10/11 ordered items have local rows. T03 is checked at namespace/association scope; no registry census or absence proof. S06 remains next, strictly within the two established context families and call-site receiver proofs.
