@@ -1,0 +1,517 @@
+{
+  "objectCount": 15,
+  "duckCountHistogram": {
+    "0": 12,
+    "1": 3
+  },
+  "subscriptionCountHistogram": {
+    "0": 10,
+    "1": 5
+  },
+  "pending": [
+    {
+      "seed": "009C4094",
+      "address": "009C4300",
+      "instruction": "bl #0x9f7364",
+      "known_registers": {
+        "r4": "00000022"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C4094",
+      "address": "009C42B8",
+      "instruction": "cmp r7, r6",
+      "known_registers": {
+        "r6": "00000011"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "outside authored subscription loop count bound"
+    },
+    {
+      "seed": "009C4094",
+      "address": "009C4140",
+      "instruction": "beq #0x9c40fc",
+      "known_registers": {
+        "r4": "00000024"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored duck loop count bound"
+    },
+    {
+      "seed": "009C4094",
+      "address": "009C4208",
+      "instruction": "str r2, [sp, #0x24]",
+      "known_registers": {
+        "r4": "00000023"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C4094",
+      "address": "009C4250",
+      "instruction": "ldrb r0, [ip], #1",
+      "known_registers": {
+        "r4": "00000022",
+        "r6": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C4094",
+      "address": "009C4268",
+      "instruction": "ldr r0, [ip]",
+      "known_registers": {
+        "r4": "00000022",
+        "r6": "00000000"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C4254",
+      "instruction": "tst r0, #0x80",
+      "known_registers": {
+        "r4": "00000022",
+        "r6": "00000000"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C426C",
+      "instruction": "add ip, ip, #7",
+      "known_registers": {
+        "r4": "00000022",
+        "r6": "00000000"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C4308",
+      "instruction": "mov r0, sl",
+      "known_registers": {
+        "r4": "00000022"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C42C0",
+      "instruction": "lsl r4, r4, #2",
+      "known_registers": {
+        "r6": "00000011"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored subscription loop count bound"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C4148",
+      "instruction": "b #0x9c41ac",
+      "known_registers": {
+        "r4": "00000024"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "outside authored duck loop count bound"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C4100",
+      "instruction": "beq #0x9c41cc",
+      "known_registers": {
+        "r4": "00000024"
+      },
+      "nzcv_mask": "FFFF",
+      "disposition": "outside authored duck loop count bound"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C4210",
+      "instruction": "ldrh r7, [r3, #1]",
+      "known_registers": {
+        "r4": "00000023"
+      },
+      "nzcv_mask": "F0F0",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    },
+    {
+      "seed": "009C40C0",
+      "address": "009C41C0",
+      "instruction": "mov r0, sl",
+      "known_registers": {
+        "r4": "00000023"
+      },
+      "nzcv_mask": "0F0F",
+      "disposition": "existing NB/BH contract; counter origin or input not established by saved state"
+    }
+  ],
+  "outsideCount": 5,
+  "rows": [
+    {
+      "id": 3803692087,
+      "bank": "Init.bnk",
+      "payloadSha256": "e93aa153a51e89f5fdb5b4e08020ca7e7f1d1c989dc39044a82bb681beea4f1c",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 1415,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 1428,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 393239870,
+      "bank": "Init.bnk",
+      "payloadSha256": "334f629647983952c53bb69fec6d0ada1b9face0f494a282991c0ae47fed2f64",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 1498,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 1,
+      "fxAndHelperHex": "0100000170be3a01000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 1,
+      "bindings": [
+        {
+          "offset": 1519,
+          "propertyID": 0,
+          "pointCount": 2,
+          "rawHex": "43913b5d0001000f59ec2102020000000000000080bf040000000000803f0000000004000000"
+        }
+      ],
+      "tailOffset": 1557,
+      "tailHex": "0100000098b92a1f00010006fdbd8fc43a4103"
+    },
+    {
+      "id": 2459405053,
+      "bank": "Init.bnk",
+      "payloadSha256": "f5af8accba87c508c7fe8f12e406c3a10d40e77b4127a95fbdfbaefde9588a87",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 1627,
+      "duckCount": 1,
+      "ducks": [
+        "d636f0ed000090c164000000640000000505"
+      ],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 1658,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 1534528548,
+      "bank": "Init.bnk",
+      "payloadSha256": "87de617df35f1c06fc217bb14ff8afc20f1b055253c93a5e9d8980b21d621118",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 1713,
+      "duckCount": 1,
+      "ducks": [
+        "d636f0ed00000000e8030000e80300000400"
+      ],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 1,
+      "bindings": [
+        {
+          "offset": 1744,
+          "propertyID": 0,
+          "pointCount": 2,
+          "rawHex": "116dd2880001005a52973d02020000000000000080bf040000000000803f0000000004000000"
+        }
+      ],
+      "tailOffset": 1782,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 1551306167,
+      "bank": "Init.bnk",
+      "payloadSha256": "d002274911520620bb86d329db22485cdc5eda781e9b8bab2e302264895e13ac",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 1852,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 1,
+      "bindings": [
+        {
+          "offset": 1865,
+          "propertyID": 0,
+          "pointCount": 2,
+          "rawHex": "80227b66000100bee7363402020000000000000080bf040000000000803f0000000004000000"
+        }
+      ],
+      "tailOffset": 1903,
+      "tailHex": "0100000098b92a1f00010006fdbd8fffbf0405"
+    },
+    {
+      "id": 1723505802,
+      "bank": "Init.bnk",
+      "payloadSha256": "3ff3811e91f257ca72752fffe4f7b41a4c9450cf0b894f8e9d979d3503447afb",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000141000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 1973,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 1,
+      "bindings": [
+        {
+          "offset": 1986,
+          "propertyID": 5,
+          "pointCount": 2,
+          "rawHex": "40127c630001058535e90a00020000000000000048c3060000000000803f0000000004000000"
+        }
+      ],
+      "tailOffset": 2024,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 2476517424,
+      "bank": "Init.bnk",
+      "payloadSha256": "e7021c6c34b07b0c2bbaa188a2f1388390828b899f63bb7a997c966fda08f518",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2079,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 1,
+      "fxAndHelperHex": "0100003bc0dd8901000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2100,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 2678428985,
+      "bank": "Init.bnk",
+      "payloadSha256": "0975e938c8d81a3607c88ee0b97b48c4a61045b85d4e595e3380f3558b4da3b3",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000141000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2155,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 4,
+      "fxAndHelperHex": "0400001ffc6767010001c6014917010002ff3022df010003bd11fc0400000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2197,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 2678428988,
+      "bank": "Init.bnk",
+      "payloadSha256": "cd11498f20f15d812aeff23c414ed0dd50512f8a4757c23f44903c23c50ba56e",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000141000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2252,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 4,
+      "fxAndHelperHex": "0400001ffc6767010001c6014917010002ff3022df0100031f5e951800000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2294,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 2678428990,
+      "bank": "Init.bnk",
+      "payloadSha256": "7fe78a49ef1291e5027e4f04993da902452f895969966a1010976ef904005c12",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000141000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2349,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 4,
+      "fxAndHelperHex": "0400001ffc6767010001c6014917010002ff3022df010003e769733900000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2391,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 2678428991,
+      "bank": "Init.bnk",
+      "payloadSha256": "2990723af33488957c1fc5c1f90f5e0a049f7ae9d80c17eb35c1c0340abffe77",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000141000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2446,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 4,
+      "fxAndHelperHex": "0400001ffc6767010001c6014917010002ff3022df01000384c8a20f00000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2488,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 3991942870,
+      "bank": "Init.bnk",
+      "payloadSha256": "696dcb8679f2d6702c6579426c47b0b726b7b864a6ae101938cd4b5af558a3bf",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2578,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 1,
+      "bindings": [
+        {
+          "offset": 2591,
+          "propertyID": 0,
+          "pointCount": 2,
+          "rawHex": "ebee003c0001000e69050802020000000000000080bf070000000000803f0000000004000000"
+        }
+      ],
+      "tailOffset": 2629,
+      "tailHex": "02000000d390d636000100c590d636d671b70d98b92a1f00010006fdbd8fca4c9038"
+    },
+    {
+      "id": 792781730,
+      "bank": "Init.bnk",
+      "payloadSha256": "02f576dc98a18f747364137c815544eb4ca151bd505033418c1d47f7a37f3dc1",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2714,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2727,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 3829101743,
+      "bank": "Init.bnk",
+      "payloadSha256": "2c08572bf45319b67b2dd724383302fc5e95f04cc168a4fdaf32f45f0310e606",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2782,
+      "duckCount": 1,
+      "ducks": [
+        "a2e3402f0000c0c2f4010000f40100000200"
+      ],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2813,
+      "tailHex": "00000000"
+    },
+    {
+      "id": 805203703,
+      "bank": "Init.bnk",
+      "payloadSha256": "9f14855752622a5ea91b2a122389e4d641eda53d95298acf6cc262c284b25b42",
+      "propertyHex": "041b1c1d20000000000000c842000000000000c842",
+      "controlsHex": "000000000000000002",
+      "durationMilliseconds": 1000,
+      "rawWord": 3267362816,
+      "duckCountOffset": 2868,
+      "duckCount": 0,
+      "ducks": [],
+      "fxCount": 0,
+      "fxAndHelperHex": "000000000000",
+      "helperID": 0,
+      "helperShared": 0,
+      "flagByte": 0,
+      "subscriptionCount": 0,
+      "bindings": [],
+      "tailOffset": 2881,
+      "tailHex": "00000000"
+    }
+  ],
+  "boundary": "Finite bank reader input counts only; tail bytes retained without tracing. No global runtime mutation, callback success or alias absence proof."
+}

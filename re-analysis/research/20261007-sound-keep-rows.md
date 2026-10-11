@@ -11775,3 +11775,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint828 - segment marker-loop authored count bounds
 
 `20261011-sound-music-marker-cap-disposition.md` parses all209 shipped Segment payloads to their exact ends:stingers0,markers2..7. Four989FF4 saved incoming-loop counters46/47 and20 of52 98A190 cleanup counters>7 are outside those authored bounds;other32 states remain explicit under existing MK contracts. Name-length R5 is not misclassified as a parse counter. No all-runtime input/alias proof or status promotion;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint829 - authored bus duck/subscription cap bounds
+
+`20261011-sound-bus-reader-cap-disposition.md` independently parses15 shipped Bus control prefixes:duck counts0/1,subscription counts0/1. Five of14 saved states exceed the exact native loop counters;other nine remain explicit. Bus104 uses ordinary properties plus nine control bytes,no fictitious range section;later R4 roles are not mistaken for duck counters. No all-runtime input/alias proof or status promotion;116 CHECKED /24 PARTIAL;140 AUDIBLE /0 INTERNAL unchanged. Guard reread;research only.
