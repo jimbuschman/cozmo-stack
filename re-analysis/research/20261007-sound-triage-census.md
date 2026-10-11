@@ -3063,3 +3063,13 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint762 — unload packet-to-recipient inputs
 
 `20261010-sound-bank-unload-input-reconciliation.md` binds actual9BA35C/9BB86C to unchanged packet fields and UD261 mode/key/callback/cookie/selector inputs, preserving worker raw result versus immediate acceptance1. SL42–48 startup/submission/worker contracts reused; two Thumb matches are ARM interior encodings.109/134 retain actual producer/global/key/writer gaps, not unread local unload bodies.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint763 — named controller unload producer
+
+`20261010-sound-bank-unload-controller-input-join.md` binds8D3504 ->8D896E ->9A4044 to kind1, exact bank-ID helper, mode2/auxiliary0, global callback, synchronization/submission/completion and success-only loaded-bank erasure. Scene bank loop preserves order and ignores each unload Boolean. Alternate inputs and bank/header/global writer proof remain open;109/134 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint764 — alternate unload input disposition
+
+`20261010-sound-bank-unload-producer-input-dispositions.md` retains UC763's actual8D897E supplier, rejects Thumb9A3F22 inside ARM ADD and confirms separate9A4134 entry after9A4044 return/literal. Actual ID/auxiliary/output inputs remain UNKNOWN; immediate/raw/export navigation is not unreachability.109/134 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.

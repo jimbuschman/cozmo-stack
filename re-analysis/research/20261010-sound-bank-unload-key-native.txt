@@ -1,0 +1,59 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x0099D8FC..0x0099D9C0 exclusive; ARM;
+0099D8FC: push         {r4, r5, r6, r7, lr}
+0099D900: sub          sp, sp, #0x20c
+0099D904: mov          r4, r0
+0099D908: bl           #0x4a44e0
+0099D90C: mov          r1, r4
+0099D910: movw         r3, #0x103
+0099D914: mov          r7, sp
+0099D918: add          r4, r0, #1
+0099D91C: mov          r0, sp
+0099D920: cmp          r4, r3
+0099D924: movhs        r4, r3
+0099D928: mov          r2, r4
+0099D92C: bl           #0x4bb694
+0099D930: add          r3, sp, #0x208
+0099D934: add          r4, r3, r4
+0099D938: mov          r0, sp
+0099D93C: mov          r3, #0
+0099D940: strb         r3, [r4, #-0x208]
+0099D944: bl           #0x4a44e0
+0099D948: subs         r3, r0, #1
+0099D94C: mov          r5, r0
+0099D950: bmi          #0x99d990
+0099D954: ldrb         r2, [sp, r3]
+0099D958: add          r1, sp, r3
+0099D95C: cmp          r2, #0x2e
+0099D960: subne        r2, r0, #2
+0099D964: addne        r2, sp, r2
+0099D968: bne          #0x99d97c
+0099D96C: b            #0x99da3c
+0099D970: ldrb         r0, [r1]
+0099D974: cmp          r0, #0x2e
+0099D978: beq          #0x99da3c
+0099D97C: sub          r3, r3, #1
+0099D980: mov          r1, r2
+0099D984: cmn          r3, #1
+0099D988: sub          r2, r2, #1
+0099D98C: bne          #0x99d970
+0099D990: add          r6, r5, #1
+0099D994: movw         r3, #0x103
+0099D998: cmp          r6, r3
+0099D99C: add          r4, sp, #0x104
+0099D9A0: mov          r1, r7
+0099D9A4: movhs        r6, r3
+0099D9A8: mov          r0, r4
+0099D9AC: mov          r2, r6
+0099D9B0: bl           #0x4bb694
+0099D9B4: add          r3, sp, #0x208
+0099D9B8: add          r6, r3, r6
+0099D9BC: cmp          r5, #0
+0104F94C: raw=004A4010 relocated=004A4010
+0104F950: raw=004A4010 relocated=004A4010
+RANGE 0x008D3630..0x008D363A exclusive; Thumb;
+008D3630: movs         r0, #0
+008D3632: add          sp, #0x20
+008D3634: pop.w        {r4, r5, r6, r7, r8, sb, sl, pc}
+008D3638: b            #0x8d363c

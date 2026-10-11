@@ -1,0 +1,3 @@
+4D2458+8+B00000+7D000+4F4=104F954; use PC from first ADD, not final LDR.
+('0x104f954', 'TYPE.ARM_JUMP_SLOT', '_ZN4Anki11AudioEngine21AudioEngineController15UnloadSoundbankERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE')
+('0x8d342d', '_ZN4Anki11AudioEngine21AudioEngineController15UnloadSoundbankERKNSt6__ndk112basic_stringIcNS2_11char_traitsIcEENS2_9allocatorIcEEEE')
