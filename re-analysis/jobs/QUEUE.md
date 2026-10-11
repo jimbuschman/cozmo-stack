@@ -38,4 +38,4 @@ anything. BOARD.md is history; this file is the live queue.
 
 | # | job | status |
 | --- | --- | --- |
-| 1 | [R-M5-047](../research/requests/20261011-m5-047-stack.md) | open |
+| 1 | [R-M5-047](../research/requests/20261011-m5-047-stack.md) | done (8694b961) |

@@ -117,7 +117,7 @@
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -9944,15 +9944,16 @@
       "subsystem": "M5-animation",
       "title": "AnimationGroup entry head window before the first UseHeadAngle entry in a file (stale stack slot sp+0x20)",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "Which entry the all-on-cooldown backup picks.",
-      "provenance": "Opus fix-row extraction (2026-10-11), manager ruling.",
+      "provenance": "Opus fix-row extraction (2026-10-11); Codex R-M5-047 emulator run (2026-10-11), manager check of 0x0058C044 and the frame overlap; operator decision 2026-10-11.",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261011-m5-fix-rows.md section 9 B6: DefineFromJson slot sp+0x20 (0x0058A680); +0x20/+0x24 written only when UseHeadAngle (0x0058C76E); copy 0x0058A6F2..0x0058A70C; feeds the backup window B2.",
-        "re-analysis/research/20261011-m5-last-reads.md R47-1..R47-3, S47-1: the head words are entry+0x20/+0x24 = sp+0x40/+0x44 in DefineFromJson; the loader emulation stopped at pthread_create (0x005246C0) before LoadAnimationGroupFile, with no values observed."
+        "re-analysis/research/20261011-m5-last-reads.md R47-1..R47-3, S47-1: the head words are entry+0x20/+0x24 = sp+0x40/+0x44 in DefineFromJson; the loader emulation stopped at pthread_create (0x005246C0) before LoadAnimationGroupFile, with no values observed.",
+        "re-analysis/research/20261011-m5-047-stack.md R1-R7: before the first UseHeadAngle entry, sp+0x40/+0x44 hold the AnimationGroupContainer and RobotDataLoader addresses, saved by the hash-table find prologue push.w at 0x0058C044 (GetAnimationGroup, 0x0058B6F8..0x0058B6FE) in the frame the group DefineFromJson reuses; independent of poison and of the previous file; they move with the heap (case 3)."
       ],
-      "unresolved": "RECOVERABLE_GAP: the stale words at sp+0x40/+0x44 before the first UseHeadAngle entry. The loader-thread emulation stopped at pthread_create (0x005246C0). Next attempt: run the worker job body for one group file directly on a fresh emulated stack and test whether the words depend on the poison, on prior jobs, or on heap addresses. Until then the code emits MISSING: M5-047.",
+      "unresolved": "COMPATIBILITY_POLICY (operator, 2026-10-11): the original reads two heap addresses as the f32 min/max, so its behaviour depends on the phone's address layout and varies with ASLR. The stack follows the 64-bit-phone class: addresses at or above 0xC0000000 read as f32 <= -2, so max+0.05 < head for every reachable head angle, and the entry is never accepted by the backup (B2). Build: entries before their file's first UseHeadAngle entry fail the B2 window test; entries after one inherit its window (B6); no MISSING line. Everything else in B1-B6 is unchanged.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

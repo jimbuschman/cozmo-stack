@@ -66,6 +66,10 @@ stack implements that feature.
 - **M1-038, after a disconnect sub-message** (operator, 2026-10-09): stop processing the frame; the original continues through freed memory.
 - **M3-054, verbose log display** (operator, 2026-10-11): the stack's log display follows libDAS sink (a) exactly by
   default (M3-053); a stack setting, off by default, also shows the info and debug entries the phone drops.
+- **M5-047, the stale head window** (operator, 2026-10-11).
+  - **The original:** reads two heap addresses as the head-window min/max of group entries that come before their
+    file's first UseHeadAngle entry, so its backup choice depends on the phone's memory layout.
+  - **The stack:** follows the 64-bit-phone case. Those entries are never accepted by the all-on-cooldown backup.
 - **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
 
 Apply no other departure without the operator.

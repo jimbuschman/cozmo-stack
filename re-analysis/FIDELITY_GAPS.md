@@ -9,9 +9,9 @@ Manifest of **506 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 151 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 3 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 48 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 250 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 41 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 42 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -28,7 +28,7 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 54 | 1 | 11 | 0 | 4 | no | no |
 | M4-control — Motion, sensors, lights and cubes | 36 | 0 | 9 | 0 | 3 | yes | no |
-| M5-animation — Animation clips, scheduler and face | 47 | 1 | 35 | 0 | 1 | no | no |
+| M5-animation — Animation clips, scheduler and face | 47 | 0 | 35 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 28 | 0 | 25 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 25 | 3 | 17 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 19 | 5 | 13 | 0 | 0 | no | no |
@@ -83,17 +83,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json.
 * evidence: re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to "event".; re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, "das", "%s%s : %s %s") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets "$game" (0x801C..0x8074).
 * outstanding: RECOVERABLE_GAP: sink (b) queue body 0xB47C unread (the upload is BLOCKED_EXTERNAL); sink (c) is unreachable without the app's "$game". Sink (a) and the level filter are read; the stack's rendered log follows them (operator, 2026-10-11): records M3-053 and M3-054.
-
-### M5-animation — Animation clips, scheduler and face
-
-**M5-047 — AnimationGroup entry head window before the first UseHeadAngle entry in a file (stale stack slot sp+0x20)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs`
-* effect: Which entry the all-on-cooldown backup picks.
-* rests on: Opus fix-row extraction (2026-10-11), manager ruling.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261011-m5-fix-rows.md section 9 B6: DefineFromJson slot sp+0x20 (0x0058A680); +0x20/+0x24 written only when UseHeadAngle (0x0058C76E); copy 0x0058A6F2..0x0058A70C; feeds the backup window B2.; re-analysis/research/20261011-m5-last-reads.md R47-1..R47-3, S47-1: the head words are entry+0x20/+0x24 = sp+0x40/+0x44 in DefineFromJson; the loader emulation stopped at pthread_create (0x005246C0) before LoadAnimationGroupFile, with no values observed.
-* outstanding: RECOVERABLE_GAP: the stale words at sp+0x40/+0x44 before the first UseHeadAngle entry. The loader-thread emulation stopped at pthread_create (0x005246C0). Next attempt: run the worker job body for one group file directly on a fresh emulated stack and test whether the words depend on the poison, on prior jobs, or on heap addresses. Until then the code emits MISSING: M5-047.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -2881,4 +2870,5 @@ Each of these is a question already answered. The original's behaviour is establ
 | M4-032 | M4-control | EQUIVALENT_IMPLEMENTATION | Phone printf rendering of %f / %.1f / %.2f in engine logs | Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs. |
 | M4-034 | M4-control | COMPATIBILITY_POLICY | The C# head/lift API's default speed, acceleration and duration (head 10/20/0, lift 10/20/0): the app's values, an app input | Unity app code (authority 2): unity/scripts/csharp/Robot.cs |
 | M5-042 | M5-animation | COMPATIBILITY_POLICY | AnimationStreamer::Update VizManager::SetText and CozmoContext::SetSdkStatus calls: not reproduced (SDK and viz out of scope) | libcozmoEngine.so 3.4.0-1204. |
+| M5-047 | M5-animation | COMPATIBILITY_POLICY | AnimationGroup entry head window before the first UseHeadAngle entry in a file (stale stack slot sp+0x20) | libcozmoEngine.so 3.4.0-1204. |
 
