@@ -1,4 +1,22 @@
-## Q15 Step 2 — batch 1 coverage (2026-10-11)
+## Q15 Step 2 — coverage after batch 2 (2026-10-11)
+
+| Batch 2 ordered item | Batch status | Rows / boundary |
+|---|---|---|
+| D04 | CHECKED join locally | B2J01–05; Layer submission/preparation and Sound policy joins. |
+| D05 | CHECKED join locally | B2J06–08; fresh/replayed note request joins. |
+| D06 | CHECKED locally | B2J09–11, B2RESET1–5; controller propagation and uncovered scoped reset decisions. |
+| H01 | CHECKED join locally | B2J12–14; voice creation, MIDI owner association, source controls. |
+| H02 | CHECKED join locally | B2J15–16; note-state ownership and held-action joins. |
+| H03 | CHECKED join locally | B2J17–19; stop, transition and stop-loop joins. |
+| H04 | CHECKED join locally | B2J20–21; action membership, cancellation and recipient stop joins. |
+| H05 | CHECKED join locally | B2J22–24; deferred queue preparation and concrete dispatch joins. |
+| H06 | CHECKED endpoint locally | B2END01–05; separate streamed/direct-buffer Vorbis loop/end-trim decisions. |
+| H07 | CHECKED endpoint locally | B2END07–09; secondary close and retirement order. |
+| D03 | PARTIAL, bounded READ processed | B2TR1–6, B2J25–28; constructed-track98/9C/AC and established Layer44; other receiver inputs STOP/UNKNOWN. |
+
+Batch2 tally: **11 ordered items processed: 10 locally CHECKED, 1 PARTIAL**. Added **28 Q14 mapping rows, 18 decision/receiver-proof rows and 2 out-of-scope boundary rows** (48 total). Across batches1–2: **20 locally CHECKED, 2 PARTIAL** (S06/D03), **11 unstarted READ**, **28 STOP/UNKNOWN**, **8 out-of-scope items**, total69. Both manager corrections move one original STOP to bounded READ; cumulative dispositions33READ/28STOP/8out-of-scope. Overall **0 CHECKED categories / 7 PARTIAL**. Remaining READ: S05,T01,T02,D02,D07,A01,E01–E04,V02. No complete production path, fidelity settlement or hardware acceptance is claimed. Stop for batch3.
+
+Batch 1 retained local coverage:
 
 | Ordered item | Batch status | Rows / boundary |
 |---|---|---|
@@ -14,19 +32,19 @@
 | T03 | CHECKED locally | B1TAB1–3; exact namespace/association and failure omissions. |
 | S06 | PARTIAL, bounded READ processed | R1–R7 prove positive segment/playlist receivers; all 9 distinct targets of slots `8/28/30/34/40/70` have rows below. U1–U5 remain STOP/UNKNOWN. |
 
-All seven overall Q15 categories remain PARTIAL. Batch CHECKED is local research coverage, not production acceptance or a fidelity-manifest status. Step 1's S06 STOP is superseded by the manager's bounded READ instruction; unproved receivers still stop as UNKNOWN. No hardware work.
+All seven overall Q15 categories remain PARTIAL. Batch CHECKED is local research coverage, not production acceptance or a fidelity-manifest status. Step 1's S06 and D03 STOP entries are superseded by the manager's bounded READ instructions; unproved receivers still stop as UNKNOWN. No hardware work.
 
-| Q15 category | Current status | Remaining READ items after batch 1; retained STOP / scope boundaries |
+| Q15 category | Current status | Remaining READ items after batch 2; retained STOP / scope boundaries |
 |---|---|---|
 | Segment selection | PARTIAL | S05; S06 unproved receiver groups; S07/S10–S14/T08 STOP; O01/O03–O07 out of scope. |
-| Playlist selection | PARTIAL | S05/H01–H07; S06 unproved receiver groups; S07/S10–S14/P04–P07/T08 STOP; O01–O07 out of scope. |
-| Transitions, switch and meter state | PARTIAL | T01/T02/H03; S06 unproved receiver groups; S07/S10–S14/T04–T08 STOP; O01–O07 out of scope. |
-| MIDI dispatch and target inheritance | PARTIAL | D02/D04–D07/H01–H07/E02–E04; D01/D03/D08/D09/T08 STOP (D03 has the new track-table lead for batch 2); O01–O07 out of scope. |
-| Note-on/off and held-note timing | PARTIAL | S05/D02/D04–D07/H01–H07/A01/E02–E04; S06 unproved receiver groups; S07/S11/S14/D01/D03/D08/D09/H08/H09/A02–A04 STOP; O01–O07 out of scope. |
-| Envelope parameters and trigger state | PARTIAL | E01–E04/D02/H01–H04/A01; E05/E06/D01/A02–A04 STOP; O01/O02 out of scope. |
-| Vibrato/LFO parameters and state | PARTIAL | E01–E04/V02/D02/H01–H04/A01; E05/E06/V01/V03/V04/D01/A02–A04 STOP; V05/O01/O02 out of scope. |
+| Playlist selection | PARTIAL | S05; S06 unproved receiver groups; S07/S10–S14/P04–P07/T08 STOP; O01–O07 out of scope. |
+| Transitions, switch and meter state | PARTIAL | T01/T02; S06 unproved receiver groups; S07/S10–S14/T04–T08 STOP; O01–O07 out of scope. |
+| MIDI dispatch and target inheritance | PARTIAL | D02/D07/E02–E04; D03 unproved receiver inputs; D01/D08/D09/T08 STOP; O01–O07 out of scope. |
+| Note-on/off and held-note timing | PARTIAL | S05/D02/D07/A01/E02–E04; S06/D03 unproved receivers; S07/S11/S14/D01/D08/D09/H08/H09/A02–A04 STOP; O01–O07 out of scope. |
+| Envelope parameters and trigger state | PARTIAL | E01–E04/D02/A01; E05/E06/D01/A02–A04 STOP; O01/O02 out of scope. |
+| Vibrato/LFO parameters and state | PARTIAL | E01–E04/V02/D02/A01; E05/E06/V01/V03/V04/D01/A02–A04 STOP; V05/O01/O02 out of scope. |
 
-These remaining item IDs retain their names and bounded addresses in the Step 1 disposition table below. Newly encountered concrete decision interfaces are separately named at the end of B1.5; they remain unpaid, including for locally CHECKED items. The original Step 1 tables are historical, with S06's original STOP explicitly superseded above. No category or complete production path is declared closed.
+These remaining item IDs retain their names and bounded addresses in the Step 1 disposition table below. Newly encountered concrete decision interfaces are separately named at the end of B1.5; they remain unpaid, including for locally CHECKED items. The original Step 1 tables are historical, with S06/D03's original STOP explicitly superseded above. No category or complete production path is declared closed.
 
 ## Q15 resume — Step 1 coverage disposition (2026-10-11)
 
@@ -1616,7 +1634,7 @@ Scope guard and stop rule re-read. Shipped engine SHA256 `02263c07f6bb60f4d7f351
 | B1TR2 / S03 | `00984BA8..00984BDC;00984D10..00984D18;00991EC0..00991F18` | Existing track source count60zero ->reparse. Nonzero calls991EC0: wrapped count<<3 zero returns0; otherwise inspect each source pair's pointer4 byteC bit7 physically. First bit7set returns1; exhaustion0. Resultnonzero skips992BD0 entirely and associates. Result0 locks creation and calls992BD0 with same args but **stack mode1**. No source-pointer null guard in scan. | Concrete scan changes reuse/reparse decisions; no inference that all registered objects are this factory's product. |
 | B1TR3 / S03 | `00984BEC..00984C14;00984D1C..00984D30;00984D6C..00984DA4` | New reader raw1 unlocks creation lock before association. New non1 invokes track.vtC **before unlocking**. Existing reparse unlocks **before** testing result; non1 then invokes live track.vtC. Both failure branches release temporary payload and return saved raw reader result. Successful/reused objects associate and return1. No compensating association on failure. | T03 owns9B21B8; virtual release differs by actual product class. D03 later uses the positive new-product table. |
 | B1TR4 / S03 | `00990C8C..00990D60;00990D68` |990C8C allocates9C. Null->null. Success invokesA1E1B4(track,ID); installs main table=`00990CCC+8+006A9794+8=0103A470`, secondary10=`0103A5AC`. Zero5C/60/64/68/6C/70/74/78/7C/80/84/88/90/98; byte94 clears bits0/1 preserving other6; halfword8C=FFFF. Query990710; set46bit2 iff result0/A/C;9F40F4; return pointer. **This establishes S03's newly constructed track table for D03.** |A1E1B4 is shared track-base/default behavior; body remains its M6 boundary. No table proof for an arbitrary preexisting lookup result. |
-| B1TR5 / S03 | `00990710..00990714;0103A470` |990710 returns immediate rawB, so B1TR4's **fresh constructor** clears46bit2. Raw method words are preserved in the table capture for batch2; no extraction of D03 slots yet. |Source parsing/runtime changes after construction remain TPL/SRC; initial defaults do not prove immutable values. |
+| B1TR5 / S03 | `00990710..00990714;0103A470` |990710 returns immediate raw6 (B2.4 corrects the earlier transcription rawB), so B1TR4's **fresh constructor** clears46bit2. Raw method words are preserved in the table capture for batch2. |Source parsing/runtime changes after construction remain TPL/SRC; initial defaults do not prove immutable values. |
 
 Checkpoint B1.1: 3/11 ordered items have local rows; no new manifest claims. Concrete switch tree/base and track-base interfaces are explicitly retained, not silently upgraded to full-path closure. out of scope: storage/I-O/allocator/hash/lock-service implementation and per-sample DSP; no infrastructure descent.
 
@@ -1793,8 +1811,36 @@ Primary recheck: existing `20261007-singing-release-codec-native.txt`, Q14 `2026
 | B2END04 / H06 | `00A734E0..00A735BC;00AB0374..00AB03F0;00AB1138..00AB11B8` → EL393A–D/SV392C/D/HN587 sample-completion row | Emit advances position by actual emitted frames before boundary test. Count1: unsigned position>=total passes74 argument1; count!=1: position>loopEnd (strict) resets loopStart and passes0. Known end1 returns11; loop0 resets its class-specific trim/cursor/counter and returns2D. Equality at loopEnd stays2D; zero emitted frames is2E, not fabricated11. |
 | B2END05 / H06 | `00A53410;00A565D4` → VR173D; `00A44A50..00A44B40;009D40C4` → VS3–5/VD186 | Voice48 clears primary PBI mask then setsDC2. Actual frame consumer rechecksDC2 after callbacks, unlinks head/predecessor/tail and decrements voice count before Term44/live destructor0/free. End11 can instead select a saved secondary through VS4's ordered clear/teardown/attach/Init path. Endpoint, state2 and release are distinct decisions; no end-state shortcut. |
 | B2END06 / H06 scope | `00A74388/00A743A4` stream14/18 internals | out of scope: storage/I/O settings backend; retain the source's exact query/reload/word8-clear/apply/result decisions above, no stream-family search. |
-| B2END07 / H07 | `00A5361C..00A53654` → VF180B; `00A56414..00A56470` → NS3 | A matching secondary is closed viaA56414(source,0) whileD8 still published; caller reloadsD8, invokes live destructor0 and free if nonnull, then clearsD8. Reloaded null skips destructor/free but still clears. No unconditional primary-close or assumed transaction. |
+| B2END07 / H07 | `00A53610..00A53654` → VF180B; `00A56414..00A56470` → NS3 | A matching secondary is closed viaA56414(source,0) whileD8 still published; caller reloadsD8, invokes live destructor0 and free if nonnull, then clearsD8. Reloaded null skips destructor/free but still clears. No unconditional primary-close or assumed transaction. |
 | B2END08 / H07 | `00A56468` → CB3; `00A5643C` → SF10/NF1–6; `00A56450` → existing concrete source2C contracts | Nonnull sourceC PBI with word4bit20 removes exact playingID/source metadata first. Reload PBI after that callback, then A01800(PBI,reason) clearsPBI154 before enqueue type4. Regardless nullable PBI, tail source.live2C with original source. CB3 first composite-match/search-before-lock and SF10 deferred publication are not generic I/O. Known source close bodies retain their existing family rows; no binding of arbitrary changed source tables. |
 | B2END09 / H07 scope | Pool/free and source I/O/DSP descendants | out of scope: allocation/free/backing and stream I/O implementation, per-sample DSP; preserve the visible callback and pointer/publication order, no descent. |
 
 H06/H07 locally CHECKED for the named positive Vorbis/standard-voice/source-control interfaces. The HN587 Q14 endpoint report owns the geometry joins and correction; these rows do not certify every source product, final robot-output attachment, or hardware endpoint. Ten of eleven batch2 items are now locally mapped; D03 follows under the manager's two-stage receiver/table rule. No three-checkpoint no-row stop triggered.
+
+## Step 2 batch 2 — checkpoint B2.4: D03
+
+Stop rule applied before each recipient. Primary: `20261011-singing-b2-receiver-native.txt`, existing B1 track-product/method-table captures, CF/OQ/CCF/CWT/CX companions, and Q14 `20261009-sound-music-node-retirement-interface-native.txt`. The proof below is for the **fresh B1TR4 track successfully attached to the established segment and subsequently selected into a MIDI context**. Its conditions are explicit; neither a type name nor an arbitrary ID lookup proves this identity. The table/body joins follow the receiver proof. Existing Q14 bodies are reused.
+
+| Receiver row | Instruction citations / existing rows | Pointer identity and bounded conditions |
+|---|---|---|
+| B2TR1 | `00984B60..00984BA4;00990C8C..00990D60;00992BD4;00992FC4..00992FD4;009F7038..009F7090;0103A040` → B1TR1/4, CF15–17 | Missing-track arm constructs T with990C8C and passes that same pointer to992BD0. Reader saves T inr4; its9F6EF8 call passes T asr0. With mode0 and successful shared entry, a nonzero authored ordinary-parent ID resolving to the established segment103A018 invokes segment28=981940 **with T as child**. CF15–17's successful publication stores T in segment5C/count60, then sets T34=segment. Thus this positive attachment carries the constructor's103A470 object, rather than inferring class from a later registry lookup. Failed/missing/different-parent branches are not this proof. No new parent-family descent. |
+| B2TR2 | `0098A328..0098A33C;00999208..00999268;009987D4..009988DC;0099B15C..0099B210` → OQ4/8, CF1 | Selecting that published segment child uses98A328: index<count60 loads exactly5C[index]. OQ4 copies this T to start-operationC and retains it. OQ8's new-child branch passes operationC to99B15C; CF1 stores it in track-contextG48 and retains it. Existing-child reuse requires the same T/index identity, but an independently supplied operation or unproved segment child is not certified. No new RNG or child-family search. |
+| B2TR3 | `0099B994..0099BA0C;00A3D258;00A3D2A0..00A3D2D0;00A3BF20;00A3BF8C` → CCF2–4, CWT1/2 | MIDI-format branch snapshots G48, supplies it asA3D234 r2; factory saves r2 inr4 and passes it as constructor r3. A3BF0C saves r3 insl and stores it to C78. Factory initializes this same C via its installed vt8; constructor's table is103BFF0 (CWT1), whose initializer isA3CBE0 (CX). Consequently C78 is the same newly constructed T in B2TR1/2. Factory failure releases this same published C through NQ/CD, not a replacement context. |
+| B2TR4 | `00A3CBFC..00A3CC0C;00A3CC88..00A3CCF8` → CX | At the manager'sA3CBEC lead, actual98 dispatch isA3CC0C: loadr0=C78,load[r0],load98,call with flags3. AtA3CC7C lead, actualAC dispatch isA3CCF8: loadr0=C78,load[r0],loadAC. Both receivers therefore equal B2TR3's T on the proved path. AC arguments are A=&sp30, requestedmask0, F=&CE4; stack={K=&sp18,0,0,0,0}. K receives C8/C20/zero/FF/FF/zero. Subscription earlier writes sp30 mask2000; that is distinct from AC's r2=0. |
+| B2TR5 | `00A3CA38..00A3CAA0` → CCF4, CD/NQ | Same C's destruction restores its own context tables and releases media/handle first. Actual9C callA3CAA0 loadsr0=C78 and flags3, then reads T's table9C. Restoring **C's** table does not replace T's table. This proves the third supplied lead's receiver on the same constructed-track path, including initialization-failure cleanup; it does not prove a different caller's constructor argument. |
+| B2TR6 | `00A3BE2C..00A3BF00;00A71170;00A71228..00A71264;0103B094;009D0454..009D0458` → MT4/5, GI572B, NT201C | MAT's target receiver comes from C34, distinct from C78. For the already-established sampler target110896138/Layer103B050 (GI572B), successful MT resolution to that product gives MAT r4=C34; its44=9D0454 returns5. Both actual44 callsA71234/A71260 therefore return5, so MAT2's0/C controller-only restriction does not apply. This reuses an existing established target table; it is not a claim that every target lookup resolves to Layer. |
+
+| Mapping row / item | Call site → Q14 row ID (table-word/body citations) | Decision carried |
+|---|---|---|
+| B2J25 / D03 track98 | `00A3CC0C` → LC3 (`0103A508=009F2D7C;009F2D7C..009F2E30`) | Flags3 increments own counters64 and66; missing state construction retains raw result. Conditional bus98(3) precedes parent98 with bit0 cleared/u16 truncation only when bus present; recursive raw results combine by bitwiseAND/u8. CX failure gate uses returned zero/nonzero. Track binding is now positive; parent/bus classes are not inferred from track table. |
+| B2J26 / D03 track9C | `00A3CAA0` → LC6 (`0103A50C=009F5180;009F5180..009F5270`) | Flags3 decrements own64 then66 modulo65536, applies idle teardown before bus/parent propagation. Missing own state still propagates. No rollback or aggregate result invented. Generic ancestor recipients remain LC6's separate boundaries. |
+| B2J27 / D03 trackAC | `00A3CCF8` → NPA1–6/NPS1–3/NPR1–3/AUX1–6/NFAC1–5/NHIER1–2 (`0103A51C=009EF258;009EF258..009F0ED8`, literal islands excluded by Q14 capture) | Requestedmask0 skips mask-gated groups, but state/instance scalar and factor stages and unmasked auxiliary/attachment stages still follow their individual gates. With byteflag0, NHIER1 uses the single parent34 AC pass, not AUX6/NPA4–5's double-association path. F=&CE4 receives the scoped factors that CX subsequently multiplies in physical order. Q14 owns exact local body; concrete further hierarchy recipients still require their own table proof. No duplicate body extraction. |
+| B2J28 / D03 target44 | `00A71234;00A71260` → NT201C (`0103B094=009D0454;009D0454..009D0458`), GI572B | The already-established Layer target returns5 twice. Preserve MAT2's literal two calls and later allocation/init gates; this getter neither selects a sample nor grants every note successful voice creation. |
+
+STOP/UNKNOWN: receivers from arbitrary preexisting track lookup results, independently supplied operation/context inputs, or other unresolved C34 target products are not shown to have either established table; no target or caller search and no descent.
+
+Out of scope: media/payload backing and allocator/I-O internals; per-sample DSP. Only their already-rowed admission/result branches are retained here.
+
+B1TR5 correction: primary990710 is `mov r0,#6; bx lr`, not rawB. The fresh constructor's46bit2-clear conclusion is unchanged. B2END07's caller citation now startsA53610 to include the close call atA53614. No production code, inventory or fidelity-manifest change.
+
+D03 is **PARTIAL, bounded READ processed**: the constructed-track path binds all three requested slots; the previously established Layer target binds44; other receiver inputs stay UNKNOWN. B2.4 adds six receiver-proof rows and four Q14 mapping rows. No new target body was needed. No item reached three checkpoints without a new row. Batch2 ends here; batch3 requires the manager's next ordered instruction.
