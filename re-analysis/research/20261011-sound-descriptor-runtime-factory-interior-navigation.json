@@ -1,0 +1,144 @@
+{
+  "raw_aligned_pointer_navigation": [],
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0xa3b684",
+    "0xa3b688",
+    "0xa3b68c",
+    "0xa3b690",
+    "0xa3b694",
+    "0xa3b698",
+    "0xa3b69c",
+    "0xa3b6a0",
+    "0xa3b6a4",
+    "0xa3b6a8",
+    "0xa3b6ac",
+    "0xa3b6b0",
+    "0xa3b6b4",
+    "0xa3b6b8",
+    "0xa3b6bc",
+    "0xa3b6c0",
+    "0xa3b6c4",
+    "0xa3b6c8",
+    "0xa3b6cc",
+    "0xa3b6d0",
+    "0xa3b6d4",
+    "0xa3b6d8",
+    "0xa3b6dc",
+    "0xa3b6e0",
+    "0xa3b6e4",
+    "0xa3b6e8",
+    "0xa3b6ec",
+    "0xa3b6f0",
+    "0xa3b6f4",
+    "0xa3b6f8",
+    "0xa3b6fc",
+    "0xa3b700",
+    "0xa3b704",
+    "0xa3b708",
+    "0xa3b70c",
+    "0xa3b710",
+    "0xa3b714",
+    "0xa3b718",
+    "0xa3b71c",
+    "0xa3b720",
+    "0xa3b724",
+    "0xa3b728",
+    "0xa3b72c",
+    "0xa3b730"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0xa3b052",
+      "target": "#0xa3b6f8",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b6f8",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b5da",
+      "target": "#0xa3b6e4",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b6e4",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b6a0",
+      "target": "#0xa3b6fc",
+      "mode": "ARM",
+      "instruction": "beq #0xa3b6fc",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b6a8",
+      "target": "#0xa3b6f0",
+      "mode": "ARM",
+      "instruction": "bne #0xa3b6f0",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b6c4",
+      "target": "#0xa3b6f0",
+      "mode": "ARM",
+      "instruction": "beq #0xa3b6f0",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b714",
+      "target": "#0xa3b6f0",
+      "mode": "ARM",
+      "instruction": "beq #0xa3b6f0",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b730",
+      "target": "#0xa3b6e0",
+      "mode": "ARM",
+      "instruction": "b #0xa3b6e0",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b74e",
+      "target": "#0xa3b690",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b690",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b77e",
+      "target": "#0xa3b6a8",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b6a8",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3b7e6",
+      "target": "#0xa3b6f0",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b6f0",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3bb62",
+      "target": "#0xa3b68c",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b68c",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3bb96",
+      "target": "#0xa3b6d8",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b6d8",
+      "section": ".text"
+    },
+    {
+      "address": "0xa3bba6",
+      "target": "#0xa3b6d0",
+      "mode": "Thumb",
+      "instruction": "b #0xa3b6d0",
+      "section": ".text"
+    }
+  ]
+}
