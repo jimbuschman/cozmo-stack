@@ -1,0 +1,1800 @@
+{
+  "engineSHA256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "count": 138,
+  "rows": [
+    {
+      "candidate": {
+        "address": "0x9fb3fe",
+        "target": "#0x9fbb42",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb42",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb3fc",
+      "bytes": "0100a0e3",
+      "containingARMInterpretation": "mov r0, #1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb412",
+        "target": "#0x9fbb56",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb56",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb410",
+      "bytes": "4c10a0e3",
+      "containingARMInterpretation": "mov r1, #0x4c",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb43a",
+        "target": "#0x9fbb7e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb7e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb438",
+      "bytes": "4c20a0e3",
+      "containingARMInterpretation": "mov r2, #0x4c",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb452",
+        "target": "#0x9fbb96",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb96",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb450",
+      "bytes": "0100a0e3",
+      "containingARMInterpretation": "mov r0, #1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb476",
+        "target": "#0x9fbbba",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbba",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb474",
+      "bytes": "3400a0e3",
+      "containingARMInterpretation": "mov r0, #0x34",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb492",
+        "target": "#0x9fbb36",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb36",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb490",
+      "bytes": "000050e3",
+      "containingARMInterpretation": "cmp r0, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb4b2",
+        "target": "#0x9fbb60",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb60",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb4b0",
+      "bytes": "000055e3",
+      "containingARMInterpretation": "cmp r5, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb4da",
+        "target": "#0x9fbc1e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc1e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb4d8",
+      "bytes": "0030a0e3",
+      "containingARMInterpretation": "mov r3, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb522",
+        "target": "#0x9fbbc8",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbc8",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb520",
+      "bytes": "000051e3",
+      "containingARMInterpretation": "cmp r1, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb52a",
+        "target": "#0x9fbc46",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc46",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb528",
+      "bytes": "ffce8ce3",
+      "containingARMInterpretation": "orr ip, ip, #0xff0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb52e",
+        "target": "#0x9fbc72",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc72",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb52c",
+      "bytes": "0160a0e3",
+      "containingARMInterpretation": "mov r6, #1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb532",
+        "target": "#0x9fbc4e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc4e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb530",
+      "bytes": "0ec08ce3",
+      "containingARMInterpretation": "orr ip, ip, #0xe",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb53e",
+        "target": "#0x9fbbf4",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbf4",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb53c",
+      "bytes": "000059e3",
+      "containingARMInterpretation": "cmp sb, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb566",
+        "target": "#0x9fbc22",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc22",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb564",
+      "bytes": "00005ce3",
+      "containingARMInterpretation": "cmp ip, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb586",
+        "target": "#0x9fbcca",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcca",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb584",
+      "bytes": "0030a0e3",
+      "containingARMInterpretation": "mov r3, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb59a",
+        "target": "#0x9fbcde",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcde",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb598",
+      "bytes": "1720a0e3",
+      "containingARMInterpretation": "mov r2, #0x17",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb5b2",
+        "target": "#0x9fbd4e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd4e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb5b0",
+      "bytes": "ffcecce3",
+      "containingARMInterpretation": "bic ip, ip, #0xff0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb5b6",
+        "target": "#0x9fbd52",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd52",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb5b4",
+      "bytes": "0ec0cce3",
+      "containingARMInterpretation": "bic ip, ip, #0xe",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb5be",
+        "target": "#0x9fbc62",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc62",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb5bc",
+      "bytes": "000050e3",
+      "containingARMInterpretation": "cmp r0, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb5de",
+        "target": "#0x9fbc8e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc8e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb5dc",
+      "bytes": "000056e3",
+      "containingARMInterpretation": "cmp r6, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb606",
+        "target": "#0x9fbd4a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd4a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb604",
+      "bytes": "0030a0e3",
+      "containingARMInterpretation": "mov r3, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb612",
+        "target": "#0x9fbd56",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd56",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb610",
+      "bytes": "0160a0e3",
+      "containingARMInterpretation": "mov r6, #1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb61a",
+        "target": "#0x9fbd5e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd5e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb618",
+      "bytes": "0010a0e3",
+      "containingARMInterpretation": "mov r1, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb61e",
+        "target": "#0x9fbcda",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcda",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb61c",
+      "bytes": "00005ce3",
+      "containingARMInterpretation": "cmp ip, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb632",
+        "target": "#0x9fbb50",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb50",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb630",
+      "bytes": "08d08de2",
+      "containingARMInterpretation": "add sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb63a",
+        "target": "#0x9fbcde",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcde",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb638",
+      "bytes": "000050e3",
+      "containingARMInterpretation": "cmp r0, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb642",
+        "target": "#0x9fbd86",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd86",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb640",
+      "bytes": "0060a0e3",
+      "containingARMInterpretation": "mov r6, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb65e",
+        "target": "#0x9fbd7a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd7a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb65c",
+      "bytes": "ffce8ce3",
+      "containingARMInterpretation": "orr ip, ip, #0xff0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb666",
+        "target": "#0x9fbd82",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd82",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb664",
+      "bytes": "0ec08ce3",
+      "containingARMInterpretation": "orr ip, ip, #0xe",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb66e",
+        "target": "#0x9fbdb2",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdb2",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb66c",
+      "bytes": "4c10a0e3",
+      "containingARMInterpretation": "mov r1, #0x4c",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb68e",
+        "target": "#0x9fbdd2",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdd2",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb68c",
+      "bytes": "4c20a0e3",
+      "containingARMInterpretation": "mov r2, #0x4c",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb6b2",
+        "target": "#0x9fbbba",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbba",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb6b0",
+      "bytes": "082082e2",
+      "containingARMInterpretation": "add r2, r2, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb6e2",
+        "target": "#0x9fbb80",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb80",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb6e0",
+      "bytes": "08d04de2",
+      "containingARMInterpretation": "sub sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb6e6",
+        "target": "#0x9fbda6",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbda6",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb6e4",
+      "bytes": "00005ee3",
+      "containingARMInterpretation": "cmp lr, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb6fe",
+        "target": "#0x9fbe42",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe42",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb6fc",
+      "bytes": "0040a0e3",
+      "containingARMInterpretation": "mov r4, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb712",
+        "target": "#0x9fbe56",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe56",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb710",
+      "bytes": "1920a0e3",
+      "containingARMInterpretation": "mov r2, #0x19",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb72e",
+        "target": "#0x9fbc4c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc4c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb72c",
+      "bytes": "08d08de2",
+      "containingARMInterpretation": "add sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb73a",
+        "target": "#0x9fbbd8",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbd8",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb738",
+      "bytes": "08d04de2",
+      "containingARMInterpretation": "sub sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb742",
+        "target": "#0x9fbe02",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe02",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb740",
+      "bytes": "00005ee3",
+      "containingARMInterpretation": "cmp lr, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb782",
+        "target": "#0x9fbca0",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbca0",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb780",
+      "bytes": "08d08de2",
+      "containingARMInterpretation": "add sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb78e",
+        "target": "#0x9fbe38",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe38",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb78c",
+      "bytes": "000053e3",
+      "containingARMInterpretation": "cmp r3, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb7ae",
+        "target": "#0x9fbc4c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc4c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb7ac",
+      "bytes": "0cd04de2",
+      "containingARMInterpretation": "sub sp, sp, #0xc",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb7b2",
+        "target": "#0x9fbe56",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe56",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb7b0",
+      "bytes": "000050e3",
+      "containingARMInterpretation": "cmp r0, #0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb7fe",
+        "target": "#0x9fbd1c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd1c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb7fc",
+      "bytes": "0cd08de2",
+      "containingARMInterpretation": "add sp, sp, #0xc",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb80a",
+        "target": "#0x9fbb4e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb4e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb808",
+      "bytes": "0030a0e1",
+      "containingARMInterpretation": "mov r3, r0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb812",
+        "target": "#0x9fbcb0",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcb0",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb810",
+      "bytes": "08d04de2",
+      "containingARMInterpretation": "sub sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb836",
+        "target": "#0x9fbb7a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb7a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb834",
+      "bytes": "01c0a0e1",
+      "containingARMInterpretation": "mov ip, r1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb83a",
+        "target": "#0x9fbb7e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb7e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb838",
+      "bytes": "0430a0e1",
+      "containingARMInterpretation": "mov r3, r4",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb85e",
+        "target": "#0x9fbd7c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd7c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb85c",
+      "bytes": "08d08de2",
+      "containingARMInterpretation": "add sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb876",
+        "target": "#0x9fbb32",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb32",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb874",
+      "bytes": "01005ce1",
+      "containingARMInterpretation": "cmp ip, r1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb882",
+        "target": "#0x9fbbc6",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbc6",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb880",
+      "bytes": "0150a0e1",
+      "containingARMInterpretation": "mov r5, r1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb886",
+        "target": "#0x9fbd24",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd24",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb884",
+      "bytes": "0cd04de2",
+      "containingARMInterpretation": "sub sp, sp, #0xc",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb88a",
+        "target": "#0x9fbbce",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbce",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb888",
+      "bytes": "0040a0e1",
+      "containingARMInterpretation": "mov r4, r0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb88e",
+        "target": "#0x9fbbd2",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbd2",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb88c",
+      "bytes": "0300a0e1",
+      "containingARMInterpretation": "mov r0, r3",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8aa",
+        "target": "#0x9fbbee",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbee",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8a8",
+      "bytes": "0400a0e1",
+      "containingARMInterpretation": "mov r0, r4",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8c2",
+        "target": "#0x9fbde0",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbde0",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8c0",
+      "bytes": "0cd08de2",
+      "containingARMInterpretation": "add sp, sp, #0xc",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8ce",
+        "target": "#0x9fbb30",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb30",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8cc",
+      "bytes": "1eff2fe1",
+      "containingARMInterpretation": "bx lr",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8d6",
+        "target": "#0x9fbb38",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb38",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8d4",
+      "bytes": "1eff2fe1",
+      "containingARMInterpretation": "bx lr",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8e6",
+        "target": "#0x9fbd84",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd84",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8e4",
+      "bytes": "08d04de2",
+      "containingARMInterpretation": "sub sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8f2",
+        "target": "#0x9fbc36",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc36",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8f0",
+      "bytes": "0040a0e1",
+      "containingARMInterpretation": "mov r4, r0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8fa",
+        "target": "#0x9fbc3e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc3e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8f8",
+      "bytes": "0c00a0e1",
+      "containingARMInterpretation": "mov r0, ip",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb8fe",
+        "target": "#0x9fbc42",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc42",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb8fc",
+      "bytes": "0350a0e1",
+      "containingARMInterpretation": "mov r5, r3",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb902",
+        "target": "#0x9fbc46",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc46",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb900",
+      "bytes": "0270a0e1",
+      "containingARMInterpretation": "mov r7, r2",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb906",
+        "target": "#0x9fbc4a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc4a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb904",
+      "bytes": "0160a0e1",
+      "containingARMInterpretation": "mov r6, r1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb91a",
+        "target": "#0x9fbe38",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe38",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb918",
+      "bytes": "08d08de2",
+      "containingARMInterpretation": "add sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb926",
+        "target": "#0x9fbc6a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc6a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb924",
+      "bytes": "0610a0e1",
+      "containingARMInterpretation": "mov r1, r6",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb92e",
+        "target": "#0x9fbc72",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc72",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb92c",
+      "bytes": "0720a0e1",
+      "containingARMInterpretation": "mov r2, r7",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb932",
+        "target": "#0x9fbc76",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc76",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb930",
+      "bytes": "0530a0e1",
+      "containingARMInterpretation": "mov r3, r5",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb936",
+        "target": "#0x9fbe54",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe54",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb934",
+      "bytes": "08d08de2",
+      "containingARMInterpretation": "add sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb946",
+        "target": "#0x9fbe64",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe64",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb944",
+      "bytes": "08d08de2",
+      "containingARMInterpretation": "add sp, sp, #8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb95e",
+        "target": "#0x9fbc1a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc1a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb95c",
+      "bytes": "01005ce1",
+      "containingARMInterpretation": "cmp ip, r1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb982",
+        "target": "#0x9fbbe4",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbe4",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb980",
+      "bytes": "1eff2fe1",
+      "containingARMInterpretation": "bx lr",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb9ae",
+        "target": "#0x9fbc10",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc10",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb9ac",
+      "bytes": "1eff2fe1",
+      "containingARMInterpretation": "bx lr",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb9b6",
+        "target": "#0x9fbc18",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc18",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb9b4",
+      "bytes": "1eff2fe1",
+      "containingARMInterpretation": "bx lr",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb9be",
+        "target": "#0x9fbd02",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd02",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb9bc",
+      "bytes": "0080a0e1",
+      "containingARMInterpretation": "mov r8, r0",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb9ca",
+        "target": "#0x9fbd0e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd0e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb9c8",
+      "bytes": "0170a0e1",
+      "containingARMInterpretation": "mov r7, r1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb9d6",
+        "target": "#0x9fbd1a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd1a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb9d4",
+      "bytes": "0240a0e1",
+      "containingARMInterpretation": "mov r4, r2",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fb9de",
+        "target": "#0x9fbd22",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd22",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fb9dc",
+      "bytes": "0350a0e1",
+      "containingARMInterpretation": "mov r5, r3",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fba02",
+        "target": "#0x9fbd46",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd46",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fba00",
+      "bytes": "0210a0e1",
+      "containingARMInterpretation": "mov r1, r2",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fba2e",
+        "target": "#0x9fbd72",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd72",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fba2c",
+      "bytes": "0180a0e1",
+      "containingARMInterpretation": "mov r8, r1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fba92",
+        "target": "#0x9fbe2e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe2e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fba90",
+      "bytes": "d020cce1",
+      "containingARMInterpretation": "ldrd r2, r3, [ip]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fba96",
+        "target": "#0x9fbdda",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdda",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fba94",
+      "bytes": "a22ba0e1",
+      "containingARMInterpretation": "lsr r2, r2, #0x17",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fba9a",
+        "target": "#0x9fbda2",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbda2",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fba98",
+      "bytes": "832482e1",
+      "containingARMInterpretation": "orr r2, r2, r3, lsl #9",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbaa6",
+        "target": "#0x9fbdce",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdce",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbaa4",
+      "bytes": "033092e1",
+      "containingARMInterpretation": "orrs r3, r2, r3",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbaba",
+        "target": "#0x9fbdfe",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdfe",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbab8",
+      "bytes": "0430a0e1",
+      "containingARMInterpretation": "mov r3, r4",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbad6",
+        "target": "#0x9fbe1a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe1a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbad4",
+      "bytes": "0800a0e1",
+      "containingARMInterpretation": "mov r0, r8",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbada",
+        "target": "#0x9fbe1e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe1e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbad8",
+      "bytes": "0410a0e1",
+      "containingARMInterpretation": "mov r1, r4",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbade",
+        "target": "#0x9fbe22",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe22",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbadc",
+      "bytes": "0620a0e1",
+      "containingARMInterpretation": "mov r2, r6",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbb0e",
+        "target": "#0x9fbe52",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe52",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbb0c",
+      "bytes": "09e0a0e1",
+      "containingARMInterpretation": "mov lr, sb",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbede",
+        "target": "#0x9fbe66",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe66",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbedc",
+      "bytes": "1031c2e7",
+      "containingARMInterpretation": "bfi r3, r0, #2, #1",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fbffe",
+        "target": "#0x9fbb3a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb3a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fbffc",
+      "bytes": "00409ce5",
+      "containingARMInterpretation": "ldr r4, [ip]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc00e",
+        "target": "#0x9fbb3a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb3a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc00c",
+      "bytes": "301094e5",
+      "containingARMInterpretation": "ldr r1, [r4, #0x30]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc022",
+        "target": "#0x9fbb4e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb4e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc020",
+      "bytes": "2c3094e5",
+      "containingARMInterpretation": "ldr r3, [r4, #0x2c]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc03a",
+        "target": "#0x9fbb6c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb6c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc038",
+      "bytes": "186097e5",
+      "containingARMInterpretation": "ldr r6, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc03e",
+        "target": "#0x9fbb70",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb70",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc03c",
+      "bytes": "14c097e5",
+      "containingARMInterpretation": "ldr ip, [r7, #0x14]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc066",
+        "target": "#0x9fbb92",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb92",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc064",
+      "bytes": "044094e5",
+      "containingARMInterpretation": "ldr r4, [r4, #4]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc072",
+        "target": "#0x9fbb9e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb9e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc070",
+      "bytes": "083094e5",
+      "containingARMInterpretation": "ldr r3, [r4, #8]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc07e",
+        "target": "#0x9fbbaa",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbaa",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc07c",
+      "bytes": "0c3094e5",
+      "containingARMInterpretation": "ldr r3, [r4, #0xc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc08a",
+        "target": "#0x9fbb96",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbb96",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc088",
+      "bytes": "0c3084e5",
+      "containingARMInterpretation": "str r3, [r4, #0xc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc092",
+        "target": "#0x9fbbc4",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbc4",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc090",
+      "bytes": "186097e5",
+      "containingARMInterpretation": "ldr r6, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc096",
+        "target": "#0x9fbbc8",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbc8",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc094",
+      "bytes": "14c097e5",
+      "containingARMInterpretation": "ldr ip, [r7, #0x14]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc0ae",
+        "target": "#0x9fbbea",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbbea",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc0ac",
+      "bytes": "00309ce5",
+      "containingARMInterpretation": "ldr r3, [ip]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc0e2",
+        "target": "#0x9fbc14",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc14",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc0e0",
+      "bytes": "14c097e5",
+      "containingARMInterpretation": "ldr ip, [r7, #0x14]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc0e6",
+        "target": "#0x9fbc18",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc18",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc0e4",
+      "bytes": "186097e5",
+      "containingARMInterpretation": "ldr r6, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc0fe",
+        "target": "#0x9fbc3a",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc3a",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc0fc",
+      "bytes": "00309ce5",
+      "containingARMInterpretation": "ldr r3, [ip]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc12a",
+        "target": "#0x9fbc5c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc5c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc128",
+      "bytes": "1c2097e5",
+      "containingARMInterpretation": "ldr r2, [r7, #0x1c]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc13e",
+        "target": "#0x9fbc50",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc50",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc13c",
+      "bytes": "186087e5",
+      "containingARMInterpretation": "str r6, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc146",
+        "target": "#0x9fbc5e",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc5e",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc144",
+      "bytes": "00508ae5",
+      "containingARMInterpretation": "str r5, [sl]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc15a",
+        "target": "#0x9fbc92",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc92",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc158",
+      "bytes": "04009ae5",
+      "containingARMInterpretation": "ldr r0, [sl, #4]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc16a",
+        "target": "#0x9fbca2",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbca2",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc168",
+      "bytes": "04009ae5",
+      "containingARMInterpretation": "ldr r0, [sl, #4]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc16e",
+        "target": "#0x9fbc92",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc92",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc16c",
+      "bytes": "003090e5",
+      "containingARMInterpretation": "ldr r3, [r0]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc172",
+        "target": "#0x9fbc9c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbc9c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc170",
+      "bytes": "0c3093e5",
+      "containingARMInterpretation": "ldr r3, [r3, #0xc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc17a",
+        "target": "#0x9fbcac",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcac",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc178",
+      "bytes": "186097e5",
+      "containingARMInterpretation": "ldr r6, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc17e",
+        "target": "#0x9fbcb0",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcb0",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc17c",
+      "bytes": "14c097e5",
+      "containingARMInterpretation": "ldr ip, [r7, #0x14]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc196",
+        "target": "#0x9fbcd2",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcd2",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc194",
+      "bytes": "00309ce5",
+      "containingARMInterpretation": "ldr r3, [ip]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc1aa",
+        "target": "#0x9fbcce",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcce",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc1a8",
+      "bytes": "003090e5",
+      "containingARMInterpretation": "ldr r3, [r0]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc20a",
+        "target": "#0x9fbd1c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd1c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc208",
+      "bytes": "186087e5",
+      "containingARMInterpretation": "str r6, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc226",
+        "target": "#0x9fbd58",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd58",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc224",
+      "bytes": "0c1097e5",
+      "containingARMInterpretation": "ldr r1, [r7, #0xc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc24a",
+        "target": "#0x9fbd76",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd76",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc248",
+      "bytes": "003094e5",
+      "containingARMInterpretation": "ldr r3, [r4]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc252",
+        "target": "#0x9fbd7c",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd7c",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc250",
+      "bytes": "0c3093e5",
+      "containingARMInterpretation": "ldr r3, [r3, #0xc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc25e",
+        "target": "#0x9fbd90",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd90",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc25c",
+      "bytes": "0c0097e5",
+      "containingARMInterpretation": "ldr r0, [r7, #0xc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc262",
+        "target": "#0x9fbd86",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd86",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc260",
+      "bytes": "003090e5",
+      "containingARMInterpretation": "ldr r3, [r0]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc266",
+        "target": "#0x9fbd90",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbd90",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc264",
+      "bytes": "cc3093e5",
+      "containingARMInterpretation": "ldr r3, [r3, #0xcc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc276",
+        "target": "#0x9fbda2",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbda2",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc274",
+      "bytes": "003094e5",
+      "containingARMInterpretation": "ldr r3, [r4]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc27e",
+        "target": "#0x9fbda8",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbda8",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc27c",
+      "bytes": "0c3093e5",
+      "containingARMInterpretation": "ldr r3, [r3, #0xc]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc292",
+        "target": "#0x9fbdd4",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdd4",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc290",
+      "bytes": "b8309fe5",
+      "containingARMInterpretation": "ldr r3, [pc, #0xb8]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc29e",
+        "target": "#0x9fbdbc",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdbc",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc29c",
+      "bytes": "00308de5",
+      "containingARMInterpretation": "str r3, [sp]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc2ae",
+        "target": "#0x9fbdd8",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdd8",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc2ac",
+      "bytes": "000093e5",
+      "containingARMInterpretation": "ldr r0, [r3]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc2b2",
+        "target": "#0x9fbdd0",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdd0",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc2b0",
+      "bytes": "04308de5",
+      "containingARMInterpretation": "str r3, [sp, #4]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc2c2",
+        "target": "#0x9fbdf4",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdf4",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc2c0",
+      "bytes": "14b097e5",
+      "containingARMInterpretation": "ldr fp, [r7, #0x14]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc2c6",
+        "target": "#0x9fbdf8",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbdf8",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc2c4",
+      "bytes": "18e097e5",
+      "containingARMInterpretation": "ldr lr, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc302",
+        "target": "#0x9fbe40",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe40",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc300",
+      "bytes": "04309de5",
+      "containingARMInterpretation": "ldr r3, [sp, #4]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc30a",
+        "target": "#0x9fbe34",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe34",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc308",
+      "bytes": "000093e5",
+      "containingARMInterpretation": "ldr r0, [r3]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc312",
+        "target": "#0x9fbe50",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe50",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc310",
+      "bytes": "00309de5",
+      "containingARMInterpretation": "ldr r3, [sp]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc316",
+        "target": "#0x9fbe28",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe28",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc314",
+      "bytes": "14a087e5",
+      "containingARMInterpretation": "str sl, [r7, #0x14]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc31e",
+        "target": "#0x9fbe30",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe30",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc31c",
+      "bytes": "1c3087e5",
+      "containingARMInterpretation": "str r3, [r7, #0x1c]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc326",
+        "target": "#0x9fbe58",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbe58",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc324",
+      "bytes": "186097e5",
+      "containingARMInterpretation": "ldr r6, [r7, #0x18]",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    },
+    {
+      "candidate": {
+        "address": "0x9fc386",
+        "target": "#0x9fbcb0",
+        "mode": "Thumb",
+        "instruction": "b #0x9fbcb0",
+        "section": ".text"
+      },
+      "containingAddress": "0x9fc384",
+      "bytes": "0c2093e4",
+      "containingARMInterpretation": "ldr r2, [r3], #0xc",
+      "limit": "ARM word interpretation at natural alignment; local byte witness, not full control-flow/mixed-mode/input/alias proof."
+    }
+  ]
+}

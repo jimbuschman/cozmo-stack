@@ -3244,3 +3244,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint799 - structured publisher entry/subscription slices
 
 `20261010-sound-structured-binding-input-disposition.md` restricts caller navigation toA67830 prologue andA67A68 subscription loop, excluding the owner's own sources and intervening positioning payload target.15 encodings:two actual Thumb source instructions,thirteen individually reopened containing ARM words/local slices; mixed-mode/indirect input proof remains limited. No admitted object/property/type input;132 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint800 - output-query candidate word witnesses
+
+`20261010-sound-routing-query-candidate-source-disposition.md` individually records788's138 remaining Thumb-looking encodings as containing ARM word interpretations with local primary bytes; separate entry/return witnesses correct nearest-function enclosure assumptions. This limited navigation is not a complete mode/input/alias absence proof. Actual9FBB30 second-argument output destination and original parent34/outputbus38 aliases remain UNKNOWN;104/131 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
