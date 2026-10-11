@@ -1,0 +1,67 @@
+0x009884C8: push     {r4, r5, r6, lr}
+0x009884CC: mov      r5, r0
+0x009884D0: ldrb     r3, [r0, #0x1bd]
+0x009884D4: tst      r3, #0x80
+0x009884D8: bne      #0x9884ec
+0x009884DC: ldr      r3, [r0, #0x150]
+0x009884E0: ldrb     r3, [r3, #0xc]
+0x009884E4: tst      r3, #2
+0x009884E8: bne      #0x988584
+0x009884EC: ldr      r3, [pc, #0xd8]   ; [pc->0x009885CC] = 0x006B7B54
+0x009884F0: vmov.f32 s14, #5.000000e-01
+0x009884F4: vldr     s13, [r5, #0x164]
+0x009884F8: ldr      r6, [r5, #0x1d8]
+0x009884FC: ldr      r3, [pc, r3]   ; [pc->0x00988504] = 0xE1D330B0
+0x00988500: mov      r0, r6
+0x00988504: ldrh     r3, [r3]
+0x00988508: vmov     s15, r3
+0x0098850C: vcvt.f32.s32 s15, s15
+0x00988510: vmul.f32 s15, s15, s13
+0x00988514: vmov.f32 s13, #-5.000000e-01
+0x00988518: vcmpe.f32 s15, #0
+0x0098851C: vmrs     apsr_nzcv, fpscr
+0x00988520: vmovle.f32 s14, s13
+0x00988524: vadd.f32 s15, s15, s14
+0x00988528: vcvt.s32.f32 s15, s15
+0x0098852C: vmov     r1, s15
+0x00988530: vmov     r4, s15
+0x00988534: bl       #0x4cf578   ; ->0x004CF578
+0x00988538: add      r3, r4, r4, lsr #31
+0x0098853C: cmp      r1, r3, asr #1
+0x00988540: bgt      #0x988594
+0x00988544: ldr      r3, [r5, #0x1b4]
+0x00988548: cmp      r1, r3
+0x0098854C: bgt      #0x988598
+0x00988550: cmp      r1, #0
+0x00988554: ble      #0x988584
+0x00988558: ldrb     r4, [r5, #0x1be]
+0x0098855C: rsb      r6, r1, r6
+0x00988560: ldrb     r2, [r5, #0x1bd]
+0x00988564: rsb      r1, r1, r3
+0x00988568: and      r4, r4, #0xfe
+0x0098856C: str      r6, [r5, #0x1d8]
+0x00988570: bfc      r4, #1, #1
+0x00988574: orr      r2, r2, #0x80
+0x00988578: str      r1, [r5, #0x1b4]
+0x0098857C: strb     r4, [r5, #0x1be]
+0x00988580: strb     r2, [r5, #0x1bd]
+0x00988584: ldrb     r3, [r5, #0x1be]
+0x00988588: orr      r3, r3, #0x40
+0x0098858C: strb     r3, [r5, #0x1be]
+0x00988590: pop      {r4, r5, r6, pc}
+0x00988594: ldr      r3, [r5, #0x1b4]
+0x00988598: ldrb     r2, [r5, #0x1be]
+0x0098859C: rsb      r4, r1, r4
+0x009885A0: ldrb     r1, [r5, #0x1bd]
+0x009885A4: add      r6, r6, r4
+0x009885A8: and      r2, r2, #0xfe
+0x009885AC: add      r3, r3, r4
+0x009885B0: bfc      r2, #1, #1
+0x009885B4: orr      r1, r1, #0x80
+0x009885B8: str      r6, [r5, #0x1d8]
+0x009885BC: str      r3, [r5, #0x1b4]
+0x009885C0: strb     r2, [r5, #0x1be]
+0x009885C4: strb     r1, [r5, #0x1bd]
+0x009885C8: b        #0x988584   ; ->0x00988584
+
+Raw ELF word at01040058=01052440. Address from009884FC+8+006B7B54; runtime consumer loads U16 from the pointed global. Literal009885CC=006B7B54 is data, not an instruction.
