@@ -1,0 +1,89 @@
+{
+  "boundary": "Actual A3B694 and9D0418 instructions. Explicit GOT pool-ID42, allocation pointer/null and A5-filled object fixtures; A3B434 is an insertion-request ABI boundary with no registry effects simulated. No actual shipped caller, field-value, allocator initialization, global binding, insertion success or supported-input exclusion proof.",
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "unicorn_version": "2.1.4",
+  "cases": [
+    {
+      "id_fixture_hex": "12345678",
+      "type_fixture_hex": "00000000",
+      "allocation_nonnull_fixture": true,
+      "return": 536875008,
+      "calls": [
+        {
+          "interface": "allocate",
+          "pool_fixture": 42,
+          "size": 72,
+          "returned_pointer_fixture": 536875008
+        },
+        {
+          "interface": "insert-request",
+          "object": 536875008,
+          "snapshot_before_interface_hex": "a0bf0301a5a5a5a57856341201000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+          "unmodified_payload_pattern_hex": "A5"
+        }
+      ]
+    },
+    {
+      "id_fixture_hex": "12345678",
+      "type_fixture_hex": "00000000",
+      "allocation_nonnull_fixture": false,
+      "return": 0,
+      "calls": [
+        {
+          "interface": "allocate",
+          "pool_fixture": 42,
+          "size": 72,
+          "returned_pointer_fixture": 0
+        }
+      ]
+    },
+    {
+      "id_fixture_hex": "12345678",
+      "type_fixture_hex": "00000001",
+      "allocation_nonnull_fixture": true,
+      "return": 536875008,
+      "calls": [
+        {
+          "interface": "allocate",
+          "pool_fixture": 42,
+          "size": 56,
+          "returned_pointer_fixture": 536875008
+        },
+        {
+          "interface": "insert-request",
+          "object": 536875008,
+          "snapshot_before_interface_hex": "c8bf0301a5a5a5a57856341201000000a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+          "unmodified_payload_pattern_hex": "A5"
+        }
+      ]
+    },
+    {
+      "id_fixture_hex": "12345678",
+      "type_fixture_hex": "00000001",
+      "allocation_nonnull_fixture": false,
+      "return": 0,
+      "calls": [
+        {
+          "interface": "allocate",
+          "pool_fixture": 42,
+          "size": 56,
+          "returned_pointer_fixture": 0
+        }
+      ]
+    },
+    {
+      "id_fixture_hex": "12345678",
+      "type_fixture_hex": "00000002",
+      "allocation_nonnull_fixture": true,
+      "return": 0,
+      "calls": []
+    },
+    {
+      "id_fixture_hex": "12345678",
+      "type_fixture_hex": "FFFFFFFF",
+      "allocation_nonnull_fixture": true,
+      "return": 0,
+      "calls": []
+    }
+  ]
+}
