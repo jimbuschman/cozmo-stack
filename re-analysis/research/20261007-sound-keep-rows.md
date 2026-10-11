@@ -11911,3 +11911,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint862 — paired-load exclusion-label correction
 
 861's report now removes an overbroad unrelated-recipient exclusion label.9EB568 is a direct call outside the selected descriptor-getter candidate; this slot check makes no behavior/completion claim for it and does not waive timing/control decisions. Only guard-listed backing/free mechanisms and per-sample DSP are excluded.23 pairs/zero selected calls/zero caps and024 PARTIAL unchanged.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint863 — shared descriptor composed block loads
+
+`20261011-sound-descriptor-block-slot-disposition.md` checks ADD48/4C/50→LDM IA/IB/DA/DB, a form excluded by842/861:385 seeds/13 reached block loads/nine target-containing loads/zero selected-register calls/12 caps. Primary IA/writeback/DB layouts checked; nine old caps retained and three new pointer origins bounded without context-class or DSP assumptions. No actual shared getter ID/field recipient or conditional/cached/foreign absence proof;024 PARTIAL.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
