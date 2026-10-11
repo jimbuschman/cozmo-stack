@@ -1,0 +1,16 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x005927C6..0x005927F0 exclusive; Thumb;
+005927C6: blx          #0x4a83f8
+005927CA: vmov         s0, r0
+005927CE: cmp          r7, #1
+005927D0: vcvt.u32.f32 s0, s0
+005927D4: vmov         r0, s0
+005927D8: bne          #0x5927ec
+005927DA: subs         r0, #1
+005927DC: movs         r1, #1
+005927DE: clz          r0, r0
+005927E2: rsb.w        r0, r0, #0x20
+005927E6: lsl.w        r0, r1, r0
+005927EA: b            #0x5927f0
+005927EC: blx          #0x4a85d8

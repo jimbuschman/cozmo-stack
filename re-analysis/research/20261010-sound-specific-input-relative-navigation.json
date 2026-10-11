@@ -1,0 +1,5 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "limit": "Aligned ALLOC-section self-relative word and PREL31 navigation only. Does not cover arbitrary table-base-relative words, transformed pointers, copies, stack or external input. Every candidate needs primary consumer attribution.",
+  "candidates": []
+}

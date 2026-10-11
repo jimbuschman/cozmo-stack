@@ -1,0 +1,9 @@
+[
+  {
+    "name": ".rodata",
+    "start": "0xbe3ed0",
+    "end": "0x1017518",
+    "flags": 2,
+    "executable": false
+  }
+]

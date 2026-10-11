@@ -1,0 +1,114 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0x9cdfe4"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0x5927d4",
+      "target": "#0x9ce01c",
+      "mode": "ARM",
+      "instruction": "beq #0x9ce01c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9cdafe",
+      "target": "#0x9ce00c",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce00c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9cdb36",
+      "target": "#0x9ce04c",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce04c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9cdbd2",
+      "target": "#0x9ce05c",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce05c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9cdcde",
+      "target": "#0x9ce022",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce022",
+      "section": ".text"
+    },
+    {
+      "address": "0x9cddda",
+      "target": "#0x9ce03c",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce03c",
+      "section": ".text"
+    },
+    {
+      "address": "0x9cdf26",
+      "target": "#0x9ce050",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce050",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce0d6",
+      "target": "#0x9ce018",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce018",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce442",
+      "target": "#0x9cdfe6",
+      "mode": "Thumb",
+      "instruction": "b #0x9cdfe6",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce44a",
+      "target": "#0x9cdfee",
+      "mode": "Thumb",
+      "instruction": "b #0x9cdfee",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce47e",
+      "target": "#0x9ce03a",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce03a",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce4ea",
+      "target": "#0x9ce020",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce020",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce516",
+      "target": "#0x9ce054",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce054",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce522",
+      "target": "#0x9ce046",
+      "mode": "Thumb",
+      "instruction": "b #0x9ce046",
+      "section": ".text"
+    },
+    {
+      "address": "0x9ce5ca",
+      "target": "#0x9cdffa",
+      "mode": "Thumb",
+      "instruction": "b #0x9cdffa",
+      "section": ".text"
+    }
+  ]
+}

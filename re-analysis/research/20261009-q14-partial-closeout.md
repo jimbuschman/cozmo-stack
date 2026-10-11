@@ -452,3 +452,23 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint776 — runtime weight setter interior-entry disposition
 
 `20261010-sound-weight-setter-interior-disposition.md` checks A08024..A080CC, with30 external encoding candidates. The sole ARM candidate is actual ThumbVSTR;29 Thumb encodings provide no established input. Separate branch/literal/PUSH/return boundaries retain actual node/childID/weight admission as UNKNOWN,008 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint777 — FX updater interior-entry disposition
+
+`20261010-sound-fx-updater-interior-disposition.md` bounds external immediate branches into9CDFE4..9CE064. The sole ARM candidate is actual Thumb VMOV; fourteen Thumb encodings supply no established runtime input. Separate return/literal/PUSH boundaries retained; settings/property/data/size and its actual notification recipient remain UNKNOWN,016 PARTIAL.107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint778 — ARM device MOVW seed correction
+
+`20261010-sound-device-movw-seed-disposition.md` adds omitted DF90..9B low-half seeds:4393 windows retain all300 checkpoint774 events and326 caps. The one added candidate is E06F80 in non-executable rodata, not an established writer. Original rate/frame groups remain PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint779 — Thumb MOVW address-construction seed correction
+
+`20261010-sound-thumb-movw-seed-disposition.md` records the bounded search and explicit limits. 6855 windows retain the same300 events, with338 caps; no new rate/frame writer or input. Original obligations remain PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint780 — Named input self-relative pointer disposition
+
+`20261010-sound-specific-input-relative-disposition.md` records the bounded search and explicit limits. Five named input targets yield no address-relative/PREL31 candidates; arbitrary table bases, copied and external pointers remain UNKNOWN. Original obligations remain PARTIAL;107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
