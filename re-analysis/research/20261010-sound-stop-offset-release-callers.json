@@ -1,0 +1,59 @@
+{
+  "sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "targets": [
+    "0xa3e920",
+    "0xa3eb4c"
+  ],
+  "limit": "Dual-alignment immediate ARM/Thumb branch encoding navigation only; mixed-mode/literal false candidates, alternate entry/computed/copied/indirect inputs remain UNKNOWN.",
+  "candidates": [
+    {
+      "address": "0xa3eb40",
+      "target": "#0xa3e920",
+      "mode": "ARM",
+      "instruction": "bl #0xa3e920",
+      "section": ".text"
+    },
+    {
+      "address": "0xa70ac0",
+      "target": "#0xa3eb4c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3eb4c",
+      "section": ".text"
+    },
+    {
+      "address": "0xa716a0",
+      "target": "#0xa3eb4c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3eb4c",
+      "section": ".text"
+    },
+    {
+      "address": "0xa7171c",
+      "target": "#0xa3eb4c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3eb4c",
+      "section": ".text"
+    },
+    {
+      "address": "0xa71784",
+      "target": "#0xa3eb4c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3eb4c",
+      "section": ".text"
+    },
+    {
+      "address": "0xa71a9c",
+      "target": "#0xa3eb4c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3eb4c",
+      "section": ".text"
+    },
+    {
+      "address": "0xa71da8",
+      "target": "#0xa3eb4c",
+      "mode": "ARM",
+      "instruction": "bl #0xa3eb4c",
+      "section": ".text"
+    }
+  ]
+}

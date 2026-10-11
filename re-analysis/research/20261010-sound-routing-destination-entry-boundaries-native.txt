@@ -1,0 +1,26 @@
+ENGINE SHA256 02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1
+LIGHT: explicit ELF32 LOAD ranges; no symbol/index/relocation navigation; words are raw ELF values
+RANGE 0x009D23B0..0x009D24AC exclusive; ARM;
+009D23B0: ldr          r0, [r3]
+009D23B4: bl           #0xa7a988
+009D23B8: b            #0x9d226c
+009D23BC: ldr          r3, [pc, #0x30] ; word[009D23F4]=FFFFFDBC
+009D23C0: mov          r0, sl
+009D23C4: ldr          r3, [r7, r3]
+009D23C8: ldr          fp, [r3]
+009D23CC: bl           #0xa0b600
+009D23D0: mov          r1, sl
+009D23D4: mov          r0, fp
+009D23D8: bl           #0xa7a988
+009D23DC: b            #0x9d230c
+009D23E0: pop          {r3, r4, r5, r6, r7, r8, sb, sl, fp, pc}
+009D23E4: rsbeq        fp, fp, r0, lsr #15
+009D23E8: mlseq        fp, ip, r7, fp
+009D23EC: rsbeq        lr, r6, ip, lsl r0
+RANGE 0x009F3150..0x009F3280 exclusive; ARM;
+009F3150: ldr          fp, [fp, #8]
+009F3154: cmp          fp, #0
+009F3158: bne          #0x9f2e5c
+009F315C: b            #0x9f2f70
+009F3160: andeq        r0, r0, r0
+009F3164: rsbeq        sp, r4, r0, asr #8

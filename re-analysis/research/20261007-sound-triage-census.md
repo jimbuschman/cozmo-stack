@@ -3023,3 +3023,13 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint754 — division provider dependency/load boundary
 
 `20261010-sound-division-load-boundary.md` adds22-member shipped engine DT_NEEDED closure, eager-binding flags, actual activity DAS-before-engine clinit and separate DAS/TTS class orders. Only DAS/acatts provide selected division names in that shipped closure; process interposition/zero-handler/raise and actual zero input remain UNKNOWN. No inferred symbol winner or phone linker descent.099/130 PARTIAL;107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint755 — selected routing interior-entry input boundaries
+
+`20261010-sound-routing-destination-interior-input-dispositions.md`: Actual separate entries and prior returns exclude ordinary fallthrough into9D2410/9F319C;67 Thumb interior encodings provide no ARM caller. Supplied destinations remain UNKNOWN, not unreachable.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+
+### Checkpoint756 — named music stop-offset operation inputs
+
+`20261010-sound-stop-offset-release-input-reconciliation.md`: Seven actual ARM calls bind timed-release event and forced-stop lifetime entries, preserving context/mode/count gates and unlink/owner-clear/stop/release order. These named music contracts are paid;119 retains exhaustive writer/alias proof.107 native+8 scope CHECKED/25 PARTIAL,140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
