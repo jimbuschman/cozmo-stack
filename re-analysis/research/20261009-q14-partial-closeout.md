@@ -562,3 +562,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint800 - output-query candidate word witnesses
 
 `20261010-sound-routing-query-candidate-source-disposition.md` individually records788's138 remaining Thumb-looking encodings as containing ARM word interpretations with local primary bytes; separate entry/return witnesses correct nearest-function enclosure assumptions. This limited navigation is not a complete mode/input/alias absence proof. Actual9FBB30 second-argument output destination and original parent34/outputbus38 aliases remain UNKNOWN;104/131 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint801 - music-flush candidate source boundaries
+
+`20261010-sound-stop-offset-flush-candidate-source-disposition.md` attributes775's50 remaining encodings to upper halfwords of ARM instructions using seven primary entries and finite predecessor chains; all53 finite immediate candidates accounted. Corrects nearest-ownerA71138's spillover to separatePUSHA71534. ActualA71634 manager/context andA716BC manager/raw-mode admission, plus original stop-offset alias/writer proof, remain UNKNOWN;119 PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
