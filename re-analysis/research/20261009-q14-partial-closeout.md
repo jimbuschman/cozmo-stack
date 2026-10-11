@@ -622,3 +622,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint815 - ten shipped helper entry gates
 
 `20261011-sound-rate-frame-helper-entry-disposition.md` preserves exact divisor1,divisor0,andzero64-bit entry gates from814's10 source-defined candidates. No incomingR2/R3 read occurs before the first control frontier;only five prefixes defineR2. No full-helper,selected-provider,zero-input reachability or alias-absence promotion. Next bounded lead is the existing callers' post-call register use/scalar inputs. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint816 - existing helper post-call register frontiers
+
+`20261011-sound-rate-frame-helper-postcall-disposition.md` pays four concrete branch destinations and the999018 leaf with register definitions before use;consistent NZCV prevents skipping both complementaryEQ/NE definitions. Three later numerical-helper call frontiers remain explicitly named,including source-positiveUIDIVMOD linkage4A6694. No arithmetic/body,selected-provider or all-alias promotion. Six rate/frame obligations remain PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

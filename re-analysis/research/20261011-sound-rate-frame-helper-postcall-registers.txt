@@ -1,0 +1,132 @@
+0098638C __aeabi_idiv
+00986390 103098e5 ldr r3, [r8, #0x10]
+FRONTIER {"address":"00986394","kind":"all tracked values defined before read","path":["00986390"]}
+
+0099CCA0 __aeabi_uidiv
+0099CCA4 089295e5 ldr sb, [r5, #0x208]
+0099CCA8 970007e0 mul r7, r7, r0
+0099CCAC 0800a0e1 mov r0, r8
+0099CCB0 007084e5 str r7, [r4]
+0099CCB4 d7f0ffeb bl #0x999018
+FRONTIER {"address":"0099CCB4","kind":"call with tracked value still live","pending":["r3"],"instruction":"bl #0x999018","path":["0099CCA4","0099CCA8","0099CCAC","0099CCB0","0099CCB4"]}
+
+009AA154 __aeabi_uidiv
+009AA158 4c3097e5 ldr r3, [r7, #0x4c]
+FRONTIER {"address":"009AA15C","kind":"all tracked values defined before read","path":["009AA158"]}
+
+009AF948 __aeabi_l2f
+009AF94C 98339fe5 ldr r3, [pc, #0x398]
+009AF950 107a07ee vmov s14, r7
+009AF954 487af8ee vcvt.f32.u32 s15, s16
+009AF958 033096e7 ldr r3, [r6, r3]
+009AF95C d96adfed vldr s13, [pc, #0x364]
+009AF960 1c6a94ed vldr s12, [r4, #0x70]
+009AF964 c75af8ee vcvt.f32.s32 s11, s14
+009AF968 007a93ed vldr s14, [r3]
+009AF96C a57ac7ee vdiv.f32 s15, s15, s11
+009AF970 900a05ee vmov s11, r0
+009AF974 a77ac6ee vdiv.f32 s15, s13, s15
+009AF978 877a85ee vdiv.f32 s14, s11, s14
+009AF97C 277ac7ee vdiv.f32 s15, s14, s15
+009AF980 867a77ee vadd.f32 s15, s15, s12
+009AF984 e77abcee vcvt.u32.f32 s14, s15
+009AF988 105a17ee vmov r5, s14
+009AF98C 000055e3 cmp r5, #0
+009AF990 5200000a beq #0x9afae0
+009AF994 105a07ee vmov s14, r5
+009AF998 0710a0e1 mov r1, r7
+009AF99C 100a18ee vmov r0, s16
+009AF9A0 477ab8ee vcvt.f32.u32 s14, s14
+009AF9A4 c77a77ee vsub.f32 s15, s15, s14
+009AF9A8 1c7ac4ed vstr s15, [r4, #0x70]
+009AF9AC 573aeceb bl #0x4be310
+009AFAE0 1c229fe5 ldr r2, [pc, #0x21c]
+FRONTIER {"address":"009AFAE4","kind":"all tracked values defined before read","path":["009AF94C","009AF950","009AF954","009AF958","009AF95C","009AF960","009AF964","009AF968","009AF96C","009AF970","009AF974","009AF978","009AF97C","009AF980","009AF984","009AF988","009AF98C","009AF990","009AFAE0"]}
+FRONTIER {"address":"009AF9AC","kind":"call with tracked value still live","pending":["r2"],"instruction":"bl #0x4be310","path":["009AF94C","009AF950","009AF954","009AF958","009AF95C","009AF960","009AF964","009AF968","009AF96C","009AF970","009AF974","009AF978","009AF97C","009AF980","009AF984","009AF988","009AF98C","009AF990","009AF994","009AF998","009AF99C","009AF9A0","009AF9A4","009AF9A8","009AF9AC"]}
+
+009AFB0C __aeabi_uidiv
+009AF9E0 08339fe5 ldr r3, [pc, #0x308]
+009AFB10 000055e1 cmp r5, r0
+009AFB14 1f00009a bls #0x9afb98
+009AFB18 c0319fe5 ldr r3, [pc, #0x1c0]
+009AFB98 0050a0e3 mov r5, #0
+009AFB9C 8fffffea b #0x9af9e0
+FRONTIER {"address":"009AF9E4","kind":"all tracked values defined before read","path":["009AFB10","009AFB14","009AFB98","009AFB9C","009AF9E0"]}
+FRONTIER {"address":"009AFB1C","kind":"all tracked values defined before read","path":["009AFB10","009AFB14","009AFB18"]}
+
+009B0834 __aeabi_uidiv
+009B0838 000055e1 cmp r5, r0
+009B083C 1500009a bls #0x9b0898
+009B0840 9c309fe5 ldr r3, [pc, #0x9c]
+009B0898 028bbdec vpop {d8}
+009B089C f883bde8 pop {r3, r4, r5, r6, r7, r8, sb, pc}
+FRONTIER {"address":"009B089C","kind":"terminal before tracked-value read","pending":[],"instruction":"pop {r3, r4, r5, r6, r7, r8, sb, pc}","path":["009B0838","009B083C","009B0898","009B089C"]}
+FRONTIER {"address":"009B0844","kind":"all tracked values defined before read","path":["009B0838","009B083C","009B0840"]}
+
+009EBE94 __aeabi_idiv
+009EBE98 06609fe7 ldr r6, [pc, r6]
+009EBE9C 05508fe0 add r5, pc, r5
+009EBEA0 007096e5 ldr r7, [r6]
+009EBEA4 0010a0e1 mov r1, r0
+009EBEA8 4c0097e5 ldr r0, [r7, #0x4c]
+009EBEAC f8e9eaeb bl #0x4a6694
+FRONTIER {"address":"009EBEAC","kind":"call with tracked value still live","pending":["r2"],"instruction":"bl #0x4a6694","path":["009EBE98","009EBE9C","009EBEA0","009EBEA4","009EBEA8","009EBEAC"]}
+
+009FD548 __aeabi_idiv
+009FD54C 005ab7ee vmov.f32 s10, #1.000000e+00
+009FD550 00e050e2 subs lr, r0, #0
+009FD554 90ea071e vmovne s15, lr
+009FD558 09e0a001 moveq lr, sb
+009FD55C 38e084e5 str lr, [r4, #0x38]
+009FD560 677af81e vcvtne.f32.u32 s15, s15
+009FD564 275a851e vdivne.f32 s10, s10, s15
+009FD568 01005ae3 cmp sl, #1
+009FD56C c700000a beq #0x9fd890
+009FD570 047a97ed vldr s14, [r7, #0x10]
+009FD574 056ad7ed vldr s13, [r7, #0x14]
+009FD578 065ad7ed vldr s11, [r7, #0x18]
+009FD57C 478ab4ee vcmp.f32 s16, s14
+009FD580 10faf1ee vmrs apsr_nzcv, fpscr
+009FD584 0200001a bne #0x9fd594
+009FD588 668af4ee vcmp.f32 s17, s13
+009FD58C 10faf1ee vmrs apsr_nzcv, fpscr
+009FD590 7c00000a beq #0x9fd788
+009FD594 14339fe5 ldr r3, [pc, #0x314]
+009FD788 659ab4ee vcmp.f32 s18, s11
+009FD78C 10faf1ee vmrs apsr_nzcv, fpscr
+009FD790 0130a013 movne r3, #1
+009FD794 0030a003 moveq r3, #0
+009FD890 0030a0e3 mov r3, #0
+FRONTIER {"address":"009FD894","kind":"all tracked values defined before read","path":["009FD54C","009FD550","009FD554","009FD558","009FD55C","009FD560","009FD564","009FD568","009FD56C","009FD890"]}
+FRONTIER {"address":"009FD598","kind":"all tracked values defined before read","path":["009FD54C","009FD550","009FD554","009FD558","009FD55C","009FD560","009FD564","009FD568","009FD56C","009FD570","009FD574","009FD578","009FD57C","009FD580","009FD584","009FD594"]}
+FRONTIER {"address":"009FD794","kind":"all tracked values defined before read","path":["009FD54C","009FD550","009FD554","009FD558","009FD55C","009FD560","009FD564","009FD568","009FD56C","009FD570","009FD574","009FD578","009FD57C","009FD580","009FD584","009FD588","009FD58C","009FD590","009FD788","009FD78C","009FD790"]}
+FRONTIER {"address":"009FD798","kind":"all tracked values defined before read","path":["009FD54C","009FD550","009FD554","009FD558","009FD55C","009FD560","009FD564","009FD568","009FD56C","009FD570","009FD574","009FD578","009FD57C","009FD580","009FD584","009FD588","009FD58C","009FD590","009FD788","009FD78C","009FD790","009FD794"]}
+
+00A3685C __aeabi_idiv
+00A36860 003094e5 ldr r3, [r4]
+00A36864 080053e1 cmp r3, r8
+00A36868 1a00000a beq #0xa368d8
+00A3686C 028bbdec vpop {d8}
+00A36870 140084e5 str r0, [r4, #0x14]
+00A36874 105084e5 str r5, [r4, #0x10]
+00A36878 1c5084e5 str r5, [r4, #0x1c]
+00A3687C f883bde8 pop {r3, r4, r5, r6, r7, r8, sb, pc}
+00A368D8 0f0417e3 tst r7, #0xf000000
+00A368DC e2ffff0a beq #0xa3686c
+00A368E0 103094e5 ldr r3, [r4, #0x10]
+00A368E4 142094e5 ldr r2, [r4, #0x14]
+FRONTIER {"address":"00A3687C","kind":"terminal before tracked-value read","pending":["r2"],"instruction":"pop {r3, r4, r5, r6, r7, r8, sb, pc}","path":["00A36860","00A36864","00A36868","00A368D8","00A368DC","00A3686C","00A36870","00A36874","00A36878","00A3687C"]}
+FRONTIER {"address":"00A368E8","kind":"all tracked values defined before read","path":["00A36860","00A36864","00A36868","00A368D8","00A368DC","00A368E0","00A368E4"]}
+FRONTIER {"address":"00A3687C","kind":"terminal before tracked-value read","pending":["r2"],"instruction":"pop {r3, r4, r5, r6, r7, r8, sb, pc}","path":["00A36860","00A36864","00A36868","00A3686C","00A36870","00A36874","00A36878","00A3687C"]}
+
+00A58074 __aeabi_uidiv
+00A58078 000084e5 str r0, [r4]
+00A5807C 0100a0e3 mov r0, #1
+00A58080 1080bde8 pop {r4, pc}
+FRONTIER {"address":"00A58080","kind":"terminal before tracked-value read","pending":["r3"],"instruction":"pop {r4, pc}","path":["00A58078","00A5807C","00A58080"]}
+
+00A58DB0 __aeabi_idiv
+00A58DB4 0510a0e1 mov r1, r5
+00A58DB8 970000e0 mul r0, r7, r0
+00A58DBC 5395e9eb bl #0x4be310
+FRONTIER {"address":"00A58DBC","kind":"call with tracked value still live","pending":["r2"],"instruction":"bl #0x4be310","path":["00A58DB4","00A58DB8","00A58DBC"]}

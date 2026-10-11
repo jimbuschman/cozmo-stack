@@ -1,0 +1,1487 @@
+{
+  "scope": "Existing11 helper calls /12 rate-frame register observations only.",
+  "rows": [
+    {
+      "call": "0098638C",
+      "helper": "__aeabi_idiv",
+      "tracked_registers": [
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "00986390",
+          "bytes": "103098e5",
+          "instruction": "ldr r3, [r8, #0x10]",
+          "reads": [
+            "r8"
+          ],
+          "writes": [
+            "r3"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "00986394",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "00986390"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "0099CCA0",
+      "helper": "__aeabi_uidiv",
+      "tracked_registers": [
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "0099CCA4",
+          "bytes": "089295e5",
+          "instruction": "ldr sb, [r5, #0x208]",
+          "reads": [
+            "r5"
+          ],
+          "writes": [
+            "sb"
+          ]
+        },
+        {
+          "address": "0099CCA8",
+          "bytes": "970007e0",
+          "instruction": "mul r7, r7, r0",
+          "reads": [
+            "r7",
+            "r0"
+          ],
+          "writes": [
+            "r7"
+          ]
+        },
+        {
+          "address": "0099CCAC",
+          "bytes": "0800a0e1",
+          "instruction": "mov r0, r8",
+          "reads": [
+            "r8"
+          ],
+          "writes": [
+            "r0"
+          ]
+        },
+        {
+          "address": "0099CCB0",
+          "bytes": "007084e5",
+          "instruction": "str r7, [r4]",
+          "reads": [
+            "r7",
+            "r4"
+          ],
+          "writes": []
+        },
+        {
+          "address": "0099CCB4",
+          "bytes": "d7f0ffeb",
+          "instruction": "bl #0x999018",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "lr",
+            "pc"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "0099CCB4",
+          "kind": "call with tracked value still live",
+          "pending": [
+            "r3"
+          ],
+          "instruction": "bl #0x999018",
+          "path": [
+            "0099CCA4",
+            "0099CCA8",
+            "0099CCAC",
+            "0099CCB0",
+            "0099CCB4"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "009AA154",
+      "helper": "__aeabi_uidiv",
+      "tracked_registers": [
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "009AA158",
+          "bytes": "4c3097e5",
+          "instruction": "ldr r3, [r7, #0x4c]",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "r3"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "009AA15C",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009AA158"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "009AF948",
+      "helper": "__aeabi_l2f",
+      "tracked_registers": [
+        "r2",
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "009AF94C",
+          "bytes": "98339fe5",
+          "instruction": "ldr r3, [pc, #0x398]",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009AF950",
+          "bytes": "107a07ee",
+          "instruction": "vmov s14, r7",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "s14"
+          ]
+        },
+        {
+          "address": "009AF954",
+          "bytes": "487af8ee",
+          "instruction": "vcvt.f32.u32 s15, s16",
+          "reads": [
+            "s16"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009AF958",
+          "bytes": "033096e7",
+          "instruction": "ldr r3, [r6, r3]",
+          "reads": [
+            "r6",
+            "r3"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009AF95C",
+          "bytes": "d96adfed",
+          "instruction": "vldr s13, [pc, #0x364]",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "s13"
+          ]
+        },
+        {
+          "address": "009AF960",
+          "bytes": "1c6a94ed",
+          "instruction": "vldr s12, [r4, #0x70]",
+          "reads": [
+            "r4"
+          ],
+          "writes": [
+            "s12"
+          ]
+        },
+        {
+          "address": "009AF964",
+          "bytes": "c75af8ee",
+          "instruction": "vcvt.f32.s32 s11, s14",
+          "reads": [
+            "s14"
+          ],
+          "writes": [
+            "s11"
+          ]
+        },
+        {
+          "address": "009AF968",
+          "bytes": "007a93ed",
+          "instruction": "vldr s14, [r3]",
+          "reads": [
+            "r3"
+          ],
+          "writes": [
+            "s14"
+          ]
+        },
+        {
+          "address": "009AF96C",
+          "bytes": "a57ac7ee",
+          "instruction": "vdiv.f32 s15, s15, s11",
+          "reads": [
+            "s15",
+            "s11"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009AF970",
+          "bytes": "900a05ee",
+          "instruction": "vmov s11, r0",
+          "reads": [
+            "r0"
+          ],
+          "writes": [
+            "s11"
+          ]
+        },
+        {
+          "address": "009AF974",
+          "bytes": "a77ac6ee",
+          "instruction": "vdiv.f32 s15, s13, s15",
+          "reads": [
+            "s13",
+            "s15"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009AF978",
+          "bytes": "877a85ee",
+          "instruction": "vdiv.f32 s14, s11, s14",
+          "reads": [
+            "s11",
+            "s14"
+          ],
+          "writes": [
+            "s14"
+          ]
+        },
+        {
+          "address": "009AF97C",
+          "bytes": "277ac7ee",
+          "instruction": "vdiv.f32 s15, s14, s15",
+          "reads": [
+            "s14",
+            "s15"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009AF980",
+          "bytes": "867a77ee",
+          "instruction": "vadd.f32 s15, s15, s12",
+          "reads": [
+            "s15",
+            "s12"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009AF984",
+          "bytes": "e77abcee",
+          "instruction": "vcvt.u32.f32 s14, s15",
+          "reads": [
+            "s15"
+          ],
+          "writes": [
+            "s14"
+          ]
+        },
+        {
+          "address": "009AF988",
+          "bytes": "105a17ee",
+          "instruction": "vmov r5, s14",
+          "reads": [
+            "s14"
+          ],
+          "writes": [
+            "r5"
+          ]
+        },
+        {
+          "address": "009AF98C",
+          "bytes": "000055e3",
+          "instruction": "cmp r5, #0",
+          "reads": [
+            "r5"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "009AF990",
+          "bytes": "5200000a",
+          "instruction": "beq #0x9afae0",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "009AF994",
+          "bytes": "105a07ee",
+          "instruction": "vmov s14, r5",
+          "reads": [
+            "r5"
+          ],
+          "writes": [
+            "s14"
+          ]
+        },
+        {
+          "address": "009AF998",
+          "bytes": "0710a0e1",
+          "instruction": "mov r1, r7",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "r1"
+          ]
+        },
+        {
+          "address": "009AF99C",
+          "bytes": "100a18ee",
+          "instruction": "vmov r0, s16",
+          "reads": [
+            "s16"
+          ],
+          "writes": [
+            "r0"
+          ]
+        },
+        {
+          "address": "009AF9A0",
+          "bytes": "477ab8ee",
+          "instruction": "vcvt.f32.u32 s14, s14",
+          "reads": [
+            "s14"
+          ],
+          "writes": [
+            "s14"
+          ]
+        },
+        {
+          "address": "009AF9A4",
+          "bytes": "c77a77ee",
+          "instruction": "vsub.f32 s15, s15, s14",
+          "reads": [
+            "s15",
+            "s14"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009AF9A8",
+          "bytes": "1c7ac4ed",
+          "instruction": "vstr s15, [r4, #0x70]",
+          "reads": [
+            "s15",
+            "r4"
+          ],
+          "writes": []
+        },
+        {
+          "address": "009AF9AC",
+          "bytes": "573aeceb",
+          "instruction": "bl #0x4be310",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "lr",
+            "pc"
+          ]
+        },
+        {
+          "address": "009AFAE0",
+          "bytes": "1c229fe5",
+          "instruction": "ldr r2, [pc, #0x21c]",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "r2"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "009AFAE4",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009AF94C",
+            "009AF950",
+            "009AF954",
+            "009AF958",
+            "009AF95C",
+            "009AF960",
+            "009AF964",
+            "009AF968",
+            "009AF96C",
+            "009AF970",
+            "009AF974",
+            "009AF978",
+            "009AF97C",
+            "009AF980",
+            "009AF984",
+            "009AF988",
+            "009AF98C",
+            "009AF990",
+            "009AFAE0"
+          ]
+        },
+        {
+          "address": "009AF9AC",
+          "kind": "call with tracked value still live",
+          "pending": [
+            "r2"
+          ],
+          "instruction": "bl #0x4be310",
+          "path": [
+            "009AF94C",
+            "009AF950",
+            "009AF954",
+            "009AF958",
+            "009AF95C",
+            "009AF960",
+            "009AF964",
+            "009AF968",
+            "009AF96C",
+            "009AF970",
+            "009AF974",
+            "009AF978",
+            "009AF97C",
+            "009AF980",
+            "009AF984",
+            "009AF988",
+            "009AF98C",
+            "009AF990",
+            "009AF994",
+            "009AF998",
+            "009AF99C",
+            "009AF9A0",
+            "009AF9A4",
+            "009AF9A8",
+            "009AF9AC"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "009AFB0C",
+      "helper": "__aeabi_uidiv",
+      "tracked_registers": [
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "009AF9E0",
+          "bytes": "08339fe5",
+          "instruction": "ldr r3, [pc, #0x308]",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009AFB10",
+          "bytes": "000055e1",
+          "instruction": "cmp r5, r0",
+          "reads": [
+            "r5",
+            "r0"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "009AFB14",
+          "bytes": "1f00009a",
+          "instruction": "bls #0x9afb98",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "009AFB18",
+          "bytes": "c0319fe5",
+          "instruction": "ldr r3, [pc, #0x1c0]",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009AFB98",
+          "bytes": "0050a0e3",
+          "instruction": "mov r5, #0",
+          "reads": [],
+          "writes": [
+            "r5"
+          ]
+        },
+        {
+          "address": "009AFB9C",
+          "bytes": "8fffffea",
+          "instruction": "b #0x9af9e0",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "009AF9E4",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009AFB10",
+            "009AFB14",
+            "009AFB98",
+            "009AFB9C",
+            "009AF9E0"
+          ]
+        },
+        {
+          "address": "009AFB1C",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009AFB10",
+            "009AFB14",
+            "009AFB18"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "009B0834",
+      "helper": "__aeabi_uidiv",
+      "tracked_registers": [
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "009B0838",
+          "bytes": "000055e1",
+          "instruction": "cmp r5, r0",
+          "reads": [
+            "r5",
+            "r0"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "009B083C",
+          "bytes": "1500009a",
+          "instruction": "bls #0x9b0898",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "009B0840",
+          "bytes": "9c309fe5",
+          "instruction": "ldr r3, [pc, #0x9c]",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009B0898",
+          "bytes": "028bbdec",
+          "instruction": "vpop {d8}",
+          "reads": [
+            "d8"
+          ],
+          "writes": [
+            "d8"
+          ]
+        },
+        {
+          "address": "009B089C",
+          "bytes": "f883bde8",
+          "instruction": "pop {r3, r4, r5, r6, r7, r8, sb, pc}",
+          "reads": [
+            "sp"
+          ],
+          "writes": [
+            "sp",
+            "r3",
+            "r4",
+            "r5",
+            "r6",
+            "r7",
+            "r8",
+            "sb",
+            "pc"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "009B089C",
+          "kind": "terminal before tracked-value read",
+          "pending": [],
+          "instruction": "pop {r3, r4, r5, r6, r7, r8, sb, pc}",
+          "path": [
+            "009B0838",
+            "009B083C",
+            "009B0898",
+            "009B089C"
+          ]
+        },
+        {
+          "address": "009B0844",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009B0838",
+            "009B083C",
+            "009B0840"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "009EBE94",
+      "helper": "__aeabi_idiv",
+      "tracked_registers": [
+        "r2"
+      ],
+      "instructions": [
+        {
+          "address": "009EBE98",
+          "bytes": "06609fe7",
+          "instruction": "ldr r6, [pc, r6]",
+          "reads": [
+            "pc",
+            "r6"
+          ],
+          "writes": [
+            "r6"
+          ]
+        },
+        {
+          "address": "009EBE9C",
+          "bytes": "05508fe0",
+          "instruction": "add r5, pc, r5",
+          "reads": [
+            "pc",
+            "r5"
+          ],
+          "writes": [
+            "r5"
+          ]
+        },
+        {
+          "address": "009EBEA0",
+          "bytes": "007096e5",
+          "instruction": "ldr r7, [r6]",
+          "reads": [
+            "r6"
+          ],
+          "writes": [
+            "r7"
+          ]
+        },
+        {
+          "address": "009EBEA4",
+          "bytes": "0010a0e1",
+          "instruction": "mov r1, r0",
+          "reads": [
+            "r0"
+          ],
+          "writes": [
+            "r1"
+          ]
+        },
+        {
+          "address": "009EBEA8",
+          "bytes": "4c0097e5",
+          "instruction": "ldr r0, [r7, #0x4c]",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "r0"
+          ]
+        },
+        {
+          "address": "009EBEAC",
+          "bytes": "f8e9eaeb",
+          "instruction": "bl #0x4a6694",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "lr",
+            "pc"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "009EBEAC",
+          "kind": "call with tracked value still live",
+          "pending": [
+            "r2"
+          ],
+          "instruction": "bl #0x4a6694",
+          "path": [
+            "009EBE98",
+            "009EBE9C",
+            "009EBEA0",
+            "009EBEA4",
+            "009EBEA8",
+            "009EBEAC"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "009FD548",
+      "helper": "__aeabi_idiv",
+      "tracked_registers": [
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "009FD54C",
+          "bytes": "005ab7ee",
+          "instruction": "vmov.f32 s10, #1.000000e+00",
+          "reads": [],
+          "writes": [
+            "s10"
+          ]
+        },
+        {
+          "address": "009FD550",
+          "bytes": "00e050e2",
+          "instruction": "subs lr, r0, #0",
+          "reads": [
+            "r0"
+          ],
+          "writes": [
+            "lr"
+          ]
+        },
+        {
+          "address": "009FD554",
+          "bytes": "90ea071e",
+          "instruction": "vmovne s15, lr",
+          "reads": [
+            "lr"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009FD558",
+          "bytes": "09e0a001",
+          "instruction": "moveq lr, sb",
+          "reads": [
+            "sb"
+          ],
+          "writes": [
+            "lr"
+          ]
+        },
+        {
+          "address": "009FD55C",
+          "bytes": "38e084e5",
+          "instruction": "str lr, [r4, #0x38]",
+          "reads": [
+            "lr",
+            "r4"
+          ],
+          "writes": []
+        },
+        {
+          "address": "009FD560",
+          "bytes": "677af81e",
+          "instruction": "vcvtne.f32.u32 s15, s15",
+          "reads": [
+            "s15"
+          ],
+          "writes": [
+            "s15"
+          ]
+        },
+        {
+          "address": "009FD564",
+          "bytes": "275a851e",
+          "instruction": "vdivne.f32 s10, s10, s15",
+          "reads": [
+            "s10",
+            "s15"
+          ],
+          "writes": [
+            "s10"
+          ]
+        },
+        {
+          "address": "009FD568",
+          "bytes": "01005ae3",
+          "instruction": "cmp sl, #1",
+          "reads": [
+            "sl"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "009FD56C",
+          "bytes": "c700000a",
+          "instruction": "beq #0x9fd890",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "009FD570",
+          "bytes": "047a97ed",
+          "instruction": "vldr s14, [r7, #0x10]",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "s14"
+          ]
+        },
+        {
+          "address": "009FD574",
+          "bytes": "056ad7ed",
+          "instruction": "vldr s13, [r7, #0x14]",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "s13"
+          ]
+        },
+        {
+          "address": "009FD578",
+          "bytes": "065ad7ed",
+          "instruction": "vldr s11, [r7, #0x18]",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "s11"
+          ]
+        },
+        {
+          "address": "009FD57C",
+          "bytes": "478ab4ee",
+          "instruction": "vcmp.f32 s16, s14",
+          "reads": [
+            "s16",
+            "s14"
+          ],
+          "writes": [
+            "fpscr_nzcv"
+          ]
+        },
+        {
+          "address": "009FD580",
+          "bytes": "10faf1ee",
+          "instruction": "vmrs apsr_nzcv, fpscr",
+          "reads": [
+            "fpscr_nzcv"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "009FD584",
+          "bytes": "0200001a",
+          "instruction": "bne #0x9fd594",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "009FD588",
+          "bytes": "668af4ee",
+          "instruction": "vcmp.f32 s17, s13",
+          "reads": [
+            "s17",
+            "s13"
+          ],
+          "writes": [
+            "fpscr_nzcv"
+          ]
+        },
+        {
+          "address": "009FD58C",
+          "bytes": "10faf1ee",
+          "instruction": "vmrs apsr_nzcv, fpscr",
+          "reads": [
+            "fpscr_nzcv"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "009FD590",
+          "bytes": "7c00000a",
+          "instruction": "beq #0x9fd788",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "009FD594",
+          "bytes": "14339fe5",
+          "instruction": "ldr r3, [pc, #0x314]",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009FD788",
+          "bytes": "659ab4ee",
+          "instruction": "vcmp.f32 s18, s11",
+          "reads": [
+            "s18",
+            "s11"
+          ],
+          "writes": [
+            "fpscr_nzcv"
+          ]
+        },
+        {
+          "address": "009FD78C",
+          "bytes": "10faf1ee",
+          "instruction": "vmrs apsr_nzcv, fpscr",
+          "reads": [
+            "fpscr_nzcv"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "009FD790",
+          "bytes": "0130a013",
+          "instruction": "movne r3, #1",
+          "reads": [],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009FD794",
+          "bytes": "0030a003",
+          "instruction": "moveq r3, #0",
+          "reads": [],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "009FD890",
+          "bytes": "0030a0e3",
+          "instruction": "mov r3, #0",
+          "reads": [],
+          "writes": [
+            "r3"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "009FD894",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009FD54C",
+            "009FD550",
+            "009FD554",
+            "009FD558",
+            "009FD55C",
+            "009FD560",
+            "009FD564",
+            "009FD568",
+            "009FD56C",
+            "009FD890"
+          ]
+        },
+        {
+          "address": "009FD598",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009FD54C",
+            "009FD550",
+            "009FD554",
+            "009FD558",
+            "009FD55C",
+            "009FD560",
+            "009FD564",
+            "009FD568",
+            "009FD56C",
+            "009FD570",
+            "009FD574",
+            "009FD578",
+            "009FD57C",
+            "009FD580",
+            "009FD584",
+            "009FD594"
+          ]
+        },
+        {
+          "address": "009FD794",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009FD54C",
+            "009FD550",
+            "009FD554",
+            "009FD558",
+            "009FD55C",
+            "009FD560",
+            "009FD564",
+            "009FD568",
+            "009FD56C",
+            "009FD570",
+            "009FD574",
+            "009FD578",
+            "009FD57C",
+            "009FD580",
+            "009FD584",
+            "009FD588",
+            "009FD58C",
+            "009FD590",
+            "009FD788",
+            "009FD78C",
+            "009FD790"
+          ]
+        },
+        {
+          "address": "009FD798",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "009FD54C",
+            "009FD550",
+            "009FD554",
+            "009FD558",
+            "009FD55C",
+            "009FD560",
+            "009FD564",
+            "009FD568",
+            "009FD56C",
+            "009FD570",
+            "009FD574",
+            "009FD578",
+            "009FD57C",
+            "009FD580",
+            "009FD584",
+            "009FD588",
+            "009FD58C",
+            "009FD590",
+            "009FD788",
+            "009FD78C",
+            "009FD790",
+            "009FD794"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "00A3685C",
+      "helper": "__aeabi_idiv",
+      "tracked_registers": [
+        "r2"
+      ],
+      "instructions": [
+        {
+          "address": "00A36860",
+          "bytes": "003094e5",
+          "instruction": "ldr r3, [r4]",
+          "reads": [
+            "r4"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "00A36864",
+          "bytes": "080053e1",
+          "instruction": "cmp r3, r8",
+          "reads": [
+            "r3",
+            "r8"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "00A36868",
+          "bytes": "1a00000a",
+          "instruction": "beq #0xa368d8",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "00A3686C",
+          "bytes": "028bbdec",
+          "instruction": "vpop {d8}",
+          "reads": [
+            "d8"
+          ],
+          "writes": [
+            "d8"
+          ]
+        },
+        {
+          "address": "00A36870",
+          "bytes": "140084e5",
+          "instruction": "str r0, [r4, #0x14]",
+          "reads": [
+            "r0",
+            "r4"
+          ],
+          "writes": []
+        },
+        {
+          "address": "00A36874",
+          "bytes": "105084e5",
+          "instruction": "str r5, [r4, #0x10]",
+          "reads": [
+            "r5",
+            "r4"
+          ],
+          "writes": []
+        },
+        {
+          "address": "00A36878",
+          "bytes": "1c5084e5",
+          "instruction": "str r5, [r4, #0x1c]",
+          "reads": [
+            "r5",
+            "r4"
+          ],
+          "writes": []
+        },
+        {
+          "address": "00A3687C",
+          "bytes": "f883bde8",
+          "instruction": "pop {r3, r4, r5, r6, r7, r8, sb, pc}",
+          "reads": [
+            "sp"
+          ],
+          "writes": [
+            "sp",
+            "r3",
+            "r4",
+            "r5",
+            "r6",
+            "r7",
+            "r8",
+            "sb",
+            "pc"
+          ]
+        },
+        {
+          "address": "00A368D8",
+          "bytes": "0f0417e3",
+          "instruction": "tst r7, #0xf000000",
+          "reads": [
+            "r7"
+          ],
+          "writes": [
+            "cpsr"
+          ]
+        },
+        {
+          "address": "00A368DC",
+          "bytes": "e2ffff0a",
+          "instruction": "beq #0xa3686c",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "pc"
+          ]
+        },
+        {
+          "address": "00A368E0",
+          "bytes": "103094e5",
+          "instruction": "ldr r3, [r4, #0x10]",
+          "reads": [
+            "r4"
+          ],
+          "writes": [
+            "r3"
+          ]
+        },
+        {
+          "address": "00A368E4",
+          "bytes": "142094e5",
+          "instruction": "ldr r2, [r4, #0x14]",
+          "reads": [
+            "r4"
+          ],
+          "writes": [
+            "r2"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "00A3687C",
+          "kind": "terminal before tracked-value read",
+          "pending": [
+            "r2"
+          ],
+          "instruction": "pop {r3, r4, r5, r6, r7, r8, sb, pc}",
+          "path": [
+            "00A36860",
+            "00A36864",
+            "00A36868",
+            "00A368D8",
+            "00A368DC",
+            "00A3686C",
+            "00A36870",
+            "00A36874",
+            "00A36878",
+            "00A3687C"
+          ]
+        },
+        {
+          "address": "00A368E8",
+          "kind": "all tracked values defined before read",
+          "path": [
+            "00A36860",
+            "00A36864",
+            "00A36868",
+            "00A368D8",
+            "00A368DC",
+            "00A368E0",
+            "00A368E4"
+          ]
+        },
+        {
+          "address": "00A3687C",
+          "kind": "terminal before tracked-value read",
+          "pending": [
+            "r2"
+          ],
+          "instruction": "pop {r3, r4, r5, r6, r7, r8, sb, pc}",
+          "path": [
+            "00A36860",
+            "00A36864",
+            "00A36868",
+            "00A3686C",
+            "00A36870",
+            "00A36874",
+            "00A36878",
+            "00A3687C"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "00A58074",
+      "helper": "__aeabi_uidiv",
+      "tracked_registers": [
+        "r3"
+      ],
+      "instructions": [
+        {
+          "address": "00A58078",
+          "bytes": "000084e5",
+          "instruction": "str r0, [r4]",
+          "reads": [
+            "r0",
+            "r4"
+          ],
+          "writes": []
+        },
+        {
+          "address": "00A5807C",
+          "bytes": "0100a0e3",
+          "instruction": "mov r0, #1",
+          "reads": [],
+          "writes": [
+            "r0"
+          ]
+        },
+        {
+          "address": "00A58080",
+          "bytes": "1080bde8",
+          "instruction": "pop {r4, pc}",
+          "reads": [
+            "sp"
+          ],
+          "writes": [
+            "sp",
+            "r4",
+            "pc"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "00A58080",
+          "kind": "terminal before tracked-value read",
+          "pending": [
+            "r3"
+          ],
+          "instruction": "pop {r4, pc}",
+          "path": [
+            "00A58078",
+            "00A5807C",
+            "00A58080"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    },
+    {
+      "call": "00A58DB0",
+      "helper": "__aeabi_idiv",
+      "tracked_registers": [
+        "r2"
+      ],
+      "instructions": [
+        {
+          "address": "00A58DB4",
+          "bytes": "0510a0e1",
+          "instruction": "mov r1, r5",
+          "reads": [
+            "r5"
+          ],
+          "writes": [
+            "r1"
+          ]
+        },
+        {
+          "address": "00A58DB8",
+          "bytes": "970000e0",
+          "instruction": "mul r0, r7, r0",
+          "reads": [
+            "r7",
+            "r0"
+          ],
+          "writes": [
+            "r0"
+          ]
+        },
+        {
+          "address": "00A58DBC",
+          "bytes": "5395e9eb",
+          "instruction": "bl #0x4be310",
+          "reads": [
+            "pc"
+          ],
+          "writes": [
+            "lr",
+            "pc"
+          ]
+        }
+      ],
+      "frontiers": [
+        {
+          "address": "00A58DBC",
+          "kind": "call with tracked value still live",
+          "pending": [
+            "r2"
+          ],
+          "instruction": "bl #0x4be310",
+          "path": [
+            "00A58DB4",
+            "00A58DB8",
+            "00A58DBC"
+          ]
+        }
+      ],
+      "limit": "Local256-byte graph plus4 primary reopened branch-entry slices; consistent NZCV predicates; calls,out-of-bound/indirect/terminal instructions stop; no helper body or global alias absence proof."
+    }
+  ]
+}
