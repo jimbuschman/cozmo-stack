@@ -3567,3 +3567,7 @@ Close-out rows009/034 now name the alternative direct/internal or mutable event/
 ### Checkpoint879 — original constructor destination interior attributions
 
 `20261011-sound-routing-constructor-interior-disposition.md` retains other34 original755 candidates into9F319C:32 upper-half ARM words, lower half9F318C actual prior-constructor store, and literal9F3164 read by9F2E3C after9F315C branch. No admitted constructor destination or alternate-mode/indirect absence. Actual9F2F88 liveC4 tail retains incoming receiver and R1=0; its target stays UNKNOWN despite rejected Thumb9F2F8A. No new family/callee or755 rescan. Stop these34 leads;104/131 PARTIAL.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.
+
+### Checkpoint880 — bounded original C4 indirect-tail joins
+
+`20261011-sound-routing-c4-tail-disposition.md` positively joins879 actual9F2F88 tail for seven previously established node/bus table products:CC is9F2E34;C4 targets98154C/A1DFE0/9C3D04, different from9F319C. Seven actual-instruction Unicorn receiver/table/frame fixtures confirm retainedR0,zeroR1,restoredLR/SP and stop before paid callees. No new caller/admission/all-receiver/immutability claim.22 raw method-pointer candidates retained,other15 unbound without new family descent.104/131 PARTIAL for original constructor destination and writer/alias inputs; stop these bounded joins.117 CHECKED (109 native+8 scope)/23 PARTIAL/0 NOT DONE;140 AUDIBLE/0 INTERNAL. Research only; Q15 stays behindQ14.

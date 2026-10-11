@@ -1,0 +1,281 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "unicorn_version": "2.1.4",
+  "boundary": "Actual9F2F70..88 and original static C4/CC bytes for seven previously established BI378A/NR146B/NT201A/SI283A/BH549A products. Explicit receiver/table/frame fixtures, not a fresh class construction or actual caller/input membership proof. Stop before C4 callee. Other15 exact pointer candidates are navigation only, not fifteen admitted products or a new family census. Alternate vtables, mutations and arbitrary aliases stay UNKNOWN.",
+  "tail_instruction_hex": "2c009de50010a0e3003090e5c43093e534d08de2f04fbde813ff2fe1",
+  "cases": [
+    {
+      "established_product": "RanSeq",
+      "vtable_fixture": "0103B860",
+      "slotCC_address": "0103B92C",
+      "slotCC_value": "009F2E34",
+      "slotC4_address": "0103B924",
+      "selected_C4_target": "0098154C",
+      "receiver_at_tail": "20000000",
+      "argumentR1": 0,
+      "stack_delta": 88,
+      "stopped_before_callee": true
+    },
+    {
+      "established_product": "Sound",
+      "vtable_fixture": "0103BAD0",
+      "slotCC_address": "0103BB9C",
+      "slotCC_value": "009F2E34",
+      "slotC4_address": "0103BB94",
+      "selected_C4_target": "00A1DFE0",
+      "receiver_at_tail": "20000000",
+      "argumentR1": 0,
+      "stack_delta": 88,
+      "stopped_before_callee": true
+    },
+    {
+      "established_product": "Switch",
+      "vtable_fixture": "0103BDC8",
+      "slotCC_address": "0103BE94",
+      "slotCC_value": "009F2E34",
+      "slotC4_address": "0103BE8C",
+      "selected_C4_target": "0098154C",
+      "receiver_at_tail": "20000000",
+      "argumentR1": 0,
+      "stack_delta": 88,
+      "stopped_before_callee": true
+    },
+    {
+      "established_product": "ActorMixer",
+      "vtable_fixture": "0103CF88",
+      "slotCC_address": "0103D054",
+      "slotCC_value": "009F2E34",
+      "slotC4_address": "0103D04C",
+      "selected_C4_target": "0098154C",
+      "receiver_at_tail": "20000000",
+      "argumentR1": 0,
+      "stack_delta": 88,
+      "stopped_before_callee": true
+    },
+    {
+      "established_product": "Layer",
+      "vtable_fixture": "0103B050",
+      "slotCC_address": "0103B11C",
+      "slotCC_value": "009F2E34",
+      "slotC4_address": "0103B114",
+      "selected_C4_target": "0098154C",
+      "receiver_at_tail": "20000000",
+      "argumentR1": 0,
+      "stack_delta": 88,
+      "stopped_before_callee": true
+    },
+    {
+      "established_product": "bus base",
+      "vtable_fixture": "0103ACE0",
+      "slotCC_address": "0103ADAC",
+      "slotCC_value": "009F2E34",
+      "slotC4_address": "0103ADA4",
+      "selected_C4_target": "009C3D04",
+      "receiver_at_tail": "20000000",
+      "argumentR1": 0,
+      "stack_delta": 88,
+      "stopped_before_callee": true
+    },
+    {
+      "established_product": "bus second",
+      "vtable_fixture": "0103D100",
+      "slotCC_address": "0103D1CC",
+      "slotCC_value": "009F2E34",
+      "slotC4_address": "0103D1C4",
+      "selected_C4_target": "009C3D04",
+      "receiver_at_tail": "20000000",
+      "argumentR1": 0,
+      "stack_delta": 88,
+      "stopped_before_callee": true
+    }
+  ],
+  "exact_method_pointer_candidates": [
+    {
+      "section": ".data.rel.ro",
+      "address": "01039794",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039A44",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039B9C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039CF4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039F74",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103A0E4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103A264",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103A53C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103AB1C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103AC64",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103ADAC",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B11C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B374",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B5A4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B6F4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B92C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103BB9C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103BCEC",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103BE94",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103D054",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103D1CC",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103D324",
+      "value": "009F2E34"
+    }
+  ],
+  "other_unbound_pointer_candidates": [
+    {
+      "section": ".data.rel.ro",
+      "address": "01039794",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039A44",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039B9C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039CF4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "01039F74",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103A0E4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103A264",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103A53C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103AB1C",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103AC64",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B374",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B5A4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103B6F4",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103BCEC",
+      "value": "009F2E34"
+    },
+    {
+      "section": ".data.rel.ro",
+      "address": "0103D324",
+      "value": "009F2E34"
+    }
+  ]
+}
