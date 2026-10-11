@@ -7,3 +7,5 @@ VI663A: fresh primary `20261010-sound-voice-init-pointer-candidate-native.txt` a
 VI663B: VS4/VS14/VS16's three known direct producer and error/re-init gates, and VF's selected format/FX/lifetime decisions remain paid. VW650 still binds actual E0/E4 stores and both caller-mediated output-word updates. The original complete indirect/computed/stack/copied pointer caller proof and additional E0/E4 writer-alias proof remain PARTIAL. The single-window encoding result is neither all-callers proof nor evidence that initialization always succeeds.
 
 Counts107 native+8 scope CHECKED/25 PARTIAL;140 AUDIBLE/0 INTERNAL. No production/fidelity/inventory/hardware/Q15 edits. out of scope: per-sample DSP, storage/I-O and excluded branch payloads.
+
+Correction, checkpoint793: PT540C already contains a fourth direct VoiceInit call atA41C68. The three VS/VI523A sites above remain locally valid but do not exhaust even the known direct callers. See `20261010-sound-voice-init-interior-disposition.md`; indirect and E0/E4 alias proofs remain PARTIAL.

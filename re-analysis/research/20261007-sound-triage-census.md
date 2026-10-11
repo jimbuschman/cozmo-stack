@@ -417,7 +417,7 @@ Checkpoint497 reconciliation: PA491/DP492/IP493/ES494/AU495/CA496 settle ordinar
 
 > | M6-025 | **KEEP** | 0x009EB4C8;0x00A0CA04;0x00A40940;0x009EBE38..0x009EC0F0;0x00A42210;0x00A0428C;0x00A054D8;0x00A53558;0x00A5358C;0x00A535D8;0x00A53698;0x00A22304;0x00A22684 | Indirect-caller census, initialization barrier, re-init triggers, null-parent remainder, pending-state/device-build bodies and absent field writers are state/lifetime gaps. |
 
-PARTIAL: TH1–TH8/DF1–DF44 establish device/worker init and rebuild parents; VS4/VS14–VS17 trace all three direct VoiceInit callers and re-init/error gates from primary code. Remaining: indirect-caller census, null-parent and pending-state/field writer/remaining collaborator bodies.
+PARTIAL: TH1–TH8/DF1–DF44 establish device/worker init and rebuild parents; VS4/VS14–VS17 trace three originally scoped direct VoiceInit sites (checkpoint793 adds PT540C fourth site) and re-init/error gates from primary code. Remaining: indirect-caller census, null-parent and pending-state/field writer/remaining collaborator bodies.
 
 Checkpoint198 reconciliation: PN177/QN172/VF180/N5194 trace all four named standard voice control callbacks A53558/A5358C/A535D8/A53698 with their gates, concrete slots and source/wrapper recipients; PF193 settles grouped preparation/start dispatch. Remaining: indirect caller/producer census, E0/E4 and other field writers, null-parent/pending-state/device collaborator closure; the four named callback bodies are no longer unread.
 
@@ -779,7 +779,7 @@ out of scope: per-sample ADP-1 arithmetic, backing allocation/storage mechanics 
 
 > | C31.2 Compressor init/settings | M6-013,M6-025 | **KEEP** | 0x00AA0538;0x00AA0808;0x00A54A30 | Creation, parameter reads, formats, initialization failure and reset/bypass remain exact; execute endpoint UNKNOWN in current correction. |
 
-CHECKED (decisions-only scope), checkpoint537: B7–12/B19–20/CP1–9/PP441F actual compressor108 creation/readers/Init/Reset/Term/Execute boundaries, PM536D actual Info and selected population, VI523A allthree Init callers, VF/WV/RS/PS404 stages/wrapper lifecycle and EB497/FQ431 bypass. The previously named enclosing109/138 product remainder is positive P109523–524/P138525–535 and Q14-073/078/079 CHECKED at536. No generic extra-family placeholder or automatic fidelity acceptance.
+CHECKED (decisions-only scope), checkpoint537: B7–12/B19–20/CP1–9/PP441F actual compressor108 creation/readers/Init/Reset/Term/Execute boundaries, PM536D actual Info and selected population, VI523A three Init sites plus PT540C retained handoff, VF/WV/RS/PS404 stages/wrapper lifecycle and EB497/FQ431 bypass. The previously named enclosing109/138 product remainder is positive P109523–524/P138525–535 and Q14-073/078/079 CHECKED at536. No generic extra-family placeholder or automatic fidelity acceptance.
 
 out of scope: isolated per-sample detector/filter/compressor/gain recurrence under ADP-1; exact parameters, channel/history/count/cadence/cache/failure/bypass/lifetime retained.
 
@@ -3214,3 +3214,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint792 - direct descriptor-getter consumers
 
 `20261010-sound-descriptor-direct-getter-disposition.md` checks exact immediate branches to both descriptor getters and their4C/50 wrappers:two existing ARM forwarding tails and one individually rejected upper-halfword ARM stack-adjustment encoding. No new admitted ID/field consumer;024 remains PARTIAL, no indirect absence inference.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
+
+### Checkpoint793 - fourth direct VoiceInit caller
+
+`20261010-sound-voice-init-interior-disposition.md` corrects the total from three to four direct Init calls:retained handoffA41C68 already has positive PT540C attachment/Init/stop/start decisions.142 interior/entry encodings:four actual ARM entry calls,ten individually rejected false encodings,128 unattributed Thumb candidates retained for source-boundary checks.033 PARTIAL; no indirect absence or new E0/E4 writer claim.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread; research only.
