@@ -11711,3 +11711,7 @@ Checkpoint744: EF744 attributes20 enum initializer1F0 address candidates to actu
 ### Checkpoint812 - weight pointer-value publication observations
 
 `20261010-sound-weight-formed-pointer-disposition.md` retains the repaired model's existing formed/indirect observations and adds stored/returned values for exactlyA08024/25.14887 windows/807 caps/zero target events. Three existing760/761 primary pointer handoff/publication/return controls pass;none is a weight input. No runtime node/childID/weight or complete exclusion proof;008 remains PARTIAL/AUDIBLE.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.
+
+### Checkpoint813 - native live-register argument checks
+
+`20261011-sound-rate-frame-live-register-disposition.md` positively pays two existing liveR3 pointer observations:actualA548B8 reads/stores only scalarR1 intovoiceEC,and9E2BD0 saves scalar frameR1 then overwritesR3 before any read. Neither is a pointer escape;no per-sample evaluator descent or new scalar writer. Other original writer/alias/input proofs remain open;all six rate/frame obligations stay PARTIAL.108 native+8 scope CHECKED/24 PARTIAL;140 AUDIBLE/0 INTERNAL unchanged. Guard reread;research only.

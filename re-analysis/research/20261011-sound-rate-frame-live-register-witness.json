@@ -1,0 +1,78 @@
+{
+  "engine_sha256": "02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1",
+  "rate_GOT": {
+    "slot": "01040068",
+    "raw": "0105243C",
+    "caller_equation": "01040068"
+  },
+  "frame_GOT": {
+    "slot": "01040058",
+    "raw": "01052440",
+    "caller_equation": "01040058"
+  },
+  "callee_checks": [
+    {
+      "entry": "00A548B8",
+      "first_r3_definition": null,
+      "checked": [
+        {
+          "address": "00A548B8",
+          "bytes": "ec1080e5",
+          "instruction": "str r1, [r0, #0xec]",
+          "r3_read": false,
+          "r3_write": false
+        },
+        {
+          "address": "00A548BC",
+          "bytes": "1eff2fe1",
+          "instruction": "bx lr",
+          "r3_read": false,
+          "r3_write": false
+        }
+      ],
+      "limit": "Only incomingR3 read-before-definition / complete two-instruction leaf; no callee-body arithmetic descent."
+    },
+    {
+      "entry": "009E2BD0",
+      "first_r3_definition": "009E2BE0",
+      "checked": [
+        {
+          "address": "009E2BD0",
+          "bytes": "f04f2de9",
+          "instruction": "push {r4, r5, r6, r7, r8, sb, sl, fp, lr}",
+          "r3_read": false,
+          "r3_write": false
+        },
+        {
+          "address": "009E2BD4",
+          "bytes": "01b0a0e1",
+          "instruction": "mov fp, r1",
+          "r3_read": false,
+          "r3_write": false
+        },
+        {
+          "address": "009E2BD8",
+          "bytes": "0e8b2ded",
+          "instruction": "vpush {d8, d9, d10, d11, d12, d13, d14}",
+          "r3_read": false,
+          "r3_write": false
+        },
+        {
+          "address": "009E2BDC",
+          "bytes": "20a090e5",
+          "instruction": "ldr sl, [r0, #0x20]",
+          "r3_read": false,
+          "r3_write": false
+        },
+        {
+          "address": "009E2BE0",
+          "bytes": "cc339fe5",
+          "instruction": "ldr r3, [pc, #0x3cc]",
+          "r3_read": false,
+          "r3_write": true
+        }
+      ],
+      "limit": "Only incomingR3 read-before-definition / complete two-instruction leaf; no callee-body arithmetic descent."
+    }
+  ]
+}
