@@ -1,0 +1,38 @@
+Direct branch targets 004A88A8,004AD2F4,004B1C08,004B426C,0057B914,00584B48,005B32BC,005BE41C,008CB8DC,009A0EF8,009A257C,009A6704,009A6840,00A03108
+ARM candidate 009A103C -> 00A03108 raw=EB018831
+ARM candidate 009A2630 -> 00A03108 raw=EB0182B4
+ARM candidate 009A6778 -> 009A0EF8 raw=EBFFE9DE
+ARM candidate 009A67C0 -> 009A0EF8 raw=EBFFE9CC
+ARM candidate 009A68B8 -> 009A0EF8 raw=EBFFE98E
+ARM candidate 009A6908 -> 009A0EF8 raw=EBFFE97A
+Thumb candidate 0051F8A2: blx #0x4a88a8
+Thumb candidate 0051F9CE: blx #0x4a88a8
+Thumb candidate 00573152: blx #0x4ad2f4
+Thumb candidate 0057EC32: b.w #0x8cb8dc
+Thumb candidate 005ACC70: blx #0x4ad2f4
+Thumb candidate 005B1630: blx #0x4b1c08
+Thumb candidate 005B31BC: blx #0x4b1c08
+Thumb candidate 005B3304: blx #0x4ad2f4
+Thumb candidate 005BE464: blx #0x4ad2f4
+Thumb candidate 005D7ED4: blx #0x4b426c
+Thumb candidate 005EC13C: blx #0x4b426c
+Thumb candidate 005F14C4: blx #0x4b426c
+Thumb candidate 005F1EF2: blx #0x4b426c
+Thumb candidate 005F679A: blx #0x4b426c
+Thumb candidate 005F845E: blx #0x4b426c
+Thumb candidate 005FB442: blx #0x4b426c
+Thumb candidate 00606CCA: blx #0x4b426c
+Thumb candidate 008D8D32: blx #0x9a6704
+Thumb candidate 00CC1580: bl #0x9a257c
+Raw aligned address-valued words across file-backed LOADs (relocations/PC-relative references not excluded):
+00009C88: 00584B49
+00012BA8: 0057B915
+0001B8B8: 005B32BD
+0001D4E8: 005BE41D
+Dynamic symbol records at target addresses:
+CC1580 section=.rodata flags=2 range=00BE3ED0..01017518
+00584B49 size=30 info=12 section=10: _ZN4Anki5Cozmo14ProceduralFace21EnableClippingWarningEb
+0057B915 size=14C info=12 section=10: _ZN4Anki5Cozmo17AnimationStreamer17PushIdleAnimationENS0_16AnimationTriggerERKNSt6__ndk112basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEE
+005B32BD size=FC info=12 section=10: _ZN4Anki5Cozmo9IActivity22SmartPushIdleAnimationERNS0_5RobotENS0_16AnimationTriggerE
+005BE41D size=FC info=12 section=10: _ZN4Anki5Cozmo9IBehavior22SmartPushIdleAnimationERNS0_5RobotENS0_16AnimationTriggerE
+LIMIT: candidates require reopening; no claim excluding indirect/computed/exported calls.
