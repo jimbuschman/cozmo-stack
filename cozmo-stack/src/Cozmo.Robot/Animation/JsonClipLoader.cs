@@ -24,8 +24,17 @@ internal static class JsonClipLoader
     public static AnimationClip? Load(string file, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         using var doc = JsonDocument.Parse(File.ReadAllText(file));
-        return LoadDocument(doc, log, sourceLog);
+        return IsEmpty(doc.RootElement) ? null : LoadDocument(doc, log, sourceLog);
     }
+
+    // LoadAnimationFile 0x00521472..0x00521478: Json::Value::empty() skips definition silently.
+    internal static bool IsEmpty(JsonElement value) => value.ValueKind switch
+    {
+        JsonValueKind.Null => true,
+        JsonValueKind.Object => !value.EnumerateObject().Any(),
+        JsonValueKind.Array => value.GetArrayLength() == 0,
+        _ => false
+    };
 
     internal static AnimationClip? LoadDocument(JsonDocument doc, Action<string>? log, SourceLogSink? sourceLog)
     {

@@ -494,9 +494,9 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 Log?.Invoke("MISSING: M5-001 DataPlatform.readAsJson 0x0084C124..0x0084C15C: conditional JsonCpp formatted reader errors are unrecovered; no System.Text.Json diagnostic substituted");
             }
             using (doc)
-                if (doc is not null)
+                if (doc is not null && !JsonClipLoader.IsEmpty(doc.RootElement))
                     lock (_gate) { var clip = JsonClipLoader.LoadDocument(doc, Log, SourceLog); if (clip != null) Register(clip, path, true); }
-            // L6.6 / 0x00521470..0x005214A8: every JSON read failure still adds ratio.
+            // L6.5/L6.6 / 0x00521470..0x005214A8: failed reads and empty values still add ratio.
         }
         lock (_gate) LoadingProgress += ratio;
     }

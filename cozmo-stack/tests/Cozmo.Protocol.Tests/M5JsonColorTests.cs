@@ -40,11 +40,12 @@ public class M5JsonColorTests
     [Fact]
     public void NamedAlphaCarriesIntoFollowingThreeComponentArray()
     {
-        // One reused ColorRGBA: Back named OFFWHITE sets alpha ff (0xC9745F); Front's size 3 leaves it untouched.
-        WithJson(Frame(Arrays.Replace("\"Back\":[0,0,0]", "\"Back\":\"OFFWHITE\"")), (clip, entries, _) =>
+        // C17: normalized alpha trunc(0.5f * 255f) = 127. One ColorRGBA is reused
+        // (0x004FABA0); Front's size 3 skips alpha (0x00840488), retaining 7f rather than ff.
+        WithJson(Frame(Arrays.Replace("\"Back\":[0,0,0]", "\"Back\":[1,1,1,0.5]")), (clip, entries, _) =>
         {
             var frame = Assert.IsType<LightsKeyframe>(Assert.Single(clip.Keyframes));
-            Assert.Equal(new uint[] { 0x000000FF, 0x000000FF, 0x000000FF, 0xCCCCCCFF, 0x000000FF }, frame.LoadedColorWords);
+            Assert.Equal(new uint[] { 0x0000007F, 0x0000007F, 0x0000007F, 0xFFFFFF7F, 0x0000007F }, frame.LoadedColorWords);
             Assert.Empty(entries.Where(e => e.Level == EngineLogLevel.Warning));
         });
     }
@@ -95,6 +96,65 @@ public class M5JsonColorTests
             check(clip, entries, text);
         }
         finally { File.Delete(path); EngineErrorState.ErrorFlagSet = old; }
+    }
+
+    [Theory]
+    [InlineData("{}")] [InlineData("[]")] [InlineData("null")]
+    public void EmptyJsonFileSkipsDefinitionSilentlyAndAdvancesProgress(string json)
+    {
+        // L6.5: Json::Value::empty / cbnz at 0x00521472..78 skips DefineFromJson;
+        // L6.6: progress still advances at 0x00521686..0x005216FC.
+        string root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(Path.Combine(root, "animations"));
+        string empty = Path.Combine(root, "animations", "empty.json");
+        File.WriteAllText(empty, json);
+        bool old = EngineErrorState.ErrorFlagSet;
+        try
+        {
+            var entries = new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();
+            var text = new System.Collections.Concurrent.ConcurrentQueue<string>();
+            using var robot = CozmoRobot.CreateOffline(); robot.Engine.LogEntry += entries.Enqueue;
+            SourceLogSink sourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
+            EngineErrorState.ErrorFlagSet = false;
+            Assert.Null(JsonClipLoader.Load(empty, text.Enqueue, sourceLog));
+            Assert.Empty(entries); Assert.Empty(text);
+            var lib = AnimationLibrary.Open(root, text.Enqueue, sourceLog);
+            Assert.Empty(lib.ClipNames);
+            Assert.Equal(0.7f, lib.LoadingProgress);
+            Assert.False(EngineErrorState.ErrorFlagSet);
+            // Loading-file and final loader infos remain; the empty value itself emits nothing.
+            Assert.DoesNotContain(entries, e => e.Level is EngineLogLevel.Error or EngineLogLevel.Warning
+                || e.Name.StartsWith("CannedAnimationContainer"));
+            Assert.Single(entries.Where(e => e.Name == "RobotDataLoader.LoadAnimationFile.LoadingAnimationsFromBinaryOrJson"));
+            File.WriteAllText(Path.Combine(root, "animations", "good.json"), "{\"good\":[]}");
+            var continued = AnimationLibrary.Open(root, text.Enqueue, sourceLog);
+            Assert.Equal(new[] { "good" }, continued.ClipNames);
+            Assert.Equal(0.7f, continued.LoadingProgress);
+            Assert.False(EngineErrorState.ErrorFlagSet);
+            Assert.DoesNotContain(entries, e => e.Name == "CannedAnimationContainer.DefineFromJson.EmptyFile");
+        }
+        finally { Directory.Delete(root, true); EngineErrorState.ErrorFlagSet = old; }
+    }
+
+    [Fact]
+    public void DirectContainerDefinitionRetainsEmptyFileError()
+    {
+        // J1: direct DefineFromJson has its own no-members error, 0x005887DA..0x0058882A.
+        bool old = EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse("{}");
+            var entries = new List<EngineLogEntry>();
+            using var robot = CozmoRobot.CreateOffline(); robot.Engine.LogEntry += entries.Add;
+            EngineErrorState.ErrorFlagSet = false;
+            Assert.Null(JsonClipLoader.LoadDocument(doc, null, (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t)));
+            var error = Assert.Single(entries);
+            Assert.Equal(EngineLogLevel.Error, error.Level);
+            Assert.Equal("CannedAnimationContainer.DefineFromJson.EmptyFile", error.Name);
+            Assert.EndsWith("Found no animations in JSON", error.Text);
+            Assert.True(EngineErrorState.ErrorFlagSet);
+        }
+        finally { EngineErrorState.ErrorFlagSet = old; }
     }
 
     [Theory]
