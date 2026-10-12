@@ -78,9 +78,9 @@ public class BackpackLoaderTests
             var lines = new List<string>();
             var patterns = BackpackLightAnimations.Load(root, lines.Add);
             Assert.Equal(new[] { "OffCharger" }, patterns.Names);
-            Assert.Equal("info: [Animations] RobotDataLoader.CollectAnimFiles.Results: Found 2 animation files of type 3", lines[0]);
-            Assert.Equal(2, lines.Count); // no InvalidJson for empty roots, just results and elapsed time
-            Assert.StartsWith("info: [Animations] RobotDataLoader.LoadBackpackLightAnimations.LoadTime: Time to load backpack light animations = ", lines[1]);
+            // B-M5-4: Results belongs to the single CollectAnimFiles loop (0x0051F6A4..0x0051F710),
+            // never to this per-type loader. Recursive empty roots emit only the elapsed-time line.
+            Assert.StartsWith("info: [Animations] RobotDataLoader.LoadBackpackLightAnimations.LoadTime: Time to load backpack light animations = ", Assert.Single(lines));
         }
         finally { Directory.Delete(root, true); }
     }

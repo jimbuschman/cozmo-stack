@@ -247,10 +247,12 @@ public sealed class CozmoRobot : IDisposable
         Display.BeforeFrame = () => { if (!Audio.Busy) SendStreamDirect(new AudioSilence()); };
         Motion = new CozmoMotion(this);
         // fidelity: M4-017, M4-018
-        // The shipped light patterns, from the resources path the engine options name (LB4e; LC3). Without one the
-        // containers hold only OffCharger, and the charging and cube animations warn and play nothing (LB4c, LC2 (c)).
-        Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text)),
-                                 CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text)));
+        // M4-036: retain the host containers at construction; emit loader logs only at L0 after StartEngine.
+        SourceLogSink loadingLog = (level, channel, key, text) =>
+            _lightLoadingLogs.Add((level, channel, key, text));
+        Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, loadingLog),
+                                 CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) =>
+                                     _cubeLoadingLogs.Add((level, channel, key, text))));
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
         CubeAccel = new CubeAccelStreams(this);
@@ -332,6 +334,25 @@ public sealed class CozmoRobot : IDisposable
         Engine.BlockFilterInit = LoadBlockPool;
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
+    }
+
+    private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _lightLoadingLogs = new();
+
+    private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _cubeLoadingLogs = new();
+
+    // L0: constructor-loaded containers are retained; replay cube diagnostics before backpack diagnostics.
+    internal void EmitLightLoadingLogs(bool collect)
+    {
+        (EngineLogLevel Level, string? Channel, string Key, string Text)[] entries;
+        lock (_lightLoadingLogs)
+        {
+            entries = _cubeLoadingLogs.Concat(_lightLoadingLogs)
+                .Where(e => (e.Key == "RobotDataLoader.WalkAnimationDir") == collect).ToArray();
+            _cubeLoadingLogs.RemoveAll(e => (e.Key == "RobotDataLoader.WalkAnimationDir") == collect);
+            _lightLoadingLogs.RemoveAll(e => (e.Key == "RobotDataLoader.WalkAnimationDir") == collect);
+        }
+        foreach (var entry in entries)
+            Engine.EmitSourceLog(entry.Level, entry.Channel, entry.Key, entry.Text);
     }
 
     // fidelity: M4-011

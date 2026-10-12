@@ -286,6 +286,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// <c>assets/animations</c>, or directly at either directory.
     /// </summary>
     public static AnimationLibrary Open(string assetsRoot, Action<string>? log = null, SourceLogSink? sourceLog = null, EngineRandom? contextRandom = null)
+        => OpenForLoad(assetsRoot, log, sourceLog, contextRandom, () => true, null, null);
+
+    internal static AnimationLibrary OpenForLoad(string assetsRoot, Action<string>? log, SourceLogSink? sourceLog,
+        EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups)
     {
         var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
         log?.Invoke("MISSING: M5-001 loader main-thread VERIFY gates at 0x0051F3AA/0x00521338: CozmoContext main-thread identity is not represented by the host loader");
@@ -296,13 +300,15 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 $"no animations or animationGroups directory under {assetsRoot}. Point this at the unpacked " +
                 "cozmo_resources assets directory.");
 
-        // R46-1..R46-4: each Open constructs a fresh collect map. Collect all four vectors before Results.
-        var files = CollectFiles(new[] { animations, FindConfigDirectory(assetsRoot, "animations") }, sourceLog);
-        var cubeFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/cubeLights") }, sourceLog);
-        var backpackFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/backpackLights") }, sourceLog);
-        var groupFiles = CollectFiles(new[] { groups }, sourceLog);
+        // R46-1..R46-4: collect all four vectors before Results; production retains the collect history.
+        bool freshCollect = beginCollect();
+        beforeCollect?.Invoke();
+        var files = CollectFiles(new[] { animations, FindConfigDirectory(assetsRoot, "animations") }, SourceLogDispatch.GetSink(sourceLog, log));
+        var cubeFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/cubeLights") }, SourceLogDispatch.GetSink(sourceLog, log));
+        var backpackFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/backpackLights") }, SourceLogDispatch.GetSink(sourceLog, log));
+        var groupFiles = CollectFiles(new[] { groups }, SourceLogDispatch.GetSink(sourceLog, log));
         EmitCollectResults(new[] { files.Count, groupFiles.Count, cubeFiles.Count, backpackFiles.Count },
-            fresh: true, log, sourceLog);
+            freshCollect, log, sourceLog);
         double started = MonotonicMilliseconds();
         Eye.ClippingWarningEnabled = false;
         float ratio = 0.7f / files.Count;
@@ -342,6 +348,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 g.UseContainer(lib._cooldowns);
             }
 
+        // L0: LoadNonConfigData 0x0051F3BC..0x0051F3CE: groups, cube lights, backpack lights, faces.
+        afterGroups?.Invoke();
         lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
         lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
         return lib;

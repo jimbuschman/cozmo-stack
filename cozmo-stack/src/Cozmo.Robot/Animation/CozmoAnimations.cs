@@ -268,13 +268,24 @@ public sealed class CozmoAnimations : IDisposable
     /// <summary>Something was buffered for the stream outside an Advance (a policy API): make sure a drain will run.</summary>
     internal void KickStream() => StartTicker();
 
+    private int _collectRan;
+
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot)
     {
-        // The pre-rendered face animations live beside the clips, and the faceAnimations track names them.
-        FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
-        _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
-        Library = AnimationLibrary.Open(assetsRoot, _robot.Engine.Log, (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text), _scheduler.ContextRandom);
+        Library = AnimationLibrary.OpenForLoad(assetsRoot, _robot.Engine.Log,
+            (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text),
+            _scheduler.ContextRandom,
+            // Consume freshness when collection starts, even if a later file load fails.
+            () => Interlocked.Exchange(ref _collectRan, 1) == 0,
+            () => _robot.EmitLightLoadingLogs(collect: true), () =>
+            {
+                // L0 / M4-036: after groups (0x0051F3BC), lights (0x0051F3C2/3C8), then faces (3CE).
+                // Keep constructor-loaded containers; only their source-log emission moves.
+                _robot.EmitLightLoadingLogs(collect: false);
+                FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
+                _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
+            });
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)

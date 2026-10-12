@@ -95,11 +95,8 @@ public sealed class BackpackLightAnimations
         var dir = Path.Combine(resourcesPath, "config", "engine", "lights", "backpackLights");
         var files = new List<string>();
         var mtimes = new Dictionary<string, long>(StringComparer.Ordinal);
+        // CollectAnimFiles owns Results; standalone walks do not emit a second type-3 line.
         Collect(dir);
-        if (Directory.Exists(dir))
-            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.CollectAnimFiles.Results", $"Found {files.Count} animation files of type 3");
-        else
-            log?.Invoke("MISSING: M4-036 RobotDataLoader.CollectAnimFiles.Results type argument for a missing directory is unread");
         var time = System.Diagnostics.Stopwatch.StartNew();
         foreach (var f in files)
         {

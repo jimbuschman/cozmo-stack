@@ -90,6 +90,67 @@ public class M5LastReadsTests
         Assert.DoesNotContain(diagnostics, l => l.StartsWith("MISSING: M5-045") || l.StartsWith("MISSING: M5-046"));
     }
 
+    [Fact]
+    public void B_M5_4_ResourcesOptionLoadsLightsAfterSeedCollectClipsAndGroups()
+    {
+        // L0: 0x0051F3B0..0x0051F3CE; seed precedes loading at 0x004ECBD4..0x004ECC4A.
+        string root = Resources();
+        using var robot = CozmoRobot.CreateForTest(new Port(), () => 1_000_000_000,
+            new CozmoEngineOptions { ResourcesPath = root, BlockPoolPath = "" });
+        Assert.NotNull(robot.Lights.Body.Animations.Get("Charging"));
+        var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
+        robot.Engine.StartProduction(5489);
+        robot.Animations.LoadFrom(root);
+        var logs = entries.ToArray();
+        int seed = Array.FindIndex(logs, e => e.Name == "app.random_seed");
+        var results = logs.Select((entry, index) => (entry, index)).Where(x => x.entry.Name == ResultsKey).ToArray();
+        Assert.Equal(new[] { "Found 507 animation files of type 1", "Found 1 animation files of type 3",
+            "Found 37 animation files of type 2", "Found 293 animation files of type 0" }, results.Select(x => x.entry.Text));
+        Assert.True(seed >= 0); Assert.All(results, x => Assert.True(x.index > seed));
+        int clips = Array.FindIndex(logs, e => e.Name == "RobotDataLoader.LoadAnimationsInternal.LoadTime");
+        int backpack = Array.FindIndex(logs, e => e.Name == "RobotDataLoader.LoadBackpackLightAnimations.LoadTime");
+        Assert.True(clips > results.Last().index);
+        Assert.True(backpack > clips);
+        Assert.Single(logs.Where(e => e.Name == "RobotDataLoader.LoadBackpackLightAnimations.LoadTime"));
+        Assert.NotNull(robot.Lights.Body.Animations.Get("Charging"));
+        Assert.NotNull(robot.Animations.FaceAnimations);
+    }
+
+    [Fact]
+    public void B_M5_4_GroupDefinitionPrecedesBackpackLoadTime()
+    {
+        string root = Path.Combine(Path.GetTempPath(), "m5-loading-order-" + Guid.NewGuid());
+        try
+        {
+            foreach (string dir in new[] { "assets/animations", "assets/animationGroups", "config/engine/lights/cubeLights", "config/engine/lights/backpackLights" })
+            {
+                Directory.CreateDirectory(Path.Combine(root, dir));
+                File.WriteAllText(Path.Combine(root, dir, "a.json"), dir == "assets/animations" ? "{\"a\":[]}" : "{}");
+            }
+            using var robot = CozmoRobot.CreateForTest(new Port(), () => 1_000_000_000,
+                new CozmoEngineOptions { ResourcesPath = root, BlockPoolPath = "" });
+            var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
+            robot.Animations.LoadFrom(root);
+            // NoAnimations is the checked group failure before the next loader step, 0x0058B89E..0x0058B8B2.
+            int group = entries.FindIndex(e => e.Name == "AnimationGroup.DefineFromJson.NoAnimations");
+            int backpack = entries.FindIndex(e => e.Name == "RobotDataLoader.LoadBackpackLightAnimations.LoadTime");
+            Assert.True(group >= 0); Assert.True(backpack > group);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void B_M5_4_SecondProductionLibraryLoadRefusesTheUncheckedCollectHistory()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        robot.Animations.LoadFrom(Resources());
+        var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
+        var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
+        robot.Animations.LoadFrom(Resources());
+        Assert.DoesNotContain(entries, e => e.Name == ResultsKey);
+        Assert.Single(diagnostics.Where(l => l.StartsWith("MISSING: M5-046") && l.Contains("non-fresh map")));
+    }
+
     [Theory]
     [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)]
     public void R46_8_AbsentTypeEmitsMissingInsteadOfAssumingOrder(int absent)
