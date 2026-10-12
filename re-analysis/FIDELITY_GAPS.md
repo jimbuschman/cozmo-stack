@@ -9,8 +9,8 @@ Manifest of **524 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 178 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 228 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 231 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 49 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,7 +28,7 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 56 | 0 | 7 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 36 | 0 | 7 | 0 | 3 | yes | no |
-| M5-animation — Animation clips, scheduler and face | 58 | 3 | 17 | 0 | 1 | no | no |
+| M5-animation — Animation clips, scheduler and face | 58 | 0 | 20 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 28 | 0 | 25 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 26 | 3 | 18 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
@@ -72,35 +72,6 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
-
-### M5-animation — Animation clips, scheduler and face
-
-**M5-055 — ~CozmoEngine member destruction order (RobotDataLoader abort flag, robot and streamer teardown, weak-signal unlinks)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: Whether an engine shutdown aborts a running load and unlinks subscriptions, and in what order.
-* rests on: Second M5 Opus settling pass (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read.
-* outstanding: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order.
-
-**M5-056 — The engine-to-game subscription container factory and its ProtoHandle (UiMessageHandler::Subscribe(EngineToGameTag))** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: What a release of an engine-to-game subscription does.
-* rests on: Second M5 Opus settling pass (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m5-x9-extraction.md section 4a: UiMessageHandler::Subscribe(EngineToGameTag) 0x006626CC creates the container through 0x0066411C; its ProtoHandle and release are not read.
-* outstanding: RECOVERABLE_GAP: read 0x0066411C and the ProtoHandle release.
-
-**M5-058 — FaceAnimationKeyFrame +0x28 writers (the face-animation override)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/StreamAnimation.cs`
-* effect: Whether a face keyframe ever streams its own bytes instead of the named face animation.
-* rests on: Second M5 Opus settling pass (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m5-settling-2.md D7: the 17 sites that load the FaceAnimationKeyFrame vtable GOT 0x0103E9D8 are the ctor 0x00564290 (zeroes +0x28) and its callers, the byte-copy helpers 0x005645CA/0x0057E38E, AppendTrack 0x0057829A and list clear/erase/pop_back; no direct reference to vtable 0x0101F0B8; a later in-place store to +0x28 is not yet ruled out. When +0x28 is set, GetStreamMessage streams the keyframe own +0x18 bytes (0x004F97DE..0x004F97E8).
-* outstanding: RECOVERABLE_GAP: scan for in-place stores to +0x28 of FaceAnimationKeyFrame objects; if none, record it as natively always zero and close M5-013.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -740,7 +711,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): FaceAnimationLibrary.Variants stores each image thresholded at 0x80 as two CompressRLE variants, even rows cleared and odd rows cleared (C12); the FaceAnim track sends one stored frame per stream frame with the FaceAnimationManager's _firstScanLine (toggled by InitStream, A11), an empty frame skipped (index +1, no message), and is done when the index reaches the frame count; Abort resets the current keyframe's index (A24). Verify round 3 (2026-09-29, C5 item 5): the threshold is strictly above 0x80 (a pixel equal to 0x80 becomes 0); GetFrame returns the odd-rows-cleared variant when _firstScanLine is non-zero and the even-rows-cleared one when it is 0; GetStreamMessage resets the index lazily when IsDone is already true (no message that call), advances without a message on an empty vector, and does not advance on a null frame. Verify round 3 fix (2026-09-29): FaceAnimationManager::GetNumFrames (0x005816D8) returns 0 on a map miss (0x0058173A), so IsDone (0x004F9770) is true for an unknown name and GetStreamMessage's lazy reset consumes the keyframe in one frame instead of stalling the track.
 * best authority: libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)
 * evidence: C12 0x004F9708..0x004F98C4; FaceAnimationManager 0x00581254..0x005812C4; GetFrame 0x005817B4..0x005817CA; M3 B4; R-ANIM pre-extraction part 1 item 5 5.1..5.8: Threshold 0x00871E98, libopencv_core 0x7A7A2, variant store 0x00581254, GetFrame 0x005817B4, GetStreamMessage 0x004F9812, IsDone 0x004F9770; re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-013 (Opus settling pass, manager-adopted 2026-10-11).
-* outstanding: Settling pass 2026-10-11: the FlatBuffer/JSON +0x28 add path is split out to M5-043. The threshold is strictly above 0x80, the variant and lazy index reset are settled, and an unknown name (0 frames) is done at once (C5). The writers of keyframe +0x28 (the IsDone override) are RECOVERABLE_GAP (0x004F9770, 0x004F97DE). B-M5-8 (2026-10-12), built, awaiting strong verification: ordinal case-sensitive name dictionaries and consumed zero-frame misses (0x005816D8, 0x00581790, 0x0058173A). Face-file loader recovery remains X-M5-9. B-M5-9 (2026-10-12), built, awaiting strong verification: typed GetNumFrames warning on exact map miss: Unknown animation requested: %s; lookup/consumption remains M5-013, loader is M5-052. B-M5-10 (2026-10-12), built, awaiting strong verification: Each GetNumFrames miss emits GetAnimationByName.UnknownName then GetNumFrames warnings, repeated by GetStreamMessage IsDone, in native order (0x005813B4, 0x005816DE, 0x00581714, 0x004F97A0, 0x004F97D4; vtable relocation 0x0101F0C0). The override gate still bypasses GetNumFrames. Second M5 pass: the +0x28 writer gap is M5-058.
+* outstanding: Settling pass 2026-10-11: the FlatBuffer/JSON +0x28 add path is split out to M5-043. The threshold is strictly above 0x80, the variant and lazy index reset are settled, and an unknown name (0 frames) is done at once (C5). The writers of keyframe +0x28 (the IsDone override) are RECOVERABLE_GAP (0x004F9770, 0x004F97DE). B-M5-8 (2026-10-12), built, awaiting strong verification: ordinal case-sensitive name dictionaries and consumed zero-frame misses (0x005816D8, 0x00581790, 0x0058173A). Face-file loader recovery remains X-M5-9. B-M5-9 (2026-10-12), built, awaiting strong verification: typed GetNumFrames warning on exact map miss: Unknown animation requested: %s; lookup/consumption remains M5-013, loader is M5-052. B-M5-10 (2026-10-12), built, awaiting strong verification: Each GetNumFrames miss emits GetAnimationByName.UnknownName then GetNumFrames warnings, repeated by GetStreamMessage IsDone, in native order (0x005813B4, 0x005816DE, 0x00581714, 0x004F97A0, 0x004F97D4; vtable relocation 0x0101F0C0). The override gate still bypasses GetNumFrames. Second M5 pass: the +0x28 writer gap is M5-058. R-M5-TEARDOWN: the +0x28 override is natively always zero (M5-058), so IsDone/GetStreamMessage always go through GetNumFrames/GetFrame.
 
 **M5-014 — Cooldown keyed by clip name across groups; the Default-mood backup rule within +-0.05 rad, else the first entry** (live path)
 
@@ -849,6 +820,33 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261012-m8-play-animation-actions.md row L1: CannedAnimationContainer::GetAnimation 0x00588074..0x005880E4, the InvalidName sErrorF with errG and break on a miss.
 * outstanding: Build: the miss path logs InvalidName with errG/break and returns null; confirm the stack lookup site. B-M5-11 (2026-10-12), built, awaiting strong verification: D6: live library GetAnimation miss emits Error/null-channel/CannedAnimationContainer.GetAnimation_Const.InvalidName with the requested name, sets errG and conditionally breaks, returns null (0x00588074..0x005880E4, literals 0x00588110/0x00588148). Existing neutral, idle and replay/string paths call this lookup at native 0x0057A1F2/0x0057D292/0x0057B14E; fidelity tags and branch regressions added. The native string empty-name gate is retained. No D4 idle-null policy change.
+
+**M5-055 — ~CozmoEngine member destruction order (RobotDataLoader abort flag, robot and streamer teardown, weak-signal unlinks)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: Whether an engine shutdown aborts a running load and unlinks subscriptions, and in what order.
+* rests on: Second M5 Opus settling pass (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read.; re-analysis/research/20261012-m5-teardown-reads.md item 1 (Opus-checked 14/14): ~CozmoEngine 0x004EC68C..0x004EC722 (+0x64, vectors +0x50/+0x40, +0x3C, +0x38, +0x34 CozmoContext, +0x30 UiMessageHandler, Json +0x18, vector +4) and wrapper 0x004EC79C; ~CozmoContext 0x004EAAAC..0x004EAC14 calls RobotManager::RemoveRobots first (0x004EAABE -> 0x0052F428..0x0052F472); ~Robot 0x00511512..0x0051154A; ~AnimationStreamer 0x0057AF48..0x0057AFDA (+0xC base subscription, tag 0xB4, released last); ~RobotDataLoader 0x0051F0C6..0x0051F0EA (runs after RobotManager); ~UiMessageHandler 0x0066011C..0x00660192; signal destructors 0x006634B8 (E2G) and 0x00663620 (G2E). So the UiMessageHandler and both signal maps are alive when the Robots release their subscriptions.
+* outstanding: IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order.
+
+**M5-056 — The engine-to-game subscription container factory and its ProtoHandle (UiMessageHandler::Subscribe(EngineToGameTag))** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: What a release of an engine-to-game subscription does.
+* rests on: Second M5 Opus settling pass (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m5-x9-extraction.md section 4a: UiMessageHandler::Subscribe(EngineToGameTag) 0x006626CC creates the container through 0x0066411C; its ProtoHandle and release are not read.; re-analysis/research/20261012-m5-teardown-reads.md item 2 (Opus-checked 14/14): Subscribe 0x006626CC..0x0066271A (map +0x20, 16-bit tag); factory 0x0066411C..0x0066418C; lazy sentinel 0x0066436C..0x006643C4; node 0x00664684..0x006646B2 (refcount +0x20 = 1, tail insert); handle {vptr 0x0102FFB8, signal, node, token, ctrl}; token 0x006642E6..0x0066434E (0x12345678, deleter 0x0066446A bx lr); container control 0x004EF088..0x004EF0AC, on_zero_shared 0x004EF184, destructor 0x004EF1B8..0x004EF1D0; unlink 0x00664708..0x00664742 (weak lock, token release before deref, identity search) -> node unlink 0x006634F4..0x00663562; handle destructors 0x006646C4..0x00664702; libc++ __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8. G2E (0x00662750 -> 0x006648CC, node 0x00664E34, unlink 0x00664EB8) is the same algorithm.
+* outstanding: IMPLEMENTATION_GAP: build the release as read. Concurrency and allocation-failure behaviour are not claimed. Previous notes: RECOVERABLE_GAP: read 0x0066411C and the ProtoHandle release.
+
+**M5-058 — FaceAnimationKeyFrame +0x28 writers (the face-animation override)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/StreamAnimation.cs`
+* effect: Whether a face keyframe ever streams its own bytes instead of the named face animation.
+* rests on: Second M5 Opus settling pass (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m5-settling-2.md D7: the 17 sites that load the FaceAnimationKeyFrame vtable GOT 0x0103E9D8 are the ctor 0x00564290 (zeroes +0x28) and its callers, the byte-copy helpers 0x005645CA/0x0057E38E, AppendTrack 0x0057829A and list clear/erase/pop_back; no direct reference to vtable 0x0101F0B8; a later in-place store to +0x28 is not yet ruled out. When +0x28 is set, GetStreamMessage streams the keyframe own +0x18 bytes (0x004F97DE..0x004F97E8).; re-analysis/research/20261012-m5-teardown-reads.md item 3 (Opus-checked; two independent scans): the constructor 0x00564290 zeroes +0x18..+0x28 (memclr4 0x005642C6..0x005642CC); its only callers 0x00563E48, 0x0057669C, 0x0057734C, 0x00587CCC store nothing to +0x28 afterwards; the 17 GOT 0x0103E9D8 sites are the whole set; the copy stores 0x00564616, 0x0057E392, 0x00578314 only carry a source byte; vtable 0x0101F0B8 has no setter; GetStreamMessage never writes +0x28 (gate 0x004F97DE..0x004F97E8). So the shipped engine never sets the override non-zero.
+* outstanding: IMPLEMENTATION_GAP: natively always zero. Confirm the stack never sets it in production (the internal test seam only) and that M5X9BuilderTests.AuthoredJsonOverrideIsZero is not circular; then this and M5-013 own no +0x28 gap. Previous notes: RECOVERABLE_GAP: scan for in-place stores to +0x28 of FaceAnimationKeyFrame objects; if none, record it as natively always zero and close M5-013.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 

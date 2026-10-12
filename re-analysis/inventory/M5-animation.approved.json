@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "2f473448119bacfb66548d2c196d48ed22a5c2a9d9b1b54c4b0246f3995b6079",
+  "inventory_sha256": "c9f39bb77e2adef844043de2bebc5b479ff263408f6c5f29884d6c77c5dbb4ac",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -700,21 +700,23 @@
       "hardware_required": false
     },
     "M5-055": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "~CozmoEngine member destruction order (RobotDataLoader abort flag, robot and streamer teardown, weak-signal unlinks)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read."
+        "re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read.",
+        "re-analysis/research/20261012-m5-teardown-reads.md item 1 (Opus-checked 14/14): ~CozmoEngine 0x004EC68C..0x004EC722 (+0x64, vectors +0x50/+0x40, +0x3C, +0x38, +0x34 CozmoContext, +0x30 UiMessageHandler, Json +0x18, vector +4) and wrapper 0x004EC79C; ~CozmoContext 0x004EAAAC..0x004EAC14 calls RobotManager::RemoveRobots first (0x004EAABE -> 0x0052F428..0x0052F472); ~Robot 0x00511512..0x0051154A; ~AnimationStreamer 0x0057AF48..0x0057AFDA (+0xC base subscription, tag 0xB4, released last); ~RobotDataLoader 0x0051F0C6..0x0051F0EA (runs after RobotManager); ~UiMessageHandler 0x0066011C..0x00660192; signal destructors 0x006634B8 (E2G) and 0x00663620 (G2E). So the UiMessageHandler and both signal maps are alive when the Robots release their subscriptions."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M5-056": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The engine-to-game subscription container factory and its ProtoHandle (UiMessageHandler::Subscribe(EngineToGameTag))",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-x9-extraction.md section 4a: UiMessageHandler::Subscribe(EngineToGameTag) 0x006626CC creates the container through 0x0066411C; its ProtoHandle and release are not read."
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4a: UiMessageHandler::Subscribe(EngineToGameTag) 0x006626CC creates the container through 0x0066411C; its ProtoHandle and release are not read.",
+        "re-analysis/research/20261012-m5-teardown-reads.md item 2 (Opus-checked 14/14): Subscribe 0x006626CC..0x0066271A (map +0x20, 16-bit tag); factory 0x0066411C..0x0066418C; lazy sentinel 0x0066436C..0x006643C4; node 0x00664684..0x006646B2 (refcount +0x20 = 1, tail insert); handle {vptr 0x0102FFB8, signal, node, token, ctrl}; token 0x006642E6..0x0066434E (0x12345678, deleter 0x0066446A bx lr); container control 0x004EF088..0x004EF0AC, on_zero_shared 0x004EF184, destructor 0x004EF1B8..0x004EF1D0; unlink 0x00664708..0x00664742 (weak lock, token release before deref, identity search) -> node unlink 0x006634F4..0x00663562; handle destructors 0x006646C4..0x00664702; libc++ __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8. G2E (0x00662750 -> 0x006648CC, node 0x00664E34, unlink 0x00664EB8) is the same algorithm."
       ],
       "live_path": true,
       "hardware_required": false
@@ -730,11 +732,12 @@
       "hardware_required": false
     },
     "M5-058": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "FaceAnimationKeyFrame +0x28 writers (the face-animation override)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-settling-2.md D7: the 17 sites that load the FaceAnimationKeyFrame vtable GOT 0x0103E9D8 are the ctor 0x00564290 (zeroes +0x28) and its callers, the byte-copy helpers 0x005645CA/0x0057E38E, AppendTrack 0x0057829A and list clear/erase/pop_back; no direct reference to vtable 0x0101F0B8; a later in-place store to +0x28 is not yet ruled out. When +0x28 is set, GetStreamMessage streams the keyframe own +0x18 bytes (0x004F97DE..0x004F97E8)."
+        "re-analysis/research/20261012-m5-settling-2.md D7: the 17 sites that load the FaceAnimationKeyFrame vtable GOT 0x0103E9D8 are the ctor 0x00564290 (zeroes +0x28) and its callers, the byte-copy helpers 0x005645CA/0x0057E38E, AppendTrack 0x0057829A and list clear/erase/pop_back; no direct reference to vtable 0x0101F0B8; a later in-place store to +0x28 is not yet ruled out. When +0x28 is set, GetStreamMessage streams the keyframe own +0x18 bytes (0x004F97DE..0x004F97E8).",
+        "re-analysis/research/20261012-m5-teardown-reads.md item 3 (Opus-checked; two independent scans): the constructor 0x00564290 zeroes +0x18..+0x28 (memclr4 0x005642C6..0x005642CC); its only callers 0x00563E48, 0x0057669C, 0x0057734C, 0x00587CCC store nothing to +0x28 afterwards; the 17 GOT 0x0103E9D8 sites are the whole set; the copy stores 0x00564616, 0x0057E392, 0x00578314 only carry a source byte; vtable 0x0101F0B8 has no setter; GetStreamMessage never writes +0x28 (gate 0x004F97DE..0x004F97E8). So the shipped engine never sets the override non-zero."
       ],
       "live_path": true,
       "hardware_required": false

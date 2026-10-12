@@ -895,3 +895,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New RECOVERABLE_GAP | M5-055 ~CozmoEngine member order, M5-056 E2G subscription factory, M5-058 FaceAnimationKeyFrame +0x28 writers |
 | New COMPATIBILITY_POLICY | M5-057 PushIdleAnimation(ProceduralLive) app input |
 | Source investigation | reopened (M5-055, 056, 058) |
+
+
+## R-M5-TEARDOWN (manager, 2026-10-12; research/20261012-m5-teardown-reads.md, Opus-checked, 0 wrong)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP read, now IMPLEMENTATION_GAP | M5-055 ~CozmoEngine order, M5-056 E2G subscription release, M5-058 +0x28 (natively always zero) |
+| Evidence noted | M5-013 (override gate always off natively) |
+
