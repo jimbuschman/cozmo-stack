@@ -40,8 +40,9 @@ anything. BOARD.md is history; this file is the live queue.
 | 8 | [B-M5-6](B-M5-6.md) | done (d9b59e53); re-verify PASS. Queued: M4-036 unresolved must say the constructor loads the backpack file list from its own walk, not the collect's type-3 vector (0x0052013C) |
 | 9 | [B-M5-7](B-M5-7.md) | done (028f038d); re-verify FAIL (1: non-object JSON root got EmptyFile), manager fixed. Queued: JsonClipLoader.Load is a test helper, mark it |
 | 10 | [B-M5-8](B-M5-8.md) | done (9812b4e0, suite 4387/4387); re-verify FAIL (5), see B-M5-9 |
-| 11 | [B-M5-9](B-M5-9.md) | open (B-M5-8 fixes + X-M5-9 builds: group loader, readAsJson, face loader, teardown order) |
-| 12 | [B-M3M4-9](B-M3M4-9.md) | open, after B-M5-9 (M3+M4 final settling pass defects) |
+| 11 | [B-M5-9](B-M5-9.md) | done (b302b3e4); re-verify FAIL (4), see B-M5-10 |
+| 12 | [B-M3M4-9](B-M3M4-9.md) | running (home PC) |
+| 13 | [B-M5-10](B-M5-10.md) | open, after B-M3M4-9 |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
