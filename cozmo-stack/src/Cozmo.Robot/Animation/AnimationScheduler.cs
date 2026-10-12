@@ -457,7 +457,9 @@ public sealed class AnimationScheduler
     private AnimationClip? _streamingClip;
     private AnimationHandle? _handle;
     private AnimationClip? _neutral;                     // +0x40
+    private bool _nullIdleSkipReported;                 // stack only: one M1-034 line per entry into the null-idle state
     private int _idleMs;                                 // +0x44
+    internal int IdleMsForTest { get { lock (_gate) return _idleMs; } }
     private readonly List<(AnimationTrigger Trigger, string Lock)> _idleStack = new();   // +0x48
     private string _lastStreamedName = "";               // +0x54
     private bool _idleInitialised;                       // +0x64
@@ -1104,6 +1106,7 @@ public sealed class AnimationScheduler
         var top = TopTrigger;
         if (top == IdleCount) return LayersOrFlushLocked();
         int result = 0;
+        bool skipNullIdleTail = false;
 
         var old = _idleAnim;
         if (top == AnimationTrigger.ProceduralLive)
@@ -1147,8 +1150,14 @@ public sealed class AnimationScheduler
                 else if (old is null && catalog is not null)
                 {
                     // fidelity: M5-027 — M1-034 null-idle departure (operator, 2026-10-12), D4.
-                    // 0x0057D218 -> 0x0057D3EE -> InitStream(null, 0xFF); Animation::Init dereferences null.
-                    Log?.Invoke($"Idle tail skipped (M1-034): original dereferences null for unmapped idle trigger {top} (M5-027, 0x0057D3FE -> 0x00577BC6)");
+                    // 0x0057D218 -> 0x0057D3EE -> InitStream(null, 0xFF); Animation::Init dereferences null. The whole
+                    // tail 0x0057D3EE..0x0057D446 is skipped, including the +0x44 += 60 at 0x0057D442..0x0057D446.
+                    skipNullIdleTail = true;
+                    if (!_nullIdleSkipReported)
+                    {
+                        _nullIdleSkipReported = true;    // one visible line per entry into this state, not per tick
+                        Log?.Invoke($"Idle tail skipped (M1-034): original dereferences null for unmapped idle trigger {top} (M5-027, 0x0057D3FE -> 0x00577BC6)");
+                    }
                 }
                 // Q1: the native no-animation branch reaches the tail; the approved null-idle skip below survives it.
             }
@@ -1171,7 +1180,9 @@ public sealed class AnimationScheduler
                 _lastStreamSec = _nowSec;         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
             }
         }
-        _idleMs += 60;
+        if (skipNullIdleTail) return result;      // M1-034 null-idle departure: the native tail never completes
+        _nullIdleSkipReported = false;
+        _idleMs += 60;                            // 0x0057D442..0x0057D446
         return result;
     }
 
@@ -1958,6 +1969,7 @@ public sealed class AnimationScheduler
             _streamingClip = null;
             _idleAnim = null;
             _idleMs = 0;
+            _nullIdleSkipReported = false;
             _idleStack.Clear();
             _idleStack.Add((IdleCount, DefaultAnimLock));
             _lastStreamedName = "";
