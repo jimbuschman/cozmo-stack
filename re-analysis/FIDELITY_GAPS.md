@@ -9,8 +9,8 @@ Manifest of **544 records** over 16 subsystems.
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 55 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 229 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 53 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 231 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 57 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -28,7 +28,7 @@ remains after both, and they do not go away by working harder on this repository
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 59 | 0 | 3 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 44 | 2 | 9 | 0 | 3 | no | no |
-| M5-animation — Animation clips, scheduler and face | 64 | 2 | 20 | 0 | 1 | no | no |
+| M5-animation — Animation clips, scheduler and face | 64 | 0 | 22 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 29 | 1 | 25 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 26 | 3 | 18 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
@@ -92,26 +92,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261012-m3m4-settling-2.md: ParseJsonToAnim 0x00589910..0x00589CD8 and its loader; the stack (Lights.cs:578-625) still uses System.Text.Json with trailing commas, ordinal file order and *.json only.
 * outstanding: RECOVERABLE_GAP: read the cube-light loader (walk, readAsJson, ParseJsonToAnim, error paths).
-
-### M5-animation — Animation clips, scheduler and face
-
-**M5-063 — DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs`
-* effect: What driving animations do when an action completes, and when the stack pushes or removes them.
-* rests on: Opus extractor read of the M5 teardown members (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732).
-* outstanding: RECOVERABLE_GAP: read the three bodies.
-
-**M5-064 — Unread engine/context teardown bodies: BaseStationTimer instance, engine +0x38, TransferQueueMgr Dispatch::Stop, GameLogTransferTask +0x10** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: Whether shutdown does anything observable beyond what M5-055 records.
-* rests on: Opus extractor read of the M5 teardown members (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m5-teardown-members.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (instance dtor unread); engine +0x38 set to 0 at 0x004EB292 (no writer found); TransferQueueMgr 0x006A3860 -> Dispatch::Stop 0x006A3874 (unread); GameLogTransferTask 0x006A2E6C virtual delete of +0x10 (unread).
-* outstanding: RECOVERABLE_GAP: read the four bodies (and search for an engine +0x38 writer).
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -870,7 +850,7 @@ Each of these is a question already answered. The original's behaviour is establ
 * rests on: Second M5 Opus settling pass (2026-10-12), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read.; re-analysis/research/20261012-m5-teardown-reads.md item 1 (Opus-checked 14/14): ~CozmoEngine 0x004EC68C..0x004EC722 (+0x64, vectors +0x50/+0x40, +0x3C, +0x38, +0x34 CozmoContext, +0x30 UiMessageHandler, Json +0x18, vector +4) and wrapper 0x004EC79C; ~CozmoContext 0x004EAAAC..0x004EAC14 calls RobotManager::RemoveRobots first (0x004EAABE -> 0x0052F428..0x0052F472); ~Robot 0x00511512..0x0051154A; ~AnimationStreamer 0x0057AF48..0x0057AFDA (+0xC base subscription, tag 0xB4, released last); ~RobotDataLoader 0x0051F0C6..0x0051F0EA (runs after RobotManager); ~UiMessageHandler 0x0066011C..0x00660192; signal destructors 0x006634B8 (E2G) and 0x00663620 (G2E). So the UiMessageHandler and both signal maps are alive when the Robots release their subscriptions.
-* outstanding: IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): engine +0x3C is DeviceDataManager (not PerfMetric), +0x40 DebugConsoleManager, +0x50 DasToSdkHandler; their teardown is unlink only. Order before ~CozmoContext: BaseStationTimer global clear and removeInstance (0x004EC6A0..0x004EC6B4), VizManager::Disconnect (out of scope), AnimationTransfer (M5-059). The engine +4 subscription vector is released at 0x004EC71C after the hub is gone (expired-token no-ops). Context members: no observable effects in PerfMetric, CozmoExperiments, NeedsManager (no WriteToDevice); unread parts are M5-064 and M6-029.
+* outstanding: IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): engine +0x3C is DeviceDataManager (not PerfMetric), +0x40 DebugConsoleManager, +0x50 DasToSdkHandler; their teardown is unlink only. Order before ~CozmoContext: BaseStationTimer global clear and removeInstance (0x004EC6A0..0x004EC6B4), VizManager::Disconnect (out of scope), AnimationTransfer (M5-059). The engine +4 subscription vector is released at 0x004EC71C after the hub is gone (expired-token no-ops). Context members: no observable effects in PerfMetric, CozmoExperiments, NeedsManager (no WriteToDevice); unread parts are M5-064 and M6-029. Lead (re-analysis/research/20261012-m5-driving-handler-read.md): after removeInstance, BaseStationTimer::getInstance() re-creates a zeroed instance and gTickTimeProvider is null; check whether any later teardown step (RemoveRobots, robot destructors) reads the time.
 
 **M5-059 — AnimationTransfer CleanUp(1) at engine construction and destruction: delete <cache>/TestAnim.json** (live path)
 
@@ -889,6 +869,24 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261012-m5-teardown-members.md: lambda 0x0057E836 -> HandleSetParameters 0x0057E860..0x0057E90E: names.size == values.size -> if +0x18 SetDefaultParams (0x0057E882..0x0057E88C), then SetParam per pair (0x0057E89A..0x0057E8B2); else sErrorF (0x0057E8D0, format 0xBEF4E1) and errG (0x0057E8F6..0x0057E90A). Registered at 0x0057A4BA only with an external interface (0x0057A4AC). App senders: Robot.cs:663, :1402-1404.
 * outstanding: IMPLEMENTATION_GAP: build from the rows; read the format at 0xBEF4E1 (job B-M5-15).
+
+**M5-063 — DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs`
+* effect: What driving animations do when an action completes, and when the stack pushes or removes them.
+* rests on: Opus extractor read of the M5 teardown members (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732).; re-analysis/research/20261012-m5-driving-handler-read.md: handler state ctor 0x004F06B0..0x004F0878 / Init 0x004F0FC4..0x004F0FF4; Push gate warning 0x004F094C..0x004F0964 and push_back 0x004F0988..0x004F09FA; Remove gate 0x004F0A9E..0x004F0AB4, empty-stack warning 0x004F0ADA..0x004F0C22 (0xBE4672), first-match erase 0x004F0AE4..0x004F0C6C, LoopBoundOverflow drivingAnimationHandler.cpp:108 0x004F0B5A..0x004F0BB6; UpdateCurrDrivingAnimations only from Init (0x004F0D2C..0x004F0D74: back(), else Sad 0x2C, else needs-met 0x38, else default 0x20); HandleActionCompleted 0x004F0D78..0x004F0E2A with PlayEndAnim 0x004F0EFA..0x004F0F4A, PlayDrivingLoopAnim 0x004F0E58..0x004F0EA0, PlayDrivingEndAnim 0x004F106C..0x004F10C0, lock/unlock helpers 0x004F0EB2..0x004F0EE2 / 0x004F0F4C; ActionIsBeingDestroyed 0x004F0F94..0x004F0FC0.
+* outstanding: Read 2026-10-12 (re-analysis/research/20261012-m5-driving-handler-read.md): build the handler bodies (job B-M5-15). Ownership: M5-063 owns the handler bodies, including PlayEndAnim, the loop/end plays, UpdateCurrDrivingAnimations and ActionIsBeingDestroyed; M12-024 owns the action-side call sites. The 16 engine-internal Push/Remove callers (SevereNeedsComponent, activities, DriveOffCharger, PounceOnMotion, TrackLaser, OnboardingShowCube, ReactToFrustration; listed in the research file) belong to their behaviour layers (M7/M15), which own their arguments. Not read: MovementComponent lock/unlock semantics of the double UnlockTracks; TriggerLiftSafeAnimationAction parameter names. Previous notes: RECOVERABLE_GAP: read the three bodies.
+
+**M5-064 — Unread engine/context teardown bodies: BaseStationTimer instance, engine +0x38, TransferQueueMgr Dispatch::Stop, GameLogTransferTask +0x10** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: Whether shutdown does anything observable beyond what M5-055 records.
+* rests on: Opus extractor read of the M5 teardown members (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m5-teardown-members.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (instance dtor unread); engine +0x38 set to 0 at 0x004EB292 (no writer found); TransferQueueMgr 0x006A3860 -> Dispatch::Stop 0x006A3874 (unread); GameLogTransferTask 0x006A2E6C virtual delete of +0x10 (unread).; re-analysis/research/20261012-m5-driving-handler-read.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (D2 bx lr 0x0084BC30, D0 operator delete 0x0084BC32); engine +0x38 written only with 0 in CozmoEngine/CozmoAPI (0x004EB292, 0x004EB960, 0x004EC6EE, 0x004EC756); Dispatch::Stop -> Queue::Stop 0x007FBB80 -> TaskExecutor::StopExecution 0x007FC684..0x007FC762 (pending tasks destroyed unrun, taken batch finishes, joins); GameLogTransferTask dtor 0x006A2E6C..0x006A2E94 -> ~HttpAdapter 0x00805F88..0x00805FE8 (state 0, JNI DeleteGlobalRef via lambda 0x00808300).
+* outstanding: Read 2026-10-12 (re-analysis/research/20261012-m5-driving-handler-read.md): no log, event, send or file on any of the four; the only effect outside memory is a JNI global-ref release (Java layer, app boundary). Build: no observable step; tag the teardown (job B-M5-15). Not searched: an engine +0x38 writer outside CozmoEngine/CozmoAPI. Lead for M5-055: getInstance() re-creates a zeroed BaseStationTimer after removeInstance, so a later teardown read would see time 0. Previous notes: RECOVERABLE_GAP: read the four bodies (and search for an engine +0x38 writer).
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 

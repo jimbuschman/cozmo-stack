@@ -922,3 +922,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP | M5-059 TestAnim.json cleanup, M5-062 HandleSetParameters |
 | New COMPATIBILITY_POLICY (scope rule) | M5-060 cache path, M5-061 game messages the stack never sends |
 | New RECOVERABLE_GAP | M5-063 DrivingAnimationHandler bodies, M5-064 unread teardown bodies |
+
+
+## Driving handler and teardown bodies read (manager, 2026-10-12; research/20261012-m5-driving-handler-read.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M5-063, M5-064 |

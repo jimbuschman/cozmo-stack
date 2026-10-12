@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "1aa3cf2befaa55ebf40baabdf647f91f056fcc1ce64908be84d50434ff8aaa33",
+  "inventory_sha256": "47aca96c6375405797b2ba9caa8443c6a4302a08287fd7fe0e2d0d279d0e899f",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -784,21 +784,23 @@
       "hardware_required": false
     },
     "M5-063": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732)."
+        "re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732).",
+        "re-analysis/research/20261012-m5-driving-handler-read.md: handler state ctor 0x004F06B0..0x004F0878 / Init 0x004F0FC4..0x004F0FF4; Push gate warning 0x004F094C..0x004F0964 and push_back 0x004F0988..0x004F09FA; Remove gate 0x004F0A9E..0x004F0AB4, empty-stack warning 0x004F0ADA..0x004F0C22 (0xBE4672), first-match erase 0x004F0AE4..0x004F0C6C, LoopBoundOverflow drivingAnimationHandler.cpp:108 0x004F0B5A..0x004F0BB6; UpdateCurrDrivingAnimations only from Init (0x004F0D2C..0x004F0D74: back(), else Sad 0x2C, else needs-met 0x38, else default 0x20); HandleActionCompleted 0x004F0D78..0x004F0E2A with PlayEndAnim 0x004F0EFA..0x004F0F4A, PlayDrivingLoopAnim 0x004F0E58..0x004F0EA0, PlayDrivingEndAnim 0x004F106C..0x004F10C0, lock/unlock helpers 0x004F0EB2..0x004F0EE2 / 0x004F0F4C; ActionIsBeingDestroyed 0x004F0F94..0x004F0FC0."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M5-064": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Unread engine/context teardown bodies: BaseStationTimer instance, engine +0x38, TransferQueueMgr Dispatch::Stop, GameLogTransferTask +0x10",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-teardown-members.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (instance dtor unread); engine +0x38 set to 0 at 0x004EB292 (no writer found); TransferQueueMgr 0x006A3860 -> Dispatch::Stop 0x006A3874 (unread); GameLogTransferTask 0x006A2E6C virtual delete of +0x10 (unread)."
+        "re-analysis/research/20261012-m5-teardown-members.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (instance dtor unread); engine +0x38 set to 0 at 0x004EB292 (no writer found); TransferQueueMgr 0x006A3860 -> Dispatch::Stop 0x006A3874 (unread); GameLogTransferTask 0x006A2E6C virtual delete of +0x10 (unread).",
+        "re-analysis/research/20261012-m5-driving-handler-read.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (D2 bx lr 0x0084BC30, D0 operator delete 0x0084BC32); engine +0x38 written only with 0 in CozmoEngine/CozmoAPI (0x004EB292, 0x004EB960, 0x004EC6EE, 0x004EC756); Dispatch::Stop -> Queue::Stop 0x007FBB80 -> TaskExecutor::StopExecution 0x007FC684..0x007FC762 (pending tasks destroyed unrun, taken batch finishes, joins); GameLogTransferTask dtor 0x006A2E6C..0x006A2E94 -> ~HttpAdapter 0x00805F88..0x00805FE8 (state 0, JNI DeleteGlobalRef via lambda 0x00808300)."
       ],
       "live_path": true,
       "hardware_required": false
