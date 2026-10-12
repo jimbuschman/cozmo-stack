@@ -136,23 +136,28 @@ public class M5JsonColorTests
         finally { Directory.Delete(root, true); EngineErrorState.ErrorFlagSet = old; }
     }
 
-    [Fact]
-    public void DirectContainerDefinitionRetainsEmptyFileError()
+    [Theory]
+    [InlineData("[1]")]
+    [InlineData("\"x\"")]
+    [InlineData("\"\"")]
+    [InlineData("5")]
+    [InlineData("true")]
+    public void NonEmptyNonObjectRootLogsNoEngineEntryAndStopsVisibly(string json)
     {
-        // J1: direct DefineFromJson has its own no-members error, 0x005887DA..0x0058882A.
+        // empty() is false for these (0x008E9FAC..0x008E9FBE), and getMemberNames throws for any type but null/object
+        // (0x008E6B9A..0x008E6BA0 -> 0x008E6D08). EmptyFile (0x005887EC) is never reached natively.
         bool old = EngineErrorState.ErrorFlagSet;
         try
         {
-            using var doc = System.Text.Json.JsonDocument.Parse("{}");
-            var entries = new List<EngineLogEntry>();
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            Assert.False(JsonClipLoader.IsEmpty(doc.RootElement));
+            var entries = new List<EngineLogEntry>(); var lines = new List<string>();
             using var robot = CozmoRobot.CreateOffline(); robot.Engine.LogEntry += entries.Add;
             EngineErrorState.ErrorFlagSet = false;
-            Assert.Null(JsonClipLoader.LoadDocument(doc, null, (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t)));
-            var error = Assert.Single(entries);
-            Assert.Equal(EngineLogLevel.Error, error.Level);
-            Assert.Equal("CannedAnimationContainer.DefineFromJson.EmptyFile", error.Name);
-            Assert.EndsWith("Found no animations in JSON", error.Text);
-            Assert.True(EngineErrorState.ErrorFlagSet);
+            Assert.Null(JsonClipLoader.LoadDocument(doc, lines.Add, (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t)));
+            Assert.Empty(entries);
+            Assert.False(EngineErrorState.ErrorFlagSet);
+            Assert.Contains(lines, l => l.StartsWith("MISSING: M5-001") && l.Contains("0x008E6D08"));
         }
         finally { EngineErrorState.ErrorFlagSet = old; }
     }

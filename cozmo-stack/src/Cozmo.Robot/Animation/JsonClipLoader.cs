@@ -40,9 +40,19 @@ internal static class JsonClipLoader
     {
         using var clipLog = Eye.UseWarningLog(log, sourceLog);
         var root = doc.RootElement;
+        // DefineFromJson 0x00588700 -> getMemberNames 0x008E6B90 accepts only null or an object (0x008E6B9A..0x008E6BA0);
+        // any other type throws Json::LogicError (0x008E6C68..0x008E6D08) with the container mutex held (0x00521480).
+        // What catches it upstream is unread, so the stack stops here visibly instead of inventing a result.
+        if (root.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null))
+        {
+            log?.Invoke($"MISSING: M5-001 a non-empty non-object JSON root ({root.ValueKind}) makes getMemberNames throw Json::LogicError (0x008E6D08) under the container mutex; the native handling is unread; skipped");
+            return null;
+        }
         var names = root.ValueKind == JsonValueKind.Object
             ? root.EnumerateObject().Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList()
             : new List<string>();
+        // Zero members: 0x0058870A -> EmptyFile 0x005887EC. Natively dead on the load path, because the empty() gate at
+        // 0x00521478 already skips null and empty objects, and 0x0052148A is DefineFromJson's only call site.
         if (names.Count == 0)
         {
             SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "CannedAnimationContainer.DefineFromJson.EmptyFile", "Found no animations in JSON");
