@@ -44,7 +44,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 12 | [B-M3M4-9](B-M3M4-9.md) | done (ae2bd302, suite 4445/4445); re-verify FAIL (5), see B-M3M4-10 |
 | 13 | [B-M5-10](B-M5-10.md) | done (f5dac2f0, suite 4471/4471); re-verify FAIL (1: mood cut at the first NUL), manager fixed |
 | 14 | [B-M3M4-10](B-M3M4-10.md) | done (70a3484d, suite 4487/4487); re-verify FAIL (2, backpack loader), see B-M3M4-11 |
-| 15 | [B-M5-11](B-M5-11.md) | open (second M5 settling pass defects D1/D2/D3/D6) |
+| 15 | [B-M5-11](B-M5-11.md) | done (119eb2fa); re-verify PASS (2 cleanups queued) |
 | 16 | [B-M5-12](B-M5-12.md) | open, after B-M5-11 (null-idle path under M1-034) |
 | 17 | [B-M3M4-11](B-M3M4-11.md) | open, after B-M5-12 (backpack loader conversion order and indexing) |
 
