@@ -1,0 +1,128 @@
+﻿[
+  {
+    "id": "M3-008",
+    "subsystem": "M3-device",
+    "title": "How the firmware maps pair bits to physical display rows, and the robot playback period",
+    "location": "cozmo-stack/src/Cozmo.Robot/Display.cs",
+    "effect": "the face shows interlaced or shifted rows",
+    "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "engine side: pair bit0 = row 2k, bit1 = row 2k\u002B1 (B10 0x00581A48..0x00581AB0; decoder B14 0x0057FCF0..0x0057FDD8)",
+      "firmware images are encrypted (entropy 7.8-8.0 bits/byte) and 2457 is not shipped"
+    ],
+    "status": "HARDWARE_ONLY",
+    "unresolved": "only the robot can answer it",
+    "hardware_required": true,
+    "live_path": true,
+    "test": "; M3M4HwTests (draft structure; no hardware run)"
+  },
+  {
+    "id": "M3-016",
+    "subsystem": "M3-device",
+    "title": "Whether firmware 2457 emits colour frames in this format, and how the robot reacts to EnableColorImages",
+    "location": "cozmo-stack/src/Cozmo.Robot/Camera.cs",
+    "effect": "colour frames never arrive or arrive differently",
+    "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M3-device.md",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "A14 encoding 8 with data[0] != 0 becomes 9 (0x004F1D8C)",
+      "3b the engine flag has no decode consumer (0x005FAC64, 0x005FBDAE)",
+      "firmware 2457 is not shipped"
+    ],
+    "status": "HARDWARE_ONLY",
+    "unresolved": "only the robot can answer it",
+    "hardware_required": true,
+    "live_path": true,
+    "test": "; M3M4HwTests (draft structure; no hardware run)"
+  },
+  {
+    "id": "M3-036",
+    "subsystem": "M3-device",
+    "title": "The robot\u0027s reply to a factory read with Length = 1, and the non-factory Length = size\u002B16 re-request contract",
+    "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+    "effect": "the calibration read\u0027s reply shape and the multi-blob re-request cannot be judged from the engine alone",
+    "provenance": "HARDWARE_ONLY; the firmware bodies are encrypted and no official-app NV capture exists. The CONTROL bundle shows only the reply to Length = 1024 (indices 0..7 and 15).",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "evidence": [
+      "pass 1 step 17: what the robot does with Length = 1 is unknown; the Length = 1024 reply looked like tag offsets from StartTag with 56 bytes at index 0, an inference only",
+      "pass 4 open q5: whether the Length = size\u002B16 re-request is answered from index 1 / byte size\u002B16 is firmware behaviour"
+    ],
+    "status": "HARDWARE_ONLY",
+    "unresolved": "Observed (manager, 2026-10-10, from bundles): the factory read tag 0x80000001 with Length = 1 gets one NVOpResult {index 0, Result 0, 56 bytes} and nothing more, in 20260925-165815/173447/180557-CONTROL (e.g. 180557 frames.jsonl line 11, 20 ms after the request); the old Length = 1024 read (061148) got index-numbered replies 0..7 and 15 with Result 3 and an empty terminator. Open: the non-factory size\u002B16 re-request has no data (needs an entry larger than about 1008 bytes); one factory tag only. Before: a robot run sending Length = 1 and recording the reply, and a non-factory read large enough to need a re-request",
+    "hardware_required": true,
+    "live_path": true,
+    "test": "M3DeviceTests.M3_036_Hardware; M3M4HwTests (draft structure; no hardware run)"
+  },
+  {
+    "id": "M4-013",
+    "subsystem": "M4-control",
+    "title": "Whether the robot honours StartMotorCalibration after its connection-time calibration",
+    "location": "cozmo-stack/src/Cozmo.Conformance/Control.cs",
+    "effect": "a requested recalibration never happens, and a behaviour waiting on it waits for its backstop",
+    "provenance": "not observed; the robot calibrates on every connection, which masked earlier checks",
+    "authority": "robot firmware behaviour; no shipped artifact settles it",
+    "evidence": [
+      "hardware check I"
+    ],
+    "status": "HARDWARE_ONLY",
+    "unresolved": "only a robot can show whether the request is honoured",
+    "hardware_required": true,
+    "live_path": true,
+    "test": "; M3M4HwTests (draft structure; no hardware run)"
+  },
+  {
+    "id": "M4-021",
+    "subsystem": "M4-control",
+    "title": "Whether the robot reports the origin id and frame from AbsoluteLocalizationUpdate in RobotState",
+    "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+    "evidence": [
+      "SC4i: this stack never sent AbsoluteLocalizationUpdate; all 855 states in re-analysis/acceptance/hardware/20260924-202748-CONTROL/frames.jsonl reported origin 0, frame 0",
+      "no original-app capture exists"
+    ],
+    "effect": "no robot state is accepted, or all are",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "status": "HARDWARE_ONLY",
+    "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+    "unresolved": "Observed (manager, 2026-10-10, from bundles; stacks older than HEAD): without the update (20260924-202748-CONTROL) all 855 states reported origin 0 frame 0; with AbsoluteLocalizationUpdate {frame 0, origin 1} sent first, every state reported origin 1 frame 0 in 20260925-061148/165740/165815/173447/180557-CONTROL (e.g. 180557 result.json originsReported: 688/688, 0 rejected). Open: no within-run before/after (the first state follows the update) and only one value pair was sent; the M3M4-HW ORIGIN check gives the within-run comparison on the current stack. Before: only the robot can answer it",
+    "hardware_required": true,
+    "live_path": true,
+    "test": "; M3M4HwTests (draft structure; no hardware run)"
+  },
+  {
+    "id": "M4-024",
+    "subsystem": "M4-control",
+    "title": "What makes the robot forward cube telemetry after connection, and the robot-side effect of StreamObjectAccel",
+    "location": "cozmo-stack/src/Cozmo.Robot/CubeAccel.cs",
+    "evidence": [
+      "S12 AddListener sends {activeID, 1} reliable (0x00635556, 0x00635562)",
+      "S18/S19 no shipped robot or cube firmware for 2457",
+      "CONTROL run: no cube telemetry after the connection"
+    ],
+    "effect": "the cube accelerometer and events never arrive",
+    "authority": "libcozmoEngine.so 3.4.0-1204",
+    "status": "HARDWARE_ONLY",
+    "provenance": "the existing stack code; not yet compared against re-analysis/inventory/M4-control.md",
+    "unresolved": "Observed (manager, 2026-10-10, from bundles): in 20260925-061148/165815/173447/180557-CONTROL no ObjectAccel arrived before StreamObjectAccel{enable 1}; the first followed it by 41..287 ms. Moved/Stopped/Tapped/TappedFiltered/PowerLevel/UpAxisChanged arrived with no StreamObjectAccel ever sent. Unexplained: 20260924-202748-CONTROL sent the stream-on and got no ObjectAccel (older stack, no cube gamma/ID/lights, a cube reconnect). Open: no controlled stream-off phase; the effect of enable 0 is unmeasured. Before: only the robot can answer it",
+    "hardware_required": true,
+    "live_path": true,
+    "test": "; M3M4HwTests (draft structure; no hardware run)"
+  },
+  {
+    "id": "M3-050",
+    "subsystem": "M3-device",
+    "title": "Whether the robot ever sends an ImageChunk in encodings 5/6/7",
+    "location": "cozmo-stack/src/Cozmo.Conformance/M3M4Hw.cs",
+    "status": "HARDWARE_ONLY",
+    "effect": "If the firmware sends a valid non-JPEG image in encodings 5/6/7, the stack\u0027s empty-Mat result (M3-045 C.5) differs from the original.",
+    "provenance": "Split from M3-045 by the Opus final settling pass (2026-10-11, HEAD 8f035387; jobs/B-M3M4.md \u0022Final settling pass\u0022).",
+    "authority": "Robot firmware (not readable); libcozmoEngine.so DecodeImageHelper dispatch.",
+    "evidence": [
+      "Encodings 5/6/7 reach imdecode from DecodeImageHelper (gray tbh 0x004F2898, RGB tbh 0x004F21AE); the encoding byte comes only from the robot\u0027s ImageChunk; ImageRequest cannot ask for 5/6/7 (research/20261010-m3045-m4033-rows.md A.3)."
+    ],
+    "unresolved": "HARDWARE_ONLY: the M3M4-HW run records the encoding of every frame it receives and flags any 5/6/7.",
+    "hardware_required": true,
+    "live_path": true,
+    "test": "; M3M4HwTests (draft structure; no hardware run)"
+  }
+]
