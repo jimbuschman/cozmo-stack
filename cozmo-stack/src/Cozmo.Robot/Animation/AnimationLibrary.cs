@@ -958,10 +958,15 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 Reject();
                 continue;
             }
+            // asCString 0x0058C59C, strlen 0x0058C5AC: the name is cut at the first NUL before the lookup (0x0058C5BE);
+            // JsonCpp keeps embedded NULs in the decoded string (0x008E1530..0x008E154E).
             string mood = m.GetString()!;
+            int nul = mood.IndexOf('\0');
+            if (nul >= 0) mood = mood.Substring(0, nul);
             if (mood is not ("Happy" or "Sad" or "Default" or "Count"))
             {
-                Console.Error.WriteLine($"error: string '{mood}' is not a valid SimpleMoodType value");
+                // cerr, then put(widen('\n')) and flush (0x00792036..0x0079204C): a bare LF on every host.
+                Console.Error.Write($"error: string '{mood}' is not a valid SimpleMoodType value\n");
                 Console.Error.Flush();
                 mood = "Happy";
             }

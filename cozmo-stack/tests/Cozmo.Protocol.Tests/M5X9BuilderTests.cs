@@ -82,6 +82,7 @@ public class M5X9BuilderTests : IDisposable
 
     [Theory]
     [InlineData("Count")]
+    [InlineData("Count\\u0000x")]   // cut at the first NUL (strlen 0x0058C5AC), so still Count -> BadType
     public void BadMoodDoesNotSetErrorBeforeParentAndGroupContainerTailIsExact(string mood)
     {
         string root = Root(); Directory.CreateDirectory(Path.Combine(root, "animationGroups"));
@@ -316,6 +317,24 @@ public class M5X9BuilderTests : IDisposable
         scheduler.ReleaseParameterSubscription=()=>{Assert.True(live.Head.IsEmpty);order.Add("parameter");};
         scheduler.Destroy();Assert.Equal(new[]{"setup","parameter"},order);
     }
+    [Theory]
+    [InlineData("Sad\\u0000x", SimpleMood.Sad)]   // cut at the first NUL (asCString/strlen 0x0058C59C..0x0058C5AC)
+    [InlineData("Default\\u0000", SimpleMood.Default)]
+    public void MoodIsCutAtTheFirstNul(string mood, SimpleMood expected)
+    {
+        string root=Root(); Directory.CreateDirectory(Path.Combine(root,"animationGroups"));
+        try
+        {
+            File.WriteAllText(Path.Combine(root,"animations","c.json"),"{\"c\":[]}");
+            File.WriteAllText(Path.Combine(root,"animationGroups","g.json"),"{\"Animations\":[{\"Name\":\"c\",\"Weight\":1,\"Mood\":\""+mood+"\"}]}");
+            var entries=new ConcurrentQueue<Entry>(); EngineErrorState.ErrorFlagSet=false;
+            var lib=AnimationLibrary.Open(root,sourceLog:Capture(entries));
+            Assert.Equal(expected,Assert.Single(lib.GetGroup("g")!.Entries).MoodType);
+            Assert.DoesNotContain(entries,e=>e.Level is EngineLogLevel.Warning or EngineLogLevel.Error);
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
     [Theory]
     [InlineData("invalid")] [InlineData("0")]
     public void UnknownMoodIsHappyWithoutEngineDiagnostics(string mood)

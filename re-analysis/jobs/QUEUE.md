@@ -42,8 +42,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 10 | [B-M5-8](B-M5-8.md) | done (9812b4e0, suite 4387/4387); re-verify FAIL (5), see B-M5-9 |
 | 11 | [B-M5-9](B-M5-9.md) | done (b302b3e4); re-verify FAIL (4), see B-M5-10 |
 | 12 | [B-M3M4-9](B-M3M4-9.md) | done (ae2bd302, suite 4445/4445); re-verify FAIL (5), see B-M3M4-10 |
-| 13 | [B-M5-10](B-M5-10.md) | running (home PC) |
-| 14 | [B-M3M4-10](B-M3M4-10.md) | open, after B-M5-10 |
+| 13 | [B-M5-10](B-M5-10.md) | done (f5dac2f0, suite 4471/4471); re-verify FAIL (1: mood cut at the first NUL), manager fixed |
+| 14 | [B-M3M4-10](B-M3M4-10.md) | running (home PC) |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
