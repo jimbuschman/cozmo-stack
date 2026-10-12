@@ -501,3 +501,11 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | --- | --- |
 | Settled | M3-024, M3-028, M3-032, M3-053 |
 | New IMPLEMENTATION_GAP | M3-057 AnimationState -> SetClientDropCount |
+
+
+## Check of B-M3M4-12 (manager, 2026-10-12; research/20261012-b-m3m4-12-check.md)
+
+| Change | Records |
+| --- | --- |
+| Settled | M3-057 |
+| New COMPATIBILITY_POLICY (scope rule: the DAS $player_id platform input) | M3-058 |

@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "9f836a12571afce93519e955eaa2b77c2be1a4df853a451b85cde875c74749e7",
+  "inventory_sha256": "c4d14f6b814b76f5da2ba8b0d9417c471917b817dcbdaeca55d0f3df8f019644",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -650,11 +650,21 @@
       "hardware_required": false
     },
     "M3-057": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "AnimationState -> Robot::SetClientDropCount and the Robot.ClientDropCount.Incremented event",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m3m4-settling-2.md: the AnimationState handler tail-calls Robot::SetClientDropCount(+0xE) (0x00538010..0x00538020 -> 0x00518A38..0x00518A80): if the count is above +0x249 (unsigned) it stores it and emits sEventF \"Robot.ClientDropCount.Incremented\" \"%u\" (M2 inventory R-P5 marked it NEW)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-058": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "The DAS $player_id input: DASGetPlatform()->vtbl[+0x10] (app/platform input)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-b-m3m4-12-check.md: the startup sets $player_id to the MD5 hex digest of DASGetPlatform()->vtbl[+0x10]() (0x665F52..0x665FAC); the platform object is supplied by the app layer."
       ],
       "live_path": true,
       "hardware_required": false

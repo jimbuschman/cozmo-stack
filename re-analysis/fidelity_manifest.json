@@ -9739,7 +9739,7 @@
       ],
       "effect": "The order and arguments of the engine's log-library calls, and what the engine does with each flush completion.",
       "provenance": "Opus check of R-M3-051 (2026-10-12), manager-adopted.",
-      "unresolved": "Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Partial checked control seam built against DasControlStandIn: archive callback addresses/suffix, data collection reason2, Configure relative-path/scope descriptors, NativeInit(cozmo), pause schedule, global clears, reason4 shutdown, provider global/mask/flush methods and failed-transfer completions. MISSING: Configure absolute root inputs, Android/Unity platform input selector/arguments, startup completion reaction0x00667748 (resolved callback, absent from checked rows), startup $player_id MD50x00665FAC and DasTransferTask caller0x006A25FE. No guessed paths/platform objects/digest/native callback reaction. Reopened source0x0052F2D8 clears $session_id with null (literal0x0052F3E4), contradicting the check report's player_id label at this address; preserved the clear, no fake RemoveRobot digest. Needs edge0x004ED10A precedes connect pause0x004ED114. Pause's true->false internal appender flush is distinguished from a provider DASForceFlushNow call. Source file/sink(b) work remains excluded under M3-051.",
+      "unresolved": "Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Partial checked control seam built against DasControlStandIn: archive callback addresses/suffix, data collection reason2, Configure relative-path/scope descriptors, NativeInit(cozmo), pause schedule, global clears, reason4 shutdown, provider global/mask/flush methods and failed-transfer completions. MISSING: Configure absolute root inputs, Android/Unity platform input selector/arguments, startup completion reaction0x00667748 (resolved callback, absent from checked rows), startup $player_id MD50x00665FAC and DasTransferTask caller0x006A25FE. No guessed paths/platform objects/digest/native callback reaction. Reopened source0x0052F2D8 clears $session_id with null (literal0x0052F3E4), contradicting the check report's player_id label at this address; preserved the clear, no fake RemoveRobot digest. Needs edge0x004ED10A precedes connect pause0x004ED114. Pause's true->false internal appender flush is distinguished from a provider DASForceFlushNow call. Source file/sink(b) work remains excluded under M3-051. Opus check of B-M3M4-12 (re-analysis/research/20261012-b-m3m4-12-check.md): startup, connect, RemoveRobot, RequestDataCollectionOption, shutdown and provider thunks match. Still open: (a) the startup flush callback reaction 0x667748..0x6677A0 (sEventF das.upload / das.upload.fail, kv {}, text \"live\"; runs on the libDAS worker 0x717C -> 0xB7BC -> 0xC374), built as a MISSING; (b) the global sets 0x52E38A $session_id, 0x536810 $group, 0x536FF0 $phys are not routed to the stand-in; (c) the $player_id input is a platform input (new COMPATIBILITY_POLICY record); (d) the DasTransferTask caller 0x6A25FE is unread. Correction: 0x52F2D8 is sSetGlobal(\"$session_id\", null), not $player_id.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X12BuilderTests.DasStartupControlOrderUsesCheckedArgumentsAndReportsMissingInputs"
@@ -9766,17 +9766,34 @@
       "subsystem": "M3-device",
       "title": "AnimationState -> Robot::SetClientDropCount and the Robot.ClientDropCount.Incremented event",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m3m4-settling-2.md: the AnimationState handler tail-calls Robot::SetClientDropCount(+0xE) (0x00538010..0x00538020 -> 0x00518A38..0x00518A80): if the count is above +0x249 (unsigned) it stores it and emits sEventF \"Robot.ClientDropCount.Incremented\" \"%u\" (M2 inventory R-P5 marked it NEW)."
       ],
       "effect": "The robot drop counter and its DAS event.",
       "provenance": "Second M3/M4 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: build from the cited rows. B-M3M4-12 (2026-10-12), built, awaiting strong verification: AnimationState tail now applies the unsigned byte high-water drop counter, zero from constructor memclr8 +0x238 length0x12 at0x0050FD10. Store before Event/null-channel/Robot.ClientDropCount.Incremented, unsigned decimal count and empty kv (0x00538010..0x00538020 -> 0x00518A38..0x00518A80, event0x00518A58). Time-sync gate retained; equal/decreasing/wrapped counts produce no event.",
+      "unresolved": "Settled 2026-10-12 by the Opus check of B-M3M4-12 (re-analysis/research/20261012-b-m3m4-12-check.md): tail 0x00538010..0x00538020 -> 0x518A38; unsigned byte compare against +0x249; store 0x518A46 before sEventF 0x518A58 (empty kv, no channel); initial 0 (memclr8 0x50FD0A); field +0xE (0x538018). Previous notes: IMPLEMENTATION_GAP: build from the cited rows. B-M3M4-12 (2026-10-12), built, awaiting strong verification: AnimationState tail now applies the unsigned byte high-water drop counter, zero from constructor memclr8 +0x238 length0x12 at0x0050FD10. Store before Event/null-channel/Robot.ClientDropCount.Incremented, unsigned decimal count and empty kv (0x00538010..0x00538020 -> 0x00518A38..0x00518A80, event0x00518A58). Time-sync gate retained; equal/decreasing/wrapped counts produce no event.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X12BuilderTests.DropCountUsesUnsignedMaximumAndStoresBeforeSourceEvent"
+    },
+    {
+      "id": "M3-058",
+      "subsystem": "M3-device",
+      "title": "The DAS $player_id input: DASGetPlatform()->vtbl[+0x10] (app/platform input)",
+      "location": "cozmo-stack/src/Cozmo.Robot/DasControl.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-b-m3m4-12-check.md: the startup sets $player_id to the MD5 hex digest of DASGetPlatform()->vtbl[+0x10]() (0x665F52..0x665FAC); the platform object is supplied by the app layer."
+      ],
+      "effect": "The $player_id DAS global.",
+      "provenance": "Opus check of B-M3M4-12 (2026-10-12), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09): the stack supplies the platform value from its own settings; the MD5 and the sSetGlobal stay exact (M3-055).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M4-029",
