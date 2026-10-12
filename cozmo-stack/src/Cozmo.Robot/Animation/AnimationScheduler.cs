@@ -113,6 +113,7 @@ public sealed class StreamSendBuffer
     private readonly object _gate = new();
     private readonly LinkedList<Entry> _fifo = new();
     private int _bytesStreamed, _framesStreamed, _bytesToSend, _framesToSend;
+    private bool _draining;
 
     /// <summary>The engine log for the budget warning (C9).</summary>
     public Action<string>? Log { get; set; }
@@ -187,19 +188,35 @@ public sealed class StreamSendBuffer
     {
         lock (_gate)
         {
-            while (_fifo.First is { } node)
-            {
-                var e = node.Value;
-                if (e.Size > _bytesToSend) return DrainResult.BudgetStop;
-                if (e.IsAudio && _framesToSend <= 0) return DrainResult.BudgetStop;
-                if (!e.Send()) return DrainResult.SendError;
-                if (node.List == _fifo) _fifo.Remove(node);   // a send callback may have cleared the buffer
-                _bytesToSend -= e.Size;
-                if (e.IsAudio) _framesToSend--;
-                CountLocked(e.Size, e.IsAudio);
-            }
-            return DrainResult.Empty;
+            // One drain owns the FIFO across unlocked sends. Observers may inspect or clear it.
+            if (_draining) return DrainResult.BudgetStop;
+            _draining = true;
         }
+        try
+        {
+            while (true)
+            {
+                LinkedListNode<Entry> node;
+                Entry e;
+                lock (_gate)
+                {
+                    if (_fifo.First is not { } first) return DrainResult.Empty;
+                    node = first;
+                    e = node.Value;
+                    if (e.Size > _bytesToSend) return DrainResult.BudgetStop;
+                    if (e.IsAudio && _framesToSend <= 0) return DrainResult.BudgetStop;
+                }
+                if (!e.Send()) return DrainResult.SendError;
+                lock (_gate)
+                {
+                    if (node.List == _fifo) _fifo.Remove(node);
+                    _bytesToSend -= e.Size;
+                    if (e.IsAudio) _framesToSend--;
+                    CountLocked(e.Size, e.IsAudio);
+                }
+            }
+        }
+        finally { lock (_gate) _draining = false; }
     }
 
     /// <summary><see cref="Drain"/>, true when the buffer emptied.</summary>
@@ -211,12 +228,9 @@ public sealed class StreamSendBuffer
     /// </summary>
     public bool SendDirect(int size, bool countsAsFrame, Func<bool> send)
     {
-        lock (_gate)
-        {
-            if (!send()) return false;
-            CountLocked(size, countsAsFrame);
-            return true;
-        }
+        if (!send()) return false;
+        lock (_gate) CountLocked(size, countsAsFrame);
+        return true;
     }
 
     /// <summary>A direct, counted send of a message: frames streamed rises for 0x8E, 0x8F and EndOfAnimation (C11, C12).</summary>

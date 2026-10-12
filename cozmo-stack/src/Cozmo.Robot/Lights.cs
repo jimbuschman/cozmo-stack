@@ -79,7 +79,14 @@ public sealed class BackpackLightAnimations
     public IReadOnlyCollection<string> Names => _byName.Keys;
 
     /// <summary>GetAnimation: exact lookup, null for an unknown name ("InvalidName", LB4c).</summary>
-    public LedPattern[]? Get(string name) => _byName.GetValueOrDefault(name);
+    public LedPattern[]? Get(string name, Action<string>? log = null, SourceLogSink? sourceLog = null)
+    {
+        if (_byName.TryGetValue(name, out var lights)) return lights;
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
+            "BackpackLightAnimationContainer.GetAnimation_Const.InvalidName", $"Animation requested for unknown animation '{name}'.");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        return null;
+    }
 
     // fidelity: M4-017
     /// <summary>
@@ -108,9 +115,12 @@ public sealed class BackpackLightAnimations
             try { bytes = File.ReadAllBytes(f); }
             catch (IOException) { ReadFailure(f, null); continue; }
             catch (UnauthorizedAccessException) { ReadFailure(f, null); continue; }
-            JsonDocument doc;
-            try { doc = JsonDocument.Parse(bytes, new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true }); }
-            catch (JsonException e) { ReadFailure(f, e.Message); continue; }
+            FirmwareJsonDocument doc;
+            try
+            {
+                if (!Json.TryParseFirst(bytes, out doc)) { ReadFailure(f, "M5-051 G5b"); continue; }
+            }
+            catch (JsonRuntimeError e) { log?.Invoke($"event handler threw: {e.GetType().Name}: {e.Message}"); continue; }
             using (doc)
             {
                 // fidelity: M1-034, M4-036 — section 13.4, operator pin: the native loader terminates;
@@ -158,19 +168,19 @@ public sealed class BackpackLightAnimations
             SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "DataPlatform.readAsJson", $"Failed to read [{f}]");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             if (!string.IsNullOrEmpty(errors))
-                log?.Invoke("MISSING: M4-036 / M1-029 | DataPlatform.readAsJson 0x0084C090..0x0084C15C: Json reader errors [%s] uses JsonCpp formatted reader errors; those bytes are not in the adopted rows and cannot be replaced by System.Text.Json diagnostics");
+                log?.Invoke("MISSING: M5-051 G5b | DataPlatform.readAsJson 0x0084C090..0x0084C15C: Json reader errors [%s] requires JsonCpp formatted reader-error bytes");
         }
     }
 
-    private static bool JsonEmpty(JsonElement root) => root.ValueKind switch
+    private static bool JsonEmpty(FirmwareJsonValue root) => root.Kind switch
     {
-        JsonValueKind.Null or JsonValueKind.Undefined => true,
-        JsonValueKind.Array => root.GetArrayLength() == 0,
-        JsonValueKind.Object => !root.EnumerateObject().Any(),
+        FirmwareJsonKind.Null => true,
+        FirmwareJsonKind.Array => root.Elements.Count == 0,
+        FirmwareJsonKind.Object => root.Members.Count == 0,
         _ => false
     };
 
-    internal void DefineFromJson(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
+    internal void DefineFromJson(FirmwareJsonValue root, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         AddStateValues("Charging", root, "charging", log, sourceLog);
         AddStateValues("Charged", root, "charged", log, sourceLog);
@@ -183,23 +193,23 @@ public sealed class BackpackLightAnimations
     /// transitionOnPeriod_ms, transitionOffPeriod_ms and offset, each with exactly 5 entries, otherwise "Missing member
     /// field" and nothing is inserted; an existing key is not overwritten. Colours are floats: byte = u32(f · 255).
     /// </summary>
-    private void AddStateValues(string name, JsonElement root, string key, Action<string>? log, SourceLogSink? sourceLog = null)
+    private void AddStateValues(string name, FirmwareJsonValue root, string key, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         // Section 13.4: root["charging"] const/find and the state's first isMember require object or null.
-        if (root.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null or JsonValueKind.Undefined))
+        if (root.Kind is not (FirmwareJsonKind.Object or FirmwareJsonKind.Null))
             throw new JsonLogicError("in Json::Value::find(key, end, found): requires objectValue or nullValue");
-        JsonElement e = default;
-        if (root.ValueKind == JsonValueKind.Object) root.TryGetProperty(key, out e);
-        if (e.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null or JsonValueKind.Undefined))
+        FirmwareJsonValue e = new();
+        if (root.Kind == FirmwareJsonKind.Object) e = Member(root, key);
+        if (e.Kind is not (FirmwareJsonKind.Object or FirmwareJsonKind.Null))
             throw new JsonLogicError("in Json::Value::find(key, end, found): requires objectValue or nullValue");
         bool valid = true;
         string[] fields = { "onColors", "offColors", "onPeriod_ms", "offPeriod_ms", "transitionOnPeriod_ms", "transitionOffPeriod_ms", "offset" };
         foreach (var f in fields)
         {
-            bool exists = e.ValueKind == JsonValueKind.Object && e.TryGetProperty(f, out _);
-            JsonElement arr = exists ? e.GetProperty(f) : default;
-            bool ok = exists && arr.ValueKind == JsonValueKind.Array && arr.GetArrayLength() == 5;
-            if (exists && (f == "onColors" || f == "offColors") && (arr.ValueKind != JsonValueKind.Array || arr.GetArrayLength() != 5))
+            bool exists = e.Kind == FirmwareJsonKind.Object && e.Members.ContainsKey(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(f)));
+            FirmwareJsonValue arr = exists ? Member(e, f) : new();
+            bool ok = exists && arr.Kind == FirmwareJsonKind.Array && arr.Elements.Count == 5;
+            if (exists && (f == "onColors" || f == "offColors") && (arr.Kind != FirmwareJsonKind.Array || arr.Elements.Count != 5))
             {
                 SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "JsonTools.GetColorValuesToArrayOptional.DiffSizes", "The json array and destination array are different sizes");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
@@ -215,18 +225,40 @@ public sealed class BackpackLightAnimations
         if (_byName.ContainsKey(name)) return;
         var leds = new LedPattern[5];
         for (int i = 0; i < 5; i++)
-            leds[i] = new LedPattern(FloatColor(e.GetProperty("onColors")[i]), FloatColor(e.GetProperty("offColors")[i]),
-                                     (uint)e.GetProperty("onPeriod_ms")[i].GetInt64(), (uint)e.GetProperty("offPeriod_ms")[i].GetInt64(),
-                                     (uint)e.GetProperty("transitionOnPeriod_ms")[i].GetInt64(),
-                                     (uint)e.GetProperty("transitionOffPeriod_ms")[i].GetInt64(),
-                                     (int)e.GetProperty("offset")[i].GetInt64());
+            leds[i] = new LedPattern(FloatColor(Member(e, "onColors").Elements[i]), FloatColor(Member(e, "offColors").Elements[i]),
+                                     unchecked((uint)Integer(Member(e, "onPeriod_ms").Elements[i])), unchecked((uint)Integer(Member(e, "offPeriod_ms").Elements[i])),
+                                     unchecked((uint)Integer(Member(e, "transitionOnPeriod_ms").Elements[i])),
+                                     unchecked((uint)Integer(Member(e, "transitionOffPeriod_ms").Elements[i])),
+                                     unchecked((int)Integer(Member(e, "offset").Elements[i])));
         _byName[name] = leds;
     }
 
-    private static LedColor FloatColor(JsonElement c)
+    private static LedColor FloatColor(FirmwareJsonValue c)
     {
-        byte B(int i) => unchecked((byte)(uint)(c[i].GetSingle() * 255f));
+        byte B(int i) => unchecked((byte)(uint)((float)Number(c.Elements[i]) * 255f));
         return new LedColor(B(0), B(1), B(2), B(3));
+    }
+
+    private static FirmwareJsonValue Member(FirmwareJsonValue root, string key) =>
+        root.Members.GetValueOrDefault(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(key))) ?? new();
+    private static long Integer(FirmwareJsonValue value) => value.Kind switch
+    {
+        FirmwareJsonKind.Int => value.Signed,
+        FirmwareJsonKind.UInt => checked((long)value.Unsigned),
+        _ => throw new JsonLogicError("Value is not convertible to integer."),
+    };
+    private static double Number(FirmwareJsonValue value) => value.Kind switch
+    {
+        FirmwareJsonKind.Int => value.Signed,
+        FirmwareJsonKind.UInt => value.Unsigned,
+        FirmwareJsonKind.Real => value.Real,
+        _ => throw new JsonLogicError("Value is not convertible to number."),
+    };
+    // Test/standalone callers use the same production Reader.
+    internal void DefineFromJson(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
+    {
+        if (!Json.TryParseFirst(System.Text.Encoding.UTF8.GetBytes(root.GetRawText()), out var doc)) return;
+        using (doc) DefineFromJson(doc.RootElement, log, sourceLog);
     }
 
     internal static bool TryParse(byte[] bytes, out JsonDocument doc)
@@ -294,8 +326,12 @@ public sealed class BodyLightComponent
     /// <summary>
     /// StartLoopingBackpackLightsInternal (LB4i, 0x006322A4): StopLooping(locator), then emplace_front at the source.
     /// </summary>
+    internal SourceLogSink? SourceLog { get; set; }
     internal void StartLooping(LedPattern[] leds, int source)
     {
+        bool invalid;
+        lock (_gate) invalid = _locator is null;
+        if (invalid) SourceLog?.Invoke(EngineLogLevel.Info, "BodyLightComponent", "BodyLightComponent::RemoveBackpackLightConfig.InvalidLocator", "Trying to remove an invalid locator.");
         lock (_gate)
         {
             if (_locator is { } l) _sources[l.Source].Remove(l.Node);
@@ -323,7 +359,7 @@ public sealed class BodyLightComponent
             _chargingState = state;
             name = StateNames[state];
         }
-        if (Animations.Get(name) is { } leds) StartLooping(leds, 2);
+        if (Animations.Get(name, log, sourceLog) is { } leds) StartLooping(leds, 2);
         else SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "BodyLightComponent.UpdateChargingLightConfig.NullAnim", $"Got null anim for state {name}");
     }
 
@@ -380,7 +416,7 @@ public sealed class CozmoLights
     internal CozmoLights(CozmoRobot robot, BackpackLightAnimations backpack, CubeLightAnimations cubes)
     {
         _robot = robot;
-        Body = new BodyLightComponent(m => _robot.SendMessage(m), backpack);
+        Body = new BodyLightComponent(m => _robot.SendMessage(m), backpack) { SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text) };
         Cubes = new CubeLightComponent(robot, cubes);
     }
 
@@ -755,6 +791,7 @@ public sealed class CubeLightComponent
     {
         Playing pushed;
         CubeLightPattern first;
+        uint objectId;
         var logs = new List<Action>();
         void Log(string line) => logs.Add(() => this.Log(line));
         void SourceLog(EngineLogLevel level, string? channel, string key, string text) => logs.Add(() => this.SourceLog(level, channel, key, text));
@@ -766,6 +803,7 @@ public sealed class CubeLightComponent
                 if (connected is null)
                 { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real connected BlockWorld ObjectID; active-slot fallback is not used"); return false; }
                 uint id = connected.ObjectId;
+                objectId = id;
                 string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
                 if (!_infos.TryGetValue(type, out var info)) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.InvalidObjectID", $"No object with id {id} exists in _objectInfo map can't play animation"); return false; }
                 var stack = info.Layers[layer];
@@ -788,14 +826,13 @@ public sealed class CubeLightComponent
                 SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.SettingLights", $"Playing trigger {trigger} on layer {layerName} for object {id}");
                 info.CurrentLayer = layer;
                 pushed.PendingSend = true;
-                // SendTransitionMessage is an unread engine-to-game handoff on this path.
-                Log("MISSING: M4-018 | SendTransitionMessage 0x00638758..0x006387D8 game payload has no adopted row");
+
             }
         }
         finally { foreach (var call in logs) call(); }
         // Do not hold _gate while taking _sendGate: SetLights takes those in the opposite order.
         uint result;
-        try { result = SetObjectLights(type, first); }
+        try { SendTransitionMessage(objectId); result = SetObjectLights(type, first); }
         catch { lock (_gate) pushed.PendingSend = false; throw; }
         lock (_gate)
         {
@@ -821,8 +858,17 @@ public sealed class CubeLightComponent
     /// </summary>
     internal void Update()
     {
-        var sends = new List<(ObjectType, CubeLightPattern)>();
+        var calls = new List<Action>();
         var defaults = new HashSet<ObjectType>();
+        void Send(ObjectType type, CubeLightPattern pattern, bool transition)
+        {
+            uint? id = TryObjectId(type);
+            calls.Add(() => {
+                if (transition) SendTransitionMessage(id);
+                if (SetObjectLights(type, pattern) != 0)
+                    SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.Update.SetLightsFailed", "");
+            });
+        }
         lock (_gate)
         {
             // fidelity: M4-018
@@ -852,7 +898,7 @@ public sealed class CubeLightComponent
                         {
                             var next = top.Anim[top.Index];
                             top.TimerMs = unchecked(now + next.DurationMs);
-                            sends.Add((type, next));
+                            Send(type, next, transition: true);
                             continue;
                         }
                     }
@@ -863,7 +909,11 @@ public sealed class CubeLightComponent
                     {
                         // P3: resend the lower animation's current pattern, with no timer or iterator reset.
                         var lower = stack[^1];
-                        sends.Add((type, lower.Anim[lower.Index]));
+                        uint? id = TryObjectId(type);
+                        int layer = info.CurrentLayer;
+                        if (id is { } previousId) calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.PlayingPrevious", $"Have previous anim {lower.Name} on layer {LayerName(layer)} id {previousId}"));
+                        else calls.Add(() => Log("MISSING: M4-018 | Update.PlayingPrevious 0x00637AA4: native ObjectID unavailable"));
+                        Send(type, lower.Anim[lower.Index], transition: true);
                         continue;
                     }
                 }
@@ -872,14 +922,18 @@ public sealed class CubeLightComponent
                 // otherwise the current layer goes back to 2 and the default layer-2 animation is picked.
                 if (info.GameLayerOnly)
                 {
-                    sends.Add((type, OffLights));
+                    Send(type, OffLights, transition: false);
                     continue;
                 }
+                int previousLayer = info.CurrentLayer;
+                uint? objectId = TryObjectId(type);
                 info.CurrentLayer = StateLayer;
+                if (objectId is { } emptyId) calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.NoAnimsLeftOnLayer", $"No more animations left on layer {LayerName(previousLayer)} for object {emptyId} going to State layer"));
+                else calls.Add(() => Log("MISSING: M4-018 | Update.NoAnimsLeftOnLayer 0x00637BD6: native ObjectID unavailable"));
                 if (info.Layers[StateLayer].Count == 0) defaults.Add(type);
             }
         }
-        foreach (var (t, p) in sends) SetObjectLights(t, p);
+        foreach (var call in calls) call();
         foreach (var t in defaults) PickNextAnimForDefaultLayer(t);
     }
 
@@ -890,6 +944,18 @@ public sealed class CubeLightComponent
     /// </summary>
     internal void StopAllAnimsOnLayer(int layer, ObjectType? type = null)
     {
+        if (type is null) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopAllAnimsOnLayer.AllObjects", $"Stopping all anims for all objects on layer {LayerName(layer)}");
+        else
+        {
+            bool exists;
+            lock (_gate) exists = _infos.ContainsKey(type.Value);
+            if (!exists)
+            {
+                if (TryObjectId(type.Value) is { } id) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopAllAnimsOnLayer.BadObject", $"ObjectId {id} does not exist in _objectInfo map unable to stop anims");
+                else Log("MISSING: M4-018 | StopAllAnimsOnLayer.BadObject 0x00638E72: type-only caller has no native ObjectID");
+                return;
+            }
+        }
         lock (_gate)
         {
             foreach (var (t, info) in _infos)
@@ -907,6 +973,9 @@ public sealed class CubeLightComponent
     /// </summary>
     internal void StopLightAnim(string trigger, int layer, ObjectType? type = null)
     {
+        int? id = type is null ? -1 : TryObjectId(type.Value) is { } value ? unchecked((int)value) : null;
+        if (id is { } objectId) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopLightAnim", $"Stopping {trigger} on object {objectId} on layer {LayerName(layer)}.");
+        else Log("MISSING: M4-018 | StopLightAnim 0x00638F9C: type-only caller has no native ObjectID");
         lock (_gate)
         {
             foreach (var (t, info) in _infos)
@@ -914,6 +983,7 @@ public sealed class CubeLightComponent
                     foreach (var p in info.Layers[layer])
                         if (MatchesTrigger(p, trigger)) p.Stop = true;
         }
+        Log("MISSING: M4-018 | CubeLightComponent.StopLignAnim.Result 0x00639300: Current state string serializer has no adopted row");
         Update();
     }
 
@@ -934,6 +1004,7 @@ public sealed class CubeLightComponent
     /// </summary>
     public void EnableCubeSleep(bool enable, bool skipAnimation = false)
     {
+        SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.EnableCubeSleep", $"{(enable ? "Enabling" : "Disabling")} cube sleep");
         lock (_gate)
         {
             _sleepEnabled = enable;
@@ -1080,6 +1151,23 @@ public sealed class CubeLightComponent
     /// off = 0 gives offColor := onColor, off := 0x7FFFFFFF; gamma 0x80. MakeStateRelativeToXY with mode 0 returns.
     /// Then SetLights with the pattern's rotation.
     /// </summary>
+    private uint? TryObjectId(ObjectType type) => _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type)?.ObjectId;
+    private static string LayerName(int layer) => layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "(null)" };
+    private void SendTransitionMessage(uint? objectId)
+    {
+        if (objectId is not { } id)
+        {
+            Log("MISSING: M4-018 | SendTransitionMessage.NullObject 0x00638150: type-only caller has no native ObjectID");
+            return;
+        }
+        if (_robot.VisionModeRecipient?.World.ConnectedObjects.Any(o => o.ObjectId == id) != true)
+        {
+            SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.SendTransitionMessage.NullObject", $"Got null object using id {unchecked((int)id)}");
+            return;
+        }
+        Log("MISSING: M4-018 | SendTransitionMessage 0x00638758..0x006387D8 game payload has no adopted row");
+    }
+
     private uint SetObjectLights(ObjectType type, CubeLightPattern p)
     {
         if (p.MakeRelative) Log("warning: MISSING: a makeRelative cube light pattern needs the located object (M11-004: the located object and makeRelative); sent to the connected cube");

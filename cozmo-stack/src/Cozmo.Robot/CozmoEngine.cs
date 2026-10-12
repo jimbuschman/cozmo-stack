@@ -918,6 +918,7 @@ public sealed partial class EngineRobot
                 Engine.EmitStackLog($"event handler threw: {e.GetType().Name}: {e.Message}");
                 return;
             }
+            Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotIsPhysical", simIsNull ? "1" : "0"); // 0x00536942..0x00536956
             // fidelity: M4-011
             // SetPhysicalRobot(true) calls BlockFilter::Init (0x0051391E..0x00513954) before its +0x14 store (0x0051397A) and
             // VisionComponent::SetPhysicalRobot (0x0051397C); a simulated robot (sim non-null) never takes this branch.
@@ -1191,7 +1192,7 @@ public sealed partial class EngineRobot
         // remains dependent on M11's calibration pointer and UpdateAllResults result.
         if (!FirstFullStateHandled)
         {
-            Engine.EmitSourceLog(EngineLogLevel.Debug, null, "Robot.Update", "Waiting for first full robot state to be handled");
+            Engine.EmitSourceLog(EngineLogLevel.Debug, "Unnamed", "Robot.Update", "Waiting for first full robot state to be handled");
             AnimationStreamingOpen = false;
             return;
         }

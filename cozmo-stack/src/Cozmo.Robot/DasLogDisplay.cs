@@ -62,12 +62,15 @@ internal sealed class DasLogDisplay
     }
 
     // fidelity: M3-053, M3-054
-    internal DisplayedEngineLog? Render(EngineLogEntry entry, bool verbose, Action<string> missing)
+    internal DisplayedEngineLog? Render(EngineLogEntry entry, bool verbose, Action<DisplayedEngineLog> diagnostic)
     {
-        string name = entry.Name ?? "";
+        static string CString(string? value) => (value ?? "").Split('\0')[0];
+        string name = CString(entry.Name);
+        // libDAS 0x742E..0x743E checks the pointer and first byte only; spaces are valid names.
         if (name.Length == 0)
         {
-            missing("MISSING: M3-053 | libDAS core 0x742E..0x75EE: DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED (value=%s file=%s funct=%s line=%d); arguments unread (libDAS file offset 0x32D3C)");
+            // 0x7440..0x7472: null value/file/function become the empty string at 0x32CFF.
+            diagnostic(new(3, "daslib", FormattableString.Invariant($"DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED (value={CString(entry.Text)} file={CString(entry.SourceFile)} funct={CString(entry.SourceFunction)} line={entry.SourceLine})")));
             name = "noname";
         }
         if (!verbose && (int)entry.Level < GetLevel(name)) return null;

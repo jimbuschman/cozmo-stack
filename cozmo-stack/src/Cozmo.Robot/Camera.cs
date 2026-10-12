@@ -674,24 +674,23 @@ public sealed class CameraSettings
     /// </summary>
     public bool SetCameraSettings(ushort exposureMs, float gain)
     {
-        CurrentCameraParams info;
-        lock (_gate)
+        int min, max; float minGain, maxGain;
+        lock (_gate) { min = MinExposureMs; max = MaxExposureMs; minGain = MinGain; maxGain = MaxGain; }
+        if (!(max >= exposureMs && min <= exposureMs))
         {
-            if (!(MaxExposureMs >= exposureMs && MinExposureMs <= exposureMs))
-            {
-                Emit(EngineLogLevel.Warning, null, "VisionSystem.IsExposureValid.OOR", $"Exposure {exposureMs}ms not in range {MinExposureMs}ms to {MaxExposureMs}ms");
-                return false;
-            }
-            if (!(gain >= MinGain && gain <= MaxGain))
-            {
-                Emit(EngineLogLevel.Warning, null, "VisionSystem.IsGainValid.OOR", $"Gain {F(gain, 6)} not in range {F(MinGain, 6)} to {F(MaxGain, 6)}");
-                return false;
-            }
-            Emit(EngineLogLevel.Info, "VisionComponent", "VisionComponent.SetCameraSettings", $"Exp:{exposureMs}ms Gain:{F(gain, 6)}");
-            _send(new SetCameraParams { Gain = gain, ExposureMs = exposureMs, AutoExposureEnabled = false });
-            SetNextCameraParamsLocked(exposureMs, gain);
-            info = new CurrentCameraParams(gain, exposureMs, AutoExposureEnabled);
+            Emit(EngineLogLevel.Warning, null, "VisionSystem.IsExposureValid.OOR", $"Exposure {exposureMs}ms not in range {min}ms to {max}ms");
+            return false;
         }
+        if (!(gain >= minGain && gain <= maxGain))
+        {
+            Emit(EngineLogLevel.Warning, null, "VisionSystem.IsGainValid.OOR", $"Gain {F(gain, 6)} not in range {F(minGain, 6)} to {F(maxGain, 6)}");
+            return false;
+        }
+        Emit(EngineLogLevel.Info, "VisionComponent", "VisionComponent.SetCameraSettings", $"Exp:{exposureMs}ms Gain:{F(gain, 6)}");
+        _send(new SetCameraParams { Gain = gain, ExposureMs = exposureMs, AutoExposureEnabled = false });
+        SetNextCameraParams(exposureMs, gain);
+        CurrentCameraParams info;
+        lock (_gate) info = new CurrentCameraParams(gain, exposureMs, AutoExposureEnabled);
         CurrentCameraParamsChanged?.Invoke(info);
         return true;
     }
@@ -699,10 +698,12 @@ public sealed class CameraSettings
     /// <summary>VisionSystem::SetNextCameraParams (1d): queues the params, warning when some are already pending.</summary>
     private static string F(double value, int digits) => double.IsNaN(value) ? "nan" : double.IsPositiveInfinity(value) ? "inf" : double.IsNegativeInfinity(value) ? "-inf" : value.ToString("F" + digits, System.Globalization.CultureInfo.InvariantCulture);
 
-    private void SetNextCameraParamsLocked(int exposureMs, float gain)
+    private void SetNextCameraParams(int exposureMs, float gain)
     {
-        if (NextCameraParams is { } old) Emit(EngineLogLevel.Warning, null, "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", $"Params already requested ({old.Item1}ms,{F(old.Item2, 2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain, 2)})");
-        NextCameraParams = (exposureMs, gain);
+        (int, float)? previous;
+        lock (_gate) previous = NextCameraParams;
+        if (previous is { } old) Emit(EngineLogLevel.Warning, null, "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", $"Params already requested ({old.Item1}ms,{F(old.Item2, 2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain, 2)})");
+        lock (_gate) NextCameraParams = (exposureMs, gain);
     }
 
     // fidelity: M3-021
@@ -729,18 +730,19 @@ public sealed class CameraSettings
             return;
         }
         SetCameraSettings(InitialExposureTimeMs, m.Field1);
+        // 0x006B938A..0x006B93A0: SetGammaTable precedes the zero-minimum diagnostic.
+        lock (_gate) GammaTable = (byte[])m.Field4.Clone();
+        if (min == 0) Emit(EngineLogLevel.Debug, "VisionSystem", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "Will use 1.");
         lock (_gate)
         {
             // 13.6: SetGammaTable 0x0085F594..0x0085F5B6 always returns 0; BadGammaCurve is unreachable.
-            GammaTable = (byte[])m.Field4.Clone();
-            if (min == 0) Emit(EngineLogLevel.Debug, "VisionSystem", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "Will use 1.");
             MaxExposureMs = max;
             MinExposureMs = min <= 0 ? 1 : min;
             MinGain = DefaultParamsMinGain;
             MaxGain = m.Field0;
-            SetNextCameraParamsLocked(InitialExposureTimeMs, m.Field1);
-            Emit(EngineLogLevel.Info, "VisionSystem", "VisionSystem.SetCameraExposureParams.Success", $"Current Gain:{InitialExposureTimeMs}ms Limits:[{min} {max}], Current Exposure:{F(m.Field1, 3)} Limits:[{F(DefaultParamsMinGain, 3)} {F(m.Field0, 3)}]");
         }
+        SetNextCameraParams(InitialExposureTimeMs, m.Field1);
+        Emit(EngineLogLevel.Info, "VisionSystem", "VisionSystem.SetCameraExposureParams.Success", $"Current Gain:{InitialExposureTimeMs}ms Limits:[{min} {max}], Current Exposure:{F(m.Field1, 3)} Limits:[{F(DefaultParamsMinGain, 3)} {F(m.Field0, 3)}]");
     }
 
     // fidelity: M3-019, M3-022

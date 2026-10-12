@@ -279,6 +279,10 @@ public sealed class CubeConnections
     // The channeled info, warning and error calls of the connection path. A line is queued where the engine logs it
     // and delivered when the entry point has left the lock, in order.
     internal event Action<EngineLogLevel, string?, string, string>? SourceLog;
+    internal event Action<string>? StackLog;
+    private void QueueMissing(string line) => _pendingLogs.Add(() => {
+        if (StackLog is { } sink) sink(line); else _log?.Invoke(line);
+    });
     private void Queue(EngineLogLevel level, string? channel, string key, string text, bool includeChannelInText = false)
     {
         _pendingLogs.Add(() => {
@@ -554,10 +558,21 @@ public sealed class CubeConnections
         int free = -1;
         for (int i = 0; i < SlotCount; i++)
         {
-            if (_persistentPool[i].FactoryId == factoryId || _persistentPool[i].Type == type) return false;
+            if (_persistentPool[i].FactoryId == factoryId || _persistentPool[i].Type == type)
+            {
+                Queue(EngineLogLevel.Error, null, "BlockFilter.AddObjectToPersistentPool", $"Object with factory ID 0x{factoryId:x} and/or type {ObjectTypeName(type)} already in _persistentPool");
+                _pendingLogs.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak);
+                return false;
+            }
             if (free < 0 && _persistentPool[i].FactoryId == 0) free = i;
         }
-        if (free < 0) return false;
+        if (free < 0)
+        {
+            Queue(EngineLogLevel.Error, null, "BlockFilter.AddFactoryId", $"There is no available slot to add factory ID {PrintfHex(factoryId)},");
+            _pendingLogs.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak);
+            return false;
+        }
+        Queue(EngineLogLevel.Info, "BlockPool", "BlockFilter.AddObjectToPersistentPool", $"Adding object 0x{factoryId:x} of type {ObjectTypeName(type)} to the persistent pool");
         _persistentPool[free] = (factoryId, type);
         Save();                                                  // 0x0061ACE2
         return true;
@@ -585,6 +600,7 @@ public sealed class CubeConnections
         lock (_gate)
         {
             _poolPath = path;
+            Queue(EngineLogLevel.Info, "BlockPool", "BlockFilter.Init", $"Loading from file {path}");
             Load();
             Array.Copy(_persistentPool, _runtimePool, SlotCount);
             ConnectToObjectsLocked(_runtimePool.Select(p => p.FactoryId).ToArray());
@@ -615,13 +631,19 @@ public sealed class CubeConnections
             string line = nl < 0 ? text[start..] : text[start..nl];
             start = nl < 0 ? text.Length : nl + 1;
             if (line.Length == 0) continue;
-            if (count >= SlotCount) break;
+            if (count >= SlotCount)
+            {
+                Queue(EngineLogLevel.Error, null, "BlockFilter.Load", "Found more than 5 lines in the file. They will be ignored");
+                _pendingLogs.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak);
+                break;
+            }
             if (!line.StartsWith("0x", StringComparison.Ordinal)) continue;
-            if (!Stoul(line, 16, out uint factoryId, out int pos)) continue;
+            if (!Stoul(line, 16, out uint factoryId, out int pos)) { MissingParseError(); continue; }
             if (pos >= line.Length) continue;
             _persistentPool[count].FactoryId = factoryId;
-            if (!Stoul(line[(pos + 1)..], 10, out uint type, out _)) continue;
+            if (!Stoul(line[(pos + 1)..], 10, out uint type, out _)) { MissingParseError(); continue; }
             _persistentPool[count].Type = (ObjectType)(int)type;
+            Queue(EngineLogLevel.Info, "BlockPool", "BlockFilter.Load", $"{PrintfHex(factoryId)},{unchecked((int)type)}");
             count++;
         }
     }
@@ -667,20 +689,27 @@ public sealed class CubeConnections
     /// it, and each entry with a non-zero factory id is written as "0x", the id in lower-case hex, ",", the type in
     /// decimal and a line feed (0x0061B0EA..0x0061B154).
     /// </summary>
+    private void MissingParseError() => QueueMissing("MISSING: M4-011 | BlockFilter.Load.ParseError at 0x0061A55E needs phone std::stoul exception what() bytes");
+    private static string PrintfHex(uint value) => value == 0 ? "00000000" : "0x" + value.ToString("x").PadLeft(6, '0');
+
     private void Save()
     {
         if (_poolPath.Length == 0) return;
         try
         {
             if (_persistentPool.All(p => p.FactoryId == 0) && File.Exists(_poolPath)) File.Delete(_poolPath);
-            var sb = new System.Text.StringBuilder();
+            using var writer = new StreamWriter(_poolPath, append: false, new System.Text.UTF8Encoding(false));
             foreach (var (factoryId, type) in _persistentPool)
-                if (factoryId != 0) sb.Append("0x").Append(factoryId.ToString("x")).Append(',').Append(((int)type).ToString()).Append('\n');
-            var dir = Path.GetDirectoryName(_poolPath);
-            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            File.WriteAllText(_poolPath, sb.ToString());
+                if (factoryId != 0)
+                {
+                    writer.Write("0x" + factoryId.ToString("x") + "," + ((int)type).ToString(System.Globalization.CultureInfo.InvariantCulture) + "\n");
+                    Queue(EngineLogLevel.Info, "BlockPool", "BlockFilter.Save", $"{PrintfHex(factoryId)},{(int)type}");
+                }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            QueueMissing("MISSING: M4-011 | BlockFilter.Save.Error at 0x0061B260 needs phone std::ios_base::failure what() bytes and its source exception gate; host I/O failures are isolated");
+        }
     }
 
 

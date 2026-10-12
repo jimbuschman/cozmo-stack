@@ -171,6 +171,7 @@ public sealed class CozmoCubes
         Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
                                           () => Seconds());
         Connections.SourceLog += (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
+        Connections.StackLog += _robot.Engine.EmitStackLog;
         Connections.BlockPoolData += m => _robot.Engine.DeliverBlockPoolData(m);
     }
 
@@ -507,7 +508,11 @@ public sealed class CozmoCubes
                     // engine broadcasts nothing. This stack records the advertisement (the internal tracking the
                     // connection path needs) and raises no ObjectAvailable/ObjectUnavailable broadcast.
                     // The engine records an advertisement only for a light cube or the charger.
-                    if (!IsTrackedActiveObject(a.ObjectType)) break;
+                    if (!IsTrackedActiveObject(a.ObjectType))
+                    {
+                        SourceLog(EngineLogLevel.Warning, null, "Robot.HandleActiveObjectAvailable.UnknownType", $"FactoryID: 0x{a.FactoryId:x}, ObjectType: '{CubeConnections.ObjectTypeName(a.ObjectType)}'");
+                        break;
+                    }
                     bool isNew = !_byFactoryId.ContainsKey(a.FactoryId);
                     var c = Track(a.FactoryId);
                     c.Type = a.ObjectType;
@@ -516,6 +521,9 @@ public sealed class CozmoCubes
                     c.Advertisements++;
                     if (isNew) discovered = c;
                     callouts.Add(() => Connections.OnObjectAvailable(a.FactoryId, a.ObjectType, a.Rssi));
+                    // 0x0053398E..0x005339C8: the ObjectAvailable log also requires +0x490 and signed RSSI <=49.
+                    if (BroadcastsAvailableObjects && a.Rssi <= 49)
+                        SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectAvailable.ObjectAvailable", $"Type: {CubeConnections.ObjectTypeName(a.ObjectType)}, FactoryID 0x{a.FactoryId:x}, rssi {a.Rssi}, (currTime {unchecked((int)(_robot.Engine.Robot?.StoredState?.Timestamp ?? 0))})");
                     break;
                 }
                 case ObjectConnectionState s:
@@ -550,6 +558,8 @@ public sealed class CozmoCubes
                     }
                     if (isNew) discovered = c;
                     callouts.Add(() => Connections.OnConnectionState(s.ObjectID, s.FactoryID, s.Connected, s.ObjectType));
+                    if (s.ObjectID <= MaxActiveObjectSlot)
+                        SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectConnectionState.Recvd", $"FactoryID 0x{s.FactoryID:x}, connected {(s.Connected ? 1 : 0)}");
                     lights = (s.ObjectType, s.Connected);
                     break;
                 }
@@ -647,7 +657,7 @@ public sealed class CozmoCubes
                     if (d.WindowEnd == 0) d.Moving = true;
                     if (WorldId(c, Log) is not { } movedWorldId) break;
                     if (IsCharger(c, Log)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.Charger", "Charger sending garbage move messages"); break; }
-                    SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.ObjectMovedOrStopped", $"ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {mv.AxisOfAccel}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
+                    SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.ObjectMovedOrStopped", $"ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {UpAxisName(mv.AxisOfAccel)}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
                     if (ShouldIgnoreMovementDueToDoubleTap(c)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.IgnoringMessage", $"Waiting for double tap id:{movedWorldId} ignoring movement message"); break; }
                     if (!c.Moving) { c.Moving = true; c.MovingChangedAt = mv.Timestamp; }
                     _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)movedWorldId), true);
@@ -690,7 +700,7 @@ public sealed class CozmoCubes
                     // receiver's record of the broadcast.
                     if (Connected(ua.ObjectID) is not { } c) { SourceLog(EngineLogLevel.Error, null, "Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)ua.ObjectID)}"); callouts.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak); break; }
                     if (WorldId(c, Log) is not { } upWorldId) break;
-                    SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged", $"Type: {c.Type}, ObjectID: {upWorldId}, UpAxis: {ua.UpAxis}");
+                    SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged", $"Type: {c.Type}, ObjectID: {upWorldId}, UpAxis: {UpAxisName(ua.UpAxis)}");
                     c.UpAxis = ua.UpAxis;
                     c.LastSeenUtc = DateTime.UtcNow;
                     break;
@@ -733,6 +743,9 @@ public sealed class CozmoCubes
     }
 
     /// <summary>"%.2f": two decimals, the invariant point (ordinary values; the engine formats with the phone printf).</summary>
+    // EnumToString(UpAxis) 0x007B9BE4..0x007B9BF6: unsigned >7 returns NULL; M3-048's %s renders (null).
+    private static string UpAxisName(UpAxis axis) => (byte)axis <= 7 ? axis.ToString() : "(null)";
+
     private static string F2(double v) => v.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);
 
     private static float BatteryPercentOf(float volts) => Cube.BatteryPercentOf(volts);

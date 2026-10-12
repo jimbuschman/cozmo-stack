@@ -17,6 +17,96 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class M4ControlTests
 {
+    // 0x0063429C, 0x00634534/57A, 0x0053564C and 0x00535948.
+    [Fact]
+    public void B9_CliffThresholdCountAndLiveUndetectedLogsKeepNativeOrder()
+    {
+        using var rig = new Rig(); rig.ToSynced(); rig.State();
+        rig.Robot.Sensors.SendCliffDetectThresholdToRobot(400);
+        var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        rig.Robot.Sensors.SendCliffDetectThresholdToRobot(50);
+        rig.Robot.Sensors.SendCliffDetectThresholdToRobot(50);
+        var changed = Assert.Single(entries.Where(e => e.Name!.EndsWith("CliffDetectThresholdUpdated")));
+        Assert.Equal((EngineLogLevel.Info, "Unnamed", "New cliff detect threshold 50 (old threshold 400)"), (changed.Level, changed.Channel, changed.Text));
+        rig.Robot.Sensors.SendCliffDetectThresholdToRobot(400); entries.Clear();
+        rig.Robot.Sensors.IncrementSuspiciousCliffCount();
+        Assert.Equal(new[] { "IncrementSuspiciousCliffCount.Count", "IncrementSuspiciousCliffCount.NewThreshold" }, entries.Select(e => e.Name));
+        Assert.Equal(new[] { "1", "150" }, entries.Select(e => e.Text)); Assert.All(entries, e => Assert.Equal(EngineLogLevel.Event, e.Level));
+        entries.Clear(); rig.Data(new CliffEvent { Timestamp = 123, DetectedFlags = 0 }); rig.Tick();
+        var undetected = Assert.Single(entries.Where(e => e.Name == "RobotImplMessaging.HandleCliffEvent.Undetected"));
+        Assert.Equal((EngineLogLevel.Info, "Unnamed", ""), (undetected.Level, undetected.Channel, undetected.Text));
+        entries.Clear(); rig.Data(new PotentialCliff()); rig.Tick();
+        Assert.Contains(entries, e => e.Name == "Robot.HandlePotentialCliffEvent" && e.Level == EngineLogLevel.Warning && e.Text.EndsWith("Got potential cliff message but not in drone mode"));
+    }
+
+    // 0x006324E4 and 0x00587460..0x0058749A; public SetBackpack routes the first locator.
+    [Fact]
+    public void B9_BackpackFirstLocatorAndUnknownNameUseSourceKeysAndErrorFlag()
+    {
+        using var rig = new Rig(); var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        rig.Robot.Lights.SetBackpack(LedColor.Red); rig.Robot.Lights.SetBackpack(LedColor.Green);
+        var invalid = Assert.Single(entries);
+        Assert.Equal((EngineLogLevel.Info, "BodyLightComponent", "BodyLightComponent::RemoveBackpackLightConfig.InvalidLocator", "Trying to remove an invalid locator."), (invalid.Level, invalid.Channel, invalid.Name, invalid.Text));
+        EngineErrorState.ErrorFlagSet = false;
+        rig.Robot.Lights.Body.Animations.Get("missing", sourceLog: (level, channel, key, text) => rig.Engine.EmitSourceLog(level, channel, key, text));
+        Assert.True(EngineErrorState.ErrorFlagSet);
+        Assert.Equal("BackpackLightAnimationContainer.GetAnimation_Const.InvalidName", entries[^1].Name);
+        Assert.EndsWith("Animation requested for unknown animation 'missing'.", entries[^1].Text);
+    }
+
+    // 0x007B9BE4 >7 returns NULL; 0x00533BA2/0x00533C72 and data table 0x01020EF8/0x01020F00.
+    [Fact]
+    public void B9_CubeConnectionEventsAndInvalidUpAxisKeepNativeFields()
+    {
+        using var rig = new Rig(); using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        rig.ToSynced(); rig.State(); var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        ConnectCube(rig);
+        var connection = Assert.Single(entries.Where(e => e.Name == "robot.accessory_connection"));
+        Assert.Equal("connected", connection.Data["$data"]); Assert.Equal(EngineLogLevel.Event, connection.Level);
+        Assert.Contains(entries, e => e.Name == "Robot.HandleActiveObjectConnectionState.Recvd" && e.Text.EndsWith("connected 1"));
+        rig.Data(new ObjectUpAxisChanged { ObjectID = 0, UpAxis = (UpAxis)255 }); rig.Tick();
+        Assert.Contains(entries, e => e.Name == "Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged" && e.Text.EndsWith("UpAxis: (null)"));
+    }
+
+    [Fact]
+    public void B9_CubeSleepEntryPrecedesTheStopLogs()
+    {
+        using var rig = new Rig(); var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        rig.Robot.Lights.Cubes.EnableCubeSleep(false);
+        Assert.Equal(("CubeLightComponent.EnableCubeSleep", "Disabling cube sleep"), (entries[0].Name, entries[0].Text));
+        Assert.Equal(new[] { "CubeLightComponent.StopLightAnim", "CubeLightComponent.StopLightAnim" }, entries.Where(e => e.Name == "CubeLightComponent.StopLightAnim").Select(e => e.Name));
+        Assert.Equal("Stopping Sleep on object -1 on layer State.", entries[1].Text);
+    }
+
+    // 0x00637AA4 / 0x00637BD6 / 0x00637B34 and 0x00638150 through live light entries.
+    [Fact]
+    public void B9_CubeUpdatePreviousEmptyAndNullTransitionLogsFollowTheirGates()
+    {
+        string res = CubeLightResources();
+        try
+        {
+            using var rig = new Rig(res); rig.ToSynced(); rig.State(); ConnectCube(rig);
+            var world = rig.Robot.VisionModeRecipient!.World;
+            uint id = world.ConnectedObjectIdForActiveId(0)!.Value;
+            var lights = rig.Robot.Lights.Cubes; var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+            Assert.True(lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1, "Sleep", 2));
+            Assert.True(lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1, "Connected", 2));
+            lights.StopLightAnim("Connected", 2);
+            Assert.Contains(entries, e => e.Name == "CubeLightComponent.Update.PlayingPrevious" && e.Text == $"Have previous anim sleep on layer State id {id}");
+            lights.StopAllAnimsOnLayer(2);
+            Assert.Contains(entries, e => e.Name == "CubeLightComponent.StopAllAnimsOnLayer.AllObjects" && e.Text == "Stopping all anims for all objects on layer State");
+            Assert.Contains(entries, e => e.Name == "CubeLightComponent.Update.NoAnimsLeftOnLayer" && e.Text == $"No more animations left on layer State for object {id} going to State layer");
+            rig.Engine.Robot!.SendFault = _ => false;
+            lights.EnableGameLayerOnly(true);
+            Assert.Contains(entries, e => e.Name == "CubeLightComponent.Update.SetLightsFailed" && e.Level == EngineLogLevel.Warning && e.Text.EndsWith(": "));
+            lights.EnableGameLayerOnly(false);
+            rig.Engine.LogEntry += e => { if (e.Name == "CubeLightComponent.PlayLightAnim.SettingLights") world.RemoveConnectedActiveObject(0); };
+            Assert.True(lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1, "Sleep", 2));
+            Assert.Contains(entries, e => e.Name == "CubeLightComponent.SendTransitionMessage.NullObject" && e.Text.EndsWith($"Got null object using id {unchecked((int)id)}"));
+        }
+        finally { Directory.Delete(res, true); }
+    }
+
     // B-M3M4-6: world _gate must be released before the configuration subscriber takes _updateGate.
     [Theory]
     [InlineData(true)] [InlineData(false)]

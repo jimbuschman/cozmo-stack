@@ -445,23 +445,26 @@ public sealed class CozmoSensors
     /// </summary>
     private void UpdateCliffDetectThreshold()
     {
-        List<ushort> cliffs;
+        List<(uint Timestamp, ushort Cliff0)> cliffs;
         lock (_gate)
         {
             if (_cliffSuspiciousAt == 0 || _robot.Motion.BodyMoving) return;
             // S3: lower_bound(_cliffSuspiciousAt) - the first sample with timestamp >= the target.
             int i = _cliffHistory.FindIndex(e => e.Timestamp >= _cliffSuspiciousAt);
             if (i < 0) { _cliffSuspiciousAt = 0; return; }
-            cliffs = new List<ushort>();
-            for (; i < _cliffHistory.Count; i++) cliffs.Add(_cliffHistory[i].Cliff0);
+            cliffs = new();
+            for (; i < _cliffHistory.Count; i++) cliffs.Add((_cliffHistory[i].Timestamp, _cliffHistory[i].Cliff0));
             _cliffSuspiciousAt = 0;   // S6
         }
         // S5: min is a local (0xFFFF), the variance is the component's +0x3C.
         ushort min = 0xFFFF;
-        foreach (var cliff in cliffs)
+        foreach (var (timestamp, cliff) in cliffs)
         {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Unnamed", "CliffSensorComponent.UpdateCliffDetectThreshold.CliffValueWhileStopping", $"{unchecked((int)timestamp)} - {cliff}");
             if (min > cliff) min = cliff;
-            if (_cliffVariance > CliffVarianceThreshold && (uint)(min + 15) < cliff)
+            float variance;
+            lock (_gate) variance = _cliffVariance;
+            if (variance > CliffVarianceThreshold && (uint)(min + 15) < cliff)
                 IncrementSuspiciousCliffCount();
         }
     }
@@ -474,19 +477,23 @@ public sealed class CozmoSensors
     /// </summary>
     internal void IncrementSuspiciousCliffCount()
     {
-        ushort sent;
+        ushort sent; int count;
         lock (_gate)
         {
-            ushort cache = _cliffThresholdCache;
-            if (cache < CliffSuspiciousCacheMin) return;
-            _cliffSuspiciousCount++;
-            uint reduced = (uint)cache - 250u;
-            if (reduced <= 0x96u) reduced = CliffSuspiciousThreshold;
-            _cliffThresholdCache = (ushort)reduced;
-            sent = (ushort)reduced;
-            _cliffSuspiciousCount = 0;
+            if (_cliffThresholdCache < CliffSuspiciousCacheMin) return;
+            count = ++_cliffSuspiciousCount;
         }
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "IncrementSuspiciousCliffCount.Count", unchecked((int)count).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        lock (_gate)
+        {
+            if (_cliffSuspiciousCount == 0) return; // 0x0063455A..0x0063455C
+            uint reduced = (uint)_cliffThresholdCache - 250u;
+            if (reduced <= 0x96u) reduced = CliffSuspiciousThreshold;
+            sent = _cliffThresholdCache = (ushort)reduced;
+        }
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "IncrementSuspiciousCliffCount.NewThreshold", sent.ToString(System.Globalization.CultureInfo.InvariantCulture));
         SendCliffDetectThresholdToRobot(sent);
+        lock (_gate) _cliffSuspiciousCount = 0;
     }
 
     // fidelity: M4-019
@@ -545,7 +552,13 @@ public sealed class CozmoSensors
     /// </summary>
     internal void SendCliffDetectThresholdToRobot(ushort t)
     {
-        lock (_gate) if (t != _cliffThresholdCache) _cliffThresholdCache = t;
+        ushort old;
+        lock (_gate) old = _cliffThresholdCache;
+        if (t != old)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "CliffSensorComponent.SendCliffDetectThresholdToRobot.CliffDetectThresholdUpdated", $"New cliff detect threshold {t} (old threshold {old})");
+            lock (_gate) _cliffThresholdCache = t;
+        }
         _robot.SendMessage(new SetCliffDetectThreshold { Field0 = t });
     }
 
@@ -711,7 +724,14 @@ public sealed class CozmoSensors
     /// </summary>
     private void HandlePotentialCliff()
     {
-        lock (_gate) if (_onChargerPlatform) return;
+        bool onPlatform;
+        lock (_gate) onPlatform = _onChargerPlatform;
+        if (onPlatform)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Unnamed", "Robot.HandlePotentialCliffEvent.OnChargerPlatform", "Ignoring potential cliff event while on charger platform");
+            return;
+        }
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.HandlePotentialCliffEvent", "Got potential cliff message but not in drone mode");
         _robot.Motion.StopAllMotors();
         _robot.SendMessage(new EnableStopOnCliff(false));
     }
@@ -795,8 +815,11 @@ public sealed class CozmoSensors
                 lock (_gate)
                 {
                     if (!_cliffEnabled && any) break;
-                    _cliffDetectedByEvent = any;
                 }
+                if (any)
+                    _robot.Engine.EmitStackLog("MISSING: M4-019 | HandleCliffEvent 0x00535548..0x005356E6: ComputeCliffPose 0x00634980 and AddCliff body have no checked rows; Detected at 0x00535602 needs the computed pose, ComputeCliffPoseFailed at 0x00535682 and errG/break at 0x005356BC need its result");
+                else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotImplMessaging.HandleCliffEvent.Undetected", "");
+                lock (_gate) _cliffDetectedByEvent = any;
                 var report = new CliffReport(c.Timestamp, (CliffSensors)c.DetectedFlags, c.DidStopForCliff);
                 lock (_gate)
                 {
@@ -818,9 +841,11 @@ public sealed class CozmoSensors
                 // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; MISSING: M8-019, reported below),
                 // ActionList::Cancel(-1) (0x00535466..0x0053546E; M8-015's ActionList, the robot's own) and the RobotStopped broadcast (0x00535480).
                 // Nothing is sent to the robot by this handler.
-                _robot.Engine.EmitEngineLog(EngineLogLevel.Event, null, "RobotImplMessaging.HandleRobotStopped",
+                float stoppedVariance;
+                lock (_gate) stoppedVariance = _cliffVariance;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "RobotImplMessaging.HandleRobotStopped",
                     rs.Field0.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    new Dictionary<string, string> { ["$data"] = _cliffVariance.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) });
+                    new Dictionary<string, string> { ["$data"] = stoppedVariance.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) });
                 EvaluateCliffSuspiciousnessWhenStopped(_robot.Engine.Robot?.StoredState?.Timestamp ?? _cliffTimestamp);
                 bool stoppedEnabled;
                 lock (_gate) stoppedEnabled = _cliffEnabled;

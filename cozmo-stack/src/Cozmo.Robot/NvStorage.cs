@@ -222,6 +222,8 @@ public sealed class NvStorageComponent : IDisposable
 
     private readonly CozmoRobot _robot;
     private readonly object _gate = new();
+    private static readonly object SizeTableGate = new();
+    private static bool _sizeTableHasFactoryKeys;
     private SavedCommand _saved = new();
 
     /// <summary>
@@ -261,6 +263,20 @@ public sealed class NvStorageComponent : IDisposable
         _robot = robot;
         ConstructedSetStateLocked();
         robot.Message += OnMessage;
+        // InitSizeTable 0x00643B48..0x00643CE0: log successor differences in the static tree.
+        // DE000/DE030 are inserted after the first walk; later constructors walk them too,
+        // before DE030's value is overwritten by the factory-block rule at 0x00643CE0.
+        lock (SizeTableGate)
+        {
+            if (_sizeTableHasFactoryKeys)
+            {
+                LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.InitSizeTable", "Max size of 0xde000: 48");
+                LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.InitSizeTable", "Max size of 0xde030: " + (0x180000u - 0xDE030u).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+            foreach (var (tag, size) in MaxSizeTable.Where(p => p.Key >= 0x180000 && p.Key < 0x198000).OrderBy(p => p.Key))
+                LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.InitSizeTable", $"Max size of 0x{tag:x}: {(uint)size}");
+            _sizeTableHasFactoryKeys = true;
+        }
     }
 
     // fidelity: M3-048
@@ -1130,6 +1146,7 @@ public sealed class NvStorageComponent : IDisposable
                                 return;
                             }
                             // Fits in the first blob: 0x643922 resizes the reply vector to total+16 (pass 4b Q3).
+                            LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.ResizeBlobToValidData", $"Tag: 0x{r.Tag:x}, TotalSize: {total}");
                             req.HeaderFitsInFirstBlob = true;
                         }
                     }
@@ -1239,7 +1256,10 @@ public sealed class NvStorageComponent : IDisposable
             count = total;
         req.HeaderFitsInFirstBlob = false;
         if (count > 0 && offset >= 0) req.Write(offset, r.Data, sourceSkip, count);
+        // 0x006435D4: size and offset are the resized incoming vector's size and header skip.
+        int blobSize = sourceSkip + count;
         ArmDeadlineLocked(req);
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandelNVData.ReceivedBlob", $"BaseEntryTag: 0x{req.ResponseBaseTag ?? req.Tag:x}, Tag: 0x{r.Tag:x}, BlobSize {blobSize}, offset {index}, StartWriteIndex: {offset}");
     }
 
     // fidelity: M3-030, M3-034

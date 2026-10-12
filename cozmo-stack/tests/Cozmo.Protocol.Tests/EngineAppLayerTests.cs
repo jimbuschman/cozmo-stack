@@ -410,9 +410,16 @@ public class EngineAppLayerTests
             File.WriteAllText(path, "\nignored,1\n0x10\n0x20,3\n0x30,bad\n0x30,2\n0x40,1\n0x50,13\n0x60,2\n0x70,1\n");
             using (var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path }))
             {
+                var entries = new List<EngineLogEntry>(); var missing = new List<string>();
+                rig.Engine.LogEntry += entries.Add; rig.Engine.StackLogLine += missing.Add;
                 rig.ToValidated(); // physical firmware handler invokes the live BlockFilter.Init
                 Assert.Equal(new uint[] { 0x20, 0x30, 0x40, 0x50, 0x60 }, rig.Robot.Cubes.Connections.PersistentPool.Select(p => p.FactoryId));
                 Assert.Equal(new int[] { 3, 2, 1, 13, 2 }, rig.Robot.Cubes.Connections.PersistentPool.Select(p => (int)p.Type));
+                // 0x0061A220, 0x0061A4BA and 0x0061A5A0: path, %#08x,%d, then error/errG.
+                Assert.Contains(entries, e => e.Name == "BlockFilter.Init" && e.Channel == "BlockPool" && e.Text == "Loading from file " + path);
+                Assert.Equal(new[] { "0x000020,3", "0x000030,2", "0x000040,1", "0x000050,13", "0x000060,2" }, entries.Where(e => e.Name == "BlockFilter.Load" && e.Level == EngineLogLevel.Info).Select(e => e.Text));
+                Assert.Contains(entries, e => e.Name == "BlockFilter.Load" && e.Level == EngineLogLevel.Error && e.Text.EndsWith("Found more than 5 lines in the file. They will be ignored"));
+                Assert.Contains(missing, l => l.Contains("BlockFilter.Load.ParseError at 0x0061A55E"));
             }
             File.WriteAllText(path, "0x2a,bad\n");
             using var partial = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
@@ -430,6 +437,7 @@ public class EngineAppLayerTests
         try
         {
             using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path });
+            var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
             rig.ToSuccess();
             rig.SendFirstFullState(1000);
             foreach (uint id in new uint[] { 10, 7, 4, 9 })
@@ -439,7 +447,40 @@ public class EngineAppLayerTests
             rig.Tick(3000); // checked pool 2s throttle, then live cube update after Gate A
             Assert.Equal(10u, rig.Robot.Cubes.Connections.PersistentPool[0].FactoryId); // visits 9,4,7,10
             Assert.Equal("0xa,1\n", File.ReadAllText(path)); // source lower-case hex, comma, decimal, LF
+            // 0x0061ACB6 precedes the store/Save, whose log is 0x0061B174.
+            var add = Assert.Single(entries.Where(e => e.Name == "BlockFilter.AddObjectToPersistentPool"));
+            var save = Assert.Single(entries.Where(e => e.Name == "BlockFilter.Save"));
+            Assert.Equal((EngineLogLevel.Info, "BlockPool", "Adding object 0xa of type Block_LIGHTCUBE1 to the persistent pool"), (add.Level, add.Channel, add.Text));
+            Assert.Equal("0x00000a,1", save.Text); Assert.True(entries.IndexOf(add) < entries.IndexOf(save));
             Assert.Contains(rig.Port.Sent.Select(b => RobotMessage.Parse(b)).OfType<SetPropSlot>(), m => m.FactoryId == 10 && m.Slot == 0);
+        }
+        finally { File.Delete(path); }
+    }
+
+    // 0x0061AD04 / 0x0061AD5E error text and errG gates. Success is covered through the live tick above.
+    [Fact]
+    public void B9_PersistentPoolDuplicateAndFullErrorsSetTheFlagAfterTheSourceEntry()
+    {
+        string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".txt");
+        try
+        {
+            File.WriteAllText(path, "0x10,1\n0x20,2\n0x30,3\n0x40,4\n0x50,5\n");
+            using var rig = new Rig(new CozmoEngineOptions { BlockPoolPath = path }); rig.ToValidated();
+            var pool = rig.Robot.Cubes.Connections;
+            var add = typeof(CubeConnections).GetMethod("AddObjectToPersistentPool", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var flush = typeof(CubeConnections).GetMethod("FlushLogs", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var entries = new List<EngineLogEntry>(); var flagsAtLog = new List<bool>();
+            rig.Engine.LogEntry += e => { if (e.Name == "BlockFilter.AddObjectToPersistentPool" || e.Name == "BlockFilter.AddFactoryId") { entries.Add(e); flagsAtLog.Add(EngineErrorState.ErrorFlagSet); } };
+            foreach (var (id, type) in new[] { (0x10u, ObjectType.Block_LIGHTCUBE2), (0x60u, (ObjectType)6) })
+            {
+                EngineErrorState.ErrorFlagSet = false;
+                Assert.False((bool)add.Invoke(pool, new object[] { id, type })!); flush.Invoke(pool, null);
+                Assert.True(EngineErrorState.ErrorFlagSet);
+            }
+            Assert.Equal(new[] { false, false }, flagsAtLog);
+            Assert.EndsWith("Object with factory ID 0x10 and/or type Block_LIGHTCUBE2 already in _persistentPool", entries[0].Text);
+            Assert.EndsWith("There is no available slot to add factory ID 0x000060,", entries[1].Text);
+            Assert.All(entries, e => Assert.Equal(EngineLogLevel.Error, e.Level));
         }
         finally { File.Delete(path); }
     }

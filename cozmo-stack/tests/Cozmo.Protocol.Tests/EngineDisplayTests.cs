@@ -95,13 +95,27 @@ public class EngineDisplayTests
     [Theory]
     [InlineData(null)]
     [InlineData("")]
-    public void NullNameKeepsEntryAndUsesNonameWithAnExplicitMissingLiteral(string? name)
+    [InlineData("\0ignored")]
+    public void BlankNameKeepsEntryAndUsesNonameWithTheNativeDiagnostic(string? name)
     {
         var display = new DasLogDisplay(); display.Configure("{}", _ => { });
-        var missing = new List<string>();
+        var diagnostics = new List<DisplayedEngineLog>();
         var entry = new EngineLogEntry(EngineLogLevel.Event, null, name, "text", new Dictionary<string,string>());
-        Assert.Equal("noname : text ", display.Render(entry, false, missing.Add)!.Line);
-        Assert.StartsWith("MISSING: M3-053", Assert.Single(missing));
+        Assert.Equal("noname : text ", display.Render(entry, false, diagnostics.Add)!.Line);
+        Assert.Equal(new DisplayedEngineLog(3, "daslib", "DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED (value=text file= funct= line=0)"), Assert.Single(diagnostics));
         Assert.Equal(name, entry.Name);
+    }
+
+    // libDAS 0x742E..0x7476: blank means first byte zero, with no whitespace scan.
+    [Fact]
+    public void WhitespaceNameIsValidAndBlankDiagnosticPreservesItsMetadata()
+    {
+        var display = new DasLogDisplay(); display.Configure("{}", _ => { });
+        var diagnostics = new List<DisplayedEngineLog>();
+        var entry = new EngineLogEntry(EngineLogLevel.Event, null, " \t", "text", new Dictionary<string,string>());
+        Assert.Equal(" \t : text ", display.Render(entry, false, diagnostics.Add)!.Line); Assert.Empty(diagnostics);
+        entry = entry with { Name = null, SourceFile = "test.cpp", SourceFunction = "Run", SourceLine = 42 };
+        display.Render(entry, false, diagnostics.Add);
+        Assert.Equal(new DisplayedEngineLog(3, "daslib", "DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED (value=text file=test.cpp funct=Run line=42)"), Assert.Single(diagnostics));
     }
 }

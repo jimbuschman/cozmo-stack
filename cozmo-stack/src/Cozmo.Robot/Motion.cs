@@ -1110,12 +1110,12 @@ bool requireCalibration = true)
     /// lights, 0x270 the cube lights and 0x450 the tap filter are the deletions at 0x00511500, 0x00511428, 0x0051143E,
     /// 0x0051146A and 0x005111EA. Each owner pointer is cleared before its destructor runs (the Lifetime does that), except slot 0x450 (the tap filter), which is released with clearBefore:false and cleared afterwards (0x00511220),
     /// and none of the destructors sends a message: nothing is unlocked, stopped or switched off by them.
-    /// Touch +0x28C is bound under M4-033. Cliff +0x288 (M4-027) remains MISSING (its RollingFileLogger close;
-    /// the Cliff state lives in <see cref="CozmoSensors"/>).
+    /// Touch +0x28C is bound under M4-033. Cliff's logger is natively null: EnableRawDataLogging
+    /// (0x00634848) has no caller, so LogRawData never creates +0x44 (~CliffSensorComponent 0x00633FF8).
+    /// The head action's FaceLayerToRemove +0x88 is also dead: +0xA8 is never set (M4-016 C11.3).
     /// </summary>
     internal void BindRobotLifetime(EngineRobot robot)
     {
-        Behavior.SteppedBehavior.ReportMissing("M4-027 | ~Robot's deletion of CliffSensorComponent (+0x288, ~CliffSensorComponent 0x00633FF8): its RollingFileLogger close is not reproduced (the Cliff state lives in CozmoSensors)");
         var lifetime = robot.Lifetime;
         // fidelity: M4-033
         // T15: clear the owner before deletion; the logger is always null (T11). No flush, log or send.

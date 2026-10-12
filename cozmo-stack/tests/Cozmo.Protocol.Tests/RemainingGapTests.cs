@@ -85,6 +85,7 @@ public class RemainingGapTests
     public void ThePoolIsSavedAsTheEngineWritesItAndLoadedBackAtInit()
     {
         var dir = Path.Combine(Path.GetTempPath(), "cozmo-blockpool-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir); // 0x0061B014 Save opens the file; its data-scope directory already exists.
         var path = Path.Combine(dir, "blockPool.txt");
         try
         {

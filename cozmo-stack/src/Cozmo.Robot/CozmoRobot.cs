@@ -705,7 +705,15 @@ public sealed class CozmoRobot : IDisposable
         if (m is DefaultCameraParams dcp) Route(() => CameraSettings.Handle(dcp));
         Route(() => Sensors.Handle(m));
         // AddConnectedActiveObject (0x00533BD6) precedes the broadcast (0x00533D2C).
-        if (m is ObjectConnectionState cs) Route(() => VisionModeRecipient?.HandleObjectConnectionState(cs));
+        if (m is ObjectConnectionState cs)
+        {
+            // fidelity: M11-041
+            // 0x00533BA2 / 0x00533C72: event precedes Add/RemoveConnectedActiveObject.
+            if (cs.ObjectID <= CozmoCubes.MaxActiveObjectSlot)
+                Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.accessory_connection", $"0x{cs.FactoryID:x},{CubeConnections.ObjectTypeName(cs.ObjectType)}",
+                    new Dictionary<string, string> { ["$data"] = cs.Connected ? "connected" : "disconnected" });
+            Route(() => VisionModeRecipient?.HandleObjectConnectionState(cs));
+        }
         Route(() => Cubes.Handle(m));
         Route(() => CubeAccel.Handle(m));
     }

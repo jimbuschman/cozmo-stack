@@ -5,6 +5,25 @@ using Xunit;
 namespace Cozmo.Protocol.Tests;
 public class BackpackLoaderTests
 {
+    // Json::Reader first-value parse (FirmwareJson.cs; 0x008E0B4C..0x008E0C2C): suffix tokens do not change success.
+    [Theory]
+    [InlineData("{} trailing garbage", true)]
+    [InlineData("/* comment */ {} {}", true)]
+    [InlineData("{\"charging\":{},}", false)]
+    public void B9_LoaderUsesJsonCppFirstValueAcceptance(string json, bool accepted)
+    {
+        string root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        string dir = Path.Combine(root, BackpackLightAnimations.ResourceDirectory); Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "test.json"), json);
+            var entries = new List<EngineLogEntry>(); var lines = new List<string>();
+            BackpackLightAnimations.Load(root, lines.Add, (level, channel, key, text) => entries.Add(new EngineLogEntry(level, channel, key, text, new Dictionary<string, string>())));
+            Assert.Equal(!accepted, entries.Any(e => e.Name == "DataPlatform.readAsJson"));
+            if (!accepted) Assert.Contains(lines, l => l.StartsWith("MISSING: M5-051 G5b"));
+        }
+        finally { Directory.Delete(root, true); }
+    }
     [Theory]
     [InlineData("[1]", false)]
     [InlineData("\"bad\"", false)]

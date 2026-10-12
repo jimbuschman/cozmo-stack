@@ -18,6 +18,81 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class M3DeviceTests
 {
+    // B-M3M4-9: failure warning calls are Robot::SendMessage 0x005134F4; FIFO/count decisions 0x0057BF72..0x0057C00A.
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void B9_StreamFailedSendSubscriberCanReadTheStreamLock(bool direct)
+    {
+        using var rig = new Rig(); rig.ToSuccess();
+        var stream = rig.Robot.Animations.Scheduler.Stream;
+        stream.UpdateAmountToSend(0, 0);
+        rig.Engine.Robot!.SendFault = _ => false;
+        bool reached = false;
+        rig.Engine.LogEntry += e => { if (e.Name == "Robot.SendMessage") reached = Task.Run(() => stream.Count).Wait(TimeSpan.FromSeconds(2)); };
+        int before = stream.BytesStreamed;
+        if (direct) Assert.False(stream.SendDirect(new EndOfAnimation(), m => rig.Robot.SendMessage(m)));
+        else
+        {
+            stream.Buffer(this, new AudioSilence(), m => rig.Robot.SendMessage(m));
+            Assert.Equal(StreamSendBuffer.DrainResult.SendError, stream.Drain());
+            Assert.Equal(1, stream.Count);
+        }
+        Assert.True(reached); Assert.Equal(before, stream.BytesStreamed);
+    }
+
+    // A19/A20 plus the adopted lock correction: logs keep validation/send/pending/success order.
+    [Fact]
+    public void B9_CameraLogAndSendFailureSubscribersCanReadTheSettingsLock()
+    {
+        using var rig = new Rig(); rig.ToSuccess();
+        rig.Engine.Robot!.SendFault = _ => false;
+        var reached = new List<bool>(); var keys = new List<string?>(); int gammaBytesAtZeroMinimum = -1;
+        rig.Engine.LogEntry += e => {
+            if (e.Name == "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime") gammaBytesAtZeroMinimum = rig.Robot.CameraSettings.GammaTable.Length;
+            if (e.Name == "Robot.SendMessage" || e.Name!.StartsWith("VisionSystem.") || e.Name.StartsWith("VisionComponent.SetCamera"))
+            { keys.Add(e.Name); reached.Add(Task.Run(() => rig.Robot.CameraSettings.BodyHwVersion).Wait(TimeSpan.FromSeconds(2))); }
+        };
+        Assert.False(rig.Robot.CameraSettings.SetCameraSettings(0, 1));
+        Assert.False(rig.Robot.CameraSettings.SetCameraSettings(16, float.NaN));
+        rig.Robot.CameraSettings.Handle(Defaults(3f, 1.5f, 0, 50));
+        Assert.Contains("VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", keys);
+        Assert.Contains("VisionSystem.SetNextCameraParams.OverwritingPreviousParams", keys);
+        Assert.Contains("Robot.SendMessage", keys);
+        Assert.Equal(17, gammaBytesAtZeroMinimum); // 0x006B938A SetGammaTable precedes 0x006B93DE.
+        Assert.All(reached, Assert.True);
+    }
+
+    // 0x00536942..0x00536956 and InitSizeTable 0x00643BCC, excluding the final sentinel special case.
+    [Fact]
+    public void B9_PhysicalRobotAndNvSizeTableUseTheNativeFields()
+    {
+        using var rig = new Rig(); var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        rig.ToSuccess();
+        var physical = Assert.Single(entries.Where(e => e.Name == "RobotIsPhysical"));
+        Assert.Equal((EngineLogLevel.Info, "Unnamed", "1"), (physical.Level, physical.Channel, physical.Text));
+        // The NV component is constructed by CozmoRobot before a caller can subscribe to Engine.LogEntry.
+        Assert.Equal(new[] { "Max size of 0x180000: 4096", "Max size of 0x181000: 4096", "Max size of 0x182000: 4096", "Max size of 0x183000: 4096", "Max size of 0x184000: 65536", "Max size of 0x194000: 4096", "Max size of 0x195000: 4096", "Max size of 0x196000: 4096", "Max size of 0x197000: 4096" }, rig.Engine.NvStorage!.Log.Where(l => l.StartsWith("info: NVStorageComponent.InitSizeTable: Max size of 0x1")).Select(l => l["info: NVStorageComponent.InitSizeTable: ".Length..]));
+        using var second = new Rig();
+        Assert.Equal(new[] { "info: NVStorageComponent.InitSizeTable: Max size of 0xde000: 48", "info: NVStorageComponent.InitSizeTable: Max size of 0xde030: 663504" }, second.Engine.NvStorage!.Log.Where(l => l.StartsWith("info: NVStorageComponent.InitSizeTable: Max size of 0xd")));
+
+    }
+
+    // 0x006438FC, 0x006435D4: resize first, then apply/rearm and ReceivedBlob. offset is the blob index.
+    [Fact]
+    public void B9_NvFirstBlobResizeAndAppliedBlobLogsUseNativeArguments()
+    {
+        using var rig = new Rig(); rig.ToSuccess(); DrainConnectionQueue(rig);
+        var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        rig.Engine.NvStorage!.Read(0x182000, null); rig.Tick();
+        byte[] blob = new byte[64]; NvHeader(4, 0x435A4D4F).CopyTo(blob, 0);
+        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = blob }); rig.Tick();
+        var resize = Assert.Single(entries.Where(e => e.Name == "NVStorageComponent.HandleNVOpResult.ResizeBlobToValidData"));
+        var applied = Assert.Single(entries.Where(e => e.Name == "NVStorageComponent.HandelNVData.ReceivedBlob"));
+        Assert.Equal((EngineLogLevel.Debug, "NVStorage", "Tag: 0x182000, TotalSize: 4"), (resize.Level, resize.Channel, resize.Text));
+        Assert.Equal("BaseEntryTag: 0x182000, Tag: 0x182000, BlobSize 20, offset 0, StartWriteIndex: 0", applied.Text);
+        Assert.True(entries.IndexOf(resize) < entries.IndexOf(applied));
+    }
+
     [Fact]
     public void B5_StackDiagnosticsAreVisibleWithoutEngineEntriesAndUtf8CutUsesBytes()
     {
@@ -624,12 +699,12 @@ public class M3DeviceTests
         var logs = new List<string>();
         rig.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
         rig.Tick();
-        Assert.Contains("debug: Robot.Update: Waiting for first full robot state to be handled", logs);
+        Assert.Contains("debug: [Unnamed] Robot.Update: Waiting for first full robot state to be handled", logs);
         logs.Clear();
         SendFirstFullState(rig);
         logs.Clear();
         rig.Tick();
-        Assert.DoesNotContain("debug: Robot.Update: Waiting for first full robot state to be handled", logs);
+        Assert.DoesNotContain("debug: [Unnamed] Robot.Update: Waiting for first full robot state to be handled", logs);
         rig.Engine.VisionUpdateAllResultsFailed = () => true;
         rig.Tick();
         Assert.DoesNotContain("warning: Robot.Update.VisionComponentUpdateFail", logs); // null calibration skips Gate B

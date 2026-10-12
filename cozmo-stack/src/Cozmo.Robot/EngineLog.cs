@@ -13,6 +13,9 @@ public sealed record EngineLogEntry(EngineLogLevel Level, string? Channel, strin
 {
     /// <summary>The vsnprintf output bytes, including a possible incomplete UTF-8 sequence at the bound.</summary>
     public ReadOnlyMemory<byte> TextUtf8 { get; init; }
+    public string? SourceFile { get; init; }
+    public string? SourceFunction { get; init; }
+    public int SourceLine { get; init; }
 }
 
 public sealed partial class CozmoEngine
@@ -32,8 +35,12 @@ public sealed partial class CozmoEngine
     internal DasLogDisplay LogDisplay => _logDisplay;
     private void DisplayEngineEntry(EngineLogEntry entry)
     {
-        var line = _logDisplay.Render(entry, VerboseLogDisplay, EmitStackLog);
+        var line = _logDisplay.Render(entry, VerboseLogDisplay, DisplayDiagnostic);
         if (line is null) return;
+        DisplayDiagnostic(line);
+    }
+    private void DisplayDiagnostic(DisplayedEngineLog line)
+    {
         if (DisplayedLog is { } displayed)
             foreach (Action<DisplayedEngineLog> subscriber in displayed.GetInvocationList())
                 try { subscriber(line); } catch (Exception e) { ReportFault(e); }
