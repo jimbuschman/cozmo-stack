@@ -2169,8 +2169,12 @@ public sealed partial class CozmoEngine : IDisposable
         if (Robot is { } robot && CreateGoToSleepSequence is { } factory)
         {
             var action = factory(robot);
-            _ = robot.ActionList.QueueAction(QueueActionPosition.Now, action, 0);
-            return;
+            if (action is not null)
+            {
+                _ = robot.ActionList.QueueAction(QueueActionPosition.Now, action, 0);
+                return;
+            }
+            // M5-038's missing M8 recipient is a stack fallback, never an engine NullAction input.
         }
         else EmitStackLog("warning: MISSING: CreateGoToSleepAnimSequence (CC8, M5 interface) is not implemented; GoToSleepRequested raised");
         var h = GoToSleepRequested;

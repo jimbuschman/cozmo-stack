@@ -338,7 +338,7 @@ public sealed record AnimationHandle(string ClipName, AnimationTrack Tracks)
 
     internal void ReleaseHostWaiters()
     {
-        // Managed API waiters observe that their owned native object was destroyed. This has no native broadcast,
+        // Stack host-API completion, not an engine step: waiters observe that their owned native object was destroyed. This has no native broadcast,
         // no sink call and no action/end callbacks; AbortAll owns the wire teardown.
         lock (_onEnd) { _completed = true; _endReason = AnimationEndReason.Cancelled; _onEnd.Clear(); }
         _done.TrySetResult(AnimationEndReason.Cancelled);
@@ -740,7 +740,7 @@ public sealed class AnimationScheduler
         if (_streaming!.IsLive && numLoops != 1)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.SetStreamingAnimation.LoopingLiveAnimation", $"VERIFY(numLoops == 1): Animation {clip.Name} is marked 'live' but numLoops={numLoops}. Clamping to 1.");
-            DesiredFaceDistortionComponent.ErrorFlagSet = true; // sVerifyFailedReturnFalse has no debug-break call.
+            Cozmo.Transport.EngineErrorState.ErrorFlagSet = true; // sVerifyFailedReturnFalse has no debug-break call.
             Log?.Invoke("MISSING: M5-008 sVerifyFailedReturnFalse callstack dump at 0x0080DA08 and logger-provider flush at 0x0080DA24 have no M3 recipient");
             numLoops = 1;                                          // A8
         }

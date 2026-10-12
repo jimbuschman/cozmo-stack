@@ -155,11 +155,11 @@ public class TriggerTests
             if (r.GroupName is null) continue;
             mapped++;
             if (r.Resolved && lib.HasClip(r.Selected!)) resolved++;
-            else if (!logs.Any(l => l.StartsWith("MISSING: M5-047")) && broken.Count < 5) broken.Add($"{t} -> {r.GroupName}: {r.Problem ?? "clip absent"}");
+            else if (broken.Count < 5) broken.Add($"{t} -> {r.GroupName}: {r.Problem ?? "clip absent"}");
         }
         Assert.Equal(573, mapped);
         Assert.True(broken.Count == 0, $"{mapped - resolved} triggers do not reach a clip, e.g. {string.Join("; ", broken)}");
-        Assert.True(resolved > 0); // M5-047 blocks a source-undetermined backup; it does not substitute a clip.
+        Assert.Equal(mapped, resolved);
     }
 
     /// <summary>

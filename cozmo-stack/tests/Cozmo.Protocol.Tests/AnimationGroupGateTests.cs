@@ -58,11 +58,11 @@ public class AnimationGroupGateTests
     }
 
     /// <summary>
-    /// C5 item 4.11/4.12 (forced policy SD2): an entry without UseHeadAngle has no defined head window, so it
-    /// never qualifies for the Default-mood backup and the backup falls to the first entry.
+    /// M5-047 approved 64-bit-phone policy: entries before the first UseHeadAngle fail the B2 window test;
+    /// B4 (0x0058AD94..0x0058ADBA) logs NoBackup and returns the first entry without changing cooldown.
     /// </summary>
     [Fact]
-    public void ThePreFirstUseHeadAngleBackupWindowIsMissing()
+    public void ThePreFirstUseHeadAngleBackupWindowFailsAndNoBackupReturnsFirst()
     {
         var first = new AnimationGroupEntry("first", 1f, 100f, "Default");
         var soon = new AnimationGroupEntry("soon", 1f, 50f, "Default");
@@ -74,9 +74,13 @@ public class AnimationGroupGateTests
 
         // "soon" comes off cooldown first, but it has no window, so the backup takes the first entry
         var logs = new List<string>();
-        g.Log = logs.Add;
-        Assert.Null(g.Choose(new Random(4), nowSec: 1, headAngleDeg: 0));
-        Assert.Contains(logs, l => l.StartsWith("MISSING: M5-047"));
+        g.SourceLog = (_, _, key, _) => logs.Add(key);
+        Assert.Same(first, g.Choose(new Random(4), nowSec: 1, headAngleDeg: 0));
+        Assert.Contains("AnimationGroup.GetAnimation.NoBackup", logs);
+        Assert.DoesNotContain("AnimationGroup.GetAnimation.NoAnimation", logs);
+        Assert.DoesNotContain("AnimationGroup.GetAnimation.BackupAnimationChosen", logs);
+        Assert.Equal(100d, first.CooldownEndsSec);
+        Assert.Equal(50d, soon.CooldownEndsSec);
     }
 
     /// <summary>

@@ -11,7 +11,7 @@ public enum SimpleMood : byte { Happy, Sad, Default, Count }
 /// One choice inside an animation group (D4, 0x0058C4C0..0x0058C7BE; C5 item 4): Name, Weight, Mood (SimpleMoodType),
 /// CooldownTime_Sec (default 0), UseHeadAngle and HeadAngleMin/Max_Deg (converted to radians for the gate). There are no
 /// defaults for Weight, Mood or HeadAngle: the loader rejects an entry that omits or mis-types any required one. An entry
-/// without UseHeadAngle inherits the preceding window in its file; before the first window, M5-047 remains unread.
+/// without UseHeadAngle inherits the preceding window in its file; before the first window, M5-047 excludes it from backup.
 /// </summary>
 public sealed record AnimationGroupEntry(string Name, float Weight, double CooldownSec, string Mood)
 {
@@ -116,9 +116,10 @@ public sealed class AnimationGroup
                 candidates.Add(e);
                 sum += e.Weight;
             }
+            // G4: even an empty pass consumes two MT outputs (0x0058AA72..0x0058AA86).
+            float r = (float)rng.RandDbl((double)sum);
             if (candidates.Count != 0)
             {
-                float r = (float)rng.RandDbl((double)sum);
                 var pick = candidates[^1];
                 foreach (var e in candidates) { r -= e.Weight; if (r < 0) { pick = e; break; } }
                 pick.Container.SetCooldown(pick.Name, pick.CooldownSec + (double)time);
@@ -141,9 +142,9 @@ public sealed class AnimationGroup
                     if (e.MoodType != SimpleMood.Default) continue;
                     float left = e.Container.TimeUntilCooldownOver(e.Name, (double)time);
                     if (!(left < best)) continue;
-                    // M5-047: the pre-first-UseHeadAngle stack slot is unread. Stop this choice rather than inventing a window.
-                    if (!e.UseHeadAngle && !e.BackupWindowKnown)
-                    { Log?.Invoke("MISSING: M5-047 AnimationGroup backup head window before the first UseHeadAngle entry; selection undetermined"); return null; }
+                    // fidelity: M5-047
+                    // Approved 64-bit-phone policy: pre-first-window entries fail B2; B4 still returns entries[0].
+                    if (!e.UseHeadAngle && !e.BackupWindowKnown) continue;
                     float min = e.UseHeadAngle ? e.HeadAngleMinRad : e.BackupMinRad;
                     float max = e.UseHeadAngle ? e.HeadAngleMaxRad : e.BackupMaxRad;
                     if (!(min + BitConverter.Int32BitsToSingle(unchecked((int)0xBD4CCCCD)) <= head) || max + BitConverter.Int32BitsToSingle(0x3D4CCCCD) < head) continue;
@@ -270,6 +271,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     /// <summary>The robot's simple mood the groups choose by (MoodManager, M7). Unset: Default.</summary>
     public Func<SimpleMood>? CurrentMood { get; set; }
+    private int _missingSimpleMoodReported;
 
     /// <summary>
     /// The time the group cooldowns use: MoodManager+0x130, its last-update seconds (G1; M7). Production supplies BaseStationTimer seconds; unset is zero.
@@ -301,7 +303,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         var groupFiles = CollectFiles(new[] { groups }, sourceLog);
         EmitCollectResults(new[] { files.Count, groupFiles.Count, cubeFiles.Count, backpackFiles.Count },
             fresh: true, log, sourceLog);
-        double started = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        double started = MonotonicMilliseconds();
         Eye.ClippingWarningEnabled = false;
         float ratio = 0.7f / files.Count;
         System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
@@ -322,7 +324,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         foreach (var worker in workers) worker.Join();
         failure?.Throw();
         Eye.ClippingWarningEnabled = true; // L10: only after Process returns normally.
-        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationsInternal.LoadTime", FormattableString.Invariant($"Time to load animations = {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started:F2} ms"));
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationsInternal.LoadTime", FormattableString.Invariant($"Time to load animations = {MonotonicMilliseconds() - started:F2} ms"));
         SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimations.CannedAnimationsCount", $"Total number of canned animations available = {lib._clipCache.Count}");
 
         if (groups is not null)
@@ -343,6 +345,14 @@ public sealed class AnimationLibrary : IAnimationCatalog
         lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
         lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
         return lib;
+    }
+
+    // L10b: CLOCK_MONOTONIC nanoseconds, converted to double milliseconds (0x00833D40..0x00833D6A).
+    private static double MonotonicMilliseconds()
+    {
+        long ticks = System.Diagnostics.Stopwatch.GetTimestamp(), frequency = System.Diagnostics.Stopwatch.Frequency;
+        long nanoseconds = ticks / frequency * 1_000_000_000 + ticks % frequency * 1_000_000_000 / frequency;
+        return (double)nanoseconds * 1e-6;
     }
 
     private static string? FindDir(string root, string name)
@@ -448,7 +458,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         {
             byte[] bytes;
             try { bytes = File.ReadAllBytes(path); }
-            catch (IOException) { BinaryError("BinaryDataNull", $"Found no data in {path}"); return; }
+            catch (Exception) { bytes = Array.Empty<byte>(); } // ReadFileAsBinary open/read failure returns an empty vector.
             if (bytes.Length == 0) { BinaryError("BinaryDataEmpty", $"Found no data in {path}"); return; }
             var root = FlatTable.Root(bytes);
             var tables = root.Tables(ClipsField).ToList();
@@ -505,6 +515,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
         var g = GetGroup(group);
         if (g is null || g.Entries.Count == 0) return ""; // G0: silent empty result.
         g.Log = Log; g.SourceLog = SourceLog;
+        if (CurrentMood is null && Interlocked.Exchange(ref _missingSimpleMoodReported, 1) == 0)
+            Log?.Invoke("MISSING: M5-011 SimpleMood (M7); Default retained because GetSimpleMood is not represented");
         return g.GetAnimationName(ContextRandom, CurrentMood?.Invoke() ?? SimpleMood.Default,
             (float)(CooldownTimeSec?.Invoke() ?? 0), HeadAngleRad?.Invoke(), strict)?.Name ?? "";
     }

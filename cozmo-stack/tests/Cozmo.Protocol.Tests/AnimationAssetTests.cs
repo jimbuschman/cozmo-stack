@@ -258,7 +258,8 @@ public class AnimationAssetTests
             for (int i = 0; i < 5; i++)
             {
                 var pick = g.Choose(rnd);
-                if (pick is null) { Assert.Contains(logs, l => l.StartsWith("MISSING: M5-047") || l.StartsWith("error: AnimationGroup.GetAnimation.NoAnimation:")); continue; }
+                Assert.NotNull(pick);
+                Assert.DoesNotContain(logs, l => l.Contains("AnimationGroup.GetAnimation.NoAnimation") || l.StartsWith("MISSING: M5-047"));
                 if (!lib.HasClip(pick.Name)) missing++;
             }
         }

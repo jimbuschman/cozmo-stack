@@ -38,13 +38,24 @@ public sealed class Eye
     public const int ParamCount = 19;
 
     // fidelity: M5-040
-    internal static bool ClippingWarningEnabled = true;
-    internal static readonly AsyncLocal<Action<string>?> WarningLog = new();
-    internal static readonly AsyncLocal<SourceLogSink?> WarningSourceLog = new();
+    internal static volatile bool ClippingWarningEnabled = true;
+    private static readonly object WarningGate = new();
+    private static readonly List<WarningScope> WarningScopes = new();
     internal static IDisposable UseWarningLog(Action<string>? log, SourceLogSink? sourceLog = null)
-    { var old = WarningLog.Value; var oldSource = WarningSourceLog.Value; WarningLog.Value = log; WarningSourceLog.Value = sourceLog; return new WarningScope(old, oldSource); }
-    private sealed class WarningScope(Action<string>? old, SourceLogSink? oldSource) : IDisposable
-    { public void Dispose() { WarningLog.Value = old; WarningSourceLog.Value = oldSource; } }
+    {
+        var scope = new WarningScope(log, sourceLog);
+        lock (WarningGate) WarningScopes.Add(scope);
+        return scope;
+    }
+    private sealed class WarningScope(Action<string>? log, SourceLogSink? sourceLog) : IDisposable
+    {
+        internal SourceLogSink? Sink => SourceLogDispatch.GetSink(sourceLog, log);
+        public void Dispose() { lock (WarningGate) WarningScopes.Remove(this); }
+    }
+    private static SourceLogSink? WarningSink
+    {
+        get { lock (WarningGate) return WarningScopes.Count == 0 ? null : WarningScopes[^1].Sink; }
+    }
     private readonly float[] _p = new float[ParamCount];
 
     /// <summary>
@@ -103,7 +114,12 @@ public sealed class Eye
     /// </summary>
     public static float Clip(EyeParam p, float value)
     {
-        if (float.IsNaN(value)) return value;
+        if (float.IsNaN(value))
+        {
+            // M5-040: unconditional warning, EnumToString(param), 0x005848B8..0x00584904.
+            WarningSink?.Invoke(EngineLogLevel.Warning, null, "ProceduralFace.Clip.NaN", $"Returning original value instead of NaN for {p}");
+            return value;
+        }
         (float min, float max)? range = p switch
         {
             EyeParam.UpperLidAngle or EyeParam.LowerLidAngle => (-45f, 45f),
@@ -114,14 +130,18 @@ public sealed class Eye
         if (range is not { } bounds) return value;
         if (value < bounds.min || value > bounds.max)
         {
-            if (ClippingWarningEnabled) SourceLogDispatch.GetSink(WarningSourceLog.Value, WarningLog.Value)?.Invoke(EngineLogLevel.Warning, null, "ProceduralFace.Clip.OutOfRange", FormattableString.Invariant($"Value of {value:F6} out of range [{bounds.min:F6},{bounds.max:F6}] for parameter {p}. Clipping."));
+            if (ClippingWarningEnabled) WarningSink?.Invoke(EngineLogLevel.Warning, null, "ProceduralFace.Clip.OutOfRange", FormattableString.Invariant($"Value of {value:F6} out of range [{bounds.min:F6},{bounds.max:F6}] for parameter {p}. Clipping."));
             return value < bounds.min ? bounds.min : bounds.max;
         }
         return value;
     }
 
     /// <summary>C9 with its NaN rule: a NaN keeps <paramref name="previous"/>, the target's value before the write.</summary>
-    public static float Clip(EyeParam p, float value, float previous) => float.IsNaN(value) ? previous : Clip(p, value);
+    public static float Clip(EyeParam p, float value, float previous)
+    {
+        float clipped = Clip(p, value);
+        return float.IsNaN(value) ? previous : clipped;
+    }
 
     /// <summary>
     /// Blend towards another eye, as <c>ProceduralFace::Interpolate</c> (C8, 0x00584290..0x0058454C) does it for

@@ -91,7 +91,7 @@ public class M5FixRowsTests
     }
 
     [Fact]
-    public void B6_ThePreviousHeadWindowIsInheritedAndUnknownWindowsStopTheBackup()
+    public void B6_ThePreviousHeadWindowIsInherited()
     {
         string root = TempAssets();
         try
@@ -440,13 +440,14 @@ public class M5FixRowsTests
     [Fact]
     public void M5_029_EveryAuthoredTrackCapacitySiteNamesItsNativeKeyframeType()
     {
-        // Ten native instantiations in fix rows section 16, including the procedural-face type_info string.
+        // Native instantiations in fix rows section 16; RobotAudio 0x005631D8 (warning 0x00563202).
         var cases = new (Keyframe Frame, string NativeType)[]
         {
             (new LiftKeyframe(0, 1, 0, 0), "N4Anki5Cozmo18LiftHeightKeyFrameE"),
             (new FaceKeyframe(0, new ProceduralFacePose()), "N4Anki5Cozmo22ProceduralFaceKeyFrameE"),
             (new HeadKeyframe(0, 1, 0, 0), "N4Anki5Cozmo17HeadAngleKeyFrameE"),
             (new AudioKeyframe(0, new long[] { 1 }, 1, new[] { 1f }, false), "N4Anki5Cozmo18RobotAudioKeyFrameE"),
+            (new DeviceAudioKeyframe(0, "one"), "N4Anki5Cozmo19DeviceAudioKeyFrameE"),
             (new LightsKeyframe(0, 1, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }, new[] { 0f, 0f, 0f }), "N4Anki5Cozmo22BackpackLightsKeyFrameE"),
             (new FaceAnimationKeyframe(0, "f"), "N4Anki5Cozmo21FaceAnimationKeyFrameE"),
             (new EventKeyframe(0, "bad"), "N4Anki5Cozmo13EventKeyFrameE"),

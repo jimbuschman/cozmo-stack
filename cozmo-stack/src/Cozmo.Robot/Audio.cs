@@ -439,7 +439,7 @@ public sealed class CozmoAudio
             {
                 var frame = f;
                 stream.Buffer(token, StreamSendBuffer.SizeOf(new AudioSample { Samples = frame }), true,
-                              () => SendPlayFrame(frame, removal));
+                              () => SendPlayFrame(frame, removal), MessageCatalog.ById[new AudioSample().Id].Member);
                 if (PairedMessage?.Invoke() is { } partner) stream.Buffer(token, partner, SendNow);
             }
             _kick?.Invoke();

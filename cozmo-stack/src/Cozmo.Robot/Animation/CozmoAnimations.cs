@@ -258,9 +258,10 @@ public sealed class CozmoAnimations : IDisposable
         try { return _scheduler.Advance(_robot.Engine.Timer.TimeStampMs); }
         catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
         {
+            _robot.Engine.EmitStackLog($"Animation host handler isolated (M1-034): {ex}");
             try { Faulted?.Invoke(ex); } catch { }
             try { _scheduler.Stop(); } catch { }
-            return 1;
+            return 0;
         }
     }
 

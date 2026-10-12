@@ -2295,6 +2295,8 @@ public class EngineAppLayerTests
         rig.Data(new RobotState { Timestamp = 2, PoseOriginId = 1 });
         rig.Tick();
         var order = new List<string>();
+        var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        int sleepEvents = 0; rig.Engine.GoToSleepRequested += () => sleepEvents++;
         var factory = rig.Engine.CreateGoToSleepSequence!;
         rig.Engine.CreateGoToSleepSequence = robot =>
         {
@@ -2308,6 +2310,8 @@ public class EngineAppLayerTests
         Assert.Equal(new[] { "sleep first" }, order);
         Assert.Contains($"disconnect {Rig.RobotEp}", rig.Port.Calls);
         Assert.True(rig.Logged("MISSING: M5-038 -> M8"));
+        Assert.Equal(1, sleepEvents);
+        Assert.DoesNotContain(entries, e => e.Name == "ActionList.QueueAction.NullAction");
     }
 
     /// <summary>

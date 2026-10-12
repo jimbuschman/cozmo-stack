@@ -38,6 +38,7 @@ internal static class JsonClipLoader
         if (names.Count > 1)
             SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "CannedAnimationContainer.DefineFromJson.TooManyAnims", $"Expecting only one animation per json file, found {names.Count}. Will use first: {names[0]}");
         string name = names[0];
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "CannedAnimationContainer::DefineFromJson", $"Loading '{name}'");
         if (name == ProceduralAnimName)
         {
             SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "CannedAnimationContainer.DefineFromJson.ReservedName", $"Skipping animation with reserved name '{name}'.");
@@ -45,7 +46,6 @@ internal static class JsonClipLoader
             return null;
         }
 
-        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "CannedAnimationContainer::DefineFromJson", $"Loading '{name}'");
         var probe = new StreamAnimation(name, isLive: false) { Log = log, SourceLog = sourceLog };
         var frames = new List<Keyframe>();
         bool failed = false;
@@ -247,20 +247,25 @@ internal static class JsonClipLoader
     {
         error = null;
         // fidelity: M5-016
-        float[] Color(string key)
+        uint color = BackpackColor.Default;
+        bool Color(string key, out float[] components)
         {
-            var v = Required(el, key);
+            var v = el.TryGetProperty(key, out var present) ? present : Required(el, key);
             // C5 item 6.4/6.5: a string goes through NamedColors::GetByString; an unknown name is DEFAULT with a
             // warning, not a rejection. Any other type than a string or a 3/4-element array rejects the keyframe.
             if (v.ValueKind == JsonValueKind.String)
-                return NamedColors.AsRawComponents(v.GetString()!, log, sourceLog);
-            if (v.ValueKind != JsonValueKind.Array) throw new JsonCppException($"BackpackLightsKeyFrame: '{key}' is not an array");
-            return v.EnumerateArray().Select(x => AsFloat(x, key)).ToArray();
+                components = NamedColors.AsRawComponents(v.GetString()!, log, sourceLog);
+            else
+                components = v.ValueKind == JsonValueKind.Array
+                    ? v.EnumerateArray().Select(x => AsFloat(x, key)).ToArray() : Array.Empty<float>();
+            // Convert immediately, before reading the next colour: NamedColors and GetU8 warnings interleave.
+            return BackpackColor.GetColorOptional(components, ref color, log, sourceLog);
         }
-        var back = Color("Back"); var front = Color("Front"); var middle = Color("Middle"); var left = Color("Left"); var right = Color("Right");
+        if (!Color("Back", out var back) || !Color("Front", out var front) || !Color("Middle", out var middle)
+            || !Color("Left", out var left) || !Color("Right", out var right))
+        { error = "BackpackLightsKeyFrame: a colour is not an array of 3 or 4 floats"; return null; }
         uint duration = unchecked((uint)AsInt(Required(el, "durationTime_ms"), "durationTime_ms"));
         var k = new LightsKeyframe(trigger, duration, left, right, front, middle, back);
-        if (!BackpackColor.TryReadAll(left, right, front, middle, back, out _, log, sourceLog)) { error = "BackpackLightsKeyFrame: a colour is not an array of 3 or 4 floats"; return null; }
         return k;
     }
 
