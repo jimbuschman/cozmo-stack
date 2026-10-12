@@ -883,3 +883,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M15-034 | NEW (S-9a): ProgressionUnlockComponent's NV read callback 0x0064CE34 (from M3-034). | RECOVERABLE_GAP |
 | M15-035 | NEW (S-9b): InventoryComponent's NV read callback 0x0063D7C4 (from M3-034). | RECOVERABLE_GAP |
 | M15-036 | NEW (S-11): the Lab read and RestoreLoadedActiveExperiments 0x006A5C34 (from M3-033/M3-034). | RECOVERABLE_GAP |
+
+
+## M4-046 read (manager, 2026-10-12; research/20261012-m4-046-anim-modifier.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP | M15-037 ActivityBuildPyramid light modifiers and tracker lifecycle |

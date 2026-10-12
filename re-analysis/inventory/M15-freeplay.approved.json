@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-10",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "696757ced2f680407e3c18340608fba09991981b0b989f1279f19928ed78080b",
+  "inventory_sha256": "b3b53bb9a6928ad8473858e6845a755ebf7ac9edafb2dcde393a4cb1df326a14",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -461,6 +461,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Read(0x196000) at 0x006A5B1E from the mfgId lambda (0x0052E3A6..0x0052E3B2, M3-033 #13); callback 0x10317B8+0x14 = 0x006A6486 -> CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34 (exports)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-037": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ActivityBuildPyramid cube-light modifiers and tracker lifecycle (the live modifier=true PlayLightAnim caller)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-046-anim-modifier.md: ActivityBuildPyramid::SetCubeLights StopAndPlay passes modifier = true (0x005A7D52..0x005A7D66) with node+0x28, filled by SetPyramidBaseLights (0x005A9238/0x005A928A) and UpdateDesiredLights (0x005A96F0, 0x005A9758, 0x005A97C4; sources unread); getters 0x005A9960, 0x005A9A3C, 0x005A9B00 read. Tracker erase on disconnect 0x005A7FD4 -> 0x005A7FFA."
       ],
       "live_path": true,
       "hardware_required": false
