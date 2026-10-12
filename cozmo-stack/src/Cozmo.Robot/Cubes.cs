@@ -743,7 +743,7 @@ public sealed class CozmoCubes
     }
 
     /// <summary>"%.2f": two decimals, the invariant point (ordinary values; the engine formats with the phone printf).</summary>
-    // EnumToString(UpAxis) 0x007B9BE4..0x007B9BF6: unsigned >7 returns NULL; M3-048's %s renders (null).
+    // EnumToString(UpAxis) 0x007B9BE4..0x007B9BF6: unsigned >7 returns NULL; M4-032's %s renders (null).
     private static string UpAxisName(UpAxis axis) => (byte)axis <= 7 ? axis.ToString() : "(null)";
 
     private static string F2(double v) => v.ToString("F2", System.Globalization.CultureInfo.InvariantCulture);

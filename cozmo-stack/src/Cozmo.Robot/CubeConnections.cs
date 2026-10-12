@@ -638,10 +638,10 @@ public sealed class CubeConnections
                 break;
             }
             if (!line.StartsWith("0x", StringComparison.Ordinal)) continue;
-            if (!Stoul(line, 16, out uint factoryId, out int pos)) { MissingParseError(); continue; }
+            if (!Stoul(line, 16, out uint factoryId, out int pos)) { ParseError(line); continue; }
             if (pos >= line.Length) continue;
             _persistentPool[count].FactoryId = factoryId;
-            if (!Stoul(line[(pos + 1)..], 10, out uint type, out _)) { MissingParseError(); continue; }
+            if (!Stoul(line[(pos + 1)..], 10, out uint type, out _)) { ParseError(line); continue; }
             _persistentPool[count].Type = (ObjectType)(int)type;
             Queue(EngineLogLevel.Info, "BlockPool", "BlockFilter.Load", $"{PrintfHex(factoryId)},{unchecked((int)type)}");
             count++;
@@ -689,7 +689,7 @@ public sealed class CubeConnections
     /// it, and each entry with a non-zero factory id is written as "0x", the id in lower-case hex, ",", the type in
     /// decimal and a line feed (0x0061B0EA..0x0061B154).
     /// </summary>
-    private void MissingParseError() => QueueMissing("MISSING: M4-011 | BlockFilter.Load.ParseError at 0x0061A55E needs phone std::stoul exception what() bytes");
+    private void ParseError(string line) => Queue(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", line);
     private static string PrintfHex(uint value) => value == 0 ? "00000000" : "0x" + value.ToString("x").PadLeft(6, '0');
 
     private void Save()
@@ -708,7 +708,7 @@ public sealed class CubeConnections
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            QueueMissing("MISSING: M4-011 | BlockFilter.Save.Error at 0x0061B260 needs phone std::ios_base::failure what() bytes and its source exception gate; host I/O failures are isolated");
+            QueueMissing("MISSING: M4-011 | BlockFilter.Save.Error at 0x0061B260 needs shipped libc++_shared.so std::ios_base::failure what() bytes (absent from the adopted rows) and its source exception gate; host I/O failures are isolated");
         }
     }
 

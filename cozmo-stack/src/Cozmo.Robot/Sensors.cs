@@ -454,7 +454,6 @@ public sealed class CozmoSensors
             if (i < 0) { _cliffSuspiciousAt = 0; return; }
             cliffs = new();
             for (; i < _cliffHistory.Count; i++) cliffs.Add((_cliffHistory[i].Timestamp, _cliffHistory[i].Cliff0));
-            _cliffSuspiciousAt = 0;   // S6
         }
         // S5: min is a local (0xFFFF), the variance is the component's +0x3C.
         ushort min = 0xFFFF;
@@ -467,6 +466,8 @@ public sealed class CozmoSensors
             if (variance > CliffVarianceThreshold && (uint)(min + 15) < cliff)
                 IncrementSuspiciousCliffCount();
         }
+        lock (_gate) _cliffSuspiciousAt = 0; // S6: 0x006344AE, after the successor walk.
+
     }
 
     // fidelity: M4-019

@@ -419,7 +419,8 @@ public class EngineAppLayerTests
                 Assert.Contains(entries, e => e.Name == "BlockFilter.Init" && e.Channel == "BlockPool" && e.Text == "Loading from file " + path);
                 Assert.Equal(new[] { "0x000020,3", "0x000030,2", "0x000040,1", "0x000050,13", "0x000060,2" }, entries.Where(e => e.Name == "BlockFilter.Load" && e.Level == EngineLogLevel.Info).Select(e => e.Text));
                 Assert.Contains(entries, e => e.Name == "BlockFilter.Load" && e.Level == EngineLogLevel.Error && e.Text.EndsWith("Found more than 5 lines in the file. They will be ignored"));
-                Assert.Contains(missing, l => l.Contains("BlockFilter.Load.ParseError at 0x0061A55E"));
+                Assert.Contains(entries, e => e.Name == "BlockFilter.Load.ParseError" && e.Level == EngineLogLevel.Debug && e.Channel == "Unnamed" && e.Text == "0x30,bad");
+                Assert.DoesNotContain(missing, l => l.Contains("BlockFilter.Load.ParseError"));
             }
             File.WriteAllText(path, "0x2a,bad\n");
             using var partial = new Rig(new CozmoEngineOptions { BlockPoolPath = path });

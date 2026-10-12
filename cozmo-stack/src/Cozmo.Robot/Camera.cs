@@ -701,9 +701,12 @@ public sealed class CameraSettings
     private void SetNextCameraParams(int exposureMs, float gain)
     {
         (int, float)? previous;
-        lock (_gate) previous = NextCameraParams;
+        lock (_gate)
+        {
+            previous = NextCameraParams;
+            NextCameraParams = (exposureMs, gain);
+        }
         if (previous is { } old) Emit(EngineLogLevel.Warning, null, "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", $"Params already requested ({old.Item1}ms,{F(old.Item2, 2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain, 2)})");
-        lock (_gate) NextCameraParams = (exposureMs, gain);
     }
 
     // fidelity: M3-021

@@ -118,6 +118,8 @@ public sealed class BackpackLightAnimations
             FirmwareJsonDocument doc;
             try
             {
+                int delimiter = Array.IndexOf(bytes, (byte)0xFF);
+                if (delimiter >= 0) bytes = bytes[..delimiter]; // Reader::parse(istream): getline delimiter (char)-1.
                 if (!Json.TryParseFirst(bytes, out doc)) { ReadFailure(f, "M5-051 G5b"); continue; }
             }
             catch (JsonRuntimeError e) { log?.Invoke($"event handler threw: {e.GetType().Name}: {e.Message}"); continue; }
@@ -226,34 +228,21 @@ public sealed class BackpackLightAnimations
         var leds = new LedPattern[5];
         for (int i = 0; i < 5; i++)
             leds[i] = new LedPattern(FloatColor(Member(e, "onColors").Elements[i]), FloatColor(Member(e, "offColors").Elements[i]),
-                                     unchecked((uint)Integer(Member(e, "onPeriod_ms").Elements[i])), unchecked((uint)Integer(Member(e, "offPeriod_ms").Elements[i])),
-                                     unchecked((uint)Integer(Member(e, "transitionOnPeriod_ms").Elements[i])),
-                                     unchecked((uint)Integer(Member(e, "transitionOffPeriod_ms").Elements[i])),
-                                     unchecked((int)Integer(Member(e, "offset").Elements[i])));
+                                     Json.AsUInt(Member(e, "onPeriod_ms").Elements[i]), Json.AsUInt(Member(e, "offPeriod_ms").Elements[i]),
+                                     Json.AsUInt(Member(e, "transitionOnPeriod_ms").Elements[i]),
+                                     Json.AsUInt(Member(e, "transitionOffPeriod_ms").Elements[i]),
+                                     Json.AsInt(Member(e, "offset").Elements[i]));
         _byName[name] = leds;
     }
 
     private static LedColor FloatColor(FirmwareJsonValue c)
     {
-        byte B(int i) => unchecked((byte)(uint)((float)Number(c.Elements[i]) * 255f));
+        byte B(int i) => unchecked((byte)(uint)(Json.AsFloat(c.Elements[i]) * 255f));
         return new LedColor(B(0), B(1), B(2), B(3));
     }
 
     private static FirmwareJsonValue Member(FirmwareJsonValue root, string key) =>
         root.Members.GetValueOrDefault(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(key))) ?? new();
-    private static long Integer(FirmwareJsonValue value) => value.Kind switch
-    {
-        FirmwareJsonKind.Int => value.Signed,
-        FirmwareJsonKind.UInt => checked((long)value.Unsigned),
-        _ => throw new JsonLogicError("Value is not convertible to integer."),
-    };
-    private static double Number(FirmwareJsonValue value) => value.Kind switch
-    {
-        FirmwareJsonKind.Int => value.Signed,
-        FirmwareJsonKind.UInt => value.Unsigned,
-        FirmwareJsonKind.Real => value.Real,
-        _ => throw new JsonLogicError("Value is not convertible to number."),
-    };
     // Test/standalone callers use the same production Reader.
     internal void DefineFromJson(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
     {
@@ -330,14 +319,14 @@ public sealed class BodyLightComponent
     internal void StartLooping(LedPattern[] leds, int source)
     {
         bool invalid;
-        lock (_gate) invalid = _locator is null;
-        if (invalid) SourceLog?.Invoke(EngineLogLevel.Info, "BodyLightComponent", "BodyLightComponent::RemoveBackpackLightConfig.InvalidLocator", "Trying to remove an invalid locator.");
         lock (_gate)
         {
+            invalid = _locator is null;
             if (_locator is { } l) _sources[l.Source].Remove(l.Node);
             var node = _sources[source].AddFirst(new Entry { Leds = leds });
             _locator = (source, node);
         }
+        if (invalid) SourceLog?.Invoke(EngineLogLevel.Info, "BodyLightComponent", "BodyLightComponent::RemoveBackpackLightConfig.InvalidLocator", "Trying to remove an invalid locator.");
     }
 
     // fidelity: M4-017
@@ -698,6 +687,9 @@ public sealed class CubeLightComponent
     /// held while robot+0x2C4 is 0 and applied by <see cref="Update"/> when it returns to 1 (C11.2 L6).
     /// </summary>
     private bool _refreshRequested;
+    // comp+0x20: ctor 0x0063710A; only game-message writer 0x0063A2EA. No ingress is wired in this stack.
+    private bool _transitionMessagesEnabled;
+    private int _transitionIngressMissingReported;
 
     internal CubeLightComponent(CozmoRobot robot, CubeLightAnimations animations)
     {
@@ -733,6 +725,7 @@ public sealed class CubeLightComponent
         {
             _infos.Clear();
             _gammaCache = 0;
+            _transitionMessagesEnabled = false;
             _sleepEnabled = false;
             _sleepSkipFade = false;
             _gameLayerOnlyDefault = false;
@@ -856,7 +849,9 @@ public sealed class CubeLightComponent
     /// W4/P2/P3: after a pop, consecutive stopped entries are popped too (P2), and if an animation is left on the layer
     /// its current pattern is resent immediately - SetObjectLights, with no timer or iterator reset (P3).
     /// </summary>
-    internal void Update()
+    internal void Update() => Update(pickDefaultLayer: true);
+
+    internal void Update(bool pickDefaultLayer)
     {
         var calls = new List<Action>();
         var defaults = new HashSet<ObjectType>();
@@ -930,7 +925,7 @@ public sealed class CubeLightComponent
                 info.CurrentLayer = StateLayer;
                 if (objectId is { } emptyId) calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.NoAnimsLeftOnLayer", $"No more animations left on layer {LayerName(previousLayer)} for object {emptyId} going to State layer"));
                 else calls.Add(() => Log("MISSING: M4-018 | Update.NoAnimsLeftOnLayer 0x00637BD6: native ObjectID unavailable"));
-                if (info.Layers[StateLayer].Count == 0) defaults.Add(type);
+                if (pickDefaultLayer) defaults.Add(type);
             }
         }
         foreach (var call in calls) call();
@@ -962,7 +957,7 @@ public sealed class CubeLightComponent
                 if (type is null || t == type)
                     foreach (var p in info.Layers[layer]) p.Stop = true;
         }
-        Update();
+        Update(pickDefaultLayer: true);
     }
 
     // fidelity: M4-018
@@ -971,7 +966,7 @@ public sealed class CubeLightComponent
     /// +0x41 = 1, then Update runs. The engine's stop flag is per entry, keyed by the animation's trigger; this stack
     /// keys a playing animation by its animation name, so the match is on the pattern's animation name.
     /// </summary>
-    internal void StopLightAnim(string trigger, int layer, ObjectType? type = null)
+    internal void StopLightAnim(string trigger, int layer, ObjectType? type = null, bool pickDefaultLayer = true)
     {
         int? id = type is null ? -1 : TryObjectId(type.Value) is { } value ? unchecked((int)value) : null;
         if (id is { } objectId) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopLightAnim", $"Stopping {trigger} on object {objectId} on layer {LayerName(layer)}.");
@@ -984,7 +979,7 @@ public sealed class CubeLightComponent
                         if (MatchesTrigger(p, trigger)) p.Stop = true;
         }
         Log("MISSING: M4-018 | CubeLightComponent.StopLignAnim.Result 0x00639300: Current state string serializer has no adopted row");
-        Update();
+        Update(pickDefaultLayer); // 0x006390BE..0x006390C2 forwards the native bool parameter.
     }
 
     /// <summary>The animation name a trigger maps to; a playing entry matches when its name is the trigger's name.</summary>
@@ -1152,9 +1147,17 @@ public sealed class CubeLightComponent
     /// Then SetLights with the pattern's rotation.
     /// </summary>
     private uint? TryObjectId(ObjectType type) => _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type)?.ObjectId;
-    private static string LayerName(int layer) => layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "(null)" };
+    private static string LayerName(int layer) => layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
     private void SendTransitionMessage(uint? objectId)
     {
+        bool enabled;
+        lock (_gate) enabled = _transitionMessagesEnabled;
+        if (!enabled)
+        {
+            if (Interlocked.Exchange(ref _transitionIngressMissingReported, 1) == 0)
+                Log("MISSING: M4-018 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false");
+            return;
+        }
         if (objectId is not { } id)
         {
             Log("MISSING: M4-018 | SendTransitionMessage.NullObject 0x00638150: type-only caller has no native ObjectID");

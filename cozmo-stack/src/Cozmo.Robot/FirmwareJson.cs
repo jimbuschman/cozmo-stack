@@ -114,6 +114,32 @@ internal static class Json
             default: throw new JsonLogicError("Value is not convertible to UInt.");
         }
     }
+    // fidelity: M4-017
+    // B-M3M4-10: checked GetValue<int> -> asInt, 0x008E60E8..0x008E63F6.
+    public static int AsInt(FirmwareJsonValue value) => value.Kind switch
+    {
+        FirmwareJsonKind.Null => 0,
+        FirmwareJsonKind.Boolean => value.Boolean ? 1 : 0,
+        FirmwareJsonKind.Int => value.Signed >= int.MinValue && value.Signed <= int.MaxValue
+            ? (int)value.Signed : throw new JsonLogicError("LargestInt out of Int range"),
+        FirmwareJsonKind.UInt => value.Unsigned <= int.MaxValue
+            ? (int)value.Unsigned : throw new JsonLogicError("LargestUInt out of Int range"),
+        FirmwareJsonKind.Real => value.Real >= int.MinValue && value.Real <= int.MaxValue
+            ? (int)value.Real : throw new JsonLogicError("double out of Int range"),
+        _ => throw new JsonLogicError("Value is not convertible to Int."),
+    };
+
+    // asFloat 0x008E9C08..0x008E9D00: int64/uint64 convert directly to f32; real narrows from f64.
+    public static float AsFloat(FirmwareJsonValue value) => value.Kind switch
+    {
+        FirmwareJsonKind.Null => 0f,
+        FirmwareJsonKind.Boolean => value.Boolean ? 1f : 0f,
+        FirmwareJsonKind.Int => (float)value.Signed,
+        FirmwareJsonKind.UInt => (float)value.Unsigned,
+        FirmwareJsonKind.Real => (float)value.Real,
+        _ => throw new JsonLogicError("Value is not convertible to float."),
+    };
+
     public static uint? OptionalUInt(FirmwareJsonValue root, string key)
     {
         var value = Member(root, key);

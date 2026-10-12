@@ -102,9 +102,46 @@ public class M4ControlTests
             lights.EnableGameLayerOnly(false);
             rig.Engine.LogEntry += e => { if (e.Name == "CubeLightComponent.PlayLightAnim.SettingLights") world.RemoveConnectedActiveObject(0); };
             Assert.True(lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1, "Sleep", 2));
-            Assert.Contains(entries, e => e.Name == "CubeLightComponent.SendTransitionMessage.NullObject" && e.Text.EndsWith($"Got null object using id {unchecked((int)id)}"));
+            Assert.DoesNotContain(entries, e => e.Name == "CubeLightComponent.SendTransitionMessage.NullObject");
         }
         finally { Directory.Delete(res, true); }
+    }
+
+    // P5 / 0x00637C02..06: Update's bool, not the occupied State stack, decides the default pick.
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void B10_DefaultPickUsesUpdateArgumentWithOccupiedStateLayer(bool pick)
+    {
+        string res=CubeLightResources();
+        try
+        {
+            using var rig=new Rig(res);rig.ToSynced();rig.State();ConnectCube(rig);
+            var lights=rig.Robot.Lights.Cubes;
+            Assert.True(lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Sleep",1));
+            var entries=new List<EngineLogEntry>();rig.Engine.LogEntry+=entries.Add;
+            lights.StopLightAnim("Sleep",1,pickDefaultLayer:pick);
+            Assert.Equal(pick,entries.Any(e=>e.Name=="CubeLightComponent.PlayLightAnim.SettingLights" && e.Text.Contains("Playing trigger Connected")));
+        }
+        finally {Directory.Delete(res,true);}
+    }
+
+    [Fact]
+    public void B10_TransitionGateDefaultsFalseAndMissingIngressIsReportedOnce()
+    {
+        string res=CubeLightResources();
+        try
+        {
+            using var rig=new Rig(res);rig.ToSynced();rig.State();
+            var stack=new List<string>();var entries=new List<EngineLogEntry>();
+            rig.Engine.StackLogLine+=stack.Add;rig.Engine.LogEntry+=entries.Add;ConnectCube(rig);
+            var lights=rig.Robot.Lights.Cubes;
+            lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Sleep",2);
+            lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Connected",2);
+            Assert.Single(stack,l=>l.Contains("EnableCubeLightsStateTransitionMessages ingress"));
+            Assert.DoesNotContain(stack,l=>l.Contains("SendTransitionMessage.NullObject") || l.Contains("game payload"));
+            Assert.DoesNotContain(entries,e=>e.Name=="CubeLightComponent.SendTransitionMessage.NullObject");
+        }
+        finally {Directory.Delete(res,true);}
     }
 
     // B-M3M4-6: world _gate must be released before the configuration subscriber takes _updateGate.
@@ -2354,12 +2391,15 @@ public class M4ControlTests
         Assert.True(s.CliffVariance > 10000f);
         s.EvaluateCliffSuspiciousnessWhenStopped(1);           // start the walk from the beginning
         int mark = rig.Mark();
+        var duringWalk = new List<uint>();
+        rig.Engine.LogEntry += e => { if (e.Name == "CliffSensorComponent.UpdateCliffDetectThreshold.CliffValueWhileStopping") duringWalk.Add(s.CliffSuspiciousAt); };
         var trig = rig.MakeState(RobotStatusFlag.IsBodyAccMode, x: 100);   // body stopped
         trig.CliffDataRaw = new ushort[] { 1500, 500, 500, 500 };
         rig.Data(trig); rig.Tick();
         var thresholds = rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
         Assert.Contains(thresholds, b => Convert.ToHexString(Body(b)) == "9600");
-        Assert.Equal(0u, s.CliffSuspiciousAt);                 // S6: cleared by the walk
+        Assert.NotEmpty(duringWalk); Assert.All(duringWalk, at => Assert.Equal(1u, at));
+        Assert.Equal(0u, s.CliffSuspiciousAt);                 // S6: cleared after the walk
     }
 
     /// <summary>
