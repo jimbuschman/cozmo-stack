@@ -487,3 +487,9 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | New IMPLEMENTATION_GAP: the engine's calls into libDAS | M3-055 |
 | New COMPATIBILITY_POLICY: data-collection app inputs | M3-056 |
 
+
+## M3-045 (operator, 2026-10-12)
+
+| Change | Records |
+| --- | --- |
+| To COMPATIBILITY_POLICY (operator departure: JPEG decoder only; the dispatch stays exact) | M3-045 |

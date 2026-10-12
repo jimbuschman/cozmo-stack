@@ -81,6 +81,11 @@ stack implements that feature.
   to be uploaded through the app's Java `postToServer` to Anki's servers, and nothing in scope reads them. The engine's
   own calls into libDAS stay exact (M3-055). A flush with a callback reports a failed transfer, as a phone with no
   connection does (`research/20261012-m3-051-libdas-sink-b-check.md`).
+- **M3-045, non-JPEG image decoders** (operator, 2026-10-12): only the JPEG decoder is ported. The decoder choice for
+  encodings 5/6/7 stays exact (the signature window, the registration order, the first match). A payload that matches
+  one of the nine other OpenCV decoders (BMP, HDR, WebP, SunRaster, PxM, TIFF, PNG, JPEG 2000, EXR) returns the empty
+  image with a visible MISSING, where the original would decode it. The operator's robot sent only encoding 8 (M3-050),
+  and the engine cannot request 5/6/7.
 - **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
 
 Apply no other departure without the operator.

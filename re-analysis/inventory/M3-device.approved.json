@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "cd2e6fb2749575fee5b7c3027e9a659a39117ee4c7b8a08139dd45981b13d789",
+  "inventory_sha256": "5a8a57a41494e4abc52c03c451c4ec853decd6bcdec5f430fb856c28f446cf61",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -522,7 +522,7 @@
       "hardware_required": false
     },
     "M3-045": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "imdecode's decoder choice for a non-JPEG payload in encodings 5/6/7 (findDecoder over the decoders registered in the shipped libopencv_imgcodecs.so)",
       "authority": "libopencv_imgcodecs.so (OpenCV 3.1, shipped) and libcozmoEngine.so 3.4.0-1204",
       "evidence": [
