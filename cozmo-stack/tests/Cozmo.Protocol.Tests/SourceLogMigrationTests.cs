@@ -87,6 +87,27 @@ public class SourceLogMigrationTests
     }
 
     [Fact]
+    public void B8_UnmatchedCubePatternAndUnknownPathStatusStayOnTheStackStream()
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var entries = new List<EngineLogEntry>(); var stack = new List<string>();
+        robot.Engine.LogEntry += entries.Add; robot.Engine.StackLogLine += stack.Add;
+        using var json = JsonDocument.Parse("{\"bad\":[{}]}");
+        var lights = new CubeLightAnimations();
+        lights.Define(json.RootElement, robot.Engine.Log,
+            (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
+        Assert.Empty(entries);
+        Assert.Contains(stack, s => s.Contains("a pattern lacks a required field"));
+        Assert.Contains(stack, s => s.StartsWith("MISSING: CubeLightAnimationContainer.ParseJsonToAnim.InvalidPattern"));
+        entries.Clear(); stack.Clear();
+        robot.Motion.Path.DriveToPoseStatus = 7;
+        robot.Motion.Path.Abort(_ => true);
+        Assert.DoesNotContain(entries, e => e.Name == "PathComponent.Abort");
+        Assert.DoesNotContain(entries, e => e.Text.Contains("<MISSING:"));
+        Assert.Contains(stack, s => s.StartsWith("MISSING: ERobotDriveToPoseStatus name for status 7"));
+    }
+
+    [Fact]
     public void BufferedPortsRetainCallOrderAndEmitAfterTheBudgetLock()
     {
         using var robot = CozmoRobot.CreateOffline();

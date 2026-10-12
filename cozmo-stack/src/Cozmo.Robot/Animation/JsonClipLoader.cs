@@ -72,6 +72,7 @@ internal static class JsonClipLoader
                 if (error is not null)
                 {
                     log?.Invoke($"error: {name}: {error}");
+                    log?.Invoke("MISSING: Animation.DefineFromJson, Animation.DefineFromJson.FrameNameMissing, Animation.DefineFromJson.AddKeyFrameFailure, Animation.DefineFromJson.UnrecognizedFrameName, IKeyFrame.ReadFromJson, IKeyFrame.GetMemberFromJsonMacro, BodyMotionKeyFrame.MissingRadius, BodyMotionKeyFrame.ProcessRadiusString engine error fields/tails; higher-layer port deferred");
                     failed = true;
                     break;
                 }

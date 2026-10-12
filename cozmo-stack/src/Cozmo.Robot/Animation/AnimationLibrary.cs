@@ -495,6 +495,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
             // have logged the failure at load and left the clip out, so it is logged in that form and treated as absent,
             // and nothing throws into the engine tick
             Log?.Invoke($"error: {name}: {e.Message}");
+            Log?.Invoke("MISSING: Animation.DefineFromJson.AddKeyFrameFailure, Animation.DefineFromJson.UnrecognizedFrameName, BodyMotionKeyFrame.MissingRadius, IKeyFrame.GetMemberFromJsonMacro engine error fields/tails carried by clip-load exceptions; higher-layer port deferred");
             return null;
         }
     }

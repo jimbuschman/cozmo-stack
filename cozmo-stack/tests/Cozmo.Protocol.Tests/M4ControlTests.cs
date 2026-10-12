@@ -90,7 +90,7 @@ public class M4ControlTests
 
     // Manager-checked signed-byte subtract/cmp 0x00630B2E..0x00630B42 and sChanneledInfoF 0x00630B5C.
     [Theory]
-    [InlineData(60, 0, true)] [InlineData(61, 0, false)] [InlineData(-68, -128, true)] [InlineData(-67, -128, false)]
+    [InlineData(60, 0, true)] [InlineData(61, 0, false)] [InlineData(-68, -128, true)] [InlineData(-67, -128, false)] [InlineData(50, -100, false)]
     public void B7_TapIgnoredUsesTheSourceKeyChannelAndSignedDifference(sbyte positive, sbyte negative, bool ignored)
     {
         using var rig = new Rig(); rig.ToSynced(); rig.State(); ConnectCube(rig);
@@ -105,6 +105,36 @@ public class M4ControlTests
             Assert.Equal("Tap ignored 60 <= 60", e.Text); Assert.Empty(e.Data); Assert.Equal(0, taps);
         }
         else { Assert.Empty(logs); Assert.Equal(1, taps); }
+    }
+
+    // B8: 0x005350AA..0x0053519C; live ProcessMessages -> Sensors.Handle.
+    [Theory]
+    [InlineData(2.5f, "3", false)] [InlineData(-2.5f, "-3", false)] [InlineData(1000.5f, "1001", true)]
+    public void B8_FallingEventHasRoundfTextUnsignedDurationAndSourceOrder(float intensity, string text, bool needs)
+    {
+        using var rig = new Rig(); rig.ToSynced(); rig.State();
+        var order = new List<string>(); var entries = new List<EngineLogEntry>();
+        rig.Robot.Sensors.NeedsActionCompleted += id => { Assert.Equal(17, id); order.Add("needs"); };
+        rig.Engine.LogEntry += e => { if (e.Name == "robot.falling_event") { entries.Add(e); order.Add("event"); } };
+        rig.Robot.Sensors.FallingStopped += r => { Assert.Equal(1234u, r.DurationMs); order.Add("report"); };
+        rig.Data(new FallingStopped { DurationMs = 1234, ImpactIntensity = intensity }); rig.Tick();
+        var entry = Assert.Single(entries); Assert.Equal(EngineLogLevel.Event, entry.Level); Assert.Null(entry.Channel);
+        Assert.Equal(text, entry.Text); Assert.Equal("1234", Assert.Single(entry.Data).Value); Assert.True(entry.Data.ContainsKey("$data"));
+        Assert.Equal(needs ? new[] { "needs", "event", "report" } : new[] { "event", "report" }, order);
+    }
+
+    [Fact]
+    public void B8_UnlockAllTracksLogsBeforeClearingAndSendingTheTrackIndex()
+    {
+        using var rig = new Rig(); rig.ToSynced(); rig.State();
+        rig.Robot.Motion.LockTracks(1, "A", "A");
+        int mark = rig.Mark(); var entries = new List<EngineLogEntry>(); bool lockedAtLog = false;
+        rig.Engine.LogEntry += e => { if (e.Name == "MovementComponent.UnlockAllTracks") { entries.Add(e); lockedAtLog = rig.Robot.Motion.AreAnyTracksLocked(1); } };
+        rig.Robot.Motion.CompletelyUnlockAllTracks();
+        var entry = Assert.Single(entries); Assert.Equal(EngineLogLevel.Info, entry.Level); Assert.Equal("Unnamed", entry.Channel);
+        Assert.Equal("Unlocking track Head", entry.Text); Assert.Empty(entry.Data); Assert.True(lockedAtLog);
+        Assert.False(rig.Robot.Motion.AreAnyTracksLocked(1));
+        Assert.Equal((byte)0, Assert.Single(rig.SentSince(mark).OfType<EnableAnimTracks>()).Field0);
     }
 
     // B-M3M4-5 checked Stopped body 0x534924..53494A and the shared Moved body.

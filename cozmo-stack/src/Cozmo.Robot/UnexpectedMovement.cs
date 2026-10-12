@@ -245,6 +245,7 @@ public sealed class UnexpectedMovementDetector
 
         if (Count <= CountThreshold) return null;                                // B11
         Log?.Invoke($"MovementComponent.CheckForUnexpectedMovement: Unexpected movement detected {TypeName(type)}");
+        Log?.Invoke("MISSING: MovementComponent.CheckForUnexpectedMovement warning at 0x0063E5DA; M10 log port deferred");
         var side = Respond(Count);                                               // B12..B16
         // B17: the broadcast on every fire, with the current state's timestamp, then the reset.
         var report = new UnexpectedMovementReport(s.Timestamp, type, side, SumLeft / Count, SumRight / Count, Count)

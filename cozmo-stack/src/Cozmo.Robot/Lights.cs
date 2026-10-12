@@ -559,7 +559,12 @@ public sealed class CubeLightAnimations
                 if (!TryPattern(e, out var p)) { ok = false; break; }
                 patterns.Add(p);
             }
-            if (!ok) { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "CubeLightAnimationContainer", $"{anim.Name}: a pattern lacks a required field"); continue; }
+            if (!ok)
+            {
+                log?.Invoke($"error: {anim.Name}: a pattern lacks a required field");
+                log?.Invoke("MISSING: CubeLightAnimationContainer.ParseJsonToAnim.InvalidPattern / .InvalidJson: the stack TryPattern aggregates missing fields and invalid arrays; no single source branch matches (0x00589910..0x00589CD8)");
+                continue;
+            }
             _anims.TryAdd(anim.Name, patterns.ToArray());
         }
     }

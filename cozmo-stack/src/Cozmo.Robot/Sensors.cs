@@ -844,7 +844,13 @@ public sealed class CozmoSensors
                 // C2 (0x5350AA..0x5350C2; 0x535186..0x53519C): intensity > 1000 registers NeedsAction 17, then the DAS
                 // "robot.falling_event", then the game FallingStopped{duration, intensity}.
                 if (f.ImpactIntensity > FallNeedsActionIntensity) NeedsActionCompleted?.Invoke(FallNeedsActionId);
-                _robot.Engine.Log($"info: DAS robot.falling_event: duration {f.DurationMs} ms, intensity {f.ImpactIntensity:F1}");
+                // sEvent 0x00535144: roundf then vcvt.s32.f32; unsigned duration to_string in $data.
+                float rounded = MathF.Round(f.ImpactIntensity, MidpointRounding.AwayFromZero);
+                int intensity = float.IsNaN(rounded) ? 0 : rounded >= int.MaxValue ? int.MaxValue
+                    : rounded <= int.MinValue ? int.MinValue : (int)rounded;
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.falling_event",
+                    intensity.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    new Dictionary<string, string> { ["$data"] = f.DurationMs.ToString(System.Globalization.CultureInfo.InvariantCulture) });
                 FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity) { Timestamp = f.Timestamp });
                 break;
 

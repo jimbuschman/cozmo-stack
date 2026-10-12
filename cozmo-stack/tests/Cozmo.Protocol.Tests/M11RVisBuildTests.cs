@@ -1901,7 +1901,7 @@ public class M11RVisBuildTests : IDisposable
         Assert.Equal(anyRemain ? 0 : 1, (int)c.Robot2C4);
         Assert.Equal(anyRemain ? 0 : -1, c.Robot2B8);
         Assert.Equal(anyRemain ? 0 : 1, nothingRemains);
-        Assert.Equal(anyRemain ? 0 : 1, log.Count(l => l.Contains("NoMoreRemainingLocalizableObjects")));
+        Assert.Equal(anyRemain ? 0 : 1, log.Count(l => !l.StartsWith("MISSING:") && l.Contains("NoMoreRemainingLocalizableObjects")));
     }
 
     /// <summary>

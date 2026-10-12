@@ -409,7 +409,11 @@ public sealed class CozmoCamera
         foreach (var w in warnings) Log?.Invoke(w);
         if (completed is null) return;
         FrameReceived?.Invoke(completed);
-        if (capWarning is not null) Log?.Invoke(capWarning);
+        if (capWarning is not null)
+        {
+            Log?.Invoke(capWarning);
+            Log?.Invoke("MISSING: RobotImplMessaging.HandleImageChunk (key 0x00535BF8, format 0x00BE93C4): tick-cap logger arguments/level unported");
+        }
         if (toVision) FrameForVision?.Invoke(completed);
     }
 
@@ -433,6 +437,7 @@ public sealed class CozmoCamera
         if (_imagesThisTick < MaxImagesPerTick) return true;
         FramesOverTickCap++;
         warning = $"warning: Ignoring {_imagesThisTick + 1}th image (with t={f.Timestamp}) received during basestation tick at {t:F6}sec";
+        // MISSING: RobotImplMessaging.HandleImageChunk (0x00535BF8 / 0x00BE93C4); reported with capWarning after releasing _gate.
         return false;
     }
 

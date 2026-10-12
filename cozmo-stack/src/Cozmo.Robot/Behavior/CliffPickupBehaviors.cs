@@ -260,6 +260,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
         }
         Log("DAS robot.cliff_detected");
         EngineLog("info: DAS robot.cliff_detected");
+        EngineLog("MISSING: robot.cliff_detected engine event fields; higher-layer port deferred");
         int sev = SevereNeedValue();
         var trigger = sev == 0 ? AnimationTrigger.NeedsSevereLowRepairCliffReact
                     : sev == 1 ? AnimationTrigger.NeedsSevereLowEnergyCliffReact
@@ -436,6 +437,7 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
         string das = $"info: DAS BehaviorReactToPickup.CalibratingHead: {raw}";
         Log(das);
         Context.Robot.Engine.Log(das);
+        Context.Robot.Engine.Log("MISSING: BehaviorReactToPickup.CalibratingHead engine event fields; higher-layer port deferred");
         CalibrateHead(() => { });                                                               // CalibrateMotorAction(robot, true, false), empty callback
     }
 

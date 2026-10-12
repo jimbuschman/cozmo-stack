@@ -165,13 +165,17 @@ public class EngineAppLayerTests
         rig.ToSuccess();
         var counter = new RobotStatePublicationCounter();
         rig.Engine.PublicationCounter = counter;
-        const string message = "info: Unnamed: RobotManager.UpdateAllRobots: Not sending robot 1 state (none available).";
+        const string message = "info: [Unnamed] RobotManager.UpdateAllRobots: Not sending robot 1 state (none available).";
+        var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
         for (int i = 0; i < 10; ++i) rig.Tick(0);
         Assert.Equal((ushort)10, counter.Count);
         Assert.DoesNotContain(message, rig.Log);
         rig.Tick(0);
         Assert.Equal((ushort)0, counter.Count);
         Assert.Equal(1, rig.Log.Count(l => l == message));
+        var entry = Assert.Single(entries.Where(e => e.Name == "RobotManager.UpdateAllRobots"));
+        Assert.Equal(EngineLogLevel.Info, entry.Level); Assert.Equal("Unnamed", entry.Channel);
+        Assert.Equal("Not sending robot 1 state (none available).", entry.Text); Assert.Empty(entry.Data);
         for (int i = 0; i < 11; ++i) rig.Tick(0);
         Assert.Equal(2, rig.Log.Count(l => l == message));
         counter.Count = ushort.MaxValue;
@@ -198,7 +202,7 @@ public class EngineAppLayerTests
         Assert.Equal((ushort)10, counter.Count);
         rig.Tick(0);
         Assert.Equal((ushort)0, counter.Count);
-        Assert.Contains("info: Unnamed: RobotManager.UpdateAllRobots: Not sending robot 1 state (none available).", rig.Log);
+        Assert.Contains("info: [Unnamed] RobotManager.UpdateAllRobots: Not sending robot 1 state (none available).", rig.Log);
     }
 
     // 0051810C..00518122, UnknownOriginID=0 at00C97B20; warning's native format is empty.
@@ -1379,6 +1383,9 @@ public class EngineAppLayerTests
         using var rig = new Rig();
         rig.ToSuccess();
         rig.Messages.Clear();
+        var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        bool oldError = EngineErrorState.ErrorFlagSet;
+        EngineErrorState.ErrorFlagSet = false;
         rig.Raw(Array.Empty<byte>());
         var avail = new RobotAvailable { SerialNumberHead = 1 }.ToBytes();
         rig.Raw(avail.Concat(new byte[] { 0 }).ToArray());      // one byte too many
@@ -1389,6 +1396,13 @@ public class EngineAppLayerTests
         var raw = Assert.IsType<RawRobotMessage>(Assert.Single(rig.Messages));
         Assert.Equal((RobotMessageId)0x10, raw.Id);
         Assert.Empty(raw.Body);
+        var errors = entries.Where(e => e.Name == "RobotMessageHandler.MessageUnpack").ToArray();
+        Assert.Equal(2, errors.Length);
+        Assert.All(errors, e => { Assert.Equal(EngineLogLevel.Error, e.Level); Assert.Null(e.Channel); Assert.Empty(e.Data); });
+        Assert.EndsWith($"Message unpack error, tag robotAvailable (0xc9) expecting {avail.Length} but have {avail.Length + 1}", errors[0].Text);
+        Assert.EndsWith("Message unpack error, tag INVALID (0x10) expecting 1 but have 2", errors[1].Text);
+        Assert.True(EngineErrorState.ErrorFlagSet);
+        EngineErrorState.ErrorFlagSet = oldError;
     }
 
     /// <summary>

@@ -67,7 +67,12 @@ public sealed class FreeplayStack : IDisposable
         // below names the same id (Hiccup, the feeding PlayAnims) the first instance stands, so the config's is the one bound.
         var factoryContext = new BehaviorFactoryContext
         {
-            SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text),
+            SourceLog = (level, channel, key, text) =>
+            {
+                robot.Engine.EmitSourceLog(level, channel, key, text);
+                if (level is EngineLogLevel.Warning or EngineLogLevel.Error)
+                    SourceLogDispatch.Write(null, problems.Add, level, channel, key, text);
+            },
             Vision = vision,
             Manipulation = m,
             Log = line =>

@@ -201,8 +201,16 @@ internal sealed class EngineTickRunner
             int r = _tick(start - runStart);             // CD2 (0x0065B3F4..0x0065B42C)
             if (r != 0) { _log($"error: engine update returned {r}; the run loop stops"); return; }   // CD2 (0x0065B704..0x0065B712)
             long rem = target - _nowNs();                // CD3 (0x0065B432..0x0065B45E)
-            if (rem < OvertimeWarnNs) _log($"warning: overtime {rem / 1e6:F1} ms");                   // CD4
-            else if (rem < OvertimeDebugNs) _log($"debug: overtime {rem / 1e6:F1} ms");               // CD4
+            if (rem < OvertimeWarnNs)
+            {
+                _log($"warning: overtime {rem / 1e6:F1} ms"); // CD4
+                _log("MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): warning call arguments unported");
+            }
+            else if (rem < OvertimeDebugNs)
+            {
+                _log($"debug: overtime {rem / 1e6:F1} ms"); // CD4
+                _log("MISSING: CozmoAPI.CozmoInstanceRunner.overtime (key 0x0065B76C): debug call arguments unported");
+            }
             if (rem >= 1000) _sleepNs(rem / 1000 * 1000);                                           // CD3: rem_us (0x0065B576..0x0065B5D2)
             target += PeriodNs;                                                                       // CD3 (0x0065B5EE)
             if (rem <= CatchupNs) target += -rem / PeriodNs * PeriodNs;                               // CD5 (0x0065B63C)
@@ -478,9 +486,12 @@ internal sealed class MessageHandler
             if (robot is null) continue;
             if (data.Length == 0) { _engine.EmitStackLog("error: MessageHandler.ProcessMessages: message of size 0"); continue; }
             if (_engine.Robots.ShouldFilterMessage(CozmoEngine.RobotId, data[0], robotToEngine: true)) continue;
-            if (!TryUnpack(data, out var msg))
+            if (!TryUnpack(data, out var msg, out int consumed))
             {
-                _engine.EmitSourceLog(EngineLogLevel.Error, null, "MessageHandler.ProcessMessages", $"size mismatch unpacking tag 0x{data[0]:X2} ({data.Length} bytes); dropped");
+                // sErrorF 0x0069D9FC: r3=tag name, stack={tag, Unpack return, received size}.
+                _engine.EmitSourceLog(EngineLogLevel.Error, null, "RobotMessageHandler.MessageUnpack",
+                    FormattableString.Invariant($"Message unpack error, tag {RobotToEngineTagName(data[0])} (0x{data[0]:x2}) expecting {consumed} but have {data.Length}"));
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0069DA22..0x0069DA2E, after the log.
                 continue;
             }
             if (msg is RobotErrorReport err)
@@ -516,8 +527,31 @@ internal sealed class MessageHandler
     /// an over-counted u8 array is kept shorter, and a truncated fixed message is kept when later smaller reads
     /// happen to consume exactly what is left (D11).
     /// </summary>
-    internal static bool TryUnpack(byte[] data, out RobotMessage msg)
+    // fidelity: M1-027
+    // RobotToEngineTagToString 0x007B748C..0x007B74A4, pointer table 0x01034740.
+    private static readonly string[] RobotToEngineTagNames =
     {
+        "trace", "printText", "mainCycleTimeError", "goalPose", "activeObjectMoved", "activeObjectStopped",
+        "activeObjectTapped", "dataDump", "pickAndPlaceResult", "objectTappedFiltered", "rampTraverseStarted", "rampTraverseCompleted",
+        "bridgeTraverseStarted", "bridgeTraverseCompleted", "timeProfStat", "imuDataChunk", "cliffEvent", "potentialCliff",
+        "syncTimeAck", "robotPoked", "motorActionAck", "movingLiftPostDock", "pathFollowingEvent", "imuRawDataChunk",
+        "defaultCameraParams", "robotAvailable", "animStarted", "animEnded", "INVALID", "nvOpResult",
+        "objectPowerLevel", "crashReport", "activeObjectConnectionState", "motorCalibration", "factoryFirmwareVersion", "dockingStatus",
+        "robotStopped", "animEvent", "factoryTestParam", "activeObjectUpAxisChanged", "motorAutoEnabled", "robotError",
+        "liftLoad", "backpackButton", "imuTemperature", "fallingStarted", "fallingStopped", "INVALID",
+        "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID",
+        "INVALID", "INVALID", "INVALID", "INVALID", "INVALID", "INVALID",
+        "wifiFlashID", "mfgId", "firmwareVersion", "otaAck", "state", "animState",
+        "image", "activeObjectAvailable", "imageGyro", "objectAccel",
+    };
+    internal static string RobotToEngineTagName(byte tag) => tag is >= 0xB0 and <= 0xF5
+        ? RobotToEngineTagNames[tag - 0xB0] : "INVALID";
+
+    internal static bool TryUnpack(byte[] data, out RobotMessage msg) => TryUnpack(data, out msg, out _);
+
+    private static bool TryUnpack(byte[] data, out RobotMessage msg, out int consumed)
+    {
+        consumed = 1;
         var id = (RobotMessageId)data[0];
         if (data[0] < 0xB0 || data[0] > 0xF5)
         {
@@ -529,6 +563,7 @@ internal sealed class MessageHandler
         {
             var r = new CladReader(data.AsMemory(1));
             msg = parse(r);
+            consumed += r.Position;
             return r.Remaining == 0;
         }
         // D5: 0xCC and 0xDF..0xEB have no codec; the default case consumes the tag alone.

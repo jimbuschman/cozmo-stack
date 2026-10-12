@@ -853,7 +853,7 @@ public class M4AbortSleepTests
         Assert.Single(rig.LogLines().Skip(logMark), l => l.StartsWith("debug: [Unnamed] MovementComponent.LockState: LIFT_TRACK:1 MoveLiftToLowDock["));
     }
 
-    /// <summary>Row 4: the status names (table 0x0102F610): 0 Failed .. 6 WaitingToCancelPathAndSetFailure; 7 has no name (visible placeholder).</summary>
+    /// <summary>Row 4: the status names (table 0x0102F610): 0 Failed .. 6 WaitingToCancelPathAndSetFailure; 7 has no name (stack MISSING, no engine entry).</summary>
     [Theory]
     [InlineData(0, "Failed")]
     [InlineData(1, "ComputingPath")]
@@ -872,7 +872,8 @@ public class M4AbortSleepTests
         Assert.Contains($"info: [Planner] PathComponent.Abort: Aborting from status '{name}'", rig.LogLines());
         var seven = new PathComponent(rig.Robot) { DriveToPoseStatus = 7, ErasePathHook = _ => { } };
         seven.Abort();
-        Assert.Contains(rig.LogLines(), l => l.StartsWith("info: [Planner] PathComponent.Abort: Aborting from status '<MISSING"));
+        Assert.Contains(rig.LogLines(), l => l.StartsWith("MISSING: ERobotDriveToPoseStatus name for status 7"));
+        Assert.DoesNotContain(rig.LogLines(), l => l.Contains("Aborting from status '<MISSING"));
     }
 
     /// <summary>Row 6: the head ack callback (0x0054D624..0x0054D68E) logs "MoveHeadToAngleAction.MotorActionAcked" with (tag, id) once the command was sent, and again on a repeat.</summary>

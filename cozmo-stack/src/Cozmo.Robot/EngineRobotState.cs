@@ -83,7 +83,7 @@ public sealed partial class CozmoEngine
         if (!robot.FirstFullStateHandled)
         {
             // 0x0052F728..0x0052F774: wrapping u16 increment, >=11 info, then reset.
-            PublicationCounter.MissingState(() => EmitSourceLog(EngineLogLevel.Info, null, "Unnamed", $"RobotManager.UpdateAllRobots: Not sending robot {RobotId} state (none available)."));
+            PublicationCounter.MissingState(() => EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotManager.UpdateAllRobots", $"Not sending robot {RobotId} state (none available)."));
             return;
         }
         // The offline harness opens the update gate before supplying its first packet.

@@ -282,6 +282,7 @@ public sealed class OffTreadsClassifier
         // A10
         StateChanged?.Invoke(old, cand);
         Log?.Invoke($"Robot.OfftreadsState.TreadStateChanged: {old} -> {cand}");
+        Log?.Invoke("MISSING: Robot.OfftreadsState.TreadStateChanged info at 0x005120D0; M10 log port deferred");
         // A12
         if (cand is >= OffTreadsState.OnBack and <= OffTreadsState.Falling) UnattachCarriedObjectIfCarrying?.Invoke();
         // A11
@@ -292,7 +293,11 @@ public sealed class OffTreadsClassifier
             var any = AnyRemainingLocalizableObjects;
             if (any is null || !any())
             {
-                if (any is not null) Log?.Invoke("Robot.CheckAndUpdateTreadsState.NoMoreRemainingLocalizableObjects");
+                if (any is not null)
+                {
+                    Log?.Invoke("Robot.CheckAndUpdateTreadsState.NoMoreRemainingLocalizableObjects");
+                    Log?.Invoke("MISSING: Robot.CheckAndUpdateTreadsState.NoMoreRemainingLocalizableObjects info at 0x00512138; M10/M11 log port deferred");
+                }
                 Robot2C4 = 1;
                 Robot2B8 = -1;
                 NothingLocalizableRemainsOnTreads?.Invoke();

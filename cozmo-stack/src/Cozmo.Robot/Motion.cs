@@ -484,7 +484,8 @@ public sealed class CozmoMotion
             for (int k = 0; k < _trackLocks.Length; k++)
             {
                 if (_trackLocks[k].Count == 0) continue;                    // empty set: no log, no clear, no message
-                Log($"MovementComponent.UnlockAllTracks: Unlocking track {TrackName(k)}");
+                // sChanneledInfoF 0x00640FD8, before clear and EnableAnimTracks.
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "MovementComponent.UnlockAllTracks", $"Unlocking track {TrackName(k)}");
                 _trackLocks[k].Clear();
                 _robot.SendMessage(new EnableAnimTracks { Field0 = (byte)k });   // the index k, not 1<<k
             }
@@ -554,6 +555,7 @@ public sealed class CozmoMotion
         if (_directDriveDisabled)
         {
             Log($"info: Ignoring {what} message while direct drive is disabled");
+            Log("MISSING: MovementComponent.EventHandler.DriveWheels / MoveHead / MoveLift / DriveArc / TurnInPlaceAtSpeed disabled-direct-drive engine log calls; checked argument/level rows absent");
             return new MotionOutcome(MotionResult.Refused, $"{what} ignored: direct drive is disabled");
         }
         if (!holds && IsTrackLockedLocked(mask))
@@ -1547,11 +1549,11 @@ internal sealed class PathComponent
     internal int Abort(Func<RobotMessage, bool>? send = null)
     {
         // Row 4: the static table at 0x0102F610 is indexed by +0x38 with no bounds check; slot 7 holds 0 in the file image, so a value of 7 or
-        // more has no name and what the engine does with it is UNKNOWN (visible placeholder).
-        string name = StatusName?.Invoke(DriveToPoseStatus)
-                      ?? ((uint)DriveToPoseStatus < StatusNames.Length ? StatusNames[DriveToPoseStatus]
-                          : $"<MISSING: ERobotDriveToPoseStatus name for status {DriveToPoseStatus}, read past the table at 0x0102F610>");
-        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Planner", "PathComponent.Abort", $"Aborting from status '{name}'");
+        // more has no name and what the engine does with it is UNKNOWN (reported on the stack stream).
+        string? name = StatusName?.Invoke(DriveToPoseStatus)
+                      ?? ((uint)DriveToPoseStatus < StatusNames.Length ? StatusNames[DriveToPoseStatus] : null);
+        if (name is null) MissingOnce($"ERobotDriveToPoseStatus name for status {DriveToPoseStatus}, read past the table at 0x0102F610; PathComponent.Abort log is unported");
+        else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Planner", "PathComponent.Abort", $"Aborting from status '{name}'");
         if (PlannerSlot10 is { } planner) { planner(); Field47 = false; }
         SharedPath = null;
         int cleared = ClearPath(send);

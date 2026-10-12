@@ -1856,7 +1856,8 @@ public class M3DeviceTests
         for (uint id = 1; id <= 5; id++) cam.Handle(Chunk(id, 0, new byte[] { 0, 1 }, total: 1));
         Assert.Equal(5, received);
         Assert.Equal(3, toVision);
-        Assert.Equal(2, log.Count);
+        Assert.Equal(2, log.Count(l => l.StartsWith("warning: Ignoring")));
+        Assert.Equal(2, log.Count(l => l.StartsWith("MISSING: RobotImplMessaging.HandleImageChunk")));
         Assert.Contains("4th image", log[0]);
         t = 1.06;
         cam.Handle(Chunk(9, 0, new byte[] { 0, 1 }, total: 1));

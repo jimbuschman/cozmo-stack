@@ -447,7 +447,10 @@ public sealed class SingingBehavior : IBehavior
             _shakeStartMs = null;
             double elapsedMs = nowMs - start;
             if (elapsedMs > 500)
+            {
                 context.Robot.Engine.Log($"info: DAS robot.song_shake_duration_ms: duration {(int)elapsedMs} ms");
+                context.Robot.Engine.Log("MISSING: robot.song_shake_duration_ms engine event fields; higher-layer port deferred");
+            }
         }
     }
 

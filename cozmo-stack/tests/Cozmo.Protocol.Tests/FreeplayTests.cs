@@ -53,6 +53,31 @@ public class FreeplayTests
         public void Stop(BehaviorStopReason r) { }
     }
 
+    [Fact]
+    public void B8_BehaviorConfigWarningReachesProblemsAndSourceLog()
+    {
+        string temp = Path.Combine(Path.GetTempPath(), "B8-behaviors-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            string original = Path.Combine(ObbRoot()!, "assets", "cozmo_resources", "config");
+            string config = Path.Combine(temp, "assets", "cozmo_resources", "config");
+            foreach (string file in Directory.GetFiles(original, "*", SearchOption.AllDirectories))
+            {
+                string target = Path.Combine(config, Path.GetRelativePath(original, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Copy(file, target);
+            }
+            File.WriteAllText(Path.Combine(BehaviorConfigLoader.DirectoryFor(temp), "b8-invalid.json"), "{");
+            using var rig = new Rig();
+            var entries = new List<EngineLogEntry>(); rig.Robot.Engine.LogEntry += entries.Add;
+            using var stack = FreeplayStack.Create(temp, rig.Robot, Ctx(rig), () => 0, withReactions: false);
+            // RobotDataLoader.Behavior warning 0x005207BE: failed JSON read, filename argument.
+            var warning = Assert.Single(entries.Where(e => e.Name == "RobotDataLoader.Behavior"));
+            Assert.Equal(EngineLogLevel.Warning, warning.Level);
+            Assert.Contains(stack.Problems, p => p.StartsWith("warning: RobotDataLoader.Behavior:") && p.Contains("b8-invalid.json"));
+        }
+        finally { if (Directory.Exists(temp)) Directory.Delete(temp, true); }
+    }
+
     // ------------------------------------------------------------------ needs
 
     [Fact]
