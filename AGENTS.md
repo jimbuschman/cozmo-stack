@@ -60,7 +60,14 @@ stack implements that feature.
 ### Other approved departures
 
 - **M1-034, handler isolation** (operator, 2026-10-07): a handler exception is caught, logged and survived; the original aborts. It also covers the backpack-light loader's
-  non-object JSON throw (operator, 2026-10-11; M4-036), which the shipped file never reaches.
+  non-object JSON throw (operator, 2026-10-11; M4-036), which the shipped file never reaches. It also covers the
+  animation and face loaders' fatal paths (operator, 2026-10-12; `research/20261012-m5-x9-extraction.md`), which no
+  shipped file reaches:
+  - a JsonCpp throw (stack limit; a non-object root's find/getMemberNames LogicError);
+  - a face frame number that `stoi` rejects as out of range;
+  - a malformed non-empty `.bin` (the original reads it unchecked: undefined behaviour).
+
+  The stack skips that file, logs the skip visibly, and carries on.
 - **M1-040, firmware check** (operator, 2026-10-09): every robot firmware is accepted and logged; the original rejects a version that differs from the app's. Without it the operator's robot (2457) is refused.
 - **M1-036, crash reporting** (operator, 2026-10-09): no Breakpad crash reporter.
 - **M1-038, after a disconnect sub-message** (operator, 2026-10-09): stop processing the frame; the original continues through freed memory.

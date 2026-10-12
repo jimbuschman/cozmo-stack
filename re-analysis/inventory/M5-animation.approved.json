@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "b7e07d0cae853825140c95d722e5cb7f6894d4324016dd3ba3eacc0abfd3d7ff",
+  "inventory_sha256": "8aaa12c44eb4b581de140081d239c4af00debf8dfddb408a348575ac7a97a493",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -15,13 +15,14 @@
         "gap2 J1..J5 DefineFromJson 0x005886F4.. (first top-level key); the four shipped JSON clips",
         "R-ANIM pre-extraction part 1 item 1 F1..T3: FaceAnimation 0x004F9434, Event 0x004FA8B8, DeviceAudio 0x004FA658, RecordHeading 0x004FBB54, TurnToRecordedHeading 0x004FBF2C; CheckRotationSpeed 0x004FBBE6",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-001 (Opus settling pass, manager-adopted 2026-10-11).",
-        "re-analysis/research/20261011-m5-fix-rows.md section 1 (Opus fix rows, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-fix-rows.md section 1 (Opus fix rows, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4d: main-thread checks 0x0051F3AA/0x00521338 are natively unreachable (LoadNonConfigData has its own thread; ReadAnimationDir 0x0052F858 has no caller); getMemberNames LogicError (0x008E6D08) is uncaught -> std::terminate; a failed open is parse()==false, not an exception (section 2)."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M5-002": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "19 procedural-eye parameters and the ProceduralFace default (all 0 except EyeScaleX/Y 1, face scale 1, no distorter); SetFromFlatBuf rules",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -62,7 +63,7 @@
       "hardware_required": false
     },
     "M5-005": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -113,7 +114,8 @@
         "A13 0x0057CFF6..0x0057D036",
         "A27 0x0057ED0E..0x0057ED2A",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-008 (Opus settling pass, manager-adopted 2026-10-11).",
-        "re-analysis/research/20261011-m5-fix-rows.md section 5 (Opus fix rows, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-fix-rows.md section 5 (Opus fix rows, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4c: sVerifyFailedReturnFalse 0x0080D9A4 logs sErrorV \"VERIFY(%s): \", sets errG with no debug break; sDumpCallstack 0x0080DA08 is a no-op (0x0080B0A6 bx lr); the flush 0x0080DA24 goes MultiLoggerProvider::Flush 0x006673BA -> DasLoggerProvider::Flush 0x006671F4 -> libDAS DASForceFlushNow (M3-051); returns 0."
       ],
       "live_path": true,
       "hardware_required": false
@@ -155,7 +157,8 @@
         "D6 0x0058AB30..0x0058AE2A",
         "R-ANIM pre-extraction part 1 item 4 4.1..4.12: group loop 0x0058A622..0x0058A73C, entry DefineFromJson 0x0058C4CC..0x0058C7D2, ctor 0x0058C4B0, backup 0x0058AC2A",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-011 (Opus settling pass, manager-adopted 2026-10-11).",
-        "re-analysis/research/20261011-m5-fix-rows.md section 8 (Opus fix rows, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-fix-rows.md section 8 (Opus fix rows, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4f: MoodManager::GetSimpleMood 0x0067C084 (Default; Happy > 0.33f -> Happy; Confident < -0.29f -> Sad; Happy < -0.33f -> Sad) is an M7 input; the group draw time is MoodManager+0x130 (0x0058A95C), the last MoodManager::Update(t) time (0x0067B67E), not BaseStationTimer."
       ],
       "live_path": true,
       "hardware_required": false
@@ -227,7 +230,7 @@
       "hardware_required": false
     },
     "M5-017": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -263,20 +266,21 @@
       "hardware_required": false
     },
     "M5-020": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "Expressions: the shipped Code Lab AnimationTrigger mapping and Unity Random; no invented faces",
       "authority": "unity/scripts/csharp/CodeLab/CodeLabGame.cs:3094; libunity.so (shipped); operator decision 2026-09-29",
       "evidence": [
         "operator decision 2026-09-29: no invented faces; rebuild on the shipped Code Lab expression mapping",
         "CodeLabGame.GetAnimationTriggerForScratchIndex CodeLabGame.cs:3094, Random.Range(1,34) :3101, Random.Range(1,14) :3106",
         "R-ANIM pre-extraction part 1 item 11 R3..R8: RandomRangeInt 0x10BCE8, xorshift128 0x10BD00..0x10BD2C, InitState 0x10BC00, time(NULL) seed 0x71ED4..0x71F04",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-020 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-020 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261012-m5-x9-extraction.md section 5: the Unity Random consumer is CodeLabGame.cs:3094-3107 only; CodeLab runs in internal SDK mode (CodeLabGame.cs:967), which the app-boundary scope rule excludes (AGENTS.md, operator 2026-10-09)."
       ],
       "live_path": false,
       "hardware_required": false
     },
     "M5-021": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "Eye fill = shipped OpenCV 3.1.0 fillConvexPoly LINE_4 and ellipse2Poly; DrawEye outline and lid polygons; _firstScanLine offset; fill order",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -289,7 +293,7 @@
       "hardware_required": false
     },
     "M5-022": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Disconnect and teardown: a failed send only returns; Robot::SendAbortAnimation (0x8D) as AbortAll calls it; ~AnimationStreamer",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -317,7 +321,7 @@
       "hardware_required": false
     },
     "M5-024": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "InitStream: tag and start, the scan-line toggle rule, buffer dropped, start/end flags, audio animation created, RemoveKeepFaceAlive(99) for non-live; nothing sent",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -373,7 +377,7 @@
       "hardware_required": false
     },
     "M5-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Keep-alive: timeout 0.5 s, KeepFaceAlive darts and blinks, default params, continuous StreamLayers while a persistent layer exists",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -387,7 +391,7 @@
       "hardware_required": false
     },
     "M5-029": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Track layer manager: tags, AddLayer/AddPersistentLayer, persistent hold, AddToPersistentLayer, the Remove cross-fade, HaveLayersToSend, frame flags",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -442,7 +446,7 @@
       "hardware_required": false
     },
     "M5-033": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Event 0x95, RecordHeading 0x91, TurnToRecordedHeading 0x92 keyframes and their clamps",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -456,7 +460,7 @@
       "hardware_required": false
     },
     "M5-034": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "AnimationTrigger to group name from assets/animationGroupMaps Pairs; first entry wins; unknown gives a warning and \"\"",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -468,7 +472,7 @@
       "hardware_required": false
     },
     "M5-035": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The streamer never reads enabledAnimTracks or skips a locked track; locks only through DisableAnimTracks/EnableAnimTracks; the live idle checks MovementComponent locks",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -499,7 +503,8 @@
       "evidence": [
         "0x00511524..0x0051154A; 0x0057AF48..0x0057AFDA; 0x0057B044..0x0057B0C2; Destroy driving subscriptions/vector and streamer; ClearSendBuffer discards without send. TrackLayer/live/shared descendant effects UNKNOWN; no final flush inferred.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-037 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-037 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4a: the descendant effects are read; the teardown order is M5-053."
       ],
       "live_path": true,
       "hardware_required": false
@@ -517,7 +522,7 @@
       "hardware_required": false
     },
     "M5-039": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Ready-to-stream animation consumer lifecycle",
       "authority": "libcozmoEngine.so 3.4.0-1204 ready-byte writer and SyncTimeAck.",
       "evidence": [
@@ -529,7 +534,7 @@
       "hardware_required": false
     },
     "M5-040": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "ProceduralFace clip warning: ClipWarnFcn (ProceduralFace.Clip.OutOfRange) and where it is enabled",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -540,7 +545,7 @@
       "hardware_required": false
     },
     "M5-041": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "UpdateStream DeviceAudio wall-clock step: IsTimeToPlay(+0x80, now), PlayOnDevice, MoveToNextKeyFrame",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -577,13 +582,14 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-037: TLC delete 0x0057AF8C..0x0057AF98; shared_ptr +0xC release 0x0057AFD0.",
-        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): TD1-TD8, TDU: ~TrackLayerComponent 0x0064ED8C frees +0x10, +0xC, +8, +4 in order, no send or log; +0xC is the UiMessageHandler subscription container (TD3-TD6, 0x004EF184); libc++_shared.so __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8."
+        "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): TD1-TD8, TDU: ~TrackLayerComponent 0x0064ED8C frees +0x10, +0xC, +8, +4 in order, no send or log; +0xC is the UiMessageHandler subscription container (TD3-TD6, 0x004EF184); libc++_shared.so __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8.",
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4b: libc++_shared __release_shared 0x5ED6C (on_zero_shared then weak release); 0x0057AFD4 is the last owner. Supersedes TDU \"external, unsettled\"."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M5-045": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Which RandomGenerator AnimationGroupContainer+0x28 is (the stream behind the group draw)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -598,7 +604,8 @@
       "title": "RobotDataLoader.CollectAnimFiles.Results info order over the four file types",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261011-m5-last-reads.md R46-1..R46-8: collect order clips (type 0, 0x00523F5C), cubeLights (2, 0x005241E6), backpackLights (3, 0x0052429A), animationGroups (1, 0x0052434A) into unordered_map<int,vector<string>> at loader+0x44; the log walks the node list from +0x4C (0x0051F6A4..0x0051F710); executed shipped operator[] / __rehash give the chain [1,3,2,0] for a fresh map with all four types populated; info 0x0051F6EA, channel 0x00BE5216, key 0x00BE7B49, fmt 0x00BE7B72; trace re-analysis/research/20261011-m5-last-reads-emu.txt."
+        "re-analysis/research/20261011-m5-last-reads.md R46-1..R46-8: collect order clips (type 0, 0x00523F5C), cubeLights (2, 0x005241E6), backpackLights (3, 0x0052429A), animationGroups (1, 0x0052434A) into unordered_map<int,vector<string>> at loader+0x44; the log walks the node list from +0x4C (0x0051F6A4..0x0051F710); executed shipped operator[] / __rehash give the chain [1,3,2,0] for a fresh map with all four types populated; info 0x0051F6EA, channel 0x00BE5216, key 0x00BE7B49, fmt 0x00BE7B72; trace re-analysis/research/20261011-m5-last-reads-emu.txt.",
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4e: on a fresh map the Results order is the reverse of first insertion (walk order 0,2,3,1 restricted to populated types), emulated over all 15 populations; a non-fresh map is unreachable in production (LoadNonConfigData runs once, 0x00523580..0x005235CC; map cleared 0x0051F47C; ReadAnimationDir has no caller)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -634,6 +641,46 @@
       "evidence": [
         "The streamer teardown (M5-037: 0x0057AF48..0x0057AFDA, 0x0057B044..0x0057B0C2) destroys the streamer with no broadcast, no sink call and no end callback; the engine has no host-side waiter to release.",
         "Scope rule, AGENTS.md (operator, 2026-10-09): engine reports are delivered to the stack's C# API; the stack's API completes its own pending waits."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-050": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Animation-group file loader: collect, 4-way dispatch, abort gate, readAsJson, silent empty skip, stem name, Loading info, locked find-or-insert define",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-x9-extraction.md section 1, G1..G14: LoadAnimationGroups 0x0051FC74, LoadAnimationGroupFile 0x00521D7C (abort gate 0x00521D86..0x00521D8E, read 0x00521D98..0x00521DA6, empty skip 0x00521DAC..0x00521DB2, stem 0x00521DB6..0x00521ED0, info 0x00521ED2..0x00521F0A, mutex 0x00521F30..0x00521F4C), DispatchWorker<3>::Process 0x00521AFC..0x00521C0C, AddAnimationGroup 0x0058B4A2..0x0058B678, AnimationGroupContainer::DefineFromJson errors 0x0058B8B2..0x0058B972."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-051": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "readAsJson diagnostics: the Failed to read error and the Json reader errors debug line",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-x9-extraction.md section 2, G5a..G5c: readAsJson 0x0084C090..0x0084C15C (fopen, Reader::parse; false -> sErrorF DataPlatform.readAsJson \"Failed to read [%s]\" + errG/break, then sChanneledDebugF Unnamed \"Json reader errors [%s]\" when getFormattedErrorMessages is non-empty); stack limit throw 0x008E09AA..0x008E0D92."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-052": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Face-animation loader: dir walk, mtime gate, reserved name, sorted frames, name/stoi/negative errors that abort the animation, gap fill, grayscale 128x64 gate",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-x9-extraction.md section 3, F1..F20: ReadFaceAnimationDir 0x00580048 (walk 0x005800B0, reserved name 0x005801AE..0x0058040E, stat 0x005802B6..0x005804B2, mtime 0x005802FC..0x005805A8), LoadAnimationImageFrames 0x00580834 (sort 0x00580920, name checks 0x00580E34..0x00580F6E, stoi 0x00580A0E..0x00580A1C with LSDA pad 0x00580DB0, negative 0x00580B06..0x00580B6A, gap fill 0x00580A2C..0x00580AE4, imread grayscale 0x00580BE6..0x00580C16, size gate 0x00580C1A..0x00580CF8, threshold 0x00580C2C); eager at 0x0051F3CE."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-053": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "DrivingAnimationHandler and streamer handler teardown order",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4a: Robot dtor 0x00511524..0x00511542 (+0x4C handle vector released back to front 0x004EAEA2..0x004EAEBA; +8 vector 0x004F090C; handler deleted); handler subscriptions 0x5A, 0xB5, 0xB6 only with an external interface (0x004F072C); streamer SetupHandlers 0x0057A5A8 subscribes 0xAE, 0xAF, 0xAD, 0xC4, released 0xC4, 0xAD, 0xAF, 0xAE (0x0057AF6C); each release is the last owner."
       ],
       "live_path": true,
       "hardware_required": false

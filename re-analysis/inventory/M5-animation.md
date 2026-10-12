@@ -867,3 +867,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- | --- |
 | M5-048 — StartEngine's random_seed input and when it arrives | COMPATIBILITY_POLICY | 0x004ECBD4..0x004ECBDA, 0x004EADA2..0x004EADBE; RobotEngineManager.cs:435-442 (the app sends 0). The stack supplies 0 at engine start. From the B-M5-2 re-verify. |
 | M5-049 — host API waiters released at streamer destruction | COMPATIBILITY_POLICY | M5-037 teardown 0x0057AF48..0x0057AFDA, 0x0057B044..0x0057B0C2 has no waiter; stack API completion only, nothing on the wire. From B-M5-3 item 16. |
+
+
+## Extraction X-M5-9 (manager, 2026-10-12; research/20261012-m5-x9-extraction.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP | M5-050 group-file loader, M5-051 readAsJson diagnostics, M5-052 face-animation loader, M5-053 handler teardown order |
+| Evidence added, corrections | M5-001 (main-thread checks dead; terminate and .bin under M1-034), M5-008 (VERIFY tail), M5-011 (clock is MoodManager+0x130; SimpleMood is M7), M5-037 (order is M5-053), M5-044 (release read), M5-046 (order for every population; non-fresh unreachable) |
+| To COMPATIBILITY_POLICY (scope: SDK mode) | M5-020 (Code Lab only) |
+| Departure (operator, 2026-10-12) | M1-034 extended to the loaders' fatal paths and a malformed .bin |
+
