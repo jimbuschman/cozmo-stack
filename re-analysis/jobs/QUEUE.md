@@ -47,3 +47,4 @@ anything. BOARD.md is history; this file is the live queue.
 | # | job | status |
 | --- | --- | --- |
 | 1 | [R-M5-047](../research/requests/20261011-m5-047-stack.md) | done (8694b961) |
+| 2 | [R-M5-052](../research/requests/20261012-m5-052-face-png.md) | open (home PC research clone) |
