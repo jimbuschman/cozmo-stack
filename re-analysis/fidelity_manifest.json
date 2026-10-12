@@ -1855,7 +1855,7 @@
       "subsystem": "M5-animation",
       "title": "19 procedural-eye parameters and the ProceduralFace default (all 0 except EyeScaleX/Y 1, face scale 1, no distorter); SetFromFlatBuf rules",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C6 SetFromFlatBuf 0x005838D0..0x00583AAC; SetFacePosition 0x00583B20..0x00583BF8",
@@ -1867,7 +1867,7 @@
       "test": "M5AnimationTests.M5_002_K4_TheDefaultFace, M5AnimationTests.M5_002_C6_SetFromFlatBufRules, M5AnimationTests.M5_002_C2_TheCentreIsClampedBeforeTheScaleIsSet",
       "effect": "a face is built with different parameters",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): ProceduralFacePose() is the K4 default (both eyes 0 except EyeScaleX/Y = 1, face scale 1, centre 0, angle 0, no distorter). AnimationLibrary.DefineFace is SetFromFlatBuf onto a default face (C6): a leftEye/rightEye of other than 19 floats leaves that eye unchanged; each value goes through Clip, a NaN keeping the default's value (C9); faceAngle f1 (0); scaleX/Y f4/f5 (1), a negative one 0; the centre through SetFacePosition. Verify round 1 (2026-09-25, corrections C1..C3, gap4): SetFromFlatBuf calls SetFacePosition before the scale is set (C2), so the clamp uses the default scale 1. Verify round 2 (2026-09-25, correction C4): GetEyeBoundingBox's xmax, 96 + sx·(cxR + 15·scaleXR), mirrors xmin as verified against 0x00584568..0x00584636. Verify round 3 (2026-09-25): the NaN min/max difference in GetEyeBoundingBox is unreachable: 0 NaN/Inf among the 33,485 shipped ProceduralFace keyframes, JSON cannot encode NaN, Clip keeps the previous value on a NaN (C9), and every run-time face path stays finite (Interpolate's divisor is non-zero, LookAt divides by 5 or the 17/12 box values, Combine and the blink only add or multiply finite values).",
-      "unresolved": "built, awaiting strong verification: B-M5-1: WrongNumParams key/level/count/eye arguments on both eye readers. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-002 (logs: exact rows to be extracted). Only a caller-built clip containing a NaN would expose the MathF.Min/Max against compare-and-select difference; no production path produces one.",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): eye readers, scale, face angle, SetFacePosition, GetEyeBoundingBox, 16-entry clip table, WrongNumParams. Previous notes: built, awaiting strong verification: B-M5-1: WrongNumParams key/level/count/eye arguments on both eye readers. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-002 (logs: exact rows to be extracted). Only a caller-built clip containing a NaN would expose the MathF.Min/Max against compare-and-select difference; no production path produces one.",
       "hardware_required": false
     },
     {
@@ -1917,7 +1917,7 @@
       "subsystem": "M5-animation",
       "title": "Variability: RandIntInRange on the static keyframe RNG per GetStreamMessage, unclamped",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C2/C3 RandIntInRange(a-v, a+v) with strb truncation",
@@ -1928,7 +1928,7 @@
       "test": "M5AnimationTests.M5_005_C3_VariabilityIsNotClamped, AnimationGapTests.VariabilityIsAppliedToHeadAndLiftKeyframesAtStreamTime, M5AnimationTests.M5_005_R1_Mt19937AndGetNextDbl",
       "effect": "keyframe values vary differently",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): WithVariability draws RandIntInRange(v - var, v + var) (gap1: a + trunc(u·(b - a + 1)), EngineRandom) on the scheduler's keyframe RNG each time the keyframe's message is built, and the result is cast unchecked (sbyte for the head, byte for the lift): no clamp, so it truncates or wraps (C2, C3). The uniform source behind the draw is System.Random; the engine's mt19937 stream and seed are not in the inventory, so no sequence is claimed. Verify round 1 (2026-09-25, corrections C1..C3, gap4): IKeyFrame::sRNG is a ported std::mt19937 (Mt19937) seeded from OS entropy (RandomNumberGenerator for /dev/urandom, R2, C3); GetNextDbl = (d0 + d1·2^32)·2^-64 (R1). The scheduler's test seam (a given Random) seeds it instead.",
-      "unresolved": "built, awaiting strong verification: B-M5-1: RandIntInRange int32 width wraps before double multiplication; full-width regression. Previous notes: Settling pass 2026-10-11: DEFECT, fix per re-analysis/research/20261011-m5-settling-pass.md row M5-005. built, awaiting strong verification (R-FIX2, 2026-10-03): EngineRandom reads /dev/urandom ONCE for seed 0 and uses the word even if it is zero (0x0082F898..0x0082F8A4); tests through an injectable entropy source with an independent mt19937 (seed 0 gives 2357136044, 2546248239; seed 5489 gives 3499211612, 581869302). Still open: none known.",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): RandIntInRange in i32 before f64 (0x0082FA9E..AA), GetNextDbl, seed/entropy, head/lift draws 0x004F8C08/0x004F8F80. Previous notes: built, awaiting strong verification: B-M5-1: RandIntInRange int32 width wraps before double multiplication; full-width regression. Previous notes: Settling pass 2026-10-11: DEFECT, fix per re-analysis/research/20261011-m5-settling-pass.md row M5-005. built, awaiting strong verification (R-FIX2, 2026-10-03): EngineRandom reads /dev/urandom ONCE for seed 0 and uses the word even if it is zero (0x0082F898..0x0082F8A4); tests through an injectable entropy source with an independent mt19937 (seed 0 gives 2357136044, 2546248239; seed 5489 gives 3499211612, 581869302). Still open: none known.",
       "hardware_required": false
     },
     {
@@ -2165,7 +2165,7 @@
       "subsystem": "M5-animation",
       "title": "Audio alternative: r = RandDbl(1), first with lower <= r <= upper skipping |p| < 1e-5, else nothing",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
         "C14 0x004F9AEC..0x004F9CBE, 0x004F9DAC..0x004F9DFC",
@@ -2177,7 +2177,7 @@
       "id": "M5-017",
       "effect": "a different sound plays",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AudioAnimation.Start draws r = (float)RandDbl(1) on the keyframe RNG and takes ChooseAlternative: the first alternative with lower <= r <= upper over the cumulative probabilities, skipping |p| < 1e-5; none → nothing plays (C14). Loaded keyframes always carry N probabilities summing to at most 1 (C13); ChooseAlternative's 1/N fallback is only for keyframes built in code with other probabilities. Verify round 1 (2026-09-25, corrections C1..C3, gap4): The alternative draw is on sRNG, the entropy-seeded mt19937 (R2).",
-      "unresolved": "built, awaiting strong verification: B-M5-1: all audio-reference draws at InitStream in authored order, u16 event counter, selected nonzero event list; all three debug sites and empty-ref error; M6-028 consumer handoff. Previous notes: Settling pass 2026-10-11: DEFECT, fix per re-analysis/research/20261011-m5-settling-pass.md row M5-017. built, awaiting strong verification (R-FIX2, 2026-10-03): the audio-alternative draw inherits the M5-005 fix (single entropy read, zero word used). Still open: none known.",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): draw and selection 0x004F9AEC..0x004F9CBE (1e-5 = 0x3727C5AC, inclusive test, signed-byte return, three debug lines, empty-references error); InitStream draws 0x00596898..0x00596914; consumer M6-028, readiness M6-027. Previous notes: built, awaiting strong verification: B-M5-1: all audio-reference draws at InitStream in authored order, u16 event counter, selected nonzero event list; all three debug sites and empty-ref error; M6-028 consumer handoff. Previous notes: Settling pass 2026-10-11: DEFECT, fix per re-analysis/research/20261011-m5-settling-pass.md row M5-017. built, awaiting strong verification (R-FIX2, 2026-10-03): the audio-alternative draw inherits the M5-005 fix (single entropy read, zero word used). Still open: none known.",
       "hardware_required": false
     },
     {
@@ -2251,8 +2251,8 @@
         "gap3 B1..B3 ellipse2Poly 0x00043C48 (SinTable 0x000E7910, vcvtr ties-to-even)",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-021 (Opus settling pass, manager-adopted 2026-10-11)."
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Settling pass 2026-10-11 (ruling 4.2): the bionic tanf/cosf part is EQUIVALENT_IMPLEMENTATION (unshipped system library); the OpenCv310 port still needs re-verification. The trig in DrawEye and GetTransformationMatrix is MathF.Tan/Cos/Sin (bionic libm may differ in the last ulp, which can move a rounded point at a tie); the float operation order of the point transform is m00·x + m01·y + m02. Rounding assumes the default FPSCR mode (MD2).",
+      "status": "EQUIVALENT_IMPLEMENTATION",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): the OpenCv310 port matches stock 3.1.0 and the shipped libopencv_imgproc (edge dx 0x00042B8E..0x00042B94; fillConvexPoly, LineIterator 4, clipLine, ellipse2Poly ties-to-even, warpAffine nearest); the point transform holds (0x0053A8AC..0x0053A90C). Boundary: only the bionic tanf/cosf/sinf calls are EQUIVALENT_IMPLEMENTATION (unshipped system library, ruling 4.2); everything else is exact. Previous notes: Settling pass 2026-10-11 (ruling 4.2): the bionic tanf/cosf part is EQUIVALENT_IMPLEMENTATION (unshipped system library); the OpenCv310 port still needs re-verification. The trig in DrawEye and GetTransformationMatrix is MathF.Tan/Cos/Sin (bionic libm may differ in the last ulp, which can move a rounded point at a tie); the float operation order of the point transform is m00·x + m01·y + m02. Rounding assumes the default FPSCR mode (MD2).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5AnimationTests.M5_021_A4_A9_FillConvexPolyLine4, M5AnimationTests.M5_021_B3_Ellipse2PolyRoundsTiesToEven, M5AnimationTests.M5_021_A9_A10_LineIteratorAndClipLine, ProceduralFaceRendererTests",
@@ -6138,8 +6138,8 @@
         "Handoff (overlap ruling 2026-10-10): AbortAll's order and result (0x0051194C..0x0051198C) are M4-026's; this record keeps Robot::SendAbortAnimation, called at 0x00511972 (body 0x00517E0A)",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-022 (Opus settling pass, manager-adopted 2026-10-11)."
       ],
-      "status": "IMPLEMENTATION_GAP",
-      "unresolved": "built, awaiting strong verification: B-M5-1: Dispose calls M4-026 AbortAll and removes unsupported extra DriveWheels(0); inherited M12/M13 recipients remain outside M5. Previous notes: Settling pass 2026-10-11 (ruling 4.3): Dispose calls M4-026's AbortAll; DriveWheels(0) is removed (no approved departure). Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): overlap ruling: AbortAll is M4-026's (built); PathComponent::Abort/ClearPath M13-029's, AbortDocking M12-018's, StopAllMotors M4-015's. The text below that A37 is not run at teardown is stale: M4-026 runs AbortAll on removal. Before: PathComponent::Abort and AbortDocking (A37) are M12/M13's and not run at teardown. The extra DriveWheels(0) after StopAllMotors is this stack's (PROJECT_STATE decision note), not the engine's.",
+      "status": "EXACT_SOURCE",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): SendAbortAnimation reliable=1 hot=0 (0x00517E02..0x00517E0A) via M4-026; ~AnimationStreamer owned by M5-037/M5-044. Previous notes: built, awaiting strong verification: B-M5-1: Dispose calls M4-026 AbortAll and removes unsupported extra DriveWheels(0); inherited M12/M13 recipients remain outside M5. Previous notes: Settling pass 2026-10-11 (ruling 4.3): Dispose calls M4-026's AbortAll; DriveWheels(0) is removed (no approved departure). Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): overlap ruling: AbortAll is M4-026's (built); PathComponent::Abort/ClearPath M13-029's, AbortDocking M12-018's, StopAllMotors M4-015's. The text below that A37 is not run at teardown is stale: M4-026 runs AbortAll on removal. Before: PathComponent::Abort and AbortDocking (A37) are M12/M13's and not run at teardown. The extra DriveWheels(0) after StopAllMotors is this stack's (PROJECT_STATE decision note), not the engine's.",
       "hardware_required": false,
       "live_path": true,
       "test": "M5AnimationTests.M5_022_A37_TeardownSendsAbortAnimationThenStopAllMotors, M5AnimationTests.M5_007_C14_AFailedOrThrowingSendIsRetriedAndCountedOnce"
@@ -6516,9 +6516,9 @@
       ],
       "effect": "animations start differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): InitStreamLocked is A10..A12: Animation::Init (the iterators to begin); +0xA0 = tag; +0x80 = now; both _firstScanLine values toggled on a new name or when now + GetLastKeyFrameEndTime - +0x1D4 > 30000 (unsigned), +0x1D4 = now; +0x1C8 = the name; +0x84 = +0x80; a non-empty buffer dropped with SendBufferNotEmpty; endSent = IsEmpty, startSent = 0; the audio animation created; RemoveKeepFaceAlive(99) for a non-live animation. Nothing is sent. Verify round 1 (2026-09-25, corrections C1..C3, gap4): GetLastKeyFrameEndTime is gap4 E1 (StreamAnimation.LastKeyFrameEndTime: the unsigned max over non-empty tracks of the last element's trigger + duration for Head, Lift, Body, TurnTo and Backpack, the trigger for the others). The _firstScanLine values are process statics shared by every streamer and not reset with a robot (ScanLineState.Process, M3 B3). The audio animation it creates is the M6 stand-in described in M5-018.",
-      "unresolved": "built, awaiting strong verification: B-M5-3: CozmoAudio.Play buffered entries carry animAudioSample, so ClearSendBuffer emits the keyed Clearing unsent log (0x0057B082); no untyped-test-message MISSING on that production path. InitStream behavior unchanged. Previous build history (superseded where above): B-M5-1: InitStream info precedes per-message debug clear; drops all buffered source messages without dispatch; M6 construction/post-construction gaps remain. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-024 (logs: exact rows to be extracted).",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): InitStream 0x0057B674..0x0057B800; Animation::Init returns 0 (0x00577C14); 30000 from 0x0058D8BC; SendBufferNotEmpty gated on +0x94 before ClearSendBuffer. Previous notes: built, awaiting strong verification: B-M5-3: CozmoAudio.Play buffered entries carry animAudioSample, so ClearSendBuffer emits the keyed Clearing unsent log (0x0057B082); no untyped-test-message MISSING on that production path. InitStream behavior unchanged. Previous build history (superseded where above): B-M5-1: InitStream info precedes per-message debug clear; drops all buffered source messages without dispatch; M6 construction/post-construction gaps remain. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-024 (logs: exact rows to be extracted).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5ScanLineTests.M5_024_A11_E1_TheScanLineToggleRule, M5AnimationTests.M5_024_A12_TheStartAndEndFlags, M5AnimationTests.M5_024_A12_L7_ANonLiveInitStreamRemovesTheDart, M3DeviceTests.M3_013_A12_AReplacementDropsTheLeftovers, M5ScanLineTests.M5_024_E1_GetLastKeyFrameEndTime, M5BuilderCorrectionsTests.AudioPlayBufferUsesAudioSampleTagInClearLogs"
@@ -6599,9 +6599,9 @@
       ],
       "effect": "the idle face behaves differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): Advance's keep-alive block is A31: only once +0x88 > 0 (the ctor's -FLT_MAX; set after each streaming UpdateStream and, B3, after each idle or live-idle UpdateStream); TrackLayerComponent.Update (the glitch, G1); with nothing streaming and the idle the live animation, or no idle and now - +0x88 > +0x1C0 (0.5 s, ResetKeepFaceAliveLastStreamTimeout; KeepAliveTimeoutSec for Hiccup, M7, A32): the neutral replay after an abort to nothing, the default parameters once (A34, LiveIdleParams) and FaceLayerManager.KeepFaceAlive (A33, K4..K6: both timers -60; the dart when EyeDartMaxDistance > 0, its timer <= 0 and no layer or only its own: GenerateEyeShift (K1, LookAt K3), AddToPersistentLayer or a new single-keyframe \"KeepAliveEyeDart\" persistent layer, the timer RandIntInRange(p20, p21); the blink when its timer <= 0: GenerateBlink (K7..K9: the 7-frame table plus the restore keyframe, the drawer's _firstScanLine flipped at generation) as the \"Blink\" layer, the timer RandIntInRange(min, max) or (7500, 30000) with BadBlinkSpacingParams). While any layer exists StreamLayers streams under one Start with no End, a FaceImage every frame once a layer face is due (Q1.7..Q1.10). The draws are on the context RNG, an entropy-seeded mt19937 (R3, C3). Verify round 1 (2026-09-25, corrections C1..C3, gap4): The keep-alive runs under the live idle too, since its UpdateStream now sets +0x88 (B3). The dart, blink and glitch draws are on the context RNG, an entropy-seeded mt19937 (R3).",
-      "unresolved": "built, awaiting strong verification: B-M5-1: BadBlinkSpacingParams exact max/min signed integers and recovery. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-028 (logs: exact rows to be extracted).",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): KeepFaceAlive 0x0058D374..0x0058D558: dart gate, vcvt.s32 spacing draws, signed max<=min warning, 7500/30000 fallback 0x0058D540. Previous notes: built, awaiting strong verification: B-M5-1: BadBlinkSpacingParams exact max/min signed integers and recovery. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-028 (logs: exact rows to be extracted).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5AnimationTests.M5_028_A31_Q1_KeepAliveAfterTheFirstStreamAndHalfASecond, M5AnimationTests.M5_028_K7_K9_TheBlink, M5AnimationTests.M5_028_K1_K3_TheDartKeyframe, M5AnimationTests.M5_028_A34_TheDefaultParameters, M5AnimationTests.M5_027_B3_AnIdleStreamSetsTheLastStreamTime"
@@ -6620,9 +6620,9 @@
       ],
       "effect": "layered faces behave differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): TrackLayerManager is gap1 L1..L6 and gap2 Q1.2..Q1.5: tags 1..255 skipping 0 and used ones; AddLayer copies the track live, start as given, stream 0, returns 0; AddPersistentLayer non-live, start and stream 0, returns the tag; AddToPersistentLayer adds trigger + last trigger + 33; ApplyLayersToFrame in ascending tag order, stream += 33, a persistent layer at its end pinned to its last keyframe with its time frozen (an empty one warns and loses its persistent flag), a non-persistent one removed after the loop, the OR of the results. FaceLayerManager.RemovePersistentLayer is L7/Q1.11/gap3 K5 (a live \"Remove\"+name layer: a copy of the current keyframe at 0 when dur >= 1, then a default face at dur). HaveLayersToSend is audio OR backpack OR face (Q1.1); ApplyLayersToAnim sets the frame flags in the order audio, backpack, face (Q1.6).",
-      "unresolved": "built, awaiting strong verification: B-M5-1: TooManyFrames emitted with instantiated native type name, exact empty-persistent and removal log sites; copied tracks retain log metadata. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-029 (logs: exact rows to be extracted).",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): EmptyPersistentLayer 0x0058E6C0..0x0058E6FC, pinned stream time, RemovePersistentLayer info (size-1) before removal, TooManyFrames > 1000, the 11 type names. Previous notes: built, awaiting strong verification: B-M5-1: TooManyFrames emitted with instantiated native type name, exact empty-persistent and removal log sites; copied tracks retain log metadata. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-029 (logs: exact rows to be extracted).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5AnimationTests.M5_029_L1_L7_TheLayerManager, M5AnimationTests.M5_024_A12_L7_ANonLiveInitStreamRemovesTheDart, M5FixRowsTests.M5_029_EveryAuthoredTrackCapacitySiteNamesItsNativeKeyframeType"
@@ -6703,9 +6703,9 @@
       ],
       "effect": "event and heading keyframes behave differently",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): Event (C15): event_id through the AnimEvent names, an unrecognised one rejecting the keyframe at load; streamed once as 0x95 {u8 AnimEvent}. RecordHeading (C19): 0x91, empty, once. TurnToRecordedHeading (C19, S2): duration (negative → INT_MAX) and the fields with their defaults at load, CheckRotationSpeed (speed ±300, accel and decel ±13636); the track held for its duration (IsDoneHelper). Verify round 1 (2026-09-25, corrections C1..C3, gap4): TurnToRecordedHeading is sent as 0x92 at counter 0 (gap4 T2): 13 bytes, s16 offset_deg, s16 speed, s16 accel, s16 decel, u16 tolerance, u16 numHalfRevs, u8 useShortestDir (RobotAnimationSink.ToMessage); IsDone holds the track until counter >= duration.",
-      "unresolved": "built, awaiting strong verification: B-M5-1: unknown event warning and three speed/accel/decel clamp infos on checked common helpers. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-033 (logs: exact rows to be extracted).",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): three TurnTo clamp infos (> 300, >= 13637, |s16| args, 13636.363281) and the Event warning, fix rows section 19. Previous notes: built, awaiting strong verification: B-M5-1: unknown event warning and three speed/accel/decel clamp infos on checked common helpers. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-033 (logs: exact rows to be extracted).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5AnimationTests.M5_033_C15_C19_S2_EventAndTurnToAtLoad, M5AnimationTests.M5_025_A16_TheFrameOrder, M5AnimationTests.M5_033_T1_T2_TurnToRecordedHeadingBytes"
@@ -6722,9 +6722,9 @@
       ],
       "effect": "a trigger plays a different group",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): AnimationTriggerResponses is gap1 C7: every \"*.json\" under assets/animationGroupMaps, recursively; a file used only if it parses and has \"Pairs\"; CladEvent → AnimName inserted only when the key is absent (the first wins), no enum check; GetResponse(trigger) looks up EnumToString(trigger) with an info log, or warns \"Animation requested for unknown response '%s'\" and returns \"\". AnimationLibrary.GetAnimationForTrigger uses it (D8). (Behavior/AnimationTriggerMap, the M7 callers' map, is separate and keeps its own rules.)",
-      "unresolved": "built, awaiting strong verification: B-M5-1: found Animations info key and unknown warning qualified key with double colon. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-034 (logs: exact rows to be extracted).",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): Found info (Animations, key 0xBFEC4A) and the :: warning (0x0067088A/0x006708E2); trigger ordinals. Previous notes: built, awaiting strong verification: B-M5-1: found Animations info key and unknown warning qualified key with double colon. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-034 (logs: exact rows to be extracted).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5AnimationTests.M5_034_C7_TheTriggerMap"
@@ -6743,9 +6743,9 @@
       ],
       "effect": "tracks are suppressed that the engine would send",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): The streamer has no reference to enabledAnimTracks and no lock check: every track of a frame is buffered (B2, B3); track locks are only DisableAnimTracks/EnableAnimTracks (M4-014). Verify round 1 (2026-09-25, corrections C1..C3, gap4): B4: the only streamer-side lock checks are UpdateLiveAnimation's (AreAnyTracksLocked 4/2/1, gap4 L3), now built (M5-030).",
-      "unresolved": "built, awaiting strong verification: B-M5-1: live-idle movement locks remain read behind API-supplied PushIdleAnimation; no new lock bypass. Previous notes: Settling pass 2026-10-11: B1..B3 hold; B4 waits on M5-030. Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. B4 (the live idle checks the MovementComponent locks) rests on M5-030 (IMPLEMENTATION_GAP) and is disabled on the only production route by the StreamLive seam.",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): B4 lock checks AreAnyTracksLocked(4/2/1) at 0x0057D636/0x0057D664/0x0057D69E; the rest of UpdateLiveAnimation is M5-030. Previous notes: built, awaiting strong verification: B-M5-1: live-idle movement locks remain read behind API-supplied PushIdleAnimation; no new lock bypass. Previous notes: Settling pass 2026-10-11: B1..B3 hold; B4 waits on M5-030. Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. B4 (the live idle checks the MovementComponent locks) rests on M5-030 (IMPLEMENTATION_GAP) and is disabled on the only production route by the StreamLive seam.",
       "hardware_required": false,
       "live_path": true,
       "test": "M5AnimationTests.M5_025_A16_TheFrameOrder, M5AnimationTests.M5_030_L1_L8_TheLiveIdleGeneratesItsKeyframes"
@@ -9800,8 +9800,8 @@
       "id": "M5-039",
       "subsystem": "M5-animation",
       "title": "Ready-to-stream animation consumer lifecycle",
-      "location": "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "EXACT_SOURCE",
       "effect": "Animation stream can start before sync/readiness or fail to resume after ready write.",
       "provenance": "M1 state writes known; downstream consumers untraced.",
       "authority": "libcozmoEngine.so 3.4.0-1204 ready-byte writer and SyncTimeAck.",
@@ -9810,17 +9810,17 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-039 (Opus settling pass, manager-adopted 2026-10-11).",
         "re-analysis/research/20261011-m5-fix-rows.md section 21 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
-      "unresolved": "built, awaiting strong verification: B-M5-1: ready-and-synced gate, Update/UpdateStream/StreamLayers result codes and nonzero Robot.Update.AnimationStreamer warning; M3 send result interface unchanged. Previous notes: IMPLEMENTATION_GAP (ruling 4.4): Robot::Update gates AnimationStreamer::Update on robot+0x2A and +0x29; return the results of Update/UpdateStream/StreamLayers and log Robot.Update.AnimationStreamer per re-analysis/research/20261011-m5-settling-pass.md row M5-039.",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): U0 0x0051410C..0x0051411E, U1 warning, U2..U5 (StreamLayers 0x0057C4E0..0x0057C69E); SendMessage failure is always 1 (0x0069DD26). Previous notes: built, awaiting strong verification: B-M5-1: ready-and-synced gate, Update/UpdateStream/StreamLayers result codes and nonzero Robot.Update.AnimationStreamer warning; M3 send result interface unchanged. Previous notes: IMPLEMENTATION_GAP (ruling 4.4): Robot::Update gates AnimationStreamer::Update on robot+0x2A and +0x29; return the results of Update/UpdateStream/StreamLayers and log Robot.Update.AnimationStreamer per re-analysis/research/20261011-m5-settling-pass.md row M5-039.",
       "hardware_required": false,
       "live_path": true,
-      "test": "Animation ready-to-stream source-derived case after extraction."
+      "test": "M3DeviceTests.M3_013_CD12_TheEngineTickRunsTheStreamerOnlyWhileStreamingIsOpen"
     },
     {
       "id": "M5-040",
       "subsystem": "M5-animation",
       "title": "ProceduralFace clip warning: ClipWarnFcn (ProceduralFace.Clip.OutOfRange) and where it is enabled",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/ProceduralFace.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "effect": "Whether clamped face parameters log a warning.",
       "provenance": "Opus settling pass (2026-10-11), manager-adopted.",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
@@ -9828,7 +9828,7 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 2 N1: ClipWarnFcn 0x0105AB20; EnableClippingWarning 0x00584B48; logger 0x00584A41 (0x00584A78; 0x00584ACC/0x00584AEC); no-op 0x00584BE5; Clip call 0x00584880.",
         "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): CW1-CW5, CWU: Enable(0) 0x0051F8A2 before loading, Enable(1) 0x0051F9CE after DispatchWorker::Process 0x0051F9C8; no other caller; unmapped parameter skips clipping 0x00584822/0x0058484E."
       ],
-      "unresolved": "built, awaiting strong verification: B-M5-3: NaN unconditionally warns with ProceduralFace.Clip.NaN / Returning original value instead of NaN for %s, EnumToString(param), then retains stored value (0x005848B8..0x00584904). Clipping-warning enable and warning routing are process-global, visible on worker threads with no ExecutionContext flow. Managed logger scopes are removed by identity so overlapping disposal cannot restore a stale sink. Existing clamp enable gates unchanged. Previous build history (superseded where above): B-M5-1: process-global warning enabled initially, off during load and restored only on normal return; both compare-and-select clamp warnings and unmapped-parameter bypass. Previous notes: IMPLEMENTATION_GAP: build ClipWarnFcn exactly: off during clip loading, on afterwards; ProceduralFace.Clip.OutOfRange on both clamp branches (0x00584880, 0x005848AC); no clipping for a parameter outside the range map.",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): Clip 0x005847A8..0x00584908: NaN skips both clamps then warns unconditionally; logger args (name, value, min, max) 0x00584A40..0x00584A78. Previous notes: built, awaiting strong verification: B-M5-3: NaN unconditionally warns with ProceduralFace.Clip.NaN / Returning original value instead of NaN for %s, EnumToString(param), then retains stored value (0x005848B8..0x00584904). Clipping-warning enable and warning routing are process-global, visible on worker threads with no ExecutionContext flow. Managed logger scopes are removed by identity so overlapping disposal cannot restore a stale sink. Existing clamp enable gates unchanged. Previous build history (superseded where above): B-M5-1: process-global warning enabled initially, off during load and restored only on normal return; both compare-and-select clamp warnings and unmapped-parameter bypass. Previous notes: IMPLEMENTATION_GAP: build ClipWarnFcn exactly: off during clip loading, on afterwards; ProceduralFace.Clip.OutOfRange on both clamp branches (0x00584880, 0x005848AC); no clipping for a parameter outside the range map.",
       "hardware_required": false,
       "live_path": true,
       "test": "M5BuilderCorrectionsTests.M5_040_NaNLogsWhileClippingWarningsAreDisabledAndAcrossThreads"
@@ -9838,7 +9838,7 @@
       "subsystem": "M5-animation",
       "title": "UpdateStream DeviceAudio wall-clock step: IsTimeToPlay(+0x80, now), PlayOnDevice, MoveToNextKeyFrame",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "effect": "A clip with a DeviceAudio keyframe never runs out of frames in the stack.",
       "provenance": "Opus settling pass (2026-10-11), manager-adopted.",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
@@ -9846,10 +9846,10 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 1 row M5-001 and section 2 N2: 0x0057C876..0x0057C8E0.",
         "re-analysis/research/20261011-m5-fix-rows.md section 22 (Opus fix rows, manager-adopted 2026-10-11)."
       ],
-      "unresolved": "built, awaiting strong verification: B-M5-1: one due DeviceAudio keyframe per UpdateStream before budget/frame work using unsigned wall-clock addition; PlayOnDevice checked BX LR; device playback belongs to M6. Previous notes: IMPLEMENTATION_GAP: build; the device-audio playback itself is M6's, named as a handoff.",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): DeviceAudio step 0x0057C86C..0x0057C8E0: initialised gate, u32 IsTimeToPlay(+0x80, now), one keyframe, before UpdateAmountToSend. Previous notes: built, awaiting strong verification: B-M5-1: one due DeviceAudio keyframe per UpdateStream before budget/frame work using unsigned wall-clock addition; PlayOnDevice checked BX LR; device playback belongs to M6. Previous notes: IMPLEMENTATION_GAP: build; the device-audio playback itself is M6's, named as a handoff.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M5FixRowsTests.DA1ToDA4_DeviceAudioConsumesAtMostOneBeforeTheBudgetEvenWhenSendingFails"
     },
     {
       "id": "M5-042",
@@ -9909,7 +9909,7 @@
       "subsystem": "M5-animation",
       "title": "Which RandomGenerator AnimationGroupContainer+0x28 is (the stream behind the group draw)",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationLibrary.cs",
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "effect": "Which animation a weighted group draw picks.",
       "provenance": "Opus fix-row extraction (2026-10-11); Codex last reads R45-1..R45-5 (2026-10-11), manager spot-check of 0x004EA764..0x004EA79A, 0x0051EDAE..0x0051EDBE, 0x0058B484..0x0058B49E.",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
@@ -9917,7 +9917,7 @@
         "re-analysis/research/20261011-m5-last-reads.md R45-1..R45-5: CozmoContext ctor allocates RandomGenerator(0) at context+0x14 (0x004EA764..0x004EA776) and builds RobotDataLoader with the context (0x004EA790..0x004EA79A); the loader passes context+0x14 to AnimationGroupContainer (0x0051EDB6..0x0051EDBA), stored at +0x28 (0x0058B49E), copied to each group+0 (0x0058B4B8, 0x0058A5C2); StartEngine reseeds the same object via CozmoContext::SetRandomSeed (0x004ECBD4..0x004ECBDA, 0x004EADA2..0x004EADBE); named SetSeed emits event app.random_seed (0x0082F8CC..0x0082F914; kv/key/fmt 0x0082F990/0x0082F998/0x0082F9A8).",
         "re-analysis/inventory/M5-animation.md R3 (same chain, already cited)."
       ],
-      "unresolved": "built, awaiting strong verification: B-M5-2 implements adopted R45-1..R45-5: one engine-owned context generator shared with the scheduler and library; startup reseeds that same instance (zero draws one fresh entropy word, including zero) and emits source event app.random_seed, $data=CozmoContext, %u effective seed. Constructor seeding is silent. Actual entropy and later stream position remain runtime (S45-1).",
+      "unresolved": "Settled 2026-10-12 by the final Opus pass (re-analysis/research/20261012-m5-final-settling.md): SetSeed 0x0082F860..0x0082F93C (zero takes one random_device word, mt19937 seeding, app.random_seed event); one shared instance; the input value is M5-048. Previous notes: built, awaiting strong verification: B-M5-2 implements adopted R45-1..R45-5: one engine-owned context generator shared with the scheduler and library; startup reseeds that same instance (zero draws one fresh entropy word, including zero) and emits source event app.random_seed, $data=CozmoContext, %u effective seed. Constructor seeding is silent. Actual entropy and later stream position remain runtime (S45-1).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5LastReadsTests.R45_5_StartForwardsNonzeroSeedAndEmitsTheNamedEvent, M5LastReadsTests.R45_4_5_EachStartTakesOneFreshEntropyWordIncludingZero, M5LastReadsTests.R45_1_3_R46_7_8_ShippedLoadUsesSharedInstanceAndAllFourResultsInOrder"

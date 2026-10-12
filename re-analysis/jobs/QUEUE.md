@@ -39,6 +39,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 7 | [B-M5-5](B-M5-5.md) | done (244828ac); re-verify FAIL (2: OFFWHITE alpha, fixed by manager; JSON empty() gate), see B-M5-7 |
 | 8 | [B-M5-6](B-M5-6.md) | done (d9b59e53); re-verify PASS. Queued: M4-036 unresolved must say the constructor loads the backpack file list from its own walk, not the collect's type-3 vector (0x0052013C) |
 | 9 | [B-M5-7](B-M5-7.md) | done (028f038d); re-verify FAIL (1: non-object JSON root got EmptyFile), manager fixed. Queued: JsonClipLoader.Load is a test helper, mark it |
+| 10 | [B-M5-8](B-M5-8.md) | open (M5 final settling pass defects) |
 
 ## Research lane (clone `cozmo-stack-codex`)
 

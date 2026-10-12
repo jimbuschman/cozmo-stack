@@ -1314,6 +1314,7 @@ public sealed class AnimationScheduler
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return 1;
         }
+        // fidelity: M5-041
         // M5-041 DA1–DA4: one device keyframe on the wall timestamp, before budgets; PlayOnDevice is BX LR (M6 handoff).
         uint wall = unchecked((uint)_nowMs);
         if (anim.DeviceAudio.Current is { } device && unchecked((uint)_startMs + device.Trigger) <= wall)
