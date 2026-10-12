@@ -240,9 +240,10 @@ public sealed class FistBumpBehavior : SteppedBehavior
                 if (now - _idleStart > SettleWarnSec)                                                // 0x005F2168 -> 0x005F21AC
                 {
                     // 0x005F2178: event "BehaviorFistBump.UpdateInternal.MotorSettleTimeTooLong" (0x005F25EC), format "%f" (0x005F2624), the elapsed time as a double
-                    string warn = $"warning: BehaviorFistBump.UpdateInternal.MotorSettleTimeTooLong: {((double)(now - _idleStart)).ToString("F6", System.Globalization.CultureInfo.InvariantCulture)}";
+                    string text = ((double)(now - _idleStart)).ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
+                    string warn = "warning: BehaviorFistBump.UpdateInternal.MotorSettleTimeTooLong: " + text;
                     Log(warn);
-                    Context.Robot.Engine.Log(warn);
+                    Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "BehaviorFistBump.UpdateInternal.MotorSettleTimeTooLong", text);
                 }
                 break;
 

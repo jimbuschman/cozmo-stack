@@ -23,6 +23,7 @@ internal sealed class StreamTrack<T> where T : class, IStreamKeyframe
 
     public bool IsLive { get; set; }
     internal Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
     internal string NativeTypeName { get; set; } = "";
     public int Count => _frames.Count;
     public bool IsEmpty => _frames.Count == 0;
@@ -55,7 +56,7 @@ internal sealed class StreamTrack<T> where T : class, IStreamKeyframe
     /// <summary>AddKeyFrameToBackHelper (L4): false (TooManyFrames) above 1000.</summary>
     public bool AddKeyFrameToBack(T kf)
     {
-        if (_frames.Count > 1000) { Log?.Invoke($"warning: Animation.Track.AddKeyFrameToBack.TooManyFrames: There are already {_frames.Count} frames in track of type {NativeTypeName}. Refusing to add more."); return false; }
+        if (_frames.Count > 1000) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "Animation.Track.AddKeyFrameToBack.TooManyFrames", $"There are already {_frames.Count} frames in track of type {NativeTypeName}. Refusing to add more."); return false; }
         _frames.Add(kf);
         if (_frames.Count == 1) _cur = 0;
         return true;
@@ -81,7 +82,7 @@ internal sealed class StreamTrack<T> where T : class, IStreamKeyframe
     /// <summary>A copy of the track with its iterator on the first keyframe (AddLayer copies the track, L2).</summary>
     public StreamTrack<T> CopyFromBegin(Func<T, T> copy)
     {
-        var t = new StreamTrack<T> { IsLive = IsLive, Log = Log, NativeTypeName = NativeTypeName };
+        var t = new StreamTrack<T> { IsLive = IsLive, Log = Log, SourceLog = SourceLog, NativeTypeName = NativeTypeName };
         foreach (var f in _frames) t._frames.Add(copy(f));
         t._cur = 0;
         return t;
@@ -213,6 +214,11 @@ internal sealed class StreamAnimation
         set { foreach (var t in KeyframeTracks) t.Log = value; ProcFace.Log = value; _log = value; }
     }
     private Action<string>? _log;
+    private SourceLogSink? _sourceLog;
+    internal SourceLogSink? SourceLog
+    {
+        set { foreach (var t in KeyframeTracks) t.SourceLog = value; ProcFace.SourceLog = value; _sourceLog = value; }
+    }
     public void Clear() { foreach (var t in KeyframeTracks) t.Clear(); ProcFace.Clear(); }
 
     public string Name { get; }
@@ -321,7 +327,7 @@ internal sealed class StreamAnimation
     {
         bool ok = AddLiveCore(k);
         if (!ok && k is FaceKeyframe or FaceAnimationKeyframe or BodyKeyframe or LiftKeyframe or HeadKeyframe)
-        { _log?.Invoke($"error: Animation.AddKeyFrameToBack.Failed: AnimationName:{Name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
+        { SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Error, null, "Animation.AddKeyFrameToBack.Failed", $"AnimationName:{Name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
         return ok;
     }
 

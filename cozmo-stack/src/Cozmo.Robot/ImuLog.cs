@@ -39,12 +39,11 @@ internal sealed class ImuDiagnosticLog
     internal static string DefaultPersistentPath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cozmo-stack");
 
-    private void Log(string line) => _robot.Engine.Log(line);
 
     // G1: sChanneledInfoF (PLT 0x004A505C) with channel "Unnamed" (0x00BE3FEC), the event name and the format's text, in the
     // stack's "info: [channel] event: text" convention. OpeningLogFile's format is "%s" with the file name; ClosingLogFile's
     // format is empty (0x00BE3F00). The composition of the final line inside sChanneledInfoF is outside the inventory.
-    private void LogInfo(string eventName, string text) => Log($"info: [Unnamed] {eventName}: {text}");
+    private void LogInfo(string eventName, string text) => _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", eventName, text);
 
     /// <summary>
     /// L5/L6: kP_IMU_LOGS_DIR is "imu_logs" in scope 2; the path is the DataPlatform string at +0xC, a '/' because the
@@ -95,7 +94,7 @@ internal sealed class ImuDiagnosticLog
             string dir = LogsDirectory();
             if (!EngineFileUtils.CreateDirectory(dir))                            // L8: the result must be 1
             {
-                Log($"error: Robot.HandleImuData.CreateDirFailed: {dir}");
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "Robot.HandleImuData.CreateDirFailed", $"{dir}");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();   // continues to build and open the file
             }
             // L9: directory + "/imuLog_" + decimal unsigned counter + ".dat"; no existence check, no prior close.
@@ -132,7 +131,7 @@ internal sealed class ImuDiagnosticLog
             string dir = LogsDirectory();
             if (!EngineFileUtils.CreateDirectory(dir))                            // L17: a zero result
             {
-                Log($"error: Robot.HandleImuRawData.CreateDirFailed: {dir}");
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "Robot.HandleImuRawData.CreateDirFailed", $"{dir}");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();   // continues with the filename search
             }
             string name;

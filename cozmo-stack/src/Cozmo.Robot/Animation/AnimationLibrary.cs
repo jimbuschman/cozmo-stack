@@ -97,12 +97,13 @@ public sealed class AnimationGroup
     }
 
     internal Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
     internal AnimationGroupEntry? GetAnimationName(EngineRandom rng, SimpleMood mood, double? nowSec, double? headRad, bool strict)
     {
         float time = (float)(nowSec ?? 0), head = (float)(headRad ?? 0);
         while (true)
         {
-            Log?.Invoke($"debug: [Unnamed] AnimationGroup.GetAnimation: getting animation from group '{Name}', simple mood = '{mood}'");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "AnimationGroup.GetAnimation", $"getting animation from group '{Name}', simple mood = '{mood}'");
             bool anyMood = false;
             float sum = 0;
             var candidates = new List<AnimationGroupEntry>();
@@ -121,18 +122,18 @@ public sealed class AnimationGroup
                 var pick = candidates[^1];
                 foreach (var e in candidates) { r -= e.Weight; if (r < 0) { pick = e; break; } }
                 pick.Container.SetCooldown(pick.Name, pick.CooldownSec + (double)time);
-                Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.Found: Group '{Name}' returning animation name '{pick.Name}'");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationGroup.GetAnimation.Found", $"Group '{Name}' returning animation name '{pick.Name}'");
                 return pick;
             }
             if (mood != SimpleMood.Default)
             {
-                Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.NoMoodMatch: No animations from group '{Name}' selected matching mood '{mood}', trying with default mood");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationGroup.GetAnimation.NoMoodMatch", $"No animations from group '{Name}' selected matching mood '{mood}', trying with default mood");
                 mood = SimpleMood.Default;
                 continue;
             }
             if (anyMood && !strict)
             {
-                Log?.Invoke("info: [Animations] AnimationGroup.GetAnimation.AllOnCooldown: All animations are on cooldown. Selecting the one closest to being finished");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationGroup.GetAnimation.AllOnCooldown", "All animations are on cooldown. Selecting the one closest to being finished");
                 float best = float.MaxValue;
                 AnimationGroupEntry? backup = null;
                 foreach (var e in _entries)
@@ -146,18 +147,18 @@ public sealed class AnimationGroup
                     float min = e.UseHeadAngle ? e.HeadAngleMinRad : e.BackupMinRad;
                     float max = e.UseHeadAngle ? e.HeadAngleMaxRad : e.BackupMaxRad;
                     if (!(min + BitConverter.Int32BitsToSingle(unchecked((int)0xBD4CCCCD)) <= head) || max + BitConverter.Int32BitsToSingle(0x3D4CCCCD) < head) continue;
-                    Log?.Invoke(FormattableString.Invariant($"info: [Animations] AnimationGroup.GetAnimation.BackupAnimationChosen: Animation is '{e.Name}' and new min cooldown is '{left:F6}'"));
+                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationGroup.GetAnimation.BackupAnimationChosen", FormattableString.Invariant($"Animation is '{e.Name}' and new min cooldown is '{left:F6}'"));
                     backup = e; best = left;
                 }
                 if (backup != null)
                 {
-                    Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.BackupAnimationFound: All animations in group '{Name}' were on cooldown / invalid, so selected '{backup.Name}'");
+                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationGroup.GetAnimation.BackupAnimationFound", $"All animations in group '{Name}' were on cooldown / invalid, so selected '{backup.Name}'");
                     return backup;
                 }
-                Log?.Invoke($"info: [Animations] AnimationGroup.GetAnimation.NoBackup: All animations in group '{Name}' were on cooldown / invalid nothing could be returned so choosing first in list");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationGroup.GetAnimation.NoBackup", $"All animations in group '{Name}' were on cooldown / invalid nothing could be returned so choosing first in list");
                 return _entries[0];
             }
-            Log?.Invoke($"error: AnimationGroup.GetAnimation.NoAnimation: Could not find a single animation from group '{Name}' to run. Returning empty");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.GetAnimation.NoAnimation", $"Could not find a single animation from group '{Name}' to run. Returning empty");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
@@ -178,6 +179,7 @@ public sealed class AnimationTriggerResponses
     private readonly Dictionary<string, string> _pairs = new(StringComparer.Ordinal);
 
     public Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
     public int Count => _pairs.Count;
 
     public static AnimationTriggerResponses Load(string? dir)
@@ -208,10 +210,10 @@ public sealed class AnimationTriggerResponses
         string key = trigger.ToString();
         if (_pairs.TryGetValue(key, out var name))
         {
-            Log?.Invoke($"info: [Animations] GetResponseForAnimationTrigger.Found: {key} -> {name}");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "GetResponseForAnimationTrigger.Found", $"{key} -> {name}");
             return name;
         }
-        Log?.Invoke($"warning: AnimationTriggerResponsesContainer::GetResponse: Animation requested for unknown response '{key}'");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationTriggerResponsesContainer::GetResponse", $"Animation requested for unknown response '{key}'");
         return "";
     }
 
@@ -259,6 +261,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     /// <summary>The engine log for the load errors (C2) and the group errors.</summary>
     public Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>The robot's simple mood the groups choose by (MoodManager, M7). Unset: Default.</summary>
     public Func<SimpleMood>? CurrentMood { get; set; }
@@ -275,9 +278,9 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// Opens a library over an unpacked <c>cozmo_resources</c> tree. Point it at the directory that holds
     /// <c>assets/animations</c>, or directly at either directory.
     /// </summary>
-    public static AnimationLibrary Open(string assetsRoot, Action<string>? log = null)
+    public static AnimationLibrary Open(string assetsRoot, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        var lib = new AnimationLibrary { Log = log };
+        var lib = new AnimationLibrary { Log = log, SourceLog = sourceLog };
         log?.Invoke("MISSING: M5-001 loader main-thread VERIFY gates at 0x0051F3AA/0x00521338: CozmoContext main-thread identity is not represented by the host loader");
         var animations = FindDir(assetsRoot, "animations");
         var groups = FindDir(assetsRoot, "animationGroups");
@@ -294,12 +297,12 @@ public sealed class AnimationLibrary : IAnimationCatalog
                     if (f.EndsWith("json", StringComparison.Ordinal) || f.EndsWith("bin", StringComparison.Ordinal))
                     {
                         var stat = new FileInfo(f); stat.Refresh();
-                        if (!stat.Exists) log?.Invoke($"warning: RobotDataLoader.WalkAnimationDir: could not get mtime for {f}");
+                        if (!stat.Exists) SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}");
                         else files.Add(f); // startup mtime map is empty; every successful stat passes.
                     }
         // M5-046: the complete native Results map order is unread; retain the current type-0 order.
         log?.Invoke("MISSING: M5-046 RobotDataLoader.CollectAnimFiles.Results map iteration order");
-        log?.Invoke($"info: [Animations] RobotDataLoader.CollectAnimFiles.Results: Found {files.Count} animation files of type 0");
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.CollectAnimFiles.Results", $"Found {files.Count} animation files of type 0");
         double started = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         Eye.ClippingWarningEnabled = false;
         float ratio = 0.7f / files.Count;
@@ -321,8 +324,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
         foreach (var worker in workers) worker.Join();
         failure?.Throw();
         Eye.ClippingWarningEnabled = true; // L10: only after Process returns normally.
-        log?.Invoke(FormattableString.Invariant($"info: [Animations] RobotDataLoader.LoadAnimationsInternal.LoadTime: Time to load animations = {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started:F2} ms"));
-        log?.Invoke($"info: [Animations] RobotDataLoader.LoadAnimations.CannedAnimationsCount: Total number of canned animations available = {lib._clipCache.Count}");
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationsInternal.LoadTime", FormattableString.Invariant($"Time to load animations = {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - started:F2} ms"));
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimations.CannedAnimationsCount", $"Total number of canned animations available = {lib._clipCache.Count}");
 
         if (groups is not null)
             foreach (var f in Directory.EnumerateFiles(groups, "*.json", SearchOption.AllDirectories))
@@ -335,12 +338,12 @@ public sealed class AnimationLibrary : IAnimationCatalog
                     g = new AnimationGroup { Name = gname };
                     lib._groups[gname] = g;
                 }
-                DefineGroup(g, f, lib.HasClip, lib.Log);
+                DefineGroup(g, f, lib.HasClip, lib.Log, lib.SourceLog);
                 g.UseContainer(lib._cooldowns);
             }
 
         lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
-        lib.Triggers.Log = log;
+        lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
         return lib;
     }
 
@@ -408,8 +411,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
     public float LoadingProgress { get; private set; }
     private void LoadAnimationFile(string path, float ratio)
     {
-        using var clipLog = Eye.UseWarningLog(Log);
-        Log?.Invoke($"info: [Animations] RobotDataLoader.LoadAnimationFile.LoadingAnimationsFromBinaryOrJson: Loading animations from {path}");
+        using var clipLog = Eye.UseWarningLog(Log, SourceLog);
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationFile.LoadingAnimationsFromBinaryOrJson", $"Loading animations from {path}");
         bool binary = path.EndsWith("bin", StringComparison.Ordinal);
         if (binary)
         {
@@ -424,27 +427,27 @@ public sealed class AnimationLibrary : IAnimationCatalog
             foreach (var table in tables)
             {
                 string name = table.String(ClipName) ?? "";
-                Log?.Invoke($"info: [Animations] RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary: Loading '{name}' from {path}");
-                lock (_gate) Register(ParseClip(table, Log), path, false);
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary", $"Loading '{name}' from {path}");
+                lock (_gate) Register(ParseClip(table, Log, SourceLog), path, false);
             }
         }
         else
         {
-            try { lock (_gate) { var clip = JsonClipLoader.Load(path, Log); if (clip != null) Register(clip, path, true); } }
+            try { lock (_gate) { var clip = JsonClipLoader.Load(path, Log, SourceLog); if (clip != null) Register(clip, path, true); } }
             catch (Exception e) when (e is IOException or JsonException) { } // L6.6: JSON read failure still adds ratio.
         }
         lock (_gate) LoadingProgress += ratio;
     }
     private void BinaryError(string key, string text)
     {
-        Log?.Invoke($"error: RobotDataLoader.LoadAnimationFile.{key}: {text}");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, $"RobotDataLoader.LoadAnimationFile.{key}", $"{text}");
         Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
     }
     private void Register(AnimationClip clip, string path, bool json)
     {
         if (clip.Name == JsonClipLoader.ProceduralAnimName)
         {
-            Log?.Invoke($"error: CannedAnimationContainer.DefineFromJson.ReservedName: Skipping animation with reserved name '{clip.Name}'.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "CannedAnimationContainer.DefineFromJson.ReservedName", $"Skipping animation with reserved name '{clip.Name}'.");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return;
         }
@@ -452,7 +455,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         if (json) _jsonClipFiles[clip.Name] = path;
         if (clip.LoadTruncated)
         {
-            Log?.Invoke($"error: CannedAnimationContainer.DefineFromJson: Failed to define animation '{clip.Name}' from Json.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "CannedAnimationContainer.DefineFromJson", $"Failed to define animation '{clip.Name}' from Json.");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
         }
     }
@@ -471,7 +474,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     {
         var g = GetGroup(group);
         if (g is null || g.Entries.Count == 0) return ""; // G0: silent empty result.
-        g.Log = Log;
+        g.Log = Log; g.SourceLog = SourceLog;
         return g.GetAnimationName(ContextRandom, CurrentMood?.Invoke() ?? SimpleMood.Default,
             (float)(CooldownTimeSec?.Invoke() ?? 0), HeadAngleRad?.Invoke(), strict)?.Name ?? "";
     }
@@ -504,11 +507,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// <summary>Every clip in an asset file already in memory.</summary>
     public static IReadOnlyList<AnimationClip> Parse(byte[] bytes) => Parse(bytes, null);
 
-    private static IReadOnlyList<AnimationClip> Parse(byte[] bytes, Action<string>? log)
+    private static IReadOnlyList<AnimationClip> Parse(byte[] bytes, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         var root = FlatTable.Root(bytes);
         var clips = new List<AnimationClip>();
-        foreach (var c in root.Tables(ClipsField)) clips.Add(ParseClip(c, log));
+        foreach (var c in root.Tables(ClipsField)) clips.Add(ParseClip(c, log, sourceLog));
         return clips;
     }
 
@@ -518,10 +521,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// DefineFromFlatBuf fails, or that the track refuses (BadTriggerTime, TooManyFrames), logs "Adding X frame %d failed."
     /// and ends the load there: earlier tracks and keyframes stay, the rest are not loaded, and the clip is kept (C3).
     /// </summary>
-    private static AnimationClip ParseClip(FlatTable clip, Action<string>? log)
+    private static AnimationClip ParseClip(FlatTable clip, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         var name = clip.String(ClipName) ?? "";
-        var probe = new StreamAnimation(name, isLive: false) { Log = log };
+        var probe = new StreamAnimation(name, isLive: false) { Log = log, SourceLog = sourceLog };
         var frames = new List<Keyframe>();
         var kf = clip.Table(ClipKeyframes);
         bool failed = false;
@@ -530,7 +533,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         {
             if (k is null || !track.AddNewKeyFrameToBack(item))
             {
-                log?.Invoke($"error: Animation.DefineFromFlatBuf.AddKeyFrameFailure: Adding {what} frame {index} failed.");
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "Animation.DefineFromFlatBuf.AddKeyFrameFailure", $"Adding {what} frame {index} failed.");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 failed = true;
                 return false;
@@ -548,7 +551,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 var k = define(t);
                 if (k is null)
                 {
-                    log?.Invoke($"error: Animation.DefineFromFlatBuf.AddKeyFrameFailure: Adding {what} frame {i} failed.");
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "Animation.DefineFromFlatBuf.AddKeyFrameFailure", $"Adding {what} frame {i} failed.");
                     Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 failed = true;
                     return;
@@ -561,25 +564,25 @@ public sealed class AnimationLibrary : IAnimationCatalog
         int n = 0;
         Each(KfLift, "LiftHeight", DefineLift, k => Add(probe.Lift, new StreamKeyframe(k), k, "LiftHeight", n++));
         n = 0;
-        Each(KfFace, "ProceduralFace", t => DefineFace(t, log), k => Add(probe.ProcFace, new FaceFrame(k.TriggerTimeMs, ((FaceKeyframe)k).Pose), k, "ProceduralFace", n++));
+        Each(KfFace, "ProceduralFace", t => DefineFace(t, log, sourceLog), k => Add(probe.ProcFace, new FaceFrame(k.TriggerTimeMs, ((FaceKeyframe)k).Pose), k, "ProceduralFace", n++));
         n = 0;
         Each(KfHead, "HeadAngle", DefineHead, k => Add(probe.Head, new StreamKeyframe(k), k, "HeadAngle", n++));
         n = 0;
-        Each(KfAudio, "RobotAudio", t => DefineAudio(t, log, name), k => Add(probe.RobotAudio, new StreamKeyframe(k), k, "RobotAudio", n++));
+        Each(KfAudio, "RobotAudio", t => DefineAudio(t, log, name, sourceLog), k => Add(probe.RobotAudio, new StreamKeyframe(k), k, "RobotAudio", n++));
         n = 0;
-        Each(KfLights, "BackpackLights", t => DefineLights(t, log), k => Add(probe.Backpack, new StreamKeyframe(k), k, "BackpackLights", n++));
+        Each(KfLights, "BackpackLights", t => DefineLights(t, log, sourceLog), k => Add(probe.Backpack, new StreamKeyframe(k), k, "BackpackLights", n++));
         n = 0;
         Each(KfFaceAnim, "FaceAnimation", t => new FaceAnimationKeyframe(t.U32(0), t.String(1) ?? ""),
              k => Add(probe.FaceAnim, new StreamKeyframe(k), k, "FaceAnimation", n++));
         n = 0;
-        Each(KfEvent, "Event", t => DefineEvent(t, log, name), k => Add(probe.Event, new StreamKeyframe(k), k, "Event", n++));
+        Each(KfEvent, "Event", t => DefineEvent(t, log, name, sourceLog), k => Add(probe.Event, new StreamKeyframe(k), k, "Event", n++));
         n = 0;
-        Each(KfBody, "BodyMotion", t => DefineBody(t, log, name), k => Add(probe.Body, new StreamKeyframe(k), k, "BodyMotion", n++));
+        Each(KfBody, "BodyMotion", t => DefineBody(t, log, name, sourceLog), k => Add(probe.Body, new StreamKeyframe(k), k, "BodyMotion", n++));
         n = 0;
         Each(KfRecordHeading, "RecordHeading", t => new RecordHeadingKeyframe(t.U32(0)),
              k => Add(probe.RecHeading, new StreamKeyframe(k), k, "RecordHeading", n++));
         n = 0;
-        Each(KfTurnToHeading, "TurnToRecordedHeading", t => DefineTurnTo(t, log, name), k => Add(probe.TurnTo, new StreamKeyframe(k), k, "TurnToRecordedHeading", n++));
+        Each(KfTurnToHeading, "TurnToRecordedHeading", t => DefineTurnTo(t, log, name, sourceLog), k => Add(probe.TurnTo, new StreamKeyframe(k), k, "TurnToRecordedHeading", n++));
 
         var sorted = frames.OrderBy(f => f.TriggerTimeMs).ToList();       // stable: each track keeps its order
         AnimationTrack tracks = 0;
@@ -606,15 +609,15 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// (a wrong-size eye is left unchanged, with a warning); faceAngle f1 (0); scaleX/Y f4/f5 (1), a negative one 0;
     /// the centre f2/f3 through SetFacePosition, before the scale is set (C2).
     /// </summary>
-    private static Keyframe DefineFace(FlatTable t, Action<string>? log)
+    private static Keyframe DefineFace(FlatTable t, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         var pose = new ProceduralFacePose();
         var left = t.Floats(6);
         var right = t.Floats(7);
         if (left.Length == Eye.ParamCount) pose.Left = Eye.FromAsset(left);
-        else log?.Invoke($"warning: ProceduralFace.SetEyeArrayHelper.WrongNumParams: Unexpected number of parameters for leftEye array ({left.Length} vs. 19)");
+        else SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "ProceduralFace.SetEyeArrayHelper.WrongNumParams", $"Unexpected number of parameters for leftEye array ({left.Length} vs. 19)");
         if (right.Length == Eye.ParamCount) pose.Right = Eye.FromAsset(right);
-        else log?.Invoke($"warning: ProceduralFace.SetEyeArrayHelper.WrongNumParams: Unexpected number of parameters for rightEye array ({right.Length} vs. 19)");
+        else SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "ProceduralFace.SetEyeArrayHelper.WrongNumParams", $"Unexpected number of parameters for rightEye array ({right.Length} vs. 19)");
         pose.FaceAngle = t.F32(1);
         pose.SetFacePosition(t.F32(2), t.F32(3));          // C2: before the scale (0x00583A08 before 0x00583A0C..)
         pose.FaceScaleX = MathF.Max(0f, t.F32(4, 1f));
@@ -627,7 +630,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// probability f3, hasAlts f4 (true). No probability vector gives 1/N each; a count mismatch or a running sum above 1
     /// is an error and the keyframe is rejected.
     /// </summary>
-    private static Keyframe? DefineAudio(FlatTable t, Action<string>? log, string clip)
+    private static Keyframe? DefineAudio(FlatTable t, Action<string>? log, string clip, SourceLogSink? sourceLog = null)
     {
         var ids = t.Longs(1).Select(v => (long)(uint)(v & 0xFFFFFFFF)).ToArray();
         var probs = t.Floats(3);
@@ -638,7 +641,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         }
         else if (probs.Length != ids.Length)
         {
-            log?.Invoke($"error: RobotAudioKeyFrame.SetMembersFromFlatBuf.UnknownProbabilities: {clip}: The number of audio event IDs ({ids.Length}) does not match number of probabilities ({probs.Length})");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "RobotAudioKeyFrame.SetMembersFromFlatBuf.UnknownProbabilities", $"{clip}: The number of audio event IDs ({ids.Length}) does not match number of probabilities ({probs.Length})");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
@@ -648,7 +651,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
             sum += p;
             if (sum > 1.0f)
             {
-                log?.Invoke($"error: RobotAudioKeyFrame.SetMembersFromFlatBuf.TotalProbabilitiesTooHigh: {clip}: The total probability of all audio events combined exceeds 1.0");
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "RobotAudioKeyFrame.SetMembersFromFlatBuf.TotalProbabilitiesTooHigh", $"{clip}: The total probability of all audio events combined exceeds 1.0");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return null;
             }
@@ -660,19 +663,19 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// C16: trigger f0, duration f1, Left f2, Right f3, Front f4, Middle f5, Back f6, converted to JSON and read by
     /// SetMembersFromJson (gap4 J1.9): a colour that is not 3 or 4 floats rejects the keyframe.
     /// </summary>
-    private static Keyframe? DefineLights(FlatTable t, Action<string>? log)
+    private static Keyframe? DefineLights(FlatTable t, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         var k = new LightsKeyframe(t.U32(0), t.U32(1), t.Floats(2), t.Floats(3), t.Floats(4), t.Floats(5), t.Floats(6));
-        return BackpackColor.TryReadAll(k.Left, k.Right, k.Front, k.Middle, k.Back, out _, log) ? k : null;
+        return BackpackColor.TryReadAll(k.Left, k.Right, k.Front, k.Middle, k.Back, out _, log, sourceLog) ? k : null;
     }
 
     /// <summary>C15: event_id f1 through AnimEventFromString; "Count" (unrecognised) warns and rejects the keyframe.</summary>
-    private static Keyframe? DefineEvent(FlatTable t, Action<string>? log, string clip)
+    private static Keyframe? DefineEvent(FlatTable t, Action<string>? log, string clip, SourceLogSink? sourceLog = null)
     {
         var e = new EventKeyframe(t.U32(0), t.String(1) ?? "");
         if (e.Parsed is null)
         {
-            log?.Invoke($"warning: EventKeyFrame.UnrecognizedEventName: {e.EventId}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "EventKeyFrame.UnrecognizedEventName", $"{e.EventId}");
             return null;
         }
         return e;
@@ -684,18 +687,18 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// CheckRotationSpeed; STRAIGHT → 0x7FFF and CheckStraightSpeed; anything else an error that rejects the keyframe.
     /// CheckRotationSpeed: |v| &gt; 300 → ±300; CheckStraightSpeed and CheckTurnSpeed: |v| ≥ 221 → ±220.
     /// </summary>
-    private static Keyframe? DefineBody(FlatTable t, Action<string>? log, string clip)
+    private static Keyframe? DefineBody(FlatTable t, Action<string>? log, string clip, SourceLogSink? sourceLog = null)
     {
         var raw = t.String(2) ?? "";
         short speed = t.I16(3);
         short originalSpeed = speed;
         if (!BodyKeyframe.CheckSpeedForRadiusString(raw, ref speed))
         {
-            log?.Invoke($"error: BodyMotionKeyFrame.BadRadiusString: {clip}: Unrecognized string for 'radius_mm' field: {raw}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "BodyMotionKeyFrame.BadRadiusString", $"{clip}: Unrecognized string for 'radius_mm' field: {raw}");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
-        LogBodyClamp(raw, originalSpeed, clip, log);
+        LogBodyClamp(raw, originalSpeed, clip, log, sourceLog);
         return new BodyKeyframe(t.U32(0), Duration(t, 1), raw, speed);
     }
 
@@ -704,10 +707,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// tolerance f6 (2), numHalfRevs f7 (0), useShortestDir f8 (false); CheckRotationSpeed: speed |v| &gt; 300 → ±300,
     /// accel and decel |v| ≥ 13637 → ±13636.
     /// </summary>
-    private static Keyframe DefineTurnTo(FlatTable t, Action<string>? log, string name)
+    private static Keyframe DefineTurnTo(FlatTable t, Action<string>? log, string name, SourceLogSink? sourceLog = null)
     {
         short speed = t.I16(3), accel = t.I16(4, 1000), decel = t.I16(5, 1000);
-        LogTurnClamps(speed, accel, decel, name, log);
+        LogTurnClamps(speed, accel, decel, name, log, sourceLog);
         if (Math.Abs((int)speed) > 300) speed = (short)Math.Clamp((int)speed, -300, 300);
         if (Math.Abs((int)accel) >= 13637) accel = (short)Math.Clamp((int)accel, -13636, 13636);
         if (Math.Abs((int)decel) >= 13637) decel = (short)Math.Clamp((int)decel, -13636, 13636);
@@ -715,7 +718,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
                                                  t.U16(6, 2), t.U16(7), t.Bool(8));
     }
 
-    internal static void LogBodyClamp(string radius, short speed, string name, Action<string>? log)
+    internal static void LogBodyClamp(string radius, short speed, string name, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         bool point = !BodyKeyframe.HasDigits(radius) && (radius == "TURN_IN_PLACE" || radius == "POINT_TURN");
         int abs = Math.Abs((int)speed);
@@ -723,14 +726,14 @@ public sealed class AnimationLibrary : IAnimationCatalog
         {
             string kind = point ? "CheckRotationSpeed.PointTurnSpeedExceedsLimit" : radius == "STRAIGHT" ? "CheckStraightSpeed.StraightSpeedExceedsLimit" : "CheckTurnSpeed.ArcSpeedExceedsLimit";
             string text = point ? $"PointTurn speed {abs} deg/s exceeds limit of 300.000000 deg/s. Clamping" : $"Speed {abs} mm/s exceeds limit of 220.000000 mm/s. Clamping";
-            log?.Invoke($"info: [Animations] BodyMotionKeyFrame.{kind}: {name}: {text}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", $"BodyMotionKeyFrame.{kind}", $"{name}: {text}");
         }
     }
-    internal static void LogTurnClamps(short speed, short accel, short decel, string name, Action<string>? log)
+    internal static void LogTurnClamps(short speed, short accel, short decel, string name, Action<string>? log, SourceLogSink? sourceLog = null)
     {
-        if (Math.Abs((int)speed) > 300) log?.Invoke($"info: [Animations] TurnToRecordedHeadingKeyFrame.CheckRotationSpeed.PointTurnSpeedExceedsLimit: {name}: PointTurn speed {Math.Abs((int)speed)} deg/s exceeds limit of 300.000000 deg/s. Clamping");
-        if (Math.Abs((int)accel) >= 13637) log?.Invoke($"info: [Animations] TurnToRecordedHeadingKeyFrame.CheckRotationAccel.PointTurnAccelExceedsLimit: {name}: PointTurn accel {Math.Abs((int)accel)} deg/s^2 exceeds limit of 13636.363281 deg/s^2. Clamping");
-        if (Math.Abs((int)decel) >= 13637) log?.Invoke($"info: [Animations] TurnToRecordedHeadingKeyFrame.CheckRotationAccel.PointTurnDecelExceedsLimit: {name}: PointTurn decel {Math.Abs((int)decel)} deg/s^2 exceeds limit of 13636.363281 deg/s^2. Clamping");
+        if (Math.Abs((int)speed) > 300) SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "TurnToRecordedHeadingKeyFrame.CheckRotationSpeed.PointTurnSpeedExceedsLimit", $"{name}: PointTurn speed {Math.Abs((int)speed)} deg/s exceeds limit of 300.000000 deg/s. Clamping");
+        if (Math.Abs((int)accel) >= 13637) SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "TurnToRecordedHeadingKeyFrame.CheckRotationAccel.PointTurnAccelExceedsLimit", $"{name}: PointTurn accel {Math.Abs((int)accel)} deg/s^2 exceeds limit of 13636.363281 deg/s^2. Clamping");
+        if (Math.Abs((int)decel) >= 13637) SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "TurnToRecordedHeadingKeyFrame.CheckRotationAccel.PointTurnDecelExceedsLimit", $"{name}: PointTurn decel {Math.Abs((int)decel)} deg/s^2 exceeds limit of 13636.363281 deg/s^2. Clamping");
     }
 
     // ------------------------------------------------------------------ groups (D4)
@@ -741,7 +744,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// non-array "Animations", a JSON parse failure, or any rejected entry leaves the group in the container with the
     /// entries that did define (the caller added it by name first, C5 item 4.1).
     /// </summary>
-    private static void DefineGroup(AnimationGroup g, string path, Func<string, bool> hasClip, Action<string>? log)
+    private static void DefineGroup(AnimationGroup g, string path, Func<string, bool> hasClip, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         try
         {
@@ -749,7 +752,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
             if (!doc.RootElement.TryGetProperty("Animations", out var arr) || arr.ValueKind != JsonValueKind.Array)
             {
                 // 4.2: not an array logs NoAnimations and fails the define
-                log?.Invoke("error: AnimationGroup.DefineFromJson.NoAnimations: Missing 'Animations' field for animation group.");
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.DefineFromJson.NoAnimations", "Missing 'Animations' field for animation group.");
                 return;
             }
             var entries = new List<AnimationGroupEntry>();
@@ -761,31 +764,31 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 // group continues with the rest (4.3).
                 if (!e.TryGetProperty("Name", out var n) || n.ValueKind != JsonValueKind.String)
                 {
-                    log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoName: Missing 'Name' field for animation.");
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoName", "Missing 'Name' field for animation.");
                     continue;
                 }
                 string name = n.GetString()!;
                 if (!hasClip(name))
                 {
-                    log?.Invoke($"error: AnimationGroupEntry.DefineFromJson.InvalidName: No canned animation exists named '{name}'");
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.InvalidName", $"No canned animation exists named '{name}'");
                     continue;
                 }
                 // 4.6: Weight must be numeric; there is no default of 1.
                 if (!e.TryGetProperty("Weight", out var w) || w.ValueKind != JsonValueKind.Number)
                 {
-                    log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoWeight: Missing 'Weight' field for animation.");
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoWeight", "Missing 'Weight' field for animation.");
                     continue;
                 }
                 // 4.7: Mood must be a string and a recognised SimpleMoodType; there is no default of "Default".
                 if (!e.TryGetProperty("Mood", out var m) || m.ValueKind != JsonValueKind.String)
                 {
-                    log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoMood: Missing 'Mood' field for animation.");
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoMood", "Missing 'Mood' field for animation.");
                     continue;
                 }
                 string mood = m.GetString()!;
                 if (!Enum.TryParse<SimpleMood>(mood, ignoreCase: false, out var moodType) || moodType == SimpleMood.Count)
                 {
-                    log?.Invoke($"warning: SimpleMoodScorer.ReadFromJson.BadType: Bad 'Mood' = '{mood}'");
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "SimpleMoodScorer.ReadFromJson.BadType", $"Bad 'Mood' = '{mood}'");
                     continue;
                 }
                 // 4.8: CooldownTime_Sec defaults to 0.0.
@@ -800,7 +803,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
                     if (!e.TryGetProperty("HeadAngleMin_Deg", out var mn) || mn.ValueKind != JsonValueKind.Number
                         || !e.TryGetProperty("HeadAngleMax_Deg", out var mx) || mx.ValueKind != JsonValueKind.Number)
                     {
-                        log?.Invoke("error: AnimationGroupEntry.DefineFromJson.NoHeadAngleWhenUsingHeadAngles: Missing " +
+                        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoHeadAngleWhenUsingHeadAngles", "Missing " +
                                     "'HeadAngleMin_Deg' or 'HeadAngleMax_Deg' field for animation.");
                         continue;
                     }
@@ -821,7 +824,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         catch (JsonException e)
         {
             // a file that is not a group definition leaves the group empty; it stays in the container (C5 item 4.1)
-            log?.Invoke($"error: AnimationGroup.DefineFromJson: '{path}' is not a group definition: {e.Message}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.DefineFromJson", $"'{path}' is not a group definition: {e.Message}");
         }
     }
 }

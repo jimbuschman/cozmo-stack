@@ -12,6 +12,7 @@ internal sealed class ActionList : IDisposable
     private readonly SortedDictionary<int, ActionQueue> _queues = new();
     private readonly ActionWatcher _watcher = new();
     private readonly Action<string>? _log;
+    private readonly SourceLogSink? _sourceLog;
     private Action<RobotCompletedAction>? _gameSend;
     private bool _clearing;
     // The engine is single-threaded, so this lock changes no engine behaviour: it only keeps a caller that queues
@@ -20,9 +21,9 @@ internal sealed class ActionList : IDisposable
     // throws InvalidOperationException; the same lock also serialises the ActionQueue internals and Cancel/Clear.
     private readonly object _gate = new();
 
-    public ActionList(Action<string>? log = null)
+    public ActionList(Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        _log = log;
+        _log = log; _sourceLog = sourceLog;
         // The watcher's D6 broadcast is the local seam; forward it to the game sink when one is set.
         _watcher.RobotCompletedActionBroadcast += r => _gameSend?.Invoke(r);
     }
@@ -142,12 +143,12 @@ internal sealed class ActionList : IDisposable
         {
             if (incoming is null)
             {
-                _log?.Invoke("warning: ActionList.QueueAction.NullAction");
+                SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.NullAction", "");
                 return 1;
             }
             if ((int)position > (int)QueueActionPosition.InParallel)
             {
-                _log?.Invoke("warning: ActionList.QueueAction.BadPosition");
+                SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.BadPosition", "");
                 return 1;
             }
             // Q2: the disabled gate (robot+0x2C7) tests the incoming +0x60 Tag against the external ranges. The
@@ -184,7 +185,7 @@ return 0;
                 case QueueActionPosition.InParallel:
                     return AddConcurrent(incoming);
                 default:
-                    _log?.Invoke("warning: ActionList.QueueAction.BadPosition");
+                    SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.BadPosition", "");
                     return 1;
             }
         }
@@ -257,7 +258,7 @@ return 0;
         if (!q.Interrupt(incoming))
         {
             // Q15: an Interrupt refusal logs and falls back to QueueNow.
-            _log?.Invoke("warning: ActionList.QueueAction.InterruptRefused");
+            SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.InterruptRefused", "");
             q.QueueNow(incoming);
         }
         return 0;
@@ -295,7 +296,7 @@ return 0;
         {
             if (q.HasPendingReference(incoming))
             {
-                _log?.Invoke("warning: ActionList.QueueAction.Duplicate");
+                SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.Duplicate", "");
                 return true;
             }
         }

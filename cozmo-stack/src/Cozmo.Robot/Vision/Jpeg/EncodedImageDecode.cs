@@ -22,7 +22,7 @@ internal static class EncodedImageDecode
     /// "warning: Key: text"), at the points the helper raises them (D2..D7), and the line cv::error prints when an OpenCV call throws (O8).
     /// A null sink is the engine's null gLoggerProvider: nothing is formatted (D6).
     /// </summary>
-    public static EncodedImageDecodeResult DecodeGray(byte encoding, byte[] payload, byte[] jpeg, int rows, int cols, Action<string>? log = null)
+    public static EncodedImageDecodeResult DecodeGray(byte encoding, byte[] payload, byte[] jpeg, int rows, int cols, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         CvMat m;
         try
@@ -48,17 +48,17 @@ internal static class EncodedImageDecode
                     m = Resize(OpenCvImage.Imdecode(jpeg, 0), cols, rows);
                     break;
                 default:                                    // Y0, Y1: 0, 3, 4, 10..255
-                    return Unsupported(encoding, log);
+                    return Unsupported(encoding, log, sourceLog);
             }
         }
         catch (OpenCvException e)
         {
-            return OpenCvFailed(e, log);
+            return OpenCvFailed(e, log, sourceLog);
         }
-        return Check(m, rows, cols, log);
+        return Check(m, rows, cols, log, sourceLog);
     }
 
-    public static EncodedImageDecodeResult DecodeRgb(byte encoding, byte[] payload, byte[] jpeg, int rows, int cols, Action<string>? log = null)
+    public static EncodedImageDecodeResult DecodeRgb(byte encoding, byte[] payload, byte[] jpeg, int rows, int cols, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         CvMat m;
         try
@@ -84,20 +84,20 @@ internal static class EncodedImageDecode
                     m = Resize(SwapRb(OpenCvImage.Imdecode(jpeg, 1)), cols, rows);
                     break;
                 default:                                    // Z0, Z1: 0, 3, 4, 10..255
-                    return Unsupported(encoding, log);
+                    return Unsupported(encoding, log, sourceLog);
             }
         }
         catch (OpenCvException e)
         {
-            return OpenCvFailed(e, log);
+            return OpenCvFailed(e, log, sourceLog);
         }
-        return Check(m, rows, cols, log);
+        return Check(m, rows, cols, log, sourceLog);
     }
 
     // O8: cv::error prints "OpenCV Error: ..." to stderr and to logcat (tag cv::error(), priority ERROR) when it throws, before the exception
     // unwinds. One line is emitted here, in the log-prefix form with the logcat tag as the key; the stderr copy is the same text.
     // The exception itself leaves the engine's helper (O9, the catcher above it is M11-058's); this port reports a failed decode.
-    private static EncodedImageDecodeResult OpenCvFailed(OpenCvException e, Action<string>? log)
+    private static EncodedImageDecodeResult OpenCvFailed(OpenCvException e, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         log?.Invoke("error: cv::error(): " + e.Message);
         // MISSING: M11-058 | the engine's catcher of this cv::Exception (and the frame's fate after it) is unread; the port reports a failed decode.
@@ -108,13 +108,13 @@ internal static class EncodedImageDecode
     // the size check 0x004F2CDA..0x004F2D34 / 0x004F2658..0x004F2674 (J38, D7): rows against EncodedImage+0x18, cols against +0x14;
     // a mismatch is sWarningF("EncodedImage.DecodeImageRGB.BadDecode" in both helpers), expected width x height then got cols x rows,
     // with no _errG store and no break.
-    private static EncodedImageDecodeResult Check(CvMat m, int rows, int cols, Action<string>? log)
+    private static EncodedImageDecodeResult Check(CvMat m, int rows, int cols, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         if (m.Rows != rows || m.Cols != cols)
         {
             const string key = "EncodedImage.DecodeImageRGB.BadDecode";
             string text = $"Failed to decode {cols}x{rows} image from buffer. Got {m.Cols}x{m.Rows}";
-            log?.Invoke($"warning: {key}: {text}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, key, text);
             return new EncodedImageDecodeResult { Ok = false, Error = $"{key}: {text}" };
         }
         return new EncodedImageDecodeResult { Ok = true, Image = m };
@@ -127,11 +127,11 @@ internal static class EncodedImageDecode
     /// the helper returns failure with no image. <c>EnumToString</c> returns NULL above 9 (D5); a NULL <c>%s</c> is rendered "(null)", which
     /// is the phone libc's printf (bionic) and so a system-library boundary, not a value the shipped files settle.
     /// </summary>
-    private static EncodedImageDecodeResult Unsupported(byte encoding, Action<string>? log)
+    private static EncodedImageDecodeResult Unsupported(byte encoding, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         const string key = "EncodedImage.DecodeImageRGB.UnsupportedEncoding";
         string text = $"Encoding {EnumToString(encoding)} not yet supported for decoding image chunks";
-        log?.Invoke($"error: {key}: {text}");                 // sErrorF first (D2/D3) ...
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, key, text);                 // sErrorF first (D2/D3) ...
         Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();  // ... then _errG = 1 and the break gate (D4)
         return new EncodedImageDecodeResult { Ok = false, Error = $"{key}: {text}" };
     }

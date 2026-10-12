@@ -70,10 +70,10 @@ public sealed class CameraFrame
     public DateTime ReceivedUtc { get; init; } = DateTime.UtcNow;
 
     /// <summary><c>DecodeImageGray</c> (A8, A11): a 320 x 240 gray image, or false with the reason.</summary>
-    public bool TryDecodeGray(out GrayImage? image, out string? error, Action<string>? log = null) => EncodedImageDecoder.TryDecodeGray(this, out image, out error, log);
+    public bool TryDecodeGray(out GrayImage? image, out string? error, Action<string>? log = null, SourceLogSink? sourceLog = null) => EncodedImageDecoder.TryDecodeGray(this, out image, out error, log, sourceLog);
 
     /// <summary><c>DecodeImageRGB</c> (A9..A11): 320 x 240 RGB, row-major, 3 bytes a pixel, or false with the reason.</summary>
-    public bool TryDecodeRgb(out byte[]? rgb, out string? error, Action<string>? log = null) => EncodedImageDecoder.TryDecodeRgb(this, out rgb, out error, log);
+    public bool TryDecodeRgb(out byte[]? rgb, out string? error, Action<string>? log = null, SourceLogSink? sourceLog = null) => EncodedImageDecoder.TryDecodeRgb(this, out rgb, out error, log, sourceLog);
 
     // fidelity: M3-046
     /// <summary>
@@ -150,7 +150,7 @@ public static class EncodedImageDecoder
     /// The exact text the engine logs is <c>"VERIFY(false): NoneImageEncoding"</c>; it is passed to
     /// <paramref name="log"/> when the decoder has a log seam.
     /// </summary>
-    public static bool IsColor(byte encoding, Action<string>? log = null)
+    public static bool IsColor(byte encoding, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         if (encoding > 8) return true;
         switch (encoding)
@@ -169,11 +169,11 @@ public static class EncodedImageDecoder
     /// <summary>
     /// <c>EncodedImage::DecodeImageGray</c> = <c>DecodeImageHelper&lt;Image&gt;</c> (Y0..Y8). See the class summary.
     /// </summary>
-    public static bool TryDecodeGray(CameraFrame f, out GrayImage? image, out string? error, Action<string>? log = null)
+    public static bool TryDecodeGray(CameraFrame f, out GrayImage? image, out string? error, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         image = null;
         if (EmptyMiniReconstruction(f)) return PolicyFail(log, out error);
-        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeGray(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log);
+        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeGray(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log, sourceLog);
         if (!r.Ok) return Fail(r.Error!, out error);
         image = new GrayImage(r.Image!.Cols, r.Image.Rows, r.Image.Data);
         error = null;
@@ -184,11 +184,11 @@ public static class EncodedImageDecoder
     /// <summary>
     /// <c>EncodedImage::DecodeImageRGB</c> = <c>DecodeImageHelper&lt;ImageRGB&gt;</c> (Z0..Z8). See the class summary.
     /// </summary>
-    public static bool TryDecodeRgb(CameraFrame f, out byte[]? rgb, out string? error, Action<string>? log = null)
+    public static bool TryDecodeRgb(CameraFrame f, out byte[]? rgb, out string? error, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         rgb = null;
         if (EmptyMiniReconstruction(f)) return PolicyFail(log, out error);
-        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeRgb(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log);
+        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeRgb(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log, sourceLog);
         if (!r.Ok) return Fail(r.Error!, out error);
         rgb = r.Image!.Data;
         error = null;
@@ -674,15 +674,15 @@ public sealed class CameraSettings
         {
             if (!(MaxExposureMs >= exposureMs && MinExposureMs <= exposureMs))
             {
-                Emit($"warning: VisionSystem.IsExposureValid.OOR: Exposure {exposureMs}ms not in range {MinExposureMs}ms to {MaxExposureMs}ms");
+                Emit(EngineLogLevel.Warning, null, "VisionSystem.IsExposureValid.OOR", $"Exposure {exposureMs}ms not in range {MinExposureMs}ms to {MaxExposureMs}ms");
                 return false;
             }
             if (!(gain >= MinGain && gain <= MaxGain))
             {
-                Emit($"warning: VisionSystem.IsGainValid.OOR: Gain {F(gain, 6)} not in range {F(MinGain, 6)} to {F(MaxGain, 6)}");
+                Emit(EngineLogLevel.Warning, null, "VisionSystem.IsGainValid.OOR", $"Gain {F(gain, 6)} not in range {F(MinGain, 6)} to {F(MaxGain, 6)}");
                 return false;
             }
-            Emit($"info: [VisionComponent] VisionComponent.SetCameraSettings: Exp:{exposureMs}ms Gain:{F(gain, 6)}");
+            Emit(EngineLogLevel.Info, "VisionComponent", "VisionComponent.SetCameraSettings", $"Exp:{exposureMs}ms Gain:{F(gain, 6)}");
             _send(new SetCameraParams { Gain = gain, ExposureMs = exposureMs, AutoExposureEnabled = false });
             SetNextCameraParamsLocked(exposureMs, gain);
             info = new CurrentCameraParams(gain, exposureMs, AutoExposureEnabled);
@@ -696,7 +696,7 @@ public sealed class CameraSettings
 
     private void SetNextCameraParamsLocked(int exposureMs, float gain)
     {
-        if (NextCameraParams is { } old) Emit($"warning: VisionSystem.SetNextCameraParams.OverwritingPreviousParams: Params already requested ({old.Item1}ms,{F(old.Item2, 2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain, 2)})");
+        if (NextCameraParams is { } old) Emit(EngineLogLevel.Warning, null, "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", $"Params already requested ({old.Item1}ms,{F(old.Item2, 2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain, 2)})");
         NextCameraParams = (exposureMs, gain);
     }
 
@@ -715,11 +715,11 @@ public sealed class CameraSettings
         // MISSING: M11-059 | VisionSystem::IsInitialized (0x006B2CD6) and the initial exposure (vision_config.json InitialExposureTime_ms, read by
         // VisionComponent::Init 0x00650DAE..0x00650DCA) are M11-059's; this stack holds the constants 16 and true.
         Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (unread); this stack uses the constants true and 16");
-        if (!VisionSystemInitialized) { Emit("error: VisionComponent.HandleDefaultCameraParams.NotInitialized: "); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return; }
+        if (!VisionSystemInitialized) { Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.NotInitialized", ""); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return; }
         ushort min = m.Field2, max = m.Field3;
         if (!(min <= InitialExposureTimeMs && InitialExposureTimeMs <= max))
         {
-            Emit($"error: VisionComponent.HandleDefaultCameraParams.BadInitialExposureTime: Initial exp time {InitialExposureTimeMs}ms outside range [{min},{max}]");
+            Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.BadInitialExposureTime", $"Initial exp time {InitialExposureTimeMs}ms outside range [{min},{max}]");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return;
         }
@@ -728,13 +728,13 @@ public sealed class CameraSettings
         {
             // 13.6: SetGammaTable 0x0085F594..0x0085F5B6 always returns 0; BadGammaCurve is unreachable.
             GammaTable = (byte[])m.Field4.Clone();
-            if (min == 0) Emit("debug: [VisionSystem] VisionSystem.SetCameraExposureParams.ZeroMinExposureTime: Will use 1.");
+            if (min == 0) Emit(EngineLogLevel.Debug, "VisionSystem", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "Will use 1.");
             MaxExposureMs = max;
             MinExposureMs = min <= 0 ? 1 : min;
             MinGain = DefaultParamsMinGain;
             MaxGain = m.Field0;
             SetNextCameraParamsLocked(InitialExposureTimeMs, m.Field1);
-            Emit($"info: [VisionSystem] VisionSystem.SetCameraExposureParams.Success: Current Gain:{InitialExposureTimeMs}ms Limits:[{min} {max}], Current Exposure:{F(m.Field1, 3)} Limits:[{F(DefaultParamsMinGain, 3)} {F(m.Field0, 3)}]");
+            Emit(EngineLogLevel.Info, "VisionSystem", "VisionSystem.SetCameraExposureParams.Success", $"Current Gain:{InitialExposureTimeMs}ms Limits:[{min} {max}], Current Exposure:{F(m.Field1, 3)} Limits:[{F(DefaultParamsMinGain, 3)} {F(m.Field0, 3)}]");
         }
     }
 
@@ -771,18 +771,18 @@ public sealed class CameraSettings
         Vision.CameraCalibration? installed = null;
         lock (_gate)
         {
-            if (r.Result != 0) Emit("warning: VisionComponent.ReadCameraCalibration.Failed");   // empty format (0xBE3F00, 0x0065AB7A)
+            if (r.Result != 0) Emit(EngineLogLevel.Warning, null, "VisionComponent.ReadCameraCalibration.Failed", "");   // empty format (0xBE3F00, 0x0065AB7A)
             else if (r.Data.Length != CalibrationBytes)
                 // "Expected %zu, got %zu" (0x0065AE50..0x0065AE58): r3 = MakeWordAligned(size) is compared with the blob size, which is the second arg.
-                Emit($"warning: VisionComponent.ReadCameraCalibration.SizeMismatch: Expected {CalibrationBytes}, got {r.Data.Length}");
+                Emit(EngineLogLevel.Warning, null, "VisionComponent.ReadCameraCalibration.SizeMismatch", $"Expected {CalibrationBytes}, got {r.Data.Length}");
             else
             {
                 installed = Vision.CameraCalibration.Unpack(r.Data);
                 // 0x0065ACE8 logs the received struct before the <=6 check zeroes the distortion.
-                Emit($"info: [Unnamed] VisionComponent.ReadCameraCalibration.Recvd: {RecvdText(installed)}");
+                Emit(EngineLogLevel.Info, "Unnamed", "VisionComponent.ReadCameraCalibration.Recvd", $"{RecvdText(installed)}");
                 if (_bodyHwVersion <= 6)
                 {
-                    Emit("info: [Unnamed] VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs");   // empty format (0xBE3F00)
+                    Emit(EngineLogLevel.Info, "Unnamed", "VisionComponent.ReadCameraCalibration.IgnoringDistCoeffs", "");   // empty format (0xBE3F00)
                     installed = installed with { DistortionCoefficients = new double[8] };
                 }
                 Calibration = installed;
@@ -815,7 +815,12 @@ public sealed class CameraSettings
                $"cx: {F((float)c.CenterX)}, cy: {F((float)c.CenterY)}, distCoeffs: [{string.Join(", ", d)}])";
     }
 
-    private void Emit(string line) => Log?.Invoke(line);
+    internal event Action<EngineLogLevel, string?, string, string>? SourceLog;
+    private void Emit(EngineLogLevel level, string? channel, string key, string text)
+    {
+        SourceLog?.Invoke(level, channel, key, text);
+        Log?.Invoke(level.ToString().ToLowerInvariant() + ": " + (channel is null ? "" : "[" + channel + "] ") + key + (text.Length == 0 ? "" : ": " + text));
+    }
 
     // fidelity: M1-025, M1-015
     /// <summary>The as-constructed state, for a removed robot (the VisionComponent and VisionSystem are built afresh). Subscribers are kept.</summary>

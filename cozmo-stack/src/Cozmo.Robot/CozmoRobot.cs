@@ -249,8 +249,8 @@ public sealed class CozmoRobot : IDisposable
         // fidelity: M4-017, M4-018
         // The shipped light patterns, from the resources path the engine options name (LB4e; LC3). Without one the
         // containers hold only OffCharger, and the charging and cube animations warn and play nothing (LB4c, LC2 (c)).
-        Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log),
-                                 CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log));
+        Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text)),
+                                 CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text)));
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
         CubeAccel = new CubeAccelStreams(this);
@@ -266,7 +266,7 @@ public sealed class CozmoRobot : IDisposable
         Camera.TimeSynced = () => Engine.Robot?.TimeSynced ?? false;
         Camera.EventTime = () => Engine.Timer.Seconds;
         Camera.Log += l => Engine.Log(l);
-        CameraSettings.Log += l => Engine.Log(l);
+        CameraSettings.SourceLog += (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text);
         // fidelity: M3-022
         // One robot-level NV storage owner serves every read (NVStorageComponent): the VisionComponent's
         // connection-time calibration read is queued on it rather than subscribing on its own.
@@ -728,7 +728,7 @@ public sealed class CozmoRobot : IDisposable
         if (Engine.Robot?.StoredState is not { } stored) return;
         Route(Cubes.Update);
         Route(Lights.Cubes.Update);
-        Route(() => Lights.Body.Update(stored, Engine.Log));
+        Route(() => Lights.Body.Update(stored, Engine.Log, (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text)));
     }
 
     // fidelity: M1-041

@@ -67,7 +67,8 @@ public abstract class CompoundAction : ActionRunner
     protected virtual void AddAction(ActionRunner child, bool other)
     {
         _ = other;                                        // P3: forwarded, unused by the base body
-        child.Log = Log;                                  // +0x57
+        child.Log = Log;
+        child.SourceLog = SourceLog;                                  // +0x57
         child.Watcher = Watcher;
         _children.Add(child);
     }
@@ -81,7 +82,7 @@ public abstract class CompoundAction : ActionRunner
     {
         if (child is null)
         {
-            Log?.Invoke("warning: ICompoundAction.AddAction.NullChild");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "ICompoundAction.AddAction.NullChild", "");
             return;
         }
         if (ignoreFailure) _ignorePredicates[child] = static (_, _) => true;
@@ -94,10 +95,11 @@ public abstract class CompoundAction : ActionRunner
     {
         if (child is null)
         {
-            Log?.Invoke("warning: ICompoundAction.Constructor.NullChild");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "ICompoundAction.Constructor.NullChild", "");
             return;
         }
         child.Log = Log;
+        child.SourceLog = SourceLog;
         child.Watcher = Watcher;
         _children.Add(child);
     }
@@ -167,7 +169,7 @@ public abstract class CompoundAction : ActionRunner
             return child.GetCompletionUnion();
         }
         if (_completionCache.TryGetValue(_proxyTag, out var cached)) return cached.Union;
-        Log?.Invoke("warning: ICompoundAction.GetCompletionUnion.ProxyTagMissing");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "ICompoundAction.GetCompletionUnion.ProxyTagMissing", "");
         return base.GetCompletionUnion();
     }
 

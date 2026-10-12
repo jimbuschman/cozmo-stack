@@ -428,6 +428,7 @@ public sealed class SelectionChooser : IBehaviorChooser
 
     /// <summary>Log lines (the handler's warnings and the unknown-tag error).</summary>
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>
     /// <c>BehaviorManager::FindBehaviorByExecutableType</c> (called at 0x0060AA7C). Its body is not in the M8 inventory (the container
@@ -504,8 +505,8 @@ public sealed class SelectionChooser : IBehaviorChooser
         string name = defined ? ((BehaviorID)message.BehaviorID).ToString() : message.BehaviorID.ToString();
         if (defined && _bound is not null) _bound.TryGetValue(name, out found);
         _numRuns = message.NumRuns;                                                        // 0x0060AA88 / 0x0060AB7A
-        if (found is null) Log?.Invoke($"warning: SelectionBSRunnableChooser.HandleExecuteBehaviorByName.UnknownBehavior: Unknown behavior {name}");
-        else Log?.Invoke($"info: [Unnamed] SelectionBSRunnableChooser.HandleExecuteBehaviorByName.SelectBehavior: selecting behavior name '{name}'");
+        if (found is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "SelectionBSRunnableChooser.HandleExecuteBehaviorByName.UnknownBehavior", $"Unknown behavior {name}");
+        else SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "SelectionBSRunnableChooser.HandleExecuteBehaviorByName.SelectBehavior", $"selecting behavior name '{name}'");
         Select(found);
     }
 
@@ -527,8 +528,8 @@ public sealed class SelectionChooser : IBehaviorChooser
         var found = find(message.ExecutableBehaviorType);
         _numRuns = message.NumRuns;                                                        // 0x0060AAC8
         if (!_reportedTypeNameMissing) { _reportedTypeNameMissing = true; Log?.Invoke("MISSING: M8-013: the ExecutableBehaviorType name table (EnumToString, PLT 0x4B6CA8) is not in the stack; the number is logged instead of the name"); }
-        if (found is null) Log?.Invoke($"warning: SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.NoBehavior: No behavior for exec type {message.ExecutableBehaviorType}");
-        else Log?.Invoke($"info: [Unnamed] SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.SelectBehavior: selecting behavior '{found.Id}' exec type '{message.ExecutableBehaviorType}'");
+        if (found is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.NoBehavior", $"No behavior for exec type {message.ExecutableBehaviorType}");
+        else SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "SelectionBSRunnableChooser.ExecuteBehaviorByExecutableType.SelectBehavior", $"selecting behavior '{found.Id}' exec type '{message.ExecutableBehaviorType}'");
         Select(found);
     }
 
@@ -546,7 +547,7 @@ public sealed class SelectionChooser : IBehaviorChooser
             case Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnionTag:
                 HandleExecuteBehavior(Cozmo.Protocol.ExecuteBehaviorByExecutableTypeMessage.UnpackBody(payload)); break;
             default:
-                Log?.Invoke("error: SelectionBSRunnableChooser.HandleMessage.UnknownTag: got a tag we didn't subscribe to");   // sErrorF 0x0060AB3A..0x0060AB74
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "SelectionBSRunnableChooser.HandleMessage.UnknownTag", "got a tag we didn't subscribe to");   // sErrorF 0x0060AB3A..0x0060AB74
                 Select(null);
                 break;
         }

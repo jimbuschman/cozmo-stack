@@ -330,6 +330,7 @@ public sealed class MoodState
 
     /// <summary>The warnings the engine logs (<c>MoodManager::Update</c>'s step below the floor).</summary>
     public Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
 
     public MoodState(MoodModel model) => _model = model;
 
@@ -512,7 +513,7 @@ public sealed class MoodState
         float dt = last != 0 ? t - last : MinUpdateStepSec;
         if (dt < MinUpdateStepSec)
         {
-            Log?.Invoke($"warning: MoodManager.Update.TimeStepTooSmall: dt {dt}, last {last}, now {t}");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "MoodManager.Update.TimeStepTooSmall", $"dt {dt}, last {last}, now {t}");
             dt = MinUpdateStepSec;
         }
         _lastUpdateSec = t;

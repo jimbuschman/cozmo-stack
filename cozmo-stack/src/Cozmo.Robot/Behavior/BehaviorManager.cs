@@ -157,6 +157,7 @@ public sealed class BehaviorManager : IDisposable
 
     /// <summary>The manager's log lines (C7, C8, gap1 4a..4c).</summary>
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>
     /// C3: ActionList::IsEmpty, the M8/M12 interface. Null: no ActionList is attached to this stack, and the sticky
@@ -363,7 +364,7 @@ public sealed class BehaviorManager : IDisposable
         // UpdateRobotPropertiesForReaction, MISSING), so it is always false.
         if (motion.LockedTracks != 0 && (!motion.DirectDriveHoldsAnyTrack || motion.DirectDriveDisabled))
         {
-            Log?.Invoke("warning: BehaviorManager.CheckReactionTriggerStrategies: Some tracks are locked, unlocking them");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "BehaviorManager.CheckReactionTriggerStrategies", "Some tracks are locked, unlocking them");
             motion.CompletelyUnlockAllTracks();
         }
     }

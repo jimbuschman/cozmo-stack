@@ -18,8 +18,9 @@ public sealed class BehaviorFactoryContext
     public VisionSystem? Vision { get; init; }
     /// <summary>The manipulation system (the M12/M13 layer), for the classes that dock, place or drive.</summary>
     public ManipulationSystem? Manipulation { get; init; }
-    /// <summary>The engine's log: each line starts with its level (info, warning, error), as <see cref="CozmoEngine.LogLine"/> lines do.</summary>
+    /// <summary>Stack diagnostics and standalone log observation; source calls use the separate typed seam.</summary>
     public Action<string>? Log { get; init; }
+    public SourceLogSink? SourceLog { get; init; }
 }
 
 /// <summary>
@@ -133,7 +134,7 @@ public static class BehaviorConfigLoader
     /// (<c>__node_insert_unique</c> 0x00520792): a duplicate keeps the first and drops the new one with no log (0x005207E6..0x00520808).
     /// The files are read as jsoncpp reads them: comments and trailing commas are tolerated.
     /// </summary>
-    public static Dictionary<BehaviorID, JsonElement> Load(string obbRoot, Action<string>? log = null)
+    public static Dictionary<BehaviorID, JsonElement> Load(string obbRoot, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         var map = new Dictionary<BehaviorID, JsonElement>();
         var dir = DirectoryFor(obbRoot);
@@ -149,7 +150,7 @@ public static class BehaviorConfigLoader
             }
             catch (Exception e) when (e is JsonException or IOException or UnauthorizedAccessException)
             {
-                log?.Invoke($"warning: RobotDataLoader.Behavior: Failed to read '{path}'");
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotDataLoader.Behavior", $"Failed to read '{path}'");
                 continue;
             }
             if (IsEmpty(json)) continue;
@@ -301,7 +302,7 @@ public sealed class BehaviorFactory
     {
         if ((byte)cls > 0x4E)
         {
-            ctx.Log?.Invoke($"error: behaviorContainer.CreateBehavior.Failed: Failed to create Behavior of type '{cls}'");
+            SourceLogDispatch.GetSink(ctx.SourceLog, ctx.Log)?.Invoke(EngineLogLevel.Error, null, "behaviorContainer.CreateBehavior.Failed", $"Failed to create Behavior of type '{cls}'");
             status = BehaviorCreateStatus.ClassOutOfRange;
             return null;
         }
@@ -360,7 +361,7 @@ public sealed class BehaviorContainer
             count++;
             if (BehaviorConfigLoader.IsEmpty(json))
             {
-                ctx.Log?.Invoke($"warning: Robot.LoadBehavior: Failed to read behavior file for behavior id '{id}'");
+                SourceLogDispatch.GetSink(ctx.SourceLog, ctx.Log)?.Invoke(EngineLogLevel.Warning, null, "Robot.LoadBehavior", $"Failed to read behavior file for behavior id '{id}'");
                 continue;
             }
             var cls = BehaviorClassNames.ExtractFromConfig(json);
@@ -370,7 +371,7 @@ public sealed class BehaviorContainer
                 NotCreated++;
                 // only the engine's own null (a class above 0x4E) is the engine's error; a class this stack cannot build is reported MISSING by the factory
                 if (status == BehaviorCreateStatus.ClassOutOfRange)
-                    ctx.Log?.Invoke($"error: Robot.LoadBehavior.CreateFailed: Failed to create a behavior for behavior id '{id}'");
+                    SourceLogDispatch.GetSink(ctx.SourceLog, ctx.Log)?.Invoke(EngineLogLevel.Error, null, "Robot.LoadBehavior.CreateFailed", $"Failed to create a behavior for behavior id '{id}'");
             }
         }
         if (count != 0) VerifyExecutableBehaviors();
@@ -387,7 +388,7 @@ public sealed class BehaviorContainer
     {
         var id = BehaviorConfigLoader.IdFromString(behavior.Id);
         if (_behaviors.TryAdd(id, behavior))
-            _ctx.Log?.Invoke($"info: [Unnamed] behaviorContainer::AddToFactory: Added new behavior '{id}' 0x{RuntimeHelpers.GetHashCode(behavior):X8}");
+            SourceLogDispatch.GetSink(_ctx.SourceLog, _ctx.Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "behaviorContainer::AddToFactory", $"Added new behavior '{id}' 0x{RuntimeHelpers.GetHashCode(behavior):X8}");
         return behavior;
     }
 
@@ -402,5 +403,5 @@ public sealed class BehaviorContainer
     /// The engine's path for a real robot: <see cref="BehaviorConfigLoader.Load"/> (the <c>RobotDataLoader</c>'s map) then the container over it.
     /// </summary>
     public static BehaviorContainer LoadShipped(string obbRoot, BehaviorFactoryContext ctx) =>
-        new(new BehaviorFactory(), ctx, BehaviorConfigLoader.Load(obbRoot, ctx.Log));
+        new(new BehaviorFactory(), ctx, BehaviorConfigLoader.Load(obbRoot, ctx.Log, ctx.SourceLog));
 }

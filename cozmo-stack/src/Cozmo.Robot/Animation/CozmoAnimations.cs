@@ -162,7 +162,9 @@ public sealed class CozmoAnimations : IDisposable
         _sink = new RobotAnimationSink(robot);
         _scheduler = new AnimationScheduler(_sink);
         _scheduler.Stream.Log = robot.Engine.Log;
+        _scheduler.Stream.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
         _scheduler.Log = robot.Engine.Log;
+        _scheduler.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
         // fidelity: M6-028
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
         // a robot with no firmware version yet has the client constructor's 0 (None).
@@ -270,8 +272,9 @@ public sealed class CozmoAnimations : IDisposable
         // The pre-rendered face animations live beside the clips, and the faceAnimations track names them.
         FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
         _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
-        Library = AnimationLibrary.Open(assetsRoot, _robot.Engine.Log);
+        Library = AnimationLibrary.Open(assetsRoot, _robot.Engine.Log, (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
         Library.Log = _robot.Engine.Log;
+        Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)
         Library.HeadAngleRad = () => _robot.State.HeadAngleRad;
         Library.ContextRandom = _scheduler.ContextRandom; // M5-045: ownership of the native group RNG remains unread.
@@ -586,7 +589,7 @@ public sealed class CozmoFace
     /// <summary>Renders a pose and shows it. Returns the bitmap that was sent, for inspection and tests.</summary>
     public FaceBitmap SetParameters(ProceduralFacePose pose)
     {
-        using var clipLog = Eye.UseWarningLog(_robot.Engine.Log);
+        using var clipLog = Eye.UseWarningLog(_robot.Engine.Log, (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
         Current = pose.Clone();
         var bmp = ProceduralFaceRenderer.Render(pose);
         _robot.Display.Show(bmp);

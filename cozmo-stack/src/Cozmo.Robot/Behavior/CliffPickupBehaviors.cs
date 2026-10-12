@@ -116,7 +116,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
             if (detected == 0 || _quit != 0) return;
             string warn = "warning: BehaviorReactToCliff.CliffWithoutStop: Got a cliff event but stop isn't running, skipping straight to cliff react (bad latency?)";
             Log(warn);
-            EngineLog(warn);
+            (_robot ?? Context?.Robot)?.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "BehaviorReactToCliff.CliffWithoutStop", "Got a cliff event but stop isn't running, skipping straight to cliff react (bad latency?)");
             _reactNow = 1;
             _cliffDetected = detected;
             _state = 1;
@@ -126,7 +126,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
         {
             string dbg = "debug: BehaviorReactToCliff.GotCliff: Got cliff event while running";
             Log(dbg);
-            EngineLog(dbg);
+            (_robot ?? Context?.Robot)?.Engine.EmitSourceLog(EngineLogLevel.Debug, null, "BehaviorReactToCliff.GotCliff", "Got cliff event while running");
             _cliffDetected = detected;
             _reactNow = 1;
         }
@@ -198,7 +198,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
             {
                 string err = "error: BehaviorReactToCliff.Init.InvalidState: Init called with invalid state";
                 Log(err);
-                EngineLog(err);
+                (_robot ?? Context?.Robot)?.Engine.EmitSourceLog(EngineLogLevel.Error, null, "BehaviorReactToCliff.Init.InvalidState", "Init called with invalid state");
                 InitFailed = true;                                                              // returns 1
                 break;
             }
@@ -217,7 +217,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
         if (_savedThreshold == robot.Sensors.CliffDetectThreshold) return true;                 // 0x006056CE..0x006056D4
         string info = "info: [Behaviors] BehaviorReactToCliff.QuittingDueToSuspiciousCliff";
         Log(info);
-        EngineLog(info);
+        (_robot ?? Context?.Robot)?.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "BehaviorReactToCliff.QuittingDueToSuspiciousCliff", "");
         _quit = 1;                                                                              // 0x00605718
         return true;
     }
@@ -421,7 +421,7 @@ public sealed class ReactToPickupBehavior : SteppedBehavior
         {
             string line = "info: BehaviorReactToPickup.OnCharger: Stopping behavior because we are on the charger";
             Log(line);
-            Context.Robot.Engine.Log(line);
+            Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, null, "BehaviorReactToPickup.OnCharger", "Stopping behavior because we are on the charger");
             Finish();
             return;
         }

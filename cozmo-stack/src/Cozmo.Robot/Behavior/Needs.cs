@@ -314,7 +314,7 @@ public sealed class NeedsState
     // fidelity: M15-001
     public NeedBracketId GetNeedBracket(int need)
     {
-        if (need is < 0 or > 2) { Warn?.Invoke($"warning: NeedsState.GetNeedBracket: invalid need {need}"); return (NeedBracketId)4; }
+        if (need is < 0 or > 2) { SourceLogDispatch.GetSink(SourceLog, Warn)?.Invoke(EngineLogLevel.Warning, null, "NeedsState.GetNeedBracket", $"invalid need {need}"); return (NeedBracketId)4; }
         UpdateCurNeedsBrackets();
         return (NeedBracketId)_curBrackets[need];
     }
@@ -326,12 +326,13 @@ public sealed class NeedsState
     // fidelity: M15-001
     public bool IsNeedAtBracket(NeedId n, NeedBracketId b)
     {
-        if ((int)n is < 0 or > 2) { Warn?.Invoke($"error: NeedsState.IsNeedAtBracket: invalid need {(int)n}"); return false; }
+        if ((int)n is < 0 or > 2) { SourceLogDispatch.GetSink(SourceLog, Warn)?.Invoke(EngineLogLevel.Error, null, "NeedsState.IsNeedAtBracket", $"invalid need {(int)n}"); return false; }
         return GetNeedBracket(n) == b;
     }
 
     /// <summary>The engine's warning sink for an invalid need index.</summary>
     public event Action<string>? Warn;
+    public SourceLogSink? SourceLog { get; set; }
 
     public (NeedId Need, NeedBracketId Bracket) GetLowestNeedAndBracket()
     {
@@ -653,6 +654,7 @@ public sealed class NeedsManager
         State = new NeedsState(Config);
         Random = random ?? new Random();
         State.Warn += m => Log?.Invoke(m);
+        State.SourceLog = (level, channel, key, text) => SourceLogDispatch.Write(SourceLog, Log, level, channel, key, text);
         InitReset(clockSec());
     }
 
@@ -741,6 +743,7 @@ public sealed class NeedsManager
     /// </summary>
     public event Action<NeedId, NeedBracketId, NeedBracketId, double>? BracketChanged;
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>
     /// <c>NeedsManager</c>+0x3D4: the desired-face-distortion component (D01). Constructed and initialised by
@@ -1245,14 +1248,14 @@ public sealed class NeedsManager
         lock (_gate) nv = NvStorage;
         if (nv is null)
         {
-            Log?.Invoke("error: NeedsManager.StartReadFromRobot: no NV storage to queue the robot needs read on");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "NeedsManager.StartReadFromRobot", "no NV storage to queue the robot needs read on");
             lock (_gate) _awaitingRobotData = false;    // +0x3d0
             return 0;
         }
         // The NV read happens outside _gate; an invalid tag invokes OnRobotRead synchronously.
         if (nv.Read(tag, OnRobotRead) == 0)
         {
-            Log?.Invoke($"error: NeedsManager.StartReadFromRobot: the NV tag 0x{tag:X8} is invalid; the robot needs read was not queued");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "NeedsManager.StartReadFromRobot", $"the NV tag 0x{tag:X8} is invalid; the robot needs read was not queued");
             lock (_gate) _awaitingRobotData = false;    // +0x3d0
             return 0;
         }
@@ -1300,7 +1303,7 @@ public sealed class NeedsManager
             // The engine runs no Unpack variant and leaves the struct prefix uninitialised; the stack reads
             // it as all-zero (the forced SD2 policy), sets the rewrite flag and returns success.
             robot = new NeedsStateOnRobot { Version = 5 };
-            Log?.Invoke("warning: NeedsManager.FinishReadFromRobot: Version 0 found on robot but not supported");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "NeedsManager.FinishReadFromRobot", "Version 0 found on robot but not supported");
         }
         else
         {
@@ -1430,7 +1433,7 @@ public sealed class NeedsManager
                     if (_deviceVersionUpdated)
                     {
                         _deviceVersionUpdated = false;    // +0x1cb, cleared with the log (0x00694DB6)
-                        Log?.Invoke("info: NeedsManager.InitAfterReadFromRobotAttempt: storage version update (device)");
+                        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, null, "NeedsManager.InitAfterReadFromRobotAttempt", "storage version update (device)");
                     }
                 }
                 WriteToDevice?.Invoke(false);
@@ -1442,7 +1445,7 @@ public sealed class NeedsManager
                     if (_robotRewriteNeeded)
                     {
                         _robotRewriteNeeded = false;      // +0x1ca, cleared with the log (0x00694E62)
-                        Log?.Invoke("info: NeedsManager.InitAfterReadFromRobotAttempt: storage version update (robot)");
+                        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, null, "NeedsManager.InitAfterReadFromRobotAttempt", "storage version update (robot)");
                     }
                 }
                 StartWriteToRobot(now);
@@ -1474,7 +1477,7 @@ public sealed class NeedsManager
             if (!_robotConnected) return;                            // the connected robot +4 is null
             if (_awaitingRobotData)
             {
-                Log?.Invoke("warning: NeedsManager.StartWriteToRobot: Aborting writing needs state to robot, because we are reading needs state from robot");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "NeedsManager.StartWriteToRobot", "Aborting writing needs state to robot, because we are reading needs state from robot");
                 return;
             }
             _lastWriteToRobotSec = nowSec;                           // +0x1c0/+0x1c4
@@ -1495,13 +1498,13 @@ public sealed class NeedsManager
         // The NV write happens outside _gate (finding 5: do not hold _gate across NvStorageComponent.Write).
         if (nv is null)
         {
-            Log?.Invoke("error: NeedsManager.StartWriteToRobot.WriteFailed: no NV storage to queue the robot needs write on");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "NeedsManager.StartWriteToRobot.WriteFailed", "no NV storage to queue the robot needs write on");
             _writeToRobotError = true;
             return;
         }
         if (nv.Write(NeedsNvKey, blob, r => FinishWriteToRobot(r.Result)) == 0)
         {
-            Log?.Invoke("error: NeedsManager.StartWriteToRobot.WriteFailed");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "NeedsManager.StartWriteToRobot.WriteFailed", "");
             _writeToRobotError = true;
         }
     }
@@ -1545,7 +1548,7 @@ public sealed class NeedsManager
     public void FinishWriteToRobot(sbyte result)
     {
         if (result >= 0) return;
-        Log?.Invoke("error: NeedsManager.FinishWriteToRobot.WriteFailed");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "NeedsManager.FinishWriteToRobot.WriteFailed", "");
         _writeToRobotError = true;
     }
 
@@ -1790,7 +1793,7 @@ public sealed class NeedsManager
         using var doc = System.Text.Json.JsonDocument.Parse(text);
         var root = doc.RootElement;
         int version = root.TryGetProperty("_StateFileVersion", out var ver) && ver.ValueKind == System.Text.Json.JsonValueKind.Number ? ver.GetInt32() : 1;
-        if (version > 5) { Log?.Invoke($"warning: NeedsManager.ReadFromDevice: state file version {version} is above 5; not read"); return false; }
+        if (version > 5) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "NeedsManager.ReadFromDevice", $"state file version {version} is above 5; not read"); return false; }
         if (root.TryGetProperty("_SerialNumber", out var sn) && sn.ValueKind == System.Text.Json.JsonValueKind.Number)
         {
             _previousSerial = _serial;

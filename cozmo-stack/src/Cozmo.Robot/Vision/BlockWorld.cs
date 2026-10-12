@@ -1775,11 +1775,18 @@ public sealed class BlockWorld
             Log?.Invoke("ObjectPoseConfirmer.SetPoseStateHelper.CantSetInvalidPoseState: cannot set PoseState to Invalid");
             return false;
         }
+        var old = StorePoseState(obj, state);
+        if (old is { } previous) PoseStateChanged?.Invoke(obj, previous, state);
+        return true;
+    }
+
+    // Shared state mutation; callers deliver PoseStateChanged after releasing any world lock.
+    private PoseState? StorePoseState(ObservableObject obj, PoseState state)
+    {
         if (state == PoseState.Dirty && LocalizedToObjectId == obj.ObjectId) SetLocalizedTo(null);
         var old = obj.PoseState;
         obj.PoseState = state;
-        if (old != state) PoseStateChanged?.Invoke(obj, old, state);
-        return true;
+        return old != state ? old : null;
     }
 
     /// <summary>
@@ -2486,10 +2493,7 @@ public sealed class BlockWorld
         {
             if (IsCarryingObject?.Invoke(matched.ObjectId) != true && matched.PoseState == PoseState.Known)
             {
-                // MarkObjectDirty(false) -> SetPoseStateHelper(Dirty), without its callout under _gate.
-                if (LocalizedToObjectId == matched.ObjectId) SetLocalizedTo(null);
-                previous = matched.PoseState;
-                matched.PoseState = PoseState.Dirty;
+                previous = StorePoseState(matched, PoseState.Dirty);
             }
             matched.IsMoving = moving;
         }

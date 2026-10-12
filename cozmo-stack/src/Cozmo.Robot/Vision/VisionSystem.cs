@@ -328,9 +328,10 @@ public sealed class VisionSystem : IDisposable
             {
                 string current = string.Join("+", Enumerable.Range(0, 16)
                     .Where(i => (ModeEnableMask & (1 << i)) != 0).Select(i => ((VisionMode)i).ToString()));
-                Log?.Invoke(enable
-                    ? $"info: VisionSystem.EnablingMode: Adding mode LimitedExposure to current mode {current}."
-                    : $"info: VisionSystem.DisablingMode: Removing mode LimitedExposure from current mode {current}.");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, null,
+                    enable ? "VisionSystem.EnablingMode" : "VisionSystem.DisablingMode",
+                    enable ? $"Adding mode LimitedExposure to current mode {current}."
+                    : $"Removing mode LimitedExposure from current mode {current}.");
                 if (enable) ModeEnableMask = (ModeEnableMask & ~1) | bit;
                 else
                 {
@@ -414,6 +415,7 @@ public sealed class VisionSystem : IDisposable
 
     public event Action<VisionFrameResult>? FrameProcessed;
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>Raises the system's log line (used by the face actions' failure paths).</summary>
     internal void LogLine(string line) => Log?.Invoke(line);
@@ -806,14 +808,14 @@ public sealed class VisionSystem : IDisposable
         if (isColor)
         {
             // colour -> DecodeImageRGB + ImageCache::Reset(ImageRGB const&) (0x0087459E, RGB at +0x54)
-            if (!f.TryDecodeRgb(out var rgb, out _, Log)) return null;      // the helper's own logs (D2..D7) went to Log
+            if (!f.TryDecodeRgb(out var rgb, out _, Log, SourceLog)) return null;      // the helper's own logs (D2..D7) went to Log
             cache.Reset(rgb!, f.Width, f.Height);
         }
         else
         {
             // fidelity: M3-001
             // A6: a frame that does not decode (A8..A11, policy M3-020) is not processed.
-            if (!f.TryDecodeGray(out var gray, out _, Log)) return null;    // the helper's own logs (D2..D7) went to Log
+            if (!f.TryDecodeGray(out var gray, out _, Log, SourceLog)) return null;    // the helper's own logs (D2..D7) went to Log
             cache.Reset(gray!);
         }
         return ProcessCapture(cache, f.ImageId, f.Timestamp, removal);

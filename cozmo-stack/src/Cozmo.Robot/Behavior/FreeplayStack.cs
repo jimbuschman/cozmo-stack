@@ -67,6 +67,7 @@ public sealed class FreeplayStack : IDisposable
         // below names the same id (Hiccup, the feeding PlayAnims) the first instance stands, so the config's is the one bound.
         var factoryContext = new BehaviorFactoryContext
         {
+            SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text),
             Vision = vision,
             Manipulation = m,
             Log = line =>
@@ -168,7 +169,7 @@ public sealed class FreeplayStack : IDisposable
         // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update from the engine tick
         // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
         // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
-        var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log);
+        var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
         robot.Engine.AIComponentUpdate = () => ai.Update(robot);

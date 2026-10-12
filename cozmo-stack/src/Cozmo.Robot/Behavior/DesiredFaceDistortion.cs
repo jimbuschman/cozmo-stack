@@ -57,6 +57,7 @@ public sealed class DesiredFaceDistortionComponent
 
     /// <summary>The log sink (the engine's "NeedsSystem" channel; the exact strings are D05, D06, D10, D17).</summary>
     public Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>
     /// The tick-count seam. The engine reads <c>BaseStationTimer::GetTickCount</c> (the timer's +0x24,
@@ -171,7 +172,7 @@ public sealed class DesiredFaceDistortionComponent
     private void Error(string tag, string message)
     {
         ErrorFlagSet = true;
-        Log?.Invoke($"error: {tag}: {message}");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, $"{tag}", $"{message}");
     }
 
     /// <summary>

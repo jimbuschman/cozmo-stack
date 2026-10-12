@@ -88,7 +88,7 @@ public sealed class BackpackLightAnimations
     /// json["badCharger"]). A directory or file that is missing loads nothing.
     /// </summary>
     // fidelity: M4-036
-    public static BackpackLightAnimations Load(string? resourcesPath, Action<string>? log = null)
+    public static BackpackLightAnimations Load(string? resourcesPath, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         var c = new BackpackLightAnimations();
         if (resourcesPath is null) return c;
@@ -97,7 +97,7 @@ public sealed class BackpackLightAnimations
         var mtimes = new Dictionary<string, long>(StringComparer.Ordinal);
         Collect(dir);
         if (Directory.Exists(dir))
-            log?.Invoke($"info: [Animations] RobotDataLoader.CollectAnimFiles.Results: Found {files.Count} animation files of type 3");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.CollectAnimFiles.Results", $"Found {files.Count} animation files of type 3");
         else
             log?.Invoke("MISSING: M4-036 RobotDataLoader.CollectAnimFiles.Results type argument for a missing directory is unread");
         var time = System.Diagnostics.Stopwatch.StartNew();
@@ -114,11 +114,11 @@ public sealed class BackpackLightAnimations
             {
                 // fidelity: M1-034, M4-036 — section 13.4, operator pin: the native loader terminates;
                 // isolate this file and keep states already inserted, then continue the enumeration.
-                try { if (!JsonEmpty(doc.RootElement)) c.DefineFromJson(doc.RootElement, log); }
+                try { if (!JsonEmpty(doc.RootElement)) c.DefineFromJson(doc.RootElement, log, sourceLog); }
                 catch (JsonLogicError e) { log?.Invoke($"event handler threw: {e.GetType().Name}: {e.Message}"); }
             }
         }
-        log?.Invoke($"info: [Animations] RobotDataLoader.LoadBackpackLightAnimations.LoadTime: Time to load backpack light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadBackpackLightAnimations.LoadTime", $"Time to load backpack light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
         return c;
 
         void Collect(string path)
@@ -138,15 +138,15 @@ public sealed class BackpackLightAnimations
                     if (!stat.Exists) throw new IOException();
                     mtime = new DateTimeOffset(stat.LastWriteTimeUtc).ToUnixTimeSeconds();
                 }
-                catch (IOException) { log?.Invoke($"warning: RobotDataLoader.WalkAnimationDir: could not get mtime for {f}"); continue; }
-                catch (UnauthorizedAccessException) { log?.Invoke($"warning: RobotDataLoader.WalkAnimationDir: could not get mtime for {f}"); continue; }
+                catch (IOException) { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}"); continue; }
+                catch (UnauthorizedAccessException) { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}"); continue; }
                 if (mtimes.TryGetValue(f, out var old) && old >= mtime) continue;
                 mtimes[f] = mtime; files.Add(f);
             }
         }
         void ReadFailure(string f, string? errors)
         {
-            log?.Invoke($"error: DataPlatform.readAsJson: Failed to read [{f}]");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "DataPlatform.readAsJson", $"Failed to read [{f}]");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             if (!string.IsNullOrEmpty(errors))
                 log?.Invoke("MISSING: M4-036 / M1-029 | DataPlatform.readAsJson 0x0084C090..0x0084C15C: Json reader errors [%s] uses JsonCpp formatted reader errors; those bytes are not in the adopted rows and cannot be replaced by System.Text.Json diagnostics");
@@ -161,11 +161,11 @@ public sealed class BackpackLightAnimations
         _ => false
     };
 
-    internal void DefineFromJson(JsonElement root, Action<string>? log)
+    internal void DefineFromJson(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
     {
-        AddStateValues("Charging", root, "charging", log);
-        AddStateValues("Charged", root, "charged", log);
-        AddStateValues("BadCharger", root, "badCharger", log);
+        AddStateValues("Charging", root, "charging", log, sourceLog);
+        AddStateValues("Charged", root, "charged", log, sourceLog);
+        AddStateValues("BadCharger", root, "badCharger", log, sourceLog);
     }
 
     // fidelity: M4-017
@@ -174,7 +174,7 @@ public sealed class BackpackLightAnimations
     /// transitionOnPeriod_ms, transitionOffPeriod_ms and offset, each with exactly 5 entries, otherwise "Missing member
     /// field" and nothing is inserted; an existing key is not overwritten. Colours are floats: byte = u32(f · 255).
     /// </summary>
-    private void AddStateValues(string name, JsonElement root, string key, Action<string>? log)
+    private void AddStateValues(string name, JsonElement root, string key, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         // Section 13.4: root["charging"] const/find and the state's first isMember require object or null.
         if (root.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null or JsonValueKind.Undefined))
@@ -192,14 +192,14 @@ public sealed class BackpackLightAnimations
             bool ok = exists && arr.ValueKind == JsonValueKind.Array && arr.GetArrayLength() == 5;
             if (exists && (f == "onColors" || f == "offColors") && (arr.ValueKind != JsonValueKind.Array || arr.GetArrayLength() != 5))
             {
-                log?.Invoke("error: JsonTools.GetColorValuesToArrayOptional.DiffSizes: The json array and destination array are different sizes");
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "JsonTools.GetColorValuesToArrayOptional.DiffSizes", "The json array and destination array are different sizes");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             }
             valid &= ok; // all seven reads run
         }
         if (!valid)
         {
-            log?.Invoke($"error: BackpackLightAnimationContainer.AddBackpackLightStateValues.InvalidJson: Missing member field in pattern definition for BackpackLightsState {name}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "BackpackLightAnimationContainer.AddBackpackLightStateValues.InvalidJson", $"Missing member field in pattern definition for BackpackLightsState {name}");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return;
         }
@@ -301,7 +301,7 @@ public sealed class BodyLightComponent
     /// off it, a battery under 3.5 V gives 3, else 0. On a change the state is stored first (+0x38 at 0x00631BD8), then
     /// the pattern named for it is looped at source 2; an unknown name warns and plays nothing (LB4c).
     /// </summary>
-    private void UpdateChargingLightConfig(RobotState stored, Action<string> log)
+    private void UpdateChargingLightConfig(RobotState stored, Action<string> log, SourceLogSink? sourceLog = null)
     {
         int state;
         if (stored.Has(RobotStatusFlag.IsOnCharger))
@@ -315,7 +315,7 @@ public sealed class BodyLightComponent
             name = StateNames[state];
         }
         if (Animations.Get(name) is { } leds) StartLooping(leds, 2);
-        else log($"warning: BodyLightComponent.UpdateChargingLightConfig.NullAnim: Got null anim for state {name}");
+        else SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "BodyLightComponent.UpdateChargingLightConfig.NullAnim", $"Got null anim for state {name}");
     }
 
     // fidelity: M4-017
@@ -324,9 +324,9 @@ public sealed class BodyLightComponent
     /// first state: the charging config; best = the front of the first non-empty source in {1, 0, 2}; a change applies
     /// best, or Off when best is null; with best and the previous both null, Off is sent again.
     /// </summary>
-    internal void Update(RobotState stored, Action<string> log)
+    internal void Update(RobotState stored, Action<string> log, SourceLogSink? sourceLog = null)
     {
-        UpdateChargingLightConfig(stored, log);
+        UpdateChargingLightConfig(stored, log, sourceLog);
         LedPattern[]? apply;
         lock (_gate)
         {
@@ -520,7 +520,7 @@ public sealed class CubeLightAnimations
     /// json and bin through <c>DataPlatform::pathToResource(Scope::Resources, ...)</c>; on the shipped files that is
     /// <c>&lt;persistentDataPath&gt;/cozmo/cozmo_resources/config/engine/lights/cubeLights</c>.
     /// </summary>
-    public static CubeLightAnimations Load(string? resourcesPath, Action<string>? log = null)
+    public static CubeLightAnimations Load(string? resourcesPath, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         var c = new CubeLightAnimations();
         if (resourcesPath is null) return c;
@@ -541,12 +541,12 @@ public sealed class CubeLightAnimations
         foreach (var f in Directory.GetFiles(dir, "*.json", SearchOption.AllDirectories).OrderBy(p => p, StringComparer.Ordinal))
         {
             if (!BackpackLightAnimations.TryParse(File.ReadAllBytes(f), out var doc)) { log?.Invoke($"error: {f}: not JSON"); continue; }
-            using (doc) c.Define(doc.RootElement, log);
+            using (doc) c.Define(doc.RootElement, log, sourceLog);
         }
         return c;
     }
 
-    internal void Define(JsonElement root, Action<string>? log)
+    internal void Define(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         if (root.ValueKind != JsonValueKind.Object) return;
         foreach (var anim in root.EnumerateObject())
@@ -559,7 +559,7 @@ public sealed class CubeLightAnimations
                 if (!TryPattern(e, out var p)) { ok = false; break; }
                 patterns.Add(p);
             }
-            if (!ok) { log?.Invoke($"error: CubeLightAnimationContainer: {anim.Name}: a pattern lacks a required field"); continue; }
+            if (!ok) { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "CubeLightAnimationContainer", $"{anim.Name}: a pattern lacks a required field"); continue; }
             _anims.TryAdd(anim.Name, patterns.ToArray());
         }
     }
@@ -702,7 +702,8 @@ public sealed class CubeLightComponent
     }
 
     private uint NowMs => _robot.Engine.Timer.TimeStampMs;
-    private void Log(string l) => _robot.Engine.EmitSourceLog(l, "CubeLightComponent");
+    private void Log(string l) => _robot.Engine.Log(l);
+    private void SourceLog(EngineLogLevel level, string? channel, string key, string text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
 
     // fidelity: M4-018
     /// <summary>
@@ -740,8 +741,9 @@ public sealed class CubeLightComponent
     {
         Playing pushed;
         CubeLightPattern first;
-        var logs = new List<string>();
-        void Log(string line) => logs.Add(line);
+        var logs = new List<Action>();
+        void Log(string line) => logs.Add(() => this.Log(line));
+        void SourceLog(EngineLogLevel level, string? channel, string key, string text) => logs.Add(() => this.SourceLog(level, channel, key, text));
         try
         {
             lock (_gate)
@@ -751,15 +753,15 @@ public sealed class CubeLightComponent
                 { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real connected BlockWorld ObjectID; active-slot fallback is not used"); return false; }
                 uint id = connected.ObjectId;
                 string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
-                if (!_infos.TryGetValue(type, out var info)) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.InvalidObjectID: No object with id {id} exists in _objectInfo map can't play animation"); return false; }
+                if (!_infos.TryGetValue(type, out var info)) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.InvalidObjectID", $"No object with id {id} exists in _objectInfo map can't play animation"); return false; }
                 var stack = info.Layers[layer];
-                if (stack.Count > 0 && !stack[^1].CanBeOverridden) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.CantBeOverridden: Current anim {stack[^1].Name} can not be overridden on object {id} layer {layerName}"); return false; }
+                if (stack.Count > 0 && !stack[^1].CanBeOverridden) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.CantBeOverridden", $"Current anim {stack[^1].Name} can not be overridden on object {id} layer {layerName}"); return false; }
                 string name = Animations.AnimationForTrigger(trigger);
                 var anim = Animations.ForTrigger(trigger);
-                if (anim is null || anim.Length == 0) { Log($"warning: CubeLightComponent.NoAnimForTrigger: No animation found for trigger {name}"); return false; }
-                if (info.GameLayerOnly && layer != UserLayer) { Log($"info: [CubeLightComponent] CubeLightComponent.OnlyGameLayerEnabled: Only game layer is enabled, refusing to play anim {name} on object {id} layer {layerName}"); return false; }
-                if (!info.GameLayerOnly && layer == UserLayer) { Log("info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.NotPlayingUserAnim: Refusing to play anim on User/Game layer when it is not enabled"); return false; }
-                if (stack.Count > 0 && stack[^1].Blended && blend) { Log("info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim: Can't play a blended anim over already playing blended anim"); return false; }
+                if (anim is null || anim.Length == 0) { SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.NoAnimForTrigger", $"No animation found for trigger {name}"); return false; }
+                if (info.GameLayerOnly && layer != UserLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.OnlyGameLayerEnabled", $"Only game layer is enabled, refusing to play anim {name} on object {id} layer {layerName}"); return false; }
+                if (!info.GameLayerOnly && layer == UserLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.NotPlayingUserAnim", "Refusing to play anim on User/Game layer when it is not enabled"); return false; }
+                if (stack.Count > 0 && stack[^1].Blended && blend) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim", "Can't play a blended anim over already playing blended anim"); return false; }
                 // Blending body remains M11's unported light-state handoff; do not manufacture the blended pattern.
                 if (blend) { Log("MISSING: M4-018 | BlendAnimWithCurLights body is not in the adopted rows; animation not pushed"); return false; }
                 first = anim[0];
@@ -768,15 +770,15 @@ public sealed class CubeLightComponent
                     CanBeOverridden = first.CanBeOverridden };
                 stack.Add(playing);
                 pushed = playing;
-                if (layer > info.CurrentLayer) { Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.LightsNotSet: Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
-                Log($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.SettingLights: Playing trigger {trigger} on layer {layerName} for object {id}");
+                if (layer > info.CurrentLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.LightsNotSet", $"Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
+                SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.SettingLights", $"Playing trigger {trigger} on layer {layerName} for object {id}");
                 info.CurrentLayer = layer;
                 pushed.PendingSend = true;
                 // SendTransitionMessage is an unread engine-to-game handoff on this path.
                 Log("MISSING: M4-018 | SendTransitionMessage 0x00638758..0x006387D8 game payload has no adopted row");
             }
         }
-        finally { foreach (var line in logs) this.Log(line); }
+        finally { foreach (var call in logs) call(); }
         // Do not hold _gate while taking _sendGate: SetLights takes those in the opposite order.
         uint result;
         try { result = SetObjectLights(type, first); }
@@ -945,7 +947,7 @@ public sealed class CubeLightComponent
         // "[CubeLightComponent]", the IHelper channel convention), event "CubeLightComponent.EnableGameLayerOnly" (0x00639BAC), format
         // "%s game layer only for %s" (0x00639BD4): "Enabling" (0x00BFAA93) when enable != 0 else "Disabling"
         // (0x00BFAA9C); "all objects" (0x00639B94) when ObjectID == -1, else "object " (0x00639BA0) + the id.
-        Log($"info: [CubeLightComponent] CubeLightComponent.EnableGameLayerOnly: {(enable ? "Enabling" : "Disabling")} game layer only for " +
+        SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.EnableGameLayerOnly", $"{(enable ? "Enabling" : "Disabling")} game layer only for " +
             (objectId == -1 ? "all objects" : FormattableString.Invariant($"object {objectId}")));
         // An id other than -1 with no ObjectInfo (type null): the lookup fails, complete no-op after the entry log.
         if (type is null && objectId != -1) return;
@@ -1068,7 +1070,7 @@ public sealed class CubeLightComponent
     {
         if (p.MakeRelative) Log("warning: MISSING: a makeRelative cube light pattern needs the located object (M11-004: the located object and makeRelative); sent to the connected cube");
         var cube = _robot.Cubes.ConnectedCubes.FirstOrDefault(c => c.Type == type && c.ObjectId is not null);
-        if (cube is null) { Log("info: [CubeLightController] CubeLightController.SetObjectLights.NullActiveObject: Null active object pointer"); return 0x04000000; }
+        if (cube is null) { SourceLog(EngineLogLevel.Info, "CubeLightController", "CubeLightController.SetObjectLights.NullActiveObject", "Null active object pointer"); return 0x04000000; }
         var leds = new LedPattern[4];
         for (int i = 0; i < 4; i++)
         {

@@ -186,6 +186,7 @@ public sealed class UnexpectedMovementDetector
     public event Action<UnexpectedMovementReport>? Detected;
     /// <summary>The engine's log lines (B11, B13, B14, B15, B16).</summary>
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>B5 / B17: +0x94..+0xA0 = 0.</summary>
     public void Reset()
@@ -266,12 +267,12 @@ public sealed class UnexpectedMovementDetector
         var (result, hist) = lookup(StartTimestamp);                                                     // B13
         if (result == HistoryLookupResult.OriginMismatch)
         {
-            Log?.Invoke("info: MovementComponent.CheckForUnexpectedMovement.PoseHistoryOriginMismatch");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, null, "MovementComponent.CheckForUnexpectedMovement.PoseHistoryOriginMismatch", "");
             return UnexpectedMovementSide.Unknown;
         }
         if (result != HistoryLookupResult.Ok)
         {
-            Log?.Invoke($"warning: MovementComponent.CheckForUnexpectedMovement.PoseHistoryFailure: Could not get robot pose at t={StartTimestamp}");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "MovementComponent.CheckForUnexpectedMovement.PoseHistoryFailure", $"Could not get robot pose at t={StartTimestamp}");
             return UnexpectedMovementSide.Unknown;
         }
         // B14

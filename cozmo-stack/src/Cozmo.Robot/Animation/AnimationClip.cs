@@ -222,10 +222,10 @@ public static class NamedColors
     /// <summary>
     /// <c>GetByString</c> (C5 item 6.3): a hit returns the stored colour; a miss logs and returns DEFAULT.
     /// </summary>
-    public static uint GetByString(string name, Action<string>? log = null)
+    public static uint GetByString(string name, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         if (Map.TryGetValue(name, out var c)) return c;
-        log?.Invoke($"warning: NamedColors.GetByString: Unknown color name '{name}', returning default");
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "NamedColors.GetByString", $"Unknown color name '{name}', returning default");
         return Default;
     }
 
@@ -233,9 +233,9 @@ public static class NamedColors
     /// A named colour as the four raw components r, g, b, a, so the reused-<c>ColorRGBA</c> reader
     /// (<see cref="BackpackColor.TryReadAll"/>) treats it by the raw rule (C17) and reproduces the same word.
     /// </summary>
-    public static float[] AsRawComponents(string name, Action<string>? log = null)
+    public static float[] AsRawComponents(string name, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        uint c = GetByString(name, log);
+        uint c = GetByString(name, log, sourceLog);
         return new[] { (float)((c >> 24) & 0xFF), (float)((c >> 16) & 0xFF), (float)((c >> 8) & 0xFF), (float)(c & 0xFF) };
     }
 }
@@ -256,13 +256,13 @@ public static class BackpackColor
     /// vcvt.u32.f32 (truncation, a negative saturating to 0), stored as a u8; alpha only from a 4th element ≥ 0, by the same
     /// rule (so a 3-element array keeps <paramref name="c"/>'s alpha).
     /// </summary>
-    public static bool GetColorOptional(IReadOnlyList<float> v, ref uint c, Action<string>? log = null)
+    public static bool GetColorOptional(IReadOnlyList<float> v, ref uint c, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        if (v.Count != 3 && v.Count != 4) { log?.Invoke("warning: JsonTools.GetColorOptional: Expecting color in Json to be a string or 3 or 4 element array"); return false; }
+        if (v.Count != 3 && v.Count != 4) { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "JsonTools.GetColorOptional", "Expecting color in Json to be a string or 3 or 4 element array"); return false; }
         bool raw = v[0] > 1f || v[1] > 1f || v[2] > 1f;
         byte U8(float x)
         {
-            if (!raw && (x < 0 || x > 1)) log?.Invoke("warning: ColorRGBA.GetU8.OutOfRangeValue: Float RGBA values should be on the interval [0,1]. Will clip.");
+            if (!raw && (x < 0 || x > 1)) SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "ColorRGBA.GetU8.OutOfRangeValue", "Float RGBA values should be on the interval [0,1]. Will clip.");
             float f = raw ? x : x * 255f;
             uint u = float.IsNaN(f) || f <= 0f ? 0u : f >= 4294967295f ? uint.MaxValue : (uint)f;
             return unchecked((byte)u);
@@ -288,19 +288,19 @@ public static class BackpackColor
     /// Left, Front, Middle, Back, Right (C18).
     /// </summary>
     public static bool TryReadAll(IReadOnlyList<float> left, IReadOnlyList<float> right, IReadOnlyList<float> front,
-                                  IReadOnlyList<float> middle, IReadOnlyList<float> back, out ushort[] leds, Action<string>? log = null)
+                                  IReadOnlyList<float> middle, IReadOnlyList<float> back, out ushort[] leds, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         leds = new ushort[5];
         uint c = Default;
-        if (!GetColorOptional(back, ref c, log)) return false;
+        if (!GetColorOptional(back, ref c, log, sourceLog)) return false;
         leds[3] = Encode(c);
-        if (!GetColorOptional(front, ref c, log)) return false;
+        if (!GetColorOptional(front, ref c, log, sourceLog)) return false;
         leds[1] = Encode(c);
-        if (!GetColorOptional(middle, ref c, log)) return false;
+        if (!GetColorOptional(middle, ref c, log, sourceLog)) return false;
         leds[2] = Encode(c);
-        if (!GetColorOptional(left, ref c, log)) return false;
+        if (!GetColorOptional(left, ref c, log, sourceLog)) return false;
         leds[0] = Encode(c);
-        if (!GetColorOptional(right, ref c, log)) return false;
+        if (!GetColorOptional(right, ref c, log, sourceLog)) return false;
         leds[4] = Encode(c);
         return true;
     }

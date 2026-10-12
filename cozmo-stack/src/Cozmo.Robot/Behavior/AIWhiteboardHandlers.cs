@@ -89,6 +89,7 @@ public sealed class AIWhiteboardHandlers
 
     /// <summary>Log lines.</summary>
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>
     /// Tag 0x44 (<c>RobotObservedObject</c>, handler 0x0056c448..0x0056c476): removes every possible-object entry of the same type whose pose
@@ -138,7 +139,7 @@ public sealed class AIWhiteboardHandlers
         }
         if (robotPose() is not { } robot)
         {
-            Log?.Invoke("error: AIWhiteboard.ConsiderNewPossibleObject: could not express the pose relative to the robot (log text MISSING, 0x0056c54a..0x0056c55c)");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AIWhiteboard.ConsiderNewPossibleObject", "could not express the pose relative to the robot (log text MISSING, 0x0056c54a..0x0056c55c)");
             return;
         }
         float relZ = (float)pose.WithRespectTo(robot).Translation.Z;
@@ -225,6 +226,7 @@ public sealed class AIWhiteboardBeaconRenderer
 
     /// <summary>MISSING reports (once per seam).</summary>
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
     private bool _reportedPoseMissing, _reportedTimeMissing;
 
     /// <summary>Hooks the whiteboard's render seam so every <c>AddBeacon</c> renders (<c>AddBeacon</c> calls <c>UpdateBeaconRender</c>, 0x0056c3de).</summary>

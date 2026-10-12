@@ -493,6 +493,7 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
 
     /// <summary>The engine's log lines (3e, 3f).</summary>
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>desiredFaces (+0x58).</summary>
     public IReadOnlyCollection<int> DesiredFaces { get { lock (_gate) return _desired.ToList(); } }
@@ -521,7 +522,7 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
         }
         if (_robotPose() is not { } robot)
         {
-            Log?.Invoke($"error: ReactionTriggerStrategyFacePositionUpdated: could not get the distance to face {id}");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "ReactionTriggerStrategyFacePositionUpdated", $"could not get the distance to face {id}");
             return;
         }
         var d = robot.Translation - face.HeadPose.Translation;
@@ -554,7 +555,7 @@ public sealed class FacePositionUpdatedStrategy : ReactionTriggerStrategy, IDisp
     /// <summary>3f: FinishedReactingToFace.</summary>
     public void FinishedReactingToFace(int id)
     {
-        Log?.Invoke($"debug: ReactionTriggerStrategyPositionUpdate.RobotReactedToId: no record for {id}");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, null, "ReactionTriggerStrategyPositionUpdate.RobotReactedToId", $"no record for {id}");
         lock (_gate)
         {
             _reacted.Add(id);

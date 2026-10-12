@@ -58,16 +58,22 @@ public class M4ControlTests
         try
         {
             using var rig = new Rig(res); rig.ToSynced(); rig.State();
-            var reached = new List<bool>();
+            var reached = new List<bool>(); bool movedReentered = false, tapReentered = false;
             rig.Engine.LogEntry += e => {
                 if (e.Name?.StartsWith("CubeLightComponent.") == true)
                     reached.Add(Task.Run(() => rig.Robot.Lights.Cubes.Update()).Wait(TimeSpan.FromSeconds(2)));
                 if (e.Name?.StartsWith("Robot.ActiveObjectMoved.") == true)
+                {
+                    movedReentered = true;
                     reached.Add(Task.Run(() => rig.Robot.Cubes.ByObjectId(0)).Wait(TimeSpan.FromSeconds(2)));
+                }
             };
             rig.Engine.StackLogLine += line => {
                 if (line.StartsWith("tap from unknown object"))
+                {
+                    tapReentered = true;
                     reached.Add(Task.Run(() => rig.Robot.Cubes.ByObjectId(4)).Wait(TimeSpan.FromSeconds(2)));
+                }
             };
             // Raw entry, no pre-registration: AddConnectedActiveObject must precede SettingLights.
             Assert.Empty(rig.Robot.VisionModeRecipient!.World.ConnectedObjects);
@@ -76,10 +82,29 @@ public class M4ControlTests
             Assert.Contains(rig.SentSince(mark), m => m is CubeLights);
             rig.Data(new ObjectMoved { ObjectID = 0 });
             rig.Data(new ObjectTapped { ObjectID = 4, TapPos = 100, TapNeg = 0 }); rig.Tick();
-            Assert.True(reached.Count >= 3); Assert.All(reached, Assert.True);
+            Assert.True(movedReentered); Assert.True(tapReentered); Assert.All(reached, Assert.True);
             Assert.DoesNotContain(rig.Log, l => l.Contains("PlayLightAnim requires the real connected"));
         }
         finally { Directory.Delete(res, true); }
+    }
+
+    // Manager-checked signed-byte subtract/cmp 0x00630B2E..0x00630B42 and sChanneledInfoF 0x00630B5C.
+    [Theory]
+    [InlineData(60, 0, true)] [InlineData(61, 0, false)] [InlineData(-68, -128, true)] [InlineData(-67, -128, false)]
+    public void B7_TapIgnoredUsesTheSourceKeyChannelAndSignedDifference(sbyte positive, sbyte negative, bool ignored)
+    {
+        using var rig = new Rig(); rig.ToSynced(); rig.State(); ConnectCube(rig);
+        var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
+        int taps = 0; rig.Robot.Cubes.CubeTapped += _ => taps++;
+        rig.Robot.Cubes.SetBlockTapFilterEnabled(false);
+        rig.Data(new ObjectTapped { ObjectID = 0, TapPos = positive, TapNeg = negative }); rig.Tick();
+        var logs = entries.Where(e => e.Name == "BlockTapFilterComponent.HandleEnableTapFilter.Ignored").ToArray();
+        if (ignored)
+        {
+            var e = Assert.Single(logs); Assert.Equal(EngineLogLevel.Info, e.Level); Assert.Equal("BlockPool", e.Channel);
+            Assert.Equal("Tap ignored 60 <= 60", e.Text); Assert.Empty(e.Data); Assert.Equal(0, taps);
+        }
+        else { Assert.Empty(logs); Assert.Equal(1, taps); }
     }
 
     // B-M3M4-5 checked Stopped body 0x534924..53494A and the shared Moved body.

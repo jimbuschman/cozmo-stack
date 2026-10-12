@@ -111,6 +111,7 @@ public sealed class BehaviorHelperComponent
     private readonly List<HelperRef> _stack = new();
     private readonly Func<int> _worldOriginId;
     private readonly Action<string>? _log;
+    private readonly SourceLogSink? _sourceLog;
     private Action<CozmoRobot>? _success;      // +0x10 (manager +0x20)
     private Action<CozmoRobot>? _failure;      // +0x28 (manager +0x38)
     private int _storedWorldOriginId;          // +0x40
@@ -140,10 +141,10 @@ public sealed class BehaviorHelperComponent
 
     /// <param name="worldOriginId"><c>Robot::GetWorldOriginID</c> (0x004a4c48 PLT), read by <c>UpdateActiveHelper</c> and <c>DelegateToHelper</c>.</param>
     /// <param name="log">The engine's log line sink (the engine logs through <c>sChanneledInfoF</c>; its text is this stack's).</param>
-    public BehaviorHelperComponent(Func<int> worldOriginId, Action<string>? log = null)
+    public BehaviorHelperComponent(Func<int> worldOriginId, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         _worldOriginId = worldOriginId;
-        _log = log;
+        _log = log; _sourceLog = sourceLog;
         Factory = new BehaviorHelperFactory(this);   // +0x00 (0x0056da5c)
     }
 
@@ -160,7 +161,7 @@ public sealed class BehaviorHelperComponent
     /// <summary>+0x40.</summary>
     public int StoredWorldOriginId { get { using (Enter()) return _storedWorldOriginId; } }
 
-    private void Info(string id, string text) => _log?.Invoke($"info: [Behaviors] {id}: {text}");
+    private void Info(string id, string text) => SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Info, "Behaviors", $"{id}", $"{text}");
 
     /// <summary>
     /// <c>AddHelperToComponent(IHelper*&amp; raw)</c> 0x0056da8a: never reads the component; builds a <c>shared_ptr&lt;IHelper&gt;</c> from <c>*raw</c>

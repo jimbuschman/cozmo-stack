@@ -83,7 +83,7 @@ public sealed partial class CozmoEngine
         if (!robot.FirstFullStateHandled)
         {
             // 0x0052F728..0x0052F774: wrapping u16 increment, >=11 info, then reset.
-            PublicationCounter.MissingState(() => Log($"info: Unnamed: RobotManager.UpdateAllRobots: Not sending robot {RobotId} state (none available)."));
+            PublicationCounter.MissingState(() => EmitSourceLog(EngineLogLevel.Info, null, "Unnamed", $"RobotManager.UpdateAllRobots: Not sending robot {RobotId} state (none available)."));
             return;
         }
         // The offline harness opens the update gate before supplying its first packet.
@@ -91,7 +91,7 @@ public sealed partial class CozmoEngine
         var p = PublicationPose!();
         // GOT 0x0103E978 -> PoseOriginList::UnknownOriginID at 0x00C97B20 is 0.
         // 0x0051810C..0x00518122 warns with the empty format at 0x00BE3F00, then continues.
-        if (p.OriginId == 0) Log("warning: Robot.GetRobotState.BadOriginID");
+        if (p.OriginId == 0) EmitSourceLog(EngineLogLevel.Warning, null, "Robot.GetRobotState.BadOriginID", "");
         var carry = PublicationCarrying!();
         uint status = state.Status;
         if (robot.AnimationStateTag != 0) status |= robot.AnimationStateTag == 0xFF ? 0x840u : 0x40u;

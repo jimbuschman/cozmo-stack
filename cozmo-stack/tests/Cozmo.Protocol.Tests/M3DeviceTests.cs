@@ -24,7 +24,9 @@ public class M3DeviceTests
         using var rig = new Rig();
         var entries = new List<EngineLogEntry>(); var stack = new List<string>(); var shown = new List<string>();
         rig.Engine.LogEntry += entries.Add; rig.Engine.StackLogLine += stack.Add; rig.Engine.LogLine += shown.Add;
-        foreach (string line in new[] { "no terminal NVOpResult", "MISSING: unread", "event handler threw: boom" })
+        foreach (string line in new[] { "no terminal NVOpResult", "MISSING: unread", "event handler threw: boom",
+            "debug: [Camera] Fake.Key: debug text", "info: Fake.Key: info text", "event: Fake.Key: event text",
+            "warning: Fake.Key: warning text", "error: Fake.Key: error text" })
             rig.Engine.Log(line);
         // Explicit stack diagnostics stay stack entries even when their text resembles a source key.
         rig.Engine.EmitStackLog("info: Fake.Source.Key: diagnostic");

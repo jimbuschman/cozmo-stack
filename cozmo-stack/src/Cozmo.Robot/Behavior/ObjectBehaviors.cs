@@ -110,7 +110,7 @@ public sealed class ObjectPositionUpdatedStrategy : ReactionTriggerStrategy, IDi
         {
             if (!_records.TryGetValue(id, out var r))
             {
-                _robot?.Engine.Log($"debug: ReactionTriggerStrategyPositionUpdate.RobotReactedToId: no record for {id}");
+                _robot?.Engine.EmitSourceLog(EngineLogLevel.Debug, null, "ReactionTriggerStrategyPositionUpdate.RobotReactedToId", $"no record for {id}");
                 return;
             }
             r.ReactedPose = r.ObservedPose;

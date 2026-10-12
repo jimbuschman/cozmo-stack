@@ -116,6 +116,7 @@ public sealed class StreamSendBuffer
 
     /// <summary>The engine log for the budget warning (C9).</summary>
     public Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>Robot+0x23C: bytes streamed since the Robot was built (C11..C13).</summary>
     public int BytesStreamed { get { lock (_gate) return _bytesStreamed; } }
@@ -138,21 +139,21 @@ public sealed class StreamSendBuffer
     /// <summary>UpdateAmountToSend (C9), from the played counters AnimationState last reported (C10).</summary>
     public void UpdateAmountToSend(int bytesPlayed, int framesPlayed)
     {
-        var logs = new List<string>();
+        var logs = new List<(EngineLogLevel Level, string? Channel, string Key, string Text)>();
         lock (_gate)
         {
             int bytes = unchecked(bytesPlayed - _bytesStreamed + BytesAhead);
             if (_bytesStreamed < 0 && bytesPlayed >= 1)
-                logs.Add($"info: [Unnamed] AnimationStreamer.UpdateAmountToSend.BytesStreamedOverflow: free {bytes} (streamed = {_bytesStreamed}, played {bytesPlayed})");
+                logs.Add((EngineLogLevel.Info, "Unnamed", "AnimationStreamer.UpdateAmountToSend.BytesStreamedOverflow", $"free {bytes} (streamed = {_bytesStreamed}, played {bytesPlayed})"));
             if (bytes < 0)
             {
-                logs.Add($"warning: AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot: minBytesFree:{bytes} numBytesStreamed:{_bytesStreamed} numBytesPlayed:{bytesPlayed}");
+                logs.Add((EngineLogLevel.Warning, null, "AnimationStreamer.UpdateAmountToSend.NegativeMinBytesFreeInRobot", $"minBytesFree:{bytes} numBytesStreamed:{_bytesStreamed} numBytesPlayed:{bytesPlayed}"));
                 bytes = 0;
             }
             _bytesToSend = Math.Min(bytes, MaxBytesPerUpdate);
             _framesToSend = Math.Max(unchecked(framesPlayed - _framesStreamed + AudioFramesAhead), 0);
         }
-        foreach (var line in logs) Log?.Invoke(line);
+        foreach (var line in logs) SourceLogDispatch.Write(SourceLog, Log, line.Level, line.Channel, line.Key, line.Text);
     }
 
     /// <summary>The test seam's budget (a sink that models no robot): nothing is held back.</summary>
@@ -262,7 +263,7 @@ public sealed class StreamSendBuffer
             foreach (var entry in _fifo)
                 if (entry.Size != 0)
                 {
-                    if (entry.TagName is { } name) Log?.Invoke($"debug: [Unnamed] AnimationStreamer.ClearSendBuffer: Clearing unsent {name}");
+                    if (entry.TagName is { } name) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "AnimationStreamer.ClearSendBuffer", $"Clearing unsent {name}");
                     else Log?.Invoke("MISSING: ClearSendBuffer tag for caller-supplied untyped test message");
                 }
             _fifo.Clear();
@@ -473,13 +474,14 @@ public sealed class AnimationScheduler
         _sink = sink;
         _keyframeRng = random is null ? new EngineRandom() : new EngineRandom(random);
         _contextRng = random is null ? new EngineRandom() : new EngineRandom(random);
-        _tlc = new TrackLayerComponent(_contextRng, _scanLines) { Log = l => Log?.Invoke(l) };
+        _tlc = new TrackLayerComponent(_contextRng, _scanLines) { Log = l => Log?.Invoke(l), SourceLog = (level, channel, key, text) => SourceLogDispatch.Write(SourceLog, Log, level, channel, key, text) };
         _live = StreamAnimation.Live();
         _idleStack.Add((IdleCount, DefaultAnimLock));
     }
 
     /// <summary>The engine log.</summary>
     public Action<string>? Log { get; set; }
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>The context RNG (context+0x14, R3): the live idle, the layer managers and the group draw share it.</summary>
     public EngineRandom ContextRandom => _contextRng;
@@ -647,16 +649,16 @@ public sealed class AnimationScheduler
             var (name, count) = group.Length == 0 || catalog is null ? ("", 0) : catalog.GetFirstAnimationName(group);
             if (count == 0 || name.Length == 0)
             {
-                Log?.Invoke($"error: AnimationStreamer.Constructor.BadNeutralAnimGroup: Neutral animation group {group} for trigger NeutralFace is empty or null");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Constructor.BadNeutralAnimGroup", $"Neutral animation group {group} for trigger NeutralFace is empty or null");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 _tlc.SetResetData(null);
                 _tlc.Init();
                 return;
             }
             if (count > 1)
-                Log?.Invoke($"warning: AnimationStreamer.Constructor.MultipleNeutralFaceAnimations: Neutral face animation group {group} has {count} animations instead of one. Using first.");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Constructor.MultipleNeutralFaceAnimations", $"Neutral face animation group {group} has {count} animations instead of one. Using first.");
             _neutral = catalog!.GetAnimation(name);
-            if (_neutral is null) { Log?.Invoke($"error: AnimationStreamer.Constructor.NeutralFaceDataNotFound: Could not find expected neutral face animation file called {name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
+            if (_neutral is null) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Constructor.NeutralFaceDataNotFound", $"Could not find expected neutral face animation file called {name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             var face = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
             _tlc.SetResetData(face);
             _tlc.Init();
@@ -710,12 +712,12 @@ public sealed class AnimationScheduler
         var old = _streaming;
         if (old is not null && clip is not null && !interrupt)
         {
-            Log?.Invoke($"info: [Unnamed] AnimationStreamer.SetStreamingAnimation.NotInterrupting: Already streaming {_streamingClip?.Name}, will not interrupt with {clip.Name}");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "AnimationStreamer.SetStreamingAnimation.NotInterrupting", $"Already streaming {_streamingClip?.Name}, will not interrupt with {clip.Name}");
             return 0;
         }
         if (old is not null)
         {
-            Log?.Invoke($"info: [Unnamed] AnimationStreamer.SetStreamingAnimation.Aborting: Animation {clip?.Name ?? "NULL"} is interrupting animation {old.Name}");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "AnimationStreamer.SetStreamingAnimation.Aborting", $"Animation {clip?.Name ?? "NULL"} is interrupting animation {old.Name}");
             AbortLocked();
         }
         else if (clip is null || _idleAnim is not null)
@@ -736,7 +738,7 @@ public sealed class AnimationScheduler
         }
         if (_streaming!.IsLive && numLoops != 1)
         {
-            Log?.Invoke($"error: AnimationStreamer.SetStreamingAnimation.LoopingLiveAnimation: VERIFY(numLoops == 1): Animation {clip.Name} is marked 'live' but numLoops={numLoops}. Clamping to 1.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.SetStreamingAnimation.LoopingLiveAnimation", $"VERIFY(numLoops == 1): Animation {clip.Name} is marked 'live' but numLoops={numLoops}. Clamping to 1.");
             DesiredFaceDistortionComponent.ErrorFlagSet = true; // sVerifyFailedReturnFalse has no debug-break call.
             Log?.Invoke("MISSING: M5-008 sVerifyFailedReturnFalse callstack dump at 0x0080DA08 and logger-provider flush at 0x0080DA24 have no M3 recipient");
             numLoops = 1;                                          // A8
@@ -822,7 +824,7 @@ public sealed class AnimationScheduler
         }
         if (_streaming is null && _idleAnim is null) return;
         var anim = _streaming ?? _idleAnim!;
-        Log?.Invoke($"info: [Unnamed] AnimationStreamer.Abort: Tag={_tag} {(_streaming != null ? "Streaming" : "Idle")}:{anim.Name} hasFramesLeft={(anim.HasFramesLeft ? 1 : 0)} audioComplete={(_audio is null || _audio.IsComplete ? 1 : 0)} startSent={(_startSent ? 1 : 0)} endSent={(_endSent ? 1 : 0)} sendBuffer={Stream.TagNames}");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "AnimationStreamer.Abort", $"Tag={_tag} {(_streaming != null ? "Streaming" : "Idle")}:{anim.Name} hasFramesLeft={(anim.HasFramesLeft ? 1 : 0)} audioComplete={(_audio is null || _audio.IsComplete ? 1 : 0)} startSent={(_startSent ? 1 : 0)} endSent={(_endSent ? 1 : 0)} sendBuffer={Stream.TagNames}");
         if (anim.FaceAnim.Current is { } fa) fa.FaceAnimIndex = 0;
         _startSent = false;
         _endSent = false;
@@ -853,7 +855,7 @@ public sealed class AnimationScheduler
         _streamMs = _startMs;
         if (!Stream.IsEmpty)
         {
-            Log?.Invoke("info: [Unnamed] Animation.Init.SendBufferNotEmpty: Expecting SendBuffer to be empty. Will clear.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "Animation.Init.SendBufferNotEmpty", "Expecting SendBuffer to be empty. Will clear.");
             Stream.ClearSendBuffer();      // ClearSendBuffer: dropped, not sent (A12)
         }
         _endSent = anim.IsEmpty;
@@ -919,7 +921,7 @@ public sealed class AnimationScheduler
         {
             if (trigger == IdleCount) { _idleAnim = null; _idleInitialised = false; }
             _idleStack.Add((trigger, lockName));
-            Log?.Invoke($"info: [Animations] AnimationStreamer.PushIdleAnimation: Setting idle animation to '{trigger}'.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "AnimationStreamer.PushIdleAnimation", $"Setting idle animation to '{trigger}'.");
         }
     }
 
@@ -935,19 +937,19 @@ public sealed class AnimationScheduler
         lock (_gate)
         {
             _nowMs = nowMs;
-            if (_idleStack.Count == 1) { Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.WillNotPopLast: Refusing to pop default idle animation '{_idleStack[0].Trigger}' for lockName {lockName}"); return 1; }
-            if (_idleStack.Count == 0) { Log?.Invoke("error: AnimationStreamer.RemoveIdleAnimation.NoStack: Trying to pop an idle animation, but the stack is empty"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return 1; }
+            if (_idleStack.Count == 1) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.RemoveIdleAnimation.WillNotPopLast", $"Refusing to pop default idle animation '{_idleStack[0].Trigger}' for lockName {lockName}"); return 1; }
+            if (_idleStack.Count == 0) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.RemoveIdleAnimation.NoStack", "Trying to pop an idle animation, but the stack is empty"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return 1; }
             int i = -1;
             for (int at = 0; at < _idleStack.Count; at++) if (_idleStack[at].Lock == lockName) i = at;
             if (_idleStack.Count >= 1000)
-            { Log?.Invoke("error: LoopBoundOverflow: ../../../../engine/animations/animationStreamer.cpp:528"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
+            { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "LoopBoundOverflow", "../../../../engine/animations/animationStreamer.cpp:528"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             if (i < 0)
             {
-                Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.NoLockNameFoundInStack: Attempted to remove idle with lock name {lockName}, but not found");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.RemoveIdleAnimation.NoLockNameFoundInStack", $"Attempted to remove idle with lock name {lockName}, but not found");
                 return 1;
             }
             if (i != _idleStack.Count - 1)
-                Log?.Invoke($"warning: AnimationStreamer.RemoveIdleAnimation.AnimationRemovedFromMiddleOfStack: The animation {_idleStack[i].Lock} was removed with lock name {lockName}, but other idles were above it");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.RemoveIdleAnimation.AnimationRemovedFromMiddleOfStack", $"The animation {_idleStack[i].Lock} was removed with lock name {lockName}, but other idles were above it");
             _idleStack.RemoveAt(i);
             if (TopTrigger == IdleCount)
             {
@@ -977,6 +979,7 @@ public sealed class AnimationScheduler
             _ = nowMs;
             if (_streaming is not null) return false;
             _live.Log = Log;
+            _live.SourceLog = SourceLog;
             return _live.AddLive(k);
         }
     }
@@ -986,11 +989,12 @@ public sealed class AnimationScheduler
     /// <summary>One engine Update of the streamer (see the class summary).</summary>
     public int Advance(double nowMs)
     {
-        using var clipLog = Eye.UseWarningLog(Log);
+        using var clipLog = Eye.UseWarningLog(Log, SourceLog);
         lock (_gate)
         {
             _nowMs = nowMs;
             _live.Log = Log;
+            _live.SourceLog = SourceLog;
             // fidelity: M7-016, M7-017
             // The engine's clock is a float32 (GetCurrentTimeInSeconds returns it in r0, 0x0057D02A..0x0057D02E).
             float nowSec = (float)(nowMs / 1000.0);
@@ -1082,7 +1086,7 @@ public sealed class AnimationScheduler
             int liveResult = UpdateLiveAnimationLocked();
             if (liveResult != 0)
             {
-                Log?.Invoke("error: AnimationStreamer.Update.LiveUpdateFailed: Failed updating live animation from current robot state.");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Update.LiveUpdateFailed", "Failed updating live animation from current robot state.");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return liveResult;
             }
@@ -1132,10 +1136,10 @@ public sealed class AnimationScheduler
     {
         if (_tlc.HaveLayersToSend) return StreamLayersLocked();
         if (Stream.IsEmpty) return 0;
-        Log?.Invoke($"warning: AnimationStreamer.Update.SendBufferNotEmpty: Expect send buffer to be emptied by UpdateStream or StreamFaceLayers by now, has {Stream.Count} messages");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Update.SendBufferNotEmpty", $"Expect send buffer to be emptied by UpdateStream or StreamFaceLayers by now, has {Stream.Count} messages");
         RefreshBudget();
         int result = DrainResultCode();
-        if (result != 0) Log?.Invoke($"warning: AnimationStreamer.Update.SendBufferedMessagesFailed: Could not send {Stream.Count} remaining messages in send buffer");
+        if (result != 0) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Update.SendBufferedMessagesFailed", $"Could not send {Stream.Count} remaining messages in send buffer");
         if (_startSent && Stream.IsEmpty && !_endSent) return SendEndOfAnimationLocked();
         return result;
     }
@@ -1152,13 +1156,14 @@ public sealed class AnimationScheduler
         var clip = name.Length == 0 ? null : catalog.GetAnimation(name);
         if (clip is null)
         {
-            Log?.Invoke(name.Length == 0
-                ? $"error: AnimationStreamer.Update.EmptyIdleAnimationFromGroup: Returned empty animation name for group {trigger}. Popping the group."
-                : $"error: AnimationStreamer.Update.InvalidIdleAnimationFromGroup: Returned null animation for name '{name}' from group '{group}'. Popping the group.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null,
+                name.Length == 0 ? "AnimationStreamer.Update.EmptyIdleAnimationFromGroup" : "AnimationStreamer.Update.InvalidIdleAnimationFromGroup",
+                name.Length == 0 ? $"Returned empty animation name for group {trigger}. Popping the group."
+                : $"Returned null animation for name '{name}' from group '{group}'. Popping the group.");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
-        Log?.Invoke($"debug: [Unnamed] AnimationStreamer.Update.SelectedNewIdle: Selected idle animation '{name}' from group '{group}'");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "AnimationStreamer.Update.SelectedNewIdle", $"Selected idle animation '{name}' from group '{group}'");
         return StreamAnimation.Of(clip);
     }
 
@@ -1303,7 +1308,7 @@ public sealed class AnimationScheduler
     {
         if (!anim.Initialised)
         {
-            Log?.Invoke($"error: Animation.Update: {anim.Name}: Animation must be initialized before it can be played/updated.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "Animation.Update", $"{anim.Name}: Animation must be initialized before it can be played/updated.");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return 1;
         }
@@ -1535,7 +1540,7 @@ public sealed class AnimationScheduler
         var payload = FaceBitmapCodec.EncodeCanvas(canvas, FaceBitmapCodec.CanvasRows, FaceBitmapCodec.CanvasColumns);
         if (payload is null)
         {
-            Log?.Invoke("error: AnimationStreamer.BufferFaceToSend: Failed to get RLE frame from procedural face");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.BufferFaceToSend", "Failed to get RLE frame from procedural face");
             return;
         }
         Buffer(StreamSizes.Face(payload), false, () => _sink.FaceImage(payload), tagName: "animFaceImage");
@@ -1801,18 +1806,18 @@ public sealed class AnimationScheduler
     {
         if (k.EventIds.Length == 0)
         {
-            Log?.Invoke("error: RobotAudioKeyFrame.GetAudioRefIndex.EmptyAudioReferences: Check to make sure animation loaded successfully - sound file(s) probably not found.");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "RobotAudioKeyFrame.GetAudioRefIndex.EmptyAudioReferences", "Check to make sure animation loaded successfully - sound file(s) probably not found.");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return -1;
         }
         int index = probabilityMode
-            ? ChooseAlternative(k.EventIds.Length, k.Probabilities, _keyframeRng.RandDbl(1), Log)
+            ? ChooseAlternative(k.EventIds.Length, k.Probabilities, _keyframeRng.RandDbl(1), Log, SourceLog)
             : (k.EventIds.Length == 1 ? 0 : _keyframeRng.RandIntInRange(0, k.EventIds.Length - 1));
         index = unchecked((sbyte)index);
-        Log?.Invoke($"debug: [Audio] RobotAudioKeyFrame.GetAudioRef.RandomAudioSelection: {(probabilityMode ? "Probability selected" : "Randomly selected")} audio index = {index}");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Audio", "RobotAudioKeyFrame.GetAudioRef.RandomAudioSelection", $"{(probabilityMode ? "Probability selected" : "Randomly selected")} audio index = {index}");
         return index;
     }
-    internal static int ChooseAlternative(int count, float[] probabilities, double draw, Action<string>? log = null)
+    internal static int ChooseAlternative(int count, float[] probabilities, double draw, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         if (count <= 0) return -1;
         float[] p = probabilities;
@@ -1822,7 +1827,7 @@ public sealed class AnimationScheduler
         {
             if (MathF.Abs(p[i]) < BitConverter.Int32BitsToSingle(0x3727C5AC)) continue;
             float next = acc + p[i];
-            log?.Invoke(FormattableString.Invariant($"debug: [Audio] RobotAudioKeyFrame.GetAudioRefIndex.ShowInfo: random value = {r:F6}, idx = {i} and range = {acc:F6} to {next:F6}"));
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Debug, "Audio", "RobotAudioKeyFrame.GetAudioRefIndex.ShowInfo", FormattableString.Invariant($"random value = {r:F6}, idx = {i} and range = {acc:F6} to {next:F6}"));
             if (!(acc > r) && next >= r) return i;
             acc = next;
         }

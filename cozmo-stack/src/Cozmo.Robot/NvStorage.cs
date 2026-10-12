@@ -273,7 +273,13 @@ public sealed class NvStorageComponent : IDisposable
     private void LogCall(string line)
     {
         _log.Add(line);
-        _pendingLogCalls.Enqueue(() => _robot.Engine.EmitSourceLog(line, "NVStorage"));
+        _pendingLogCalls.Enqueue(() => _robot.Engine.Log(line));
+    }
+
+    private void LogCall(EngineLogLevel level, string? channel, string key, string text)
+    {
+        _log.Add(level.ToString().ToLowerInvariant() + ": " + key + ": " + text);
+        _pendingLogCalls.Enqueue(() => _robot.Engine.EmitSourceLog(level, channel, key, text));
     }
 
     /// <summary>The read request lines, for the conformance log.</summary>
@@ -325,7 +331,7 @@ public sealed class NvStorageComponent : IDisposable
     /// largest <c>_maxSizeTable</c> key at or below it (the tree floor, 0x00644228..0x00644338); anything else
     /// (0x198000 and above, or no key at or below) is the sentinel.
     /// </summary>
-    public static uint GetBaseEntryTag(uint tag, Action<string>? log = null)
+    public static uint GetBaseEntryTag(uint tag, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         if ((tag & 0x80000000u) != 0)                                     // signed <= -1: the factory path
         {
@@ -334,7 +340,7 @@ public sealed class NvStorageComponent : IDisposable
                 && IsFactoryEntryTag(tag & 0xFFFF0000u))
                 return tag & 0xFFFF0000u;
             // 0x006442EC: no factory key matched -> sWarningF(FactoryTagNotFound, "0x%x", tag)
-            log?.Invoke($"warning: NVStorageComponent.GetBaseEntryTag.FactoryTagNotFound: 0x{tag:x}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "NVStorageComponent.GetBaseEntryTag.FactoryTagNotFound", $"0x{tag:x}");
             return 0x198000u;
         }
         if (tag < 0x198000u)
@@ -347,7 +353,7 @@ public sealed class NvStorageComponent : IDisposable
         }
 // 0x00644274: the coarse test tag >> 15 < 0x33 failed, or no _maxSizeTable key is at or
 // below the tag -> sWarningF(TagIsTooSmall, "0x%x", tag)
-        log?.Invoke($"warning: NVStorageComponent.GetBaseEntryTag.TagIsTooSmall: 0x{tag:x}");
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "NVStorageComponent.GetBaseEntryTag.TagIsTooSmall", $"0x{tag:x}");
         return 0x198000u;
     }
 
@@ -463,7 +469,7 @@ public sealed class NvStorageComponent : IDisposable
         using var logEmission = new LogEmission(this);
         if (!IsValidEntryTag(tag))
         {
-            lock (_gate) LogCall($"warning: NVStorageComponent.Read.InvalidTag: Tag: 0x{tag:x}");
+            lock (_gate) LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Read.InvalidTag", $"Tag: 0x{tag:x}");
             FlushLogCalls();
             if (broadcast)
                 NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpRead, -6, 0, Array.Empty<byte>()));
@@ -474,7 +480,7 @@ public sealed class NvStorageComponent : IDisposable
         lock (_gate)
         {
             // A null name prints "(null)": bionic's printf for a NULL %s (a system-library boundary, manager ruling 2026-10-10).
-            LogCall($"info: NVStorageComponent.Read.QueueingReadRequest: {NvEntryTagName(tag) ?? "(null)"}");
+            LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.Read.QueueingReadRequest", $"{NvEntryTagName(tag) ?? "(null)"}");
             _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpRead, Callback = callback, Sink = sink, Broadcast = broadcast });
         }
         return 1;
@@ -524,17 +530,17 @@ public sealed class NvStorageComponent : IDisposable
             string name = TagNameOrMissing(tag);
             if (!IsValidEntryTag(tag))
             {
-                LogCall($"warning: NVStorageComponent.Write.InvalidTag: Tag: {name} (0x{tag:x})");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Write.InvalidTag", $"Tag: {name} (0x{tag:x})");
                 valid = false;
             }
             if (IsFactoryEntryTag(tag) && !FactoryWritesAllowed)
             {
-                LogCall($"warning: NVStorageComponent.Write.FactoryTagNotAllowed: Tag: {name} (0x{tag:x})");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Write.FactoryTagNotAllowed", $"Tag: {name} (0x{tag:x})");
                 valid = false;
             }
             if (data is null)
             {
-                LogCall($"warning: NVStorageComponent.Write.NullData: {name}");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Write.NullData", $"{name}");
                 valid = false;
             }
             uint max = (uint)MaxSizeForEntryTagLogged(tag);
@@ -544,20 +550,20 @@ public sealed class NvStorageComponent : IDisposable
             if (pad < 4) n += pad;
             if (unchecked(n - 1) >= limit)
             {
-                LogCall($"warning: NVStorageComponent.Write.InvalidSize: Tag: {name}, {n} bytes (limit {(int)limit} bytes)");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Write.InvalidSize", $"Tag: {name}, {n} bytes (limit {(int)limit} bytes)");
                 valid = false;
             }
             if (valid)
             {
                 if (!FactoryWritesAllowed)
                 {
-                    LogCall($"debug: NVStorageComponent.Write.PrecedingWriteWithErase: Tag: {name}");
+                    LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.Write.PrecedingWriteWithErase", $"Tag: {name}");
                     _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpErase });
                 }
                 var vector = new byte[n];
                 Array.Copy(data!, vector, (int)Math.Min(numBytes, (uint)data!.Length));
                 _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpWrite, Data = vector, Callback = callback, Broadcast = broadcast });
-                LogCall($"debug: NVStorageComponent.Write.DataQueued: {name} - numBytes: {n}");
+                LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.Write.DataQueued", $"{name} - numBytes: {n}");
             }
         }
         FlushLogCalls();
@@ -582,18 +588,18 @@ public sealed class NvStorageComponent : IDisposable
             string name = TagNameOrMissing(tag);
             if (!IsValidEntryTag(tag))
             {
-                LogCall($"warning: NVStorageComponent.Erase.InvalidEntryTag: Tag: {name} (0x{tag:x})");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Erase.InvalidEntryTag", $"Tag: {name} (0x{tag:x})");
                 valid = false;
             }
             else if (IsFactoryEntryTag(tag) && !FactoryWritesAllowed)
             {
-                LogCall($"warning: NVStorageComponent.Write.FactoryTagNotAllowed: Tag: {name} (0x{tag:x})");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Write.FactoryTagNotAllowed", $"Tag: {name} (0x{tag:x})");
                 valid = false;
             }
             if (valid)
             {
                 _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpErase, Callback = callback, Broadcast = broadcast, EraseSize = size });
-                LogCall($"debug: NVStorageComponent.Erase.Queued: {name}");
+                LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.Erase.Queued", $"{name}");
             }
         }
         FlushLogCalls();
@@ -611,7 +617,7 @@ public sealed class NvStorageComponent : IDisposable
         lock (_gate)
         {
             _queue.Enqueue(new PendingRequest { Tag = 0, Op = OpWipeAll, Callback = callback, Broadcast = broadcast });
-            LogCall("debug: NVStorageComponent.WipeAll.Queued: ");
+            LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.WipeAll.Queued", "");
         }
         return 1;
     }
@@ -622,7 +628,7 @@ public sealed class NvStorageComponent : IDisposable
     {
         using var logEmission = new LogEmission(this);
         lock (_gate)
-            LogCall("error: NVStorageComponent.WipeFactory.NotAllowed: Must be allowed to write to factory addresses");
+            LogCall(EngineLogLevel.Error, null, "NVStorageComponent.WipeFactory.NotAllowed", "Must be allowed to write to factory addresses");
         FlushLogCalls();
         Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
         return 0;
@@ -688,13 +694,13 @@ public sealed class NvStorageComponent : IDisposable
     {
         _state = 0;                                                    // M3-037: +8 is uninitialised in the engine
         _readPending = false;                                          // SetState(0) clears +0x78 (0x00642B5C)
-        LogCall("debug: NVStorageComponent.SetState: PrevState: 0, NewState: 0");
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.SetState", "PrevState: 0, NewState: 0");
     }
 
     /// <summary>SetState (0x00642B0C..0x00642B64, WB7): logs the transition; only state 0 clears +0x48, +0x1C and +0x78 (the request's flags here).</summary>
     private void SetStateLocked(int state)
     {
-        LogCall($"debug: NVStorageComponent.SetState: PrevState: {_state}, NewState: {state}");
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.SetState", $"PrevState: {_state}, NewState: {state}");
         if (state == 0) _readPending = false;               // 0x00642B52..0x00642B5C: only state 0 clears +0x78 (+0x50 stays)
         _state = state;
     }
@@ -719,7 +725,7 @@ public sealed class NvStorageComponent : IDisposable
         _readTag = req.Tag;                                 // +0x50 = the request's tag (0x0064542A)
         SendSavedLocked(req);
         // N3/N4 (0x006453B8..0x006453D2): after the send, ProcessRequest logs the READ's saved tag and length.
-        LogCall($"debug: NVStorageComponent.ProcessRequest.SendingRead: StartTag: 0x{_saved.Tag:x}, Length: {(uint)_saved.Length}");
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.ProcessRequest.SendingRead", $"StartTag: 0x{_saved.Tag:x}, Length: {(uint)_saved.Length}");
         // M3-030 (0x645448..0x64546E): the caller's sink vector (+0x54) is cleared at arm, not at completion.
         req.Sink?.Clear();
         ArmDeadlineLocked(req);
@@ -742,7 +748,7 @@ public sealed class NvStorageComponent : IDisposable
         _saved.Op = OpErase;
         req.AckAwaited = true;
         _saved.Length = req.EraseSize != 0 ? (int)req.EraseSize : MaxSizeForEntryTagLogged(req.Tag);
-        LogCall($"debug: NVStorageComponent.ProcessRequest.SendingErase: {TagNameOrMissing(req.Tag)} (Tag: 0x{req.Tag:x}) size: {(uint)_saved.Length}");
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.ProcessRequest.SendingErase", $"{TagNameOrMissing(req.Tag)} (Tag: 0x{req.Tag:x}) size: {(uint)_saved.Length}");
         SendSavedLocked(req);
         QueueDataToWriteMissing(req.Tag, 0);
         SetStateLocked(1);
@@ -765,7 +771,7 @@ public sealed class NvStorageComponent : IDisposable
         req.Deadline = SyncedClock + ReadTimeoutTicks;
         req.AckAwaited = false;
         QueueDataToWriteMissing(req.Tag, req.Data.Length);
-        LogCall($"debug: NVStorageComponent.ProcessRequest.SendingWrite: StartTag: 0x{req.Tag:x} ({TagNameOrMissing(req.Tag)}), timeoutTime: {(int)req.Deadline.Value}, currTime: {(int)SyncedClock}");
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.ProcessRequest.SendingWrite", $"StartTag: 0x{req.Tag:x} ({TagNameOrMissing(req.Tag)}), timeoutTime: {(int)req.Deadline.Value}, currTime: {(int)SyncedClock}");
         SetStateLocked(1);
     }
 
@@ -778,7 +784,7 @@ public sealed class NvStorageComponent : IDisposable
     /// </summary>
     private void DispatchWipeAllLocked(PendingRequest req)
     {
-        LogCall("debug: NVStoageComponent.ProcessRequest.SendingWipeAll: ");
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStoageComponent.ProcessRequest.SendingWipeAll", "");
         req.AckTag = 0x198000;
         req.MoreData = false;
         req.Deadline = SyncedClock + ReadTimeoutTicks;
@@ -803,7 +809,7 @@ public sealed class NvStorageComponent : IDisposable
         int n = _saved.AssembleWriteChunk(chunkTag, req.Data, req.Offset, factoryDataFlag: FactoryWritesAllowed);
         req.Offset += n;
         req.NextTag += IsFactoryEntryTag(req.WriteBaseTag) ? 1u : 0x400u;
-        LogCall($"debug: NVStorageComponent.Update.SendingWriteMsg: BaseTag: {TagNameOrMissing(req.WriteBaseTag)}, tag: 0x{_saved.Tag:x}, bytesSent: {n}");
+        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.Update.SendingWriteMsg", $"BaseTag: {TagNameOrMissing(req.WriteBaseTag)}, tag: 0x{_saved.Tag:x}, bytesSent: {n}");
         SendSavedLocked(req);
         req.AckAwaited = true;
         req.Retries = 0;
@@ -820,7 +826,7 @@ public sealed class NvStorageComponent : IDisposable
     {
         if (tag == 0x198000 || !MaxSizeTable.ContainsKey(tag))
         {
-            LogCall($"warning: NVStorageComponent.GetMaxSizeForEntryTag.InvalidTag: 0x{tag:x}");
+            LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.GetMaxSizeForEntryTag.InvalidTag", $"0x{tag:x}");
             return 0;
         }
         return MaxSizeTable[tag];
@@ -839,11 +845,11 @@ public sealed class NvStorageComponent : IDisposable
         req.Retries = (byte)(req.Retries + 1);
         if (req.Retries >= RetryLimit)
         {
-            LogCall($"error: NVStorageComponent.ResendLastCommand.NumRetriesExceeded: Tag: 0x{_saved.Tag:x}, Op: {NvOpName(_saved.Op)}, Attempts: {RetryLimit}");
+            LogCall(EngineLogLevel.Error, null, "NVStorageComponent.ResendLastCommand.NumRetriesExceeded", $"Tag: 0x{_saved.Tag:x}, Op: {NvOpName(_saved.Op)}, Attempts: {RetryLimit}");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return false;
         }
-        LogCall($"info: NVStorageComponent.ResendLastCommand.Retry: Tag: 0x{_saved.Tag:x}, Op: {NvOpName(_saved.Op)}, Attempt: {req.Retries}");
+        LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.ResendLastCommand.Retry", $"Tag: 0x{_saved.Tag:x}, Op: {NvOpName(_saved.Op)}, Attempt: {req.Retries}");
         QueueSendLocked(_saved.ToCommand());       // the saved header and a copy of the saved Data, for every op
         return true;
     }
@@ -907,7 +913,7 @@ public sealed class NvStorageComponent : IDisposable
             {
                 if (_onIdle.Count == 0) return;
                 callback = _onIdle[0];
-                LogCall("debug: NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback: ");
+                LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.ProcessOnIdleCallbacks.ProcessingCallback", "");
             }
             FlushLogCalls();
             callback();
@@ -945,7 +951,7 @@ public sealed class NvStorageComponent : IDisposable
                     // State 2 (read pending): only the timeout check.
                     if (req.Deadline is { } deadline && SyncedClock > deadline)
                     {
-                        LogCall($"warning: NVStorageComponent.Update.ReadTimeout: Tag: 0x{req.Tag:x}");
+                        LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Update.ReadTimeout", $"Tag: 0x{req.Tag:x}");
                         timeoutRequest = req;
                         timeoutCallback = req.Callback;
                         timeoutResult = new NvResult(-4, Array.Empty<byte>());
@@ -958,7 +964,7 @@ public sealed class NvStorageComponent : IDisposable
                     // with +0x20, calls the callback with -4, then SetState(0). No retry, no broadcast, no backup, no error flag.
                     if (SyncedClock > req.Deadline)
                     {
-                        LogCall($"warning: NVStorageComponent.Update.WriteTimeout: Tag: 0x{req.AckTag:x}");
+                        LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Update.WriteTimeout", $"Tag: 0x{req.AckTag:x}");
                         timeoutRequest = req;
                         timeoutCallback = req.Callback;
                         timeoutResult = new NvResult(-4, Array.Empty<byte>());
@@ -967,7 +973,7 @@ public sealed class NvStorageComponent : IDisposable
                 else if (!req.MoreData)
                 {
                     // WB14 (0x006459A2..0x006459DE): nothing is left to send.
-                    LogCall("warning: NVStorageComponent.Update.NoDataToWrite: ");
+                    LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Update.NoDataToWrite", "");
                     SetStateLocked(0);
                     _inFlight = null;
                 }
@@ -1024,7 +1030,7 @@ public sealed class NvStorageComponent : IDisposable
             // fidelity: M3-043
             // WD1/WD2 (0x00642FCC..0x00643048): every ack logs Recvd; a WIPEALL ack (op 3) is normalised to 0x198000 whatever its tag, any other
             // op to GetBaseEntryTag(tag). Ops 1..3 are accepted only while an ack is awaited for that normalised tag (WD3).
-            LogCall($"debug: NVStorageComponent.HandleNVOpResult.Recvd: Tag: 0x{r.Tag:x}, Op: {NvOpName(r.Op) ?? "(null)"}, Result: {NvResultName(r.Result) ?? "(null)"}");
+            LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.Recvd", $"Tag: 0x{r.Tag:x}, Op: {NvOpName(r.Op) ?? "(null)"}, Result: {NvResultName(r.Result) ?? "(null)"}");
             uint r8 = r.Op == OpWipeAll ? 0x198000u : r.Tag;
             uint baseTag = r.Op == OpWipeAll ? 0x198000u : GetBaseEntryTag(r.Tag, _log.Add);
             if (r.Op is >= OpWrite and <= OpWipeAll)
@@ -1036,7 +1042,7 @@ public sealed class NvStorageComponent : IDisposable
             }
             if (r.Op != OpRead)
             {
-                LogCall($"warning: NVStorageComponent.HandleNVOpResult.UnhandledOperation: {NvOpName(r.Op) ?? "(null)"}");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.UnhandledOperation", $"{NvOpName(r.Op) ?? "(null)"}");
                 return;
             }
             // M3-025/M3-026/M3-028 acceptance gate (0x006430BA..0x006430CE): a read reply is taken only when +0x78 (a read was
@@ -1044,7 +1050,7 @@ public sealed class NvStorageComponent : IDisposable
             // SetState(0)) equals the reply's base tag; otherwise the sWarningF at 0x0064318E and nothing else (0x00643192 -> 0x00643238).
             if (!_readPending || _readTag != baseTag)
             {
-                LogCall($"warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x{r8:x}, BaseTag: 0x{baseTag:x}, " +
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested", $"Tag recvd: 0x{r8:x}, BaseTag: 0x{baseTag:x}, " +
                          $"ExpectedBaseTag: 0x{_readTag:x} (pending {(_readPending ? 1 : 0)}), BlobSize: {(uint)r.Data.Length}, result: {NvResultName(r.Result) ?? "(null)"}");
                 return;
             }
@@ -1068,10 +1074,10 @@ public sealed class NvStorageComponent : IDisposable
                 // ReadOpFailed for every negative result (0x006434E4).
                 if (IsRetryableResult(result) && ResendLastCommandLocked(req))
                 {
-                    LogCall($"info: NVStorageComponent.HandleNVOpResult.ResentFailedRead: Tag 0x{r.Tag:x} resent due to {NvResultName(result)}");
+                    LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.HandleNVOpResult.ResentFailedRead", $"Tag 0x{r.Tag:x} resent due to {NvResultName(result)}");
                     return;
                 }
-                LogCall($"warning: NVStorageComponent.HandleNVOpResult.ReadOpFailed: Tag: 0x{r.Tag:x}, op: {NvOpName(req.Op)}, result: {NvResultName(result)}");
+                LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.ReadOpFailed", $"Tag: 0x{r.Tag:x}, op: {NvOpName(req.Op)}, result: {NvResultName(result)}");
                 completion = CompleteLocked(req, result, req.Buffer);
             }
             else
@@ -1082,7 +1088,7 @@ public sealed class NvStorageComponent : IDisposable
                 {
                     if (r.Data.Length < NvHeaderSize)
                     {
-                        LogCall($"warning: NVStorageComponent.HandleNVOpResult.TooLittleReadData: Tag 0x{r.Tag:x}, Got {r.Data.Length}, Expected 1024");   // Expected is the literal 0x400 (0x00643440), not the 0x10 size gate (0x006430F2)
+                        LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.TooLittleReadData", $"Tag 0x{r.Tag:x}, Got {r.Data.Length}, Expected 1024");   // Expected is the literal 0x400 (0x00643440), not the 0x10 size gate (0x006430F2)
                         req.Clear();                                  // 0x643478: clear the pending buffer before -3
                         result = -3;
                     }
@@ -1090,7 +1096,7 @@ public sealed class NvStorageComponent : IDisposable
                     {
                         // 0x00643112 bne -> 0x0064348A: sChanneledDebugF, channel NVStorage (0xBFB43A), key 0xBFB993, format
                         // 0xBFB9C5; args the reply tag, the u32 at blob+0, 0x435A4D4F. Result -1 (0x006434DC).
-                        LogCall($"debug: NVStorageComponent.HandleNVOpResult.InvalidHeader: Tag: 0x{r.Tag:x}, Got 0x{BitConverter.ToUInt32(r.Data, 0):x}, Expected 0x{NonFactoryHeaderMagic:x}");
+                        LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.InvalidHeader", $"Tag: 0x{r.Tag:x}, Got 0x{BitConverter.ToUInt32(r.Data, 0):x}, Expected 0x{NonFactoryHeaderMagic:x}");
                         result = -1;
                     }
                     else
@@ -1099,7 +1105,7 @@ public sealed class NvStorageComponent : IDisposable
                         int max = MaxSizeForEntryTag(req.Tag);
                         if (total > (uint)(max - NvHeaderSize))
                         {
-                            LogCall($"warning: NVStorageComponent.HandleNVOpResult.InvalidDataSize: Tag 0x{r.Tag:x}, size {total}, maxSizeAllowed {max}");
+                            LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.InvalidDataSize", $"Tag 0x{r.Tag:x}, size {total}, maxSizeAllowed {max}");
                             result = -1;
                         }
                         else
@@ -1112,7 +1118,7 @@ public sealed class NvStorageComponent : IDisposable
                             if (total > (uint)(r.Data.Length - NvHeaderSize))
                             {
                                 // M3-028: the rest is on the robot; re-request it, reliable and not hot, with no re-arm.
-                                LogCall($"debug: NVStorageComponent.HandleNVOpResult.ReadingRestOfData: Tag: 0x{r.Tag:x}, TotalSize: {total}");
+                                LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.ReadingRestOfData", $"Tag: 0x{r.Tag:x}, TotalSize: {total}");
                                 // fidelity: M3-027
                                 // N10 (0x00643888..0x006438BC): the saved tag (+0xDC) becomes the response tag, the op (+0xE4)
                                 // 0 and the Length (+0xE0) total + 16; the command is the saved header with a copy of the
@@ -1157,11 +1163,11 @@ public sealed class NvStorageComponent : IDisposable
     {
         string baseName = NvEntryTagName(baseTag) ?? "(null)";   // NULL %s (unreachable: every valid tag is named, 0x007CEE38)
         if (result == 0)
-            LogCall($"info: NVStorageComponent.HandleNVOpResult.ReadSuccess: BaseTag: {baseName}, result: {NvResultName(0)}");
+            LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.HandleNVOpResult.ReadSuccess", $"BaseTag: {baseName}, result: {NvResultName(0)}");
         else if (result == -1)
-            LogCall($"info: NVStorageComponent.HandleNVOpResult.ReadEntryNotFound: BaseTag: {baseName}, Tag: 0x{r.Tag:x}, result: {NvResultName(-1)}");
+            LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.HandleNVOpResult.ReadEntryNotFound", $"BaseTag: {baseName}, Tag: 0x{r.Tag:x}, result: {NvResultName(-1)}");
         else
-            LogCall($"warning: NVStorageComponent.HandleNVOpResult.ReadFailed: BaseTag: {baseName}, result: {NvResultName(result)}");
+            LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.ReadFailed", $"BaseTag: {baseName}, result: {NvResultName(result)}");
     }
 
     // fidelity: M3-031
@@ -1180,7 +1186,7 @@ public sealed class NvStorageComponent : IDisposable
         var req = _inFlight;
         if (req is null || req.Op == OpRead || !req.AckAwaited || req.AckTag != sb)
         {
-            LogCall($"warning: NVStorageComponent.HandleNVOpResult.AckdTagBaseTagWasNeverSent: BaseTag: 0x{sb:x}, Tag: 0x{r8:x}");
+            LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.AckdTagBaseTagWasNeverSent", $"BaseTag: 0x{sb:x}, Tag: 0x{r8:x}");
             return null;
         }
         sbyte result = r.Result;
@@ -1189,10 +1195,10 @@ public sealed class NvStorageComponent : IDisposable
         {
             if (IsRetryableResult(result) && ResendLastCommandLocked(req))
             {
-                LogCall($"info: NVStorageComponent.HandleNVOpResult.ResentFailedWrite: Tag 0x{r8:x} resent due to {NvResultName(result)}, op: {NvOpName(r.Op)}");
+                LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.HandleNVOpResult.ResentFailedWrite", $"Tag 0x{r8:x} resent due to {NvResultName(result)}, op: {NvOpName(r.Op)}");
                 return null;
             }
-            LogCall($"warning: NVStorageComponent.HandleNVOpResult.WriteOpFailed: Tag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
+            LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.WriteOpFailed", $"Tag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
             req.AckAwaited = false;
             req.MoreData = false;
         }
@@ -1203,9 +1209,9 @@ public sealed class NvStorageComponent : IDisposable
         }
         string fp = TagNameOrUnreachable(sb);
         if (result != 0)
-            LogCall($"warning: NVStorageComponent.HandleNVOpResult.WriteFailed: BaseTag: {fp}, lastTag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
+            LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.HandleNVOpResult.WriteFailed", $"BaseTag: {fp}, lastTag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
         else
-            LogCall($"info: NVStorageComponent.HandleNVOpResult.WriteSuccess: BaseTag: {fp}, lastTag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
+            LogCall(EngineLogLevel.Info, "NVStorage", "NVStorageComponent.HandleNVOpResult.WriteSuccess", $"BaseTag: {fp}, lastTag: 0x{r8:x}, op: {NvOpName(r.Op)}, result: {NvResultName(result)}");
         return CompleteLocked(req, result, Array.Empty<byte>(), r.Op);
     }
 
@@ -1278,7 +1284,7 @@ public sealed class NvStorageComponent : IDisposable
                 foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
             if (c.Callback is not null)
             {
-                lock (_gate) LogCall($"debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: {TagNameOrUnreachable(c.NameTag)}");
+                lock (_gate) LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback", $"{TagNameOrUnreachable(c.NameTag)}");
                 FlushLogCalls();
                 c.Callback.Invoke(c.Result);
             }
@@ -1293,7 +1299,7 @@ public sealed class NvStorageComponent : IDisposable
             // after the outcome log and immediately before invoking the callback.
             if (c.Callback is not null)
             {
-                lock (_gate) LogCall($"debug: NVStorageComponent.HandleNVOpResult.ExecutingReadCallback: {TagNameOrUnreachable(c.NameTag)}");
+                lock (_gate) LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.ExecutingReadCallback", $"{TagNameOrUnreachable(c.NameTag)}");
             }
             FlushLogCalls();
             c.Callback?.Invoke(c.Result);
@@ -1343,7 +1349,7 @@ public sealed class NvStorageComponent : IDisposable
             index++;
             if (index >= 1000)
             {
-                LogCall("error: LoopBoundOverflow: ../../../../engine/components/nvStorageComponent.cpp:1191");
+                LogCall(EngineLogLevel.Error, null, "LoopBoundOverflow", "../../../../engine/components/nvStorageComponent.cpp:1191");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();       // 0x006437BE..0x006437D2: _errG, then the debug-break gate
                 return chunks;
             }

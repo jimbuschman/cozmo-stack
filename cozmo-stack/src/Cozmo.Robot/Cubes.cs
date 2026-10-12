@@ -169,7 +169,8 @@ public sealed class CozmoCubes
         // The connection path's clock is BaseStationTimer::GetCurrentTimeInSeconds (CD3, CD4, CD8).
         Seconds = () => _robot.Engine.Timer.SecondsF;
         Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
-                                          () => Seconds(), l => _robot.Engine.EmitSourceLog(l, "BlockPool"));
+                                          () => Seconds());
+        Connections.SourceLog += (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         Connections.BlockPoolData += m => _robot.Engine.DeliverBlockPoolData(m);
     }
 
@@ -354,7 +355,8 @@ public sealed class CozmoCubes
     public void SetBlockTapFilterEnabled(bool enable) { lock (_gate) _tapFilterEnabled = enable; }
 
     private uint NowMs => _robot.Engine.Timer.TimeStampMs;
-    private void Log(string l) => _robot.Engine.EmitSourceLog(l, "Unnamed");
+    private void Log(string l) => _robot.Engine.Log(l);
+    private void Log(EngineLogLevel level, string? channel, string key, string text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
 
     private DoubleTapInfo TapInfo(Cube c)
     {
@@ -491,6 +493,7 @@ public sealed class CozmoCubes
         (ObjectType Type, bool Connected)? lights = null;
         var callouts = new List<Action>();
         void Log(string line) => callouts.Add(() => this.Log(line));
+        void SourceLog(EngineLogLevel level, string? channel, string key, string text) => callouts.Add(() => this.Log(level, channel, key, text));
         void StackLog(string line) => callouts.Add(() => _robot.Engine.EmitStackLog(line));
         lock (_gate)
         {
@@ -557,7 +560,7 @@ public sealed class CozmoCubes
                     uint robotId = CozmoEngine.RobotId;                                      // A2: Robot+0x10
                     float volts = p.BatteryLevel / 100f;                                      // A3
                     float percent = BatteryPercentOf(volts);
-                    Log($"debug: RobotToEngine.ObjectPowerLevel.Log: RobotID {robotId} activeID {p.ObjectID} at {F2(volts)}V {F2(percent)}%");   // A4
+                    SourceLog(EngineLogLevel.Debug, "Unnamed", "RobotToEngine.ObjectPowerLevel.Log", $"RobotID {robotId} activeID {p.ObjectID} at {F2(volts)}V {F2(percent)}%");   // A4
                     // A6: BaseStationTimer::GetCurrentTimeInSeconds (the stack's engine clock, Seconds), truncated to u32 by vcvt.u32.f32.
                     float secs = Seconds();
                     uint now = secs >= 4294967296f ? uint.MaxValue : secs > 0f ? (uint)secs : 0u;
@@ -568,7 +571,7 @@ public sealed class CozmoCubes
                     bool skip = then != 0 && unchecked(now - then) >> 3 <= 0x4A && unchecked(p.MissedPackets - _lastReportMissed[p.ObjectID]) <= 0x200;
                     if (!skip)
                     {
-                        Log($"debug: RobotToEngine.ObjectPowerLevel.Report: Sending DAS report for robotID {robotId} activeID {p.ObjectID} now {now} then {then}");   // A9
+                        SourceLog(EngineLogLevel.Debug, "Unnamed", "RobotToEngine.ObjectPowerLevel.Report", $"Sending DAS report for robotID {robotId} activeID {p.ObjectID} now {now} then {then}");   // A9
                         callouts.Add(() => _robot.Engine.EmitEngineLog(EngineLogLevel.Event, null, "robot.accessory_powerlevel",
                             $"{p.ObjectID} {F2(volts)}V ({unchecked((int)p.MissedPackets)} lost)",
                             new Dictionary<string, string> { ["$data"] = $"{F2(volts)},{F2(percent)}" }));
@@ -588,7 +591,7 @@ public sealed class CozmoCubes
                         Log("MISSING: HandleObjectPowerLevel 0x00537360: no BlockWorld is attached, so the connected-object lookup (A12) has nothing to search; nothing is broadcast (M11-004: BlockWorld's connected-object helpers, FindConnectedObjectHelper 0x0061F078)");
                     else if (ConnectedObjectIdForActiveId(p.ObjectID) is { } objectId)
                     {
-                        Log($"debug: RobotToEngine.ObjectPowerLevel.Broadcast: RobotID {robotId} activeID {p.ObjectID} objectID {objectId} at {p.BatteryLevel} cv");   // A14 (objectID is %u)
+                        SourceLog(EngineLogLevel.Debug, "Unnamed", "RobotToEngine.ObjectPowerLevel.Broadcast", $"RobotID {robotId} activeID {p.ObjectID} objectID {objectId} at {p.BatteryLevel} cv");   // A14 (objectID is %u)
                         powerBroadcast = new ObjectPowerLevel { ObjectID = objectId, MissedPackets = p.MissedPackets, BatteryLevel = p.BatteryLevel };   // A15
                     }
                     break;
@@ -600,8 +603,13 @@ public sealed class CozmoCubes
                     // dropped with a warning; with the filter on and a physical robot (robot+0x14, SetPhysicalRobot from
                     // HandleFirmwareVersion) the tap is queued, the first one setting deadline = now + 75 ms; otherwise
                     // ObjectTapped is broadcast at once. CheckForDoubleTap follows.
-                    int intensity = t.TapPos - t.TapNeg;
-                    if (intensity <= TapIntensityMin) { StackLog($"info: BlockTapFilterComponent: Tap ignored {intensity} <= {TapIntensityMin}"); break; }
+                    int intensity = unchecked((sbyte)t.TapPos) - unchecked((sbyte)t.TapNeg);
+                    if (intensity <= TapIntensityMin)
+                    {
+                        // Manager-checked sChanneledInfoF 0x00630B5C; signed-byte difference 0x00630B2E..0x00630B42.
+                        SourceLog(EngineLogLevel.Info, "BlockPool", "BlockTapFilterComponent.HandleEnableTapFilter.Ignored", $"Tap ignored {intensity} <= 60");
+                        break;
+                    }
                     if (Connected(t.ObjectID) is not { } c)
                     {
                         StackLog($"tap from unknown object {t.ObjectID}");
@@ -631,16 +639,16 @@ public sealed class CozmoCubes
                     // Moved handler sets its moving flag only while no double-tap window is open (CD10g).
                     if (Connected(mv.ObjectID) is not { } c)
                     {
-                        Log($"warning: Robot.ActiveObjectMoved.UnknownActiveID: Could not find match for active object ID {unchecked((int)mv.ObjectID)}");
+                        SourceLog(EngineLogLevel.Warning, null, "Robot.ActiveObjectMoved.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)mv.ObjectID)}");
                         callouts.Add(() => MovementLocatedLoop(mv.ObjectID, -1, true, mv.Timestamp, "Robot.ActiveObjectMoved."));
-                        Log($"warning: ObjectMovedOrStoppedHelper.UnknownActiveID: Could not find match for active object ID {unchecked((int)mv.ObjectID)}"); break;
+                        SourceLog(EngineLogLevel.Warning, null, "ObjectMovedOrStoppedHelper.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)mv.ObjectID)}"); break;
                     }
                     var d = TapInfo(c);
                     if (d.WindowEnd == 0) d.Moving = true;
                     if (WorldId(c, Log) is not { } movedWorldId) break;
-                    if (IsCharger(c, Log)) { Log("info: [Unnamed] Robot.ActiveObjectMoved.Charger: Charger sending garbage move messages"); break; }
-                    Log($"info: [Unnamed] Robot.ActiveObjectMoved.ObjectMovedOrStopped: ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {mv.AxisOfAccel}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
-                    if (ShouldIgnoreMovementDueToDoubleTap(c)) { Log($"info: [Unnamed] Robot.ActiveObjectMoved.IgnoringMessage: Waiting for double tap id:{movedWorldId} ignoring movement message"); break; }
+                    if (IsCharger(c, Log)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.Charger", "Charger sending garbage move messages"); break; }
+                    SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.ObjectMovedOrStopped", $"ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {mv.AxisOfAccel}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
+                    if (ShouldIgnoreMovementDueToDoubleTap(c)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.IgnoringMessage", $"Waiting for double tap id:{movedWorldId} ignoring movement message"); break; }
                     if (!c.Moving) { c.Moving = true; c.MovingChangedAt = mv.Timestamp; }
                     _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)movedWorldId), true);
                     c.Accel = new Vector3(mv.Accel.X, mv.Accel.Y, mv.Accel.Z);
@@ -658,14 +666,14 @@ public sealed class CozmoCubes
                     // handler clears its moving flag (CD10g).
                     if (Connected(sm.ObjectID) is not { } c)
                     {
-                        Log($"warning: Robot.ActiveObjectStopped.UnknownActiveID: Could not find match for active object ID {unchecked((int)sm.ObjectID)}");
+                        SourceLog(EngineLogLevel.Warning, null, "Robot.ActiveObjectStopped.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)sm.ObjectID)}");
                         callouts.Add(() => MovementLocatedLoop(sm.ObjectID, -1, false, sm.Timestamp, "Robot.ActiveObjectStopped."));
-                        Log($"warning: ObjectMovedOrStoppedHelper.UnknownActiveID: Could not find match for active object ID {unchecked((int)sm.ObjectID)}"); break;
+                        SourceLog(EngineLogLevel.Warning, null, "ObjectMovedOrStoppedHelper.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)sm.ObjectID)}"); break;
                     }
                     TapInfo(c).Moving = false;
                     if (WorldId(c, Log) is not { } stoppedWorldId) break;
-                    if (IsCharger(c, Log)) { Log("info: [Unnamed] Robot.ActiveObjectStopped.Charger: Charger sending garbage move messages"); break; }
-                    Log($"info: [Unnamed] Robot.ActiveObjectStopped.ObjectMovedOrStopped: ObjectID: {stoppedWorldId} (Active ID {unchecked((int)sm.ObjectID)}), type: {c.Type}, axisOfAccel: <unknown>, accel: 0.000000 0.000000 0.000000, time: {unchecked((int)sm.Timestamp)} ms");
+                    if (IsCharger(c, Log)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectStopped.Charger", "Charger sending garbage move messages"); break; }
+                    SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectStopped.ObjectMovedOrStopped", $"ObjectID: {stoppedWorldId} (Active ID {unchecked((int)sm.ObjectID)}), type: {c.Type}, axisOfAccel: <unknown>, accel: 0.000000 0.000000 0.000000, time: {unchecked((int)sm.Timestamp)} ms");
                     _ = ShouldIgnoreMovementDueToDoubleTap(c);
                     if (c.Moving) { c.Moving = false; c.MovingChangedAt = sm.Timestamp; }
                     _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)stoppedWorldId), false);
@@ -680,9 +688,9 @@ public sealed class CozmoCubes
                     // CD10c (0x00534D66..0x00534E1E): an unknown id is an error; otherwise ObjectUpAxisChanged is
                     // broadcast with the object's id. Nothing is stored on the engine's object; UpAxis here is the
                     // receiver's record of the broadcast.
-                    if (Connected(ua.ObjectID) is not { } c) { Log($"error: Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID: Could not find match for active object ID {unchecked((int)ua.ObjectID)}"); callouts.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak); break; }
+                    if (Connected(ua.ObjectID) is not { } c) { SourceLog(EngineLogLevel.Error, null, "Robot.HandleActiveObjectUpAxisChanged.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)ua.ObjectID)}"); callouts.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak); break; }
                     if (WorldId(c, Log) is not { } upWorldId) break;
-                    Log($"info: [Unnamed] Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged: Type: {c.Type}, ObjectID: {upWorldId}, UpAxis: {ua.UpAxis}");
+                    SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged", $"Type: {c.Type}, ObjectID: {upWorldId}, UpAxis: {ua.UpAxis}");
                     c.UpAxis = ua.UpAxis;
                     c.LastSeenUtc = DateTime.UtcNow;
                     break;

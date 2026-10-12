@@ -135,11 +135,11 @@ public static class AnkiMuLaw
     /// single precision (row 1c) and the cast truncates toward zero (row 1e). The lower clamp tests the original input
     /// (row 1f).
     /// </summary>
-    public static byte Encode(float sample, Action<string>? log = null)
+    public static byte Encode(float sample, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         if (float.IsNaN(sample))
         {
-            log?.Invoke("warning: RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN: Audio sample from current stream is NaN");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotAudioAnimationOnRobot.encodeMuLaw.sampleNaN", "Audio sample from current stream is NaN");
             return 0;
         }
         if (sample <= -1f) return Encode((short)-32767);

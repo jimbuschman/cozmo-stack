@@ -325,7 +325,7 @@ public sealed class CozmoMotion
             else
             {
                 // sChanneledInfoF channel Unnamed (0x00BE3FEC via the literal at 0x0063FF44), row 2.
-                Log($"info: [Unnamed] MovementComponent.UnlockTracks: Tracks 0x{mask:x} are not currently locked by {who}");
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "MovementComponent.UnlockTracks", $"Tracks 0x{mask:x} are not currently locked by {who}");
                 PrintLockStateLocked();
             }
             if (tree.Count == 0) enable |= (byte)(1 << b);
@@ -384,7 +384,7 @@ public sealed class CozmoMotion
             foreach (var e in tree) sb.Append(e.Debug).Append('[').Append(e.Key).Append("] ");
             sb.Append('\n');
         }
-        Log("debug: [Unnamed] MovementComponent.LockState: " + sb);
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Unnamed", "MovementComponent.LockState", "" + sb);
     }
 
     /// <summary>PrintLockState as a diagnostic call (0x0063FF76 is its only engine call site).</summary>
@@ -533,7 +533,7 @@ public sealed class CozmoMotion
                 // sErrorF event "MovementComponent.DirectDriveCheckSpeedAndLockTracks" (0x0063F036), format 0x0063F134: %s is the
                 // mask's AnimTrackFlagsToString, %x the mask, then the debug name and the key. _errG is set (0x0063F08C), then the
                 // debug-break gate (0x0063F090).
-                Log($"error: MovementComponent.DirectDriveCheckSpeedAndLockTracks: Locks left on tracks {AnimTrackFlagsToString(mask)} [0x{mask:x}] after {debug}[{key}] unlocked");
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "MovementComponent.DirectDriveCheckSpeedAndLockTracks", $"Locks left on tracks {AnimTrackFlagsToString(mask)} [0x{mask:x}] after {debug}[{key}] unlocked");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             }
         }
@@ -558,7 +558,7 @@ public sealed class CozmoMotion
         }
         if (!holds && IsTrackLockedLocked(mask))
         {
-            Log($"info: MovementComponent.{lockedName}");
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, null, $"MovementComponent.{lockedName}", "");
             return new MotionOutcome(MotionResult.Refused, $"{what} ignored: {lockedName}");
         }
         return null;
@@ -773,14 +773,14 @@ bool requireCalibration = true)
             // getDegrees 0x0084CD40: one f32 multiply, then promoted for %.1f.
             float degrees = target * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
             // fidelity: M4-032 (M4-001: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
-            Log(FormattableString.Invariant($"warning: MoveHeadToAngleAction.Constructor.AngleTooLow: Requested head angle ({degrees:F1}deg) less than min head angle (-25.0deg). Clipping."));
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "MoveHeadToAngleAction.Constructor.AngleTooLow", FormattableString.Invariant($"Requested head angle ({degrees:F1}deg) less than min head angle (-25.0deg). Clipping."));
             target = MinHeadAngleRad;
         }
         else if (RadiansGreaterThan(target, MaxHeadAngleRad))
         {
             float degrees = target * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
             // fidelity: M4-032 (M4-001: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
-            Log(FormattableString.Invariant($"warning: MoveHeadToAngleAction.Constructor.AngleTooHigh: Requested head angle ({degrees:F1}deg) more than max head angle (44.5deg). Clipping."));
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "MoveHeadToAngleAction.Constructor.AngleTooHigh", FormattableString.Invariant($"Requested head angle ({degrees:F1}deg) more than max head angle (44.5deg). Clipping."));
             target = MaxHeadAngleRad;
         }
         float tolerance = Math.Max(GameHeadToleranceRad, MinHeadToleranceRad);
@@ -1214,6 +1214,7 @@ bool requireCalibration = true)
             // fidelity: M4-016
             // The base IActionRunner warnings/infos (TimedOut, TracksLocked, Cancel, ...) reach the engine log.
             Log = line => Owner.Log(line);
+            SourceLog = (level, channel, key, text) => Owner._robot.Engine.EmitSourceLog(level, channel, key, text);
         }
 
         // fidelity: M4-016
@@ -1270,7 +1271,7 @@ bool requireCalibration = true)
             {
                 string shown = double.IsPositiveInfinity(h) ? "inf" : ((double)h).ToString("F6", System.Globalization.CultureInfo.InvariantCulture);
                 // fidelity: M4-032 (%f rendered by .NET fixed-point, invariant culture: the phone printf boundary)
-                Owner.Log($"warning: MoveLiftToHeightAction.Init.InvalidHeight: {shown} mm. Clipping to be in range.");
+                Owner._robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "MoveLiftToHeightAction.Init.InvalidHeight", $"{shown} mm. Clipping to be in range.");
                 h = h < LowDockHeightMm ? LowDockHeightMm : CarryHeightMm;
                 RequestedHeight = h;
             }
@@ -1326,7 +1327,7 @@ bool requireCalibration = true)
                         ref ushort count = ref (IsHead ? ref _headWaitingAck : ref _liftWaitingAck);
                         if (Eleventh(ref count))
                         {
-                            Owner.Log(FormattableString.Invariant($"debug: {name}.CheckIfDone.WaitingForAck: [{tag}] ActionID: {Id}"));
+                            Owner._robot.Engine.EmitSourceLog(EngineLogLevel.Debug, null, $"{name}.CheckIfDone.WaitingForAck", FormattableString.Invariant($"[{tag}] ActionID: {Id}"));
                             count = 0; // native reset follows the log.
                         }
                     }
@@ -1341,7 +1342,7 @@ bool requireCalibration = true)
                     {
                         float degrees = BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
                         // fidelity: M4-032 (M4-016: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
-                        Owner.Log(FormattableString.Invariant($"info: MoveHeadToAngleAction.CheckIfDone.HeadMovingInPosition: [{tag}] Head considered in position at {Target * degrees:F1}deg but still moving at {Owner._headAngle * degrees:F1}deg"));
+                        Owner._robot.Engine.EmitSourceLog(EngineLogLevel.Info, null, "MoveHeadToAngleAction.CheckIfDone.HeadMovingInPosition", FormattableString.Invariant($"[{tag}] Head considered in position at {Target * degrees:F1}deg but still moving at {Owner._headAngle * degrees:F1}deg"));
                     }
                     return moving ? EngineActionResult.Running : EngineActionResult.Success;
                 }
@@ -1355,16 +1356,16 @@ bool requireCalibration = true)
                             float degrees = BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1));
                             // Game/compound construction uses variability 0 (MA10), tolerance at +80, variability +88.
                             // fidelity: M4-032 (M4-016: the %.1f render is the phone printf boundary, .NET fixed-point, invariant culture)
-                            Owner.Log(FormattableString.Invariant($"debug: MoveHeadToAngleAction.CheckIfDone.NotInPosition: [{tag}] Waiting for head to get in position: {Owner._headAngle * degrees:F1}deg vs. {Target * degrees:F1}deg(+/-{0f:F1}) tol:{Tolerance * degrees:F1}deg"));
+                            Owner._robot.Engine.EmitSourceLog(EngineLogLevel.Debug, null, "MoveHeadToAngleAction.CheckIfDone.NotInPosition", FormattableString.Invariant($"[{tag}] Waiting for head to get in position: {Owner._headAngle * degrees:F1}deg vs. {Target * degrees:F1}deg(+/-{0f:F1}) tol:{Tolerance * degrees:F1}deg"));
                         }
                         // fidelity: M4-032 (M4-016: the %.1f and %f renders are the phone printf boundary, .NET fixed-point, invariant culture)
-                        else Owner.Log(FormattableString.Invariant($"debug: MoveLiftToHeightAction.CheckIfDone.NotInPosition: [{tag}] Waiting for lift to get in position: {Owner.CurrentLiftHeightMm():F1}mm vs. {Target:F1}mm (tol: {Tolerance:F6})"));
+                        else Owner._robot.Engine.EmitSourceLog(EngineLogLevel.Debug, null, "MoveLiftToHeightAction.CheckIfDone.NotInPosition", FormattableString.Invariant($"[{tag}] Waiting for lift to get in position: {Owner.CurrentLiftHeightMm():F1}mm vs. {Target:F1}mm (tol: {Tolerance:F6})"));
                         count = 0;
                     }
                 }
                 if (!moving && HasMoved)
                 {
-                    Owner.Log(FormattableString.Invariant($"warning: {name}.CheckIfDone.StoppedMakingProgress: [{tag}] giving up since we stopped moving"));
+                    Owner._robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, $"{name}.CheckIfDone.StoppedMakingProgress", FormattableString.Invariant($"[{tag}] giving up since we stopped moving"));
                     return ResultStoppedMakingProgress;
                 }
                 return EngineActionResult.Running;
@@ -1424,7 +1425,7 @@ bool requireCalibration = true)
                         // "<MoveHeadToAngleAction|MoveLiftToHeightAction>.MotorActionAcked", "[%d] ActionID: %d" with (tag +0x60, motor action id).
                         if (!a.Sent || a.Id != ack.ActionId) continue;
                         string name = a.IsHead ? "MoveHeadToAngleAction" : "MoveLiftToHeightAction";
-                        Log(FormattableString.Invariant($"info: [Actions] {name}.MotorActionAcked: [{unchecked((int)a.Tag)}] ActionID: {a.Id}"));
+                        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Actions", $"{name}.MotorActionAcked", FormattableString.Invariant($"[{unchecked((int)a.Tag)}] ActionID: {a.Id}"));
                         a.Acked = true;
                     }
                     break;
@@ -1436,8 +1437,8 @@ bool requireCalibration = true)
                     if (_robot.State.HeadCalibrated)
                     {
                         float h = s.HeadAngle;
-                        if (h < ReportedHeadLowOob) { Log("warning: Robot.GetCameraHeadPose.HeadAngleOOB"); h = MinHeadAngleRad; }
-                        else if (h > ReportedHeadHighOob) { Log("warning: Robot.GetCameraHeadPose.HeadAngleOOB"); h = MaxHeadAngleRad; }
+                        if (h < ReportedHeadLowOob) { _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.GetCameraHeadPose.HeadAngleOOB", ""); h = MinHeadAngleRad; }
+                        else if (h > ReportedHeadHighOob) { _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.GetCameraHeadPose.HeadAngleOOB", ""); h = MaxHeadAngleRad; }
                         _headAngle = h;
                     }
                     break;
@@ -1550,7 +1551,7 @@ internal sealed class PathComponent
         string name = StatusName?.Invoke(DriveToPoseStatus)
                       ?? ((uint)DriveToPoseStatus < StatusNames.Length ? StatusNames[DriveToPoseStatus]
                           : $"<MISSING: ERobotDriveToPoseStatus name for status {DriveToPoseStatus}, read past the table at 0x0102F610>");
-        _robot.Engine.Log($"info: [Planner] PathComponent.Abort: Aborting from status '{name}'");
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Planner", "PathComponent.Abort", $"Aborting from status '{name}'");
         if (PlannerSlot10 is { } planner) { planner(); Field47 = false; }
         SharedPath = null;
         int cleared = ClearPath(send);

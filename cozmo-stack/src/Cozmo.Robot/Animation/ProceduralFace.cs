@@ -40,10 +40,11 @@ public sealed class Eye
     // fidelity: M5-040
     internal static bool ClippingWarningEnabled = true;
     internal static readonly AsyncLocal<Action<string>?> WarningLog = new();
-    internal static IDisposable UseWarningLog(Action<string>? log)
-    { var old = WarningLog.Value; WarningLog.Value = log; return new WarningScope(old); }
-    private sealed class WarningScope(Action<string>? old) : IDisposable
-    { public void Dispose() => WarningLog.Value = old; }
+    internal static readonly AsyncLocal<SourceLogSink?> WarningSourceLog = new();
+    internal static IDisposable UseWarningLog(Action<string>? log, SourceLogSink? sourceLog = null)
+    { var old = WarningLog.Value; var oldSource = WarningSourceLog.Value; WarningLog.Value = log; WarningSourceLog.Value = sourceLog; return new WarningScope(old, oldSource); }
+    private sealed class WarningScope(Action<string>? old, SourceLogSink? oldSource) : IDisposable
+    { public void Dispose() { WarningLog.Value = old; WarningSourceLog.Value = oldSource; } }
     private readonly float[] _p = new float[ParamCount];
 
     /// <summary>
@@ -113,7 +114,7 @@ public sealed class Eye
         if (range is not { } bounds) return value;
         if (value < bounds.min || value > bounds.max)
         {
-            if (ClippingWarningEnabled) WarningLog.Value?.Invoke(FormattableString.Invariant($"warning: ProceduralFace.Clip.OutOfRange: Value of {value:F6} out of range [{bounds.min:F6},{bounds.max:F6}] for parameter {p}. Clipping."));
+            if (ClippingWarningEnabled) SourceLogDispatch.GetSink(WarningSourceLog.Value, WarningLog.Value)?.Invoke(EngineLogLevel.Warning, null, "ProceduralFace.Clip.OutOfRange", FormattableString.Invariant($"Value of {value:F6} out of range [{bounds.min:F6},{bounds.max:F6}] for parameter {p}. Clipping."));
             return value < bounds.min ? bounds.min : bounds.max;
         }
         return value;

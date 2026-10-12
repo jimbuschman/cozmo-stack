@@ -49,6 +49,8 @@ public class M5FixRowsTests
     }
     private static void JsonClip(string root, string file, string name) => File.WriteAllText(Path.Combine(root, "animations", file),
         "{\"" + name + "\":[{\"Name\":\"HeadAngleKeyFrame\",\"triggerTime_ms\":0,\"durationTime_ms\":100,\"angle_deg\":5,\"angleVariability_deg\":0}]}");
+    private static SourceLogSink Source(CozmoEngine engine) =>
+        (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text);
     private static void Entry(List<EngineLogEntry> entries, string key, EngineLogLevel level, string? channel, string text)
     {
         var e = Assert.Single(entries, e => e.Name == key);
@@ -113,7 +115,7 @@ public class M5FixRowsTests
     public void G2G7G9_GroupEntriesReachTheStructuredLogger()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var g = new AnimationGroup { Name = "g", Entries = new[] { new AnimationGroupEntry("a", 1, 0, "Default") }, Log = robot.Engine.Log };
+        var g = new AnimationGroup { Name = "g", Entries = new[] { new AnimationGroupEntry("a", 1, 0, "Default") }, Log = robot.Engine.Log, SourceLog = Source(robot.Engine) };
         Assert.NotNull(g.GetAnimationName(new EngineRandom(5489), SimpleMood.Default, 0, 0, true));
         Entry(entries, "AnimationGroup.GetAnimation", EngineLogLevel.Debug, "Unnamed", "getting animation from group 'g', simple mood = 'Default'");
         Entry(entries, "AnimationGroup.GetAnimation.Found", EngineLogLevel.Info, "Animations", "Group 'g' returning animation name 'a'");
@@ -148,7 +150,7 @@ public class M5FixRowsTests
     public void CW5_ClippingLogsBothBranchesAndLeavesUnmappedParametersAlone(float input, float expected)
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        using var scope = Eye.UseWarningLog(robot.Engine.Log);
+        using var scope = Eye.UseWarningLog(robot.Engine.Log, sourceLog: Source(robot.Engine));
         Eye.ClippingWarningEnabled = true;
         Assert.Equal(expected, Eye.Clip(EyeParam.UpperLidAngle, input));
         Entry(entries, "ProceduralFace.Clip.OutOfRange", EngineLogLevel.Warning, null,
@@ -163,11 +165,11 @@ public class M5FixRowsTests
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
         uint c = BackpackColor.Default;
-        Assert.True(BackpackColor.GetColorOptional(new[] { -1f, 0f, 0f, 2f }, ref c, robot.Engine.Log));
+        Assert.True(BackpackColor.GetColorOptional(new[] { -1f, 0f, 0f, 2f }, ref c, robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Assert.Equal(2, entries.Count(e => e.Name == "ColorRGBA.GetU8.OutOfRangeValue"));
         Assert.All(entries, e => { Assert.Equal(EngineLogLevel.Warning, e.Level); Assert.Equal("(tc0000) : Float RGBA values should be on the interval [0,1]. Will clip.", e.Text); });
-        entries.Clear(); Assert.True(BackpackColor.GetColorOptional(new[] { 2f, -1f, 0f, 2f }, ref c, robot.Engine.Log)); Assert.Empty(entries);
-        Assert.False(BackpackColor.GetColorOptional(new[] { 1f }, ref c, robot.Engine.Log));
+        entries.Clear(); Assert.True(BackpackColor.GetColorOptional(new[] { 2f, -1f, 0f, 2f }, ref c, robot.Engine.Log, sourceLog: Source(robot.Engine))); Assert.Empty(entries);
+        Assert.False(BackpackColor.GetColorOptional(new[] { 1f }, ref c, robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Entry(entries, "JsonTools.GetColorOptional", EngineLogLevel.Warning, null, "Expecting color in Json to be a string or 3 or 4 element array");
     }
 
@@ -196,7 +198,7 @@ public class M5FixRowsTests
     public void U3_UninitializedAndSendFailuresReturnOne()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log };
+        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine) };
         var method = typeof(AnimationScheduler).GetMethod("UpdateStreamLocked", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         Assert.Equal(1, method.Invoke(s, new object[] { new StreamAnimation("u", false), true }));
         Entry(entries, "Animation.Update", EngineLogLevel.Error, null, "u: Animation must be initialized before it can be played/updated.");
@@ -261,8 +263,8 @@ public class M5FixRowsTests
         }
         return new FlatTable(bytes.ToArray(), 128);
     }
-    private static object? Define(string method, FlatTable table, Action<string> log, string name = "a") =>
-        typeof(AnimationLibrary).GetMethod(method, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.Invoke(null, new object[] { table, log, name });
+    private static object? Define(string method, FlatTable table, Action<string> log, SourceLogSink sourceLog, string name = "a") =>
+        typeof(AnimationLibrary).GetMethod(method, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!.Invoke(null, new object[] { table, log, name, sourceLog });
 
     [Fact]
     public void M5_001_002_JsonOwnNameAndWrongEyeLengthEntries()
@@ -272,7 +274,7 @@ public class M5FixRowsTests
         try
         {
             File.WriteAllText(Path.Combine(root, "animations", "a.json"), "{\"a\":[{\"Name\":\"ProceduralFaceKeyFrame\",\"triggerTime_ms\":0,\"leftEye\":[0]}]}");
-            var lib = AnimationLibrary.Open(root, robot.Engine.Log);
+            var lib = AnimationLibrary.Open(root, robot.Engine.Log, sourceLog: Source(robot.Engine));
             Entry(entries, "CannedAnimationContainer::DefineFromJson", EngineLogLevel.Debug, "Unnamed", "Loading 'a'");
             Entry(entries, "RobotDataLoader.CollectAnimFiles.Results", EngineLogLevel.Info, "Animations", "Found 1 animation files of type 0");
             Entry(entries, "ProceduralFace.SetEyeArrayHelper.WrongNumParams", EngineLogLevel.Warning, null, "Unexpected number of parameters for leftEye array (1 vs. 19)");
@@ -286,7 +288,7 @@ public class M5FixRowsTests
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
         var track = new StreamTrack<FaceFrame>(); track.AddKeyFrameToBack(FaceFrame.Default(10)); track.AddKeyFrameToBack(FaceFrame.Default(20));
         var face = new ProceduralFacePose();
-        Assert.False(TrackLayerComponent.GetFaceHelper(track, 100, 125, ref face, true, robot.Engine.Log));
+        Assert.False(TrackLayerComponent.GetFaceHelper(track, 100, 125, ref face, true, robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Assert.Equal(20u, track.Current!.Trigger);
         Entry(entries, "AnimationStreamer.GetFaceHelper.FramesTooClose", EngineLogLevel.Warning, null, "currentFrameTriggerTime: 10 ms, nextFrameTriggerTime: 20, StreamTime: 25");
     }
@@ -298,10 +300,10 @@ public class M5FixRowsTests
     public void M5_006_BodyClampInfo(string radius, short speed, string key, string text)
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var frame = Assert.IsType<BodyKeyframe>(Define("DefineBody", Table(0u, 100u, radius, speed), robot.Engine.Log));
+        var frame = Assert.IsType<BodyKeyframe>(Define("DefineBody", Table(0u, 100u, radius, speed), robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Assert.Equal(radius == "POINT_TURN" ? 300 : 220, Math.Abs((int)frame.Speed));
         Entry(entries, "BodyMotionKeyFrame." + key, EngineLogLevel.Info, "Animations", text);
-        entries.Clear(); Assert.Null(Define("DefineBody", Table(0u, 100u, "bad", speed), robot.Engine.Log));
+        entries.Clear(); Assert.Null(Define("DefineBody", Table(0u, 100u, "bad", speed), robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Entry(entries, "BodyMotionKeyFrame.BadRadiusString", EngineLogLevel.Error, null, "a: Unrecognized string for 'radius_mm' field: bad");
     }
 
@@ -309,7 +311,7 @@ public class M5FixRowsTests
     public void M5_008_023_024_StreamingLogsCarryNamesAndQueuedMessageTags()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log }; s.Stream.Log = robot.Engine.Log;
+        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine) }; s.Stream.Log = robot.Engine.Log; s.Stream.SourceLog = Source(robot.Engine);
         s.Play(Clip("first", new HeadKeyframe(0, 100, 0, 0)), 0);
         Assert.Null(s.Play(Clip("second"), 0, false));
         Entry(entries, "AnimationStreamer.SetStreamingAnimation.NotInterrupting", EngineLogLevel.Info, "Unnamed", "Already streaming first, will not interrupt with second");
@@ -327,7 +329,7 @@ public class M5FixRowsTests
     public void M5_009_AudioDefinitionRejectsAndLogs(bool sum, string key, string text)
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        Assert.Null(Define("DefineAudio", Table(0u, new long[] { 1, 2 }, 1f, sum ? new[] { 0.75f, 0.5f } : new[] { 0.5f }), robot.Engine.Log));
+        Assert.Null(Define("DefineAudio", Table(0u, new long[] { 1, 2 }, 1f, sum ? new[] { 0.75f, 0.5f } : new[] { 0.5f }), robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Entry(entries, "RobotAudioKeyFrame.SetMembersFromFlatBuf." + key, EngineLogLevel.Error, null, text);
         Assert.True(Cozmo.Transport.EngineErrorState.ErrorFlagSet);
     }
@@ -336,7 +338,7 @@ public class M5FixRowsTests
     public void M5_010_NeutralConstructorError()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log, Catalog = new Catalog { Count = 0 } }; s.LoadNeutralFace();
+        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine), Catalog = new Catalog { Count = 0 } }; s.LoadNeutralFace();
         Entry(entries, "AnimationStreamer.Constructor.BadNeutralAnimGroup", EngineLogLevel.Error, null, "Neutral animation group group for trigger NeutralFace is empty or null");
     }
 
@@ -345,7 +347,7 @@ public class M5FixRowsTests
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
         var e = new AnimationGroupEntry("a", 1, 10, "Default") { UseHeadAngle = true, HeadAngleMinDeg = -10, HeadAngleMaxDeg = 10 }; e.Container.SetCooldown("a", 10);
-        var g = new AnimationGroup { Name = "g", Entries = new[] { e }, Log = robot.Engine.Log };
+        var g = new AnimationGroup { Name = "g", Entries = new[] { e }, Log = robot.Engine.Log, SourceLog = Source(robot.Engine) };
         e.Container.SetCooldown("a", 10);
         Assert.NotNull(g.GetAnimationName(new EngineRandom(5489), SimpleMood.Default, 1, 0, false));
         Entry(entries, "AnimationGroup.GetAnimation.BackupAnimationChosen", EngineLogLevel.Info, "Animations", "Animation is 'a' and new min cooldown is '9.000000'");
@@ -356,7 +358,7 @@ public class M5FixRowsTests
     public void M5_027_StackLogsAndIdleErrorRepeatWithoutPopping()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log, Catalog = new Catalog { Name = "" } };
+        var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine), Catalog = new Catalog { Name = "" } };
         s.PushIdleAnimation(AnimationTrigger.NeutralFace, "lock");
         Entry(entries, "AnimationStreamer.PushIdleAnimation", EngineLogLevel.Info, "Animations", "Setting idle animation to 'NeutralFace'.");
         Assert.Equal(1, s.Advance(0)); Assert.Equal(1, s.Advance(60));
@@ -370,12 +372,12 @@ public class M5FixRowsTests
     public void M5_028_029_LayerWarningsAndRemovalInfo()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var face = new FaceLayerManager(new EngineRandom(5489), new ScanLineState()) { Log = robot.Engine.Log };
+        var face = new FaceLayerManager(new EngineRandom(5489), new ScanLineState()) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine) };
         var p = new LiveIdleParams(); p[LiveIdleParam.EyeDartMaxDistance_pix] = 0; p[LiveIdleParam.BlinkSpacingMinTime_ms] = 10; p[LiveIdleParam.BlinkSpacingMaxTime_ms] = 10;
         face.KeepFaceAlive(p);
         Entry(entries, "AnimationStreamer.KeepFaceAlive.BadBlinkSpacingParams", EngineLogLevel.Warning, null, "Max (10) must be greater than min (10)");
         entries.Clear(); byte tag = face.AddPersistentLayer("empty", new StreamTrack<FaceFrame>());
-        face.ApplyLayersToFrame((_, _, _) => false, robot.Engine.Log);
+        face.ApplyLayersToFrame((_, _, _) => false, robot.Engine.Log, sourceLog: Source(robot.Engine));
         Entry(entries, "AnimationStreamer.UpdateFace.EmptyPersistentLayer", EngineLogLevel.Warning, null, $"Persistent face layer is empty - perhaps live frames were used? (tag={tag})");
         face.RemovePersistentLayer(tag, 0);
         Entry(entries, "ITrackLayerManager.RemovePersistentLayer", EngineLogLevel.Info, "Unnamed", $"empty, Tag = {tag} (Layers remaining=1)");
@@ -385,7 +387,7 @@ public class M5FixRowsTests
     public void M5_029_030_TrackCapacityAndLiveAddFailureLogInOrder()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        var a = new StreamAnimation("live", true) { Log = robot.Engine.Log };
+        var a = new StreamAnimation("live", true) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine) };
         for (int i = 0; i < 1001; i++) Assert.True(a.AddLive(new HeadKeyframe((uint)i, 1, 0, 0)));
         Assert.False(a.AddLive(new HeadKeyframe(1001, 1, 0, 0)));
         Entry(entries, "Animation.Track.AddKeyFrameToBack.TooManyFrames", EngineLogLevel.Warning, null, "There are already 1001 frames in track of type N4Anki5Cozmo17HeadAngleKeyFrameE. Refusing to add more.");
@@ -397,9 +399,9 @@ public class M5FixRowsTests
     public void M5_033_TurnClampsAndUnknownEvent()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        Define("DefineTurnTo", Table(0u, 100u, (short)0, (short)-301, (short)13637, (short)-13637), robot.Engine.Log);
+        Define("DefineTurnTo", Table(0u, 100u, (short)0, (short)-301, (short)13637, (short)-13637), robot.Engine.Log, sourceLog: Source(robot.Engine));
         Entry(entries, "TurnToRecordedHeadingKeyFrame.CheckRotationAccel.PointTurnDecelExceedsLimit", EngineLogLevel.Info, "Animations", "a: PointTurn decel 13637 deg/s^2 exceeds limit of 13636.363281 deg/s^2. Clamping");
-        entries.Clear(); Assert.Null(Define("DefineEvent", Table(0u, "bad"), robot.Engine.Log));
+        entries.Clear(); Assert.Null(Define("DefineEvent", Table(0u, "bad"), robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Entry(entries, "EventKeyFrame.UnrecognizedEventName", EngineLogLevel.Warning, null, "bad");
     }
 
@@ -408,7 +410,7 @@ public class M5FixRowsTests
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
         var map = AnimationTriggerResponses.Load(null);
-        map.Log = robot.Engine.Log;
+        map.Log = robot.Engine.Log; map.SourceLog = Source(robot.Engine);
         Assert.Equal("", map.GetResponse(AnimationTrigger.NeutralFace));
         Entry(entries, "AnimationTriggerResponsesContainer::GetResponse", EngineLogLevel.Warning, null, "Animation requested for unknown response 'NeutralFace'");
     }
@@ -424,9 +426,9 @@ public class M5FixRowsTests
     public void M5_017_AllThreeDebugFormatsAndEmptyReferenceError()
     {
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
-        Assert.Equal(0, AnimationScheduler.ChooseAlternative(1, new[] { 1f }, 0.25, robot.Engine.Log));
+        Assert.Equal(0, AnimationScheduler.ChooseAlternative(1, new[] { 1f }, 0.25, robot.Engine.Log, sourceLog: Source(robot.Engine)));
         Entry(entries, "RobotAudioKeyFrame.GetAudioRefIndex.ShowInfo", EngineLogLevel.Debug, "Audio", "random value = 0.250000, idx = 0 and range = 0.000000 to 1.000000");
-        entries.Clear(); var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log };
+        entries.Clear(); var s = new AnimationScheduler(new Sink()) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine) };
         Assert.Equal(0, s.GetAudioRefIndex(new AudioKeyframe(0, new long[] { 1 }, 1, new[] { 1f }, false), false));
         Entry(entries, "RobotAudioKeyFrame.GetAudioRef.RandomAudioSelection", EngineLogLevel.Debug, "Audio", "Randomly selected audio index = 0");
         entries.Clear(); Assert.Equal(0, s.GetAudioRefIndex(new AudioKeyframe(0, new long[] { 1 }, 1, new[] { 1f }, false), true));
@@ -455,7 +457,7 @@ public class M5FixRowsTests
         using var robot = CozmoRobot.CreateOffline(); var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
         foreach (var (frame, nativeType) in cases)
         {
-            entries.Clear(); var animation = new StreamAnimation("a", true) { Log = robot.Engine.Log };
+            entries.Clear(); var animation = new StreamAnimation("a", true) { Log = robot.Engine.Log, SourceLog = Source(robot.Engine) };
             for (int i = 0; i < 1001; i++) Assert.True(animation.AddLive(frame));
             Assert.False(animation.AddLive(frame));
             Entry(entries, "Animation.Track.AddKeyFrameToBack.TooManyFrames", EngineLogLevel.Warning, null, $"There are already 1001 frames in track of type {nativeType}. Refusing to add more.");

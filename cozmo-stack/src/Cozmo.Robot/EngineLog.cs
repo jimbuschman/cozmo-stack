@@ -65,28 +65,10 @@ public sealed partial class CozmoEngine
         DisplayEngineEntry(entry);
     }
 
-    // Legacy delegate for existing source ports (including higher-layer ports outside this job).
-    // Host diagnostics must use EmitStackLog at their call site; key spelling is never provenance.
-    internal void Log(string line) => EmitSourceLog(line);
+    // Text delegates carry stack diagnostics only; spelling and level prefixes are not provenance.
+    internal void Log(string line) => EmitStackLog(line);
 
-    // Explicit boundary for source-ported Action<string> component delegates.
-    // Callers must already own a cited engine log call; this only decodes their legacy representation.
-    internal void EmitSourceLog(string line, string? suppliedChannel = null)
-    {
-        int split = line.IndexOf(": ", StringComparison.Ordinal);
-        string levelName = split < 0 ? "" : line[..split];
-        EngineLogLevel level = levelName switch { "debug" => EngineLogLevel.Debug, "info" => EngineLogLevel.Info,
-            "event" => EngineLogLevel.Event, "warning" => EngineLogLevel.Warning, "error" => EngineLogLevel.Error, _ => EngineLogLevel.Info };
-        // Host diagnostics, including MISSING, remain visible and are not engine logger calls.
-        if (line.Contains("MISSING:", StringComparison.Ordinal) || line.StartsWith("event handler threw:", StringComparison.Ordinal) || levelName is not ("debug" or "info" or "event" or "warning" or "error"))
-        { EmitStackLog(line); return; }
-        string rest = line[(split + 2)..];
-        string? channel = level is EngineLogLevel.Debug or EngineLogLevel.Info ? suppliedChannel : null;
-        if (rest.StartsWith('[') && rest.IndexOf("] ", StringComparison.Ordinal) is var end && end > 0)
-        { channel = rest[1..end]; rest = rest[(end + 2)..]; }
-        int keyEnd = rest.IndexOf(": ", StringComparison.Ordinal);
-        string key = keyEnd < 0 ? rest : rest[..keyEnd];
-        string text = keyEnd < 0 ? "" : rest[(keyEnd + 2)..];
-        EmitEngineLog(level, channel, key, text);
-    }
+    // Source ports provide the logger fields explicitly at their cited call sites.
+    internal void EmitSourceLog(EngineLogLevel level, string? channel, string key, string text,
+        IReadOnlyDictionary<string, string>? data = null) => EmitEngineLog(level, channel, key, text, data);
 }

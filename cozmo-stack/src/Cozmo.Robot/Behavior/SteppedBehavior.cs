@@ -452,9 +452,10 @@ public abstract class SteppedBehavior : IBehavior
     /// </summary>
     protected void SetStateName(string newState)
     {
-        string line = $"info: [Behaviors] Behavior.TransitionToState: Behavior:{Id}, FromState:{_stateName} ToState:{newState}";
+        string text = $"Behavior:{Id}, FromState:{_stateName} ToState:{newState}";
+        string line = "info: [Behaviors] Behavior.TransitionToState: " + text;
         Log(line);
-        Context?.Robot.Engine.Log(line);
+        Context?.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", "Behavior.TransitionToState", text);
         _stateName = newState;
         ReportMissing("Robot::Update's behaviour debug string (robot+0x4C = activity + ' ' + BehaviorID + '-' + IBehavior+0x58, 0x00513F6A..0x00513F9C) sent to VizManager::SetText and SetSdkStatus(Behavior): the sender and the SDK-status path are M11/M12 and not built");
     }
@@ -715,7 +716,7 @@ public abstract class SteppedBehavior : IBehavior
         // 0x005bd362 cbnz viaCallback; 0x005bd364..0x005bd36e: only a live helper (+0xc8 set, [ctl+4]+1 != 0) is stopped, with the log at 0x005bd376..0x005bd39c.
         if (!viaCallback && HasLiveHelper)
         {
-            Context?.Robot.Engine.Log($"info: [Behaviors] {Id}.StopActing.WithoutCallback.StopHelper: Stopping behavior helper because action stopped without callback");
+            Context?.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", $"{Id}.StopActing.WithoutCallback.StopHelper", $"Stopping behavior helper because action stopped without callback");
             StopHelperWithoutCallback();
         }
         int handle = Volatile.Read(ref _currentActionHandle);
@@ -757,15 +758,15 @@ public abstract class SteppedBehavior : IBehavior
         var ai = Context?.AI ?? throw new NotSupportedException(
             "IBehavior::SmartDelegateToHelper 0x005bebee..0x005bebf8 reaches the BehaviorHelperComponent through [[[this+0x2c]+0x264]+0x10]; this behaviour's context has no AIComponent");
         var robot = Context.Robot;
-        robot.Engine.Log($"info: [Behaviors] {Id}.SmartDelegateToHelper: Behavior requesting to delegate to helper {helper.Pointer.Name}");
+        robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", $"{Id}.SmartDelegateToHelper", $"Behavior requesting to delegate to helper {helper.Pointer.Name}");
         if (_helperWeak is { IsLive: true })
         {
-            robot.Engine.Log($"warning: IBehavior.SmartDelegateToHelper: Attempted to start a handler while handle already running, stopping running helper");
+            robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "IBehavior.SmartDelegateToHelper", $"Attempted to start a handler while handle already running, stopping running helper");
             StopHelperWithoutCallback();
         }
         bool delegated = ai.Helpers.DelegateToHelper(robot, helper, onSuccess, onFailure);
         if (delegated) _helperWeak = new HelperWeakRef(helper);
-        else robot.Engine.Log($"info: [Behaviors] {Id}SmartDelegateToHelper.Failed: Failed to delegate to helper");
+        else robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", $"{Id}SmartDelegateToHelper.Failed", $"Failed to delegate to helper");
         return delegated;
     }
 
@@ -784,7 +785,7 @@ public abstract class SteppedBehavior : IBehavior
         {
             var ai = Context?.AI ?? throw new NotSupportedException(
                 "IBehavior::StopHelperWithoutCallback 0x005bd2a6..0x005bd2b0 reaches the BehaviorHelperComponent through [[[this+0x2c]+0x264]+0x10]; this behaviour's context has no AIComponent");
-            Context.Robot.Engine.Log($"info: [Behaviors] {Id}.SmartStopHelper: Behavior stopping its helper");
+            Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors", $"{Id}.SmartStopHelper", $"Behavior stopping its helper");
             return ai.Helpers.StopHelperWithoutCallback(locked);
         }
         finally { locked.Release(); }

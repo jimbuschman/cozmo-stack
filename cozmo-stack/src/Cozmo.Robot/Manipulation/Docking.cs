@@ -192,6 +192,7 @@ public sealed class DockingSystem : IDisposable
     public List<RobotMessage> Sent { get; } = new();
     public int ErrorSignalsSent { get; private set; }
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
     /// <summary>
     /// Raised when the robot reports it is moving the lift after a dock (<c>MovingLiftPostDock</c>, tag 0xC5) to a dock action that has registered
     /// its handler (<see cref="RegisterActionHandlers"/>): <c>IDockAction::Init</c> registers it (0x005516EA), so no action means no delivery.
@@ -473,7 +474,7 @@ public sealed class DockingSystem : IDisposable
     {
         if (Carrying.CarriedObjectId is null)
         {
-            Log?.Invoke("error: Robot.PlaceObjectOnGround.NotCarryingObject");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "Robot.PlaceObjectOnGround.NotCarryingObject", "");
             return true;
         }
         DockingSuccessByte = false;

@@ -124,8 +124,8 @@ public abstract class IHelper : BSRunnable
     /// <summary>Slot +0x30 <c>UpdateWhileActiveInternal(Robot&amp;)</c>.</summary>
     protected abstract BehaviorStatus UpdateWhileActiveInternal(CozmoRobot robot);
 
-    private void Log(string level, string channel, string id, string text) =>
-        _robot.Engine.Log($"{level}: [{channel}] {id}: {text}");
+    private void Log(EngineLogLevel level, string channel, string id, string text) =>
+        _robot.Engine.EmitSourceLog(level, channel, id, text);
 
     /// <summary>
     /// <c>IHelper::InitializeOnStack()</c> 0x005b6706: +0x2c = 0 (0x005b670c); +0x1c = 1 Running (0x005b6714); the +0x30 handler destroyed and emptied
@@ -158,8 +158,8 @@ public abstract class IHelper : BSRunnable
         }
         else
         {
-            Log("debug", "Events", "robot.behavior_helper.start", Name);       // sEventF (no DAS sink in this stack)
-            Log("info", "BehaviorHelpers", "IHelper.Init", Name);
+            Log(EngineLogLevel.Debug, "Events", "robot.behavior_helper.start", Name);       // sEventF (no DAS sink in this stack)
+            Log(EngineLogLevel.Info, "BehaviorHelpers", "IHelper.Init", Name);
             _initHasRun = true;
             _startTime = robot.Engine.Timer.SecondsF;
             _status = Init(robot);
@@ -182,7 +182,7 @@ public abstract class IHelper : BSRunnable
     /// </summary>
     public BehaviorStatus OnDelegateSuccess(CozmoRobot robot)
     {
-        Log("debug", "BehaviorHelpers", "IHelper.OnDelegateSuccess", Name);
+        Log(EngineLogLevel.Debug, "BehaviorHelpers", "IHelper.OnDelegateSuccess", Name);
         if (_successHandler is { } handler) _status = handler(robot);
         _successHandler = null;
         return _status;
@@ -195,7 +195,7 @@ public abstract class IHelper : BSRunnable
     /// </summary>
     public BehaviorStatus OnDelegateFailure(CozmoRobot robot)
     {
-        Log("info", "BehaviorHelpers", "IHelper.OnDelegateFailure", Name);
+        Log(EngineLogLevel.Info, "BehaviorHelpers", "IHelper.OnDelegateFailure", Name);
         if (_failureHandler is { } handler) _status = handler(robot);
         _successHandler = null;
         return _status;
@@ -214,7 +214,7 @@ public abstract class IHelper : BSRunnable
     /// </summary>
     public void Stop(bool first)
     {
-        Log("info", "BehaviorHelpers", "IHelper.Stop", $"{Name} isActive={(first ? 1 : 0)}, IsActing={(IsActing() ? 1 : 0)}");
+        Log(EngineLogLevel.Info, "BehaviorHelpers", "IHelper.Stop", $"{Name} isActive={(first ? 1 : 0)}, IsActing={(IsActing() ? 1 : 0)}");
         LogStopEvent(first);
         if (first && _behavior.HasCurrentAction) _behavior.StopActingFromHelper(keepAction: false);
         OnStopSlot24(first);
@@ -236,7 +236,7 @@ public abstract class IHelper : BSRunnable
         };
         if (name is null) return;
         float duration = _robot.Engine.Timer.SecondsF - _startTime;
-        if (duration < 0f) { Log("error", "BehaviorHelpers", "IHelper.Stop.InvalidTime", Name); return; }
-        Log("debug", "Events", name, $"{Name} {duration}");
+        if (duration < 0f) { Log(EngineLogLevel.Error, "BehaviorHelpers", "IHelper.Stop.InvalidTime", Name); return; }
+        Log(EngineLogLevel.Debug, "Events", name, $"{Name} {duration}");
     }
 }

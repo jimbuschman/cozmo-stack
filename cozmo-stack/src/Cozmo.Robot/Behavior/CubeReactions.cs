@@ -248,7 +248,7 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
             _behavior.TargetObjectId = e.ObjectId;
             return;
         }
-        rc.Context.Robot.Engine.Log("warning: ReactionTriggerStrategyCubeMoved.SetupForceTriggerBehavior: no located object to react to");
+        rc.Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "ReactionTriggerStrategyCubeMoved.SetupForceTriggerBehavior", "no located object to react to");
     }
 
     public override void EnabledStateChanged(BehaviorContext context, bool enabled)

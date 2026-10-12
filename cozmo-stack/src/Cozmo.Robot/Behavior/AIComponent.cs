@@ -17,9 +17,9 @@ public sealed class AIComponent
 {
     /// <param name="worldOriginId"><c>Robot::GetWorldOriginID</c>.</param>
     /// <param name="log">The engine log line sink.</param>
-    public AIComponent(Func<int> worldOriginId, Action<string>? log = null)
+    public AIComponent(Func<int> worldOriginId, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        Helpers = new BehaviorHelperComponent(worldOriginId, log);
+        Helpers = new BehaviorHelperComponent(worldOriginId, log, sourceLog);
     }
 
     // fidelity: M10-009

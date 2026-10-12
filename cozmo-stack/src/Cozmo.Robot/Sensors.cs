@@ -79,6 +79,7 @@ public sealed class CozmoSensors
         OffTreads.ClearOnChargerPlatform = () => SetOnChargerPlatform(false);
         OffTreads.Log += l => _robot.Engine.Log(l);
         UnexpectedMovement.Log += l => _robot.Engine.Log(l);
+        UnexpectedMovement.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
     }
 
     /// <summary>Raised when the robot reports a cliff.</summary>
@@ -533,7 +534,7 @@ public sealed class CozmoSensors
     /// <summary>The game EnableCliffSensor (SC6, 0x00527E8E..0x00527EEA): logs "Setting to %s" and stores +4; nothing is sent.</summary>
     public void SetCliffSensorEnabled(bool enable)
     {
-        _robot.Engine.Log($"info: EnableCliffSensor: Setting to {(enable ? "true" : "false")}");
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, null, "EnableCliffSensor", $"Setting to {(enable ? "true" : "false")}");
         lock (_gate) _cliffEnabled = enable;
     }
 
@@ -834,7 +835,7 @@ public sealed class CozmoSensors
             case Protocol.FallingStarted fs:
                 // fidelity: M10-011
                 // C1 (0x534F4C..0x534F9E): log, then the game FallingStarted{timestamp}.
-                _robot.Engine.Log($"info: RobotImplMessaging.HandleFallingStarted: timestamp {fs.Unknown}");
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Info, null, "RobotImplMessaging.HandleFallingStarted", $"timestamp {fs.Unknown}");
                 FallingStarted?.Invoke(fs.Unknown);
                 break;
 
@@ -955,7 +956,7 @@ public sealed class CozmoSensors
                             {
                                 // fidelity: M11-019
                                 // 0x00512F24..0x00512F96: sErrorF "Robot.UpdateFullRobotState.MismatchedFrameIDs" (state frame id, then robot+0x2B0), +0x2C0 = 0, Robot::Delocalize.
-                                _robot.Engine.Log(FormattableString.Invariant($"error: Robot.UpdateFullRobotState.MismatchedFrameIDs: Robot[{s.PoseFrameId}] and engine[{_robot.Engine.Robot?.PoseFrameId}] frameIDs are mismatched, delocalizing"));
+                                _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "Robot.UpdateFullRobotState.MismatchedFrameIDs", FormattableString.Invariant($"Robot[{s.PoseFrameId}] and engine[{_robot.Engine.Robot?.PoseFrameId}] frameIDs are mismatched, delocalizing"));
                                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 00512F7A, 00512F7C..7E
                                 _frameMismatchCount = 0; // 00512F88: after log/error flag, before Delocalize.
                                 FrameMismatchDelocalizeTrigger = s;

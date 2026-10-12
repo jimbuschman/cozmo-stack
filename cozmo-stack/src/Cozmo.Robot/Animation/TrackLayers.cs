@@ -25,6 +25,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
     protected readonly SortedDictionary<byte, TrackLayer<T>> Layers = new();
     private byte _tagCounter;
     public Action<string>? Log;
+    public SourceLogSink? SourceLog { get; set; }
 
     /// <summary>Q1.2: HaveLayersToSend = (layer-map size ≠ 0).</summary>
     public bool HaveLayersToSend => Layers.Count != 0;
@@ -48,6 +49,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
     {
         var t = track.CopyFromBegin(copy);
         t.Log = Log ?? t.Log;
+        t.SourceLog = SourceLog ?? t.SourceLog;
         t.IsLive = true;
         byte tag = NextTag();
         Layers[tag] = new TrackLayer<T> { Track = t, StartTime = startTime, StreamTime = 0, IsPersistent = false, Tag = tag, Name = name };
@@ -59,6 +61,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
     {
         var t = track.CopyFromBegin(copy);
         t.Log = Log ?? t.Log;
+        t.SourceLog = SourceLog ?? t.SourceLog;
         t.IsLive = false;
         byte tag = NextTag();
         Layers[tag] = new TrackLayer<T> { Track = t, StartTime = 0, StreamTime = 0, IsPersistent = true, Tag = tag, Name = name };
@@ -85,7 +88,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
     /// frame (the layer holds its last face and is never removed); not persistent → removed after the loop. Returns the
     /// OR of the fn results.
     /// </summary>
-    public bool ApplyLayersToFrame(Func<StreamTrack<T>, int, int, bool> fn, Action<string>? log = null)
+    public bool ApplyLayersToFrame(Func<StreamTrack<T>, int, int, bool> fn, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         bool any = false;
         List<byte>? remove = null;
@@ -99,7 +102,7 @@ internal class TrackLayerManager<T> where T : class, IStreamKeyframe
             {
                 if (layer.Track.IsEmpty)
                 {
-                    log?.Invoke($"warning: AnimationStreamer.UpdateFace.EmptyPersistentLayer: Persistent face layer is empty - perhaps live frames were used? (tag={layer.Tag})");
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.UpdateFace.EmptyPersistentLayer", $"Persistent face layer is empty - perhaps live frames were used? (tag={layer.Tag})");
                     layer.IsPersistent = false;
                 }
                 else
@@ -185,7 +188,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
             int min = (int)p[LiveIdleParam.BlinkSpacingMinTime_ms], max = (int)p[LiveIdleParam.BlinkSpacingMaxTime_ms];
             if (max <= min)
             {
-                Log?.Invoke($"warning: AnimationStreamer.KeepFaceAlive.BadBlinkSpacingParams: Max ({max}) must be greater than min ({min})");
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.KeepFaceAlive.BadBlinkSpacingParams", $"Max ({max}) must be greater than min ({min})");
                 min = 7500;
                 max = 30000;
             }
@@ -252,7 +255,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     public void RemovePersistentLayer(byte tag, int dur)
     {
         if (!Layers.TryGetValue(tag, out var layer)) return;
-        Log?.Invoke($"info: [Unnamed] ITrackLayerManager.RemovePersistentLayer: {layer.Name}, Tag = {tag} (Layers remaining={Layers.Count - 1})");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Unnamed", "ITrackLayerManager.RemovePersistentLayer", $"{layer.Name}, Tag = {tag} (Layers remaining={Layers.Count - 1})");
         var track = new StreamTrack<FaceFrame> { NativeTypeName = "N4Anki5Cozmo22ProceduralFaceKeyFrameE" };
         if (dur >= 1 && layer.Track.Current is { } cur)
         {
@@ -435,7 +438,7 @@ internal sealed class BackpackLayerManager : TrackLayerManager<BackpackFrame>
     /// </summary>
     public StreamTrack<BackpackFrame> GenerateGlitchLights()
     {
-        var track = new StreamTrack<BackpackFrame> { Log = Log, NativeTypeName = "N4Anki5Cozmo22BackpackLightsKeyFrameE" };
+        var track = new StreamTrack<BackpackFrame> { Log = Log, SourceLog = SourceLog, NativeTypeName = "N4Anki5Cozmo22BackpackLightsKeyFrameE" };
         var leds = new ushort[5];
         track.AddKeyFrameToBack(new BackpackFrame(0, 200, (ushort[])leds.Clone()));
         leds[Middle] = Red;
@@ -619,6 +622,12 @@ internal sealed class TrackLayerComponent
         set { Face.Log = value; Backpack.Log = value; }
     }
 
+    public SourceLogSink? SourceLog
+    {
+        get => Face.SourceLog;
+        set { Face.SourceLog = value; Backpack.SourceLog = value; }
+    }
+
     // fidelity: M5-010
     /// <summary>
     /// <c>ProceduralFace::_resetData</c> (P1): null until the streamer constructor's SetResetData. In the engine it is a
@@ -665,7 +674,7 @@ internal sealed class TrackLayerComponent
     /// </summary>
     public void AddGlitch(float degree)
     {
-        Log?.Invoke($"debug: TrackLayerComponent.AddGlitch: Degree {degree:F2}");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, null, "TrackLayerComponent.AddGlitch", $"Degree {degree:F2}");
         Face.AddLayer("Glitch", FaceLayerManager.GenerateFaceDistortion(degree), 0);
         Backpack.AddLayer("Glitch", Backpack.GenerateGlitchLights(), 0);
     }
@@ -721,7 +730,7 @@ internal sealed class TrackLayerComponent
                 if (kf is null) return false;
                 layered = (ushort[])kf.Leds.Clone();
                 return true;
-            }, Log);
+            }, Log, SourceLog);
             if (layered is not null) frame.BackpackLeds = layered;
             frame.Backpack |= any;
         }
@@ -731,11 +740,11 @@ internal sealed class TrackLayerComponent
         bool animFace = false;
         if (anim is not null)
         {
-            animFace = GetFaceHelper(anim.ProcFace, start, streamTime, ref face, replace: true, Log, firedFace);
+            animFace = GetFaceHelper(anim.ProcFace, start, streamTime, ref face, replace: true, Log, firedFace, SourceLog);
             if (animFace && storeFace) LastFace = face.Clone();
         }
         var composed = face;
-        bool layerFace = Face.ApplyLayersToFrame((track, ls, lt) => GetFaceHelper(track, ls, lt, ref composed, replace: false, Log), Log);
+        bool layerFace = Face.ApplyLayersToFrame((track, ls, lt) => GetFaceHelper(track, ls, lt, ref composed, replace: false, Log, sourceLog: SourceLog), Log, SourceLog);
         frame.Face = animFace || layerFace;
         frame.FaceOut = composed;
         return frame;
@@ -750,7 +759,7 @@ internal sealed class TrackLayerComponent
     /// layer). Returns whether a face was produced.
     /// </summary>
     internal static bool GetFaceHelper(StreamTrack<FaceFrame> track, int start, int t, ref ProceduralFacePose face,
-                                       bool replace, Action<string>? log = null, Action<FaceFrame>? fired = null)
+                                       bool replace, Action<string>? log = null, Action<FaceFrame>? fired = null, SourceLogSink? sourceLog = null)
     {
         var kf = track.Current;
         if (kf is null || start + (long)kf.Trigger > t) return false;
@@ -764,7 +773,7 @@ internal sealed class TrackLayerComponent
         }
         else if (start + (long)next.Trigger <= t)
         {
-            log?.Invoke($"warning: AnimationStreamer.GetFaceHelper.FramesTooClose: currentFrameTriggerTime: {unchecked((int)kf.Trigger)} ms, nextFrameTriggerTime: {unchecked((int)next.Trigger)}, StreamTime: {unchecked(t - start)}");
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.GetFaceHelper.FramesTooClose", $"currentFrameTriggerTime: {unchecked((int)kf.Trigger)} ms, nextFrameTriggerTime: {unchecked((int)next.Trigger)}, StreamTime: {unchecked(t - start)}");
             track.MoveToNext();
             return false;
         }
