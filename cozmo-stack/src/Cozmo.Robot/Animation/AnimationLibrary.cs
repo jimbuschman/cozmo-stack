@@ -481,8 +481,20 @@ public sealed class AnimationLibrary : IAnimationCatalog
         }
         else
         {
-            try { lock (_gate) { var clip = JsonClipLoader.Load(path, Log, SourceLog); if (clip != null) Register(clip, path, true); } }
-            catch (Exception e) when (e is IOException or JsonException) { } // L6.6: JSON read failure still adds ratio.
+            JsonDocument? doc = null;
+            try { doc = JsonDocument.Parse(File.ReadAllText(path)); }
+            catch (Exception)
+            {
+                // readAsJson 0x0084C0E6, errG 0x0084C10C..0x0084C120; failed read returns false.
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null,
+                    "DataPlatform.readAsJson", $"Failed to read [{path}]");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                Log?.Invoke("MISSING: M5-001 DataPlatform.readAsJson 0x0084C124..0x0084C15C: conditional JsonCpp formatted reader errors are unrecovered; no System.Text.Json diagnostic substituted");
+            }
+            using (doc)
+                if (doc is not null)
+                    lock (_gate) { var clip = JsonClipLoader.LoadDocument(doc, Log, SourceLog); if (clip != null) Register(clip, path, true); }
+            // L6.6 / 0x00521470..0x005214A8: every JSON read failure still adds ratio.
         }
         lock (_gate) LoadingProgress += ratio;
     }

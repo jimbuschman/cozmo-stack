@@ -184,7 +184,11 @@ public sealed record LightsKeyframe(uint TriggerTimeMs, uint DurationTimeMs,
     /// (C18, +0x10..+0x18; Q2), read as SetMembersFromJson reads them (gap4 J1.9, <see cref="BackpackColor.TryReadAll"/>);
     /// null when a colour is not an array of 3 or 4 floats, which rejects the keyframe at load.
     /// </summary>
-    public ushort[]? EncodedLeds => BackpackColor.TryReadAll(Left, Right, Front, Middle, Back, out var leds) ? leds : null;
+    // JSON SetMembersFromJson stores each converted ColorRGBA immediately. Named words must never
+    // pass through the float converter again (0x00840286..0x00840288).
+    internal uint[]? LoadedColorWords { get; init; }
+    public ushort[]? EncodedLeds => LoadedColorWords is { } words ? words.Select(BackpackColor.Encode).ToArray()
+        : BackpackColor.TryReadAll(Left, Right, Front, Middle, Back, out var leds) ? leds : null;
 }
 
 // fidelity: M5-016

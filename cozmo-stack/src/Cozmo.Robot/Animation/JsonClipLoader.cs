@@ -23,8 +23,13 @@ internal static class JsonClipLoader
 
     public static AnimationClip? Load(string file, Action<string>? log, SourceLogSink? sourceLog = null)
     {
-        using var clipLog = Eye.UseWarningLog(log, sourceLog);
         using var doc = JsonDocument.Parse(File.ReadAllText(file));
+        return LoadDocument(doc, log, sourceLog);
+    }
+
+    internal static AnimationClip? LoadDocument(JsonDocument doc, Action<string>? log, SourceLogSink? sourceLog)
+    {
+        using var clipLog = Eye.UseWarningLog(log, sourceLog);
         var root = doc.RootElement;
         var names = root.ValueKind == JsonValueKind.Object
             ? root.EnumerateObject().Select(p => p.Name).OrderBy(n => n, StringComparer.Ordinal).ToList()
@@ -71,8 +76,18 @@ internal static class JsonClipLoader
                 catch (JsonCppException e) { error = e.Message; }
                 if (error is not null)
                 {
-                    log?.Invoke($"error: {name}: {error}");
-                    log?.Invoke("MISSING: Animation.DefineFromJson, Animation.DefineFromJson.FrameNameMissing, Animation.DefineFromJson.AddKeyFrameFailure, Animation.DefineFromJson.UnrecognizedFrameName, IKeyFrame.ReadFromJson, IKeyFrame.GetMemberFromJsonMacro, BodyMotionKeyFrame.MissingRadius, BodyMotionKeyFrame.ProcessRadiusString engine error fields/tails; higher-layer port deferred");
+                    if (error != BackpackColorFailure)
+                    {
+                        log?.Invoke($"error: {name}: {error}");
+                        log?.Invoke("MISSING: Animation.DefineFromJson, Animation.DefineFromJson.FrameNameMissing, Animation.DefineFromJson.AddKeyFrameFailure, Animation.DefineFromJson.UnrecognizedFrameName, IKeyFrame.ReadFromJson, IKeyFrame.GetMemberFromJsonMacro, BodyMotionKeyFrame.MissingRadius, BodyMotionKeyFrame.ProcessRadiusString engine error fields/tails; higher-layer port deferred");
+                    }
+                    else
+                    {
+                        // J1.1: failed AddKeyFrameToBack reaches 0x00576E74, then errG, and ends the loop.
+                        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
+                            "Animation.DefineFromJson.AddKeyFrameFailure", $"Adding BackpackLightsKeyFrame frame {i} failed.");
+                        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                    }
                     failed = true;
                     break;
                 }
@@ -155,7 +170,7 @@ internal static class JsonClipLoader
             case "ProceduralFaceKeyFrame":
                 return DefineFace(trigger, el, log, sourceLog);
             case "BackpackLightsKeyFrame":
-                return DefineBackpack(trigger, el, log, out error, sourceLog);
+                return DefineBackpack(trigger, el, log, clip, out error, sourceLog);
             case "RobotAudioKeyFrame":
                 return DefineAudio(trigger, el, out error);
             case "FaceAnimationKeyFrame":
@@ -243,29 +258,48 @@ internal static class JsonClipLoader
     /// <see cref="NamedColors.GetByString"/> (an unknown name is DEFAULT, not a rejection); then "durationTime_ms" asInt,
     /// required.
     /// </summary>
-    private static Keyframe? DefineBackpack(uint trigger, JsonElement el, Action<string>? log, out string? error, SourceLogSink? sourceLog = null)
+    private const string BackpackColorFailure = "BackpackLightsKeyFrame.SetMembersFromJson";
+
+    private static Keyframe? DefineBackpack(uint trigger, JsonElement el, Action<string>? log, string clip, out string? error, SourceLogSink? sourceLog = null)
     {
         error = null;
         // fidelity: M5-016
         uint color = BackpackColor.Default;
+        var words = new uint[5]; // Left, Front, Middle, Back, Right (0x004FABDC..0x004FADB6).
         bool Color(string key, out float[] components)
         {
-            var v = el.TryGetProperty(key, out var present) ? present : Required(el, key);
+            components = Array.Empty<float>();
+            if (!el.TryGetProperty(key, out var v)) return false; // isMember failure is silent.
             // C5 item 6.4/6.5: a string goes through NamedColors::GetByString; an unknown name is DEFAULT with a
             // warning, not a rejection. Any other type than a string or a 3/4-element array rejects the keyframe.
             if (v.ValueKind == JsonValueKind.String)
-                components = NamedColors.AsRawComponents(v.GetString()!, log, sourceLog);
+            {
+                color = NamedColors.GetByString(v.GetString()!, log, sourceLog);
+                // Retain the exposed asset components, but streaming uses LoadedColorWords.
+                components = new[] { (float)(color >> 24), (float)((color >> 16) & 0xFF),
+                    (float)((color >> 8) & 0xFF), (float)(color & 0xFF) };
+                return true; // Native copies the word directly; no GetU8 conversion/warnings.
+            }
             else
                 components = v.ValueKind == JsonValueKind.Array
                     ? v.EnumerateArray().Select(x => AsFloat(x, key)).ToArray() : Array.Empty<float>();
             // Convert immediately, before reading the next colour: NamedColors and GetU8 warnings interleave.
             return BackpackColor.GetColorOptional(components, ref color, log, sourceLog);
         }
-        if (!Color("Back", out var back) || !Color("Front", out var front) || !Color("Middle", out var middle)
-            || !Color("Left", out var left) || !Color("Right", out var right))
-        { error = "BackpackLightsKeyFrame: a colour is not an array of 3 or 4 floats"; return null; }
+        bool Read(string key, int index, out float[] components)
+        {
+            if (Color(key, out components)) { words[index] = color; return true; }
+            // 0x004FAE4E: r3 is the animation name, [sp] is the failed LED key.
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
+                BackpackColorFailure, $"{clip}: Failed to get '{key}' LED color from Json file");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x004FAFAC..0x004FAFB8, return 1.
+            return false;
+        }
+        if (!Read("Back", 3, out var back) || !Read("Front", 1, out var front) || !Read("Middle", 2, out var middle)
+            || !Read("Left", 0, out var left) || !Read("Right", 4, out var right))
+        { error = BackpackColorFailure; return null; }
         uint duration = unchecked((uint)AsInt(Required(el, "durationTime_ms"), "durationTime_ms"));
-        var k = new LightsKeyframe(trigger, duration, left, right, front, middle, back);
+        var k = new LightsKeyframe(trigger, duration, left, right, front, middle, back) { LoadedColorWords = words };
         return k;
     }
 
