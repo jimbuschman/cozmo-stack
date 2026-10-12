@@ -693,3 +693,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New | M8-020 PlayAnimationAction, M8-021 TriggerAnimationAction (IMPLEMENTATION_GAP); M8-022 DAS blacklist source (RECOVERABLE_GAP) |
 | Evidence added | M8-015 (IActionRunner/IAction rows), M8-017 (AddAction chain) |
 | Corrected | M8-007: TRACKS_LOCKED completes at once, no retry |
+
+
+## R-M9-029 (manager, 2026-10-12; research/20261012-m9-029-custom-song.md, Opus-checked)
+
+| Change | Records |
+| --- | --- |
+| Note | M8-020: the cozmo_sings_custom remap is CodeLab-only (M9-029) |
+

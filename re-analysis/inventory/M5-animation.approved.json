@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "c9f39bb77e2adef844043de2bebc5b479ff263408f6c5f29884d6c77c5dbb4ac",
+  "inventory_sha256": "57d7374c36802417dcff19f4202e350d88cc4a67fe4daecb6e862cc68ea87e8e",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -116,7 +116,8 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-008 (Opus settling pass, manager-adopted 2026-10-11).",
         "re-analysis/research/20261011-m5-fix-rows.md section 5 (Opus fix rows, manager-adopted 2026-10-11).",
         "re-analysis/research/20261012-m5-x9-extraction.md section 4c: sVerifyFailedReturnFalse 0x0080D9A4 logs sErrorV \"VERIFY(%s): \", sets errG with no debug break; sDumpCallstack 0x0080DA08 is a no-op (0x0080B0A6 bx lr); the flush 0x0080DA24 goes MultiLoggerProvider::Flush 0x006673BA -> DasLoggerProvider::Flush 0x006671F4 -> libDAS DASForceFlushNow (M3-051); returns 0.",
-        "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242)."
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242).",
+        "re-analysis/research/20261012-m9-029-custom-song.md check: SetStreamingAnimation stores +0x38 = anim at 0x0057B24A before the custom branch; the live/tag/InitStream tail (0x0057B29C..0x0057B2F6) runs on whatever +0x38 holds; ReplayLastAnimation (A27, 0x0057ED0E) replays by the name at +0x54 through the string overload with custom = false (0x0057B160..0x0057B16C)."
       ],
       "live_path": true,
       "hardware_required": false

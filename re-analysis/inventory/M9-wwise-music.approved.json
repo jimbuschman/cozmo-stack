@@ -2,7 +2,7 @@
   "subsystem": "M9-wwise-music",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "3a65e8169bd312fc3bb6eaca2fa4ef5a38b6f04de96ad311039337618306754e",
+  "inventory_sha256": "65dd0109abc6d3e9a4a37179f88b9b1b0d8a5afb00d8d2747486e06e1b5a0477",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -337,11 +337,12 @@
       "hardware_required": false
     },
     "M9-029": {
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "title": "SetStreamingAnimation custom-song branch (CreateCustomSongAnimation)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-settling-2.md: SetStreamingAnimation 0x0057B24E..0x0057B29A, the custom-song branch: CreateCustomSongAnimation, its info log, +0x38 = +0x3C (inventory row A7, \"NEW (M9 interface)\")."
+        "re-analysis/research/20261012-m5-settling-2.md: SetStreamingAnimation 0x0057B24E..0x0057B29A, the custom-song branch: CreateCustomSongAnimation, its info log, +0x38 = +0x3C (inventory row A7, \"NEW (M9 interface)\").",
+        "re-analysis/research/20261012-m9-029-custom-song.md (Opus-checked 20/22 confirmed, 0 wrong): the branch gate is the customSong argument == 1 (0x0057B24E..0x0057B256); CreateCustomSongAnimation 0x0057A978..0x0057ABC0 clones the template, rebuilds RobotAudio from the +0x74 notes (table 0xC59B7C, 500 ms per beat unit), trims below 8000 ms; ReplaceNotesInSong (G2E 0xC4) handler 0x0057A890 is the only writer of +0x74; the only producer of the custom flag is PlayAnimationAction::Init remapping \"cozmo_sings_custom\" (0x00543F3A..0x00543F96; the only flag-setting caller of the pointer overload, BL scan); the only app sender of that name and of ReplaceNotesInSong is CodeLabGame.cs:2101..2117, inside internal SDK mode (CodeLabGame.cs:967)."
       ],
       "live_path": true,
       "hardware_required": false

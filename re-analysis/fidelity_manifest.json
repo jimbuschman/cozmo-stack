@@ -2003,13 +2003,14 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-008 (Opus settling pass, manager-adopted 2026-10-11).",
         "re-analysis/research/20261011-m5-fix-rows.md section 5 (Opus fix rows, manager-adopted 2026-10-11).",
         "re-analysis/research/20261012-m5-x9-extraction.md section 4c: sVerifyFailedReturnFalse 0x0080D9A4 logs sErrorV \"VERIFY(%s): \", sets errG with no debug break; sDumpCallstack 0x0080DA08 is a no-op (0x0080B0A6 bx lr); the flush 0x0080DA24 goes MultiLoggerProvider::Flush 0x006673BA -> DasLoggerProvider::Flush 0x006671F4 -> libDAS DASForceFlushNow (M3-051); returns 0.",
-        "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242)."
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242).",
+        "re-analysis/research/20261012-m9-029-custom-song.md check: SetStreamingAnimation stores +0x38 = anim at 0x0057B24A before the custom branch; the live/tag/InitStream tail (0x0057B29C..0x0057B2F6) runs on whatever +0x38 holds; ReplayLastAnimation (A27, 0x0057ED0E) replays by the name at +0x54 through the string overload with custom = false (0x0057B160..0x0057B16C)."
       ],
       "live_path": true,
       "test": "M5AnimationTests.M5_008_A4_A5_A9_RefuseInterruptAndTheTags, M5AnimationTests.M5_008_A13_EachLoopReInitsWithTheSameTag, M5AnimationTests.M5_008_A27_ReplayLastAnimation, AnimationGapTests.TheTagCounterWrapsPastZeroAndFf, M5X9BuilderTests.VerifyHasNoCallstackWritesAndFlushSeesErrorFlag",
       "effect": "a second animation is handled differently",
       "provenance": "compared against re-analysis/inventory/M5-animation.md on 2026-09-25 and reproduced by the code (M5 batch): SetStreamingAnimationLocked is A4..A9: streaming and a non-null newcomer without interrupt → NotInterrupting, 0 (Play returns null); streaming → Aborting and Abort; nothing streaming: a null newcomer → Abort, a non-null one → Abort only with an idle set; +0x38 = the newcomer; a null newcomer after an old one sets +0x73 (A6); a live animation is forced to 1 loop (A8); the name to +0x54, IncrementTagCtr (1..0xFE, 0 and 0xFF never), InitStream, +0x68 = numLoops, +0x6C = 0, the tag returned (AnimationHandle.Tag). Advance's streaming branch is A13 (a finished loop re-inits with the same tag; numLoops 0 forever; the last one ends the animation in the Update after its End). ReplayLastAnimation is A27. The custom song (A7) is M9's and not offered.",
-      "unresolved": "built, awaiting strong verification: B-M5-1: loop exhaustion bypasses idle that tick, exact interruption/live-loop error sites; MISSING verify callstack 0x0080DA08 and provider flush 0x0080DA24 recipient. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-008 (logs: exact rows to be extracted). X-M5-9: build the VERIFY tail (no callstack output, errG without break, flush via the logger provider); the libDAS flush body is M3-051. B-M5-9 (2026-10-12), built, awaiting strong verification: VERIFY logs typed key, sets error flag without debug break, has no callstack output (BX LR), invokes provider-flush interface and returns 0; libDAS DASForceFlushNow body remains MISSING M3-051. R-M8-PLAY: build the null tail (+0x73 store) and the idle Abort call; what Abort does when idle is still to be confirmed. B-M5-10 (2026-10-12), built, awaiting strong verification: Moved the SetStreamingAnimation doc comment off the VERIFY helper; helper behavior unchanged. Second M5 pass: the custom-song branch is owned by M9-029.",
+      "unresolved": "built, awaiting strong verification: B-M5-1: loop exhaustion bypasses idle that tick, exact interruption/live-loop error sites; MISSING verify callstack 0x0080DA08 and provider flush 0x0080DA24 recipient. Previous notes: Settling pass 2026-10-11 (ruling 4.1): back to IMPLEMENTATION_GAP; fix per re-analysis/research/20261011-m5-settling-pass.md row M5-008 (logs: exact rows to be extracted). X-M5-9: build the VERIFY tail (no callstack output, errG without break, flush via the logger provider); the libDAS flush body is M3-051. B-M5-9 (2026-10-12), built, awaiting strong verification: VERIFY logs typed key, sets error flag without debug break, has no callstack output (BX LR), invokes provider-flush interface and returns 0; libDAS DASForceFlushNow body remains MISSING M3-051. R-M8-PLAY: build the null tail (+0x73 store) and the idle Abort call; what Abort does when idle is still to be confirmed. B-M5-10 (2026-10-12), built, awaiting strong verification: Moved the SetStreamingAnimation doc comment off the VERIFY helper; helper behavior unchanged. Second M5 pass: the custom-song branch is owned by M9-029. R-M9-029: the custom branch (A7) is M9-029 (COMPATIBILITY_POLICY, CodeLab only); M5-008 keeps the gates before it, the +0x38 store and the tail.",
       "hardware_required": false
     },
     {
@@ -3289,14 +3290,15 @@
       "subsystem": "M9-wwise-music",
       "title": "SetStreamingAnimation custom-song branch (CreateCustomSongAnimation)",
       "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-settling-2.md: SetStreamingAnimation 0x0057B24E..0x0057B29A, the custom-song branch: CreateCustomSongAnimation, its info log, +0x38 = +0x3C (inventory row A7, \"NEW (M9 interface)\")."
+        "re-analysis/research/20261012-m5-settling-2.md: SetStreamingAnimation 0x0057B24E..0x0057B29A, the custom-song branch: CreateCustomSongAnimation, its info log, +0x38 = +0x3C (inventory row A7, \"NEW (M9 interface)\").",
+        "re-analysis/research/20261012-m9-029-custom-song.md (Opus-checked 20/22 confirmed, 0 wrong): the branch gate is the customSong argument == 1 (0x0057B24E..0x0057B256); CreateCustomSongAnimation 0x0057A978..0x0057ABC0 clones the template, rebuilds RobotAudio from the +0x74 notes (table 0xC59B7C, 500 ms per beat unit), trims below 8000 ms; ReplaceNotesInSong (G2E 0xC4) handler 0x0057A890 is the only writer of +0x74; the only producer of the custom flag is PlayAnimationAction::Init remapping \"cozmo_sings_custom\" (0x00543F3A..0x00543F96; the only flag-setting caller of the pointer overload, BL scan); the only app sender of that name and of ReplaceNotesInSong is CodeLabGame.cs:2101..2117, inside internal SDK mode (CodeLabGame.cs:967)."
       ],
       "effect": "What a custom-song play request streams.",
       "provenance": "Second M5 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read 0x0057B24E..0x0057B29A and CreateCustomSongAnimation; owned by the singing layer.",
+      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09: SDK mode including CodeLab is unsupported): the custom-song path is reachable only from the CodeLab internal-SDK flow, so it is unreachable in the stack. Condition: the native gate is not SDK-gated, so the stack must not forward the name \"cozmo_sings_custom\" to its play path or offer ReplaceNotesInSong; it rejects that name visibly (a stack MISSING), with a test. UNKNOWN: the 60-entry event-name mapping (the research table file was not committed), malformed enum bytes past the table. Previous notes: RECOVERABLE_GAP: read 0x0057B24E..0x0057B29A and CreateCustomSongAnimation; owned by the singing layer.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -10357,7 +10359,7 @@
       ],
       "effect": "Whether an animation action plays, how it ends, what it reports, and what stopping it does to the streamer.",
       "provenance": "Codex research R-M8-PLAY (2026-10-12), Opus-checked (109/109 rows confirmed), manager-adopted.",
-      "unresolved": "Build after M8-015 (the action runtime), which it depends on, with M5-008/M5-023 (the streamer). It cannot settle while M8-015 is a RECOVERABLE_GAP. UNKNOWN: the C++ default constructor arguments.",
+      "unresolved": "Build after M8-015 (the action runtime), which it depends on, with M5-008/M5-023 (the streamer). It cannot settle while M8-015 is a RECOVERABLE_GAP. UNKNOWN: the C++ default constructor arguments. R-M9-029: the \"cozmo_sings_custom\" remap (0x00543F3A..0x00543F96) is reachable only from CodeLab (M9-029 policy); the stack rejects that name.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

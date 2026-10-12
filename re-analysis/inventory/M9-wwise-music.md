@@ -404,3 +404,11 @@ The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample 
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP (from the M5 pass) | M9-029 SetStreamingAnimation custom-song branch |
+
+
+## R-M9-029 (manager, 2026-10-12; research/20261012-m9-029-custom-song.md, Opus-checked)
+
+| Change | Records |
+| --- | --- |
+| To COMPATIBILITY_POLICY (scope: CodeLab/SDK only) | M9-029 custom-song branch |
+

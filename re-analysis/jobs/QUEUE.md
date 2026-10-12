@@ -47,6 +47,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 15 | [B-M5-11](B-M5-11.md) | done (119eb2fa); re-verify PASS (2 cleanups queued) |
 | 16 | [B-M5-12](B-M5-12.md) | open, after B-M5-11 (null-idle path under M1-034) |
 | 17 | [B-M3M4-11](B-M3M4-11.md) | open, after B-M5-12 (backpack loader conversion order and indexing) |
+| 18 | [B-M5-13](B-M5-13.md) | open, after B-M3M4-11 (teardown builds, custom-song rejection, M5-010 lead) |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
@@ -56,5 +57,5 @@ anything. BOARD.md is history; this file is the live queue.
 | 2 | [R-M5-052](../research/requests/20261012-m5-052-face-png.md) | done (70b8ba04); adopted into M5-052: shipped faces decode 1-bit -> 0/255, 8-bit identity |
 | 3 | [R-M8-PLAY](../research/requests/20261012-m8-play-animation-actions.md) | done (4c6e6d56); Opus check running |
 | 4 | [R-M3-051](../research/requests/20261012-m3-051-libdas-sink-b.md) | done (5f4f04d2); adopted (operator departure M3-051) |
-| 5 | [R-M5-TEARDOWN](../research/requests/20261012-m5-teardown-reads.md) | done (cd912037); Opus check running |
-| 6 | [R-M9-029](../research/requests/20261012-m9-029-custom-song.md) | open (blocks M5-008) |
+| 5 | [R-M5-TEARDOWN](../research/requests/20261012-m5-teardown-reads.md) | done (cd912037); adopted (M5-055/056/058 to build) |
+| 6 | [R-M9-029](../research/requests/20261012-m9-029-custom-song.md) | done (8ccc9ac5); adopted: M9-029 COMPATIBILITY_POLICY (CodeLab only) |

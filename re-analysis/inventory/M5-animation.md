@@ -904,3 +904,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RECOVERABLE_GAP read, now IMPLEMENTATION_GAP | M5-055 ~CozmoEngine order, M5-056 E2G subscription release, M5-058 +0x28 (natively always zero) |
 | Evidence noted | M5-013 (override gate always off natively) |
 
+
+## R-M9-029 (manager, 2026-10-12; research/20261012-m9-029-custom-song.md, Opus-checked)
+
+| Change | Records |
+| --- | --- |
+| Evidence added | M5-008 (+0x38 store, tail, replay custom=false; A7 handed to M9-029) |
+
