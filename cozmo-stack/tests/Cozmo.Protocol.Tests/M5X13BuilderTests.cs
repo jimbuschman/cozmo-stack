@@ -44,7 +44,7 @@ public class M5X13BuilderTests : IDisposable
             Assert.True(load.Wait(TimeSpan.FromSeconds(15)));
             Assert.Empty(load.Result.GroupNames); // +0x278 gate prevents group definition.
             // E07/E08/E09/E10/E11; subscription vectors release from the back.
-            Assert.Equal(new[] { "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
+            Assert.Equal(new[] { "unlink G2E F7", "unlink G2E E0", "unlink G2E DF", "unlink G2E DE", "unlink G2E DD", "unlink G2E DC", "unlink G2E DB", "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
                 "unlink G2E C4", "unlink G2E AD", "unlink G2E AF", "unlink G2E AE",
                 "unlink G2E B4", "robots", "abort", "join", "loader", "hub" }, order);
             Assert.Throws<ObjectDisposedException>(() => hub.Subscribe(0x5A, true));

@@ -353,14 +353,16 @@ public class M12RVisBuildTests
         Assert.Equal(0u, (uint)d.CheckIfDone(Tick(4, robot: At(500, 500))));
     }
 
-    /// <summary>M12-024 (RECOVERABLE_GAP): the driving-animation handler is an explicit stub; the default throws instead of choosing an animation behaviour.</summary>
+    /// <summary>M5-063 builds the shared handler: constructor state5 refuses an end animation. M12-024 action-side Init remains missing; the explicit legacy stub still throws.</summary>
     [Fact]
     public void M12_024_TheDefaultDrivingAnimationHandlerIsAVisibleStub()
     {
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var d = new DriveToPoseAction(rig.M) { Goal = At(100, 0) };
-        Assert.Throws<NotSupportedException>(() => d.CheckIfDone(Tick(4, robot: At(100, 0))));
+        Assert.Same(rig.Robot.Animations.DrivingAnimations, d.DrivingAnimations);
+        Assert.Equal(5, d.DrivingAnimations.State);
+        Assert.Equal(ActionResult.Success, d.CheckIfDone(Tick(4, robot: At(100, 0))));
         Assert.Throws<NotSupportedException>(() => UnreadDrivingAnimationHandler.Instance.PlayEndAnim());
         Assert.Throws<NotSupportedException>(() => UnreadDrivingAnimationHandler.Instance.PlayStartAnim());
     }

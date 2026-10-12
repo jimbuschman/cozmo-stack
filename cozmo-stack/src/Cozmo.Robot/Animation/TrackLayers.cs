@@ -494,7 +494,7 @@ public enum LiveIdleParam
 /// <summary>The streamer's live-idle parameters (A34, SetDefaultParams 0x0057DB40..0x0057DCD6).</summary>
 public sealed class LiveIdleParams
 {
-    private readonly float[] _p = new float[(int)LiveIdleParam.NumParameters];
+    private readonly float[] _p = new float[256]; // native map has byte keys (0x0057C184/0x0057C1E6).
 
     /// <summary>
     /// The streamer's +0x04 byte: the defaults have been requested. The engine's GetParam&lt;T&gt;, the base SetParam (0x0057C178:
@@ -541,6 +541,12 @@ public sealed class LiveIdleParams
     public void SetParam(LiveIdleParam p, float value)
     {
         if (p == LiveIdleParam.BlinkSpacingMaxTime_ms && 30000f < value) value = 30000f;
+        SetBaseParam(p, value);
+    }
+
+    // fidelity: M5-062 — B4 calls the base directly (0x0057E8A2 -> 0x0057C178), bypassing the derived 30000 cap.
+    internal void SetBaseParam(LiveIdleParam p, float value)
+    {
         EnsureDefaults();
         float v = RangeMax <= value || float.IsNaN(value) ? RangeMax : value;
         v = RangeMin >= v ? RangeMin : v;

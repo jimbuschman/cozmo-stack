@@ -110,20 +110,26 @@ internal sealed class ActionList : IDisposable
     {
         lock (_gate)
         {
+            // fidelity: M5-063 — completion callback can queue a driving end animation here.
             int result = 0;
-            var erase = new List<int>();
-            foreach (var kv in _queues)
+            int? previousKey = null;
+            while (true)
             {
+                // Native advances/erases AFTER Queue.Update (0x0053F5B2..0x0053F5D6).
+                // E2G completion can synchronously insert a later parallel queue; visit it this tick.
+                // Do not keep a SortedDictionary enumerator across that callback.
+                KeyValuePair<int, ActionQueue>? next = null;
+                foreach (var entry in _queues)
+                    if (previousKey is null || entry.Key > previousKey.Value) { next = entry; break; }
+                if (next is not { } kv) break;
+                previousKey = kv.Key;
                 int r = kv.Value.Update(_watcher);
                 if (result == 0 && r != 0) result = r;
-                if (kv.Value.Current is null && kv.Value.PendingCount == 0) erase.Add(kv.Key);
-            }
-            foreach (int key in erase)
-            {
-                if (_queues.TryGetValue(key, out var q))
+                if (kv.Value.Current is null && kv.Value.PendingCount == 0
+                    && _queues.TryGetValue(kv.Key, out var saved) && ReferenceEquals(saved, kv.Value))
                 {
-                    _queues.Remove(key);
-                    q.Dispose();
+                    _queues.Remove(kv.Key);
+                    kv.Value.Dispose();
                 }
             }
             _watcher.Update();

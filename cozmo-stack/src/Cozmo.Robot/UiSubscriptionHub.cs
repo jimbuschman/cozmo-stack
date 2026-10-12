@@ -18,7 +18,7 @@ internal sealed class UiSubscriptionHub : IDisposable
     private sealed class Signal
     {
         internal readonly Token Lifetime = new();
-        internal readonly LinkedList<Action?> Nodes = new();
+        internal readonly LinkedList<Action<object?>?> Nodes = new();
         internal void Destroy()
         {
             while (Nodes.First is { } node) { node.Value = null; Nodes.Remove(node); }
@@ -27,6 +27,9 @@ internal sealed class UiSubscriptionHub : IDisposable
     }
 
     internal RetainedSubscription Subscribe(ushort tag, bool engineToGame, Action? callback = null)
+        => SubscribeMessage(tag, engineToGame, callback is null ? null : _ => callback());
+
+    internal RetainedSubscription SubscribeMessage(ushort tag, bool engineToGame, Action<object?>? callback)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         var map = engineToGame ? _e2g : _g2e;
@@ -54,13 +57,13 @@ internal sealed class UiSubscriptionHub : IDisposable
     internal int Count(ushort tag, bool engineToGame)
         => (engineToGame ? _e2g : _g2e).GetValueOrDefault(tag)?.Nodes.Count ?? 0;
 
-    internal void Deliver(ushort tag, bool engineToGame)
+    internal void Deliver(ushort tag, bool engineToGame, object? payload = null)
     {
         if ((engineToGame ? _e2g : _g2e).TryGetValue(tag, out var signal))
         {
-            var snapshot = new List<LinkedListNode<Action?>>();
+            var snapshot = new List<LinkedListNode<Action<object?>?>>();
             for (var node = signal.Nodes.First; node is not null; node = node.Next) snapshot.Add(node);
-            foreach (var node in snapshot) node.Value?.Invoke();
+            foreach (var node in snapshot) node.Value?.Invoke(payload);
         }
     }
 

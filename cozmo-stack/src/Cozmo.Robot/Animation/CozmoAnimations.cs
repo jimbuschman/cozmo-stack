@@ -160,6 +160,7 @@ public sealed class CozmoAnimations : IDisposable
         _robot = robot;
         robot.Engine.DestroyDataLoader = DestroyLoader;
         _sink = new RobotAnimationSink(robot);
+        DrivingAnimations = new DrivingAnimationHandler(robot);
         // fidelity: M5-045
         _scheduler = new AnimationScheduler(_sink, contextRandom: robot.Engine.ContextRandom);
         _scheduler.Stream.Log = robot.Engine.Log;
@@ -209,17 +210,44 @@ public sealed class CozmoAnimations : IDisposable
     {
         // fidelity: M5-010 — streamer constructor, once per native Robot, never on load completion.
         _scheduler.LoadNeutralFace();
-        var driving = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0x5A, 0xB5, 0xB6 }, true);
-        var parameter = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0xB4 }, false);
+        DrivingAnimations.Bind(robot);
+        robot.ActionList.GameSend = completion => _robot.Engine.AnimationMessages.Deliver(RobotCompletedAction.UnionTag, true, completion);
+        var driving = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0x5A, 0xB5, 0xB6 }, true, (tag, payload) =>
+        {
+            if (tag == 0x5A && payload is RobotCompletedAction done) DrivingAnimations.HandleActionCompleted(done.Tag, done.Result);
+            else if (tag == 0xB5 && payload is PushDrivingAnimationMessage push) DrivingAnimations.Push(push.Animations, push.LockName);
+            else if (tag == 0xB6 && payload is string name) DrivingAnimations.Remove(name);
+        });
+        var parameter = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0xB4 }, false, (_, payload) =>
+        {
+            if (payload is AnimationParameterMessage p) _scheduler.HandleSetParameters(p.Names, p.Values, p.SetUnspecifiedToDefault);
+        });
         var streamer = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0xAE, 0xAF, 0xAD, 0xC4 }, false);
         robot.Lifetime.Bind(0x24C, _ =>
         {
             driving.Release();
-            _robot.Engine.EmitStackLog("MISSING: M5-053 DrivingAnimations owned vector +8 destructor 0x004F090C; no concrete host driving-animation recipient");
+            DrivingAnimations.ClearEntriesForDestroy(); // vector strings/storage only, 0x004F090C..0x004F0942.
         });
         _scheduler.ReleaseSetupHandlers = streamer.Release;
         _scheduler.ReleaseParameterSubscription = parameter.Release;
         robot.Lifetime.Bind(0x60, _ => Dispose());
+    }
+
+    // fidelity: M5-063 — same handler as the subscriptions, not a parallel implementation.
+    internal DrivingAnimationHandler DrivingAnimations { get; }
+    public void PushDrivingAnimations(AnimationTrigger start, AnimationTrigger loop, AnimationTrigger end, string lockName)
+    {
+        var payload = new PushDrivingAnimationMessage(new(start, loop, end), lockName);
+        _robot.Engine.PostGameMessage(() => _robot.Engine.AnimationMessages.Deliver(0xB5, false, payload));
+    }
+    public void RemoveDrivingAnimations(string lockName)
+        => _robot.Engine.PostGameMessage(() => _robot.Engine.AnimationMessages.Deliver(0xB6, false, lockName));
+
+    // fidelity: M5-062 — host supplies the app B4 payload; delivery is on the engine thread.
+    public void SetLiveIdleAnimationParameters(IReadOnlyList<LiveIdleParam> names, IReadOnlyList<float> values, bool setUnspecifiedToDefault = false)
+    {
+        var payload = new AnimationParameterMessage(names.Select(p => unchecked((byte)p)).ToArray(), values.ToArray(), setUnspecifiedToDefault);
+        _robot.Engine.PostGameMessage(() => _robot.Engine.AnimationMessages.Deliver(0xB4, false, payload));
     }
 
     /// <summary>The loaded asset library, or null until <see cref="LoadFrom"/> is called.</summary>
@@ -482,6 +510,7 @@ public sealed class CozmoAnimations : IDisposable
     internal void ResetToConstructed()
     {
         _scheduler.ResetToConstructed();
+        DrivingAnimations.ResetToConstructed();
         _sink.ResetToConstructed();
     }
 

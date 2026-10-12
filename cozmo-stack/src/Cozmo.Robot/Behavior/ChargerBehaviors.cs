@@ -67,7 +67,7 @@ public sealed class DriveOffChargerBehavior : ManipulationBehavior
         DriveResult = null;
         LeftChargerOnTreads = false;
         DroveOffAtSec = null;
-        SteppedBehavior.ReportMissing("BehaviorDriveOffCharger::InitInternal DrivingAnimationHandler::PushDrivingAnimations (0x005C0B34..0x005C0B50, when the AI value is 3): not built");
+        SteppedBehavior.ReportMissing("M5-063 BehaviorDriveOffCharger::InitInternal PushDrivingAnimations caller (M13-017, 0x005C0B34..0x005C0B50): AI process input and triplet arguments not settled; handler is built, caller remains missing");
         // fidelity: M7-021, M13-017
         // InitInternal 0x005C0B54..0x005C0B8C: robot+0x355 set takes the "WaitForOnTreads" state name (0x005C0B74), else TransitionToDrivingForward.
         if (Context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads) { SetStateName("WaitForOnTreads"); CurrentPhase = Phase.WaitForOnTreads; }

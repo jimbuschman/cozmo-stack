@@ -123,7 +123,7 @@ public class ActionCompletionTests
     }
 
     /// <summary>
-    /// D2/D6: the game send is gated by <c>HasExternalInterface</c>. With it false (production) nothing is raised;
+    /// D2/D6: the game send is gated by <c>HasExternalInterface</c>. M5-063 wires the internal E2G recipient by default; a forced-off gate raises nothing.
     /// with it true the watcher raises the record and reports the missing engine-to-game sink once.
     /// </summary>
     [Fact]
@@ -137,7 +137,9 @@ public class ActionCompletionTests
         var list = rig.Engine.Robot!.ActionList;
         var broadcasts = new List<RobotCompletedAction>();
         list.Watcher.RobotCompletedActionBroadcast += broadcasts.Add;
-        Assert.False(list.Watcher.HasExternalInterface);                    // D2: false in production
+        Assert.True(list.Watcher.HasExternalInterface); // M5-063 binds the E2G driving subscriber.
+        list.GameSend = null;
+        Assert.False(list.Watcher.HasExternalInterface); // explicit D2 false branch
 
         var first = rig.Robot.Motion.SetHeadAngleAsync(0.3f + 0.034f);
         rig.Tick();

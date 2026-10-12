@@ -74,6 +74,8 @@ public sealed class CozmoEngineOptions
     public bool DataCollectionEnabled { get; init; }
     // fidelity: M3-058 — persisted device-ID host setting, created once as a UUID.
     public string? DasDeviceIdPath { get; init; }
+    // fidelity: M5-060 — replaces app DataPlatformCachePath/temporaryCachePath.
+    public string AnimationCachePath { get; init; } = Path.Combine(Path.GetTempPath(), "cozmo-stack");
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
 
     // fidelity: M3-041
@@ -745,8 +747,8 @@ public sealed partial class EngineRobot
         Engine = engine;
         Idle = new IdleTimeoutComponent(this);
         _actionList = new ActionList(engine.Log, (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text));
-        // D2: the game gate. The stack has no engine-to-game sink, so the ActionWatcher does not raise the D6
-        // RobotCompletedAction broadcast in production; a test may turn it on through ActionList.GameSend.
+        // D2: initially off until host lifetime binding wires GameSend to the E2G signal (M5-063).
+        // The public completed-action payload/union boundary remains owned by M7-020.
         _actionList.Watcher.HasExternalInterface = false;
         InitLifetime();
         ConstructorDelocalize();
@@ -1891,6 +1893,7 @@ public sealed partial class CozmoEngine : IDisposable
         _t.Received += Rcm.Rcd.ReceiveData;
         Rcm.Rcd.Queued = Kick;
         Handler.Initialised = true;
+        InitAnimationTransfer(); // fidelity: M5-059 — construction after DeviceDataManager, 0x004EB2CE.
         // fidelity: M1-029
         // G5.16..G5.18, G5.25: RobotManager::Init starts the header load on its own thread; nothing waits for it.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
@@ -2280,6 +2283,8 @@ public sealed partial class CozmoEngine : IDisposable
         Behavior.SteppedBehavior.MissingReported -= _missingSink;
         _runner?.Stop();
         _t.Received -= Rcm.Rcd.ReceiveData;
+        // fidelity: M5-059, M5-064 — quiet members before context; 0x004EC6C0..0x004EC6CC.
+        DestroyAnimationTransferMembers();
         // Context +0x34 precedes UiMessageHandler +0x30 (0x004EC6F8..0x004EC710).
         Robots.RemoveRobots();
         DestructionObserved?.Invoke("robots");

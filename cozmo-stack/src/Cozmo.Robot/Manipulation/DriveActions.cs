@@ -59,9 +59,9 @@ public readonly record struct DriveToPoseTick(int PathStatus, double NowSec, Pos
 /// <summary>
 /// The engine's <c>DrivingAnimationHandler</c> (<c>[robot+0x24C]</c>) as <c>DriveToPoseAction::CheckIfDone</c>
 /// uses it: the state word it reads first (<c>[[robot+0x24C]] == 3</c> keeps the action RUNNING), the start
-/// animation at path state 3 and the end animation at the tail. M12-024 (RECOVERABLE_GAP): the handler's
-/// states, the animations it chooses and what its return value means are not read, so the default
-/// implementation is <see cref="UnreadDrivingAnimationHandler"/>, which throws.
+/// animation at path state 3 and the end animation at the tail. The shared Robot handler now implements the
+/// checked M5-063 bodies. M12-024 still owns its action-side lifecycle calls; PlayStartAnim and the queued
+/// TriggerLiftSafeAnimationAction runner remain visible MISSING boundaries.
 /// </summary>
 // fidelity: M12-024
 public interface IDrivingAnimationHandler
@@ -75,9 +75,8 @@ public interface IDrivingAnimationHandler
 }
 
 /// <summary>
-/// The visible stub for M12-024: every member throws <see cref="NotSupportedException"/>, because the
-/// handler's body is RECOVERABLE_GAP (not read). It exists so that nothing can run
-/// <c>DriveToPoseAction.CheckIfDone</c> and get a silently-invented animation behaviour.
+/// Legacy explicit opt-out for callers that cannot supply the driving-handler lifecycle. The default
+/// DriveToPoseAction uses the shared M5-063 handler; this adapter retains the historical throwing contract.
 /// </summary>
 // fidelity: M12-024
 public sealed class UnreadDrivingAnimationHandler : IDrivingAnimationHandler
@@ -116,7 +115,7 @@ public sealed class DriveToPoseAction
 
     private readonly ManipulationSystem _m;
 
-    public DriveToPoseAction(ManipulationSystem m) { _m = m; AbortPath = () => _m.Paths.Abort(); }
+    public DriveToPoseAction(ManipulationSystem m) { _m = m; AbortPath = () => _m.Paths.Abort(); DrivingAnimations = m.Robot.Animations.DrivingAnimations; }
 
     public Pose3d? Goal { get; set; }
     /// <summary>Alternative goals for the lattice planner (a cube's pre-action poses); the reached one becomes <see cref="Goal"/>.</summary>
@@ -142,7 +141,8 @@ public sealed class DriveToPoseAction
     public double DeadlineSec { get; private set; } = -1.0;
     /// <summary><c>[this+0xC4]</c>, incremented at path state 3.</summary>
     public int FollowingPathTicks { get; private set; }
-    public IDrivingAnimationHandler DrivingAnimations { get; set; } = UnreadDrivingAnimationHandler.Instance;
+    // fidelity: M5-063 — shared robot handler; M12-024 still owns the unbuilt action-side Init/start/end lifecycle.
+    public IDrivingAnimationHandler DrivingAnimations { get; set; }
     /// <summary><c>PathComponent::Abort</c> (0x0055AD5C).</summary>
     public Action AbortPath { get; set; }
     public PathMotionProfile Profile { get; set; } = PathMotionProfile.Default;

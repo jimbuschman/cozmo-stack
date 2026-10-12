@@ -600,6 +600,8 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
 
     protected override void OnStart()
     {
+        // fidelity: M5-063 — M7 checked caller gives the pointer, but explicitly leaves its triplet undecoded.
+        ReportMissing("M5-063 ReactToFrustration PushDrivingAnimations (M7, 0x00605C20, triplet 0x00C73C00) arguments not decoded in the checked row; no animation triggers invented");
         PlayTrigger(Animation, () =>
         {
             double nowSec = Clock() / 1000.0;
@@ -642,5 +644,9 @@ public sealed class ReactToFrustrationBehavior : SteppedBehavior
         });
     }
 
-    protected override void OnStop(BehaviorStopReason reason) { _driveCancel?.Cancel(); _driveCancel = null; }
+    protected override void OnStop(BehaviorStopReason reason)
+    {
+        ReportMissing("M5-063 ReactToFrustration RemoveDrivingAnimations (M7, 0x00605D8E) waits for its unbuilt paired Push/triplet; no unmatched removal or extra empty-stack warning fabricated");
+        _driveCancel?.Cancel(); _driveCancel = null;
+    }
 }

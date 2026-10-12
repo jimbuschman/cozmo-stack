@@ -653,6 +653,24 @@ public sealed class AnimationScheduler
 
     private AnimationTrigger TopTrigger => _idleStack.Count == 0 ? IdleCount : _idleStack[^1].Trigger;
 
+    // fidelity: M5-062
+    internal void HandleSetParameters(IReadOnlyList<byte> names, IReadOnlyList<float> values, bool setUnspecifiedToDefault)
+    {
+        lock (_gate)
+        {
+            if (names.Count != values.Count)
+            {
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null,
+                    "AnimationStreamer.HandleSetLiveAnimationParameter.MismatchedLengths",
+                    FormattableString.Invariant($"ParamNames and ParamValues not the same length ({names.Count} & {values.Count})"));
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                return;
+            }
+            if (setUnspecifiedToDefault) LiveIdleParameters.SetDefaultParams();
+            for (int i = 0; i < names.Count; ++i) LiveIdleParameters.SetBaseParam((LiveIdleParam)names[i], values[i]);
+        }
+    }
+
     // ================================================================== neutral face (A2)
 
     // fidelity: M5-010
