@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "e1bdbe1f7ce2046d6b2e9caa283ddb533b9420001e831270df17f68e8f27879d",
+  "inventory_sha256": "7083e1ab118a2a016e8311ebcfc54a5036e54395aed5f91b4d516d7d20b2beeb",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -520,11 +520,12 @@
       "hardware_required": false
     },
     "M4-041": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BlendAnimWithCurLights body, the StopLignAnim.Result serializer and the GetLEDState callers",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: PlayLightAnim blend body (unread); StopLignAnim.Result current-state serializer (0x00639300); ActiveObject::GetLEDState IndexTooLarge/NegativeIndex (0x0063958E/0x006395CC) and its callers."
+        "re-analysis/research/20261012-m3m4-settling-2.md: PlayLightAnim blend body (unread); StopLignAnim.Result current-state serializer (0x00639300); ActiveObject::GetLEDState IndexTooLarge/NegativeIndex (0x0063958E/0x006395CC) and its callers.",
+        "re-analysis/research/20261012-m4-cube-lights-check.md section M4-041: Blend 0x00638B3C..0x00638BF0 (NullActiveObject channeled info 0x638C24/0xBFAA4C returns 0; per i=0..3 GetLEDState 0x00638B7C, zero on/off word -> rev of the LED word, flag; returns flag&1); StopLignAnim.Result debug 0x006390BA..0x00639300 (grammar and literals 0x6394EC..0x639524, layer table 0x0102EE64, found/did not find 0x639538/0x639528); GetLEDState 0x0063956C..0x00639600 (callers only 0x00638B7C and 0x0063A642; both warnings unreachable)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -551,11 +552,32 @@
       "hardware_required": false
     },
     "M4-044": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The cube-light animation loader (CubeLightAnimations / ParseJsonToAnim)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: ParseJsonToAnim 0x00589910..0x00589CD8 and its loader; the stack (Lights.cs:578-625) still uses System.Text.Json with trailing commas, ordinal file order and *.json only."
+        "re-analysis/research/20261012-m3m4-settling-2.md: ParseJsonToAnim 0x00589910..0x00589CD8 and its loader; the stack (Lights.cs:578-625) still uses System.Text.Json with trailing commas, ordinal file order and *.json only.",
+        "re-analysis/research/20261012-m4-cube-lights-check.md section M4-044: dir \"config/engine/lights/cubeLights\" (0x51F80C) via WalkAnimationDir (scope 1, suffixes json/bin, recurse; shared with M4-036/M5-050/M5-046) and callback 0x005241DE; PushJob + DispatchWorker<3> (0x0051FED8/0x0051FEE4); LoadTime info 0x0051FF0E; per-file 0x00521C30..0x00521CA8 (no abort gate; readAsJson; DefineFromJson under lock 0x26C); DefineFromJson 0x00589910..0x00589CD8 (EmptyFile 0x00589C74, TooManyAnims 0x00589968, size<1 -> empty list, InvalidJson 0x00589C10, InvalidPattern 0x00589A2C, duration asUInt, canBeOverridden asBool, patternDebugName default name+index, replace on success, keep old on failure); ParseJsonToPattern helpers and order, relative byte always 0 (0x005894A4..0x005894C6); colour helper DiffSizes 0x5896F8/0x58972C, uxtb + REV."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-045": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlayLightAnim: the blended / non-blended branch after BlendAnimWithCurLights",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-cube-lights-check.md: branch condition (modifierArg | BlendReturn) & !backBlended (0x00638590..0x0063859A; backBlended from the stack back +0x40, 0x0063830C..0x00638326); blended: per-layer slot node+0x44+12*layer := blended list (0x006385B6), name back.name + \"+\" (0x6389AC) + animName or \"\" + animName on an empty stack (0x006385C0..0x0063860C), info +0x10/+0x14 -> slot, +0x38 blended = 1 (0x00638698..0x006386AE), no zero-duration clear; non-blended: name animName, container list, stack cleared if the first pattern duration_ms == 0 (0x006385EA..0x006385F4). Shipped DanceFadeOff, Flash and SpeedTapWin hold [0,0,0,0] colours, so they take the blended branch with a connected object."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-046": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ApplyAnimModifier body and the PlayLightAnim callers that pass modifier = true",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-cube-lights-check.md: ApplyAnimModifier 0x00638A8C..0x00638B3A (only caller 0x006384F0) is unread; the callers of PlayLightAnim 0x006382D0 and its overload 0x006389FC that pass modifier = true are unscanned."
       ],
       "live_path": true,
       "hardware_required": false

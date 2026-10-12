@@ -703,3 +703,12 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M4-037, M4-038, M4-043 |
 | Title corrected (non-virtual std::exception::what) | M4-043 |
 | Split out | M4-038 helpers -> M11-062, M13-030 |
+
+
+## Check of R-M4-LIGHTS (manager, 2026-10-12; research/20261012-m4-cube-lights-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M4-041, M4-044 |
+| New IMPLEMENTATION_GAP | M4-045 PlayLightAnim blend branch |
+| New RECOVERABLE_GAP | M4-046 ApplyAnimModifier and modifier callers |

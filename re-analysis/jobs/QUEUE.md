@@ -51,6 +51,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 20 | [B-M5-14](B-M5-14.md) | open (M5-010 per-Robot neutral read, M9-029 behaviour entry) |
 | 21 | [B-M3M4-13](B-M3M4-13.md) | open, after B-M5-14 (M4-037/038/043, rest of M3-055, cleanups) |
 | 22 | [B-M5-15](B-M5-15.md) | open, after B-M3M4-13 (TestAnim.json cleanup, HandleSetParameters, driving handler, subscription owners) |
+| 23 | [B-M3M4-14](B-M3M4-14.md) | open, after B-M5-15 (cube lights: blend, loader, serializer) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
@@ -64,5 +65,5 @@ anything. BOARD.md is history; this file is the live queue.
 | 5 | [R-M5-TEARDOWN](../research/requests/20261012-m5-teardown-reads.md) | done (cd912037); adopted (M5-055/056/058 to build) |
 | 6 | [R-M9-029](../research/requests/20261012-m9-029-custom-song.md) | done (8ccc9ac5); adopted: M9-029 COMPATIBILITY_POLICY (CodeLab only) |
 | 7 | [R-M4-CLIFF](../research/requests/20261012-m4-cliff-and-names.md) | answered; checked (research/20261012-m4-cliff-and-names-check.md) |
-| 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | answered; Opus check running |
+| 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | answered; checked (research/20261012-m4-cube-lights-check.md) |
 | 9 | [R-CLIFF-WORLD](../research/requests/20261012-cliff-world-helpers.md) | open (M11-062, M13-030) |
