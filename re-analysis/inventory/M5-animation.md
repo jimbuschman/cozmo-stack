@@ -859,3 +859,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Fix rows adopted | M5-001..041 as listed in the rows file |
 | M5-014 corrected (clock, B6 inheritance) | M5-014 |
 | New RECOVERABLE_GAP | M5-045 group RNG instance, M5-046 Results order, M5-047 pre-first head window |
+
+
+## App-boundary policy records (manager, 2026-10-12)
+
+| Record | Status | Basis |
+| --- | --- | --- |
+| M5-048 — StartEngine's random_seed input and when it arrives | COMPATIBILITY_POLICY | 0x004ECBD4..0x004ECBDA, 0x004EADA2..0x004EADBE; RobotEngineManager.cs:435-442 (the app sends 0). The stack supplies 0 at engine start. From the B-M5-2 re-verify. |
+| M5-049 — host API waiters released at streamer destruction | COMPATIBILITY_POLICY | M5-037 teardown 0x0057AF48..0x0057AFDA, 0x0057B044..0x0057B0C2 has no waiter; stack API completion only, nothing on the wire. From B-M5-3 item 16. |

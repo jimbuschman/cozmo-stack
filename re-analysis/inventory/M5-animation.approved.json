@@ -1,8 +1,8 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-10-11",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "6483dc32bd987c8199ff9544fa26336830251139ba6385ac05ecb2647d50e45a",
+  "inventory_sha256": "b7e07d0cae853825140c95d722e5cb7f6894d4324016dd3ba3eacc0abfd3d7ff",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -611,6 +611,29 @@
         "re-analysis/research/20261011-m5-fix-rows.md section 9 B6: DefineFromJson slot sp+0x20 (0x0058A680); +0x20/+0x24 written only when UseHeadAngle (0x0058C76E); copy 0x0058A6F2..0x0058A70C; feeds the backup window B2.",
         "re-analysis/research/20261011-m5-last-reads.md R47-1..R47-3, S47-1: the head words are entry+0x20/+0x24 = sp+0x40/+0x44 in DefineFromJson; the loader emulation stopped at pthread_create (0x005246C0) before LoadAnimationGroupFile, with no values observed.",
         "re-analysis/research/20261011-m5-047-stack.md R1-R7: before the first UseHeadAngle entry, sp+0x40/+0x44 hold the AnimationGroupContainer and RobotDataLoader addresses, saved by the hash-table find prologue push.w at 0x0058C044 (GetAnimationGroup, 0x0058B6F8..0x0058B6FE) in the frame the group DefineFromJson reuses; independent of poison and of the previous file; they move with the heap (case 3)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-048": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "StartEngine's random_seed input and when it arrives (app input supplied by the stack)",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity app scripts (authority 2).",
+      "evidence": [
+        "StartEngine loads the message's random_seed word and calls CozmoContext::SetRandomSeed (0x004ECBD4..0x004ECBDA), which forwards it unchanged to context+0x14 (0x004EADA2..0x004EADBE); SetSeed 0x0082F860..0x0082F93C (0 = one /dev/urandom word) emits app.random_seed (0x0082F914).",
+        "unity/scripts/csharp/RobotEngineManager.cs:435-442 and StartEngine.cs:10: the app never sets random_seed, so it is 0; StartupManager.cs:415-417 sends StartEngine after engine init.",
+        "B-M5-2 re-verify (Opus, 2026-10-11): the stack supplies 0 itself and reseeds in StartProduction/StartOffline, before the transport starts."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-049": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Host API waiters released when the animation streamer is destroyed (stack API completion)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "The streamer teardown (M5-037: 0x0057AF48..0x0057AFDA, 0x0057B044..0x0057B0C2) destroys the streamer with no broadcast, no sink call and no end callback; the engine has no host-side waiter to release.",
+        "Scope rule, AGENTS.md (operator, 2026-10-09): engine reports are delivered to the stack's C# API; the stack's API completes its own pending waits."
       ],
       "live_path": true,
       "hardware_required": false

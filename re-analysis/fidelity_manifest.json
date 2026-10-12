@@ -122,7 +122,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M5-animation.md",
-        "approved": "2026-10-11",
+        "approved": "2026-10-12",
         "snapshot": "re-analysis/inventory/M5-animation.approved.json"
       }
     },
@@ -9957,6 +9957,43 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M5BuilderCorrectionsTests.M5_047_ShippedNoWindowGroupOnCooldownLogsNoBackupAndReturnsFirst, M5BuilderCorrectionsTests.B6_InheritedWindowRejectsAnOutOfWindowBackup"
+    },
+    {
+      "id": "M5-048",
+      "subsystem": "M5-animation",
+      "title": "StartEngine's random_seed input and when it arrives (app input supplied by the stack)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity app scripts (authority 2).",
+      "evidence": [
+        "StartEngine loads the message's random_seed word and calls CozmoContext::SetRandomSeed (0x004ECBD4..0x004ECBDA), which forwards it unchanged to context+0x14 (0x004EADA2..0x004EADBE); SetSeed 0x0082F860..0x0082F93C (0 = one /dev/urandom word) emits app.random_seed (0x0082F914).",
+        "unity/scripts/csharp/RobotEngineManager.cs:435-442 and StartEngine.cs:10: the app never sets random_seed, so it is 0; StartupManager.cs:415-417 sends StartEngine after engine init.",
+        "B-M5-2 re-verify (Opus, 2026-10-11): the stack supplies 0 itself and reseeds in StartProduction/StartOffline, before the transport starts."
+      ],
+      "effect": "The seed the context RNG starts from and the position of the app.random_seed event among the startup logs.",
+      "provenance": "Scope rule, AGENTS.md (operator, 2026-10-09): an app-supplied engine input the stack supplies from its own settings is recorded as COMPATIBILITY_POLICY. Manager record, 2026-10-12, from the B-M5-2 re-verify.",
+      "unresolved": "COMPATIBILITY_POLICY: the stack supplies the app's StartEngine random_seed = 0 (the app's own value) and delivers it at engine start (CozmoEngine.StartEngineRandom), before the transport starts; in the app it arrives later, from StartupManager. The engine side (one fresh entropy word, the event, the shared instance) is M5-045's.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "M5LastReadsTests.R45_5_StartForwardsNonzeroSeedAndEmitsTheNamedEvent, M5LastReadsTests.R45_4_5_EachStartTakesOneFreshEntropyWordIncludingZero"
+    },
+    {
+      "id": "M5-049",
+      "subsystem": "M5-animation",
+      "title": "Host API waiters released when the animation streamer is destroyed (stack API completion)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "The streamer teardown (M5-037: 0x0057AF48..0x0057AFDA, 0x0057B044..0x0057B0C2) destroys the streamer with no broadcast, no sink call and no end callback; the engine has no host-side waiter to release.",
+        "Scope rule, AGENTS.md (operator, 2026-10-09): engine reports are delivered to the stack's C# API; the stack's API completes its own pending waits."
+      ],
+      "effect": "A stack API caller waiting on an animation completes (observes destruction) instead of waiting forever when the robot is removed; nothing on the wire or in engine logs changes.",
+      "provenance": "B-M5-1 verification and B-M5-3 item 16 (manager, 2026-10-11): ReleaseHostWaiters is host-API only. Manager record, 2026-10-12.",
+      "unresolved": "COMPATIBILITY_POLICY: ReleaseHostWaiters completes the stack's own API waiters at streamer destruction. It sends nothing, emits no engine log and runs no action or end callback; the wire teardown stays M5-037's (AbortAll).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M7-024",

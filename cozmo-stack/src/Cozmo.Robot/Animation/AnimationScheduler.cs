@@ -336,6 +336,7 @@ public sealed record AnimationHandle(string ClipName, AnimationTrack Tracks)
         }
     }
 
+    // fidelity: M5-049
     internal void ReleaseHostWaiters()
     {
         // Stack host-API completion, not an engine step: waiters observe that their owned native object was destroyed. This has no native broadcast,

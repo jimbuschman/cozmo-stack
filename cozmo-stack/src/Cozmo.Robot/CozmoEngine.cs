@@ -1880,6 +1880,7 @@ public sealed partial class CozmoEngine : IDisposable
     }
 
     // fidelity: M5-045
+    // fidelity: M5-048 (the app input: random_seed 0, supplied here at engine start)
     // R45-5: StartEngine reseeds before the started guard. The host replaces the app input (which is zero).
     private void StartEngineRandom(uint randomSeed = 0, Func<uint>? entropy = null)
     {
