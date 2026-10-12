@@ -485,21 +485,18 @@ public sealed class CozmoMotion
             {
                 if (_trackLocks[k].Count == 0) continue;                    // empty set: no log, no clear, no message
                 // sChanneledInfoF 0x00640FD8, before clear and EnableAnimTracks.
-                _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "MovementComponent.UnlockAllTracks", $"Unlocking track {TrackName(k)}");
+                // %s = EnumToString(AnimTrackFlag(1<<k)) (0x00640FBA..0x00640FC8 -> 0x007BC250): HEAD_TRACK.. for k 0..6;
+                // 0x80 has no case and returns NULL (0x007BC2B0), which libc then formats: not shipped, so MISSING.
+                if (k < AnimTrackNames.Length)
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "MovementComponent.UnlockAllTracks", $"Unlocking track {AnimTrackNames[k]}");
+                else
+                    _robot.Engine.Log("MISSING: MovementComponent.UnlockAllTracks for track 0x80: EnumToString returns NULL (0x007BC2B0); the phone libc's %s of NULL is not shipped");
                 _trackLocks[k].Clear();
                 _robot.SendMessage(new EnableAnimTracks { Field0 = (byte)k });   // the index k, not 1<<k
             }
         }
     }
 
-    /// <summary>The name <c>EnumToString(AnimTrackFlag)</c> gives the mask <c>1&lt;&lt;k</c> (C1).</summary>
-    private static string TrackName(int k) => k switch
-    {
-        0 => "Head",
-        1 => "Lift",
-        2 => "Body",
-        _ => k.ToString(),
-    };
 
     /// <summary>
     /// The motion-track mask for an animation's tracks: the engine's <c>IActionRunner</c> +0x54 mask uses the

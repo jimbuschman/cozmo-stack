@@ -132,7 +132,7 @@ public class M4ControlTests
         rig.Engine.LogEntry += e => { if (e.Name == "MovementComponent.UnlockAllTracks") { entries.Add(e); lockedAtLog = rig.Robot.Motion.AreAnyTracksLocked(1); } };
         rig.Robot.Motion.CompletelyUnlockAllTracks();
         var entry = Assert.Single(entries); Assert.Equal(EngineLogLevel.Info, entry.Level); Assert.Equal("Unnamed", entry.Channel);
-        Assert.Equal("Unlocking track Head", entry.Text); Assert.Empty(entry.Data); Assert.True(lockedAtLog);
+        Assert.Equal("Unlocking track HEAD_TRACK", entry.Text); Assert.Empty(entry.Data); Assert.True(lockedAtLog); // EnumToString(1) = 0x00C20053 via 0x007BC26C
         Assert.False(rig.Robot.Motion.AreAnyTracksLocked(1));
         Assert.Equal((byte)0, Assert.Single(rig.SentSince(mark).OfType<EnableAnimTracks>()).Field0);
     }
