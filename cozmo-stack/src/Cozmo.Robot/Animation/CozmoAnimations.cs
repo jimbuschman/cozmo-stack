@@ -167,6 +167,8 @@ public sealed class CozmoAnimations : IDisposable
         _scheduler.Log = robot.Engine.Log;
         _scheduler.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
         _scheduler.FlushSourceLogger = robot.Engine.FlushSourceLogger;
+        _scheduler.CatalogProvider = () => Library;
+        _scheduler.FaceAnimationVariants = name => FaceAnimations?.Variants(name);
         // fidelity: M6-028
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
         // a robot with no firmware version yet has the client constructor's 0 (None).
@@ -205,6 +207,8 @@ public sealed class CozmoAnimations : IDisposable
     // fidelity: M5-053, M5-044
     internal void BindRobotLifetime(EngineRobot robot)
     {
+        // fidelity: M5-010 — streamer constructor, once per native Robot, never on load completion.
+        _scheduler.LoadNeutralFace();
         var driving = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0x5A, 0xB5, 0xB6 }, true);
         var parameter = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0xB4 }, false);
         var streamer = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0xAE, 0xAF, 0xAD, 0xC4 }, false);
@@ -338,8 +342,6 @@ public sealed class CozmoAnimations : IDisposable
                 _robot.EmitLightLoadingLogs();
                 FaceAnimations = FaceAnimationLibrary.Open(assetsRoot, _robot.Engine.Log,
                     (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
-                lock (_loaderGate)
-                    if (!_loaderDestroyed) _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
             }, _robot.BeforeAnimationFileStat, lib =>
             {
                 lock (_loaderGate)
@@ -365,16 +367,6 @@ public sealed class CozmoAnimations : IDisposable
             }
             return _robot.Engine.Timer.Seconds;
         }; // M7 owns the cached clock. This job does not build or claim that recipient.
-        // fidelity: M5-010, M5-027
-        // The streamer's idle and neutral animations come from the container, the groups and the trigger map (A2, A29).
-        lock (_loaderGate)
-        {
-            if (!_loaderDestroyed)
-            {
-                _scheduler.Catalog = Library;
-                _scheduler.LoadNeutralFace();
-            }
-        }
         return Library;
     }
 
@@ -418,7 +410,7 @@ public sealed class CozmoAnimations : IDisposable
     }
 
     // fidelity: M9-029 — approved CodeLab/internal-SDK exclusion, native name producer 0x00543F3A..0x00543F96.
-    private bool RejectCustomSong(string name) => _scheduler.RejectCustomSong(name);
+    internal bool RejectCustomSong(string name) => _scheduler.RejectCustomSong(name);
 
     /// <summary>Plays a clip that is already loaded or built in memory.</summary>
     public Task<AnimationEndReason>? Play(AnimationClip clip, bool replaceRunning = true)

@@ -377,8 +377,10 @@ public sealed class PlayArbitraryAnimBehavior : IBehavior
     // fidelity: M8-004
     public double Score { get; set; }
 
+    // fidelity: M9-029
     public bool IsRunnable(BehaviorContext context) =>
-        ClipName is not null && context.Robot.Animations.Library?.HasClip(ClipName) == true;
+        ClipName is not null && !context.Robot.Animations.RejectCustomSong(ClipName) &&
+        context.Robot.Animations.Library?.HasClip(ClipName) == true;
 
     public double EvaluateScore(BehaviorContext context) => IsRunnable(context) ? Score : 0;
 
@@ -386,7 +388,7 @@ public sealed class PlayArbitraryAnimBehavior : IBehavior
     {
         _finished = false;
         var lib = context.Robot.Animations.Library;
-        if (ClipName is null || lib is null || !lib.HasClip(ClipName))
+        if (ClipName is null || context.Robot.Animations.RejectCustomSong(ClipName) || lib is null || !lib.HasClip(ClipName))
         {
             _finished = true;
             return Task.CompletedTask;

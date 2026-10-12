@@ -533,7 +533,9 @@ public sealed class AnimationScheduler
     private bool _reportedDeviceAudio;
 
     /// <summary>The idle and neutral animations' source (A2, A29). Null: no idle animation can be picked.</summary>
-    public IAnimationCatalog? Catalog { get; set; }
+    private IAnimationCatalog? _catalog;
+    internal Func<IAnimationCatalog?>? CatalogProvider { get; set; }
+    public IAnimationCatalog? Catalog { get => _catalog ?? CatalogProvider?.Invoke(); set => _catalog = value; }
 
     /// <summary>The live-idle and keep-alive parameters (A34; set to the defaults by the first keep-alive, A31).</summary>
     public LiveIdleParams LiveIdleParameters { get; } = new();
@@ -682,9 +684,21 @@ public sealed class AnimationScheduler
             _neutral = catalog!.GetAnimation(name);
             if (_neutral is null) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Constructor.NeutralFaceDataNotFound", $"Could not find expected neutral face animation file called {name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             var face = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
-            if (_neutral is not null) _tlc.SetResetData(face); // 0x0057A1FA skips 0x0057A20E on miss.
+            SetNeutralResetData(face); // 0x0057A1FA skips 0x0057A20E on miss.
             _tlc.Init();
         }
+    }
+
+    // fidelity: M1-034, M5-010
+    private void SetNeutralResetData(ProceduralFacePose? face)
+    {
+        if (_neutral is null) return;
+        if (face is null)
+        {
+            Log?.Invoke("M1-034 / M5-010: neutral animation has no ProceduralFace keyframe; skipping SetResetData and retaining previous reset data");
+            return;
+        }
+        _tlc.SetResetData(face);
     }
 
     /// <summary>The neutral-face clip (+0x40), or null.</summary>
@@ -2004,7 +2018,7 @@ public sealed class AnimationScheduler
             _nowMs = 0;
             var neutralFace = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
             _tlc.Reset();
-            _tlc.SetResetData(neutralFace);
+            SetNeutralResetData(neutralFace);
             _tlc.Init();
             AudioFramesSent = 0;
             PositionMs = 0;
