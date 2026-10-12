@@ -68,6 +68,10 @@ stack implements that feature.
   - a malformed non-empty `.bin` (the original reads it unchecked: undefined behaviour).
 
   The stack skips that file, logs the skip visibly, and carries on.
+
+  It also covers the streamer's null-idle path (operator, 2026-10-12; M5-027). An idle stack whose top trigger has no
+  animation, with no old idle, makes the original dereference null: `InitStream(null)` → `Animation::Init` at
+  0x00577BC6, or `HasFramesLeft`/`UpdateStream(null)`. The stack skips that tail, logs it visibly, and carries on.
 - **M1-040, firmware check** (operator, 2026-10-09): every robot firmware is accepted and logged; the original rejects a version that differs from the app's. Without it the operator's robot (2457) is refused.
 - **M1-036, crash reporting** (operator, 2026-10-09): no Breakpad crash reporter.
 - **M1-038, after a disconnect sub-message** (operator, 2026-10-09): stop processing the frame; the original continues through freed memory.

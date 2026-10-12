@@ -45,6 +45,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 13 | [B-M5-10](B-M5-10.md) | done (f5dac2f0, suite 4471/4471); re-verify FAIL (1: mood cut at the first NUL), manager fixed |
 | 14 | [B-M3M4-10](B-M3M4-10.md) | done (70a3484d, suite 4487/4487); re-verify pending |
 | 15 | [B-M5-11](B-M5-11.md) | open (second M5 settling pass defects D1/D2/D3/D6) |
+| 16 | [B-M5-12](B-M5-12.md) | open, after B-M5-11 (null-idle path under M1-034) |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
