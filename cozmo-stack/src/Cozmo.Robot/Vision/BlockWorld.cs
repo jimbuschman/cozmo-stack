@@ -219,6 +219,8 @@ public sealed class ObservableObject
     public uint FactoryId { get; internal set; }
     /// <summary>The pose origin this object's pose is expressed in (the located map's first key). LOCAL: this stack has one origin.</summary>
     public uint OriginId { get; internal set; }
+    // fidelity: M4-037 — optional concrete pose tree for names; flattened poses retain their root origin ID.
+    internal PoseTreeNameNode? PoseNameNode;
     /// <summary>obj+0x10 <c>fromDistance</c>, stored by <c>SetPose</c>; -1 when set without one.</summary>
     public double FromDistance { get; internal set; } = -1.0;
     /// <summary>vtable +0x0C, <c>IsActive</c>: 1 for an ActiveCube (0x004E385C). NOTE (M11-042): the Charger's value is unread; this stack treats it as passive.</summary>
@@ -686,6 +688,10 @@ public sealed class BlockWorld
     /// </summary>
     // fidelity: M11-004
     public uint CurrentOriginId { get; set; } = 1;
+    // fidelity: M4-037
+    internal SourceLogSink? SourceLog;
+    internal string RootName(ObservableObject obj) => obj.PoseNameNode?.FindRoot(SourceLog).Name ?? PoseOriginNames.NameOf(obj.OriginId);
+
 
     private readonly object _gate = new();
     /// <summary>BlockWorld+0x3C: <c>map&lt;origin, map&lt;family, map&lt;type, map&lt;ObjectID, shared_ptr&gt;&gt;&gt;&gt;</c>, walked in ascending key order.</summary>
@@ -892,6 +898,7 @@ public sealed class BlockWorld
             Log?.Invoke($"Robot.LocalizeToObject.UnlocalizedObject: Refusing to localize to object {existing.ObjectId}, which claims not to be localizable.");
             return 1;
         }
+        Log?.Invoke("MISSING: M4-037 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); localization helpers remain unbuilt");
         UnbuiltLocalizeToObjectCalls++;
         return SetLocalizedTo(existing) ? 0u : 1u;
     }
@@ -989,6 +996,19 @@ public sealed class BlockWorld
             Log?.Invoke($"BlockWorld.AddMarkerlessObject: {type} {id} at {standing}");
             return obj;
         }
+    }
+
+    // fidelity: M4-038
+    internal void AddCliffFromCheckedPose(Pose3d input, uint timestamp, Action<string> missing)
+    {
+        var size = MarkerlessObject.SizeByType((ObjectType)15)!.Value;
+        var candidate = input.Compose(new Pose3d(Mat3.Identity, new Vec3(0, 0, size.Z * 0.5)));
+        // Candidate family 6/type15, activeID -1, factoryID0; the first unknown helper is InitPose(state1).
+        // No object is inserted: its acceptance and identity depend on the unrecovered helpers below.
+        missing("MISSING: M11-062 AddMarkerlessObject(type15) InitPose/SetPose(state1) 0x00622390; candidate not inserted");
+        missing("MISSING: M11-062 cliff overlap IsSameAs 0x0061FD8C/0x00502B08 and intersection predicate 0x00622908..0x0062297C; acceptance not guessed (allowed families 2,6 when localized)");
+        missing("MISSING: M11-062 cliff SetID, DeleteIntersectingObjects, GetBoundingQuad and broadcast 0x008CAD1C; BlockWorld.AddLocatedObject and robot.object_located wait for a source-established insertion");
+        missing("MISSING: M13-030 cliff MemoryMap insert/QuadTree/helper+0x38 0x00684984/0x006226EA; no navigation-map mutation");
     }
 
     /// <summary>The collision obstacle an unexpected movement leaves where the robot was blocked.</summary>

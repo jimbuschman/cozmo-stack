@@ -39,25 +39,26 @@ public class M3M4X12BuilderTests : IDisposable
     {
         var calls = new List<DasControlCall>(); var missing = new List<string>();
         bool? success = null; string? response = null; bool? pausedAtNeedsEdge = null;
+        using var completed = new ManualResetEventSlim();
         using var robot = CozmoRobot.CreateForTest(new Port(), () => 0,
             new CozmoEngineOptions { DataCollectionEnabled = enabled }, engineCreated: e =>
             {
                 e.Das.CallObserved = calls.Add; e.StackLogLine += missing.Add;
                 e.ConnectToRobotHandled += () => pausedAtNeedsEdge = e.Das.Paused;
-                e.DasStartupFlushCompleted = (ok, text) => { success = ok; response = text; };
+                e.DasStartupFlushCompleted = (ok, text) => { success = ok; response = text; completed.Set(); };
             });
         Assert.Equal(new[] { "DASSetArchiveLogConfig", enabled ? "DASEnableNetwork" : "DASDisableNetwork",
-            "DASConfigure", "DASNativeInit", "DASPauseUploadingToServer", "Appender.Flush", "DASForceFlushWithCallback" }, calls.Select(c => c.Name));
+            "DASConfigure", "DASNativeInit", "DASPauseUploadingToServer", "Appender.Flush", "_DAS_SetGlobal", "DASForceFlushWithCallback" }, calls.Select(c => c.Name));
         Assert.Equal(new object?[] { 0x00666C04u, 0x00666E44u, ".tar.gz" }, calls[0].Arguments);
         Assert.Equal(new object?[] { 2u }, calls[1].Arguments);
         // Native configure relative suffix and DataPlatform scopes; absolute roots explicitly unbuilt.
         Assert.Equal(new object?[] { new DasSourcePath(null, "/DASConfig.json"), new DasSourcePath(2, "DASLogs"), new DasSourcePath(3, "") }, calls[2].Arguments);
         Assert.Equal(new object?[] { "cozmo" }, calls[3].Arguments);
         Assert.Equal(new object?[] { false }, calls[4].Arguments);
+        Assert.True(completed.Wait(TimeSpan.FromSeconds(10)));
         Assert.Equal(false, success); Assert.Equal("", response);
         Assert.Contains(missing, s => s.StartsWith("MISSING: M3-055 DASConfigure"));
-        Assert.Contains(missing, s => s.Contains("$player_id MD5 input at0x00665FAC"));
-        Assert.Contains(missing, s => s.Contains("DasTransferTask.OnTransferReady"));
+        Assert.DoesNotContain(missing, s => s.Contains("$player_id MD5 input") || s.Contains("DasTransferTask.OnTransferReady"));
         calls.Clear(); robot.Engine.RequestDataCollectionOption(true); robot.Engine.Tick();
         Assert.Equal(0u, robot.Engine.Das.DisabledReasons);
         robot.Engine.Das.DisableNetwork(4); robot.Engine.RequestDataCollectionOption(false); robot.Engine.Tick();
@@ -71,7 +72,7 @@ public class M3M4X12BuilderTests : IDisposable
         robot.Engine.ClearGlobal("$session_id");
         Assert.Equal(new object?[] { "$session_id", null }, calls[^1].Arguments);
         robot.Engine.Das.SetGlobal("test", "value"); Assert.Equal("value", robot.Engine.Das.GetGlobalsForThisRun()["test"]);
-        robot.Engine.ClearGlobal("test"); Assert.Empty(robot.Engine.Das.GetGlobalsForThisRun());
+        robot.Engine.ClearGlobal("test"); Assert.DoesNotContain("test", robot.Engine.Das.GetGlobalsForThisRun().Keys);
         robot.Engine.FlushSourceLogger(); Assert.Equal("DASForceFlushNow", calls[^1].Name);
         robot.Dispose(); Assert.Contains(calls, c => c.Name == "DASDisableNetwork" && Equals(c.Arguments[0], 4u));
     }

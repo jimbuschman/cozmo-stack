@@ -776,7 +776,8 @@ public sealed class CozmoCubes
         foreach (var o in objects)
         {
             if (unchecked((int)o.ObjectId) != objectId)
-                Log($"MISSING: M4-037 | {prefix}ActiveObjectInDifferentFramesWithDifferentIDs 0x00534042..0x005340CC: root-pose names are not represented by the attached BlockWorld; first ID {objects[0].ObjectId}, this ID {o.ObjectId}");
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, prefix + "ActiveObjectInDifferentFramesWithDifferentIDs",
+                    FormattableString.Invariant($"First object={unchecked((int)objects[0].ObjectId)} in '{world.RootName(objects[0])}'. This object={unchecked((int)o.ObjectId)} in '{world.RootName(o)}'."));
             world.ApplyMovedOrStopped(o, moving);
         }
     }

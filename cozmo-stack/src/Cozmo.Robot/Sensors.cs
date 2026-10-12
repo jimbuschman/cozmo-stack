@@ -802,6 +802,29 @@ public sealed class CozmoSensors
         UnexpectedMovement.ResetToConstructed();
     }
 
+    // fidelity: M4-038
+    // Test-only oracle input. Production ComputeStateAt(true) is unbuilt under M11-051/053.
+    internal Func<uint, (int Status, Vision.Pose3d Pose)>? CliffHistoricalPoseForTest;
+    internal int? ComputeCliffPose(CliffEvent cliff, out Vision.Pose3d pose)
+    {
+        pose = default;
+        if (cliff.DetectedFlags == 0)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "CliffSensorComponent.ComputeCliffPose.NoCliff", "CliffEvent::detectedFlags == 0! Can't compute a cliff pose if there was no cliff detected.");
+            return 0;
+        }
+        if (CliffHistoricalPoseForTest is null)
+        {
+            _robot.Engine.EmitStackLog("MISSING: M11-051/M11-053 ComputeStateAt(timestamp, true) 0x006349A6; cliff pose/result unknown, skipping AddCliff and its conditional Detected/failure logs");
+            return null;
+        }
+        var state = CliffHistoricalPoseForTest(cliff.Timestamp);
+        if (state.Status == 0) { pose = state.Pose; return 1; }
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "CliffSensorComponent.ComputeCliffPose.NoHistoricalPose", FormattableString.Invariant($"Could not retrieve historical pose for timestamp {cliff.Timestamp}"));
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        return 0;
+    }
+
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
     internal void Handle(RobotMessage m)
     {
@@ -819,7 +842,19 @@ public sealed class CozmoSensors
                     if (!_cliffEnabled && any) break;
                 }
                 if (any)
-                    _robot.Engine.EmitStackLog("MISSING: M4-038 | HandleCliffEvent 0x00535548..0x005356E6: ComputeCliffPose 0x00634980 and AddCliff body have no checked rows; Detected at 0x00535602 needs the computed pose, ComputeCliffPoseFailed at 0x00535682 and errG/break at 0x005356BC need its result");
+                {
+                    int? result = ComputeCliffPose(c, out var pose);
+                    if (result == 1)
+                    {
+                        _robot.LocalizationWorld.AddCliffFromCheckedPose(pose, c.Timestamp, _robot.Engine.EmitStackLog);
+                        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotImplMessaging.HandleCliffEvent.Detected", FormattableString.Invariant($"at {(double)(float)pose.Translation.X:F3},{(double)(float)pose.Translation.Y:F3}. DetectedFlags = 0x{c.DetectedFlags:X2}"));
+                    }
+                    else if (result is not null)
+                    {
+                        _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "RobotImplMessaging.HandleCliffEvent.ComputeCliffPoseFailed", "Failed computing cliff pose!");
+                        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                    }
+                }
                 else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotImplMessaging.HandleCliffEvent.Undetected", "");
                 lock (_gate) _cliffDetectedByEvent = any;
                 var report = new CliffReport(c.Timestamp, (CliffSensors)c.DetectedFlags, c.DidStopForCliff);

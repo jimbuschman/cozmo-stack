@@ -1,15 +1,26 @@
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Cozmo.Robot;
 
 // fidelity: M3-051, M3-055
 // Sink (b) is deliberately absent. This is the library control endpoint, not an uploader.
 internal sealed record DasControlCall(string Name, object?[] Arguments);
 internal sealed record DasSourcePath(int? Scope, string RelativePath);
-internal sealed class DasControlStandIn
+internal sealed class DasControlStandIn : IDisposable
 {
     internal Action<DasControlCall>? CallObserved; // test observer, no source-log entry.
     internal uint DisabledReasons { get; private set; }
     internal bool Paused { get; private set; } = true; // libDAS constructor 0xB254..0xB260.
     private readonly Dictionary<string, string> _globals = new();
+    private readonly object _globalGate = new();
+    private readonly BlockingCollection<Action> _work = new();
+    private Thread? _worker;
+    private readonly object _workerGate = new();
+    internal string? GameAppenderName { get; private set; }
+    internal uint GlobalsRevision { get; private set; }
+
     private void Call(string name, params object?[] args) => CallObserved?.Invoke(new(name, args));
     internal void SetArchiveLogConfig(uint archive, uint unarchive, string suffix)
         => Call("DASSetArchiveLogConfig", archive, unarchive, suffix);
@@ -30,19 +41,49 @@ internal sealed class DasControlStandIn
     }
     internal void SetGlobal(string name, string? value)
     {
-        if (value is null) _globals.Remove(name); else _globals[name] = value;
+        lock (_globalGate)
+        {
+            // 0x801C..0x8092: $game replaces the game-log appender, or closes it on clear.
+            // M3-051 excludes the appender's file/transfer work; retain its selected name only.
+            if (name == "$game") GameAppenderName = string.IsNullOrEmpty(value) ? null : value;
+            if (string.IsNullOrEmpty(value)) _globals.Remove(name); else _globals[name] = value;
+            GlobalsRevision = unchecked(GlobalsRevision + 1); // 0x80DA..0x80F6.
+        }
         Call("_DAS_SetGlobal", name, value);
     }
     internal IReadOnlyDictionary<string, string> GetGlobalsForThisRun()
     {
         Call("_DAS_GetGlobalsForThisRun");
-        return new Dictionary<string, string>(_globals);
+        lock (_globalGate) return new Dictionary<string, string>(_globals);
     }
     internal void ForceFlushNow() => Call("DASForceFlushNow");
     internal void ForceFlushWithCallback(Action<bool, string> callback)
     {
         Call("DASForceFlushWithCallback");
-        callback(false, ""); // operator's M3-051 ruling; no sink (b), always failed transfer.
+        lock (_workerGate)
+        {
+            if (_worker is null)
+            {
+                _worker = new Thread(() => { foreach (var work in _work.GetConsumingEnumerable()) work(); })
+                    { IsBackground = true, Name = "cozmo-das" };
+                _worker.Start();
+            }
+            _work.Add(() => callback(false, "")); // M3-051: failed transfer, on the serial worker.
+        }
+    }
+    // Offline test seams wait for startup callbacks before attaching later assertions.
+    // Production startup never waits; every completion still runs on the worker.
+    internal void WaitForPendingCallbacksForTest()
+    {
+        using var done = new ManualResetEventSlim();
+        lock (_workerGate) { if (_worker is null) return; _work.Add(done.Set); }
+        done.Wait();
+    }
+    public void Dispose()
+    {
+        Thread? worker;
+        lock (_workerGate) { _work.CompleteAdding(); worker = _worker; }
+        if (worker is not null && worker != Thread.CurrentThread) worker.Join();
     }
 }
 
@@ -62,16 +103,33 @@ public sealed partial class CozmoEngine
         EmitStackLog("MISSING: M3-055 DASConfigure absolute resource roots and DASPlatform_Android.Init / InitForUnityPlayer app input selection (0x00665CD6, 0x00665EEC/0x00665F14); source descriptors retained, no Android object or host path invented");
         Das.NativeInit("cozmo"); // 0x00665F3A, game literal at0x00BFE7BE.
         Das.Pause(false);
-        MissingDasPlayerId("startup", 0x00665FAC);
+        // fidelity: M3-058 — persisted host device-ID replaces DAS platform+0x1C input.
+        string deviceId = LoadDasDeviceId();
+        Das.SetGlobal("$player_id", Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(deviceId))));
         Das.ForceFlushWithCallback((ok, response) =>
         {
-            DasStartupFlushCompleted?.Invoke(ok, response);
-            EmitStackLog("MISSING: M3-055 startup flush callback recipient0x00667748 (vptr0x010301C4 invoke slot+0x18); stand-in returns failure, native engine callback reaction is not in the checked rows");
+            EmitSourceLog(EngineLogLevel.Event, null, ok ? "das.upload" : "das.upload.fail", "live");
+            if (DasStartupFlushCompleted is { } completed) DeliverIsolated(() => completed(ok, response));
         });
-        EmitStackLog("MISSING: M3-055 DasTransferTask.OnTransferReady caller/input at0x006A25FE; startup flush completes as failed transfer, no task behavior invented");
+        // fidelity: M3-059 — background transfer app trigger is never supplied; task paths unreachable.
     }
-    private void MissingDasPlayerId(string caller, uint address)
-        => EmitStackLog($"MISSING: M3-055 {caller} $player_id MD5 input at0x{address:X8}; no digest or global value invented");
+    // fidelity: M3-058
+    private string LoadDasDeviceId()
+    {
+        string path = Options.DasDeviceIdPath ?? Path.Combine(
+            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cozmo-stack"), "device-id");
+        if (File.Exists(path)) return File.ReadLines(path, Encoding.UTF8).FirstOrDefault() ?? "";
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+        string id = Guid.NewGuid().ToString();
+        try
+        {
+            using var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
+            using var writer = new StreamWriter(file, new UTF8Encoding(false));
+            writer.WriteLine(id);
+            return id;
+        }
+        catch (IOException) when (File.Exists(path)) { return File.ReadLines(path, Encoding.UTF8).FirstOrDefault() ?? ""; }
+    }
 
     // fidelity: M3-056 — host supplies the app's RequestDataCollectionOption bool, default off at startup.
     public void RequestDataCollectionOption(bool enabled)

@@ -85,6 +85,17 @@ public sealed partial class EngineRobot
         AddMessage(RobotMessageId.State, m => _lastStateHandled = UpdateFullRobotState((RobotState)m));
         AddMessage(RobotMessageId.CrashReport, _ => TracePrinterOnCrashReport());
         AddMessage(RobotMessageId.AnimState, m => HandleAnimationState((AnimationState)m));
+        // fidelity: M3-055 — HandleRobotAvailable 0x536810 and HandleRobotSetBodyID 0x536FF0.
+        AddMessage(RobotMessageId.RobotAvailable, m =>
+        {
+            var a = (RobotAvailable)m;
+            Engine.Das.SetGlobal("$group", $"0xbeef{a.HwVersion:x4}{a.SerialNumberHead:x8}");
+        });
+        AddMessage(RobotMessageId.MfgId, m =>
+        {
+            var a = (ManufacturingID)m;
+            Engine.Das.SetGlobal("$phys", $"0xbeef{a.BodyColor & 0xffff:x4}{a.BodyHwVersion & 0xffff:x4}{a.SerialNumber:x8}");
+        });
         AddMessage(RobotMessageId.FirmwareVersion, m => HandleFirmwareVersion((FirmwareVersion)m));
         Lifetime.Bind(0x51C, _ => _idleHandles.Retire());
         // fidelity: M3-041

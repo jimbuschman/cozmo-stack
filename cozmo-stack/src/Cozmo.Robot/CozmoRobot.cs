@@ -257,6 +257,8 @@ public sealed class CozmoRobot : IDisposable
                                      deferLoaderLogs: true, beforeStat: beforeAnimationFileStat),
                                  CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) =>
                                      _cubeLoadingLogs.Add((level, channel, key, text))));
+        LocalizationWorld.SourceLog = (l, c, k, t) => Engine.EmitSourceLog(l, c, k, t);
+        LocalizationWorld.Log += Engine.EmitStackLog;
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
         CubeAccel = new CubeAccelStreams(this);
@@ -401,6 +403,7 @@ public sealed class CozmoRobot : IDisposable
         robot.Transport.OfflineConnect();
         robot.Engine.InitOfflineLink(transport.Peer!);
         robot.Engine.StartOffline(autoTick: true);
+        robot.Engine.Das.WaitForPendingCallbacksForTest();
         return robot;
     }
 
@@ -414,6 +417,7 @@ public sealed class CozmoRobot : IDisposable
         var robot = new CozmoRobot(null, ReliableTransport.CreateOffline(), engineOptions ?? new CozmoEngineOptions(), port, engineClock,
             engineCreated, beforeAnimationFileStat);
         robot.Engine.StartOffline(autoTick: false);
+        robot.Engine.Das.WaitForPendingCallbacksForTest();
         return robot;
     }
 

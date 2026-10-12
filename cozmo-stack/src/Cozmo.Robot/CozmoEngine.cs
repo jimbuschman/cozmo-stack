@@ -72,6 +72,8 @@ public sealed class CozmoEngineOptions
     // fidelity: M3-054
     // fidelity: M3-056 — app DataCollectionEnabled input, host default off.
     public bool DataCollectionEnabled { get; init; }
+    // fidelity: M3-058 — persisted device-ID host setting, created once as a UUID.
+    public string? DasDeviceIdPath { get; init; }
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
 
     // fidelity: M3-041
@@ -1004,6 +1006,8 @@ public sealed partial class EngineRobot
     /// <summary>PoseOriginList (SC4g): the next id starts at 1 (0x0084792C..0x0084793C); UnknownOriginID 0 is never added.</summary>
     private uint _nextOriginId = 1;
     private readonly List<uint> _origins = new();
+    // fidelity: M4-037
+    internal PoseOriginNames OriginNames { get; } = new();
 
     /// <summary>The current pose origin's id: 1 after the constructor's Delocalize.</summary>
     public uint CurrentOriginId { get; private set; }
@@ -1025,9 +1029,18 @@ public sealed partial class EngineRobot
     private void ConstructorDelocalize()
     {
         Engine.RobotDelocalized?.Invoke();   // SC4d: ClearCliffRunningStats is the first thing Robot::Delocalize does
-        CurrentOriginId = _nextOriginId++;
-        _origins.Add(CurrentOriginId);
+        AddOriginWithId(_nextOriginId);
         PoseFrameId = 0;
+    }
+
+    // fidelity: M4-037 — AddOriginWithID 0x847BD8; duplicate verify-failed return.
+    internal bool AddOriginWithId(uint id)
+    {
+        OriginNames.Missing = Engine.EmitStackLog;
+        if (!OriginNames.AddOriginWithId(id, (l, c, k, t) => Engine.EmitSourceLog(l, c, k, t))) return false;
+        _origins.Add(id); CurrentOriginId = id;
+        _nextOriginId = OriginNames.NextId;
+        return true;
     }
 
     /// <summary>PoseOriginList::ContainsOriginID.</summary>
@@ -1469,6 +1482,7 @@ internal sealed class RobotInitialConnection
         if (c is 0 or 2 or 3 or 4) BodyColor = (sbyte)c;
         else { _engine.EmitStackLog($"error: RobotInitialConnection: bad body colour {c}"); BodyColor = -1; }
         SessionId = Guid.NewGuid();
+        _engine.Das.SetGlobal("$session_id", SessionId.Value.ToString()); // fidelity: M3-055 — 0x0052E38A.
         SendConnectionResponse(RobotConnectionResult.Success, fw);
         // fidelity: M3-033, M3-034, M1-028
         // 0x52E3AA: ReadLabAssignmentsFromRobot (CozmoExperiments, 0x6A5B1E) queues NV 0x196000; the lab layer
@@ -2017,7 +2031,7 @@ public sealed partial class CozmoEngine : IDisposable
         // fidelity: M15-016
         // J13: both the AddRobot-failed and the success path reach 0x004ED10A, so the needs edge is raised
         // unconditionally here; the already-connected branch above returns without it. DASPauseUploadingToServer(1)
-        // follows in the engine and has no stack equivalent.
+        // follows this edge through the libDAS control endpoint.
         var handled = ConnectToRobotHandled;
         if (handled is not null) foreach (var t in handled.GetInvocationList()) Isolated((Action)t);
         Das.Pause(true); // fidelity: M3-055 — 0x004ED114, after the needs edge at0x004ED10A.
@@ -2262,6 +2276,7 @@ public sealed partial class CozmoEngine : IDisposable
         if (_disposed) return;
         _disposed = true;
         Das.DisableNetwork(4); // fidelity: M3-055 — cozmo_shutdown0x006668E2.
+        Das.Dispose(); // join the stand-in worker before releasing host callback recipients.
         Behavior.SteppedBehavior.MissingReported -= _missingSink;
         _runner?.Stop();
         _t.Received -= Rcm.Rcd.ReceiveData;

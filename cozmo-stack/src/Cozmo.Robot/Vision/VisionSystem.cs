@@ -59,6 +59,8 @@ public sealed class VisionSystem : IDisposable
         // The world keeps its own connected objects (BlockWorld::AddConnectedActiveObject, fed by ObjectConnectionState below), and
         // reads the carrying and treads state from the components that own them.
         World = new BlockWorld();
+        World.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
+        World.Log += robot.Engine.EmitStackLog;
         robot.LocalizationWorld = World;
         // fidelity: M4-018, M4-017
         // C11.2: read the same localization owner as SetLocalizedTo and the published game status.

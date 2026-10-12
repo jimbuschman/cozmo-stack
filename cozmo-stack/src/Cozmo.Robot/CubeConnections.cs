@@ -202,7 +202,7 @@ public sealed class CubeConnections
     /// flag and the discovery time, and restarts both the discovery and the reconnect clocks. It leaves the
     /// pool and the last update time alone.
     /// </summary>
-    // fidelity: M4-042 — this enable is the M1-042 host input; app pool editing/removal messages have no ingress.
+    // fidelity: M1-042 — this enable is the host input; M4-042 app pool editing/removal messages have no ingress.
     public void EnableAutoBlockPool(bool enabled, float discoveryTimeSeconds = 0f)
     {
         lock (_gate)
@@ -716,7 +716,8 @@ public sealed class CubeConnections
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            QueueMissing("MISSING: M4-043 | BlockFilter.Save.Error at 0x0061B260 needs shipped libc++_shared.so std::ios_base::failure what() bytes (absent from the adopted rows); host I/O failures are isolated");
+            Queue(EngineLogLevel.Error, null, "BlockFilter.Save.Error", "std::exception");
+            _pendingLogs.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak);
         }
     }
 

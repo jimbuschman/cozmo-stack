@@ -19,7 +19,7 @@ namespace Cozmo.Protocol.Tests;
 public class M3DeviceTests
 {
     // Frozen manifest names retained as executable aliases of their current source-oracle regressions.
-    // The callbacks alias asserts the MISSING handoffs, not completed higher-layer recipients.
+    // The callbacks alias checks the callback logs for named no-sink handoffs.
     [Fact]
     public void M3_032_TheNvDispatchIsGatedInTheEngineUpdate() => M3_032_G1_G2_RobotUpdateLogsItsTwoGates();
     [Fact]
@@ -69,7 +69,7 @@ public class M3DeviceTests
         Assert.All(reached, Assert.True);
     }
 
-    // 0x00536942..0x00536956 and InitSizeTable 0x00643BCC, excluding the final sentinel special case.
+    // 0x00536942..0x00536956 and InitSizeTable 0x00643B48 / GetMaxSizeForEntryTag 0x00643FC8, excluding the final sentinel special case.
     [Fact]
     public void B9_PhysicalRobotAndNvSizeTableUseTheNativeFields()
     {
@@ -2938,7 +2938,7 @@ public class M3DeviceTests
         ReadWith(new byte[8]);
         Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.TooLittleReadData: Tag 0x182000, Got 8, Expected 1024", nv.Log);
         ReadWith(NvHeader(0xFFFFFF, 0x435A4D4F));
-        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.InvalidDataSize: Tag 0x182000, size 16777215, maxSizeAllowed 4096", nv.Log); // native size table0x00643BCC.
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.InvalidDataSize: Tag 0x182000, size 16777215, maxSizeAllowed 4096", nv.Log); // InitSizeTable 0x00643B48 / GetMaxSizeForEntryTag 0x00643FC8.
         ReadWith(NvHeader(0x800, 0x435A4D4F));
         Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ReadingRestOfData: Tag: 0x182000, TotalSize: 2048", nv.Log);
     }
