@@ -204,20 +204,45 @@ public sealed class BackpackLightAnimations
         if (root.Kind == FirmwareJsonKind.Object) e = Member(root, key);
         if (e.Kind is not (FirmwareJsonKind.Object or FirmwareJsonKind.Null))
             throw new JsonLogicError("in Json::Value::find(key, end, found): requires objectValue or nullValue");
-        bool valid = true;
-        string[] fields = { "onColors", "offColors", "onPeriod_ms", "offPeriod_ms", "transitionOnPeriod_ms", "transitionOffPeriod_ms", "offset" };
-        foreach (var f in fields)
+        // The native helpers convert each entire field before reading the next field; &= evaluates every read.
+        var onColors = new LedColor[5]; var offColors = new LedColor[5];
+        var on = new uint[5]; var off = new uint[5]; var transitionOn = new uint[5]; var transitionOff = new uint[5];
+        var offsets = new int[5];
+        bool Colors(string field, LedColor[] destination)
         {
-            bool exists = e.Kind == FirmwareJsonKind.Object && e.Members.ContainsKey(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(f)));
-            FirmwareJsonValue arr = exists ? Member(e, f) : new();
-            bool ok = exists && arr.Kind == FirmwareJsonKind.Array && arr.Elements.Count == 5;
-            if (exists && (f == "onColors" || f == "offColors") && (arr.Kind != FirmwareJsonKind.Array || arr.Elements.Count != 5))
+            bool exists = e.Kind == FirmwareJsonKind.Object && e.Members.ContainsKey(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(field)));
+            if (!exists) return false;
+            var array = Member(e, field);
+            if (Json.Size(array) != 5)
             {
                 SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "JsonTools.GetColorValuesToArrayOptional.DiffSizes", "The json array and destination array are different sizes");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                return false;
             }
-            valid &= ok; // all seven reads run
+            for (uint i = 0; i < 5; i++) destination[i] = FloatColor(Json.Index(array, i));
+            return true;
         }
+        bool Unsigned(string field, uint[] destination)
+        {
+            var array = Member(e, field);
+            if (array.Kind != FirmwareJsonKind.Array || Json.Size(array) != 5) return false;
+            for (uint i = 0; i < 5; i++) destination[i] = Json.AsUInt(Json.Index(array, i));
+            return true;
+        }
+        bool Signed(string field, int[] destination)
+        {
+            var array = Member(e, field);
+            if (array.Kind != FirmwareJsonKind.Array || Json.Size(array) != 5) return false;
+            for (uint i = 0; i < 5; i++) destination[i] = Json.AsInt(Json.Index(array, i));
+            return true;
+        }
+        bool valid = Colors("onColors", onColors);
+        valid &= Colors("offColors", offColors);
+        valid &= Unsigned("onPeriod_ms", on);
+        valid &= Unsigned("offPeriod_ms", off);
+        valid &= Unsigned("transitionOnPeriod_ms", transitionOn);
+        valid &= Unsigned("transitionOffPeriod_ms", transitionOff);
+        valid &= Signed("offset", offsets);
         if (!valid)
         {
             SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "BackpackLightAnimationContainer.AddBackpackLightStateValues.InvalidJson", $"Missing member field in pattern definition for BackpackLightsState {name}");
@@ -227,17 +252,13 @@ public sealed class BackpackLightAnimations
         if (_byName.ContainsKey(name)) return;
         var leds = new LedPattern[5];
         for (int i = 0; i < 5; i++)
-            leds[i] = new LedPattern(FloatColor(Member(e, "onColors").Elements[i]), FloatColor(Member(e, "offColors").Elements[i]),
-                                     Json.AsUInt(Member(e, "onPeriod_ms").Elements[i]), Json.AsUInt(Member(e, "offPeriod_ms").Elements[i]),
-                                     Json.AsUInt(Member(e, "transitionOnPeriod_ms").Elements[i]),
-                                     Json.AsUInt(Member(e, "transitionOffPeriod_ms").Elements[i]),
-                                     Json.AsInt(Member(e, "offset").Elements[i]));
+            leds[i] = new LedPattern(onColors[i], offColors[i], on[i], off[i], transitionOn[i], transitionOff[i], offsets[i]);
         _byName[name] = leds;
     }
 
     private static LedColor FloatColor(FirmwareJsonValue c)
     {
-        byte B(int i) => unchecked((byte)(uint)(Json.AsFloat(c.Elements[i]) * 255f));
+        byte B(int i) => unchecked((byte)(uint)(Json.AsFloat(Json.Index(c, (uint)i)) * 255f));
         return new LedColor(B(0), B(1), B(2), B(3));
     }
 

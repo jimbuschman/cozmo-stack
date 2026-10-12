@@ -171,6 +171,7 @@ public sealed class CozmoCubes
         Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
                                           () => Seconds());
         Connections.SourceLog += (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
+        Connections.SourceLogBytes += (level, channel, key, utf8) => _robot.Engine.EmitSourceLog(level, channel, key, utf8);
         Connections.StackLog += _robot.Engine.EmitStackLog;
         Connections.BlockPoolData += m => _robot.Engine.DeliverBlockPoolData(m);
     }

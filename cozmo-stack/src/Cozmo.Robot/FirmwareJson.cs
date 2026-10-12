@@ -62,6 +62,24 @@ internal static class Json
         if (!root.Members.TryGetValue(identity, out var value)) root.Members[identity] = value = new();
         return value;
     }
+    // fidelity: M4-036
+    // Json::Value::operator[](unsigned) const, 0x008EA6DC: shared null for null/missing array indices.
+    private static readonly FirmwareJsonValue NullIndexValue = new();
+    public static FirmwareJsonValue Index(FirmwareJsonValue value, uint index)
+    {
+        if (value.Kind == FirmwareJsonKind.Null) return NullIndexValue;
+        if (value.Kind != FirmwareJsonKind.Array)
+            throw new JsonLogicError("in Json::Value::operator[](ArrayIndex)const: requires arrayValue");
+        return index < value.Elements.Count ? value.Elements[(int)index] : NullIndexValue;
+    }
+    // Json::Value::size, 0x008E6E40: object member count, array length, otherwise zero.
+    public static int Size(FirmwareJsonValue value) => value.Kind switch
+    {
+        FirmwareJsonKind.Object => value.Members.Count,
+        FirmwareJsonKind.Array => value.Elements.Count,
+        _ => 0,
+    };
+
     public static bool IsNull(FirmwareJsonValue value) => value.Kind == FirmwareJsonKind.Null;
 
     // Byte strings are preserved even for malformed UTF-8 and encoded surrogates.

@@ -400,6 +400,25 @@ public class EngineAppLayerTests
         Assert.DoesNotContain(rig.Log, l => l.Contains("lifetime owner +0x51C") || l.Contains("lifetime owner +0x518"));
     }
 
+    // Native raw getline / %s argument: a UTF8 BOM is data, NUL terminates only the logged C string.
+    [Fact]
+    public void B11_PoolLoadUsesRawBytesAndParseErrorKeepsExactCStringBytes()
+    {
+        string path=Path.Combine(Path.GetTempPath(),"pool-b11-"+Guid.NewGuid()+".txt");
+        try
+        {
+            byte[] bytes=new byte[]{0xEF,0xBB,0xBF}.Concat(System.Text.Encoding.ASCII.GetBytes("0x10,3\n0x20,bad\0ignored\n0x30,")).Concat(new byte[]{0xFF}).Concat(System.Text.Encoding.ASCII.GetBytes("\n0x40,3\n")).ToArray();
+            File.WriteAllBytes(path,bytes);
+            using var rig=new Rig(new CozmoEngineOptions{BlockPoolPath=path});var entries=new List<EngineLogEntry>();rig.Engine.LogEntry+=entries.Add;rig.ToValidated();
+            Assert.Equal(0x40u,rig.Robot.Cubes.Connections.PersistentPool[0].FactoryId);Assert.Equal(0u,rig.Robot.Cubes.Connections.PersistentPool[1].FactoryId);
+            var errors=entries.Where(e=>e.Name=="BlockFilter.Load.ParseError").ToArray();Assert.Equal(2,errors.Length);
+            Assert.Equal("0x20,bad",errors[0].Text);Assert.Equal(System.Text.Encoding.ASCII.GetBytes("0x20,bad"),errors[0].TextUtf8.ToArray());
+            Assert.Equal(System.Text.Encoding.ASCII.GetBytes("0x30,").Concat(new byte[]{0xFF}).ToArray(),errors[1].TextUtf8.ToArray());
+            Assert.All(errors,e=>{Assert.Equal(EngineLogLevel.Debug,e.Level);Assert.Equal("Unnamed",e.Channel);});
+        }
+        finally{File.Delete(path);}
+    }
+
     // Checked M4-011 Load 0061A2DC..0061A58E; Init through SetPhysicalRobot 00513954.
     [Fact]
     public void M4_011_CheckedPoolGrammarAndFiveEntryBoundThroughFirmwareEntry()

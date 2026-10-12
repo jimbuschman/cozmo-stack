@@ -54,10 +54,13 @@ public sealed partial class CozmoEngine
     // fidelity: M3-048
     internal void EmitEngineLog(EngineLogLevel level, string? channel, string? name, string text,
         IReadOnlyDictionary<string, string>? data = null)
+        => EmitEngineLogBytes(level, channel, name, Encoding.UTF8.GetBytes(text), data);
+
+    private void EmitEngineLogBytes(EngineLogLevel level, string? channel, string? name, byte[] utf8,
+        IReadOnlyDictionary<string, string>? data = null)
     {
-        byte[] utf8 = Encoding.UTF8.GetBytes(text);
         if (utf8.Length > 1023) utf8 = utf8[..1023];
-        text = Encoding.UTF8.GetString(utf8);
+        string text = Encoding.UTF8.GetString(utf8);
         if (level is EngineLogLevel.Warning or EngineLogLevel.Error)
         {
             string prefix = "(tc" + unchecked((uint)Timer.TickCount).ToString("D4", CultureInfo.InvariantCulture) + ") : ";
@@ -87,4 +90,8 @@ public sealed partial class CozmoEngine
     // Source ports provide the logger fields explicitly at their cited call sites.
     internal void EmitSourceLog(EngineLogLevel level, string? channel, string key, string text,
         IReadOnlyDictionary<string, string>? data = null) => EmitEngineLog(level, channel, key, text, data);
+    // fidelity: M4-011, M3-048 — %s from a raw C string, using the same logger byte bound/fan-out.
+    internal void EmitSourceLog(EngineLogLevel level, string? channel, string key, ReadOnlyMemory<byte> utf8,
+        IReadOnlyDictionary<string, string>? data = null) => EmitEngineLogBytes(level, channel, key, utf8.ToArray(), data);
+
 }

@@ -279,6 +279,7 @@ public sealed class CubeConnections
     // The channeled info, warning and error calls of the connection path. A line is queued where the engine logs it
     // and delivered when the entry point has left the lock, in order.
     internal event Action<EngineLogLevel, string?, string, string>? SourceLog;
+    internal event Action<EngineLogLevel, string?, string, ReadOnlyMemory<byte>>? SourceLogBytes;
     internal event Action<string>? StackLog;
     private void QueueMissing(string line) => _pendingLogs.Add(() => {
         if (StackLog is { } sink) sink(line); else _log?.Invoke(line);
@@ -620,7 +621,7 @@ public sealed class CubeConnections
     private void Load()
     {
         string text;
-        try { text = File.ReadAllText(_poolPath); }
+        try { text = System.Text.Encoding.Latin1.GetString(File.ReadAllBytes(_poolPath)); } // One character per raw byte; no BOM/UTF8 decoding on the parse path.
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException) { return; }
 
         int count = 0;
@@ -683,15 +684,24 @@ public sealed class CubeConnections
         return true;
     }
 
+    private void ParseError(string line)
+    {
+        int nul = line.IndexOf('\0');
+        byte[] utf8 = System.Text.Encoding.Latin1.GetBytes(nul < 0 ? line : line[..nul]);
+        _pendingLogs.Add(() => {
+            if (SourceLogBytes is { } bytesSink) bytesSink(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", utf8);
+            else if (SourceLog is { } sink) sink(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", System.Text.Encoding.UTF8.GetString(utf8));
+            else SourceLogDispatch.GetSink(null, _log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", System.Text.Encoding.UTF8.GetString(utf8));
+        });
+    }
+    private static string PrintfHex(uint value) => value == 0 ? "00000000" : "0x" + value.ToString("x").PadLeft(6, '0');
+
     /// <summary>
     /// <c>BlockFilter::Save</c> 0x0061B014: nothing without a path; when every entry is empty an existing file is
     /// removed first (stat and remove at 0x0061B058..0x0061B068); then the file is opened for output, truncating
     /// it, and each entry with a non-zero factory id is written as "0x", the id in lower-case hex, ",", the type in
     /// decimal and a line feed (0x0061B0EA..0x0061B154).
     /// </summary>
-    private void ParseError(string line) => Queue(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", line);
-    private static string PrintfHex(uint value) => value == 0 ? "00000000" : "0x" + value.ToString("x").PadLeft(6, '0');
-
     private void Save()
     {
         if (_poolPath.Length == 0) return;
