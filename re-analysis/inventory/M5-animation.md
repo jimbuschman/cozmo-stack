@@ -911,3 +911,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Evidence added | M5-008 (+0x38 store, tail, replay custom=false; A7 handed to M9-029) |
 
+
+
+## M5 teardown members (manager, 2026-10-12; research/20261012-m5-teardown-members.md)
+
+| Change | Records |
+| --- | --- |
+| Settled by the B-M5-13 check | M5-050, M5-056, M5-058 |
+| Reopened (per-Robot neutral read) | M5-010 |
+| New IMPLEMENTATION_GAP | M5-059 TestAnim.json cleanup, M5-062 HandleSetParameters |
+| New COMPATIBILITY_POLICY (scope rule) | M5-060 cache path, M5-061 game messages the stack never sends |
+| New RECOVERABLE_GAP | M5-063 DrivingAnimationHandler bodies, M5-064 unread teardown bodies |

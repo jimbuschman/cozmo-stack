@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "57d7374c36802417dcff19f4202e350d88cc4a67fe4daecb6e862cc68ea87e8e",
+  "inventory_sha256": "1aa3cf2befaa55ebf40baabdf647f91f056fcc1ce64908be84d50434ff8aaa33",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -739,6 +739,66 @@
       "evidence": [
         "re-analysis/research/20261012-m5-settling-2.md D7: the 17 sites that load the FaceAnimationKeyFrame vtable GOT 0x0103E9D8 are the ctor 0x00564290 (zeroes +0x28) and its callers, the byte-copy helpers 0x005645CA/0x0057E38E, AppendTrack 0x0057829A and list clear/erase/pop_back; no direct reference to vtable 0x0101F0B8; a later in-place store to +0x28 is not yet ruled out. When +0x28 is set, GetStreamMessage streams the keyframe own +0x18 bytes (0x004F97DE..0x004F97E8).",
         "re-analysis/research/20261012-m5-teardown-reads.md item 3 (Opus-checked; two independent scans): the constructor 0x00564290 zeroes +0x18..+0x28 (memclr4 0x005642C6..0x005642CC); its only callers 0x00563E48, 0x0057669C, 0x0057734C, 0x00587CCC store nothing to +0x28 afterwards; the 17 GOT 0x0103E9D8 sites are the whole set; the copy stores 0x00564616, 0x0057E392, 0x00578314 only carry a source byte; vtable 0x0101F0B8 has no setter; GetStreamMessage never writes +0x28 (gate 0x004F97DE..0x004F97E8). So the shipped engine never sets the override non-zero."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-059": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "AnimationTransfer CleanUp(1) at engine construction and destruction: delete <cache>/TestAnim.json",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: ctor CleanUp(1) 0x0057F376..0x0057F37A after DeviceDataManager (0x004EB2CE); dtor CleanUp(1) 0x0057FC20..0x0057FC22, first after VizManager::Disconnect (0x004EC6C0..0x004EC6CC); CleanUp 0x0057FA00..0x0057FB88: pathToResource(2, \"TestAnim.json\" 0x004D7224..0x004D7252) = cache + \"/\" + name (0x0084BE82, 0x0084BEF6..0x0084BF16), FileExists stat+S_ISREG (0x0080343E..0x0080344A), remove() (0x00802C64..0x00802C72); no log; the directory step needs +0x14, set only by TransferFile."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-060": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "The DataPlatform cache path (DataPlatformCachePath; app input)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: cozmo_startup reads config key \"DataPlatformCachePath\" (0x006658F0 -> 0x006659CC) into DataPlatform+0xC; the app sets it to Application.temporaryCachePath (RobotEngineManager.cs:534)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-061": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Game messages the stack never sends: TransferFile 0xF7, GetJsonDasLogs 0xE0, ReplayLastAnimation 0xAD, RequestDeviceData 0xDB, debug-console 0xDC..0xDF",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: subscriptions: AnimationTransfer 0xF7 (0x0057F322..0x0057F350), DasToSdkHandler 0xE0 (0x00667EE4), streamer 0xAD (0x0057A69E), DeviceDataManager 0xDB (0x0066FE08), DebugConsoleManager 0xDC..0xDF (0x0066864C, table 0xC86570); no in-scope sender (TransferFile only from SDK/CodeLab; ReplayLastAnimation no sender found)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-062": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "AnimationStreamer HandleSetParameters (G2E 0xB4 SetLiveIdleAnimationParameters)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: lambda 0x0057E836 -> HandleSetParameters 0x0057E860..0x0057E90E: names.size == values.size -> if +0x18 SetDefaultParams (0x0057E882..0x0057E88C), then SetParam per pair (0x0057E89A..0x0057E8B2); else sErrorF (0x0057E8D0, format 0xBEF4E1) and errG (0x0057E8F6..0x0057E90A). Registered at 0x0057A4BA only with an external interface (0x0057A4AC). App senders: Robot.cs:663, :1402-1404."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-063": {
+      "status": "RECOVERABLE_GAP",
+      "title": "DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-064": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Unread engine/context teardown bodies: BaseStationTimer instance, engine +0x38, TransferQueueMgr Dispatch::Stop, GameLogTransferTask +0x10",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (instance dtor unread); engine +0x38 set to 0 at 0x004EB292 (no writer found); TransferQueueMgr 0x006A3860 -> Dispatch::Stop 0x006A3874 (unread); GameLogTransferTask 0x006A2E6C virtual delete of +0x10 (unread)."
       ],
       "live_path": true,
       "hardware_required": false

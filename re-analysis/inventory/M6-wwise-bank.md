@@ -3164,3 +3164,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M6-016 | Note: owner of the whole of PopRobotAudioMessage (overlap with M3-010), including the C5 pad and C7 no-volume rows; also the OnDevice playback and InitAnimation draws from M3-024. | IMPLEMENTATION_GAP |
 | M6-027 | NEW (S-1): RobotAudioClient::UpdateAnimationIsReady (from M3-013 C16). | IMPLEMENTATION_GAP |
 | M6-028 | NEW (S-2): RobotAudioClient::CreateAudioAnimation (from M3-024 C2). | IMPLEMENTATION_GAP |
+
+
+## M5 teardown members (manager, 2026-10-12; research/20261012-m5-teardown-members.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP | M6-029 AudioMultiplexer teardown |

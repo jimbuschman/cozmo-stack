@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-10-10",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "2dd04ee418df110a3075959681728054db537d9472ecc77c62feb6d0b50a95f1",
+  "inventory_sha256": "18d58a8229894edbcfe496b519f28a3db2fb46332267fdefb9aa4c10407abccf",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -422,6 +422,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "CreateAudioAnimation 0x00599FF0: the +0x3C source switch (cmp r0,#0/#2/#1 0x0059A074..0x0059A07C), the two constructions 0x0059A082..0x0059A0B6, the post-construction state check ldrb.w r0,[r6,#0x3C] 0x0059A0BA (states 4/5), the source-0 clear 0x0059A11C..0x0059A12E (per M3-024's record, not re-read); the client's initial source is null (0x005994E6)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-029": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Context +0xC AudioMultiplexer teardown (CozmoAudioController, AudioEngineController)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -50,6 +50,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 18 | [B-M5-13](B-M5-13.md) | done 710751f9; Opus check FAIL on one omission (research/20261012-b-m5-13-check.md) |
 | 20 | [B-M5-14](B-M5-14.md) | open (M5-010 per-Robot neutral read, M9-029 behaviour entry) |
 | 21 | [B-M3M4-13](B-M3M4-13.md) | open, after B-M5-14 (M4-037/038/043, rest of M3-055, cleanups) |
+| 22 | [B-M5-15](B-M5-15.md) | open, after B-M3M4-13 (TestAnim.json cleanup, HandleSetParameters, subscription owners) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

@@ -117,7 +117,7 @@
       "id": "M5-animation",
       "name": "Animation clips, scheduler and face",
       "milestone": "M5",
-      "source_investigation_exhausted": true,
+      "source_investigation_exhausted": false,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
@@ -130,12 +130,12 @@
       "id": "M6-wwise-bank",
       "name": "Wwise bank reading and codecs",
       "milestone": "M6",
-      "source_investigation_exhausted": true,
+      "source_investigation_exhausted": false,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-        "approved": "2026-10-10",
+        "approved": "2026-10-12",
         "snapshot": "re-analysis/inventory/M6-wwise-bank.approved.json"
       }
     },
@@ -7843,6 +7843,23 @@
       "test": ""
     },
     {
+      "id": "M6-029",
+      "subsystem": "M6-wwise-bank",
+      "title": "Context +0xC AudioMultiplexer teardown (CozmoAudioController, AudioEngineController)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C)."
+      ],
+      "effect": "What the audio engine does at shutdown.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the chain past its first level.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
       "id": "M11-021",
       "subsystem": "M11-vision",
       "title": "The per-frame marker-mode gate",
@@ -9052,7 +9069,7 @@
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "built, awaiting strong verification: B-M5-1: bind streamer destructor in robot lifetime, drop buffered messages with TD8 debug then clear managed owned storage; release host waiters without sends/end callbacks; MISSING native driving handle-vector/+8 ownership 0x00511524..0x00511542 and streamer SetupHandlers handle ownership 0x0057AF6C. Previous notes: IMPLEMENTATION_GAP (ruling 4.4): build the teardown order per re-analysis/research/20261011-m5-settling-pass.md row M5-037 (no sends). ~TrackLayerComponent internals and the +0xC object are split out to M5-044. X-M5-9: the driving-handler and streamer handler release order is owned by M5-053. B-M5-9 (2026-10-12), built, awaiting strong verification: driving +0x24C and streamer +0x60 lifetime points now call ordered ownership-release interfaces; handler vectors owned by M5-053, parameter last release M5-044; concrete missing recipients still visible. Second M5 pass: the ~CozmoEngine order is M5-055. B-M5-13 (2026-10-12), built, awaiting strong verification: Default driving and streamer ownership recipients are concrete UI nodes; live Robot lifetime releases driving B6/B5/E2G5A before streamer C4/AD/AF/AE, with hub alive at engine shutdown. The former engine-order/factory MISSINGs are resolved by M5-055/056. Driving +8 animation-vector and subscription callback semantics still lack checked concrete recipients and remain MISSING. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Same ClearSendBuffer lock cleanup; stream destruction still drops pending messages without sends, with source debug order preserved.",
+      "unresolved": "built, awaiting strong verification: B-M5-1: bind streamer destructor in robot lifetime, drop buffered messages with TD8 debug then clear managed owned storage; release host waiters without sends/end callbacks; MISSING native driving handle-vector/+8 ownership 0x00511524..0x00511542 and streamer SetupHandlers handle ownership 0x0057AF6C. Previous notes: IMPLEMENTATION_GAP (ruling 4.4): build the teardown order per re-analysis/research/20261011-m5-settling-pass.md row M5-037 (no sends). ~TrackLayerComponent internals and the +0xC object are split out to M5-044. X-M5-9: the driving-handler and streamer handler release order is owned by M5-053. B-M5-9 (2026-10-12), built, awaiting strong verification: driving +0x24C and streamer +0x60 lifetime points now call ordered ownership-release interfaces; handler vectors owned by M5-053, parameter last release M5-044; concrete missing recipients still visible. Second M5 pass: the ~CozmoEngine order is M5-055. B-M5-13 (2026-10-12), built, awaiting strong verification: Default driving and streamer ownership recipients are concrete UI nodes; live Robot lifetime releases driving B6/B5/E2G5A before streamer C4/AD/AF/AE, with hub alive at engine shutdown. The former engine-order/factory MISSINGs are resolved by M5-055/056. Driving +8 animation-vector and subscription callback semantics still lack checked concrete recipients and remain MISSING. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Same ClearSendBuffer lock cleanup; stream destruction still drops pending messages without sends, with source debug order preserved. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): the driving +8 vector is a plain vector of {DrivingAnimations, lockName} pairs; its destructor 0x004F090C..0x004F0942 frees strings only: no recipient, so its MISSING closes as no effect. 0x5A is an E2G subscription (slot +0x28); B5/B6 are G2E. The callback bodies are M5-063; AD is M5-061; B4 is M5-062; AE/AF are M5-027/M5-057; C4 is M9-029.",
       "hardware_required": false,
       "live_path": true,
       "test": "M5X9BuilderTests.SourceHandlerReleaseOrderUsesSoleOwnedRecipientsAndClearsEachOnce, M5X9BuilderTests.StreamerDestructionReleasesSetupBeforeLiveAndParameterLast, M5X13BuilderTests.ShutdownUnlinksRobotsThenAbortsAndJoinsLoaderBeforeHub, M3M4X12BuilderTests.ClearSendBufferLogsFifoOutsideLockWithoutSending"
@@ -10214,7 +10231,7 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): TD1-TD8, TDU: ~TrackLayerComponent 0x0064ED8C frees +0x10, +0xC, +8, +4 in order, no send or log; +0xC is the UiMessageHandler subscription container (TD3-TD6, 0x004EF184); libc++_shared.so __release_shared 0x5ED6C, __release_weak 0x5EDC2, lock 0x5EDE8.",
         "re-analysis/research/20261012-m5-x9-extraction.md section 4b: libc++_shared __release_shared 0x5ED6C (on_zero_shared then weak release); 0x0057AFD4 is the last owner. Supersedes TDU \"external, unsettled\"."
       ],
-      "unresolved": "built, awaiting strong verification: B-M5-1: managed TLC release order face then face/backpack/audio storage, parameter maps last; MISSING concrete tag-B4 shared subscription release 0x0057AFD4 and exact native handle ownership; no final send/callback invented. Previous notes: IMPLEMENTATION_GAP: build the teardown order (no sends, no logs) together with M5-037. X-M5-9: the release is read (section 4b); RECOVERABLE_GAP remains the ~CozmoEngine member order. B-M5-9 (2026-10-12), built, awaiting strong verification: SetupHandlers releases precede live storage; the parameter subscription is released last after parameter maps through its sole-owner interface; shipped libc++ shared/weak release targets reopened; ~CozmoEngine weak-signal lifetime and concrete host recipients remain MISSING. Second M5 pass: the ~CozmoEngine order is M5-055. Second M5 pass: the E2G container factory is M5-056. B-M5-13 (2026-10-12), built, awaiting strong verification: The default tag-B4 subscription now has a concrete G2E node and last-owner release after streamer parameter storage. Engine shutdown keeps the signal alive until this unlink, then destroys the hub. No E2G factory/order MISSING remains; the payload callback recipient is still MISSING.",
+      "unresolved": "built, awaiting strong verification: B-M5-1: managed TLC release order face then face/backpack/audio storage, parameter maps last; MISSING concrete tag-B4 shared subscription release 0x0057AFD4 and exact native handle ownership; no final send/callback invented. Previous notes: IMPLEMENTATION_GAP: build the teardown order (no sends, no logs) together with M5-037. X-M5-9: the release is read (section 4b); RECOVERABLE_GAP remains the ~CozmoEngine member order. B-M5-9 (2026-10-12), built, awaiting strong verification: SetupHandlers releases precede live storage; the parameter subscription is released last after parameter maps through its sole-owner interface; shipped libc++ shared/weak release targets reopened; ~CozmoEngine weak-signal lifetime and concrete host recipients remain MISSING. Second M5 pass: the ~CozmoEngine order is M5-055. Second M5 pass: the E2G container factory is M5-056. B-M5-13 (2026-10-12), built, awaiting strong verification: The default tag-B4 subscription now has a concrete G2E node and last-owner release after streamer parameter storage. Engine shutdown keeps the signal alive until this unlink, then destroys the hub. No E2G factory/order MISSING remains; the payload callback recipient is still MISSING. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): the B4 recipient is HandleSetParameters 0x0057E860 (M5-062).",
       "hardware_required": false,
       "live_path": true,
       "test": "M5X9BuilderTests.StreamerDestructionReleasesSetupBeforeLiveAndParameterLast, M5X13BuilderTests.ShutdownUnlinksRobotsThenAbortsAndJoinsLoaderBeforeHub, M5X13BuilderTests.SubscriptionLastReleaseDropsTokenBeforeIdentityUnlinkAndExpiredReleaseDoesNothing"
@@ -10375,7 +10392,7 @@
       ],
       "effect": "Which subscriptions end, and in what order, when a robot is removed.",
       "provenance": "Opus extraction X-M5-9 (2026-10-12), manager-adopted.",
-      "unresolved": "Build the release order. RECOVERABLE_GAP: the E2G container factory 0x0066411C and its ProtoHandle; the ~CozmoEngine member order (whether unlinks happen at engine shutdown). B-M5-9 (2026-10-12), built, awaiting strong verification: sole ownership interfaces constructed with source subscription tag order and released back-to-front: driving B6/B5/5A then +8 storage handoff; streamer C4/AD/AF/AE at native lifetime point; bound concrete IDisposable recipients release once; absent recipients visibly MISSING, E2G factory/ProtoHandle and engine weak-signal destruction order remain gaps. Second M5 pass: the ~CozmoEngine order is M5-055. Second M5 pass: the E2G container factory is M5-056. B-M5-13 (2026-10-12), built, awaiting strong verification: Concrete default retained subscription nodes replace unwired ownership; vector release order and sole-owner interfaces unchanged. All unlinks occur before loader abort/join and UI map destruction. Concrete driving +8 vector and typed callback recipients remain visible MISSING, rather than treated as recovered from factory rows.",
+      "unresolved": "Build the release order. RECOVERABLE_GAP: the E2G container factory 0x0066411C and its ProtoHandle; the ~CozmoEngine member order (whether unlinks happen at engine shutdown). B-M5-9 (2026-10-12), built, awaiting strong verification: sole ownership interfaces constructed with source subscription tag order and released back-to-front: driving B6/B5/5A then +8 storage handoff; streamer C4/AD/AF/AE at native lifetime point; bound concrete IDisposable recipients release once; absent recipients visibly MISSING, E2G factory/ProtoHandle and engine weak-signal destruction order remain gaps. Second M5 pass: the ~CozmoEngine order is M5-055. Second M5 pass: the E2G container factory is M5-056. B-M5-13 (2026-10-12), built, awaiting strong verification: Concrete default retained subscription nodes replace unwired ownership; vector release order and sole-owner interfaces unchanged. All unlinks occur before loader abort/join and UI map destruction. Concrete driving +8 vector and typed callback recipients remain visible MISSING, rather than treated as recovered from factory rows. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): the driving +8 vector is a plain vector of {DrivingAnimations, lockName} pairs; its destructor 0x004F090C..0x004F0942 frees strings only: no recipient, so its MISSING closes as no effect. 0x5A is an E2G subscription (slot +0x28); B5/B6 are G2E. The callback bodies are M5-063; AD is M5-061; B4 is M5-062; AE/AF are M5-027/M5-057; C4 is M9-029.",
       "hardware_required": false,
       "live_path": true,
       "test": "M5X9BuilderTests.SourceHandlerReleaseOrderUsesSoleOwnedRecipientsAndClearsEachOnce, M5X9BuilderTests.StreamerDestructionReleasesSetupBeforeLiveAndParameterLast, M5X13BuilderTests.ShutdownUnlinksRobotsThenAbortsAndJoinsLoaderBeforeHub, M5X13BuilderTests.SubscriptionLastReleaseDropsTokenBeforeIdentityUnlinkAndExpiredReleaseDoesNothing"
@@ -10410,7 +10427,7 @@
       ],
       "effect": "Whether an engine shutdown aborts a running load and unlinks subscriptions, and in what order.",
       "provenance": "Second M5 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged.",
+      "unresolved": "IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): engine +0x3C is DeviceDataManager (not PerfMetric), +0x40 DebugConsoleManager, +0x50 DasToSdkHandler; their teardown is unlink only. Order before ~CozmoContext: BaseStationTimer global clear and removeInstance (0x004EC6A0..0x004EC6B4), VizManager::Disconnect (out of scope), AnimationTransfer (M5-059). The engine +4 subscription vector is released at 0x004EC71C after the hub is gone (expired-token no-ops). Context members: no observable effects in PerfMetric, CozmoExperiments, NeedsManager (no WriteToDevice); unread parts are M5-064 and M6-029.",
       "hardware_required": false,
       "live_path": true,
       "test": "M5X13BuilderTests.ShutdownUnlinksRobotsThenAbortsAndJoinsLoaderBeforeHub, M5X13BuilderTests.ShutdownJoinsTickerWithoutHoldingRobotMembershipLock"
@@ -10467,6 +10484,108 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M5X9BuilderTests.FaceNameMissWarningIsSourceKeyedAndAuthoredJsonOverrideIsZero, M5X9BuilderTests.AuthoredFlatBufferOverrideIsZeroAfterDefinitionAndInsertion"
+    },
+    {
+      "id": "M5-059",
+      "subsystem": "M5-animation",
+      "title": "AnimationTransfer CleanUp(1) at engine construction and destruction: delete <cache>/TestAnim.json",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: ctor CleanUp(1) 0x0057F376..0x0057F37A after DeviceDataManager (0x004EB2CE); dtor CleanUp(1) 0x0057FC20..0x0057FC22, first after VizManager::Disconnect (0x004EC6C0..0x004EC6CC); CleanUp 0x0057FA00..0x0057FB88: pathToResource(2, \"TestAnim.json\" 0x004D7224..0x004D7252) = cache + \"/\" + name (0x0084BE82, 0x0084BEF6..0x0084BF16), FileExists stat+S_ISREG (0x0080343E..0x0080344A), remove() (0x00802C64..0x00802C72); no log; the directory step needs +0x14, set only by TransferFile."
+      ],
+      "effect": "A stale TestAnim.json in the cache directory is deleted at startup and shutdown.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: build from the rows (job B-M5-15).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-060",
+      "subsystem": "M5-animation",
+      "title": "The DataPlatform cache path (DataPlatformCachePath; app input)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: cozmo_startup reads config key \"DataPlatformCachePath\" (0x006658F0 -> 0x006659CC) into DataPlatform+0xC; the app sets it to Application.temporaryCachePath (RobotEngineManager.cs:534)."
+      ],
+      "effect": "Where scope-2 resource paths resolve.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09): the stack supplies its own cache directory setting.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-061",
+      "subsystem": "M5-animation",
+      "title": "Game messages the stack never sends: TransferFile 0xF7, GetJsonDasLogs 0xE0, ReplayLastAnimation 0xAD, RequestDeviceData 0xDB, debug-console 0xDC..0xDF",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: subscriptions: AnimationTransfer 0xF7 (0x0057F322..0x0057F350), DasToSdkHandler 0xE0 (0x00667EE4), streamer 0xAD (0x0057A69E), DeviceDataManager 0xDB (0x0066FE08), DebugConsoleManager 0xDC..0xDF (0x0066864C, table 0xC86570); no in-scope sender (TransferFile only from SDK/CodeLab; ReplayLastAnimation no sender found)."
+      ],
+      "effect": "Whether those handlers ever run.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY (scope rule; SDK and CodeLab unsupported): the stack does not send these messages; the subscriptions exist and are torn down (unlink only); the handlers are unreachable.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-062",
+      "subsystem": "M5-animation",
+      "title": "AnimationStreamer HandleSetParameters (G2E 0xB4 SetLiveIdleAnimationParameters)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: lambda 0x0057E836 -> HandleSetParameters 0x0057E860..0x0057E90E: names.size == values.size -> if +0x18 SetDefaultParams (0x0057E882..0x0057E88C), then SetParam per pair (0x0057E89A..0x0057E8B2); else sErrorF (0x0057E8D0, format 0xBEF4E1) and errG (0x0057E8F6..0x0057E90A). Registered at 0x0057A4BA only with an external interface (0x0057A4AC). App senders: Robot.cs:663, :1402-1404."
+      ],
+      "effect": "What a live-idle parameter message does.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: build from the rows; read the format at 0xBEF4E1 (job B-M5-15).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-063",
+      "subsystem": "M5-animation",
+      "title": "DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/CozmoAnimations.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732)."
+      ],
+      "effect": "What driving animations do when an action completes, and when the stack pushes or removes them.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the three bodies.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M5-064",
+      "subsystem": "M5-animation",
+      "title": "Unread engine/context teardown bodies: BaseStationTimer instance, engine +0x38, TransferQueueMgr Dispatch::Stop, GameLogTransferTask +0x10",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-teardown-members.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (instance dtor unread); engine +0x38 set to 0 at 0x004EB292 (no writer found); TransferQueueMgr 0x006A3860 -> Dispatch::Stop 0x006A3874 (unread); GameLogTransferTask 0x006A2E6C virtual delete of +0x10 (unread)."
+      ],
+      "effect": "Whether shutdown does anything observable beyond what M5-055 records.",
+      "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the four bodies (and search for an engine +0x38 writer).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M7-024",
