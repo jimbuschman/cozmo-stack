@@ -1,8 +1,8 @@
 {
   "subsystem": "M9-wwise-music",
-  "approved": "2026-10-05",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "df3d7ba51923d02d038900c3f80f28d07c36c02b5e3b1d4aff83120f6cdd4c66",
+  "inventory_sha256": "3a65e8169bd312fc3bb6eaca2fa4ef5a38b6f04de96ad311039337618306754e",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -332,6 +332,16 @@
       "evidence": [
         "0x00599F60..0x00599FBF",
         "X4 S20-S21"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-029": {
+      "status": "RECOVERABLE_GAP",
+      "title": "SetStreamingAnimation custom-song branch (CreateCustomSongAnimation)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-settling-2.md: SetStreamingAnimation 0x0057B24E..0x0057B29A, the custom-song branch: CreateCustomSongAnimation, its info log, +0x38 = +0x3C (inventory row A7, \"NEW (M9 interface)\")."
       ],
       "live_path": true,
       "hardware_required": false

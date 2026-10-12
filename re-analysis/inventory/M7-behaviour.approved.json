@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-10",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "74d38c3656afd159ac7d2de7e4b8cd98b67b3ab2d75c7e4fa44aef7f49870422",
+  "inventory_sha256": "7ffd2453203e1b220c3650034f19fd547dd76e4ba865e1bc54fc60588a375b6a",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -323,6 +323,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-026": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "MoodManager::GetSimpleMood and the mood time MoodManager+0x130 (inputs to the animation group draw)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4f: GetSimpleMood 0x0067C084 (Default; Happy > 0.33f -> Happy; Confident < -0.29f -> Sad; Happy < -0.33f -> Sad; constants 0x0067C0C0..0x0067C0C8); the group draw reads MoodManager+0x130 (0x0058A95C), written only by MoodManager::Update(t) 0x0067B67E and Reset/ctor."
       ],
       "live_path": true,
       "hardware_required": false

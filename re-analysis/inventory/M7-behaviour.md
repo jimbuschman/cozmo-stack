@@ -1322,3 +1322,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- | --- |
 | M7-020 | Note: ActionList/ActionQueue/ActionWatcher carry M7-020 tags but implement M8-015's rows; retag in the build round. | IMPLEMENTATION_GAP |
 | M7-025 | NEW (S-10): BehaviorTrackLaser's read of VisionComponent+0x32A (from M3-023 3b). | RECOVERABLE_GAP |
+
+
+## Second M5 settling pass (manager, 2026-10-12; research/20261012-m5-settling-2.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP (input to M5-011/M5-014) | M7-026 GetSimpleMood and MoodManager+0x130 |

@@ -397,3 +397,10 @@ The complete audit (`re-analysis/research/20260929-audit-complete.md`) found tha
 ## ADP-1 (operator decision, 2026-10-05)
 
 The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample DSP arithmetic may become EQUIVALENT_IMPLEMENTATION; every decision stays exact. No record is reclassified by this note. Each mixed record states its boundary in `unresolved`, and moves only when its equivalent part passes the equivalence test (`jobs/B-ADP-HARNESS.md`).
+
+
+## Second M5 settling pass (manager, 2026-10-12; research/20261012-m5-settling-2.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP (from the M5 pass) | M9-029 SetStreamingAnimation custom-song branch |

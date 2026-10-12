@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "8b7c3dbdc900b343d49547deaf452eb17f3a337336614ec2f712912066d6bebe",
+  "inventory_sha256": "2f473448119bacfb66548d2c196d48ed22a5c2a9d9b1b54c4b0246f3995b6079",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -75,7 +75,7 @@
       "hardware_required": false
     },
     "M5-006": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Body 0x99: radius strings, speed clamps (point turn +-300, straight/turn +-220), negative duration never stops, the stop at duration end",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -134,7 +134,7 @@
       "hardware_required": false
     },
     "M5-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -243,7 +243,7 @@
       "hardware_required": false
     },
     "M5-018": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Frames per Update while ShouldProcessAnimationFrame: empty buffer and keyframes left, or audio ready while audio exists",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -306,7 +306,7 @@
       "hardware_required": false
     },
     "M5-023": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Abort: AnimationAborted broadcast -> AbortAnimation 0x8D reliable; state cleared; buffer kept and flushed by the next no-animation Update unless InitStream drops it; no EndOfAnimation",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -421,7 +421,7 @@
       "hardware_required": false
     },
     "M5-031": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -433,7 +433,7 @@
       "hardware_required": false
     },
     "M5-032": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EQUIVALENT_IMPLEMENTATION",
       "title": "DrawFace: 64x128 canvas, the face transform via shipped cv::warpAffine INTER_NEAREST BORDER_CONSTANT 0, row extent, interlace clearing, scan-line shift",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -569,7 +569,7 @@
       "hardware_required": false
     },
     "M5-043": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "FaceAnimationKeyFrame +0x28 writers on the FlatBuffer/JSON add path (Track::AddKeyFrameToBack(CozmoAnim::FaceAnimation*))",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -603,7 +603,7 @@
       "hardware_required": false
     },
     "M5-046": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "RobotDataLoader.CollectAnimFiles.Results info order over the four file types",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -695,6 +695,46 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m8-play-animation-actions.md row L1: CannedAnimationContainer::GetAnimation 0x00588074..0x005880E4, the InvalidName sErrorF with errG and break on a miss."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-055": {
+      "status": "RECOVERABLE_GAP",
+      "title": "~CozmoEngine member destruction order (RobotDataLoader abort flag, robot and streamer teardown, weak-signal unlinks)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-056": {
+      "status": "RECOVERABLE_GAP",
+      "title": "The engine-to-game subscription container factory and its ProtoHandle (UiMessageHandler::Subscribe(EngineToGameTag))",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4a: UiMessageHandler::Subscribe(EngineToGameTag) 0x006626CC creates the container through 0x0066411C; its ProtoHandle and release are not read."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-057": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "PushIdleAnimation(ProceduralLive) as the app-supplied input that starts live animation (app input)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-settling-2.md: UpdateLiveAnimation 0x0057D5F8..0x0057DA82 runs only when the idle stack top is ProceduralLive, which is pushed through the game-to-engine PushIdleAnimation (tag 0xAE) by the app (M5-030)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-058": {
+      "status": "RECOVERABLE_GAP",
+      "title": "FaceAnimationKeyFrame +0x28 writers (the face-animation override)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-settling-2.md D7: the 17 sites that load the FaceAnimationKeyFrame vtable GOT 0x0103E9D8 are the ctor 0x00564290 (zeroes +0x28) and its callers, the byte-copy helpers 0x005645CA/0x0057E38E, AppendTrack 0x0057829A and list clear/erase/pop_back; no direct reference to vtable 0x0101F0B8; a later in-place store to +0x28 is not yet ruled out. When +0x28 is set, GetStreamMessage streams the keyframe own +0x18 bytes (0x004F97DE..0x004F97E8)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -885,3 +885,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New | M5-054 CannedAnimationContainer::GetAnimation InvalidName |
 | Evidence added | M5-038 (factory only; actions are M8-020/021), M5-008, M5-023 (null SetStreamingAnimation tail) |
+
+
+## Second M5 settling pass (manager, 2026-10-12; research/20261012-m5-settling-2.md)
+
+| Change | Records |
+| --- | --- |
+| Settled (second pass) | M5-006, 010, 018, 023, 031, 043, 046 EXACT_SOURCE; M5-032 EQUIVALENT_IMPLEMENTATION |
+| New RECOVERABLE_GAP | M5-055 ~CozmoEngine member order, M5-056 E2G subscription factory, M5-058 FaceAnimationKeyFrame +0x28 writers |
+| New COMPATIBILITY_POLICY | M5-057 PushIdleAnimation(ProceduralLive) app input |
+| Source investigation | reopened (M5-055, 056, 058) |
