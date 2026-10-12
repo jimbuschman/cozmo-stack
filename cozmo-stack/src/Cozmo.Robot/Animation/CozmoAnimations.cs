@@ -160,7 +160,8 @@ public sealed class CozmoAnimations : IDisposable
         _robot = robot;
         robot.Engine.EmitStackLog("MISSING: M5-037/044 concrete driving/streamer subscription ownership (0x00511524, 0x0057AF6C, 0x0057AFD4); managed storage teardown is built, native subscription release remains unwired");
         _sink = new RobotAnimationSink(robot);
-        _scheduler = new AnimationScheduler(_sink);
+        // fidelity: M5-045
+        _scheduler = new AnimationScheduler(_sink, contextRandom: robot.Engine.ContextRandom);
         _scheduler.Stream.Log = robot.Engine.Log;
         _scheduler.Stream.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
         _scheduler.Log = robot.Engine.Log;
@@ -272,13 +273,14 @@ public sealed class CozmoAnimations : IDisposable
         // The pre-rendered face animations live beside the clips, and the faceAnimations track names them.
         FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
         _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
-        Library = AnimationLibrary.Open(assetsRoot, _robot.Engine.Log, (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
+        Library = AnimationLibrary.Open(assetsRoot, _robot.Engine.Log, (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text), _scheduler.ContextRandom);
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)
         Library.HeadAngleRad = () => _robot.State.HeadAngleRad;
-        Library.ContextRandom = _scheduler.ContextRandom; // M5-045: ownership of the native group RNG remains unread.
-        _robot.Engine.EmitStackLog("MISSING: M5-045 AnimationGroupContainer RNG instance ownership; using the current stack generator");
+        // fidelity: M5-045
+        // R45-2..R45-3: loader -> container+0x28 -> group+0 uses context+0x14.
+        Library.ContextRandom = _scheduler.ContextRandom;
         Library.CooldownTimeSec = () => _robot.Engine.Timer.Seconds; // G1: f32 BaseStationTimer sampled by Robot::Update.
         // fidelity: M5-010, M5-027
         // The streamer's idle and neutral animations come from the container, the groups and the trigger map (A2, A29).

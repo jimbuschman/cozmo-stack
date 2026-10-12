@@ -469,11 +469,12 @@ public sealed class AnimationScheduler
     /// Null: IKeyFrame::sRNG and the context RNG are mt19937s seeded from OS entropy, as the engine seeds both from
     /// /dev/urandom (gap4 R1..R3, C3). A test seam: a given instance seeds both, so a timeline can be reproduced.
     /// </param>
-    public AnimationScheduler(IAnimationSink sink, Random? random = null)
+    public AnimationScheduler(IAnimationSink sink, Random? random = null, EngineRandom? contextRandom = null)
     {
         _sink = sink;
         _keyframeRng = random is null ? new EngineRandom() : new EngineRandom(random);
-        _contextRng = random is null ? new EngineRandom() : new EngineRandom(random);
+        // fidelity: M5-045
+        _contextRng = contextRandom ?? (random is null ? new EngineRandom() : new EngineRandom(random));
         _tlc = new TrackLayerComponent(_contextRng, _scanLines) { Log = l => Log?.Invoke(l), SourceLog = (level, channel, key, text) => SourceLogDispatch.Write(SourceLog, Log, level, channel, key, text) };
         _live = StreamAnimation.Live();
         _idleStack.Add((IdleCount, DefaultAnimLock));

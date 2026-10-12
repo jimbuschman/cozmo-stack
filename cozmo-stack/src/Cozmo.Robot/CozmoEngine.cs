@@ -1629,6 +1629,10 @@ public sealed partial class CozmoEngine : IDisposable
     /// <summary>The only robot id the engine uses (B2: robot 1).</summary>
     public const uint RobotId = 1;
 
+    // fidelity: M5-045
+    // R45-1..R45-3: context+0x14, shared with the streamer and animation groups.
+    internal Animation.EngineRandom ContextRandom { get; } = new();
+
     private readonly IEngineTransport _t;
     private readonly ConcurrentQueue<Action> _gameMessages = new();
     private readonly object _tickLock = new();
@@ -1856,8 +1860,9 @@ public sealed partial class CozmoEngine : IDisposable
     // ------------------------------------------------------------------ running
 
     /// <summary>B24/B12: production. The transport is started (RCM::Init's StartClient) and the 60 ms engine thread runs.</summary>
-    internal void StartProduction()
+    internal void StartProduction(uint randomSeed = 0, Func<uint>? entropy = null)
     {
+        StartEngineRandom(randomSeed, entropy);
         _t.Start();
         _runner = new EngineTickRunner(_nowNs, EngineTickRunner.HostSleepNs, TickAt, Log);
         _runner.Start("cozmo-engine");
@@ -1868,7 +1873,21 @@ public sealed partial class CozmoEngine : IDisposable
     /// message runs engine ticks on the calling thread until nothing is pending, so a replayed datagram reaches the
     /// handlers before the call that fed it returns.
     /// </summary>
-    internal void StartOffline(bool autoTick) => _autoTick = autoTick;
+    internal void StartOffline(bool autoTick, uint randomSeed = 0, Func<uint>? entropy = null)
+    {
+        StartEngineRandom(randomSeed, entropy);
+        _autoTick = autoTick;
+    }
+
+    // fidelity: M5-045
+    // R45-5: StartEngine reseeds before the started guard. The host replaces the app input (which is zero).
+    private void StartEngineRandom(uint randomSeed = 0, Func<uint>? entropy = null)
+    {
+        uint effective = ContextRandom.SetSeed(randomSeed, entropy);
+        EmitSourceLog(EngineLogLevel.Event, null, "app.random_seed",
+            effective.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            new Dictionary<string, string> { ["$data"] = "CozmoContext" }); // sEventF("%u"), 0x0082F914.
+    }
 
     /// <summary>Whether the 60 ms engine thread runs (production), rather than one of the offline seams.</summary>
     internal bool IsProduction => _runner is not null;

@@ -17,7 +17,7 @@ namespace Cozmo.Robot.Animation;
 /// </summary>
 public sealed class EngineRandom
 {
-    private readonly Mt19937 _mt;
+    private Mt19937 _mt;
     private readonly object _gate = new();
 
     /// <summary>
@@ -26,6 +26,18 @@ public sealed class EngineRandom
     /// the seed even when it is zero (0x0082F89C..0x0082F8A4: <c>mov r5, r0</c> straight into the seeding loop), M5-005.
     /// </summary>
     public EngineRandom(uint seed, Func<uint>? entropy = null) => _mt = new Mt19937(seed == 0 ? (entropy ?? EntropySeed)() : seed);
+
+    // fidelity: M5-045
+    /// <summary>R45-4: reseed the existing generator; return the effective word, including entropy zero.</summary>
+    internal uint SetSeed(uint seed, Func<uint>? entropy = null)
+    {
+        lock (_gate)
+        {
+            uint effective = seed == 0 ? (entropy ?? EntropySeed)() : seed;
+            _mt = new Mt19937(effective);
+            return effective;
+        }
+    }
 
     /// <summary>An entropy-seeded generator (SetSeed(0), R1..R3).</summary>
     public EngineRandom() : this(0) { }

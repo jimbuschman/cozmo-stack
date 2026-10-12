@@ -243,10 +243,15 @@ public sealed class AnimationLibrary : IAnimationCatalog
     private readonly object _gate = new();
 
     /// <summary>
-    /// The current generator used while M5-045's AnimationGroupContainer+0x28 ownership remains unread.
-    /// Production names that missing input at construction; no shared-instance provenance is claimed.
+    /// R45-1..R45-3: the shared context generator supplied to AnimationGroupContainer and each group.
+    /// Standalone libraries own a generator; production supplies the engine context instance.
     /// </summary>
-    public EngineRandom ContextRandom { get; set; } = new();
+    // fidelity: M5-045
+    public EngineRandom ContextRandom { get; set; }
+
+    public AnimationLibrary() : this(null) { }
+
+    private AnimationLibrary(EngineRandom? contextRandom) => ContextRandom = contextRandom ?? new EngineRandom();
 
     /// <summary>The clip names available (FlatBuffer and JSON), whether or not they have been parsed yet.</summary>
     public IReadOnlyCollection<string> ClipNames { get { lock (_gate) return _clipFiles.Keys.ToArray(); } }
@@ -278,9 +283,9 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// Opens a library over an unpacked <c>cozmo_resources</c> tree. Point it at the directory that holds
     /// <c>assets/animations</c>, or directly at either directory.
     /// </summary>
-    public static AnimationLibrary Open(string assetsRoot, Action<string>? log = null, SourceLogSink? sourceLog = null)
+    public static AnimationLibrary Open(string assetsRoot, Action<string>? log = null, SourceLogSink? sourceLog = null, EngineRandom? contextRandom = null)
     {
-        var lib = new AnimationLibrary { Log = log, SourceLog = sourceLog };
+        var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
         log?.Invoke("MISSING: M5-001 loader main-thread VERIFY gates at 0x0051F3AA/0x00521338: CozmoContext main-thread identity is not represented by the host loader");
         var animations = FindDir(assetsRoot, "animations");
         var groups = FindDir(assetsRoot, "animationGroups");
@@ -289,20 +294,13 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 $"no animations or animationGroups directory under {assetsRoot}. Point this at the unpacked " +
                 "cozmo_resources assets directory.");
 
-        // L1–L6: unsorted, case-sensitive suffix walk, then four contiguous worker chunks.
-        var files = new List<string>();
-        foreach (var dir in new[] { animations, FindConfigAnimations(assetsRoot) })
-            if (dir != null)
-                foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
-                    if (f.EndsWith("json", StringComparison.Ordinal) || f.EndsWith("bin", StringComparison.Ordinal))
-                    {
-                        var stat = new FileInfo(f); stat.Refresh();
-                        if (!stat.Exists) SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}");
-                        else files.Add(f); // startup mtime map is empty; every successful stat passes.
-                    }
-        // M5-046: the complete native Results map order is unread; retain the current type-0 order.
-        log?.Invoke("MISSING: M5-046 RobotDataLoader.CollectAnimFiles.Results map iteration order");
-        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.CollectAnimFiles.Results", $"Found {files.Count} animation files of type 0");
+        // R46-1..R46-4: each Open constructs a fresh collect map. Collect all four vectors before Results.
+        var files = CollectFiles(new[] { animations, FindConfigDirectory(assetsRoot, "animations") }, sourceLog);
+        var cubeFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/cubeLights") }, sourceLog);
+        var backpackFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/backpackLights") }, sourceLog);
+        var groupFiles = CollectFiles(new[] { groups }, sourceLog);
+        EmitCollectResults(new[] { files.Count, groupFiles.Count, cubeFiles.Count, backpackFiles.Count },
+            fresh: true, log, sourceLog);
         double started = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         Eye.ClippingWarningEnabled = false;
         float ratio = 0.7f / files.Count;
@@ -356,18 +354,50 @@ public sealed class AnimationLibrary : IAnimationCatalog
         return null;
     }
 
-    /// <summary>config/engine/animations beside the assets directory (gap1 C5, string 0x0051F7EC).</summary>
-    private static string? FindConfigAnimations(string root)
+    /// <summary>R46-1..R46-3: a config/engine directory beside the assets directory.</summary>
+    private static string? FindConfigDirectory(string root, string relative)
     {
         var full = Path.GetFullPath(root);
         var parent = Directory.GetParent(full.TrimEnd(Path.DirectorySeparatorChar))?.FullName;
         foreach (var baseDir in new[] { full, parent })
         {
             if (baseDir is null) continue;
-            var c = Path.Combine(baseDir, "config", "engine", "animations");
+            var c = Path.Combine(baseDir, "config", "engine", relative);
             if (Directory.Exists(c)) return c;
         }
         return null;
+    }
+
+    // fidelity: M5-046
+    // R46-8 / L2: fresh mtime map; case-sensitive json/bin suffixes and successful stat only.
+    private static List<string> CollectFiles(IEnumerable<string?> directories, SourceLogSink? sourceLog)
+    {
+        var files = new List<string>();
+        foreach (var dir in directories)
+            if (dir is not null)
+                foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                    if (f.EndsWith("json", StringComparison.Ordinal) || f.EndsWith("bin", StringComparison.Ordinal))
+                    {
+                        var stat = new FileInfo(f); stat.Refresh();
+                        if (!stat.Exists) sourceLog?.Invoke(EngineLogLevel.Warning, null,
+                            "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}");
+                        else files.Add(f);
+                    }
+        return files;
+    }
+
+    // fidelity: M5-046
+    internal static void EmitCollectResults(IReadOnlyList<int> counts, bool fresh, Action<string>? log, SourceLogSink? sourceLog)
+    {
+        // R46-7..R46-8: only this populated, fresh-map history has a checked iteration order.
+        if (!fresh || counts.Count != 4 || counts.Any(n => n <= 0))
+        {
+            log?.Invoke("MISSING: M5-046 RobotDataLoader.CollectAnimFiles.Results node history for a non-fresh map or absent type");
+            return;
+        }
+        foreach (int type in new[] { 1, 3, 2, 0 })
+            sourceLog?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.CollectAnimFiles.Results",
+                FormattableString.Invariant($"Found {counts[type]} animation files of type {type}"));
     }
 
     private static IEnumerable<string> ClipNamesIn(string file)

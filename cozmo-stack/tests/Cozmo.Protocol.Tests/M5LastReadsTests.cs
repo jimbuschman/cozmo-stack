@@ -1,0 +1,133 @@
+using System.Collections.Concurrent;
+using Cozmo.Robot;
+using Cozmo.Robot.Animation;
+using Xunit;
+
+namespace Cozmo.Protocol.Tests;
+
+[Collection("M5 process statics")]
+public class M5LastReadsTests
+{
+    private const string ResultsKey = "RobotDataLoader.CollectAnimFiles.Results";
+
+    [Theory]
+    [InlineData(5489u, "5489")]
+    [InlineData(uint.MaxValue, "4294967295")]
+    public void R45_5_StartForwardsNonzeroSeedAndEmitsTheNamedEvent(uint seed, string expected)
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
+        var shared = robot.Animations.Scheduler.ContextRandom;
+        shared.GetNextDbl(); // Reseeding must discard the old stream position.
+        robot.Engine.StartOffline(false, seed, () => throw new Exception("Nonzero seed must bypass entropy"));
+        Assert.Same(shared, robot.Engine.ContextRandom);
+        var entry = Assert.Single(entries);
+        Assert.Equal(EngineLogLevel.Event, entry.Level);
+        Assert.Null(entry.Channel);
+        Assert.Equal("app.random_seed", entry.Name);
+        Assert.Equal(expected, entry.Text); // native %u, 0x0082F910..914.
+        Assert.Equal("CozmoContext", Assert.Single(entry.Data).Value);
+        Assert.True(entry.Data.ContainsKey("$data"));
+        if (seed == 5489)
+            Assert.Equal((3499211612d + 581869302d * 4294967296d) / 18446744073709551616d,
+                shared.GetNextDbl()); // standard mt19937 initial words, also covered by M5-005.
+    }
+
+    [Theory]
+    [InlineData(0u, "0")]
+    [InlineData(42u, "42")]
+    public void R45_4_5_EachStartTakesOneFreshEntropyWordIncludingZero(uint word, string expected)
+    {
+        using var robot = CozmoRobot.CreateOffline();
+        var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
+        int reads = 0;
+        for (int i = 0; i < 2; i++)
+            robot.Engine.StartOffline(false, 0, () => { reads++; return word; });
+        Assert.Equal(2, reads); Assert.Equal(2, entries.Count);
+        Assert.All(entries, entry => { Assert.Equal("app.random_seed", entry.Name); Assert.Equal(expected, entry.Text); });
+    }
+
+    private sealed class Port : IEngineTransport
+    {
+        public bool Started;
+        public void Start() => Started = true;
+        public void Connect(System.Net.IPAddress ip, bool isSimulated) { }
+        public void Disconnect(System.Net.IPEndPoint address) { }
+        public void SendData(byte[] clad) { }
+        public bool TimedOut => false;
+        public event Action<Cozmo.Transport.ReceiverEvent>? Received { add { } remove { } }
+    }
+
+    [Fact]
+    public void R45_5_ProductionStartEmitsNamedSeed()
+    {
+        var port = new Port();
+        using var engine = new CozmoEngine(port, null);
+        var entries = new ConcurrentQueue<EngineLogEntry>(); engine.LogEntry += entries.Enqueue;
+        engine.StartProduction(0, () => 123);
+        Assert.True(port.Started);
+        var entry = Assert.Single(entries.Where(e => e.Name == "app.random_seed"));
+        Assert.Equal(EngineLogLevel.Event, entry.Level);
+        Assert.Equal("123", entry.Text);
+        Assert.Equal("CozmoContext", entry.Data["$data"]);
+    }
+
+    [Fact]
+    public void R45_1_3_R46_7_8_ShippedLoadUsesSharedInstanceAndAllFourResultsInOrder()
+    {
+        string root = Resources();
+        using var robot = CozmoRobot.CreateOffline();
+        var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
+        var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
+        var library = robot.Animations.LoadFrom(root);
+        Assert.Same(robot.Engine.ContextRandom, robot.Animations.Scheduler.ContextRandom);
+        Assert.Same(robot.Engine.ContextRandom, library.ContextRandom);
+        var results = entries.Where(e => e.Name == ResultsKey).ToArray();
+        // Vector sizes counted independently in the shipped resource tree (files, not clips).
+        Assert.Equal(new[] { "Found 507 animation files of type 1", "Found 1 animation files of type 3",
+            "Found 37 animation files of type 2", "Found 293 animation files of type 0" }, results.Select(e => e.Text));
+        Assert.All(results, e => { Assert.Equal(EngineLogLevel.Info, e.Level); Assert.Equal("Animations", e.Channel); Assert.Empty(e.Data); });
+        Assert.DoesNotContain(diagnostics, l => l.StartsWith("MISSING: M5-045") || l.StartsWith("MISSING: M5-046"));
+    }
+
+    [Theory]
+    [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)]
+    public void R46_8_AbsentTypeEmitsMissingInsteadOfAssumingOrder(int absent)
+    {
+        string root = Path.Combine(Path.GetTempPath(), "m5-last-reads-" + Guid.NewGuid());
+        var dirs = new[] { "assets/animations", "assets/animationGroups", "config/engine/lights/cubeLights", "config/engine/lights/backpackLights" };
+        try
+        {
+            foreach (string dir in dirs) Directory.CreateDirectory(Path.Combine(root, dir));
+            for (int type = 0; type < 4; type++)
+                if (type != absent) File.WriteAllText(Path.Combine(root, dirs[type], "a.json"), type == 0 ? "{\"a\":[]}" : "{}");
+            using var robot = CozmoRobot.CreateOffline();
+            var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
+            var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
+            robot.Animations.LoadFrom(root);
+            Assert.Single(diagnostics.Where(l => l.StartsWith("MISSING: M5-046")));
+            Assert.DoesNotContain(entries, e => e.Name == ResultsKey);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void R46_8_NonFreshMapEmitsMissingInsteadOfAssumingOrder()
+    {
+        var diagnostics = new List<string>(); var entries = new List<string>();
+        AnimationLibrary.EmitCollectResults(new[] { 1, 1, 1, 1 }, false, diagnostics.Add,
+            (_, _, _, text) => entries.Add(text));
+        Assert.Single(diagnostics); Assert.StartsWith("MISSING: M5-046", diagnostics[0]); Assert.Empty(entries);
+    }
+
+    private static string Resources()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            string path = Path.Combine(dir.FullName, "re-analysis", "obb", "assets", "cozmo_resources");
+            if (Directory.Exists(path)) return path;
+        }
+        throw new DirectoryNotFoundException("Shipped resources required for R46-7 regression");
+    }
+}
+
