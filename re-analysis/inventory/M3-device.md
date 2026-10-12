@@ -477,3 +477,13 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | Pin 14.6 | Rendered log follows libDAS sink (a): new M3-053 (IMPLEMENTATION_GAP); verbose switch new M3-054 (COMPATIBILITY_POLICY, operator). M3-051 unresolved updated. |
+
+
+## R-M3-051, libDAS sink (b) (manager, 2026-10-12; research/20261012-m3-051-libdas-sink-b.md, Opus-checked)
+
+| Change | Records |
+| --- | --- |
+| To COMPATIBILITY_POLICY, retitled (operator departure: sink (b) files not built) | M3-051 |
+| New IMPLEMENTATION_GAP: the engine's calls into libDAS | M3-055 |
+| New COMPATIBILITY_POLICY: data-collection app inputs | M3-056 |
+

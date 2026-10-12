@@ -91,12 +91,12 @@
       "id": "M3-device",
       "name": "Camera, display and audio device layer",
       "milestone": "M3",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M3-device.md",
-        "approved": "2026-10-11",
+        "approved": "2026-10-12",
         "snapshot": "re-analysis/inventory/M3-device.approved.json"
       }
     },
@@ -9641,17 +9641,18 @@
     {
       "id": "M3-051",
       "subsystem": "M3-device",
-      "title": "libDAS processing of engine log entries: DASConfig level filtering, $level/$ts and the three sinks",
+      "title": "libDAS sink (b): on-device log files and their upload (not built; operator departure)",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "COMPATIBILITY_POLICY",
       "effect": "Which engine log entries libDAS keeps and where they go (a local sink, the remote queue, the game sink); the stack keeps every entry today.",
       "provenance": "Split from M3-048 by the manager (2026-10-11).",
       "authority": "libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json.",
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to \"event\".",
-        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, \"das\", \"%s%s : %s %s\") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets \"$game\" (0x801C..0x8074)."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, \"das\", \"%s%s : %s %s\") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets \"$game\" (0x801C..0x8074).",
+        "re-analysis/research/20261012-m3-051-libdas-sink-b.md rows B01..B29 (29 confirmed by the Opus check) and re-analysis/research/20261012-m3-051-libdas-sink-b-check.md (B24/U01 corrected: the live archive config from DASSetArchiveLogConfig 0x665A4E)."
       ],
-      "unresolved": "RECOVERABLE_GAP: sink (b) queue body 0xB47C unread (the upload is BLOCKED_EXTERNAL); sink (c) is unreachable without the app's \"$game\". Sink (a) and the level filter are read; the stack's rendered log follows them (operator, 2026-10-11): records M3-053 and M3-054.",
+      "unresolved": "COMPATIBILITY_POLICY (operator, 2026-10-12; AGENTS.md departure M3-051): the stack does not write sink (b) files. They exist only for the upload through Java com.anki.daslib.DAS.postToServer (0x27C3C) to Anki servers (BLOCKED_EXTERNAL), and no in-scope reader exists. A DASForceFlushWithCallback completion reports a failed transfer, as a phone with no connection does (B26). Sink (a) is M3-053; the engine calls into libDAS are M3-055; the data-collection inputs are M3-056. Previous notes: RECOVERABLE_GAP: sink (b) queue body 0xB47C unread (the upload is BLOCKED_EXTERNAL); sink (c) is unreachable without the app's \"$game\". Sink (a) and the level filter are read; the stack's rendered log follows them (operator, 2026-10-11): records M3-053 and M3-054.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9703,6 +9704,40 @@
         "re-analysis/research/20261011-m3m4-fix-rows.md sections 13.5 and 14.6 (what sink (a) drops); AGENTS.md approved departures (operator, 2026-10-11)."
       ],
       "unresolved": "COMPATIBILITY_POLICY: input = the stack's verbose-log setting (default off). It changes only the display; the structured entries (M3-048) and every engine-side effect are unchanged. Built B-M3M4-4: default-off setting and live toggle affect display only, including channels; structured entries unchanged.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-055",
+      "subsystem": "M3-device",
+      "title": "The engine's calls into libDAS: startup configuration, archive config, pause and network mask schedule, globals, flushes",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3-051-libdas-sink-b-check.md section \"Engine calls into libDAS\": DASSetArchiveLogConfig 0x665A4E; DataCollectionEnabled 0x6659E6 -> Enable/Disable(2) 0x665C1E/0x665C26; DASConfigure 0x665CD6; platform init 0x665EEC/0x665F14/0x665F3A; Pause(false) 0x665F4E; $player_id 0x665FAC; DASForceFlushWithCallback 0x665FCC and 0x6A25FE; Pause(true) on ConnectToRobot 0x4ED114; RemoveRobot 0x52F2D8/0x52F2EE; RequestDataCollectionOption 0x4EE084; cozmo_shutdown DASDisableNetwork(4) 0x6668E2; provider methods 0x6671F4, 0x667214..0x667244."
+      ],
+      "effect": "The order and arguments of the engine's log-library calls, and what the engine does with each flush completion.",
+      "provenance": "Opus check of R-M3-051 (2026-10-12), manager-adopted.",
+      "unresolved": "Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-056",
+      "subsystem": "M3-device",
+      "title": "Data-collection enable: the startup DataCollectionEnabled key and the RequestDataCollectionOption message (app inputs)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity app scripts (authority 2).",
+      "evidence": [
+        "re-analysis/research/20261012-m3-051-libdas-sink-b-check.md: startup key DataCollectionEnabled (0x6659E6) -> DASEnableNetwork/DASDisableNetwork(2) (0x665C1E/0x665C26); HandleMessage<RequestDataCollectionOption> 0x4EE084 (sent by the app from DataCollectionPanel.cs:74); any set mask bit blocks the upload (0x8818/0x882C, gate 0xB49A)."
+      ],
+      "effect": "Whether the engine marks DAS uploads enabled; with sink (b) not built (M3-051) nothing is uploaded either way.",
+      "provenance": "App-boundary scope rule (operator, 2026-10-09); manager record 2026-10-12.",
+      "unresolved": "COMPATIBILITY_POLICY: the stack supplies DataCollectionEnabled from its own settings (default off) and accepts RequestDataCollectionOption from its host API; the engine's Enable/Disable calls stay exact (M3-055).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

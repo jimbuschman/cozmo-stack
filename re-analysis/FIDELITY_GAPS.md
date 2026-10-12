@@ -3,15 +3,15 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **516 records** over 16 subsystems.
+Manifest of **518 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 171 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 4 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 49 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 235 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 45 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| RECOVERABLE_GAP | 48 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 236 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 47 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -26,7 +26,7 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
-| M3-device — Camera, display and audio device layer | 54 | 1 | 7 | 0 | 4 | no | no |
+| M3-device — Camera, display and audio device layer | 56 | 0 | 8 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 36 | 0 | 7 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 54 | 0 | 25 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 28 | 0 | 25 | 0 | 0 | yes | no |
@@ -72,17 +72,6 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
-
-### M3-device — Camera, display and audio device layer
-
-**M3-051 — libDAS processing of engine log entries: DASConfig level filtering, $level/$ts and the three sinks** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: Which engine log entries libDAS keeps and where they go (a local sink, the remote queue, the game sink); the stack keeps every entry today.
-* rests on: Split from M3-048 by the manager (2026-10-11).
-* best authority: libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json.
-* evidence: re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to "event".; re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, "das", "%s%s : %s %s") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets "$game" (0x801C..0x8074).
-* outstanding: RECOVERABLE_GAP: sink (b) queue body 0xB47C unread (the upload is BLOCKED_EXTERNAL); sink (c) is unreachable without the app's "$game". Sink (a) and the level filter are read; the stack's rendered log follows them (operator, 2026-10-11): records M3-053 and M3-054.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -602,6 +591,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libDAS (shipped in the APK) DasLocalAppenderImpl and _DAS_GetLevel; libcozmoEngine.so DasLoggerProvider.
 * evidence: re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: _DAS_GetLevel 0x73A4..0x73F0, 0x11758..0x11866 (override tree on '.' segments, else localMinLogLevel); core 0x742E..0x75EE (null/blank name -> "DAS ERROR: EVENT WITH A NULL OR BLANK NAME PASSED ..." and "noname"); sink (a) vtable 0x36A8C, gate 0x75F2..0x7666, right-trim 0x25984..0x259D0, __android_log_print(prio, "das", "%s%s : %s %s", "", name, text, "") 0x27D98..0x27E20, prio by level 0..4 = 3,4,4,5,6.
 * outstanding: built, awaiting strong verification: B-M3M4-5: root and exact override paths retained; intermediate overrides are unread and unreachable with shipped no-overrides input; circular descendant assertion removed; known null-name format retained with unread arguments MISSING. Previous notes: built, awaiting strong verification: B-M3M4-4 supplies shipped/default levels, dot-segment override filter, right-trim/trailing-space sink (a), priority/tag, noname fallback and unchanged structured entries. MISSING: section 13.5 abbreviates the null-name diagnostic literal; JsonCpp formatted parse-error argument bytes are unread. These paths emit visible MISSING rather than invented native text. Previous instructions: IMPLEMENTATION_GAP: build on M3-048's structured entry. Levels come from the M3-052 DASConfig input (DASConfigure defaults and parse-failure levels per 13.5). The logcat priority is carried on the rendered line. $level/$ts insertion is metadata, not displayed by sink (a). B-M3M4-9 built, awaiting strong verification: Null/first-byte-NUL name diagnostic is priority 3/tag daslib with value/file/function/line arguments, null strings empty, before filtering and noname fallback; whitespace remains a valid name.
+
+**M3-055 — The engine's calls into libDAS: startup configuration, archive config, pause and network mask schedule, globals, flushes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: The order and arguments of the engine's log-library calls, and what the engine does with each flush completion.
+* rests on: Opus check of R-M3-051 (2026-10-12), manager-adopted.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m3-051-libdas-sink-b-check.md section "Engine calls into libDAS": DASSetArchiveLogConfig 0x665A4E; DataCollectionEnabled 0x6659E6 -> Enable/Disable(2) 0x665C1E/0x665C26; DASConfigure 0x665CD6; platform init 0x665EEC/0x665F14/0x665F3A; Pause(false) 0x665F4E; $player_id 0x665FAC; DASForceFlushWithCallback 0x665FCC and 0x6A25FE; Pause(true) on ConnectToRobot 0x4ED114; RemoveRobot 0x52F2D8/0x52F2EE; RequestDataCollectionOption 0x4EE084; cozmo_shutdown DASDisableNetwork(4) 0x6668E2; provider methods 0x6671F4, 0x667214..0x667244.
+* outstanding: Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling.
 
 ### M4-control — Motion, sensors, lights and cubes
 
@@ -2739,8 +2737,10 @@ Each of these is a question already answered. The original's behaviour is establ
 | M3-044 | M3-device | COMPATIBILITY_POLICY | CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends | libcozmoEngine.so 3.4.0-1204 camera start path. |
 | M3-046 | M3-device | COMPATIBILITY_POLICY | CameraFrame.PresentationJpeg/Save: a tool-only JPEG writer with non-engine bytes | libcozmoEngine.so 3.4.0-1204 EncodedImage::Save (a dead export) |
 | M3-049 | M3-device | COMPATIBILITY_POLICY | Json::LogicError from HandleFirmwareVersion on a non-object firmware JSON root: no engine catcher (terminate); the stack isolates it under M1-034 | libcozmoEngine.so 3.4.0-1204. |
+| M3-051 | M3-device | COMPATIBILITY_POLICY | libDAS sink (b): on-device log files and their upload (not built; operator departure) | libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json. |
 | M3-052 | M3-device | COMPATIBILITY_POLICY | DASConfigure input: the stack supplies the shipped OBB assets/DASConfig.json as the engine's DAS configuration | libcozmoEngine.so cozmo_startup; Unity RobotEngineManager.cs; the shipped OBB. |
 | M3-054 | M3-device | COMPATIBILITY_POLICY | Verbose log display: a stack setting, off by default, that also shows the entries libDAS sink (a) drops | Operator decision; no engine counterpart. |
+| M3-056 | M3-device | COMPATIBILITY_POLICY | Data-collection enable: the startup DataCollectionEnabled key and the RequestDataCollectionOption message (app inputs) | libcozmoEngine.so 3.4.0-1204; Unity app scripts (authority 2). |
 | M4-029 | M4-control | COMPATIBILITY_POLICY | SDK light-state and lift-power recipients | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M4-030 | M4-control | COMPATIBILITY_POLICY | StopRobotForSdk action/control recipient | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M4-032 | M4-control | EQUIVALENT_IMPLEMENTATION | Phone printf rendering of %f / %.1f / %.2f in engine logs | Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs. |

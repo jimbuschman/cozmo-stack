@@ -77,6 +77,10 @@ stack implements that feature.
   - **The original:** reads two heap addresses as the head-window min/max of group entries that come before their
     file's first UseHeadAngle entry, so its backup choice depends on the phone's memory layout.
   - **The stack:** follows the 64-bit-phone case. Those entries are never accepted by the all-on-cooldown backup.
+- **M3-051, libDAS sink (b)** (operator, 2026-10-12): the stack does not write the on-device log files. They exist only
+  to be uploaded through the app's Java `postToServer` to Anki's servers, and nothing in scope reads them. The engine's
+  own calls into libDAS stay exact (M3-055). A flush with a callback reports a failed transfer, as a phone with no
+  connection does (`research/20261012-m3-051-libdas-sink-b-check.md`).
 - **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
 
 Apply no other departure without the operator.

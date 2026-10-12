@@ -1,8 +1,8 @@
 {
   "subsystem": "M3-device",
-  "approved": "2026-10-11",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "38503509be3124cc6bdb79dc1179ec0b5dc56e289e8fd8619f6e7f1b3b9ea247",
+  "inventory_sha256": "cd2e6fb2749575fee5b7c3027e9a659a39117ee4c7b8a08139dd45981b13d789",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -398,7 +398,7 @@
       "hardware_required": false
     },
     "M3-034": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The connection reads' callbacks: handoffs only (progression M15-034, inventory M15-035, face album M14-012, backup M15-033, lab M15-036, needs M15-014)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -497,7 +497,7 @@
       "hardware_required": false
     },
     "M3-043": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV storage write side: Write(), the WRITE/ERASE/WIPEALL dispatch, the chunk loop, the write timeout and write-result handling",
       "authority": "libcozmoEngine.so 3.4.0-1204 NVStorageComponent.",
       "evidence": [
@@ -546,7 +546,7 @@
       "hardware_required": false
     },
     "M3-047": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Robot::SendMessage: every engine-to-robot send's failure warning",
       "authority": "libcozmoEngine.so 3.4.0-1204 Robot::SendMessage.",
       "evidence": [
@@ -556,7 +556,7 @@
       "hardware_required": false
     },
     "M3-048": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "DAS/log emission: sEventF/sWarningF/sErrorF/sChanneled* entries (level, channel, key, text with the 1023 cut and the (tc) prefix, structured $data pairs) on M3/M4 paths",
       "authority": "libcozmoEngine.so 3.4.0-1204 DAS logging (sEventF/sWarningF).",
       "evidence": [
@@ -588,12 +588,13 @@
       "hardware_required": true
     },
     "M3-051": {
-      "status": "RECOVERABLE_GAP",
-      "title": "libDAS processing of engine log entries: DASConfig level filtering, $level/$ts and the three sinks",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "libDAS sink (b): on-device log files and their upload (not built; operator departure)",
       "authority": "libDAS.so (ships in the APK; authority 2); re-analysis/obb/assets/DASConfig.json.",
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 7: _DAS_LogKv libDAS 0x7D9C (pairs into a map, then the core 0x7424 adds $level/$ts); sinks gated by level at 0x75F2..0x7704; DASConfigure 0x69E2..0x6C26; DASConfig.json:3-11 sets all three levels to \"event\".",
-        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, \"das\", \"%s%s : %s %s\") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets \"$game\" (0x801C..0x8074)."
+        "re-analysis/research/20261011-m3m4-fix-rows.md section 13.5: DASConfigure call 0x00665974..0x00665D04; libDAS DASConfigure 0x6694..0x6C28 (defaults; parse failure keeps .data levels remote 2, game 1, local root 5); _DAS_GetLevel 0x73A4..0x73F0; sink (a) DasLocalAppenderImpl vtable 0x36A8C, __android_log_print(prio, \"das\", \"%s%s : %s %s\") 0x27D98..0x27E20, prio {3,4,4,5,6}; sink (c) only after the app sets \"$game\" (0x801C..0x8074).",
+        "re-analysis/research/20261012-m3-051-libdas-sink-b.md rows B01..B29 (29 confirmed by the Opus check) and re-analysis/research/20261012-m3-051-libdas-sink-b-check.md (B24/U01 corrected: the live archive config from DASSetArchiveLogConfig 0x665A4E)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -624,6 +625,26 @@
       "authority": "Operator decision; no engine counterpart.",
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md sections 13.5 and 14.6 (what sink (a) drops); AGENTS.md approved departures (operator, 2026-10-11)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-055": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The engine's calls into libDAS: startup configuration, archive config, pause and network mask schedule, globals, flushes",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3-051-libdas-sink-b-check.md section \"Engine calls into libDAS\": DASSetArchiveLogConfig 0x665A4E; DataCollectionEnabled 0x6659E6 -> Enable/Disable(2) 0x665C1E/0x665C26; DASConfigure 0x665CD6; platform init 0x665EEC/0x665F14/0x665F3A; Pause(false) 0x665F4E; $player_id 0x665FAC; DASForceFlushWithCallback 0x665FCC and 0x6A25FE; Pause(true) on ConnectToRobot 0x4ED114; RemoveRobot 0x52F2D8/0x52F2EE; RequestDataCollectionOption 0x4EE084; cozmo_shutdown DASDisableNetwork(4) 0x6668E2; provider methods 0x6671F4, 0x667214..0x667244."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-056": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Data-collection enable: the startup DataCollectionEnabled key and the RequestDataCollectionOption message (app inputs)",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity app scripts (authority 2).",
+      "evidence": [
+        "re-analysis/research/20261012-m3-051-libdas-sink-b-check.md: startup key DataCollectionEnabled (0x6659E6) -> DASEnableNetwork/DASDisableNetwork(2) (0x665C1E/0x665C26); HandleMessage<RequestDataCollectionOption> 0x4EE084 (sent by the app from DataCollectionPanel.cs:74); any set mask bit blocks the upload (0x8818/0x882C, gate 0xB49A)."
       ],
       "live_path": true,
       "hardware_required": false
