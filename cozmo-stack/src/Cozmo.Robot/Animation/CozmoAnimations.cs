@@ -158,7 +158,7 @@ public sealed class CozmoAnimations : IDisposable
     internal CozmoAnimations(CozmoRobot robot)
     {
         _robot = robot;
-        robot.Engine.EmitStackLog("MISSING: M5-037/044 concrete driving/streamer subscription ownership (0x00511524, 0x0057AF6C, 0x0057AFD4); managed storage teardown is built, native subscription release remains unwired");
+        robot.Engine.DestroyDataLoader = DestroyLoader;
         _sink = new RobotAnimationSink(robot);
         // fidelity: M5-045
         _scheduler = new AnimationScheduler(_sink, contextRandom: robot.Engine.ContextRandom);
@@ -287,6 +287,28 @@ public sealed class CozmoAnimations : IDisposable
 
     private int _collectRan;
 
+    // fidelity: M5-050, M5-055
+    private readonly object _loaderGate = new();
+    private Thread? _loader;
+    private bool _loaderDestroyed;
+    internal Action<string>? LoaderDestructionObserved;
+    private void DestroyLoader()
+    {
+        Thread? loader;
+        lock (_loaderGate)
+        {
+            _loaderDestroyed = true;
+            loader = _loader;
+            if (loader is not null) Library?.AbortLoading(); // nonzero thread handle gate.
+        }
+        if (loader is not null)
+        {
+            LoaderDestructionObserved?.Invoke("abort");
+            if (loader != Thread.CurrentThread) loader.Join();
+            LoaderDestructionObserved?.Invoke("join");
+        }
+    }
+
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot)
     {
@@ -294,7 +316,13 @@ public sealed class CozmoAnimations : IDisposable
         System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
         // X9 G1: LoadNonConfigData owns a loader thread; the API waits for that load's result.
         var loader = new Thread(() => { try { loaded = LoadOnLoaderThread(assetsRoot); } catch (Exception e) { failure = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e); } }) { IsBackground = true };
-        loader.Start(); loader.Join(); failure?.Throw(); return loaded!;
+        lock (_loaderGate)
+        {
+            ObjectDisposedException.ThrowIf(_loaderDestroyed, this);
+            _loader = loader;
+            loader.Start();
+        }
+        loader.Join(); failure?.Throw(); return loaded!;
     }
     private AnimationLibrary LoadOnLoaderThread(string assetsRoot)
     {
@@ -310,8 +338,16 @@ public sealed class CozmoAnimations : IDisposable
                 _robot.EmitLightLoadingLogs();
                 FaceAnimations = FaceAnimationLibrary.Open(assetsRoot, _robot.Engine.Log,
                     (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
-                _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
-            }, _robot.BeforeAnimationFileStat, lib => Library = lib);
+                lock (_loaderGate)
+                    if (!_loaderDestroyed) _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
+            }, _robot.BeforeAnimationFileStat, lib =>
+            {
+                lock (_loaderGate)
+                {
+                    Library = lib;
+                    if (_loaderDestroyed) lib.AbortLoading();
+                }
+            });
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)
@@ -331,8 +367,14 @@ public sealed class CozmoAnimations : IDisposable
         }; // M7 owns the cached clock. This job does not build or claim that recipient.
         // fidelity: M5-010, M5-027
         // The streamer's idle and neutral animations come from the container, the groups and the trigger map (A2, A29).
-        _scheduler.Catalog = Library;
-        _scheduler.LoadNeutralFace();
+        lock (_loaderGate)
+        {
+            if (!_loaderDestroyed)
+            {
+                _scheduler.Catalog = Library;
+                _scheduler.LoadNeutralFace();
+            }
+        }
         return Library;
     }
 
@@ -370,9 +412,13 @@ public sealed class CozmoAnimations : IDisposable
     /// </summary>
     public Task<AnimationEndReason>? Play(string name, bool replaceRunning = true)
     {
+        if (RejectCustomSong(name)) return null;
         var lib = Library ?? throw new InvalidOperationException("no animation assets are loaded; call LoadFrom first");
         return Play(lib.GetClip(name), replaceRunning);
     }
+
+    // fidelity: M9-029 — approved CodeLab/internal-SDK exclusion, native name producer 0x00543F3A..0x00543F96.
+    private bool RejectCustomSong(string name) => _scheduler.RejectCustomSong(name);
 
     /// <summary>Plays a clip that is already loaded or built in memory.</summary>
     public Task<AnimationEndReason>? Play(AnimationClip clip, bool replaceRunning = true)
@@ -467,6 +513,7 @@ public sealed class CozmoAnimations : IDisposable
     /// </summary>
     public AnimationTicket? PlayTracked(string name, bool replaceRunning = true, AnimationTrack lockTracks = AnimationTrack.None, int numLoops = 1, byte heldLockMask = 0, string? heldLockOwner = null)
     {
+        if (RejectCustomSong(name)) return null;
         var lib = Library ?? throw new InvalidOperationException("no animation assets are loaded; call LoadFrom first");
         return PlayTracked(lib.GetClip(name), replaceRunning, lockTracks, numLoops, heldLockMask, heldLockOwner);
     }
@@ -483,6 +530,7 @@ public sealed class CozmoAnimations : IDisposable
         // 0x03000019 (0x00540572..0x0054057c) - it is not retried - so this returns null. Otherwise MovementComponent::LockTracks 0x00640098
         // takes one owner entry per track, released by UnlockTracks 0x0063fe5c. A caller whose action already took the lock (the behaviour's
         // action locks before its Init, 0x00540584..0x0054058e) passes it in: it is released here when the animation ends.
+        if (RejectCustomSong(clip.Name)) return null;
         byte mask = heldLockOwner is null ? CozmoMotion.MaskFor(lockTracks) : heldLockMask;
         string? owner = heldLockOwner;
         if (mask != 0 && owner is null)

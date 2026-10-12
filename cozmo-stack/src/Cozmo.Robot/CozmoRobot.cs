@@ -672,10 +672,10 @@ public sealed class CozmoRobot : IDisposable
         }
         if (pendingLoaderLogs != 0)
             Engine.EmitStackLog($"MISSING: M4-036 deferred light loader logs: disposed with {pendingLoaderLogs} captured loader logs still pending; the engine never loads lights outside LoadNonConfigData");
-        try { if (Engine.Robot is { } robot) Motion.AbortAll(robot); } catch { }
-        try { Animations.Dispose(); } catch { }
-        try { Engine.NvStorage?.Dispose(); } catch { }
+        // fidelity: M5-055 — engine context removes Robots before loader abort/join and hub.
         Engine.Dispose();
+        try { Animations.Dispose(); } catch { } // host object also exists when no Robot was added.
+        try { Engine.NvStorage?.Dispose(); } catch { }
         Transport.Dispose();
     }
 

@@ -113,6 +113,9 @@ internal sealed class StreamKeyframe : IStreamKeyframe
     public int FaceAnimIndex;
     // fidelity: M5-043
     // FK1–FK4: +0x28 is zero on both loader/add paths; it is not an asset option.
+    // fidelity: M5-058
+    // Native ctor memclr4 0x005642C6..0x005642CC zeroes +0x28. JSON/FlatBuf/SetFace/seed
+    // never enable it; copies 0x00564616/0x0057E392/0x00578314 preserve zero. Test seam only.
     internal byte FaceAnimationOverride = 0;
 
     /// <summary>Whether <see cref="AnimationScheduler.KeyframeFired"/> has been raised for this keyframe in this play.</summary>

@@ -674,7 +674,6 @@ public sealed class AnimationScheduler
             {
                 SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Constructor.BadNeutralAnimGroup", $"Neutral animation group {group} for trigger NeutralFace is empty or null");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-                _tlc.SetResetData(null);
                 _tlc.Init();
                 return;
             }
@@ -684,7 +683,7 @@ public sealed class AnimationScheduler
             _neutral = catalog!.GetAnimation(name);
             if (_neutral is null) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Constructor.NeutralFaceDataNotFound", $"Could not find expected neutral face animation file called {name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             var face = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
-            _tlc.SetResetData(face);
+            if (_neutral is not null) _tlc.SetResetData(face); // 0x0057A1FA skips 0x0057A20E on miss.
             _tlc.Init();
         }
     }
@@ -742,8 +741,17 @@ public sealed class AnimationScheduler
     /// to +0x54, a new tag (IncrementTagCtr, 1..0xFE), InitStream(anim, tag), +0x68 = numLoops, +0x6C = 0; the tag is
     /// returned.
     /// </summary>
+    // fidelity: M9-029
+    internal bool RejectCustomSong(string name)
+    {
+        if (name != "cozmo_sings_custom") return false;
+        Log?.Invoke("MISSING: M9-029 cozmo_sings_custom is CodeLab/internal SDK only; custom-song play is unsupported");
+        return true;
+    }
+
     private byte SetStreamingAnimationLocked(AnimationClip? clip, int numLoops, bool interrupt)
     {
+        if (clip is not null && RejectCustomSong(clip.Name)) return 0;
         var old = _streaming;
         if (old is not null && clip is not null && !interrupt)
         {

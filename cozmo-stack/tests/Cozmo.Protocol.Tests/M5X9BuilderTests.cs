@@ -256,7 +256,9 @@ public class M5X9BuilderTests : IDisposable
     public void FaceNameMissWarningIsSourceKeyedAndAuthoredJsonOverrideIsZero()
     {
         var entries=new ConcurrentQueue<Entry>(); var clip=Json("""{"c":[{"Name":"FaceAnimationKeyFrame","triggerTime_ms":0,"animName":"absent"}]}""",entries)!;
-        Assert.Equal(0,StreamAnimation.Of(clip).FaceAnim.Current!.FaceAnimationOverride);
+        // Native F01 memclr4 at 0x005642C6..0x005642CC establishes literal byte zero;
+        // JSON call 0x0057734C and insertion copies never introduce a nonzero flag.
+        Assert.Equal((byte)0,StreamAnimation.Of(clip).FaceAnim.Current!.FaceAnimationOverride);
         entries.Clear(); var scheduler=new AnimationScheduler(new Sink()){SourceLog=Capture(entries),FaceAnimationVariants=_=>null}; scheduler.Play(clip,0); scheduler.Advance(0);
         var warnings = entries.Where(e => e.Level == EngineLogLevel.Warning).ToArray();
         Assert.Equal(new[] { "FaceAnimationManager.GetAnimationByName.UnknownName", "FaceAnimationManager.GetNumFrames", "FaceAnimationManager.GetAnimationByName.UnknownName", "FaceAnimationManager.GetNumFrames" }, warnings.Select(e => e.Key));
@@ -285,7 +287,8 @@ public class M5X9BuilderTests : IDisposable
         int face=Table(2);Pointer(faces+4,face);Pointer(Slot(face,1),Text("sprite"));
         var parsed=Assert.Single(AnimationLibrary.Parse(bytes.ToArray()));
         Assert.IsType<FaceAnimationKeyframe>(Assert.Single(parsed.Keyframes));
-        Assert.Equal(0,StreamAnimation.Of(parsed).FaceAnim.Current!.FaceAnimationOverride);
+        // F01 constructor -> FlatBuf caller 0x0057669C -> byte-preserving insertion.
+        Assert.Equal((byte)0,StreamAnimation.Of(parsed).FaceAnim.Current!.FaceAnimationOverride);
     }
 
     [Fact]

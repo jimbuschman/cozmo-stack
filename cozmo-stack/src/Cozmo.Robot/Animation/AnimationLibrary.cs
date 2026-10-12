@@ -294,7 +294,6 @@ public sealed class AnimationLibrary : IAnimationCatalog
     {
         var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
         loaderCreated?.Invoke(lib);
-        log?.Invoke("MISSING: M5-050 RobotDataLoader destruction/abort ownership (0x0051F0D4..0x0051F0E6); CozmoEngine member destruction order remains unread, no robot-disconnect abort invented");
         var animations = FindDir(assetsRoot, "animations");
         var groups = FindDir(assetsRoot, "animationGroups");
         if (animations is null && groups is null)

@@ -267,6 +267,7 @@ internal static class JsonClipLoader
     private static Keyframe DefineFace(uint trigger, JsonElement el, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         var pose = new ProceduralFacePose();
+        // Native eye vector reads/converts: 0x00583C34 / 0x00583790 / 0x004FA614.
         float[]? Floats(string key) =>
             Present(el, key, out var v) && v.ValueKind == JsonValueKind.Array ? v.EnumerateArray().Select(x => AsFloat(x, key)).ToArray() : null;
         foreach (string eye in new[] { "leftEye", "rightEye" })

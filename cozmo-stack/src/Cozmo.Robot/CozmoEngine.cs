@@ -1565,6 +1565,20 @@ internal sealed class RobotManager
         return ric?.ShouldFilter(tag, robotToEngine) ?? false;
     }
 
+    // fidelity: M5-055
+    // RemoveRobots 0x0052F428..0x0052F472: destroy in tree-key order, then clear;
+    // unlike RemoveRobot, shutdown has no disconnect broadcasts or device reconstruction.
+    internal void RemoveRobots()
+    {
+        EngineRobot?[] robots;
+        lock (_membershipGate) robots = RobotEntries.OrderBy(pair => pair.Key).Select(pair => pair.Value).ToArray();
+        // The host animation ticker can read membership while its destructor joins it.
+        // As in RemoveRobot, never hold the membership lock across component teardown.
+        foreach (var robot in robots)
+            if (robot is not null) _engine.DestroyRobot(robot);
+        lock (_membershipGate) { RobotEntries.Clear(); RobotIds.Clear(); _rics.Clear(); }
+    }
+
     // fidelity: M1-015
     /// <summary>
     /// RemoveRobot(id, wasConnecting) (CB32, CB33, CC26): the result is 2 ConnectionRejected when the transport
@@ -2224,6 +2238,11 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     internal void StopTick() => _runner?.Stop();
 
+    // fidelity: M5-055, M5-056
+    internal Action? DestroyDataLoader;
+    internal Action<string>? DestructionObserved; // internal order observer; no production behavior.
+    internal UiSubscriptionHub AnimationMessages { get; } = new();
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -2231,5 +2250,12 @@ public sealed partial class CozmoEngine : IDisposable
         Behavior.SteppedBehavior.MissingReported -= _missingSink;
         _runner?.Stop();
         _t.Received -= Rcm.Rcd.ReceiveData;
+        // Context +0x34 precedes UiMessageHandler +0x30 (0x004EC6F8..0x004EC710).
+        Robots.RemoveRobots();
+        DestructionObserved?.Invoke("robots");
+        DestroyDataLoader?.Invoke(); // context +0x1C, after RobotManager: abort then join.
+        DestructionObserved?.Invoke("loader");
+        AnimationMessages.Dispose(); // G2E map, then E2G map (0x0066016E..0x00660184).
+        DestructionObserved?.Invoke("hub");
     }
 }
