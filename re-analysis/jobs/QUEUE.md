@@ -64,4 +64,5 @@ anything. BOARD.md is history; this file is the live queue.
 | 5 | [R-M5-TEARDOWN](../research/requests/20261012-m5-teardown-reads.md) | done (cd912037); adopted (M5-055/056/058 to build) |
 | 6 | [R-M9-029](../research/requests/20261012-m9-029-custom-song.md) | done (8ccc9ac5); adopted: M9-029 COMPATIBILITY_POLICY (CodeLab only) |
 | 7 | [R-M4-CLIFF](../research/requests/20261012-m4-cliff-and-names.md) | answered; checked (research/20261012-m4-cliff-and-names-check.md) |
-| 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | running (M4-041, M4-044) |
+| 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | answered; Opus check running |
+| 9 | [R-CLIFF-WORLD](../research/requests/20261012-cliff-world-helpers.md) | open (M11-062, M13-030) |
