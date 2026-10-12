@@ -73,8 +73,10 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     fi
 
     echo "pre-push: fidelity check passed; full test suite for $local_sha (about 4 minutes); log in $log"
-    if ! dotnet test cozmo-stack/Cozmo.sln >> "$log" 2>&1; then
-        grep -E "\[FAIL\]|Failed!|error CS" "$log" | head -20
+    # A test that hangs or allocates without end fails the push after 5 minutes and is named in the log, instead of
+    # stalling the machine (seen twice on 2026-10-12, with 6-10 GB in testhost).
+    if ! dotnet test cozmo-stack/Cozmo.sln --blame-hang --blame-hang-timeout 5m >> "$log" 2>&1; then
+        grep -E "\[FAIL\]|Failed!|error CS|hang|Blame|active test" "$log" | head -20
         echo "pre-push: REFUSED. The full test suite failed."
         exit 1
     fi
