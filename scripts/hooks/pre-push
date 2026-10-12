@@ -56,6 +56,22 @@ while read -r local_ref local_sha remote_ref remote_sha; do
         continue
     fi
 
+    # Records-only push (operator, 2026-10-12): when nothing under cozmo-stack/ or re-analysis/tools/ changed, only
+    # the manifest, FIDELITY_GAPS.md or the inventory did. The code is then the code an earlier full suite passed, so
+    # only the test classes that read those files run. Their result is not cached as a full pass.
+    if ! echo "$changed" | grep -Eq '^(cozmo-stack/|re-analysis/tools/)'; then
+        records_tests='FullyQualifiedName~FidelityManifestTests|FullyQualifiedName~HardwareCatalogFidelityTests|FullyQualifiedName~ControlCheckFidelityTests|FullyQualifiedName~LinkCheckFidelityTests|FullyQualifiedName~M3M4HwTests|FullyQualifiedName~M5AnimationTests|FullyQualifiedName~EngineAppLayerTests|FullyQualifiedName~M4ControlTests|FullyQualifiedName~M3DeviceTests|FullyQualifiedName~M2ProtocolTests|FullyQualifiedName~WwiseVoiceLinkerTests'
+        echo "pre-push: fidelity check passed; records only, so the manifest-reading test classes run for $local_sha; log in $log"
+        if ! dotnet test cozmo-stack/Cozmo.sln --filter "$records_tests" >> "$log" 2>&1; then
+            grep -E "\[FAIL\]|Failed!|error CS" "$log" | head -20
+            echo "pre-push: REFUSED. The manifest-reading tests failed."
+            exit 1
+        fi
+        grep -E "Passed!" "$log" | tail -1
+        echo "pre-push: gate passed (records only)."
+        continue
+    fi
+
     echo "pre-push: fidelity check passed; full test suite for $local_sha (about 4 minutes); log in $log"
     if ! dotnet test cozmo-stack/Cozmo.sln >> "$log" 2>&1; then
         grep -E "\[FAIL\]|Failed!|error CS" "$log" | head -20
