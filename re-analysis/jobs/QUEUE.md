@@ -47,8 +47,9 @@ anything. BOARD.md is history; this file is the live queue.
 | 15 | [B-M5-11](B-M5-11.md) | done (119eb2fa); re-verify PASS (2 cleanups queued) |
 | 16 | [B-M5-12](B-M5-12.md) | done (b228c542); re-verify FAIL (1: +0x44 += 60 still ran), manager fixed |
 | 17 | [B-M3M4-11](B-M3M4-11.md) | done (589824f8, suite 4508/4508); re-verify PASS |
-| 18 | [B-M5-13](B-M5-13.md) | open, after B-M3M4-11 (teardown builds, custom-song rejection, M5-010 lead) |
-| 19 | [B-M3M4-12](B-M3M4-12.md) | open, after B-M5-13 (second M3/M4 settling pass build items) |
+| 18 | [B-M5-13](B-M5-13.md) | done 710751f9; Opus check FAIL on one omission (research/20261012-b-m5-13-check.md) |
+| 20 | [B-M5-14](B-M5-14.md) | open (M5-010 per-Robot neutral read, M9-029 behaviour entry) |
+| 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check running |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
@@ -60,5 +61,5 @@ anything. BOARD.md is history; this file is the live queue.
 | 4 | [R-M3-051](../research/requests/20261012-m3-051-libdas-sink-b.md) | done (5f4f04d2); adopted (operator departure M3-051) |
 | 5 | [R-M5-TEARDOWN](../research/requests/20261012-m5-teardown-reads.md) | done (cd912037); adopted (M5-055/056/058 to build) |
 | 6 | [R-M9-029](../research/requests/20261012-m9-029-custom-song.md) | done (8ccc9ac5); adopted: M9-029 COMPATIBILITY_POLICY (CodeLab only) |
-| 7 | [R-M4-CLIFF](../research/requests/20261012-m4-cliff-and-names.md) | open (M4-038, M4-037, M4-043, M3-055 inputs) |
-| 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | open, after R-M4-CLIFF (M4-041, M4-044) |
+| 7 | [R-M4-CLIFF](../research/requests/20261012-m4-cliff-and-names.md) | answered; Opus check running |
+| 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | running (M4-041, M4-044) |

@@ -135,7 +135,7 @@
       "hardware_required": false
     },
     "M5-010": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -650,7 +650,7 @@
       "hardware_required": false
     },
     "M5-050": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Animation-group file loader: collect, 4-way dispatch, abort gate, readAsJson, silent empty skip, stem name, Loading info, locked find-or-insert define",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -712,7 +712,7 @@
       "hardware_required": false
     },
     "M5-056": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The engine-to-game subscription container factory and its ProtoHandle (UiMessageHandler::Subscribe(EngineToGameTag))",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -733,7 +733,7 @@
       "hardware_required": false
     },
     "M5-058": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "FaceAnimationKeyFrame +0x28 writers (the face-animation override)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
