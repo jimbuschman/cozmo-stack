@@ -41,8 +41,9 @@ anything. BOARD.md is history; this file is the live queue.
 | 9 | [B-M5-7](B-M5-7.md) | done (028f038d); re-verify FAIL (1: non-object JSON root got EmptyFile), manager fixed. Queued: JsonClipLoader.Load is a test helper, mark it |
 | 10 | [B-M5-8](B-M5-8.md) | done (9812b4e0, suite 4387/4387); re-verify FAIL (5), see B-M5-9 |
 | 11 | [B-M5-9](B-M5-9.md) | done (b302b3e4); re-verify FAIL (4), see B-M5-10 |
-| 12 | [B-M3M4-9](B-M3M4-9.md) | running (home PC) |
-| 13 | [B-M5-10](B-M5-10.md) | open, after B-M3M4-9 |
+| 12 | [B-M3M4-9](B-M3M4-9.md) | done (ae2bd302, suite 4445/4445); re-verify FAIL (5), see B-M3M4-10 |
+| 13 | [B-M5-10](B-M5-10.md) | running (home PC) |
+| 14 | [B-M3M4-10](B-M3M4-10.md) | open, after B-M5-10 |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
