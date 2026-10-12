@@ -166,6 +166,7 @@ public sealed class CozmoAnimations : IDisposable
         _scheduler.Stream.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
         _scheduler.Log = robot.Engine.Log;
         _scheduler.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
+        _scheduler.FlushSourceLogger = robot.Engine.FlushSourceLogger;
         // fidelity: M6-028
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
         // a robot with no firmware version yet has the client constructor's 0 (None).
@@ -199,6 +200,22 @@ public sealed class CozmoAnimations : IDisposable
         // at call time; unwired reads as not carrying.
         live.Carrying = () => robot.Motion.IsCarryingObject?.Invoke() == true;
         live.HeadAngleRad = () => robot.State.HeadAngleRad ?? 0f;
+    }
+
+    // fidelity: M5-053, M5-044
+    internal void BindRobotLifetime(EngineRobot robot)
+    {
+        var driving = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0x5A, 0xB5, 0xB6 }, true);
+        var parameter = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0xB4 }, false);
+        var streamer = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0xAE, 0xAF, 0xAD, 0xC4 }, false);
+        robot.Lifetime.Bind(0x24C, _ =>
+        {
+            driving.Release();
+            _robot.Engine.EmitStackLog("MISSING: M5-053 DrivingAnimations owned vector +8 destructor 0x004F090C; no concrete host driving-animation recipient");
+        });
+        _scheduler.ReleaseSetupHandlers = streamer.Release;
+        _scheduler.ReleaseParameterSubscription = parameter.Release;
+        robot.Lifetime.Bind(0x60, _ => Dispose());
     }
 
     /// <summary>The loaded asset library, or null until <see cref="LoadFrom"/> is called.</summary>
@@ -273,6 +290,14 @@ public sealed class CozmoAnimations : IDisposable
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot)
     {
+        AnimationLibrary? loaded = null;
+        System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
+        // X9 G1: LoadNonConfigData owns a loader thread; the API waits for that load's result.
+        var loader = new Thread(() => { try { loaded = LoadOnLoaderThread(assetsRoot); } catch (Exception e) { failure = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e); } }) { IsBackground = true };
+        loader.Start(); loader.Join(); failure?.Throw(); return loaded!;
+    }
+    private AnimationLibrary LoadOnLoaderThread(string assetsRoot)
+    {
         Library = AnimationLibrary.OpenForLoad(assetsRoot, _robot.Engine.Log,
             (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text),
             _scheduler.ContextRandom,
@@ -283,9 +308,10 @@ public sealed class CozmoAnimations : IDisposable
                 // L0 / M4-036: after groups (0x0051F3BC), lights (0x0051F3C2/3C8), then faces (3CE).
                 // Keep constructor-loaded containers; only their source-log emission moves.
                 _robot.EmitLightLoadingLogs();
-                FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
+                FaceAnimations = FaceAnimationLibrary.Open(assetsRoot, _robot.Engine.Log,
+                    (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
                 _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
-            }, _robot.BeforeAnimationFileStat);
+            }, _robot.BeforeAnimationFileStat, lib => Library = lib);
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)
@@ -293,7 +319,16 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-045
         // R45-2..R45-3: loader -> container+0x28 -> group+0 uses context+0x14.
         Library.ContextRandom = _scheduler.ContextRandom;
-        Library.CooldownTimeSec = () => _robot.Engine.Timer.Seconds; // G1: f32 BaseStationTimer sampled by Robot::Update.
+        bool reportedMoodClock = false;
+        Library.CooldownTimeSec = () =>
+        {
+            if (!reportedMoodClock)
+            {
+                reportedMoodClock = true;
+                _robot.Engine.EmitStackLog("MISSING: M5-011 MoodManager+0x130 clock input (M7, 0x0058A95C/0x0067B67E); existing BaseStationTimer stand-in remains unverified");
+            }
+            return _robot.Engine.Timer.Seconds;
+        }; // M7 owns the cached clock. This job does not build or claim that recipient.
         // fidelity: M5-010, M5-027
         // The streamer's idle and neutral animations come from the container, the groups and the trigger map (A2, A29).
         _scheduler.Catalog = Library;

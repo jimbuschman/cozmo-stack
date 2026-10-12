@@ -290,10 +290,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     internal static AnimationLibrary OpenForLoad(string assetsRoot, Action<string>? log, SourceLogSink? sourceLog,
         EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups,
-        Action<string>? beforeStat = null)
+        Action<string>? beforeStat = null, Action<AnimationLibrary>? loaderCreated = null)
     {
         var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
-        log?.Invoke("MISSING: M5-001 loader main-thread VERIFY gates at 0x0051F3AA/0x00521338: CozmoContext main-thread identity is not represented by the host loader");
+        loaderCreated?.Invoke(lib);
+        log?.Invoke("MISSING: M5-050 RobotDataLoader destruction/abort ownership (0x0051F0D4..0x0051F0E6); CozmoEngine member destruction order remains unread, no robot-disconnect abort invented");
         var animations = FindDir(assetsRoot, "animations");
         var groups = FindDir(assetsRoot, "animationGroups");
         if (animations is null && groups is null)
@@ -334,26 +335,74 @@ public sealed class AnimationLibrary : IAnimationCatalog
         SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationsInternal.LoadTime", FormattableString.Invariant($"Time to load animations = {MonotonicMilliseconds() - started:F2} ms"));
         SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimations.CannedAnimationsCount", $"Total number of canned animations available = {lib._clipCache.Count}");
 
-        if (groups is not null)
-            foreach (var f in Directory.EnumerateFiles(groups, "*.json", SearchOption.AllDirectories))
-            {
-                // C5 item 4.1 (0x0058B89E AddAnimationGroup before 0x0058B8B2 DefineFromJson): the group is added by
-                // name first, so it stays in the container (empty or partial) even when the define fails.
-                string gname = Path.GetFileNameWithoutExtension(f);
-                if (!lib._groups.TryGetValue(gname, out var g))
-                {
-                    g = new AnimationGroup { Name = gname };
-                    lib._groups[gname] = g;
-                }
-                DefineGroup(g, f, lib.HasClip, lib.Log, lib.SourceLog);
-                g.UseContainer(lib._cooldowns);
-            }
+        DispatchFiles(groupFiles, lib.LoadAnimationGroupFile);
 
         // L0: LoadNonConfigData 0x0051F3BC..0x0051F3CE: groups, cube lights, backpack lights, faces.
         afterGroups?.Invoke();
         lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
         lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
         return lib;
+    }
+
+    // fidelity: M5-050
+    private int _abortLoading;
+    internal void AbortLoading() => Volatile.Write(ref _abortLoading, 1);
+    internal static void DispatchFiles(IReadOnlyList<string> files, Action<string> load)
+    {
+        var workers = new List<Thread>();
+        int offset = 0;
+        for (int part = 0; part < 4; part++)
+        {
+            int first = offset, end = first + files.Count / 4 + (part < files.Count % 4 ? 1 : 0); offset = end;
+            void Run() { for (int i = first; i < end; i++) load(files[i]); }
+            if (part == 3) Run();
+            else if (first != end) { var thread = new Thread(Run) { IsBackground = true }; workers.Add(thread); thread.Start(); }
+        }
+        foreach (var thread in workers) thread.Join();
+    }
+    // fidelity: M5-051
+    private JsonDocument? ReadAsJson(string path)
+    {
+        try { return JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { MaxDepth = 1000 }); }
+        catch (JsonException e) when (e.Message.Contains("maximum configured depth", StringComparison.OrdinalIgnoreCase))
+        { Log?.Invoke($"Loader file skipped (M1-034): JsonCpp stack-limit fatal path in {path}"); return null; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
+        {
+            ReportReadAsJsonFailure(path, null, Log, SourceLog);
+            return null;
+        }
+    }
+    internal static void ReportReadAsJsonFailure(string path, string? readerErrors, Action<string>? log, SourceLogSink? sourceLog)
+    {
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "DataPlatform.readAsJson", $"Failed to read [{path}]");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        if (readerErrors is null)
+            log?.Invoke($"MISSING: M5-051 JsonCpp formatted reader errors for {path}, 0x008E09A4..0x008E2A70; conditional Unnamed debug text at 0x0084C124..0x0084C15C remains unread");
+        else if (readerErrors.Length != 0)
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "DataPlatform.readAsJson", $"Json reader errors [{readerErrors}]");
+    }
+    private void LoadAnimationGroupFile(string path)
+    {
+        if (Volatile.Read(ref _abortLoading) != 0) return;
+        using var doc = ReadAsJson(path);
+        if (doc is null || JsonClipLoader.IsEmpty(doc.RootElement)) return;
+        string name = Path.GetFileNameWithoutExtension(path);
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationGroupFile.LoadingSpecificAnimGroupFromJson", $"Loading '{name}' from {path}");
+        try
+        {
+            lock (_gate)
+            {
+                if (!_groups.TryGetValue(name, out var group)) { group = new AnimationGroup { Name = name }; _groups.Add(name, group); }
+                if (!DefineGroup(group, doc.RootElement, HasClip, Log, SourceLog))
+                {
+                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupContainer.DefineAnimationGroupFromJson", $"Failed to define animation group '{name}' from Json.");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                }
+                group.UseContainer(_cooldowns);
+            }
+        }
+        catch (Exception e) when (e is not OutOfMemoryException)
+        { Log?.Invoke($"Loader file skipped (M1-034): fatal group JSON path in {path}; {e.GetType().Name}"); }
     }
 
     // L10b: CLOCK_MONOTONIC nanoseconds, converted to double milliseconds (0x00833D40..0x00833D6A).
@@ -394,7 +443,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         var files = new List<string>();
         foreach (var dir in directories)
             if (dir is not null)
-                foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+                foreach (var f in WalkFilesInReaddirOrder(dir))
                     if (f.EndsWith("json", StringComparison.Ordinal) || f.EndsWith("bin", StringComparison.Ordinal))
                     {
                         beforeStat?.Invoke(f); // Test-only filesystem race injection; production uses the actual stat.
@@ -406,18 +455,26 @@ public sealed class AnimationLibrary : IAnimationCatalog
         return files;
     }
 
+    // X9 G2b: recurse at the directory entry, not after emitting all parent files. Host enumeration order is input.
+    private static IEnumerable<string> WalkFilesInReaddirOrder(string path)
+    {
+        foreach (var entry in new DirectoryInfo(path).EnumerateFileSystemInfos())
+        {
+            if ((entry.Attributes & FileAttributes.ReparsePoint) != 0) continue; // DT_LNK is neither DT_REG nor DT_DIR.
+            if (entry is DirectoryInfo) { foreach (string file in WalkFilesInReaddirOrder(entry.FullName)) yield return file; }
+            else if (entry is FileInfo) yield return entry.FullName;
+        }
+    }
+
     // fidelity: M5-046
     internal static void EmitCollectResults(IReadOnlyList<int> counts, bool fresh, Action<string>? log, SourceLogSink? sourceLog)
     {
-        // R46-7..R46-8: only this populated, fresh-map history has a checked iteration order.
-        if (!fresh || counts.Count != 4 || counts.Any(n => n <= 0))
-        {
-            log?.Invoke("MISSING: M5-046 RobotDataLoader.CollectAnimFiles.Results node history for a non-fresh map or absent type");
-            return;
-        }
+        // X9 section 4e: the one production collect is fresh, and the map is cleared afterwards.
+        // All 15 populations iterate reverse first insertion of walk order 0,2,3,1.
         foreach (int type in new[] { 1, 3, 2, 0 })
-            sourceLog?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.CollectAnimFiles.Results",
-                FormattableString.Invariant($"Found {counts[type]} animation files of type {type}"));
+            if (counts[type] > 0)
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.CollectAnimFiles.Results",
+                    FormattableString.Invariant($"Found {counts[type]} animation files of type {type}"));
     }
 
     private static IEnumerable<string> ClipNamesIn(string file)
@@ -461,6 +518,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     public float LoadingProgress { get; private set; }
     private void LoadAnimationFile(string path, float ratio)
     {
+        if (Volatile.Read(ref _abortLoading) != 0) return;
         using var clipLog = Eye.UseWarningLog(Log, SourceLog);
         SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationFile.LoadingAnimationsFromBinaryOrJson", $"Loading animations from {path}");
         bool binary = path.EndsWith("bin", StringComparison.Ordinal);
@@ -485,26 +543,17 @@ public sealed class AnimationLibrary : IAnimationCatalog
             }
             catch (Exception e) when (e is ArgumentException or IndexOutOfRangeException or OverflowException or InvalidDataException)
             {
-                // LoadAnimationFile 0x00521616..0x00521684: BinaryDataNull, errG and conditional break.
-                BinaryError("BinaryDataNull", $"Found no data in {path}");
+                Log?.Invoke($"Loader file skipped (M1-034): malformed non-empty binary {path}; {e.GetType().Name}");
                 return;
             }
         }
         else
         {
-            JsonDocument? doc = null;
-            try { doc = JsonDocument.Parse(File.ReadAllText(path)); }
-            catch (Exception)
-            {
-                // readAsJson 0x0084C0E6, errG 0x0084C10C..0x0084C120; failed read returns false.
-                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null,
-                    "DataPlatform.readAsJson", $"Failed to read [{path}]");
-                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-                Log?.Invoke("MISSING: M5-001 DataPlatform.readAsJson 0x0084C124..0x0084C15C: conditional JsonCpp formatted reader errors are unrecovered; no System.Text.Json diagnostic substituted");
-            }
-            using (doc)
-                if (doc is not null && !JsonClipLoader.IsEmpty(doc.RootElement))
-                    lock (_gate) { var clip = JsonClipLoader.LoadDocument(doc, Log, SourceLog); if (clip != null) Register(clip, path, true); }
+            using var doc = ReadAsJson(path);
+            if (doc is not null && !JsonClipLoader.IsEmpty(doc.RootElement))
+                try { lock (_gate) { var clip = JsonClipLoader.LoadDocument(doc, Log, SourceLog); if (clip != null) Register(clip, path, true); } }
+                catch (Exception e) when (e is not OutOfMemoryException)
+                { Log?.Invoke($"Loader file skipped (M1-034): JsonCpp fatal conversion in {path}; {e.GetType().Name}"); }
             // L6.5/L6.6 / 0x00521470..0x005214A8: failed reads and empty values still add ratio.
         }
         lock (_gate) LoadingProgress += ratio;
@@ -818,23 +867,22 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// non-array "Animations", a JSON parse failure, or any rejected entry leaves the group in the container with the
     /// entries that did define (the caller added it by name first, C5 item 4.1).
     /// </summary>
-    private static void DefineGroup(AnimationGroup g, string path, Func<string, bool> hasClip, Action<string>? log, SourceLogSink? sourceLog = null)
+    private static bool DefineGroup(AnimationGroup g, JsonElement root, Func<string, bool> hasClip, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         try
         {
-            using var doc = JsonDocument.Parse(File.ReadAllText(path));
-            if (!doc.RootElement.TryGetProperty("Animations", out var arr) || arr.ValueKind != JsonValueKind.Array)
+            if (!root.TryGetProperty("Animations", out var arr) || arr.ValueKind != JsonValueKind.Array)
             {
                 // 4.2: not an array logs NoAnimations and fails the define
                 SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.DefineFromJson.NoAnimations", "Missing 'Animations' field for animation group.");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-                return;
+                return false;
             }
             var entries = new List<AnimationGroupEntry>();
             int entryIndex = -1;
-            void Reject()
+            void Reject(bool sharedTail = true)
             {
-                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058C6E8..0x0058C6F4
+                if (sharedTail) Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058C6E8..0x0058C6F4
                 SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
                     "AnimationGroup.DefineFromJson.AddEntryFailure", $"Adding animation {entryIndex} failed.");
                 Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058A6D2..0x0058A6D8
@@ -874,10 +922,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
                     continue;
                 }
                 string mood = m.GetString()!;
-                if (!Enum.TryParse<SimpleMood>(mood, ignoreCase: false, out var moodType) || moodType == SimpleMood.Count)
+                if (mood is not ("Happy" or "Sad" or "Default"))
                 {
                     SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "SimpleMoodScorer.ReadFromJson.BadType", $"Bad 'Mood' = '{mood}'");
-                    Reject();
+                    Reject(false);
                     continue;
                 }
                 // 4.8: CooldownTime_Sec defaults to 0.0.
@@ -910,11 +958,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 });
             }
             g.Entries = entries;
+            return true;
         }
-        catch (JsonException e)
-        {
-            // a file that is not a group definition leaves the group empty; it stays in the container (C5 item 4.1)
-            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.DefineFromJson", $"'{path}' is not a group definition: {e.Message}");
-        }
+        catch { throw; }
     }
 }

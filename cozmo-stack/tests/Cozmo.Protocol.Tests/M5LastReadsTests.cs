@@ -191,14 +191,14 @@ public class M5LastReadsTests
             foreach (string dir in new[] { "assets/animations", "assets/animationGroups", "config/engine/lights/cubeLights", "config/engine/lights/backpackLights" })
             {
                 Directory.CreateDirectory(Path.Combine(root, dir));
-                File.WriteAllText(Path.Combine(root, dir, "a.json"), dir == "assets/animations" ? "{\"a\":[]}" : "{}");
+                File.WriteAllText(Path.Combine(root, dir, "a.json"), dir == "assets/animations" ? "{\"a\":[]}" : dir == "assets/animationGroups" ? "{\"Animations\":[]}" : "{}");
             }
             using var robot = CozmoRobot.CreateForTest(new Port(), () => 1_000_000_000,
                 new CozmoEngineOptions { ResourcesPath = root, BlockPoolPath = "" });
             var entries = new List<EngineLogEntry>(); robot.Engine.LogEntry += entries.Add;
             robot.Animations.LoadFrom(root);
-            // NoAnimations is the checked group failure before the next loader step, 0x0058B89E..0x0058B8B2.
-            int group = entries.FindIndex(e => e.Name == "AnimationGroup.DefineFromJson.NoAnimations");
+            // X9 G8 is before the mutex and backpack loader. Empty objects are silently skipped (G6).
+            int group = entries.FindIndex(e => e.Name == "RobotDataLoader.LoadAnimationGroupFile.LoadingSpecificAnimGroupFromJson");
             int backpack = entries.FindIndex(e => e.Name == "RobotDataLoader.LoadBackpackLightAnimations.LoadTime");
             Assert.True(group >= 0); Assert.True(backpack > group);
         }
@@ -206,20 +206,20 @@ public class M5LastReadsTests
     }
 
     [Fact]
-    public void B_M5_4_SecondProductionLibraryLoadRefusesTheUncheckedCollectHistory()
+    public void B_M5_4_RepeatHostLoadUsesAFreshNativePopulation()
     {
         using var robot = CozmoRobot.CreateOffline();
         robot.Animations.LoadFrom(Resources());
         var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
         var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
         robot.Animations.LoadFrom(Resources());
-        Assert.DoesNotContain(entries, e => e.Name == ResultsKey);
-        Assert.Single(diagnostics.Where(l => l.StartsWith("MISSING: M5-046") && l.Contains("non-fresh map")));
+        Assert.Equal(new[] { 1, 3, 2, 0 }, entries.Where(e => e.Name == ResultsKey).Select(e => int.Parse(e.Text[^1..])));
+        Assert.DoesNotContain(diagnostics, l => l.StartsWith("MISSING: M5-046"));
     }
 
     [Theory]
     [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)]
-    public void R46_8_AbsentTypeEmitsMissingInsteadOfAssumingOrder(int absent)
+    public void R46_8_AbsentTypeUsesTheAdoptedPopulationOrder(int absent)
     {
         string root = Path.Combine(Path.GetTempPath(), "m5-last-reads-" + Guid.NewGuid());
         var dirs = new[] { "assets/animations", "assets/animationGroups", "config/engine/lights/cubeLights", "config/engine/lights/backpackLights" };
@@ -232,19 +232,19 @@ public class M5LastReadsTests
             var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
             var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
             robot.Animations.LoadFrom(root);
-            Assert.Single(diagnostics.Where(l => l.StartsWith("MISSING: M5-046")));
-            Assert.DoesNotContain(entries, e => e.Name == ResultsKey);
+            Assert.DoesNotContain(diagnostics, l => l.StartsWith("MISSING: M5-046"));
+            Assert.Equal(new[] { 1, 3, 2, 0 }.Where(t => t != absent), entries.Where(e => e.Name == ResultsKey).Select(e => int.Parse(e.Text[^1..])));
         }
         finally { Directory.Delete(root, true); }
     }
 
     [Fact]
-    public void R46_8_NonFreshMapEmitsMissingInsteadOfAssumingOrder()
+    public void R46_8_HostSeamDoesNotEmitTheUnreachableNonFreshMissing()
     {
         var diagnostics = new List<string>(); var entries = new List<string>();
         AnimationLibrary.EmitCollectResults(new[] { 1, 1, 1, 1 }, false, diagnostics.Add,
             (_, _, _, text) => entries.Add(text));
-        Assert.Single(diagnostics); Assert.StartsWith("MISSING: M5-046", diagnostics[0]); Assert.Empty(entries);
+        Assert.Empty(diagnostics); Assert.Equal(new[] { "1", "3", "2", "0" }, entries.Select(e => e[^1..]));
     }
 
     private static string Resources()

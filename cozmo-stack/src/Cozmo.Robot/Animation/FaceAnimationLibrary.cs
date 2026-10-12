@@ -32,80 +32,90 @@ public sealed class FaceAnimationLibrary
     public static int FirstScanLine => ScanLineState.Process.FaceAnimation;
 
     private readonly Dictionary<string, string> _dirs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, long> _mtimes = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IReadOnlyList<FaceBitmap>> _cache = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IReadOnlyList<FaceAnimationFrame>> _variants = new(StringComparer.Ordinal);
     private readonly object _gate = new();
-
-    /// <summary>The animation names found, whether or not their frames have been read yet.</summary>
+    private Action<string>? _log;
+    private SourceLogSink? _sourceLog;
     public IReadOnlyCollection<string> Names { get { lock (_gate) return _dirs.Keys.ToArray(); } }
 
-    /// <summary>
-    /// Opens a library over an unpacked <c>cozmo_resources</c> tree. Point it at the directory that holds
-    /// <c>assets/faceAnimations</c>, or directly at that directory. A tree without one gives an empty
-    /// library rather than an error: most of them have no face animations at all.
-    /// </summary>
-    public static FaceAnimationLibrary Open(string assetsRoot)
+    // fidelity: M5-052
+    public static FaceAnimationLibrary Open(string assetsRoot, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        var lib = new FaceAnimationLibrary();
+        var lib = new FaceAnimationLibrary { _log = log, _sourceLog = sourceLog };
         var dir = FindDir(assetsRoot);
         if (dir is null) return lib;
-        foreach (var d in Directory.EnumerateDirectories(dir))
-            lib._dirs[Path.GetFileName(d)] = d;
+        var jobs = new List<string>();
+        foreach (string path in Directory.EnumerateDirectories(dir))
+        {
+            string name = Path.GetFileName(path);
+            if (name == JsonClipLoader.ProceduralAnimName)
+            { lib.Error("FaceAnimationManager.ReadFaceAnimationDir.ReservedName", "'_PROCEDURAL_' is a reserved face animation name. Ignoring."); continue; }
+            var stat = new DirectoryInfo(path); stat.Refresh();
+            if (!stat.Exists)
+            { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "FaceAnimationManager.ReadFaceAnimationDir", $"could not get mtime for {path}"); continue; }
+            long mtime = stat.LastWriteTimeUtc.Ticks;
+            if (lib._mtimes.TryGetValue(name, out long old) && old >= mtime) continue;
+            lib._mtimes[name] = mtime; lib._dirs[name] = path;
+            lib._cache[name] = Array.Empty<FaceBitmap>(); lib._variants[name] = Array.Empty<FaceAnimationFrame>();
+            jobs.Add(path);
+        }
+        log?.Invoke("MISSING: M5-052 cv::imread grayscale/libopencv PNG decode 0x0086E75E and libc++ stoi 0x00580A0E; host decoder/canonical decimal input only");
+        AnimationLibrary.DispatchFiles(jobs, lib.LoadImageFrames);
         return lib;
     }
-
+    private void Error(string key, string text)
+    { SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Error, null, key, text); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
     private static string? FindDir(string root)
     {
-        if (string.Equals(Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar)), "faceAnimations",
-                          StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar)), "faceAnimations", StringComparison.OrdinalIgnoreCase))
             return Directory.Exists(root) ? root : null;
         foreach (var candidate in new[] { Path.Combine(root, "faceAnimations"), Path.Combine(root, "assets", "faceAnimations") })
             if (Directory.Exists(candidate)) return candidate;
         return null;
     }
-
-    /// <summary>True when an animation of this name is present.</summary>
+    private void LoadImageFrames(string path)
+    {
+        string name = Path.GetFileName(path);
+        var pictures = new List<FaceBitmap>(); var frames = new List<FaceAnimationFrame>();
+        void Publish() { lock (_gate) { _cache[name] = pictures.ToArray(); _variants[name] = frames.ToArray(); } }
+        foreach (string filename in new DirectoryInfo(path).EnumerateFiles().Where(f => (f.Attributes & FileAttributes.ReparsePoint) == 0).Select(f => f.Name)
+            .OrderBy(n => System.Text.Encoding.UTF8.GetBytes(n), Utf8Comparer.Instance))
+        {
+            int dot = filename.LastIndexOf('.'), underscore = filename.LastIndexOf('_');
+            string? failure = dot < 0 ? $"Could not find '.' in frame filename {filename}" : underscore < 0 ? $"Could not find '_' in frame filename {filename}" : dot <= underscore + 1 ? $"Unexpected relative positions for '.' and '_' in frame filename {filename}" : null;
+            if (failure is not null) { Error("FaceAnimationManager.ReadFaceAnimationDir", failure); break; }
+            string number = filename[(underscore + 1)..dot];
+            // The canonical decimal subset is unambiguous; libc++ stoi's remaining parsing rules stay MISSING.
+            if (!System.Text.RegularExpressions.Regex.IsMatch(number, @"^[+-]?[0-9]+$"))
+            {
+                if (number.Length == 0 || !number.Any(char.IsAsciiDigit))
+                    Error("FaceAnimationManager.ReadFaceAnimationDir", $"Could not get frame number from substring '{number}' of filename '{filename}'.");
+                else _log?.Invoke($"MISSING: M5-052 libc++ stoi parsing of '{number}' in {filename}, 0x00580A0E; animation load stopped");
+                break;
+            }
+            if (!int.TryParse(number, System.Globalization.NumberStyles.AllowLeadingSign, System.Globalization.CultureInfo.InvariantCulture, out int n))
+            { _log?.Invoke($"Loader file skipped (M1-034): face frame stoi out_of_range in {filename}"); continue; }
+            if (n < 0) { Error("FaceAnimationManager.ReadFaceAnimationDir", $"Found negative frame number ({n}) for filename '{filename}'."); break; }
+            if (n >= 2)
+                while (frames.Count < n - 1) { frames.Add(new(Array.Empty<byte>(), Array.Empty<byte>())); pictures.Add(new()); }
+            string fullPath = Path.Combine(path, filename);
+            MiniPng.Gray8 image = default;
+            try { image = MiniPng.DecodeGray8(File.ReadAllBytes(fullPath)); }
+            catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException or OverflowException)
+            { /* imread failure has rows/cols zero; source size diagnostic, then continue. */ }
+            if (image.Pixels is null || image.Width != 128 || image.Height != 64)
+            { Error("FaceAnimationManager.ReadFaceAnimationDir", $"Image in {fullPath} is {image.Width}x{image.Height} instead of 128x64."); continue; }
+            pictures.Add(ToFace(image)); frames.Add(FaceAnimationFrame.FromImage(image));
+        }
+        Publish();
+    }
+    private sealed class Utf8Comparer : IComparer<byte[]>
+    { internal static readonly Utf8Comparer Instance = new(); public int Compare(byte[]? a, byte[]? b) => a.AsSpan().SequenceCompareTo(b); }
     public bool Has(string name) { lock (_gate) return _dirs.ContainsKey(name); }
-
-    private IReadOnlyList<MiniPng.Gray8>? Images(string name)
-    {
-        if (!_dirs.TryGetValue(name, out var dir)) return null;
-        return Directory.EnumerateFiles(dir, "*.png")
-                        .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-                        .Select(f => MiniPng.DecodeGray8(File.ReadAllBytes(f)))
-                        .ToArray();
-    }
-
-    /// <summary>
-    /// The frames of one animation as this stack's 128 x 32 pictures (the odd canvas row of each pair), or null when
-    /// there is no such animation. For inspection; the stream uses <see cref="Variants"/>.
-    /// </summary>
-    public IReadOnlyList<FaceBitmap>? Frames(string name)
-    {
-        lock (_gate)
-        {
-            if (_cache.TryGetValue(name, out var cached)) return cached;
-            var images = Images(name);
-            if (images is null) return null;
-            var frames = images.Select(ToFace).ToArray();
-            _cache[name] = frames;
-            return frames;
-        }
-    }
-
-    /// <summary>The stored frames of one animation, each with its two RLE variants (C12), or null when there is none.</summary>
-    public IReadOnlyList<FaceAnimationFrame>? Variants(string name)
-    {
-        lock (_gate)
-        {
-            if (_variants.TryGetValue(name, out var cached)) return cached;
-            var images = Images(name);
-            if (images is null) return null;
-            var frames = images.Select(FaceAnimationFrame.FromImage).ToArray();
-            _variants[name] = frames;
-            return frames;
-        }
-    }
+    public IReadOnlyList<FaceBitmap>? Frames(string name) { lock (_gate) return _cache.GetValueOrDefault(name); }
+    public IReadOnlyList<FaceAnimationFrame>? Variants(string name) { lock (_gate) return _variants.GetValueOrDefault(name); }
 
     /// <summary>
     /// One 128 x 64 grayscale image as this stack's 128 x 32 picture: lit where the sample is strictly above the
@@ -175,8 +185,8 @@ public static class MiniPng
         if (png.Length < 8 || !png[..8].SequenceEqual(Signature))
             throw new InvalidDataException("not a PNG file");
 
-        int width = 0, height = 0;
-        var idat = new MemoryStream();
+        int width = 0, height = 0, depth = 0;
+        using var idat = new MemoryStream();
         int at = 8;
         while (at + 8 <= png.Length)
         {
@@ -189,10 +199,10 @@ public static class MiniPng
             {
                 width = ReadBe32(png, data);
                 height = ReadBe32(png, data + 4);
-                byte depth = png[data + 8], colour = png[data + 9], interlace = png[data + 12];
-                if (depth != 8 || colour != 0 || interlace != 0)
+                depth = png[data + 8]; byte colour = png[data + 9], interlace = png[data + 12];
+                if ((depth != 1 && depth != 8) || colour != 0 || interlace != 0)
                     throw new InvalidDataException(
-                        $"only 8-bit non-interlaced grayscale PNG is supported (depth {depth}, colour type {colour}, interlace {interlace})");
+                        $"only 1-bit or 8-bit non-interlaced grayscale PNG is supported (depth {depth}, colour type {colour}, interlace {interlace})");
             }
             else if (type.SequenceEqual("IDAT"u8)) idat.Write(png.Slice(data, length));
             else if (type.SequenceEqual("IEND"u8)) break;
@@ -202,24 +212,25 @@ public static class MiniPng
         if (width <= 0 || height <= 0) throw new InvalidDataException("PNG has no IHDR");
 
         idat.Position = 0;
-        var raw = new byte[(width + 1) * height];
+        int rowBytes = checked((width * depth + 7) / 8);
+        var raw = new byte[checked((rowBytes + 1) * height)];
         using (var z = new ZLibStream(idat, CompressionMode.Decompress))
             z.ReadExactly(raw);
 
         // Undo the per-scanline filters. One byte per pixel, so the filter's "previous pixel" is one byte
         // back and its "above" is one scanline back.
-        var pixels = new byte[width * height];
+        var pixels = new byte[checked(rowBytes * height)];
         for (int y = 0; y < height; y++)
         {
-            int src = y * (width + 1);
+            int src = y * (rowBytes + 1);
             byte filter = raw[src];
-            int dst = y * width;
-            for (int x = 0; x < width; x++)
+            int dst = y * rowBytes;
+            for (int x = 0; x < rowBytes; x++)
             {
                 int value = raw[src + 1 + x];
                 byte a = x > 0 ? pixels[dst + x - 1] : (byte)0;
-                byte b = y > 0 ? pixels[dst - width + x] : (byte)0;
-                byte c = x > 0 && y > 0 ? pixels[dst - width + x - 1] : (byte)0;
+                byte b = y > 0 ? pixels[dst - rowBytes + x] : (byte)0;
+                byte c = x > 0 && y > 0 ? pixels[dst - rowBytes + x - 1] : (byte)0;
                 value += filter switch
                 {
                     0 => 0,
@@ -231,6 +242,13 @@ public static class MiniPng
                 };
                 pixels[dst + x] = (byte)value;
             }
+        }
+        if (depth == 1)
+        {
+            var unpacked = new byte[checked(width * height)];
+            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+                unpacked[y * width + x] = (byte)(((pixels[y * rowBytes + x / 8] >> (7 - x % 8)) & 1) * 255);
+            pixels = unpacked;
         }
         return new Gray8(width, height, pixels);
     }

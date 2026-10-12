@@ -486,6 +486,9 @@ public sealed class AnimationScheduler
     /// <summary>The engine log.</summary>
     public Action<string>? Log { get; set; }
     public SourceLogSink? SourceLog { get; set; }
+    internal Action? FlushSourceLogger { get; set; }
+    internal Action? ReleaseSetupHandlers;
+    internal Action? ReleaseParameterSubscription;
 
     /// <summary>The context RNG (context+0x14, R3): the live idle, the layer managers and the group draw share it.</summary>
     public EngineRandom ContextRandom => _contextRng;
@@ -711,6 +714,16 @@ public sealed class AnimationScheduler
     /// to +0x54, a new tag (IncrementTagCtr, 1..0xFE), InitStream(anim, tag), +0x68 = numLoops, +0x6C = 0; the tag is
     /// returned.
     /// </summary>
+    // fidelity: M5-008
+    internal int VerifyFailedReturnFalse(string key, string text)
+    {
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, key, text);
+        Cozmo.Transport.EngineErrorState.ErrorFlagSet = true;
+        // sDumpCallstack is BX LR, 0x0080B0A6; no debug-break call.
+        FlushSourceLogger?.Invoke();
+        return 0;
+    }
+
     private byte SetStreamingAnimationLocked(AnimationClip? clip, int numLoops, bool interrupt)
     {
         var old = _streaming;
@@ -742,9 +755,8 @@ public sealed class AnimationScheduler
         }
         if (_streaming!.IsLive && numLoops != 1)
         {
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.SetStreamingAnimation.LoopingLiveAnimation", $"VERIFY(numLoops == 1): Animation {clip.Name} is marked 'live' but numLoops={numLoops}. Clamping to 1.");
-            Cozmo.Transport.EngineErrorState.ErrorFlagSet = true; // sVerifyFailedReturnFalse has no debug-break call.
-            Log?.Invoke("MISSING: M5-008 sVerifyFailedReturnFalse callstack dump at 0x0080DA08 and logger-provider flush at 0x0080DA24 have no M3 recipient");
+            _ = VerifyFailedReturnFalse("AnimationStreamer.SetStreamingAnimation.LoopingLiveAnimation",
+                $"VERIFY(numLoops == 1): Animation {clip.Name} is marked 'live' but numLoops={numLoops}. Clamping to 1.");
             numLoops = 1;                                          // A8
         }
         _lastStreamedName = clip.Name;
@@ -1143,7 +1155,7 @@ public sealed class AnimationScheduler
     private int LayersOrFlushLocked()
     {
         if (_tlc.HaveLayersToSend) return StreamLayersLocked();
-        if (Stream.IsEmpty) return 0;
+        if (Stream.RobotMessageCount == 0) return 0;
         SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Update.SendBufferNotEmpty", $"Expect send buffer to be emptied by UpdateStream or StreamFaceLayers by now, has {Stream.RobotMessageCount} messages");
         RefreshBudget();
         int result = DrainResultCode();
@@ -1300,7 +1312,7 @@ public sealed class AnimationScheduler
     /// </summary>
     private bool ShouldProcessAnimationFrame(StreamAnimation anim)
     {
-        if (!Stream.IsEmpty) return false;
+        if (Stream.RobotMessageCount != 0) return false;
         if (_audio is null) return anim.HasFramesLeft;
         _audio.Update(_startMs, _streamMs);
         if (_audio.IsComplete)
@@ -1505,6 +1517,7 @@ public sealed class AnimationScheduler
     {
         if (k.FaceAnimationOverride != 0) return false;
         var frames = FramesOf(fa);
+        if (frames is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "FaceAnimationManager.GetNumFrames", $"Unknown animation requested: {fa.AnimName}");
         return frames is null || k.FaceAnimIndex >= frames.Count;
     }
 
@@ -1892,13 +1905,16 @@ public sealed class AnimationScheduler
         {
             _handle?.ReleaseHostWaiters(); _handle = null;
             Stream.ClearSendBuffer(); // TD8: helper-owned debug entries; destructor adds no log or send.
+            var setupRelease = ReleaseSetupHandlers; ReleaseSetupHandlers = null;
+            setupRelease?.Invoke(); // +0x1B4 handles, before owned live animation.
             _live.Clear();
             _audio = null;
             _tlc.Destroy();
             _idleStack.Clear();
             _streaming = null; _streamingClip = null; _idleAnim = null;
             LiveIdleParameters.ResetToConstructed();
-            // MISSING: M5-044 parameter-subscription last release 0x0057AFD4: concrete tag-B4 shared ownership is not represented by this host API.
+            var parameterRelease = ReleaseParameterSubscription; ReleaseParameterSubscription = null;
+            parameterRelease?.Invoke(); // last owner, after parameter maps; weak-lock outcome belongs to engine shutdown order.
         }
     }
 

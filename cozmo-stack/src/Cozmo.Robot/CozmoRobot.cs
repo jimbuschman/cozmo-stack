@@ -329,9 +329,7 @@ public sealed class CozmoRobot : IDisposable
         Engine.BindRobotLifetime = robot =>
         {
             Motion.BindRobotLifetime(robot);
-            // MISSING: M5-037 DrivingAnimationHandler destruction 0x00511524..0x00511542:
-            // the host has no concrete +0x4C subscription handles / +8 DrivingAnimations owner to bind.
-            robot.Lifetime.Bind(0x60, _ => Animations.Dispose()); // M5-037/044 source destruction point.
+            Animations.BindRobotLifetime(robot);
         };
         // fidelity: M4-011
         // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.

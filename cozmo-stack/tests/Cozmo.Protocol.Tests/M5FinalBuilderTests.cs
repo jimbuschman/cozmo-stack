@@ -228,7 +228,7 @@ public class M5FinalBuilderTests : IDisposable
     [Theory]
     [InlineData(new byte[] { 1 })]
     [InlineData(new byte[] { 255, 255, 255, 255, 0, 0, 0, 0 })]
-    public void MalformedBinaryLogsBinaryDataNullWithoutThrowing(byte[] bytes)
+    public void MalformedBinaryUsesVisibleIsolationAndNoEngineError(byte[] bytes)
     {
         // BinaryDataNull sErrorF 0x00521634, errG/break in the following tail.
         string root = Path.Combine(Path.GetTempPath(), "m5-binary-" + Guid.NewGuid());
@@ -236,11 +236,12 @@ public class M5FinalBuilderTests : IDisposable
         string path = Path.Combine(root, "animations", "bad.bin"); File.WriteAllBytes(path, bytes);
         try
         {
-            var logs = new List<Log>();
-            var library = AnimationLibrary.Open(root, sourceLog: Capture(logs));
+            var logs = new List<Log>(); var stack = new List<string>(); EngineErrorState.ErrorFlagSet = false;
+            var library = AnimationLibrary.Open(root, stack.Add, sourceLog: Capture(logs));
             Assert.Empty(library.ClipNames);
-            Assert.Equal("Found no data in " + path, Assert.Single(logs, l => l.Key == "RobotDataLoader.LoadAnimationFile.BinaryDataNull").Text);
-            Assert.True(EngineErrorState.ErrorFlagSet);
+            Assert.DoesNotContain(logs, l => l.Level == EngineLogLevel.Error);
+            Assert.Contains(stack, l => l.StartsWith("Loader file skipped (M1-034): malformed non-empty binary"));
+            Assert.False(EngineErrorState.ErrorFlagSet);
         }
         finally { Directory.Delete(root, true); }
     }

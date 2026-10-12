@@ -157,7 +157,7 @@ public class M5JsonColorTests
             Assert.Null(JsonClipLoader.LoadDocument(doc, lines.Add, (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t)));
             Assert.Empty(entries);
             Assert.False(EngineErrorState.ErrorFlagSet);
-            Assert.Contains(lines, l => l.StartsWith("MISSING: M5-001") && l.Contains("0x008E6D08"));
+            Assert.Contains(lines, l => l.StartsWith("Loader file skipped (M1-034)") && l.Contains("0x008E6D08"));
         }
         finally { EngineErrorState.ErrorFlagSet = old; }
     }
@@ -186,7 +186,7 @@ public class M5JsonColorTests
             var error = Assert.Single(entries.Where(e => e.Name == "DataPlatform.readAsJson"));
             Assert.Equal(EngineLogLevel.Error, error.Level); Assert.EndsWith($"Failed to read [{bad}]", error.Text);
             Assert.True(EngineErrorState.ErrorFlagSet);
-            Assert.Contains(text, t => t.StartsWith("MISSING: M5-001 DataPlatform.readAsJson"));
+            Assert.Contains(text, t => t.StartsWith("MISSING: M5-051 JsonCpp formatted reader errors"));
         }
         finally { Directory.Delete(root, true); EngineErrorState.ErrorFlagSet = old; }
     }

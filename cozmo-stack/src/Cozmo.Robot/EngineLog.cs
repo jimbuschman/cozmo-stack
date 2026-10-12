@@ -65,6 +65,15 @@ public sealed partial class CozmoEngine
         DisplayEngineEntry(entry);
     }
 
+    // M5-008: MultiLoggerProvider::Flush -> DasLoggerProvider::Flush -> DASForceFlushNow.
+    internal Action? LoggerProviderFlush;
+    internal Func<byte, bool, IDisposable?>? AnimationSubscriptionFactory;
+    internal void FlushSourceLogger()
+    {
+        if (LoggerProviderFlush is { } flush) flush();
+        else EmitStackLog("MISSING: M5-008 -> M3-051 DASForceFlushNow body (libDAS 0x7168); logger provider flush at 0x0080DA24");
+    }
+
     // Text delegates carry stack diagnostics only; spelling and level prefixes are not provenance.
     internal void Log(string line) => EmitStackLog(line);
 

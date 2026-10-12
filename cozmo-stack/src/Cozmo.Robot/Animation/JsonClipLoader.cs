@@ -21,6 +21,9 @@ internal static class JsonClipLoader
         public JsonCppException(string m) : base(m) { }
     }
 
+    private sealed class MissingMemberException(string member) : Exception
+    { internal string Member => member; }
+
     public static AnimationClip? Load(string file, Action<string>? log, SourceLogSink? sourceLog = null)
     {
         using var doc = JsonDocument.Parse(File.ReadAllText(file));
@@ -45,7 +48,7 @@ internal static class JsonClipLoader
         // What catches it upstream is unread, so the stack stops here visibly instead of inventing a result.
         if (root.ValueKind is not (JsonValueKind.Object or JsonValueKind.Null))
         {
-            log?.Invoke($"MISSING: M5-001 a non-empty non-object JSON root ({root.ValueKind}) makes getMemberNames throw Json::LogicError (0x008E6D08) under the container mutex; the native handling is unread; skipped");
+            log?.Invoke($"Loader file skipped (M1-034): non-object clip root {root.ValueKind}; native getMemberNames throws at 0x008E6D08");
             return null;
         }
         var names = root.ValueKind == JsonValueKind.Object
@@ -80,33 +83,26 @@ internal static class JsonClipLoader
             foreach (var el in arr.EnumerateArray())
             {
                 string? error = null;
-                string frameName = el.ValueKind == JsonValueKind.Object && el.TryGetProperty("Name", out var frameType) && frameType.ValueKind == JsonValueKind.String ? frameType.GetString()! : "";
-                try
+                void ParentFailure(string key, string text) { Error(log, sourceLog, key, text); failed = true; }
+                if (el.ValueKind != JsonValueKind.Object)
+                { ParentFailure("Animation.DefineFromJson.FrameMissing", $"frame {i} of '{name}' animation is missing or incorrect type."); break; }
+                if (!el.TryGetProperty("Name", out var frameType) || frameType.ValueKind != JsonValueKind.String)
+                { ParentFailure("Animation.DefineFromJson.FrameNameMissing", $"Missing 'Name' field for frame {i} of '{name}' animation."); break; }
+                string frameName = frameType.GetString()!;
+                if (frameName is not ("HeadAngleKeyFrame" or "LiftHeightKeyFrame" or "BodyMotionKeyFrame" or
+                    "ProceduralFaceKeyFrame" or "BackpackLightsKeyFrame" or "RobotAudioKeyFrame" or "FaceAnimationKeyFrame" or
+                    "EventKeyFrame" or "DeviceAudioKeyFrame" or "RecordHeadingKeyFrame" or "TurnToRecordedHeadingKeyFrame"))
+                { ParentFailure("Animation.DefineFromJson.UnrecognizedFrameName", $"Frame {i} in '{name}' animation has unrecognized name '{frameName}'."); break; }
+                Keyframe? k;
+                try { k = Define(frameName, el, log, name, out error, sourceLog); }
+                catch (MissingMemberException e)
+                { Error(log, sourceLog, "IKeyFrame.GetMemberFromJsonMacro", $"Failed to get '{e.Member}' from Json file."); error = "IKeyFrame.GetMemberFromJsonMacro"; k = null; }
+                if (k is null || error is not null || !probe.AddNew(k))
                 {
-                    if (el.ValueKind != JsonValueKind.Object) error = "Animation.DefineFromJson: a frame is not an object";
-                    else if (!el.TryGetProperty("Name", out var n) || n.ValueKind != JsonValueKind.String)
-                        error = "Animation.DefineFromJson.FrameNameMissing";
-                    else
-                    {
-                        var k = Define(n.GetString()!, el, log, name, out error, sourceLog);
-                        if (k is not null && !probe.AddNew(k)) error = $"Animation.DefineFromJson.AddKeyFrameFailure: {n.GetString()} frame {i}";
-                        if (k is not null && error is null) frames.Add(k);
-                    }
-                }
-                catch (JsonCppException e)
-                {
-                    error = e.Message;
-                    log?.Invoke("MISSING: M5-001 unchecked JsonCpp conversion/other keyframe rejection detail: " + e.Message);
-                }
-                if (error is not null)
-                {
-                    // 0x00576E74..0x00576EC2: every failed keyframe takes the parent tail and ends this loop.
-                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
-                        "Animation.DefineFromJson.AddKeyFrameFailure", $"Adding {frameName} frame {i} failed.");
-                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-                    failed = true;
+                    ParentFailure("Animation.DefineFromJson.AddKeyFrameFailure", $"Adding {frameName} frame {i} failed.");
                     break;
                 }
+                frames.Add(k);
                 i++;
             }
         }
@@ -159,7 +155,7 @@ internal static class JsonClipLoader
 
     private static JsonElement Required(JsonElement o, string key)
     {
-        if (!Present(o, key, out var v)) throw new JsonCppException($"IKeyFrame.GetMemberFromJsonMacro: Failed to get '{key}' from Json file.");
+        if (!Present(o, key, out var v)) throw new MissingMemberException(key);
         return v;
     }
 
@@ -171,7 +167,7 @@ internal static class JsonClipLoader
 
     private static bool GetNumericMember(JsonElement el, string key, Action<string>? log, SourceLogSink? sourceLog, out JsonElement value)
     {
-        if (Present(el, key, out value) && value.ValueKind == JsonValueKind.Number) return true;
+        if (Present(el, key, out value)) return true; // checked optional<int/short>: asInt handles bool; incompatible types throw.
         Error(log, sourceLog, "IKeyFrame.GetMemberFromJsonMacro", $"Failed to get '{key}' from Json file.");
         return false;
     }
@@ -182,7 +178,12 @@ internal static class JsonClipLoader
     {
         error = null;
         // J1.3: IKeyFrame::DefineFromJson: "triggerTime_ms" required, asUInt
-        if (!Present(el, "triggerTime_ms", out var tr)) { error = "IKeyFrame.ReadFromJson: no triggerTime_ms"; return null; }
+        if (!Present(el, "triggerTime_ms", out var tr))
+        {
+            // J1.3 checked gate/key; the complete format/arguments need manager adoption.
+            log?.Invoke("MISSING: M5-001 IKeyFrame.ReadFromJson missing triggerTime_ms diagnostic at 0x004F8AF2; native format/arguments not in the adopted row");
+            error = "IKeyFrame.ReadFromJson"; return null;
+        }
         uint trigger = AsUInt(tr, "triggerTime_ms");
         switch (type)
         {
@@ -232,7 +233,7 @@ internal static class JsonClipLoader
         if (!GetNumericMember(el, "speed", log, sourceLog, out var speedValue))
         { error = "BodyMotionKeyFrame.SetMembersFromJson"; return null; }
         short speed = unchecked((short)AsInt(speedValue, "speed"));
-        if (!Present(el, "radius_mm", out var r))
+        if (!el.TryGetProperty("radius_mm", out var r))
         {
             Error(log, sourceLog, "BodyMotionKeyFrame.SetMembersFromJson.MissingRadius", $"{clip}: Missing 'radius_mm' field.");
             error = "BodyMotionKeyFrame.SetMembersFromJson.MissingRadius";
@@ -254,6 +255,8 @@ internal static class JsonClipLoader
             BodyKeyframe.CheckSpeedForRadiusString(raw, ref speed);   // B6: the clamps run after the radius decision
             return new BodyKeyframe(trigger, duration, raw, speed);
         }
+        if (!GetNumericMember(el, "radius_mm", log, sourceLog, out r))
+        { error = "IKeyFrame.GetMemberFromJsonMacro"; return null; }
         short radius = unchecked((short)AsInt(r, "radius_mm"));
         AnimationLibrary.LogBodyClamp(radius.ToString(System.Globalization.CultureInfo.InvariantCulture), speed, clip, log, sourceLog);
         if (Math.Abs((int)speed) >= 221) speed = (short)Math.Clamp((int)speed, -220, 220);   // CheckTurnSpeed

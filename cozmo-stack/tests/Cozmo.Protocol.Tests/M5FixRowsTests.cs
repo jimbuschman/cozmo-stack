@@ -137,8 +137,8 @@ public class M5FixRowsTests
             Assert.Equal("OwnName", lib.GetClip("OwnName").Name);
             Assert.False(lib.HasClip("file")); Assert.False(lib.HasClip("ownname")); Assert.False(lib.HasClip("ignored"));
             Assert.Equal(BitConverter.SingleToInt32Bits(0.7f), BitConverter.SingleToInt32Bits(lib.LoadingProgress));
-            Assert.Contains(logs, l => l.StartsWith("MISSING: M5-046"));
-            Assert.DoesNotContain(logs, l => l.Contains("RobotDataLoader.CollectAnimFiles.Results: Found"));
+            Assert.DoesNotContain(logs, l => l.StartsWith("MISSING: M5-046"));
+            Assert.Contains("info: [Animations] RobotDataLoader.CollectAnimFiles.Results: Found 2 animation files of type 0", logs);
             Assert.Contains("info: [Animations] RobotDataLoader.LoadAnimations.CannedAnimationsCount: Total number of canned animations available = 1", logs);
             Assert.True(Eye.ClippingWarningEnabled);
         }
@@ -285,7 +285,7 @@ public class M5FixRowsTests
             File.WriteAllText(Path.Combine(root, "animations", "a.json"), "{\"a\":[{\"Name\":\"ProceduralFaceKeyFrame\",\"triggerTime_ms\":0,\"leftEye\":[0]}]}");
             var lib = AnimationLibrary.Open(root, robot.Engine.Log, sourceLog: Source(robot.Engine));
             Entry(entries, "CannedAnimationContainer::DefineFromJson", EngineLogLevel.Debug, "Unnamed", "Loading 'a'");
-            Assert.DoesNotContain(entries, e => e.Name == "RobotDataLoader.CollectAnimFiles.Results");
+            Entry(entries, "RobotDataLoader.CollectAnimFiles.Results", EngineLogLevel.Info, "Animations", "Found 1 animation files of type 0");
             Entry(entries, "ProceduralFace.SetEyeArrayHelper.WrongNumParams", EngineLogLevel.Warning, null, "Unexpected number of parameters for leftEye array (1 vs. 19)");
         }
         finally { Directory.Delete(root, true); }
