@@ -644,17 +644,15 @@ public sealed class AnimationLibrary : IAnimationCatalog
         return g is null || g.Entries.Count == 0 ? ("", 0) : (g.Entries[0].Name, g.Entries.Count);
     }
 
+    // fidelity: M5-054
     public AnimationClip? GetAnimation(string name)
     {
         try { return GetClip(name); }
-        catch (KeyNotFoundException) { return null; }
-        catch (NotSupportedException e)
+        catch (KeyNotFoundException)
         {
-            // a JSON clip holding a keyframe type the port cannot load (M5-001 MISSING): the engine's DefineFromJson would
-            // have logged the failure at load and left the clip out, so it is logged in that form and treated as absent,
-            // and nothing throws into the engine tick
-            Log?.Invoke($"error: {name}: {e.Message}");
-            Log?.Invoke("MISSING: Animation.DefineFromJson.AddKeyFrameFailure, Animation.DefineFromJson.UnrecognizedFrameName, BodyMotionKeyFrame.MissingRadius, IKeyFrame.GetMemberFromJsonMacro engine error fields/tails carried by clip-load exceptions; higher-layer port deferred");
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null,
+                "CannedAnimationContainer.GetAnimation_Const.InvalidName", $"Animation requested for unknown animation '{name}'.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return null;
         }
     }

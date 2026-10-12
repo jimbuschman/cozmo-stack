@@ -135,31 +135,17 @@ internal static class JsonClipLoader
         throw new JsonCppException($"JsonCpp: '{what}' is not convertible to a number");
     }
 
-    /// <summary>asUInt: range [0, 2^32 − 1] (else a throw), vcvt.u32.f64 (truncates).</summary>
-    private static uint AsUInt(JsonElement e, string what)
+    private static FirmwareJsonValue Scalar(JsonElement value)
     {
-        double d = Num(e, what);
-        if (d < 0 || d > 4294967295.0) throw new JsonCppException($"JsonCpp: '{what}' out of UInt range");
-        return (uint)Math.Truncate(d);
+        if (value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined) return new();
+        if (!Cozmo.Robot.Json.TryParseFirst(System.Text.Encoding.UTF8.GetBytes(value.GetRawText()), out var doc))
+            throw new JsonCppException("Scalar conversion failed.");
+        using (doc) return doc.RootElement;
     }
-
-    /// <summary>asInt: range [−2^31, 2^31 − 1] (else a throw), vcvt.s32.f64 (truncates toward zero).</summary>
-    private static int AsInt(JsonElement e, string what)
-    {
-        double d = Num(e, what);
-        if (d < int.MinValue || d > int.MaxValue) throw new JsonCppException($"JsonCpp: '{what}' out of Int range");
-        return (int)Math.Truncate(d);
-    }
-
-    private static float AsFloat(JsonElement e, string what) => (float)Num(e, what);
-
-    private static ulong AsUInt64(JsonElement e, string what)
-    {
-        if (e.ValueKind == JsonValueKind.Number && e.TryGetUInt64(out var u)) return u;
-        double d = Num(e, what);
-        if (d < 0 || d > 18446744073709551615.0) throw new JsonCppException($"JsonCpp: '{what}' out of UInt64 range");
-        return (ulong)Math.Truncate(d);
-    }
+    private static uint AsUInt(JsonElement e, string what) => Cozmo.Robot.Json.AsUInt(Scalar(e));
+    private static int AsInt(JsonElement e, string what) => Cozmo.Robot.Json.AsInt(Scalar(e));
+    private static float AsFloat(JsonElement e, string what) => Cozmo.Robot.Json.AsFloat(Scalar(e));
+    private static ulong AsUInt64(JsonElement e, string what) => Cozmo.Robot.Json.AsUInt64(Scalar(e));
 
     private static bool Present(JsonElement o, string key, out JsonElement v) =>
         o.TryGetProperty(key, out v) && v.ValueKind != JsonValueKind.Null;
@@ -189,10 +175,9 @@ internal static class JsonClipLoader
     {
         error = null;
         // J1.3: IKeyFrame::DefineFromJson: "triggerTime_ms" required, asUInt
-        if (!Present(el, "triggerTime_ms", out var tr))
+        if (!el.TryGetProperty("triggerTime_ms", out var tr))
         {
-            // J1.3 checked gate/key; the complete format/arguments need manager adoption.
-            log?.Invoke("MISSING: M5-001 IKeyFrame.ReadFromJson missing triggerTime_ms diagnostic at 0x004F8AF2; native format/arguments not in the adopted row");
+            Error(log, sourceLog, "IKeyFrame.ReadFromJson", $"{clip}: Expecting 'triggerTime_ms' field in KeyFrame Json");
             error = "IKeyFrame.ReadFromJson"; return null;
         }
         uint trigger = AsUInt(tr, "triggerTime_ms");
@@ -330,7 +315,7 @@ internal static class JsonClipLoader
                 return true; // Native copies the word directly; no GetU8 conversion/warnings.
             }
             else
-                components = v.ValueKind == JsonValueKind.Array
+                components = v.ValueKind == JsonValueKind.Array && v.GetArrayLength() is 3 or 4
                     ? v.EnumerateArray().Select(x => AsFloat(x, key)).ToArray() : Array.Empty<float>();
             // Convert immediately, before reading the next colour: NamedColors and GetU8 warnings interleave.
             return BackpackColor.GetColorOptional(components, ref color, log, sourceLog);
@@ -364,7 +349,7 @@ internal static class JsonClipLoader
         error = null;
         float volume = Present(el, "volume", out var vv) ? AsFloat(vv, "volume") : 1f;
         bool hasAlts = Present(el, "hasAlts", out var ha) && Num(ha, "hasAlts") != 0;
-        var idEl = Required(el, "audioEventId");
+        el.TryGetProperty("audioEventId", out var idEl); // Missing selects the scalar asUInt64(null) path.
         if (idEl.ValueKind == JsonValueKind.Array)
         {
             var ids = idEl.EnumerateArray().Select(x => (long)(uint)(AsUInt64(x, "audioEventId") & 0xFFFFFFFF)).ToArray();
@@ -374,6 +359,8 @@ internal static class JsonClipLoader
                                                           : new[] { AsFloat(p, "probability") };
             else if (ids.Length > 0) { probs = new float[ids.Length]; Array.Fill(probs, 1.0f / ids.Length); }
             else probs = Array.Empty<float>();
+            if (probs.Length == 0 && ids.Length > 0)
+            { probs = new float[ids.Length]; Array.Fill(probs, 1.0f / ids.Length); } // 0x004FA26A -> 0x004FA39C.
             if (probs.Length != ids.Length)
             {
                 error = "RobotAudioKeyFrame.SetMembersFromJson.UnknownProbabilities";

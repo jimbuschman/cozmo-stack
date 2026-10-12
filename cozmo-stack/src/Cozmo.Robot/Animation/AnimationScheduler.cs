@@ -678,6 +678,7 @@ public sealed class AnimationScheduler
             }
             if (count > 1)
                 SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Constructor.MultipleNeutralFaceAnimations", $"Neutral face animation group {group} has {count} animations instead of one. Using first.");
+            // fidelity: M5-054 — native 0x0057A1F2; the library lookup owns the miss/error tail.
             _neutral = catalog!.GetAnimation(name);
             if (_neutral is null) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Constructor.NeutralFaceDataNotFound", $"Could not find expected neutral face animation file called {name}"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             var face = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
@@ -714,6 +715,7 @@ public sealed class AnimationScheduler
         lock (_gate)
         {
             _nowMs = nowMs;
+            // fidelity: M5-054 — string overload 0x0057B14E, with the native empty-name gate at 0x0057B14A.
             var clip = _lastStreamedName.Length == 0 ? null : Catalog?.GetAnimation(_lastStreamedName);
             byte tag = SetStreamingAnimationLocked(clip, numLoops, interrupt: true);
             return tag == 0 ? null : _handle;
@@ -1187,6 +1189,7 @@ public sealed class AnimationScheduler
     {
         string group = catalog.GetAnimationForTrigger(trigger);
         string name = catalog.GetAnimationNameFromGroup(group, strict: false);
+        // fidelity: M5-054 — idle lookup 0x0057D292; retains the separate empty-name gate.
         var clip = name.Length == 0 ? null : catalog.GetAnimation(name);
         if (clip is null)
         {

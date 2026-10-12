@@ -140,6 +140,20 @@ internal static class Json
         _ => throw new JsonLogicError("Value is not convertible to float."),
     };
 
+    // fidelity: M5-009
+    // asUInt64 0x008E9538..0x008E9594; __aeabi_d2ulz is an imported phone conversion routine.
+    public static ulong AsUInt64(FirmwareJsonValue value) => value.Kind switch
+    {
+        FirmwareJsonKind.Null => 0,
+        FirmwareJsonKind.Boolean => value.Boolean ? 1UL : 0UL,
+        FirmwareJsonKind.Int => value.Signed >= 0 ? (ulong)value.Signed
+            : throw new JsonLogicError("LargestInt out of UInt64 range"),
+        FirmwareJsonKind.UInt => value.Unsigned,
+        FirmwareJsonKind.Real => value.Real >= 0 && value.Real <= (double)ulong.MaxValue
+            ? (ulong)value.Real : throw new JsonLogicError("double out of UInt64 range"),
+        _ => throw new JsonLogicError("Value is not convertible to UInt64."),
+    };
+
     public static uint? OptionalUInt(FirmwareJsonValue root, string key)
     {
         var value = Member(root, key);

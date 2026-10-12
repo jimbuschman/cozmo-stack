@@ -76,7 +76,8 @@ public class M5X9BuilderTests : IDisposable
     {
         var entries = new ConcurrentQueue<Entry>(); var stack = new List<string>();
         var clip = Json("""{"c":[{"Name":"RecordHeadingKeyFrame"}]}""", entries, stack.Add)!;
-        Assert.True(clip.LoadTruncated); Assert.Contains(stack, l => l.Contains("MISSING: M5-001 IKeyFrame.ReadFromJson"));
+        Assert.True(clip.LoadTruncated); Assert.DoesNotContain(stack, l => l.Contains("MISSING: M5-001 IKeyFrame.ReadFromJson"));
+        Check(entries, "IKeyFrame.ReadFromJson", EngineLogLevel.Error, null, "c: Expecting 'triggerTime_ms' field in KeyFrame Json");
         Check(entries, "Animation.DefineFromJson.AddKeyFrameFailure", EngineLogLevel.Error, null, "Adding RecordHeadingKeyFrame frame 0 failed.");
     }
 
@@ -479,9 +480,11 @@ public class M5X9BuilderTests : IDisposable
             File.WriteAllBytes(Path.Combine(root,"animations","bad.bin"),bytes.ToArray());
             var entries=new ConcurrentQueue<Entry>();var stack=new ConcurrentQueue<string>();
             var lib=AnimationLibrary.Open(root,stack.Enqueue,Capture(entries));
-            Assert.False(lib.HasClip("first"));Assert.False(lib.HasClip("second"));Assert.Null(lib.GetAnimation("first"));
+            Assert.False(lib.HasClip("first"));Assert.False(lib.HasClip("second"));
             Assert.Equal(new[]{"Loading 'first'","Loading 'second'"},entries.Where(e=>e.Key.EndsWith("LoadingSpecificAnimFromBinary")).Select(e=>e.Text.Split(" from ")[0]));
             Assert.Contains(stack,l=>l.Contains("malformed non-empty binary"));Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
+            Assert.Null(lib.GetAnimation("first"));
+            Check(entries,"CannedAnimationContainer.GetAnimation_Const.InvalidName",EngineLogLevel.Error,null,"Animation requested for unknown animation 'first'.");
         }
         finally { Directory.Delete(root,true); }
     }
