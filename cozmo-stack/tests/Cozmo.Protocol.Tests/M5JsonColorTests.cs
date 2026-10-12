@@ -14,12 +14,12 @@ public class M5JsonColorTests
 
     [Theory]
     [InlineData("BLACK", 0x000000FFu, 0x8000)]
-    [InlineData("OFFWHITE", 0xCCCCCCCCu, 0xE739)]
+    [InlineData("OFFWHITE", 0xCCCCCCFFu, 0xE739)]
     [InlineData("bad-name", 0xFFCC00FFu, 0xFF20)]
     public void NamedWordsSurviveJsonLoadingWithoutComponentConversion(string name, uint word, int led)
     {
         // GetColorOptional word copy 0x00840286..88; PLT 0x004CDE44 -> 0x0083F780,
-        // miss 0x0083F98C..D0 returns DEFAULT. OFFWHITE shipped bytes cc cc cc cc.
+        // miss 0x0083F98C..D0 returns DEFAULT. OFFWHITE at 0xC9745F is cc cc cc ff.
         WithJson(Frame(string.Join(",", new[] { "Back", "Front", "Middle", "Left", "Right" }
             .Select(key => $"\"{key}\":\"{name}\""))), (clip, entries, _) =>
         {
@@ -40,11 +40,11 @@ public class M5JsonColorTests
     [Fact]
     public void NamedAlphaCarriesIntoFollowingThreeComponentArray()
     {
-        // One reused ColorRGBA: Back named OFFWHITE sets alpha cc; Front's size 3 leaves it untouched.
+        // One reused ColorRGBA: Back named OFFWHITE sets alpha ff (0xC9745F); Front's size 3 leaves it untouched.
         WithJson(Frame(Arrays.Replace("\"Back\":[0,0,0]", "\"Back\":\"OFFWHITE\"")), (clip, entries, _) =>
         {
             var frame = Assert.IsType<LightsKeyframe>(Assert.Single(clip.Keyframes));
-            Assert.Equal(new uint[] { 0x000000CC, 0x000000CC, 0x000000CC, 0xCCCCCCCC, 0x000000CC }, frame.LoadedColorWords);
+            Assert.Equal(new uint[] { 0x000000FF, 0x000000FF, 0x000000FF, 0xCCCCCCFF, 0x000000FF }, frame.LoadedColorWords);
             Assert.Empty(entries.Where(e => e.Level == EngineLogLevel.Warning));
         });
     }

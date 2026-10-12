@@ -217,7 +217,7 @@ public static class NamedColors
         ["DEFAULT"] = 0xFFCC00FF,
         ["DARKGRAY"] = 0x4C4C4CFF,
         ["DARKGREEN"] = 0x007F00FF,
-        ["OFFWHITE"] = 0xCCCCCCCC,
+        ["OFFWHITE"] = 0xCCCCCCFF,                                       // NamedColors::OFFWHITE 0xC9745F: cc cc cc ff
     };
 
     /// <summary>The 13 names, for a caller that wants to enumerate them.</summary>

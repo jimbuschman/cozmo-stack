@@ -203,7 +203,7 @@
     RED, GREEN, BLUE, YELLOW, CYAN, ORANGE, MAGENTA, WHITE, BLACK, DEFAULT, DARKGRAY, DARKGREEN, OFFWHITE, with
     values RED ff0000ff, GREEN 00ff00ff, BLUE 0000ffff, YELLOW ffff00ff, CYAN 00ffffff, ORANGE ff7f00ff,
     MAGENTA ff00ffff, WHITE ffffffff, BLACK 000000ff, DEFAULT ffcc00ff, DARKGRAY 4c4c4cff, DARKGREEN 007f00ff,
-    OFFWHITE cccccccc (LIGHTGRAY b2b2b2ff exists as a symbol but is not in the map). The lookup is case-sensitive; a
+    OFFWHITE ccccccff (corrected 2026-10-11 from a transcription error, cccccccc; NamedColors::OFFWHITE at 0xC9745F, GLOB_DAT via GOT 0x103FE2C) (LIGHTGRAY b2b2b2ff exists as a symbol but is not in the map). The lookup is case-sensitive; a
     miss logs "Unknown color name '%s', returning default" and returns DEFAULT. `JsonTools::GetColorOptional`
     (0x0084024C) sends a string through GetByString, accepts a 3- or 4-element array by the float rule (C17), and
     returns false for any other type. `BackpackLightsKeyFrame::SetMembersFromJson` uses it for Back, Front, Middle,

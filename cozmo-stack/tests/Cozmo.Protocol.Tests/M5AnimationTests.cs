@@ -2076,7 +2076,7 @@ public class M5AnimationTests
         Assert.Equal(0xFFCC00FFu, NamedColors.GetByString("DEFAULT"));
         Assert.Equal(0x4C4C4CFFu, NamedColors.GetByString("DARKGRAY"));
         Assert.Equal(0x007F00FFu, NamedColors.GetByString("DARKGREEN"));
-        Assert.Equal(0xCCCCCCCCu, NamedColors.GetByString("OFFWHITE"));
+        Assert.Equal(0xCCCCCCFFu, NamedColors.GetByString("OFFWHITE"));
         Assert.Equal(NativeOracleFixtures.NamedColor("red"), NamedColors.GetByString("red"));   // native case-sensitive miss
     }
 

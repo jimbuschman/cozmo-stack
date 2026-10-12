@@ -36,8 +36,9 @@ anything. BOARD.md is history; this file is the live queue.
 | 4 | [B-M5-2](B-M5-2.md) | done (9af65077); re-verify FAIL (1: duplicate type-3 Results), see B-M5-4 |
 | 5 | [B-M5-3](B-M5-3.md) | done (8816bab0); re-verify FAIL (2: manifest tests on wrong record, fixed by manager; string colours), see B-M5-5 |
 | 6 | [B-M5-4](B-M5-4.md) | done (ac0581ad, manager suite 4338/4338); re-verify FAIL (1: backpack walk warnings twice), see B-M5-6 |
-| 7 | [B-M5-5](B-M5-5.md) | running (manager's machine) |
-| 8 | [B-M5-6](B-M5-6.md) | open, after B-M5-5 |
+| 7 | [B-M5-5](B-M5-5.md) | done (244828ac); re-verify FAIL (2: OFFWHITE alpha, fixed by manager; JSON empty() gate), see B-M5-7 |
+| 8 | [B-M5-6](B-M5-6.md) | running (manager's machine) |
+| 9 | [B-M5-7](B-M5-7.md) | open, after B-M5-6 |
 
 ## Research lane (clone `cozmo-stack-codex`)
 
