@@ -3,15 +3,15 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **534 records** over 16 subsystems.
+Manifest of **537 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 53 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 224 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 54 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 227 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| COMPATIBILITY_POLICY | 55 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -26,17 +26,17 @@ remains after both, and they do not go away by working harder on this repository
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 17 | 0 | 0 | 0 | 0 | yes | yes |
-| M3-device — Camera, display and audio device layer | 58 | 0 | 3 | 0 | 4 | yes | no |
-| M4-control — Motion, sensors, lights and cubes | 44 | 5 | 6 | 0 | 3 | no | no |
+| M3-device — Camera, display and audio device layer | 59 | 0 | 3 | 0 | 4 | yes | no |
+| M4-control — Motion, sensors, lights and cubes | 44 | 2 | 9 | 0 | 3 | no | no |
 | M5-animation — Animation clips, scheduler and face | 58 | 0 | 18 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 28 | 0 | 25 | 0 | 0 | yes | no |
 | M7-behaviour — Idle, mood and reactions | 26 | 3 | 18 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 15 | 2 | 10 | 0 | 0 | no | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 61 | 10 | 35 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 62 | 11 | 35 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 40 | 8 | 21 | 0 | 0 | no | no |
-| M13-navigation — Planning, charger and block configurations | 29 | 3 | 23 | 0 | 0 | no | no |
+| M13-navigation — Planning, charger and block configurations | 30 | 4 | 23 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 36 | 10 | 22 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
@@ -75,24 +75,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M4-control — Motion, sensors, lights and cubes
 
-**M4-037 — Pose-origin root names for the ActiveObjectInDifferentFramesWithDifferentIDs warning** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
-* effect: The text of that warning.
-* rests on: Second M3/M4 Opus settling pass (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m3m4-settling-2.md: the warning at 0x00534042..0x005340CC prints the root names of two pose origins (FindRoot 0x4A40F0, GetName 0x4A4C60) when a located ID differs from the connected ID.
-* outstanding: RECOVERABLE_GAP: read FindRoot/GetName and how pose origins are named.
-
-**M4-038 — CliffSensorComponent::ComputeCliffPose and BlockWorld::AddCliff (the detected-cliff path)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
-* effect: Where a detected cliff is placed in the world, and the logs around it.
-* rests on: Second M3/M4 Opus settling pass (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the "Detected at" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it.
-* outstanding: RECOVERABLE_GAP: read ComputeCliffPose and AddCliff.
-
 **M4-041 — BlendAnimWithCurLights body, the StopLignAnim.Result serializer and the GetLEDState callers** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
@@ -101,15 +83,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261012-m3m4-settling-2.md: PlayLightAnim blend body (unread); StopLignAnim.Result current-state serializer (0x00639300); ActiveObject::GetLEDState IndexTooLarge/NegativeIndex (0x0063958E/0x006395CC) and its callers.
 * outstanding: RECOVERABLE_GAP: read the blend body, the serializer and the GetLEDState callers.
-
-**M4-043 — BlockFilter::Save failure text: the ios_base::failure what() bytes from libc++_shared.so** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CubeConnections.cs`
-* effect: The Save.Error log text.
-* rests on: Second M3/M4 Opus settling pass (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m3m4-settling-2.md: Save.Error (0x0061B21C..0x0061B2A4) logs what() of the caught ios_base::failure; the bytes are in the shipped libc++_shared.so.
-* outstanding: RECOVERABLE_GAP: read the ios_base::failure message for a failed open in libc++_shared.so.
 
 **M4-044 — The cube-light animation loader (CubeLightAnimations / ParseJsonToAnim)** (live path)
 
@@ -364,6 +337,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN
 * outstanding: RECOVERABLE_GAP: read VisionSystem::Update from 0x006B4D5C for the consumer of the slot and what it applies. The stack queues NextCameraParams (Camera.cs) and never applies it.
 
+**M11-062 — BlockWorld helpers reached by AddMarkerlessObject (cliffs): IsSameAs, the intersecting predicate, GetBoundingQuad, SetID, InitPose, the 0x008CAD1C pose-state broadcast, DeleteIntersectingObjects** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: Whether a detected cliff is added, merged or blocked in BlockWorld.
+* rests on: Opus check of R-M4-CLIFF (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: unread helpers on the AddMarkerlessObject path: IsSameAs, the predicate 0x00622908..0x0062297C, GetBoundingQuad<float>, ObservableObject::SetID, InitPose/SetPose(state 1), the tail 0x008CAD1C, DeleteIntersectingObjects.
+* outstanding: RECOVERABLE_GAP: read the listed helpers (split from M4-038).
+
 ### M12-manipulation — Docking, carrying and pre-action poses
 
 **M12-024 — DrivingAnimationHandler PlayStartAnim / PlayEndAnim** (live path)
@@ -466,6 +448,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: 0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
 * outstanding: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): rows A3/A4 are adopted with corrections (re-analysis/jobs/B-M3M4.md) and the code is built (Motion.cs PathComponent, tagged M4-026, retagged M13-029 in the build round; tests M4AbortSleepTests.M4_026_A3_*, A4_*, Row4); the status is not changed in this pass (its layer's turn). Overlap ruling: PathComponent::Abort/ClearPath 0x00649100..0x006492A0 are this record's; M4-026 keeps the call at 0x0051195E..0x00511960. Before: S9: planner owner 0x0051127E..0x00511288; recipients 0x00649100 and 0x00649220. Virtual descendants UNKNOWN. Source triage S9. Source: re-analysis/research/20261006-M1M2-missing-triage.md.
+
+**M13-030 — The MemoryMap insert of cliff data (MemoryMapData_Cliff, QuadTree insert, helper +0x38 timestamp)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: The navigation map after a cliff.
+* rests on: Opus check of R-M4-CLIFF (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038 step 7: BlockWorld+0x54 = 1, MemoryMapData_Cliff (0x00684984), quad from GetBoundingQuadXY (0x00502612..0x00502650), insert through helper vtable+8, BlockWorld+0x58 = fmax(ts, helper+0x38()) (0x006226EA..).
+* outstanding: RECOVERABLE_GAP: read the MemoryMap insert and helper+0x38 (split from M4-038).
 
 ### M14-faces — Face and pet pipeline
 
@@ -600,8 +591,8 @@ Each of these is a question already answered. The original's behaviour is establ
 * effect: The order and arguments of the engine's log-library calls, and what the engine does with each flush completion.
 * rests on: Opus check of R-M3-051 (2026-10-12), manager-adopted.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m3-051-libdas-sink-b-check.md section "Engine calls into libDAS": DASSetArchiveLogConfig 0x665A4E; DataCollectionEnabled 0x6659E6 -> Enable/Disable(2) 0x665C1E/0x665C26; DASConfigure 0x665CD6; platform init 0x665EEC/0x665F14/0x665F3A; Pause(false) 0x665F4E; $player_id 0x665FAC; DASForceFlushWithCallback 0x665FCC and 0x6A25FE; Pause(true) on ConnectToRobot 0x4ED114; RemoveRobot 0x52F2D8/0x52F2EE; RequestDataCollectionOption 0x4EE084; cozmo_shutdown DASDisableNetwork(4) 0x6668E2; provider methods 0x6671F4, 0x667214..0x667244.
-* outstanding: Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Partial checked control seam built against DasControlStandIn: archive callback addresses/suffix, data collection reason2, Configure relative-path/scope descriptors, NativeInit(cozmo), pause schedule, global clears, reason4 shutdown, provider global/mask/flush methods and failed-transfer completions. MISSING: Configure absolute root inputs, Android/Unity platform input selector/arguments, startup completion reaction0x00667748 (resolved callback, absent from checked rows), startup $player_id MD50x00665FAC and DasTransferTask caller0x006A25FE. No guessed paths/platform objects/digest/native callback reaction. Reopened source0x0052F2D8 clears $session_id with null (literal0x0052F3E4), contradicting the check report's player_id label at this address; preserved the clear, no fake RemoveRobot digest. Needs edge0x004ED10A precedes connect pause0x004ED114. Pause's true->false internal appender flush is distinguished from a provider DASForceFlushNow call. Source file/sink(b) work remains excluded under M3-051. Opus check of B-M3M4-12 (re-analysis/research/20261012-b-m3m4-12-check.md): startup, connect, RemoveRobot, RequestDataCollectionOption, shutdown and provider thunks match. Still open: (a) the startup flush callback reaction 0x667748..0x6677A0 (sEventF das.upload / das.upload.fail, kv {}, text "live"; runs on the libDAS worker 0x717C -> 0xB7BC -> 0xC374), built as a MISSING; (b) the global sets 0x52E38A $session_id, 0x536810 $group, 0x536FF0 $phys are not routed to the stand-in; (c) the $player_id input is a platform input (new COMPATIBILITY_POLICY record); (d) the DasTransferTask caller 0x6A25FE is unread. Correction: 0x52F2D8 is sSetGlobal("$session_id", null), not $player_id.
+* evidence: re-analysis/research/20261012-m3-051-libdas-sink-b-check.md section "Engine calls into libDAS": DASSetArchiveLogConfig 0x665A4E; DataCollectionEnabled 0x6659E6 -> Enable/Disable(2) 0x665C1E/0x665C26; DASConfigure 0x665CD6; platform init 0x665EEC/0x665F14/0x665F3A; Pause(false) 0x665F4E; $player_id 0x665FAC; DASForceFlushWithCallback 0x665FCC and 0x6A25FE; Pause(true) on ConnectToRobot 0x4ED114; RemoveRobot 0x52F2D8 ($session_id clear, corrected 2026-10-12 by re-analysis/research/20261012-m4-cliff-and-names-check.md)/0x52F2EE; RequestDataCollectionOption 0x4EE084; cozmo_shutdown DASDisableNetwork(4) 0x6668E2; provider methods 0x6671F4, 0x667214..0x667244.
+* outstanding: Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Partial checked control seam built against DasControlStandIn: archive callback addresses/suffix, data collection reason2, Configure relative-path/scope descriptors, NativeInit(cozmo), pause schedule, global clears, reason4 shutdown, provider global/mask/flush methods and failed-transfer completions. MISSING: Configure absolute root inputs, Android/Unity platform input selector/arguments, startup completion reaction0x00667748 (resolved callback, absent from checked rows), startup $player_id MD50x00665FAC and DasTransferTask caller0x006A25FE. No guessed paths/platform objects/digest/native callback reaction. Reopened source0x0052F2D8 clears $session_id with null (literal0x0052F3E4), contradicting the check report's player_id label at this address; preserved the clear, no fake RemoveRobot digest. Needs edge0x004ED10A precedes connect pause0x004ED114. Pause's true->false internal appender flush is distinguished from a provider DASForceFlushNow call. Source file/sink(b) work remains excluded under M3-051. Opus check of B-M3M4-12 (re-analysis/research/20261012-b-m3m4-12-check.md): startup, connect, RemoveRobot, RequestDataCollectionOption, shutdown and provider thunks match. Still open: (a) the startup flush callback reaction 0x667748..0x6677A0 (sEventF das.upload / das.upload.fail, kv {}, text "live"; runs on the libDAS worker 0x717C -> 0xB7BC -> 0xC374), built as a MISSING; (b) the global sets 0x52E38A $session_id, 0x536810 $group, 0x536FF0 $phys are not routed to the stand-in; (c) the $player_id input is a platform input (new COMPATIBILITY_POLICY record); (d) the DasTransferTask caller 0x6A25FE is unread. Correction: 0x52F2D8 is sSetGlobal("$session_id", null), not $player_id. R-M4-CLIFF check (re-analysis/research/20261012-m4-cliff-and-names-check.md): $player_id = lowercase hex MD5 of the device-ID string (0x665F52..0x665FAC; input is M3-058); the DasTransferTask caller is reachable only from the app trigger, now M3-059 (unreachable in scope): drop that MISSING.
 
 ### M4-control — Motion, sensors, lights and cubes
 
@@ -658,6 +649,33 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: 0x005111EA..0x0051121A; 0x005113E0..0x005113F6; 0x00511428..0x00511488; 0x00511500..0x00511510; Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership effects. Existing ResetDevices is a candidate, not evidence of these native effects; queues/subscriptions/virtual descendants UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt; S2 ResetDevices transfer: Robot::AbortAll 0x0051194C..0x0051198C and owned component boundaries 0x005111EA..0x0051121A, 0x005113E0..0x005113F6, 0x00511428..0x00511488, 0x00511500..0x00511510 (20261006-M1M2-missing-triage.md S2).
 * outstanding: Final settling pass: KEEP. The Cliff RollingFileLogger close (+0x288, 0x00633FF8) is not built (Motion.cs:1119); the FaceLayerToRemove tree (+0x88) is not modelled (Motion.cs:1134). Before: B-M3M4-2: Touch teardown (+0x28C) is now bound under M4-033 and no longer reports MISSING. The Cliff logger close (+0x288) remains MISSING here. M4AbortSleepTests updated to require quiet Touch teardown and preserve the Cliff missing-owner check. Previous manager ruling and build history: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): in-layer. TouchSensorComponent is live (Update per RobotState at 0x00512996), not only a teardown matter: new record M4-033 owns it, its teardown (+0x28C) included. The Cliff component's logger close (+0x288, ~CliffSensorComponent 0x00633FF8) stays here; the manager may move it to M4-019. "Recovered, now to build" below is stale: built (M4AbortSleepTests); the Touch/Cliff teardown and their RollingFileLogger close are pinned as MISSING lines. Build round: the Touch/Cliff MISSING (Motion.cs:1084) names no record: name M4-033 / M4-027. Before: RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows adopted (manager, 2026-10-10, jobs/B-M3M4.md); recovered, now to build. Before: S2: Tap filter, Touch/Cliff, CubeAccel, backpack/cube lights and Movement ownership. ResetDevices candidate maps to native AbortAll 0x0051194C..0x0051198C and component boundaries 0x005111EA..0x0051121A, 0x005113E0..0x005113F6, 0x00511428..0x00511488, 0x00511500..0x00511510; it is not proof of equivalent ownership. Queues/subscriptions/virtual descendants UNKNOWN. Source: 20261006-M1M2-missing-triage.md S2. B-M3M4-9 built, awaiting strong verification: Removed the misleading RollingFileLogger runtime MISSING: EnableRawDataLogging 0x00634848 has no caller, so +0x44 remains null. FaceLayerToRemove +0x88 is gated by +0xA8, never set (M4-016 C11.3). Other previously recorded host teardown uncertainty remains. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Cliff +0x288 slot bound quietly: native-null +0x44 logger owner and deque retirement (0x00633FF8..0x00634014). Existing native null/unreachable logging proof retained; stale missing-owner assertion removed.
+
+**M4-037 — Pose-origin root names for the ActiveObjectInDifferentFramesWithDifferentIDs warning** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Cubes.cs`
+* effect: The text of that warning.
+* rests on: Second M3/M4 Opus settling pass (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m3m4-settling-2.md: the warning at 0x00534042..0x005340CC prints the root names of two pose origins (FindRoot 0x4A40F0, GetName 0x4A4C60) when a located ID differs from the connected ID.; re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-037: format 0xBE95E1 and argument order 0x0053406A..0x005340C6; FindRoot 0x0084520C (parent +0x30, 1000-step bound 0x008452C4, LoopBoundOverflow poseTreeNode.h:325); GetName 0x00844956 (+0x38); origins named "Origin"+to_string(id) (0x00847BD8), next-ID 1 (0x0084792C), first origin "Origin1" via Delocalize(false) 0x00510324 -> AddNewOrigin 0x00510A66; _REJ 0x00847F20 / _FLT 0x00847FD8 rename child nodes.
+* outstanding: Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): build from the rows; job B-M3M4-13. Previous notes: RECOVERABLE_GAP: read FindRoot/GetName and how pose origins are named.
+
+**M4-038 — CliffSensorComponent::ComputeCliffPose and BlockWorld::AddCliff (the detected-cliff path)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Sensors.cs`
+* effect: Where a detected cliff is placed in the world, and the logs around it.
+* rests on: Second M3/M4 Opus settling pass (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the "Detected at" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it.; re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: ComputeCliffPose 0x00634980..0x00634A50 (flags test, ComputeStateAt on robot+0x390, NoCliff 0xBFA513/0xBFA541, NoHistoricalPose 0x00634AAC/0x00634AE4 errG 0x006349F2); caller result==1 gate 0x005355B8, Detected 0xBE9368/0x005357F4 channel Unnamed, ComputeCliffPoseFailed 0x00535788/0x005357C4; AddCliff 0x006249FE = AddMarkerlessObject(type 15) steps 1-7 (size 0x41A00000/0x42200000/0x42480000, tolerances size*0.5 and pi/4, allowed families {2,6} when robot+0x2B8 != -1, AddLocatedObject logs 0xBF8EF7 and robot.object_located 0x00622E1C).
+* outstanding: Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): build the M4 part from the rows (job B-M3M4-13). Handoffs, as visible MISSINGs: ComputeStateAt (M11-051/053), the BlockWorld helpers (M11-062), the MemoryMap insert (M13-030). Previous notes: RECOVERABLE_GAP: read ComputeCliffPose and AddCliff.
+
+**M4-043 — BlockFilter::Save failure text: the non-virtual std::exception::what() ("std::exception")** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CubeConnections.cs`
+* effect: The Save.Error log text.
+* rests on: Second M3/M4 Opus settling pass (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m3m4-settling-2.md: Save.Error (0x0061B21C..0x0061B2A4) logs what() of the caught ios_base::failure; the bytes are in the shipped libc++_shared.so.; re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-043: the catch calls PLT 0x004A8C98 (GOT 0x01041C14 = _ZNKSt9exception4whatEv, non-virtual); libc++_shared.so 0x7C3C4 returns "std::exception" (0x7C3C8); sErrorF BlockFilter.Save.Error (0x0061B368) "%s" (0x0061B380), errG and break 0x0061B286..0x0061B29A. The earlier evidence line's "what() of the caught ios_base::failure" is corrected by this.
+* outstanding: Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): Save.Error logs exactly "std::exception"; job B-M3M4-13. Not read: which writes in the try block can throw, the selector != 1 handler (0x0061B314). Previous notes: RECOVERABLE_GAP: read the ios_base::failure message for a failed open in libc++_shared.so.
 
 ### M5-animation — Animation clips, scheduler and face
 
@@ -2684,6 +2702,7 @@ Each of these is a question already answered. The original's behaviour is establ
 | M3-054 | M3-device | COMPATIBILITY_POLICY | Verbose log display: a stack setting, off by default, that also shows the entries libDAS sink (a) drops | Operator decision; no engine counterpart. |
 | M3-056 | M3-device | COMPATIBILITY_POLICY | Data-collection enable: the startup DataCollectionEnabled key and the RequestDataCollectionOption message (app inputs) | libcozmoEngine.so 3.4.0-1204; Unity app scripts (authority 2). |
 | M3-058 | M3-device | COMPATIBILITY_POLICY | The DAS $player_id input: DASGetPlatform()->vtbl[+0x10] (app/platform input) | libcozmoEngine.so 3.4.0-1204. |
+| M3-059 | M3-device | COMPATIBILITY_POLICY | The background-transfer trigger (ExecuteBackgroundTransfers; app input): DasTransferTask and GameLogTransferTask | libcozmoEngine.so 3.4.0-1204. |
 | M4-029 | M4-control | COMPATIBILITY_POLICY | SDK light-state and lift-power recipients | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M4-030 | M4-control | COMPATIBILITY_POLICY | StopRobotForSdk action/control recipient | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M4-032 | M4-control | EQUIVALENT_IMPLEMENTATION | Phone printf rendering of %f / %.1f / %.2f in engine logs | Android bionic libc (not shipped); the engine's formats in M4-001/M4-016 and the M3 logs. |

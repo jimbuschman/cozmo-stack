@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "24f6f38e1838529b69dd5e5460523190fca1231480b46c62cbdb8c4e0de688fd",
+  "inventory_sha256": "e1bdbe1f7ce2046d6b2e9caa283ddb533b9420001e831270df17f68e8f27879d",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -478,21 +478,23 @@
       "hardware_required": false
     },
     "M4-037": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Pose-origin root names for the ActiveObjectInDifferentFramesWithDifferentIDs warning",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: the warning at 0x00534042..0x005340CC prints the root names of two pose origins (FindRoot 0x4A40F0, GetName 0x4A4C60) when a located ID differs from the connected ID."
+        "re-analysis/research/20261012-m3m4-settling-2.md: the warning at 0x00534042..0x005340CC prints the root names of two pose origins (FindRoot 0x4A40F0, GetName 0x4A4C60) when a located ID differs from the connected ID.",
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-037: format 0xBE95E1 and argument order 0x0053406A..0x005340C6; FindRoot 0x0084520C (parent +0x30, 1000-step bound 0x008452C4, LoopBoundOverflow poseTreeNode.h:325); GetName 0x00844956 (+0x38); origins named \"Origin\"+to_string(id) (0x00847BD8), next-ID 1 (0x0084792C), first origin \"Origin1\" via Delocalize(false) 0x00510324 -> AddNewOrigin 0x00510A66; _REJ 0x00847F20 / _FLT 0x00847FD8 rename child nodes."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-038": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "CliffSensorComponent::ComputeCliffPose and BlockWorld::AddCliff (the detected-cliff path)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the \"Detected at\" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it."
+        "re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the \"Detected at\" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it.",
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: ComputeCliffPose 0x00634980..0x00634A50 (flags test, ComputeStateAt on robot+0x390, NoCliff 0xBFA513/0xBFA541, NoHistoricalPose 0x00634AAC/0x00634AE4 errG 0x006349F2); caller result==1 gate 0x005355B8, Detected 0xBE9368/0x005357F4 channel Unnamed, ComputeCliffPoseFailed 0x00535788/0x005357C4; AddCliff 0x006249FE = AddMarkerlessObject(type 15) steps 1-7 (size 0x41A00000/0x42200000/0x42480000, tolerances size*0.5 and pi/4, allowed families {2,6} when robot+0x2B8 != -1, AddLocatedObject logs 0xBF8EF7 and robot.object_located 0x00622E1C)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -538,11 +540,12 @@
       "hardware_required": false
     },
     "M4-043": {
-      "status": "RECOVERABLE_GAP",
-      "title": "BlockFilter::Save failure text: the ios_base::failure what() bytes from libc++_shared.so",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BlockFilter::Save failure text: the non-virtual std::exception::what() (\"std::exception\")",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: Save.Error (0x0061B21C..0x0061B2A4) logs what() of the caught ios_base::failure; the bytes are in the shipped libc++_shared.so."
+        "re-analysis/research/20261012-m3m4-settling-2.md: Save.Error (0x0061B21C..0x0061B2A4) logs what() of the caught ios_base::failure; the bytes are in the shipped libc++_shared.so.",
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-043: the catch calls PLT 0x004A8C98 (GOT 0x01041C14 = _ZNKSt9exception4whatEv, non-virtual); libc++_shared.so 0x7C3C4 returns \"std::exception\" (0x7C3C8); sErrorF BlockFilter.Save.Error (0x0061B368) \"%s\" (0x0061B380), errG and break 0x0061B286..0x0061B29A. The earlier evidence line's \"what() of the caught ios_base::failure\" is corrected by this."
       ],
       "live_path": true,
       "hardware_required": false

@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-10",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "b2b1b7636d55b5c857cf966ed7cf6781780af9ef5aa4819de8b59fa3fc49f5be",
+  "inventory_sha256": "d8893916b89bf7ebdae26b5f63dc20b332edd4b969a1ed1a57fa28d6343e5f07",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -734,6 +734,16 @@
         "E5 0x006B2282..0x006B2298 SetNextMode queues (mode, bool) on the deque at VisionSystem+0xB0",
         "E6 0x006B4FB6..0x006B4FE4 VisionSystem::Update drains the deque",
         "E7 0x006B1A76..0x006B1CC6 VisionSystem::EnableMode sets/clears the mode's bit in the mask at VisionSystem+0xAC (checked for mode 14)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-062": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BlockWorld helpers reached by AddMarkerlessObject (cliffs): IsSameAs, the intersecting predicate, GetBoundingQuad, SetID, InitPose, the 0x008CAD1C pose-state broadcast, DeleteIntersectingObjects",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: unread helpers on the AddMarkerlessObject path: IsSameAs, the predicate 0x00622908..0x0062297C, GetBoundingQuad<float>, ObservableObject::SetID, InitPose/SetPose(state 1), the tail 0x008CAD1C, DeleteIntersectingObjects."
       ],
       "live_path": true,
       "hardware_required": false

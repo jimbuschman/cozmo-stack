@@ -200,7 +200,7 @@
       "review": {
         "inventory": "re-analysis/inventory/M11-vision.md",
         "state": "INVENTORY_APPROVED",
-        "approved": "2026-10-10",
+        "approved": "2026-10-12",
         "snapshot": "re-analysis/inventory/M11-vision.approved.json"
       }
     },
@@ -226,7 +226,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M13-navigation.md",
-        "approved": "2026-10-10",
+        "approved": "2026-10-12",
         "snapshot": "re-analysis/inventory/M13-navigation.approved.json"
       }
     },
@@ -9242,6 +9242,23 @@
       "test": ""
     },
     {
+      "id": "M13-030",
+      "subsystem": "M13-navigation",
+      "title": "The MemoryMap insert of cliff data (MemoryMapData_Cliff, QuadTree insert, helper +0x38 timestamp)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038 step 7: BlockWorld+0x54 = 1, MemoryMapData_Cliff (0x00684984), quad from GetBoundingQuadXY (0x00502612..0x00502650), insert through helper vtable+8, BlockWorld+0x58 = fmax(ts, helper+0x38()) (0x006226EA..)."
+      ],
+      "effect": "The navigation map after a cliff.",
+      "provenance": "Opus check of R-M4-CLIFF (2026-10-12), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the MemoryMap insert and helper+0x38 (split from M4-038).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
       "id": "M14-013",
       "subsystem": "M14-faces",
       "title": "Pet/face-world and speech lifetime recipients",
@@ -9735,11 +9752,11 @@
       "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3-051-libdas-sink-b-check.md section \"Engine calls into libDAS\": DASSetArchiveLogConfig 0x665A4E; DataCollectionEnabled 0x6659E6 -> Enable/Disable(2) 0x665C1E/0x665C26; DASConfigure 0x665CD6; platform init 0x665EEC/0x665F14/0x665F3A; Pause(false) 0x665F4E; $player_id 0x665FAC; DASForceFlushWithCallback 0x665FCC and 0x6A25FE; Pause(true) on ConnectToRobot 0x4ED114; RemoveRobot 0x52F2D8/0x52F2EE; RequestDataCollectionOption 0x4EE084; cozmo_shutdown DASDisableNetwork(4) 0x6668E2; provider methods 0x6671F4, 0x667214..0x667244."
+        "re-analysis/research/20261012-m3-051-libdas-sink-b-check.md section \"Engine calls into libDAS\": DASSetArchiveLogConfig 0x665A4E; DataCollectionEnabled 0x6659E6 -> Enable/Disable(2) 0x665C1E/0x665C26; DASConfigure 0x665CD6; platform init 0x665EEC/0x665F14/0x665F3A; Pause(false) 0x665F4E; $player_id 0x665FAC; DASForceFlushWithCallback 0x665FCC and 0x6A25FE; Pause(true) on ConnectToRobot 0x4ED114; RemoveRobot 0x52F2D8 ($session_id clear, corrected 2026-10-12 by re-analysis/research/20261012-m4-cliff-and-names-check.md)/0x52F2EE; RequestDataCollectionOption 0x4EE084; cozmo_shutdown DASDisableNetwork(4) 0x6668E2; provider methods 0x6671F4, 0x667214..0x667244."
       ],
       "effect": "The order and arguments of the engine's log-library calls, and what the engine does with each flush completion.",
       "provenance": "Opus check of R-M3-051 (2026-10-12), manager-adopted.",
-      "unresolved": "Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Partial checked control seam built against DasControlStandIn: archive callback addresses/suffix, data collection reason2, Configure relative-path/scope descriptors, NativeInit(cozmo), pause schedule, global clears, reason4 shutdown, provider global/mask/flush methods and failed-transfer completions. MISSING: Configure absolute root inputs, Android/Unity platform input selector/arguments, startup completion reaction0x00667748 (resolved callback, absent from checked rows), startup $player_id MD50x00665FAC and DasTransferTask caller0x006A25FE. No guessed paths/platform objects/digest/native callback reaction. Reopened source0x0052F2D8 clears $session_id with null (literal0x0052F3E4), contradicting the check report's player_id label at this address; preserved the clear, no fake RemoveRobot digest. Needs edge0x004ED10A precedes connect pause0x004ED114. Pause's true->false internal appender flush is distinguished from a provider DASForceFlushNow call. Source file/sink(b) work remains excluded under M3-051. Opus check of B-M3M4-12 (re-analysis/research/20261012-b-m3m4-12-check.md): startup, connect, RemoveRobot, RequestDataCollectionOption, shutdown and provider thunks match. Still open: (a) the startup flush callback reaction 0x667748..0x6677A0 (sEventF das.upload / das.upload.fail, kv {}, text \"live\"; runs on the libDAS worker 0x717C -> 0xB7BC -> 0xC374), built as a MISSING; (b) the global sets 0x52E38A $session_id, 0x536810 $group, 0x536FF0 $phys are not routed to the stand-in; (c) the $player_id input is a platform input (new COMPATIBILITY_POLICY record); (d) the DasTransferTask caller 0x6A25FE is unread. Correction: 0x52F2D8 is sSetGlobal(\"$session_id\", null), not $player_id.",
+      "unresolved": "Build the call sequence against the stack's libDAS stand-in (sink (b) not built, M3-051); each flush completion returns failure. The DasTransferTask path (0x6A25FE) and the $player_id digest input need their callers read before settling. B-M3M4-12 (2026-10-12), built, awaiting strong verification: Partial checked control seam built against DasControlStandIn: archive callback addresses/suffix, data collection reason2, Configure relative-path/scope descriptors, NativeInit(cozmo), pause schedule, global clears, reason4 shutdown, provider global/mask/flush methods and failed-transfer completions. MISSING: Configure absolute root inputs, Android/Unity platform input selector/arguments, startup completion reaction0x00667748 (resolved callback, absent from checked rows), startup $player_id MD50x00665FAC and DasTransferTask caller0x006A25FE. No guessed paths/platform objects/digest/native callback reaction. Reopened source0x0052F2D8 clears $session_id with null (literal0x0052F3E4), contradicting the check report's player_id label at this address; preserved the clear, no fake RemoveRobot digest. Needs edge0x004ED10A precedes connect pause0x004ED114. Pause's true->false internal appender flush is distinguished from a provider DASForceFlushNow call. Source file/sink(b) work remains excluded under M3-051. Opus check of B-M3M4-12 (re-analysis/research/20261012-b-m3m4-12-check.md): startup, connect, RemoveRobot, RequestDataCollectionOption, shutdown and provider thunks match. Still open: (a) the startup flush callback reaction 0x667748..0x6677A0 (sEventF das.upload / das.upload.fail, kv {}, text \"live\"; runs on the libDAS worker 0x717C -> 0xB7BC -> 0xC374), built as a MISSING; (b) the global sets 0x52E38A $session_id, 0x536810 $group, 0x536FF0 $phys are not routed to the stand-in; (c) the $player_id input is a platform input (new COMPATIBILITY_POLICY record); (d) the DasTransferTask caller 0x6A25FE is unread. Correction: 0x52F2D8 is sSetGlobal(\"$session_id\", null), not $player_id. R-M4-CLIFF check (re-analysis/research/20261012-m4-cliff-and-names-check.md): $player_id = lowercase hex MD5 of the device-ID string (0x665F52..0x665FAC; input is M3-058); the DasTransferTask caller is reachable only from the app trigger, now M3-059 (unreachable in scope): drop that MISSING.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X12BuilderTests.DasStartupControlOrderUsesCheckedArgumentsAndReportsMissingInputs"
@@ -9790,7 +9807,24 @@
       ],
       "effect": "The $player_id DAS global.",
       "provenance": "Opus check of B-M3M4-12 (2026-10-12), manager record.",
-      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09): the stack supplies the platform value from its own settings; the MD5 and the sSetGlobal stay exact (M3-055).",
+      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09): the stack supplies the platform value from its own settings; the MD5 and the sSetGlobal stay exact (M3-055). Manager decision 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): the stack keeps a persisted device-ID string in its own settings, created once as a new UUID (the Java DAS.getDeviceID role, DAS.java:159-242).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-059",
+      "subsystem": "M3-device",
+      "title": "The background-transfer trigger (ExecuteBackgroundTransfers; app input): DasTransferTask and GameLogTransferTask",
+      "location": "cozmo-stack/src/Cozmo.Robot/DasControl.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M3-055: context+0x2C DasTransferTask and +0x30 GameLogTransferTask registered at 0x004EA7BE..0x004EA892; triggered only by Java BackgroundConnectivity (Wi-Fi and a 200 from google.com, BackgroundConnectivity.java:48-91) -> JNI 0x00667908..0x00667938 -> cozmo_execute_background_transfers -> StartDataTransfer 0x006A38D4."
+      ],
+      "effect": "Whether background uploads run.",
+      "provenance": "Opus check of R-M4-CLIFF (2026-10-12), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09): the stack never calls ExecuteBackgroundTransfers, as the original phone with no connection never does (the M3-051 stance); the DasTransferTask (0x006A25FE) and GameLogTransferTask (0x006A28B9) paths and the StartDataTransfer counter are unreachable.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9942,14 +9976,15 @@
       "subsystem": "M4-control",
       "title": "Pose-origin root names for the ActiveObjectInDifferentFramesWithDifferentIDs warning",
       "location": "cozmo-stack/src/Cozmo.Robot/Cubes.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: the warning at 0x00534042..0x005340CC prints the root names of two pose origins (FindRoot 0x4A40F0, GetName 0x4A4C60) when a located ID differs from the connected ID."
+        "re-analysis/research/20261012-m3m4-settling-2.md: the warning at 0x00534042..0x005340CC prints the root names of two pose origins (FindRoot 0x4A40F0, GetName 0x4A4C60) when a located ID differs from the connected ID.",
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-037: format 0xBE95E1 and argument order 0x0053406A..0x005340C6; FindRoot 0x0084520C (parent +0x30, 1000-step bound 0x008452C4, LoopBoundOverflow poseTreeNode.h:325); GetName 0x00844956 (+0x38); origins named \"Origin\"+to_string(id) (0x00847BD8), next-ID 1 (0x0084792C), first origin \"Origin1\" via Delocalize(false) 0x00510324 -> AddNewOrigin 0x00510A66; _REJ 0x00847F20 / _FLT 0x00847FD8 rename child nodes."
       ],
       "effect": "The text of that warning.",
       "provenance": "Second M3/M4 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read FindRoot/GetName and how pose origins are named.",
+      "unresolved": "Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): build from the rows; job B-M3M4-13. Previous notes: RECOVERABLE_GAP: read FindRoot/GetName and how pose origins are named.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9959,14 +9994,15 @@
       "subsystem": "M4-control",
       "title": "CliffSensorComponent::ComputeCliffPose and BlockWorld::AddCliff (the detected-cliff path)",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the \"Detected at\" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it."
+        "re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the \"Detected at\" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it.",
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: ComputeCliffPose 0x00634980..0x00634A50 (flags test, ComputeStateAt on robot+0x390, NoCliff 0xBFA513/0xBFA541, NoHistoricalPose 0x00634AAC/0x00634AE4 errG 0x006349F2); caller result==1 gate 0x005355B8, Detected 0xBE9368/0x005357F4 channel Unnamed, ComputeCliffPoseFailed 0x00535788/0x005357C4; AddCliff 0x006249FE = AddMarkerlessObject(type 15) steps 1-7 (size 0x41A00000/0x42200000/0x42480000, tolerances size*0.5 and pi/4, allowed families {2,6} when robot+0x2B8 != -1, AddLocatedObject logs 0xBF8EF7 and robot.object_located 0x00622E1C)."
       ],
       "effect": "Where a detected cliff is placed in the world, and the logs around it.",
       "provenance": "Second M3/M4 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read ComputeCliffPose and AddCliff.",
+      "unresolved": "Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): build the M4 part from the rows (job B-M3M4-13). Handoffs, as visible MISSINGs: ComputeStateAt (M11-051/053), the BlockWorld helpers (M11-062), the MemoryMap insert (M13-030). Previous notes: RECOVERABLE_GAP: read ComputeCliffPose and AddCliff.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -10042,16 +10078,17 @@
     {
       "id": "M4-043",
       "subsystem": "M4-control",
-      "title": "BlockFilter::Save failure text: the ios_base::failure what() bytes from libc++_shared.so",
+      "title": "BlockFilter::Save failure text: the non-virtual std::exception::what() (\"std::exception\")",
       "location": "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m3m4-settling-2.md: Save.Error (0x0061B21C..0x0061B2A4) logs what() of the caught ios_base::failure; the bytes are in the shipped libc++_shared.so."
+        "re-analysis/research/20261012-m3m4-settling-2.md: Save.Error (0x0061B21C..0x0061B2A4) logs what() of the caught ios_base::failure; the bytes are in the shipped libc++_shared.so.",
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-043: the catch calls PLT 0x004A8C98 (GOT 0x01041C14 = _ZNKSt9exception4whatEv, non-virtual); libc++_shared.so 0x7C3C4 returns \"std::exception\" (0x7C3C8); sErrorF BlockFilter.Save.Error (0x0061B368) \"%s\" (0x0061B380), errG and break 0x0061B286..0x0061B29A. The earlier evidence line's \"what() of the caught ios_base::failure\" is corrected by this."
       ],
       "effect": "The Save.Error log text.",
       "provenance": "Second M3/M4 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the ios_base::failure message for a failed open in libc++_shared.so.",
+      "unresolved": "Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): Save.Error logs exactly \"std::exception\"; job B-M3M4-13. Not read: which writes in the try block can throw, the selector != 1 handler (0x0061B314). Previous notes: RECOVERABLE_GAP: read the ios_base::failure message for a failed open in libc++_shared.so.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -10670,6 +10707,23 @@
         "E7 0x006B1A76..0x006B1CC6 VisionSystem::EnableMode sets/clears the mode's bit in the mask at VisionSystem+0xAC (checked for mode 14)"
       ],
       "unresolved": "built under M4-017 (2026-10-09) for mode 14, awaiting strong verification: Vision/VisionSystem.cs (the mode-14 queue, the drain, the EnablingMode/DisablingMode logs) carries fidelity: M4-017 and is retagged M11-061 in the build round. Other mode-queue producers and their FaceTracker recipients are not covered. M11-034 owns the schedule mechanism only.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-062",
+      "subsystem": "M11-vision",
+      "title": "BlockWorld helpers reached by AddMarkerlessObject (cliffs): IsSameAs, the intersecting predicate, GetBoundingQuad, SetID, InitPose, the 0x008CAD1C pose-state broadcast, DeleteIntersectingObjects",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: unread helpers on the AddMarkerlessObject path: IsSameAs, the predicate 0x00622908..0x0062297C, GetBoundingQuad<float>, ObservableObject::SetID, InitPose/SetPose(state 1), the tail 0x008CAD1C, DeleteIntersectingObjects."
+      ],
+      "effect": "Whether a detected cliff is added, merged or blocked in BlockWorld.",
+      "provenance": "Opus check of R-M4-CLIFF (2026-10-12), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed helpers (split from M4-038).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

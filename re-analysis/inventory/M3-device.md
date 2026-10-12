@@ -509,3 +509,11 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | --- | --- |
 | Settled | M3-057 |
 | New COMPATIBILITY_POLICY (scope rule: the DAS $player_id platform input) | M3-058 |
+
+
+## Check of R-M4-CLIFF (manager, 2026-10-12; research/20261012-m4-cliff-and-names-check.md)
+
+| Change | Records |
+| --- | --- |
+| New COMPATIBILITY_POLICY (scope rule: the background-transfer trigger) | M3-059 |
+| Evidence label corrected (0x52F2D8 is $session_id) | M3-055 |

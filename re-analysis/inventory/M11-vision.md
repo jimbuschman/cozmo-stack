@@ -1403,3 +1403,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M11-059 | NEW (S-3): VisionComponent::Init / VisionSystem::Init, IsInitialized and the album load-or-erase branch (from M3-021, M3-033). | RECOVERABLE_GAP |
 | M11-060 | NEW (S-4): VisionSystem::Update's application of the pending camera params (from M3-021 1d). | RECOVERABLE_GAP |
 | M11-061 | NEW (S-6): the vision-mode request queue (from M4-017 E4..E7; code built under M4-017). | IMPLEMENTATION_GAP |
+
+
+## Check of R-M4-CLIFF (manager, 2026-10-12; research/20261012-m4-cliff-and-names-check.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP (split from M4-038) | M11-062 BlockWorld helpers on the AddMarkerlessObject path |

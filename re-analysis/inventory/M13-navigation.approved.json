@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-10",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "ec932c93de1cfdd4a7e8b1f8b39f5433a58c45fdf91477579289d7b221f1ab18",
+  "inventory_sha256": "6648b0fdbf0ddbcd90fd3135839bcfb81bbf4a8a8de12c2cab310ac4fa7c9925",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -392,6 +392,16 @@
       "evidence": [
         "0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-030": {
+      "status": "RECOVERABLE_GAP",
+      "title": "The MemoryMap insert of cliff data (MemoryMapData_Cliff, QuadTree insert, helper +0x38 timestamp)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038 step 7: BlockWorld+0x54 = 1, MemoryMapData_Cliff (0x00684984), quad from GetBoundingQuadXY (0x00502612..0x00502650), insert through helper vtable+8, BlockWorld+0x58 = fmax(ts, helper+0x38()) (0x006226EA..)."
       ],
       "live_path": true,
       "hardware_required": false

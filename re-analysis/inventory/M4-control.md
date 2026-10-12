@@ -694,3 +694,12 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Reopened (Save.Error reachable) | M4-011 |
 | New RECOVERABLE_GAP | M4-037 pose-origin names, M4-038 ComputeCliffPose/AddCliff, M4-041 blend/serializer/GetLEDState, M4-043 Save.Error what(), M4-044 cube-light loader |
 | New COMPATIBILITY_POLICY (scope: app inputs not offered) | M4-039 drone mode, M4-040 cube-light game inputs, M4-042 BlockFilter game messages |
+
+
+## Check of R-M4-CLIFF (manager, 2026-10-12; research/20261012-m4-cliff-and-names-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M4-037, M4-038, M4-043 |
+| Title corrected (non-virtual std::exception::what) | M4-043 |
+| Split out | M4-038 helpers -> M11-062, M13-030 |

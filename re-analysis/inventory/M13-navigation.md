@@ -2507,3 +2507,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- | --- |
 | M13-022 | Title and evidence narrowed: MoveHeadToAngleAction is M4-001/M4-016's (overlap ruling); this record keeps TurnInPlaceAction and its calls into the action. | IMPLEMENTATION_GAP |
 | M13-029 | Note: owner of PathComponent::Abort/ClearPath (overlap with M4-026); rows and built code exist (status unchanged, its layer's turn). | RECOVERABLE_GAP |
+
+
+## Check of R-M4-CLIFF (manager, 2026-10-12; research/20261012-m4-cliff-and-names-check.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP (split from M4-038) | M13-030 MemoryMap insert of cliff data |
