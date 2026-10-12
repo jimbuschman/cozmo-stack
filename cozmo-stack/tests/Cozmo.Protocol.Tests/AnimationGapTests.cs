@@ -225,13 +225,9 @@ public class AnimationGapTests
         Assert.Equal(17 * 33, s.PositionMs);                             // frame 561 built, waiting on the budget (A18)
     }
 
-    /// <summary>
-    /// A tick that arrives late owes several frames and streams each of them, with its own audio message
-    /// and its own keyframes, rather than firing everything in one frame. The engine streams frame by
-    /// frame to the budget on every update; a late wall-clock tick here is made up the same way.
-    /// </summary>
+    /// <summary>Offline unpaced replay seam only; this is not an engine pacing oracle (M5-018).</summary>
     [Fact]
-    public void ALateTickCatchesUpFrameByFrameNotByJumping()
+    public void TheOfflineUnpacedSeamCatchesUpFrameByFrame()
     {
         var r = new PacedRecorder { Played = null };
         var s = new AnimationScheduler(r);

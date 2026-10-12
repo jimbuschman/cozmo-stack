@@ -80,6 +80,7 @@ internal static class JsonClipLoader
             foreach (var el in arr.EnumerateArray())
             {
                 string? error = null;
+                string frameName = el.ValueKind == JsonValueKind.Object && el.TryGetProperty("Name", out var frameType) && frameType.ValueKind == JsonValueKind.String ? frameType.GetString()! : "";
                 try
                 {
                     if (el.ValueKind != JsonValueKind.Object) error = "Animation.DefineFromJson: a frame is not an object";
@@ -92,21 +93,17 @@ internal static class JsonClipLoader
                         if (k is not null && error is null) frames.Add(k);
                     }
                 }
-                catch (JsonCppException e) { error = e.Message; }
+                catch (JsonCppException e)
+                {
+                    error = e.Message;
+                    log?.Invoke("MISSING: M5-001 unchecked JsonCpp conversion/other keyframe rejection detail: " + e.Message);
+                }
                 if (error is not null)
                 {
-                    if (error != BackpackColorFailure)
-                    {
-                        log?.Invoke($"error: {name}: {error}");
-                        log?.Invoke("MISSING: Animation.DefineFromJson, Animation.DefineFromJson.FrameNameMissing, Animation.DefineFromJson.AddKeyFrameFailure, Animation.DefineFromJson.UnrecognizedFrameName, IKeyFrame.ReadFromJson, IKeyFrame.GetMemberFromJsonMacro, BodyMotionKeyFrame.MissingRadius, BodyMotionKeyFrame.ProcessRadiusString engine error fields/tails; higher-layer port deferred");
-                    }
-                    else
-                    {
-                        // J1.1: failed AddKeyFrameToBack reaches 0x00576E74, then errG, and ends the loop.
-                        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
-                            "Animation.DefineFromJson.AddKeyFrameFailure", $"Adding BackpackLightsKeyFrame frame {i} failed.");
-                        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-                    }
+                    // 0x00576E74..0x00576EC2: every failed keyframe takes the parent tail and ends this loop.
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
+                        "Animation.DefineFromJson.AddKeyFrameFailure", $"Adding {frameName} frame {i} failed.");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                     failed = true;
                     break;
                 }
@@ -166,6 +163,19 @@ internal static class JsonClipLoader
         return v;
     }
 
+    private static void Error(Action<string>? log, SourceLogSink? sourceLog, string key, string text)
+    {
+        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, key, text);
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+    }
+
+    private static bool GetNumericMember(JsonElement el, string key, Action<string>? log, SourceLogSink? sourceLog, out JsonElement value)
+    {
+        if (Present(el, key, out value) && value.ValueKind == JsonValueKind.Number) return true;
+        Error(log, sourceLog, "IKeyFrame.GetMemberFromJsonMacro", $"Failed to get '{key}' from Json file.");
+        return false;
+    }
+
     // ------------------------------------------------------------------ keyframes (J1.1, J1.2, J1.3, J1.5..J1.10)
 
     private static Keyframe? Define(string type, JsonElement el, Action<string>? log, string clip, out string? error, SourceLogSink? sourceLog = null)
@@ -191,7 +201,7 @@ internal static class JsonClipLoader
             case "BackpackLightsKeyFrame":
                 return DefineBackpack(trigger, el, log, clip, out error, sourceLog);
             case "RobotAudioKeyFrame":
-                return DefineAudio(trigger, el, out error);
+                return DefineAudio(trigger, el, log, clip, sourceLog, out error);
             case "FaceAnimationKeyFrame":
                 return DefineFaceAnimation(trigger, el, log, clip, sourceLog);
             case "EventKeyFrame":
@@ -216,11 +226,16 @@ internal static class JsonClipLoader
     private static Keyframe? DefineBody(uint trigger, JsonElement el, Action<string>? log, string clip, out string? error, SourceLogSink? sourceLog = null)
     {
         error = null;
-        uint duration = unchecked((uint)AsInt(Required(el, "durationTime_ms"), "durationTime_ms"));
-        short speed = unchecked((short)AsInt(Required(el, "speed"), "speed"));
+        if (!GetNumericMember(el, "durationTime_ms", log, sourceLog, out var durationValue))
+        { error = "BodyMotionKeyFrame.SetMembersFromJson"; return null; }
+        uint duration = unchecked((uint)AsInt(durationValue, "durationTime_ms"));
+        if (!GetNumericMember(el, "speed", log, sourceLog, out var speedValue))
+        { error = "BodyMotionKeyFrame.SetMembersFromJson"; return null; }
+        short speed = unchecked((short)AsInt(speedValue, "speed"));
         if (!Present(el, "radius_mm", out var r))
         {
-            error = $"BodyMotionKeyFrame.MissingRadius: {clip}: Missing 'radius_mm' field.";
+            Error(log, sourceLog, "BodyMotionKeyFrame.SetMembersFromJson.MissingRadius", $"{clip}: Missing 'radius_mm' field.");
+            error = "BodyMotionKeyFrame.SetMembersFromJson.MissingRadius";
             return null;
         }
         if (r.ValueKind == JsonValueKind.String)
@@ -231,7 +246,8 @@ internal static class JsonClipLoader
             var probe = new BodyKeyframe(trigger, duration, raw, speed);
             if (probe.TokenRadius is null)
             {
-                error = $"BodyMotionKeyFrame.ProcessRadiusString: {clip}: unrecognised radius '{raw}'";
+                Error(log, sourceLog, "BodyMotionKeyFrame.BadRadiusString", $"{clip}: Unrecognized string for 'radius_mm' field: {raw}");
+                error = "BodyMotionKeyFrame.BadRadiusString";
                 return null;
             }
             AnimationLibrary.LogBodyClamp(raw, speed, clip, log, sourceLog);
@@ -317,7 +333,9 @@ internal static class JsonClipLoader
         if (!Read("Back", 3, out var back) || !Read("Front", 1, out var front) || !Read("Middle", 2, out var middle)
             || !Read("Left", 0, out var left) || !Read("Right", 4, out var right))
         { error = BackpackColorFailure; return null; }
-        uint duration = unchecked((uint)AsInt(Required(el, "durationTime_ms"), "durationTime_ms"));
+        if (!GetNumericMember(el, "durationTime_ms", log, sourceLog, out var durationValue))
+        { error = BackpackColorFailure; return null; }
+        uint duration = unchecked((uint)AsInt(durationValue, "durationTime_ms"));
         var k = new LightsKeyframe(trigger, duration, left, right, front, middle, back) { LoadedColorWords = words };
         return k;
     }
@@ -327,7 +345,7 @@ internal static class JsonClipLoader
     /// element, 1/N each when absent, a count mismatch or a running sum above 1 rejects; each id the low 32 bits of
     /// asUInt64. A scalar id: one ref with the scalar probability or 1.0, no sum check. "audioName" is ignored.
     /// </summary>
-    private static Keyframe? DefineAudio(uint trigger, JsonElement el, out string? error)
+    private static Keyframe? DefineAudio(uint trigger, JsonElement el, Action<string>? log, string clip, SourceLogSink? sourceLog, out string? error)
     {
         error = null;
         float volume = Present(el, "volume", out var vv) ? AsFloat(vv, "volume") : 1f;
@@ -342,12 +360,22 @@ internal static class JsonClipLoader
                                                           : new[] { AsFloat(p, "probability") };
             else if (ids.Length > 0) { probs = new float[ids.Length]; Array.Fill(probs, 1.0f / ids.Length); }
             else probs = Array.Empty<float>();
-            if (probs.Length != ids.Length) { error = "RobotAudioKeyFrame: the probability count differs from the id count"; return null; }
+            if (probs.Length != ids.Length)
+            {
+                error = "RobotAudioKeyFrame.SetMembersFromJson.UnknownProbabilities";
+                Error(log, sourceLog, error, $"{clip}: The number of audio event IDs ({ids.Length}) does not match number of probabilities ({probs.Length})");
+                return null;
+            }
             float sum = 0f;
             foreach (var q in probs)
             {
                 sum += q;
-                if (sum > 1.0f) { error = "RobotAudioKeyFrame.TotalProbabilitiesTooHigh"; return null; }
+                if (sum > 1.0f)
+                {
+                    error = "RobotAudioKeyFrame.SetMembersFromJson.TotalProbabilitiesTooHigh";
+                    Error(log, sourceLog, error, $"{clip}: The total probability of all audio events combined exceeds 1.0");
+                    return null;
+                }
             }
             return new AudioKeyframe(trigger, ids, volume, probs, hasAlts);
         }

@@ -110,13 +110,16 @@ public static class ProceduralFaceRenderer
             for (int row = rowMin; row < rowMax; row++)
             {
                 if ((row & 1) == firstScanLine) continue;
-                float f = inverseRange * (float)(row - rowMin);
+                float f = DistortionRowFraction(inverseRange, row - rowMin);
                 int s = d.GetEyeDistortionAmount(f);
                 ShiftRow(img, row, s);
             }
         }
         return img;
     }
+
+    // 0x00585E28/0x00585E34: multiply the precomputed binary32 reciprocal by the row index.
+    internal static float DistortionRowFraction(float inverseRange, int rowIndex) => inverseRange * (float)rowIndex;
 
     /// <summary>
     /// E1, C2 (0x00585CB6..0x00585D98): the row extent of a transformed face: the 4 corners of each eye rectangle, 8 points,

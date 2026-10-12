@@ -31,9 +31,9 @@ public sealed class FaceAnimationLibrary
     /// </summary>
     public static int FirstScanLine => ScanLineState.Process.FaceAnimation;
 
-    private readonly Dictionary<string, string> _dirs = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, IReadOnlyList<FaceBitmap>> _cache = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, IReadOnlyList<FaceAnimationFrame>> _variants = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _dirs = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyList<FaceBitmap>> _cache = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyList<FaceAnimationFrame>> _variants = new(StringComparer.Ordinal);
     private readonly object _gate = new();
 
     /// <summary>The animation names found, whether or not their frames have been read yet.</summary>

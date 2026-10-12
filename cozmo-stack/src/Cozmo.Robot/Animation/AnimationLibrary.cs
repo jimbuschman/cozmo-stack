@@ -470,15 +470,24 @@ public sealed class AnimationLibrary : IAnimationCatalog
             try { bytes = File.ReadAllBytes(path); }
             catch (Exception) { bytes = Array.Empty<byte>(); } // ReadFileAsBinary open/read failure returns an empty vector.
             if (bytes.Length == 0) { BinaryError("BinaryDataEmpty", $"Found no data in {path}"); return; }
-            var root = FlatTable.Root(bytes);
-            var tables = root.Tables(ClipsField).ToList();
-            if (!root.Has(ClipsField)) { BinaryError("AllClipsNull", $"Found no animations in {path}"); return; }
-            if (tables.Count == 0) { BinaryError("AnimClipsEmpty", $"Found no animations in {path}"); return; }
-            foreach (var table in tables)
+            try
             {
-                string name = table.String(ClipName) ?? "";
-                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary", $"Loading '{name}' from {path}");
-                lock (_gate) Register(ParseClip(table, Log, SourceLog), path, false);
+                var root = FlatTable.Root(bytes);
+                var tables = root.Tables(ClipsField).ToList();
+                if (!root.Has(ClipsField)) { BinaryError("AllClipsNull", $"Found no animations in {path}"); return; }
+                if (tables.Count == 0) { BinaryError("AnimClipsEmpty", $"Found no animations in {path}"); return; }
+                foreach (var table in tables)
+                {
+                    string name = table.String(ClipName) ?? "";
+                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary", $"Loading '{name}' from {path}");
+                    lock (_gate) Register(ParseClip(table, Log, SourceLog), path, false);
+                }
+            }
+            catch (Exception e) when (e is ArgumentException or IndexOutOfRangeException or OverflowException or InvalidDataException)
+            {
+                // LoadAnimationFile 0x00521616..0x00521684: BinaryDataNull, errG and conditional break.
+                BinaryError("BinaryDataNull", $"Found no data in {path}");
+                return;
             }
         }
         else
@@ -818,42 +827,57 @@ public sealed class AnimationLibrary : IAnimationCatalog
             {
                 // 4.2: not an array logs NoAnimations and fails the define
                 SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.DefineFromJson.NoAnimations", "Missing 'Animations' field for animation group.");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return;
             }
             var entries = new List<AnimationGroupEntry>();
+            int entryIndex = -1;
+            void Reject()
+            {
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058C6E8..0x0058C6F4
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
+                    "AnimationGroup.DefineFromJson.AddEntryFailure", $"Adding animation {entryIndex} failed.");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058A6D2..0x0058A6D8
+            }
             bool windowKnown = false;
             float inheritedMin = 0, inheritedMax = 0;
             foreach (var e in arr.EnumerateArray())
             {
+                entryIndex++;
                 // 4.4: Name must be a string, 4.5: and must name a loaded clip; otherwise the entry is rejected and the
                 // group continues with the rest (4.3).
                 if (!e.TryGetProperty("Name", out var n) || n.ValueKind != JsonValueKind.String)
                 {
                     SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoName", "Missing 'Name' field for animation.");
+                    Reject();
                     continue;
                 }
                 string name = n.GetString()!;
                 if (!hasClip(name))
                 {
                     SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.InvalidName", $"No canned animation exists named '{name}'");
+                    Reject();
                     continue;
                 }
                 // 4.6: Weight must be numeric; there is no default of 1.
                 if (!e.TryGetProperty("Weight", out var w) || w.ValueKind != JsonValueKind.Number)
                 {
                     SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoWeight", "Missing 'Weight' field for animation.");
+                    Reject();
                     continue;
                 }
                 // 4.7: Mood must be a string and a recognised SimpleMoodType; there is no default of "Default".
                 if (!e.TryGetProperty("Mood", out var m) || m.ValueKind != JsonValueKind.String)
                 {
                     SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoMood", "Missing 'Mood' field for animation.");
+                    Reject();
                     continue;
                 }
                 string mood = m.GetString()!;
                 if (!Enum.TryParse<SimpleMood>(mood, ignoreCase: false, out var moodType) || moodType == SimpleMood.Count)
                 {
                     SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "SimpleMoodScorer.ReadFromJson.BadType", $"Bad 'Mood' = '{mood}'");
+                    Reject();
                     continue;
                 }
                 // 4.8: CooldownTime_Sec defaults to 0.0.
@@ -870,6 +894,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
                     {
                         SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoHeadAngleWhenUsingHeadAngles", "Missing " +
                                     "'HeadAngleMin_Deg' or 'HeadAngleMax_Deg' field for animation.");
+                        Reject();
                         continue;
                     }
                     minDeg = (float)mn.GetDouble();

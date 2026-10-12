@@ -233,11 +233,20 @@ public class M5FixRowsTests
     private sealed class Child() : ActionRunner(26, 0) { public override uint CheckIfDone() => EngineActionResult.Success; public override bool CanInterrupt() => true; }
 
     [Fact]
-    public void FK1ToFK4_FaceOverrideIsZeroOnBothAddPaths()
+    public void FK1ToFK4_FaceOverrideControlsIsDoneThroughTheStreamer()
     {
-        var a = new StreamAnimation("a", false); a.AddNew(new FaceAnimationKeyframe(0, "f"));
-        Assert.Equal(0, a.FaceAnim.Current!.FaceAnimationOverride);
-        a = StreamAnimation.Of(Clip("b", new FaceAnimationKeyframe(0, "f"))); Assert.Equal(0, a.FaceAnim.Current!.FaceAnimationOverride);
+        // 0x004F9770..0x004F9778: +0x28 != 0 returns false even for an absent name (0 frames).
+        // Input injection only: the native writers of +0x28 remain RECOVERABLE_GAP, not an asset feature.
+        var clip = Clip("override", new FaceAnimationKeyframe(0, "absent"));
+        var anim = StreamAnimation.Of(clip);
+        var scheduler = new AnimationScheduler(new Sink());
+        scheduler.Play(clip, 0);
+        anim.FaceAnim.Current!.FaceAnimationOverride = 1;
+        scheduler.Advance(0);
+        Assert.False(anim.FaceAnim.AtEnd);
+        anim.FaceAnim.Current!.FaceAnimationOverride = 0;
+        scheduler.Advance(33);
+        Assert.True(anim.FaceAnim.AtEnd);
     }
     // A minimal schema fixture, encoded independently of the production readers.
     private static FlatTable Table(params object?[] fields)

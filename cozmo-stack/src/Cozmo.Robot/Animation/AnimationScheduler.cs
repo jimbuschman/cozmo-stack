@@ -128,6 +128,8 @@ public sealed class StreamSendBuffer
     public int NumAudioFramesToSend { get { lock (_gate) return _framesToSend; } }
     /// <summary>Messages waiting in the buffer.</summary>
     public int Count { get { lock (_gate) return _fifo.Count; } }
+    // +0x94 counts only EngineToRobot entries; zero-size callbacks are stack bookkeeping.
+    internal int RobotMessageCount { get { lock (_gate) return _fifo.Count(e => e.Size > 0); } }
     public bool IsEmpty { get { lock (_gate) return _fifo.Count == 0; } }
 
     /// <summary>EngineToRobot::Size(): 1 for the tag plus the member's packed size (C11).</summary>
@@ -942,7 +944,7 @@ public sealed class AnimationScheduler
             if (_idleStack.Count == 1) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.RemoveIdleAnimation.WillNotPopLast", $"Refusing to pop default idle animation '{_idleStack[0].Trigger}' for lockName {lockName}"); return 1; }
             if (_idleStack.Count == 0) { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.RemoveIdleAnimation.NoStack", "Trying to pop an idle animation, but the stack is empty"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return 1; }
             int i = -1;
-            for (int at = 0; at < _idleStack.Count; at++) if (_idleStack[at].Lock == lockName) i = at;
+            for (int at = 0; at < Math.Min(_idleStack.Count, 1000); at++) if (_idleStack[at].Lock == lockName) i = at;
             if (_idleStack.Count >= 1000)
             { SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "LoopBoundOverflow", "../../../../engine/animations/animationStreamer.cpp:528"); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
             if (i < 0)
@@ -989,7 +991,9 @@ public sealed class AnimationScheduler
     // ================================================================== Update
 
     /// <summary>One engine Update of the streamer (see the class summary).</summary>
-    public int Advance(double nowMs)
+    public int Advance(double nowMs) => Advance(nowMs, (long)(nowMs * 1_000_000.0));
+
+    internal int Advance(double nowMs, long nowNs)
     {
         using var clipLog = Eye.UseWarningLog(Log, SourceLog);
         lock (_gate)
@@ -999,7 +1003,7 @@ public sealed class AnimationScheduler
             _live.SourceLog = SourceLog;
             // fidelity: M7-016, M7-017
             // The engine's clock is a float32 (GetCurrentTimeInSeconds returns it in r0, 0x0057D02A..0x0057D02E).
-            float nowSec = (float)(nowMs / 1000.0);
+            float nowSec = _nowSec = (float)(nowNs / 1e9);
 
             // A31: the keep-alive block (0x0057CF6A..0x0057CFF4): gate A +0x88 > 0, TrackLayerComponent::Update, gate B +0x38
             // == 0, gate C: now - +0x88 (vsub.f32) is not <= +0x1C0 (vcmpe.f32, it le) unless the idle is the live animation
@@ -1065,6 +1069,8 @@ public sealed class AnimationScheduler
     /// more. Any other top goes straight to the idle (0x0057D03A..0x0057D04C branch to 0x0057D064; the flush at 0x0057D122
     /// is reached only from 0x0057D056), which neither flushes nor sends an End: an InitStream drops the leftovers (A12).
     /// </summary>
+    private float _nowSec;
+
     private int NoAnimationPathLocked()
     {
         var top = TopTrigger;
@@ -1127,7 +1133,7 @@ public sealed class AnimationScheduler
             else
             {
                 result = UpdateStreamLocked(_idleAnim, storeFace: false);
-                _lastStreamSec = (float)(_nowMs / 1000.0);         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
+                _lastStreamSec = _nowSec;         // B3: +0x88 = now after the idle's UpdateStream (0x0057D428..0x0057D43E)
             }
         }
         _idleMs += 60;
@@ -1138,10 +1144,10 @@ public sealed class AnimationScheduler
     {
         if (_tlc.HaveLayersToSend) return StreamLayersLocked();
         if (Stream.IsEmpty) return 0;
-        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Update.SendBufferNotEmpty", $"Expect send buffer to be emptied by UpdateStream or StreamFaceLayers by now, has {Stream.Count} messages");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Update.SendBufferNotEmpty", $"Expect send buffer to be emptied by UpdateStream or StreamFaceLayers by now, has {Stream.RobotMessageCount} messages");
         RefreshBudget();
         int result = DrainResultCode();
-        if (result != 0) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Update.SendBufferedMessagesFailed", $"Could not send {Stream.Count} remaining messages in send buffer");
+        if (result != 0) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AnimationStreamer.Update.SendBufferedMessagesFailed", $"Could not send {Stream.RobotMessageCount} remaining messages in send buffer");
         if (_startSent && Stream.IsEmpty && !_endSent) return SendEndOfAnimationLocked();
         return result;
     }
@@ -1227,6 +1233,8 @@ public sealed class AnimationScheduler
             }
             if (!_live.AddLive(new BodyKeyframe(0, unchecked((uint)_bodyDurMs), radius, speed)))
             {
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.UpdateLiveAnimation.AddBodyMotionKeyFrameFailed", "");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return 1;
             }
             _bodySpacingMs = rng.RandIntInRange(Pi(LiveIdleParam.BodyMovementSpacingMin_ms), Pi(LiveIdleParam.BodyMovementSpacingMax_ms));
@@ -1239,6 +1247,8 @@ public sealed class AnimationScheduler
             _liftDurMs = rng.RandIntInRange(Pi(LiveIdleParam.LiftMovementDurationMin_ms), Pi(LiveIdleParam.LiftMovementDurationMax_ms));
             if (!_live.AddLive(new LiftKeyframe(0, unchecked((uint)_liftDurMs), Pu8(LiveIdleParam.LiftHeightMean_mm), Pu8(LiveIdleParam.LiftHeightVariability_mm))))
             {
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.UpdateLiveAnimation.AddLiftHeightKeyFrameFailed", "");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return 1;
             }
             _liftSpacingMs = rng.RandIntInRange(Pi(LiveIdleParam.LiftMovementSpacingMin_ms), Pi(LiveIdleParam.LiftMovementSpacingMax_ms));
@@ -1252,6 +1262,8 @@ public sealed class AnimationScheduler
             sbyte angle = unchecked((sbyte)VcvtS32(inputs.HeadAngleRad() * RadToDeg));
             if (!_live.AddLive(new HeadKeyframe(0, unchecked((uint)_headDurMs), angle, Pu8(LiveIdleParam.HeadAngleVariability_deg))))
             {
+                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.UpdateLiveAnimation.AddHeadAngleKeyFrameFailed", "");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return 1;
             }
             _headSpacingMs = rng.RandIntInRange(Pi(LiveIdleParam.HeadMovementSpacingMin_ms), Pi(LiveIdleParam.HeadMovementSpacingMax_ms));
@@ -1491,6 +1503,7 @@ public sealed class AnimationScheduler
     /// </summary>
     private bool FaceAnimationIsDone(FaceAnimationKeyframe fa, StreamKeyframe k)
     {
+        if (k.FaceAnimationOverride != 0) return false;
         var frames = FramesOf(fa);
         return frames is null || k.FaceAnimIndex >= frames.Count;
     }
@@ -1910,6 +1923,7 @@ public sealed class AnimationScheduler
             _endSent = false;
             _abortedToNothing = false;
             _startMs = _streamMs = 0;
+            _nowSec = 0;
             _lastStreamSec = -float.MaxValue;
             _tag = 0;
             _live = StreamAnimation.Live();

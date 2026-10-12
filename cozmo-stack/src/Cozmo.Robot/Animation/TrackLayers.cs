@@ -674,7 +674,7 @@ internal sealed class TrackLayerComponent
     /// </summary>
     public void AddGlitch(float degree)
     {
-        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, null, "TrackLayerComponent.AddGlitch", $"Degree {degree:F2}");
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Animations", "TrackLayerComponent.AddGlitch", FormattableString.Invariant($"Degree {degree:F2}"));
         Face.AddLayer("Glitch", FaceLayerManager.GenerateFaceDistortion(degree), 0);
         Backpack.AddLayer("Glitch", Backpack.GenerateGlitchLights(), 0);
     }
