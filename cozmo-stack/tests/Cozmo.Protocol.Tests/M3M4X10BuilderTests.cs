@@ -112,13 +112,15 @@ public class M3M4X10BuilderTests : IDisposable
         var method=camera.GetType().GetMethod("SetNextCameraParams",BindingFlags.Instance|BindingFlags.NonPublic)!;
         camera.GetType().GetProperty("NextCameraParams")!.SetValue(camera,null);
         var warnings=new ConcurrentQueue<EngineLogEntry>();robot.Engine.LogEntry+=e=>{if(e.Name=="VisionSystem.SetNextCameraParams.OverwritingPreviousParams")warnings.Enqueue(e);};
+        var gaps=new ConcurrentQueue<string>();robot.Engine.StackLogLine+=s=>{if(s.StartsWith("MISSING: M11-060"))gaps.Enqueue(s);};
         using var start=new ManualResetEventSlim();
         var first=Task.Run(()=>{start.Wait();method.Invoke(camera,new object[]{10,1f});});
         var second=Task.Run(()=>{start.Wait();method.Invoke(camera,new object[]{20,2f});});
         start.Set();await Task.WhenAll(first,second).WaitAsync(TimeSpan.FromSeconds(5));
-        var warning=Assert.Single(warnings);Assert.Equal(EngineLogLevel.Warning,warning.Level);Assert.Null(warning.Channel);
+        // B-M3M4-12 suppression while the M11-060 clear is unbuilt; historical test name retained for frozen manifests.
+        Assert.Empty(warnings);Assert.Single(gaps);
         var final=camera.NextCameraParams!.Value;
-        Assert.EndsWith(final.Item1==20 ? "Params already requested (10ms,1.00) but not sent. Replacing with (20ms,2.00)" : "Params already requested (20ms,2.00) but not sent. Replacing with (10ms,1.00)",warning.Text);
+        Assert.True(final == (10,1f) || final == (20,2f)); // complete atomic request, never mixed fields.
     }
 }
 

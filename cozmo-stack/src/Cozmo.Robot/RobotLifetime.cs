@@ -141,12 +141,14 @@ public sealed partial class CozmoEngine
     // fidelity: M1-050
     internal void NotifyExternalRobotDisconnected(uint id) => ExternalRobotDisconnectCallObserved?.Invoke(id);
     internal void ClearGlobal(string name) => Required(
-        ClearDasGlobal is { } callback ? () => callback(name) : null, $"DAS clear {name}");
+        () => { Das.SetGlobal(name, null); ClearDasGlobal?.Invoke(name); }, $"DAS clear {name}");
     internal void NotifyDisconnectServices()
     {
         Required(NeedsRobotDisconnected, "NeedsManager.OnRobotDisconnected 0x0052F2E0");
         Required(PerfRobotDisconnected, "PerfMetric.OnRobotDisconnected 0x0052F2E8");
-        Required(DasPauseUploading is { } das ? () => das(false) : null, "DASPauseUploadingToServer(0) 0x0052F2EE");
+        // fidelity: M3-055 — 0x0052F2D8 clears $session_id above; it is not a player digest site.
+        Das.Pause(false);
+        DasPauseUploading?.Invoke(false);
     }
     internal void DestroyRobot(EngineRobot robot)
     {

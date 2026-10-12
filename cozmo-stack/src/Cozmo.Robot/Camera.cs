@@ -695,18 +695,23 @@ public sealed class CameraSettings
         return true;
     }
 
-    /// <summary>VisionSystem::SetNextCameraParams (1d): queues the params, warning when some are already pending.</summary>
+    /// <summary>VisionSystem::SetNextCameraParams (1d): queues the params; the native overwrite warning is suppressed while M11-060 is unbuilt.</summary>
     private static string F(double value, int digits) => double.IsNaN(value) ? "nan" : double.IsPositiveInfinity(value) ? "inf" : double.IsNegativeInfinity(value) ? "-inf" : value.ToString("F" + digits, System.Globalization.CultureInfo.InvariantCulture);
 
+    private bool _pendingClearMissingReported;
     private void SetNextCameraParams(int exposureMs, float gain)
     {
-        (int, float)? previous;
+        bool reportMissing;
         lock (_gate)
         {
-            previous = NextCameraParams;
+            reportMissing = NextCameraParams is not null && !_pendingClearMissingReported;
+            if (reportMissing) _pendingClearMissingReported = true;
             NextCameraParams = (exposureMs, gain);
         }
-        if (previous is { } old) Emit(EngineLogLevel.Warning, null, "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", $"Params already requested ({old.Item1}ms,{F(old.Item2, 2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain, 2)})");
+        if (reportMissing)
+        {
+            _robot.Engine.EmitStackLog("MISSING: M11-060 VisionSystem.Update camera pending-flag clear (0x006B50C8..0x006B50D8); OverwritingPreviousParams suppressed while this clear is unbuilt, params remain pending");
+        }
     }
 
     // fidelity: M3-021

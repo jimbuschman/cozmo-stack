@@ -81,7 +81,7 @@ public sealed partial class CozmoEngine
     internal void FlushSourceLogger()
     {
         if (LoggerProviderFlush is { } flush) flush();
-        else EmitStackLog("MISSING: M5-008 -> M3-051 DASForceFlushNow body (libDAS 0x7168); logger provider flush at 0x0080DA24");
+        Das.ForceFlushNow(); // fidelity: M3-055 — provider0x006671F4 -> libDAS0x7168.
     }
 
     // Text delegates carry stack diagnostics only; spelling and level prefixes are not provenance.

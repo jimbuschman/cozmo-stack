@@ -1120,6 +1120,8 @@ bool requireCalibration = true)
         // fidelity: M4-033
         // T15: clear the owner before deletion; the logger is always null (T11). No flush, log or send.
         lifetime.Bind(0x28C, _ => robot.TouchSensor = null);
+        // fidelity: M4-027 — 0x00633FF8..0x00634014: null logger delete, then deque storage.
+        lifetime.Bind(0x288, _ => { }); // managed deque/no native logger owner.
         lifetime.Bind(-3, _ => AbortAll(robot));
         lifetime.Bind(0x450, _ => _robot.Cubes.DestroyTapFilter());
         lifetime.Bind(0x278, _ => _robot.CubeAccel.ResetToConstructed());

@@ -202,6 +202,7 @@ public sealed class CubeConnections
     /// flag and the discovery time, and restarts both the discovery and the reconnect clocks. It leaves the
     /// pool and the last update time alone.
     /// </summary>
+    // fidelity: M4-042 — this enable is the M1-042 host input; app pool editing/removal messages have no ingress.
     public void EnableAutoBlockPool(bool enabled, float discoveryTimeSeconds = 0f)
     {
         lock (_gate)
@@ -411,7 +412,7 @@ public sealed class CubeConnections
         if (s.State is not ActiveObjectSlotState.PendingConnection and not ActiveObjectSlotState.Disconnected)
         {
             Queue(EngineLogLevel.Error, null, "Robot.HandleConnectedToObject.InvalidState", $"Invalid state {(int)s.State} when connected to object 0x{factoryId:x} with active ID {slot}");
-            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            _pendingLogs.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak);
         }
         // 0x00517A3C..0x00517A68 (channel BlockPool, the engine's own key spelling "HandleConnectToObject"): the slot, the id, the
         // reported type and the state before the change.
@@ -436,7 +437,7 @@ public sealed class CubeConnections
         if (s.State is not ActiveObjectSlotState.Connected and not ActiveObjectSlotState.PendingDisconnection)
         {
             Queue(EngineLogLevel.Error, null, "Robot.HandleDisconnectedFromObject.InvalidState", $"Invalid state {(int)s.State} when disconnected from object 0x{factoryId:x} with active ID {slot}");
-            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            _pendingLogs.Add(Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak);
         }
         // 0x00517C3A..0x00517C66 (channel BlockPool): the slot, the id, the reported type and the state before the change.
         Queue(EngineLogLevel.Info, "BlockPool", "Robot.HandleDisconnectedFromObject", $"Disconnected from active Id {slot} with factory Id 0x{factoryId:x} of type {ObjectTypeName(type)}. Connection State = {(int)s.State}");
@@ -688,11 +689,8 @@ public sealed class CubeConnections
     {
         int nul = line.IndexOf('\0');
         byte[] utf8 = System.Text.Encoding.Latin1.GetBytes(nul < 0 ? line : line[..nul]);
-        _pendingLogs.Add(() => {
-            if (SourceLogBytes is { } bytesSink) bytesSink(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", utf8);
-            else if (SourceLog is { } sink) sink(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", System.Text.Encoding.UTF8.GetString(utf8));
-            else SourceLogDispatch.GetSink(null, _log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", System.Text.Encoding.UTF8.GetString(utf8));
-        });
+        _pendingLogs.Add(() => SourceLogBytes?.Invoke(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", utf8));
+        Queue(EngineLogLevel.Debug, "Unnamed", "BlockFilter.Load.ParseError", System.Text.Encoding.UTF8.GetString(utf8));
     }
     private static string PrintfHex(uint value) => value == 0 ? "00000000" : "0x" + value.ToString("x").PadLeft(6, '0');
 
@@ -718,7 +716,7 @@ public sealed class CubeConnections
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            QueueMissing("MISSING: M4-011 | BlockFilter.Save.Error at 0x0061B260 needs shipped libc++_shared.so std::ios_base::failure what() bytes (absent from the adopted rows) and its source exception gate; host I/O failures are isolated");
+            QueueMissing("MISSING: M4-043 | BlockFilter.Save.Error at 0x0061B260 needs shipped libc++_shared.so std::ios_base::failure what() bytes (absent from the adopted rows); host I/O failures are isolated");
         }
     }
 

@@ -721,8 +721,9 @@ public sealed class CozmoSensors
     /// <summary>
     /// PotentialCliff 0xC1 (SC7, 0x0053582C..0x00535998): ignored on the charger platform (+0x34A, C8); in drone mode a
     /// TriggerLiftSafeAnimationAction; otherwise, when not in SDK mode, StopAllMotors and EnableStopOnCliff{0}.
-    /// This stack is not in SDK mode and has no drone mode (EnableDroneMode, SC8, is not offered).
+    /// M4-039: this stack is not in SDK mode and has no drone mode (EnableDroneMode, SC8, is not offered).
     /// </summary>
+    // fidelity: M4-039 — no EnableDroneMode app input is offered; native flag remains zero.
     private void HandlePotentialCliff()
     {
         bool onPlatform;
@@ -818,7 +819,7 @@ public sealed class CozmoSensors
                     if (!_cliffEnabled && any) break;
                 }
                 if (any)
-                    _robot.Engine.EmitStackLog("MISSING: M4-019 | HandleCliffEvent 0x00535548..0x005356E6: ComputeCliffPose 0x00634980 and AddCliff body have no checked rows; Detected at 0x00535602 needs the computed pose, ComputeCliffPoseFailed at 0x00535682 and errG/break at 0x005356BC need its result");
+                    _robot.Engine.EmitStackLog("MISSING: M4-038 | HandleCliffEvent 0x00535548..0x005356E6: ComputeCliffPose 0x00634980 and AddCliff body have no checked rows; Detected at 0x00535602 needs the computed pose, ComputeCliffPoseFailed at 0x00535682 and errG/break at 0x005356BC need its result");
                 else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotImplMessaging.HandleCliffEvent.Undetected", "");
                 lock (_gate) _cliffDetectedByEvent = any;
                 var report = new CliffReport(c.Timestamp, (CliffSensors)c.DetectedFlags, c.DidStopForCliff);

@@ -70,6 +70,8 @@ public sealed class CozmoEngineOptions
     public string? BlockPoolPath { get; init; }
 
     // fidelity: M3-054
+    // fidelity: M3-056 — app DataCollectionEnabled input, host default off.
+    public bool DataCollectionEnabled { get; init; }
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
 
     // fidelity: M3-041
@@ -865,6 +867,8 @@ public sealed partial class EngineRobot
 
     // fidelity: M3-012
     /// <summary>The AnimationState handler (C10, 0x00537FD0..0x0053800C): gated by +0x29; writes +0x238, +0x240, +0x348, +0x248.</summary>
+    // fidelity: M3-057
+    public byte ClientDropCount { get; private set; } // memclr8 +0x238 length0x12, 0x0050FD0A..10.
     internal void HandleAnimationState(AnimationState a)
     {
         if (!TimeSynced) return;
@@ -873,6 +877,13 @@ public sealed partial class EngineRobot
         EnabledAnimTracks = a.EnabledAnimTracks;
         AnimationStateTag = a.Tag;
         _animationStateHandled = true;
+        // 0x00538020 -> 0x00518A38: unsigned byte maximum, store before event.
+        if (a.ClientDropCount > ClientDropCount)
+        {
+            ClientDropCount = a.ClientDropCount;
+            Engine.EmitSourceLog(EngineLogLevel.Event, null, "Robot.ClientDropCount.Incremented",
+                ClientDropCount.ToString(System.Globalization.CultureInfo.InvariantCulture)); // empty kv, 0x00518A58.
+        }
     }
 
     // fidelity: M3-024
@@ -1897,8 +1908,10 @@ public sealed partial class CozmoEngine : IDisposable
     // fidelity: M5-045
     // fidelity: M5-048 (the app input: random_seed 0, supplied here at engine start)
     // R45-5: StartEngine reseeds before the started guard. The host replaces the app input (which is zero).
+    // fidelity: M3-055 — host startup enters the libDAS control seam before starting the engine.
     private void StartEngineRandom(uint randomSeed = 0, Func<uint>? entropy = null)
     {
+        StartDasControl();
         uint effective = ContextRandom.SetSeed(randomSeed, entropy);
         EmitSourceLog(EngineLogLevel.Event, null, "app.random_seed",
             effective.ToString(System.Globalization.CultureInfo.InvariantCulture),
@@ -2007,6 +2020,7 @@ public sealed partial class CozmoEngine : IDisposable
         // follows in the engine and has no stack equivalent.
         var handled = ConnectToRobotHandled;
         if (handled is not null) foreach (var t in handled.GetInvocationList()) Isolated((Action)t);
+        Das.Pause(true); // fidelity: M3-055 — 0x004ED114, after the needs edge at0x004ED10A.
     });
 
     // fidelity: M1-051, M1-052
@@ -2247,6 +2261,7 @@ public sealed partial class CozmoEngine : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
+        Das.DisableNetwork(4); // fidelity: M3-055 — cozmo_shutdown0x006668E2.
         Behavior.SteppedBehavior.MissingReported -= _missingSink;
         _runner?.Stop();
         _t.Received -= Rcm.Rcd.ReceiveData;

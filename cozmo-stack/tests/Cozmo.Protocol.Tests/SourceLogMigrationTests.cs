@@ -98,7 +98,7 @@ public class SourceLogMigrationTests
             (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
         Assert.Empty(entries);
         Assert.Contains(stack, s => s.Contains("a pattern lacks a required field"));
-        Assert.Contains(stack, s => s.StartsWith("MISSING: CubeLightAnimationContainer.ParseJsonToAnim.InvalidPattern"));
+        Assert.Contains(stack, s => s.StartsWith("MISSING: M4-044 | CubeLightAnimationContainer.ParseJsonToAnim.InvalidPattern"));
         entries.Clear(); stack.Clear();
         robot.Motion.Path.DriveToPoseStatus = 7;
         robot.Motion.Path.Abort(_ => true);

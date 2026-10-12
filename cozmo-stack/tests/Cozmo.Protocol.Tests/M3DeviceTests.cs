@@ -18,6 +18,13 @@ namespace Cozmo.Protocol.Tests;
 [Collection("SteppedBehavior missing-report statics")]
 public class M3DeviceTests
 {
+    // Frozen manifest names retained as executable aliases of their current source-oracle regressions.
+    // The callbacks alias asserts the MISSING handoffs, not completed higher-layer recipients.
+    [Fact]
+    public void M3_032_TheNvDispatchIsGatedInTheEngineUpdate() => M3_032_G1_G2_RobotUpdateLogsItsTwoGates();
+    [Fact]
+    public void M3_034_TheConnectionReadCallbacksReachTheirLayers() => M3_034_TheConnectionReadCallbacksReportAllNoSinkHandoffs();
+
     // B-M3M4-9: failure warning calls are Robot::SendMessage 0x005134F4; FIFO/count decisions 0x0057BF72..0x0057C00A.
     [Theory]
     [InlineData(false)] [InlineData(true)]
@@ -56,7 +63,7 @@ public class M3DeviceTests
         Assert.False(rig.Robot.CameraSettings.SetCameraSettings(16, float.NaN));
         rig.Robot.CameraSettings.Handle(Defaults(3f, 1.5f, 0, 50));
         Assert.Contains("VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", keys);
-        Assert.Contains("VisionSystem.SetNextCameraParams.OverwritingPreviousParams", keys);
+        Assert.DoesNotContain("VisionSystem.SetNextCameraParams.OverwritingPreviousParams", keys); // M11-060 clear unbuilt; warning suppressed.
         Assert.Contains("Robot.SendMessage", keys);
         Assert.Equal(17, gammaBytesAtZeroMinimum); // 0x006B938A SetGammaTable precedes 0x006B93DE.
         Assert.All(reached, Assert.True);
@@ -117,9 +124,9 @@ public class M3DeviceTests
         using var rig = new Rig();
         var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
         rig.Robot.CameraSettings.Handle(Defaults(3f, 1.5f, 0, 50));
-        Assert.Equal(new[] { "VisionComponent.SetCameraSettings", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", "VisionSystem.SetCameraExposureParams.Success" }, entries.Select(e => e.Name));
+        Assert.Equal(new[] { "VisionComponent.SetCameraSettings", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "VisionSystem.SetCameraExposureParams.Success" }, entries.Select(e => e.Name));
         Assert.Equal(EngineLogLevel.Debug, entries[1].Level); Assert.Equal("Will use 1.", entries[1].Text);
-        Assert.Equal("Current Gain:16ms Limits:[0 50], Current Exposure:1.500 Limits:[0.100 3.000]", entries[3].Text);
+        Assert.Equal("Current Gain:16ms Limits:[0 50], Current Exposure:1.500 Limits:[0.100 3.000]", entries[2].Text);
         Assert.Equal(1, rig.Robot.CameraSettings.MinExposureMs);
     }
 
@@ -2931,7 +2938,7 @@ public class M3DeviceTests
         ReadWith(new byte[8]);
         Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.TooLittleReadData: Tag 0x182000, Got 8, Expected 1024", nv.Log);
         ReadWith(NvHeader(0xFFFFFF, 0x435A4D4F));
-        Assert.Contains(nv.Log, l => l.StartsWith("warning: NVStorageComponent.HandleNVOpResult.InvalidDataSize: Tag 0x182000, size 16777215, maxSizeAllowed "));
+        Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.InvalidDataSize: Tag 0x182000, size 16777215, maxSizeAllowed 4096", nv.Log); // native size table0x00643BCC.
         ReadWith(NvHeader(0x800, 0x435A4D4F));
         Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ReadingRestOfData: Tag: 0x182000, TotalSize: 2048", nv.Log);
     }

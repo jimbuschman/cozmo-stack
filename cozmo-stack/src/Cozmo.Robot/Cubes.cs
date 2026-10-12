@@ -2,6 +2,10 @@ using Cozmo.Protocol;
 
 namespace Cozmo.Robot;
 
+// fidelity: M4-009
+public sealed record CubeTimestampEvent(Cube Cube, uint Timestamp);
+public sealed record CubeUpAxisEvent(uint Timestamp, int ObjectID, UpAxis UpAxis);
+
 /// <summary>What is known about one of Cozmo's light cubes.</summary>
 public sealed class Cube
 {
@@ -72,6 +76,8 @@ public sealed class Cube
     public ObjectTapped? LastTap { get; internal set; }
     /// <summary>The robot timestamp of the last SetIsMoving (CD10a, CD10b).</summary>
     public uint MovingChangedAt { get; internal set; }
+    // fidelity: M4-009 — each event's message timestamp, including repeated movement reports.
+    public uint LastBroadcastTimestamp { get; internal set; }
 
     public override string ToString() =>
         $"Cube 0x{FactoryId:x8} {Type}{(ObjectId is { } o ? $" id={o}" : "")} " +
@@ -170,7 +176,10 @@ public sealed class CozmoCubes
         Seconds = () => _robot.Engine.Timer.SecondsF;
         Connections = new CubeConnections(m => _robot.SendMessage(m, reliable: true, flush: true),
                                           () => Seconds());
-        Connections.SourceLog += (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
+        Connections.SourceLog += (level, channel, key, text) =>
+        {
+            if (key != "BlockFilter.Load.ParseError") _robot.Engine.EmitSourceLog(level, channel, key, text);
+        }; // ParseError is delivered through the raw-byte sink; all other string consumers still receive it.
         Connections.SourceLogBytes += (level, channel, key, utf8) => _robot.Engine.EmitSourceLog(level, channel, key, utf8);
         Connections.StackLog += _robot.Engine.EmitStackLog;
         Connections.BlockPoolData += m => _robot.Engine.DeliverBlockPoolData(m);
@@ -201,6 +210,10 @@ public sealed class CozmoCubes
     public event Action<Cube>? CubeTapped;
     /// <summary>Raised when a cube starts or stops moving.</summary>
     public event Action<Cube>? CubeMoved;
+    // fidelity: M4-009 — immutable message timestamps beside the existing cube notices.
+    public event Action<CubeTimestampEvent>? MovementBroadcast;
+    public event Action<CubeTimestampEvent>? TapBroadcast;
+    public event Action<CubeUpAxisEvent>? UpAxisBroadcast;
 
     /// <summary>True once discovery has been turned on and not turned off again.</summary>
     public bool DiscoveryEnabled { get; private set; }
@@ -407,6 +420,7 @@ public sealed class CozmoCubes
     {
         c.Taps++;
         c.LastTap = t;
+        c.LastBroadcastTimestamp = t.Timestamp;
         c.LastTapUtc = DateTime.UtcNow;
         c.LastSeenUtc = c.LastTapUtc.Value;
     }
@@ -441,7 +455,11 @@ public sealed class CozmoCubes
                     if (_byFactoryId.Values.FirstOrDefault(c => c.Type == type && c.ObjectId is not null) is { } c) ended.Add(c.ObjectId!.Value);
                 }
         }
-        if (tapped is not null) CubeTapped?.Invoke(tapped);
+        if (tapped is not null)
+        {
+            var notice = new CubeTimestampEvent(tapped, tapped.LastTap!.Timestamp);
+            CubeTapped?.Invoke(tapped); TapBroadcast?.Invoke(notice);
+        }
         // CD10g (0x006311A2..0x006313D8): MarkObjectDirty on every located copy whose pose state is Known (+0x24 == 1);
         // BlockWorld.MarkDirty changes only a Known pose.
         foreach (var id in ended) EventFan.Raise(DoubleTapPendingEnded, id, null);
@@ -492,6 +510,8 @@ public sealed class CozmoCubes
     {
         Cube? discovered = null, connectionChanged = null, tapped = null, moved = null;
         ObjectPowerLevel? powerBroadcast = null;
+        CubeTimestampEvent? movementBroadcast = null;
+        CubeUpAxisEvent? upAxisBroadcast = null;
         (ObjectType Type, bool Connected)? lights = null;
         var callouts = new List<Action>();
         void Log(string line) => callouts.Add(() => this.Log(line));
@@ -666,7 +686,12 @@ public sealed class CozmoCubes
                     c.UpAxis = mv.AxisOfAccel;
                     c.LastSeenUtc = DateTime.UtcNow;
                     callouts.Add(() => MovementLocatedLoop(mv.ObjectID, movedWorldId, true, mv.Timestamp, "Robot.ActiveObjectMoved."));
-                    if (ExcludeFromMovedBroadcast?.Invoke(c) != true) moved = c;
+                    if (ExcludeFromMovedBroadcast?.Invoke(c) != true)
+                    {
+                        moved = c;
+                        c.LastBroadcastTimestamp = mv.Timestamp;
+                        movementBroadcast = new CubeTimestampEvent(c, c.LastBroadcastTimestamp);
+                    }
                     break;
                 }
                 case ObjectStoppedMoving sm:
@@ -690,7 +715,12 @@ public sealed class CozmoCubes
                     _robot.VisionModeRecipient?.World.SetConnectedMoving(unchecked((uint)stoppedWorldId), false);
                     c.LastSeenUtc = DateTime.UtcNow;
                     callouts.Add(() => MovementLocatedLoop(sm.ObjectID, stoppedWorldId, false, sm.Timestamp, "Robot.ActiveObjectStopped."));
-                    if (ExcludeFromMovedBroadcast?.Invoke(c) != true) moved = c;
+                    if (ExcludeFromMovedBroadcast?.Invoke(c) != true)
+                    {
+                        moved = c;
+                        c.LastBroadcastTimestamp = sm.Timestamp;
+                        movementBroadcast = new CubeTimestampEvent(c, sm.Timestamp);
+                    }
                     break;
                 }
                 case ObjectUpAxisChanged ua:
@@ -703,6 +733,8 @@ public sealed class CozmoCubes
                     if (WorldId(c, Log) is not { } upWorldId) break;
                     SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged", $"Type: {c.Type}, ObjectID: {upWorldId}, UpAxis: {UpAxisName(ua.UpAxis)}");
                     c.UpAxis = ua.UpAxis;
+                    c.LastBroadcastTimestamp = ua.Timestamp;
+                    upAxisBroadcast = new CubeUpAxisEvent(ua.Timestamp, upWorldId, ua.UpAxis);
                     c.LastSeenUtc = DateTime.UtcNow;
                     break;
                 }
@@ -719,8 +751,14 @@ public sealed class CozmoCubes
         // fidelity: M4-018
         // LC7: the game-side ObjectConnectionState reaches the CubeLightComponent synchronously.
         if (lights is { } l) _robot.Lights.Cubes.OnObjectConnectionState(l.Type, l.Connected);
-        if (tapped is not null) CubeTapped?.Invoke(tapped);
+        if (tapped is not null)
+        {
+            var notice = new CubeTimestampEvent(tapped, tapped.LastTap!.Timestamp);
+            CubeTapped?.Invoke(tapped); TapBroadcast?.Invoke(notice);
+        }
         if (moved is not null) CubeMoved?.Invoke(moved);
+        if (movementBroadcast is not null) MovementBroadcast?.Invoke(movementBroadcast);
+        if (upAxisBroadcast is not null) UpAxisBroadcast?.Invoke(upAxisBroadcast);
         if (powerBroadcast is not null) PowerLevelBroadcast?.Invoke(powerBroadcast);
     }
 
@@ -738,7 +776,7 @@ public sealed class CozmoCubes
         foreach (var o in objects)
         {
             if (unchecked((int)o.ObjectId) != objectId)
-                Log($"MISSING: M4-009 / M11-004 | {prefix}ActiveObjectInDifferentFramesWithDifferentIDs 0x00534042..0x005340CC: root-pose names are not represented by the attached BlockWorld; first ID {objects[0].ObjectId}, this ID {o.ObjectId}");
+                Log($"MISSING: M4-037 | {prefix}ActiveObjectInDifferentFramesWithDifferentIDs 0x00534042..0x005340CC: root-pose names are not represented by the attached BlockWorld; first ID {objects[0].ObjectId}, this ID {o.ObjectId}");
             world.ApplyMovedOrStopped(o, moving);
         }
     }

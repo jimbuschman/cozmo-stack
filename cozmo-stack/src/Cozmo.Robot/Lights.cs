@@ -192,7 +192,7 @@ public sealed class BackpackLightAnimations
     // fidelity: M4-017
     /// <summary>
     /// AddBackpackLightStateValues (LB4d, 0x00586D20..0x005870D0): onColors, offColors, onPeriod_ms, offPeriod_ms,
-    /// transitionOnPeriod_ms, transitionOffPeriod_ms and offset, each with exactly 5 entries, otherwise "Missing member
+    /// transitionOnPeriod_ms, transitionOffPeriod_ms and offset, each with size()==5, otherwise "Missing member
     /// field" and nothing is inserted; an existing key is not overwritten. Colours are floats: byte = u32(f · 255).
     /// </summary>
     private void AddStateValues(string name, FirmwareJsonValue root, string key, Action<string>? log, SourceLogSink? sourceLog = null)
@@ -617,7 +617,7 @@ public sealed class CubeLightAnimations
             if (!ok)
             {
                 log?.Invoke($"error: {anim.Name}: a pattern lacks a required field");
-                log?.Invoke("MISSING: CubeLightAnimationContainer.ParseJsonToAnim.InvalidPattern / .InvalidJson: the stack TryPattern aggregates missing fields and invalid arrays; no single source branch matches (0x00589910..0x00589CD8)");
+                log?.Invoke("MISSING: M4-044 | CubeLightAnimationContainer.ParseJsonToAnim.InvalidPattern / .InvalidJson: the stack TryPattern aggregates missing fields and invalid arrays; no single source branch matches (0x00589910..0x00589CD8)");
                 continue;
             }
             _anims.TryAdd(anim.Name, patterns.ToArray());
@@ -829,7 +829,7 @@ public sealed class CubeLightComponent
                 if (!info.GameLayerOnly && layer == UserLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.NotPlayingUserAnim", "Refusing to play anim on User/Game layer when it is not enabled"); return false; }
                 if (stack.Count > 0 && stack[^1].Blended && blend) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim", "Can't play a blended anim over already playing blended anim"); return false; }
                 // Blending body remains M11's unported light-state handoff; do not manufacture the blended pattern.
-                if (blend) { Log("MISSING: M4-018 | BlendAnimWithCurLights body is not in the adopted rows; animation not pushed"); return false; }
+                if (blend) { Log("MISSING: M4-041 | BlendAnimWithCurLights body is not in the adopted rows; animation not pushed"); return false; }
                 first = anim[0];
                 var playing = new Playing { Anim = anim, Name = name, Index = 0,
                     TimerMs = (first.DurationMs | durationMs) == 0 ? 0 : unchecked(NowMs + first.DurationMs + durationMs),
@@ -999,7 +999,7 @@ public sealed class CubeLightComponent
                     foreach (var p in info.Layers[layer])
                         if (MatchesTrigger(p, trigger)) p.Stop = true;
         }
-        Log("MISSING: M4-018 | CubeLightComponent.StopLignAnim.Result 0x00639300: Current state string serializer has no adopted row");
+        Log("MISSING: M4-041 | CubeLightComponent.StopLignAnim.Result 0x00639300: Current state string serializer has no adopted row");
         Update(pickDefaultLayer); // 0x006390BE..0x006390C2 forwards the native bool parameter.
     }
 
@@ -1176,7 +1176,8 @@ public sealed class CubeLightComponent
         if (!enabled)
         {
             if (Interlocked.Exchange(ref _transitionIngressMissingReported, 1) == 0)
-                Log("MISSING: M4-018 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false");
+                // fidelity: M4-040 — app transition ingress is unavailable; native flag stays false.
+                Log("MISSING: M4-040 | EnableCubeLightsStateTransitionMessages ingress (0x0063A2EA) is not wired; comp+0x20 remains false");
             return;
         }
         if (objectId is not { } id)

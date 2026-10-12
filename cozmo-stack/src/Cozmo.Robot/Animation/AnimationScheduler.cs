@@ -274,16 +274,15 @@ public sealed class StreamSendBuffer
     // fidelity: M5-024, M5-037
     internal void ClearSendBuffer()
     {
+        string?[] names;
         lock (_gate)
         {
-            foreach (var entry in _fifo)
-                if (entry.Size != 0)
-                {
-                    if (entry.TagName is { } name) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "AnimationStreamer.ClearSendBuffer", $"Clearing unsent {name}");
-                    else Log?.Invoke("MISSING: ClearSendBuffer tag for caller-supplied untyped test message");
-                }
+            names = _fifo.Where(entry => entry.Size != 0).Select(entry => entry.TagName).ToArray();
             _fifo.Clear();
         }
+        foreach (var name in names)
+            if (name is not null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "AnimationStreamer.ClearSendBuffer", $"Clearing unsent {name}");
+            else Log?.Invoke("MISSING: ClearSendBuffer tag for caller-supplied untyped test message");
     }
 
     // fidelity: M1-025, M1-015
