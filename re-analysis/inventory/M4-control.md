@@ -684,3 +684,13 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | Pin 14.4 | M1-034 extends to the backpack-light loader's non-object JSON throw: M4-017 and M4-036 unresolved updated. |
+
+
+## Second M3/M4 settling pass (manager, 2026-10-12; research/20261012-m3m4-settling-2.md)
+
+| Change | Records |
+| --- | --- |
+| Settled | M4-017, M4-036 |
+| Reopened (Save.Error reachable) | M4-011 |
+| New RECOVERABLE_GAP | M4-037 pose-origin names, M4-038 ComputeCliffPose/AddCliff, M4-041 blend/serializer/GetLEDState, M4-043 Save.Error what(), M4-044 cube-light loader |
+| New COMPATIBILITY_POLICY (scope: app inputs not offered) | M4-039 drone mode, M4-040 cube-light game inputs, M4-042 BlockFilter game messages |

@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-11",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "dd5a59e94ada220a334cab705c7369a1fd212b6dacad85b02ffce0e82c417857",
+  "inventory_sha256": "24f6f38e1838529b69dd5e5460523190fca1231480b46c62cbdb8c4e0de688fd",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -87,7 +87,7 @@
       "hardware_required": false
     },
     "M4-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Cliff sensor data (raw values, CLIFF_DETECTED, timestamp, enum names) and HandleObjectPowerLevel (cube battery)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -134,7 +134,7 @@
       "hardware_required": false
     },
     "M4-011": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order",
       "authority": "libcozmoEngine.so",
       "evidence": [
@@ -206,7 +206,7 @@
       "hardware_required": false
     },
     "M4-017": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BodyLightComponent and SetHeadlight: priority, Off resent every tick while no source, charging state machine, shared locator, wire conversion, the headlight's EnableMode(14) call and send",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -457,7 +457,7 @@
       "hardware_required": false
     },
     "M4-035": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "BlockFilter::SendBlockPoolData: the block-pool broadcast to the game on M4-010's path",
       "authority": "libcozmoEngine.so 3.4.0-1204 BlockFilter.",
       "evidence": [
@@ -468,11 +468,91 @@
       "hardware_required": false
     },
     "M4-036": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "RobotDataLoader backpack-light loader: WalkAnimationDir, FilesInDirectory, the mtime gate, readAsJson, the empty() skip and the Results/LoadTime logs",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotDataLoader, FileUtils, DataPlatform.",
       "evidence": [
         "re-analysis/research/20261011-m3m4-fix-rows.md section 13.3: LoadNonConfigData order 0x0051F3B0..0x0051F3CE; WalkAnimationDir 0x0051F600..0x0051F62C, 0x00520E5A..0x005211BC; FilesInDirectory 0x00802D70..0x00802E10, suffixes 0x0101FF68; Results 0x0051F6A4..0x0051F6EA; LoadBackpackLightAnimationFile 0x00521CE4..0x00521D42; readAsJson 0x0084C090..0x0084C15C; LoadTime 0x005200DE, 0x00520184..0x005201AA."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-037": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Pose-origin root names for the ActiveObjectInDifferentFramesWithDifferentIDs warning",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: the warning at 0x00534042..0x005340CC prints the root names of two pose origins (FindRoot 0x4A40F0, GetName 0x4A4C60) when a located ID differs from the connected ID."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-038": {
+      "status": "RECOVERABLE_GAP",
+      "title": "CliffSensorComponent::ComputeCliffPose and BlockWorld::AddCliff (the detected-cliff path)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the \"Detected at\" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-039": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Drone mode (+0x34B) and its EnableDroneMode input (app input)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: HandlePotentialCliffEvent branches on +0x34B (0x00535898..0x00535924); the flag is set only by the app-sent drone-mode message."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-040": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Cube-light game inputs: EnableCubeLightsStateTransitionMessages and game SetObjectLights (app inputs)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: comp+0x20 is written only by HandleMessage<EnableCubeLightsStateTransitionMessages> (0x0063A2EA); game SetObjectLights reaches NullActiveCube (0x0063A204)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-041": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BlendAnimWithCurLights body, the StopLignAnim.Result serializer and the GetLEDState callers",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: PlayLightAnim blend body (unread); StopLignAnim.Result current-state serializer (0x00639300); ActiveObject::GetLEDState IndexTooLarge/NegativeIndex (0x0063958E/0x006395CC) and its callers."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-042": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "BlockFilter game messages 0xE6/0xE7/0xEA/0xEB, including RemoveObjectFromPersistentPool and the pool enable (app inputs)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: the persistent-pool edit messages arrive only from the app (RemoveObjectFromPersistentPool 0x0061B3DE/0x0061B42E; the pool-enable input)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-043": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BlockFilter::Save failure text: the ios_base::failure what() bytes from libc++_shared.so",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: Save.Error (0x0061B21C..0x0061B2A4) logs what() of the caught ios_base::failure; the bytes are in the shipped libc++_shared.so."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-044": {
+      "status": "RECOVERABLE_GAP",
+      "title": "The cube-light animation loader (CubeLightAnimations / ParseJsonToAnim)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: ParseJsonToAnim 0x00589910..0x00589CD8 and its loader; the stack (Lights.cs:578-625) still uses System.Text.Json with trailing commas, ordinal file order and *.json only."
       ],
       "live_path": true,
       "hardware_required": false

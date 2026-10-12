@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "5a8a57a41494e4abc52c03c451c4ec853decd6bcdec5f430fb856c28f446cf61",
+  "inventory_sha256": "9f836a12571afce93519e955eaa2b77c2be1a4df853a451b85cde875c74749e7",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -281,7 +281,7 @@
       "hardware_required": false
     },
     "M3-024": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "HandleFirmwareVersion: the firmware JSON parse and the audio output source (\"sim\" isNull gives SetOutputSource(2), otherwise 1)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -327,7 +327,7 @@
       "hardware_required": false
     },
     "M3-028": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "NV non-factory reads: the OMZC header check and the Length = size+16 re-request",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -374,7 +374,7 @@
       "hardware_required": false
     },
     "M3-032": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "The NV dispatch gates in Robot::Update: Gate A (a first full state after SyncTimeAck), the SyncTime watchdog and Gate B (calibration and UpdateAllResults)",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -610,7 +610,7 @@
       "hardware_required": false
     },
     "M3-053": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Rendered engine log: libDAS sink (a) exactly (the DASConfig level filter, \"name : text \" with right-trim and trailing space, the logcat priority, the null-name \"noname\" path)",
       "authority": "libDAS (shipped in the APK) DasLocalAppenderImpl and _DAS_GetLevel; libcozmoEngine.so DasLoggerProvider.",
       "evidence": [
@@ -645,6 +645,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204; Unity app scripts (authority 2).",
       "evidence": [
         "re-analysis/research/20261012-m3-051-libdas-sink-b-check.md: startup key DataCollectionEnabled (0x6659E6) -> DASEnableNetwork/DASDisableNetwork(2) (0x665C1E/0x665C26); HandleMessage<RequestDataCollectionOption> 0x4EE084 (sent by the app from DataCollectionPanel.cs:74); any set mask bit blocks the upload (0x8818/0x882C, gate 0xB49A)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-057": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "AnimationState -> Robot::SetClientDropCount and the Robot.ClientDropCount.Incremented event",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m3m4-settling-2.md: the AnimationState handler tail-calls Robot::SetClientDropCount(+0xE) (0x00538010..0x00538020 -> 0x00518A38..0x00518A80): if the count is above +0x249 (unsigned) it stores it and emits sEventF \"Robot.ClientDropCount.Incremented\" \"%u\" (M2 inventory R-P5 marked it NEW)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -493,3 +493,11 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | To COMPATIBILITY_POLICY (operator departure: JPEG decoder only; the dispatch stays exact) | M3-045 |
+
+
+## Second M3/M4 settling pass (manager, 2026-10-12; research/20261012-m3m4-settling-2.md)
+
+| Change | Records |
+| --- | --- |
+| Settled | M3-024, M3-028, M3-032, M3-053 |
+| New IMPLEMENTATION_GAP | M3-057 AnimationState -> SetClientDropCount |
