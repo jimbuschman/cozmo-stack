@@ -32,7 +32,7 @@ anything. BOARD.md is history; this file is the live queue.
 | --- | --- | --- |
 | 1 | [B-M3M4-6](B-M3M4-6.md) | done (5d62bbb1); re-verify FAIL, see B-M3M4-7 |
 | 2 | [B-M3M4-7](B-M3M4-7.md) | done (ceb4df28); re-verify FAIL (1), see B-M3M4-8 |
-| 3 | [B-M3M4-8](B-M3M4-8.md) | open |
+| 3 | [B-M3M4-8](B-M3M4-8.md) | done (c0b50b8d); re-verify FAIL (1: UnlockAllTracks %s), manager fixed in 7157aa38 |
 | 4 | [B-M5-2](B-M5-2.md) | open |
 | 5 | [B-M5-3](B-M5-3.md) | open |
 

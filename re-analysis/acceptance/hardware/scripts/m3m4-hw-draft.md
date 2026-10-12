@@ -1,6 +1,6 @@
-# DRAFT — M3M4-HW: the seven HARDWARE_ONLY records of M3-device and M4-control
+# M3M4-HW: the seven HARDWARE_ONLY records of M3-device and M4-control
 
-Manager review required before the operator runs it. It has not been run on a robot (only against the loopback `fakerobot`, for the bundle writer). It never commits, never edits the manifest and never writes the robot's NV storage. Every check ends **OBSERVED_\*** (with the rule that produced it) or **INCONCLUSIVE** (with what is missing). There is no PASS, and no verdict settles a record: a hardware observation does not raise provenance (AGENTS.md).
+**APPROVED for the operator's run (manager, 2026-10-11),** at the commit that contains B-M3M4-8 and 7157aa38. The file keeps its `-draft` name because the tool hashes this path into `env.json`. The manager's answers to the open questions are at the end. Until this approval it had not been run on a robot (only against the loopback `fakerobot`, for the bundle writer). It never commits, never edits the manifest and never writes the robot's NV storage. Every check ends **OBSERVED_\*** (with the rule that produced it) or **INCONCLUSIVE** (with what is missing). There is no PASS, and no verdict settles a record: a hardware observation does not raise provenance (AGENTS.md).
 
 Records (current manifest, status HARDWARE_ONLY, `hardware_required`, `live_path`): **M3-008** pair-bit to display-row mapping and playback period; **M3-016** colour frames and the robot's reaction to EnableColorImages; **M3-036** factory read with Length = 1 and the non-factory Length = size+16 re-request; **M4-013** StartMotorCalibration after the connection-time calibration; **M4-021** origin id/frame in RobotState after AbsoluteLocalizationUpdate; **M4-024** what makes the robot forward cube telemetry, and the effect of StreamObjectAccel. The tool reads `re-analysis/fidelity_manifest.json` first and stops (exit 2, before any network use) if any of the seven is missing; it warns if one is no longer HARDWARE_ONLY and copies the seven records into the bundle (`records.json`).
 
@@ -110,3 +110,12 @@ Verdicts: `OBSERVED_ACCEL_FORWARDED_WITHOUT_REQUEST`; `OBSERVED_ACCEL_ONLY_WITH_
 ### All phases: ImageChunk encoding (M3-050)
 
 `image-encodings.jsonl` records every received ImageChunk, including retransmissions, in every phase and outside check windows. Each row names M3-050, image/chunk IDs, encoding, timestamp, phase and flag567 (true for 5, 6 or 7). The script does not infer firmware behavior from decoder tests. CUBE_TELEM's automatic pool uses M4-010 as context: it remains IMPLEMENTATION_GAP, awaiting strong verification. No run settles either record.
+
+## Manager's answers (2026-10-11)
+
+1. **M4-021:** the check stays as a within-run before/after comparison. The 09-25 CONTROL bundle is a cross-bundle pair, and this run replaces it as the evidence. The origin probe is dropped.
+2. **M3-036:** run it as designed. The manager re-reads the record against this bundle when judging it. Changing the record's evidence goes through re-approval, not through this script.
+3. **M4-024:** phase 1 (no StreamObjectAccel) answers the narrower reading, and phases 2–3 answer the rest. Both are recorded, and the manager reconciles the record from the bundle.
+4. **The `test` fields:** queued. Any manifest change goes with the acceptance commit, under the approval rules.
+5. **P2 `StartCamera(color: true)`:** acceptable. It is tool-only (M3-044) and labelled so in `result.json`, and only P1 speaks for the engine path.
+6. **MOTOR_CAL:** no cube on the lift. That is in the setup, and the operator confirms it at the prompt.
