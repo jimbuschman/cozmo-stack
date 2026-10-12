@@ -81,7 +81,7 @@ public class M5X9BuilderTests : IDisposable
     }
 
     [Theory]
-    [InlineData("invalid")] [InlineData("0")]
+    [InlineData("Count")]
     public void BadMoodDoesNotSetErrorBeforeParentAndGroupContainerTailIsExact(string mood)
     {
         string root = Root(); Directory.CreateDirectory(Path.Combine(root, "animationGroups"));
@@ -93,6 +93,8 @@ public class M5X9BuilderTests : IDisposable
             var lib = AnimationLibrary.Open(root, sourceLog: (l, c, k, t) => { entries.Enqueue(new(l,c,k,t)); if (k.Contains("BadType") || k.Contains("AddEntryFailure")) seen.Enqueue((k, EngineErrorState.ErrorFlagSet)); });
             Assert.Equal(new[] { ("SimpleMoodScorer.ReadFromJson.BadType", false), ("AnimationGroup.DefineFromJson.AddEntryFailure", false) }, seen);
             Assert.True(EngineErrorState.ErrorFlagSet); Assert.Empty(lib.GetGroup("g")!.Entries);
+            Check(entries, "AnimationGroupContainer.DefineAnimationGroupFromJson", EngineLogLevel.Error, null, "Failed to define animation group 'g' from Json.");
+            Assert.True(entries.ToList().FindIndex(e => e.Key.EndsWith("AddEntryFailure")) < entries.ToList().FindIndex(e => e.Key == "AnimationGroupContainer.DefineAnimationGroupFromJson"));
             entries.Clear(); File.WriteAllText(Path.Combine(root, "animationGroups", "g.json"), "{\"Other\":1}");
             AnimationLibrary.Open(root, sourceLog: Capture(entries));
             Check(entries, "AnimationGroupContainer.DefineAnimationGroupFromJson", EngineLogLevel.Error, null, "Failed to define animation group 'g' from Json.");
@@ -254,7 +256,9 @@ public class M5X9BuilderTests : IDisposable
         var entries=new ConcurrentQueue<Entry>(); var clip=Json("""{"c":[{"Name":"FaceAnimationKeyFrame","triggerTime_ms":0,"animName":"absent"}]}""",entries)!;
         Assert.Equal(0,StreamAnimation.Of(clip).FaceAnim.Current!.FaceAnimationOverride);
         entries.Clear(); var scheduler=new AnimationScheduler(new Sink()){SourceLog=Capture(entries),FaceAnimationVariants=_=>null}; scheduler.Play(clip,0); scheduler.Advance(0);
-        Check(entries,"FaceAnimationManager.GetNumFrames",EngineLogLevel.Warning,null,"Unknown animation requested: absent");
+        var warnings = entries.Where(e => e.Level == EngineLogLevel.Warning).ToArray();
+        Assert.Equal(new[] { "FaceAnimationManager.GetAnimationByName.UnknownName", "FaceAnimationManager.GetNumFrames", "FaceAnimationManager.GetAnimationByName.UnknownName", "FaceAnimationManager.GetNumFrames" }, warnings.Select(e => e.Key));
+        Assert.All(warnings, e => { Assert.Null(e.Channel); Assert.Equal("Unknown animation requested: absent", e.Text); });
     }
 
 
@@ -312,12 +316,163 @@ public class M5X9BuilderTests : IDisposable
         scheduler.ReleaseParameterSubscription=()=>{Assert.True(live.Head.IsEmpty);order.Add("parameter");};
         scheduler.Destroy();Assert.Equal(new[]{"setup","parameter"},order);
     }
+    [Theory]
+    [InlineData("invalid")] [InlineData("0")]
+    public void UnknownMoodIsHappyWithoutEngineDiagnostics(string mood)
+    {
+        string root=Root(); Directory.CreateDirectory(Path.Combine(root,"animationGroups"));
+        try
+        {
+            File.WriteAllText(Path.Combine(root,"animations","c.json"),"{\"c\":[]}");
+            File.WriteAllText(Path.Combine(root,"animationGroups","g.json"),"{\"Animations\":[{\"Name\":\"c\",\"Weight\":1,\"Mood\":\""+mood+"\"}]}");
+            var entries=new ConcurrentQueue<Entry>(); EngineErrorState.ErrorFlagSet=false;
+            var lib=AnimationLibrary.Open(root,sourceLog:Capture(entries));
+            Assert.Equal(SimpleMood.Happy,Assert.Single(lib.GetGroup("g")!.Entries).MoodType);
+            Assert.DoesNotContain(entries,e=>e.Level is EngineLogLevel.Warning or EngineLogLevel.Error);
+            Assert.False(EngineErrorState.ErrorFlagSet);
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"Name\":\"absent\"}")]
+    [InlineData("{\"Name\":\"c\"}")]
+    [InlineData("{\"Name\":\"c\",\"Weight\":1}")]
+    [InlineData("{\"Name\":\"c\",\"Weight\":1,\"Mood\":\"Count\"}")]
+    [InlineData("{\"Name\":\"c\",\"Weight\":1,\"Mood\":\"Happy\",\"UseHeadAngle\":true}")]
+    public void EveryGroupRejectionGetsContainerTailAndRetainsValidEntries(string rejected)
+    {
+        string root=Root(); Directory.CreateDirectory(Path.Combine(root,"animationGroups"));
+        try
+        {
+            File.WriteAllText(Path.Combine(root,"animations","c.json"),"{\"c\":[]}");
+            File.WriteAllText(Path.Combine(root,"animationGroups","g.json"),"{\"Animations\":["+rejected+",{\"Name\":\"c\",\"Weight\":1,\"Mood\":\"Happy\"}]}");
+            var entries=new ConcurrentQueue<Entry>();
+            var lib=AnimationLibrary.Open(root,sourceLog:Capture(entries));
+            Assert.Equal("c",Assert.Single(lib.GetGroup("g")!.Entries).Name);
+            var tail=entries.Where(e=>e.Key is "AnimationGroup.DefineFromJson.AddEntryFailure" or "AnimationGroupContainer.DefineAnimationGroupFromJson").ToArray();
+            Assert.Equal(new[]{"AnimationGroup.DefineFromJson.AddEntryFailure","AnimationGroupContainer.DefineAnimationGroupFromJson"},tail.Select(e=>e.Key));
+            Assert.Equal("Adding animation 0 failed.",tail[0].Text);
+            Assert.Equal("Failed to define animation group 'g' from Json.",tail[1].Text);
+            Assert.All(tail,e=>{Assert.Equal(EngineLogLevel.Error,e.Level);Assert.Null(e.Channel);});
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
+    [Theory]
+    [InlineData("-9223372036854775808","-9223372036854775808")]
+    [InlineData("18446744073709551615","18446744073709551615")]
+    [InlineData("1.0","1.0")]
+    [InlineData("1.25","1.25")]
+    [InlineData("1e20","1e+20")]
+    [InlineData("1e-7","9.9999999999999995e-08")]
+    [InlineData("true","true")] [InlineData("false","false")]
+    public void FaceAndDeviceAudioNamesUseShippedScalarStringConversion(string value,string expected)
+    {
+        string root=Root();
+        try
+        {
+            File.WriteAllText(Path.Combine(root,"animations","c.json"),"{\"c\":[{\"Name\":\"FaceAnimationKeyFrame\",\"triggerTime_ms\":0,\"animName\":"+value+"},{\"Name\":\"DeviceAudioKeyFrame\",\"triggerTime_ms\":0,\"audioName\":"+value+"}]}");
+            var entries=new ConcurrentQueue<Entry>(); var lib=AnimationLibrary.Open(root,sourceLog:Capture(entries));
+            var clip=lib.GetClip("c");
+            Assert.Equal(expected,Assert.Single(clip.Keyframes.OfType<FaceAnimationKeyframe>()).AnimName);
+            Assert.Equal(expected,Assert.Single(clip.Keyframes.OfType<DeviceAudioKeyframe>()).AudioName);
+            Assert.False(clip.LoadTruncated); Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
+    [Theory]
+    [InlineData("FaceAnimationKeyFrame","animName","[]")]
+    [InlineData("FaceAnimationKeyFrame","animName","{}")]
+    [InlineData("DeviceAudioKeyFrame","audioName","[]")]
+    [InlineData("DeviceAudioKeyFrame","audioName","{}")]
+    public void AggregateNameThrowsSkipWholeFile(string type,string member,string value)
+    {
+        string root=Root();
+        try
+        {
+            File.WriteAllText(Path.Combine(root,"animations","c.json"),"{\"c\":[{\"Name\":\"RecordHeadingKeyFrame\",\"triggerTime_ms\":0},{\"Name\":\""+type+"\",\"triggerTime_ms\":1,\""+member+"\":"+value+"}]}");
+            var entries=new ConcurrentQueue<Entry>();var stack=new ConcurrentQueue<string>();
+            var lib=AnimationLibrary.Open(root,stack.Enqueue,Capture(entries));
+            Assert.False(lib.HasClip("c"));Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
+            Assert.Contains(stack,l=>l.StartsWith("Loader file skipped (M1-034): JsonCpp fatal conversion"));
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
+    [Theory]
+    [InlineData(16,0,0)] [InlineData(8,2,0)] [InlineData(8,0,1)]
+    public void UnsupportedPngSkipsWithStackMissingAndNoEngineSizeError(int depth,int colour,int interlace)
+    {
+        string root=Root();string dir=Path.Combine(root,"faceAnimations","f");Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllBytes(Path.Combine(dir,"f_0.png"),Png(128,64,depth,255,colour,interlace));
+            File.WriteAllBytes(Path.Combine(dir,"f_1.png"),Png(128,64,8,255));
+            var entries=new ConcurrentQueue<Entry>();var stack=new ConcurrentQueue<string>();
+            var lib=FaceAnimationLibrary.Open(root,stack.Enqueue,Capture(entries));
+            Assert.Single(lib.Variants("f")!);
+            Assert.Contains(stack,l=>l.Contains("unsupported by host decoder"));
+            Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
+    [Theory]
+    [InlineData(999,false)] [InlineData(1000,true)] [InlineData(1001,true)]
+    public void JsonDepthFatalUsesActiveValueDepthInsteadOfExceptionText(int containers,bool fatal)
+    {
+        string root=Root();
+        try
+        {
+            File.WriteAllText(Path.Combine(root,"animations","deep.json"),new string('[',containers)+"0"+new string(']',containers));
+            var entries=new ConcurrentQueue<Entry>();var stack=new ConcurrentQueue<string>();
+            AnimationLibrary.Open(root,stack.Enqueue,Capture(entries));
+            Assert.Equal(fatal,stack.Any(l=>l.Contains("stack-limit fatal path")));
+            Assert.DoesNotContain(entries,e=>e.Key=="DataPlatform.readAsJson");
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
+    [Fact]
+    public void MalformedSecondBinaryTableRollsBackFirstRegistration()
+    {
+        // FlatBuffer fixture: root clips[2]; first empty clip is valid, second has an invalid keyframe pointer.
+        var bytes=new List<byte>(new byte[4]);var vtables=new Dictionary<int,int>();
+        void Put(int at,byte[] data){for(int i=0;i<data.Length;i++)bytes[at+i]=data[i];}
+        int Table(int count)
+        {
+            int vt=bytes.Count;bytes.AddRange(new byte[4+2*count]);Put(vt,BitConverter.GetBytes((ushort)(4+2*count)));Put(vt+2,BitConverter.GetBytes((ushort)(4+4*count)));
+            while(bytes.Count%4!=0)bytes.Add(0);int t=bytes.Count;bytes.AddRange(new byte[4+4*count]);Put(t,BitConverter.GetBytes(t-vt));vtables[t]=vt;return t;
+        }
+        int Slot(int t,int id){Put(vtables[t]+4+2*id,BitConverter.GetBytes((ushort)(4+4*id)));return t+4+4*id;}
+        void Pointer(int slot,int target)=>Put(slot,BitConverter.GetBytes((uint)(target-slot)));
+        int Text(string text){while(bytes.Count%4!=0)bytes.Add(0);int at=bytes.Count;byte[] b=Encoding.UTF8.GetBytes(text);bytes.AddRange(BitConverter.GetBytes(b.Length));bytes.AddRange(b);bytes.Add(0);return at;}
+        int rt=Table(1);Put(0,BitConverter.GetBytes(rt));while(bytes.Count%4!=0)bytes.Add(0);
+        int vector=bytes.Count;bytes.AddRange(BitConverter.GetBytes(2));bytes.AddRange(new byte[8]);Pointer(Slot(rt,0),vector);
+        int first=Table(2);Pointer(vector+4,first);Pointer(Slot(first,0),Text("first"));
+        int second=Table(2);Pointer(vector+8,second);Pointer(Slot(second,0),Text("second"));Put(Slot(second,1),BitConverter.GetBytes(0x100000u));
+        string root=Root();
+        try
+        {
+            File.WriteAllBytes(Path.Combine(root,"animations","bad.bin"),bytes.ToArray());
+            var entries=new ConcurrentQueue<Entry>();var stack=new ConcurrentQueue<string>();
+            var lib=AnimationLibrary.Open(root,stack.Enqueue,Capture(entries));
+            Assert.False(lib.HasClip("first"));Assert.False(lib.HasClip("second"));Assert.Null(lib.GetAnimation("first"));
+            Assert.Equal(new[]{"Loading 'first'","Loading 'second'"},entries.Where(e=>e.Key.EndsWith("LoadingSpecificAnimFromBinary")).Select(e=>e.Text.Split(" from ")[0]));
+            Assert.Contains(stack,l=>l.Contains("malformed non-empty binary"));Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
+        }
+        finally { Directory.Delete(root,true); }
+    }
+
     private sealed class Sink:IAnimationSink
     {
         public void Face(FaceBitmap b){} public void Audio(byte[]? b){} public void Head(sbyte a,uint d){} public void Lift(byte h,uint d){} public void Body(BodyKeyframe b){} public void BodyStop(){} public void Lights(LightsKeyframe b){} public void Event(string s){} public void AnimationStarted(byte b){} public void AnimationEnded(){} public void Finished(string s,bool b){}
     }
     // Independent PNG fixture: unfiltered rows, zlib and standard CRC32, not the production decoder.
-    private static byte[] Png(int width,int height,int depth,byte value)
+    private static byte[] Png(int width,int height,int depth,byte value,int colour=0,int interlace=0)
     {
         using var result=new MemoryStream(); result.Write(new byte[]{137,80,78,71,13,10,26,10});
         void Chunk(string type,byte[] data)
@@ -325,7 +480,7 @@ public class M5X9BuilderTests : IDisposable
             byte[] name=Encoding.ASCII.GetBytes(type), length=new byte[4]; BinaryPrimitives.WriteInt32BigEndian(length,data.Length); result.Write(length); result.Write(name); result.Write(data);
             uint crc=0xffffffff; foreach(byte b in name.Concat(data)){crc^=b;for(int j=0;j<8;j++)crc=(crc>>1)^((crc&1)!=0?0xedb88320u:0u);} BinaryPrimitives.WriteUInt32BigEndian(length,~crc); result.Write(length);
         }
-        byte[] header=new byte[13]; BinaryPrimitives.WriteInt32BigEndian(header,width); BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4),height);header[8]=(byte)depth;
+        byte[] header=new byte[13]; BinaryPrimitives.WriteInt32BigEndian(header,width); BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4),height);header[8]=(byte)depth;header[9]=(byte)colour;header[12]=(byte)interlace;
         Chunk("IHDR",header); using var compressed=new MemoryStream();
         using(var z=new ZLibStream(compressed,CompressionLevel.SmallestSize,true)) for(int y=0;y<height;y++){z.WriteByte(0);for(int x=0;x<(width*depth+7)/8;x++)z.WriteByte(value);}
         Chunk("IDAT",compressed.ToArray());Chunk("IEND",Array.Empty<byte>());return result.ToArray();

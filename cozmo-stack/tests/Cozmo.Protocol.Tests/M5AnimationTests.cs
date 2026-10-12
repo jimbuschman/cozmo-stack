@@ -2104,7 +2104,7 @@ public class M5AnimationTests
 
     /// <summary>
     /// C5 item 4 (4.3..4.10): an entry whose Name is not a loaded clip, whose Weight is absent/non-numeric, whose Mood is
-    /// absent/non-string or unrecognised, or that sets UseHeadAngle without both angles, is rejected; the group keeps the
+    /// absent/non-string or Count, or that sets UseHeadAngle without both angles, is rejected; the group keeps the
     /// rest. There are no defaults for Weight, Mood or HeadAngle.
     /// </summary>
     [Fact]
@@ -2122,7 +2122,7 @@ public class M5AnimationTests
                 { "Name": "clipA", "Weight": 1.0, "Mood": "Default" },
                 { "Name": "no_such_clip", "Weight": 1.0, "Mood": "Default" },
                 { "Name": "clipA", "Mood": "Default" },
-                { "Name": "clipA", "Weight": 1.0, "Mood": "NoSuchMood" },
+                { "Name": "clipA", "Weight": 1.0, "Mood": "Count" },
                 { "Name": "clipA", "Weight": 1.0, "Mood": "Default", "UseHeadAngle": true },
                 { "Name": "clipA", "Weight": 2.0, "Mood": "Default", "UseHeadAngle": true, "HeadAngleMin_Deg": -10, "HeadAngleMax_Deg": 10 }
             ] }

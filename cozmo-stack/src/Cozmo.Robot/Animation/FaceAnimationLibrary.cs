@@ -102,9 +102,15 @@ public sealed class FaceAnimationLibrary
                 while (frames.Count < n - 1) { frames.Add(new(Array.Empty<byte>(), Array.Empty<byte>())); pictures.Add(new()); }
             string fullPath = Path.Combine(path, filename);
             MiniPng.Gray8 image = default;
-            try { image = MiniPng.DecodeGray8(File.ReadAllBytes(fullPath)); }
-            catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException or OverflowException)
-            { /* imread failure has rows/cols zero; source size diagnostic, then continue. */ }
+            byte[]? png = null;
+            try { png = File.ReadAllBytes(fullPath); }
+            catch (IOException) { /* A file read failure gives an empty native image. */ }
+            if (png is not null)
+            {
+                try { image = MiniPng.DecodeGray8(png); }
+                catch (Exception e) when (e is IOException or InvalidDataException or ArgumentException or OverflowException)
+                { _log?.Invoke($"MISSING: M5-052 cv::imread PNG path unsupported by host decoder in {fullPath}; {e.GetType().Name}; frame skipped"); continue; }
+            }
             if (image.Pixels is null || image.Width != 128 || image.Height != 64)
             { Error("FaceAnimationManager.ReadFaceAnimationDir", $"Image in {fullPath} is {image.Width}x{image.Height} instead of 128x64."); continue; }
             pictures.Add(ToFace(image)); frames.Add(FaceAnimationFrame.FromImage(image));

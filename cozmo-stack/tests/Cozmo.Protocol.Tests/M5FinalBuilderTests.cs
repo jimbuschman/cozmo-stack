@@ -203,7 +203,7 @@ public class M5FinalBuilderTests : IDisposable
             });
             Assert.Single(library.GetGroup("g")!.Entries);
             var errors = logs.Where(l => l.Level == EngineLogLevel.Error).ToArray();
-            Assert.Equal(new[] { key, "AnimationGroup.DefineFromJson.AddEntryFailure" }, errors.Select(l => l.Key));
+            Assert.Equal(new[] { key, "AnimationGroup.DefineFromJson.AddEntryFailure", "AnimationGroupContainer.DefineAnimationGroupFromJson" }, errors.Select(l => l.Key));
             Assert.Equal("Adding animation 0 failed.", errors[1].Text); Assert.True(parentSawError);
         }
         finally { Directory.Delete(root, true); }

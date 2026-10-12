@@ -720,14 +720,6 @@ public sealed class AnimationScheduler
         }
     }
 
-    /// <summary>
-    /// A4..A9 SetStreamingAnimation. A4: streaming and a non-null newcomer without interrupt → NotInterrupting, 0.
-    /// A5: streaming (and null or interrupt) → Aborting and Abort; nothing streaming: a null newcomer → Abort, a
-    /// non-null one → Abort only with an idle animation set; then +0x38 = the newcomer. A6: a null newcomer sets +0x73
-    /// when there was an old animation and returns 0. A8: a live animation with numLoops ≠ 1 is forced to 1. A9: the name
-    /// to +0x54, a new tag (IncrementTagCtr, 1..0xFE), InitStream(anim, tag), +0x68 = numLoops, +0x6C = 0; the tag is
-    /// returned.
-    /// </summary>
     // fidelity: M5-008
     internal int VerifyFailedReturnFalse(string key, string text)
     {
@@ -738,6 +730,14 @@ public sealed class AnimationScheduler
         return 0;
     }
 
+    /// <summary>
+    /// A4..A9 SetStreamingAnimation. A4: streaming and a non-null newcomer without interrupt → NotInterrupting, 0.
+    /// A5: streaming (and null or interrupt) → Aborting and Abort; nothing streaming: a null newcomer → Abort, a
+    /// non-null one → Abort only with an idle animation set; then +0x38 = the newcomer. A6: a null newcomer sets +0x73
+    /// when there was an old animation and returns 0. A8: a live animation with numLoops ≠ 1 is forced to 1. A9: the name
+    /// to +0x54, a new tag (IncrementTagCtr, 1..0xFE), InitStream(anim, tag), +0x68 = numLoops, +0x6C = 0; the tag is
+    /// returned.
+    /// </summary>
     private byte SetStreamingAnimationLocked(AnimationClip? clip, int numLoops, bool interrupt)
     {
         var old = _streaming;
@@ -1531,7 +1531,12 @@ public sealed class AnimationScheduler
     {
         if (k.FaceAnimationOverride != 0) return false;
         var frames = FramesOf(fa);
-        if (frames is null) SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "FaceAnimationManager.GetNumFrames", $"Unknown animation requested: {fa.AnimName}");
+        if (frames is null)
+        {
+            var sink = SourceLogDispatch.GetSink(SourceLog, Log);
+            sink?.Invoke(EngineLogLevel.Warning, null, "FaceAnimationManager.GetAnimationByName.UnknownName", $"Unknown animation requested: {fa.AnimName}");
+            sink?.Invoke(EngineLogLevel.Warning, null, "FaceAnimationManager.GetNumFrames", $"Unknown animation requested: {fa.AnimName}");
+        }
         return frames is null || k.FaceAnimIndex >= frames.Count;
     }
 
@@ -1545,12 +1550,13 @@ public sealed class AnimationScheduler
     private bool FaceAnimationFrameLocked(StreamKeyframe k)
     {
         var fa = (FaceAnimationKeyframe)k.Source;
-        var frames = FramesOf(fa);
-        if (frames is null || k.FaceAnimIndex >= frames.Count)
+        if (FaceAnimationIsDone(fa, k))
         {
             k.FaceAnimIndex = 0;                          // the lazy reset; no message this call
             return false;
         }
+        var frames = FramesOf(fa);
+        if (frames is null || k.FaceAnimIndex >= frames.Count) return false;
         var payload = frames[k.FaceAnimIndex].ForScanLine(_scanLines.FaceAnimation);
         k.FaceAnimIndex++;
         if (payload.Length == 0) return false;            // an empty vector advances and sends nothing

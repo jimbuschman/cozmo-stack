@@ -363,14 +363,30 @@ public sealed class AnimationLibrary : IAnimationCatalog
     // fidelity: M5-051
     private JsonDocument? ReadAsJson(string path)
     {
-        try { return JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions { MaxDepth = 1000 }); }
-        catch (JsonException e) when (e.Message.Contains("maximum configured depth", StringComparison.OrdinalIgnoreCase))
-        { Log?.Invoke($"Loader file skipped (M1-034): JsonCpp stack-limit fatal path in {path}"); return null; }
+        try
+        {
+            string text = File.ReadAllText(path);
+            if (ExceedsJsonValueDepth(text))
+            { Log?.Invoke($"Loader file skipped (M1-034): JsonCpp stack-limit fatal path in {path}"); return null; }
+            return JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 1000 });
+        }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
             ReportReadAsJsonFailure(path, null, Log, SourceLog);
             return null;
         }
+    }
+    private static bool ExceedsJsonValueDepth(string text)
+    {
+        var reader = new Utf8JsonReader(System.Text.Encoding.UTF8.GetBytes(text), new JsonReaderOptions { MaxDepth = int.MaxValue });
+        try
+        {
+            while (reader.Read())
+                if (reader.TokenType is not (JsonTokenType.PropertyName or JsonTokenType.EndArray or JsonTokenType.EndObject)
+                    && reader.CurrentDepth >= 1000) return true;
+        }
+        catch (JsonException) { } // A syntax failure still belongs to readAsJson's diagnostics.
+        return false;
     }
     internal static void ReportReadAsJsonFailure(string path, string? readerErrors, Action<string>? log, SourceLogSink? sourceLog)
     {
@@ -534,11 +550,32 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 var tables = root.Tables(ClipsField).ToList();
                 if (!root.Has(ClipsField)) { BinaryError("AllClipsNull", $"Found no animations in {path}"); return; }
                 if (tables.Count == 0) { BinaryError("AnimClipsEmpty", $"Found no animations in {path}"); return; }
-                foreach (var table in tables)
+                lock (_gate)
                 {
-                    string name = table.String(ClipName) ?? "";
-                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary", $"Loading '{name}' from {path}");
-                    lock (_gate) Register(ParseClip(table, Log, SourceLog), path, false);
+                    var prior = new Dictionary<string, (AnimationClip? Clip, string? File, string? JsonFile)>(StringComparer.Ordinal);
+                    try
+                    {
+                        foreach (var table in tables)
+                        {
+                            string name = table.String(ClipName) ?? "";
+                            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationFile.LoadingSpecificAnimFromBinary", $"Loading '{name}' from {path}");
+                            var clip = ParseClip(table, Log, SourceLog);
+                            prior.TryAdd(clip.Name, (_clipCache.GetValueOrDefault(clip.Name), _clipFiles.GetValueOrDefault(clip.Name), _jsonClipFiles.GetValueOrDefault(clip.Name)));
+                            Register(clip, path, false);
+                        }
+                    }
+                    catch (Exception e) when (e is ArgumentException or IndexOutOfRangeException or OverflowException or InvalidDataException)
+                    {
+                        // M1-034 isolates the whole malformed file, including earlier tables. Holding the gate keeps
+                        // another loader's registration from being overwritten by this rollback.
+                        foreach (var (name, old) in prior)
+                        {
+                            if (old.Clip is null) _clipCache.Remove(name); else _clipCache[name] = old.Clip;
+                            if (old.File is null) _clipFiles.Remove(name); else _clipFiles[name] = old.File;
+                            if (old.JsonFile is null) _jsonClipFiles.Remove(name); else _jsonClipFiles[name] = old.JsonFile;
+                        }
+                        throw;
+                    }
                 }
             }
             catch (Exception e) when (e is ArgumentException or IndexOutOfRangeException or OverflowException or InvalidDataException)
@@ -869,97 +906,101 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// </summary>
     private static bool DefineGroup(AnimationGroup g, JsonElement root, Func<string, bool> hasClip, Action<string>? log, SourceLogSink? sourceLog = null)
     {
-        try
+        if (!root.TryGetProperty("Animations", out var arr) || arr.ValueKind != JsonValueKind.Array)
         {
-            if (!root.TryGetProperty("Animations", out var arr) || arr.ValueKind != JsonValueKind.Array)
-            {
-                // 4.2: not an array logs NoAnimations and fails the define
-                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.DefineFromJson.NoAnimations", "Missing 'Animations' field for animation group.");
-                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
-                return false;
-            }
-            var entries = new List<AnimationGroupEntry>();
-            int entryIndex = -1;
-            void Reject(bool sharedTail = true)
-            {
-                if (sharedTail) Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058C6E8..0x0058C6F4
-                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
-                    "AnimationGroup.DefineFromJson.AddEntryFailure", $"Adding animation {entryIndex} failed.");
-                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058A6D2..0x0058A6D8
-            }
-            bool windowKnown = false;
-            float inheritedMin = 0, inheritedMax = 0;
-            foreach (var e in arr.EnumerateArray())
-            {
-                entryIndex++;
-                // 4.4: Name must be a string, 4.5: and must name a loaded clip; otherwise the entry is rejected and the
-                // group continues with the rest (4.3).
-                if (!e.TryGetProperty("Name", out var n) || n.ValueKind != JsonValueKind.String)
-                {
-                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoName", "Missing 'Name' field for animation.");
-                    Reject();
-                    continue;
-                }
-                string name = n.GetString()!;
-                if (!hasClip(name))
-                {
-                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.InvalidName", $"No canned animation exists named '{name}'");
-                    Reject();
-                    continue;
-                }
-                // 4.6: Weight must be numeric; there is no default of 1.
-                if (!e.TryGetProperty("Weight", out var w) || w.ValueKind != JsonValueKind.Number)
-                {
-                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoWeight", "Missing 'Weight' field for animation.");
-                    Reject();
-                    continue;
-                }
-                // 4.7: Mood must be a string and a recognised SimpleMoodType; there is no default of "Default".
-                if (!e.TryGetProperty("Mood", out var m) || m.ValueKind != JsonValueKind.String)
-                {
-                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoMood", "Missing 'Mood' field for animation.");
-                    Reject();
-                    continue;
-                }
-                string mood = m.GetString()!;
-                if (mood is not ("Happy" or "Sad" or "Default"))
-                {
-                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "SimpleMoodScorer.ReadFromJson.BadType", $"Bad 'Mood' = '{mood}'");
-                    Reject(false);
-                    continue;
-                }
-                // 4.8: CooldownTime_Sec defaults to 0.0.
-                double cooldown = e.TryGetProperty("CooldownTime_Sec", out var c) && c.ValueKind == JsonValueKind.Number
-                    ? c.GetDouble() : 0.0;
-                // 4.9: UseHeadAngle is optional; absent or false succeeds without a head window. 4.10: when true both
-                // angles are required, else the entry is rejected. There are no infinity defaults.
-                bool useHead = e.TryGetProperty("UseHeadAngle", out var uh) && uh.ValueKind == JsonValueKind.True;
-                float minDeg = 0f, maxDeg = 0f;
-                if (useHead)
-                {
-                    if (!e.TryGetProperty("HeadAngleMin_Deg", out var mn) || mn.ValueKind != JsonValueKind.Number
-                        || !e.TryGetProperty("HeadAngleMax_Deg", out var mx) || mx.ValueKind != JsonValueKind.Number)
-                    {
-                        SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoHeadAngleWhenUsingHeadAngles", "Missing " +
-                                    "'HeadAngleMin_Deg' or 'HeadAngleMax_Deg' field for animation.");
-                        Reject();
-                        continue;
-                    }
-                    minDeg = (float)mn.GetDouble();
-                    maxDeg = (float)mx.GetDouble();
-                }
-                if (useHead) { inheritedMin = minDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35); inheritedMax = maxDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35); windowKnown = true; }
-                entries.Add(new AnimationGroupEntry(name, (float)w.GetDouble(), cooldown, mood)
-                {
-                    UseHeadAngle = useHead,
-                    BackupWindowKnown = windowKnown, BackupMinRad = inheritedMin, BackupMaxRad = inheritedMax,
-                    HeadAngleMinDeg = minDeg,
-                    HeadAngleMaxDeg = maxDeg,
-                });
-            }
-            g.Entries = entries;
-            return true;
+            // 4.2: not an array logs NoAnimations and fails the define
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroup.DefineFromJson.NoAnimations", "Missing 'Animations' field for animation group.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            return false;
         }
-        catch { throw; }
+        var entries = new List<AnimationGroupEntry>();
+        int entryIndex = -1;
+        bool rejected = false;
+        void Reject(bool sharedTail = true)
+        {
+            rejected = true;
+            if (sharedTail) Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058C6E8..0x0058C6F4
+            SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null,
+                "AnimationGroup.DefineFromJson.AddEntryFailure", $"Adding animation {entryIndex} failed.");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0058A6D2..0x0058A6D8
+        }
+        bool windowKnown = false;
+        float inheritedMin = 0, inheritedMax = 0;
+        foreach (var e in arr.EnumerateArray())
+        {
+            entryIndex++;
+            // 4.4: Name must be a string, 4.5: and must name a loaded clip; otherwise the entry is rejected and the
+            // group continues with the rest (4.3).
+            if (!e.TryGetProperty("Name", out var n) || n.ValueKind != JsonValueKind.String)
+            {
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoName", "Missing 'Name' field for animation.");
+                Reject();
+                continue;
+            }
+            string name = n.GetString()!;
+            if (!hasClip(name))
+            {
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.InvalidName", $"No canned animation exists named '{name}'");
+                Reject();
+                continue;
+            }
+            // 4.6: Weight must be numeric; there is no default of 1.
+            if (!e.TryGetProperty("Weight", out var w) || w.ValueKind != JsonValueKind.Number)
+            {
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoWeight", "Missing 'Weight' field for animation.");
+                Reject();
+                continue;
+            }
+            // 0x00791F0C: an unknown string writes to cerr and returns Happy; only Count is BadType.
+            if (!e.TryGetProperty("Mood", out var m) || m.ValueKind != JsonValueKind.String)
+            {
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoMood", "Missing 'Mood' field for animation.");
+                Reject();
+                continue;
+            }
+            string mood = m.GetString()!;
+            if (mood is not ("Happy" or "Sad" or "Default" or "Count"))
+            {
+                Console.Error.WriteLine($"error: string '{mood}' is not a valid SimpleMoodType value");
+                Console.Error.Flush();
+                mood = "Happy";
+            }
+            if (mood == "Count")
+            {
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "SimpleMoodScorer.ReadFromJson.BadType", $"Bad 'Mood' = '{mood}'");
+                Reject(false);
+                continue;
+            }
+            // 4.8: CooldownTime_Sec defaults to 0.0.
+            double cooldown = e.TryGetProperty("CooldownTime_Sec", out var c) && c.ValueKind == JsonValueKind.Number
+                ? c.GetDouble() : 0.0;
+            // 4.9: UseHeadAngle is optional; absent or false succeeds without a head window. 4.10: when true both
+            // angles are required, else the entry is rejected. There are no infinity defaults.
+            bool useHead = e.TryGetProperty("UseHeadAngle", out var uh) && uh.ValueKind == JsonValueKind.True;
+            float minDeg = 0f, maxDeg = 0f;
+            if (useHead)
+            {
+                if (!e.TryGetProperty("HeadAngleMin_Deg", out var mn) || mn.ValueKind != JsonValueKind.Number
+                    || !e.TryGetProperty("HeadAngleMax_Deg", out var mx) || mx.ValueKind != JsonValueKind.Number)
+                {
+                    SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Error, null, "AnimationGroupEntry.DefineFromJson.NoHeadAngleWhenUsingHeadAngles", "Missing " +
+                                "'HeadAngleMin_Deg' or 'HeadAngleMax_Deg' field for animation.");
+                    Reject();
+                    continue;
+                }
+                minDeg = (float)mn.GetDouble();
+                maxDeg = (float)mx.GetDouble();
+            }
+            if (useHead) { inheritedMin = minDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35); inheritedMax = maxDeg * BitConverter.Int32BitsToSingle(0x3C8EFA35); windowKnown = true; }
+            entries.Add(new AnimationGroupEntry(name, (float)w.GetDouble(), cooldown, mood)
+            {
+                UseHeadAngle = useHead,
+                BackupWindowKnown = windowKnown, BackupMinRad = inheritedMin, BackupMaxRad = inheritedMax,
+                HeadAngleMinDeg = minDeg,
+                HeadAngleMaxDeg = maxDeg,
+            });
+        }
+        g.Entries = entries;
+        return !rejected;
     }
 }

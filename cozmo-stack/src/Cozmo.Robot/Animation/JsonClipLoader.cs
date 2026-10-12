@@ -116,6 +116,17 @@ internal static class JsonClipLoader
 
     // ------------------------------------------------------------------ JsonCpp (J1.4)
 
+    private static string AsString(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.String) return value.GetString()!;
+        if (value.ValueKind is JsonValueKind.Array or JsonValueKind.Object)
+            throw new JsonCppException("Value is not convertible to String.");
+        // Reuse the checked shipped scalar converter and precision-17 wrapper (M1-029), not JSON lexical text.
+        if (!Cozmo.Robot.Json.TryParseFirst(System.Text.Encoding.UTF8.GetBytes(value.GetRawText()), out var doc))
+            throw new JsonCppException("Scalar conversion failed.");
+        using (doc) return System.Text.Encoding.UTF8.GetString(Cozmo.Robot.Json.AsStringBytes(doc.RootElement));
+    }
+
     private static double Num(JsonElement e, string what)
     {
         if (e.ValueKind == JsonValueKind.Number) return e.GetDouble();
@@ -388,16 +399,14 @@ internal static class JsonClipLoader
     }
 
     /// <summary>
-    /// C5 item 1 (F2, F3): FaceAnimation reads "animName" as a string; absent (or not a string) is the common error macro
-    /// and rejects the keyframe. Then <c>Process</c> strips a path prefix up to and including the last '/', with a
+    /// C5 item 1 (F2, F3): FaceAnimation converts scalar "animName" with JsonCpp asString. Absent/null invokes the
+    /// common error macro and rejects the keyframe; array/object throws skip the file under M1-034. Then <c>Process</c> strips a path prefix up to and including the last '/', with a
     /// warning, and resets the frame index to 0 (the keyframe's index starts at 0 here).
     /// </summary>
     private static Keyframe DefineFaceAnimation(uint trigger, JsonElement el, Action<string>? log, string clip, SourceLogSink? sourceLog = null)
     {
         var v = Required(el, "animName");
-        if (v.ValueKind != JsonValueKind.String)
-            throw new JsonCppException("IKeyFrame.GetMemberFromJsonMacro: Failed to get 'animName' from Json file.");
-        string name = v.GetString()!;
+        string name = AsString(v);
         int slash = name.LastIndexOf('/');
         if (slash >= 0)
         {
@@ -438,15 +447,13 @@ internal static class JsonClipLoader
     }
 
     /// <summary>
-    /// C5 item 1 (D2): DeviceAudio reads "audioName" as a string; absent (or not a string) is the common error macro and
-    /// rejects the keyframe. Its GetStreamMessage returns null and PlayOnDevice is empty, so it has no wire effect.
+    /// C5 item 1 (D2): DeviceAudio converts scalar "audioName" with JsonCpp asString. Absent/null invokes the common
+    /// error macro and rejects the keyframe; array/object throws skip the file under M1-034. Its GetStreamMessage returns null and PlayOnDevice is empty, so it has no wire effect.
     /// </summary>
     private static Keyframe DefineDeviceAudio(uint trigger, JsonElement el)
     {
         var v = Required(el, "audioName");
-        if (v.ValueKind != JsonValueKind.String)
-            throw new JsonCppException("IKeyFrame.GetMemberFromJsonMacro: Failed to get 'audioName' from Json file.");
-        return new DeviceAudioKeyframe(trigger, v.GetString()!);
+        return new DeviceAudioKeyframe(trigger, AsString(v));
     }
 
     /// <summary>
