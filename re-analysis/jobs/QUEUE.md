@@ -50,4 +50,5 @@ anything. BOARD.md is history; this file is the live queue.
 | --- | --- | --- |
 | 1 | [R-M5-047](../research/requests/20261011-m5-047-stack.md) | done (8694b961) |
 | 2 | [R-M5-052](../research/requests/20261012-m5-052-face-png.md) | done (70b8ba04); adopted into M5-052: shipped faces decode 1-bit -> 0/255, 8-bit identity |
-| 3 | [R-M8-PLAY](../research/requests/20261012-m8-play-animation-actions.md) | open (home PC research clone) |
+| 3 | [R-M8-PLAY](../research/requests/20261012-m8-play-animation-actions.md) | done (4c6e6d56); Opus check running |
+| 4 | [R-M3-051](../research/requests/20261012-m3-051-libdas-sink-b.md) | open (home PC research clone) |
