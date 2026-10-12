@@ -1133,7 +1133,8 @@ public sealed class AnimationScheduler
             bool ended = _idleAnim is not null && _endSent && !_idleAnim.HasFramesLeft && Stream.IsEmpty;
             if (_idleAnim is null || ended || !_idleInitialised)
             {
-                if (Catalog is { } catalog && catalog.HasAnimationForTrigger(top))
+                var catalog = Catalog;
+                if (catalog is not null && catalog.HasAnimationForTrigger(top))
                 {
                     var picked = PickIdleLocked(catalog, top);
                     if (picked is null)
@@ -1143,7 +1144,13 @@ public sealed class AnimationScheduler
                     }
                     _idleAnim = picked;
                 }
-                // Q1: a trigger with no animation goes on to the tail with no error (0x0057D218)
+                else if (old is null && catalog is not null)
+                {
+                    // fidelity: M5-027 — M1-034 null-idle departure (operator, 2026-10-12), D4.
+                    // 0x0057D218 -> 0x0057D3EE -> InitStream(null, 0xFF); Animation::Init dereferences null.
+                    Log?.Invoke($"Idle tail skipped (M1-034): original dereferences null for unmapped idle trigger {top} (M5-027, 0x0057D3FE -> 0x00577BC6)");
+                }
+                // Q1: the native no-animation branch reaches the tail; the approved null-idle skip below survives it.
             }
         }
 
