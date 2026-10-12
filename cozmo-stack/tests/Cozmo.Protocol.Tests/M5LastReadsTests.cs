@@ -95,10 +95,11 @@ public class M5LastReadsTests
     {
         // L0: 0x0051F3B0..0x0051F3CE; seed precedes loading at 0x004ECBD4..0x004ECC4A.
         string root = Resources();
+        var entries = new ConcurrentQueue<EngineLogEntry>();
         using var robot = CozmoRobot.CreateForTest(new Port(), () => 1_000_000_000,
-            new CozmoEngineOptions { ResourcesPath = root, BlockPoolPath = "" });
+            new CozmoEngineOptions { ResourcesPath = root, BlockPoolPath = "" },
+            engineCreated: engine => engine.LogEntry += entries.Enqueue);
         Assert.NotNull(robot.Lights.Body.Animations.Get("Charging"));
-        var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
         robot.Engine.StartProduction(5489);
         robot.Animations.LoadFrom(root);
         var logs = entries.ToArray();
@@ -114,6 +115,71 @@ public class M5LastReadsTests
         Assert.Single(logs.Where(e => e.Name == "RobotDataLoader.LoadBackpackLightAnimations.LoadTime"));
         Assert.NotNull(robot.Lights.Body.Animations.Get("Charging"));
         Assert.NotNull(robot.Animations.FaceAnimations);
+    }
+
+    [Fact]
+    public void B_M5_6_DeferredStatFailureWarnsOnceInCollectOrder()
+    {
+        // Collect's four walks: 0x0051F58A/5DA/62C/67E. LoadBackpackLightAnimations has no walk.
+        string root = Path.Combine(Path.GetTempPath(), "m5-stat-order-" + Guid.NewGuid());
+        string[] dirs = { "assets/animations", "config/engine/lights/cubeLights",
+            "config/engine/lights/backpackLights", "assets/animationGroups" };
+        var entries = new ConcurrentQueue<EngineLogEntry>();
+        try
+        {
+            foreach (string dir in dirs)
+            {
+                Directory.CreateDirectory(Path.Combine(root, dir));
+                File.WriteAllText(Path.Combine(root, dir, "good.json"), dir == dirs[0] ? "{\"good\":[]}" : "{}");
+                File.WriteAllText(Path.Combine(root, dir, "fail.json"), "{}");
+            }
+            // Delete between enumeration and stat, exercising the real FileInfo failure in both walks.
+            using var robot = CozmoRobot.CreateForTest(new Port(), () => 1_000_000_000,
+                new CozmoEngineOptions { ResourcesPath = root, BlockPoolPath = "" },
+                engineCreated: engine => engine.LogEntry += entries.Enqueue,
+                beforeAnimationFileStat: path => { if (Path.GetFileName(path) == "fail.json") File.Delete(path); });
+            Assert.DoesNotContain(entries, e => e.Name == "RobotDataLoader.WalkAnimationDir");
+            foreach (string dir in dirs) File.WriteAllText(Path.Combine(root, dir, "fail.json"), "{}");
+            robot.Animations.LoadFrom(root);
+            var warnings = entries.Where(e => e.Name == "RobotDataLoader.WalkAnimationDir").ToArray();
+            Assert.Equal(4, warnings.Length);
+            for (int i = 0; i < dirs.Length; i++)
+            {
+                Assert.Equal(EngineLogLevel.Warning, warnings[i].Level);
+                Assert.Null(warnings[i].Channel);
+                Assert.EndsWith("could not get mtime for " + Path.GetFullPath(Path.Combine(root, dirs[i], "fail.json")),
+                    warnings[i].Text.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar));
+            }
+            Assert.Single(warnings.Where(e => e.Text.Contains("backpackLights")));
+            Assert.Single(entries.Where(e => e.Name == "RobotDataLoader.LoadBackpackLightAnimations.LoadTime"));
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void B_M5_6_DisposeReportsPendingLoaderLogsOnlyOnce(bool load)
+    {
+        string root = Path.Combine(Path.GetTempPath(), "m5-pending-logs-" + Guid.NewGuid());
+        var diagnostics = new ConcurrentQueue<string>();
+        var entries = new ConcurrentQueue<EngineLogEntry>();
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root, "assets", "animations"));
+            Directory.CreateDirectory(Path.Combine(root, "config", "engine", "lights", "backpackLights"));
+            var robot = CozmoRobot.CreateForTest(new Port(), () => 1_000_000_000,
+                new CozmoEngineOptions { ResourcesPath = root, BlockPoolPath = "" },
+                engineCreated: engine => { engine.StackLogLine += diagnostics.Enqueue; engine.LogEntry += entries.Enqueue; });
+            try { if (load) robot.Animations.LoadFrom(root); }
+            finally { robot.Dispose(); }
+            robot.Dispose();
+            var missing = diagnostics.Where(l => l.StartsWith("MISSING: M4-036 deferred light loader logs:")).ToArray();
+            if (load) Assert.Empty(missing);
+            else Assert.Equal("MISSING: M4-036 deferred light loader logs: disposed with 1 captured loader logs still pending; the engine never loads lights outside LoadNonConfigData", Assert.Single(missing));
+            Assert.DoesNotContain(entries, e => e.Text.StartsWith("MISSING:"));
+        }
+        finally { Directory.Delete(root, true); }
     }
 
     [Fact]

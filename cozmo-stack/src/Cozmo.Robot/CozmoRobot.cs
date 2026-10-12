@@ -229,11 +229,14 @@ public sealed class CozmoRobot : IDisposable
     public CozmoEngine Engine { get; }
 
     private CozmoRobot(TransportOptions? options, ReliableTransport? transport, CozmoEngineOptions? engineOptions,
-                       IEngineTransport? port = null, Func<long>? engineClock = null)
+                       IEngineTransport? port = null, Func<long>? engineClock = null,
+                       Action<CozmoEngine>? engineCreated = null, Action<string>? beforeAnimationFileStat = null)
     {
         Transport = transport ?? new ReliableTransport(options);
         var realPort = port is null ? new ReliableTransportPort(Transport) : null;
         Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock);
+        engineCreated?.Invoke(Engine); // Test-only observer, attached before any device constructor runs.
+        BeforeAnimationFileStat = beforeAnimationFileStat;
         if (realPort is not null) realPort.Log = Engine.EmitStackLog;
         // fidelity: M3-012
         // The raw-bitmap face (MD3) and the single-frame audio sends go out at once, but in the stream counters
@@ -250,7 +253,8 @@ public sealed class CozmoRobot : IDisposable
         // M4-036: retain the host containers at construction; emit loader logs only at L0 after StartEngine.
         SourceLogSink loadingLog = (level, channel, key, text) =>
             _lightLoadingLogs.Add((level, channel, key, text));
-        Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, loadingLog),
+        Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, loadingLog,
+                                     deferLoaderLogs: true, beforeStat: beforeAnimationFileStat),
                                  CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) =>
                                      _cubeLoadingLogs.Add((level, channel, key, text))));
         Sensors = new CozmoSensors(this, State);
@@ -340,16 +344,17 @@ public sealed class CozmoRobot : IDisposable
 
     private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _cubeLoadingLogs = new();
 
+    internal Action<string>? BeforeAnimationFileStat { get; }
+
     // L0: constructor-loaded containers are retained; replay cube diagnostics before backpack diagnostics.
-    internal void EmitLightLoadingLogs(bool collect)
+    internal void EmitLightLoadingLogs()
     {
         (EngineLogLevel Level, string? Channel, string Key, string Text)[] entries;
         lock (_lightLoadingLogs)
         {
-            entries = _cubeLoadingLogs.Concat(_lightLoadingLogs)
-                .Where(e => (e.Key == "RobotDataLoader.WalkAnimationDir") == collect).ToArray();
-            _cubeLoadingLogs.RemoveAll(e => (e.Key == "RobotDataLoader.WalkAnimationDir") == collect);
-            _lightLoadingLogs.RemoveAll(e => (e.Key == "RobotDataLoader.WalkAnimationDir") == collect);
+            entries = _cubeLoadingLogs.Concat(_lightLoadingLogs).ToArray();
+            _cubeLoadingLogs.Clear();
+            _lightLoadingLogs.Clear();
         }
         foreach (var entry in entries)
             Engine.EmitSourceLog(entry.Level, entry.Channel, entry.Key, entry.Text);
@@ -405,9 +410,11 @@ public sealed class CozmoRobot : IDisposable
     /// Test seam: a robot whose engine talks to <paramref name="port"/> and is ticked only by
     /// <see cref="CozmoEngine.Tick"/>. <see cref="Transport"/> is an unused offline transport.
     /// </summary>
-    internal static CozmoRobot CreateForTest(IEngineTransport port, Func<long> engineClock, CozmoEngineOptions? engineOptions = null)
+    internal static CozmoRobot CreateForTest(IEngineTransport port, Func<long> engineClock, CozmoEngineOptions? engineOptions = null,
+        Action<CozmoEngine>? engineCreated = null, Action<string>? beforeAnimationFileStat = null)
     {
-        var robot = new CozmoRobot(null, ReliableTransport.CreateOffline(), engineOptions ?? new CozmoEngineOptions(), port, engineClock);
+        var robot = new CozmoRobot(null, ReliableTransport.CreateOffline(), engineOptions ?? new CozmoEngineOptions(), port, engineClock,
+            engineCreated, beforeAnimationFileStat);
         robot.Engine.StartOffline(autoTick: false);
         return robot;
     }
@@ -658,6 +665,15 @@ public sealed class CozmoRobot : IDisposable
         // fidelity: M5-022
         // M4-026 owns the complete AbortAll path, before the no-send M5 streamer destruction.
         try { Engine.StopTick(); } catch { }
+        int pendingLoaderLogs;
+        lock (_lightLoadingLogs)
+        {
+            pendingLoaderLogs = _cubeLoadingLogs.Count + _lightLoadingLogs.Count;
+            _cubeLoadingLogs.Clear();
+            _lightLoadingLogs.Clear();
+        }
+        if (pendingLoaderLogs != 0)
+            Engine.EmitStackLog($"MISSING: M4-036 deferred light loader logs: disposed with {pendingLoaderLogs} captured loader logs still pending; the engine never loads lights outside LoadNonConfigData");
         try { if (Engine.Robot is { } robot) Motion.AbortAll(robot); } catch { }
         try { Animations.Dispose(); } catch { }
         try { Engine.NvStorage?.Dispose(); } catch { }

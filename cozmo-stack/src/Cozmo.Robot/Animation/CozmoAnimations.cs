@@ -278,14 +278,14 @@ public sealed class CozmoAnimations : IDisposable
             _scheduler.ContextRandom,
             // Consume freshness when collection starts, even if a later file load fails.
             () => Interlocked.Exchange(ref _collectRan, 1) == 0,
-            () => _robot.EmitLightLoadingLogs(collect: true), () =>
+            null, () =>
             {
                 // L0 / M4-036: after groups (0x0051F3BC), lights (0x0051F3C2/3C8), then faces (3CE).
                 // Keep constructor-loaded containers; only their source-log emission moves.
-                _robot.EmitLightLoadingLogs(collect: false);
+                _robot.EmitLightLoadingLogs();
                 FaceAnimations = FaceAnimationLibrary.Open(assetsRoot);
                 _scheduler.FaceAnimationVariants = FaceAnimations.Variants;
-            });
+            }, _robot.BeforeAnimationFileStat);
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)

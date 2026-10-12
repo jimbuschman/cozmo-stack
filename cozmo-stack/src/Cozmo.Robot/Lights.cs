@@ -89,6 +89,10 @@ public sealed class BackpackLightAnimations
     /// </summary>
     // fidelity: M4-036
     public static BackpackLightAnimations Load(string? resourcesPath, Action<string>? log = null, SourceLogSink? sourceLog = null)
+        => Load(resourcesPath, log, sourceLog, deferLoaderLogs: false, beforeStat: null);
+
+    internal static BackpackLightAnimations Load(string? resourcesPath, Action<string>? log, SourceLogSink? sourceLog,
+        bool deferLoaderLogs, Action<string>? beforeStat)
     {
         var c = new BackpackLightAnimations();
         if (resourcesPath is null) return c;
@@ -131,15 +135,23 @@ public sealed class BackpackLightAnimations
                 long mtime;
                 try
                 {
+                    beforeStat?.Invoke(f);
                     var stat = new FileInfo(f);
                     if (!stat.Exists) throw new IOException();
                     mtime = new DateTimeOffset(stat.LastWriteTimeUtc).ToUnixTimeSeconds();
                 }
-                catch (IOException) { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}"); continue; }
-                catch (UnauthorizedAccessException) { SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}"); continue; }
+                catch (IOException) { StatFailure(f); continue; }
+                catch (UnauthorizedAccessException) { StatFailure(f); continue; }
                 if (mtimes.TryGetValue(f, out var old) && old >= mtime) continue;
                 mtimes[f] = mtime; files.Add(f);
             }
+        }
+        void StatFailure(string f)
+        {
+            // CollectAnimFiles owns the only WalkAnimationDir warning in the deferred production path.
+            if (!deferLoaderLogs)
+                SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null,
+                    "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}");
         }
         void ReadFailure(string f, string? errors)
         {

@@ -289,7 +289,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
         => OpenForLoad(assetsRoot, log, sourceLog, contextRandom, () => true, null, null);
 
     internal static AnimationLibrary OpenForLoad(string assetsRoot, Action<string>? log, SourceLogSink? sourceLog,
-        EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups)
+        EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups,
+        Action<string>? beforeStat = null)
     {
         var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
         log?.Invoke("MISSING: M5-001 loader main-thread VERIFY gates at 0x0051F3AA/0x00521338: CozmoContext main-thread identity is not represented by the host loader");
@@ -303,10 +304,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
         // R46-1..R46-4: collect all four vectors before Results; production retains the collect history.
         bool freshCollect = beginCollect();
         beforeCollect?.Invoke();
-        var files = CollectFiles(new[] { animations, FindConfigDirectory(assetsRoot, "animations") }, SourceLogDispatch.GetSink(sourceLog, log));
-        var cubeFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/cubeLights") }, SourceLogDispatch.GetSink(sourceLog, log));
-        var backpackFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/backpackLights") }, SourceLogDispatch.GetSink(sourceLog, log));
-        var groupFiles = CollectFiles(new[] { groups }, SourceLogDispatch.GetSink(sourceLog, log));
+        var files = CollectFiles(new[] { animations, FindConfigDirectory(assetsRoot, "animations") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
+        var cubeFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/cubeLights") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
+        var backpackFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/backpackLights") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
+        var groupFiles = CollectFiles(new[] { groups }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
         EmitCollectResults(new[] { files.Count, groupFiles.Count, cubeFiles.Count, backpackFiles.Count },
             freshCollect, log, sourceLog);
         double started = MonotonicMilliseconds();
@@ -388,7 +389,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     // fidelity: M5-046
     // R46-8 / L2: fresh mtime map; case-sensitive json/bin suffixes and successful stat only.
-    private static List<string> CollectFiles(IEnumerable<string?> directories, SourceLogSink? sourceLog)
+    private static List<string> CollectFiles(IEnumerable<string?> directories, SourceLogSink? sourceLog, Action<string>? beforeStat)
     {
         var files = new List<string>();
         foreach (var dir in directories)
@@ -396,6 +397,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 foreach (var f in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
                     if (f.EndsWith("json", StringComparison.Ordinal) || f.EndsWith("bin", StringComparison.Ordinal))
                     {
+                        beforeStat?.Invoke(f); // Test-only filesystem race injection; production uses the actual stat.
                         var stat = new FileInfo(f); stat.Refresh();
                         if (!stat.Exists) sourceLog?.Invoke(EngineLogLevel.Warning, null,
                             "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {f}");
