@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "8aaa12c44eb4b581de140081d239c4af00debf8dfddb408a348575ac7a97a493",
+  "inventory_sha256": "8b7c3dbdc900b343d49547deaf452eb17f3a337336614ec2f712912066d6bebe",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -115,7 +115,8 @@
         "A27 0x0057ED0E..0x0057ED2A",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-008 (Opus settling pass, manager-adopted 2026-10-11).",
         "re-analysis/research/20261011-m5-fix-rows.md section 5 (Opus fix rows, manager-adopted 2026-10-11).",
-        "re-analysis/research/20261012-m5-x9-extraction.md section 4c: sVerifyFailedReturnFalse 0x0080D9A4 logs sErrorV \"VERIFY(%s): \", sets errG with no debug break; sDumpCallstack 0x0080DA08 is a no-op (0x0080B0A6 bx lr); the flush 0x0080DA24 goes MultiLoggerProvider::Flush 0x006673BA -> DasLoggerProvider::Flush 0x006671F4 -> libDAS DASForceFlushNow (M3-051); returns 0."
+        "re-analysis/research/20261012-m5-x9-extraction.md section 4c: sVerifyFailedReturnFalse 0x0080D9A4 logs sErrorV \"VERIFY(%s): \", sets errG with no debug break; sDumpCallstack 0x0080DA08 is a no-op (0x0080B0A6 bx lr); the flush 0x0080DA24 goes MultiLoggerProvider::Flush 0x006673BA -> DasLoggerProvider::Flush 0x006671F4 -> libDAS DASForceFlushNow (M3-051); returns 0.",
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -315,7 +316,8 @@
         "A25 0x0057D122..0x0057D1DE",
         "R-ANIM pre-extraction part 1 item 8 8a..8c: choice 0x0057B418..0x0057B430, reset 0x0057B562",
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-023 (Opus settling pass, manager-adopted 2026-10-11).",
-        "re-analysis/research/20261011-m5-fix-rows.md section 12 (Opus fix rows, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-fix-rows.md section 12 (Opus fix rows, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -516,7 +518,8 @@
       "evidence": [
         "0x0052CEA2..0x0052CFC0; 0x0052CECA..0x0052CEDE; 0x0052CF0E; 0x0052CF44; Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
-        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-038 (Opus settling pass, manager-adopted 2026-10-11)."
+        "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-038 (Opus settling pass, manager-adopted 2026-10-11).",
+        "re-analysis/research/20261012-m8-play-animation-actions.md section 7 and re-analysis/research/20261012-m8-play-animation-actions-check.md: the factory builds D2, D5 and D4 as TriggerAnimationAction(loops 1, interrupt 1, mask 0, 0x42700000, strict 0) and the lift child MoveLiftToHeight(preset 0, 0x40A00000), added through compound vtable +0x20 with r3 = 0, [sp] = 0 (rows 1..7 confirmed)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -682,6 +685,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m5-x9-extraction.md section 4a: Robot dtor 0x00511524..0x00511542 (+0x4C handle vector released back to front 0x004EAEA2..0x004EAEBA; +8 vector 0x004F090C; handler deleted); handler subscriptions 0x5A, 0xB5, 0xB6 only with an external interface (0x004F072C); streamer SetupHandlers 0x0057A5A8 subscribes 0xAE, 0xAF, 0xAD, 0xC4, released 0xC4, 0xAD, 0xAF, 0xAE (0x0057AF6C); each release is the last owner."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-054": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CannedAnimationContainer::GetAnimation and its InvalidName error",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m8-play-animation-actions.md row L1: CannedAnimationContainer::GetAnimation 0x00588074..0x005880E4, the InvalidName sErrorF with errG and break on a miss."
       ],
       "live_path": true,
       "hardware_required": false

@@ -1,8 +1,8 @@
 {
   "subsystem": "M8-framework",
-  "approved": "2026-10-10",
+  "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "9979ce92514a21dec81f703905d061b92c6274f6d40dd1db518794db7f2076f4",
+  "inventory_sha256": "bab9987aca80bd5aed118632f06a95895e7c0d021b643698569a068a5cd624ee",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -101,7 +101,8 @@
       "evidence": [
         "Every action carries a track mask at +0x54. IActionRunner::Update 0x00540370 reads it and asks MovementComponent::AreAnyTracksLocked(mask) at 0x00540440: while any of those tracks is held it warns \"Action %s [%d] not running because required tracks are locked\" (0x005404A8) and does not run the action - it stays queued and is tried again on the next tick. Otherwise it locks them through the helper at 0x004F0F4C, which calls MovementComponent::LockTracks(mask, tag, name), and then runs the action.",
         "LockTracks 0x00640098 walks the bits of the mask and inserts one LockInfo - the owner's name and reason - per track into a multiset at component+0x30; UnlockTracks 0x0063FE5C removes them. So a track is held by a set of owners and is free when the last one lets go.",
-        "The mask is therefore mutual exclusion, not muting: the animation plays its tracks and nothing else may drive them while it does. This stack claims the clip's tracks on the behaviour's scope and the scheduler refuses a play whose tracks are owned; the refusal waits and retries, as IActionRunner does, instead of treating the play as done."
+        "The mask is therefore mutual exclusion, not muting: the animation plays its tracks and nothing else may drive them while it does. This stack claims the clip's tracks on the behaviour's scope and the scheduler refuses a play whose tracks are owned; the refusal waits and retries, as IActionRunner does, instead of treating the play as done.",
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md correction: TRACKS_LOCKED (0x03000019, stored at 0x0054057C) goes straight to completion (0x005405A4); no wait, no retry. The earlier \"stays queued and is tried again\" is wrong."
       ],
       "live_path": true,
       "hardware_required": false
@@ -217,7 +218,8 @@
       "evidence": [
         "0x0053E6A8..0x0053E6E0; 0x005409E2..0x00540A40; 0x00541146..0x00541238; 0x0053FAB2; Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
-        "P3/P4 full ActionList/ActionQueue/IAction lifecycle: ActionList 0x0053F580..0x0053F5F2, ActionQueue 0x0053F5F4..0x0053F70C, IActionRunner 0x00540370..0x0054063E, clock/timeout 0x00540D4A..0x00540E80, CheckIfDone 0x005549B8..0x005549F4 (20261006-M1M2-missing-triage.md P3/P4)."
+        "P3/P4 full ActionList/ActionQueue/IAction lifecycle: ActionList 0x0053F580..0x0053F5F2, ActionQueue 0x0053F5F4..0x0053F70C, IActionRunner 0x00540370..0x0054063E, clock/timeout 0x00540D4A..0x00540E80, CheckIfDone 0x005549B8..0x005549F4 (20261006-M1M2-missing-triage.md P3/P4).",
+        "re-analysis/research/20261012-m8-play-animation-actions.md rows C2..C7, L14..L23, D5, S2..S4 and re-analysis/research/20261012-m8-play-animation-actions-check.md (the +0x57 gate on L17/L18/L20, the DeleteActionAndIter guard set at queue+0x10, ActionWatcher Start/EndUpdating 0x00540386/0x0054057E/0x00540630, the UpdateInternal status string 0x00540D46..0x00540F1C)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -239,7 +241,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 4..5: AddAction(IActionRunner*, bool, bool) 0x0054EC7C -> AddAction(function, bool) 0x0054ED90 (empty predicate; child inherits +0x57; compound name appended); the trailing boolean is never loaded."
       ],
       "live_path": true,
       "hardware_required": false
@@ -260,6 +263,37 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Called at 0x00535454 (blx 0x4AA1C8) from Robot::HandleRobotStopped when the cliff sensor is enabled (gate 0x00535436..0x00535438; M4-019 H4 0x00535432..0x00535480)"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-020": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlayAnimationAction: construction, Init, robot/game animation handlers, CheckIfDone, animationCompleted, destructor streamer stop",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m8-play-animation-actions.md rows C1, C8..C11, P1..P12, D1..D3, L2..L8: ctor 0x00543C08..0x00543CBE (+0x84 loops, +0x8B 0, +0x8C interrupt, +0x90 null, +0x94 timeout; 60.0f -> FLT_MAX only when loops == 0), Init 0x00543F20 (cozmo_sings_custom remap 0x0054417C/0x00544190, lookup robot[0]->+0x20->+0x48, SetStreamingAnimation(robot+0x60, anim, loops, interrupt, flag) -> +0x8B, tag 0 -> failed, 0x03000001; R2E 0xCA/0xCB/0xD5 via 0x00519F8C and E2G 0x5F via external-interface vtable +0x28; callbacks 0x005452F1, 0x0054541D, 0x0054561D, 0x005457F5 and AnimationEvent forward 0x00545750), CheckIfDone 0x005441C0, GetCompletionUnion 0x005441DE (0x0075C544, 0x006C22DC), destructor 0x00543DAC (StillStreaming info 0x00543DF2 on robot+0x98 == +0x90; SetStreamingAnimation(null, 1, true, false) at 0x00543E26; releases +0xB4, +0xAC, +0xA4, +0x9C), vtable 0x01021584 slots +0x1C/+0x20/+0x2C (0x00545210).",
+        "re-analysis/research/20261012-m8-play-animation-actions-check.md additions 2 (the null SetStreamingAnimation tail: +0x73 store and the idle Abort)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-021": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "TriggerAnimationAction: trigger to group, Init NO_ANIM_NAME paths, the group choice hand-off, the DAS blacklist gate and the robot.play_animation event",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m8-play-animation-actions.md rows T1..T12, D4, L11..L13: ctor 0x00544228, SetAnimGroupFromTrigger 0x0054432C (Has == 1 before Get; empty-group warning TriggerAnimationAction.EmptyAnimGroupNameForTrigger \"Event: %s\" at 0x005443AC), Init 0x0054443C (NO_ANIM_NAME 0x0300000C; GetAnimationNameFromGroup with the robot and strictCooldown; blacklist set walk +0x8C/+0x90; sEvent robot.play_animation, value +0x78, $data trigger + \":\" + group at 0x005445BC), vtable 0x010215BC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-022": {
+      "status": "RECOVERABLE_GAP",
+      "title": "LoadDasBlacklistedAnimationTriggers and its configuration source",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m8-play-animation-actions.md row on 0x0052E9A0..0x0052EA0A; the caller chain and the config asset are not read."
       ],
       "live_path": true,
       "hardware_required": false

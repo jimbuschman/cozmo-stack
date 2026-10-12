@@ -878,3 +878,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | To COMPATIBILITY_POLICY (scope: SDK mode) | M5-020 (Code Lab only) |
 | Departure (operator, 2026-10-12) | M1-034 extended to the loaders' fatal paths and a malformed .bin |
 
+
+## R-M8-PLAY (manager, 2026-10-12; research/20261012-m8-play-animation-actions.md, Opus-checked)
+
+| Change | Records |
+| --- | --- |
+| New | M5-054 CannedAnimationContainer::GetAnimation InvalidName |
+| Evidence added | M5-038 (factory only; actions are M8-020/021), M5-008, M5-023 (null SetStreamingAnimation tail) |

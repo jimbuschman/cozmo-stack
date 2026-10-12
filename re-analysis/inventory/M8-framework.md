@@ -684,3 +684,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | M8-011 | Note: Gate B (0x00513C6E..0x00513C9A) is M3-032's (overlap ruling); tag moves in the build round. | IMPLEMENTATION_GAP |
 | M8-015 | Note: rows and built code exist (status unchanged, its layer's turn); owner of the IActionRunner base (from M4-016), Cancel(-1) (M4-026, M4-019) and QueueActionNow (M4-003). | RECOVERABLE_GAP |
 | M8-019 | NEW (S-7): BehaviorManager::RequestCurrentBehaviorEndImmediately (from M4-019 H4). | RECOVERABLE_GAP |
+
+
+## R-M8-PLAY (manager, 2026-10-12; research/20261012-m8-play-animation-actions.md, Opus-checked)
+
+| Change | Records |
+| --- | --- |
+| New | M8-020 PlayAnimationAction, M8-021 TriggerAnimationAction (IMPLEMENTATION_GAP); M8-022 DAS blacklist source (RECOVERABLE_GAP) |
+| Evidence added | M8-015 (IActionRunner/IAction rows), M8-017 (AddAction chain) |
+| Corrected | M8-007: TRACKS_LOCKED completes at once, no retry |
