@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "f090b7807f0988f6c99eaef9b18365db1dabbf7062d925a4e4a93941f48b5a17",
+  "inventory_sha256": "2efebf19f8111b22f5af38fee907dcbd15cbca573b10056f7cc4f9633d2354e6",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -767,6 +767,36 @@
       "evidence": [
         "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: Play-area event 0x00624F16..0x00624F32 (every 60 s from +4/+8, ctor 0x0061BD20..0x0061BD3A; sEventF robot.play_area_size 0x00625314 \"%.2f\" 0x0062532C of helper vt+0x1C, body unread). AddAndUpdateFailed return 0x006250B6..0x006250C2 -> 0x00625220 skips the flag clear 0x006250D8 and the tail; reached when PotentialObjectsForLocalizingTo::LocalizeRobot returns non-zero (0x00621304 -> 0x00621320) on a Robot::LocalizeToObject failure (0x005154B0..0x00515AA4, e.g. ObjectPoseOriginMisMatch 0x0051592C..0x00515984).",
         "re-analysis/research/20261013-play-area-check.md sections P and L (propagation): gate 0x00624F0E..0x00624F22; vt+0x1C = GetExploredRegionAreaM2 0x006816E8 returning MemoryMap+0x40 (processor+0x30); sEventF 0x00624F34..0x00624F4E before the clear; AddAndUpdateObjects returns LocalizeRobot (0x00621304..0x00621320); UpdateVisionMarkers BlockWorldUpdateFailed 0x00654E12 and the docking-signal call 0x00654E38..0x00654E4A; UpdateAllResults LocalHandlerFailed 0x00654C7C/0x00654CB0 \"DetectingMarkers\", errG, fp 0x006544EE."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-065": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Pose3d / Rotation3d / Transform3d arithmetic: double unit quaternion, float translation, float point rotation, renormalised composition (rows R1-R34, R38-R40)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-pose3d-arithmetic.md: rows R1-R34 and R38-R40 (storage 0x0084A656.., Normalize 0x00849DB8..0x00849E52, product 0x00849EF4..0x00849F8E, Rotation3d*Point3f 0x0084ACA6 -> UnitQuaternion<float>* 0x00849C1C..0x00849CF8, GetAngleDiffFrom 0x0084A694..0x0084A746, GetAngleAroundZaxis 0x0084AA1C..0x0084AAB8, GetRotationMatrix 0x0084AAE0..0x0084ABEC, Renormalize 0x008494E0..0x0084969E, Transform3d ops 0x0084B92A..0x0084BB98, Pose3d ctors 0x0084683C..0x00846DEE, PoseBase ops 0x0084505C..0x008451EA, IsSameAs_WithAmbiguity 0x00846EA4..0x008471A6, RotationMatrix3d ops 0x0084B0E4..0x0084B1B4)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-066": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The pose tree: GetWithRespectTo (null/alias checks, depth walk, Tt^-1*Tf, 1000-step LoopBoundOverflow) and GetWithRespectToRoot (rows R35-R37)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-pose3d-arithmetic.md: rows R35-R37: GetWithRespectTo 0x00845A34..0x00845DFE (FromEqualsTo warning, chain cases a-d, LoopBoundOverflow poseBase_impl.h lines 0x1A0/0x1B6/0x1D4), GetTreeDepth 0x00845E8C..0x00845F02, HasSameParentAs 0x00844D44..0x00844D7C, GetWithRespectToRoot 0x004DF628..0x004DF6DC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-067": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Unread pieces of the pose arithmetic: cv::Rodrigues (libopencv_calib3d.so), PoseBase::operator=/SetParent/PoseTreeNode ctors, and the remaining family bodies",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-pose3d-arithmetic.md: \"Not read\" section: cv::Rodrigues via RenormalizeHelper 0x008499B0..0x00849A10, Rotation3d(RotationMatrix3d) 0x0084A3F4..0x0084A45C, RotationMatrix3d(angle, axis) 0x0084ADA4..0x0084AF34; PoseBase::operator= 0x00845940, SetParent 0x00844A14, PoseTreeNode ctors 0x00845F44/0x00845FE4; UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; Euler/matrix X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; the Pose2d/Transform2d family 0x0084B619..0x0084B92A."
       ],
       "live_path": true,
       "hardware_required": false

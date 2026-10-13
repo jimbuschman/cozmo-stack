@@ -1436,3 +1436,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; title now names what it builds) | M11-064 |
 | Notes appended | M11-044, M11-045, M11-048 |
+
+
+## Pose3d arithmetic read (manager, 2026-10-13; research/20261013-pose3d-arithmetic.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP | M11-065 pose arithmetic; M11-066 pose tree |
+| New RECOVERABLE_GAP | M11-067 cv::Rodrigues and tree copy semantics |
+| Notes appended | M11-052, M11-062 |

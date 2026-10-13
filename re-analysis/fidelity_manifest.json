@@ -1305,7 +1305,7 @@
         "M2 OUT pass: Pack 0x007A384E, Size 0x007A38E8, operator== 0x007A38EC (cmp at 0,4,8; vcmp at 0xC..0x14) confirm the types; the ContainsOriginID send gate (0x00512766..0x00512772) is M1-041"
       ],
       "status": "EXACT_SOURCE",
-      "unresolved": "",
+      "unresolved": " Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The quaternion it reads is produced by the path in M11-065.",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportSourceTests.AbsoluteLocalizationUpdateEndsWithTheHeadingInRadians, M2ProtocolTests.M2_009_OutboundSizesAreTheEngines",
@@ -4285,7 +4285,7 @@
       ],
       "effect": "a caller uses the threshold without the engine's sentinel handling, or a non-caller uses it",
       "provenance": "the report had DriveToObjectAction::CheckIfDone as a caller; it is not",
-      "unresolved": "Argument order is (goal / pre-action pose, object pose, angle) and the norm is 3-D (CubePreActionPoses.DistanceThresholdMm). Caller 1 (DriveToPoseAction.ReadyState, both outputs, z = Robot::GetHeight), caller 2 (PlaceRelObjectOffsetPoses.Filter, {out0, out1, 100.0}, Radians 0.1308997) and caller 3 (IDockAction::GetPreActionPoses, DockPreActionPoses.Evaluate with M12-031) are wired. Still open, so the record stays IMPLEMENTATION_GAP: caller 1's CheckIfDone state machine is not driven by the live drive (M12-023, M12-032); caller 2 has no production caller in this stack (M12-026); caller 3's pose list carries the labelled UprightOnly reduction (M12-001). FlipBlockAction (M13) reaches caller 3 through DockActionBase.IsCloseEnoughToPreActionPose with flag A clear and its own tolerance for both the threshold and the yaw test; its engine flag A and tolerance are not itemised here.",
+      "unresolved": "Argument order is (goal / pre-action pose, object pose, angle) and the norm is 3-D (CubePreActionPoses.DistanceThresholdMm). Caller 1 (DriveToPoseAction.ReadyState, both outputs, z = Robot::GetHeight), caller 2 (PlaceRelObjectOffsetPoses.Filter, {out0, out1, 100.0}, Radians 0.1308997) and caller 3 (IDockAction::GetPreActionPoses, DockPreActionPoses.Evaluate with M12-031) are wired. Still open, so the record stays IMPLEMENTATION_GAP: caller 1's CheckIfDone state machine is not driven by the live drive (M12-023, M12-032); caller 2 has no production caller in this stack (M12-026); caller 3's pose list carries the labelled UprightOnly reduction (M12-001). FlipBlockAction (M13) reaches caller 3 through DockActionBase.IsCloseEnoughToPreActionPose with flag A clear and its own tolerance for both the threshold and the yaw test; its engine flag A and tolerance are not itemised here. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. GetAngleDiffFrom also has an exact-equality early return and a [-1,1] clamp (R13).",
       "hardware_required": false,
       "live_path": true,
       "test": "M12RVisBuildTests.M12_020_*; M12RVisBuildTests.M12_031_*; M12RVisBuildTests.M12_023_TheThresholdPairReplacesTheXAndYTolerance; ManipulationTests.TheDistanceThresholdIsThreeDimensionalTwoOutputAndGuarded"
@@ -4486,7 +4486,7 @@
         "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q4-Q6; re-analysis/research/20260929-R-VIS-verify-M12-gap3.md"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Built: Clone keeps NOTHING (ObjectID -1 = uint.MaxValue, fresh markers, InitPose Known), so the inner GetPreActionPoses does not answer 0x03000004 and the chain goes to poses and a drive; IsPlacementGoalFree returns true before any query when the carried object is not found, otherwise the default filter's FindLocatedIntersectingObjects (ignore {carried id}; reference quad at +0x16C with padding 0; the candidate's quad padded by [+0x17C]; Intersects; no Z test; current origin; M13-007 footprints, M13-023 planar stand-in for tilted/non-cube pairs); the approach-angle helper 0x00550858 (RotatedParentAxis + table) is built for the Z arms. MISSING: ComputePlacementApproachAngle 0x005504A0's own body (Init step 3, so +0x178 still throws NotSupportedException) and Rotation3d::GetAngleAroundXaxis/Yaxis (the helper's X and Y arms throw by default). Ties in GetRotatedParentAxis: 'X'/'Y' instantiations assumed to read rows 0/1 like the verified 'Z'.",
+      "unresolved": "Built: Clone keeps NOTHING (ObjectID -1 = uint.MaxValue, fresh markers, InitPose Known), so the inner GetPreActionPoses does not answer 0x03000004 and the chain goes to poses and a drive; IsPlacementGoalFree returns true before any query when the carried object is not found, otherwise the default filter's FindLocatedIntersectingObjects (ignore {carried id}; reference quad at +0x16C with padding 0; the candidate's quad padded by [+0x17C]; Intersects; no Z test; current origin; M13-007 footprints, M13-023 planar stand-in for tilted/non-cube pairs); the approach-angle helper 0x00550858 (RotatedParentAxis + table) is built for the Z arms. MISSING: ComputePlacementApproachAngle 0x005504A0's own body (Init step 3, so +0x178 still throws NotSupportedException) and Rotation3d::GetAngleAroundXaxis/Yaxis (the helper's X and Y arms throw by default). Ties in GetRotatedParentAxis: 'X'/'Y' instantiations assumed to read rows 0/1 like the verified 'Z'. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. Rotation3d GetAngleAroundX/Y are read (R15); the PLTs 0x004AB914/0x004AB908 are the RotationMatrix3d versions; check which class the callers use.",
       "hardware_required": false,
       "live_path": true,
       "test": "M12RVisBuildTests.M12_030_*"
@@ -4544,7 +4544,7 @@
         "re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q1-Q3; re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q1-Q3 (PASS). Caveat: x, y are parent-frame values while z and yaw are root-relative, and the parent is set to root: consistent only when the object's parent is the root"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Built: EngineRadians (Rescale 0x0084C87C, IsNear 0x0084CC0A strict/wrap-aware/|tol|, GetAngleAroundZaxis 0x0084AA1C) and ObjectPoseQueries.Engine (GetZRotatedPointAboveObjectCenter 0x00877574, GetClosestMarkerPose 0x00877774); the throwing default is gone and PreActionPose.cs:389's <= is now the strict compare. Still open, so the record stays IMPLEMENTATION_GAP: the C# has no pose tree, so the root re-expression and the frame mixing of GetZRotatedPointAboveObjectCenter (parent x, y with root-relative z and yaw) coincide and the caveat cannot show; the axis choice of GetDimInParentFrame<'Z'> reuses CubeGeometry.DimInParentFrameZ (M12-012's reading) where M12-033's text selects by GetRotatedParentAxis' signed axis (identical for a 44 mm cube); the float bit patterns of the four pi constants are taken to be the standard floats (the report gives their addresses); operator> (0x0084CC90) is not built (no C# consumer beyond DistanceThresholdMm's existing 1e-5 guard).",
+      "unresolved": "Built: EngineRadians (Rescale 0x0084C87C, IsNear 0x0084CC0A strict/wrap-aware/|tol|, GetAngleAroundZaxis 0x0084AA1C) and ObjectPoseQueries.Engine (GetZRotatedPointAboveObjectCenter 0x00877574, GetClosestMarkerPose 0x00877774); the throwing default is gone and PreActionPose.cs:389's <= is now the strict compare. Still open, so the record stays IMPLEMENTATION_GAP: the C# has no pose tree, so the root re-expression and the frame mixing of GetZRotatedPointAboveObjectCenter (parent x, y with root-relative z and yaw) coincide and the caveat cannot show; the axis choice of GetDimInParentFrame<'Z'> reuses CubeGeometry.DimInParentFrameZ (M12-012's reading) where M12-033's text selects by GetRotatedParentAxis' signed axis (identical for a 44 mm cube); the float bit patterns of the four pi constants are taken to be the standard floats (the report gives their addresses); operator> (0x0084CC90) is not built (no C# consumer beyond DistanceThresholdMm's existing 1e-5 guard). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The GetAngleAroundZaxis entries are computed in f64 and narrowed to f32 before the squares (R14).",
       "hardware_required": false,
       "live_path": true,
       "test": "M12RVisBuildTests.M12_033_*"
@@ -4562,7 +4562,7 @@
         "re-analysis/research/20260929-R-VIS-verify-M12-gap2.md 'What stays open'"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "read the handler bodies for tags 0xC5, 0xDA and the external interface, and the ramp and charger IsPreActionPoseValid overrides (0x0050F9AC, 0x004EA648).",
+      "unresolved": "read the handler bodies for tags 0xC5, 0xDA and the external interface, and the ramp and charger IsPreActionPoseValid overrides (0x0050F9AC, 0x004EA648). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. Rotation3d GetAngleAroundX/Y are read (R15); check which class the callers use.",
       "hardware_required": false,
       "live_path": true,
       "test": "M12RVisBuildTests.M12_017_*; M12RVisBuildTests.M12_030_*"
@@ -4654,7 +4654,7 @@
         "re-analysis/research/20260929-R-VIS-verify-M12-fix2.md objection 6"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "read ComputePlacementApproachAngle 0x005504A0 and GetAngleAroundXaxis/Yaxis and build them; until then the +0x178 case and the X/Y arms throw NotSupportedException tagged 'M12-039 RECOVERABLE_GAP' (visible stubs; nothing is built or guessed; the Z arms and the axis rule are built, M12-030).",
+      "unresolved": "read ComputePlacementApproachAngle 0x005504A0 and GetAngleAroundXaxis/Yaxis and build them; until then the +0x178 case and the X/Y arms throw NotSupportedException tagged 'M12-039 RECOVERABLE_GAP' (visible stubs; nothing is built or guessed; the Z arms and the axis rule are built, M12-030). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. Rotation3d GetAngleAroundX/Y are read (R15); the PLTs 0x004AB914/0x004AB908 are the RotationMatrix3d versions (unread, M11-067); check which class the callers use.",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests; M12RVisBuildTests.M12_030_TheApproachAngleHelperPicksTheAxisArm; M12RVisBuildTests.M12_030_TheCloneKeepsNothing*"
@@ -4847,7 +4847,7 @@
       ],
       "effect": "the charger marker, docked pose or pre-dock pose is at the wrong place or size",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the charger literals and pose construction (0x004E9B6C..0x004EA202) with bit-pattern constants and the GeneratePreActionPoses entry. Still open: Pose3d is double (the engine's quaternion round trip is unread); no live caller of the pre-dock generation (M12-034).",
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the charger literals and pose construction (0x004E9B6C..0x004EA202) with bit-pattern constants and the GeneratePreActionPoses entry. Still open: Pose3d is double (the engine's quaternion round trip is unread); no live caller of the pre-dock generation (M12-034). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The engine's quaternion round trip is now read (R3/R4/R7).",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut"
@@ -5138,7 +5138,7 @@
         "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): SortCornersClockwise is libc++ __sort with CompareFirst (0x004E8260; __sort4 0x004E85BE); output slots [P0, P3, P1, P2]; also reached by the cliff bounding quad (M11-062).",
+      "unresolved": "read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): SortCornersClockwise is libc++ __sort with CompareFirst (0x004E8260; __sort4 0x004E85BE); output slots [P0, P3, P1, P2]; also reached by the cliff bounding quad (M11-062). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. (e) answered: bionic libm does not ship, so its calls are EQUIVALENT_IMPLEMENTATION under AGENTS.md; the operands, widths and order stay exact. (b) cv::Rodrigues is M11-067.",
       "hardware_required": false,
       "live_path": true,
       "test": "M13RVisBuildTests.M13_023_TheFootprintStubStillThrowsForTiltedCubesAndOtherClasses; M13RVisBuildTests.M13_023_ATiltedOrNonCubeFootprintUsesTheLabelledPlanarStandInAndDoesNotThrow; M13RVisBuildTests.M13_023_ATiltedLocatedCubeDoesNotAbortTheLiftAttachOrTheStackCheck"
@@ -5175,7 +5175,7 @@
         "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q2; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q2 (PASS)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build the class footprints for Markerless, Charger, Ramp, HumanHead; the MatPiece/CustomObject corner lists and the numeric result of the base version (cv::Rodrigues renormalisation) stay open in M13-023. B-M3M4-16 check (re-analysis/research/20261013-b-m3m4-16-check.md): Footprint.GetBoundingQuadXY throws for a cube that is not yaw-only (BlockConfigurations.cs:400-402); the cliff intersection filter reaches it when unlocalized. Native always computes it.",
+      "unresolved": "build the class footprints for Markerless, Charger, Ramp, HumanHead; the MatPiece/CustomObject corner lists and the numeric result of the base version (cv::Rodrigues renormalisation) stay open in M13-023. B-M3M4-16 check (re-analysis/research/20261013-b-m3m4-16-check.md): Footprint.GetBoundingQuadXY throws for a cube that is not yaw-only (BlockConfigurations.cs:400-402); the cliff intersection filter reaches it when unlocalized. Native always computes it. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The point rotation is M11-065 (R7/R8).",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests"
@@ -8818,7 +8818,7 @@
         "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "the frame of tmp (PoseBase::GetWithRespectTo body) is unread; the code uses the nearer raw state unblended (InterpolationStandIns counts each use), and has no origin-mismatch 0x06000000 result or GetWithRespectTo failure",
+      "unresolved": "the frame of tmp (PoseBase::GetWithRespectTo body) is unread; the code uses the nearer raw state unblended (InterpolationStandIns counts each use), and has no origin-mismatch 0x06000000 result or GetWithRespectTo failure Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. R35/R36 settle the frame: GetWithRespectTo(from, to, out) is from in to's frame with out.parent = to; at 0x00531500..0x00531504 tmp is the after-pose in the before-pose frame.",
       "hardware_required": false,
       "live_path": true,
       "test": "M11RVisBuildTests"
@@ -8858,7 +8858,7 @@
         "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-04): FindFreePoseInBeacon (0x005E0378..0x005E0666) in binary32: the frame (FindCubesInBeacon, CalculateDirectionalityClosest 0x005E07D8, else the robot-to-beacon heading via acosf, else 0), S = 44.0f + 10.0f (the LightCube BlockInfo entries, Block::LookupBlockInfo 0x004E4C8C, all 0x42300000), N = trunc(radius/S), the i/j candidate order, candidate = beacon translation + R*(S*i, S*j, 0) through UnitQuaternion<float>::operator* 0x00849C1C with *out written before any test, the three tests (radius strict; DidFailToUse(-1, 2, cooldown, pose, 100.0f, pi) via 0x005E0B78; FindLocatedIntersectingObjects with the carried id ignored, padding 0x41200000). Still open: MathF Cos/Sin/Acos/Atan2 stand in for bionic cosf/sinf/acosf/atan2f (the expected bits come from Python libm, not bionic); the stack's double Pose3d/Mat3 are narrowed to f32 (the engine's Rotation3d::GetRotationMatrix Renormalize 0x008494E0 is unread); FindLocatedObjectHelper's iteration order is assumed (family, type, id); BlockWorld::ClearLocatedObjectByIDInCurOrigin (after a failed verify) is not built; a null robot pose ends the behaviour (an invented gate, reported MISSING).",
+      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-04): FindFreePoseInBeacon (0x005E0378..0x005E0666) in binary32: the frame (FindCubesInBeacon, CalculateDirectionalityClosest 0x005E07D8, else the robot-to-beacon heading via acosf, else 0), S = 44.0f + 10.0f (the LightCube BlockInfo entries, Block::LookupBlockInfo 0x004E4C8C, all 0x42300000), N = trunc(radius/S), the i/j candidate order, candidate = beacon translation + R*(S*i, S*j, 0) through UnitQuaternion<float>::operator* 0x00849C1C with *out written before any test, the three tests (radius strict; DidFailToUse(-1, 2, cooldown, pose, 100.0f, pi) via 0x005E0B78; FindLocatedIntersectingObjects with the carried id ignored, padding 0x41200000). Still open: MathF Cos/Sin/Acos/Atan2 stand in for bionic cosf/sinf/acosf/atan2f (the expected bits come from Python libm, not bionic); the stack's double Pose3d/Mat3 are narrowed to f32 (the engine's Rotation3d::GetRotationMatrix Renormalize 0x008494E0 is unread); FindLocatedObjectHelper's iteration order is assumed (family, type, id); BlockWorld::ClearLocatedObjectByIDInCurOrigin (after a failed verify) is not built; a null robot pose ends the behaviour (an invented gate, reported MISSING). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. Renormalize 0x008494E0 is now read (R18); only the cv::Rodrigues helper stays open (M11-067).",
       "hardware_required": false,
       "live_path": true,
       "test": "R2FloorPlacementTests.M15_019_TheCandidateTranslationsAreTheDisassemblysBinary32Arithmetic"
@@ -8951,7 +8951,7 @@
         "extraction report re-analysis/research/20261003-R-FIX2-M15-gap1-extraction.md"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-04): the whiteboard failure memory: four per-object tables with caps {1, 1, 10, 1} (SetFailedToUse 0x0056B6D0, table 0x0056B8A4), FindMatchingEntry 0x0056BF98 and EntryMatches 0x0056C070 (strict expiry with the 1e-5f slack, id -1 = any object), Pose3d::IsSameAs_WithAmbiguity 0x00846F3C (spherical translation test when the thresholds are equal within 1e-5f; radians >= pi accepts any rotation; the angle from GetAngleDiffFrom 0x0084A694 = acos(2c*c - 1) with c in double, NaN -> -1), the set form DidFailToUse 0x0056BAB4, the stack-on filter's call (0x005E1D24: failure 1, 20.0f, pi/8). Still open: IsSameAs_WithAmbiguity's non-uniform-threshold branch is not built (no caller here reaches it); the stack's one-origin model makes the parent-chain step an identity; the SetFailedToUse 'Removed/Added failure' log lines are not reproduced.",
+      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-04): the whiteboard failure memory: four per-object tables with caps {1, 1, 10, 1} (SetFailedToUse 0x0056B6D0, table 0x0056B8A4), FindMatchingEntry 0x0056BF98 and EntryMatches 0x0056C070 (strict expiry with the 1e-5f slack, id -1 = any object), Pose3d::IsSameAs_WithAmbiguity 0x00846F3C (spherical translation test when the thresholds are equal within 1e-5f; radians >= pi accepts any rotation; the angle from GetAngleDiffFrom 0x0084A694 = acos(2c*c - 1) with c in double, NaN -> -1), the set form DidFailToUse 0x0056BAB4, the stack-on filter's call (0x005E1D24: failure 1, 20.0f, pi/8). Still open: IsSameAs_WithAmbiguity's non-uniform-threshold branch is not built (no caller here reaches it); the stack's one-origin model makes the parent-chain step an identity; the SetFailedToUse 'Removed/Added failure' log lines are not reproduced. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. IsSameAs_WithAmbiguity is now read (R38): spherical when the three thresholds are equal, otherwise a box in this pose's rotated frame.",
       "hardware_required": false,
       "live_path": true,
       "test": "R2FloorPlacementTests.M15_024_EntryMatchesExpiryDistanceAndAngle"
@@ -9553,7 +9553,7 @@
         "Lift projection 0x0051818E..0x0051819E includes final +0.0; status 0x005181BA..0x005181E8 starts +0x350, animation !=0 adds40, FF original|840, carrying!=-1 adds2. IDs/gameStatus use owning CarryingComponent/BlockWorld/MovementComponent getters. Tracking constructor -1 at 0x0063DA86; processed-image getter VisionComponent+0xE8 at 0x006527A2.",
         "Correction: static wrapping u16 no-state counter at 0x0105101C increments before >=11 info/reset at 0x0052F720..0x0052F774, Unnamed/RobotManager.UpdateAllRobots/Not sending robot %d state (none available). UnknownOriginID GOT 0x0103E978 -> 0x00C97B20 uint0; warning Robot.GetRobotState.BadOriginID with empty format 0x00BE3F00 at 0x0051810C..0x00518122 precedes angle/head/lift reads. sinf/atan2f are undefined ELF imports (external phone libm). Source: re-analysis/research/20261009-M1-final-opus-pass.md; reopened targets/literals in re-analysis/research/20261009-M1-final-correction-native.txt"
       ],
-      "unresolved": "M1 re-check (Opus, 2026-10-09, re-analysis/research/20261009-M1-recheck.md): SETTLED. The u16 counter at 0x0105101C (>= 11, sChanneledInfoF \"Not sending robot %d state (none available).\", reset at 0x0052F774); BadOriginID sWarningF on pose+0x1C == UnknownOriginID (0) after the pose read; the gate, slot +0x1C, the 109-byte layout, the lift bits, the status bits, the IDs, gameStatus and the angle function hold. Phone-libm sinf/atan2f is recorded as an assumption. Suppliers are owned by their layers.",
+      "unresolved": "M1 re-check (Opus, 2026-10-09, re-analysis/research/20261009-M1-recheck.md): SETTLED. The u16 counter at 0x0105101C (>= 11, sChanneledInfoF \"Not sending robot %d state (none available).\", reset at 0x0052F774); BadOriginID sWarningF on pose+0x1C == UnknownOriginID (0) after the pose read; the gate, slot +0x1C, the 109-byte layout, the lift bits, the status bits, the IDs, gameStatus and the angle function hold. Phone-libm sinf/atan2f is recorded as an assumption. Suppliers are owned by their layers. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The quaternion it reads is produced by the path in M11-065.",
       "hardware_required": false,
       "live_path": true,
       "test": "EngineAppLayerTests.M1_053_PublicationGateAndOwningComponents; EngineAppLayerTests.M1_053_ProjectionAndPackedPayload; EngineAppLayerTests.M1_053_AngleSelectsNativeOperandsForEqualGreaterAndUnordered; EngineAppLayerTests.M1_053_GameStatusRequiresLocalizedAndOnTreads; EngineAppLayerTests.M1_053_OfflineSeamWithoutPacketDoesNotPublish; EngineAppLayerTests.M1_053_MissingStateCounterLogsAtElevenAndWrapsAtUshortWidth; EngineAppLayerTests.M1_053_CounterPersistsAcrossRobotRemoval; EngineAppLayerTests.M1_053_BadOriginWarningFollowsRootPoseAndDoesNotSuppressPublication"
@@ -11093,7 +11093,7 @@
       ],
       "effect": "Whether a detected cliff is added, merged or blocked in BlockWorld.",
       "provenance": "Opus check of R-M4-CLIFF (2026-10-12), manager record.",
-      "unresolved": "Read 2026-10-13 (re-analysis/research/20261012-cliff-world-helpers-check.md): build from the rows (job B-M3M4-16). Reused, not owned: cv::minAreaRect/RotatedRect::points (M13-024), SortCornersClockwise ties (M13-023), FindObjectOnTopOrUnderneathHelper (M13-007), BlockConfigurationManager::SetObjectPoseChanged (M11-037), SetLocalizedTo(null) (M11-007/M11-044), UnSetCarryingObjects (M12-007/M12-008), Pose3d tree ops (the M12 pose records). Open: the BlockWorld+0x74 writer (M11-063); the null map helper (M13-031). Previous notes: RECOVERABLE_GAP: read the listed helpers (split from M4-038). OnObjectPoseChanged detail (re-analysis/research/20261013-blockworld-flag-and-map-helper.md): the MultipleChanges and FirstPoseForObject paths do not push; both still call SetObjectPoseChanged.\nB-M3M4-16 (2026-10-13), built, awaiting strong verification: Markerless overlap stamps all matching same-type objects; existing tolerances evaluated distance then angle with pi override; shared process SetID after Object_-1 InitPose; checked canonical float quad through existing M13-024; current-origin type-14 intersection deletion, deferred clone/confirmer/pose/deleted-ID order, keyed source logs. Borrowed M13-007/023 planar fallback, M13-023 sort ties, full Pose3d tree/GetPose VERIFY (0x004EA398..46C), missing M11-037 configuration setter and clone-owner M11-042 remain gaps. Flattened same-origin pose operations reuse existing owners, not a new source-complete pose-tree claim.\nB-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: No-parent/deep-tree success conversion is stopped as a visible M12 pose-record dependency; the parent==other case uses identity and parented frame failure stays silent. Sort ties stop the owned footprint rather than accept LINQ tie order. Keyed AddLocatedObject passive warnings and ghost error include errG.\nB-M3M4-16 final review: no-parent/deep-tree conversion without an owner stops with visible MISSING/NotSupportedException instead of returning an invented match result. Null-entry origin IDs print with the native signed %d width.\nB-M3M4-16 call-accounting review: InitPose now represents the explicit obj+0x50=1 write after SetPose. The inherited +0x38 rotation-ambiguity getter target was reopened at 0x00876BAC: its function-static RotationAmbiguities initializer/guard/atexit registration is not in the checked rows and is MISSING, even though pi bypasses ambiguity comparisons. VizManager pointer handoff 0x00622D24..0x00622D30 remains an unbuilt M11-038 owner.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261012-cliff-world-helpers-check.md): build from the rows (job B-M3M4-16). Reused, not owned: cv::minAreaRect/RotatedRect::points (M13-024), SortCornersClockwise ties (M13-023), FindObjectOnTopOrUnderneathHelper (M13-007), BlockConfigurationManager::SetObjectPoseChanged (M11-037), SetLocalizedTo(null) (M11-007/M11-044), UnSetCarryingObjects (M12-007/M12-008), Pose3d tree ops (the M12 pose records). Open: the BlockWorld+0x74 writer (M11-063); the null map helper (M13-031). Previous notes: RECOVERABLE_GAP: read the listed helpers (split from M4-038). OnObjectPoseChanged detail (re-analysis/research/20261013-blockworld-flag-and-map-helper.md): the MultipleChanges and FirstPoseForObject paths do not push; both still call SetObjectPoseChanged.\nB-M3M4-16 (2026-10-13), built, awaiting strong verification: Markerless overlap stamps all matching same-type objects; existing tolerances evaluated distance then angle with pi override; shared process SetID after Object_-1 InitPose; checked canonical float quad through existing M13-024; current-origin type-14 intersection deletion, deferred clone/confirmer/pose/deleted-ID order, keyed source logs. Borrowed M13-007/023 planar fallback, M13-023 sort ties, full Pose3d tree/GetPose VERIFY (0x004EA398..46C), missing M11-037 configuration setter and clone-owner M11-042 remain gaps. Flattened same-origin pose operations reuse existing owners, not a new source-complete pose-tree claim.\nB-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: No-parent/deep-tree success conversion is stopped as a visible M12 pose-record dependency; the parent==other case uses identity and parented frame failure stays silent. Sort ties stop the owned footprint rather than accept LINQ tie order. Keyed AddLocatedObject passive warnings and ghost error include errG.\nB-M3M4-16 final review: no-parent/deep-tree conversion without an owner stops with visible MISSING/NotSupportedException instead of returning an invented match result. Null-entry origin IDs print with the native signed %d width.\nB-M3M4-16 call-accounting review: InitPose now represents the explicit obj+0x50=1 write after SetPose. The inherited +0x38 rotation-ambiguity getter target was reopened at 0x00876BAC: its function-static RotationAmbiguities initializer/guard/atexit registration is not in the checked rows and is MISSING, even though pi bypasses ambiguity comparisons. VizManager pointer handoff 0x00622D24..0x00622D30 remains an unbuilt M11-038 owner. Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. The deep-tree conversion owner is M11-066.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X16BuilderTests"
@@ -11133,6 +11133,57 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X16BuilderTests"
+    },
+    {
+      "id": "M11-065",
+      "subsystem": "M11-vision",
+      "title": "Pose3d / Rotation3d / Transform3d arithmetic: double unit quaternion, float translation, float point rotation, renormalised composition (rows R1-R34, R38-R40)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-pose3d-arithmetic.md: rows R1-R34 and R38-R40 (storage 0x0084A656.., Normalize 0x00849DB8..0x00849E52, product 0x00849EF4..0x00849F8E, Rotation3d*Point3f 0x0084ACA6 -> UnitQuaternion<float>* 0x00849C1C..0x00849CF8, GetAngleDiffFrom 0x0084A694..0x0084A746, GetAngleAroundZaxis 0x0084AA1C..0x0084AAB8, GetRotationMatrix 0x0084AAE0..0x0084ABEC, Renormalize 0x008494E0..0x0084969E, Transform3d ops 0x0084B92A..0x0084BB98, Pose3d ctors 0x0084683C..0x00846DEE, PoseBase ops 0x0084505C..0x008451EA, IsSameAs_WithAmbiguity 0x00846EA4..0x008471A6, RotationMatrix3d ops 0x0084B0E4..0x0084B1B4)."
+      ],
+      "effect": "Every pose, rotation and angle the engine computes, to the last bit; tolerance decisions (IsSameAs, cliff Equals, intersections) at boundaries.",
+      "provenance": "Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: one exact port replacing Geometry.cs Mat3/Pose3d internals (job to follow the cv::Rodrigues read). libm (cosf, sinf, acos, acosf, atan2f, sqrt, ceilf) is bionic and does not ship: EQUIVALENT_IMPLEMENTATION for those calls only; operands, widths and order stay exact. The cv::Rodrigues paths (R19, R20, R41) are the unread record.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-066",
+      "subsystem": "M11-vision",
+      "title": "The pose tree: GetWithRespectTo (null/alias checks, depth walk, Tt^-1*Tf, 1000-step LoopBoundOverflow) and GetWithRespectToRoot (rows R35-R37)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-pose3d-arithmetic.md: rows R35-R37: GetWithRespectTo 0x00845A34..0x00845DFE (FromEqualsTo warning, chain cases a-d, LoopBoundOverflow poseBase_impl.h lines 0x1A0/0x1B6/0x1D4), GetTreeDepth 0x00845E8C..0x00845F02, HasSameParentAs 0x00844D44..0x00844D7C, GetWithRespectToRoot 0x004DF628..0x004DF6DC."
+      ],
+      "effect": "Which frame every pose comparison happens in, and the logs on a bad tree.",
+      "provenance": "Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: port with M11-065. Whether out aliases its inputs depends on PoseBase::operator= and SetParent (being read).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-067",
+      "subsystem": "M11-vision",
+      "title": "Unread pieces of the pose arithmetic: cv::Rodrigues (libopencv_calib3d.so), PoseBase::operator=/SetParent/PoseTreeNode ctors, and the remaining family bodies",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-pose3d-arithmetic.md: \"Not read\" section: cv::Rodrigues via RenormalizeHelper 0x008499B0..0x00849A10, Rotation3d(RotationMatrix3d) 0x0084A3F4..0x0084A45C, RotationMatrix3d(angle, axis) 0x0084ADA4..0x0084AF34; PoseBase::operator= 0x00845940, SetParent 0x00844A14, PoseTreeNode ctors 0x00845F44/0x00845FE4; UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; Euler/matrix X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; the Pose2d/Transform2d family 0x0084B619..0x0084B92A."
+      ],
+      "effect": "GetRotationMatrix whenever a row norm is not in [0.99999899, 1.0], every matrix-to-rotation conversion, and whether poses share tree nodes.",
+      "provenance": "Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read cv::Rodrigues (both directions, CV_32F) in the shipped libopencv_calib3d.so (shipped code: exact, not libm), and the tree copy semantics (both being read); then the remaining bodies.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M15-029",
