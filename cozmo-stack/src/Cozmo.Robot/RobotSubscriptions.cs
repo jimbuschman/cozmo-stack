@@ -100,7 +100,7 @@ public sealed partial class EngineRobot
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));
         InitCheckedDevSubscribers();
-        AddMessage(new PathFollowingEvent().Id, _ => Engine.EmitStackLog("MISSING: M12-023 | Path component C6 subscription 0x0050FCF6: native handler body remains a gap; host PathFollower runs after native delivery"), "Path");
+        Engine.PathComponentConstructed?.Invoke(this); // M12-032: the component owns its one first C6 subscription.
         // Backup is the first C9 subscriber, constructed with NVStorage before Impl.
         AddMessage(RobotMessageId.RobotAvailable, _ => Engine.EmitStackLog("MISSING: M15-033 | Backup::RobotConnected 0x00519B78 -> 0x0051A010"), "Backup");
         AddMessage(new ObjectAccel().Id, m => Engine.CubeAccelRoute?.Invoke(m), "CubeAccel");

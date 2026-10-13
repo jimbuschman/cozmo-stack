@@ -2403,7 +2403,8 @@ public class M12RVisBuildTests
 
         SignalTestContext.Until(() => !(!rig.Sent.OfType<ExecutePath>().Any()), () => { LiftReports(rig, 0.0); rig.Pump(); });
         Assert.NotEmpty(rig.Sent.OfType<ExecutePath>());
-        Assert.False(task.IsCompleted);                                              // the drive is RUNNING
+        Assert.False(task.IsCompleted); // the held fixture sends PATH_STARTED, so the native status remains FollowingPath.
+        rig.HoldClock=true; // Setup is on the wire; waiting for the held-drive callback must not expire the native 30 s slot.
         return task;
     }
 

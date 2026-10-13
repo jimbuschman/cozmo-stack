@@ -17,17 +17,17 @@ public sealed class M5X18BuilderTests
         rig.Robot.Animations.PushDrivingAnimations((AnimationTrigger)0x23F,(AnimationTrigger)0x23F,(AnimationTrigger)0x23F,"fixture-input");
     }
     [Fact]
-    public void ProductionDriveCompletesWithSuccessUsingExplicitM12_032StandInAndNoTestProvider()
+    public void ProductionDriveCompletesWithSuccessUsingNativeM12_032StatusAndNoTestProvider()
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();ProductionInputs(rig);
         var observed=new List<string>();rig.Robot.Engine.StackLogLine+=observed.Add;
         using var d=new DriveToPoseAction(rig.M){Goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0))};
         var result=SignalTestContext.Result(d.RunAsync(default),()=>rig.Pump());
         Assert.Equal(ActionResult.Success,result);Assert.False(d.CanInterrupt());Assert.Equal(0x41F00000,BitConverter.SingleToInt32Bits(d.TimeoutSeconds));
-        Assert.Single(observed.Where(s=>s.Contains("M12-032")&&s.Contains("status/IDs mapping is a stand-in")));
+        Assert.DoesNotContain(observed,s=>s.Contains("status/IDs mapping is a stand-in"));
     }
     [Fact]
-    public void ProductionStraightCompletesUsingSameStandInAndTinyDistanceSendsNoPath()
+    public void ProductionStraightCompletesUsingNativeStatusAndTinyDistanceSendsNoPath()
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();ProductionInputs(rig);
         using var d=new DriveStraightAction(rig.M,100);Assert.Equal(ActionResult.Success,SignalTestContext.Result(d.RunAsync(default),()=>rig.Pump()));Assert.False(d.CanInterrupt());

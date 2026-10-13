@@ -96,7 +96,7 @@ public sealed class UnreadDrivingAnimationHandler : IDrivingAnimationHandler
 /// Checked DriveToPoseAction lifecycle on the existing ActionList runner: handler.Init precedes goal/path
 /// checks, CheckIfDone holds the end state and re-evaluates the current inputs after completion, and cleanup
 /// follows the native order. Timeout and CanInterrupt use the native base getters. Until B-M12-1,
-/// live status uses the explicitly labelled M12-032 path-follower stand-in; path creation and motion
+/// live status reads the M12-032 PathComponent; path creation and motion
 /// primitives retain their separate gaps and are not claimed source-complete.
 /// </summary>
 // fidelity: M12-024
@@ -119,8 +119,8 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         SourceLog = (l,c,k,t) => m.Robot.Engine.EmitSourceLog(l,c,k,t);
         Log = m.Robot.Engine.EmitStackLog;
     }
-    private PathRun? _run;
-    internal ushort? SourcePathIdForTest => _run?.PathId;
+    private readonly PathGoalIndex _goalIndex=new();
+    internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _destroyed;
     private readonly HashSet<string> _missingMessages=new();
     private TaskCompletionSource<ActionResult>? _done;
@@ -135,10 +135,9 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     public override uint CheckIfDone()
     {
         if (_m.DriveTickForTest is { } input) return (uint)CheckIfDone(input(this));
-        MissingSource("M12-032 status/IDs mapping is a stand-in from the existing path follower: following=3, arrived=4, failed=0");
         if(_m.RobotPose() is not {} pose){MissingSource("live pose input unavailable");return (uint)ActionResult.Running;}
-        ushort id=_run?.PathId??_m.Paths.LastPathId;
-        return (uint)CheckIfDone(new DriveToPoseTick(_run?.StandInStatus??4,_m.Robot.Engine.Timer.SecondsF,pose,_m.RobotHeightMm(),id,id));
+        var path=_m.Robot.Motion.Path;
+        return (uint)CheckIfDone(new DriveToPoseTick(path.DriveToPoseStatus,_m.Robot.Engine.Timer.SecondsF,pose,_m.RobotHeightMm(),path.Field42,path.Field44,unchecked((sbyte)path.Field40)));
     }
     private void MissingSource(string text)
     { if(!_missingMessages.Add(text))return;string line="MISSING: M12-024 | "+text; _trace.Add(line); _m.Robot.Engine.EmitStackLog(line); }
@@ -148,30 +147,38 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         LifecycleCallObserved?.Invoke("InitDriving");
         DrivingAnimations.Init((byte)RequiredTrackMask, Tag, SuppressTrackLocking, false);
         DeadlineSec=-1.0; // 0x0055A8A6, including retries.
-        MissingSource("constructor mask 0x0055A25A and head gate +0x79 at 0x0055A9EC have no settled input from this caller; candidate mask 4 retained");
+        MissingSource("constructor mask 0x0055A25A, head gate +0x79 at 0x0055A9EC and manual-speed +0xA4 have no settled input from this caller; candidate mask 4 and host manual-speed false retained");
         if (Goal is not { } goal) { _trace.Add("DriveToPoseAction.Init.NoGoalSet"); return (int)ActionResult.BadPose; }
         var start=_m.RobotPose();
         if (start is null) { MissingSource("native pose/world transform input is unavailable"); return 0; }
         MissingSource("M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted");
-        IReadOnlyList<PathSegment> path;
-        if (_m.Planner is { } planner)
+        _goalIndex.Value=0; // P5, shared byte +0x88.
+        var native=_m.Robot.Motion.Path;
+        var selectedPlanner=_m.Planner;
+        int started=native.StartDrivingToPose(Goals is {Count:>0}?Goals.Count:1,_goalIndex,false,() =>
         {
-            planner.StartPlanning(_m.World,_m.Docking.Carrying.CarriedObjectId,true,IgnoreObstacleIds);
-            var plan=planner.PlanTo(start.Value,Goals is {Count:>0}?Goals:new[]{goal},Profile);
-            if (plan is null) { _trace.Add("DriveToPoseAction.Init.PlanningFailed: no path sent");return (int)ActionResult.PathPlanningFailedAbort; }
-            path=plan.Value.Path; Goal=plan.Value.Goal;
-            _trace.Add($"lattice plan: {plan.Value.Plan.Actions.Count} primitive(s), cost {plan.Value.Plan.Cost:F0}, {plan.Value.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s), DoPlanning={planner.LastPlanningResult}");
+            if(selectedPlanner is {} planner)
+            {
+                planner.StartPlanning(_m.World,_m.Docking.Carrying.CarriedObjectId,true,IgnoreObstacleIds);
+                var plan=planner.PlanTo(start.Value,Goals is {Count:>0}?Goals:new[]{goal},Profile);
+                if(plan is null){_trace.Add("DriveToPoseAction.Init.PlanningFailed: no path sent");return new PathPlannerModelResult(0,Array.Empty<PathSegment>(),0);}
+                _trace.Add($"lattice plan: {plan.Value.Plan.Actions.Count} primitive(s), cost {plan.Value.Plan.Cost:F0}, {plan.Value.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s), DoPlanning={planner.LastPlanningResult}");
+                return new PathPlannerModelResult(2,plan.Value.Path,unchecked((byte)planner.ChosenGoalId));
+            }
+            return new PathPlannerModelResult(2,StraightLinePlanner.Plan(start.Value,goal,Profile),0);
+        },()=>selectedPlanner?.StopPlanning(),MissingSource);
+        if(started!=0)
+        {
+            _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Actions","DriveToPoseAction.Init.FailedToFindPath",$"[{unchecked((int)Tag)}] Failed to get path to goal pose.");
+            return (int)ActionResult.PathPlanningFailedAbort;
         }
-        else path=StraightLinePlanner.Plan(start.Value,goal,Profile); // existing M12-002 host planner gap retained.
-        if (path.Count==0) { MissingSource("already-at-goal empty host path has no checked native status mapping; source tick input required"); return 0; }
-        _run=_m.StartPath(path);
         return 0;
     }
     private void CleanupSource()
     {
         if (_destroyed) return; _destroyed=true;
-        bool active=_m.PathIsActiveForTest?.Invoke()??_run?.StandInStatus==3;
-        if(active){LifecycleCallObserved?.Invoke("Abort");AbortPath();} // M12-032 stand-in until B-M12-1.
+        bool active=_m.PathIsActiveForTest?.Invoke()??_m.Robot.Motion.Path.IsActive;
+        if(active){LifecycleCallObserved?.Invoke("Abort");AbortPath();} // M12-032 P3/P30.
 
         foreach (bool which in new[]{true,false})
         {
@@ -180,7 +187,6 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
             else MissingSource("EraseAllPlannerObstacles("+(which?"1":"0")+") 0x0055A626/0x0055A632 visualizer handoff absent");
         }
         LifecycleCallObserved?.Invoke("DestroyDriving"); DrivingAnimations.ActionIsBeingDestroyed();
-        _run?.Dispose();
     }
     public void Dispose() { if(_destroyed)return;CleanupSource();base.WatcherEnding(); }
     public override void WatcherEnding()
@@ -197,7 +203,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     /// <summary>Alternative goals for the lattice planner (a cube's pre-action poses); the reached one becomes <see cref="Goal"/>.</summary>
     public IReadOnlyList<Pose3d>? Goals { get; set; }
     /// <summary>The engine's <c>idx</c>, the byte at <c>[[this+0x88]]</c> that selects <c>goals[idx]</c> (0x0055ACCE..0x0055ACEA).</summary>
-    public int GoalIndex { get; set; }
+    public int GoalIndex { get=>_goalIndex.Value; set=>_goalIndex.Value=unchecked((byte)value); }
     /// <summary>Objects not to treat as obstacles (the one being docked with).</summary>
     public IEnumerable<uint>? IgnoreObstacleIds { get; set; }
     /// <summary><c>[this+0x90]</c>/<c>[this+0x94]</c>: the x and y position tolerance when <see cref="PreActionObjectPose"/> is null.</summary>
@@ -902,8 +908,7 @@ public readonly record struct DriveStraightTick(bool LastPathFailed, bool HasPat
 public sealed class DriveStraightAction : ActionRunner, IDisposable
 {
     private readonly ManipulationSystem _m;
-    private PathRun? _run;
-    internal ushort? SourcePathIdForTest => _run?.PathId;
+    internal ushort? SourcePathIdForTest => _m.Robot.Motion.Path.Field42;
     private bool _started, _destroyed, _missingDiagnostics;
     private readonly HashSet<string> _missingMessages=new();
     private TaskCompletionSource<ActionResult>? _done;
@@ -925,12 +930,12 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     {
         DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);_started=false;
         if(MathF.Abs((float)DistanceMm)<BitConverter.Int32BitsToSingle(0x3727C5AC)){_started=true;return 0;} // 0x0054761E..26.
-        Missing("AppendLine / ExecuteCustomPath failure branches 0x005476AE..0x005476D2 remain unbuilt on the host path candidate");
+        Missing("AppendLine failure branch 0x005476AE remains unbuilt on the host Path geometry candidate");
         var robot=_m.RobotPose();if(robot is null){Missing("pose/path Init input unavailable");return 0;}
         double h=robot.Value.AngleAroundZ;var to=robot.Value.Translation+new Vec3(Math.Cos(h)*DistanceMm,Math.Sin(h)*DistanceMm,0);
         var p=PathMotionProfile.Default;float speed=DistanceMm<0?-Math.Abs(SpeedMmps):Math.Abs(SpeedMmps);
-        _run=_m.StartPath(new PathSegment[]{new PathSegment.Line(robot.Value.Translation.X,robot.Value.Translation.Y,to.X,to.Y,speed,p.AccelMmps2,p.DecelMmps2)});
-        return 0;
+        int result=_m.Robot.Motion.Path.ExecuteCustomPath(new PathSegment[]{new PathSegment.Line(robot.Value.Translation.X,robot.Value.Translation.Y,to.X,to.Y,speed,p.AccelMmps2,p.DecelMmps2)},false);
+        return result==0?0:0x03000016; // P14.
     }
     public ActionResult CheckIfDone(DriveStraightTick tick)
     {
@@ -954,9 +959,8 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     public override uint CheckIfDone()
     {
         if(_m.StraightTickForTest is {} input)return (uint)CheckIfDone(input(this));
-        Missing("M12-032 status mapping is a stand-in from existing path follower: following=3, arrived=4, failed=0");
-        int status=_run?.StandInStatus??4;
-        return (uint)CheckIfDone(new DriveStraightTick(status==0,_run is not null||_started,status==3));
+        var path=_m.Robot.Motion.Path;
+        return (uint)CheckIfDone(new DriveStraightTick(path.LastPathFailed,path.HasPathToFollow,path.IsActive));
     }
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
@@ -971,9 +975,9 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     public void Dispose()
     {
         if(_destroyed)return;_destroyed=true;
-        if(_m.PathIsActiveForTest?.Invoke()??_run?.StandInStatus==3)_m.Paths.Abort(); // M12-032 stand-in.
+        if(_m.PathIsActiveForTest?.Invoke()??_m.Robot.Motion.Path.IsActive)_m.Paths.Abort();
 
-        DrivingAnimations.ActionIsBeingDestroyed();_run?.Dispose();base.WatcherEnding();
+        DrivingAnimations.ActionIsBeingDestroyed();base.WatcherEnding();
     }
     public override void WatcherEnding()
     {

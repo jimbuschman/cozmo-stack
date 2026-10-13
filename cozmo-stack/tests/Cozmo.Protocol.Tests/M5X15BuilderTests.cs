@@ -133,7 +133,8 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Equal(0u, handler.LoopId); Assert.Equal(0, robot.Engine.Robot!.ActionList.QueueCount);
         Assert.Contains(lines, l => l.Contains("M5-063 M8-005 TriggerLiftSafeAnimationAction"));
         handler.HandleActionCompleted(0, 1);
-        Assert.Contains(lines, l => l.Contains("M5-063 M12-032 PathComponent.HasPathToFollow"));
+        Assert.DoesNotContain(lines, l => l.Contains("M12-032 PathComponent.HasPathToFollow")); // P30 now reads the real constructor's Ready status.
+        Assert.Equal(0, robot.Engine.Robot!.ActionList.QueueCount);
     }
     [Fact]
     public void DrivingTrackOwnerUsesSignedToStringOfTagBits()

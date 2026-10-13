@@ -101,98 +101,37 @@ public sealed class PathSender
     public const ushort ClearPathField = 0;
 
     private readonly CozmoRobot _robot;
-    private readonly object _gate = new();
-    private ushort _pathId;
-
-    public PathSender(CozmoRobot robot) => _robot = robot;
-
-    /// <summary>The id of the last path sent (the engine's <c>_lastSentPathID</c>).</summary>
-    public ushort LastPathId { get { lock (_gate) return _pathId; } }
-    /// <summary>Every message sent, for tests and the conformance log.</summary>
-    public List<RobotMessage> Sent { get; } = new();
-
-    // fidelity: M3-047
-    // Path segments go straight to the handler, as PathDolerOuter::Dole sends them (0x00507F9E, 0x00507FF0, 0x00508046): no
-    // Robot::SendMessage warning on failure. The other path messages go through the robot's send.
-    private void Send(RobotMessage m)
+    private readonly PathComponent _path;
+    public PathSender(CozmoRobot robot)
     {
-        Sent.Add(m);
-        if (m is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn) _robot.SendToHandler(m);
-        else _robot.SendMessage(m, flush: true);
+        _robot=robot;_path=robot.Motion.Path;
+        _path.SendPathMessage=Send;
+    }
+    public ushort LastPathId => _path.Field42;
+    public List<RobotMessage> Sent { get; }=new();
+    private bool Send(RobotMessage message)
+    {
+        Sent.Add(message);
+        return message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn ? _robot.SendToHandler(message) : _robot.SendMessage(message);
+    }
+    public ushort Execute(IReadOnlyList<PathSegment> path,Action<ushort>? reserve=null)
+    {
+        int result=0;
+        if(_robot.Engine.Robot is {} owner)owner.ActionList.WithGate(()=>result=_path.ExecuteCustomPath(path,false,reserve));
+        else result=_path.ExecuteCustomPath(path,false,reserve);
+        if(result!=0)_robot.Engine.EmitStackLog("MISSING: M12-002 PathSender host caller must handle ExecuteCustomPath failure; legacy ushort API has no Result output");
+        return _path.Field42;
+    }
+    public void Abort(){if(_robot.Engine.Robot is {} owner)owner.ActionList.WithGate(()=>_path.Abort(Send));else _path.Abort(Send); }
+    // Host reservation API only. Native actions/destructors use the one global component and never this ownership gate.
+    public bool AbortIfCurrent(ushort id)
+    {
+        bool aborted=false;
+        void CheckAndAbort(){if(_path.Field42!=id)return;_path.Abort(Send);aborted=true;}
+        if(_robot.Engine.Robot is {} owner)owner.ActionList.WithGate(CheckAndAbort);else CheckAndAbort();
+        return aborted;
     }
 
-    private static uint F(double v) => BitConverter.SingleToUInt32Bits((float)v);
-
-    /// <summary>
-    /// Clears the robot's path, appends the segments and starts execution. Returns the path id.
-    ///
-    /// <paramref name="reserve"/> is called with the new id before anything is sent, so a caller can register
-    /// for the path's terminal event before the robot can possibly report it.
-    /// </summary>
-    public ushort Execute(IReadOnlyList<PathSegment> path, Action<ushort>? reserve = null)
-    {
-        // The clear, the segments and the execute are one installation. Two callers interleaving them
-        // would leave the robot holding half of each path under one id, so the whole sequence - and the
-        // id it is installed under - is taken together.
-        lock (_gate)
-        {
-            // fidelity: M12-002 - PathComponent::ExecutePath 0x0064A3C2..0x0064A3CA: ldrh r1,[r4,#0x42]; adds r1,#1; strh r1,[r4,#0x42]. A plain u16
-            // increment with no zero case: 0xFFFF wraps to 0 and 0 is a path id the engine sends (it skips nothing).
-            unchecked { _pathId++; }
-            reserve?.Invoke(_pathId);
-            Send(new ClearPath { Unknown = ClearPathField });
-            foreach (var s in path)
-            {
-                switch (s)
-                {
-                    case PathSegment.Line l:
-                        Send(new AppendPathSegmentLine { XStartMm = l.FromX, YStartMm = l.FromY,
-                                                         XEndMm = l.ToX, YEndMm = l.ToY,
-                                                         Speed = new PathSegmentSpeed { SpeedMmps = l.SpeedMmps, AccelMmps2 = l.AccelMmps2, DecelMmps2 = l.DecelMmps2 } });
-                        break;
-                    case PathSegment.Arc a:
-                        Send(new AppendPathSegmentArc { XCenterMm = a.CenterX, YCenterMm = a.CenterY,
-                                                        RadiusMm = a.RadiusMm, StartRad = a.StartAngleRad, SweepRad = a.SweepRad,
-                                                        Speed = new PathSegmentSpeed { SpeedMmps = a.SpeedMmps, AccelMmps2 = a.AccelMmps2, DecelMmps2 = a.DecelMmps2 } });
-                        break;
-                    case PathSegment.PointTurn t:
-                        Send(new AppendPathSegmentPointTurn { XMm = t.X, YMm = t.Y,
-                                                              TargetAngleRad = t.TargetAngleRad, AngleToleranceRad = t.AngleToleranceRad,
-                                                              Speed = new PathSegmentSpeed { SpeedMmps = t.SpeedRadPerSec, AccelMmps2 = t.AccelRadPerSec2, DecelMmps2 = t.DecelRadPerSec2 },
-                                                              UseShortestDirection = t.UseShortestDirection });
-                        break;
-                }
-            }
-            Send(new ExecutePath { EventId = _pathId, Unknown = false });
-            return _pathId;
-        }
-    }
-
-    /// <summary>
-    /// <c>PathComponent::Abort</c>: clear the robot's current path, whatever it is. The engine has one
-    /// path component and one path, so its own abort is unqualified like this.
-    /// </summary>
-    public void Abort() { lock (_gate) Send(new ClearPath { Unknown = ClearPathField }); }
-
-    /// <summary>
-    /// Clears the robot's path only while <paramref name="pathId"/> is still the one installed, and says
-    /// whether it did.
-    ///
-    /// This stack owns paths per action rather than globally: a <see cref="PathRun"/> that is cancelled or
-    /// times out clears the path so firmware motion does not outlive the action. That cleanup can be late -
-    /// a cancelled wait finishes after another action has already installed its own path - and an
-    /// unqualified clear would then stop the path that replaced it. Ownership is the path id: an abort that
-    /// no longer owns the robot's path sends nothing.
-    /// </summary>
-    public bool AbortIfCurrent(ushort pathId)
-    {
-        lock (_gate)
-        {
-            if (_pathId != pathId) return false;
-            Send(new ClearPath { Unknown = ClearPathField });
-            return true;
-        }
-    }
 }
 
 /// <summary>
@@ -303,8 +242,6 @@ public sealed class PathFollower : IDisposable
         { _follower = follower; PathId = pathId; _tcs = tcs; }
 
         public ushort PathId { get; }
-        // M12-032 stand-in, expressly authorized by B-M5-18; NOT native PathComponent state.
-        internal int StandInStatus => !_tcs.Task.IsCompletedSuccessfully ? 3 : _tcs.Task.Result==PathEventType.Completed ? 4 : 0;
 
         /// <summary>Completes with Completed or Interrupted; null on timeout or cancellation.</summary>
         public async Task<PathEventType?> WaitAsync(TimeSpan timeout, CancellationToken cancel)

@@ -77,6 +77,9 @@ public sealed class CozmoMotion
     {
         _robot = robot;
         Path = new PathComponent(robot);
+        robot.Engine.PathComponentConstructed=Path.Attach;
+        robot.Engine.PathSegmentRoute=seg=>{if(robot.Engine.Robot is {} owner)owner.ActionList.WithGate(()=>Path.UpdateCurrentPathSegment(seg));else Path.UpdateCurrentPathSegment(seg);};
+        robot.Engine.PathComponentTick=()=>{if(robot.Engine.Robot is {} owner)owner.ActionList.WithGate(Path.Update);else Path.Update();};
         // fidelity: M4-003, M4-016
         // Batch 2: the head/lift actions are IActionRunner subclasses queued on Robot::Update's ActionList
         // (0x005140BC), so the list tick drives their IAction::UpdateInternal timeout/CheckIfDone
@@ -1469,14 +1472,10 @@ bool requireCalibration = true)
 
 // fidelity: M13-029
 /// <summary>
-/// The engine's PathComponent (Robot+0x5C) as far as Robot::AbortAll reaches it: <c>Abort</c> 0x00649100..0x006491BC (A3) and
-/// <c>ClearPath</c> 0x00649220..0x006492A0 (A4). The path planner, the status transition, VizManager and PathDolerOuter belong to
-/// M11/M12, so what they do is an interface here (the hooks below) and a missing hook is reported once as MISSING, never
-/// replaced by a guess. The fields are named by their engine offsets. +0x38 and +0x40 start at 4 and 0xFF (the constructor,
-/// 0x00648B14..0x00648B1C); the other values start at zero here (their constructor values are not in the rows), and nothing in this
-/// stack writes them but these two functions.
+/// The engine's one PathComponent (Robot+0x5C): Abort/ClearPath below and the M12-032 state machine in NativePathComponent.cs.
+/// Fields retain native offsets and P1 constructor values. Unbuilt planner/Viz recipients remain explicit MISSING boundaries.
 /// </summary>
-internal sealed class PathComponent
+internal sealed partial class PathComponent
 {
     /// <summary><c>PoseOriginList::UnknownOriginID</c> (GOT 0x0103E978 → 0x00C97B20), 0 (see <c>EngineRobotState</c>).</summary>
     internal const uint UnknownOriginId = 0;
@@ -1484,7 +1483,7 @@ internal sealed class PathComponent
     private readonly CozmoRobot _robot;
     private readonly HashSet<string> _missingReported = new();
 
-    internal PathComponent(CozmoRobot robot) => _robot = robot;
+    internal PathComponent(CozmoRobot robot) { _robot=robot; PathDolerClearPath=ClearDoler; }
 
     /// <summary>
     /// +0x38: the ERobotDriveToPoseStatus (M12-023). 4 (Ready) from the constructor (PathComponent::PathComponent 0x00648B14 movs r0,#4;
@@ -1497,7 +1496,8 @@ internal sealed class PathComponent
     /// <summary>+0x40: 0xFF from the constructor (0x00648B1A..0x00648B1C), and set to 0xFF by ClearPath.</summary>
     internal byte Field40 = 0xFF;
     /// <summary>+0x42 and +0x4A: ClearPath copies a non-zero +0x42 into +0x4A.</summary>
-    internal ushort Field42, Field4A;
+    internal ushort Field42, Field44, Field4A;
+    internal bool Field48;
     /// <summary>+0x46 (cleared by Abort) and +0x47 (cleared only when a planner is set).</summary>
     internal bool Field46, Field47;
     /// <summary>The shared path pair at +0x30/+0x34: Abort nulls it and releases it.</summary>
@@ -1528,7 +1528,8 @@ internal sealed class PathComponent
         DriveToPoseStatus = 4;
         Field3C = 0f;
         Field40 = 0xFF;
-        Field42 = Field4A = 0;
+        Field42 = Field44 = Field4A = 0;
+        Field48=false;ResetMachine();
         Field46 = Field47 = false;
         SharedPath = null;
         PlannerObjects.Clear();
@@ -1538,7 +1539,7 @@ internal sealed class PathComponent
 
     private void MissingOnce(string what)
     {
-        if (_missingReported.Add(what)) _robot.Engine.Log($"MISSING: {what}");
+        if (_missingReported.Add(what)) _robot.Engine.EmitStackLog($"MISSING: {what}");
     }
 
     // fidelity: M13-029
@@ -1566,7 +1567,7 @@ internal sealed class PathComponent
         {
             int request = ((0x13 >> status) & 1) != 0 ? 4 : 5;
             if (SetDriveToPoseStatusHook is { } set) set(request);
-            else MissingOnce("PathComponent::SetDriveToPoseStatus 0x006492C4 (M11): the status transition is not built");
+            else SetStatus(request);
         }
         Field46 = false;
         while (PlannerObjects.Count > 0)

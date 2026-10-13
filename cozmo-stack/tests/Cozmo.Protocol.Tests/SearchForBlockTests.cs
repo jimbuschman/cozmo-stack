@@ -187,7 +187,13 @@ public class SearchForBlockTests
             var eps = rig.Sent.OfType<ExecutePath>().ToList();
             for (; handled < eps.Count; handled++)
             {
-                if (handled == failOrdinal) rig.Send(new PathFollowingEvent { EventId = eps[handled].EventId, EventType = (byte)PathEventType.Interrupted });
+                if (handled == failOrdinal)
+                {
+                    // Native DriveStraight fails on PC status 0/6 (P3/P30). INTERRUPTED produces Ready (P22).
+                    // The remaining turn children still use the explicitly gapped host PathFollower.
+                    if(handled is 3 or 6 or 9 or 12) rig.Robot.Motion.Path.SetStatus(0);
+                    else rig.Send(new PathFollowingEvent { EventId = eps[handled].EventId, EventType = (byte)PathEventType.Interrupted });
+                }
                 else rig.ReleasePath();
             }
         });

@@ -24,6 +24,8 @@ internal sealed class Rig : IDisposable
     public bool NoLibrary => Lib is null;
     /// <summary>Starts away from zero: a send stamped at time zero reads as never sent to the reliable layer.</summary>
     public readonly ManualClock Clock = new() { NowMs = 1000 };
+    /// <summary>Hold controlled engine time for held-drive assertions; timeout cases leave this false or advance Clock explicitly.</summary>
+    public bool HoldClock;
     public readonly CozmoRobot Robot;
     public readonly VisionSystem Vision;
     public readonly ManipulationSystem M;
@@ -95,13 +97,12 @@ internal sealed class Rig : IDisposable
         // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and
         // exercise the real shared handler with explicit NoAnimation inputs; they do not verify native input recovery.
         M.DrivingAnimationsForTest = () => new GeometryOnlyDrivingDependency();
-        // M12-032 stand-in: use the SAME path-follower mapping as production (B-M5-18).
-        // These geometry/wire fixture results do not prove native PathComponent status fidelity.
+        // M12-032: actual C6 messages and RobotState drive status; only planner internals remain modelled under M13-033.
         M.ErasePlannerObstaclesForTest=_=>{};
         // the look-around waits are real seconds on a robot; a rig takes them instantly
         M.Wait = (t, c) => Task.CompletedTask;
-        M.Log += Log.Add;
-        Vision.World.Log += Log.Add;
+        M.Log += l=>{lock(Log)Log.Add(l);};
+        Vision.World.Log += l=>{lock(Log)Log.Add(l);};
         M.TurnOverride = (id, max, ct) =>
         {
             // a turn towards the object: face it
@@ -167,6 +168,7 @@ internal sealed class Rig : IDisposable
     /// <summary>The radio slot (activeID) the cube with a world ObjectID is connected in: what the cube's own messages (moved, stopped) carry.</summary>
     public uint ActiveIdOf(uint worldObjectId) => (uint)Vision.World.ConnectedObjects.First(o => o.ObjectId == worldObjectId).ActiveId;
 
+    public sbyte CurrentPathSegment=-1;
     public void State(uint? flags = null, float? liftAngle = null)
     {
         T += 33;
@@ -176,7 +178,7 @@ internal sealed class Rig : IDisposable
         // a moving head or lift passes flags explicitly.
         uint f = flags ?? (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos
                                  | (OnCharger ? RobotStatusFlag.IsOnCharger : 0));
-        Send(new RobotState { Timestamp = T, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle, Pitch = Pitch }, HeadAngle = Head, LiftAngle = liftAngle ?? LiftAngleReported ?? 0f, Status = f,
+        Send(new RobotState { Timestamp = T, CurrPathSegment=CurrentPathSegment, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle, Pitch = Pitch }, HeadAngle = Head, LiftAngle = liftAngle ?? LiftAngleReported ?? 0f, Status = f,
                               Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
         // M11-004: the image IMU sample that arrives with every frame; zero rates mean "not rotating". The
         // rotating gate's fail-safe (no bracket -> true) would otherwise skip faces and unobserved checks.
@@ -233,11 +235,12 @@ internal sealed class Rig : IDisposable
     /// transport holds reliable messages until they are acknowledged, so each batch is acked (a ping frame
     /// carrying the last sequence) and the connection ticked until nothing new comes out.
     /// </summary>
-    public List<RobotMessage> Pump()
+    public List<RobotMessage> Pump(int maxRounds=50)
     {
+        bool queuedWireWork=_signalContext?.ModelWorkPending??false;
         _signalContext?.BeginFirmwarePump();
         var fresh = new List<RobotMessage>();
-        for (int round = 0; round < 50; round++)
+        for (int round = 0; round < maxRounds; round++)
         {
             var frames = Robot.Transport.OfflineOutbound;
             int before = fresh.Count;
@@ -263,7 +266,9 @@ internal sealed class Rig : IDisposable
             // list inside the same Pump call (the fake robot answers each tick, as it would live).
             if (fresh.Count > before) ReactMessages(fresh.GetRange(before, fresh.Count - before));
             // the offline connection sends what is pending from its update tick, paced by its clock
-            Clock.Advance(50);
+            // A new queued command needs one transport pacing step. Waiting for an async
+            // held-drive callback contributes no simulated engine time.
+            if(!HoldClock || (round==0 && queuedWireWork)) Clock.Advance(50);
             if (Robot.Animations.ManualTicking)
                 Robot.Animations.Scheduler.Advance(Robot.Animations.ClockMs?.Invoke() ?? Clock.NowMs);
             Robot.Transport.OfflineTick();
@@ -272,7 +277,10 @@ internal sealed class Rig : IDisposable
             // current is deleted without promoting the next action in the same tick (T8).
             Robot.Engine.Tick();
             bool listBusy = Robot.Engine.Robot is { } er && !er.ActionList.IsEmpty;
-            if (Robot.Transport.OfflineOutbound.Count == _framesSeen && fresh.Count == before && round > 2 && !listBusy) break;
+            // A deliberately held firmware operation needs the caller's next signal, not 50 model ticks
+            // racing a wall-clock async continuation and expiring the real IAction 30-second timeout.
+            bool heldHardware=(HoldPath && _heldPath is not null)||HoldLift;
+            if (Robot.Transport.OfflineOutbound.Count == _framesSeen && fresh.Count == before && round > 2 && (!listBusy||heldHardware)) break;
         }
         return fresh;
     }
@@ -285,7 +293,7 @@ internal sealed class Rig : IDisposable
             switch (m)
             {
                 case ExecutePath ep:
-                    if (HoldPath) { _heldPath = ep; break; }
+                    if (HoldPath) { _heldPath = ep; Send(new PathFollowingEvent{EventId=ep.EventId,EventType=(byte)PathEventType.Started}); break; }
                     FollowPath(ep);
                     break;
                 case DockWithObject dw:
@@ -364,6 +372,7 @@ internal sealed class Rig : IDisposable
 
     private void FollowPath(ExecutePath ep)
     {
+        Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Started });
         float wasX = X, wasY = Y;
         // The fake robot follows each segment in wire order; arcs end at their sweep's end
         // point with a tangent heading, and lines end at their commanded position.
@@ -371,8 +380,10 @@ internal sealed class Rig : IDisposable
         // Firmware executes only the segments preceding this command, in their wire order.
         int executeIdx = Sent.IndexOf(ep);
         int clearIdx = Sent.FindLastIndex(executeIdx, message => message is ClearPath);
-        foreach (var seg in Sent.Skip(clearIdx).Take(executeIdx - clearIdx))
+        var buffer=Sent.Skip(clearIdx).Take(executeIdx-clearIdx).Where(m=>m is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn).ToList();
+        for(int i=0;i<buffer.Count;i++)
         {
+            var seg=buffer[i];
             if (seg is AppendPathSegmentArc arc)
             {
                 double cx = arc.XCenterMm, cy = arc.YCenterMm, r = arc.RadiusMm;
@@ -381,10 +392,13 @@ internal sealed class Rig : IDisposable
             }
             else if (seg is AppendPathSegmentLine ln) { X = ln.XEndMm; Y = ln.YEndMm; }
             else if (seg is AppendPathSegmentPointTurn pt) Angle = pt.TargetAngleRad;
+            CurrentPathSegment=unchecked((sbyte)i);State();
+            // Firmware reports the current index while its queue drains. The native doler may
+            // append more before this mock reports completion; consume actual wire messages.
+            if(buffer.Count>=6) buffer.AddRange(Pump(3).Where(m=>m is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn));
         }
         UpdateChargerContact(wasX, wasY);
-        State();
-        Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Started });
+        CurrentPathSegment=-1;State();
         Send(new PathFollowingEvent { EventId = ep.EventId, EventType = (byte)PathEventType.Completed });
     }
 

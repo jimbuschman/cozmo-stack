@@ -19,6 +19,13 @@ namespace Cozmo.Protocol.Tests;
 /// </summary>
 public class HardwareCatalogFidelityTests
 {
+    [Fact]
+    public void DrivingChecksExposeTheUncapturedFirmwareClearPathResponse()
+    {
+        foreach(var check in HardwareCatalog.All.Where(c=>c.MovesRobot))
+            Assert.Contains("M12-041",check.FidelityRecords);
+        Assert.Contains(Records(),r=>r.Id=="M12-041" && r.Status=="HARDWARE_ONLY");
+    }
     private static readonly Regex ManifestId = new(@"^(M([1-9]|1[0-5])|TOOL)-\d{3}$");
     private static readonly Regex CoreId = new(@"^CORE-\d{3}$");
 

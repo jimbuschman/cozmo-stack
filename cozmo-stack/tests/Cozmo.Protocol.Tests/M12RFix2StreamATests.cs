@@ -121,12 +121,13 @@ public class M12RFix2StreamATests
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         var sender = new PathSender(rig.Robot);
-        var none = Array.Empty<PathSegment>();
-        for (int i = 0; i < 0xFFFF; i++) sender.Execute(none);
+        // P12 returns on an empty path before incrementing. Seed the native field at its wrap boundary.
+        rig.Robot.Motion.Path.Field42=0xFFFF;
+        var path = new PathSegment[] { new PathSegment.Line(0,0,10,0,100,200,500) };
         Assert.Equal((ushort)0xFFFF, sender.LastPathId);
-        Assert.Equal((ushort)0, sender.Execute(none));
+        Assert.Equal((ushort)0, sender.Execute(path));
         Assert.Equal((ushort)0, Assert.IsType<ExecutePath>(sender.Sent[^1]).EventId);
-        Assert.Equal((ushort)1, sender.Execute(none));
+        Assert.Equal((ushort)1, sender.Execute(path));
     }
 
     // ------------------------------------------------------------------ M12-007 and M12-017
@@ -355,7 +356,7 @@ public class M12RFix2StreamATests
 
     /// <summary>
     /// M15-012: the look-after-place sequential compound adds the parallel with ignoreFailure = 0 (0x005C8220), so a failed child ends the parallel at once with its failure
-    /// (0x0054FB36..0x0054FBCC) and CompoundActionSequential::UpdateInternal 0x0054F70C returns it: the image wait and the keep-alive do not run. The -80 mm/s drive is interrupted.
+    /// (0x0054FB36..0x0054FBCC) and CompoundActionSequential::UpdateInternal 0x0054F70C returns it: the image wait and the keep-alive do not run. The path component reports Failed (P3/P30).
     /// </summary>
     [Fact]
     public void M15_012_AFailedLookDownDriveEndsTheCompoundBeforeTheImageWaitAndTheKeepAlive()
@@ -376,7 +377,7 @@ public class M12RFix2StreamATests
         {
             var eps = rig.Sent.OfType<ExecutePath>().ToList();
             for (; handled < eps.Count; handled++)
-                rig.Send(new PathFollowingEvent { EventId = eps[handled].EventId, EventType = (byte)PathEventType.Interrupted });
+                rig.Robot.Motion.Path.SetStatus(0); // INTERRUPTED is Ready, not Failed (P22); inject the actual failure input.
         });
         Assert.True(handled > 0);
         Assert.Contains(b.Trace, l => l.Contains("the look-after-place compound failed"));

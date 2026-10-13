@@ -283,6 +283,9 @@ public class M4AbortSleepTests
         rig.Engine.ConnectToRobot(Rig.RobotIp); rig.Tick();
         rig.Port.Raise(ReceiverMarker.OnConnected, Rig.RobotEp); rig.Tick();
         int logMark = rig.LogLines().Count;
+        // P12: a failing ClearPath stops before segments. Force that one result successful
+        // so this test still isolates the failed MessageHandler segment-send path.
+        rig.Engine.Robot!.SendFault=m=>m is ClearPath?true:null;
         var sender = new Cozmo.Robot.Manipulation.PathSender(rig.Robot);
         sender.Execute(new Cozmo.Robot.Manipulation.PathSegment[] { new Cozmo.Robot.Manipulation.PathSegment.Line(0, 0, 100, 0, 50, 200, 200) });
         Assert.Contains(sender.Sent, m => m is AppendPathSegmentLine);
@@ -313,7 +316,7 @@ public class M4AbortSleepTests
         using var rig = new Rig();
         rig.ToSynced();
         rig.State();
-        var path = new PathComponent(rig.Robot);
+        var path = new PathComponent(rig.Robot) {PathDolerClearPath=null}; // Explicit context-less recipient fixture.
         path.Abort(); path.Abort();
         Assert.Equal(1, rig.LogLines().Count(l => l.StartsWith("MISSING: PathDolerOuter::ClearPath 0x005082B0")));
     }
@@ -469,7 +472,7 @@ public class M4AbortSleepTests
     /// guess a result.
     /// </summary>
     [Fact]
-    public void M4_026_A3_AnUnbuiltRecipientIsReportedMissing()
+    public void M4_026_A3_TheBuiltStatusHelperRetainsTheMissingVizRecipient()
     {
         using var rig = new Rig();
         rig.ToSynced();
@@ -478,7 +481,8 @@ public class M4AbortSleepTests
         path.Abort();
         path.Abort();
         var lines = rig.LogLines();
-        Assert.Equal(1, lines.Count(l => l.StartsWith("MISSING: PathComponent::SetDriveToPoseStatus 0x006492C4")));
+        Assert.Equal(4,path.DriveToPoseStatus);
+        Assert.DoesNotContain(lines,l=>l.StartsWith("MISSING: PathComponent::SetDriveToPoseStatus 0x006492C4"));
         Assert.Equal(1, lines.Count(l => l.StartsWith("MISSING: VizManager::ErasePath 0x006BFACE")));
     }
 

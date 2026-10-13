@@ -95,7 +95,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
             bool follow;
             if (_repeat) follow = true;
             else if (HasPathToFollowForTest is { } hasPath) follow = hasPath();
-            else { Missing("M12-032 PathComponent.HasPathToFollow (0x004F0D9E); loop completion decision stopped"); return; }
+            else follow=robot.Motion.Path.HasPathToFollow;
             if (follow && result == 0) { PlayDrivingLoopAnim(); return; }
             if (_unlock) UnlockTracks();
             PlayEndAnim(); return;

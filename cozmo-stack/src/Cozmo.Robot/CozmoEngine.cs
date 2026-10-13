@@ -1136,6 +1136,7 @@ public sealed partial class EngineRobot
         if (!TimeSynced) return false;
         FirstFullStateHandled = true;
         StoredState = s;
+        Engine.PathSegmentRoute?.Invoke(s.CurrPathSegment); // M12-032 P17/P18, before origin validation.
         if (Engine.StateStored is { } stored) Engine.RunIsolated(() => stored(s));
         if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
         {
@@ -1280,6 +1281,7 @@ public sealed partial class EngineRobot
         // the read's 5 s synchronised-clock deadline. Streaming opens on the next Update: the streamer gate above
         // is computed before this runs (0x0051410C..0x0051411E before 0x0051416A).
         Engine.NvStorage?.Update();
+        if(Engine.PathComponentTick is {} pathTick)Engine.RunIsolated(pathTick); // M12-032 P28, after ActionList and NV.
         // fidelity: M4-010, M4-017, M4-018, M4-023
         // CD2/CD12: after that, BlockTapFilter (0x00513EA4), BlockFilter, CheckDisconnected, ConnectToRequested
         // (0x0051422A..0x00514236), CubeLight::Update(true) (0x00514468) and BodyLight (0x00514470).
