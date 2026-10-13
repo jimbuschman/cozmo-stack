@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-12",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "7ffd2453203e1b220c3650034f19fd547dd76e4ba865e1bc54fc60588a375b6a",
+  "inventory_sha256": "2eac51e3318c0e515470e7b7e13fbd862b5babb1c42cfc4f76fae303841e8022",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -333,6 +333,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m5-x9-extraction.md section 4f: GetSimpleMood 0x0067C084 (Default; Happy > 0.33f -> Happy; Confident < -0.29f -> Sad; Happy < -0.33f -> Sad; constants 0x0067C0C0..0x0067C0C8); the group draw reads MoodManager+0x130 (0x0058A95C), written only by MoodManager::Update(t) 0x0067B67E and Reset/ctor."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-027": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Dev test behaviours (FactoryTest, DockingTestSimple, LiftLoadTest) built twice at Robot construction: their raw robot-message subscriptions and handler bodies",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: BehaviorManager ctor 0x0050FCAC -> 0x005A08D6 -> BehaviorContainer 0x0059C324 and BehaviorSystemManager ctor 0x0050FCBE -> 0x005A5812 -> a second container from the same map; devBehaviors/factoryTest.json, dockingTestSimple.json, liftLoadTest.json ship and are loaded by LoadBehaviors 0x005206BC (recursive). FactoryTest ctor (CreateBehavior 0x0059CBF4) subscribes D6, F3, B8, EE, D2 ungated; DockingTestSimple (0x0059CA88) D3 gated on ctx+0x20 and its +0x60 (0x005CB18C/0x005CB190); LiftLoadTest (0x0059CD14) DA through the raw IBehavior overload 0x005D401A..0x005D4038 (dispatch 0x005BF2F8..0x005BF320). Known bodies: D2 0x005D0BD4 bx lr; B8 stores +0x1B3 (0x005D0998); DT D3 counters 0x005CB35C..0x005CB382."
       ],
       "live_path": true,
       "hardware_required": false

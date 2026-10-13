@@ -786,3 +786,11 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP | M2-018 robot-message subscriber order |
+
+
+## Check of R-SUBSCRIBERS (manager, 2026-10-13; research/20261013-robot-message-subscribers-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M2-018 |
+| New RECOVERABLE_GAP | M2-019 Impl D2/D3 handlers; M2-020 dispatch residue |

@@ -1329,3 +1329,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP (input to M5-011/M5-014) | M7-026 GetSimpleMood and MoodManager+0x130 |
+
+
+## Check of R-SUBSCRIBERS (manager, 2026-10-13; research/20261013-robot-message-subscribers-check.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP | M7-027 dev test behaviours built twice |
+| Notes appended | M7-018 |

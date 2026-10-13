@@ -78,7 +78,7 @@
       "name": "CLAD messages and protocol helpers",
       "milestone": "M2",
       "source_investigation_exhausted": false,
-      "implementation_fidelity_complete": true,
+      "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M2-protocol.md",
@@ -148,7 +148,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M7-behaviour.md",
-        "approved": "2026-10-12",
+        "approved": "2026-10-13",
         "snapshot": "re-analysis/inventory/M7-behaviour.approved.json"
       }
     },
@@ -6058,7 +6058,7 @@
         "class 0x39 BehaviorWait case constructs base IBehavior and installs the BehaviorWait vtable"
       ],
       "effect": "a shipped behaviour ID instantiates the wrong class, animation list or executable behavior",
-      "unresolved": "Opus verification of R-BEH2 batch 3 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-3.md): NOT YET. 76 of 79 classes report \"class not implemented\"; the second BehaviorContainer at robot+0x48 is unbuilt (use UNKNOWN); RequestAllBehaviorsList (0x0059C44C) is unbuilt; FistBump's seams are unset in production although SparksFistBump is bound; Behaviors.cs:67 uses Enum.TryParse, which accepts names the engine's map rejects; Implementable() builds duplicate objects. Before: built, awaiting strong verification: the container loop (0x0059c34c..0x0059c428), BehaviorClassFromString (cerr text, 0 = Bouncer), BehaviorIDFromString (cerr text, 0 = AcknowledgeFace; default 'IBeh.NoBehaviorIdSpecified'), AnimationTriggerFromString (cerr text, 0, only Count skipped), AddToFactory, the 79-way table (all 79 rows checked against the binary), FistBump (full state machine incl. the +0x84 gate, state-2 empty-callback turn, wrapped scan index N=2, terminal order, thresholds as bit patterns), ReactToSparked, and Hiccup's PlayAnim half are built. Config-built constructors exist for only PlayAnim, FistBump and ReactToSparked; the other 76 classes report 'class not implemented'. Still open: the second BehaviorContainer (robot+0x48) is not built and its use is UNKNOWN; RequestAllBehaviorsList (0x0059c44c..0x0059c676) is not built; FistBump's seams are MISSING in production (SmartPushIdleAnimation(0x23F = Count), EnableLiftPower/EnableHeadPower bodies, a live PanAndTiltAction (M13-020), BehaviorObjectiveAchieved's body and ordinals 7/8/9, the carry source); SparksFistBump is bound and can run live with those seams unset; ReactionTriggerStrategyFistBump/Hiccup/Sparked (M10) are not built, so the map rows for FistBump, Hiccup and Sparked remain unbound; Implementable() still hand-builds Hiccup, ReactToObstacle and six Feeding* PlayAnim objects that the container also builds (shadowed, dead in production); Behaviors.cs:67 Enum.TryParse is looser than the engine's name map.",
+      "unresolved": "Opus verification of R-BEH2 batch 3 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-3.md): NOT YET. 76 of 79 classes report \"class not implemented\"; the second BehaviorContainer at robot+0x48 is unbuilt (use UNKNOWN); RequestAllBehaviorsList (0x0059C44C) is unbuilt; FistBump's seams are unset in production although SparksFistBump is bound; Behaviors.cs:67 uses Enum.TryParse, which accepts names the engine's map rejects; Implementable() builds duplicate objects. Before: built, awaiting strong verification: the container loop (0x0059c34c..0x0059c428), BehaviorClassFromString (cerr text, 0 = Bouncer), BehaviorIDFromString (cerr text, 0 = AcknowledgeFace; default 'IBeh.NoBehaviorIdSpecified'), AnimationTriggerFromString (cerr text, 0, only Count skipped), AddToFactory, the 79-way table (all 79 rows checked against the binary), FistBump (full state machine incl. the +0x84 gate, state-2 empty-callback turn, wrapped scan index N=2, terminal order, thresholds as bit patterns), ReactToSparked, and Hiccup's PlayAnim half are built. Config-built constructors exist for only PlayAnim, FistBump and ReactToSparked; the other 76 classes report 'class not implemented'. Still open: the second BehaviorContainer (robot+0x48) is not built and its use is UNKNOWN; RequestAllBehaviorsList (0x0059c44c..0x0059c676) is not built; FistBump's seams are MISSING in production (SmartPushIdleAnimation(0x23F = Count), EnableLiftPower/EnableHeadPower bodies, a live PanAndTiltAction (M13-020), BehaviorObjectiveAchieved's body and ordinals 7/8/9, the carry source); SparksFistBump is bound and can run live with those seams unset; ReactionTriggerStrategyFistBump/Hiccup/Sparked (M10) are not built, so the map rows for FistBump, Hiccup and Sparked remain unbound; Implementable() still hand-builds Hiccup, ReactToObstacle and six Feeding* PlayAnim objects that the container also builds (shadowed, dead in production); Behaviors.cs:67 Enum.TryParse is looser than the engine's name map. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the second BehaviorContainer is BehaviorSystemManager's (0x0050FCBE -> 0x005A5812), built from the same map, so every behaviour is instantiated twice; the dev test behaviours' constructor subscriptions are M7-027.",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests",
@@ -6431,14 +6431,49 @@
       "subsystem": "M2-protocol",
       "title": "Robot-message subscriber dispatch: per-robot signal before wildcard, registration order, synchronous; which subscribers take each tag (0xC0 first)",
       "location": "cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-play-area-check.md section D: ProcessMessages 0x0069D85C..0x0069DAEA, Broadcast 0x0069DC82..0x0069DCB4, emitter 0x0069DE24..0x0069DE74 (robot signal then wildcard), connect 0x0051D874..0x0051D8A2 and emit 0x0069E274..0x0069E2B2 (registration order, re-reading the sentinel), HandleCliffEvent registration 0x00532B80..0x00532B8A via 0x00519F8C."
+        "re-analysis/research/20261013-play-area-check.md section D: ProcessMessages 0x0069D85C..0x0069DAEA, Broadcast 0x0069DC82..0x0069DCB4, emitter 0x0069DE24..0x0069DE74 (robot signal then wildcard), connect 0x0051D874..0x0051D8A2 and emit 0x0069E274..0x0069E2B2 (registration order, re-reading the sentinel), HandleCliffEvent registration 0x00532B80..0x00532B8A via 0x00519F8C.",
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: 35 callers of 0x00519F8C (no other route); registration order at connection (test behaviours twice in the Robot ctor, then Path C6, NVStorage/Backup C9, CubeAccel F5, BlockTapFilter B6/B4/B5, Impl/TracePrinter B0/CF/EC, Impl Init 37 subscriptions 0x00510348, then the RIC D2/EE/C9, ED on OnNotified 0x0052DE34); the per-tag order table; append 0x0051D874..0x0051D8A2, emit 0x0069E274..0x0069E2B2 (an appended subscriber is reached), unlink 0x0051D338..0x0051D3A4, scoped disconnect 0x0051D8F8..0x0051D932."
       ],
       "effect": "The order in which handlers of the same robot message run (for example HandleCliffEvent against other 0xC0 subscribers).",
       "provenance": "Opus check of R-PLAY-AREA (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: the dispatch mechanism is read; which of the ~35 callers of 0x00519F8C (IBehavior::SubscribeToTags 0x005BCA4C, BlockTapFilterComponent, CubeAccelComponent, the actions) subscribe to which tags, and when, is unread. Then compare the stack's subscription order.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-robot-message-subscribers-check.md): build per-tag, registration-ordered dispatch (job B-M3M4-18), replacing the stack's fixed class order. Absent subscribers keep their place as visible MISSINGs: M2-019 (D2, D3 Impl handlers), M7-027 (test behaviours), M15-033 (Backup C9). Residue: M2-020. Previous notes: RECOVERABLE_GAP: the dispatch mechanism is read; which of the ~35 callers of 0x00519F8C (IBehavior::SubscribeToTags 0x005BCA4C, BlockTapFilterComponent, CubeAccelComponent, the actions) subscribe to which tags, and when, is unread. Then compare the stack's subscription order.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M2-019",
+      "subsystem": "M2-protocol",
+      "title": "RobotToEngineImplMessaging subscribers the stack lacks: HandleFWVersionInfo (D2) and HandleDockingStatus (D3)",
+      "location": "cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: Impl Init subscribes D2 -> HandleFWVersionInfo (bind 0x00532AC4, body 0x00533348) and D3 -> HandleDockingStatus (bind 0x00532C84, body 0x00536F1C, logs); neither is subscribed in the stack."
+      ],
+      "effect": "What the engine logs or does on a firmware-version message and on each docking-status message.",
+      "provenance": "Opus check of R-SUBSCRIBERS (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the two bodies (0x00533348.., 0x00536F1C..) completely: logs (key, format, address), state writes, and anything they forward.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M2-020",
+      "subsystem": "M2-protocol",
+      "title": "Robot-message dispatch residue: Broadcast callers passing robot ID 0x1CF, early-unsubscribe paths, destruction during an emit, load completion before AddRobot",
+      "location": "cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: Emitter 0x0069DE18: robot ID == MessageHandler+0x1C (0x1CF, set 0x0069D004/0x0069D00E) emits every robot signal for the tag (0x0069DE32..0x0069DE4E); otherwise the robot signal, then the 0x1CF signal (0x0069DE50..0x0069DE74). LoadBehaviors is called from LoadNonConfigData 0x0051F452; its order against AddRobot is unread."
+      ],
+      "effect": "Which subscribers a message reaches in the rare paths, and whether behaviours exist before a robot connects.",
+      "provenance": "Opus check of R-SUBSCRIBERS (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: find Broadcast callers that pass 0x1CF; read each subscriber's early-unsubscribe path (only the RIC's, 0x0052DFA4, is read); owner/signal destruction during an emit; the engine load/connect gating (LoadNonConfigData before AddRobot).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -7058,7 +7093,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CozmoCubes: the tap filter is on from construction and EnableBlockTapFilter toggles it (CD10d); intensity = tapPos - tapNeg, <= 60 dropped, an unknown id dropped with a warning, taps on a physical robot with the filter on queued for 75 ms from the first and only the strongest broadcast (strictly greater wins, so the earliest wins a tie), otherwise broadcast at once, then CheckForDoubleTap (CD10e, CD10f); the 500 ms double-tap window, BTF Moved/Stopped moving flag and ShouldIgnoreMovementDueToDoubleTap (CD10g). The MarkObjectDirty after a pending entry expires is BlockWorld's (M11 interface). Verifier round (2026-09-25, corrections C1..C5): when a pending double-tap entry ends in BTF Update, the located copy is marked dirty through BlockWorld.MarkDirty, which acts on a Known pose only (+0x24 == 1; 0x006311A2..0x006313D8; CozmoCubes.DoubleTapPendingEnded -> VisionSystem); a Moved inside the window returns before the world's SetMoving and MarkDirty.",
-      "unresolved": null,
+      "unresolved": " R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): code defect: the stack omits BlockTapFilter's ObjectIDNull warnings (\"Could not find match for active object ID %d\", 0x00630DE8..0x00630DFA, 0x00630F1C..0x00630F2E) and runs the tap filter after Impl's handler; natively BlockTapFilter subscribes B4/B5 first. The handler entry and lookup 0x00630D98..0x00630DC2 precede the cited range. Fix in B-M3M4-18.",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_023_CD10e_CD10f_TapsAreFilteredAndOnlyTheStrongestIsBroadcast, M4ControlTests.M4_023_CD10d_CD10g_TheDoubleTapWindowSuppressesMovement, M4ControlTests.M4_023_CD10g_TheDoubleTapWindowReachesTheWorld"
@@ -9877,7 +9912,7 @@
       ],
       "effect": "The $player_id DAS global.",
       "provenance": "Opus check of B-M3M4-12 (2026-10-12), manager record.",
-      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09): the stack supplies the platform value from its own settings; the MD5 and the sSetGlobal stay exact (M3-055). Manager decision 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): the stack keeps a persisted device-ID string in its own settings, created once as a new UUID (the Java DAS.getDeviceID role, DAS.java:159-242). B-M3M4-13 (2026-10-12), built, awaiting strong verification: Persisted DasDeviceIdPath host setting (default persistent data/device-id), first line or newly saved UUID; lowercase MD5 from UTF8 bytes supplies exact $player_id call. Opus check of B-M3M4-13 (re-analysis/research/20261012-b-m3m4-13-check.md): the stack differs from DAS.java:159-242 on a zero-byte file (Java generates and writes a new ID; the stack used \"\") and on a failed create/write (Java swallows and still returns the new ID; the stack throws). Fix in B-M3M4-15.\nB-M3M4-15 built, awaiting strong verification: DAS.java:159-242 host device-ID loader preserves a first line (including empty string), generates lowercase Java v4 form for zero bytes/read failure, overwrites and writes LF, swallows failed directory/create/write and still returns the new ID; startup always has the new MD5 input. DAS-specific test fixtures all set temporary DasDeviceIdPath; no DAS test touches LOCALAPPDATA.",
+      "unresolved": "COMPATIBILITY_POLICY (scope rule, operator 2026-10-09): the stack supplies the platform value from its own settings; the MD5 and the sSetGlobal stay exact (M3-055). Manager decision 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): the stack keeps a persisted device-ID string in its own settings, created once as a new UUID (the Java DAS.getDeviceID role, DAS.java:159-242). B-M3M4-13 (2026-10-12), built, awaiting strong verification: Persisted DasDeviceIdPath host setting (default persistent data/device-id), first line or newly saved UUID; lowercase MD5 from UTF8 bytes supplies exact $player_id call. Opus check of B-M3M4-13 (re-analysis/research/20261012-b-m3m4-13-check.md): the stack differs from DAS.java:159-242 on a zero-byte file (Java generates and writes a new ID; the stack used \"\") and on a failed create/write (Java swallows and still returns the new ID; the stack throws). Fix in B-M3M4-15.\nB-M3M4-15 built, awaiting strong verification: DAS.java:159-242 host device-ID loader preserves a first line (including empty string), generates lowercase Java v4 form for zero bytes/read failure, overwrites and writes LF, swallows failed directory/create/write and still returns the new ID; startup always has the new MD5 input. DAS-specific test fixtures all set temporary DasDeviceIdPath; no DAS test touches LOCALAPPDATA. B-M3M4-15 check (re-analysis/research/20261013-b-m3m4-15-check.md): the stack strips a UTF-8 BOM (StreamReader BOM detection); Java FileReader keeps U+FEFF and decodes as UTF-8. Fix in B-M3M4-18.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X13BuilderTests.StartupDeviceIdIsPersistedAndFailedFlushRunsOnWorkerWithEmptyKv; M3M4X15BuilderTests; M3M4X12BuilderTests; M3M4X13BuilderTests"
@@ -10765,6 +10800,23 @@
       "test": ""
     },
     {
+      "id": "M7-027",
+      "subsystem": "M7-behaviour",
+      "title": "Dev test behaviours (FactoryTest, DockingTestSimple, LiftLoadTest) built twice at Robot construction: their raw robot-message subscriptions and handler bodies",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: BehaviorManager ctor 0x0050FCAC -> 0x005A08D6 -> BehaviorContainer 0x0059C324 and BehaviorSystemManager ctor 0x0050FCBE -> 0x005A5812 -> a second container from the same map; devBehaviors/factoryTest.json, dockingTestSimple.json, liftLoadTest.json ship and are loaded by LoadBehaviors 0x005206BC (recursive). FactoryTest ctor (CreateBehavior 0x0059CBF4) subscribes D6, F3, B8, EE, D2 ungated; DockingTestSimple (0x0059CA88) D3 gated on ctx+0x20 and its +0x60 (0x005CB18C/0x005CB190); LiftLoadTest (0x0059CD14) DA through the raw IBehavior overload 0x005D401A..0x005D4038 (dispatch 0x005BF2F8..0x005BF320). Known bodies: D2 0x005D0BD4 bx lr; B8 stores +0x1B3 (0x005D0998); DT D3 counters 0x005CB35C..0x005CB382."
+      ],
+      "effect": "Logs and state changes the shipped test behaviours make on robot messages, before the engine's own handlers for the same tags.",
+      "provenance": "Opus check of R-SUBSCRIBERS (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the FactoryTest handler bodies 0x005D0864..0x005D0BD4 (D6 logs; F3 0x005D0930; EE 0x005D09A0; EE 0x005D067A), LiftLoadTest's DA virtuals (+0x6C/+0x78), the DT gate inputs, and whether anything else these constructors do is observable. The double instantiation is the shipped behaviour (exact rule): reproduce it.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
       "id": "M8-018",
       "subsystem": "M8-framework",
       "title": "SDK ResetRobot recipient dispatch",
@@ -11090,7 +11142,7 @@
       "evidence": [
         "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass)."
       ],
-      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then.",
+      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the Backup manager subscribes C9 in the NVStorage constructor (0x00519B78, gated on HasExternalInterface 0x00519B34) -> RobotConnected 0x0051A010 (unread), first on C9 before Impl and the RIC.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

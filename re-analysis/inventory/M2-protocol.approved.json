@@ -2,7 +2,7 @@
   "subsystem": "M2-protocol",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "b39ca3df790256319ecb84c0333a265eae2e0b561b1c134f623d8fd4ace6ca9e",
+  "inventory_sha256": "beedadaacde0eae9826b7b65bc5ea459726c27f2061ba5eb9d5f76b7fc7f3bb5",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -223,11 +223,32 @@
       "hardware_required": false
     },
     "M2-018": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Robot-message subscriber dispatch: per-robot signal before wildcard, registration order, synchronous; which subscribers take each tag (0xC0 first)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-play-area-check.md section D: ProcessMessages 0x0069D85C..0x0069DAEA, Broadcast 0x0069DC82..0x0069DCB4, emitter 0x0069DE24..0x0069DE74 (robot signal then wildcard), connect 0x0051D874..0x0051D8A2 and emit 0x0069E274..0x0069E2B2 (registration order, re-reading the sentinel), HandleCliffEvent registration 0x00532B80..0x00532B8A via 0x00519F8C."
+        "re-analysis/research/20261013-play-area-check.md section D: ProcessMessages 0x0069D85C..0x0069DAEA, Broadcast 0x0069DC82..0x0069DCB4, emitter 0x0069DE24..0x0069DE74 (robot signal then wildcard), connect 0x0051D874..0x0051D8A2 and emit 0x0069E274..0x0069E2B2 (registration order, re-reading the sentinel), HandleCliffEvent registration 0x00532B80..0x00532B8A via 0x00519F8C.",
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: 35 callers of 0x00519F8C (no other route); registration order at connection (test behaviours twice in the Robot ctor, then Path C6, NVStorage/Backup C9, CubeAccel F5, BlockTapFilter B6/B4/B5, Impl/TracePrinter B0/CF/EC, Impl Init 37 subscriptions 0x00510348, then the RIC D2/EE/C9, ED on OnNotified 0x0052DE34); the per-tag order table; append 0x0051D874..0x0051D8A2, emit 0x0069E274..0x0069E2B2 (an appended subscriber is reached), unlink 0x0051D338..0x0051D3A4, scoped disconnect 0x0051D8F8..0x0051D932."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-019": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotToEngineImplMessaging subscribers the stack lacks: HandleFWVersionInfo (D2) and HandleDockingStatus (D3)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: Impl Init subscribes D2 -> HandleFWVersionInfo (bind 0x00532AC4, body 0x00533348) and D3 -> HandleDockingStatus (bind 0x00532C84, body 0x00536F1C, logs); neither is subscribed in the stack."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-020": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Robot-message dispatch residue: Broadcast callers passing robot ID 0x1CF, early-unsubscribe paths, destruction during an emit, load completion before AddRobot",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: Emitter 0x0069DE18: robot ID == MessageHandler+0x1C (0x1CF, set 0x0069D004/0x0069D00E) emits every robot signal for the tag (0x0069DE32..0x0069DE4E); otherwise the robot signal, then the 0x1CF signal (0x0069DE50..0x0069DE74). LoadBehaviors is called from LoadNonConfigData 0x0051F452; its order against AddRobot is unread."
       ],
       "live_path": true,
       "hardware_required": false
