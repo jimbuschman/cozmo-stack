@@ -1483,8 +1483,9 @@ internal sealed class RobotInitialConnection
         byte c = (byte)(id.BodyColor & 0xFF);
         if (c is 0 or 2 or 3 or 4) BodyColor = (sbyte)c;
         else { _engine.EmitStackLog($"error: RobotInitialConnection: bad body colour {c}"); BodyColor = -1; }
-        SessionId = Guid.NewGuid();
-        _engine.Das.SetGlobal("$session_id", SessionId.Value.ToString()); // fidelity: M3-055 — 0x0052E38A.
+        string sessionText = EngineUuid.GetUUIDString();
+        SessionId = Guid.Parse(sessionText); // typed host view; DAS retains native byte order and case.
+        _engine.Das.SetGlobal("$session_id", sessionText); // fidelity: M3-055 — 0x0052E38A.
         SendConnectionResponse(RobotConnectionResult.Success, fw);
         // fidelity: M3-033, M3-034, M1-028
         // 0x52E3AA: ReadLabAssignmentsFromRobot (CozmoExperiments, 0x6A5B1E) queues NV 0x196000; the lab layer

@@ -9,7 +9,8 @@ namespace Cozmo.Protocol.Tests;
 public class M3M4X12BuilderTests : IDisposable
 {
     private readonly bool _error = EngineErrorState.ErrorFlagSet;
-    public void Dispose() => EngineErrorState.ErrorFlagSet = _error;
+    private readonly string _dasRoot = Directory.CreateTempSubdirectory("das12-").FullName;
+    public void Dispose() { EngineErrorState.ErrorFlagSet = _error; Directory.Delete(_dasRoot, true); }
 
     [Fact]
     public void DropCountUsesUnsignedMaximumAndStoresBeforeSourceEvent()
@@ -41,7 +42,7 @@ public class M3M4X12BuilderTests : IDisposable
         bool? success = null; string? response = null; bool? pausedAtNeedsEdge = null;
         using var completed = new ManualResetEventSlim();
         using var robot = CozmoRobot.CreateForTest(new Port(), () => 0,
-            new CozmoEngineOptions { DataCollectionEnabled = enabled }, engineCreated: e =>
+            new CozmoEngineOptions { DataCollectionEnabled = enabled, DasDeviceIdPath = Path.Combine(_dasRoot, "id") }, engineCreated: e =>
             {
                 e.Das.CallObserved = calls.Add; e.StackLogLine += missing.Add;
                 e.ConnectToRobotHandled += () => pausedAtNeedsEdge = e.Das.Paused;

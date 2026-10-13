@@ -1005,7 +1005,7 @@ public sealed class BlockWorld
         var candidate = input.Compose(new Pose3d(Mat3.Identity, new Vec3(0, 0, size.Z * 0.5)));
         // Candidate family 6/type15, activeID -1, factoryID0; the first unknown helper is InitPose(state1).
         // No object is inserted: its acceptance and identity depend on the unrecovered helpers below.
-        missing("MISSING: M11-062 AddMarkerlessObject(type15) InitPose/SetPose(state1) 0x00622390; candidate not inserted");
+        missing("MISSING: M11-062 AddMarkerlessObject(type15) 0x00622380: InitPose/SetPose(state1) unbuilt helper; candidate not inserted; later family-6 operator[] emplace 0x0062249A and Robot::GetPose VERIFY checks also missing");
         missing("MISSING: M11-062 cliff overlap IsSameAs 0x0061FD8C/0x00502B08 and intersection predicate 0x00622908..0x0062297C; acceptance not guessed (allowed families 2,6 when localized)");
         missing("MISSING: M11-062 cliff SetID, DeleteIntersectingObjects, GetBoundingQuad and broadcast 0x008CAD1C; BlockWorld.AddLocatedObject and robot.object_located wait for a source-established insertion");
         missing("MISSING: M13-030 cliff MemoryMap insert/QuadTree/helper+0x38 0x00684984/0x006226EA; no navigation-map mutation");

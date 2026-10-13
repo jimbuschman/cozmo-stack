@@ -118,17 +118,26 @@ public sealed partial class CozmoEngine
     {
         string path = Options.DasDeviceIdPath ?? Path.Combine(
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cozmo-stack"), "device-id");
-        if (File.Exists(path)) return File.ReadLines(path, Encoding.UTF8).FirstOrDefault() ?? "";
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
-        string id = Guid.NewGuid().ToString();
         try
         {
-            using var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
-            using var writer = new StreamWriter(file, new UTF8Encoding(false));
-            writer.WriteLine(id);
-            return id;
+            if (File.Exists(path))
+            {
+                using var reader = new StreamReader(path, Encoding.UTF8);
+                if (reader.ReadLine() is { } stored) return stored; // empty line is an ID; zero bytes is null.
+            }
         }
-        catch (IOException) when (File.Exists(path)) { return File.ReadLines(path, Encoding.UTF8).FirstOrDefault() ?? ""; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Security.SecurityException) { }
+        string id = Guid.NewGuid().ToString(); // Java UUID.randomUUID().toString(), lowercase v4.
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+            using var file = new FileStream(path, FileMode.Create, FileAccess.Write);
+            using var writer = new StreamWriter(file, new UTF8Encoding(false)) { NewLine = ((char)10).ToString() };
+            writer.WriteLine(id);
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or System.Security.SecurityException) { }
+        return id; // DAS.java returns the new ID even when mkdir/create/write fails.
+
     }
 
     // fidelity: M3-056 — host supplies the app's RequestDataCollectionOption bool, default off at startup.

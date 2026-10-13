@@ -9,11 +9,19 @@ namespace Cozmo.Protocol.Tests;
 public sealed class M3M4X13BuilderTests : IDisposable
 {
     private readonly bool _error = EngineErrorState.ErrorFlagSet;
-    public void Dispose() => EngineErrorState.ErrorFlagSet = _error;
+    private readonly string _dasRoot = Directory.CreateTempSubdirectory("das13-fixture-").FullName;
+    public void Dispose() { EngineErrorState.ErrorFlagSet = _error; Directory.Delete(_dasRoot, true); }
+    private CozmoRobot TestRobot()
+    {
+        var robot = CozmoRobot.CreateForTest(new Port(), () => 0,
+            new CozmoEngineOptions { DasDeviceIdPath = Path.Combine(_dasRoot, Guid.NewGuid().ToString()) });
+        robot.Engine.InitOfflineLink(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 5551));
+        return robot;
+    }
     [Fact]
     public void OriginNamesWalkParentsBoundTheLoopAndDuplicateDoesNotAdvance()
     {
-        using var robot = CozmoRobot.CreateOffline();
+        using var robot = TestRobot();
         var state = robot.Engine.Robot!;
         Assert.Equal("Origin1", state.OriginNames.Get(1)!.Name);
         Assert.True(state.AddOriginWithId(9)); Assert.Equal(10u, state.OriginNames.NextId);
@@ -32,7 +40,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
     [Fact]
     public void GlobalClearGameSpecialCaseAndLiveNativeFieldsReachDas()
     {
-        using var robot = CozmoRobot.CreateOffline(); var das = robot.Engine.Das;
+        using var robot = TestRobot(); var das = robot.Engine.Das;
         das.SetGlobal("a", "v"); das.SetGlobal("a", ""); Assert.DoesNotContain("a", das.GetGlobalsForThisRun().Keys);
         das.SetGlobal("$game", "g"); Assert.Equal("g", das.GameAppenderName);
         das.SetGlobal("$game", ""); Assert.Null(das.GameAppenderName);
@@ -70,7 +78,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
     [Fact]
     public void CliffUnknownHistoryStaysVisibleAndKnownBranchesLogBeforeErrorFlag()
     {
-        using var robot = CozmoRobot.CreateOffline(); var missing = new List<string>(); var entries = new List<EngineLogEntry>();
+        using var robot = TestRobot(); var missing = new List<string>(); var entries = new List<EngineLogEntry>();
         robot.Engine.StackLogLine += missing.Add; robot.Engine.LogEntry += entries.Add;
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 111, DetectedFlags = 1 });
         Assert.Contains(missing, s => s.Contains("M11-051/M11-053")); Assert.Empty(entries);
@@ -106,7 +114,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
     [Fact]
     public void DifferentIdsWarningUsesFirstLocatedIdThenThisIdAndRootNames()
     {
-        using var robot = CozmoRobot.CreateOffline();
+        using var robot = TestRobot();
         using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
         var world = vision.World;
         world.AddLocatedObject(new ObservableObject(41, ObjectType.Block_LIGHTCUBE1, Array.Empty<KnownMarker>()) { ActiveId = 0, OriginId = 1, PoseState = PoseState.Known });
