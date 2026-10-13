@@ -8160,7 +8160,7 @@
       "hardware_required": false,
       "effect": "objects are created, updated and forgotten each frame",
       "provenance": "the stack's BlockWorld frame update is to be compared against the engine's sequence",
-      "unresolved": "BUILT: the empty-list branch (this+0x90 = 0; the last image timestamp, not the frame's, decides whether ClearOccluders/AddLiftOccluder/CheckForUnobservedObjects run; never UpdatePoseOfStackedObjects), the r7 == 1 gate and its tail (this+0x74, BlockConfigurationManager::Update hook, UpdateMarkerlessObjects(last image timestamp)), CheckForUnobservedObjects (early returns; the candidate test is only GetLastVisuallyMatchedTime(ID) < ts, the getter reading [confirmer entry+0x30], 0 without an entry), UpdatePoseOfStackedObjects with the PoseChange list, AddObjectRelativeObservation, UpdateMarkerlessObjects (expiry built), AddLiftOccluder with the translation length and SetPhysicalRobot's eight points, with a catch-up for a vision system built after the firmware version (EngineRobot.PhysicalRobotRecorded, this stack's own record set with a full fence before the event is raised; independent of the audio output source; the engine order Robot::SetPhysicalRobot 0x00536980 before RobotAudioClient::SetOutputSource 0x0053698E is kept). NOT BUILT, visible: the xPad/yPad terms of CheckForUnobservedObjects (0x0062206E..0x006220DA: the calib+4/+8 and node+0x18/+0x1C field names are unread; both pads are 0, BlockWorld.PaddingIsBuilt is false), the collision dirty pass (CheckForCollisionWithRobot needs ObservableObject vtable +0x58, DockingComponent+4 unread; UnbuiltCollisionDirtyPassRuns), the RemovingIntersectWithRobot test (markerless GetBoundingQuadXY unread, M13-023: NotSupportedException), OnObjectPoseChanged's body beyond the this+0x74 gate (a null old pose appends nothing), the BlockConfigurationManager gate and its SetObjectPoseChanged set (M12), the play-area-size event, the readers of this+0x54/+0x58 (the fields are written). UNSOURCED STAND-IN: Robot::GetLastImageTimeStamp is a Vision::Camera getter (0x00516EC0: ldr r0,[r0,#0x258]; b 0x8CAE6C); the BlockWorld.LastImageTimestamp hook (VisionSystem) is the larger of the last received camera frame's timestamp and the frame being processed, which no citation supports. The r7 failure path is reachable only through LocalizeToObject's failure result (LocalizeRobot returns it).",
+      "unresolved": "BUILT: the empty-list branch (this+0x90 = 0; the last image timestamp, not the frame's, decides whether ClearOccluders/AddLiftOccluder/CheckForUnobservedObjects run; never UpdatePoseOfStackedObjects), the r7 == 1 gate and its tail (this+0x74, BlockConfigurationManager::Update hook, UpdateMarkerlessObjects(last image timestamp)), CheckForUnobservedObjects (early returns; the candidate test is only GetLastVisuallyMatchedTime(ID) < ts, the getter reading [confirmer entry+0x30], 0 without an entry), UpdatePoseOfStackedObjects with the PoseChange list, AddObjectRelativeObservation, UpdateMarkerlessObjects (expiry built), AddLiftOccluder with the translation length and SetPhysicalRobot's eight points, with a catch-up for a vision system built after the firmware version (EngineRobot.PhysicalRobotRecorded, this stack's own record set with a full fence before the event is raised; independent of the audio output source; the engine order Robot::SetPhysicalRobot 0x00536980 before RobotAudioClient::SetOutputSource 0x0053698E is kept). NOT BUILT, visible: the xPad/yPad terms of CheckForUnobservedObjects (0x0062206E..0x006220DA: the calib+4/+8 and node+0x18/+0x1C field names are unread; both pads are 0, BlockWorld.PaddingIsBuilt is false), the collision dirty pass (CheckForCollisionWithRobot needs ObservableObject vtable +0x58, DockingComponent+4 unread; UnbuiltCollisionDirtyPassRuns), the RemovingIntersectWithRobot test (markerless GetBoundingQuadXY unread, M13-023: NotSupportedException), OnObjectPoseChanged's body beyond the this+0x74 gate (a null old pose appends nothing), the BlockConfigurationManager gate and its SetObjectPoseChanged set (M12), the play-area-size event, the readers of this+0x54/+0x58 (the fields are written). UNSOURCED STAND-IN: Robot::GetLastImageTimeStamp is a Vision::Camera getter (0x00516EC0: ldr r0,[r0,#0x258]; b 0x8CAE6C); the BlockWorld.LastImageTimestamp hook (VisionSystem) is the larger of the last received camera frame's timestamp and the frame being processed, which no citation supports. The r7 failure path is reachable only through LocalizeToObject's failure result (LocalizeRobot returns it). Read 2026-10-13 (re-analysis/research/20261013-blockworld-flag-and-map-helper.md): the BlockWorld+0x74 window (set 0x00624F7E, clear 0x006250D8, cleared list 0x00624F78) and UpdatePoseOfStackedObjects 0x00621794..0x00621AF4 (walks entries appended during the walk; GetLocatedObjectByIdHelper miss logs BlockWorld.UpdateStacks 0x00BF8819 / 0x00621C20; clone + InitPose(oldPose, oldState); filter ignores {id} and families {6,7}, predicate obj+0x1C + 100 < lastImageTimeStamp (0x00629BAE); FindObjectOnTopOrUnderneathHelper(clone, 15.0f, filter, true); skip carried or queued; OriginMismatch warning 0x00621BDC/0x00BF87C4; AddObjectRelativeObservation, AddRelativeObservationFailed warning 0x00BF877B/0x00621C04 and continue; delete clone; list not cleared). The error return after AddAndUpdateFailed skips the clear and the tail (M11-064). The play-area event at the start (M11-064).",
       "evidence": [
         "BlockWorld::UpdateObservedMarkers 0x00624EE8: non-empty path is ClearOccluders 0x00624F98, AddLiftOccluder 0x00624FA4, CreateObjectsFromMarkers 0x00624FC4, AddAndUpdateObjects 0x0062505A, then (on its success) CheckForUnobservedObjects 0x006250CA, UpdatePoseOfStackedObjects 0x006250D0, BlockConfigurationManager::Update 0x0062520C, UpdateMarkerlessObjects 0x0062521A; the empty-list branch 0x625020 does ClearOccluders, AddLiftOccluder, CheckForUnobservedObjects 0x0062504E and skips the stacked-pose update. AddLiftOccluder body 0x6564D8 (raw state at the timestamp, Robot::GetLiftTransformWrtCamera, Transform3d::ApplyTo, Camera::Project3dPoints, Camera::AddOccluder with the transform z scale); BlockConfigurationManager::Update body 0x616D7C (DidAnyObjectsMovePastThreshold gate, UpdateAllBlockConfigs, PruneFullPyramids, UpdateLastConfigCheckBlockPoses, NotifyBroadcasterOfConfigurationManagerUpdate). UpdatePoseOfStackedObjects 0x621794 and UpdateMarkerlessObjects 0x625704 are cross-layer entry points (M10/M12)",
         "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md (items 4a, 4b PASS)",
@@ -8364,7 +8364,7 @@
         "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md 'not done'; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md 'Open'; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "read each item; OpenCV numerics may be exact black boxes only if the shipped OpenCV is emulated (the emu tools in re-analysis/tools/emu). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): still unread for the cliff insert: GetOverlapType and FastPolygon ctor/Contains (0x00688290 and callees), UpgradeRootLevel body 0x006876FA..0x006879C0, ShiftRoot 0x00686DF8..0x0068743E, processor bodies 0x00688E50..0x006890AA and 0x0068928C..0x0068934C, ClearDescendants 0x00687E1C, SwapChildrenAndContent 0x00687600, DestroyNodes 0x0068768A.",
+      "unresolved": "read each item; OpenCV numerics may be exact black boxes only if the shipped OpenCV is emulated (the emu tools in re-analysis/tools/emu). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): still unread for the cliff insert: GetOverlapType and FastPolygon ctor/Contains (0x00688290 and callees), UpgradeRootLevel body 0x006876FA..0x006879C0, ShiftRoot 0x00686DF8..0x0068743E, processor bodies 0x00688E50..0x006890AA and 0x0068928C..0x0068934C, ClearDescendants 0x00687E1C, SwapChildrenAndContent 0x00687600, DestroyNodes 0x0068768A. Also unread: MemoryMap vt+0xC (the merge used by UpdateMapOrigins, slot 0x0067DF78) and its null-argument handling (M13-032).",
       "hardware_required": false,
       "live_path": true,
       "test": "VisionTests"
@@ -9281,14 +9281,32 @@
       "subsystem": "M13-navigation",
       "title": "GetCurrentMemoryMapHelper null result: reachability (callers dereference it unchecked)",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-cliff-world-helpers-check.md: GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88 returns null when MapComponent+0x1C == UnknownOriginID (GOT 0x0103E978) or no map exists; AddMarkerlessObject dereferences it at 0x006225FE->0x00622610 and 0x006226F4, ClearLocatedObjectHelper at 0x00625E96, with no check."
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88 returns null when MapComponent+0x1C == UnknownOriginID (GOT 0x0103E978) or no map exists; AddMarkerlessObject dereferences it at 0x006225FE->0x00622610 and 0x006226F4, ClearLocatedObjectHelper at 0x00625E96, with no check.",
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md Q2: the helper (0x0067EA5C..0x0067EA88; UnknownOriginID = 0 at 0x00C97B20) is never null once Robot::Robot has run Delocalize(false) (0x00510324), which creates map 1 and sets +0x1C; +0x1C changes only with a matching map (CreateLocalizedMemoryMap 0x0067E9AE, UpdateMapOrigins 0x0067DF84), and the current origin's map is never erased (IsZombiePoseOrigin 0x00620AB8..0x00620AD2). Also dereferenced unchecked by the play-area event 0x00624F2E."
       ],
       "effect": "Whether adding a cliff or deleting an object can crash the original (and so needs an operator ruling) or the null state is unreachable.",
       "provenance": "Opus check of R-CLIFF-WORLD (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read MapComponent map creation and the +0x1C writers; decide whether a null helper is reachable when AddMarkerlessObject or ClearLocatedObjectHelper runs. Until then the stack gives a visible MISSING naming this record at those points.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-blockworld-flag-and-map-helper.md): unreachable with a robot (only a 2^32 origin-ID wrap, or teardown, unread). Build: the stack keeps the same invariant through M13-032 (the map exists from robot construction), so no null branch and no MISSING are needed at the dereference points. Previous notes: RECOVERABLE_GAP: read MapComponent map creation and the +0x1C writers; decide whether a null helper is reachable when AddMarkerlessObject or ClearLocatedObjectHelper runs. Until then the stack gives a visible MISSING naming this record at those points.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M13-032",
+      "subsystem": "M13-navigation",
+      "title": "MapComponent memory-map lifecycle: constructor (+0x1C Unknown, no map), CreateLocalizedMemoryMap on delocalize (zombie/keep-alive events, create, +0x1C), UpdateMapOrigins on re-localize (NullMapFound, merge, +0x1C, erase old)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: MapComponent ctor 0x0067D9A4..0x0067D9CA; CreateLocalizedMemoryMap 0x0067E85C..0x0067E9B4 (deleting_zombie_map 0x0067EA28 / keeping_alive_map 0x0067E9F8 print the argument origin; IsZombiePoseOrigin 0x00620AB8..0x00620AD2; CreateMemoryMap 0x0068133C..0x00681354 never null); only caller BlockWorld::OnRobotDelocalized 0x006249C4..0x006249EC (DeleteObjectsFromZombieOrigins 0x00620920..0x00620A04 first); Robot::Robot calls Delocalize(false) at 0x00510324 after constructing BlockWorld, MapComponent and PoseOriginList (next origin ID starts at 1, 0x00847934); UpdateMapOrigins 0x0067DE3C..0x0067DF96 (NullMapFound 0x0067DFE0/0x0067E010, merge vt+0xC 0x0067DF80, +0x1C 0x0067DF84, erase old 0x0067DF8A), only from LocalizeToObject after a successful Rejigger 0x0051590C."
+      ],
+      "effect": "Which memory maps exist, the zombie/keep-alive DAS events, and that the current map helper is never null with a robot.",
+      "provenance": "Opus extractor read of M11-063/M13-031 (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: build in job B-M3M4-16. Unread: the MemoryMap merge (vt+0xC, slot 0x0067DF78) and its null-argument handling (M11-048); the Robot destructor teardown order.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -10934,7 +10952,7 @@
       ],
       "effect": "Whether a detected cliff is added, merged or blocked in BlockWorld.",
       "provenance": "Opus check of R-M4-CLIFF (2026-10-12), manager record.",
-      "unresolved": "Read 2026-10-13 (re-analysis/research/20261012-cliff-world-helpers-check.md): build from the rows (job B-M3M4-16). Reused, not owned: cv::minAreaRect/RotatedRect::points (M13-024), SortCornersClockwise ties (M13-023), FindObjectOnTopOrUnderneathHelper (M13-007), BlockConfigurationManager::SetObjectPoseChanged (M11-037), SetLocalizedTo(null) (M11-007/M11-044), UnSetCarryingObjects (M12-007/M12-008), Pose3d tree ops (the M12 pose records). Open: the BlockWorld+0x74 writer (M11-063); the null map helper (M13-031). Previous notes: RECOVERABLE_GAP: read the listed helpers (split from M4-038).",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261012-cliff-world-helpers-check.md): build from the rows (job B-M3M4-16). Reused, not owned: cv::minAreaRect/RotatedRect::points (M13-024), SortCornersClockwise ties (M13-023), FindObjectOnTopOrUnderneathHelper (M13-007), BlockConfigurationManager::SetObjectPoseChanged (M11-037), SetLocalizedTo(null) (M11-007/M11-044), UnSetCarryingObjects (M12-007/M12-008), Pose3d tree ops (the M12 pose records). Open: the BlockWorld+0x74 writer (M11-063); the null map helper (M13-031). Previous notes: RECOVERABLE_GAP: read the listed helpers (split from M4-038). OnObjectPoseChanged detail (re-analysis/research/20261013-blockworld-flag-and-map-helper.md): the MultipleChanges and FirstPoseForObject paths do not push; both still call SetObjectPoseChanged.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -10944,14 +10962,32 @@
       "subsystem": "M11-vision",
       "title": "BlockWorld+0x74: the writer of the pose-change queue flag that gates OnObjectPoseChanged logs and queue",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-cliff-world-helpers-check.md: OnObjectPoseChanged 0x00624808..0x006248B8 tests byte BlockWorld+0x74 (MultipleChanges 0x006248EC, FirstPoseForObject 0x00624924, PoseChange push); no strb to +0x74 found in 0x00610000..0x00630000."
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: OnObjectPoseChanged 0x00624808..0x006248B8 tests byte BlockWorld+0x74 (MultipleChanges 0x006248EC, FirstPoseForObject 0x00624924, PoseChange push); no strb to +0x74 found in 0x00610000..0x00630000.",
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md Q1: constructor +0x74 = 0 (0x0061BD8A, strb [sl,#0x28] with sl = this+0x4C) and list setup (0x0061BD7C/0x0061BD86); UpdateObservedMarkers clears the PoseChange list (0x00624F78) and sets +0x74 = 1 (0x00624F7E), runs CreateObjectsFromMarkers, AddAndUpdateObjects, CheckForUnobservedObjects, UpdatePoseOfStackedObjects, then clears it (0x006250D4..0x006250D8) before BlockConfigurationManager::Update (0x0062520C) and UpdateMarkerlessObjects (0x0062521A). Reader 0x00624808..0x006248B8: flag 0 -> SetObjectPoseChanged only; flag 1 and queued -> MultipleChanges info (0x006248EC, 0x00BF8F50), not pushed; flag 1 and old 0 -> FirstPoseForObject info (0x00BF8F99, 0x00624924), not pushed; else emplace_back. Consumer UpdatePoseOfStackedObjects 0x00621794..0x00621AF4. Cliffs come from HandleCliffEvent on the same thread before UpdateAllRobots (0x004ED62E before 0x004ED648), so the flag is 0. The earlier note \"no strb to +0x74\" was wrong (da.py stops at undecodable halfwords)."
       ],
       "effect": "Whether a new cliff (or any object) logs FirstPoseForObject and is queued as a PoseChange.",
       "provenance": "Opus check of R-CLIFF-WORLD (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: find the writer(s) of BlockWorld+0x74 (possibly outside 0x00610000..0x00630000, or a wider store) and its value during normal running; then the queue consumer.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-blockworld-flag-and-map-helper.md): build from the rows (job B-M3M4-16); in normal running a cliff logs nothing and is not queued. The stuck-flag path after a failed localization is M11-064. The consumer rows belong to M11-037. Previous notes: RECOVERABLE_GAP: find the writer(s) of BlockWorld+0x74 (possibly outside 0x00610000..0x00630000, or a wider store) and its value during normal running; then the queue consumer.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-064",
+      "subsystem": "M11-vision",
+      "title": "UpdateObservedMarkers unread pieces: the robot.play_area_size metric (MemoryMap vt+0x1C) and the LocalizeToObject failure returns that leave BlockWorld+0x74 stuck at 1",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: Play-area event 0x00624F16..0x00624F32 (every 60 s from +4/+8, ctor 0x0061BD20..0x0061BD3A; sEventF robot.play_area_size 0x00625314 \"%.2f\" 0x0062532C of helper vt+0x1C, body unread). AddAndUpdateFailed return 0x006250B6..0x006250C2 -> 0x00625220 skips the flag clear 0x006250D8 and the tail; reached when PotentialObjectsForLocalizingTo::LocalizeRobot returns non-zero (0x00621304 -> 0x00621320) on a Robot::LocalizeToObject failure (0x005154B0..0x00515AA4, e.g. ObjectPoseOriginMisMatch 0x0051592C..0x00515984)."
+      ],
+      "effect": "The play-area DAS value; and whether pose changes after a failed localization log FirstPoseForObject/MultipleChanges and queue against a stale list.",
+      "provenance": "Opus extractor read of M11-063/M13-031 (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read MemoryMap vt+0x1C (the play-area size); read the LocalizeToObject failure returns 0x005154B0..0x00515AA4 and decide reachability of the stuck flag in normal running. Also unread: ProcessMessages (0x0069D85C) dispatch to HandleCliffEvent (only same-thread ordering is shown).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

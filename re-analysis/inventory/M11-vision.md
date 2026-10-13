@@ -1419,3 +1419,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M11-062 |
 | New RECOVERABLE_GAP | M11-063 BlockWorld+0x74 writer |
 | Notes appended | M11-045, M11-048 |
+
+
+## Read of M11-063 and M13-031 (manager, 2026-10-13; research/20261013-blockworld-flag-and-map-helper.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M11-063 |
+| New RECOVERABLE_GAP | M11-064 play-area metric and stuck-flag reachability |
+| Notes appended | M11-037, M11-062, M11-048 |

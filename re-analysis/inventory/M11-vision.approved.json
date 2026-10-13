@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "fecf4a82b116f18e4597c73312eda900d20c11c3e5a5b5107cbd409ec9bc4a1e",
+  "inventory_sha256": "5c183a755de45214333069d7814aa7e8b2c10c02fa4cb6eb9527f42dfd01b4bd",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -750,11 +750,22 @@
       "hardware_required": false
     },
     "M11-063": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BlockWorld+0x74: the writer of the pose-change queue flag that gates OnObjectPoseChanged logs and queue",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-cliff-world-helpers-check.md: OnObjectPoseChanged 0x00624808..0x006248B8 tests byte BlockWorld+0x74 (MultipleChanges 0x006248EC, FirstPoseForObject 0x00624924, PoseChange push); no strb to +0x74 found in 0x00610000..0x00630000."
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: OnObjectPoseChanged 0x00624808..0x006248B8 tests byte BlockWorld+0x74 (MultipleChanges 0x006248EC, FirstPoseForObject 0x00624924, PoseChange push); no strb to +0x74 found in 0x00610000..0x00630000.",
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md Q1: constructor +0x74 = 0 (0x0061BD8A, strb [sl,#0x28] with sl = this+0x4C) and list setup (0x0061BD7C/0x0061BD86); UpdateObservedMarkers clears the PoseChange list (0x00624F78) and sets +0x74 = 1 (0x00624F7E), runs CreateObjectsFromMarkers, AddAndUpdateObjects, CheckForUnobservedObjects, UpdatePoseOfStackedObjects, then clears it (0x006250D4..0x006250D8) before BlockConfigurationManager::Update (0x0062520C) and UpdateMarkerlessObjects (0x0062521A). Reader 0x00624808..0x006248B8: flag 0 -> SetObjectPoseChanged only; flag 1 and queued -> MultipleChanges info (0x006248EC, 0x00BF8F50), not pushed; flag 1 and old 0 -> FirstPoseForObject info (0x00BF8F99, 0x00624924), not pushed; else emplace_back. Consumer UpdatePoseOfStackedObjects 0x00621794..0x00621AF4. Cliffs come from HandleCliffEvent on the same thread before UpdateAllRobots (0x004ED62E before 0x004ED648), so the flag is 0. The earlier note \"no strb to +0x74\" was wrong (da.py stops at undecodable halfwords)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-064": {
+      "status": "RECOVERABLE_GAP",
+      "title": "UpdateObservedMarkers unread pieces: the robot.play_area_size metric (MemoryMap vt+0x1C) and the LocalizeToObject failure returns that leave BlockWorld+0x74 stuck at 1",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: Play-area event 0x00624F16..0x00624F32 (every 60 s from +4/+8, ctor 0x0061BD20..0x0061BD3A; sEventF robot.play_area_size 0x00625314 \"%.2f\" 0x0062532C of helper vt+0x1C, body unread). AddAndUpdateFailed return 0x006250B6..0x006250C2 -> 0x00625220 skips the flag clear 0x006250D8 and the tail; reached when PotentialObjectsForLocalizingTo::LocalizeRobot returns non-zero (0x00621304 -> 0x00621320) on a Robot::LocalizeToObject failure (0x005154B0..0x00515AA4, e.g. ObjectPoseOriginMisMatch 0x0051592C..0x00515984)."
       ],
       "live_path": true,
       "hardware_required": false

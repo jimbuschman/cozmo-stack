@@ -2,7 +2,7 @@
   "subsystem": "M13-navigation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "dcebec4a83676d2624f6551635b6d4b09ca2b6a8d43d1329cde268473ce3bf89",
+  "inventory_sha256": "e4419e41b23bc2d8b616618610e70ffc99f835c5fc9144d24921da0cd009bbd4",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -408,11 +408,22 @@
       "hardware_required": false
     },
     "M13-031": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "GetCurrentMemoryMapHelper null result: reachability (callers dereference it unchecked)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-cliff-world-helpers-check.md: GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88 returns null when MapComponent+0x1C == UnknownOriginID (GOT 0x0103E978) or no map exists; AddMarkerlessObject dereferences it at 0x006225FE->0x00622610 and 0x006226F4, ClearLocatedObjectHelper at 0x00625E96, with no check."
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88 returns null when MapComponent+0x1C == UnknownOriginID (GOT 0x0103E978) or no map exists; AddMarkerlessObject dereferences it at 0x006225FE->0x00622610 and 0x006226F4, ClearLocatedObjectHelper at 0x00625E96, with no check.",
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md Q2: the helper (0x0067EA5C..0x0067EA88; UnknownOriginID = 0 at 0x00C97B20) is never null once Robot::Robot has run Delocalize(false) (0x00510324), which creates map 1 and sets +0x1C; +0x1C changes only with a matching map (CreateLocalizedMemoryMap 0x0067E9AE, UpdateMapOrigins 0x0067DF84), and the current origin's map is never erased (IsZombiePoseOrigin 0x00620AB8..0x00620AD2). Also dereferenced unchecked by the play-area event 0x00624F2E."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-032": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "MapComponent memory-map lifecycle: constructor (+0x1C Unknown, no map), CreateLocalizedMemoryMap on delocalize (zombie/keep-alive events, create, +0x1C), UpdateMapOrigins on re-localize (NullMapFound, merge, +0x1C, erase old)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: MapComponent ctor 0x0067D9A4..0x0067D9CA; CreateLocalizedMemoryMap 0x0067E85C..0x0067E9B4 (deleting_zombie_map 0x0067EA28 / keeping_alive_map 0x0067E9F8 print the argument origin; IsZombiePoseOrigin 0x00620AB8..0x00620AD2; CreateMemoryMap 0x0068133C..0x00681354 never null); only caller BlockWorld::OnRobotDelocalized 0x006249C4..0x006249EC (DeleteObjectsFromZombieOrigins 0x00620920..0x00620A04 first); Robot::Robot calls Delocalize(false) at 0x00510324 after constructing BlockWorld, MapComponent and PoseOriginList (next origin ID starts at 1, 0x00847934); UpdateMapOrigins 0x0067DE3C..0x0067DF96 (NullMapFound 0x0067DFE0/0x0067E010, merge vt+0xC 0x0067DF80, +0x1C 0x0067DF84, erase old 0x0067DF8A), only from LocalizeToObject after a successful Rejigger 0x0051590C."
       ],
       "live_path": true,
       "hardware_required": false

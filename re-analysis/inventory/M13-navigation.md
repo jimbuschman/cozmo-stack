@@ -2523,3 +2523,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M13-030 |
 | New RECOVERABLE_GAP | M13-031 null map helper reachability |
 | Notes appended | M13-023 |
+
+
+## Read of M11-063 and M13-031 (manager, 2026-10-13; research/20261013-blockworld-flag-and-map-helper.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; unreachable with a robot) | M13-031 |
+| New IMPLEMENTATION_GAP | M13-032 MapComponent memory-map lifecycle |
