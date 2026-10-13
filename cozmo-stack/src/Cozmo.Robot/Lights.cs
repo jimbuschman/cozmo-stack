@@ -561,18 +561,52 @@ public sealed record CubeLightModifier(LedPattern[] Leds, uint RotationPeriodMs,
 // fidelity: M7-002
 public sealed class CubeLightAnimations
 {
-    private readonly Dictionary<string, string> _triggerToAnim = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, CubeLightPattern[]> _anims = new(StringComparer.Ordinal);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _triggerToAnim = new(StringComparer.Ordinal);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, CubeLightPattern[]> _anims = new(StringComparer.Ordinal);
+
+    private Func<Action>? _standaloneLoad;
+    private readonly object _loadGate = new();
+    internal void EnsureLoaded()
+    {
+        Action? emit = null;
+        lock (_loadGate)
+        {
+            var load = _standaloneLoad;
+            _standaloneLoad = null;
+            if (load is not null) emit = load();
+        }
+        emit?.Invoke(); // No external callout while the initialization lock is held.
+    }
+    internal static CubeLightAnimations CreateDeferred(string? path, Action<string>? log, SourceLogSink? sourceLog)
+    {
+        var c = new CubeLightAnimations();
+        if (path is null) return c; // No resource input means no standalone initialization to retain.
+        // Host-only access before LoadFrom keeps the standalone light API available.
+        c._standaloneLoad = () =>
+        {
+            var calls = new System.Collections.Concurrent.ConcurrentQueue<Action>();
+            LoadInto(c, path, text => calls.Enqueue(() => log?.Invoke(text)),
+                (level, channel, key, text) => calls.Enqueue(() => SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(level, channel, key, text)), null);
+            return () => { foreach (var call in calls) call(); };
+        };
+        return c;
+    }
+    internal void LoadCollected(string? path, IReadOnlyList<string> files, Action<string>? log, SourceLogSink? sourceLog)
+    {
+        lock (_loadGate) _standaloneLoad = null;
+        // DispatchFiles logs on worker threads. Do not hold an initialization/state lock across those callouts.
+        LoadInto(this, path, log, sourceLog, files);
+    }
 
     public const string TriggerMapPath = "assets/cubeAnimationGroupMaps/CubeAnimationTriggerMap.json";
     public const string AnimationDirectory = "config/engine/lights/cubeLights";
 
     /// <summary>GetCubeAnimationForTrigger → CubeLightAnimationContainer::GetAnimation; null for "NoAnimForTrigger".</summary>
-    public CubeLightPattern[]? ForTrigger(string trigger) =>
-        _triggerToAnim.TryGetValue(trigger, out var n) ? _anims.GetValueOrDefault(n) : null;
+    public CubeLightPattern[]? ForTrigger(string trigger)
+    { EnsureLoaded(); return _triggerToAnim.TryGetValue(trigger, out var n) ? _anims.GetValueOrDefault(n) : null; }
 
-    public IReadOnlyCollection<string> AnimationNames => _anims.Keys;
-    internal string AnimationForTrigger(string trigger) => _triggerToAnim.GetValueOrDefault(trigger) ?? "";
+    public IReadOnlyCollection<string> AnimationNames { get { EnsureLoaded(); return _anims.Keys.ToArray(); } }
+    internal string AnimationForTrigger(string trigger) { EnsureLoaded(); return _triggerToAnim.GetValueOrDefault(trigger) ?? ""; }
 
     // fidelity: M4-018
     /// <summary>
@@ -587,22 +621,33 @@ public sealed class CubeLightAnimations
     public static CubeLightAnimations Load(string? resourcesPath, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         var c = new CubeLightAnimations();
-        if (resourcesPath is null) return c;
+        LoadInto(c, resourcesPath, log, sourceLog, null);
+        return c;
+    }
+    private static void LoadInto(CubeLightAnimations c, string? resourcesPath, Action<string>? log,
+        SourceLogSink? sourceLog, IReadOnlyList<string>? collectedFiles)
+    {
+        if (resourcesPath is null) return;
         var map = Path.Combine(resourcesPath, TriggerMapPath);
         if (File.Exists(map) && BackpackLightAnimations.TryParse(File.ReadAllBytes(map), out var md))
         {
             using (md)
                 if (md.RootElement.TryGetProperty("Pairs", out var pairs) && pairs.ValueKind == JsonValueKind.Array)
                     foreach (var pair in pairs.EnumerateArray())
-                        c._triggerToAnim[pair.GetProperty("CladEvent").GetString() ?? ""] = pair.GetProperty("AnimName").GetString() ?? "";
+                        if (pair.TryGetProperty("CladEvent", out var ev) && pair.TryGetProperty("AnimName", out var an))
+                            c._triggerToAnim[ev.GetString() ?? ""] = an.GetString() ?? "";
         }
-        var files = new List<string>();
-        Collect(Path.Combine(resourcesPath, AnimationDirectory));
+        else Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.TriggerMapNotFound", $"cube light trigger map not found at {map}");
+        var directory = Path.Combine(resourcesPath, AnimationDirectory);
+        if (!Directory.Exists(directory))
+        { Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.AnimationsNotFound", $"cube light animations not found at {directory}"); return; }
+        var files = collectedFiles?.ToList() ?? new List<string>();
+        if (collectedFiles is null) Collect(directory);
         var time = System.Diagnostics.Stopwatch.StartNew();
         object definitionsGate = new();
         Animation.AnimationLibrary.DispatchFiles(files, file =>
         {
-            // No group-loader abort gate. M5-051 owns the shared JsonCpp reader.
+            // No group-loader abort gate. The parser is the M1-029/M4-036 JsonCpp port.
             try
             {
                 byte[] bytes = File.ReadAllBytes(file);
@@ -623,7 +668,6 @@ public sealed class CubeLightAnimations
         });
         Emit(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadCubeLightAnimations.LoadTime",
             $"Time to load cube light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
-        return c;
 
         void Emit(EngineLogLevel level, string? channel, string key, string text) => SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(level, channel, key, text);
         void Skip(string file, Exception e) => Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.SkipFatalFile",
@@ -776,9 +820,16 @@ public sealed class CubeLightComponent
     internal static readonly CubeLightPattern OffLights = new(
         Enumerable.Repeat(BodyLightComponent.OffLights[0], 4).ToArray(), 0, 0, true, false, "Off");
 
+    private sealed class BlendedSlot
+    {
+        public CubeLightPattern[] Patterns = Array.Empty<CubeLightPattern>();
+    }
     private sealed class Playing
     {
-        public required CubeLightPattern[] Anim;
+        public required CubeLightPattern[] BaseAnim;
+        public BlendedSlot? Slot;
+        // Native list::assign reuses the per-layer slot; buried entries retain their iterator/index.
+        public CubeLightPattern[] Anim => Slot?.Patterns ?? BaseAnim;
         public string Name = "";
         public string Trigger = "";
         public int TimerOffset;
@@ -799,7 +850,7 @@ public sealed class CubeLightComponent
         public int CurrentLayer = StateLayer;
         public bool GameLayerOnly;
         public readonly List<Playing>[] Layers = { new(), new(), new() };
-        public readonly CubeLightPattern[][] BlendedSlots = { Array.Empty<CubeLightPattern>(), Array.Empty<CubeLightPattern>(), Array.Empty<CubeLightPattern>() };
+        public readonly BlendedSlot[] BlendedSlots = { new(), new(), new() };
     }
 
     private readonly CozmoRobot _robot;
@@ -907,12 +958,12 @@ public sealed class CubeLightComponent
             var leds = new LedPattern[4]; uint rotation = pattern.RotationPeriodMs;
             for (int i = 0; i < 4; i++)
             {
-                var led = pattern.Leds[i]; var mod = modifier.Leds[i]; var first = modifier.Leds[0];
+                var led = pattern.Leds[i]; var mod = modifier.Leds[i];
                 leds[i] = led with { OnColor = FromWord(ColorWord(led.OnColor) | ColorWord(mod.OnColor)),
                     OffColor = FromWord(ColorWord(led.OffColor) | ColorWord(mod.OffColor)),
-                    OnMs = unchecked(led.OnMs + first.OnMs), OffMs = unchecked(led.OffMs + first.OffMs),
-                    TransitionOnMs = unchecked(led.TransitionOnMs + first.TransitionOnMs), TransitionOffMs = unchecked(led.TransitionOffMs + first.TransitionOffMs),
-                    OffsetMs = unchecked(led.OffsetMs + first.OffsetMs) };
+                    OnMs = unchecked(led.OnMs + mod.OnMs), OffMs = unchecked(led.OffMs + mod.OffMs),
+                    TransitionOnMs = unchecked(led.TransitionOnMs + mod.TransitionOnMs), TransitionOffMs = unchecked(led.TransitionOffMs + mod.TransitionOffMs),
+                    OffsetMs = unchecked(led.OffsetMs + mod.OffsetMs) };
                 rotation = unchecked(rotation + modifier.RotationPeriodMs);
             }
             return pattern with { Leds = leds, RotationPeriodMs = rotation, MakeRelative = modifier.RelativeMode != 0,
@@ -956,7 +1007,7 @@ public sealed class CubeLightComponent
     /// (b) the top of the layer's stack can be overridden ("CantBeOverridden"); (c) an animation exists for the trigger
     /// ("NoAnimForTrigger"); (d) gameLayerOnly with layer ≠ 0 ("OnlyGameLayerEnabled"), or not with layer 0
     /// ("NotPlayingUserAnim"); (e) blend every play; reject a second data-blended animation. Push with timer = now + the first
-    /// pattern's duration and canBeOverridden from the first pattern; (f) a layer above the current one is "LightsNotSet",
+    /// pattern's duration plus the stored offset and canBeOverridden from the last pattern; (f) a layer above the current one is "LightsNotSet",
     /// otherwise current layer := layer and SetObjectLights(first pattern). SendTransitionMessage is game-only and there
     /// is no game here.
     /// (b) is the requested layer's stack (0x006382FC..0x0063831C).
@@ -965,8 +1016,12 @@ public sealed class CubeLightComponent
     public bool PlayLightAnim(ObjectType type, string trigger, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
         => PlayLightAnim(type, trigger, EngineLayer, 0, modifier, lights, timerOffsetMs);
 
+    /// <summary>Host API compatibility: durationMs and timerOffsetMs are added with u32 wrap and
+    /// stored as the single native signed int at CurrentAnimInfo+0x44. Both initial and subsequent
+    /// patterns use that same offset; durationMs does not replace a pattern's duration.</summary>
     public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
     {
+        Animations.EnsureLoaded(); // Standalone host initialization precedes the component state lock.
         Playing pushed;
         CubeLightPattern first;
         uint objectId;
@@ -1021,17 +1076,17 @@ public sealed class CubeLightComponent
                 string playingName = name;
                 if (useBlended)
                 {
-                    info.BlendedSlots[layer] = blended;
+                    info.BlendedSlots[layer].Patterns = blended;
                     playingName = stack.Count == 0 ? name : stack[^1].Name + "+" + name;
                 }
                 else if (anim[0].DurationMs == 0) stack.Clear();
-                var selected = useBlended ? info.BlendedSlots[layer] : anim;
+                var selected = useBlended ? info.BlendedSlots[layer].Patterns : anim;
                 first = selected[0];
                 uint offset = unchecked(durationMs + (uint)timerOffsetMs);
                 uint duration = unchecked(first.DurationMs + offset);
-                var playing = new Playing { Anim = selected, Name = playingName, Trigger = trigger, Blended = useBlended, Index = 0,
+                var playing = new Playing { BaseAnim = anim, Slot = useBlended ? info.BlendedSlots[layer] : null, Name = playingName, Trigger = trigger, Blended = useBlended, Index = 0,
                     TimerMs = (first.DurationMs | offset) == 0 ? 0 : unchecked(NowMs + duration), TimerOffset = unchecked((int)offset),
-                    CanBeOverridden = anim[0].CanBeOverridden };
+                    CanBeOverridden = anim[^1].CanBeOverridden };
                 stack.Add(playing);
                 pushed = playing;
                 if (layer > info.CurrentLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.LightsNotSet", $"Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
@@ -1058,7 +1113,7 @@ public sealed class CubeLightComponent
     // fidelity: M4-018
     /// <summary>
     /// CubeLightComponent::Update(true) (LC3, 0x00637998..0x00637E02) each Robot::Update: the top of the current layer
-    /// advances to its next pattern when its timer expires (timer = now + that pattern's duration, SetObjectLights),
+    /// advances to its next pattern when its timer expires (timer = now + that pattern's duration + the stored offset when their OR is nonzero, SetObjectLights),
     /// and is popped after its last pattern; an empty layer goes back to layer 2 and PickNextAnimForDefaultLayer
     /// plays Sleep/SleepNoFade, Carrying (0), Visible (0x25) or Connected (1).
     /// A timer expires at now ≥ timer (0x00637998 <c>bhs</c>). A pattern whose timer is 0 - one with duration_ms 0, such
@@ -1102,8 +1157,7 @@ public sealed class CubeLightComponent
                 {
                     var top = stack[^1];
                     if (top.PendingSend) continue;
-                    var cur = top.Anim[top.Index];
-                    bool waiting = cur.DurationMs == 0 || unchecked((int)(now - top.TimerMs)) < 0;
+                    bool waiting = top.TimerMs == 0 || now < top.TimerMs;
                     if (waiting && !top.Stop) continue;                 // W4: holds
                     if (!top.Stop)
                     {
@@ -1111,7 +1165,8 @@ public sealed class CubeLightComponent
                         if (top.Index < top.Anim.Length)
                         {
                             var next = top.Anim[top.Index];
-                            top.TimerMs = unchecked(now + next.DurationMs);
+                            top.TimerMs = (next.DurationMs | unchecked((uint)top.TimerOffset)) == 0 ? 0
+                                : unchecked(now + next.DurationMs + (uint)top.TimerOffset);
                             Send(type, next, transition: true);
                             continue;
                         }

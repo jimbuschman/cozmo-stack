@@ -369,7 +369,7 @@ public sealed class CozmoAnimations : IDisposable
             null, () =>
             {
                 // L0 / M4-036: after groups (0x0051F3BC), lights (0x0051F3C2/3C8), then faces (3CE).
-                // Keep constructor-loaded containers; only their source-log emission moves.
+                // Cube files have just been consumed from the type-2 collect vector; backpack logs remain deferred.
                 _robot.EmitLightLoadingLogs();
                 FaceAnimations = FaceAnimationLibrary.Open(assetsRoot, _robot.Engine.Log,
                     (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text));
@@ -380,7 +380,9 @@ public sealed class CozmoAnimations : IDisposable
                     Library = lib;
                     if (_loaderDestroyed) lib.AbortLoading();
                 }
-            });
+            }, cubeFiles => _robot.Lights.Cubes.Animations.LoadCollected(_robot.Engine.Options.ResourcesPath ?? assetsRoot,
+                cubeFiles, _robot.Engine.Log,
+                (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text)));
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)

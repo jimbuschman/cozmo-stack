@@ -101,14 +101,19 @@ public sealed class M3M4X14BuilderTests : IDisposable
         Assert.Equal(new[]{"Requested LED index is too large (4 > 3). Returning 3.","LED index should be >= 0, not -7. Using 0."},logs.Select(e=>e.Text));
     }
     [Fact]
-    public void ModifierOrsWordsAddsFirstPeriodFourRotationAddsAndCopiesRawPoint()
+    public void ModifierOrsWordsAddsPerLedPeriodsFourRotationAddsAndCopiesRawPoint()
     {
         var source=new[]{new CubeLightPattern(Enumerable.Repeat(new LedPattern(new(0x10,0,0,1),new(0,2,0,0),uint.MaxValue,7,9,11,-1),4).ToArray(),uint.MaxValue,123,false,false,"n")};
-        var mods=new[]{new LedPattern(new(0,0x20,0,0),new(0,0,0x40,8),2,3,4,5,6), LedPattern.Solid(new(0,0,0,0)),LedPattern.Solid(new(0,0,0,0)),LedPattern.Solid(new(0,0,0,0))};
+        var mods=new[]{new LedPattern(new(0,0x20,0,0),new(0,0,0x40,8),2,3,4,5,6), new LedPattern(new(0,0,0,0),new(0,0,0,0),12,13,14,15,16),new LedPattern(new(0,0,0,0),new(0,0,0,0),22,23,24,25,26),new LedPattern(new(0,0,0,0),new(0,0,0,0),32,33,34,35,36)};
         var point=new System.Numerics.Vector2(BitConverter.Int32BitsToSingle(unchecked((int)0x7fc12345)),BitConverter.Int32BitsToSingle(unchecked((int)0x80000000)));
         var p=CubeLightComponent.ApplyAnimModifier(source,new(mods,2,2,point))[0];
         Assert.Equal(new LedColor(0x10,0x20,0,1),p.Leds[0].OnColor); Assert.Equal(new LedColor(0,2,0x40,8),p.Leds[0].OffColor);
-        Assert.All(p.Leds,l=>{Assert.Equal(1u,l.OnMs);Assert.Equal(10u,l.OffMs);Assert.Equal(13u,l.TransitionOnMs);Assert.Equal(16u,l.TransitionOffMs);Assert.Equal(5,l.OffsetMs);});
+        // Native 0x638AD0 uses mod+4i; each of the five arrays adds its own LED value, wrapping u32.
+        Assert.Equal(new uint[]{1,11,21,31},p.Leds.Select(l=>l.OnMs));
+        Assert.Equal(new uint[]{10,20,30,40},p.Leds.Select(l=>l.OffMs));
+        Assert.Equal(new uint[]{13,23,33,43},p.Leds.Select(l=>l.TransitionOnMs));
+        Assert.Equal(new uint[]{16,26,36,46},p.Leds.Select(l=>l.TransitionOffMs));
+        Assert.Equal(new[]{5,15,25,35},p.Leds.Select(l=>l.OffsetMs));
         Assert.Equal(7u,p.RotationPeriodMs);Assert.Equal(2,p.RelativeMode);Assert.Equal(0x7fc12345,BitConverter.SingleToInt32Bits(p.RelativePoint.X));
         Assert.Equal(unchecked((int)0x80000000),BitConverter.SingleToInt32Bits(p.RelativePoint.Y)); Assert.Equal(123u,p.DurationMs);Assert.False(p.CanBeOverridden);Assert.Equal("n",p.DebugName);
     }

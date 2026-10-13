@@ -1879,11 +1879,11 @@ public class M4ControlTests
     }
 
     /// <summary>
-    /// M4-018 LC8/LC1: a disconnection sends nothing and keeps the ObjectInfo; the reconnection plays WakeUp again, which
-    /// is sent at once, without SetCubeGamma since the cache already holds 0x80.
+    /// M4-018 LC8/LC1: a disconnection sends nothing and keeps ObjectInfo. Reconnection attempts WakeUp,
+    /// but the running shipped WakeUp's last-pattern false rejects the push (0x006386EC..0x006386F4).
     /// </summary>
     [Fact]
-    public void M4_018_LC8_AReconnectReplaysWakeUpWithoutGamma()
+    public void M4_018_LC8_AReconnectCannotOverrideRunningWakeUp()
     {
         var res = WakeUpResources();
         try
@@ -1899,7 +1899,9 @@ public class M4ControlTests
             Assert.DoesNotContain(rig.RawSince(mark), b => b[0] is 0x0C or 0x10 or 0x04);
             rig.Data(conn); rig.Tick();
             var again = rig.RawSince(mark).Where(b => b[0] is 0x0C or 0x10 or 0x04).Select(b => b[0]).ToList();
-            Assert.Equal(new byte[] { 0x10, 0x04 }, again);
+            Assert.Empty(again);
+            Assert.Contains(rig.Log,l=>l.Contains("CubeLightComponent.PlayLightAnim.CantBeOverridden"));
+            Assert.Equal(1,rig.Robot.Lights.Cubes.PlayingForTest(ObjectType.Block_LIGHTCUBE1,2)!.Value.Count);
         }
         finally { Directory.Delete(res, true); }
     }
@@ -2048,7 +2050,7 @@ public class M4ControlTests
     // ------------------------------------------------------------------ M4-018 P3
 
     /// <summary>
-    /// M4-018 W4/P2/P3 with the shipped WakeUp content: a reconnect pushes a second WakeUp on layer 2. When the top
+    /// M4-018 W4/P2/P3 with an explicitly overridable WakeUp fixture: a reconnect pushes a second entry. When the top
     /// one finishes and pops, the animation below it is resent immediately with its current pattern (the spin), with
     /// no timer or iterator reset; its own expired timer then advances it to fadeOut on the next tick.
     /// </summary>
@@ -2056,6 +2058,9 @@ public class M4ControlTests
     public void M4_018_P3_APopResendsTheLowerAnimationsCurrentPattern()
     {
         var res = WakeUpResources();
+        // The shipped last-pattern false forbids this stack. Make both patterns overridable to isolate P3.
+        string file=Path.Combine(res,CubeLightAnimations.AnimationDirectory,"wakeUp.json");
+        File.WriteAllText(file,File.ReadAllText(file).Replace("\"canBeOverridden\": false","\"canBeOverridden\": true"));
         try
         {
             using var rig = new Rig(res);

@@ -292,7 +292,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     internal static AnimationLibrary OpenForLoad(string assetsRoot, Action<string>? log, SourceLogSink? sourceLog,
         EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups,
-        Action<string>? beforeStat = null, Action<AnimationLibrary>? loaderCreated = null)
+        Action<string>? beforeStat = null, Action<AnimationLibrary>? loaderCreated = null,
+        Action<IReadOnlyList<string>>? loadCubeFiles = null)
     {
         var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
         loaderCreated?.Invoke(lib);
@@ -339,6 +340,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         DispatchFiles(groupFiles, lib.LoadAnimationGroupFile);
 
         // L0: LoadNonConfigData 0x0051F3BC..0x0051F3CE: groups, cube lights, backpack lights, faces.
+        loadCubeFiles?.Invoke(cubeFiles);
         afterGroups?.Invoke();
         lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
         lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
