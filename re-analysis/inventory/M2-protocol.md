@@ -794,3 +794,11 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M2-018 |
 | New RECOVERABLE_GAP | M2-019 Impl D2/D3 handlers; M2-020 dispatch residue |
+
+
+## Check of R-HANDLERS (manager, 2026-10-13; research/20261013-unported-message-handlers-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M2-019 |
+| Notes appended | M2-020 |

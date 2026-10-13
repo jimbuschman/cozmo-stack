@@ -2,7 +2,7 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "2eac51e3318c0e515470e7b7e13fbd862b5babb1c42cfc4f76fae303841e8022",
+  "inventory_sha256": "7b3461dc16b73bf8026fd6a3df832c6191d4f5dc2c0ddc3a08819e45ad77a0c2",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -338,11 +338,22 @@
       "hardware_required": false
     },
     "M7-027": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Dev test behaviours (FactoryTest, DockingTestSimple, LiftLoadTest) built twice at Robot construction: their raw robot-message subscriptions and handler bodies",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-robot-message-subscribers-check.md: BehaviorManager ctor 0x0050FCAC -> 0x005A08D6 -> BehaviorContainer 0x0059C324 and BehaviorSystemManager ctor 0x0050FCBE -> 0x005A5812 -> a second container from the same map; devBehaviors/factoryTest.json, dockingTestSimple.json, liftLoadTest.json ship and are loaded by LoadBehaviors 0x005206BC (recursive). FactoryTest ctor (CreateBehavior 0x0059CBF4) subscribes D6, F3, B8, EE, D2 ungated; DockingTestSimple (0x0059CA88) D3 gated on ctx+0x20 and its +0x60 (0x005CB18C/0x005CB190); LiftLoadTest (0x0059CD14) DA through the raw IBehavior overload 0x005D401A..0x005D4038 (dispatch 0x005BF2F8..0x005BF320). Known bodies: D2 0x005D0BD4 bx lr; B8 stores +0x1B3 (0x005D0998); DT D3 counters 0x005CB35C..0x005CB382."
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: BehaviorManager ctor 0x0050FCAC -> 0x005A08D6 -> BehaviorContainer 0x0059C324 and BehaviorSystemManager ctor 0x0050FCBE -> 0x005A5812 -> a second container from the same map; devBehaviors/factoryTest.json, dockingTestSimple.json, liftLoadTest.json ship and are loaded by LoadBehaviors 0x005206BC (recursive). FactoryTest ctor (CreateBehavior 0x0059CBF4) subscribes D6, F3, B8, EE, D2 ungated; DockingTestSimple (0x0059CA88) D3 gated on ctx+0x20 and its +0x60 (0x005CB18C/0x005CB190); LiftLoadTest (0x0059CD14) DA through the raw IBehavior overload 0x005D401A..0x005D4038 (dispatch 0x005BF2F8..0x005BF320). Known bodies: D2 0x005D0BD4 bx lr; B8 stores +0x1B3 (0x005D0998); DT D3 counters 0x005CB35C..0x005CB382.",
+        "re-analysis/research/20261013-unported-message-handlers-check.md section 3: FactoryTest handlers D6 0x005D0864..0x005D08B8, F3 0x005D0930..0x005D097A, B8 0x005D097C..0x005D099C, EE 0x005D09AC..0x005D0B0C (parse false -> EndTest 0x005D23EE..0x005D2618 with ActionList Cancel(-1) 0x005D24B8), D2 bx lr, IsRunnableInternal 0x005D0C0C..0x005D0C18; DockingTestSimple gate inputs non-null (0x004EA7A8..0x004EA7AC, 0x0052E4F2..0x0052E4FC), D3 0x005CB35C..0x005CB382, InitInternal reset 0x005CB498..0x005CB4AA; LiftLoadTest slots +0x60/+0x78 bx lr, +0x6C HandleWhileRunning 0x005D4FE4..0x005D5036."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-028": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Dev test behaviour constructor side effects: RollingFileLogger directories (dockingTest, liftLoadTest) and FactoryTestLogger",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-unported-message-handlers-check.md: DockingTestSimple ctor 0x005CB04E..0x005CB0A8 and LiftLoadTest ctor 0x005D3F32.. build RollingFileLogger(nullptr, pathToResource(scope 2, \"dockingTest\"/\"liftLoadTest\"), kDefaultFileExtension, 0x1400000); its ctor 0x0080DEFC calls FileUtils::CreateDirectory (0x0080DFCC); FactoryTest ctor builds FactoryTestLogger (0x005D051A -> 0x00671658). Each behaviour is built twice."
       ],
       "live_path": true,
       "hardware_required": false

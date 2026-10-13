@@ -2,7 +2,7 @@
   "subsystem": "M2-protocol",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "beedadaacde0eae9826b7b65bc5ea459726c27f2061ba5eb9d5f76b7fc7f3bb5",
+  "inventory_sha256": "25c71229192480e1e040a787f7723a17fd8d2d1cb42ddac8429686b68d7fecb1",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -234,11 +234,12 @@
       "hardware_required": false
     },
     "M2-019": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotToEngineImplMessaging subscribers the stack lacks: HandleFWVersionInfo (D2) and HandleDockingStatus (D3)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-robot-message-subscribers-check.md: Impl Init subscribes D2 -> HandleFWVersionInfo (bind 0x00532AC4, body 0x00533348) and D3 -> HandleDockingStatus (bind 0x00532C84, body 0x00536F1C, logs); neither is subscribed in the stack."
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: Impl Init subscribes D2 -> HandleFWVersionInfo (bind 0x00532AC4, body 0x00533348) and D3 -> HandleDockingStatus (bind 0x00532C84, body 0x00536F1C, logs); neither is subscribed in the stack.",
+        "re-analysis/research/20261013-unported-message-handlers-check.md sections 1-2: HandleFWVersionInfo 0x00533348..0x005335C4 (copy, the two 16-byte hash compares against 0x00C51870/0x00C51880, ConvertMessageBufferToString \" XX\", sWarningF RobotFirmware.VersionMismatch 0x00533750 with formats 0x00BE8F1F/0x00BE8F8E, sticky flags +0x38/+0x39, EngineRobotCLADVersionMismatch tag 0x2A broadcast); HandleDockingStatus 0x00536F1C..0x00536F68 (ldrsb status, EnumToString 0x007C115C..0x007C1172, sEventF robot.docking.status 0x00536F94 \"%s\" on every message)."
       ],
       "live_path": true,
       "hardware_required": false

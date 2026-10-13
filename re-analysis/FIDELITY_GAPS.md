@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **558 records** over 16 subsystems.
+Manifest of **559 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 246 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 51 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 248 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 57 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -25,12 +25,12 @@ remains after both, and they do not go away by working harder on this repository
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
-| M2-protocol — CLAD messages and protocol helpers | 20 | 2 | 1 | 0 | 0 | no | no |
+| M2-protocol — CLAD messages and protocol helpers | 20 | 1 | 2 | 0 | 0 | no | no |
 | M3-device — Camera, display and audio device layer | 60 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 47 | 0 | 14 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 29 | 1 | 25 | 0 | 0 | no | no |
-| M7-behaviour — Idle, mood and reactions | 27 | 4 | 18 | 0 | 0 | no | no |
+| M7-behaviour — Idle, mood and reactions | 28 | 4 | 19 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 15 | 2 | 10 | 0 | 0 | no | no |
@@ -75,15 +75,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M2-protocol — CLAD messages and protocol helpers
 
-**M2-019 — RobotToEngineImplMessaging subscribers the stack lacks: HandleFWVersionInfo (D2) and HandleDockingStatus (D3)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs`
-* effect: What the engine logs or does on a firmware-version message and on each docking-status message.
-* rests on: Opus check of R-SUBSCRIBERS (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-robot-message-subscribers-check.md: Impl Init subscribes D2 -> HandleFWVersionInfo (bind 0x00532AC4, body 0x00533348) and D3 -> HandleDockingStatus (bind 0x00532C84, body 0x00536F1C, logs); neither is subscribed in the stack.
-* outstanding: RECOVERABLE_GAP: read the two bodies (0x00533348.., 0x00536F1C..) completely: logs (key, format, address), state writes, and anything they forward.
-
 **M2-020 — Robot-message dispatch residue: Broadcast callers passing robot ID 0x1CF, early-unsubscribe paths, destruction during an emit, load completion before AddRobot** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs`
@@ -91,7 +82,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Opus check of R-SUBSCRIBERS (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-robot-message-subscribers-check.md: Emitter 0x0069DE18: robot ID == MessageHandler+0x1C (0x1CF, set 0x0069D004/0x0069D00E) emits every robot signal for the tag (0x0069DE32..0x0069DE4E); otherwise the robot signal, then the 0x1CF signal (0x0069DE50..0x0069DE74). LoadBehaviors is called from LoadNonConfigData 0x0051F452; its order against AddRobot is unread.
-* outstanding: RECOVERABLE_GAP: find Broadcast callers that pass 0x1CF; read each subscriber's early-unsubscribe path (only the RIC's, 0x0052DFA4, is read); owner/signal destruction during an emit; the engine load/connect gating (LoadNonConfigData before AddRobot).
+* outstanding: RECOVERABLE_GAP: find Broadcast callers that pass 0x1CF; read each subscriber's early-unsubscribe path (only the RIC's, 0x0052DFA4, is read); owner/signal destruction during an emit; the engine load/connect gating (LoadNonConfigData before AddRobot). Also: other readers of Impl+0x0C..+0x39 (the firmware-version copy and the mismatch flags), not searched (re-analysis/research/20261013-unported-message-handlers-check.md).
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -142,14 +133,14 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)
 * outstanding: RECOVERABLE_GAP: read what BehaviorTrackLaser does with the flag at 0x005FAC64 and 0x005FBDAE. Nothing else in the manifest owns BehaviorTrackLaser (M15-008 only names TrackLaser among the activities).
 
-**M7-027 — Dev test behaviours (FactoryTest, DockingTestSimple, LiftLoadTest) built twice at Robot construction: their raw robot-message subscriptions and handler bodies** (live path)
+**M7-028 — Dev test behaviour constructor side effects: RollingFileLogger directories (dockingTest, liftLoadTest) and FactoryTestLogger** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs`
-* effect: Logs and state changes the shipped test behaviours make on robot messages, before the engine's own handlers for the same tags.
-* rests on: Opus check of R-SUBSCRIBERS (2026-10-13), manager record.
+* effect: Directories or files the engine creates on the device at robot connection.
+* rests on: Opus check of R-HANDLERS (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-robot-message-subscribers-check.md: BehaviorManager ctor 0x0050FCAC -> 0x005A08D6 -> BehaviorContainer 0x0059C324 and BehaviorSystemManager ctor 0x0050FCBE -> 0x005A5812 -> a second container from the same map; devBehaviors/factoryTest.json, dockingTestSimple.json, liftLoadTest.json ship and are loaded by LoadBehaviors 0x005206BC (recursive). FactoryTest ctor (CreateBehavior 0x0059CBF4) subscribes D6, F3, B8, EE, D2 ungated; DockingTestSimple (0x0059CA88) D3 gated on ctx+0x20 and its +0x60 (0x005CB18C/0x005CB190); LiftLoadTest (0x0059CD14) DA through the raw IBehavior overload 0x005D401A..0x005D4038 (dispatch 0x005BF2F8..0x005BF320). Known bodies: D2 0x005D0BD4 bx lr; B8 stores +0x1B3 (0x005D0998); DT D3 counters 0x005CB35C..0x005CB382.
-* outstanding: RECOVERABLE_GAP: read the FactoryTest handler bodies 0x005D0864..0x005D0BD4 (D6 logs; F3 0x005D0930; EE 0x005D09A0; EE 0x005D067A), LiftLoadTest's DA virtuals (+0x6C/+0x78), the DT gate inputs, and whether anything else these constructors do is observable. The double instantiation is the shipped behaviour (exact rule): reproduce it.
+* evidence: re-analysis/research/20261013-unported-message-handlers-check.md: DockingTestSimple ctor 0x005CB04E..0x005CB0A8 and LiftLoadTest ctor 0x005D3F32.. build RollingFileLogger(nullptr, pathToResource(scope 2, "dockingTest"/"liftLoadTest"), kDefaultFileExtension, 0x1400000); its ctor 0x0080DEFC calls FileUtils::CreateDirectory (0x0080DFCC); FactoryTest ctor builds FactoryTestLogger (0x005D051A -> 0x00671658). Each behaviour is built twice.
+* outstanding: RECOVERABLE_GAP: read the RollingFileLogger ctor 0x0080DEFC..0x0080E050 and pathToResource scope 2, the rest of the LiftLoadTest ctor 0x005D3F48..0x005D401A, and FactoryTestLogger 0x00671658..; say what is created and whether anything is written.
 
 ### M8-framework — Behaviour framework and scoring
 
@@ -577,6 +568,15 @@ Each of these is a question already answered. The original's behaviour is establ
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-play-area-check.md section D: ProcessMessages 0x0069D85C..0x0069DAEA, Broadcast 0x0069DC82..0x0069DCB4, emitter 0x0069DE24..0x0069DE74 (robot signal then wildcard), connect 0x0051D874..0x0051D8A2 and emit 0x0069E274..0x0069E2B2 (registration order, re-reading the sentinel), HandleCliffEvent registration 0x00532B80..0x00532B8A via 0x00519F8C.; re-analysis/research/20261013-robot-message-subscribers-check.md: 35 callers of 0x00519F8C (no other route); registration order at connection (test behaviours twice in the Robot ctor, then Path C6, NVStorage/Backup C9, CubeAccel F5, BlockTapFilter B6/B4/B5, Impl/TracePrinter B0/CF/EC, Impl Init 37 subscriptions 0x00510348, then the RIC D2/EE/C9, ED on OnNotified 0x0052DE34); the per-tag order table; append 0x0051D874..0x0051D8A2, emit 0x0069E274..0x0069E2B2 (an appended subscriber is reached), unlink 0x0051D338..0x0051D3A4, scoped disconnect 0x0051D8F8..0x0051D932.
 * outstanding: Read 2026-10-13 (re-analysis/research/20261013-robot-message-subscribers-check.md): build per-tag, registration-ordered dispatch (job B-M3M4-18), replacing the stack's fixed class order. Absent subscribers keep their place as visible MISSINGs: M2-019 (D2, D3 Impl handlers), M7-027 (test behaviours), M15-033 (Backup C9). Residue: M2-020. Previous notes: RECOVERABLE_GAP: the dispatch mechanism is read; which of the ~35 callers of 0x00519F8C (IBehavior::SubscribeToTags 0x005BCA4C, BlockTapFilterComponent, CubeAccelComponent, the actions) subscribe to which tags, and when, is unread. Then compare the stack's subscription order.
+
+**M2-019 — RobotToEngineImplMessaging subscribers the stack lacks: HandleFWVersionInfo (D2) and HandleDockingStatus (D3)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs`
+* effect: What the engine logs or does on a firmware-version message and on each docking-status message.
+* rests on: Opus check of R-SUBSCRIBERS (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-robot-message-subscribers-check.md: Impl Init subscribes D2 -> HandleFWVersionInfo (bind 0x00532AC4, body 0x00533348) and D3 -> HandleDockingStatus (bind 0x00532C84, body 0x00536F1C, logs); neither is subscribed in the stack.; re-analysis/research/20261013-unported-message-handlers-check.md sections 1-2: HandleFWVersionInfo 0x00533348..0x005335C4 (copy, the two 16-byte hash compares against 0x00C51870/0x00C51880, ConvertMessageBufferToString " XX", sWarningF RobotFirmware.VersionMismatch 0x00533750 with formats 0x00BE8F1F/0x00BE8F8E, sticky flags +0x38/+0x39, EngineRobotCLADVersionMismatch tag 0x2A broadcast); HandleDockingStatus 0x00536F1C..0x00536F68 (ldrsb status, EnumToString 0x007C115C..0x007C1172, sEventF robot.docking.status 0x00536F94 "%s" on every message).
+* outstanding: Read 2026-10-13 (re-analysis/research/20261013-unported-message-handlers-check.md): build (job B-M3M4-18). A status outside 0/1 passes NULL to %s, rendered by the phone libc (not shipped): the stack prints "(null)" as bionic does, EQUIVALENT_IMPLEMENTATION of a system library. Other readers of Impl+0x0C..+0x39 are M2-020. Previous notes: RECOVERABLE_GAP: read the two bodies (0x00533348.., 0x00536F1C..) completely: logs (key, format, address), state writes, and anything they forward.
 
 ### M3-device — Camera, display and audio device layer
 
@@ -1364,6 +1364,15 @@ B-M5-16 built, awaiting strong verification: dedicated native GetGroupForSource 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261012-m5-x9-extraction.md section 4f: GetSimpleMood 0x0067C084 (Default; Happy > 0.33f -> Happy; Confident < -0.29f -> Sad; Happy < -0.33f -> Sad; constants 0x0067C0C0..0x0067C0C8); the group draw reads MoodManager+0x130 (0x0058A95C), written only by MoodManager::Update(t) 0x0067B67E and Reset/ctor.
 * outstanding: Build with the M7 mood manager; until then M5-011/M5-014 keep a visible MISSING.
+
+**M7-027 — Dev test behaviours (FactoryTest, DockingTestSimple, LiftLoadTest) built twice at Robot construction: their raw robot-message subscriptions and handler bodies** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs`
+* effect: Logs and state changes the shipped test behaviours make on robot messages, before the engine's own handlers for the same tags.
+* rests on: Opus check of R-SUBSCRIBERS (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-robot-message-subscribers-check.md: BehaviorManager ctor 0x0050FCAC -> 0x005A08D6 -> BehaviorContainer 0x0059C324 and BehaviorSystemManager ctor 0x0050FCBE -> 0x005A5812 -> a second container from the same map; devBehaviors/factoryTest.json, dockingTestSimple.json, liftLoadTest.json ship and are loaded by LoadBehaviors 0x005206BC (recursive). FactoryTest ctor (CreateBehavior 0x0059CBF4) subscribes D6, F3, B8, EE, D2 ungated; DockingTestSimple (0x0059CA88) D3 gated on ctx+0x20 and its +0x60 (0x005CB18C/0x005CB190); LiftLoadTest (0x0059CD14) DA through the raw IBehavior overload 0x005D401A..0x005D4038 (dispatch 0x005BF2F8..0x005BF320). Known bodies: D2 0x005D0BD4 bx lr; B8 stores +0x1B3 (0x005D0998); DT D3 counters 0x005CB35C..0x005CB382.; re-analysis/research/20261013-unported-message-handlers-check.md section 3: FactoryTest handlers D6 0x005D0864..0x005D08B8, F3 0x005D0930..0x005D097A, B8 0x005D097C..0x005D099C, EE 0x005D09AC..0x005D0B0C (parse false -> EndTest 0x005D23EE..0x005D2618 with ActionList Cancel(-1) 0x005D24B8), D2 bx lr, IsRunnableInternal 0x005D0C0C..0x005D0C18; DockingTestSimple gate inputs non-null (0x004EA7A8..0x004EA7AC, 0x0052E4F2..0x0052E4FC), D3 0x005CB35C..0x005CB382, InitInternal reset 0x005CB498..0x005CB4AA; LiftLoadTest slots +0x60/+0x78 bx lr, +0x6C HandleWhileRunning 0x005D4FE4..0x005D5036.
+* outstanding: Read 2026-10-13 (re-analysis/research/20261013-unported-message-handlers-check.md): build the handler rows (job B-M3M4-18), both instances. The constructor side effects are M7-028. EE throws are M1-034; Cancel(-1) effects are M8-015. Unread: writers of FT +0x16E outside 0x005D0438..0x005D3800; Json::Reader::parse on an empty vector; whether any chooser can select FactoryTest. Previous notes: RECOVERABLE_GAP: read the FactoryTest handler bodies 0x005D0864..0x005D0BD4 (D6 logs; F3 0x005D0930; EE 0x005D09A0; EE 0x005D067A), LiftLoadTest's DA virtuals (+0x6C/+0x78), the DT gate inputs, and whether anything else these constructors do is observable. The double instantiation is the shipped behaviour (exact rule): reproduce it.
 
 ### M8-framework — Behaviour framework and scoring
 

@@ -1337,3 +1337,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New RECOVERABLE_GAP | M7-027 dev test behaviours built twice |
 | Notes appended | M7-018 |
+
+
+## Check of R-HANDLERS (manager, 2026-10-13; research/20261013-unported-message-handlers-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M7-027 |
+| New RECOVERABLE_GAP | M7-028 test behaviour constructor side effects |
