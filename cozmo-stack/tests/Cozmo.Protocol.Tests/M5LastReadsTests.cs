@@ -176,7 +176,7 @@ public class M5LastReadsTests
             robot.Dispose();
             var missing = diagnostics.Where(l => l.StartsWith("MISSING: M4-036 deferred light loader logs:")).ToArray();
             if (load) Assert.Empty(missing);
-            else Assert.Equal("MISSING: M4-036 deferred light loader logs: disposed with 1 captured loader logs still pending; the engine never loads lights outside LoadNonConfigData", Assert.Single(missing));
+            else Assert.Equal("MISSING: M4-036 deferred light loader logs: disposed with 2 captured loader logs still pending; the engine never loads lights outside LoadNonConfigData", Assert.Single(missing));
             Assert.DoesNotContain(entries, e => e.Text.StartsWith("MISSING:"));
         }
         finally { Directory.Delete(root, true); }

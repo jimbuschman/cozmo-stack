@@ -256,7 +256,7 @@ public sealed class CozmoRobot : IDisposable
         Lights = new CozmoLights(this, BackpackLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, loadingLog,
                                      deferLoaderLogs: true, beforeStat: beforeAnimationFileStat),
                                  CubeLightAnimations.Load(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) =>
-                                     _cubeLoadingLogs.Add((level, channel, key, text))));
+                                 { lock (_lightLoadingLogs) _cubeLoadingLogs.Add((level, channel, key, text)); }));
         LocalizationWorld.SourceLog = (l, c, k, t) => Engine.EmitSourceLog(l, c, k, t);
         LocalizationWorld.Log += Engine.EmitStackLog;
         Sensors = new CozmoSensors(this, State);

@@ -390,7 +390,7 @@ public class M4ControlTests
 
     // ------------------------------------------------------------------ rig
 
-    private sealed class FakePort : IEngineTransport
+    internal sealed class FakePort : IEngineTransport
     {
         public readonly List<byte[]> Sent = new();
         public bool TimedOut { get; set; }
@@ -402,7 +402,7 @@ public class M4ControlTests
         public void Raise(ReceiverMarker m, IPEndPoint? a, byte[]? d = null) => Received?.Invoke(new ReceiverEvent(m, a, d));
     }
 
-    private sealed class Rig : IDisposable
+    internal sealed class Rig : IDisposable
     {
         public long NowNs = 1_000_000_000;
         public readonly FakePort Port = new();
@@ -521,7 +521,7 @@ public class M4ControlTests
     /// A resources directory with one single-pattern animation per default-layer trigger (S1/S2) and the trigger map
     /// that names them, so PickNextAnimForDefaultLayer can be observed by the pattern's debug name.
     /// </summary>
-    private static string CubeLightResources()
+    internal static string CubeLightResources()
     {
         var root = Path.Combine(Path.GetTempPath(), "m4-cube-sleep-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(Path.Combine(root, "assets", "cubeAnimationGroupMaps"));
@@ -546,9 +546,9 @@ public class M4ControlTests
                   "duration_ms": 100, "patternDebugName": "{{debug}}" }
               ]
             """;
-        File.WriteAllText(Path.Combine(root, "config", "engine", "lights", "cubeLights", "anims.json"),
-            "{\n" + string.Join(",\n", Anim("wakeUp", "wakeUp"), Anim("sleep", "sleep"), Anim("sleepNoFade", "sleepNoFade"),
-                Anim("connected", "connected"), Anim("carrying", "carrying"), Anim("visible", "visible")) + "\n}");
+        foreach (var (name, debug) in new[] { ("wakeUp", "wakeUp"), ("sleep", "sleep"), ("sleepNoFade", "sleepNoFade"),
+            ("connected", "connected"), ("carrying", "carrying"), ("visible", "visible") })
+            File.WriteAllText(Path.Combine(root, "config", "engine", "lights", "cubeLights", name + ".json"), "{" + Anim(name, debug) + "}");
         return root;
     }
 
@@ -1954,7 +1954,7 @@ public class M4ControlTests
         Assert.Equal(PoseState.Dirty, located.PoseState);
     }
 
-    private static void ConnectCube(Rig rig, uint slot = 0, ObjectType type = ObjectType.Block_LIGHTCUBE1)
+    internal static void ConnectCube(Rig rig, uint slot = 0, ObjectType type = ObjectType.Block_LIGHTCUBE1)
     {
         rig.Data(new ObjectConnectionState { ObjectID = slot, FactoryID = 0x1000 + slot, ObjectType = type, Connected = true });
         rig.Tick();

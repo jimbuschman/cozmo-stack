@@ -544,7 +544,15 @@ public sealed class CozmoLights
 }
 
 /// <summary>One pattern of a cube light animation (LC3): four LEDs, rotation, duration, canBeOverridden.</summary>
-public sealed record CubeLightPattern(LedPattern[] Leds, uint RotationPeriodMs, uint DurationMs, bool CanBeOverridden, bool MakeRelative, string DebugName);
+public sealed record CubeLightPattern(LedPattern[] Leds, uint RotationPeriodMs, uint DurationMs, bool CanBeOverridden, bool MakeRelative, string DebugName)
+{
+    // fidelity: M4-046 — mode byte and raw XY supplied by ObjectLights, not by JSON.
+    public byte RelativeMode { get; init; }
+    public System.Numerics.Vector2 RelativePoint { get; init; }
+}
+// fidelity: M4-046
+public sealed record CubeLightModifier(LedPattern[] Leds, uint RotationPeriodMs, byte RelativeMode, System.Numerics.Vector2 RelativePoint);
+
 
 /// <summary>
 /// The engine's cube light animations: CubeAnimationTriggerMap.json (trigger → animation name) and the patterns
@@ -575,79 +583,173 @@ public sealed class CubeLightAnimations
     /// json and bin through <c>DataPlatform::pathToResource(Scope::Resources, ...)</c>; on the shipped files that is
     /// <c>&lt;persistentDataPath&gt;/cozmo/cozmo_resources/config/engine/lights/cubeLights</c>.
     /// </summary>
+    // fidelity: M4-044, M1-034
     public static CubeLightAnimations Load(string? resourcesPath, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         var c = new CubeLightAnimations();
         if (resourcesPath is null) return c;
-        var map = Path.Combine(resourcesPath, "assets", "cubeAnimationGroupMaps", "CubeAnimationTriggerMap.json");
+        var map = Path.Combine(resourcesPath, TriggerMapPath);
         if (File.Exists(map) && BackpackLightAnimations.TryParse(File.ReadAllBytes(map), out var md))
         {
             using (md)
-            {
                 if (md.RootElement.TryGetProperty("Pairs", out var pairs) && pairs.ValueKind == JsonValueKind.Array)
-                    foreach (var p in pairs.EnumerateArray())
-                        if (p.TryGetProperty("CladEvent", out var ev) && p.TryGetProperty("AnimName", out var an))
-                            c._triggerToAnim[ev.GetString() ?? ""] = an.GetString() ?? "";
+                    foreach (var pair in pairs.EnumerateArray())
+                        c._triggerToAnim[pair.GetProperty("CladEvent").GetString() ?? ""] = pair.GetProperty("AnimName").GetString() ?? "";
+        }
+        var files = new List<string>();
+        Collect(Path.Combine(resourcesPath, AnimationDirectory));
+        var time = System.Diagnostics.Stopwatch.StartNew();
+        object definitionsGate = new();
+        Animation.AnimationLibrary.DispatchFiles(files, file =>
+        {
+            // No group-loader abort gate. M5-051 owns the shared JsonCpp reader.
+            try
+            {
+                byte[] bytes = File.ReadAllBytes(file);
+                int end = Array.IndexOf(bytes, (byte)0xFF);
+                if (end >= 0) bytes = bytes[..end];
+                if (!Json.TryParseFirst(bytes, out var doc))
+                { Animation.AnimationLibrary.ReportReadAsJsonFailure(file, null, log, sourceLog); return; }
+                using (doc)
+                    if (doc.RootElement.Kind != FirmwareJsonKind.Null &&
+                        !(doc.RootElement.Kind is FirmwareJsonKind.Array or FirmwareJsonKind.Object && Json.Size(doc.RootElement) == 0))
+                        lock (definitionsGate) c.Define(doc.RootElement, log, sourceLog, file);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            { Animation.AnimationLibrary.ReportReadAsJsonFailure(file, null, log, sourceLog); }
+            // fidelity: M1-034, M4-044 — approved fatal-path isolation; no partial registration.
+            catch (Exception e) when (e is JsonLogicError or JsonRuntimeError)
+            { Skip(file, e); }
+        });
+        Emit(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadCubeLightAnimations.LoadTime",
+            $"Time to load cube light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
+        return c;
+
+        void Emit(EngineLogLevel level, string? channel, string key, string text) => SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(level, channel, key, text);
+        void Skip(string file, Exception e) => Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.SkipFatalFile",
+            $"M1-034 / M4-044: skipping cube light file {file}: {e.Message}; keeping any previous definition");
+        void Collect(string path)
+        {
+            string[] entries;
+            try { entries = Directory.EnumerateFileSystemEntries(path).ToArray(); }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException) { return; }
+            foreach (var file in entries)
+            {
+                // Shared WalkAnimationDir: DT_LNK is neither DT_REG nor DT_DIR.
+                try { if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0) continue; }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                { Emit(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {file}"); continue; }
+                if (Directory.Exists(file)) { Collect(file); continue; }
+                if (!(file.EndsWith("json", StringComparison.Ordinal) || file.EndsWith("bin", StringComparison.Ordinal))) continue;
+                try { var stat = new FileInfo(file); if (!stat.Exists) throw new IOException(); _ = stat.LastWriteTimeUtc; }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+                { Emit(EngineLogLevel.Warning, null, "RobotDataLoader.WalkAnimationDir", $"could not get mtime for {file}"); continue; }
+                files.Add(file);
             }
         }
-        else log?.Invoke($"warning: cube light trigger map not found at {map}");
-        var dir = Path.Combine(resourcesPath, "config", "engine", "lights", "cubeLights");
-        if (!Directory.Exists(dir)) { log?.Invoke($"warning: cube light animations not found at {dir}"); return c; }
-        foreach (var f in Directory.GetFiles(dir, "*.json", SearchOption.AllDirectories).OrderBy(p => p, StringComparer.Ordinal))
-        {
-            if (!BackpackLightAnimations.TryParse(File.ReadAllBytes(f), out var doc)) { log?.Invoke($"error: {f}: not JSON"); continue; }
-            using (doc) c.Define(doc.RootElement, log, sourceLog);
-        }
-        return c;
     }
 
     internal void Define(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
     {
-        if (root.ValueKind != JsonValueKind.Object) return;
-        foreach (var anim in root.EnumerateObject())
+        if (Json.TryParseFirst(System.Text.Encoding.UTF8.GetBytes(root.GetRawText()), out var doc))
+            using (doc) Define(doc.RootElement, log, sourceLog);
+    }
+
+    // fidelity: M4-044, M1-034
+    internal void Define(FirmwareJsonValue root, Action<string>? log, SourceLogSink? sourceLog = null, string? file = null)
+    {
+        void Emit(EngineLogLevel level, string key, string text) => SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(level, null, key, text);
+        void Error(string suffix, string text)
+        { Emit(EngineLogLevel.Error, (suffix == "EmptyFile" ? "CubeLightAnimationContainer.DefineFromJson." : "CubeLightAnimationContainer.ParseJsonToAnim.") + suffix, text); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); }
+        try
         {
-            if (anim.Value.ValueKind != JsonValueKind.Array) continue;
+            if (root.Kind is not (FirmwareJsonKind.Object or FirmwareJsonKind.Null)) throw new JsonLogicError("getMemberNames requires objectValue");
+            var names = root.Members.Keys.OrderBy(x => x, StringComparer.Ordinal).ToArray(); // hex preserves CZString byte order
+            if (names.Length == 0) { Error("EmptyFile", "Found no animations in JSON"); return; }
+            string name = System.Text.Encoding.UTF8.GetString(Convert.FromHexString(names[0]));
+            if (names.Length > 1) Emit(EngineLogLevel.Warning, "CubeLightAnimationContainer.DefineFromJson.TooManyAnims",
+                $"Expecting only one animation per json file, found {names.Length}. Will use first: {name}");
+            var value = root.Members[names[0]];
             var patterns = new List<CubeLightPattern>();
-            bool ok = true;
-            foreach (var e in anim.Value.EnumerateArray())
+            for (int i = 0; i < Json.Size(value); i++)
             {
-                if (!TryPattern(e, out var p)) { ok = false; break; }
-                patterns.Add(p);
+                var entry = Json.Index(value, (uint)i);
+                if (!Has(entry, "pattern") || !Has(entry, "duration_ms")) { Error("InvalidJson", $"Missing member field in {name} json file"); return; }
+                if (!TryPattern(Get(entry, "pattern"), name, i, entry, Emit, out var pattern))
+                { Error("InvalidPattern", $"Missing member field in one of the pattern definitions in {name} json file"); return; }
+                patterns.Add(pattern);
             }
-            if (!ok)
+            _anims[name] = patterns.ToArray();
+        }
+        // fidelity: M1-034, M4-044 — skip the complete definition, retaining the prior list.
+        catch (JsonLogicError e)
+        { Emit(EngineLogLevel.Warning, "Stack.CubeLightLoader.SkipFatalFile", $"M1-034 / M4-044: skipping cube light file {file ?? "<definition>"}: {e.Message}; keeping any previous definition"); }
+    }
+
+    private static bool Has(FirmwareJsonValue value, string key)
+    {
+        if (value.Kind == FirmwareJsonKind.Null) return false;
+        if (value.Kind != FirmwareJsonKind.Object) throw new JsonLogicError("find requires objectValue");
+        return value.Members.ContainsKey(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(key)));
+    }
+    private static FirmwareJsonValue Get(FirmwareJsonValue value, string key) =>
+        Has(value, key) ? value.Members[Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(key))] : new();
+    private static bool AsBool(FirmwareJsonValue value) => value.Kind switch
+    {
+        FirmwareJsonKind.Null => false, FirmwareJsonKind.Boolean => value.Boolean,
+        FirmwareJsonKind.Int => value.Signed != 0, FirmwareJsonKind.UInt => value.Unsigned != 0,
+        FirmwareJsonKind.Real => value.Real != 0,
+        _ => throw new JsonLogicError("Value is not convertible to bool."),
+    };
+
+    private static bool TryPattern(FirmwareJsonValue pat, string name, int index, FirmwareJsonValue entry,
+        Action<EngineLogLevel, string, string> emit, out CubeLightPattern pattern)
+    {
+        pattern = null!;
+        bool ok = Colors("onColors", out var on);
+        ok &= Colors("offColors", out var off);
+        ok &= Array("onPeriod_ms", false, out var onMs);
+        ok &= Array("offPeriod_ms", false, out var offMs);
+        ok &= Array("transitionOnPeriod_ms", false, out var transOn);
+        ok &= Array("transitionOffPeriod_ms", false, out var transOff);
+        ok &= Array("offset", true, out var offsets);
+        ok &= Has(pat, "rotationPeriod_ms");
+        if (!ok) return false;
+        uint rotation = Json.AsUInt(Get(pat, "rotationPeriod_ms"));
+        var leds = Enumerable.Range(0, 4).Select(i => new LedPattern(on[i], off[i], onMs[i], offMs[i], transOn[i], transOff[i], unchecked((int)offsets[i]))).ToArray();
+        uint duration = Json.AsUInt(Get(entry, "duration_ms"));
+        bool over = !Has(entry, "canBeOverridden") || AsBool(Get(entry, "canBeOverridden"));
+        string debugName = Has(entry, "patternDebugName") ? System.Text.Encoding.UTF8.GetString(Json.AsStringBytes(Get(entry, "patternDebugName"))) : name + index.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        pattern = new(leds, rotation, duration, over, false, debugName);
+        return true;
+
+        bool Colors(string field, out LedColor[] colors)
+        {
+            colors = new LedColor[4];
+            if (!Has(pat, field)) return false;
+            var array = Get(pat, field);
+            if (Json.Size(array) != 4)
             {
-                log?.Invoke($"error: {anim.Name}: a pattern lacks a required field");
-                log?.Invoke("MISSING: M4-044 | CubeLightAnimationContainer.ParseJsonToAnim.InvalidPattern / .InvalidJson: the stack TryPattern aggregates missing fields and invalid arrays; no single source branch matches (0x00589910..0x00589CD8)");
-                continue;
+                emit(EngineLogLevel.Error, "JsonTools.GetColorValuesToArrayOptional.DiffSizes", "The json array and destination array are different sizes");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return false;
             }
-            _anims.TryAdd(anim.Name, patterns.ToArray());
+            for (uint i = 0; i < 4; i++)
+            {
+                var color = Json.Index(array, i);
+                colors[i] = new(unchecked((byte)Json.AsUInt(Json.Index(color, 0))), unchecked((byte)Json.AsUInt(Json.Index(color, 1))),
+                    unchecked((byte)Json.AsUInt(Json.Index(color, 2))), unchecked((byte)Json.AsUInt(Json.Index(color, 3))));
+            }
+            return true;
+        }
+        bool Array(string field, bool signed, out uint[] values)
+        {
+            values = new uint[4]; var array = Get(pat, field);
+            if (array.Kind != FirmwareJsonKind.Array || Json.Size(array) != 4) return false;
+            for (uint i = 0; i < 4; i++) values[i] = signed ? unchecked((uint)Json.AsInt(Json.Index(array, i))) : Json.AsUInt(Json.Index(array, i));
+            return true;
         }
     }
 
-    private static bool TryPattern(JsonElement e, out CubeLightPattern p)
-    {
-        p = null!;
-        if (!e.TryGetProperty("pattern", out var pat) || !e.TryGetProperty("duration_ms", out var dur)) return false;
-        if (!pat.TryGetProperty("rotationPeriod_ms", out var rot)) return false;
-        string[] fields = { "onColors", "offColors", "onPeriod_ms", "offPeriod_ms", "transitionOnPeriod_ms", "transitionOffPeriod_ms", "offset" };
-        foreach (var f in fields)
-            if (!pat.TryGetProperty(f, out var a) || a.ValueKind != JsonValueKind.Array || a.GetArrayLength() != 4) return false;
-        var leds = new LedPattern[4];
-        for (int i = 0; i < 4; i++)
-            leds[i] = new LedPattern(ByteColor(pat.GetProperty("onColors")[i]), ByteColor(pat.GetProperty("offColors")[i]),
-                                     (uint)pat.GetProperty("onPeriod_ms")[i].GetInt64(), (uint)pat.GetProperty("offPeriod_ms")[i].GetInt64(),
-                                     (uint)pat.GetProperty("transitionOnPeriod_ms")[i].GetInt64(),
-                                     (uint)pat.GetProperty("transitionOffPeriod_ms")[i].GetInt64(),
-                                     (int)pat.GetProperty("offset")[i].GetInt64());
-        bool over = !e.TryGetProperty("canBeOverridden", out var cbo) || cbo.ValueKind != JsonValueKind.False;
-        bool rel = pat.TryGetProperty("makeRelative", out var mr) && mr.ValueKind == JsonValueKind.True;
-        string name = e.TryGetProperty("patternDebugName", out var dn) ? dn.GetString() ?? "" : "";
-        p = new CubeLightPattern(leds, (uint)rot.GetInt64(), (uint)dur.GetInt64(), over, rel, name);
-        return true;
-    }
-
-    private static LedColor ByteColor(JsonElement c) =>
-        new((byte)c[0].GetInt32(), (byte)c[1].GetInt32(), (byte)c[2].GetInt32(), (byte)c[3].GetInt32());
 }
 
 // fidelity: M4-018
@@ -678,6 +780,8 @@ public sealed class CubeLightComponent
     {
         public required CubeLightPattern[] Anim;
         public string Name = "";
+        public string Trigger = "";
+        public int TimerOffset;
         public bool Blended;
         public int Index;
         public uint TimerMs;
@@ -691,9 +795,11 @@ public sealed class CubeLightComponent
 
     private sealed class ObjectInfo
     {
+        public uint ObjectId;
         public int CurrentLayer = StateLayer;
         public bool GameLayerOnly;
         public readonly List<Playing>[] Layers = { new(), new(), new() };
+        public readonly CubeLightPattern[][] BlendedSlots = { Array.Empty<CubeLightPattern>(), Array.Empty<CubeLightPattern>(), Array.Empty<CubeLightPattern>() };
     }
 
     private readonly CozmoRobot _robot;
@@ -765,6 +871,60 @@ public sealed class CubeLightComponent
         }
     }
 
+    // fidelity: M4-041 — ActiveObject identity owns the state, discarded with that object.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Vision.ObservableObject, LedPattern[]> _ledStates = new();
+    internal static uint ColorWord(LedColor color) => ((uint)color.R << 24) | ((uint)color.G << 16) | ((uint)color.B << 8) | color.A;
+    private static LedColor FromWord(uint word) => new((byte)(word >> 24), (byte)(word >> 16), (byte)(word >> 8), (byte)word);
+    internal static LedPattern GetLEDState(LedPattern[] current, int index, SourceLogSink? sourceLog = null)
+    {
+        if (index >= 4) { sourceLog?.Invoke(EngineLogLevel.Warning, null, "ActiveObject.GetLEDState.IndexTooLarge", $"Requested LED index is too large ({index} > 3). Returning 3."); index = 3; }
+        else if (index < 0) { sourceLog?.Invoke(EngineLogLevel.Warning, null, "ActiveObject.GetLEDState.NegativeIndex", $"LED index should be >= 0, not {index}. Using 0."); index = 0; }
+        return current[index];
+    }
+    internal static CubeLightPattern[] BlendAnimWithCurLights(CubeLightPattern[] source, LedPattern[] current, out bool changed)
+    {
+        changed = false;
+        var result = new CubeLightPattern[source.Length];
+        for (int n = 0; n < source.Length; n++)
+        {
+            var leds = (LedPattern[])source[n].Leds.Clone();
+            for (int i = 0; i < 4; i++)
+            {
+                var state = GetLEDState(current, i);
+                // LedColor is the canonical RGBA spelling of rev(native little-endian ColorRGBA word).
+                if (ColorWord(leds[i].OnColor) == 0) { leds[i] = leds[i] with { OnColor = state.OnColor }; changed = true; }
+                if (ColorWord(leds[i].OffColor) == 0) { leds[i] = leds[i] with { OffColor = state.OffColor }; changed = true; }
+            }
+            result[n] = source[n] with { Leds = leds };
+        }
+        return result;
+    }
+    // fidelity: M4-046 — 0x00638A8C..0x00638B3A.
+    internal static CubeLightPattern[] ApplyAnimModifier(CubeLightPattern[] source, CubeLightModifier modifier)
+    {
+        return source.Select(pattern =>
+        {
+            var leds = new LedPattern[4]; uint rotation = pattern.RotationPeriodMs;
+            for (int i = 0; i < 4; i++)
+            {
+                var led = pattern.Leds[i]; var mod = modifier.Leds[i]; var first = modifier.Leds[0];
+                leds[i] = led with { OnColor = FromWord(ColorWord(led.OnColor) | ColorWord(mod.OnColor)),
+                    OffColor = FromWord(ColorWord(led.OffColor) | ColorWord(mod.OffColor)),
+                    OnMs = unchecked(led.OnMs + first.OnMs), OffMs = unchecked(led.OffMs + first.OffMs),
+                    TransitionOnMs = unchecked(led.TransitionOnMs + first.TransitionOnMs), TransitionOffMs = unchecked(led.TransitionOffMs + first.TransitionOffMs),
+                    OffsetMs = unchecked(led.OffsetMs + first.OffsetMs) };
+                rotation = unchecked(rotation + modifier.RotationPeriodMs);
+            }
+            return pattern with { Leds = leds, RotationPeriodMs = rotation, MakeRelative = modifier.RelativeMode != 0,
+                RelativeMode = modifier.RelativeMode, RelativePoint = modifier.RelativePoint };
+        }).ToArray();
+    }
+    internal (string Name, bool Blended, uint Timer, CubeLightPattern[] Patterns, int Count)? PlayingForTest(ObjectType type, int layer)
+    {
+        lock (_gate) { if (!_infos.TryGetValue(type, out var info) || info.Layers[layer].Count == 0) return null;
+            var p = info.Layers[layer][^1]; return (p.Name, p.Blended, p.TimerMs, p.Anim, info.Layers[layer].Count); }
+    }
+
     private uint NowMs => _robot.Engine.Timer.TimeStampMs;
     private void Log(string l) => _robot.Engine.Log(l);
     private void SourceLog(EngineLogLevel level, string? channel, string key, string text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
@@ -786,7 +946,7 @@ public sealed class CubeLightComponent
     {
         if (!connected || !CozmoCubes.IsLightCube(type)) return;
         lock (_gate)
-            if (!_infos.ContainsKey(type)) _infos[type] = new ObjectInfo { GameLayerOnly = _gameLayerOnlyDefault };
+            if (!_infos.ContainsKey(type)) _infos[type] = new ObjectInfo { GameLayerOnly = _gameLayerOnlyDefault, ObjectId = TryObjectId(type) ?? uint.MaxValue };
         PlayLightAnim(type, "WakeUp", StateLayer);
     }
 
@@ -795,13 +955,17 @@ public sealed class CubeLightComponent
     /// PlayLightAnim (LC2, 0x006382EA..0x006387D8), its gates in order: (a) the ObjectInfo exists ("InvalidObjectID");
     /// (b) the top of the layer's stack can be overridden ("CantBeOverridden"); (c) an animation exists for the trigger
     /// ("NoAnimForTrigger"); (d) gameLayerOnly with layer ≠ 0 ("OnlyGameLayerEnabled"), or not with layer 0
-    /// ("NotPlayingUserAnim"); (e) no blended animation here. Then the animation is pushed with timer = now + the first
+    /// ("NotPlayingUserAnim"); (e) blend every play; reject a second data-blended animation. Push with timer = now + the first
     /// pattern's duration and canBeOverridden from the first pattern; (f) a layer above the current one is "LightsNotSet",
     /// otherwise current layer := layer and SetObjectLights(first pattern). SendTransitionMessage is game-only and there
     /// is no game here.
     /// (b) is the requested layer's stack (0x006382FC..0x0063831C).
     /// </summary>
-    public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool blend = false)
+    // fidelity: M4-041, M4-045, M4-046
+    public bool PlayLightAnim(ObjectType type, string trigger, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
+        => PlayLightAnim(type, trigger, EngineLayer, 0, modifier, lights, timerOffsetMs);
+
+    public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
     {
         Playing pushed;
         CubeLightPattern first;
@@ -814,9 +978,9 @@ public sealed class CubeLightComponent
             lock (_gate)
             {
                 var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type);
-                if (connected is null)
-                { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real connected BlockWorld ObjectID; active-slot fallback is not used"); return false; }
-                uint id = connected.ObjectId;
+                if (connected is null && (!_infos.TryGetValue(type, out var retained) || retained.ObjectId == uint.MaxValue))
+                { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real BlockWorld ObjectID; active-slot fallback is not used"); return false; }
+                uint id = connected?.ObjectId ?? _infos[type].ObjectId;
                 objectId = id;
                 string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
                 if (!_infos.TryGetValue(type, out var info)) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.InvalidObjectID", $"No object with id {id} exists in _objectInfo map can't play animation"); return false; }
@@ -827,13 +991,47 @@ public sealed class CubeLightComponent
                 if (anim is null || anim.Length == 0) { SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.NoAnimForTrigger", $"No animation found for trigger {name}"); return false; }
                 if (info.GameLayerOnly && layer != UserLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.OnlyGameLayerEnabled", $"Only game layer is enabled, refusing to play anim {name} on object {id} layer {layerName}"); return false; }
                 if (!info.GameLayerOnly && layer == UserLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.NotPlayingUserAnim", "Refusing to play anim on User/Game layer when it is not enabled"); return false; }
-                if (stack.Count > 0 && stack[^1].Blended && blend) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim", "Can't play a blended anim over already playing blended anim"); return false; }
-                // Blending body remains M11's unported light-state handoff; do not manufacture the blended pattern.
-                if (blend) { Log("MISSING: M4-041 | BlendAnimWithCurLights body is not in the adopted rows; animation not pushed"); return false; }
-                first = anim[0];
-                var playing = new Playing { Anim = anim, Name = name, Index = 0,
-                    TimerMs = (first.DurationMs | durationMs) == 0 ? 0 : unchecked(NowMs + first.DurationMs + durationMs),
-                    CanBeOverridden = first.CanBeOverridden };
+                bool backBlended = stack.Count > 0 && stack[^1].Blended;
+                var input = anim;
+                if (modifier)
+                {
+                    if (lights is null) { Log("MISSING: M4-046 | modifier argument requires the caller's ObjectLights"); return false; }
+                    input = ApplyAnimModifier(anim, lights);
+                }
+                CubeLightPattern[] blended = Array.Empty<CubeLightPattern>();
+                bool blendResult = false;
+                if (connected is null)
+                    SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.BlendAnimWithCurLights.NullActiveObject",
+                        $"No active object with id {id} found in block world unable to blend anims");
+                else
+                {
+                    // ActiveObject's state is retained by its identity, after SetLEDs' period/colour normalization.
+                    if (!_ledStates.TryGetValue(connected, out var current))
+                    {
+                        if (input.Any(p => p.Leds.Any(l => ColorWord(l.OnColor) == 0 || ColorWord(l.OffColor) == 0)))
+                        { Log("MISSING: M4-041 | ActiveObject constructor LED state before its first SetLEDs has no checked row"); return false; }
+                        current = new LedPattern[4]; // never consumed: none of the source words is zero.
+                    }
+                    blended = BlendAnimWithCurLights(input, current, out blendResult);
+                }
+                if (backBlended && blendResult) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim", "Can't play a blended anim over already playing blended anim"); return false; }
+                bool useBlended = (modifier || blendResult) && !backBlended;
+                if (useBlended && connected is null)
+                { Log("MISSING: M4-045 / M15-037 | modifier with NullActiveObject: empty-slot timer reads past native node at 0x006386DA; reachability requires BuildPyramid lifecycle"); return false; }
+                string playingName = name;
+                if (useBlended)
+                {
+                    info.BlendedSlots[layer] = blended;
+                    playingName = stack.Count == 0 ? name : stack[^1].Name + "+" + name;
+                }
+                else if (anim[0].DurationMs == 0) stack.Clear();
+                var selected = useBlended ? info.BlendedSlots[layer] : anim;
+                first = selected[0];
+                uint offset = unchecked(durationMs + (uint)timerOffsetMs);
+                uint duration = unchecked(first.DurationMs + offset);
+                var playing = new Playing { Anim = selected, Name = playingName, Trigger = trigger, Blended = useBlended, Index = 0,
+                    TimerMs = (first.DurationMs | offset) == 0 ? 0 : unchecked(NowMs + duration), TimerOffset = unchecked((int)offset),
+                    CanBeOverridden = anim[0].CanBeOverridden };
                 stack.Add(playing);
                 pushed = playing;
                 if (layer > info.CurrentLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.LightsNotSet", $"Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
@@ -992,20 +1190,33 @@ public sealed class CubeLightComponent
         int? id = type is null ? -1 : TryObjectId(type.Value) is { } value ? unchecked((int)value) : null;
         if (id is { } objectId) SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.StopLightAnim", $"Stopping {trigger} on object {objectId} on layer {LayerName(layer)}.");
         else Log("MISSING: M4-018 | StopLightAnim 0x00638F9C: type-only caller has no native ObjectID");
+        bool found = false;
         lock (_gate)
         {
             foreach (var (t, info) in _infos)
                 if (type is null || t == type)
                     foreach (var p in info.Layers[layer])
-                        if (MatchesTrigger(p, trigger)) p.Stop = true;
+                        if (MatchesTrigger(p, trigger)) { p.Stop = true; found = true; }
         }
-        Log("MISSING: M4-041 | CubeLightComponent.StopLignAnim.Result 0x00639300: Current state string serializer has no adopted row");
-        Update(pickDefaultLayer); // 0x006390BE..0x006390C2 forwards the native bool parameter.
+        Update(pickDefaultLayer); // native Update precedes the state-string serialization.
+        string state;
+        lock (_gate)
+        {
+            var text = new System.Text.StringBuilder();
+            foreach (var info in _infos.Values.Where(i => id == -1 || unchecked((int)i.ObjectId) == id).OrderBy(i => unchecked((int)i.ObjectId)))
+            {
+                text.Append($"object={unchecked((int)info.ObjectId)} layer={LayerName(layer)} currLayer={LayerName(info.CurrentLayer)} [");
+                foreach (var p in info.Layers[layer]) text.Append($"{p.Name}:{p.Trigger}@{p.TimerMs}{(p.Stop ? ":STOP_NOW" : "")} ");
+                text.Append(']');
+            }
+            state = text.ToString();
+        }
+        SourceLog(EngineLogLevel.Debug, "CubeLightComponent", "CubeLightComponent.StopLignAnim.Result",
+            $"{(found ? "found" : "did not find")} anim '{trigger}'. Current state: {state}"); // 0x006390BE..0x006390C2 forwards the native bool parameter.
     }
 
     /// <summary>The animation name a trigger maps to; a playing entry matches when its name is the trigger's name.</summary>
-    private bool MatchesTrigger(Playing p, string trigger) => Animations.ForTrigger(trigger) is { Length: > 0 } a
-        && ReferenceEquals(a, p.Anim);
+    private bool MatchesTrigger(Playing p, string trigger) => p.Trigger == trigger;
 
     // fidelity: M4-018
     /// <summary>
@@ -1195,7 +1406,8 @@ public sealed class CubeLightComponent
 
     private uint SetObjectLights(ObjectType type, CubeLightPattern p)
     {
-        if (p.MakeRelative) Log("warning: MISSING: a makeRelative cube light pattern needs the located object (M11-004: the located object and makeRelative); sent to the connected cube");
+        if (p.MakeRelative)
+        { Log("MISSING: M4-018 / M11-004 | relative ObjectLights requires located object / MakeStateRelativeToXY 0x00637E76; no guessed send"); return 0x04000000; }
         var cube = _robot.Cubes.ConnectedCubes.FirstOrDefault(c => c.Type == type && c.ObjectId is not null);
         if (cube is null) { SourceLog(EngineLogLevel.Info, "CubeLightController", "CubeLightController.SetObjectLights.NullActiveObject", "Null active object pointer"); return 0x04000000; }
         var leds = new LedPattern[4];
@@ -1208,7 +1420,13 @@ public sealed class CubeLightComponent
             else if (l.OffMs == 0) l = l with { OffColor = l.OnColor, OffMs = 0x7FFFFFFF };
             leds[i] = l;
         }
-        return SetLights(cube.ObjectId!.Value, leds, gamma: 0x80, p.RotationPeriodMs);
+        // Host atomicity: the retained state and its grouped wire send describe the same final writer.
+        lock (_sendGate)
+        {
+            var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.ActiveId == unchecked((int)cube.ObjectId!.Value));
+            if (connected is not null) lock (_gate) { _ledStates.Remove(connected); _ledStates.Add(connected, leds); }
+            return SetLights(cube.ObjectId!.Value, leds, gamma: 0x80, p.RotationPeriodMs);
+        }
     }
 
     // fidelity: M4-018
