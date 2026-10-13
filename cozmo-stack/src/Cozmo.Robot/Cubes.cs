@@ -506,6 +506,29 @@ public sealed class CozmoCubes
 
 
     /// <summary>Fed every robot message by <see cref="CozmoRobot"/>.</summary>
+    // fidelity: M4-023 — constructor subscription precedes Impl on B4/B5.
+    internal void HandleTapFilterMovement(RobotMessage message)
+    {
+        uint id = message is ObjectMoved moved ? moved.ObjectID : ((ObjectStoppedMoving)message).ObjectID;
+        bool missing;
+        lock (_gate)
+        {
+            var cube = Connected(id); missing = cube is null;
+            if (cube is not null)
+            {
+                var info = TapInfo(cube);
+                if (message is ObjectStoppedMoving) info.Moving = false;
+                else if (info.WindowEnd == 0) info.Moving = true;
+            }
+        }
+        if (missing)
+        {
+            string key = message is ObjectMoved ? "BlockTapFilterComponent.HandleActiveObjectMoved.ObjectIDNull"
+                : "BlockTapFilterComponent.HandleActiveObjectStopped.ObjectIDNull";
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, key, $"Could not find match for active object ID {unchecked((int)id)}");
+        }
+    }
+
     internal void Handle(RobotMessage m)
     {
         Cube? discovered = null, connectionChanged = null, tapped = null, moved = null;
@@ -674,8 +697,6 @@ public sealed class CozmoCubes
                         callouts.Add(() => MovementLocatedLoop(mv.ObjectID, -1, true, mv.Timestamp, "Robot.ActiveObjectMoved."));
                         SourceLog(EngineLogLevel.Warning, null, "ObjectMovedOrStoppedHelper.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)mv.ObjectID)}"); break;
                     }
-                    var d = TapInfo(c);
-                    if (d.WindowEnd == 0) d.Moving = true;
                     if (WorldId(c, Log) is not { } movedWorldId) break;
                     if (IsCharger(c, Log)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.Charger", "Charger sending garbage move messages"); break; }
                     SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectMoved.ObjectMovedOrStopped", $"ObjectID: {movedWorldId} (Active ID {unchecked((int)mv.ObjectID)}), type: {c.Type}, axisOfAccel: {UpAxisName(mv.AxisOfAccel)}, accel: {F6(mv.Accel.X)} {F6(mv.Accel.Y)} {F6(mv.Accel.Z)}, time: {unchecked((int)mv.Timestamp)} ms");
@@ -706,7 +727,6 @@ public sealed class CozmoCubes
                         callouts.Add(() => MovementLocatedLoop(sm.ObjectID, -1, false, sm.Timestamp, "Robot.ActiveObjectStopped."));
                         SourceLog(EngineLogLevel.Warning, null, "ObjectMovedOrStoppedHelper.UnknownActiveID", $"Could not find match for active object ID {unchecked((int)sm.ObjectID)}"); break;
                     }
-                    TapInfo(c).Moving = false;
                     if (WorldId(c, Log) is not { } stoppedWorldId) break;
                     if (IsCharger(c, Log)) { SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectStopped.Charger", "Charger sending garbage move messages"); break; }
                     SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.ActiveObjectStopped.ObjectMovedOrStopped", $"ObjectID: {stoppedWorldId} (Active ID {unchecked((int)sm.ObjectID)}), type: {c.Type}, axisOfAccel: <unknown>, accel: 0.000000 0.000000 0.000000, time: {unchecked((int)sm.Timestamp)} ms");

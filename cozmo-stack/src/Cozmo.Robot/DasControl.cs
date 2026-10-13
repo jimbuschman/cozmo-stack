@@ -114,15 +114,16 @@ public sealed partial class CozmoEngine
         // fidelity: M3-059 — background transfer app trigger is never supplied; task paths unreachable.
     }
     // fidelity: M3-058
+    internal static string? DasDeviceIdPathForTest; // null in production; explicit test fixture input.
     private string LoadDasDeviceId()
     {
-        string path = Options.DasDeviceIdPath ?? Path.Combine(
+        string path = Options.DasDeviceIdPath ?? DasDeviceIdPathForTest ?? Path.Combine(
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cozmo-stack"), "device-id");
         try
         {
             if (File.Exists(path))
             {
-                using var reader = new StreamReader(path, Encoding.UTF8);
+                using var reader = new StreamReader(path, new UTF8Encoding(false), detectEncodingFromByteOrderMarks: false);
                 if (reader.ReadLine() is { } stored) return stored; // empty line is an ID; zero bytes is null.
             }
         }

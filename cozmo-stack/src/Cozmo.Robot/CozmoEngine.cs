@@ -1303,6 +1303,7 @@ internal sealed class RobotInitialConnection
 
     private readonly CozmoEngine _engine;
     private readonly List<Subscription> _handles = new();
+    private readonly EngineRobot _registrationRobot;
     private readonly List<Subscription> _mfgId = new();
     private volatile bool _validated;
 
@@ -1318,7 +1319,7 @@ internal sealed class RobotInitialConnection
     /// <summary>The $session_id the Success path sets (CB18).</summary>
     public Guid? SessionId { get; private set; }
 
-    private sealed class Subscription { public bool Active = true; public Action<RobotMessage> Fn = _ => { }; }
+    private sealed class Subscription { public bool Active = true; public Action<RobotMessage> Fn = _ => { }; public RetainedSubscription? Handle; }
 
     // fidelity: M1-028
     /// <summary>
@@ -1326,20 +1327,27 @@ internal sealed class RobotInitialConnection
     /// E_t stored. With an external interface it subscribes, in order, 0xD2 → HandleFactoryFirmware, 0xEE →
     /// HandleFirmwareVersion, 0xC9 → HandleRobotAvailable (CB8). No timer and no Update (CB7, CB31).
     /// </summary>
-    public RobotInitialConnection(CozmoEngine engine, uint expectedVersion, uint expectedTime)
+    public RobotInitialConnection(CozmoEngine engine, uint expectedVersion, uint expectedTime, EngineRobot robot)
     {
         _engine = engine;
         ExpectedVersion = expectedVersion;
         ExpectedTime = expectedTime;
-        _handles.Add(new Subscription { Fn = m => { if (m.Id == RobotMessageId.FactoryFirmwareVersion) HandleFactoryFirmware(); } });
-        _handles.Add(new Subscription { Fn = m => { if (m is FirmwareVersion f) HandleFirmwareVersion(f); } });
-        _handles.Add(new Subscription { Fn = m => { if (m.Id == RobotMessageId.RobotAvailable) HandleRobotAvailable(); } });
+        _registrationRobot = robot;
+        Register(_handles, RobotMessageId.FactoryFirmwareVersion, _ => HandleFactoryFirmware());
+        Register(_handles, RobotMessageId.FirmwareVersion, m => HandleFirmwareVersion((FirmwareVersion)m));
+        Register(_handles, RobotMessageId.RobotAvailable, _ => HandleRobotAvailable());
     }
 
     /// <summary>
     /// The RIC's subscribers for one message, in subscription order. E3: a link is called only while its function
     /// is set, and next is read after the call, so a handle released during the emit is never reached.
     /// </summary>
+    private void Register(List<Subscription> owners, RobotMessageId tag, Action<RobotMessage> fn)
+    {
+        var subscription = new Subscription { Fn = fn };
+        subscription.Handle = _registrationRobot.SubscribeMessage(tag, m => { if (subscription.Active) fn(m); }, "RIC");
+        owners.Add(subscription);
+    }
     public void OnMessage(RobotMessage m)
     {
         for (int i = 0; i < _handles.Count; i++) if (_handles[i].Active) _handles[i].Fn(m);
@@ -1466,7 +1474,7 @@ internal sealed class RobotInitialConnection
     private void OnSuccess(uint fw)
     {
         _validated = true;
-        _mfgId.Add(new Subscription { Fn = m => { if (m is ManufacturingID id) HandleMfgId(id, fw); } });
+        Register(_mfgId, RobotMessageId.MfgId, m => HandleMfgId((ManufacturingID)m, fw));
         _engine.Handler.SendMessage(new GetManufacturingInfo());
     }
 
@@ -1517,8 +1525,8 @@ internal sealed class RobotInitialConnection
     private void SendConnectionResponse(RobotConnectionResult result, uint fw)
     {
         ResponseSent = true;
-        for (int i = _mfgId.Count - 1; i >= 0; i--) _mfgId[i].Active = false;
-        for (int i = _handles.Count - 1; i >= 0; i--) _handles[i].Active = false;
+        for (int i = _mfgId.Count - 1; i >= 0; i--) { _mfgId[i].Active = false; _mfgId[i].Handle?.Dispose(); }
+        for (int i = _handles.Count - 1; i >= 0; i--) { _handles[i].Active = false; _handles[i].Handle?.Dispose(); }
         _engine.BroadcastConnectionResponse(new RobotConnectionResponse(result, fw, Serial, BodyHwVersion, BodyColor));
     }
 
@@ -1581,7 +1589,7 @@ internal sealed class RobotManager
         {
             RobotEntries.Add(id, r);
             RobotIds.Add(id);
-            if (withRic) _rics.Add(id, new RobotInitialConnection(_engine, ExpectedVersion, ExpectedTime));
+            if (withRic) _rics.Add(id, new RobotInitialConnection(_engine, ExpectedVersion, ExpectedTime, r));
         }
         return r;
     }
@@ -1699,6 +1707,10 @@ public sealed partial class CozmoEngine : IDisposable
     // ---- the host's hooks (set by CozmoRobot)
     /// <summary>The stack's device handlers for one broadcast robot message, and whether a RobotState is handled (CD23).</summary>
     internal Action<RobotMessage, bool>? DeviceRoute;
+    internal Action<RobotMessage>? TapFilterRoute;
+    internal Action<RobotMessage>? CubeAccelRoute;
+    internal Action<RobotMessage>? PickAndPlaceRoute;
+    internal Action<RobotMessageId, string>? MessageDispatchObservedForTest;
     /// <summary>The public per-message event, raised last.</summary>
     internal Action<RobotMessage>? PublicRoute;
     /// <summary>Runs when Robot 1 is deleted (CB33), so the host can stop what belonged to it.</summary>
@@ -2136,17 +2148,16 @@ public sealed partial class CozmoEngine : IDisposable
     // fidelity: M1-024, M1-041, M1-028, M1-034
     /// <summary>
     /// MessageHandler's Broadcast (CC36) to the engine's subscribers of the tag, in the stack's order: the Robot's
-    /// own handlers (SyncTimeAck CD19; the RobotState gate CD23; crashReport for TracePrinter CD22), then the stack's
-    /// devices (for mfgId that is HandleRobotSetBodyID, which comes before the RIC's lambdas, E2), then the RIC's
-    /// subscriptions, then the public event. Each subscriber is isolated (policy M1-034).
+    /// per-tag signal in native registration order (including component/action/RIC subscriptions), then
+    /// the public host endpoint. Each native subscriber is isolated (policy M1-034).
     /// </summary>
     internal void Broadcast(RobotMessage m)
     {
         var robot = Robots.Get(RobotId);
         // fidelity: M1-046
-        bool stateHandled = robot?.DeliverMessage(m) ?? m is not RobotState;
-        if (DeviceRoute is { } d) Isolated(() => d(m, stateHandled));
-        if (Robots.Ric is { } ric) Isolated(() => ric.OnMessage(m));
+        robot?.DeliverMessage(m);
+        // All native subscribers, including the RIC, are on the robot's per-tag signal.
+        // No native registration uses the 0x1CF signal; the host endpoint follows synchronous native delivery.
         if (PublicRoute is { } p) Isolated(() => p(m));
     }
 

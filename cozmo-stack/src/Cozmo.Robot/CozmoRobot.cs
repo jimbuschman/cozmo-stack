@@ -326,6 +326,8 @@ public sealed class CozmoRobot : IDisposable
         // fidelity: M1-024
         // Messages reach the devices only from the engine's per-tick drain (B25, CD10), not from the transport.
         Engine.DeviceRoute = RouteToDevices;
+        Engine.TapFilterRoute = m => Cubes.HandleTapFilterMovement(m);
+        Engine.CubeAccelRoute = m => CubeAccel.Handle(m);
         Engine.MovementExitSdkMode = Motion.OnExitSdkMode;
         Engine.PublicRoute = m => EventFan.Raise(Message, m, e => Fault(e));
         Engine.Faulted = Fault;
@@ -731,7 +733,7 @@ public sealed class CozmoRobot : IDisposable
             Route(() => VisionModeRecipient?.HandleObjectConnectionState(cs));
         }
         Route(() => Cubes.Handle(m));
-        Route(() => CubeAccel.Handle(m));
+        // CubeAccel owns its early native F5 subscription; it is not an Impl continuation.
     }
 
     // fidelity: M1-025, M1-015

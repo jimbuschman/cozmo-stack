@@ -173,6 +173,9 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
         _behavior = behavior;
         _locator = locator;
         _world = world;
+        // Host adapter after the complete native per-tag signal (CozmoEngine.PublicRoute).
+        // Feeds M10-003 CubeMotionTracker; M11-041 owns the radio-slot to world-ID translation.
+        // It never registers a native raw B4/B5/D7 subscriber or mutates the inbound message.
         robot.Message += OnMessage;
         if (_world is not null) _world.ObjectObserved += OnWorldObserved;
     }

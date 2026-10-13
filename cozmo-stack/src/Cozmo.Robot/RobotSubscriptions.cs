@@ -23,33 +23,50 @@ internal sealed class RetainedSubscription : IDisposable
 }
 
 // fidelity: M1-046
+// fidelity: M2-018 — per-tag signal, native tail append and next read AFTER the call.
 internal sealed class SubscriptionSignal<T>
 {
     private sealed class Node
     {
-        internal readonly int Tag;
         internal Action<T>? Callback;
-        internal Node(int tag, Action<T> callback) { Tag = tag; Callback = callback; }
+        internal Node Next = null!, Prev = null!;
     }
-    private readonly LinkedList<Node> _nodes = new();
+    private readonly Dictionary<int, Node> _signals = new();
+    private readonly object _gate = new();
     internal RetainedSubscription Subscribe(int tag, Action<T> callback)
     {
-        var saved = _nodes.AddLast(new Node(tag, callback));
+        Node node;
+        lock (_gate)
+        {
+            if (!_signals.TryGetValue(tag, out var sentinel))
+            { sentinel = new Node(); sentinel.Next = sentinel.Prev = sentinel; _signals[tag] = sentinel; }
+            node = new Node { Callback = callback, Next = sentinel, Prev = sentinel.Prev };
+            sentinel.Prev.Next = node; sentinel.Prev = node;
+        }
         var weak = new WeakReference<SubscriptionSignal<T>>(this);
         return new RetainedSubscription(() =>
         {
-            // U4/U7: absent/expired signal or missing node => no action.
-            if (!weak.TryGetTarget(out var signal) || saved.List != signal._nodes) return;
-            // U5/U7: destroy callback, zero pointer, then unlink. A delivery
-            // snapshot can retain the node storage, but cannot call its old callback.
-            saved.Value.Callback = null;
-            signal._nodes.Remove(saved);
+            if (!weak.TryGetTarget(out var signal)) return;
+            lock (signal._gate)
+            {
+                if (node.Callback is null) return;
+                node.Callback = null;
+                node.Prev.Next = node.Next; node.Next.Prev = node.Prev;
+                // Removed nodes retain their OWN links, including a currently executing node.
+            }
         });
     }
     internal void Deliver(int tag, T message)
     {
-        foreach (var node in _nodes.ToArray())
-            if (node.Tag == tag) node.Callback?.Invoke(message);
+        Node sentinel, node;
+        lock (_gate) { if (!_signals.TryGetValue(tag, out sentinel!)) return; node = sentinel.Next; }
+        while (node != sentinel)
+        {
+            Action<T>? callback;
+            lock (_gate) callback = node.Callback;
+            callback?.Invoke(message); // External callouts never hold the storage lock.
+            lock (_gate) node = node.Next;
+        }
     }
 }
 
@@ -72,6 +89,7 @@ public sealed partial class EngineRobot
     private readonly SubscriptionSignal<byte> _idleMessages = new();
     private readonly SubscriptionOwners _messagingHandles = new(), _idleHandles = new();
     private bool _lastStateHandled;
+    private readonly HashSet<RobotMessageId> _implTags = new();
 
     // Existing RobotToEngine handlers retain their original order and isolation.
     // The host API is the external-interface endpoint (AGENTS app boundary).
@@ -81,6 +99,13 @@ public sealed partial class EngineRobot
         // Idle is constructed before Messaging. The C# host API supplies the
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));
+        InitCheckedDevSubscribers();
+        AddMessage(new PathFollowingEvent().Id, _ => Engine.EmitStackLog("MISSING: M12-023 | Path component C6 subscription 0x0050FCF6: native handler body remains a gap; host PathFollower runs after native delivery"), "Path");
+        // Backup is the first C9 subscriber, constructed with NVStorage before Impl.
+        AddMessage(RobotMessageId.RobotAvailable, _ => Engine.EmitStackLog("MISSING: M15-033 | Backup::RobotConnected 0x00519B78 -> 0x0051A010"), "Backup");
+        AddMessage(new ObjectAccel().Id, m => Engine.CubeAccelRoute?.Invoke(m), "CubeAccel");
+        AddMessage(RobotMessageId.ActiveObjectMoved, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");
+        AddMessage(RobotMessageId.ActiveObjectStopped, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");
         AddMessage(RobotMessageId.SyncTimeAck, _ => HandleSyncTimeAck());
         AddMessage(RobotMessageId.State, m => _lastStateHandled = UpdateFullRobotState((RobotState)m));
         AddMessage(RobotMessageId.CrashReport, _ => TracePrinterOnCrashReport());
@@ -105,6 +130,13 @@ public sealed partial class EngineRobot
                 new Dictionary<string, string> { ["$data"] = buf });
         });
         AddMessage(RobotMessageId.FirmwareVersion, m => HandleFirmwareVersion((FirmwareVersion)m));
+        AddMessage(RobotMessageId.FactoryFirmwareVersion, m => HandleFWVersionInfo((FWVersionInfo)m));
+        AddMessage(RobotMessageId.DockingStatus, m => HandleDockingStatus((DockingStatus)m));
+        AddMessage(RobotMessageId.PickAndPlaceResult, m =>
+        {
+            if (Engine.PickAndPlaceRoute is { } route) route(m);
+            else Engine.EmitStackLog("MISSING: M12-008 | Impl::HandlePickAndPlaceResult 0x00533780 has no attached DockingSystem recipient");
+        });
         Lifetime.Bind(0x51C, _ => _idleHandles.Retire());
         // fidelity: M3-041
         // I2 0x00532BC8..0x00532BE8: HandleImuData (tag 0xBF) and HandleImuRawData (tag 0xC7) are subscribed with the same
@@ -116,11 +148,28 @@ public sealed partial class EngineRobot
         // L35/I9: ~Messaging releases the subscription vector (0x00532A48), then the filebuf destructor closes the IMU
         // stream (0x00532A64 -> 0x005010B4 -> close 0x0050111C): sync, fclose, no ClosingLogFile diagnostic.
         Lifetime.Bind(0x518, _ => { _messagingHandles.Retire(); _imuLog.Destroy(); });
+        // Only the existing live device handlers are bridged here. No subscriber is invented for an unported tag.
+        RobotMessage[] deviceMessages = { new ObjectMoved(), new ObjectStoppedMoving(), new ObjectTapped(),
+            new ObjectConnectionState(), new ObjectPowerLevel(), new ObjectUpAxisChanged(), new ObjectAvailable(),
+            new DefaultCameraParams(), new ImageChunk(), new ImageImuData(), new CliffEvent(), new PotentialCliff(),
+            new RobotStopped(), new FallingStarted(), new FallingStopped(), new MotorCalibration() };
+        foreach (var tag in deviceMessages.Select(m => m.Id))
+            if (!_implTags.Contains(tag)) AddMessage(tag, _ => { }, "Impl");
     }
     private ImuDiagnosticLog _imuLog = null!;
     internal ImuDiagnosticLog ImuLog => _imuLog;
-    private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback)
-        => _messagingHandles.Add(_robotMessages.Subscribe((int)tag, m => Engine.DeliverIsolated(() => callback(m))));
+    private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback, string name = "Impl")
+    {
+        if (name == "Impl") _implTags.Add(tag);
+        _messagingHandles.Add(SubscribeMessage(tag, m =>
+        {
+            callback(m);
+            if (name == "Impl") Engine.DeviceRoute?.Invoke(m, _lastStateHandled);
+        }, name));
+    }
+    internal RetainedSubscription SubscribeMessage(RobotMessageId tag, Action<RobotMessage> callback, string name)
+        => _robotMessages.Subscribe((int)tag, m => Engine.DeliverIsolated(() =>
+        { Engine.MessageDispatchObservedForTest?.Invoke(tag, name); callback(m); }));
     internal bool DeliverMessage(RobotMessage message)
     {
         _lastStateHandled = message is not RobotState;

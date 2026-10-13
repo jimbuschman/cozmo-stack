@@ -51,18 +51,19 @@ public sealed class M3M4X15BuilderTests : IDisposable
     [Fact]
     public void NativeHeadBodyEventsFollowGlobalsAndUseSameBufferForTextAndData()
     {
-        using var robot=Create(Path.Combine(_root,"id"));var engine=robot.Engine;var order=new List<string>();var entries=new List<EngineLogEntry>();
+        using var robot=Create(Path.Combine(_root,"id"));var engine=robot.Engine;var order=new List<string>();var entries=new List<EngineLogEntry>();var globalsAtDelivery=new List<string>();
         engine.Das.CallObserved=c=>{if(c.Name=="_DAS_SetGlobal")order.Add((string)c.Arguments[0]!);};
         engine.LogEntry+=e=>
         {
             if(e.Name is not ("robot.handle_robot_set_head_id" or "robot.handle_robot_set_body_id"))return;
             order.Add(e.Name);entries.Add(e);
-            Assert.Equal(e.Text,engine.Das.GetGlobalsForThisRun()[e.Name.EndsWith("head_id")?"$group":"$phys"]);
+            globalsAtDelivery.Add(engine.Das.GetGlobalsForThisRun()[e.Name.EndsWith("head_id")?"$group":"$phys"]);
         };
         engine.Broadcast(new RobotAvailable{HwVersion=0xabcd,SerialNumberHead=0x12345678});
         engine.Broadcast(new ManufacturingID{BodyColor=unchecked((int)0x87654321),BodyHwVersion=0x12345678,SerialNumber=0x87654321});
         Assert.Equal(new[]{"$group","robot.handle_robot_set_head_id","$phys","robot.handle_robot_set_body_id"},order);
         Assert.Equal(new[]{"0xbeefabcd12345678","0xbeef4321567887654321"},entries.Select(e=>e.Text));
+        Assert.Equal(entries.Select(e=>e.Text),globalsAtDelivery);
         Assert.All(entries,e=>{Assert.Equal(EngineLogLevel.Event,e.Level);Assert.Null(e.Channel);Assert.Equal(e.Text,Assert.Single(e.Data).Value);Assert.Contains("$data",e.Data.Keys);});
     }
     private static CozmoRobot Create(string path)

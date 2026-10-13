@@ -276,6 +276,11 @@ public static class PanTiltResult
 /// <c>MovementComponent</c> (M13-022). <c>MovementComponent::TurnInPlace</c> and <c>MoveHeadToAngle</c> are unread (M13-021), so no
 /// implementation exists in this stack: the two methods are the visible stubs, and a test or a later record supplies them.
 /// </summary>
+internal interface INativeMotorAckSource
+{
+    IDisposable SubscribeMotorAck(Action<byte> callback);
+}
+
 public interface IPanTiltRobot
 {
     /// <summary>[robot+0x355] == 0 (OnTreads), what <c>IsOffTreadsStateValid</c> 0x00545EC4 tests.</summary>
@@ -309,7 +314,7 @@ public interface IPanTiltRobot
 /// made unconditionally, which is unobservable because +0xAC is read only under +0xD9, which this build never sets.
 /// </summary>
 // fidelity: M13-022
-public sealed class TurnInPlaceAction
+public sealed class TurnInPlaceAction : IDisposable
 {
     public const int ActionType = 0x28;
     public const int TracksToLock = 4;
@@ -321,15 +326,19 @@ public sealed class TurnInPlaceAction
     public const int MotorActionAckTag = 0xC4;
 
     private readonly IPanTiltRobot _robot;
+    private readonly IDisposable? _ackSubscription;
     public event Action<string>? Log;
     private readonly List<string> _eyeShiftRequests = new();
     public IReadOnlyList<string> EyeShiftRequests => _eyeShiftRequests;
     /// <summary>The draw for the +0xB8 variability; null unless the caller supplies the engine's RNG (unread).</summary>
     public Func<float, float>? RandomInRange { get; set; }
 
+    public void Dispose() => _ackSubscription?.Dispose();
+
     public TurnInPlaceAction(IPanTiltRobot robot, float angle, bool isAbsolute)
     {
         _robot = robot;
+        _ackSubscription = (robot as INativeMotorAckSource)?.SubscribeMotorAck(HandleMotorActionAck);
         Byte0x84 = false; Byte0x85 = false;
         Angle0x88 = angle;
         Angle0x8C = 0; Angle0x94 = 0; Angle0x9C = 0;

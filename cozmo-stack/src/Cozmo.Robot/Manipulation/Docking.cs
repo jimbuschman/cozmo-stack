@@ -167,6 +167,7 @@ public sealed class DockingSystem : IDisposable
         // Publication reads this active supplier. Its replacement/lifetime semantics remain M12's.
         robot.Carrying = Carrying;
         robot.Message += OnMessage;
+        robot.Engine.PickAndPlaceRoute += OnNativePickAndPlace;
         vision.DockingMarkersProcessed += OnFrame; // M11-064: signal before UpdateAllResults error
         // Everything this instance installs on the vision system is remembered, so Dispose can take back
         // what it put there - and only what it put there. A replacement installs its own and owns them
@@ -218,16 +219,20 @@ public sealed class DockingSystem : IDisposable
     {
         int id;
         lock (_handlerGate) { id = _nextHandlerId++; _actionHandlers[id] = action; }
-        return new HandlerRegistration(this, id);
+        var lift = _robot.Engine.Robot!.SubscribeMessage(RobotMessageId.LiftLoad,
+            m => LiftLoad?.Invoke(((Cozmo.Protocol.LiftLoad)m).Field0), "IDockAction");
+        return new HandlerRegistration(this, id, lift);
     }
 
     private sealed class HandlerRegistration : IDisposable
     {
         private readonly DockingSystem _owner; private readonly int _id; private int _disposed;
-        public HandlerRegistration(DockingSystem owner, int id) { _owner = owner; _id = id; }
+        private readonly IDisposable _lift;
+        public HandlerRegistration(DockingSystem owner, int id, IDisposable lift) { _owner = owner; _id = id; _lift = lift; }
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            _lift.Dispose();
             lock (_owner._handlerGate) _owner._actionHandlers.Remove(_id);
         }
     }
@@ -524,7 +529,13 @@ public sealed class DockingSystem : IDisposable
     private bool _prevPickingOrPlacing;
     private Action? _onPickingOrPlacingRise;
 
+    private void OnNativePickAndPlace(RobotMessage m) => HandleMessage(m);
     private void OnMessage(RobotMessage m)
+    {
+        if (m is PickAndPlaceResult) return; // Impl owns this native B8 handler.
+        HandleMessage(m);
+    }
+    private void HandleMessage(RobotMessage m)
     {
         switch (m)
         {
@@ -592,12 +603,7 @@ public sealed class DockingSystem : IDisposable
                 foreach (var a in registered) MovingLiftPostDock?.Invoke(ml.Field0 == (byte)a);
                 break;
             }
-            case LiftLoad ll:
-            {
-                int registered; lock (_handlerGate) registered = _actionHandlers.Count;
-                for (int i = 0; i < registered; i++) LiftLoad?.Invoke(ll.Field0);
-                break;
-            }
+            case Cozmo.Protocol.LiftLoad: break; // Constructor/Init-ordered native subscriptions own DA.
         }
     }
 
@@ -613,6 +619,7 @@ public sealed class DockingSystem : IDisposable
     public void Dispose()
     {
         _robot.Message -= OnMessage;
+        _robot.Engine.PickAndPlaceRoute -= OnNativePickAndPlace;
         _vision.DockingMarkersProcessed -= OnFrame;
         _vision.FrameProcessed -= _carriedPose;
         if (ReferenceEquals(_vision.IsCarryingObject, _isCarrying)) _vision.IsCarryingObject = null;

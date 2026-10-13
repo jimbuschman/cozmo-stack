@@ -443,19 +443,17 @@ public sealed class MountChargerAction
     /// </summary>
     private async Task<uint> RunTurnAsync(float angle, CancellationToken cancel)
     {
-        var turn = new TurnInPlaceAction(new LivePanTiltRobot(_m), angle, isAbsolute: true);
+        using var turn = new TurnInPlaceAction(new LivePanTiltRobot(_m), angle, isAbsolute: true);
         turn.SetMaxSpeed(TurnMaxSpeedRadPerSec);
         turn.SetAccel(TurnAccelRadPerSec2);
         turn.Log += l => _trace.Add(l);
-        void OnMessage(RobotMessage msg) { if (msg is MotorActionAck ack) turn.HandleMotorActionAck(ack.ActionId); }
-        _m.Robot.Message += OnMessage;
         try
         {
             uint init = turn.Init();
             if (init != 0) return init;
             return await RunToEnd(turn.CheckIfDone, cancel, DefaultActionTimeoutSec);
         }
-        finally { _m.Robot.Message -= OnMessage; }
+        finally { turn.Dispose(); }
     }
 
     /// <summary><c>BackupOntoChargerAction::CheckIfDone</c> 0x0054E7A8 over a <c>DriveStraightAction(-120.0f, 30.0f, false)</c>.</summary>
@@ -529,8 +527,11 @@ public sealed class MountChargerAction
     /// What <see cref="TurnInPlaceAction"/> reads from the live robot (M13-022's <c>IPanTiltRobot</c>). <c>MovementComponent::TurnInPlace</c>'s body is unread (M13-021), so the send is the
     /// <c>SetBodyAngle</c> message the turn path of this stack already builds (<see cref="TurnTowardsPose.Message"/>, M11-014), with the shared action-id counter (M4-005).
     /// </summary>
-    internal sealed class LivePanTiltRobot : IPanTiltRobot
+    internal sealed class LivePanTiltRobot : IPanTiltRobot, INativeMotorAckSource
     {
+        public IDisposable SubscribeMotorAck(Action<byte> callback) => _m.Robot.Engine.Robot!.SubscribeMessage(
+            RobotMessageId.MotorActionAck, m => callback(((MotorActionAck)m).ActionId), "TurnAction");
+
         private readonly ManipulationSystem _m;
         public LivePanTiltRobot(ManipulationSystem m) => _m = m;
         public bool OnTreads => _m.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;

@@ -885,6 +885,7 @@ bool requireCalibration = true)
     /// <summary>L11: the lift action's destructor releases its ack subscription before the base tail.</summary>
     private void ReleaseAckSubscription(MoveAction a)
     {
+        a.AckSubscription?.Dispose();
         lock (_gate) _actions.Remove(a);
     }
 
@@ -892,6 +893,7 @@ bool requireCalibration = true)
     /// engine result to the public <see cref="MotionOutcome"/>.</summary>
     private void ActionEnded(MoveAction a)
     {
+        a.AckSubscription?.Dispose();
         lock (_gate) _actions.Remove(a);
         a.Done.TrySetResult(OutcomeFor(a));
     }
@@ -1186,6 +1188,7 @@ bool requireCalibration = true)
             return counter >= 11;
         }
         public readonly CozmoMotion Owner;
+        internal RetainedSubscription? AckSubscription;
         public readonly bool IsHead;
         /// <summary>The motor target. For a lift action it is +0x84, which Init derives from <see cref="RequestedHeight"/> (+0x78).</summary>
         public float Target;
@@ -1216,6 +1219,8 @@ bool requireCalibration = true)
             // The base IActionRunner warnings/infos (TimedOut, TracksLocked, Cancel, ...) reach the engine log.
             Log = line => Owner.Log(line);
             SourceLog = (level, channel, key, text) => Owner._robot.Engine.EmitSourceLog(level, channel, key, text);
+            AckSubscription = Owner._robot.Engine.Robot?.SubscribeMessage(RobotMessageId.MotorActionAck,
+                m => Owner.HandleActionAck(this, (MotorActionAck)m), IsHead ? "HeadAction" : "LiftAction");
         }
 
         // fidelity: M4-016
@@ -1410,26 +1415,24 @@ bool requireCalibration = true)
     /// calibrated, a report below −28° stored as −25° and above 47.5° as 44.5°, with the HeadAngleOOB warning.
     /// Batch 2: the state/ack flags are stored here; CheckIfDone runs on the ActionList tick (L9), not in Handle.
     /// </summary>
+    private void HandleActionAck(MoveAction a, MotorActionAck ack)
+    {
+        lock (_gate)
+        {
+            if (!a.Sent || a.Id != ack.ActionId) return;
+            string name = a.IsHead ? "MoveHeadToAngleAction" : "MoveLiftToHeightAction";
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Actions", $"{name}.MotorActionAcked", FormattableString.Invariant($"[{unchecked((int)a.Tag)}] ActionID: {a.Id}"));
+            a.Acked = true;
+        }
+    }
+
     internal void Handle(RobotMessage m)
     {
         lock (_gate)
         {
             switch (m)
             {
-                case MotorActionAck ack:
-                    foreach (var a in _actions)
-                    {
-                        // fidelity: M4-016
-                        // Row 6: the head callback (0x0054D624..0x0054D68E: guard +0xAA sent and +0xA9 == id; ack flag +0xAB) and the lift one
-                        // (0x0054D748..0x0054D7B2: +0x95, +0x94; flag +0x96) are the same shape: they act only when the command was sent and the
-                        // id equals the action's, with no test of the ack flag, so a repeated ack logs again. Actions INFO
-                        // "<MoveHeadToAngleAction|MoveLiftToHeightAction>.MotorActionAcked", "[%d] ActionID: %d" with (tag +0x60, motor action id).
-                        if (!a.Sent || a.Id != ack.ActionId) continue;
-                        string name = a.IsHead ? "MoveHeadToAngleAction" : "MoveLiftToHeightAction";
-                        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Actions", $"{name}.MotorActionAcked", FormattableString.Invariant($"[{unchecked((int)a.Tag)}] ActionID: {a.Id}"));
-                        a.Acked = true;
-                    }
-                    break;
+                case MotorActionAck: break; // Each action owns its constructor-ordered C4 subscription.
                 case RobotState s:
                     _headMoving = !s.Has(RobotStatusFlag.HeadInPos);
                     _liftMoving = !s.Has(RobotStatusFlag.LiftInPos);
