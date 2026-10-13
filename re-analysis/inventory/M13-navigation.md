@@ -2539,3 +2539,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New RECOVERABLE_GAP | M13-033 planner internals |
 | Notes appended | M13-018 |
+
+
+## Check of R-PLANNERS (manager, 2026-10-13; research/20261013-planner-internals-check.md)
+
+| Change | Records |
+| --- | --- |
+| **Correction to §4b and row R4-6:** the LatticePlanner force=false branch is reachable (RestartPlannerIfNeeded 0x00649C36 r2 = 0 -> slot +0xC). R4-6 is no longer EXACT_SOURCE; it is part of M13-033's build | M13-018, M13-033 |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M13-033 |
+| New RECOVERABLE_GAP | M13-034 planner dependencies |
+| New HARDWARE_ONLY | M13-035 planner thread scheduling |

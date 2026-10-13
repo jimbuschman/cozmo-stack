@@ -4527,7 +4527,7 @@
         "re-analysis/research/20261013-m12-032-path-status.md: rows P1-P30 (ctor 0x00648B14..0x00648B6C, SetDriveToPoseStatus 0x006492C4..0x0064931A, predicates, StartDrivingToPose 0x0064ACC4..0x0064AF30, StartPlanner/fallback, Update 0x006494CC..0x00649586, UpdatePlanning 0x006495E0..0x0064972E, HandlePlanComplete 0x00649F60..0x0064A214, ExecutePath 0x0064A340..0x0064A48E, ExecuteCustomPath, UpdateCurrentPathSegment 0x006493B4..0x00649434 with the +0x42/+0x44 gate, Doler.Update 0x005082CE..0x00508326, 0xC6 lambda 0x0064B370..0x0064B4FC and helper 0x0064B620..0x0064B6A0, origin changes 0x0064980C..0x00649D14, tick order 0x005140BC/0x00514170). OnPathComplete 0x00649390 and AbortAndSetFailure 0x0064937C are dead code."
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-m12-032-path-status.md): build B1-B9 (job B-M12-1), replacing the B-M5-18 stand-in mapping. Planner internals are M13-033; robot events after ClearPath are M12-041 (HARDWARE_ONLY). The engine has one path-id counter (+0x42) and one cancel id (+0x4A), with no per-action ownership. Previous notes: read the four M13 functions' branch conditions and what [+0x42]/[+0x44] are; until then the live drive does not poll CheckIfDone (M12-023).\nB-M5-18 interim stand-in explicitly required by the urgent job: live drives use existing path-follower signals, following=3/arrived=4/failed=0, with one visible MISSING per drive. Native status/IDs are not claimed recovered by these tests. The fixture now uses the same mapping as production, with no private fixture status dictionary. B-M12-1 replaces it from adopted native rows; this record remains unchanged in classification.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-m12-032-path-status.md): build B1-B9 (job B-M12-1), replacing the B-M5-18 stand-in mapping. Planner internals are M13-033; robot events after ClearPath are M12-041 (HARDWARE_ONLY). The engine has one path-id counter (+0x42) and one cancel id (+0x4A), with no per-action ownership. Previous notes: read the four M13 functions' branch conditions and what [+0x42]/[+0x44] are; until then the live drive does not poll CheckIfDone (M12-023).\nB-M5-18 interim stand-in explicitly required by the urgent job: live drives use existing path-follower signals, following=3/arrived=4/failed=0, with one visible MISSING per drive. Native status/IDs are not claimed recovered by these tests. The fixture now uses the same mapping as production, with no private fixture status dictionary. B-M12-1 replaces it from adopted native rows; this record remains unchanged in classification. Citation (re-analysis/research/20261013-planner-internals-check.md): the HandlePlanComplete safety check goes through slot 0x18 (0x00649FB6) -> IPathPlanner::CheckIsPathSafe 0x00509202 -> slot 0x1C.",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests; M5X18BuilderTests; M5X17BuilderTests; NavigationTests; CorrectionTests; M12RVisBuildTests; R2FloorPlacementTests (M12-032 stand-in, not native status verification)"
@@ -5043,7 +5043,7 @@
       ],
       "effect": "the planner starts differently, waits the wrong time, aborts early or reports the wrong result",
       "provenance": "the current stack code; not yet compared against re-analysis/inventory/M13-navigation.md",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the planner in binary32: entry/worker, OpenList multimap with FIFO ties, the heuristic and the ONE shared best-cost map, the goal-id map built before InitializeHeuristic prunes, StateID packing, BuildPlan keeps the plan after the 1000th step (0x0085A610..0x0085A6A0), DoPlanning falls through to Replan on a cleared run flag. Still open: see M13-003 (obstacle source); the planner's sleep loop polls with Task.Delay. M12-032 read (re-analysis/research/20261013-m12-032-path-status.md): PathComponent reacts to CheckPlanningStatus each tick (P9); the planner internals are M13-033.",
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): the planner in binary32: entry/worker, OpenList multimap with FIFO ties, the heuristic and the ONE shared best-cost map, the goal-id map built before InitializeHeuristic prunes, StateID packing, BuildPlan keeps the plan after the 1000th step (0x0085A610..0x0085A6A0), DoPlanning falls through to Replan on a cleared run flag. Still open: see M13-003 (obstacle source); the planner's sleep loop polls with Task.Delay. M12-032 read (re-analysis/research/20261013-m12-032-path-status.md): PathComponent reacts to CheckPlanningStatus each tick (P9); the planner internals are M13-033. Contradicted 2026-10-13 (re-analysis/research/20261013-planner-internals-check.md): the force=false branch IS live: RestartPlannerIfNeeded passes r2 = 0 to slot +0xC (0x00649C36), reached from HandlePossibleOriginChanges when DidObjectsChange() == 1 (0x006498D6..0x006498EA); the safe prefix is kept and the new plan appended (0x004FECDE..0x004FECF6, 0x00500540). Also: UpdatePlanning consumes the status each tick (not only GetCompletePath); StopPlanning has a guard (0x004FD1BA..0x004FD1C4); DoPlanning's return is clobbered (only F8 counts); the note about Task.Delay is stale. The stack has no worker or flags. The inventory row R4-6 is corrected (M13 re-approved). Build in B-M13-1.",
       "hardware_required": false,
       "live_path": true,
       "test": "NavigationTests.DoPlanningReturnsTheEngineResultCodes"
@@ -9386,17 +9386,52 @@
     {
       "id": "M13-033",
       "subsystem": "M13-navigation",
-      "title": "Planner internals behind PathComponent: SelectPlannerHelper, LatticePlanner ComputePath/ComputeNewPathIfNeeded/StopPlanning/CheckIsPathSafe and [impl+0xF8], FaceAndApproach/MinimalAngle ComputePath, ComputeClosestGoalPose, ApplyMotionProfile",
+      "title": "Planner side of PathComponent: planner construction, SelectPlannerHelper, lattice ComputePath/ComputeNewPathIfNeeded/StartPlanning (both force values, safe-prefix retention), async worker and F0-F8 flags, StopPlanning guard, GetCompletePath, the short planners, IPathPlanner wrappers, slot 0x20/0x18 safety dispatch",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-m12-032-path-status.md: \"Unread\" section: SelectPlannerHelper 0x0064A5BA..0x0064AA18; LatticePlanner 0x004FE688, 0x004FEB00, 0x004FD1A2, 0x004FF936; FaceAndApproach/MinimalAngle vtbl+0x2C; ComputeClosestGoalPose 0x005087AC; ApplyMotionProfile 0x00508AE4; planner status base 0x00508A94..0x00508AAA.",
+        "re-analysis/research/20261013-planner-internals-check.md: ctor 0x00648AE0..0x00648C54; SelectPlannerHelper 0x0064A530..0x0064A8DA (not 0x0064A5BA..0x0064AA18); ComputeNewPathIfNeeded 0x004FEB00..0x004FEB34; StartPlanning 0x004FEB44..0x004FF452 (false branch, prefix 0x004FECDE..0x004FECF6, Append 0x00500540); worker 0x005007E0..0x00500854; DoPlanning 0x00500090..0x00500590; StopPlanning guard 0x004FD1A2..0x004FD1CC; lattice GetCompletePath 0x004FFB64..0x004FFE2E; FaceAndApproach 0x004F35A8..0x004F38F6; MinimalAngle 0x00503C18..0x005041B2; IPathPlanner 0x005087AC..0x00508AE2, 0x005091CC..0x0050928A (base internal returns 0 when +0x28 == 0); safety dispatch slot 0x18 0x00649FB6 -> 0x00509202 -> slot 0x1C."
+      ],
+      "effect": "Which planner a drive uses, the planner status PathComponent reacts to, and the goal index chosen.",
+      "provenance": "Opus extractor read of M12-032 (2026-10-13), manager record.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-planner-internals-check.md): build (job B-M13-1). PlannerRunMode/SetIsSynchronous is unreachable in production (the app never sends 0x7B), so planning is asynchronous. The no-data-platform construction branch is unreachable in the stack (the data platform always exists). Dependencies: M13-034; scheduling: M13-035. Previous notes: RECOVERABLE_GAP: read the listed bodies. The lattice planner runs on a thread in the original, so ticks spent in status 1 are scheduling-dependent; the stack reports per its own planner (note on M13-018).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M13-034",
+      "subsystem": "M13-navigation",
+      "title": "Planner dependencies still unread: DidObjectsChange, AppendToPath, PathIsSafe/ApplyPathSegment, Path::Append*, xythetaPlan::Append, FindClosestPlanSegmentToPose, the ComputePath goal loop, ApplyMotionProfile sub-ranges, MinimalAngle compares",
       "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
       "status": "RECOVERABLE_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-m12-032-path-status.md: \"Unread\" section: SelectPlannerHelper 0x0064A5BA..0x0064AA18; LatticePlanner 0x004FE688, 0x004FEB00, 0x004FD1A2, 0x004FF936; FaceAndApproach/MinimalAngle vtbl+0x2C; ComputeClosestGoalPose 0x005087AC; ApplyMotionProfile 0x00508AE4; planner status base 0x00508A94..0x00508AAA."
+        "re-analysis/research/20261013-planner-internals-check.md (and re-analysis/research/20261013-planner-internals.md): \"Unread\" section: 0x00623020, 0x00855D90, 0x00850E34, 0x00850610, 0x0085CE88, 0x0085D3C8, 0x0085D46C, 0x00851870, 0x00856310, 0x004FE7F6..0x004FE9E2, 0x00508C14..0x00508D90, 0x00508F48..0x0050906E, 0x00509070..0x005090DE, 0x00503E7A..0x00503EA2."
       ],
-      "effect": "Which planner a drive uses, the planner status PathComponent reacts to, and the goal index chosen.",
-      "provenance": "Opus extractor read of M12-032 (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed bodies. The lattice planner runs on a thread in the original, so ticks spent in status 1 are scheduling-dependent; the stack reports per its own planner (note on M13-018).",
+      "effect": "The exact path the lattice planner builds and when a running drive replans.",
+      "provenance": "Codex research checked by Opus (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies.",
       "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M13-035",
+      "subsystem": "M13-navigation",
+      "title": "Planner thread scheduling: which tick UpdatePlanning sees running (1), complete (2/3) or the transient 0 published by DoPlanning (0x005004DE)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/LatticePlanner.cs",
+      "status": "HARDWARE_ONLY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-planner-internals-check.md (and re-analysis/research/20261013-planner-internals.md): StartPlanning async dispatch 0x004FF432..0x004FF49E (F5 = 0 in production), worker 0x005007E0..0x00500854, DoPlanning F8 stores 0x00500216/0x00500212/0x0050058E and the transient 0 at 0x005004DE; UpdatePlanning reads F8 each tick (0x006495E6..0x006495EC)."
+      ],
+      "effect": "How many ticks a drive spends computing its path, and whether a transient 0 triggers the fallback planner.",
+      "provenance": "Codex research checked by Opus (2026-10-13), manager record.",
+      "unresolved": "HARDWARE_ONLY: depends on thread scheduling on the phone; no shipped artifact settles it. The stack runs a real worker thread with the same flags (job B-M13-1).",
+      "hardware_required": true,
       "live_path": true,
       "test": ""
     },

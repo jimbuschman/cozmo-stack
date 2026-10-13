@@ -60,6 +60,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 29 | [B-M5-17](B-M5-17.md) | done b9040943; Opus check FAIL (production drives hang; research/20261013-b-m5-17-check.md), fixes in B-M5-18 |
 | 29a | [B-M5-18](B-M5-18.md) | done 5db4343b; Opus check FAIL (drives time out; research/20261013-b-m5-18-check.md), fixes in B-M5-19 |
 | 29a2 | [B-M5-19](B-M5-19.md) | URGENT, next after the job in progress (triplet, end-animation action) |
+| 29c | [B-M13-1](B-M13-1.md) | open, after B-M12-1 and B-M5-19 (planner side: worker thread, both force values, planner choice) |
 | 29b | [B-M12-1](B-M12-1.md) | open, after B-M5-18 (PathComponent status machine; replaces the stand-in) |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
 | 30a | [B-M3M4-22](B-M3M4-22.md) | open, after B-M3M4-19 (M7-028 directories, B-M3M4-18 queued items) |
@@ -87,5 +88,5 @@ anything. BOARD.md is history; this file is the live queue.
 | 12 | [R-HANDLERS](../research/requests/20261013-unported-message-handlers.md) | answered; checked (research/20261013-unported-message-handlers-check.md) |
 | 13 | [R-LOGGERS-BACKUP](../research/requests/20261013-test-loggers-and-backup.md) | answered; checked (research/20261013-test-loggers-and-backup-check.md) |
 | 14 | [R-BACKUP-REST](../research/requests/20261013-backup-manager-rest.md) | answered (Codex on the work PC); checked (research/20261013-backup-manager-rest-check.md) |
-| 15 | [R-PLANNERS](../research/requests/20261013-planner-internals.md) | answered; Opus check running |
+| 15 | [R-PLANNERS](../research/requests/20261013-planner-internals.md) | answered; checked (research/20261013-planner-internals-check.md) |
 | 16 | [R-DELOC-CALLEES](../research/requests/20261013-delocalize-callees.md) | open (M11-070) |
