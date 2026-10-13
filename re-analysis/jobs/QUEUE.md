@@ -72,3 +72,4 @@ anything. BOARD.md is history; this file is the live queue.
 | 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | answered; checked (research/20261012-m4-cube-lights-check.md) |
 | 9 | [R-CLIFF-WORLD](../research/requests/20261012-cliff-world-helpers.md) | answered; checked (research/20261012-cliff-world-helpers-check.md) |
 | 10 | [R-PLAY-AREA](../research/requests/20261013-play-area-and-localize-failures.md) | answered; checked (research/20261013-play-area-check.md) |
+| 11 | [R-SUBSCRIBERS](../research/requests/20261013-robot-message-subscribers.md) | open (M2-018) |
