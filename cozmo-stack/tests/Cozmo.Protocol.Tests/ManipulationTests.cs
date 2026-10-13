@@ -238,8 +238,10 @@ public class ManipulationTests
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
         Assert.Contains(drive.Trace, l => l.Contains("Success"));
-        // the head went to the path-following angle
-        Assert.Contains(rig.Sent, m => m is SetHeadAngle sh && Math.Abs(sh.AngleRad - (-0.261799f)) < 1e-4);
+        // The native Init calls MovementComponent directly. Its M13-021 primitive is unread;
+        // substituting a queued head action would cancel this parent drive.
+        Assert.Contains(drive.Trace, l => l.StartsWith("MISSING: M12-024") && l.Contains("M13-021"));
+        Assert.DoesNotContain(rig.Sent, m => m is SetHeadAngle);
     }
 
     // ------------------------------------------------------------------ docking

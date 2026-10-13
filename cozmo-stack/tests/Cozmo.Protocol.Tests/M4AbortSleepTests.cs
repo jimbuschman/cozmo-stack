@@ -758,6 +758,7 @@ public class M4AbortSleepTests
         Assert.Equal(new[]
         {
             "info: [Unnamed] MovementComponent.UnlockTracks: Tracks 0x1 are not currently locked by nope",
+            "MISSING: M4-047 | PrintLockState 0x006410D8 handoff outside these checked rows; existing M4-031 body retained",
             "debug: [Unnamed] MovementComponent.LockState: HEAD_TRACK:1 dw[w] \nBODY_TRACK:1 dw[w] \n",
         }, lines);
     }

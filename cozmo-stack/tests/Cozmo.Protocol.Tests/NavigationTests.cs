@@ -986,23 +986,24 @@ public class NavigationTests
     }
 
     [Fact]
-    public void PopAWheelieStopsAtMissingDrivingLifecycleBeforeDockRetry()
+    public void PopAWheelieDriveCompletionDoesNotFabricateFailedAbort()
     {
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
-        rig.M.DrivingAnimationsForTest = null; // real production lifecycle, not the geometry fixture dependency.
+        rig.M.DrivingAnimationsForTest = null;
+        rig.Robot.Animations.DrivingAnimations.Push(new((AnimationTrigger)0x23F,(AnimationTrigger)0x23F,(AnimationTrigger)0x23F),"lifecycle-fixture");
         rig.Cube = CubeAt(220, 0);
         Assert.Single(rig.Frame().Objects);
         rig.DockOutcome = BlockStatus.NoBlock; rig.DockSucceeds = false;
+        var driveResults=new List<ActionResult>();rig.M.DriveResultObservedForTest=driveResults.Add;
         var ctx = Ctx(rig);
         var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
         var missing = new System.Collections.Concurrent.ConcurrentQueue<string>(); rig.Robot.Engine.StackLogLine += missing.Enqueue;
         RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
         Assert.False(b.Succeeded);
-        Assert.Contains(missing, line => line.StartsWith("MISSING: M12-024"));
-        Assert.Equal(0, b.Retries); // no claimed dock failure/retry beyond the unbuilt drive arrival lifecycle.
-        Assert.DoesNotContain(b.Trace, l => l.Contains("Retry 1 of 1"));
+        // Later native dock failures may fail/retry the behavior; the drive arrival itself must be Success.
+        Assert.NotEmpty(driveResults);Assert.Contains(ActionResult.Success,driveResults);Assert.DoesNotContain(ActionResult.Abort,driveResults);
     }
 
     [Fact]

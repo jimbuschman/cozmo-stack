@@ -382,14 +382,16 @@ public class CorrectionTests
         using var signals = SignalTestContext.Install();
         using var rig = new Rig();
         using var cts = new CancellationTokenSource();
-        // the path is never answered (nothing pumps the fake robot), so the drive is still following when the
-        // behaviour owning it is cancelled
+        // Tick the ActionList and report Started explicitly; no fake terminal firmware response is sent.
+        // The fixture therefore supplies IsActive=true when the owning behavior is cancelled.
         var drive = new DriveStraightAction(rig.M, 300, 100f).RunAsync(cts.Token);
-        SpinUntil(() => rig.M.Paths.Sent.OfType<ExecutePath>().Any());
+        SignalTestContext.Until(() => rig.M.Paths.Sent.OfType<ExecutePath>().Any(), rig.Tick);
+        rig.Send(new PathFollowingEvent { EventId = rig.M.Paths.LastPathId, EventType = (byte)PathEventType.Started });
+        rig.Tick();
         int clearsBefore = rig.M.Paths.Sent.OfType<ClearPath>().Count();
 
         cts.Cancel();
-        var result = SignalTestContext.Result(drive);
+        var result = SignalTestContext.Result(drive, rig.Tick);
         Assert.Equal(ActionResult.CancelledWhileRunning, result);
         Assert.True(rig.M.Paths.Sent.OfType<ClearPath>().Count() > clearsBefore,
                     "the cancelled drive must clear the robot's path rather than leave the firmware following it");
@@ -458,7 +460,7 @@ public class CorrectionTests
         rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
 
         var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)) };
-        var r = SignalTestContext.Result(drive.RunAsync(default));
+        var r = SignalTestContext.Result(drive.RunAsync(default), rig.Tick);
         rig.Pump();
 
         Assert.Equal(ActionResult.PathPlanningFailedAbort, r);

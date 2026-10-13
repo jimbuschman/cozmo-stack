@@ -67,7 +67,7 @@ public sealed class M5X16BuilderTests : IDisposable
     [Fact]
     public void ActivityLifecycleNamesActualOwningRecordAndDoesNotFakeHandlerStack()
     {
-        using var robot=Robot();var activity=new Activity{Id="a",Strategy=new ActivityStrategy()};var missing=new List<string>();
+        using var robot=Robot();var activity=new Activity{Id="a",Strategy=new ActivityStrategy(),DriveStartAnim=(AnimationTrigger)0x95};var missing=new List<string>();
         activity.OnSelected(1,line=>robot.Engine.EmitStackLog(line));robot.Engine.StackLogLine+=missing.Add;
         activity.OnDeselected(2,line=>robot.Engine.EmitStackLog(line));
         Assert.Contains(missing,l=>l.Contains("M5-063 / M15-006")&&l.Contains("RemoveDrivingAnimations 0x005B3450"));

@@ -110,6 +110,14 @@ public sealed class ManipulationSystem : IDisposable
     // Test-only dependency isolation for geometry/wire fixtures; null on every production construction.
     // fidelity: M12-024 — does not supply or claim the native action-side Init/start/end lifecycle.
     internal Func<IDrivingAnimationHandler>? DrivingAnimationsForTest { get; set; }
+    // Explicit fixtures only. Production must receive recovered native PathComponent/timeout inputs before claiming this path.
+    internal Func<DriveToPoseAction,DriveToPoseTick>? DriveTickForTest { get; set; }
+    internal Func<DriveToPoseAction,float>? DriveTimeoutForTest { get; set; }
+    internal Action<ActionResult>? DriveResultObservedForTest { get; set; }
+    internal Func<bool>? PathIsActiveForTest { get; set; }
+    internal Action<bool>? ErasePlannerObstaclesForTest { get; set; }
+    internal Func<DriveStraightAction,DriveStraightTick>? StraightTickForTest { get; set; }
+    internal Func<DriveStraightAction,float>? StraightTimeoutForTest { get; set; }
     public VisionSystem Vision { get; }
     public BlockWorld World => Vision.World;
     public PathSender Paths { get; }

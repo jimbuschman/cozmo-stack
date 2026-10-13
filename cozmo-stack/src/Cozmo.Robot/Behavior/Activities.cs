@@ -763,7 +763,7 @@ public sealed class ActivityStrategy
     /// a flat 3 seconds instead - an activity that ended as soon as it started waits three seconds before
     /// it may try again.
     /// </summary>
-    // fidelity: M15-006
+    // fidelity: M15-005
     public bool InCooldown(double nowSec)
     {
         double cooldown = EffectiveCooldownSec;
@@ -771,7 +771,7 @@ public sealed class ActivityStrategy
         double ended = LastEndedSec ?? 0;
         if (ended <= Epsilon && !StartInCooldown) return false;
         double ran = ended - (LastStartedSec ?? 0);
-        // 0x005B5312: a run of at most two basestation ticks gets the flat 3.0 s cooldown (M15-006).
+        // 0x005B5312: a run of at most two basestation ticks gets the flat 3.0 s cooldown (M15-005).
         if (ran > 0 && ran <= 2 * TickSec) cooldown = ShortRunCooldownSec;
         return nowSec < ended + cooldown;
     }
@@ -952,13 +952,21 @@ public sealed class Activity
     // fidelity: M5-063, M15-006 — caller triplet/lock inputs remain unread; no unmatched push/remove is fabricated.
     public void OnSelected(double nowSec, Action<string>? missing = null)
     {
-        ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing);
         SelectedAtSec = nowSec; Strategy.OnStarted(nowSec);
+        ReportActivityMissing("PublicStateBroadcaster::UpdateActivity 0x005B3154", missing);
+        if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing);
+        if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("SmartPushIdleAnimation 0x005B31BC", missing);
     }
     public void OnDeselected(double nowSec, Action<string>? missing = null)
     {
-        ReportDrivingMissing("RemoveDrivingAnimations 0x005B3450", missing);
         SelectedAtSec = null; Strategy.OnEnded(nowSec);
+        if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("RemoveIdleAnimation 0x005B340C", missing);
+        if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("RemoveDrivingAnimations 0x005B3450", missing);
+    }
+    private void ReportActivityMissing(string call, Action<string>? sink)
+    {
+        string text=$"M15-006 IActivity::{call} for {Id} is unbuilt";
+        if(sink is not null)sink("MISSING: "+text);else SteppedBehavior.ReportMissing(text);
     }
     private void ReportDrivingMissing(string call, Action<string>? sink)
     {

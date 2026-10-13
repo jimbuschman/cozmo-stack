@@ -126,7 +126,7 @@ public sealed class M5X15BuilderTests : IDisposable
     {
         using var robot = CozmoRobot.CreateOffline(); var handler = robot.Animations.DrivingAnimations;
         var lines = new List<string>(); robot.Engine.StackLogLine += lines.Add;
-        Assert.False(handler.Init(4, 99, false, false)); Assert.Equal(5, handler.State);
+        Assert.False(handler.Init(4, 99, false, false)); Assert.Equal(0, handler.State); Assert.False(handler.InputsReady);
         Assert.Contains(lines, l => l.Contains("M5-063 M7-026 GetSimpleMood"));
         handler.Push(new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D), "test");
         Assert.True(handler.Init(4, 99, false, false)); handler.PlayDrivingLoopAnim();

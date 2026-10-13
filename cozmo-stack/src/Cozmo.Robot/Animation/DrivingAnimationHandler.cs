@@ -55,14 +55,16 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
             }
         }
     }
-    internal bool Init(byte tracks, uint tag, bool argument3, bool repeatWhilePath)
+    public bool Init(byte tracks, uint tag, bool argument3, bool repeatWhilePath)
     {
         // UpdateCurrDrivingAnimations is called only here, before the Init stores.
-        if (!UpdateCurrent()) return false;
+        bool selected=UpdateCurrent();
+        if(!selected)Current=null; // Unknown selection is not the constructor triplet.
         State = 0; StartId = LoopId = EndId = 0;
         _tracks = tracks; _tag = tag; _unlock = !argument3; _repeat = repeatWhilePath; // Init's fourth C++ parameter (not counting this).
-        return true;
+        return selected;
     }
+    public bool InputsReady => Current is not null;
     private bool UpdateCurrent()
     {
         if (_entries.Count != 0) { Current = _entries[^1].Animations; return true; }
@@ -116,7 +118,18 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         robot.Motion.UnlockTracks(_tracks, unchecked((int)_tag).ToString(CultureInfo.InvariantCulture));
     }
     public void PlayStartAnim()
-        => Missing("PlayStartAnim body 0x004F0FF6 not in the adopted rows; M12-024 lifecycle caller still unbuilt");
+    {
+        if(State!=0)return;
+        if(Current is not { } current) { Missing("current start/loop selection is unknown");return; }
+        if(current.Start!=(AnimationTrigger)0x23F)PlayDrivingStartAnim();
+        else if(current.Loop!=(AnimationTrigger)0x23F)PlayDrivingLoopAnim();
+    }
+    internal void PlayDrivingStartAnim()
+    {
+        State=1;
+        if(Current is not { } current){Missing("current start selection is unknown");return;}
+        if(CreateAction(current.Start) is { } action){StartId=action.Tag;Queue(action);}
+    }
     public uint PlayEndAnim()
     {
         if (State is 3 or 4 or 5) return 0;
@@ -159,7 +172,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         if (_owner?.ActionListOwner is { } actions) actions.QueueAction(QueueActionPosition.InParallel, action, 0);
         else { Missing("M8-015 ActionList.QueueAction(IN_PARALLEL, action, 0) recipient absent"); if (action is IDisposable disposable) disposable.Dispose(); }
     }
-    internal void ActionIsBeingDestroyed()
+    public void ActionIsBeingDestroyed()
     {
         State = 5; Cancel(StartId); Cancel(LoopId); Cancel(EndId);
     }

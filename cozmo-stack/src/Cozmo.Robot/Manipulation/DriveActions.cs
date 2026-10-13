@@ -1,4 +1,5 @@
 using Cozmo.Protocol;
+using Cozmo.Transport;
 using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot.Manipulation;
@@ -54,13 +55,13 @@ public enum DriveToPoseStatus
 /// two ids are not in the inventory, so they are named by offset.
 /// </summary>
 public readonly record struct DriveToPoseTick(int PathStatus, double NowSec, Pose3d RobotPose, double RobotHeightMm,
-                                              ushort PathIdAt0x42, ushort PathIdAt0x44);
+                                              ushort PathIdAt0x42, ushort PathIdAt0x44, sbyte CurrentPathSegment = -1);
 
 /// <summary>
 /// The engine's <c>DrivingAnimationHandler</c> (<c>[robot+0x24C]</c>) as <c>DriveToPoseAction::CheckIfDone</c>
 /// uses it: the state word it reads first (<c>[[robot+0x24C]] == 3</c> keeps the action RUNNING), the start
 /// animation at path state 3 and the end animation at the tail. The shared Robot handler now implements the
-/// checked M5-063 bodies. M12-024 still owns its action-side lifecycle calls; PlayStartAnim and the queued
+/// checked M5-063 bodies and the M12-024 action-side lifecycle calls. The queued
 /// TriggerLiftSafeAnimationAction runner remain visible MISSING boundaries.
 /// </summary>
 // fidelity: M12-024
@@ -68,6 +69,9 @@ public interface IDrivingAnimationHandler
 {
     /// <summary><c>[[robot+0x24C]]</c> (0x0055AB5C..0x0055AB6A).</summary>
     int State { get; }
+    bool Init(byte tracks, uint tag, bool suppressTrackLocking, bool repeatWhilePath) => true;
+    bool InputsReady => true;
+    void ActionIsBeingDestroyed() { }
     /// <summary><c>DrivingAnimationHandler::PlayStartAnim</c> (PLT 0x004AB134; call 0x0055AC08). Its return value is not used by CheckIfDone.</summary>
     void PlayStartAnim();
     /// <summary><c>DrivingAnimationHandler::PlayEndAnim</c> (PLT 0x004A5764; call 0x0055B0AA). Non-zero keeps CheckIfDone RUNNING (0x0055B0AA..0x0055B0CC).</summary>
@@ -89,26 +93,17 @@ public sealed class UnreadDrivingAnimationHandler : IDrivingAnimationHandler
 }
 
 /// <summary>
-/// The engine's <c>DriveToPoseAction</c> (0x0055A238..0x0055B1E8): the head goes to the path-following angle
-/// −15 degrees (0xBE860A92, <c>MovementComponent::MoveHeadToAngle</c> in Init), a path to the goal is planned
-/// and executed, and the action succeeds when the robot's pose is within the goal tolerance (angle 0.174533 rad,
-/// 0x3E32B8C2, from the constructor; distance from <see cref="CubePreActionPoses.DistanceThresholdMm"/> when a
-/// pre-action pose is the goal) once the path has been traversed. INFERRED: the traversal timeout (LOCAL, from
-/// the path length). When no motion-primitive set is loaded the planner is LOCAL (<see cref="StraightLinePlanner"/>);
-/// the engine always has the lattice planner. The stack's default arrival path stops with a visible M12-024 MISSING
-/// because the action-side driving-animation Init/end lifecycle is unbuilt; it does not report source completion.
-///
-/// <see cref="CheckIfDone(DriveToPoseTick)"/> is the engine's <c>CheckIfDone</c> 0x0055AB4C state machine
-/// (M12-023). It is a pure function of its inputs and is NOT what <see cref="RunAsync"/> polls: the C# has no
-/// <c>PathComponent</c> status word to feed it (which robot events set states 1..6 is not in the inventory), so
-/// <see cref="RunAsync"/> waits on the path's terminal event and then applies the state-4 (Ready) arrival test
-/// through the same <see cref="ReadyState"/>.
+/// Checked DriveToPoseAction lifecycle on the existing ActionList runner: handler.Init precedes goal/path
+/// checks, CheckIfDone holds the end state and re-evaluates the current inputs after completion, and cleanup
+/// follows the native order. Path creation retains the separate M12-002/M12-032 gaps. Missing native timeout,
+/// path-status and motion-primitive inputs stop their rows visibly; they are not replaced with a fabricated Abort.
 /// </summary>
-public sealed class DriveToPoseAction
+// fidelity: M12-024
+public sealed class DriveToPoseAction : ActionRunner, IDisposable
 {
-    public const double PathFollowingHeadAngleRad = -0.261799;
+    public static readonly double PathFollowingHeadAngleRad = BitConverter.Int32BitsToSingle(unchecked((int)0xBE860A92));
     /// <summary><c>[this+0x9C]</c>'s constructor default, Radians(0x3E32B8C2) (0.174533).</summary>
-    public const double GoalAngleToleranceRad = 0.174533;
+    public static readonly double GoalAngleToleranceRad = BitConverter.Int32BitsToSingle(0x3E32B8C2);
     /// <summary><c>[this+0x90..0x98]</c>'s constructor default, 10.0 (inventory G3.9, base ctor 0x0055A238).</summary>
     public const double DefaultGoalDistanceToleranceMm = 10.0;
     /// <summary><c>[this+0xA8]</c>'s constructor default, 4.0 (inventory G3.9): the ComputingPath timeout in seconds.</summary>
@@ -116,7 +111,80 @@ public sealed class DriveToPoseAction
 
     private readonly ManipulationSystem _m;
 
-    public DriveToPoseAction(ManipulationSystem m) { _m = m; AbortPath = () => _m.Paths.Abort(); DrivingAnimations = m.DrivingAnimationsForTest?.Invoke() ?? m.Robot.Animations.DrivingAnimations; }
+    public DriveToPoseAction(ManipulationSystem m) : base(12, 4)
+    {
+        _m = m; AbortPath = () => _m.Paths.Abort();
+        DrivingAnimations = m.DrivingAnimationsForTest?.Invoke() ?? m.Robot.Animations.DrivingAnimations;
+        SourceLog = (l,c,k,t) => m.Robot.Engine.EmitSourceLog(l,c,k,t);
+        Log = m.Robot.Engine.EmitStackLog;
+    }
+    private PathRun? _run;
+    internal ushort? SourcePathIdForTest => _run?.PathId;
+    private bool _destroyed, _missingTick;
+    private TaskCompletionSource<ActionResult>? _done;
+    internal Action<string>? LifecycleCallObserved;
+    protected override float EngineClockSeconds => _m.Robot.Engine.Timer.SecondsF;
+    protected override bool AreAnyTracksLocked(uint mask) => _m.Robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override void LockTracks(uint mask, string owner) => _m.Robot.Motion.LockTracks((byte)mask, owner, "DriveToPose");
+    protected override void UnlockTracksInternal(uint mask, string owner) => _m.Robot.Motion.UnlockTracks((byte)mask, owner);
+    protected override bool AreAllTracksLockedBy(uint mask, string owner) => _m.Robot.Motion.AreAllTracksLockedBy((byte)mask, owner);
+    public override bool CanInterrupt()
+    { Log?.Invoke("MISSING: M12-024/M13-013 concrete CanInterrupt virtual predicate has no checked row"); throw new NotSupportedException("MISSING: concrete driving-action CanInterrupt predicate"); }
+    public override uint CheckIfDone()
+    {
+        if (_m.DriveTickForTest is { } input) return (uint)CheckIfDone(input(this));
+        if (!_missingTick) { MissingSource("M12-032 live PathComponent status/segment/ID inputs remain unbuilt; no status is guessed from a host terminal event"); _missingTick=true; }
+        return (uint)ActionResult.Running;
+    }
+    private void MissingSource(string text)
+    { string line="MISSING: M12-024 | "+text; _trace.Add(line); _m.Robot.Engine.EmitStackLog(line); }
+    public override int Init()
+    {
+        LifecycleCallObserved?.Invoke("InitDriving");
+        DrivingAnimations.Init((byte)RequiredTrackMask, Tag, SuppressTrackLocking, false);
+        if (Goal is not { } goal) { _trace.Add("DriveToPoseAction.Init.NoGoalSet"); return (int)ActionResult.BadPose; }
+        var start=_m.RobotPose();
+        if (start is null) { MissingSource("native pose/world transform input is unavailable"); return 0; }
+        MissingSource("M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted");
+        IReadOnlyList<PathSegment> path;
+        if (_m.Planner is { } planner)
+        {
+            planner.StartPlanning(_m.World,_m.Docking.Carrying.CarriedObjectId,true,IgnoreObstacleIds);
+            var plan=planner.PlanTo(start.Value,Goals is {Count:>0}?Goals:new[]{goal},Profile);
+            if (plan is null) { _trace.Add("DriveToPoseAction.Init.PlanningFailed: no path sent");return (int)ActionResult.PathPlanningFailedAbort; }
+            path=plan.Value.Path; Goal=plan.Value.Goal;
+            _trace.Add($"lattice plan: {plan.Value.Plan.Actions.Count} primitive(s), cost {plan.Value.Plan.Cost:F0}, {plan.Value.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s), DoPlanning={planner.LastPlanningResult}");
+        }
+        else path=StraightLinePlanner.Plan(start.Value,goal,Profile); // existing M12-002 host planner gap retained.
+        if (path.Count==0) { MissingSource("already-at-goal empty host path has no checked native status mapping; source tick input required"); return 0; }
+        _run=_m.StartPath(path);
+        return 0;
+    }
+    private void CleanupSource()
+    {
+        if (_destroyed) return; _destroyed=true;
+        if (_m.PathIsActiveForTest is { } active)
+        { if(active()) { LifecycleCallObserved?.Invoke("Abort"); AbortPath(); } }
+        else MissingSource("M12-032 PathComponent.IsActive destructor input is unavailable; Abort gate not guessed");
+        foreach (bool which in new[]{true,false})
+        {
+            LifecycleCallObserved?.Invoke("ErasePlanner:"+which);
+            if(_m.ErasePlannerObstaclesForTest is { } erase)erase(which);
+            else MissingSource("EraseAllPlannerObstacles("+(which?"1":"0")+") 0x0055A626/0x0055A632 visualizer handoff absent");
+        }
+        LifecycleCallObserved?.Invoke("DestroyDriving"); DrivingAnimations.ActionIsBeingDestroyed();
+        _run?.Dispose();
+    }
+    public void Dispose() { if(_destroyed)return;CleanupSource();base.WatcherEnding(); }
+    public override void WatcherEnding()
+    {
+        Dispose();
+        // Stored Cancel bypasses IAction::UpdateInternal's callbacks. The queue's destruction
+        // is the terminal boundary for the host task; no handler end call is added.
+        if(State!=EngineActionResult.Running && State!=EngineActionResult.NotStarted
+            && _done?.TrySetResult((ActionResult)State)==true)_m.DriveResultObservedForTest?.Invoke((ActionResult)State);
+    }
+
 
     public Pose3d? Goal { get; set; }
     /// <summary>Alternative goals for the lattice planner (a cube's pre-action poses); the reached one becomes <see cref="Goal"/>.</summary>
@@ -142,7 +210,7 @@ public sealed class DriveToPoseAction
     public double DeadlineSec { get; private set; } = -1.0;
     /// <summary><c>[this+0xC4]</c>, incremented at path state 3.</summary>
     public int FollowingPathTicks { get; private set; }
-    // fidelity: M5-063 — shared robot handler; M12-024 still owns the unbuilt action-side Init/start/end lifecycle.
+    // fidelity: M5-063, M12-024 — the same shared handler is used by Init and every lifecycle tick.
     public IDrivingAnimationHandler DrivingAnimations { get; set; }
     /// <summary><c>PathComponent::Abort</c> (0x0055AD5C).</summary>
     public Action AbortPath { get; set; }
@@ -157,8 +225,8 @@ public sealed class DriveToPoseAction
     }
 
     /// <summary>
-    /// <c>DriveToPoseAction::CheckIfDone</c> 0x0055AB4C, one call (M12-023). NO PRODUCTION CALLER: only tests call it; <see cref="RunAsync"/> applies just the
-    /// state-4 test through <see cref="ReadyState"/> (the C# has no PathComponent status word to feed this, M12-032).
+    /// <c>DriveToPoseAction::CheckIfDone</c> 0x0055AB4C, one call (M12-023). The ActionList entry delegates here
+    /// when native inputs exist; the explicit fixture provider is not a production PathComponent substitute.
     /// <list type="bullet">
     /// <item><c>[[robot+0x24C]] == 3</c> returns RUNNING (0x0055AB5C..0x0055AB6A); a path status above 4 returns RUNNING (0x0055AB74).</item>
     /// <item>The initial result is 0x03000008 (0x0055AB7A).</item>
@@ -179,12 +247,13 @@ public sealed class DriveToPoseAction
         {
             case DriveToPoseStatus.Failed:
                 DeadlineSec = -1.0;
-                _trace.Add("DriveToPoseAction.CheckIfDone: path status Failed");
+                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","DriveToPoseAction.CheckIfDone.Failure","Robot driving to pose failed");
                 return ActionResult.PathPlanningFailedAbort;
             case DriveToPoseStatus.ComputingPath:
-                if (DeadlineSec < 0) { DeadlineSec = tick.NowSec + PlanningTimeoutSec; return ActionResult.Running; }
-                if (tick.NowSec < DeadlineSec) return ActionResult.Running;
-                _trace.Add($"DriveToPoseAction.CheckIfDone.ComputingPathTimeout: {PlanningTimeoutSec}");
+                if (DeadlineSec < 0) { DeadlineSec = (float)tick.NowSec + (float)PlanningTimeoutSec; return ActionResult.Running; }
+                if ((float)tick.NowSec < (float)DeadlineSec) return ActionResult.Running;
+                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","DriveToPoseAction.CheckIfDone.ComputingPathTimeout",
+                    FormattableString.Invariant($"Robot has been planning for more than {(float)PlanningTimeoutSec:F6} seconds, aborting"));
                 AbortPath();
                 DeadlineSec = -1.0;
                 return ActionResult.PathPlanningFailedAbort;
@@ -193,14 +262,17 @@ public sealed class DriveToPoseAction
             case DriveToPoseStatus.FollowingPath:
                 DrivingAnimations.PlayStartAnim();
                 DeadlineSec = -1.0;
-                FollowingPathTicks++;
+                int previous=FollowingPathTicks; FollowingPathTicks=unchecked(previous+1);
+                if(previous%10==0)
+                    _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","DriveToPoseAction.CheckIfDone.WaitingForPathCompletion",
+                        $"[{unchecked((int)Tag)}] Waiting for robot to complete its path traversal ({FollowingPathTicks}), _currPathSegment={tick.CurrentPathSegment}, _lastSentPathID={tick.PathIdAt0x42}, _lastRecvdPathID={tick.PathIdAt0x44}.");
                 return ActionResult.Running;
             default:
                 result = ReadyState(GoalAtIndex(), tick.RobotPose, tick.RobotHeightMm, tick.PathIdAt0x42, tick.PathIdAt0x44);
                 break;
         }
-        // fidelity: M12-024 — the shared handler cannot stand in for the missing action-side Init.
-        if (result == ActionResult.Success && DrivingAnimations is Cozmo.Robot.Animation.DrivingAnimationHandler) MissingArrivalLifecycle();
+        if (!DrivingAnimations.InputsReady)
+        { MissingSource("M5-063 current driving-animation selection is unavailable; end-call decision stopped"); return ActionResult.Running; }
         if (result != ActionResult.Running && result != ActionResult.PathPlanningFailedAbort
             && DrivingAnimations.PlayEndAnim() != 0)
             result = ActionResult.Running;
@@ -227,97 +299,37 @@ public sealed class DriveToPoseAction
         // the full relative rotation (GetAngleDiffFrom 0x0084A694), so the full goal pose is passed.
         if (robotPose.IsSameAs(goal, tol, AngleToleranceRad, out _))
         {
-            _trace.Add($"DriveToPoseAction.CheckIfDone.Success: threshold=({tx:F1},{ty:F1})");
+            MissingSource("native Success info at 0x0055AE94: Robot ID and float translation-difference log inputs have no checked mapping; source log not fabricated");
             return ActionResult.Success;
         }
         if (pathIdAt0x42 != pathIdAt0x44)
         {
-            _trace.Add("DriveToPoseAction.CheckIfDone: not at the goal and the path ids differ; result stays 0x03000008");
+            _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"DriveToPoseAction.CheckIfDone.Failure","Robot is not at the goal and did not receive the last path");
+            EngineErrorState.StoreAndMaybeBreak();
             return ActionResult.FollowingPathButNotTraversing;
         }
-        _trace.Add($"DriveToPoseAction.CheckIfDone.DoneNotInPlace: not within threshold=({tx:F1},{ty:F1})");
+        MissingSource("native DoneNotInPlace info at 0x0055B030: complete float pose/angle/distance log argument mapping is unchecked; source log not fabricated");
         return ActionResult.FailedTraversingPath;
     }
 
+    // fidelity: M12-024 — the real ActionList supplies TIMEOUT-before-check and category-4 retry/Init ordering.
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
-        if (Goal is not { } goal) { _trace.Add("DriveToPoseAction.Init.NoGoalSet"); return ActionResult.BadPose; }
-        var start = _m.RobotPose();
-        if (start is null) { _trace.Add("no robot state"); return ActionResult.Abort; }
-        _ = _m.Robot.Motion.SetHeadAngleAsync((float)PathFollowingHeadAngleRad, CozmoMotion.ActionDefaultHeadSpeedRadPerSec, CozmoMotion.ActionDefaultHeadAccelRadPerSec2, requireCalibration: false);
-        IReadOnlyList<PathSegment> path;
-        if (_m.Planner is { } planner)
+        if (_m.DriveTimeoutForTest is not { } timeout)
         {
-            // LatticePlannerImpl::StartPlanning 0x004FEB44: store the replan bool at impl+0xA1 and import the
-            // world's obstacles with the bool hard-coded 1 (0x004FEC38); then DoPlanning, whose failure
-            // sends no path.
-            // fidelity: M13-003, M13-005, M13-018
-            planner.StartPlanning(_m.World, _m.Docking.Carrying.CarriedObjectId, forceReplan: true, IgnoreObstacleIds);
-            var goals = Goals is { Count: > 0 } ? Goals : new[] { goal };
-            var planned = planner.PlanTo(start.Value, goals, Profile);
-            if (planned is { } pl)
-            {
-                path = pl.Path; goal = pl.Goal;
-                _trace.Add($"lattice plan: {pl.Plan.Actions.Count} primitive(s), cost {pl.Plan.Cost:F0}, {pl.Plan.Expansions} expansions, {planner.Env.ObstacleCount} obstacle(s), DoPlanning={planner.LastPlanningResult}");
-            }
-            else
-            {
-                // The engine returns a planning failure and the action fails; it does not substitute a
-                // path of its own. This used to drive the straight line whenever the same environment
-                // reported it clear, which is a path the engine would never have sent.
-                _trace.Add($"DriveToPoseAction.Init.PlanningFailed: no lattice plan ({planner.Env.ObstacleCount} obstacle(s)); no path sent");
-                return ActionResult.PathPlanningFailedAbort;
-            }
+            MissingSource("DriveToPose concrete timeout getter (+0x2C) remains unread; action stopped at that input, without a fabricated Abort");
+            try { await Task.Delay(Timeout.InfiniteTimeSpan,cancel); }
+            catch(OperationCanceledException) { }
+            Dispose(); return ActionResult.CancelledWhileRunning;
         }
-        else path = StraightLinePlanner.Plan(start.Value, goal, Profile);
-        if (path.Count == 0) { _trace.Add("already at the goal"); return ActionResult.Success; }
-        using var run = _m.StartPath(path);
-        ushort id = run.PathId;
-        _trace.Add($"path {id}: {path.Count} segment(s) from {start.Value.Translation} to {goal.Translation}");
-        double lengthMm = 0;
-        foreach (var s in path)
-        {
-            if (s is PathSegment.Line l) lengthMm += Math.Sqrt((l.ToX - l.FromX) * (l.ToX - l.FromX) + (l.ToY - l.FromY) * (l.ToY - l.FromY));
-            else if (s is PathSegment.Arc a) lengthMm += Math.Abs(a.SweepRad) * a.RadiusMm;
-        }
-        var timeout = TimeSpan.FromSeconds(5 + lengthMm / Math.Max(20, Profile.SpeedMmps) * 2 + path.Count * 3);
-        var ev = await run.WaitAsync(timeout, cancel);
-        if (ev is null) { _trace.Add("DriveToPoseAction.CheckIfDone.Failure: no path completion; path aborted"); return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.FailedTraversingPath; }
-        if (ev == PathEventType.Interrupted) { _trace.Add("path interrupted"); return ActionResult.FailedTraversingPath; }
-        var now = _m.RobotPose();
-        if (now is null) return ActionResult.Abort;
-        // M12-024 (RECOVERABLE_GAP): the engine plays DrivingAnimationHandler::PlayStartAnim at path state 3 and
-        // PlayEndAnim at the tail of CheckIfDone; this wait-for-the-terminal-event flow plays neither.
-        _trace.Add("DrivingAnimationHandler PlayStartAnim/PlayEndAnim not run (M12-024 RECOVERABLE_GAP)");
-        // fidelity: M12-023, M12-032
-        // The terminal event (Completed) of the path just executed stands for the Ready state (status 4, M12-023). The result for "finished but outside the
-        // tolerance" is decided by the path-id pair (M12-023): equal ids give 0x04000002, different ids keep 0x03000008. ASSUMPTION, disclosed: both ids are
-        // this path's id, because +0x42 is the last id sent (ExecutePath increments it) and +0x44 the last id the robot reported started (M12-032, research
-        // Q8), and a Completed event for this id follows a Started event for it. That changes the live result for a finished drive that ended outside the
-        // tolerance from 0x04000001 (the earlier code) to 0x04000002; callers that switch on the code see it (CubeGameBehaviors' PopAWheelie retry). The
-        // interrupted event returns FailedTraversingPath without the Ready test although the engine sets status 4 for it too (research 8.3): M12-032 is
-        // RECOVERABLE_GAP and the setters' conditions are not all read.
-        var ready = ReadyState(goal, now.Value, RobotHeightMm(), id, id);
-        if (ready == ActionResult.Success)
-        {
-            if (DrivingAnimations is Cozmo.Robot.Animation.DrivingAnimationHandler) MissingArrivalLifecycle();
-            Goal = goal;
-        }
-        return ready;
-    }
-
-    /// <summary>
-    /// <c>Robot::GetHeight</c> 0x00516F0C = <c>max(66·sin(liftAngle) + 45 + 5, 67.7)</c> (66 at 0x00516F54,
-    /// 45 at 0x00516F58, 5.0, floor 0x42876666 = 67.7; C-E7/E9). It is the z of the <c>Point3</c> tolerance
-    /// <c>DriveToPoseAction::CheckIfDone</c> passes to <c>IsSameAs</c> (0x0055ACBA, 0x0055ACC2/0x0055ACF8).
-    /// </summary>
-    // fidelity: M12-024 — stop the unknown action lifecycle instead of claiming successful arrival.
-    private void MissingArrivalLifecycle()
-    {
-        const string missing = "MISSING: M12-024 action-side DrivingAnimationHandler Init/end lifecycle (0x0055A888, 0x0055B0C0..0x0055B0C8) is unbuilt; source remains RUNNING while its end animation plays";
-        _trace.Add(missing);
-        _m.Robot.Engine.EmitStackLog(missing);
-        throw new NotSupportedException(missing);
+        TimeoutSeconds=timeout(this);
+        _done=new(TaskCreationOptions.RunContinuationsAsynchronously);
+        AddCompletionCallback(result=>{if(result!=EngineActionResult.Running){_m.DriveResultObservedForTest?.Invoke((ActionResult)result);_done.TrySetResult((ActionResult)result);}});
+        using var cancellation=cancel.Register(Cancel); // inherited IAction Cancel, no override and no end call.
+        if(_m.Robot.Engine.Robot is not { } owner)
+        { MissingSource("ActionList recipient unavailable");try{await Task.Delay(Timeout.InfiniteTimeSpan,cancel);}catch(OperationCanceledException){}Dispose();return ActionResult.CancelledWhileRunning; }
+        owner.ActionList.QueueAction(QueueActionPosition.Now,this,0);
+        return await _done.Task;
     }
 
     private double RobotHeightMm() => _m.RobotHeightMm();
@@ -885,27 +897,82 @@ public static class PlacementApproachAngle
 /// The engine's <c>DriveStraightAction(robot, distance_mm, speed_mmps, shouldPlayAnimation)</c>: one line
 /// segment along the robot's heading, executed as a path. A negative distance drives backwards.
 /// </summary>
-public sealed class DriveStraightAction
+public readonly record struct DriveStraightTick(bool LastPathFailed, bool HasPathToFollow, bool IsActive);
+// fidelity: M13-013 — S1/S2 checked handler user. Path creation/getters retain their separate gaps.
+public sealed class DriveStraightAction : ActionRunner, IDisposable
 {
     private readonly ManipulationSystem _m;
-    public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps = 100f) { _m = m; DistanceMm = distanceMm; SpeedMmps = speedMmps; }
+    private PathRun? _run;
+    internal ushort? SourcePathIdForTest => _run?.PathId;
+    private bool _started, _destroyed, _missingTick, _missingDiagnostics;
+    private TaskCompletionSource<ActionResult>? _done;
+    public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps = 100f, bool shouldPlayAnimation = true) : base(8,4)
+    { _m=m;DistanceMm=distanceMm;SpeedMmps=speedMmps;ShouldPlayAnimation=shouldPlayAnimation;DrivingAnimations=m.DrivingAnimationsForTest?.Invoke()??m.Robot.Animations.DrivingAnimations;SourceLog=(l,c,k,t)=>m.Robot.Engine.EmitSourceLog(l,c,k,t);Log=m.Robot.Engine.EmitStackLog; }
     public double DistanceMm { get; }
     public float SpeedMmps { get; }
-
+    public bool ShouldPlayAnimation { get; }
+    public IDrivingAnimationHandler DrivingAnimations { get; set; }
+    protected override float EngineClockSeconds=>_m.Robot.Engine.Timer.SecondsF;
+    protected override bool AreAnyTracksLocked(uint mask)=>_m.Robot.Motion.AreAnyTracksLocked((byte)mask);
+    protected override void LockTracks(uint mask,string owner)=>_m.Robot.Motion.LockTracks((byte)mask,owner,"DriveStraight");
+    protected override void UnlockTracksInternal(uint mask,string owner)=>_m.Robot.Motion.UnlockTracks((byte)mask,owner);
+    protected override bool AreAllTracksLockedBy(uint mask,string owner)=>_m.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
+    public override bool CanInterrupt()
+    { Missing("concrete CanInterrupt virtual predicate has no checked row"); throw new NotSupportedException("MISSING: M13-013 CanInterrupt predicate"); }
+    private void Missing(string text)=>_m.Robot.Engine.EmitStackLog("MISSING: M13-013 | "+text);
+    public override int Init()
+    {
+        DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);_started=false;
+        var robot=_m.RobotPose();if(robot is null){Missing("pose/path Init input unavailable");return 0;}
+        double h=robot.Value.AngleAroundZ;var to=robot.Value.Translation+new Vec3(Math.Cos(h)*DistanceMm,Math.Sin(h)*DistanceMm,0);
+        var p=PathMotionProfile.Default;float speed=DistanceMm<0?-Math.Abs(SpeedMmps):Math.Abs(SpeedMmps);
+        _run=_m.StartPath(new PathSegment[]{new PathSegment.Line(robot.Value.Translation.X,robot.Value.Translation.Y,to.X,to.Y,speed,p.AccelMmps2,p.DecelMmps2)});
+        return 0;
+    }
+    public ActionResult CheckIfDone(DriveStraightTick tick)
+    {
+        if(DrivingAnimations.State==3)return ActionResult.Running;
+        if(!_missingDiagnostics){Missing("CheckIfDone info/debug arguments at 0x00547904/0x0054794E/0x005479AE are unread");_missingDiagnostics=true;}
+        if(tick.LastPathFailed)return ActionResult.FailedTraversingPath;
+        if(!_started)
+        {
+            _started=tick.HasPathToFollow;
+            if(_started && ShouldPlayAnimation)DrivingAnimations.PlayStartAnim();
+            if(!_started)return ActionResult.Running;
+        }
+        if(tick.IsActive)return ActionResult.Running;
+        if(ShouldPlayAnimation)
+        {
+            if(!DrivingAnimations.InputsReady){Missing("M5-063 driving selection unavailable");return ActionResult.Running;}
+            if(DrivingAnimations.PlayEndAnim()!=0)return ActionResult.Running;
+        }
+        return ActionResult.Success;
+    }
+    public override uint CheckIfDone()
+    {
+        if(_m.StraightTickForTest is {} input)return (uint)CheckIfDone(input(this));
+        if(!_missingTick){Missing("native LastPathFailed/HasPathToFollow/IsActive inputs absent; host path result is not substituted");_missingTick=true;}
+        return (uint)ActionResult.Running;
+    }
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
-        var robot = _m.RobotPose();
-        if (robot is null) return ActionResult.Abort;
-        double h = robot.Value.AngleAroundZ;
-        var to = robot.Value.Translation + new Vec3(Math.Cos(h) * DistanceMm, Math.Sin(h) * DistanceMm, 0);
-        var p = PathMotionProfile.Default;
-        float speed = DistanceMm < 0 ? -Math.Abs(SpeedMmps) : Math.Abs(SpeedMmps);
-        using var run = _m.StartPath(new PathSegment[] { new PathSegment.Line(robot.Value.Translation.X, robot.Value.Translation.Y, to.X, to.Y, speed, p.AccelMmps2, p.DecelMmps2) });
-        // WaitAsync clears the path when it ends without a terminal event, so a behaviour interrupted mid-drive
-        // does not leave the firmware following this line.
-        var ev = await run.WaitAsync(TimeSpan.FromSeconds(3 + Math.Abs(DistanceMm) / Math.Max(10, Math.Abs(SpeedMmps)) * 2), cancel);
-        return ev == PathEventType.Completed ? ActionResult.Success
-             : ev is null ? (cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.Timeout)
-             : ActionResult.FailedTraversingPath;
+        if(_m.StraightTimeoutForTest is not {} timeout)
+        { Missing("concrete timeout getter remains unread; stopped without fabricated Abort");try{await Task.Delay(Timeout.InfiniteTimeSpan,cancel);}catch(OperationCanceledException){}Dispose();return ActionResult.CancelledWhileRunning; }
+        TimeoutSeconds=timeout(this);_done=new(TaskCreationOptions.RunContinuationsAsynchronously);AddCompletionCallback(r=>{if(r!=EngineActionResult.Running)_done.TrySetResult((ActionResult)r);});
+        using var cancellation=cancel.Register(Cancel);
+        if(_m.Robot.Engine.Robot is not {} owner){Missing("ActionList owner absent");try{await Task.Delay(Timeout.InfiniteTimeSpan,cancel);}catch(OperationCanceledException){}Dispose();return ActionResult.CancelledWhileRunning;}
+        owner.ActionList.QueueAction(QueueActionPosition.Now,this,0);return await _done.Task;
+    }
+    public void Dispose()
+    {
+        if(_destroyed)return;_destroyed=true;
+        if(_m.PathIsActiveForTest is {} active){if(active())_m.Paths.Abort();}
+        else Missing("IsActive destructor input absent; Abort gate not guessed");
+        DrivingAnimations.ActionIsBeingDestroyed();_run?.Dispose();base.WatcherEnding();
+    }
+    public override void WatcherEnding()
+    {
+        Dispose();
+        if(State!=EngineActionResult.Running && State!=EngineActionResult.NotStarted)_done?.TrySetResult((ActionResult)State);
     }
 }

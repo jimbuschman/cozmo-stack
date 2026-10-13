@@ -353,36 +353,26 @@ public class M12RVisBuildTests
         Assert.Equal(0u, (uint)d.CheckIfDone(Tick(4, robot: At(500, 500))));
     }
 
-    /// <summary>M5-063 builds the shared handler: constructor state5 refuses an end animation. M12-024 action-side Init remains missing; the explicit legacy stub still throws.</summary>
+    /// <summary>D3/H1/H3: a checked NoAnimation triplet initializes the REAL shared handler and completes without an end action.</summary>
     [Fact]
-    public void M12_024_ArrivalStopsWithVisibleMissingActionLifecycle()
+    public void M12_024_RealHandlerInitAndNoAnimationTailDoNotFabricateAbort()
     {
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.M.DrivingAnimationsForTest = null; // exercise the real production dependency and its visible gap.
-        var d = new DriveToPoseAction(rig.M) { Goal = At(100, 0) };
-        Assert.Same(rig.Robot.Animations.DrivingAnimations, d.DrivingAnimations);
-        Assert.Equal(5, d.DrivingAnimations.State);
-        var missing = new System.Collections.Concurrent.ConcurrentQueue<string>(); rig.Robot.Engine.StackLogLine += missing.Enqueue;
-        var error = Assert.Throws<NotSupportedException>(() => d.CheckIfDone(Tick(4, robot: At(100, 0))));
-        Assert.Contains("MISSING: M12-024", error.Message);
-        Assert.Contains(missing, line => line.StartsWith("MISSING: M12-024"));
-        Assert.Throws<NotSupportedException>(() => UnreadDrivingAnimationHandler.Instance.PlayEndAnim());
-        Assert.Throws<NotSupportedException>(() => UnreadDrivingAnimationHandler.Instance.PlayStartAnim());
+        using var signals=SignalTestContext.Install();using var rig=new Rig();rig.M.DrivingAnimationsForTest=null;
+        var handler=rig.Robot.Animations.DrivingAnimations;
+        handler.Push(new((Cozmo.Robot.Behavior.AnimationTrigger)0x23F,(Cozmo.Robot.Behavior.AnimationTrigger)0x23F,(Cozmo.Robot.Behavior.AnimationTrigger)0x23F),"lifecycle-fixture");
+        using var d=new DriveToPoseAction(rig.M){Goal=At(100,0)};
+        Assert.Same(handler,d.DrivingAnimations);Assert.Equal(0,d.Init());Assert.Equal(0,handler.State);
+        Assert.Equal(ActionResult.Success,d.CheckIfDone(Tick(4,robot:At(100,0))));
     }
-
-    /// <summary>M12-024: the wait-for-the-terminal-event flow says out loud that it plays no driving animations.</summary>
+    /// <summary>The live task uses the same source CheckIfDone tail on the ActionList; the explicit geometry fixture supplies path inputs.</summary>
     [Fact]
-    public async Task M12_024_TheLivePathTraceNamesTheMissingAnimations()
+    public void M12_024_TheLivePathReturnsSuccessThroughTheEndLifecycle()
     {
-        using var signals_rig = SignalTestContext.Install();
-        using var rig = new Rig();
-        rig.M.DrivingAnimationsForTest = null; // exercise the real production dependency and its visible gap.
-        var drive = new DriveToPoseAction(rig.M) { Goal = At(150, -40, 0, 0.5) };
-        var task = drive.RunAsync(default);
-        Assert.Contains("MISSING: M12-024", Assert.Throws<NotSupportedException>(() => SignalTestContext.Run(task, () => { rig.Pump(); })).Message);
-        Assert.Contains(drive.Trace, l => l.Contains("M12-024 RECOVERABLE_GAP"));
-        Assert.Contains(drive.Trace, l => l.StartsWith("MISSING: M12-024"));
+        using var signals=SignalTestContext.Install();using var rig=new Rig();
+        var drive=new DriveToPoseAction(rig.M){Goal=At(150,-40,0,0.5)};
+        var task=drive.RunAsync(default);
+        SignalTestContext.Run(task,()=>rig.Pump());Assert.Equal(ActionResult.Success,task.GetAwaiter().GetResult());
+        Assert.DoesNotContain(drive.Trace,l=>l.Contains("unbuilt; source remains RUNNING"));
     }
 
     // ------------------------------------------------------------------ M12-025

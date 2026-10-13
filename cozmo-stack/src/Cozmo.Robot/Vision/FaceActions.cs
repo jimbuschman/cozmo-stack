@@ -563,7 +563,28 @@ public sealed class TrackFaceAction : IDisposable
     public const int UpdateIntervalMs = 60;
     private readonly VisionSystem _v;
     public TrackFaceAction(VisionSystem v, int faceId) { _v = v; FaceId = v.Faces.GetSmartFaceID(faceId); }
-    public void Dispose() => FaceId.Dispose();
+    // fidelity: M14-003 — ~ITrackAction ALWAYS resets the shared handler, even when disabled.
+    public void Dispose() { if(Interlocked.Exchange(ref _drivingDisposed,1)!=0)return; FaceId.Dispose(); DrivingHandler.ActionIsBeingDestroyed(); }
+    private int _drivingDisposed;
+    internal Cozmo.Robot.Manipulation.IDrivingAnimationHandler? DrivingHandlerForTest;
+    private Cozmo.Robot.Manipulation.IDrivingAnimationHandler DrivingHandler => DrivingHandlerForTest ?? _v.Robot.Animations.DrivingAnimations;
+    internal (byte Tracks,uint Tag,bool Suppress,uint InitResult)? DrivingInitForTest;
+    public uint StoredDrivingResult { get; private set; } = 0x02000001;
+    internal void InitDrivingLifecycle(byte tracks,uint tag,bool suppress,uint initResult)
+    {
+        if(!DrivingAnimation)return;
+        DrivingHandler.Init(tracks,tag,suppress,true);
+        if(initResult==0)DrivingHandler.PlayStartAnim();
+    }
+    internal uint? DrivingCompletionGate()
+    {
+        if(!DrivingAnimation)return null;
+        return DrivingHandler.State==3 ? 0x01000000u : DrivingHandler.State==4 ? StoredDrivingResult : null;
+    }
+    internal uint FinishWithDrivingAnimation(uint result)
+    {
+        DrivingHandler.PlayEndAnim();StoredDrivingResult=result;return 0x01000000;
+    }
     public SmartFaceID FaceId { get; }
     public double PanToleranceRad { get; set; } = MinToleranceRad;
     public double TiltToleranceRad { get; set; } = MinToleranceRad;
@@ -594,9 +615,17 @@ public sealed class TrackFaceAction : IDisposable
         // (StopCriteriaMetAndTimeToStop 0x0056594D), the small-angle clamping with its random periods (UpdateSmallAngleClamping 0x0056584D), the sound with its spacing, the eye shift
         // (+0xA1, 0x0056529C..0x0056535A), the update timeout, the mode, the driving-animation end and the 0x5654xx result mapping.
         SteppedBehavior.ReportMissing("TrackFaceAction (M14-003): ITrackAction::CheckIfDone 0x00564F09 on the ActionList tick is not built (TrackFaceAction is not routed through the built ActionList); the Task.Delay(60) loop is a stand-in and its stop criteria, small-angle clamping, sound, eye shift and timeout are unread");
+        if(DrivingAnimation)
+        {
+            if(DrivingInitForTest is {} fields)InitDrivingLifecycle(fields.Tracks,fields.Tag,fields.Suppress,fields.InitResult);
+            else _v.Robot.Engine.EmitStackLog("MISSING: M14-003 ITrackAction Init track/tag/suppress fields and tracking Init return are unavailable");
+        }
         var end = UtcNow() + duration;
         while (UtcNow() < end && !cancel.IsCancellationRequested)
         {
+            var drivingGate=DrivingCompletionGate();
+            if(drivingGate==0x01000000){await Task.Delay(UpdateIntervalMs,CancellationToken.None);continue;}
+            if(drivingGate is {} stored)return stored==0;
             var face = _v.Faces.GetFace(FaceId);
             var robot = _v.History.Latest?.RobotPose;
             if (face is null || robot is null) return false;

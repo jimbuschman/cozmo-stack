@@ -421,7 +421,7 @@ public class RFixBatch2Tests
         using var planning = new ManualResetEventSlim();
         rig.M.Planner.PlanningStarted += planning.Set;
         var drive = new DriveToPoseAction(rig.M) { Goal = At(250, 120, Math.PI / 2) };
-        var task = Task.Run(() => drive.RunAsync(default));         // the planning runs inside the first call, so it needs its own thread for StopPlanning to reach it
+        var task = Task.Run(async () => { var run=drive.RunAsync(default); rig.Tick(); return await run; }); // planning now enters on the ActionList tick; its worker lets StopPlanning reach it
         Assert.True(planning.Wait(TimeSpan.FromMinutes(2)), "the planning worker never entered DoPlanning");
         rig.M.Planner.StopPlanning();
         SignalTestContext.Run(task, () => { rig.Pump(); });
