@@ -86,3 +86,4 @@ anything. BOARD.md is history; this file is the live queue.
 | 12 | [R-HANDLERS](../research/requests/20261013-unported-message-handlers.md) | answered; checked (research/20261013-unported-message-handlers-check.md) |
 | 13 | [R-LOGGERS-BACKUP](../research/requests/20261013-test-loggers-and-backup.md) | answered; checked (research/20261013-test-loggers-and-backup-check.md) |
 | 14 | [R-BACKUP-REST](../research/requests/20261013-backup-manager-rest.md) | answered (Codex on the work PC); checked (research/20261013-backup-manager-rest-check.md) |
+| 15 | [R-PLANNERS](../research/requests/20261013-planner-internals.md) | open (M13-033) |
