@@ -51,10 +51,11 @@ anything. BOARD.md is history; this file is the live queue.
 | 20 | [B-M5-14](B-M5-14.md) | done d36613ab; Opus check FAIL (research/20261012-b-m5-14-check.md), fixes in B-M5-16 |
 | 21 | [B-M3M4-13](B-M3M4-13.md) | done 88da56ad; Opus check FAIL (research/20261012-b-m3m4-13-check.md), fixes in B-M3M4-15 |
 | 22 | [B-M5-15](B-M5-15.md) | done 1287c660; Opus check FAIL (research/20261012-b-m5-15-check.md), fixes in B-M5-16 |
-| 23 | [B-M3M4-14](B-M3M4-14.md) | open (cube lights: blend, modifier, loader) |
+| 23 | [B-M3M4-14](B-M3M4-14.md) | done 0d2b5526; Opus check FAIL (research/20261013-b-m3m4-14-check.md), fixes in B-M3M4-17 |
 | 24 | [B-M3M4-15](B-M3M4-15.md) | open, after B-M3M4-14 ($session_id, device-ID edge cases, M3-060 DAS events, cleanups) |
 | 25 | [B-M5-16](B-M5-16.md) | open, after B-M3M4-15 (M5-065 group-lookup miss, early-Robot sequence, M12-024 visibility, activity MISSINGs, cleanups) |
 | 26 | [B-M3M4-16](B-M3M4-16.md) | open, after B-M5-16 (cliff BlockWorld helpers M11-062, MemoryMap insert M13-030, null-helper MISSINGs) |
+| 27 | [B-M3M4-17](B-M3M4-17.md) | open, after B-M3M4-16 (cube-light fixes: per-LED modifier, last-pattern canBeOverridden, shared slot, timer, trigger map, one walk) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

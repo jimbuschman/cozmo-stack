@@ -11,11 +11,14 @@
 2. **Per node, for i = 0..3:**
    - onColors[i] |= mod[+4i];
    - offColors[i] |= mod[+0x10+4i];
-   - onPeriod[i] += mod[+0x20];
-   - offPeriod[i] += mod[+0x30];
-   - transitionOn[i] += mod[+0x40];
-   - transitionOff[i] += mod[+0x50];
-   - offset[i] += mod[+0x60].
+   - onPeriod[i] += mod[+0x20+4i];
+   - offPeriod[i] += mod[+0x30+4i];
+   - transitionOn[i] += mod[+0x40+4i];
+   - transitionOff[i] += mod[+0x50+4i];
+   - offset[i] += mod[+0x60+4i].
+
+   **Corrected 2026-10-13** (`research/20261013-b-m3m4-14-check.md`): the base is r3 = mod + 4i (0x00638AD0, before the
+   increment at 0x00638AD4), so every field is per LED. The first version left out +4i.
 
    The ranges are 0x00638AC0..0x00638B02. The adds are wrapping 32-bit adds. The ORs work on the packed RGBA words.
 3. **Rotation:** rotationPeriod (pattern+0x7C) += mod+0x70 **inside the i-loop**, so 4 times per pattern
