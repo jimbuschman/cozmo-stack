@@ -320,9 +320,8 @@ public readonly record struct Point2f(float X, float Y);
 /// 0x004E7EFC..0x004E7F9A; the constructor stores its four arguments in order). The perimeter walked by
 /// <see cref="Intersects"/> is P0-&gt;P2-&gt;P3-&gt;P1-&gt;P0 (s0-&gt;s1-&gt;s2-&gt;s3).
 ///
-/// Choices the inventory does not settle (rounding only, the maths is fixed): the operation order of the
-/// barycentric expression in <c>IsPointWithinTriangleHelper</c> 0x004E03B8 and of the t/u expressions in
-/// <c>kmLine2WithLineIntersection</c> 0x008F6220 (the standard forms, in float32).
+/// Barycentric order: reciprocal denominator, then multiplication, 0x004E0406/0x004E0412/0x004E0444.
+/// kmLine2WithLineIntersection's t/u expressions follow the checked float32 port below.
 /// </summary>
 // fidelity: M13-007
 public sealed class Quadrilateral
@@ -341,8 +340,9 @@ public sealed class Quadrilateral
     private static bool InTriangle(Point2f p, Point2f a, Point2f b, Point2f c)
     {
         float denom = (b.Y - c.Y) * (a.X - c.X) + (c.X - b.X) * (a.Y - c.Y);
-        float alpha = ((b.Y - c.Y) * (p.X - c.X) + (c.X - b.X) * (p.Y - c.Y)) / denom;
-        float beta = ((c.Y - a.Y) * (p.X - c.X) + (a.X - c.X) * (p.Y - c.Y)) / denom;
+        float inv=1f/denom;
+        float alpha = inv*((b.Y - c.Y) * (p.X - c.X) + (c.X - b.X) * (p.Y - c.Y));
+        float beta = inv*((c.Y - a.Y) * (p.X - c.X) + (a.X - c.X) * (p.Y - c.Y));
         float gamma = 1f - alpha - beta;
         return alpha > BaryLower && alpha < BaryUpper && beta > BaryLower && beta < BaryUpper && gamma > BaryLower && gamma < BaryUpper;   // NaN: false
     }

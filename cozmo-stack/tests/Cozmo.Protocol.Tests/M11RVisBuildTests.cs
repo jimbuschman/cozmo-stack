@@ -709,7 +709,7 @@ public class M11RVisBuildTests : IDisposable
         var o = Assert.Single(rig.Observe((ObjectType.Block_LIGHTCUBE1, At(150, 0))).Objects).Object;
         Assert.True(rig.Vision.World.DidObjectsChange);
         Assert.Equal(o.LastObservedTimestamp, rig.Vision.World.TimeOfLastChangeField);
-        rig.Vision.World.MemoryMapTimeOfLastChange = () => 9_000_000.0;
+        rig.Vision.World.Maps.Current!.Tree.Root.Content.Data.Last = 9_000_000;
         rig.Frame((ObjectType.Block_LIGHTCUBE1, At(150, 0)));
         Assert.Equal(9_000_000u, rig.Vision.World.TimeOfLastChangeField);
     }

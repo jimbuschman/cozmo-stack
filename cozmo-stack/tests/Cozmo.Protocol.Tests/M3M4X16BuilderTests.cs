@@ -166,10 +166,13 @@ public sealed class M3M4X16BuilderTests : IDisposable
     {
         double now=60;var w=new BlockWorld { BaseStationSeconds=()=>now };
         var pd=new VisionPoseData(0,Pose3d.Identity,0,0,false,false);var cam=new CameraModel(CameraCalibration.Nominal(),pd.CameraPose);
-        var seen=new List<(string,bool)>();w.SourceLog=(l,c,k,s)=> { if(k=="robot.play_area_size") { Assert.Equal("0.00",s); seen.Add((k,w.PoseChangeWindow)); } };
+        var seen=new List<bool>();var keys=new List<string>();w.SourceLog=(l,c,k,s)=>keys.Add(k);
+        w.Log+=s=>{if(s.Contains("robot.play_area_size"))seen.Add(w.PoseChangeWindow);};
         w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Empty(seen);Assert.False(w.PoseChangeWindow);
-        now=60.01;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Equal(("robot.play_area_size",false),Assert.Single(seen));
+        now=61;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.False(Assert.Single(seen));
+        now=121;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Single(seen); // stored 61, strict 61+60 < now.
         now=double.NaN;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Single(seen);
+        Assert.DoesNotContain("robot.play_area_size",keys);
     }
     [Fact]
     public void PoseQueueUsesFirstDuplicateAndFlagZeroBranchesAndAlwaysNotifiesConfiguration()

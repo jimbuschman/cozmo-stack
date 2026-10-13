@@ -61,7 +61,7 @@ public sealed class VisionSystem : IDisposable
         // reads the carrying and treads state from the components that own them.
         World = robot.LocalizationWorld; // preserve constructor map/origin owner, M13-032
         World.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
-        World.Log += robot.Engine.EmitStackLog;
+        // CozmoRobot owns the one stack-log subscription on this shared world.
         robot.LocalizationWorld = World;
         // fidelity: M4-018, M4-017
         // C11.2: read the same localization owner as SetLocalizedTo and the published game status.

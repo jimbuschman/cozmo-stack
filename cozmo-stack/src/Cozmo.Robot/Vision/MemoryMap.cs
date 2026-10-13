@@ -93,7 +93,10 @@ public sealed class MemoryMap
     internal readonly SourceQuadTree Tree = new();
     internal SourceLogSink? SourceLog { get => Tree.SourceLog; set => Tree.SourceLog = value; }
     internal Action<string>? Missing { get => Tree.Missing; set => Tree.Missing = value; }
-    public double ExploredRegionAreaM2 => Tree.Processor.ExploredArea;
+    public double ExploredRegionAreaM2
+    {
+        get { Missing?.Invoke("MISSING: M11-045 explored-area helper+0x38: tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
+    }
     internal uint LastObservedTime => Tree.Root.Content.Data.Last;
     // fidelity: M13-030 — native insertion; legacy region queries remain M11-046.
     internal Action<Vec2[],CliffMapData>? CliffInsertForTest;

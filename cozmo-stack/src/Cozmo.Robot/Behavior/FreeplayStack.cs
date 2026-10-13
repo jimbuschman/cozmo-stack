@@ -292,7 +292,7 @@ public sealed class FreeplayStack : IDisposable
             vision.OverheadEdges ??= new OverheadEdgesDetector();
             void onFrame(VisionFrameResult r)
             {
-                if (r.OverheadEdges is { } edges) ctx.Map!.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
+                if (r.OverheadEdges is { } edges && ctx.Map is {} map) map.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
             }
             vision.FrameProcessed += onFrame;
             stack._unsubscribe.Add(() => vision.FrameProcessed -= onFrame);

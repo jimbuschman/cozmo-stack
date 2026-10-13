@@ -737,6 +737,18 @@ public sealed class BlockWorld
         CreateLocalizedMemoryMap(origin); SelectedObjectId = null;
     }
     private readonly object _gate = new();
+    // Native cliffs and vision run on one thread. Serialize only their frame window here;
+    // never hold the object gate while callbacks acquire configuration/light locks.
+    internal readonly object FrameGate = new();
+    private bool _missingMapTimeReported, _missingPoseChangedReported;
+    private double MapLastObservedTime
+    {
+        get
+        {
+            if(!_missingMapTimeReported){_missingMapTimeReported=true;Missing("M11-045 map last-observed-time reader vt+0x38: tree does not yet contain all map content (B-M3M4-20)");}
+            return Maps.Current?.LastObservedTime??0;
+        }
+    }
     /// <summary>BlockWorld+0x3C: <c>map&lt;origin, map&lt;family, map&lt;type, map&lt;ObjectID, shared_ptr&gt;&gt;&gt;&gt;</c>, walked in ascending key order.</summary>
     private readonly SortedDictionary<(uint Origin, int Family, int Type, int Id), ObservableObject> _located = new();
     /// <summary>BlockWorld+0x30: <c>map&lt;family, map&lt;type, map&lt;ObjectID, shared_ptr&gt;&gt;&gt;</c> of connected active objects.</summary>
@@ -958,8 +970,6 @@ public sealed class BlockWorld
     public Func<Pose3d?>? CurrentRobotPose { get; set; }
     /// <summary><c>Robot::GetLastImageTimeStamp()</c>. Unwired: the timestamp of the frame being processed.</summary>
     public Func<uint>? LastImageTimestamp { get; set; }
-    /// <summary><c>MemoryMap</c> vtable +0x38 (its time of last change), which <c>AddAndUpdateObjects</c> maxes into this+0x58. Unwired: 0.</summary>
-    public Func<double>? MemoryMapTimeOfLastChange { get; set; }
     /// <summary><c>BaseStationTimer::GetCurrentTimeInSeconds()</c>. Unwired: the process's tick count in seconds.</summary>
     public Func<double>? BaseStationSeconds { get; set; }
 
@@ -1033,6 +1043,10 @@ public sealed class BlockWorld
 
     private ObservableObject AddMarkerless(Pose3d input, ObjectType type, uint timestamp)
     {
+        lock(FrameGate) return AddMarkerlessInFrame(input,type,timestamp);
+    }
+    private ObservableObject AddMarkerlessInFrame(Pose3d input, ObjectType type, uint timestamp)
+    {
         var size = MarkerlessObject.SizeByType(type) ?? throw new ArgumentException($"{type} is not markerless", nameof(type));
         var candidate = new ObservableObject(type, Array.Empty<KnownMarker>()) { OriginId = CurrentOriginId, LastObservedTimestamp = timestamp };
         Missing("M11-062 Robot::GetPose VERIFY root checks 0x004EA398..0x004EA46C; flattened host pose has no full Pose3d root-ID owner");
@@ -1043,7 +1057,11 @@ public sealed class BlockWorld
         if (RobotPoseTreeIsUnbuilt?.Invoke() == true) Missing("M11-062 / M12 pose records: Pose3d reparent to Robot::GetPose parent 0x00622418; tree transform unavailable");
         List<ObservableObject> overlaps;
         lock (_gate) overlaps = _located.Values.Where(o => o.OriginId == CurrentOriginId && o.Family == candidate.Family && o.Type == type)
-            .Where(o => MarkerlessSameAs(o, candidate, new Vec3(size.X,size.Y,size.Z))).ToList();
+            .Where(o =>
+            {
+                try{return MarkerlessSameAs(o,candidate,new Vec3(size.X,size.Y,size.Z));}
+                catch(NotSupportedException){Missing($"M11-062 overlap candidate {unchecked((int)o.ObjectId)} pose-tree comparison is unbuilt; candidate skipped");return false;}
+            }).ToList();
         if (overlaps.Count != 0)
         {
             foreach (var match in overlaps) match.LastObservedTimestamp = timestamp;
@@ -1052,7 +1070,11 @@ public sealed class BlockWorld
         var quad = MarkerlessQuad(candidate, standing);
         var filter = new BlockWorldFilter();
         if (LocalizedToObjectId is not null) filter.AllowedFamilies.UnionWith(new[] { ObjectFamily.LightCube, ObjectFamily.MarkerlessObject });
-        filter.Predicates.Add(o => QuadFor(o).Intersects(quad));
+        filter.Predicates.Add(o =>
+        {
+            try{return QuadFor(o).Intersects(quad);}
+            catch(NotSupportedException){Missing($"M13-025 candidate {unchecked((int)o.ObjectId)} GetBoundingQuadXY at 0x0062255E is unbuilt for this pose; candidate skipped");return false;}
+        });
         if (FindLocatedMatchingObjects(filter).Count != 0) return candidate;
         candidate.SetID();
         AddLocatedObject(candidate);
@@ -1067,12 +1089,13 @@ public sealed class BlockWorld
                 float ny = ((float)r[1,0]*1f + (float)r[1,1]*0f) + (float)r[1,2]*0f;
                 var data = new CliffMapData(new Vec2(nx,ny),timestamp); // constructor before GetBoundingQuad
                 var mapQuad = MarkerlessQuad(candidate, input); // r8: input, not standing/object pose.
-                Maps.Current.InsertCliff(Enumerable.Range(0, 4).Select(i => new Vec2(mapQuad[i].X, mapQuad[i].Y)).ToArray(),data);
+                if(Maps.Current is {} map)map.InsertCliff(Enumerable.Range(0, 4).Select(i => new Vec2(mapQuad[i].X, mapQuad[i].Y)).ToArray(),data);
+                else Missing("M13-032 current map unavailable during robot reconstruction; cliff map insertion skipped");
             }
             else Missing("M13-030 / M11-053: Robot::GetPose 0x006225A8 current pose unavailable; cliff normal/insert skipped");
         }
         else if (type == ObjectType.ProxObstacle) Missing("M13-030: MemoryMapData_ProxObstacle 0x00622646..0x006226E6 has no checked stack port");
-        _timeOfLastChange = (uint)Math.Max((double)timestamp, Maps.Current.LastObservedTime);
+        _timeOfLastChange = (uint)Math.Max((double)timestamp, MapLastObservedTime);
         return candidate;
     }
 
@@ -1147,6 +1170,7 @@ public sealed class BlockWorld
             _markerTimestamp = 0;
             _lastImageTimestamp = 0;
             _lastPlayAreaTime = 0; _timeOfLastChange = 0; SelectedObjectId = null;
+            _missingMapTimeReported=_missingPoseChangedReported=false;
             Maps = new SourceMapComponent(); // discard removed robot's owner; next Robot constructs its own
             if (!_deferMap) CreateLocalizedMemoryMap(1);
             Missing("M11-055 / M11-045 MapComponent destructor 0x0067DC00..0x0067DC28: recursive native teardown effects remain unread; managed owner discarded");
@@ -1328,12 +1352,17 @@ public sealed class BlockWorld
     // fidelity: M11-036, M11-037, M11-006, M11-010
     public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
     {
+        lock(FrameGate) return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd);
+    }
+    private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
+    {
+        _missingMapTimeReported=_missingPoseChangedReported=false;
         // fidelity: M11-064 — event precedes queue clear; float unordered skips.
         float now = (float)(BaseStationSeconds?.Invoke() ?? Environment.TickCount64 * 0.001);
         if (_lastPlayAreaTime + 60f < now)
         {
             _lastPlayAreaTime = now;
-            Source(EngineLogLevel.Event, null, "robot.play_area_size", Maps.Current.ExploredRegionAreaM2.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+            Missing("M11-045 robot.play_area_size at 0x00624F32: tree does not yet contain all map content (B-M3M4-20); event value unavailable");
         }
         // Robot::GetLastImageTimeStamp: the empty-list branch (0x00625028), UpdatePoseOfStackedObjects and UpdateMarkerlessObjects (0x0062521A) use it
         uint lastImage = LastImageTimestamp?.Invoke() ?? timestamp;
@@ -1545,7 +1574,7 @@ public sealed class BlockWorld
             observations.Add(observation);
             ObjectObserved?.Invoke(observation);                                   // BroadcastObjectObservation 0x0061FED8 (0x006211DC)
             _didObjectsChange = true;                                              // 0x006211E6
-            _timeOfLastChange = unchecked((uint)Math.Max((double)timestamp, MemoryMapTimeOfLastChange?.Invoke() ?? 0.0));   // 0x00621214: AddAndUpdateObjects's own ts argument (0x00620B9C)
+            _timeOfLastChange = unchecked((uint)Math.Max((double)timestamp, MapLastObservedTime));   // 0x00621214: AddAndUpdateObjects's own ts argument (0x00620B9C)
         }
         return LocalizeRobotResultForTest?.Invoke() ?? potentials.LocalizeRobot();                                         // 0x00621304
     }
@@ -2078,7 +2107,7 @@ public sealed class BlockWorld
         var top = FindObjectOnTopOrUnderneathHelper(obj,15,true);
         if (top is not null) ClearLocatedObjectHelper(top);
         _didObjectsChange = true;
-        _timeOfLastChange = (uint)Math.Max((double)(RobotTimestamp?.Invoke() ?? 0),Maps.Current.LastObservedTime);
+        _timeOfLastChange = (uint)Math.Max((double)(RobotTimestamp?.Invoke() ?? 0),MapLastObservedTime);
     }
 
     /// <summary>
@@ -2162,7 +2191,7 @@ public sealed class BlockWorld
             else Missing("M11-063 oldPose dereference 0x00624884: nonzero old state requires a pose");
         }
         if (SetObjectPoseChanged is { } set) set(obj.ObjectId,obj.PoseState);
-        else Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892 has no stack counterpart");
+        else if(!_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892 has no stack counterpart (once per frame)");}
         // MapComponent::UpdateObjectPose immediately returns for family 6, on both calls. No game message for a cliff.
         if (obj.Family != ObjectFamily.MarkerlessObject && oldState != obj.PoseState) PoseStateChanged?.Invoke(obj,oldState,obj.PoseState);
     }
@@ -2281,8 +2310,10 @@ public sealed class BlockWorld
         uint lastImage = _lastImageTimestamp;
         for (int index = 0; ; index++)
         {
-            PoseChange e;
-            lock (_gate) { if (index >= _poseChanges.Count) break; e = _poseChanges[index]; }
+            PoseChange[] changes;
+            lock (_gate) changes=_poseChanges.ToArray(); // Refresh each iteration: native appends during the walk are visited too.
+            if(index>=changes.Length)break;
+            PoseChange e=changes[index];
             var obj = GetLocatedObjectByIdHelper(e.Id);
             if (obj is null)
             {
@@ -2293,7 +2324,9 @@ public sealed class BlockWorld
             clone.InitPose(e.Pose, e.State);
             var stacked = FindObjectOnTopOrUnderneathHelper(clone, StackToleranceMm, true, obj.ObjectId,
                                                             c => unchecked(c.LastObservedTimestamp + 100) < lastImage);
-            if (stacked is null || Carrying(stacked.ObjectId) || _poseChanges.Any(c => c.Id == stacked.ObjectId)) continue;
+            if (stacked is null || Carrying(stacked.ObjectId)) continue;
+            bool queued;lock(_gate)queued=_poseChanges.Any(c=>c.Id==stacked.ObjectId);
+            if(queued)continue;
             if (RobotPoseTreeIsUnbuilt?.Invoke() == true)
             { Missing("M11-037 / M12 pose records GetWithRespectTo/PreComposeWith/SetParent 0x0062196E..0x006219A8; stacked tree transform skipped"); continue; }
             if (stacked.OriginId != obj.OriginId)
@@ -2823,6 +2856,7 @@ public sealed class BlockWorld
     // fidelity: M11-019
     public IReadOnlyList<ObservableObject> OnRobotDelocalized(IReadOnlySet<uint>? carriedObjectIds = null)
     {
+        Missing("M11-069 Robot.Delocalize / UpdateObjectOrigin full path is deferred to B-M11-1; AddNewOrigin and fresh-map runtime transition are not built by B-M3M4-19");
         var forgotten = new List<ObservableObject>();
         List<ObservableObject> located;
         DelocalizeRobotFields();                                   // Robot::Delocalize's own writes (0x00510A46..)

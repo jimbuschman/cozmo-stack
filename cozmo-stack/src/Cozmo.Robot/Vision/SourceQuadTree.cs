@@ -211,10 +211,13 @@ internal sealed class SourceQuadTree
     private bool Contains(Vec2[] polygon)
     {
         float epsilon = BitConverter.UInt32BitsToSingle(0x3727C5AC);
-        float half = Root.Side*.5f, xmin = Root.X-half-epsilon, xmax = Root.X+half+epsilon;
-        float ymin = Root.Y-half-epsilon, ymax = Root.Y+half+epsilon;
+        // 0x00686A84..0x00686AF0 reads cached node bounds +0x1C..+0x28, then adds -epsilon/+epsilon
+        // in xmin,xmax,ymin,ymax order. This stack recomputes bounds; bit identity is not established (M11-045).
+        float half = Root.Side*.5f, negativeEpsilon=BitConverter.UInt32BitsToSingle(0xB727C5AC);
+        float xmin = (Root.X-half)+negativeEpsilon, xmax = (Root.X+half)+epsilon;
+        float ymin = (Root.Y-half)+negativeEpsilon, ymax = (Root.Y+half)+epsilon;
         foreach (var p in polygon)
-            if (xmin > (float)p.X || xmax < (float)p.X || ymin > (float)p.Y || ymax < (float)p.Y) return false;
+            if (!(xmin <= (float)p.X && xmax >= (float)p.X && ymin <= (float)p.Y && ymax >= (float)p.Y)) return false;
         return true;
     }
     internal void Expand(Vec2 centroid, int limit, Func<bool> contains)
@@ -239,7 +242,7 @@ internal sealed class SourceMapComponent
     internal uint UpdateCount;
     internal SourceLogSink? SourceLog;
     internal Action<string>? Missing;
-    internal MemoryMap Current => Maps[CurrentOrigin]; // checked robot invariant, never a nullable fallback
+    internal MemoryMap? Current => Maps.GetValueOrDefault(CurrentOrigin); // null only while the host defers reconstruction/teardown.
     internal void CreateLocalizedMemoryMap(uint origin, Func<uint,bool> zombie)
     {
         foreach (var id in Maps.Keys.ToArray())
