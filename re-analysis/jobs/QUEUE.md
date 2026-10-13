@@ -61,6 +61,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
 | 31 | [B-POSE-1](B-POSE-1.md) | open, after B-M3M4-19 (exact Pose3d/Rotation3d/Transform3d port, cv::Rodrigues, pose tree; migrate Geometry.cs) |
 | 32 | [B-M3M4-21](B-M3M4-21.md) | open, after B-POSE-1 (dangling blended entry, cube-light root, LoadTime, cleanup) |
+| 33 | [B-M15-1](B-M15-1.md) | open, after B-M3M4-21 (backup manager: constructor, body, restore, wipe, restore list, app inputs) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
@@ -80,4 +81,4 @@ anything. BOARD.md is history; this file is the live queue.
 | 11 | [R-SUBSCRIBERS](../research/requests/20261013-robot-message-subscribers.md) | answered; checked (research/20261013-robot-message-subscribers-check.md) |
 | 12 | [R-HANDLERS](../research/requests/20261013-unported-message-handlers.md) | answered; checked (research/20261013-unported-message-handlers-check.md) |
 | 13 | [R-LOGGERS-BACKUP](../research/requests/20261013-test-loggers-and-backup.md) | answered; checked (research/20261013-test-loggers-and-backup-check.md) |
-| 14 | [R-BACKUP-REST](../research/requests/20261013-backup-manager-rest.md) | open (M15-039, M15-033) |
+| 14 | [R-BACKUP-REST](../research/requests/20261013-backup-manager-rest.md) | answered (Codex on the work PC); checked (research/20261013-backup-manager-rest-check.md) |

@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "492eae9d50fc27d1674848032b40a66c967cb8ef2ce09bf0f7e14560d50f2b4b",
+  "inventory_sha256": "96b19f8777717657a508108d637b913366ba42fb44053a505650ec348af13000",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -705,6 +705,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-test-loggers-and-backup-check.md: pathToResource scope 1 = DataPlatform+0x24 (0x0084BE66); the base is config key DataPlatformResourcesPath (0x00665940 -> 0x006659D4), which the app sets to PlatformUtil.GetResourcesFolder() (RobotEngineManager.cs:536)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-063": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "App input: the backup game-to-engine messages 0x6B RestoreRobotFromBackup (and its key), 0x6C RequestRobotRestoreData, 0x6D WipeRobotGameData, 0x6E RequestUnlockDataFromBackup; and the backup directory listing order",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): A1: sent only by the app (Robot.cs:2053-2063, 2078-2082; SettingsVersionsPanel.cs:82/171/241; RobotRestorePane.cs:36/97/105; DataPersistencePane.cs:131; UnlockablesManager.cs:121); Q4: FilesInDirectory readdir order (0x00802FF6) is filesystem order."
       ],
       "live_path": true,
       "hardware_required": false

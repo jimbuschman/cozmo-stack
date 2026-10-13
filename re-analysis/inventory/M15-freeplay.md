@@ -899,3 +899,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP | M15-039 RobotConnected stats |
 | New RECOVERABLE_GAP | M15-038 backup manager constructor |
 | Notes appended (split) | M15-033 |
+
+
+## Check of R-BACKUP-REST (manager, 2026-10-13; research/20261013-backup-manager-rest-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M15-033, M15-038 |
+| New IMPLEMENTATION_GAP | M15-040 restore, M15-041 wipe, M15-042 restore list |
+| New RECOVERABLE_GAP | M15-043 unlock-from-backup, stoull, primes, JsonCpp throws |
+| Notes appended | M15-039 |

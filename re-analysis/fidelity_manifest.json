@@ -9988,6 +9988,23 @@
       "test": ""
     },
     {
+      "id": "M3-063",
+      "subsystem": "M3-device",
+      "title": "App input: the backup game-to-engine messages 0x6B RestoreRobotFromBackup (and its key), 0x6C RequestRobotRestoreData, 0x6D WipeRobotGameData, 0x6E RequestUnlockDataFromBackup; and the backup directory listing order",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): A1: sent only by the app (Robot.cs:2053-2063, 2078-2082; SettingsVersionsPanel.cs:82/171/241; RobotRestorePane.cs:36/97/105; DataPersistencePane.cs:131; UnlockablesManager.cs:121); Q4: FilesInDirectory readdir order (0x00802FF6) is filesystem order."
+      ],
+      "effect": "When the restore, wipe, restore-list and unlock-from-backup paths run, and the order of backup keys.",
+      "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY: the stack exposes these as host API calls (the host decides when and with which key); the engine side runs exactly. The listing order is the host filesystem order.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
       "id": "M4-029",
       "subsystem": "M4-control",
       "title": "SDK light-state and lift-power recipients",
@@ -11276,14 +11293,15 @@
       "subsystem": "M15-freeplay",
       "title": "RobotDataBackupManager: NV write backup, wipe, destruction and the backup reads' sink",
       "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "NV writes, erases and wipes are mirrored into the engine's robot-data backup; without it the backup and its restore path differ.",
       "provenance": "Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\"); M3-031, M3-034, M3-038 and M3-043 defer their backup calls here. Bodies unread.",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotDataBackupManager.",
       "evidence": [
-        "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass)."
+        "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass).",
+        "re-analysis/research/20261013-backup-manager-rest-check.md: WriteBackupFile 0x0051A66C..0x0051A7F6 (onboarding gate, key/len/data format, Filename not set error, WriteFile \"wb\" 0x0080385A..0x008038D4), committed-map order (libc++ unordered_map, identity hash, growth 0x0051B45C..0x0051B4A2, small primes), IsValidTag 0x0051AC26..0x0051AC60, ReadAll 0x0051AC76..0x0051AD40 (+0x58 gate, ordinal/total), sink 0x0051DF35..0x0051DFFE, QueueDataToWrite 0x0051AE0E..0x0051AE90, WriteDataForTag 0x0051B068..0x0051B1F2, WipeAll 0x0051B530..0x0051B54A, dtor 0x0051A5F0..0x0051A636."
       ],
-      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the Backup manager subscribes C9 in the NVStorage constructor (0x00519B78, gated on HasExternalInterface 0x00519B34) -> RobotConnected 0x0051A010 (unread), first on C9 before Impl and the RIC. Split 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): RobotConnected is M15-039; the constructor side effects are M15-038. Still unread here: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, the dtor 0x0051A5F0, the sink 0x0051DF34, WriteBackupFile 0x0051A66C..0x0051A907.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-backup-manager-rest-check.md): build (job B-M15-1). Order exact up to 211 buckets (beyond: M15-043). The reads-versus-C9 order (an early sink WriteBackupFile logs Filename not set) is M3's queue order. Previous notes: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the Backup manager subscribes C9 in the NVStorage constructor (0x00519B78, gated on HasExternalInterface 0x00519B34) -> RobotConnected 0x0051A010 (unread), first on C9 before Impl and the RIC. Split 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): RobotConnected is M15-039; the constructor side effects are M15-038. Still unread here: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, the dtor 0x0051A5F0, the sink 0x0051DF34, WriteBackupFile 0x0051A66C..0x0051A907.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11361,14 +11379,15 @@
       "subsystem": "M15-freeplay",
       "title": "RobotDataBackupManager constructor: the robotBackups directory, backup_config.json tagsToBackup, and the HasExternalInterface-gated subscriptions",
       "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-test-loggers-and-backup-check.md: Ctor 0x00519AB0..0x00519D8A: +0x48 = scope 0 \"robotBackups/\"; gated on HasExternalInterface (0x00519B34): C9 -> RobotConnected and G2E 0x6B/0x6D/0x6C (helpers 0x0051A3A0/0x0051A460/0x0051A520, unread); ungated CreateDirectory(+0x48) with the CreateDir error (0x00519EDC/0x00519F10) skipping the config read; backup_config.json (scope 1, global 0x01059D70) tagsToBackup -> set<uint> +0x3C, ReadJson error (0x00BE76DE/0x00519F54); a missing file is silent."
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: Ctor 0x00519AB0..0x00519D8A: +0x48 = scope 0 \"robotBackups/\"; gated on HasExternalInterface (0x00519B34): C9 -> RobotConnected and G2E 0x6B/0x6D/0x6C (helpers 0x0051A3A0/0x0051A460/0x0051A520, unread); ungated CreateDirectory(+0x48) with the CreateDir error (0x00519EDC/0x00519F10) skipping the config read; backup_config.json (scope 1, global 0x01059D70) tagsToBackup -> set<uint> +0x3C, ReadJson error (0x00BE76DE/0x00519F54); a missing file is silent.",
+        "re-analysis/research/20261013-backup-manager-rest-check.md: the G2E helpers bind 0x6B/0x6D/0x6C (0x0051A3A8/0x0051A468/0x0051A528; invokes 0x0051DB82.., 0x0051DBF6.., 0x0051DC6A..). Handler bodies: M15-040, M15-041, M15-042."
       ],
       "effect": "The backup directory created at connection, and which NV tags are backed up (the stack hard-codes 8).",
       "provenance": "Opus check of R-LOGGERS-BACKUP (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the three G2E helpers 0x0051A3A0..0x0051A5EF and their handlers. The directory, the config read and its logs are read and can be built. Inputs: M3-061, M3-062. HasExternalInterface is true in the stack (the engine-to-game interface is the C# API).",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-backup-manager-rest-check.md): build the constructor rows (job B-M15-1), with the inputs M3-061/M3-062. Previous notes: RECOVERABLE_GAP: read the three G2E helpers 0x0051A3A0..0x0051A5EF and their handlers. The directory, the config read and its logs are read and can be built. Inputs: M3-061, M3-062. HasExternalInterface is true in the stack (the engine-to-game interface is the C# API).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11385,7 +11404,75 @@
       ],
       "effect": "A stats file written on every robot connection, and its logs.",
       "provenance": "Opus check of R-LOGGERS-BACKUP (2026-10-13), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: build (job B-M3M4-18). The basename reader WriteBackupFile 0x0051A66C..0x0051A907 is unread (M15-033). JsonCpp throws on a malformed stats file fall under M1-034. Input: M3-061.",
+      "unresolved": "IMPLEMENTATION_GAP: build (job B-M3M4-18). The basename reader WriteBackupFile 0x0051A66C..0x0051A907 is unread (M15-033). JsonCpp throws on a malformed stats file fall under M1-034. Input: M3-061. Correction 2026-10-13 (re-analysis/research/20261013-backup-manager-rest-check.md): M1-034 does not cover a malformed statsForBackup.json; that is an open operator question, and until it is ruled the stack gives a visible MISSING there. The basename's only reader is WriteBackupFile (M15-033).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-040",
+      "subsystem": "M15-freeplay",
+      "title": "RestoreRobotFromBackup (0x6B) and its write callback; GetFileToUseForBackup and ParseBackupFile",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): R1-R9: handler 0x0051B566..0x0051B934 (pending gate, NoDir, key file, selector 0x0051BB28..0x0051BD98, parser 0x0051BED0..0x0051BF98, Using file, R6 flags, R7 NV writes); callback 0x0051E6AD..0x0051E7AE; R9 HandleNVOpResult callback-before-WriteDataForTag 0x006433F0..0x00643420 (double WriteBackupFile on the last write)."
+      ],
+      "effect": "What a restore writes to the robot and reports, and the backup file writes around it.",
+      "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: build (job B-M15-1). Input: M3-063. Operator question pending: a malformed name/stats/backup file reaches std::terminate (stoull, JsonCpp, ParseBackupFile); until ruled, a visible MISSING at each point.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-041",
+      "subsystem": "M15-freeplay",
+      "title": "WipeRobotGameData (0x6D) and its erase callback",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): W1-W3: 0x0051C04A..0x0051C194 (pending gate, clear, ascending Erase over set +0x3C), callback 0x0051E8DD..0x0051E9D6."
+      ],
+      "effect": "What a wipe erases on the robot and reports.",
+      "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: build (job B-M15-1). Input: M3-063.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-042",
+      "subsystem": "M15-freeplay",
+      "title": "RequestRobotRestoreData (0x6C): backup file listing, key parse, prompt flag, RestoreRobotOptions",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): Q1/Q2/Q5: 0x0051C25E..0x0051C412; FilesInDirectory 0x00802C76..0x00803004."
+      ],
+      "effect": "Which backups the app is offered and whether it is prompted.",
+      "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: build (job B-M15-1); stoull is the unread record. Input: M3-063. Operator question pending: a malformed name/stats/backup file reaches std::terminate (stoull, JsonCpp, ParseBackupFile); until ruled, a visible MISSING at each point.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-043",
+      "subsystem": "M15-freeplay",
+      "title": "Backup unread pieces: RequestUnlockDataFromBackup (0x6E) internals, std::stoull (libc++_shared), __next_prime above 211, JsonCpp throw paths",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): U1/U2: RobotEventHandler subscription 0x005270E8 (called 0x00525970), handler 0x0051C5E4..0x0051C8C4; unread UnlockedIdsList::Unpack (PLT 0x004A8518), GetDefaultUnlocks (PLT 0x004A8554), IExternalInterface +0x1C, 0x0051C8FE..0x0051C930, 0x005257EE..0x00525970, 0x00529BC0; libc++_shared stoull 0x00065378..0x00065510 and __next_prime 0x0003B074..0x0003B6A0; Json::Value::asUInt and getMemberNames (0x008E6C68) throw paths."
+      ],
+      "effect": "The unlock state restored from a backup, and exact behaviour on unusual names and large maps.",
+      "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed ranges.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "bf45eee56d7908fced51ac18dc1c4c4db5d1e5d27f6e5d7f91375090db5d7781",
+  "inventory_sha256": "dfcf39cf1f6f9162e3d586efed26877195e7c12da0ebc336073a9e3b63678040",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -426,11 +426,12 @@
       "hardware_required": false
     },
     "M15-033": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotDataBackupManager: NV write backup, wipe, destruction and the backup reads' sink",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotDataBackupManager.",
       "evidence": [
-        "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass)."
+        "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass).",
+        "re-analysis/research/20261013-backup-manager-rest-check.md: WriteBackupFile 0x0051A66C..0x0051A7F6 (onboarding gate, key/len/data format, Filename not set error, WriteFile \"wb\" 0x0080385A..0x008038D4), committed-map order (libc++ unordered_map, identity hash, growth 0x0051B45C..0x0051B4A2, small primes), IsValidTag 0x0051AC26..0x0051AC60, ReadAll 0x0051AC76..0x0051AD40 (+0x58 gate, ordinal/total), sink 0x0051DF35..0x0051DFFE, QueueDataToWrite 0x0051AE0E..0x0051AE90, WriteDataForTag 0x0051B068..0x0051B1F2, WipeAll 0x0051B530..0x0051B54A, dtor 0x0051A5F0..0x0051A636."
       ],
       "live_path": true,
       "hardware_required": false
@@ -476,11 +477,12 @@
       "hardware_required": false
     },
     "M15-038": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotDataBackupManager constructor: the robotBackups directory, backup_config.json tagsToBackup, and the HasExternalInterface-gated subscriptions",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-test-loggers-and-backup-check.md: Ctor 0x00519AB0..0x00519D8A: +0x48 = scope 0 \"robotBackups/\"; gated on HasExternalInterface (0x00519B34): C9 -> RobotConnected and G2E 0x6B/0x6D/0x6C (helpers 0x0051A3A0/0x0051A460/0x0051A520, unread); ungated CreateDirectory(+0x48) with the CreateDir error (0x00519EDC/0x00519F10) skipping the config read; backup_config.json (scope 1, global 0x01059D70) tagsToBackup -> set<uint> +0x3C, ReadJson error (0x00BE76DE/0x00519F54); a missing file is silent."
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: Ctor 0x00519AB0..0x00519D8A: +0x48 = scope 0 \"robotBackups/\"; gated on HasExternalInterface (0x00519B34): C9 -> RobotConnected and G2E 0x6B/0x6D/0x6C (helpers 0x0051A3A0/0x0051A460/0x0051A520, unread); ungated CreateDirectory(+0x48) with the CreateDir error (0x00519EDC/0x00519F10) skipping the config read; backup_config.json (scope 1, global 0x01059D70) tagsToBackup -> set<uint> +0x3C, ReadJson error (0x00BE76DE/0x00519F54); a missing file is silent.",
+        "re-analysis/research/20261013-backup-manager-rest-check.md: the G2E helpers bind 0x6B/0x6D/0x6C (0x0051A3A8/0x0051A468/0x0051A528; invokes 0x0051DB82.., 0x0051DBF6.., 0x0051DC6A..). Handler bodies: M15-040, M15-041, M15-042."
       ],
       "live_path": true,
       "hardware_required": false
@@ -491,6 +493,46 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-test-loggers-and-backup-check.md: RobotConnected 0x0051A010..0x0051A25C (key = to_string(serialNumberHead); FileExists with the regular-file bit 0x00803446..0x0080344A; readAsJson 0x0084C01C..0x0084C18C with its logs; ReadStatsFailed 0x0051A308 returns; ConnectionCount[key] = old+1 or int 1; writeAsJson 0x0084C328..0x0084C4B6 (writing-to info, CreateDirectory strip, StyledStreamWriter tab, open, Failed to create folder error); WriteStatsFailed 0x00BE7755 continues; basename global 0x01059D80 = key + \".backup\"). First C9 subscriber."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-040": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RestoreRobotFromBackup (0x6B) and its write callback; GetFileToUseForBackup and ParseBackupFile",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): R1-R9: handler 0x0051B566..0x0051B934 (pending gate, NoDir, key file, selector 0x0051BB28..0x0051BD98, parser 0x0051BED0..0x0051BF98, Using file, R6 flags, R7 NV writes); callback 0x0051E6AD..0x0051E7AE; R9 HandleNVOpResult callback-before-WriteDataForTag 0x006433F0..0x00643420 (double WriteBackupFile on the last write)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-041": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "WipeRobotGameData (0x6D) and its erase callback",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): W1-W3: 0x0051C04A..0x0051C194 (pending gate, clear, ascending Erase over set +0x3C), callback 0x0051E8DD..0x0051E9D6."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-042": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RequestRobotRestoreData (0x6C): backup file listing, key parse, prompt flag, RestoreRobotOptions",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): Q1/Q2/Q5: 0x0051C25E..0x0051C412; FilesInDirectory 0x00802C76..0x00803004."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-043": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Backup unread pieces: RequestUnlockDataFromBackup (0x6E) internals, std::stoull (libc++_shared), __next_prime above 211, JsonCpp throw paths",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): U1/U2: RobotEventHandler subscription 0x005270E8 (called 0x00525970), handler 0x0051C5E4..0x0051C8C4; unread UnlockedIdsList::Unpack (PLT 0x004A8518), GetDefaultUnlocks (PLT 0x004A8554), IExternalInterface +0x1C, 0x0051C8FE..0x0051C930, 0x005257EE..0x00525970, 0x00529BC0; libc++_shared stoull 0x00065378..0x00065510 and __next_prime 0x0003B074..0x0003B6A0; Json::Value::asUInt and getMemberNames (0x008E6C68) throw paths."
       ],
       "live_path": true,
       "hardware_required": false
