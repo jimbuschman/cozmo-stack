@@ -53,6 +53,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 22 | [B-M5-15](B-M5-15.md) | done 1287c660; Opus check FAIL (research/20261012-b-m5-15-check.md), fixes in B-M5-16 |
 | 23 | [B-M3M4-14](B-M3M4-14.md) | open (cube lights: blend, modifier, loader) |
 | 24 | [B-M3M4-15](B-M3M4-15.md) | open, after B-M3M4-14 ($session_id, device-ID edge cases, M3-060 DAS events, cleanups) |
+| 25 | [B-M5-16](B-M5-16.md) | open, after B-M3M4-15 (M5-065 group-lookup miss, early-Robot sequence, M12-024 visibility, activity MISSINGs, cleanups) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

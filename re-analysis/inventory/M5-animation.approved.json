@@ -2,7 +2,7 @@
   "subsystem": "M5-animation",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "47aca96c6375405797b2ba9caa8443c6a4302a08287fd7fe0e2d0d279d0e899f",
+  "inventory_sha256": "5a0c89f074e167ca9b40e31dab025ba9810b668b38ad74635618e4136df24fc7",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -801,6 +801,16 @@
       "evidence": [
         "re-analysis/research/20261012-m5-teardown-members.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (instance dtor unread); engine +0x38 set to 0 at 0x004EB292 (no writer found); TransferQueueMgr 0x006A3860 -> Dispatch::Stop 0x006A3874 (unread); GameLogTransferTask 0x006A2E6C virtual delete of +0x10 (unread).",
         "re-analysis/research/20261012-m5-driving-handler-read.md: BaseStationTimer removeInstance 0x0084BBE4..0x0084BC04 (D2 bx lr 0x0084BC30, D0 operator delete 0x0084BC32); engine +0x38 written only with 0 in CozmoEngine/CozmoAPI (0x004EB292, 0x004EB960, 0x004EC6EE, 0x004EC756); Dispatch::Stop -> Queue::Stop 0x007FBB80 -> TaskExecutor::StopExecution 0x007FC684..0x007FC762 (pending tasks destroyed unrun, taken batch finishes, joins); GameLogTransferTask dtor 0x006A2E6C..0x006A2E94 -> ~HttpAdapter 0x00805F88..0x00805FE8 (state 0, JNI DeleteGlobalRef via lambda 0x00808300)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M5-065": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "AnimationGroupContainer::GetAnimationGroup miss: InvalidName error, errG, null return (callers: streamer constructor, GetAnimationNameFromGroup)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-m5-group-lookup.md: const GetAnimationGroup 0x0058B6F8..0x0058B768 (find 0x0058B6FE; miss: sErrorF key \"AnimationGroupContainer.GetAnimationGroup_Const.InvalidName\", format \"AnimationGroup requested for unknown animation group '%s'.\" at 0x0058B724, errG 0x0058B74A..0x0058B758, conditional sDebugBreakOnError 0x0058B75E, returns null); non-const 0x0058B6F4 forwards (veneer 0x008CBA0C). Callers: C1 0x00561DE4 (SayTextAction GetAnimation, not built), C2 0x0057A0E2 (streamer constructor, no empty-name check), C3 0x0057AE80 (AnimationStreamer::GetAnimationNameFromGroup 0x0057AE74: null or IsEmpty -> static empty string 0x0105AAC8, no further log; callers TriggerAnimationAction::Init 0x0054446E, AnimationStreamer::Update 0x0057D234, BehaviorFeedingEat 0x005D61BC), C4 0x0058B8A6 (DefineFromJson, unreachable after find-or-insert). HasGroup 0x0058B814 (no log) has no callers; AddAnimationGroup find never logs."
       ],
       "live_path": true,
       "hardware_required": false

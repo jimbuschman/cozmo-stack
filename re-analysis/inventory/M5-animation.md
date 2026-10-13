@@ -929,3 +929,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M5-063, M5-064 |
+
+
+## Group lookup read (manager, 2026-10-12; research/20261012-m5-group-lookup.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP | M5-065 GetAnimationGroup miss (InvalidName, errG) |
+| Notes appended | M5-010, M5-011 (G0 correction), M5-027, M8-021 |
