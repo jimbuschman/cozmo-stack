@@ -1,8 +1,8 @@
 {
   "subsystem": "M3-device",
-  "approved": "2026-10-12",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "34ca3c4c3d5f48d164c32f61f5ff718b7ade1875ff78ee39238b86000975b96b",
+  "inventory_sha256": "492eae9d50fc27d1674848032b40a66c967cb8ef2ce09bf0f7e14560d50f2b4b",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -685,6 +685,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-b-m3m4-13-check.md: HandleRobotSetHeadID (0x005367D8): after sSetGlobal(\"$group\") at 0x00536810, sEvent(\"robot.handle_robot_set_head_id\" 0x5368D0, {{\"$data\", buf}}, buf) at 0x00536848; HandleRobotSetBodyID: after sSetGlobal(\"$phys\"), sEvent(\"robot.handle_robot_set_body_id\" 0x5370F0, {{\"$data\", buf}}, buf) at 0x00537028. buf is the formatted global value."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-061": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "The DataPlatform files path (DataPlatformFilesPath, scope 0 + \"/output\"; app input: persistentDataPath)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: pathToResource scope 0 = DataPlatform+0x00 + \"/output\" (0x0084BE44, 0x0084BFAC); the base is cozmo_startup config key DataPlatformFilesPath (0x006658C8 -> 0x006659D4), which the app sets to Application.persistentDataPath (RobotEngineManager.cs:533)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-062": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "The DataPlatform resources path (DataPlatformResourcesPath, scope 1; app input: GetResourcesFolder)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: pathToResource scope 1 = DataPlatform+0x24 (0x0084BE66); the base is config key DataPlatformResourcesPath (0x00665940 -> 0x006659D4), which the app sets to PlatformUtil.GetResourcesFolder() (RobotEngineManager.cs:536)."
       ],
       "live_path": true,
       "hardware_required": false

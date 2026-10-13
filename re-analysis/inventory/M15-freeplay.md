@@ -890,3 +890,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP | M15-037 ActivityBuildPyramid light modifiers and tracker lifecycle |
+
+
+## Check of R-LOGGERS-BACKUP (manager, 2026-10-13; research/20261013-test-loggers-and-backup-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP | M15-039 RobotConnected stats |
+| New RECOVERABLE_GAP | M15-038 backup manager constructor |
+| Notes appended (split) | M15-033 |

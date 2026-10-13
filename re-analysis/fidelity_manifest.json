@@ -96,7 +96,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M3-device.md",
-        "approved": "2026-10-12",
+        "approved": "2026-10-13",
         "snapshot": "re-analysis/inventory/M3-device.approved.json"
       }
     },
@@ -252,7 +252,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-12",
+        "approved": "2026-10-13",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -5972,7 +5972,7 @@
       ],
       "status": "IMPLEMENTATION_GAP",
       "live_path": true,
-      "unresolved": "Reopened 2026-10-12 by the second M3/M4 pass (re-analysis/research/20261012-m3m4-settling-2.md): BlockFilter::Save sets the stream exception mask (0x0061B0B8) and catches ios_base::failure (0x0061B21C..0x0061B2A4: what() -> sErrorF Save.Error -> errG), so a failed open is a reachable error path (what() bytes: new RECOVERABLE_GAP); RemoveObjectFromPersistentPool (0x0061B3DE/0x0061B42E) is reached only from a game message (new COMPATIBILITY_POLICY). Load and AddObjectToPersistentPool still match. Previous notes: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): SETTLED. Init precedes the +0x14 store and VisionComponent::SetPhysicalRobot (0x00513954 -> 0x0051397A/0x0051397C). Not reproduced: the cbz at 0x00513926 that skips Init when [[robot]+8] (DataPlatform) is null; unreachable in the shipped app, because cozmo_startup calls DataPlatform::readAsJson (0x0066603C) before StartRun (0x006661EA). Test gap (Codex re-audit re-analysis/research/20261001-reaudit-M3-M4.md, 2026-10-02; the code holds): the named test covers only Init's placement; blockPool.txt's grammar, save/remove, the rehash order and the equal-RSSI choice have no test. B-M3M4-9 built, awaiting strong verification: Init/Load/Save source logs ported, excess nonempty line error and errG/break ported. Save opens the output stream before per-entry write/log and closes it afterwards, without invented directory creation. MISSING: Load.ParseError 0x0061A55E and Save.Error 0x0061B260 need shipped libc++ exception what() bytes/source gates, not host exception messages; visible stack diagnostics. RemoveObjectFromPersistentPool 0x0061B3DE/0x0061B42E has no C# caller/body; its game-message ingress remains unbuilt (no parallel helper added). B-M3M4-10 (2026-10-12), built, awaiting strong verification: Load.ParseError emits Debug/Unnamed/BlockFilter.Load.ParseError with the original rejected line as %s, then continues (0x0061A524..0x0061A58A); no exception what() and no error flag/break. Save.Error diagnostic now correctly identifies unread shipped libc++_shared.so exception bytes, not phone-library absence. Status retained as required by job; amendment awaits strong verification. B-M3M4-11 (2026-10-12), built, awaiting strong verification: Load reads raw file bytes split on LF, without UTF8/BOM decoding on its grammar path. ParseError clips only its %s C-string argument at the first NUL; raw bytes survive through explicit keyed SourceLogBytes -> EmitSourceLog to EngineLogEntry.TextUtf8, including malformed UTF8 (0x0061A3F4, catch/debug 0x0061A524..0x0061A58A, %s literal0x0061A748). Existing partial factory-id writes, count gates, queued-log order and ASCII Save output retained. Save XML documentation restored above Save. Existing EXACT_SOURCE status preserved; amendments await strong verification. B-M3M4-12 (2026-10-12), built, awaiting strong verification: ParseError delivers raw bytes, readable string and legacy sink rather than selecting one. Production engine consumes raw-byte event once, avoiding duplicate entries from its string subscription; all other sinks receive the same C-string-clipped payload. Save.Error what() MISSING names M4-043; app editing/removal exclusion names M4-042, supported pool-enable remains M1-042. No Save what() bytes supplied.",
+      "unresolved": "Reopened 2026-10-12 by the second M3/M4 pass (re-analysis/research/20261012-m3m4-settling-2.md): BlockFilter::Save sets the stream exception mask (0x0061B0B8) and catches ios_base::failure (0x0061B21C..0x0061B2A4: what() -> sErrorF Save.Error -> errG), so a failed open is a reachable error path (what() bytes: new RECOVERABLE_GAP); RemoveObjectFromPersistentPool (0x0061B3DE/0x0061B42E) is reached only from a game message (new COMPATIBILITY_POLICY). Load and AddObjectToPersistentPool still match. Previous notes: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-3-4.md): SETTLED. Init precedes the +0x14 store and VisionComponent::SetPhysicalRobot (0x00513954 -> 0x0051397A/0x0051397C). Not reproduced: the cbz at 0x00513926 that skips Init when [[robot]+8] (DataPlatform) is null; unreachable in the shipped app, because cozmo_startup calls DataPlatform::readAsJson (0x0066603C) before StartRun (0x006661EA). Test gap (Codex re-audit re-analysis/research/20261001-reaudit-M3-M4.md, 2026-10-02; the code holds): the named test covers only Init's placement; blockPool.txt's grammar, save/remove, the rehash order and the equal-RSSI choice have no test. B-M3M4-9 built, awaiting strong verification: Init/Load/Save source logs ported, excess nonempty line error and errG/break ported. Save opens the output stream before per-entry write/log and closes it afterwards, without invented directory creation. MISSING: Load.ParseError 0x0061A55E and Save.Error 0x0061B260 need shipped libc++ exception what() bytes/source gates, not host exception messages; visible stack diagnostics. RemoveObjectFromPersistentPool 0x0061B3DE/0x0061B42E has no C# caller/body; its game-message ingress remains unbuilt (no parallel helper added). B-M3M4-10 (2026-10-12), built, awaiting strong verification: Load.ParseError emits Debug/Unnamed/BlockFilter.Load.ParseError with the original rejected line as %s, then continues (0x0061A524..0x0061A58A); no exception what() and no error flag/break. Save.Error diagnostic now correctly identifies unread shipped libc++_shared.so exception bytes, not phone-library absence. Status retained as required by job; amendment awaits strong verification. B-M3M4-11 (2026-10-12), built, awaiting strong verification: Load reads raw file bytes split on LF, without UTF8/BOM decoding on its grammar path. ParseError clips only its %s C-string argument at the first NUL; raw bytes survive through explicit keyed SourceLogBytes -> EmitSourceLog to EngineLogEntry.TextUtf8, including malformed UTF8 (0x0061A3F4, catch/debug 0x0061A524..0x0061A58A, %s literal0x0061A748). Existing partial factory-id writes, count gates, queued-log order and ASCII Save output retained. Save XML documentation restored above Save. Existing EXACT_SOURCE status preserved; amendments await strong verification. B-M3M4-12 (2026-10-12), built, awaiting strong verification: ParseError delivers raw bytes, readable string and legacy sink rather than selecting one. Production engine consumes raw-byte event once, avoiding duplicate entries from its string subscription; all other sinks receive the same C-string-clipped payload. Save.Error what() MISSING names M4-043; app editing/removal exclusion names M4-042, supported pool-enable remains M1-042. No Save what() bytes supplied. Lead 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): scope 4 is DataPlatform+0x18, DataPlatformExternalPath (temporaryCachePath), not local application data; check and correct the named input.",
       "effect": "the block pool loads on every connection, not only for a physical robot, so cube connection starts from a pool the engine would not have loaded",
       "provenance": "libcozmoEngine.so, M4-control inventory (BlockFilter); settled by R-DEV, demoted by the 2026-09-29 audit",
       "hardware_required": false,
@@ -9623,7 +9623,7 @@
         "M3-041 rows L5/L6 (jobs/B-M3M4.md): the logger's directory is DataPlatform::pathToResource scope 2 + \"imu_logs\", built on the app-supplied persistent path.",
         "re-analysis/research/20261010-m3041-filebuf-rows.md F8.1 DirectoryExists 0x00802824 (stat, st_mode 0x4000 bit), F8.2 FileExists 0x0080342A (stat, st_mode 0x8000 bit)."
       ],
-      "unresolved": "COMPATIBILITY_POLICY (manager, 2026-10-10, Opus objection 6 on the M3-041 build): the persistent path is CozmoEngineOptions.DataPlatformPersistentPath, default LocalApplicationData/cozmo-stack (ImuLog.DefaultPersistentPath). stat is mapped to file attributes: on Windows the Directory attribute stands for 0x4000 and 'exists and not a directory' for 0x8000, which matches the CRT; on Unix a FIFO or device node would count as a file, unlike the engine's single-bit test. mkdir 0700 applies on Unix only. Also (Opus re-check Q2): mkdir is Directory.CreateDirectory, which creates every missing ancestor where the engine's mkdir makes one level; on Unix the engine's '/' walk visits every ancestor, so it never shows, but on Windows components separated by '\\' in a host-supplied path are created in one step and are not counted by the 200-iteration cap. On Unix, .NET's attribute query falls back to lstat, so a broken symlink counts as an existing file where the engine's stat fails.",
+      "unresolved": "COMPATIBILITY_POLICY (manager, 2026-10-10, Opus objection 6 on the M3-041 build): the persistent path is CozmoEngineOptions.DataPlatformPersistentPath, default LocalApplicationData/cozmo-stack (ImuLog.DefaultPersistentPath). stat is mapped to file attributes: on Windows the Directory attribute stands for 0x4000 and 'exists and not a directory' for 0x8000, which matches the CRT; on Unix a FIFO or device node would count as a file, unlike the engine's single-bit test. mkdir 0700 applies on Unix only. Also (Opus re-check Q2): mkdir is Directory.CreateDirectory, which creates every missing ancestor where the engine's mkdir makes one level; on Unix the engine's '/' walk visits every ancestor, so it never shows, but on Windows components separated by '\\' in a host-supplied path are created in one step and are not counted by the 200-iteration cap. On Unix, .NET's attribute query falls back to lstat, so a broken symlink counts as an existing file where the engine's stat fails. Lead 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): scope 2 is the cache path (DataPlatform+0x0C, temporaryCachePath), not the persistent path; check whether imu_logs uses scope 2, and if so correct the named input (M5-060).",
       "hardware_required": false,
       "live_path": true,
       "test": "M3ImuLogLiveTests CreateDirectory / FileExists / DirectoryExists cases."
@@ -9952,6 +9952,40 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X15BuilderTests; M3M4X12BuilderTests; M3M4X13BuilderTests"
+    },
+    {
+      "id": "M3-061",
+      "subsystem": "M3-device",
+      "title": "The DataPlatform files path (DataPlatformFilesPath, scope 0 + \"/output\"; app input: persistentDataPath)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: pathToResource scope 0 = DataPlatform+0x00 + \"/output\" (0x0084BE44, 0x0084BFAC); the base is cozmo_startup config key DataPlatformFilesPath (0x006658C8 -> 0x006659D4), which the app sets to Application.persistentDataPath (RobotEngineManager.cs:533)."
+      ],
+      "effect": "Where the engine writes robot backups and stats.",
+      "provenance": "Opus check of R-LOGGERS-BACKUP (2026-10-13), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY: the stack supplies this root from its own settings (an app input under the 2026-10-09 scope rule). Build: a stack setting, used for scope 0.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M3-062",
+      "subsystem": "M3-device",
+      "title": "The DataPlatform resources path (DataPlatformResourcesPath, scope 1; app input: GetResourcesFolder)",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: pathToResource scope 1 = DataPlatform+0x24 (0x0084BE66); the base is config key DataPlatformResourcesPath (0x00665940 -> 0x006659D4), which the app sets to PlatformUtil.GetResourcesFolder() (RobotEngineManager.cs:536)."
+      ],
+      "effect": "Where the engine reads its shipped config (for example backup_config.json).",
+      "provenance": "Opus check of R-LOGGERS-BACKUP (2026-10-13), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY: the stack supplies the shipped OBB resources folder as this root. Build: used for scope 1.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M4-029",
@@ -10841,14 +10875,15 @@
       "subsystem": "M7-behaviour",
       "title": "Dev test behaviour constructor side effects: RollingFileLogger directories (dockingTest, liftLoadTest) and FactoryTestLogger",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-unported-message-handlers-check.md: DockingTestSimple ctor 0x005CB04E..0x005CB0A8 and LiftLoadTest ctor 0x005D3F32.. build RollingFileLogger(nullptr, pathToResource(scope 2, \"dockingTest\"/\"liftLoadTest\"), kDefaultFileExtension, 0x1400000); its ctor 0x0080DEFC calls FileUtils::CreateDirectory (0x0080DFCC); FactoryTest ctor builds FactoryTestLogger (0x005D051A -> 0x00671658). Each behaviour is built twice."
+        "re-analysis/research/20261013-unported-message-handlers-check.md: DockingTestSimple ctor 0x005CB04E..0x005CB0A8 and LiftLoadTest ctor 0x005D3F32.. build RollingFileLogger(nullptr, pathToResource(scope 2, \"dockingTest\"/\"liftLoadTest\"), kDefaultFileExtension, 0x1400000); its ctor 0x0080DEFC calls FileUtils::CreateDirectory (0x0080DFCC); FactoryTest ctor builds FactoryTestLogger (0x005D051A -> 0x00671658). Each behaviour is built twice.",
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md section M7-028: RollingFileLogger ctor 0x0080DEFC..0x0080DFD4 (CreateDirectory(path, false, true), result ignored; no file opened), CreateDirectory walk 0x008028F0..0x008029C8, dtor 0x0080E090..0x0080E11E; paths scope 2 = cache path + \"/dockingTest\" | \"/liftLoadTest\"; LiftLoadTest ctor state and 0x35/0x95/DA subscriptions 0x005D3F20..0x005D4048; FactoryTestLogger(true) 0x00671658..0x006716E0 memory only."
       ],
       "effect": "Directories or files the engine creates on the device at robot connection.",
       "provenance": "Opus check of R-HANDLERS (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the RollingFileLogger ctor 0x0080DEFC..0x0080E050 and pathToResource scope 2, the rest of the LiftLoadTest ctor 0x005D3F48..0x005D401A, and FactoryTestLogger 0x00671658..; say what is created and whether anything is written.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): build L1-L5 (job B-M3M4-18), both instances. Input: M5-060 (cache path). Unread: the IBehavior base ctor; FactoryTestLogger StartLog/CloseLog. Previous notes: RECOVERABLE_GAP: read the RollingFileLogger ctor 0x0080DEFC..0x0080E050 and pathToResource scope 2, the rest of the LiftLoadTest ctor 0x005D3F48..0x005D401A, and FactoryTestLogger 0x00671658..; say what is created and whether anything is written.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11179,7 +11214,7 @@
       "evidence": [
         "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass)."
       ],
-      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the Backup manager subscribes C9 in the NVStorage constructor (0x00519B78, gated on HasExternalInterface 0x00519B34) -> RobotConnected 0x0051A010 (unread), first on C9 before Impl and the RIC.",
+      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the Backup manager subscribes C9 in the NVStorage constructor (0x00519B78, gated on HasExternalInterface 0x00519B34) -> RobotConnected 0x0051A010 (unread), first on C9 before Impl and the RIC. Split 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): RobotConnected is M15-039; the constructor side effects are M15-038. Still unread here: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, the dtor 0x0051A5F0, the sink 0x0051DF34, WriteBackupFile 0x0051A66C..0x0051A907.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11248,6 +11283,40 @@
       "effect": "Pyramid-building cube lights, and whether M4-045's NullActiveObject + modifier heap read is reachable.",
       "provenance": "Opus extractor read of M4-046 (2026-10-12), manager record.",
       "unresolved": "RECOVERABLE_GAP: read UpdateDesiredLights and SetPyramidBaseLights sources; and for reachability of M4-045 N2/N3: (a) who dispatches HandleObjectConnectionStateChange to activities and whether an inactive one receives it, (b) its order against BlockWorld's connected-object removal, (c) UpdateStateTrackerForUnrecognizedID 0x005A8004, (d) whether Update/OnDeselected can call SetCubeLights for a gone cube. Feeding (FeedingCubeController +0xAC modifier) is entered only through the app's ActivateHighLevelActivity(Feeding) as far as read.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-038",
+      "subsystem": "M15-freeplay",
+      "title": "RobotDataBackupManager constructor: the robotBackups directory, backup_config.json tagsToBackup, and the HasExternalInterface-gated subscriptions",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: Ctor 0x00519AB0..0x00519D8A: +0x48 = scope 0 \"robotBackups/\"; gated on HasExternalInterface (0x00519B34): C9 -> RobotConnected and G2E 0x6B/0x6D/0x6C (helpers 0x0051A3A0/0x0051A460/0x0051A520, unread); ungated CreateDirectory(+0x48) with the CreateDir error (0x00519EDC/0x00519F10) skipping the config read; backup_config.json (scope 1, global 0x01059D70) tagsToBackup -> set<uint> +0x3C, ReadJson error (0x00BE76DE/0x00519F54); a missing file is silent."
+      ],
+      "effect": "The backup directory created at connection, and which NV tags are backed up (the stack hard-codes 8).",
+      "provenance": "Opus check of R-LOGGERS-BACKUP (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the three G2E helpers 0x0051A3A0..0x0051A5EF and their handlers. The directory, the config read and its logs are read and can be built. Inputs: M3-061, M3-062. HasExternalInterface is true in the stack (the engine-to-game interface is the C# API).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-039",
+      "subsystem": "M15-freeplay",
+      "title": "RobotDataBackupManager::RobotConnected (C9): statsForBackup.json connection count, read/write logs, the backup basename",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: RobotConnected 0x0051A010..0x0051A25C (key = to_string(serialNumberHead); FileExists with the regular-file bit 0x00803446..0x0080344A; readAsJson 0x0084C01C..0x0084C18C with its logs; ReadStatsFailed 0x0051A308 returns; ConnectionCount[key] = old+1 or int 1; writeAsJson 0x0084C328..0x0084C4B6 (writing-to info, CreateDirectory strip, StyledStreamWriter tab, open, Failed to create folder error); WriteStatsFailed 0x00BE7755 continues; basename global 0x01059D80 = key + \".backup\"). First C9 subscriber."
+      ],
+      "effect": "A stats file written on every robot connection, and its logs.",
+      "provenance": "Opus check of R-LOGGERS-BACKUP (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: build (job B-M3M4-18). The basename reader WriteBackupFile 0x0051A66C..0x0051A907 is unread (M15-033). JsonCpp throws on a malformed stats file fall under M1-034. Input: M3-061.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

@@ -77,4 +77,4 @@ anything. BOARD.md is history; this file is the live queue.
 | 10 | [R-PLAY-AREA](../research/requests/20261013-play-area-and-localize-failures.md) | answered; checked (research/20261013-play-area-check.md) |
 | 11 | [R-SUBSCRIBERS](../research/requests/20261013-robot-message-subscribers.md) | answered; checked (research/20261013-robot-message-subscribers-check.md) |
 | 12 | [R-HANDLERS](../research/requests/20261013-unported-message-handlers.md) | answered; checked (research/20261013-unported-message-handlers-check.md) |
-| 13 | [R-LOGGERS-BACKUP](../research/requests/20261013-test-loggers-and-backup.md) | open (M7-028, M15-033) |
+| 13 | [R-LOGGERS-BACKUP](../research/requests/20261013-test-loggers-and-backup.md) | answered; checked (research/20261013-test-loggers-and-backup-check.md) |

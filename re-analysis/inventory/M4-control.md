@@ -736,3 +736,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | --- | --- |
 | New IMPLEMENTATION_GAP | M4-047 UnlockTracks miss path |
 | Notes appended | M4-014 |
+
+
+## Check of R-LOGGERS-BACKUP (manager, 2026-10-13; research/20261013-test-loggers-and-backup-check.md)
+
+| Change | Records |
+| --- | --- |
+| Lead noted (scope 4 input) | M4-011 |

@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-12",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "b3b53bb9a6928ad8473858e6845a755ebf7ac9edafb2dcde393a4cb1df326a14",
+  "inventory_sha256": "bf45eee56d7908fced51ac18dc1c4c4db5d1e5d27f6e5d7f91375090db5d7781",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -471,6 +471,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m4-046-anim-modifier.md: ActivityBuildPyramid::SetCubeLights StopAndPlay passes modifier = true (0x005A7D52..0x005A7D66) with node+0x28, filled by SetPyramidBaseLights (0x005A9238/0x005A928A) and UpdateDesiredLights (0x005A96F0, 0x005A9758, 0x005A97C4; sources unread); getters 0x005A9960, 0x005A9A3C, 0x005A9B00 read. Tracker erase on disconnect 0x005A7FD4 -> 0x005A7FFA."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-038": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotDataBackupManager constructor: the robotBackups directory, backup_config.json tagsToBackup, and the HasExternalInterface-gated subscriptions",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: Ctor 0x00519AB0..0x00519D8A: +0x48 = scope 0 \"robotBackups/\"; gated on HasExternalInterface (0x00519B34): C9 -> RobotConnected and G2E 0x6B/0x6D/0x6C (helpers 0x0051A3A0/0x0051A460/0x0051A520, unread); ungated CreateDirectory(+0x48) with the CreateDir error (0x00519EDC/0x00519F10) skipping the config read; backup_config.json (scope 1, global 0x01059D70) tagsToBackup -> set<uint> +0x3C, ReadJson error (0x00BE76DE/0x00519F54); a missing file is silent."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-039": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotDataBackupManager::RobotConnected (C9): statsForBackup.json connection count, read/write logs, the backup basename",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md: RobotConnected 0x0051A010..0x0051A25C (key = to_string(serialNumberHead); FileExists with the regular-file bit 0x00803446..0x0080344A; readAsJson 0x0084C01C..0x0084C18C with its logs; ReadStatsFailed 0x0051A308 returns; ConnectionCount[key] = old+1 or int 1; writeAsJson 0x0084C328..0x0084C4B6 (writing-to info, CreateDirectory strip, StyledStreamWriter tab, open, Failed to create folder error); WriteStatsFailed 0x00BE7755 continues; basename global 0x01059D80 = key + \".backup\"). First C9 subscriber."
       ],
       "live_path": true,
       "hardware_required": false

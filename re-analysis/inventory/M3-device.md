@@ -525,3 +525,11 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | --- | --- |
 | New IMPLEMENTATION_GAP | M3-060 head/body ID DAS events |
 | Notes appended | M3-055 ($session_id form), M3-058 (device-ID edge cases) |
+
+
+## Check of R-LOGGERS-BACKUP (manager, 2026-10-13; research/20261013-test-loggers-and-backup-check.md)
+
+| Change | Records |
+| --- | --- |
+| New COMPATIBILITY_POLICY | M3-061 files path, M3-062 resources path |
+| Lead noted | M3-042 |

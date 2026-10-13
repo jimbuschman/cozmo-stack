@@ -2,7 +2,7 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "7b3461dc16b73bf8026fd6a3df832c6191d4f5dc2c0ddc3a08819e45ad77a0c2",
+  "inventory_sha256": "8ec9cae812dcddb95ea9701c721b01c80a7efbf47c4828bb4c75de61af831df8",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -349,11 +349,12 @@
       "hardware_required": false
     },
     "M7-028": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Dev test behaviour constructor side effects: RollingFileLogger directories (dockingTest, liftLoadTest) and FactoryTestLogger",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-unported-message-handlers-check.md: DockingTestSimple ctor 0x005CB04E..0x005CB0A8 and LiftLoadTest ctor 0x005D3F32.. build RollingFileLogger(nullptr, pathToResource(scope 2, \"dockingTest\"/\"liftLoadTest\"), kDefaultFileExtension, 0x1400000); its ctor 0x0080DEFC calls FileUtils::CreateDirectory (0x0080DFCC); FactoryTest ctor builds FactoryTestLogger (0x005D051A -> 0x00671658). Each behaviour is built twice."
+        "re-analysis/research/20261013-unported-message-handlers-check.md: DockingTestSimple ctor 0x005CB04E..0x005CB0A8 and LiftLoadTest ctor 0x005D3F32.. build RollingFileLogger(nullptr, pathToResource(scope 2, \"dockingTest\"/\"liftLoadTest\"), kDefaultFileExtension, 0x1400000); its ctor 0x0080DEFC calls FileUtils::CreateDirectory (0x0080DFCC); FactoryTest ctor builds FactoryTestLogger (0x005D051A -> 0x00671658). Each behaviour is built twice.",
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md section M7-028: RollingFileLogger ctor 0x0080DEFC..0x0080DFD4 (CreateDirectory(path, false, true), result ignored; no file opened), CreateDirectory walk 0x008028F0..0x008029C8, dtor 0x0080E090..0x0080E11E; paths scope 2 = cache path + \"/dockingTest\" | \"/liftLoadTest\"; LiftLoadTest ctor state and 0x35/0x95/DA subscriptions 0x005D3F20..0x005D4048; FactoryTestLogger(true) 0x00671658..0x006716E0 memory only."
       ],
       "live_path": true,
       "hardware_required": false
