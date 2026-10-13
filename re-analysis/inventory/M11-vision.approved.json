@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "f53b72fdc7aec4000a6643d9403160e186eae1893f213bbd950a79cfeeb7786e",
+  "inventory_sha256": "ee335265d2ca72bec0d675a6013c523135fadc012f4e4d9114798c22279d7aa5",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -823,11 +823,32 @@
       "hardware_required": false
     },
     "M11-070": {
-      "status": "RECOVERABLE_GAP",
-      "title": "Delocalize unread callees: Robot::SetPose, AddVisionOnlyStateToHistory, AnyRemainingLocalizableObjects(uint), AddInExistingPose emplace defaults, IExternalInterface vt+0x18; VizManager colour and scope",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Delocalize callees: AnyRemainingLocalizableObjects(uint), SetNewPose/SetPose/AddVisionOnlyStateToHistory with GetDefaultRobotState, the AddInExistingPose default entry, and VizManager (no output)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-delocalize-and-update-object-origin.md: \"Unread\" section: 0x0051502C, 0x0051513C, 0x00626EF4, PLT 0x004A6FE8, 0x00510D94, GOT 0x0103E7DC."
+        "re-analysis/research/20261013-delocalize-and-update-object-origin.md: \"Unread\" section: 0x0051502C, 0x0051513C, 0x00626EF4, PLT 0x004A6FE8, 0x00510D94, GOT 0x0103E7DC.",
+        "re-analysis/research/20261013-delocalize-callees-check.md: A1-A10 (0x00626EF4.., 0x0061EB98..0x0061EDE4, 0x006270F4), P1-P10 (0x005126EC..0x00512722, 0x00515034..0x005150AC, 0x00515144..0x0051518A, 0x005182B0..0x005182E8, 0x005310A8..0x0053127C), C1-C4 (0x00507B14..0x00507C50, 0x00506F50..0x00506F80), V1-V4 (VizManager SendMessage 0x006BE610 and SendVizMessage 0x006C05EC are bx lr; no transport)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-071": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotDelocalized broadcast order (app delivery first, then the synchronous in-engine tag-0x32 emit) and BlockConfigurationManager's delocalized flag",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E1-E4: 0x00510D84..0x00510D9C; UiMessageHandler::Broadcast 0x00662508 (DeliverToGame 0x00661594 first, then the AnkiEvent emit 0x00662528..0x006625AE); E5(a): BlockConfigurationManager lambda 0x006172A6 sets +0xC = 1."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-072": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found."
       ],
       "live_path": true,
       "hardware_required": false

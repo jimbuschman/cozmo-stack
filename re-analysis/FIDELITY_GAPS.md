@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **578 records** over 16 subsystems.
+Manifest of **581 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 261 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 264 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 60 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -27,14 +27,14 @@ remains after both, and they do not go away by working harder on this repository
 | M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
 | M2-protocol — CLAD messages and protocol helpers | 20 | 1 | 2 | 0 | 0 | no | no |
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
-| M4-control — Motion, sensors, lights and cubes | 47 | 0 | 14 | 0 | 3 | yes | no |
+| M4-control — Motion, sensors, lights and cubes | 48 | 0 | 15 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 29 | 1 | 25 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 28 | 3 | 20 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 15 | 2 | 10 | 0 | 0 | no | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 70 | 12 | 42 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 72 | 12 | 44 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 41 | 6 | 23 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 35 | 4 | 27 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
@@ -350,14 +350,14 @@ B-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. 
 * evidence: re-analysis/research/20261013-pose3d-arithmetic.md "Not read" and re-analysis/research/20261013-rodrigues-and-pose-tree.md "Unread": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52).
 * outstanding: RECOVERABLE_GAP: read the listed bodies; find whether SetParent is ever called with a pose whose node is null (if reachable, the crash needs an operator ruling).
 
-**M11-070 — Delocalize unread callees: Robot::SetPose, AddVisionOnlyStateToHistory, AnyRemainingLocalizableObjects(uint), AddInExistingPose emplace defaults, IExternalInterface vt+0x18; VizManager colour and scope** (live path)
+**M11-072 — RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
-* effect: Which old-origin objects survive a delocalize, and the robot pose history after one.
-* rests on: Opus extractor read of Delocalize/UpdateObjectOrigin (2026-10-13), manager record.
+* effect: Which engine components react to a delocalize, and in what order.
+* rests on: Codex research checked by Opus (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-delocalize-and-update-object-origin.md: "Unread" section: 0x0051502C, 0x0051513C, 0x00626EF4, PLT 0x004A6FE8, 0x00510D94, GOT 0x0103E7DC.
-* outstanding: RECOVERABLE_GAP: read the listed bodies. Whether VizManager output is in scope is an operator question (it targets a developer visualiser).
+* evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found.
+* outstanding: RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -771,6 +771,15 @@ B-M3M4-17 built, awaiting strong verification: modifier periods, transitions and
 * evidence: re-analysis/research/20261013-m12-024-driving-lifecycle.md: UnlockTracks 0x0063FE5C..0x0063FFD8: per bit, find LockInfo by who (first string only, 0x00642508..0x00642574); miss -> sChanneledInfoF "Unnamed" "MovementComponent.UnlockTracks" (0x640040) "Tracks 0x%x are not currently locked by %s" (0x640060) with the full mask and who, then PrintLockState(); an empty set ORs the bit; mask != 0 sends EnableAnimTracks(mask). Reached by the driving handler's double unlock (PlayEndAnim) and a cancel during the end animation.
 * outstanding: IMPLEMENTATION_GAP: build the miss path (job B-M5-17). PrintLockState (0x006410D8..0x00641500) is unread: give a visible MISSING naming this record at that call until it is read.
 built, awaiting strong verification: B-M5-17 retains the explicit native info then PrintLockState then free-mask EnableAnimTracks order. Double unlock test reaches the real handler and checks two EnableAnimTracks messages. PrintLockState handoff is visibly MISSING per this job, while existing separately settled M4-031 EXACT_SOURCE body/range 0x006410D8..0x006413CA is retained; the job assertion that this whole body is unread does not erase that current evidence. Re-entrant queued cancellation is explicitly excluded from this test (M8-015).
+
+**M4-048 — CubeLightComponent HandleMessage<RobotDelocalized>: +0x21 = 1, then PlayLightAnim Connected (layer 2) on every non-carried ObjectInfo in ID order** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: Cube lights after the robot delocalizes.
+* rests on: Codex research checked by Opus (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E5(b): 0x0063A390 (lambda 0x0063AC46), +0x21 store, carried test 0x0063A3D0, PlayLightAnim(id, CubeAnimationTrigger 1, layer 2, empty callback, false, zeroed ObjectLights, 0) 0x0063A3A6..0x0063A438.
+* outstanding: IMPLEMENTATION_GAP: build (job B-M11-1). PlayLightAnim internals are M4-018/M4-045; the name of layer 2 is unread.
 
 ### M5-animation — Animation clips, scheduler and face
 
@@ -2194,7 +2203,25 @@ B-M3M4-19 built, awaiting strong verification: the strict float/unordered play-a
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-delocalize-and-update-object-origin.md: U1-U13 (0x0062013C..0x00620420) and D1-D21 (0x00510A24..0x00510DB4), DeleteObjectsFromZombieOrigins 0x00620920..0x00620A04, OnRobotDelocalized tail call BroadcastLocatedObjectStates 0x006249EC.
 * outstanding: IMPLEMENTATION_GAP: build (job B-M11-1) after the pose tree (M11-066, job B-POSE-1): the move decision is HasSameRootAs/FindRoot on the tree.
-B-M3M4-19 B2 withdrawn per checked job. Live OnRobotDelocalized visibly names M11-069 and B-M11-1 before retaining the existing incomplete path; no AddNewOrigin/fresh-map implementation or status change.
+B-M3M4-19 B2 withdrawn per checked job. Live OnRobotDelocalized visibly names M11-069 and B-M11-1 before retaining the existing incomplete path; no AddNewOrigin/fresh-map implementation or status change. The RobotDelocalized broadcast (D21) has in-engine subscribers: M11-071 (order and BlockConfigurationManager flag), M4-048 (cube lights); the list is M11-072.
+
+**M11-070 — Delocalize callees: AnyRemainingLocalizableObjects(uint), SetNewPose/SetPose/AddVisionOnlyStateToHistory with GetDefaultRobotState, the AddInExistingPose default entry, and VizManager (no output)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: Which old-origin objects survive a delocalize, and the robot pose history after one.
+* rests on: Opus extractor read of Delocalize/UpdateObjectOrigin (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-delocalize-and-update-object-origin.md: "Unread" section: 0x0051502C, 0x0051513C, 0x00626EF4, PLT 0x004A6FE8, 0x00510D94, GOT 0x0103E7DC.; re-analysis/research/20261013-delocalize-callees-check.md: A1-A10 (0x00626EF4.., 0x0061EB98..0x0061EDE4, 0x006270F4), P1-P10 (0x005126EC..0x00512722, 0x00515034..0x005150AC, 0x00515144..0x0051518A, 0x005182B0..0x005182E8, 0x005310A8..0x0053127C), C1-C4 (0x00507B14..0x00507C50, 0x00506F50..0x00506F80), V1-V4 (VizManager SendMessage 0x006BE610 and SendVizMessage 0x006C05EC are bx lr; no transport).
+* outstanding: Read 2026-10-13 (re-analysis/research/20261013-delocalize-callees-check.md): build (job B-M11-1). VizManager output is exactly nothing, so reproducing no output is exact (not a departure). IsRestingFlat uses Radians operator< (M4-001). The broadcast and its in-engine subscribers are M11-071, M4-048, M11-072. Previous notes: RECOVERABLE_GAP: read the listed bodies. Whether VizManager output is in scope is an operator question (it targets a developer visualiser).
+
+**M11-071 — RobotDelocalized broadcast order (app delivery first, then the synchronous in-engine tag-0x32 emit) and BlockConfigurationManager's delocalized flag** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: What happens inside the engine when the robot delocalizes, and in what order.
+* rests on: Codex research checked by Opus (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E1-E4: 0x00510D84..0x00510D9C; UiMessageHandler::Broadcast 0x00662508 (DeliverToGame 0x00661594 first, then the AnkiEvent emit 0x00662528..0x006625AE); E5(a): BlockConfigurationManager lambda 0x006172A6 sets +0xC = 1.
+* outstanding: IMPLEMENTATION_GAP: build (job B-M11-1). The cube-light subscriber is M4-048.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 

@@ -91,7 +91,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 13 | [R-LOGGERS-BACKUP](../research/requests/20261013-test-loggers-and-backup.md) | answered; checked (research/20261013-test-loggers-and-backup-check.md) |
 | 14 | [R-BACKUP-REST](../research/requests/20261013-backup-manager-rest.md) | answered (Codex on the work PC); checked (research/20261013-backup-manager-rest-check.md) |
 | 15 | [R-PLANNERS](../research/requests/20261013-planner-internals.md) | answered; checked (research/20261013-planner-internals-check.md) |
-| 16 | [R-DELOC-CALLEES](../research/requests/20261013-delocalize-callees.md) | answered; Opus check running |
+| 16 | [R-DELOC-CALLEES](../research/requests/20261013-delocalize-callees.md) | answered; checked (research/20261013-delocalize-callees-check.md) |
 | 17 | [R-PLAN-DEPS](../research/requests/20261013-planner-dependencies.md) | open (M13-034) |
 | 18 | [R-BACKUP-UNLOCK](../research/requests/20261013-backup-unlock-and-stoull.md) | open (M15-043) |
 | 19 | [R-POSE-REST](../research/requests/20261013-remaining-pose-bodies.md) | open (M11-068) |

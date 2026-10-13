@@ -743,3 +743,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | Lead noted (scope 4 input) | M4-011 |
+
+
+## Check of R-DELOC-CALLEES (manager, 2026-10-13; research/20261013-delocalize-callees-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP | M4-048 cube lights on delocalize |

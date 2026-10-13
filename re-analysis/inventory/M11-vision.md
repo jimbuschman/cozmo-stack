@@ -1464,3 +1464,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP | M11-069 UpdateObjectOrigin and the Delocalize sequence |
 | New RECOVERABLE_GAP | M11-070 unread callees |
 | Notes appended | M11-053 |
+
+
+## Check of R-DELOC-CALLEES (manager, 2026-10-13; research/20261013-delocalize-callees-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M11-070 |
+| New IMPLEMENTATION_GAP | M11-071 broadcast order and BlockConfiguration flag |
+| New RECOVERABLE_GAP | M11-072 subscriber list |

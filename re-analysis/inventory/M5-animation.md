@@ -937,3 +937,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New IMPLEMENTATION_GAP | M5-065 GetAnimationGroup miss (InvalidName, errG) |
 | Notes appended | M5-010, M5-011 (G0 correction), M5-027, M8-021 |
+
+
+## Check of R-DELOC-CALLEES (manager, 2026-10-13; research/20261013-delocalize-callees-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note (VizManager SetText is a no-op) | M5-042 |
