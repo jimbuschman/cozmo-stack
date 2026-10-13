@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "b3f16afdcac918cff492cfbb52a82763ff8134d4068080a70dc7a75358b7e257",
+  "inventory_sha256": "335c8c00babd064c4f5ca49857a9b5b2ecf282b87079de9425b6e35cd5c3d33a",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -454,14 +454,15 @@
       "hardware_required": false
     },
     "M12-032": {
-      "status": "RECOVERABLE_GAP",
-      "title": "The PathComponent drive-to-pose status word: its setters and the unread branch conditions",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PathComponent drive-to-pose status machine: fields, SetDriveToPoseStatus, predicates, StartDrivingToPose, Update/UpdatePlanning/HandlePlanComplete, ExecutePath, the 0xC6 PathFollowingEvent handler, the RobotState segment and doling",
       "authority": "libcozmoEngine.so 3.4.0-1204: DriveToPoseAction::CheckIfDone reads [[robot+0x5C]+0x38] (the status: 0 Failed .. 6 WaitingToCancelPathAndSetFailure) and [+0x42]/[+0x44] (last sent / received path id). The setter sites (SetDriveToPoseStatus PLT 0x004B9CD8 and veneer 0x008CCF0C, re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q8 item 4) include 0x0064941C (UpdateCurrentPathSegment: seg < 0, status == 3, +0x47 set -> status 1); the handler 0x0064B370, helper 0x0064B61C, UpdateCurrentPathSegment 0x006493B4, Update 0x006494CC and the predicate masks were read; the branch conditions inside RejiggerTargetsAndReplan, RestartPlannerIfNeeded, HandlePlanComplete and UpdatePlanning (M13) are not; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): NaN goal chain (verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md Q8): PathComponent::StartDrivingToPose 0x0064ACC4 has no NaN test; SelectPlannerHelper 0x0064A530 takes the far branch for a NaN distance (vcmpe/bpl at 0x0064A5AE..0x0064A5B6; threshold 1600.0 at 0x0064A940) and picks [this+8] (LatticePlanner); LatticePlanner::ComputePath 0x004FE688 converts goals with roundf then vcvt.s32.f32 so NaN becomes cell 0 and queries GetCollisionPenalty in two passes (0.01, 1000.0); ComputePathHelper 0x004FD1D0 keeps a goal only if GoalIsValid: CheckGoal 0x00858F90 IsInCollision(State_c) is Contains && [poly+0x44] >= 1000.0 (0x008515F8..0x008516E8) and FastPolygon::Contains 0x00841BA0 returns TRUE for NaN x,y (every compare falls through for unordered operands), so a NaN goal is rejected iff some obstacle polygon at that theta has penalty >= 1000; in Pose3d::IsSameAs_WithAmbiguity 0x00846F3C the distance test (vcmpe/ble at 0x008470CA..0x008470D2) passes for a NaN difference, so a NaN-translation goal is 'same' iff the rotation test passes (tol >= pi returns 1; else Adiff <= tol returns 1; else an empty ambiguity list returns 0, else IsRotationSame; 0x00847132..0x00847198). Everything after ComputePathHelper's vtbl+0xC (StartPlanning and its thread) and the meaning of [impl+0xF4] are unread",
       "evidence": [
         "0x0064941C, 0x0064937C, 0x00649390, 0x0064B370, 0x0064B61C, 0x006493B4, 0x006494CC",
         "re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q8; re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q8",
         "0x0064A5AE..0x0064A5B6, 0x004FE8AE..0x004FE8D4, 0x00858F90..0x0085913C, 0x008515F8..0x008516E8, 0x00841BA0..0x00841C68, 0x00846F3C..0x00847198",
-        "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q8; re-analysis/research/20260929-R-VIS-verify-M12-gap3.md Q8"
+        "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q8; re-analysis/research/20260929-R-VIS-verify-M12-gap3.md Q8",
+        "re-analysis/research/20261013-m12-032-path-status.md: rows P1-P30 (ctor 0x00648B14..0x00648B6C, SetDriveToPoseStatus 0x006492C4..0x0064931A, predicates, StartDrivingToPose 0x0064ACC4..0x0064AF30, StartPlanner/fallback, Update 0x006494CC..0x00649586, UpdatePlanning 0x006495E0..0x0064972E, HandlePlanComplete 0x00649F60..0x0064A214, ExecutePath 0x0064A340..0x0064A48E, ExecuteCustomPath, UpdateCurrentPathSegment 0x006493B4..0x00649434 with the +0x42/+0x44 gate, Doler.Update 0x005082CE..0x00508326, 0xC6 lambda 0x0064B370..0x0064B4FC and helper 0x0064B620..0x0064B6A0, origin changes 0x0064980C..0x00649D14, tick order 0x005140BC/0x00514170). OnPathComplete 0x00649390 and AbortAndSetFailure 0x0064937C are dead code."
       ],
       "live_path": true,
       "hardware_required": false
@@ -555,6 +556,16 @@
       ],
       "live_path": true,
       "hardware_required": false
+    },
+    "M12-041": {
+      "status": "HARDWARE_ONLY",
+      "title": "Which PathFollowingEvent (0xC6) the robot sends for a cleared or replaced path, and when",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-m12-032-path-status.md: P31: statuses 5 and 6 leave only through the cancelled-path helper (an event with id == +0x4A, 0x0064B620..0x0064B6A0) or the 1 s SentUnreceivedPath abort (0x006494EC..0x00649580); the robot side is firmware, with no capture of 0xC6."
+      ],
+      "live_path": true,
+      "hardware_required": true
     }
   }
 }

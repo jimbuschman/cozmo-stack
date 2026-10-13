@@ -2,7 +2,7 @@
   "subsystem": "M13-navigation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "e4419e41b23bc2d8b616618610e70ffc99f835c5fc9144d24921da0cd009bbd4",
+  "inventory_sha256": "b6d9a06a3cf845fb4228b933b83381e61e10704be311e2557ba285b842d21231",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -424,6 +424,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: MapComponent ctor 0x0067D9A4..0x0067D9CA; CreateLocalizedMemoryMap 0x0067E85C..0x0067E9B4 (deleting_zombie_map 0x0067EA28 / keeping_alive_map 0x0067E9F8 print the argument origin; IsZombiePoseOrigin 0x00620AB8..0x00620AD2; CreateMemoryMap 0x0068133C..0x00681354 never null); only caller BlockWorld::OnRobotDelocalized 0x006249C4..0x006249EC (DeleteObjectsFromZombieOrigins 0x00620920..0x00620A04 first); Robot::Robot calls Delocalize(false) at 0x00510324 after constructing BlockWorld, MapComponent and PoseOriginList (next origin ID starts at 1, 0x00847934); UpdateMapOrigins 0x0067DE3C..0x0067DF96 (NullMapFound 0x0067DFE0/0x0067E010, merge vt+0xC 0x0067DF80, +0x1C 0x0067DF84, erase old 0x0067DF8A), only from LocalizeToObject after a successful Rejigger 0x0051590C."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-033": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Planner internals behind PathComponent: SelectPlannerHelper, LatticePlanner ComputePath/ComputeNewPathIfNeeded/StopPlanning/CheckIsPathSafe and [impl+0xF8], FaceAndApproach/MinimalAngle ComputePath, ComputeClosestGoalPose, ApplyMotionProfile",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-m12-032-path-status.md: \"Unread\" section: SelectPlannerHelper 0x0064A5BA..0x0064AA18; LatticePlanner 0x004FE688, 0x004FEB00, 0x004FD1A2, 0x004FF936; FaceAndApproach/MinimalAngle vtbl+0x2C; ComputeClosestGoalPose 0x005087AC; ApplyMotionProfile 0x00508AE4; planner status base 0x00508A94..0x00508AAA."
       ],
       "live_path": true,
       "hardware_required": false

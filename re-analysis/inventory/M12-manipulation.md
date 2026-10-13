@@ -935,3 +935,12 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M12-024 |
+
+
+## M12-032 read (manager, 2026-10-13; research/20261013-m12-032-path-status.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M12-032 |
+| New HARDWARE_ONLY | M12-041 robot events after ClearPath |
+| Notes appended | M12-023, M12-002 |

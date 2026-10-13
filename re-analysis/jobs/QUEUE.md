@@ -59,6 +59,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 28 | [B-M3M4-18](B-M3M4-18.md) | done 212fec53; Opus check FAIL on scope only (research/20261013-b-m3m4-18-check.md); rest in B-M3M4-22 and B-M15-1 |
 | 29 | [B-M5-17](B-M5-17.md) | done b9040943; Opus check FAIL (production drives hang; research/20261013-b-m5-17-check.md), fixes in B-M5-18 |
 | 29a | [B-M5-18](B-M5-18.md) | URGENT, open next (drives run again; CanInterrupt; cancellation; fixture) |
+| 29b | [B-M12-1](B-M12-1.md) | open, after B-M5-18 (PathComponent status machine; replaces the stand-in) |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
 | 30a | [B-M3M4-22](B-M3M4-22.md) | open, after B-M3M4-19 (M7-028 directories, B-M3M4-18 queued items) |
 | 31 | [B-POSE-1](B-POSE-1.md) | open, after B-M3M4-19 (exact Pose3d/Rotation3d/Transform3d port, cv::Rodrigues, pose tree; migrate Geometry.cs) |

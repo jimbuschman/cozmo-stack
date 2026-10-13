@@ -2531,3 +2531,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; unreachable with a robot) | M13-031 |
 | New IMPLEMENTATION_GAP | M13-032 MapComponent memory-map lifecycle |
+
+
+## M12-032 read (manager, 2026-10-13; research/20261013-m12-032-path-status.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP | M13-033 planner internals |
+| Notes appended | M13-018 |
