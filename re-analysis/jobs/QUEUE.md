@@ -48,10 +48,11 @@ anything. BOARD.md is history; this file is the live queue.
 | 16 | [B-M5-12](B-M5-12.md) | done (b228c542); re-verify FAIL (1: +0x44 += 60 still ran), manager fixed |
 | 17 | [B-M3M4-11](B-M3M4-11.md) | done (589824f8, suite 4508/4508); re-verify PASS |
 | 18 | [B-M5-13](B-M5-13.md) | done 710751f9; Opus check FAIL on one omission (research/20261012-b-m5-13-check.md) |
-| 20 | [B-M5-14](B-M5-14.md) | open (M5-010 per-Robot neutral read, M9-029 behaviour entry) |
-| 21 | [B-M3M4-13](B-M3M4-13.md) | open, after B-M5-14 (M4-037/038/043, rest of M3-055, cleanups) |
-| 22 | [B-M5-15](B-M5-15.md) | open, after B-M3M4-13 (TestAnim.json cleanup, HandleSetParameters, driving handler, subscription owners) |
-| 23 | [B-M3M4-14](B-M3M4-14.md) | open, after B-M5-15 (cube lights: blend, loader, serializer) |
+| 20 | [B-M5-14](B-M5-14.md) | done d36613ab; Opus check FAIL (research/20261012-b-m5-14-check.md), fixes in B-M5-16 |
+| 21 | [B-M3M4-13](B-M3M4-13.md) | done 88da56ad; Opus check FAIL (research/20261012-b-m3m4-13-check.md), fixes in B-M3M4-15 |
+| 22 | [B-M5-15](B-M5-15.md) | done 1287c660; Opus check FAIL (research/20261012-b-m5-15-check.md), fixes in B-M5-16 |
+| 23 | [B-M3M4-14](B-M3M4-14.md) | open (cube lights: blend, modifier, loader) |
+| 24 | [B-M3M4-15](B-M3M4-15.md) | open, after B-M3M4-14 ($session_id, device-ID edge cases, M3-060 DAS events, cleanups) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

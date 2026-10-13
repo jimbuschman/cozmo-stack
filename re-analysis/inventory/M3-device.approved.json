@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-12",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "f8c806da1b199712cf861eab9a20e722df51d615610bbd762be3b550105cb987",
+  "inventory_sha256": "34ca3c4c3d5f48d164c32f61f5ff718b7ade1875ff78ee39238b86000975b96b",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -675,6 +675,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m4-cliff-and-names-check.md section M3-055: context+0x2C DasTransferTask and +0x30 GameLogTransferTask registered at 0x004EA7BE..0x004EA892; triggered only by Java BackgroundConnectivity (Wi-Fi and a 200 from google.com, BackgroundConnectivity.java:48-91) -> JNI 0x00667908..0x00667938 -> cozmo_execute_background_transfers -> StartDataTransfer 0x006A38D4."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-060": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "DAS events robot.handle_robot_set_head_id / robot.handle_robot_set_body_id after the $group / $phys globals",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-b-m3m4-13-check.md: HandleRobotSetHeadID (0x005367D8): after sSetGlobal(\"$group\") at 0x00536810, sEvent(\"robot.handle_robot_set_head_id\" 0x5368D0, {{\"$data\", buf}}, buf) at 0x00536848; HandleRobotSetBodyID: after sSetGlobal(\"$phys\"), sEvent(\"robot.handle_robot_set_body_id\" 0x5370F0, {{\"$data\", buf}}, buf) at 0x00537028. buf is the formatted global value."
       ],
       "live_path": true,
       "hardware_required": false

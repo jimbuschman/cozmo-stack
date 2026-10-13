@@ -517,3 +517,11 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | --- | --- |
 | New COMPATIBILITY_POLICY (scope rule: the background-transfer trigger) | M3-059 |
 | Evidence label corrected (0x52F2D8 is $session_id) | M3-055 |
+
+
+## Check of B-M3M4-13 (manager, 2026-10-12; research/20261012-b-m3m4-13-check.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP | M3-060 head/body ID DAS events |
+| Notes appended | M3-055 ($session_id form), M3-058 (device-ID edge cases) |
