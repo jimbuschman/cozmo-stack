@@ -57,7 +57,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 26 | [B-M3M4-16](B-M3M4-16.md) | done 17466557; Opus check FAIL (research/20261013-b-m3m4-16-check.md), fixes in B-M3M4-19 and B-M3M4-20 |
 | 27 | [B-M3M4-17](B-M3M4-17.md) | done b8c595ea; Opus check FAIL (research/20261013-b-m3m4-17-check.md), fixes in B-M3M4-21 |
 | 28 | [B-M3M4-18](B-M3M4-18.md) | done 212fec53; Opus check FAIL on scope only (research/20261013-b-m3m4-18-check.md); rest in B-M3M4-22 and B-M15-1 |
-| 29 | [B-M5-17](B-M5-17.md) | open, after B-M3M4-18 (M12-024 driving lifecycle, handler start side, UnlockTracks miss path, DriveStraight/ITrackAction, activity fixes) |
+| 29 | [B-M5-17](B-M5-17.md) | done b9040943; Opus check FAIL (production drives hang; research/20261013-b-m5-17-check.md), fixes in B-M5-18 |
+| 29a | [B-M5-18](B-M5-18.md) | URGENT, open next (drives run again; CanInterrupt; cancellation; fixture) |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
 | 30a | [B-M3M4-22](B-M3M4-22.md) | open, after B-M3M4-19 (M7-028 directories, B-M3M4-18 queued items) |
 | 31 | [B-POSE-1](B-POSE-1.md) | open, after B-M3M4-19 (exact Pose3d/Rotation3d/Transform3d port, cv::Rodrigues, pose tree; migrate Geometry.cs) |
