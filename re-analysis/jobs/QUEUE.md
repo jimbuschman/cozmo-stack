@@ -55,7 +55,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 24 | [B-M3M4-15](B-M3M4-15.md) | done 9a05e3a0; Opus check FAIL (research/20261013-b-m3m4-15-check.md), fixes in B-M3M4-18 |
 | 25 | [B-M5-16](B-M5-16.md) | done a941b3ec; Opus check FAIL (research/20261013-b-m5-16-check.md); M12-024 being read, fixes in B-M5-17 |
 | 26 | [B-M3M4-16](B-M3M4-16.md) | done 17466557; Opus check FAIL (research/20261013-b-m3m4-16-check.md), fixes in B-M3M4-19 and B-M3M4-20 |
-| 27 | [B-M3M4-17](B-M3M4-17.md) | open, after B-M3M4-16 (cube-light fixes: per-LED modifier, last-pattern canBeOverridden, shared slot, timer, trigger map, one walk) |
+| 27 | [B-M3M4-17](B-M3M4-17.md) | done b8c595ea (pushed after a rebase); Opus check running |
 | 28 | [B-M3M4-18](B-M3M4-18.md) | open, after B-M3M4-17 (M2-018 dispatch order, BlockTapFilter warnings, device-ID BOM, test hygiene) |
 | 29 | [B-M5-17](B-M5-17.md) | open, after B-M3M4-18 (M12-024 driving lifecycle, handler start side, UnlockTracks miss path, DriveStraight/ITrackAction, activity fixes) |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
@@ -78,3 +78,4 @@ anything. BOARD.md is history; this file is the live queue.
 | 11 | [R-SUBSCRIBERS](../research/requests/20261013-robot-message-subscribers.md) | answered; checked (research/20261013-robot-message-subscribers-check.md) |
 | 12 | [R-HANDLERS](../research/requests/20261013-unported-message-handlers.md) | answered; checked (research/20261013-unported-message-handlers-check.md) |
 | 13 | [R-LOGGERS-BACKUP](../research/requests/20261013-test-loggers-and-backup.md) | answered; checked (research/20261013-test-loggers-and-backup-check.md) |
+| 14 | [R-BACKUP-REST](../research/requests/20261013-backup-manager-rest.md) | open (M15-039, M15-033) |
