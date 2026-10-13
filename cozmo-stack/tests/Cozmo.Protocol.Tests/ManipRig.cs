@@ -69,6 +69,13 @@ internal sealed class Rig : IDisposable
     /// <summary>A fake face detector: faces placed in the world are "detected" where the camera would see them.</summary>
     public readonly FakeFaceDetector FaceDetector = new();
 
+    private sealed class GeometryOnlyDrivingDependency : IDrivingAnimationHandler
+    {
+        public int State => 5;
+        public void PlayStartAnim() { }
+        public uint PlayEndAnim() => 0;
+    }
+
     public Rig()
     {
         _signalContext = SynchronizationContext.Current as SignalTestContext;
@@ -82,6 +89,10 @@ internal sealed class Rig : IDisposable
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
         Vision = new VisionSystem(Robot, Cal) { Enabled = false };
         M = new ManipulationSystem(Robot, Vision);
+        // These geometry/wire regressions isolate the unbuilt M12-024 animation lifecycle.
+        // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and
+        // assert that the real production handler path emits MISSING and stops at arrival.
+        M.DrivingAnimationsForTest = () => new GeometryOnlyDrivingDependency();
         // the look-around waits are real seconds on a robot; a rig takes them instantly
         M.Wait = (t, c) => Task.CompletedTask;
         M.Log += Log.Add;

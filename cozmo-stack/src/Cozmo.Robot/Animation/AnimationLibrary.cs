@@ -252,7 +252,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     public AnimationLibrary() : this(null) { }
 
-    private AnimationLibrary(EngineRandom? contextRandom) => ContextRandom = contextRandom ?? new EngineRandom();
+    internal AnimationLibrary(EngineRandom? contextRandom) => ContextRandom = contextRandom ?? new EngineRandom();
 
     /// <summary>The clip names available (FlatBuffer and JSON), whether or not they have been parsed yet.</summary>
     public IReadOnlyCollection<string> ClipNames { get { lock (_gate) return _clipFiles.Keys.ToArray(); } }
@@ -265,9 +265,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// <summary>The trigger map (assets/animationGroupMaps).</summary>
     public AnimationTriggerResponses Triggers { get; private set; } = new();
 
-    /// <summary>The engine log for the load errors (C2) and the group errors.</summary>
-    public Action<string>? Log { get; set; }
-    public SourceLogSink? SourceLog { get; set; }
+    /// <summary>The engine log for the load errors (C2) and the group errors, including empty containers during loading.</summary>
+    private Action<string>? _log;
+    private SourceLogSink? _sourceLog;
+    public Action<string>? Log { get => _log; set { _log = value; Triggers.Log = value; } }
+    public SourceLogSink? SourceLog { get => _sourceLog; set { _sourceLog = value; Triggers.SourceLog = value; } }
 
     /// <summary>The robot's simple mood the groups choose by (MoodManager, M7). Unset: Default.</summary>
     public Func<SimpleMood>? CurrentMood { get; set; }
@@ -619,6 +621,17 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// <summary>Gets a group by name.</summary>
     public AnimationGroup? GetGroup(string name) { lock (_gate) return _groups.GetValueOrDefault(name); }
 
+    // fidelity: M5-065 — 0x0058B6F8..0x0058B768. Extra host presence probes retain silent GetGroup.
+    internal AnimationGroup? GetGroupForSource(string name)
+    {
+        var group = GetGroup(name);
+        if (group is not null) return group;
+        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null,
+            "AnimationGroupContainer.GetAnimationGroup_Const.InvalidName", $"AnimationGroup requested for unknown animation group '{name}'.");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        return null;
+    }
+
     // ------------------------------------------------------------------ IAnimationCatalog
 
     public bool HasAnimationForTrigger(AnimationTrigger trigger) => Triggers.HasResponse(trigger);
@@ -628,8 +641,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// <summary>GetAnimationNameFromGroup(group, strict) with the mood, the cooldown time and the head angle (D5, D6).</summary>
     public string GetAnimationNameFromGroup(string group, bool strict)
     {
-        var g = GetGroup(group);
-        if (g is null || g.Entries.Count == 0) return ""; // G0: silent empty result.
+        var g = GetGroupForSource(group);
+        if (g is null || g.Entries.Count == 0) return ""; // C3: only a miss logs; an existing empty group is silent.
         g.Log = Log; g.SourceLog = SourceLog;
         if (CurrentMood is null && Interlocked.Exchange(ref _missingSimpleMoodReported, 1) == 0)
             Log?.Invoke("MISSING: M5-011 SimpleMood (M7); Default retained because GetSimpleMood is not represented");
@@ -639,7 +652,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
 
     public (string Name, int Count) GetFirstAnimationName(string group)
     {
-        var g = GetGroup(group);
+        var g = GetGroupForSource(group);
         return g is null || g.Entries.Count == 0 ? ("", 0) : (g.Entries[0].Name, g.Entries.Count);
     }
 

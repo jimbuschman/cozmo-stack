@@ -355,14 +355,18 @@ public class M12RVisBuildTests
 
     /// <summary>M5-063 builds the shared handler: constructor state5 refuses an end animation. M12-024 action-side Init remains missing; the explicit legacy stub still throws.</summary>
     [Fact]
-    public void M12_024_TheDefaultDrivingAnimationHandlerIsAVisibleStub()
+    public void M12_024_ArrivalStopsWithVisibleMissingActionLifecycle()
     {
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.M.DrivingAnimationsForTest = null; // exercise the real production dependency and its visible gap.
         var d = new DriveToPoseAction(rig.M) { Goal = At(100, 0) };
         Assert.Same(rig.Robot.Animations.DrivingAnimations, d.DrivingAnimations);
         Assert.Equal(5, d.DrivingAnimations.State);
-        Assert.Equal(ActionResult.Success, d.CheckIfDone(Tick(4, robot: At(100, 0))));
+        var missing = new System.Collections.Concurrent.ConcurrentQueue<string>(); rig.Robot.Engine.StackLogLine += missing.Enqueue;
+        var error = Assert.Throws<NotSupportedException>(() => d.CheckIfDone(Tick(4, robot: At(100, 0))));
+        Assert.Contains("MISSING: M12-024", error.Message);
+        Assert.Contains(missing, line => line.StartsWith("MISSING: M12-024"));
         Assert.Throws<NotSupportedException>(() => UnreadDrivingAnimationHandler.Instance.PlayEndAnim());
         Assert.Throws<NotSupportedException>(() => UnreadDrivingAnimationHandler.Instance.PlayStartAnim());
     }
@@ -373,11 +377,12 @@ public class M12RVisBuildTests
     {
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
+        rig.M.DrivingAnimationsForTest = null; // exercise the real production dependency and its visible gap.
         var drive = new DriveToPoseAction(rig.M) { Goal = At(150, -40, 0, 0.5) };
         var task = drive.RunAsync(default);
-        SignalTestContext.Run(task, () => { rig.Pump(); });
-        Assert.Equal(ActionResult.Success, await task);
+        Assert.Contains("MISSING: M12-024", Assert.Throws<NotSupportedException>(() => SignalTestContext.Run(task, () => { rig.Pump(); })).Message);
         Assert.Contains(drive.Trace, l => l.Contains("M12-024 RECOVERABLE_GAP"));
+        Assert.Contains(drive.Trace, l => l.StartsWith("MISSING: M12-024"));
     }
 
     // ------------------------------------------------------------------ M12-025

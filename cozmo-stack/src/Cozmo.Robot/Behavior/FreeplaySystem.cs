@@ -72,6 +72,12 @@ public sealed class FreeplaySystem : IManagedActivity
     public IReadOnlyList<FreeplayDecision> Decisions => _decisions;
     private readonly List<FreeplayDecision> _decisions = new();
     public event Action<FreeplayDecision>? Decided;
+    private void ReportActivityMissing(string line)
+    {
+        if (_ctx.Robot is { } robot) robot.Engine.EmitStackLog(line);
+        else Log?.Invoke(line);
+    }
+
     public event Action<string>? Log;
     /// <summary>Debug / test: force the next pick to this activity id (the engine's console var "debug is forcing '%s'").</summary>
     public string? ForcedActivity { get; set; }
@@ -219,7 +225,7 @@ public sealed class FreeplaySystem : IManagedActivity
             {
                 var picked = PickNewActivity(nowSec, out var pickReason, barred);
                 if (picked is null) { Record(nowSec, null, null, $"ActivityFreeplay.NoActivitySelected: Picked no activity ({pickReason})"); _recordedThisTick = true; return null; }
-                Current = picked; Current.OnSelected(nowSec); _ctx.LastActivitySwitchSec = nowSec;
+                Current = picked; Current.OnSelected(nowSec, ReportActivityMissing); _ctx.LastActivitySwitchSec = nowSec;
                 // BehaviorManager::SwitchToRequestedSpark 0x005A4220 runs after every pick and clears the
                 // invalid-spark latch at +0x65 (C1 §1), so any new selection clears it.
                 _requestedSparkInvalid = false;
@@ -329,7 +335,7 @@ public sealed class FreeplaySystem : IManagedActivity
         if (Current is null) return;
         if (_manager.Current is not null) _manager.Stop(BehaviorStopReason.Interrupted, nowSec);
         double ranSec = Current.RunningSec(nowSec);
-        Current.OnDeselected(nowSec);
+        Current.OnDeselected(nowSec, ReportActivityMissing);
         if (Inputs.Needs is { SparksRewardPending: true } needs)
         {
             Log?.Invoke($"IActivity.Exit.SparksRewardCommunicated {Current.Id}");

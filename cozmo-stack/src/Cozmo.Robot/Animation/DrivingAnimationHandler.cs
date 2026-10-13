@@ -14,6 +14,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     private readonly List<(DrivingAnimations Animations, string LockName)> _entries = new();
     private EngineRobot? _owner;
     private byte _tracks;
+    // Native constructor never writes +0x44 (tag); this managed default is latent until Init assigns it.
     private uint _tag;
     private bool _unlock = true, _repeat;
     internal Func<int>? GetSimpleMoodForTest;
@@ -54,12 +55,12 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
             }
         }
     }
-    internal bool Init(byte tracks, uint tag, bool argument3, bool argument5)
+    internal bool Init(byte tracks, uint tag, bool argument3, bool repeatWhilePath)
     {
         // UpdateCurrDrivingAnimations is called only here, before the Init stores.
         if (!UpdateCurrent()) return false;
         State = 0; StartId = LoopId = EndId = 0;
-        _tracks = tracks; _tag = tag; _unlock = !argument3; _repeat = argument5;
+        _tracks = tracks; _tag = tag; _unlock = !argument3; _repeat = repeatWhilePath; // Init's fourth C++ parameter (not counting this).
         return true;
     }
     private bool UpdateCurrent()

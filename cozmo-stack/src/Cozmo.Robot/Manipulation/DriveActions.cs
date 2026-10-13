@@ -82,7 +82,7 @@ public interface IDrivingAnimationHandler
 public sealed class UnreadDrivingAnimationHandler : IDrivingAnimationHandler
 {
     public static readonly UnreadDrivingAnimationHandler Instance = new();
-    private const string Gap = "M12-024 RECOVERABLE_GAP: DrivingAnimationHandler (PLT 0x004AB134 / 0x004A5764) is not read.";
+    private const string Gap = "M12-024 RECOVERABLE_GAP: action-side DrivingAnimationHandler Init/start/end lifecycle is not read; handler bodies are M5-063 (PLT 0x004AB134 / 0x004A5764).";
     public int State => throw new NotSupportedException(Gap);
     public void PlayStartAnim() => throw new NotSupportedException(Gap);
     public uint PlayEndAnim() => throw new NotSupportedException(Gap);
@@ -95,7 +95,8 @@ public sealed class UnreadDrivingAnimationHandler : IDrivingAnimationHandler
 /// 0x3E32B8C2, from the constructor; distance from <see cref="CubePreActionPoses.DistanceThresholdMm"/> when a
 /// pre-action pose is the goal) once the path has been traversed. INFERRED: the traversal timeout (LOCAL, from
 /// the path length). When no motion-primitive set is loaded the planner is LOCAL (<see cref="StraightLinePlanner"/>);
-/// the engine always has the lattice planner.
+/// the engine always has the lattice planner. The stack's default arrival path stops with a visible M12-024 MISSING
+/// because the action-side driving-animation Init/end lifecycle is unbuilt; it does not report source completion.
 ///
 /// <see cref="CheckIfDone(DriveToPoseTick)"/> is the engine's <c>CheckIfDone</c> 0x0055AB4C state machine
 /// (M12-023). It is a pure function of its inputs and is NOT what <see cref="RunAsync"/> polls: the C# has no
@@ -115,7 +116,7 @@ public sealed class DriveToPoseAction
 
     private readonly ManipulationSystem _m;
 
-    public DriveToPoseAction(ManipulationSystem m) { _m = m; AbortPath = () => _m.Paths.Abort(); DrivingAnimations = m.Robot.Animations.DrivingAnimations; }
+    public DriveToPoseAction(ManipulationSystem m) { _m = m; AbortPath = () => _m.Paths.Abort(); DrivingAnimations = m.DrivingAnimationsForTest?.Invoke() ?? m.Robot.Animations.DrivingAnimations; }
 
     public Pose3d? Goal { get; set; }
     /// <summary>Alternative goals for the lattice planner (a cube's pre-action poses); the reached one becomes <see cref="Goal"/>.</summary>
@@ -198,6 +199,8 @@ public sealed class DriveToPoseAction
                 result = ReadyState(GoalAtIndex(), tick.RobotPose, tick.RobotHeightMm, tick.PathIdAt0x42, tick.PathIdAt0x44);
                 break;
         }
+        // fidelity: M12-024 — the shared handler cannot stand in for the missing action-side Init.
+        if (result == ActionResult.Success && DrivingAnimations is Cozmo.Robot.Animation.DrivingAnimationHandler) MissingArrivalLifecycle();
         if (result != ActionResult.Running && result != ActionResult.PathPlanningFailedAbort
             && DrivingAnimations.PlayEndAnim() != 0)
             result = ActionResult.Running;
@@ -295,7 +298,11 @@ public sealed class DriveToPoseAction
         // interrupted event returns FailedTraversingPath without the Ready test although the engine sets status 4 for it too (research 8.3): M12-032 is
         // RECOVERABLE_GAP and the setters' conditions are not all read.
         var ready = ReadyState(goal, now.Value, RobotHeightMm(), id, id);
-        if (ready == ActionResult.Success) Goal = goal;
+        if (ready == ActionResult.Success)
+        {
+            if (DrivingAnimations is Cozmo.Robot.Animation.DrivingAnimationHandler) MissingArrivalLifecycle();
+            Goal = goal;
+        }
         return ready;
     }
 
@@ -304,6 +311,15 @@ public sealed class DriveToPoseAction
     /// 45 at 0x00516F58, 5.0, floor 0x42876666 = 67.7; C-E7/E9). It is the z of the <c>Point3</c> tolerance
     /// <c>DriveToPoseAction::CheckIfDone</c> passes to <c>IsSameAs</c> (0x0055ACBA, 0x0055ACC2/0x0055ACF8).
     /// </summary>
+    // fidelity: M12-024 — stop the unknown action lifecycle instead of claiming successful arrival.
+    private void MissingArrivalLifecycle()
+    {
+        const string missing = "MISSING: M12-024 action-side DrivingAnimationHandler Init/end lifecycle (0x0055A888, 0x0055B0C0..0x0055B0C8) is unbuilt; source remains RUNNING while its end animation plays";
+        _trace.Add(missing);
+        _m.Robot.Engine.EmitStackLog(missing);
+        throw new NotSupportedException(missing);
+    }
+
     private double RobotHeightMm() => _m.RobotHeightMm();
 
 }

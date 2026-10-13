@@ -105,6 +105,9 @@ public sealed class ManipulationSystem : IDisposable
     public WorkoutComponent? Workouts { get; set; }
 
     public CozmoRobot Robot { get; }
+    // Test-only dependency isolation for geometry/wire fixtures; null on every production construction.
+    // fidelity: M12-024 — does not supply or claim the native action-side Init/start/end lifecycle.
+    internal Func<IDrivingAnimationHandler>? DrivingAnimationsForTest { get; set; }
     public VisionSystem Vision { get; }
     public BlockWorld World => Vision.World;
     public PathSender Paths { get; }

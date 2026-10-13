@@ -114,23 +114,17 @@ public sealed class AnimationTriggerMap
                 Problem = "the shipped trigger map names no group for this trigger",
             };
 
-        var g = library.GetGroup(group);
-        if (g is null)
-            return new TriggerResolution(trigger)
-            {
-                GroupName = group, Mood = mood,
-                Problem = $"the map names group '{group}', which the animation assets do not define",
-            };
-
-        var candidates = g.Entries.Select(c => c.Name).ToList();
+        // fidelity: M5-065 — the native C3 lookup must run even when the host diagnostic probe misses.
         var name = library.GetAnimationNameFromGroup(group, strict: false);
+        var g = library.GetGroup(group); // silent, host-only candidate/presence probe
+        var candidates = g?.Entries.Select(c => c.Name).ToList() ?? new List<string>();
         return new TriggerResolution(trigger)
         {
             GroupName = group,
             Candidates = candidates,
             Selected = name.Length == 0 ? null : name,
             Mood = mood,
-            Problem = name.Length == 0
+            Problem = g is null ? $"the map names group '{group}', which the animation assets do not define" : name.Length == 0
                 ? (candidates.Count == 0
                     ? $"group '{group}' is empty"
                     : $"group '{group}' has {candidates.Count} clips but none was selectable" +

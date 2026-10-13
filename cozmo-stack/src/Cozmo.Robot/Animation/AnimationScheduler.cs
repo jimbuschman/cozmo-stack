@@ -688,7 +688,7 @@ public sealed class AnimationScheduler
             _neutral = null;
             var catalog = Catalog;
             string group = catalog?.GetAnimationForTrigger(AnimationTrigger.NeutralFace) ?? "";
-            var (name, count) = group.Length == 0 || catalog is null ? ("", 0) : catalog.GetFirstAnimationName(group);
+            var (name, count) = catalog is null ? ("", 0) : catalog.GetFirstAnimationName(group);
             if (count == 0 || name.Length == 0)
             {
                 SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.Constructor.BadNeutralAnimGroup", $"Neutral animation group {group} for trigger NeutralFace is empty or null");
@@ -708,12 +708,12 @@ public sealed class AnimationScheduler
     }
 
     // fidelity: M1-034, M5-010
-    private void SetNeutralResetData(ProceduralFacePose? face)
+    private void SetNeutralResetData(ProceduralFacePose? face, bool reportConstructionFatal = true)
     {
         if (_neutral is null) return;
         if (face is null)
         {
-            Log?.Invoke("M1-034 / M5-010: neutral animation has no ProceduralFace keyframe; skipping SetResetData and retaining previous reset data");
+            if (reportConstructionFatal) Log?.Invoke("M1-034 / M5-010: neutral animation has no ProceduralFace keyframe; skipping SetResetData and retaining previous reset data");
             return;
         }
         _tlc.SetResetData(face);
@@ -2036,7 +2036,7 @@ public sealed class AnimationScheduler
             _nowMs = 0;
             var neutralFace = _neutral?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault()?.Pose;
             _tlc.Reset();
-            SetNeutralResetData(neutralFace);
+            SetNeutralResetData(neutralFace, reportConstructionFatal: false);
             _tlc.Init();
             AudioFramesSent = 0;
             PositionMs = 0;

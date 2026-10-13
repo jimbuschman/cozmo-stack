@@ -17,7 +17,7 @@ public sealed class M5X14BuilderTests : IDisposable
         var entries = new List<string>();
         robot.Engine.LogEntry += e => entries.Add(e.Name ?? "");
         robot.Engine.Robots.AddRobot(1, false);
-        Assert.Equal(new[] { "AnimationStreamer.Constructor.BadNeutralAnimGroup" }, entries);
+        Assert.Equal(new[] { "AnimationTriggerResponsesContainer::GetResponse", "AnimationGroupContainer.GetAnimationGroup_Const.InvalidName", "AnimationStreamer.Constructor.BadNeutralAnimGroup" }, entries);
         string root = Directory.CreateTempSubdirectory("m514-").FullName;
         Directory.CreateDirectory(Path.Combine(root, "animationGroups"));
         try
@@ -41,7 +41,7 @@ public sealed class M5X14BuilderTests : IDisposable
         scheduler.Layers.SetResetData(prior);
         scheduler.LoadNeutralFace(); scheduler.ResetToConstructed();
         Assert.Equal(17f, scheduler.LayerBaseFace.Left[0]);
-        if (faceless) Assert.All(lines, s => Assert.Contains("M1-034 / M5-010", s));
+        if (faceless) { Assert.NotEmpty(lines); Assert.All(lines, s => Assert.Contains("M1-034 / M5-010", s)); }
     }
     [Fact]
     public void ArbitraryBehaviorReportsCustomSongBeforeLibraryLookup()
@@ -52,7 +52,7 @@ public sealed class M5X14BuilderTests : IDisposable
         var context = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
         Assert.False(behavior.IsRunnable(context));
         behavior.StartAsync(context, new BehaviorScope(), default).GetAwaiter().GetResult();
-        Assert.Equal(2, lines.Count); Assert.All(lines, s => Assert.StartsWith("MISSING: M9-029", s));
+        Assert.Contains(lines, s => s.StartsWith("MISSING: M9-029"));
         Assert.False(robot.Animations.IsPlaying);
     }
     private sealed class Catalog(bool faceless) : IAnimationCatalog

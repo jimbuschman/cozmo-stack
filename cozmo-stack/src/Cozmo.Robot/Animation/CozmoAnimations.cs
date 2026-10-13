@@ -150,6 +150,7 @@ public sealed class CozmoAnimations : IDisposable
     private readonly CozmoRobot _robot;
     private readonly RobotAnimationSink _sink;
     private readonly AnimationScheduler _scheduler;
+    private readonly AnimationLibrary _emptyLibrary;
     private readonly Random _random = new();
     private readonly object _gate = new();
     private Thread? _ticker;
@@ -168,7 +169,9 @@ public sealed class CozmoAnimations : IDisposable
         _scheduler.Log = robot.Engine.Log;
         _scheduler.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
         _scheduler.FlushSourceLogger = robot.Engine.FlushSourceLogger;
-        _scheduler.CatalogProvider = () => Library;
+        // fidelity: M5-010, M5-065 — loader containers exist empty before files are loaded.
+        _emptyLibrary = new AnimationLibrary(robot.Engine.ContextRandom) { Log = robot.Engine.Log, SourceLog = _scheduler.SourceLog };
+        _scheduler.CatalogProvider = () => Library ?? _emptyLibrary;
         _scheduler.FaceAnimationVariants = name => FaceAnimations?.Variants(name);
         // fidelity: M6-028
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);

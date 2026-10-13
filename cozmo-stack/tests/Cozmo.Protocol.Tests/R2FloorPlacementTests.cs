@@ -384,7 +384,7 @@ public class R2FloorPlacementTests
     }
 
     /// <summary>
-    /// M15-023 NoFreePoses, 0x005DF69C..0x005DF73A, through the live behaviour: the carried cube is picked up, the beacon is too small for a free pose (radius 30: N = 0, and the one candidate at the centre
+    /// M15-023 NoFreePoses, 0x005DF69C..0x005DF73A, through the checked already-carried Init branch: the beacon is too small for a free pose (radius 30: N = 0, and the one candidate at the centre
     /// overlaps another cube there), so, in order: the beacon is stamped (f32 time), "...TransitionToObjectPickedUp.NoFreePoses" is logged, the "HikingNoLocationAtBeacon" (24 characters) event is
     /// triggered; NO action is started (no PlaceObjectOnGround, no further path), and the carried cube stays carried. NeedActionCompleted(PickupCube) was reported BEFORE the pose search (M15-025 row 4.1.3).
     /// </summary>
@@ -405,6 +405,10 @@ public class R2FloorPlacementTests
         bring.IsUnlocked = _ => false;                                                       // FindFreeCubeToStackOn answers null: the floor branch
         bring.ActionTaskRunner = SignalTestContext.Schedule;
         bring.WorkPosted += signals_rig.Notify;
+        // Checked carried-entry branch 0x005DF364..0x005DF372 reaches this bounded placement stage directly.
+        // The pickup drive now stops visibly at M12-024 and cannot stand in for a completed source pickup.
+        Assert.True(Runnable(bring, ctx));
+        rig.M.Docking.Carrying.SetCarrying(rig.M.World.LocatedObjects.Single(o => o.Type == ObjectType.Block_LIGHTCUBE1).ObjectId);
         double t = 0;
         bring.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         uint target = bring.Candidate!.Value;

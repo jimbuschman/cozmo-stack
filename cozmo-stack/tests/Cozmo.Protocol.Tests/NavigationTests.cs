@@ -965,8 +965,9 @@ public class NavigationTests
         Assert.Equal(0, b.Retries);
     }
 
+    /// <summary>M13-015 retry classifier/animation with the explicit geometry fixture dependency; this does not verify M12-024.</summary>
     [Fact]
-    public void PopAWheelieRetriesWithTheRetryAnimationWhenTheDockFails()
+    public void PopAWheelieRetryDecisionWithIsolatedDrivingDependency()
     {
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
@@ -978,10 +979,30 @@ public class NavigationTests
         var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
         RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
         Assert.False(b.Succeeded);
-        Assert.Equal(PopAWheelieBehavior.MaxRetries, b.Retries);
+        Assert.Equal(1, b.Retries); // native 0x005C7D44 allows retry only while count <= 0.
         Assert.Contains(b.Trace, l => l.Contains("Retry 1 of 1"));      // one retry: the count at +0x12C must still be 0 (0x005C7D44)
         Assert.Contains(b.Trace, l => l.Contains("SetFailedToUse"));
         Assert.Contains(b.Trace, l => l.Contains("PopAWheelieRetry"));
+    }
+
+    [Fact]
+    public void PopAWheelieStopsAtMissingDrivingLifecycleBeforeDockRetry()
+    {
+        using var signals = SignalTestContext.Install();
+        if (Lib is null) return;
+        using var rig = new Rig();
+        rig.M.DrivingAnimationsForTest = null; // real production lifecycle, not the geometry fixture dependency.
+        rig.Cube = CubeAt(220, 0);
+        Assert.Single(rig.Frame().Objects);
+        rig.DockOutcome = BlockStatus.NoBlock; rig.DockSucceeds = false;
+        var ctx = Ctx(rig);
+        var b = new PopAWheelieBehavior(rig.M, "PopAWheelie");
+        var missing = new System.Collections.Concurrent.ConcurrentQueue<string>(); rig.Robot.Engine.StackLogLine += missing.Enqueue;
+        RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
+        Assert.False(b.Succeeded);
+        Assert.Contains(missing, line => line.StartsWith("MISSING: M12-024"));
+        Assert.Equal(0, b.Retries); // no claimed dock failure/retry beyond the unbuilt drive arrival lifecycle.
+        Assert.DoesNotContain(b.Trace, l => l.Contains("Retry 1 of 1"));
     }
 
     [Fact]

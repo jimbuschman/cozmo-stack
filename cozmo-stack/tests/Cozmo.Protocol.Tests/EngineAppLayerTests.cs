@@ -2474,6 +2474,8 @@ public class EngineAppLayerTests
         // M5 gap4 R2, R3: IKeyFrame::sRNG is a process static that is never reseeded, and the context RNG belongs to the
         // CozmoContext, not to the Robot; neither is rebuilt with a new Robot
         "AnimationScheduler._keyframeRng", "AnimationScheduler._contextRng",
+        // The early empty animation containers reference that same engine-owned context RNG (M5-010/065).
+        "AnimationLibrary.<ContextRandom>k__BackingField",
         "FaceLayerManager.<Rng>k__BackingField", "BackpackLayerManager.<Rng>k__BackingField",
     };
 
@@ -2583,6 +2585,8 @@ public class EngineAppLayerTests
         AssertAsConstructed(fresh.Robot.Cubes, robot.Cubes, "Cubes", KeptAcrossRemoval);
         AssertAsConstructed(fresh.Robot.CubeAccel, robot.CubeAccel, "CubeAccel", KeptAcrossRemoval);
         AssertAsConstructed(fresh.Robot.Animations, robot.Animations, "Animations", KeptAcrossRemoval);
+        Assert.Same(robot.Engine.ContextRandom,
+            Assert.IsType<Cozmo.Robot.Animation.AnimationLibrary>(robot.Animations.Scheduler.Catalog).ContextRandom);
         AssertAsConstructed(fresh.Robot.Face, robot.Face, "Face", KeptAcrossRemoval);
         AssertAsConstructed(freshVision, vision, "Vision", KeptAcrossRemoval);
     }
