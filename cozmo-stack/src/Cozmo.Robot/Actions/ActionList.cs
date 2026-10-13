@@ -21,6 +21,8 @@ internal sealed class ActionList : IDisposable
     // throws InvalidOperationException; the same lock also serialises the ActionQueue internals and Cancel/Clear.
     private readonly object _gate = new();
 
+    internal void WithGate(Action action) { lock(_gate) action(); }
+
     public ActionList(Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         _log = log; _sourceLog = sourceLog;

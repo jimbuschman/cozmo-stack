@@ -12,6 +12,7 @@ internal sealed record DrivingAnimationRequest(AnimationTrigger Trigger, int Arg
 internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimationHandler
 {
     private readonly List<(DrivingAnimations Animations, string LockName)> _entries = new();
+    private readonly HashSet<string> _missingMessages=new();
     private EngineRobot? _owner;
     private byte _tracks;
     // Native constructor never writes +0x44 (tag); this managed default is latent until Init assigns it.
@@ -34,7 +35,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         Current = new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D); // checked ctor 0x004F0724..0x004F0728.
         StartId = LoopId = EndId = 0; _tracks = 0; _unlock = true; _repeat = false; _entries.Clear();
     }
-    private void Missing(string text) => robot.Engine.EmitStackLog("MISSING: M5-063 " + text);
+    private void Missing(string text) { if(_missingMessages.Add(text))robot.Engine.EmitStackLog("MISSING: M5-063 " + text); }
     private void Warning(string key, string text) => robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, key, text);
     internal void Push(DrivingAnimations animations, string lockName)
     {
@@ -58,6 +59,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     public bool Init(byte tracks, uint tag, bool argument3, bool repeatWhilePath)
     {
         // UpdateCurrDrivingAnimations is called only here, before the Init stores.
+        _missingMessages.Clear();
         bool selected=UpdateCurrent();
         if(!selected)Current=null; // Unknown selection is not the constructor triplet.
         State = 0; StartId = LoopId = EndId = 0;

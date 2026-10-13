@@ -95,8 +95,9 @@ public sealed class UnreadDrivingAnimationHandler : IDrivingAnimationHandler
 /// <summary>
 /// Checked DriveToPoseAction lifecycle on the existing ActionList runner: handler.Init precedes goal/path
 /// checks, CheckIfDone holds the end state and re-evaluates the current inputs after completion, and cleanup
-/// follows the native order. Path creation retains the separate M12-002/M12-032 gaps. Missing native timeout,
-/// path-status and motion-primitive inputs stop their rows visibly; they are not replaced with a fabricated Abort.
+/// follows the native order. Timeout and CanInterrupt use the native base getters. Until B-M12-1,
+/// live status uses the explicitly labelled M12-032 path-follower stand-in; path creation and motion
+/// primitives retain their separate gaps and are not claimed source-complete.
 /// </summary>
 // fidelity: M12-024
 public sealed class DriveToPoseAction : ActionRunner, IDisposable
@@ -120,7 +121,8 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     }
     private PathRun? _run;
     internal ushort? SourcePathIdForTest => _run?.PathId;
-    private bool _destroyed, _missingTick;
+    private bool _destroyed;
+    private readonly HashSet<string> _missingMessages=new();
     private TaskCompletionSource<ActionResult>? _done;
     internal Action<string>? LifecycleCallObserved;
     protected override float EngineClockSeconds => _m.Robot.Engine.Timer.SecondsF;
@@ -128,20 +130,25 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     protected override void LockTracks(uint mask, string owner) => _m.Robot.Motion.LockTracks((byte)mask, owner, "DriveToPose");
     protected override void UnlockTracksInternal(uint mask, string owner) => _m.Robot.Motion.UnlockTracks((byte)mask, owner);
     protected override bool AreAllTracksLockedBy(uint mask, string owner) => _m.Robot.Motion.AreAllTracksLockedBy((byte)mask, owner);
-    public override bool CanInterrupt()
-    { Log?.Invoke("MISSING: M12-024/M13-013 concrete CanInterrupt virtual predicate has no checked row"); throw new NotSupportedException("MISSING: concrete driving-action CanInterrupt predicate"); }
+    protected override string ActionName => "DriveToPose"; // 0x0055A374.
+    public override bool CanInterrupt() => false; // vptr+0x14 -> 0x0052B0B3.
     public override uint CheckIfDone()
     {
         if (_m.DriveTickForTest is { } input) return (uint)CheckIfDone(input(this));
-        if (!_missingTick) { MissingSource("M12-032 live PathComponent status/segment/ID inputs remain unbuilt; no status is guessed from a host terminal event"); _missingTick=true; }
-        return (uint)ActionResult.Running;
+        MissingSource("M12-032 status/IDs mapping is a stand-in from the existing path follower: following=3, arrived=4, failed=0");
+        if(_m.RobotPose() is not {} pose){MissingSource("live pose input unavailable");return (uint)ActionResult.Running;}
+        ushort id=_run?.PathId??_m.Paths.LastPathId;
+        return (uint)CheckIfDone(new DriveToPoseTick(_run?.StandInStatus??4,_m.Robot.Engine.Timer.SecondsF,pose,_m.RobotHeightMm(),id,id));
     }
     private void MissingSource(string text)
-    { string line="MISSING: M12-024 | "+text; _trace.Add(line); _m.Robot.Engine.EmitStackLog(line); }
+    { if(!_missingMessages.Add(text))return;string line="MISSING: M12-024 | "+text; _trace.Add(line); _m.Robot.Engine.EmitStackLog(line); }
+
     public override int Init()
     {
         LifecycleCallObserved?.Invoke("InitDriving");
         DrivingAnimations.Init((byte)RequiredTrackMask, Tag, SuppressTrackLocking, false);
+        DeadlineSec=-1.0; // 0x0055A8A6, including retries.
+        MissingSource("constructor mask 0x0055A25A and head gate +0x79 at 0x0055A9EC have no settled input from this caller; candidate mask 4 retained");
         if (Goal is not { } goal) { _trace.Add("DriveToPoseAction.Init.NoGoalSet"); return (int)ActionResult.BadPose; }
         var start=_m.RobotPose();
         if (start is null) { MissingSource("native pose/world transform input is unavailable"); return 0; }
@@ -163,9 +170,9 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     private void CleanupSource()
     {
         if (_destroyed) return; _destroyed=true;
-        if (_m.PathIsActiveForTest is { } active)
-        { if(active()) { LifecycleCallObserved?.Invoke("Abort"); AbortPath(); } }
-        else MissingSource("M12-032 PathComponent.IsActive destructor input is unavailable; Abort gate not guessed");
+        bool active=_m.PathIsActiveForTest?.Invoke()??_run?.StandInStatus==3;
+        if(active){LifecycleCallObserved?.Invoke("Abort");AbortPath();} // M12-032 stand-in until B-M12-1.
+
         foreach (bool which in new[]{true,false})
         {
             LifecycleCallObserved?.Invoke("ErasePlanner:"+which);
@@ -181,7 +188,7 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         Dispose();
         // Stored Cancel bypasses IAction::UpdateInternal's callbacks. The queue's destruction
         // is the terminal boundary for the host task; no handler end call is added.
-        if(State!=EngineActionResult.Running && State!=EngineActionResult.NotStarted
+        if(State!=EngineActionResult.Running
             && _done?.TrySetResult((ActionResult)State)==true)_m.DriveResultObservedForTest?.Invoke((ActionResult)State);
     }
 
@@ -315,20 +322,13 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
     // fidelity: M12-024 — the real ActionList supplies TIMEOUT-before-check and category-4 retry/Init ordering.
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
-        if (_m.DriveTimeoutForTest is not { } timeout)
-        {
-            MissingSource("DriveToPose concrete timeout getter (+0x2C) remains unread; action stopped at that input, without a fabricated Abort");
-            try { await Task.Delay(Timeout.InfiniteTimeSpan,cancel); }
-            catch(OperationCanceledException) { }
-            Dispose(); return ActionResult.CancelledWhileRunning;
-        }
-        TimeoutSeconds=timeout(this);
+        TimeoutSeconds=_m.DriveTimeoutForTest?.Invoke(this)??BitConverter.Int32BitsToSingle(0x41F00000);
         _done=new(TaskCreationOptions.RunContinuationsAsynchronously);
         AddCompletionCallback(result=>{if(result!=EngineActionResult.Running){_m.DriveResultObservedForTest?.Invoke((ActionResult)result);_done.TrySetResult((ActionResult)result);}});
-        using var cancellation=cancel.Register(Cancel); // inherited IAction Cancel, no override and no end call.
-        if(_m.Robot.Engine.Robot is not { } owner)
-        { MissingSource("ActionList recipient unavailable");try{await Task.Delay(Timeout.InfiniteTimeSpan,cancel);}catch(OperationCanceledException){}Dispose();return ActionResult.CancelledWhileRunning; }
+        if(_m.Robot.Engine.Robot is not {} owner){MissingSource("ActionList recipient unavailable");throw new InvalidOperationException("MISSING: DriveToPose ActionList owner");}
         owner.ActionList.QueueAction(QueueActionPosition.Now,this,0);
+        // Register AFTER queueing: even an already-cancelled token deletes the pending action under the list gate.
+        using var cancellation=cancel.Register(()=>owner.ActionList.Cancel(Tag));
         return await _done.Task;
     }
 
@@ -904,7 +904,8 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     private readonly ManipulationSystem _m;
     private PathRun? _run;
     internal ushort? SourcePathIdForTest => _run?.PathId;
-    private bool _started, _destroyed, _missingTick, _missingDiagnostics;
+    private bool _started, _destroyed, _missingDiagnostics;
+    private readonly HashSet<string> _missingMessages=new();
     private TaskCompletionSource<ActionResult>? _done;
     public DriveStraightAction(ManipulationSystem m, double distanceMm, float speedMmps = 100f, bool shouldPlayAnimation = true) : base(8,4)
     { _m=m;DistanceMm=distanceMm;SpeedMmps=speedMmps;ShouldPlayAnimation=shouldPlayAnimation;DrivingAnimations=m.DrivingAnimationsForTest?.Invoke()??m.Robot.Animations.DrivingAnimations;SourceLog=(l,c,k,t)=>m.Robot.Engine.EmitSourceLog(l,c,k,t);Log=m.Robot.Engine.EmitStackLog; }
@@ -917,12 +918,14 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     protected override void LockTracks(uint mask,string owner)=>_m.Robot.Motion.LockTracks((byte)mask,owner,"DriveStraight");
     protected override void UnlockTracksInternal(uint mask,string owner)=>_m.Robot.Motion.UnlockTracks((byte)mask,owner);
     protected override bool AreAllTracksLockedBy(uint mask,string owner)=>_m.Robot.Motion.AreAllTracksLockedBy((byte)mask,owner);
-    public override bool CanInterrupt()
-    { Missing("concrete CanInterrupt virtual predicate has no checked row"); throw new NotSupportedException("MISSING: M13-013 CanInterrupt predicate"); }
-    private void Missing(string text)=>_m.Robot.Engine.EmitStackLog("MISSING: M13-013 | "+text);
+    protected override string ActionName => "DriveStraight"; // thirteen bytes at 0x00BEA0DC.
+    public override bool CanInterrupt()=>false; // 0x0052B0B3.
+    private void Missing(string text){if(_missingMessages.Add(text))_m.Robot.Engine.EmitStackLog("MISSING: M13-013 | "+text);}
     public override int Init()
     {
         DrivingAnimations.Init((byte)RequiredTrackMask,Tag,SuppressTrackLocking,false);_started=false;
+        if(MathF.Abs((float)DistanceMm)<BitConverter.Int32BitsToSingle(0x3727C5AC)){_started=true;return 0;} // 0x0054761E..26.
+        Missing("AppendLine / ExecuteCustomPath failure branches 0x005476AE..0x005476D2 remain unbuilt on the host path candidate");
         var robot=_m.RobotPose();if(robot is null){Missing("pose/path Init input unavailable");return 0;}
         double h=robot.Value.AngleAroundZ;var to=robot.Value.Translation+new Vec3(Math.Cos(h)*DistanceMm,Math.Sin(h)*DistanceMm,0);
         var p=PathMotionProfile.Default;float speed=DistanceMm<0?-Math.Abs(SpeedMmps):Math.Abs(SpeedMmps);
@@ -951,28 +954,30 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     public override uint CheckIfDone()
     {
         if(_m.StraightTickForTest is {} input)return (uint)CheckIfDone(input(this));
-        if(!_missingTick){Missing("native LastPathFailed/HasPathToFollow/IsActive inputs absent; host path result is not substituted");_missingTick=true;}
-        return (uint)ActionResult.Running;
+        Missing("M12-032 status mapping is a stand-in from existing path follower: following=3, arrived=4, failed=0");
+        int status=_run?.StandInStatus??4;
+        return (uint)CheckIfDone(new DriveStraightTick(status==0,_run is not null||_started,status==3));
     }
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
-        if(_m.StraightTimeoutForTest is not {} timeout)
-        { Missing("concrete timeout getter remains unread; stopped without fabricated Abort");try{await Task.Delay(Timeout.InfiniteTimeSpan,cancel);}catch(OperationCanceledException){}Dispose();return ActionResult.CancelledWhileRunning; }
-        TimeoutSeconds=timeout(this);_done=new(TaskCreationOptions.RunContinuationsAsynchronously);AddCompletionCallback(r=>{if(r!=EngineActionResult.Running)_done.TrySetResult((ActionResult)r);});
-        using var cancellation=cancel.Register(Cancel);
-        if(_m.Robot.Engine.Robot is not {} owner){Missing("ActionList owner absent");try{await Task.Delay(Timeout.InfiniteTimeSpan,cancel);}catch(OperationCanceledException){}Dispose();return ActionResult.CancelledWhileRunning;}
-        owner.ActionList.QueueAction(QueueActionPosition.Now,this,0);return await _done.Task;
+        TimeoutSeconds=_m.StraightTimeoutForTest?.Invoke(this)??BitConverter.Int32BitsToSingle(0x41F00000);
+        _done=new(TaskCreationOptions.RunContinuationsAsynchronously);AddCompletionCallback(r=>{if(r!=EngineActionResult.Running)_done.TrySetResult((ActionResult)r);});
+        if(_m.Robot.Engine.Robot is not {} owner){Missing("ActionList owner absent");throw new InvalidOperationException("MISSING: DriveStraight ActionList owner");}
+        owner.ActionList.QueueAction(QueueActionPosition.Now,this,0);
+        using var cancellation=cancel.Register(()=>owner.ActionList.Cancel(Tag));
+        return await _done.Task;
     }
+
     public void Dispose()
     {
         if(_destroyed)return;_destroyed=true;
-        if(_m.PathIsActiveForTest is {} active){if(active())_m.Paths.Abort();}
-        else Missing("IsActive destructor input absent; Abort gate not guessed");
+        if(_m.PathIsActiveForTest?.Invoke()??_run?.StandInStatus==3)_m.Paths.Abort(); // M12-032 stand-in.
+
         DrivingAnimations.ActionIsBeingDestroyed();_run?.Dispose();base.WatcherEnding();
     }
     public override void WatcherEnding()
     {
         Dispose();
-        if(State!=EngineActionResult.Running && State!=EngineActionResult.NotStarted)_done?.TrySetResult((ActionResult)State);
+        if(State!=EngineActionResult.Running)_done?.TrySetResult((ActionResult)State);
     }
 }

@@ -986,6 +986,7 @@ public class NavigationTests
     }
 
     [Fact]
+    // M12-032 stand-in: the same production follower mapping feeds this behavior, not recovered native status.
     public void PopAWheelieDriveCompletionDoesNotFabricateFailedAbort()
     {
         using var signals = SignalTestContext.Install();

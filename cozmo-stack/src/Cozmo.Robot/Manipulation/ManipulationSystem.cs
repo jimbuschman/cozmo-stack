@@ -239,6 +239,7 @@ public sealed class PathRun : IDisposable
     { _m = m; PathId = pathId; _reservation = reservation; }
 
     public ushort PathId { get; }
+    internal int StandInStatus => _reservation.StandInStatus; // M12-032 stand-in, not a native status word.
     /// <summary>Whether the path was aborted because the wait was cancelled or timed out.</summary>
     public bool Aborted { get; private set; }
 

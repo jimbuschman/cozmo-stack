@@ -285,7 +285,6 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
                 Log("MISSING: DriveStraightAction is not attached; no back-up drive");
                 return;
             }
-            ReportMissing("DriveStraightAction(robot, -60.0f, 100.0f, shouldPlayAnimation = true) (0x0060534E): this stack's DriveStraightAction has no shouldPlayAnimation parameter (M13), so the drive plays no animation");
             int handle = StartActing();
             if (handle == 0) return;
             int epoch = CallbackEpoch;

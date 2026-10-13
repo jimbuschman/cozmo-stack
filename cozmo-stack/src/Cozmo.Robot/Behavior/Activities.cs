@@ -919,7 +919,7 @@ public sealed class FeatureGates
 /// <c>idleAnimTrigger</c>, <c>infoAnalyzerProcess</c>, <c>requireSpark</c>, <c>needsActionID</c>).
 /// <c>GetDesiredActiveBehavior</c> asks the chooser; between two behaviours an interlude from the interlude
 /// chooser runs when one is runnable ("Activity %s is inserting interlude %s between behaviors %s and %s").
-/// <c>OnSelected</c> pushes the idle animation and starts the clock ("robot.freeplay_goal_started");
+/// <c>OnSelected</c> stores time, starts the strategy, updates public activity state, then gates driving and idle calls;
 /// <c>OnDeselected</c> removes it and starts the strategy's cooldown.
 /// </summary>
 public sealed class Activity

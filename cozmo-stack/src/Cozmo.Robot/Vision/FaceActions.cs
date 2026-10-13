@@ -564,7 +564,10 @@ public sealed class TrackFaceAction : IDisposable
     private readonly VisionSystem _v;
     public TrackFaceAction(VisionSystem v, int faceId) { _v = v; FaceId = v.Faces.GetSmartFaceID(faceId); }
     // fidelity: M14-003 — ~ITrackAction ALWAYS resets the shared handler, even when disabled.
-    public void Dispose() { if(Interlocked.Exchange(ref _drivingDisposed,1)!=0)return; FaceId.Dispose(); DrivingHandler.ActionIsBeingDestroyed(); }
+    public void Dispose() { if(Interlocked.Exchange(ref _drivingDisposed,1)!=0)return; FaceId.Dispose();
+        var handler=DrivingHandler;
+        if(_v.Robot.Engine.Robot is {} owner)owner.ActionList.WithGate(handler.ActionIsBeingDestroyed);
+        else lock(handler)handler.ActionIsBeingDestroyed(); }
     private int _drivingDisposed;
     internal Cozmo.Robot.Manipulation.IDrivingAnimationHandler? DrivingHandlerForTest;
     private Cozmo.Robot.Manipulation.IDrivingAnimationHandler DrivingHandler => DrivingHandlerForTest ?? _v.Robot.Animations.DrivingAnimations;

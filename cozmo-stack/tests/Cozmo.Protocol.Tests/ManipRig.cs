@@ -95,25 +95,9 @@ internal sealed class Rig : IDisposable
         // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and
         // exercise the real shared handler with explicit NoAnimation inputs; they do not verify native input recovery.
         M.DrivingAnimationsForTest = () => new GeometryOnlyDrivingDependency();
-        // The fixture supplies native-status/timeout inputs explicitly; production has no such substitute.
-        var sourcePathEvents=new Dictionary<ushort,byte>();
-        Robot.Message+=message=>{if(message is PathFollowingEvent ev)sourcePathEvents[ev.EventId]=ev.EventType;};
-        M.DriveTimeoutForTest=_=>float.PositiveInfinity;
-        M.StraightTimeoutForTest=_=>float.PositiveInfinity;
-        M.PathIsActiveForTest=()=>sourcePathEvents.GetValueOrDefault(M.Paths.LastPathId,(byte)2)==0;
-        M.ErasePlannerObstaclesForTest=_=>{}; // visualizer is excluded from these geometry/wire fixtures.
-        M.DriveTickForTest=drive=>
-        {
-            ushort id=drive.SourcePathIdForTest??M.Paths.LastPathId;
-            int status=drive.SourcePathIdForTest is null?4:!sourcePathEvents.TryGetValue(id,out byte ev)?2:ev==0?3:4;
-            return new DriveToPoseTick(status,Robot.Engine.Timer.Seconds,new Pose3d(Mat3.AboutZ(Angle),new Vec3(X,Y,0)),M.RobotHeightMm(),id,id);
-        };
-        M.StraightTickForTest=drive=>
-        {
-            ushort id=drive.SourcePathIdForTest??M.Paths.LastPathId;
-            bool seen=sourcePathEvents.TryGetValue(id,out byte ev);
-            return new DriveStraightTick(seen&&ev==1,seen,seen&&ev==0);
-        };
+        // M12-032 stand-in: use the SAME path-follower mapping as production (B-M5-18).
+        // These geometry/wire fixture results do not prove native PathComponent status fidelity.
+        M.ErasePlannerObstaclesForTest=_=>{};
         // the look-around waits are real seconds on a robot; a rig takes them instantly
         M.Wait = (t, c) => Task.CompletedTask;
         M.Log += Log.Add;

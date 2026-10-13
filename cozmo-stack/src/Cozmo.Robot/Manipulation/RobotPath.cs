@@ -303,6 +303,8 @@ public sealed class PathFollower : IDisposable
         { _follower = follower; PathId = pathId; _tcs = tcs; }
 
         public ushort PathId { get; }
+        // M12-032 stand-in, expressly authorized by B-M5-18; NOT native PathComponent state.
+        internal int StandInStatus => !_tcs.Task.IsCompletedSuccessfully ? 3 : _tcs.Task.Result==PathEventType.Completed ? 4 : 0;
 
         /// <summary>Completes with Completed or Interrupted; null on timeout or cancellation.</summary>
         public async Task<PathEventType?> WaitAsync(TimeSpan timeout, CancellationToken cancel)
