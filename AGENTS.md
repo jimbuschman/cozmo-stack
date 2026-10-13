@@ -88,6 +88,20 @@ stack implements that feature.
   buried blended entry whose iterator is past the new end. When that entry resumes, the original reads a freed node
   (0x00637ACC..0x00637AE4). This is reachable with shipped SpeedTapWin, then Flash. The stack skips that entry's
   resend, logs it visibly, and carries on.
+
+  **A standing rule for every such case** (operator, 2026-10-13): any path where the original crashes, aborts or reads
+  undefined memory is covered without a further operator question. That includes std::terminate, an uncaught throw, a
+  null dereference, a freed node, a heap read past an object, or a stoull/JsonCpp throw on malformed input. The stack
+  skips the smallest unit the original would have lost, keeps the prior state, logs the skip visibly (naming M1-034 and
+  the owning record), and carries on.
+
+  Each case is still recorded: the owning record's `unresolved` names the crash point (address) and the skip.
+
+  The rule covers only undefined or terminating behaviour. Where the original's behaviour is defined, it stays exact.
+  The first case under the standing rule is the backup manager's malformed inputs (M15-039, M15-040, M15-042):
+  - a non-numeric `.backup` name;
+  - a statsForBackup.json whose ConnectionCount isn't an object or isn't numeric;
+  - a short or oversized backup file.
 - **M1-040, firmware check** (operator, 2026-10-09): every robot firmware is accepted and logged; the original rejects a version that differs from the app's. Without it the operator's robot (2457) is refused.
 - **M1-036, crash reporting** (operator, 2026-10-09): no Breakpad crash reporter.
 - **M1-038, after a disconnect sub-message** (operator, 2026-10-09): stop processing the frame; the original continues through freed memory.
