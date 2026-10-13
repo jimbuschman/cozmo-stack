@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "8f8cee69c1b8a62dedbcfae99b2c9d885576c92a13fe662af01a1dfadb004b5e",
+  "inventory_sha256": "2b5b134d56c83b912eee7fcbe68b35c155f5738a7e1d3df916f58406d7d0a5af",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -579,6 +579,16 @@
       "evidence": [
         "re-analysis/research/20261012-m4-cube-lights-check.md: ApplyAnimModifier 0x00638A8C..0x00638B3A (only caller 0x006384F0) is unread; the callers of PlayLightAnim 0x006382D0 and its overload 0x006389FC that pass modifier = true are unscanned.",
         "re-analysis/research/20261012-m4-046-anim-modifier.md: ApplyAnimModifier 0x00638A8C..0x00638B3A: copy src to dst; per node, i = 0..3: on/off colours OR, the four periods and offset wrapping 32-bit add; rotationPeriod += mod+0x70 inside the i-loop (4x, 0x00638B04..0x00638B0E); mode byte := mod+0x74 (0x00638B1A); relativePoint := mod+0x78/+0x7C raw copy; duration, canBeOverridden and name unchanged; no logs. PlayLightAnim call 0x006384F0 and the modified list into Blend (0x00638502..0x00638506); the overload 0x006389FC forwards with layer 1; every caller passes int 0; callers table in the research file."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-047": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "MovementComponent::UnlockTracks miss path: the info log, PrintLockState, and EnableAnimTracks re-sent for free tracks",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-m12-024-driving-lifecycle.md: UnlockTracks 0x0063FE5C..0x0063FFD8: per bit, find LockInfo by who (first string only, 0x00642508..0x00642574); miss -> sChanneledInfoF \"Unnamed\" \"MovementComponent.UnlockTracks\" (0x640040) \"Tracks 0x%x are not currently locked by %s\" (0x640060) with the full mask and who, then PrintLockState(); an empty set ORs the bit; mask != 0 sends EnableAnimTracks(mask). Reached by the driving handler's double unlock (PlayEndAnim) and a cancel during the end animation."
       ],
       "live_path": true,
       "hardware_required": false

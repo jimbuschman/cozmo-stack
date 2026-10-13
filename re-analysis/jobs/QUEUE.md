@@ -57,6 +57,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 26 | [B-M3M4-16](B-M3M4-16.md) | open, after B-M5-16 (cliff BlockWorld helpers M11-062, MemoryMap insert M13-030, null-helper MISSINGs) |
 | 27 | [B-M3M4-17](B-M3M4-17.md) | open, after B-M3M4-16 (cube-light fixes: per-LED modifier, last-pattern canBeOverridden, shared slot, timer, trigger map, one walk) |
 | 28 | [B-M3M4-18](B-M3M4-18.md) | open, after B-M3M4-17 (M2-018 dispatch order, BlockTapFilter warnings, device-ID BOM, test hygiene) |
+| 29 | [B-M5-17](B-M5-17.md) | open, after B-M3M4-18 (M12-024 driving lifecycle, handler start side, UnlockTracks miss path, DriveStraight/ITrackAction, activity fixes) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

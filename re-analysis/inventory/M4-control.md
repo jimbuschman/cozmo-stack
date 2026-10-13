@@ -728,3 +728,11 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Correction: LC2/LC3 canBeOverridden is the last pattern's (0x006386EC..0x006386F4) | M4-018 |
 | Correction: modifier adds are per LED | M4-046 |
 | Notes appended (shared slot, timer offset) | M4-045 |
+
+
+## M12-024 read (manager, 2026-10-13; research/20261013-m12-024-driving-lifecycle.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP | M4-047 UnlockTracks miss path |
+| Notes appended | M4-014 |

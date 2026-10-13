@@ -928,3 +928,10 @@ Authorized correction A2 in inventory/M1-transport.md; manager-adopted research/
 ## Manager correction (2026-10-09): transferred recipients
 
 M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414; recipient 0x0063BE10); remaining state/subscription effects UNKNOWN. Source: 20261006-M1M2-missing-triage.md S8.
+
+
+## M12-024 read (manager, 2026-10-13; research/20261013-m12-024-driving-lifecycle.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M12-024 |

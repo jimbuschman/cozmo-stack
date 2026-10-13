@@ -1,8 +1,8 @@
 {
   "subsystem": "M12-manipulation",
-  "approved": "2026-10-09",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "1b3ddcbba13944d68523c0fd9c7a82b7165fb5f8c88208e9ad823dbae82b5bfa",
+  "inventory_sha256": "b3f16afdcac918cff492cfbb52a82763ff8134d4068080a70dc7a75358b7e257",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -358,12 +358,13 @@
       "hardware_required": false
     },
     "M12-024": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "DrivingAnimationHandler PlayStartAnim / PlayEndAnim",
       "authority": "libcozmoEngine.so 3.4.0-1204: DrivingAnimationHandler ([robot+0x24C]; PLT 0x004AB134 and 0x004A5764) is called from DriveToPoseAction::CheckIfDone at state 3 (PlayStartAnim, 0x0055AC08) and at the tail (PlayEndAnim, 0x0055B0AA)",
       "evidence": [
         "0x0055AC08 PlayStartAnim call; 0x0055B0AA..0x0055B0CC PlayEndAnim call and its return handling",
-        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q1c"
+        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q1c",
+        "re-analysis/research/20261013-m12-024-driving-lifecycle.md: DriveToPose::Init calls handler Init first (0x0055A86C..0x0055A888; tracks +0x54, tag +0x60, suppress +0x56, repeat 0); CheckIfDone state-3 gate 0x0055AB5A..0x0055AB6A; status 3 PlayStartAnim every tick and the every-10th WaitingForPathCompletion info (0x0055AC06..0x0055ACA0, 0xBECBFB/0xBECC32); tail 0x0055B0AA..0x0055B0CC; status 0 and 2 return directly; the result is recomputed after the end animation (state 4); destructor 0x0055A5FC..0x0055A63C (Abort, EraseAllPlannerObstacles(1)/(0), ActionIsBeingDestroyed); no Cancel override; IAction order (TIMEOUT before CheckIfDone, retry re-runs Init) 0x00540D1C..0x00540F9E."
       ],
       "live_path": true,
       "hardware_required": false
