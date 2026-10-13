@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "78fc13e0f7ff1d124ff469e55befc65e7d73791237db64119c134b46a91bec26",
+  "inventory_sha256": "f53b72fdc7aec4000a6643d9403160e186eae1893f213bbd950a79cfeeb7786e",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -249,7 +249,7 @@
     },
     "M11-019": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "A new pose origin in RobotState delocalizes: located objects are forgotten, carried objects move across",
+      "title": "A delocalize: a new pose origin; carried objects (and the one on top) move to the new root; old-origin objects are kept unless their origin is a zombie",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "Robot::Delocalize 0x00510A24 allocates the new origin and tells the robot",
@@ -808,6 +808,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-pose3d-arithmetic.md \"Not read\" and re-analysis/research/20261013-rodrigues-and-pose-tree.md \"Unread\": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-069": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BlockWorld::UpdateObjectOrigin: bucket lookup, same-root gate, FindRoot re-key with overwrite, AddInExistingPose, cascaded erase; and Robot::Delocalize's full sequence (old-origin capture, pose resets, logs, carried set, OnRobotDelocalized tail broadcast)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-delocalize-and-update-object-origin.md: U1-U13 (0x0062013C..0x00620420) and D1-D21 (0x00510A24..0x00510DB4), DeleteObjectsFromZombieOrigins 0x00620920..0x00620A04, OnRobotDelocalized tail call BroadcastLocatedObjectStates 0x006249EC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-070": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Delocalize unread callees: Robot::SetPose, AddVisionOnlyStateToHistory, AnyRemainingLocalizableObjects(uint), AddInExistingPose emplace defaults, IExternalInterface vt+0x18; VizManager colour and scope",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-delocalize-and-update-object-origin.md: \"Unread\" section: 0x0051502C, 0x0051513C, 0x00626EF4, PLT 0x004A6FE8, 0x00510D94, GOT 0x0103E7DC."
       ],
       "live_path": true,
       "hardware_required": false

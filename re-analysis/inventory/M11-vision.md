@@ -1454,3 +1454,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M11-067 |
 | New RECOVERABLE_GAP | M11-068 remaining pose bodies, null-parent reachability |
 | Notes appended | M11-066 |
+
+
+## Delocalize / UpdateObjectOrigin read (manager, 2026-10-13; research/20261013-delocalize-and-update-object-origin.md)
+
+| Change | Records |
+| --- | --- |
+| Retitled (cited correction) | M11-019 |
+| New IMPLEMENTATION_GAP | M11-069 UpdateObjectOrigin and the Delocalize sequence |
+| New RECOVERABLE_GAP | M11-070 unread callees |
+| Notes appended | M11-053 |

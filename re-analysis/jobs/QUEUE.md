@@ -63,6 +63,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
 | 30a | [B-M3M4-22](B-M3M4-22.md) | open, after B-M3M4-19 (M7-028 directories, B-M3M4-18 queued items) |
 | 31 | [B-POSE-1](B-POSE-1.md) | open, after B-M3M4-19 (exact Pose3d/Rotation3d/Transform3d port, cv::Rodrigues, pose tree; migrate Geometry.cs) |
+| 31a | [B-M11-1](B-M11-1.md) | open, after B-POSE-1 (Delocalize in full, UpdateObjectOrigin) |
 | 32 | [B-M3M4-21](B-M3M4-21.md) | open, after B-POSE-1 (dangling blended entry, cube-light root, LoadTime, cleanup) |
 | 33 | [B-M15-1](B-M15-1.md) | open, after B-M3M4-21 (backup manager: constructor, body, restore, wipe, restore list, app inputs) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
