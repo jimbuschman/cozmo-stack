@@ -1445,3 +1445,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP | M11-065 pose arithmetic; M11-066 pose tree |
 | New RECOVERABLE_GAP | M11-067 cv::Rodrigues and tree copy semantics |
 | Notes appended | M11-052, M11-062 |
+
+
+## cv::Rodrigues and pose-tree read (manager, 2026-10-13; research/20261013-rodrigues-and-pose-tree.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M11-067 |
+| New RECOVERABLE_GAP | M11-068 remaining pose bodies, null-parent reachability |
+| Notes appended | M11-066 |

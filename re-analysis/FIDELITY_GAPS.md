@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **566 records** over 16 subsystems.
+Manifest of **567 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 252 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 253 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 59 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 10 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 15 | 2 | 10 | 0 | 0 | no | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 67 | 11 | 40 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 68 | 11 | 41 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 40 | 7 | 22 | 0 | 0 | no | no |
 | M13-navigation — Planning, charger and block configurations | 32 | 3 | 26 | 0 | 0 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
@@ -340,14 +340,14 @@ B-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: B-M3M4-1
 * evidence: VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN
 * outstanding: RECOVERABLE_GAP: read VisionSystem::Update from 0x006B4D5C for the consumer of the slot and what it applies. The stack queues NextCameraParams (Camera.cs) and never applies it.
 
-**M11-067 — Unread pieces of the pose arithmetic: cv::Rodrigues (libopencv_calib3d.so), PoseBase::operator=/SetParent/PoseTreeNode ctors, and the remaining family bodies** (live path)
+**M11-068 — Remaining unread pose bodies: UnitQuaternion<double>*Point3d, Euler/matrix X/Y ctors, IsValid, Abs, ApplyTo(vector), Pose2d/Transform2d, GetParent/FindRoot wrappers; reachability of SetParent with a null parent node** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs`
-* effect: GetRotationMatrix whenever a row norm is not in [0.99999899, 1.0], every matrix-to-rotation conversion, and whether poses share tree nodes.
-* rests on: Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.
+* effect: Pose math on the less-used paths, and whether the original can crash on a null parent.
+* rests on: Pose3d reads (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-pose3d-arithmetic.md: "Not read" section: cv::Rodrigues via RenormalizeHelper 0x008499B0..0x00849A10, Rotation3d(RotationMatrix3d) 0x0084A3F4..0x0084A45C, RotationMatrix3d(angle, axis) 0x0084ADA4..0x0084AF34; PoseBase::operator= 0x00845940, SetParent 0x00844A14, PoseTreeNode ctors 0x00845F44/0x00845FE4; UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; Euler/matrix X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; the Pose2d/Transform2d family 0x0084B619..0x0084B92A.
-* outstanding: RECOVERABLE_GAP: read cv::Rodrigues (both directions, CV_32F) in the shipped libopencv_calib3d.so (shipped code: exact, not libm), and the tree copy semantics (both being read); then the remaining bodies.
+* evidence: re-analysis/research/20261013-pose3d-arithmetic.md "Not read" and re-analysis/research/20261013-rodrigues-and-pose-tree.md "Unread": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52).
+* outstanding: RECOVERABLE_GAP: read the listed bodies; find whether SetParent is ever called with a pose whose node is null (if reachable, the crash needs an operator ruling).
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -432,7 +432,7 @@ B-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: B-M3M4-1
 * rests on: not read
 * best authority: libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md): cv::minAreaRect is now read (M13-024) and the bounding-quad overrides for every class are resolved (M13-025). Still unread: (a) the writers of the MatPiece/FlatMat corner vector at sub-object +0x7C (getter 0x00502DD8) and of the CustomObject corner vector at +0x64 (getter 0x004EF78A); (b) cv::Rodrigues in libopencv_calib3d.so, used through RotationMatrixBase<3>::RenormalizeHelper 0x008499B0 by Rotation3d::GetRotationMatrix 0x0084AAE0, on which the numeric result of the BASE Vision::ObservableObject::GetBoundingQuadXY (0x0087713A) depends; (c) the tie behaviour of Quadrilateral::SortCornersClockwise 0x004E7EFC for equal atan2 angles (a degenerate footprint) and the body of Rectangle<float>::InitFromPointContainer (the minAreaRect failure fallback); (d) Robot::GetCameraPose(float) and the Robot members at +0x2CC and +0x258; (e) equivalence of the Android bionic libm sin, cos, atan2 and atan2f (system library that does not ship in the APK) with the host's: a policy question, not source-recoverable
 * evidence: 0x00502DD8, 0x004EF78A the corner getters; 0x0084AAE0, 0x008494E0, 0x008499B0 the rotation-matrix path; 0x004E7EFC SortCornersClockwise; 0x004E6778 InitFromPointContainer; re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'
-* outstanding: read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): SortCornersClockwise is libc++ __sort with CompareFirst (0x004E8260; __sort4 0x004E85BE); output slots [P0, P3, P1, P2]; also reached by the cliff bounding quad (M11-062). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. (e) answered: bionic libm does not ship, so its calls are EQUIVALENT_IMPLEMENTATION under AGENTS.md; the operands, widths and order stay exact. (b) cv::Rodrigues is M11-067.
+* outstanding: read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): SortCornersClockwise is libc++ __sort with CompareFirst (0x004E8260; __sort4 0x004E85BE); output slots [P0, P3, P1, P2]; also reached by the cliff bounding quad (M11-062). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. (e) answered: bionic libm does not ship, so its calls are EQUIVALENT_IMPLEMENTATION under AGENTS.md; the operands, widths and order stay exact. (b) cv::Rodrigues is M11-067. (b) cv::Rodrigues is now read (re-analysis/research/20261013-rodrigues-and-pose-tree.md; M11-067).
 
 **M13-029 — Path/planner abort and destruction** (live path)
 
@@ -2153,7 +2153,16 @@ B-M3M4-16 (2026-10-13), built, awaiting strong verification: Float strict/unorde
 * rests on: Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-pose3d-arithmetic.md: rows R35-R37: GetWithRespectTo 0x00845A34..0x00845DFE (FromEqualsTo warning, chain cases a-d, LoopBoundOverflow poseBase_impl.h lines 0x1A0/0x1B6/0x1D4), GetTreeDepth 0x00845E8C..0x00845F02, HasSameParentAs 0x00844D44..0x00844D7C, GetWithRespectToRoot 0x004DF628..0x004DF6DC.
-* outstanding: IMPLEMENTATION_GAP: port with M11-065. Whether out aliases its inputs depends on PoseBase::operator= and SetParent (being read).
+* outstanding: IMPLEMENTATION_GAP: port with M11-065. Whether out aliases its inputs depends on PoseBase::operator= and SetParent (being read). Aliasing settled (re-analysis/research/20261013-rodrigues-and-pose-tree.md): both inputs are copied before out is written; out is written in place into its node (all wrappers and children see it), then SetParent(out, to).
+
+**M11-067 — cv::Rodrigues (OpenCV 3.1.0, both directions, CV_32F in, double inside, Jacobi SVD) and the pose-tree copy semantics (deep copy ctor, in-place operator=, shared-node SetParent, "_COPY" names)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs`
+* effect: GetRotationMatrix whenever a row norm is not in [0.99999899, 1.0], every matrix-to-rotation conversion, and whether poses share tree nodes.
+* rests on: Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-pose3d-arithmetic.md: "Not read" section: cv::Rodrigues via RenormalizeHelper 0x008499B0..0x00849A10, Rotation3d(RotationMatrix3d) 0x0084A3F4..0x0084A45C, RotationMatrix3d(angle, axis) 0x0084ADA4..0x0084AF34; PoseBase::operator= 0x00845940, SetParent 0x00844A14, PoseTreeNode ctors 0x00845F44/0x00845FE4; UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; Euler/matrix X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; the Pose2d/Transform2d family 0x0084B619..0x0084B92A.; re-analysis/research/20261013-rodrigues-and-pose-tree.md: cvRodrigues2 calib3d 0xF28E..0xFB9A (vector->matrix in double, DBL_EPSILON identity, R = c1*rrt + c*I + s*[r]x; matrix->vector cvCheckArr [-100,100) -> zero, cvSVD -> JacobiSVDImpl_<double> core 0x595C0..0x59B56 with OpenCV hypot 0x56EB0, GEMM U*Vt, s<1e-5 and 180-degree branches, acos), wrapper 0x111F8..0x1133E; PoseBase copy ctor 0x008458F0..0x0084592A, node copy ctor 0x00845FE4..0x00846044, operator= 0x00845940..0x00845A2E, SetParent 0x00844A14..0x00844A7A, node SetParent 0x008449EA..0x00844A10, WrapExistingNode 0x0084529C..0x008452C0, GetWithRespectTo write order 0x00845A34..0x00845E04.
+* outstanding: Read 2026-10-13 (re-analysis/research/20261013-rodrigues-and-pose-tree.md): build with M11-065/M11-066 (job B-POSE-1). libm cos/sin/acos inside Rodrigues are the phone libm (not shipped): EQUIVALENT_IMPLEMENTATION for those calls only, as for the other libm calls (M13-023(e)); everything else, including the Jacobi SVD and OpenCV hypot, is shipped code and exact. A NaN/Inf/out-of-range matrix renormalises to the identity. The remaining unread bodies are M11-068. Previous notes: RECOVERABLE_GAP: read cv::Rodrigues (both directions, CV_32F) in the shipped libopencv_calib3d.so (shipped code: exact, not libm), and the tree copy semantics (both being read); then the remaining bodies.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 

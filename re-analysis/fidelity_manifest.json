@@ -5138,7 +5138,7 @@
         "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): SortCornersClockwise is libc++ __sort with CompareFirst (0x004E8260; __sort4 0x004E85BE); output slots [P0, P3, P1, P2]; also reached by the cliff bounding quad (M11-062). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. (e) answered: bionic libm does not ship, so its calls are EQUIVALENT_IMPLEMENTATION under AGENTS.md; the operands, widths and order stay exact. (b) cv::Rodrigues is M11-067.",
+      "unresolved": "read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): SortCornersClockwise is libc++ __sort with CompareFirst (0x004E8260; __sort4 0x004E85BE); output slots [P0, P3, P1, P2]; also reached by the cliff bounding quad (M11-062). Pose3d read 2026-10-13 (re-analysis/research/20261013-pose3d-arithmetic.md): the arithmetic is M11-065, the tree M11-066, unread pieces M11-067. (e) answered: bionic libm does not ship, so its calls are EQUIVALENT_IMPLEMENTATION under AGENTS.md; the operands, widths and order stay exact. (b) cv::Rodrigues is M11-067. (b) cv::Rodrigues is now read (re-analysis/research/20261013-rodrigues-and-pose-tree.md; M11-067).",
       "hardware_required": false,
       "live_path": true,
       "test": "M13RVisBuildTests.M13_023_TheFootprintStubStillThrowsForTiltedCubesAndOtherClasses; M13RVisBuildTests.M13_023_ATiltedOrNonCubeFootprintUsesTheLabelledPlanarStandInAndDoesNotThrow; M13RVisBuildTests.M13_023_ATiltedLocatedCubeDoesNotAbortTheLiftAttachOrTheStackCheck"
@@ -11163,7 +11163,7 @@
       ],
       "effect": "Which frame every pose comparison happens in, and the logs on a bad tree.",
       "provenance": "Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: port with M11-065. Whether out aliases its inputs depends on PoseBase::operator= and SetParent (being read).",
+      "unresolved": "IMPLEMENTATION_GAP: port with M11-065. Whether out aliases its inputs depends on PoseBase::operator= and SetParent (being read). Aliasing settled (re-analysis/research/20261013-rodrigues-and-pose-tree.md): both inputs are copied before out is written; out is written in place into its node (all wrappers and children see it), then SetParent(out, to).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11171,16 +11171,34 @@
     {
       "id": "M11-067",
       "subsystem": "M11-vision",
-      "title": "Unread pieces of the pose arithmetic: cv::Rodrigues (libopencv_calib3d.so), PoseBase::operator=/SetParent/PoseTreeNode ctors, and the remaining family bodies",
+      "title": "cv::Rodrigues (OpenCV 3.1.0, both directions, CV_32F in, double inside, Jacobi SVD) and the pose-tree copy semantics (deep copy ctor, in-place operator=, shared-node SetParent, \"_COPY\" names)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-pose3d-arithmetic.md: \"Not read\" section: cv::Rodrigues via RenormalizeHelper 0x008499B0..0x00849A10, Rotation3d(RotationMatrix3d) 0x0084A3F4..0x0084A45C, RotationMatrix3d(angle, axis) 0x0084ADA4..0x0084AF34; PoseBase::operator= 0x00845940, SetParent 0x00844A14, PoseTreeNode ctors 0x00845F44/0x00845FE4; UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; Euler/matrix X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; the Pose2d/Transform2d family 0x0084B619..0x0084B92A.",
+        "re-analysis/research/20261013-rodrigues-and-pose-tree.md: cvRodrigues2 calib3d 0xF28E..0xFB9A (vector->matrix in double, DBL_EPSILON identity, R = c1*rrt + c*I + s*[r]x; matrix->vector cvCheckArr [-100,100) -> zero, cvSVD -> JacobiSVDImpl_<double> core 0x595C0..0x59B56 with OpenCV hypot 0x56EB0, GEMM U*Vt, s<1e-5 and 180-degree branches, acos), wrapper 0x111F8..0x1133E; PoseBase copy ctor 0x008458F0..0x0084592A, node copy ctor 0x00845FE4..0x00846044, operator= 0x00845940..0x00845A2E, SetParent 0x00844A14..0x00844A7A, node SetParent 0x008449EA..0x00844A10, WrapExistingNode 0x0084529C..0x008452C0, GetWithRespectTo write order 0x00845A34..0x00845E04."
+      ],
+      "effect": "GetRotationMatrix whenever a row norm is not in [0.99999899, 1.0], every matrix-to-rotation conversion, and whether poses share tree nodes.",
+      "provenance": "Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-rodrigues-and-pose-tree.md): build with M11-065/M11-066 (job B-POSE-1). libm cos/sin/acos inside Rodrigues are the phone libm (not shipped): EQUIVALENT_IMPLEMENTATION for those calls only, as for the other libm calls (M13-023(e)); everything else, including the Jacobi SVD and OpenCV hypot, is shipped code and exact. A NaN/Inf/out-of-range matrix renormalises to the identity. The remaining unread bodies are M11-068. Previous notes: RECOVERABLE_GAP: read cv::Rodrigues (both directions, CV_32F) in the shipped libopencv_calib3d.so (shipped code: exact, not libm), and the tree copy semantics (both being read); then the remaining bodies.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-068",
+      "subsystem": "M11-vision",
+      "title": "Remaining unread pose bodies: UnitQuaternion<double>*Point3d, Euler/matrix X/Y ctors, IsValid, Abs, ApplyTo(vector), Pose2d/Transform2d, GetParent/FindRoot wrappers; reachability of SetParent with a null parent node",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
       "status": "RECOVERABLE_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-pose3d-arithmetic.md: \"Not read\" section: cv::Rodrigues via RenormalizeHelper 0x008499B0..0x00849A10, Rotation3d(RotationMatrix3d) 0x0084A3F4..0x0084A45C, RotationMatrix3d(angle, axis) 0x0084ADA4..0x0084AF34; PoseBase::operator= 0x00845940, SetParent 0x00844A14, PoseTreeNode ctors 0x00845F44/0x00845FE4; UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; Euler/matrix X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; the Pose2d/Transform2d family 0x0084B619..0x0084B92A."
+        "re-analysis/research/20261013-pose3d-arithmetic.md \"Not read\" and re-analysis/research/20261013-rodrigues-and-pose-tree.md \"Unread\": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52)."
       ],
-      "effect": "GetRotationMatrix whenever a row norm is not in [0.99999899, 1.0], every matrix-to-rotation conversion, and whether poses share tree nodes.",
-      "provenance": "Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read cv::Rodrigues (both directions, CV_32F) in the shipped libopencv_calib3d.so (shipped code: exact, not libm), and the tree copy semantics (both being read); then the remaining bodies.",
+      "effect": "Pose math on the less-used paths, and whether the original can crash on a null parent.",
+      "provenance": "Pose3d reads (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies; find whether SetParent is ever called with a pose whose node is null (if reachable, the crash needs an operator ruling).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
