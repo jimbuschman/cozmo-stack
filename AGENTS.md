@@ -76,6 +76,12 @@ stack implements that feature.
   It also covers the neutral face with no face keyframe (operator, 2026-10-12; M5-010). If the first clip of
   `ag_neutral_face` has no ProceduralFace keyframe, the original reads address 0xC (0x0057A20A/0x0057A20C). No shipped
   file reaches it. The stack skips SetResetData, keeps the previous reset data, logs it visibly, and carries on.
+
+  It also covers the cube-light loader's fatal paths (operator, 2026-10-12; M4-044;
+  `research/20261012-m4-cube-lights-check.md`), which none of the 37 shipped files reaches: a JsonCpp stack-limit
+  throw; getMemberNames on a non-empty array or scalar root; a non-empty object as an animation value; an entry or
+  pattern that isn't an object; a wrong-kind or out-of-range `as*()` call. The original reaches std::terminate. The
+  stack skips that file (any earlier definition of the animation is kept), logs the skip visibly, and carries on.
 - **M1-040, firmware check** (operator, 2026-10-09): every robot firmware is accepted and logged; the original rejects a version that differs from the app's. Without it the operator's robot (2457) is refused.
 - **M1-036, crash reporting** (operator, 2026-10-09): no Breakpad crash reporter.
 - **M1-038, after a disconnect sub-message** (operator, 2026-10-09): stop processing the frame; the original continues through freed memory.
