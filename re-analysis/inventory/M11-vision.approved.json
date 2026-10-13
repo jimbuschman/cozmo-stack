@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "5c183a755de45214333069d7814aa7e8b2c10c02fa4cb6eb9527f42dfd01b4bd",
+  "inventory_sha256": "f090b7807f0988f6c99eaef9b18365db1dabbf7062d925a4e4a93941f48b5a17",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -761,11 +761,12 @@
       "hardware_required": false
     },
     "M11-064": {
-      "status": "RECOVERABLE_GAP",
-      "title": "UpdateObservedMarkers unread pieces: the robot.play_area_size metric (MemoryMap vt+0x1C) and the LocalizeToObject failure returns that leave BlockWorld+0x74 stuck at 1",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "UpdateObservedMarkers: the robot.play_area_size event (60 s gate, GetExploredRegionAreaM2) and the localization-failure chain (AddAndUpdateFailed early return, BlockWorldUpdateFailed, LocalHandlerFailed)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: Play-area event 0x00624F16..0x00624F32 (every 60 s from +4/+8, ctor 0x0061BD20..0x0061BD3A; sEventF robot.play_area_size 0x00625314 \"%.2f\" 0x0062532C of helper vt+0x1C, body unread). AddAndUpdateFailed return 0x006250B6..0x006250C2 -> 0x00625220 skips the flag clear 0x006250D8 and the tail; reached when PotentialObjectsForLocalizingTo::LocalizeRobot returns non-zero (0x00621304 -> 0x00621320) on a Robot::LocalizeToObject failure (0x005154B0..0x00515AA4, e.g. ObjectPoseOriginMisMatch 0x0051592C..0x00515984)."
+        "re-analysis/research/20261013-blockworld-flag-and-map-helper.md: Play-area event 0x00624F16..0x00624F32 (every 60 s from +4/+8, ctor 0x0061BD20..0x0061BD3A; sEventF robot.play_area_size 0x00625314 \"%.2f\" 0x0062532C of helper vt+0x1C, body unread). AddAndUpdateFailed return 0x006250B6..0x006250C2 -> 0x00625220 skips the flag clear 0x006250D8 and the tail; reached when PotentialObjectsForLocalizingTo::LocalizeRobot returns non-zero (0x00621304 -> 0x00621320) on a Robot::LocalizeToObject failure (0x005154B0..0x00515AA4, e.g. ObjectPoseOriginMisMatch 0x0051592C..0x00515984).",
+        "re-analysis/research/20261013-play-area-check.md sections P and L (propagation): gate 0x00624F0E..0x00624F22; vt+0x1C = GetExploredRegionAreaM2 0x006816E8 returning MemoryMap+0x40 (processor+0x30); sEventF 0x00624F34..0x00624F4E before the clear; AddAndUpdateObjects returns LocalizeRobot (0x00621304..0x00621320); UpdateVisionMarkers BlockWorldUpdateFailed 0x00654E12 and the docking-signal call 0x00654E38..0x00654E4A; UpdateAllResults LocalHandlerFailed 0x00654C7C/0x00654CB0 \"DetectingMarkers\", errG, fp 0x006544EE."
       ],
       "live_path": true,
       "hardware_required": false

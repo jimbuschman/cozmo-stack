@@ -779,3 +779,10 @@ The complete audit (`re-analysis/research/20260929-audit-complete.md`) found tha
 ## Manager correction (2026-10-09): M2-002 boundary
 
 M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocalize argument -> M11-053 (0x00512B78..0x00512BA6; Delocalize 0x00510A24..0x00510D98); P3/P4 ActionList/IAction lifecycle -> M8-015 (0x0053F580..0x0053F70C; 0x00540370..0x0054063E; 0x00540D4A..0x00540E80; 0x005549B8..0x005549F4); P2 RobotState publication -> M1-053 (0x0052F6C0..0x0052F7B0; getter 0x005180D8..0x00518252). Source: 20261006-M1M2-missing-triage.md P1-P4.
+
+
+## Check of R-PLAY-AREA (manager, 2026-10-13; research/20261013-play-area-check.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP | M2-018 robot-message subscriber order |

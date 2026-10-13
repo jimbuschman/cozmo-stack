@@ -1,8 +1,8 @@
 {
   "subsystem": "M2-protocol",
-  "approved": "2026-10-09",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "6626a39d777ee50d4aedd3a75f96d9e2202786f56ed0ddaae3a1ca89bdd64635",
+  "inventory_sha256": "b39ca3df790256319ecb84c0333a265eae2e0b561b1c134f623d8fd4ace6ca9e",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -218,6 +218,16 @@
         "ProcessMessages sets only the union tag byte to 0xFF before Unpack (0x0069D8F8/0x0069D8FA); ClearCurrent 0x007B24A0 destroys only vector/string members and stores 0xFF (0x007B2526/0x007B2528)",
         "member constructors do not zero scalars: RobotErrorReport 0x007D3E50, PickAndPlaceResult 0x007C1ABA, FallingStopped 0x007B0EAA; fixed arrays store only successful reads (0x007BF21E..0x007BF22C, 0x007C885C..0x007C886A); FWVersionInfo zeroes its first three words (0x007C32D4..0x007C32DA)",
         "visible only in a kept truncated message (M2-011 D11), e.g. a 5-byte robotError: the engine reads a stale fatal byte at 0x0069D930"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-018": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Robot-message subscriber dispatch: per-robot signal before wildcard, registration order, synchronous; which subscribers take each tag (0xC0 first)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-play-area-check.md section D: ProcessMessages 0x0069D85C..0x0069DAEA, Broadcast 0x0069DC82..0x0069DCB4, emitter 0x0069DE24..0x0069DE74 (robot signal then wildcard), connect 0x0051D874..0x0051D8A2 and emit 0x0069E274..0x0069E2B2 (registration order, re-reading the sentinel), HandleCliffEvent registration 0x00532B80..0x00532B8A via 0x00519F8C."
       ],
       "live_path": true,
       "hardware_required": false
