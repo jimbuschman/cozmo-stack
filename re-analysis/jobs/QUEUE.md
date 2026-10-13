@@ -61,7 +61,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 29a | [B-M5-18](B-M5-18.md) | done 5db4343b; Opus check FAIL (drives time out; research/20261013-b-m5-18-check.md), fixes in B-M5-19 |
 | 29a2 | [B-M5-19](B-M5-19.md) | URGENT, next after the job in progress (triplet, end-animation action) |
 | 29c | [B-M13-1](B-M13-1.md) | open, after B-M12-1 and B-M5-19 (planner side: worker thread, both force values, planner choice) |
-| 29b | [B-M12-1](B-M12-1.md) | open, after B-M5-18 (PathComponent status machine; replaces the stand-in) |
+| 29d | [B-M12-2](B-M12-2.md) | open, after B-M13-1 (Dole send failures, queued items) |
+| 29b | [B-M12-1](B-M12-1.md) | done d7316d1d; Opus check FAIL on one point (Dole send failures; research/20261013-b-m12-1-check.md), fix in B-M12-2 |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
 | 30a | [B-M3M4-22](B-M3M4-22.md) | open, after B-M3M4-19 (M7-028 directories, B-M3M4-18 queued items) |
 | 31 | [B-POSE-1](B-POSE-1.md) | open, after B-M3M4-19 (exact Pose3d/Rotation3d/Transform3d port, cv::Rodrigues, pose tree; migrate Geometry.cs) |
