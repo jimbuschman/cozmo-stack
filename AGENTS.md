@@ -82,6 +82,12 @@ stack implements that feature.
   throw; getMemberNames on a non-empty array or scalar root; a non-empty object as an animation value; an entry or
   pattern that isn't an object; a wrong-kind or out-of-range `as*()` call. The original reaches std::terminate. The
   stack skips that file (any earlier definition of the animation is kept), logs the skip visibly, and carries on.
+
+  It also covers the cube-light dangling blended entry (operator, 2026-10-13; M4-045;
+  `research/20261013-b-m3m4-17-check.md`). A later, shorter blended play reassigns the shared slot (0x006385B6) under a
+  buried blended entry whose iterator is past the new end. When that entry resumes, the original reads a freed node
+  (0x00637ACC..0x00637AE4). This is reachable with shipped SpeedTapWin, then Flash. The stack skips that entry's
+  resend, logs it visibly, and carries on.
 - **M1-040, firmware check** (operator, 2026-10-09): every robot firmware is accepted and logged; the original rejects a version that differs from the app's. Without it the operator's robot (2457) is refused.
 - **M1-036, crash reporting** (operator, 2026-10-09): no Breakpad crash reporter.
 - **M1-038, after a disconnect sub-message** (operator, 2026-10-09): stop processing the frame; the original continues through freed memory.
