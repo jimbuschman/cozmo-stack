@@ -751,6 +751,7 @@ public sealed partial class EngineRobot
         // The public completed-action payload/union boundary remains owned by M7-020.
         _actionList.Watcher.HasExternalInterface = false;
         InitLifetime();
+        Engine.ConstructorMapCreated?.Invoke(); // M13-032 new MapComponent owner, before first Delocalize
         ConstructorDelocalize();
         if (queueConnectionReads) QueueConnectionReads();
     }
@@ -1032,6 +1033,7 @@ public sealed partial class EngineRobot
     {
         Engine.RobotDelocalized?.Invoke();   // SC4d: ClearCliffRunningStats is the first thing Robot::Delocalize does
         AddOriginWithId(_nextOriginId);
+        Engine.ConstructorMapOrigin?.Invoke(CurrentOriginId); // M13-032 OnRobotDelocalized after AddNewOrigin
         PoseFrameId = 0;
     }
 
@@ -1853,6 +1855,8 @@ public sealed partial class CozmoEngine : IDisposable
     /// <c>ConstructorDelocalize</c>, 0x00510324). The runtime Delocalize callers - the UFRS treads path
     /// (0x00512BA6) and the 101st frame mismatch (0x00512F82..0x00512F96) - run in VisionSystem (M11-019). Wired by CozmoRobot to <see cref="CozmoSensors.ClearCliffRunningStats"/>.
     /// </summary>
+    internal Action? ConstructorMapCreated;
+    internal Action<uint>? ConstructorMapOrigin;
     internal Action? RobotDelocalized;
 
     // ---- the game-facing messages

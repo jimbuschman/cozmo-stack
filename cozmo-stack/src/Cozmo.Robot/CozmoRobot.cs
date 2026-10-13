@@ -201,7 +201,7 @@ public sealed class CozmoRobot : IDisposable
     public CozmoMotion Motion { get; }
     /// <summary>The robot's carrying component, shared by docking and outgoing engine state.</summary>
     public Manipulation.CarryingComponent Carrying { get; internal set; } = new();
-    internal Vision.BlockWorld LocalizationWorld { get; set; } = new();
+    internal Vision.BlockWorld LocalizationWorld { get; set; } = new(deferMap: true);
     // fidelity: M4-017
     internal Vision.VisionSystem? VisionModeRecipient { get; set; }
     /// <summary>Backpack LEDs and the infrared headlight.</summary>
@@ -259,6 +259,18 @@ public sealed class CozmoRobot : IDisposable
                                  { lock (_lightLoadingLogs) _cubeLoadingLogs.Add((level, channel, key, text)); }));
         LocalizationWorld.SourceLog = (l, c, k, t) => Engine.EmitSourceLog(l, c, k, t);
         LocalizationWorld.Log += Engine.EmitStackLog;
+        // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.
+        Engine.ConstructorMapCreated = () => LocalizationWorld.ConstructMapComponent();
+        Engine.ConstructorMapOrigin = origin =>
+        {
+            LocalizationWorld.OnRobotDelocalizedMapOrigin(origin);
+        };
+        LocalizationWorld.RobotTimestamp = () => State.Latest?.Timestamp ?? 0;
+        LocalizationWorld.CurrentRobotPose = () => State.Latest is { } s
+            ? new Vision.Pose3d(Vision.Mat3.AboutZ(s.PoseAngleRad), new Vision.Vec3(s.PoseX,s.PoseY,0)) : Vision.Pose3d.Identity;
+        LocalizationWorld.OriginNode = id => Engine.Robot?.OriginNames.Get(id);
+        LocalizationWorld.BaseStationSeconds = () => Engine.Timer.Seconds;
+
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
         CubeAccel = new CubeAccelStreams(this);

@@ -84,8 +84,9 @@ public sealed class M3M4X13BuilderTests : IDisposable
         Assert.Contains(missing, s => s.Contains("M11-051/M11-053")); Assert.Empty(entries);
         robot.Sensors.CliffHistoricalPoseForTest = _ => (0, new Pose3d(Mat3.Identity, new Vec3(12.5, -3.25, 0)));
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 222, DetectedFlags = 0x0a });
-        Assert.Equal("at 12.500,-3.250. DetectedFlags = 0x0A", Assert.Single(entries).Text);
-        Assert.Contains(missing, s => s.Contains("M11-062")); Assert.Contains(missing, s => s.Contains("M13-030"));
+        Assert.Equal("at 12.500,-3.250. DetectedFlags = 0x0A", Assert.Single(entries.Where(e => e.Name == "RobotImplMessaging.HandleCliffEvent.Detected")).Text);
+        Assert.Contains(entries, e => e.Name == "BlockWorld.AddLocatedObject");
+        Assert.Contains(missing, s => s.Contains("M11-062")); Assert.Contains(missing, s => s.Contains("M11-048"));
         entries.Clear(); robot.Sensors.CliffHistoricalPoseForTest = _ => (2, default);
         EngineErrorState.ErrorFlagSet = false; bool? atError = null;
         robot.Engine.LogEntry += e => { if (e.Name == "CliffSensorComponent.ComputeCliffPose.NoHistoricalPose") atError = EngineErrorState.ErrorFlagSet; };

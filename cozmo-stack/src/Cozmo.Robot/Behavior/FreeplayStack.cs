@@ -121,7 +121,7 @@ public sealed class FreeplayStack : IDisposable
         // context carries both the manager and every shipped behaviour's own needsActionID
         ctx.Needs ??= needs;
         // the memory map the face behaviour asks before driving in (MapComponent::GetCurrentMemoryMapHelper)
-        if (vision is not null) ctx.Map ??= new MemoryMap();
+        if (vision is not null && robot.Engine.Robot is not null) ctx.Map ??= vision.World.Maps.Current; // M13-031: one current-origin map owner
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
         // fidelity: M7-012
         // MoodManager::Init 0x0067aebc: StaticMoodData::Init reads the shipped mood_config.json and the
@@ -292,15 +292,15 @@ public sealed class FreeplayStack : IDisposable
             vision.OverheadEdges ??= new OverheadEdgesDetector();
             void onFrame(VisionFrameResult r)
             {
-                if (r.OverheadEdges is { } edges) theMap.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
+                if (r.OverheadEdges is { } edges) ctx.Map!.AddVisionOverheadEdges(edges, r.PoseData.RobotPose);
             }
             vision.FrameProcessed += onFrame;
             stack._unsubscribe.Add(() => vision.FrameProcessed -= onFrame);
 
             // A delocalization puts the robot in a new origin, and the engine gives that origin a map of
             // its own (MapComponent::CreateLocalizedMemoryMap, called from BlockWorld::OnRobotDelocalized
-            // 0x006249D6). Everything in the old map is in a frame that has gone, so it starts empty.
-            void onDelocalized(uint origin) => theMap.Clear();
+            // 0x006249D6). Follow the owner; zombie/keep-alive decisions retain or erase the old maps.
+            void onDelocalized(uint origin) => ctx.Map = vision.World.Maps.Current;
             vision.RobotDelocalized += onDelocalized;
             stack._unsubscribe.Add(() => vision.RobotDelocalized -= onDelocalized);
         }
@@ -310,6 +310,8 @@ public sealed class FreeplayStack : IDisposable
     /// <summary>One tick with the inputs refreshed from the robot and the world.</summary>
     public FreeplayDecision Tick(double nowSec, double nowMs, CozmoRobot robot, VisionSystem? vision, ManipulationSystem? m)
     {
+        // fidelity: M13-032 — follow the live current-origin owner after delocalization/robot reconstruction.
+        if (vision is not null) Context.Map = robot.Engine.Robot is not null ? vision.World.Maps.Current : null;
         // the object content of the memory map follows the world model, as MapComponent's
         // AddObservableObject / RemoveObservableObject keep it following BlockWorld
         if (Context.Map is { } map)

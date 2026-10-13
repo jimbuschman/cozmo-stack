@@ -718,7 +718,7 @@ public class M11RVisBuildTests : IDisposable
 
     /// <summary>
     /// M11-007, <c>MarkObjectUnknown</c> 0x00507128: the walk is UPWARD only. Two consecutive misses of the middle cube of a stack of three delete it and the cube above it (0x0050724C..0x0050731E)
-    /// and the cube UNDER it survives: nothing underneath is ever looked at. Nothing is written to any PoseState, and the confirmer entry is not erased (0x005073F4..0x005073FC).
+    /// and the cube UNDER it survives: nothing underneath is ever looked at. Nothing is written to any PoseState. The later DeleteLocatedObjects notification erases the confirmer entry (0x0061D5A6).
     /// </summary>
     [Fact]
     public void M11_007_MarkObjectUnknownWalksUpwardOnlyAndTheLowerObjectSurvives()
@@ -738,7 +738,7 @@ public class M11RVisBuildTests : IDisposable
         Assert.Null(w.GetLocatedObjectById(1)); Assert.Null(w.GetLocatedObjectById(2));
         Assert.Equal(PoseState.Known, lower.PoseState);
         Assert.Equal(PoseState.Dirty, mid.PoseState);                              // no PoseState written
-        Assert.NotNull(w.EntryFor(1));                                             // the entry is kept
+        Assert.Null(w.EntryFor(1)); // checked DeleteLocatedObjects deferred DeletedObjectInCurrentOrigin erases it (0x0061D5A6)
         Assert.Equal(2, changes.Count);
         // marking the LOWER cube unknown takes the whole stack above it
         var w2 = new BlockWorld();
@@ -850,8 +850,11 @@ public class M11RVisBuildTests : IDisposable
     public void M11_004_TheNonUniquePredicateNarrowsTheAngleToo()
     {
         var w = new BlockWorld();
-        var first = w.AddMarkerlessObject(new Pose3d(Mat3.AboutZ(0.3), new Vec3(100, 0, 0)), ObjectType.ProxObstacle);
-        var second = w.AddMarkerlessObject(new Pose3d(Mat3.AboutZ(0.5), new Vec3(110, 0, 0)), ObjectType.ProxObstacle);
+        var first = w.AddMarkerlessObject(new Pose3d(Mat3.AboutZ(0.3), new Vec3(1100, 0, 0)), ObjectType.ProxObstacle);
+        var second = w.AddMarkerlessObject(new Pose3d(Mat3.AboutZ(0.5), new Vec3(2110, 0, 0)), ObjectType.ProxObstacle);
+        // Isolate FindObjectMatchForObservation: the native AddMarkerless intersection gate would drop touching candidates.
+        first.SetPose(new Pose3d(first.Pose.Rotation,new Vec3(100,0,25)),-1,PoseState.Known);
+        second.SetPose(new Pose3d(second.Pose.Rotation,new Vec3(110,0,25)),-1,PoseState.Known);
         var observed = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(108, 0, 25)) };
         Assert.Same(first, w.FindObjectMatchForObservation(observed));               // second is 2 mm off but turned 0.5 > 0.3
         observed.ObjectId = first.ObjectId;                                           // its own ID is ignored
@@ -1028,8 +1031,11 @@ public class M11RVisBuildTests : IDisposable
     public void M11_004_ForANonUniqueTypeTheClosestLocatedObjectWins(double firstX, double secondX)
     {
         var w = new BlockWorld();
-        var first = w.AddMarkerlessObject(new Pose3d(Mat3.Identity, new Vec3(firstX, 0, 0)), ObjectType.ProxObstacle);
-        var second = w.AddMarkerlessObject(new Pose3d(Mat3.Identity, new Vec3(secondX, 0, 0)), ObjectType.ProxObstacle);
+        var first = w.AddMarkerlessObject(new Pose3d(Mat3.Identity, new Vec3(firstX+1000, 0, 0)), ObjectType.ProxObstacle);
+        var second = w.AddMarkerlessObject(new Pose3d(Mat3.Identity, new Vec3(secondX+2000, 0, 0)), ObjectType.ProxObstacle);
+        // Isolate FindObjectMatchForObservation: the native AddMarkerless intersection gate would drop touching candidates.
+        first.SetPose(new Pose3d(first.Pose.Rotation,new Vec3(firstX,0,25)),-1,PoseState.Known);
+        second.SetPose(new Pose3d(second.Pose.Rotation,new Vec3(secondX,0,25)),-1,PoseState.Known);
         // the observation is 2 mm from the one at 110 and 8 from the one at 100; the markerless objects stand on the ground, half their height up
         var observed = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(108, 0, 25)) };
         var match = w.FindObjectMatchForObservation(observed);

@@ -644,6 +644,34 @@ public static class ObjectFootprint
         };
     }
 
+    private static readonly (float X,float Y,float Z)[] MarkerlessCanonicalCorners = { (-.5f,-.5f,.5f),(.5f,-.5f,.5f),(-.5f,-.5f,-.5f),(.5f,-.5f,-.5f),
+        (-.5f,.5f,.5f),(.5f,.5f,.5f),(-.5f,.5f,-.5f),(.5f,.5f,-.5f) };
+    // fidelity: M11-062 — 0x005025F0 / 0x00502C32; reuse M13-024, never a second minAreaRect.
+    internal static Quadrilateral MarkerlessBoundingQuadXY(Vec3 size, Pose3d pose, float padding, Action<string> missing)
+    {
+        var signs = MarkerlessCanonicalCorners;
+        float sx = (float)size.X + 2f*padding, sy = (float)size.Y + 2f*padding, sz = (float)size.Z + 2f*padding;
+        var r = pose.Rotation; var pts = new List<Point2f>(8);
+        foreach (var s in signs)
+        {
+            float x = s.X*sx, y = s.Y*sy, z = s.Z*sz;
+            pts.Add(new Point2f((x*(float)r[0,0] + y*(float)r[0,1]) + z*(float)r[0,2],
+                (x*(float)r[1,0] + y*(float)r[1,1]) + z*(float)r[1,2]));
+        }
+        var c = MinAreaRectF.Points(MinAreaRectF.Compute(pts));
+        float cx = (((c[0].X+c[2].X)+c[1].X)+c[3].X)*.25f, cy = (((c[0].Y+c[2].Y)+c[1].Y)+c[3].Y)*.25f;
+        var angles = c.Select(p => MathF.Atan2(p.Y-cy,p.X-cx)).ToArray();
+        if (angles.Distinct().Count() != 4)
+        {
+            missing("M11-062 / M13-023: SortCornersClockwise equal-angle libc++ tie order 0x004E8260/0x004E85BE remains unbuilt");
+            throw new NotSupportedException("MISSING: M13-023 SortCornersClockwise tie order; footprint stopped");
+        }
+        var sorted = SortCornersClockwise(c);
+        float tx = (float)pose.Translation.X, ty = (float)pose.Translation.Y;
+        Point2f T(Point2f p) => new(p.X+tx,p.Y+ty);
+        return new Quadrilateral(T(sorted[0]),T(sorted[3]),T(sorted[1]),T(sorted[2]));
+    }
+
     private static bool SignBit(float v) => BitConverter.SingleToInt32Bits(v) < 0;
 
     /// <summary><c>Vision::ObservableObject::GetBoundingQuadXY</c> 0x0087713A over a corner list.</summary>

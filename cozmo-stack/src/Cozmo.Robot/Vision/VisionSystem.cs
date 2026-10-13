@@ -1,3 +1,4 @@
+using Cozmo.Transport;
 using System.Diagnostics;
 using Cozmo.Protocol;
 using Cozmo.Robot.Animation;
@@ -58,7 +59,7 @@ public sealed class VisionSystem : IDisposable
         // fidelity: M11-041
         // The world keeps its own connected objects (BlockWorld::AddConnectedActiveObject, fed by ObjectConnectionState below), and
         // reads the carrying and treads state from the components that own them.
-        World = new BlockWorld();
+        World = robot.LocalizationWorld; // preserve constructor map/origin owner, M13-032
         World.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
         World.Log += robot.Engine.EmitStackLog;
         robot.LocalizationWorld = World;
@@ -415,6 +416,7 @@ public sealed class VisionSystem : IDisposable
     public int FramesDropped { get; private set; }
     public VisionFrameResult? LastResult { get; private set; }
 
+    internal event Action<VisionFrameResult>? DockingMarkersProcessed; // M11-064 UpdateVisionMarkers, before LocalHandlerFailed
     public event Action<VisionFrameResult>? FrameProcessed;
     public event Action<string>? Log;
     public SourceLogSink? SourceLog { get; set; }
@@ -981,6 +983,17 @@ public sealed class VisionSystem : IDisposable
                 var worldFrame = World.UpdateObservedMarkers(keptMarkers, camera, timestamp, pd);
                 objects = worldFrame.Objects;
                 forgotten = worldFrame.Forgotten;
+                // fidelity: M11-064 — warning, docking signal (even after failure), then caller's error.
+                if (worldFrame.Status != 0)
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.UpdateVisionResults.BlockWorldUpdateFailed","");
+                if (keptMarkers.Count != 0)
+                    DockingMarkersProcessed?.Invoke(new VisionFrameResult(imageId,timestamp,pd,keptMarkers,objects,forgotten,sw.Elapsed));
+                if (worldFrame.Status != 0)
+                {
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionComponent.UpdateAllResults.LocalHandlerFailed","DetectingMarkers Failed");
+                    EngineErrorState.StoreAndMaybeBreak();
+                }
+
             }
             else { objects = Array.Empty<ObjectObservation>(); forgotten = Array.Empty<ObservableObject>(); }
             if (RemovedSince(removal)) return null;

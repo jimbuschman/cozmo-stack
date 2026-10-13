@@ -90,6 +90,15 @@ public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, 
 /// </summary>
 public sealed class MemoryMap
 {
+    internal readonly SourceQuadTree Tree = new();
+    internal SourceLogSink? SourceLog { get => Tree.SourceLog; set => Tree.SourceLog = value; }
+    internal Action<string>? Missing { get => Tree.Missing; set => Tree.Missing = value; }
+    public double ExploredRegionAreaM2 => Tree.Processor.ExploredArea;
+    internal uint LastObservedTime => Tree.Root.Content.Data.Last;
+    // fidelity: M13-030 — native insertion; legacy region queries remain M11-046.
+    internal Action<Vec2[],CliffMapData>? CliffInsertForTest;
+    internal void InsertCliff(Vec2[] polygon, CliffMapData data)
+    { CliffInsertForTest?.Invoke(polygon,data); Tree.Insert(polygon,data,1); }
     private readonly List<MemoryMapRegion> _regions = new();
     private readonly object _gate = new();
 

@@ -1,3 +1,4 @@
+using Cozmo.Transport;
 using Cozmo.Protocol;
 using Cozmo.Robot.Manipulation;
 
@@ -289,8 +290,16 @@ public sealed class ObservableObject
     /// </summary>
     internal void SetPose(Pose3d pose, double fromDistance, PoseState state)
     {
-        Pose = pose; FromDistance = fromDistance; PoseState = state;
+        Pose = pose; PoseState = state;
+        if (fromDistance >= 0) FromDistance = fromDistance;
+        PoseNameNode ??= new PoseTreeNameNode("Object");
+        PoseNameNode.Name = "Object_" + unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
+
+    // fidelity: M11-062 — InitPose 0x004EF562..0x004EF57E: virtual SetPose, then obj+0x50 = 1.
+    internal byte PoseInitialized;
+    internal void InitPose(Pose3d pose, PoseState state)
+    { SetPose(pose,-1,state); PoseInitialized = 1; }
 
     /// <summary>
     /// <c>Clone</c> (vtable +0x00). <c>ActiveCube::Clone</c> 0x004E3954 is a fresh <c>ActiveCube(type)</c>, not a copy: no ID, no
@@ -571,7 +580,8 @@ public sealed class ObservableObject
 public sealed record ObjectObservation(ObservableObject Object, uint Timestamp, IReadOnlyList<MarkerType> Markers, Pose3d PreviousPose, PoseState PreviousState, bool IsNew, double RmsPx);
 
 /// <summary>What <c>BlockWorld::UpdateObservedMarkers</c> produced for one frame.</summary>
-public sealed record BlockWorldFrameResult(IReadOnlyList<ObjectObservation> Objects, IReadOnlyList<ObservableObject> Forgotten);
+public sealed record BlockWorldFrameResult(IReadOnlyList<ObjectObservation> Objects, IReadOnlyList<ObservableObject> Forgotten)
+{ public uint Status { get; init; } }
 
 /// <summary>One <c>PoseChange</c> list node (BlockWorld+0x68): the object's ID, its OLD pose (+0x10) and its OLD pose state (+0x1C).</summary>
 internal readonly record struct PoseChange(uint Id, Pose3d Pose, PoseState State);
@@ -693,6 +703,39 @@ public sealed class BlockWorld
     internal string RootName(ObservableObject obj) => obj.PoseNameNode?.FindRoot(SourceLog).Name ?? PoseOriginNames.NameOf(obj.OriginId);
 
 
+    // fidelity: M13-032, M13-031
+    internal SourceMapComponent Maps { get; private set; } = new();
+    internal void ConstructMapComponent() => Maps = new SourceMapComponent();
+    internal Func<uint>? RobotTimestamp;
+    internal Func<uint, PoseTreeNameNode?>? OriginNode;
+    internal Func<bool>? RobotPoseTreeIsUnbuilt;
+    internal uint RobotId = 1;
+    internal uint? SelectedObjectId;
+    internal Func<uint?>? CarriedPrimaryId;
+    internal Action<bool>? UnsetCarryingObjects;
+    internal Func<uint>? LocalizeRobotResultForTest;
+    internal Action<uint, PoseState>? SetObjectPoseChanged;
+    public event Action<uint>? LocatedObjectDeleted;
+    internal bool PoseChangeWindow => _appendPoseChanges;
+    internal int PoseChangeCount => _poseChanges.Count;
+    private float _lastPlayAreaTime;
+    private void Source(EngineLogLevel level, string? channel, string key, string text) => SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(level, channel, key, text);
+    private void Missing(string text) => Log?.Invoke("MISSING: " + text);
+    internal void CreateLocalizedMemoryMap(uint origin)
+    {
+        Maps.SourceLog = SourceLog; Maps.Missing = text => Log?.Invoke(text);
+        Maps.CreateLocalizedMemoryMap(origin, id => id != CurrentOriginId && !_located.Values.Any(o => o.OriginId == id && CanBeUsedForLocalization(o)));
+    }
+    internal void OnRobotDelocalizedMapOrigin(uint origin)
+    {
+        CurrentOriginId = origin;
+        lock (_gate)
+        {
+            var zombies = _located.Values.Select(o=>o.OriginId).Distinct().Where(id => id != origin && !_located.Values.Any(o=>o.OriginId == id && CanBeUsedForLocalization(o))).ToHashSet();
+            foreach (var key in _located.Keys.Where(k=>zombies.Contains(k.Origin)).ToArray()) _located.Remove(key);
+        }
+        CreateLocalizedMemoryMap(origin); SelectedObjectId = null;
+    }
     private readonly object _gate = new();
     /// <summary>BlockWorld+0x3C: <c>map&lt;origin, map&lt;family, map&lt;type, map&lt;ObjectID, shared_ptr&gt;&gt;&gt;&gt;</c>, walked in ascending key order.</summary>
     private readonly SortedDictionary<(uint Origin, int Family, int Type, int Id), ObservableObject> _located = new();
@@ -898,7 +941,7 @@ public sealed class BlockWorld
             Log?.Invoke($"Robot.LocalizeToObject.UnlocalizedObject: Refusing to localize to object {existing.ObjectId}, which claims not to be localizable.");
             return 1;
         }
-        Log?.Invoke("MISSING: M4-037 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); localization helpers remain unbuilt");
+        Log?.Invoke("MISSING: M4-037 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt");
         UnbuiltLocalizeToObjectCalls++;
         return SetLocalizedTo(existing) ? 0u : 1u;
     }
@@ -949,13 +992,15 @@ public sealed class BlockWorld
     private bool OnTreadsNow() => OnTreads?.Invoke() ?? true;
 
     /// <summary>Creates a world with no connected objects; they arrive through <see cref="AddConnectedActiveObject"/>.</summary>
-    public BlockWorld() { }
+    public BlockWorld() : this(deferMap: false) { }
+    private readonly bool _deferMap; // host fixture: production waits for Robot::Delocalize
+    internal BlockWorld(bool deferMap) { _deferMap = deferMap; if (!deferMap) CreateLocalizedMemoryMap(1); }
 
     /// <summary>
     /// The earlier constructor took a delegate that answered "which cubes are connected". The engine keeps them in
     /// <c>m_connectedObjects</c>, filled by <c>AddConnectedActiveObject</c> (M11-041), so the delegate is not read.
     /// </summary>
-    public BlockWorld(Func<IEnumerable<(uint ObjectId, ObjectType Type)>> connectedActiveObjects) { }
+    public BlockWorld(Func<IEnumerable<(uint ObjectId, ObjectType Type)>> connectedActiveObjects) : this() { }
 
     public event Action<ObjectObservation>? ObjectObserved;
     // fidelity: M11-038
@@ -980,48 +1025,111 @@ public sealed class BlockWorld
     /// (0, 0, size.z / 2) - the <c>vmov.f32 s0, #0.5</c> and the multiply at 0x006223CC, which stands the
     /// box on the ground - and multiplies the pose given by it before adding it to the world.
     ///
-    /// The object id is this stack's (LOCAL): markerless objects are counted from
-    /// <see cref="FirstMarkerlessObjectId"/> upwards, since they have no marker and no cube radio to take
-    /// an id from. The engine calls the virtual <c>SetID</c> there (M11-042, unread).
+    /// Markerless IDs use the same process counter as cubes. The angle getter's pi/4 is overridden by pi,
+    /// all overlap matches are stamped, and the map quad uses the original input pose.
     /// </summary>
-    public ObservableObject AddMarkerlessObject(Pose3d pose, ObjectType type)
+    // fidelity: M11-062, M13-030, M4-038
+    public ObservableObject AddMarkerlessObject(Pose3d pose, ObjectType type) => AddMarkerless(pose, type, RobotTimestamp?.Invoke() ?? 0);
+
+    private ObservableObject AddMarkerless(Pose3d input, ObjectType type, uint timestamp)
     {
-        var size = MarkerlessObject.SizeByType(type) ?? throw new ArgumentException($"{type} is not a markerless object type", nameof(type));
-        var standing = pose.Compose(new Pose3d(Mat3.Identity, new Vec3(0, 0, size.Z * 0.5)));
-        lock (_gate)
+        var size = MarkerlessObject.SizeByType(type) ?? throw new ArgumentException($"{type} is not markerless", nameof(type));
+        var candidate = new ObservableObject(type, Array.Empty<KnownMarker>()) { OriginId = CurrentOriginId, LastObservedTimestamp = timestamp };
+        Missing("M11-062 Robot::GetPose VERIFY root checks 0x004EA398..0x004EA46C; flattened host pose has no full Pose3d root-ID owner");
+        var standing = input.Compose(new Pose3d(Mat3.Identity, new Vec3(0, 0, (float)size.Z * 0.5f)));
+        candidate.InitPose(standing, PoseState.Known); // InitPose before SetID: Object_-1.
+        candidate.PoseNameNode!.Parent = OriginNode?.Invoke(CurrentOriginId) ?? new PoseTreeNameNode(PoseOriginNames.NameOf(CurrentOriginId));
+        // The flattened pose owner cannot reproduce a non-flat Pose3d tree reparenting.
+        if (RobotPoseTreeIsUnbuilt?.Invoke() == true) Missing("M11-062 / M12 pose records: Pose3d reparent to Robot::GetPose parent 0x00622418; tree transform unavailable");
+        List<ObservableObject> overlaps;
+        lock (_gate) overlaps = _located.Values.Where(o => o.OriginId == CurrentOriginId && o.Family == candidate.Family && o.Type == type)
+            .Where(o => MarkerlessSameAs(o, candidate, new Vec3(size.X,size.Y,size.Z))).ToList();
+        if (overlaps.Count != 0)
         {
-            uint id = _nextMarkerlessId++;
-            var obj = new ObservableObject(id, type, Array.Empty<KnownMarker>()) { Pose = standing, PoseState = PoseState.Known, OriginId = CurrentOriginId };
-            _located[KeyOf(obj)] = obj;
-            Log?.Invoke($"BlockWorld.AddMarkerlessObject: {type} {id} at {standing}");
-            return obj;
+            foreach (var match in overlaps) match.LastObservedTimestamp = timestamp;
+            return overlaps[0]; // Host return view; native AddMarkerlessObject returns status 0.
         }
+        var quad = MarkerlessQuad(candidate, standing);
+        var filter = new BlockWorldFilter();
+        if (LocalizedToObjectId is not null) filter.AllowedFamilies.UnionWith(new[] { ObjectFamily.LightCube, ObjectFamily.MarkerlessObject });
+        filter.Predicates.Add(o => QuadFor(o).Intersects(quad));
+        if (FindLocatedMatchingObjects(filter).Count != 0) return candidate;
+        candidate.SetID();
+        AddLocatedObject(candidate);
+        _didObjectsChange = true;
+        if (type == ObjectType.CliffDetection)
+        {
+            var robotPose = CurrentRobotPose?.Invoke();
+            if (robotPose is { } rp)
+            {
+                var r = rp.Rotation;
+                float nx = ((float)r[0,0]*1f + (float)r[0,1]*0f) + (float)r[0,2]*0f;
+                float ny = ((float)r[1,0]*1f + (float)r[1,1]*0f) + (float)r[1,2]*0f;
+                var data = new CliffMapData(new Vec2(nx,ny),timestamp); // constructor before GetBoundingQuad
+                var mapQuad = MarkerlessQuad(candidate, input); // r8: input, not standing/object pose.
+                Maps.Current.InsertCliff(Enumerable.Range(0, 4).Select(i => new Vec2(mapQuad[i].X, mapQuad[i].Y)).ToArray(),data);
+            }
+            else Missing("M13-030 / M11-053: Robot::GetPose 0x006225A8 current pose unavailable; cliff normal/insert skipped");
+        }
+        else if (type == ObjectType.ProxObstacle) Missing("M13-030: MemoryMapData_ProxObstacle 0x00622646..0x006226E6 has no checked stack port");
+        _timeOfLastChange = (uint)Math.Max((double)timestamp, Maps.Current.LastObservedTime);
+        return candidate;
     }
 
-    // fidelity: M4-038
-    internal void AddCliffFromCheckedPose(Pose3d input, uint timestamp, Action<string> missing)
+    internal void AddCliffFromCheckedPose(Pose3d input, uint timestamp, Action<string> missing) => AddMarkerless(input, ObjectType.CliffDetection, RobotTimestamp?.Invoke() ?? timestamp);
+
+    private bool MarkerlessSameAs(ObservableObject existing, ObservableObject candidate, Vec3 size)
     {
-        var size = MarkerlessObject.SizeByType((ObjectType)15)!.Value;
-        var candidate = input.Compose(new Pose3d(Mat3.Identity, new Vec3(0, 0, size.Z * 0.5)));
-        // Candidate family 6/type15, activeID -1, factoryID0; the first unknown helper is InitPose(state1).
-        // No object is inserted: its acceptance and identity depend on the unrecovered helpers below.
-        missing("MISSING: M11-062 AddMarkerlessObject(type15) 0x00622380: InitPose/SetPose(state1) unbuilt helper; candidate not inserted; later family-6 operator[] emplace 0x0062249A and Robot::GetPose VERIFY checks also missing");
-        missing("MISSING: M11-062 cliff overlap IsSameAs 0x0061FD8C/0x00502B08 and intersection predicate 0x00622908..0x0062297C; acceptance not guessed (allowed families 2,6 when localized)");
-        missing("MISSING: M11-062 cliff SetID, DeleteIntersectingObjects, GetBoundingQuad and broadcast 0x008CAD1C; BlockWorld.AddLocatedObject and robot.object_located wait for a source-established insertion");
-        missing("MISSING: M13-030 cliff MemoryMap insert/QuadTree/helper+0x38 0x00684984/0x006226EA; no navigation-map mutation");
+        // Getter order is distance, angle, then type/family. IsSameAs overrides the getter with pi (0x40490FDB).
+        var tol = new Vec3((float)size.X * 0.5f, (float)size.Y * 0.5f, (float)size.Z * 0.5f);
+        _ = BitConverter.UInt32BitsToSingle(0x3F490FDB);
+        if (existing.Type != candidate.Type || existing.Family != candidate.Family) return false;
+        if (ReferenceEquals(existing, candidate)) return true;
+        Pose3d otherInFrame = candidate.Pose;
+        var parent = existing.PoseNameNode?.Parent;
+        if (parent is not null && ReferenceEquals(parent,candidate.PoseNameNode))
+            otherInFrame = Pose3d.Identity; // third checked frame case: temp identity, parent=other
+        else if (existing.OriginId != candidate.OriginId)
+        {
+            if (parent is null)
+                Source(EngineLogLevel.Warning, null, "Pose3d.IsSameAs.PosesHaveDifferentOrigins", "Could not get other pose w.r.t. this pose. Returning not same.");
+            return false; // parented conversion failure is silent
+        }
+        else if (parent is null || parent.Parent is not null || RobotPoseTreeIsUnbuilt?.Invoke() == true)
+        {
+            const string gap = "M11-062 / M12 pose records: IsSameAs_WithAmbiguity GetWithRespectTo 0x00846F7A..0x00846FDE; no-parent/deep-tree conversion has no checked pose-tree owner";
+            Missing(gap);
+            throw new NotSupportedException("MISSING: " + gap);
+        }
+        var a = existing.Pose.Translation; var b = otherInFrame.Translation;
+        float x = (float)b.X - (float)a.X, y = (float)b.Y - (float)a.Y, z = (float)b.Z - (float)a.Z;
+        float epsilon = BitConverter.UInt32BitsToSingle(0x3727C5AC);
+        if (MathF.Abs((float)tol.X - (float)tol.Y) < epsilon && MathF.Abs((float)tol.X - (float)tol.Z) < epsilon)
+            return (x*x + y*y) + z*z <= (float)tol.X * (float)tol.X;
+        var r = existing.Pose.Rotation;
+        float dx = ((float)r[0,0]*x + (float)r[1,0]*y) + (float)r[2,0]*z;
+        float dy = ((float)r[0,1]*x + (float)r[1,1]*y) + (float)r[2,1]*z;
+        float dz = ((float)r[0,2]*x + (float)r[1,2]*y) + (float)r[2,2]*z;
+        // Native bgt rejects; NaN does not compare greater. AngleTol >= pi returns true, no ambiguity walk.
+        return !(MathF.Abs(dx) > tol.X || MathF.Abs(dy) > tol.Y || MathF.Abs(dz) > tol.Z);
     }
+
+    private Quadrilateral MarkerlessQuad(ObservableObject obj, Pose3d pose)
+    { var s = MarkerlessObject.SizeByType(obj.Type)!.Value; return ObjectFootprint.MarkerlessBoundingQuadXY(new Vec3(s.X,s.Y,s.Z), pose, 0, Missing); }
+    private Quadrilateral QuadFor(ObservableObject obj) => obj.Family == ObjectFamily.MarkerlessObject ? MarkerlessQuad(obj, obj.Pose)
+        : obj.Type == ObjectType.Charger_Basic ? ObjectFootprint.ChargerBoundingQuadXY(obj.Pose, 0) : Footprint.GetBoundingQuadXY(obj, obj.Pose, 0);
 
     /// <summary>The collision obstacle an unexpected movement leaves where the robot was blocked.</summary>
     public ObservableObject AddCollisionObstacle(Pose3d pose) => AddMarkerlessObject(pose, ObjectType.CollisionObstacle);
 
     /// <summary>LOCAL: where this stack starts numbering markerless objects, clear of the cube ids.</summary>
     public const uint FirstMarkerlessObjectId = 1000;
-    private uint _nextMarkerlessId = FirstMarkerlessObjectId;
+
 
     // fidelity: M1-025, M1-015
     /// <summary>
     /// Back to the state right after construction, for a removed robot (CB33, CC26, CC27): no objects, no connected objects, no
-    /// confirmer entries, markerless ids from <see cref="FirstMarkerlessObjectId"/> again. No event is raised. The tuning properties and
+    /// confirmer entries. The process-wide markerless ID counter is retained. No pose event is raised. The tuning properties and
     /// subscribers are kept. The process-static ObjectID counter, unique-type map and warning cooldowns are kept too: the engine's
     /// live in .bss and outlive the Robot.
     /// </summary>
@@ -1038,7 +1146,11 @@ public sealed class BlockWorld
             _didObjectsChange = false;
             _markerTimestamp = 0;
             _lastImageTimestamp = 0;
-            _nextMarkerlessId = FirstMarkerlessObjectId;
+            _lastPlayAreaTime = 0; _timeOfLastChange = 0; SelectedObjectId = null;
+            Maps = new SourceMapComponent(); // discard removed robot's owner; next Robot constructs its own
+            if (!_deferMap) CreateLocalizedMemoryMap(1);
+            Missing("M11-055 / M11-045 MapComponent destructor 0x0067DC00..0x0067DC28: recursive native teardown effects remain unread; managed owner discarded");
+
             _localizedTo = ObservableObject.UnassignedId;
             _movedSinceLocalized = 0;
             _robot2C4 = 0; _robot2C5 = 0; _robot2C8 = -1.0f;
@@ -1216,12 +1328,20 @@ public sealed class BlockWorld
     // fidelity: M11-036, M11-037, M11-006, M11-010
     public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
     {
+        // fidelity: M11-064 — event precedes queue clear; float unordered skips.
+        float now = (float)(BaseStationSeconds?.Invoke() ?? Environment.TickCount64 * 0.001);
+        if (_lastPlayAreaTime + 60f < now)
+        {
+            _lastPlayAreaTime = now;
+            Source(EngineLogLevel.Event, null, "robot.play_area_size", Maps.Current.ExploredRegionAreaM2.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));
+        }
         // Robot::GetLastImageTimeStamp: the empty-list branch (0x00625028), UpdatePoseOfStackedObjects and UpdateMarkerlessObjects (0x0062521A) use it
         uint lastImage = LastImageTimestamp?.Invoke() ?? timestamp;
         lock (_gate) { _poseChanges.Clear(); _appendPoseChanges = true; _lastImageTimestamp = lastImage; }
         var observations = new List<ObjectObservation>();
         var forgotten = new List<ObservableObject>();
         bool r7 = true;
+        uint resultStatus = 0;
         if (markers.Count == 0)
         {
             _markerTimestamp = 0;                                                  // 0x00625024
@@ -1243,7 +1363,9 @@ public sealed class BlockWorld
             uint status = AddAndUpdateObjects(instances, camera, ts, pd, observations);   // 0x0062505A
             if (status != 0)
             {
-                Log?.Invoke("BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed");
+                Source(EngineLogLevel.Error, null, "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed", "");
+                EngineErrorState.StoreAndMaybeBreak();
+                resultStatus = status;
                 r7 = false;
             }
             if (r7)
@@ -1252,7 +1374,7 @@ public sealed class BlockWorld
                 UpdatePoseOfStackedObjects();                                      // 0x006250D0
             }
         }
-        if (!r7) return new BlockWorldFrameResult(observations, forgotten);       // 0x00625220: the error return skips the tail
+        if (!r7) return new BlockWorldFrameResult(observations, forgotten) { Status = resultStatus };       // 0x00625220: the error return skips the tail
         lock (_gate) _appendPoseChanges = false;                                   // 0x006250D8
         CollisionDirtyPass();
         BlockConfigurationManagerUpdate?.Invoke();                                 // 0x0062520C
@@ -1425,7 +1547,7 @@ public sealed class BlockWorld
             _didObjectsChange = true;                                              // 0x006211E6
             _timeOfLastChange = unchecked((uint)Math.Max((double)timestamp, MemoryMapTimeOfLastChange?.Invoke() ?? 0.0));   // 0x00621214: AddAndUpdateObjects's own ts argument (0x00620B9C)
         }
-        return potentials.LocalizeRobot();                                         // 0x00621304
+        return LocalizeRobotResultForTest?.Invoke() ?? potentials.LocalizeRobot();                                         // 0x00621304
     }
 
     /// <summary>
@@ -1896,18 +2018,67 @@ public sealed class BlockWorld
     /// the pose-changed broadcast's arguments) are unread (M11-042).
     /// </summary>
     // fidelity: M11-007, M11-042
+    // fidelity: M11-062
     internal List<ObservableObject> DeleteLocatedObjects(BlockWorldFilter filter)
     {
+        // Null entries are erased before ID/predicate filtering (native 0x0061D402).
+        lock (_gate)
+        foreach (var pair in _located.Where(kv => kv.Value is null).ToArray())
+        {
+            Source(EngineLogLevel.Warning, null, "BlockWorld.DeleteLocatedObjects.NullObject",
+                $"Deleting null object in origin {unchecked((int)pair.Key.Origin)} with Family:{(ObjectFamily)pair.Key.Family} Type:{(ObjectType)pair.Key.Type} ID:{pair.Key.Id}");
+            _located.Remove(pair.Key);
+        }
         var victims = FindLocatedMatchingObjects(filter);
         var deleted = new List<ObservableObject>();
+        var notifications = new List<(ObservableObject Original,ObservableObject Clone,Pose3d Pose,PoseState State)>();
         foreach (var o in victims)
         {
-            PoseState prev = o.PoseState;
+            if (o.OriginId == CurrentOriginId)
+            {
+                ClearLocatedObjectHelper(o);
+                var clone = o.Clone(); clone.ObjectId = o.ObjectId;
+                if (clone.IsActive) { clone.ActiveId = o.ActiveId; clone.FactoryId = o.FactoryId; }
+                notifications.Add((o,clone,o.Pose,o.PoseState));
+            }
             lock (_gate) { if (!_located.Remove(KeyOf(o))) continue; }
             deleted.Add(o);
-            PoseStateChanged?.Invoke(o, prev, PoseState.Unknown);
+        }
+        foreach (var n in notifications)
+        {
+            lock (_gate) { _confirmations.Remove(unchecked((int)n.Clone.ObjectId)); n.Original.Confirmation = null; } // DeletedObjectInCurrentOrigin, before broadcast
+            BroadcastObjectPoseChanged(n.Clone,n.Pose,n.State);
+            LocatedObjectDeleted?.Invoke(n.Clone.ObjectId); // RobotDeletedLocatedObject, uint32/Size 4 API view
         }
         return deleted;
+    }
+
+    internal void ClearLocatedObjectHelper(ObservableObject? obj)
+    {
+        if (obj is null)
+        { Source(EngineLogLevel.Warning,null,"BlockWorld.ClearObjectHelper.NullObjectPointer","BlockWorld asked to clear a null object pointer."); return; }
+        if (LocalizedToObjectId == obj.ObjectId)
+        {
+            Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.ClearObjectHelper.LocalizeRobotToNothing",
+                $"Setting robot {RobotId} as localized to no object, because it is currently localized to {obj.Type} object with ID={unchecked((int)obj.ObjectId)}, which is about to be cleared.");
+            SetLocalizedTo(null);
+        }
+        if ((CarriedPrimaryId?.Invoke() ?? (Carrying(obj.ObjectId) ? obj.ObjectId : null)) == obj.ObjectId)
+        {
+            Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.ClearObjectHelper.ClearingCarriedObject",
+                $"Clearing {obj.Type} object {unchecked((int)obj.ObjectId)} which robot {RobotId} thinks it is carrying.");
+            if (UnsetCarryingObjects is { } unset) unset(false);
+            else Missing("M12-007/M12-008: UnSetCarryingObjects(false) 0x00625D32 owner unavailable");
+        }
+        if (SelectedObjectId == obj.ObjectId)
+        {
+            Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.ClearObjectHelper.ClearingSelectedObject",$"Clearing {obj.Type} object {unchecked((int)obj.ObjectId)} which is currently selected.");
+            SelectedObjectId = null;
+        }
+        var top = FindObjectOnTopOrUnderneathHelper(obj,15,true);
+        if (top is not null) ClearLocatedObjectHelper(top);
+        _didObjectsChange = true;
+        _timeOfLastChange = (uint)Math.Max((double)(RobotTimestamp?.Invoke() ?? 0),Maps.Current.LastObservedTime);
     }
 
     /// <summary>
@@ -1924,11 +2095,16 @@ public sealed class BlockWorld
         if (connected is not null)
         {
             if (obj.IsActive) { obj.ActiveId = connected.ActiveId; obj.FactoryId = connected.FactoryId; }
-            else Log?.Invoke("ObservableObject.SetActiveID.NotActive: the object is not active");
+            else
+            {
+                Source(EngineLogLevel.Warning,null,"ObservableObject.SetActiveID.NotActive",$"ID: {unchecked((int)obj.ObjectId)}");
+                Source(EngineLogLevel.Warning,null,"ObservableObject.SetFactoryID.NotActive",$"ID: {unchecked((int)obj.ObjectId)}");
+            }
         }
         if (obj.Type == ObjectType.Block_LIGHTCUBE_GHOST)
         {
-            Log?.Invoke("BlockWorld.AddLocatedObject.AddingGhostObject");
+            Source(EngineLogLevel.Error,null,"BlockWorld.AddLocatedObject.AddingGhostObject","Adding ghost objects to BlockWorld is not permitted");
+            EngineErrorState.StoreAndMaybeBreak();
             return;
         }
         DeleteIntersectingObjects(obj);
@@ -1939,30 +2115,56 @@ public sealed class BlockWorld
         }
         var link = EntryFor(obj.ObjectId);
         if (link is not null) obj.Confirmation = link;
-        Log?.Invoke($"Adding new {obj.Type} object and ID={(int)obj.ObjectId} ActID={obj.ActiveId} FacID=0x{obj.FactoryId:x} at {obj.Pose.Translation}");
+        Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.AddLocatedObject",string.Format(System.Globalization.CultureInfo.InvariantCulture,
+            "Adding new {0}{1} object and ID={2} ActID={3} FacID=0x{4:x} at ({5:F1}, {6:F1}, {7:F1}), in frame {8}.",
+            obj.IsActive ? "active " : "", obj.Type, unchecked((int)obj.ObjectId), obj.ActiveId, obj.FactoryId, (double)(float)obj.Pose.Translation.X,(double)(float)obj.Pose.Translation.Y,(double)(float)obj.Pose.Translation.Z,RootName(obj)));
+        Source(EngineLogLevel.Event,null,"robot.object_located",obj.Type.ToString());
         BroadcastObjectPoseChanged(obj, null, PoseState.Unknown);
     }
 
     /// <summary>
-    /// <c>DeleteIntersectingObjects(obj, 0, filter)</c>, called by <c>AddLocatedObject</c> at 0x00622C84. NOT BUILT: its body is unread and is in
-    /// no record; this stub makes the missing deletion visible through <see cref="UnbuiltDeleteIntersectingObjectsCalls"/>.
+    /// <c>DeleteIntersectingObjects(obj, 0, filter)</c>, called by <c>AddLocatedObject</c> at 0x00622C84. Built from M11-062; owned footprints can still stop the filter with a visible M13-023 MISSING.
     /// </summary>
     // fidelity: M11-042
-    private void DeleteIntersectingObjects(ObservableObject obj) => UnbuiltDeleteIntersectingObjectsCalls++;
+    // fidelity: M11-062
+    private void DeleteIntersectingObjects(ObservableObject obj)
+    {
+        var filter = new BlockWorldFilter(); filter.AllowedTypes.Add(ObjectType.ProxObstacle);
+        // Native allowed-type set {14}, even for the newly added object; current origin only.
+        try
+        {
+            var quad = QuadFor(obj);
+            filter.Predicates.Add(o => QuadFor(o).Intersects(quad));
+            DeleteLocatedObjects(filter);
+        }
+        catch (NotSupportedException e)
+        { Missing("M11-062 / M13-023 DeleteIntersectingObjects footprint 0x0062464C; " + e.Message); }
+    }
 
     /// <summary>
     /// <c>ObjectPoseConfirmer::BroadcastObjectPoseChanged(obj, oldPose, oldState)</c> 0x00506F88 reaches <c>BlockWorld::OnObjectPoseChanged</c>
     /// 0x00624808 (0x00506F98), which appends a <c>PoseChange</c> (the object's ID, old pose, old state) to the list at this+0x68 only while
-    /// this+0x74 is set (0x00624814) and passes the object's current state to the BlockConfigurationManager (0x0062488C..0x00624892). UNREAD
-    /// (M11-042): the body between the gate and the append, so a null old pose (<c>AddLocatedObject</c> passes one) appends nothing here.
+    /// this+0x74 is set (0x00624814) and passes the object's current state to the BlockConfigurationManager (0x0062488C..0x00624892). Built from M11-063: a first pose logs only during the flag window and never appends.
     /// <see cref="PoseStateChanged"/> carries the state change for this stack's consumers.
     /// </summary>
     // fidelity: M11-037, M11-042
+    // fidelity: M11-063, M11-037
     internal void BroadcastObjectPoseChanged(ObservableObject obj, Pose3d? oldPose, PoseState oldState)
     {
         lock (_gate)
-            if (_appendPoseChanges && oldPose is { } p) _poseChanges.Add(new PoseChange(obj.ObjectId, p, oldState));
-        if (oldState != obj.PoseState) PoseStateChanged?.Invoke(obj, oldState, obj.PoseState);
+        if (_appendPoseChanges)
+        {
+            if (_poseChanges.Any(c => c.Id == obj.ObjectId))
+                Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.OnObjectPoseChanged.MultipleChanges",$"Object '{unchecked((int)obj.ObjectId)}' is changing its pose again this tick. Ignoring second change");
+            else if (oldState == PoseState.Unknown)
+                Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.OnObjectPoseChanged.FirstPoseForObject",$"Object '{unchecked((int)obj.ObjectId)}' is setting its first pose. Not queueing change.");
+            else if (oldPose is { } pose) _poseChanges.Add(new PoseChange(obj.ObjectId,pose,oldState));
+            else Missing("M11-063 oldPose dereference 0x00624884: nonzero old state requires a pose");
+        }
+        if (SetObjectPoseChanged is { } set) set(obj.ObjectId,obj.PoseState);
+        else Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892 has no stack counterpart");
+        // MapComponent::UpdateObjectPose immediately returns for family 6, on both calls. No game message for a cliff.
+        if (obj.Family != ObjectFamily.MarkerlessObject && oldState != obj.PoseState) PoseStateChanged?.Invoke(obj,oldState,obj.PoseState);
     }
 
     // ------------------------------------------------------------------------- CheckForUnobservedObjects
@@ -2076,27 +2278,34 @@ public sealed class BlockWorld
     // fidelity: M11-037
     public void UpdatePoseOfStackedObjects()
     {
-        List<PoseChange> changes;
-        uint lastImage;
-        lock (_gate) { changes = _poseChanges.ToList(); lastImage = _lastImageTimestamp; }
-        foreach (var e in changes)
+        uint lastImage = _lastImageTimestamp;
+        for (int index = 0; ; index++)
         {
+            PoseChange e;
+            lock (_gate) { if (index >= _poseChanges.Count) break; e = _poseChanges[index]; }
             var obj = GetLocatedObjectByIdHelper(e.Id);
             if (obj is null)
             {
-                Log?.Invoke($"BlockWorld.UpdateStacks: '{(int)e.Id}' does not exist in current frame. Ignoring change.");
+                Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.UpdateStacks",$"'{(int)e.Id}' does not exist in current frame. Ignoring change.");
                 continue;
             }
             var clone = obj.Clone();
-            clone.SetPose(e.Pose, -1.0, e.State);
+            clone.InitPose(e.Pose, e.State);
             var stacked = FindObjectOnTopOrUnderneathHelper(clone, StackToleranceMm, true, obj.ObjectId,
                                                             c => unchecked(c.LastObservedTimestamp + 100) < lastImage);
-            if (stacked is null || Carrying(stacked.ObjectId) || changes.Any(c => c.Id == stacked.ObjectId)) continue;
+            if (stacked is null || Carrying(stacked.ObjectId) || _poseChanges.Any(c => c.Id == stacked.ObjectId)) continue;
+            if (RobotPoseTreeIsUnbuilt?.Invoke() == true)
+            { Missing("M11-037 / M12 pose records GetWithRespectTo/PreComposeWith/SetParent 0x0062196E..0x006219A8; stacked tree transform skipped"); continue; }
+            if (stacked.OriginId != obj.OriginId)
+            {
+                Source(EngineLogLevel.Warning,null,"BlockWorld.UpdateStacks.OriginMismatch","Can't obtain topPose wrt old, but that's exactly how we found the object in topPose.");
+                continue;
+            }
             var newPose = obj.Pose.Compose(stacked.Pose.WithRespectTo(e.Pose));
             if (AddObjectRelativeObservation(stacked, newPose, obj) != 0)
             {
-                Log?.Invoke("BlockWorld.UpdateStacks.AddRelativeObservationFailed: Giving up on rest of stack");
-                break;
+                Source(EngineLogLevel.Warning,null,"BlockWorld.UpdateRotationOfObjectsStackedOn.AddRelativeObservationFailed","Giving up on rest of stack");
+                continue;
             }
         }
     }
@@ -2138,7 +2347,9 @@ public sealed class BlockWorld
                                  .Where(o => o.ObjectId != skip && o.Family != ObjectFamily.MarkerlessObject && o.Family != ObjectFamily.CustomObject)
                                  .ToList();
         if (extra is not null) candidates = candidates.Where(extra).ToList();
-        return BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, candidates, onTop, toleranceMm);
+        var found = BlockConfigurationManager.FindObjectOnTopOrUnderneath(obj, candidates, onTop, toleranceMm, out bool standIn);
+        if (standIn) Missing("M13-007 / M13-023 FindObjectOnTopOrUnderneathHelper 0x0062601C: existing planar stand-in decided a footprint; exact recursive stack clear remains unbuilt");
+        return found;
     }
 
     /// <summary>
@@ -2630,6 +2841,8 @@ public sealed class BlockWorld
             PoseStateChanged?.Invoke(o, prev, PoseState.Unknown);
             forgotten.Add(o);
         }
+        CreateLocalizedMemoryMap(CurrentOriginId);
+        SelectedObjectId = null;
         return forgotten;
     }
 
