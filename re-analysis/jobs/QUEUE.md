@@ -55,11 +55,12 @@ anything. BOARD.md is history; this file is the live queue.
 | 24 | [B-M3M4-15](B-M3M4-15.md) | done 9a05e3a0; Opus check FAIL (research/20261013-b-m3m4-15-check.md), fixes in B-M3M4-18 |
 | 25 | [B-M5-16](B-M5-16.md) | done a941b3ec; Opus check FAIL (research/20261013-b-m5-16-check.md); M12-024 being read, fixes in B-M5-17 |
 | 26 | [B-M3M4-16](B-M3M4-16.md) | done 17466557; Opus check FAIL (research/20261013-b-m3m4-16-check.md), fixes in B-M3M4-19 and B-M3M4-20 |
-| 27 | [B-M3M4-17](B-M3M4-17.md) | done b8c595ea (pushed after a rebase); Opus check running |
+| 27 | [B-M3M4-17](B-M3M4-17.md) | done b8c595ea; Opus check FAIL (research/20261013-b-m3m4-17-check.md), fixes in B-M3M4-21 |
 | 28 | [B-M3M4-18](B-M3M4-18.md) | open, after B-M3M4-17 (M2-018 dispatch order, BlockTapFilter warnings, device-ID BOM, test hygiene) |
 | 29 | [B-M5-17](B-M5-17.md) | open, after B-M3M4-18 (M12-024 driving lifecycle, handler start side, UnlockTracks miss path, DriveStraight/ITrackAction, activity fixes) |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | open, after B-M5-17 (play-area MISSING, new origin on delocalize, one-thread BlockWorld, InTriangle, no throw from AddMarkerless, cleanups) |
 | 31 | [B-POSE-1](B-POSE-1.md) | open, after B-M3M4-19 (exact Pose3d/Rotation3d/Transform3d port, cv::Rodrigues, pose tree; migrate Geometry.cs) |
+| 32 | [B-M3M4-21](B-M3M4-21.md) | open, after B-POSE-1 (dangling blended entry, cube-light root, LoadTime, cleanup) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
