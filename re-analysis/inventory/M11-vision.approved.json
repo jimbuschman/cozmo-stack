@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-12",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "d8893916b89bf7ebdae26b5f63dc20b332edd4b969a1ed1a57fa28d6343e5f07",
+  "inventory_sha256": "fecf4a82b116f18e4597c73312eda900d20c11c3e5a5b5107cbd409ec9bc4a1e",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -739,11 +739,22 @@
       "hardware_required": false
     },
     "M11-062": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BlockWorld helpers reached by AddMarkerlessObject (cliffs): IsSameAs, the intersecting predicate, GetBoundingQuad, SetID, InitPose, the 0x008CAD1C pose-state broadcast, DeleteIntersectingObjects",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: unread helpers on the AddMarkerlessObject path: IsSameAs, the predicate 0x00622908..0x0062297C, GetBoundingQuad<float>, ObservableObject::SetID, InitPose/SetPose(state 1), the tail 0x008CAD1C, DeleteIntersectingObjects."
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: unread helpers on the AddMarkerlessObject path: IsSameAs, the predicate 0x00622908..0x0062297C, GetBoundingQuad<float>, ObservableObject::SetID, InitPose/SetPose(state 1), the tail 0x008CAD1C, DeleteIntersectingObjects.",
+        "re-analysis/research/20261012-cliff-world-helpers-check.md section 1: overlap search 0x0062243E..0x006224C4 (all matches stamped), CheckForOverlapHelper 0x0061FD98..0x0061FDF4, IsSameAs pi override 0x008769B4..0x008769E4, IsSameAs_WithAmbiguity 0x00846F4A..0x00847196 (silent parented failure 0x0084719A), intersection wrapper 0x00622908..0x0062297C and callable 0x0062750E..0x00627536, Intersects 0x00514800..0x00514912, Contains 0x004DF764..0x004DF7BC, triangle 0x004E03B8..0x004E047E, km* 0x008F61E4..0x008F638A, canonical corners 0x005025F0..0x00502652, GetBoundingQuadXY 0x00502C32..0x00502D72, GetBoundingQuad 0x004E6490..0x004E6596, ComputeCentroid 0x004DF7BE..0x004DF84C, SortCornersClockwise 0x004E7EFC..0x004E7F9E, SetID 0x004EF468..0x004EF528, ObjectID::Set 0x008412D8..0x008412E6 (counter never reset), InitPose/SetPose 0x004EF562..0x004EF644 (\"Object_-1\"), pose broadcast 0x00506F88..0x00506FB8, 0x00506288..0x005062DA (no message for a cliff), OnObjectPoseChanged 0x00624808..0x006248B8, DeleteIntersectingObjects 0x00622C68..0x00622C84 and 0x0062464C..0x00624732, DeleteLocatedObjects 0x0061D0A6..0x0061D602, ClearLocatedObjectHelper 0x00625C78..0x00625EF6."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-063": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BlockWorld+0x74: the writer of the pose-change queue flag that gates OnObjectPoseChanged logs and queue",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: OnObjectPoseChanged 0x00624808..0x006248B8 tests byte BlockWorld+0x74 (MultipleChanges 0x006248EC, FirstPoseForObject 0x00624924, PoseChange push); no strb to +0x74 found in 0x00610000..0x00630000."
       ],
       "live_path": true,
       "hardware_required": false

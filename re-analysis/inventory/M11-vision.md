@@ -1410,3 +1410,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP (split from M4-038) | M11-062 BlockWorld helpers on the AddMarkerlessObject path |
+
+
+## Check of R-CLIFF-WORLD (manager, 2026-10-13; research/20261012-cliff-world-helpers-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M11-062 |
+| New RECOVERABLE_GAP | M11-063 BlockWorld+0x74 writer |
+| Notes appended | M11-045, M11-048 |

@@ -109,7 +109,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M4-control.md",
-        "approved": "2026-10-12",
+        "approved": "2026-10-13",
         "snapshot": "re-analysis/inventory/M4-control.approved.json"
       }
     },
@@ -200,7 +200,7 @@
       "review": {
         "inventory": "re-analysis/inventory/M11-vision.md",
         "state": "INVENTORY_APPROVED",
-        "approved": "2026-10-12",
+        "approved": "2026-10-13",
         "snapshot": "re-analysis/inventory/M11-vision.approved.json"
       }
     },
@@ -226,7 +226,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M13-navigation.md",
-        "approved": "2026-10-12",
+        "approved": "2026-10-13",
         "snapshot": "re-analysis/inventory/M13-navigation.approved.json"
       }
     },
@@ -5137,7 +5137,7 @@
         "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics).",
+      "unresolved": "read the MatPiece +0x7C and CustomObject +0x64 corner-list writers (constructors, SetCanonicalCorners), cv::Rodrigues, SortCornersClockwise's tie order and InitFromPointContainer; the libm equivalence needs a policy decision (operator/policy review: the engine uses bionic sin/cos/atan2 in double before a float cast; do not claim EXACT_SOURCE for those numerics). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): SortCornersClockwise is libc++ __sort with CompareFirst (0x004E8260; __sort4 0x004E85BE); output slots [P0, P3, P1, P2]; also reached by the cliff bounding quad (M11-062).",
       "hardware_required": false,
       "live_path": true,
       "test": "M13RVisBuildTests.M13_023_TheFootprintStubStillThrowsForTiltedCubesAndOtherClasses; M13RVisBuildTests.M13_023_ATiltedOrNonCubeFootprintUsesTheLabelledPlanarStandInAndDoesNotThrow; M13RVisBuildTests.M13_023_ATiltedLocatedCubeDoesNotAbortTheLiftAttachOrTheStackCheck"
@@ -8311,7 +8311,7 @@
         "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (rows 1.2-1.24 PASS, row 1.22 corrected)"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "build the quad tree exactly (Insert, Expand, override table, Subdivide/merge, timestamps, processor bookkeeping). ShiftRoot (1.10, 1.11) and LineSegment::IntersectsWith are M11-048 (RECOVERABLE_GAP); the Q3 quadrant offsets of Subdivide were verified by pattern.",
+      "unresolved": "build the quad tree exactly (Insert, Expand, override table, Subdivide/merge, timestamps, processor bookkeeping). ShiftRoot (1.10, 1.11) and LineSegment::IntersectsWith are M11-048 (RECOVERABLE_GAP); the Q3 quadrant offsets of Subdivide were verified by pattern. R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md section 2): Subdivide sets the parent to Unknown data with first = last = the old content +0xC; TryAutoMerge writes min/max into child[0]'s shared data object (no early exit in the equality loop); Insert_Recursive shares the incoming +0xC into the old data and ignores TrySetDetectedContentType's result; QuadTree::Insert checks all points for NaN before failing.",
       "hardware_required": false,
       "live_path": true,
       "test": "VisionTests"
@@ -8364,7 +8364,7 @@
         "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md 'not done'; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md 'Open'; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "read each item; OpenCV numerics may be exact black boxes only if the shipped OpenCV is emulated (the emu tools in re-analysis/tools/emu).",
+      "unresolved": "read each item; OpenCV numerics may be exact black boxes only if the shipped OpenCV is emulated (the emu tools in re-analysis/tools/emu). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): still unread for the cliff insert: GetOverlapType and FastPolygon ctor/Contains (0x00688290 and callees), UpgradeRootLevel body 0x006876FA..0x006879C0, ShiftRoot 0x00686DF8..0x0068743E, processor bodies 0x00688E50..0x006890AA and 0x0068928C..0x0068934C, ClearDescendants 0x00687E1C, SwapChildrenAndContent 0x00687600, DestroyNodes 0x0068768A.",
       "hardware_required": false,
       "live_path": true,
       "test": "VisionTests"
@@ -9263,14 +9263,32 @@
       "subsystem": "M13-navigation",
       "title": "The MemoryMap insert of cliff data (MemoryMapData_Cliff, QuadTree insert, helper +0x38 timestamp)",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038 step 7: BlockWorld+0x54 = 1, MemoryMapData_Cliff (0x00684984), quad from GetBoundingQuadXY (0x00502612..0x00502650), insert through helper vtable+8, BlockWorld+0x58 = fmax(ts, helper+0x38()) (0x006226EA..)."
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038 step 7: BlockWorld+0x54 = 1, MemoryMapData_Cliff (0x00684984), quad from GetBoundingQuadXY (0x00502612..0x00502650), insert through helper vtable+8, BlockWorld+0x58 = fmax(ts, helper+0x38()) (0x006226EA..).",
+        "re-analysis/research/20261012-cliff-world-helpers-check.md section 2: MemoryMapData_Cliff ctor/Clone/Equals 0x00684984..0x00684A2C, NodeContent 0x0068C450..0x0068C4E2, AddMarkerlessObject insert (input pose r8 0x0062238C, normal 0x006225A8..0x006225C6, ts 0x00622390, type 14 branch 0x00622646..0x006226E6), MemoryMap::Insert 0x006817C6..0x006817E0 (QuadTree::Insert with 1), helper +0x38 0x00681934..0x0068193A, BlockWorld+0x58 fmax 0x006226EA..0x0062271E; quad-tree rows (Insert 0x00685008..0x00685130, Expand 0x00685200..0x0068543A, UpgradeRootLevel gate/log, Insert wrapper 0x00686CB4, Insert_Recursive 0x00686CF4..0x00686DDC, override rules, ForceSet, Subdivide parent timestamps, TryAutoMerge shared-object write) checked as M11-045 rows."
       ],
       "effect": "The navigation map after a cliff.",
       "provenance": "Opus check of R-M4-CLIFF (2026-10-12), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the MemoryMap insert and helper+0x38 (split from M4-038).",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261012-cliff-world-helpers-check.md): build the cliff data class and the insert from the rows (job B-M3M4-16), through M11-045's quad tree (shared rows, not a second tree). Unread internals are M11-048 (GetOverlapType/FastPolygon, UpgradeRootLevel body, ShiftRoot, processor bodies, ClearDescendants, Swap/DestroyNodes). Null helper: M13-031. Previous notes: RECOVERABLE_GAP: read the MemoryMap insert and helper+0x38 (split from M4-038).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M13-031",
+      "subsystem": "M13-navigation",
+      "title": "GetCurrentMemoryMapHelper null result: reachability (callers dereference it unchecked)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88 returns null when MapComponent+0x1C == UnknownOriginID (GOT 0x0103E978) or no map exists; AddMarkerlessObject dereferences it at 0x006225FE->0x00622610 and 0x006226F4, ClearLocatedObjectHelper at 0x00625E96, with no check."
+      ],
+      "effect": "Whether adding a cliff or deleting an object can crash the original (and so needs an operator ruling) or the null state is unreachable.",
+      "provenance": "Opus check of R-CLIFF-WORLD (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read MapComponent map creation and the +0x1C writers; decide whether a null helper is reachable when AddMarkerlessObject or ClearLocatedObjectHelper runs. Until then the stack gives a visible MISSING naming this record at those points.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -10036,7 +10054,7 @@
       ],
       "effect": "Where a detected cliff is placed in the world, and the logs around it.",
       "provenance": "Second M3/M4 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): build the M4 part from the rows (job B-M3M4-13). Handoffs, as visible MISSINGs: ComputeStateAt (M11-051/053), the BlockWorld helpers (M11-062), the MemoryMap insert (M13-030). Previous notes: RECOVERABLE_GAP: read ComputeCliffPose and AddCliff. B-M3M4-13 (2026-10-12), built, awaiting strong verification: ComputeCliffPose flags gate and exact NoCliff/NoHistoricalPose/error/return paths; caller result==1, AddCliff then Detected log, failure error tail. Production ComputeStateAt remains MISSING M11-051/053. Test-only historical input exercises checked branches. Candidate transform built but no insertion: InitPose/IsSameAs/intersection/SetID/DeleteIntersectingObjects/broadcast/quad M11-062 and map M13-030 remain visible; acceptance is not guessed.",
+      "unresolved": "Read 2026-10-12 (re-analysis/research/20261012-m4-cliff-and-names-check.md): build the M4 part from the rows (job B-M3M4-13). Handoffs, as visible MISSINGs: ComputeStateAt (M11-051/053), the BlockWorld helpers (M11-062), the MemoryMap insert (M13-030). Previous notes: RECOVERABLE_GAP: read ComputeCliffPose and AddCliff. B-M3M4-13 (2026-10-12), built, awaiting strong verification: ComputeCliffPose flags gate and exact NoCliff/NoHistoricalPose/error/return paths; caller result==1, AddCliff then Detected log, failure error tail. Production ComputeStateAt remains MISSING M11-051/053. Test-only historical input exercises checked branches. Candidate transform built but no insertion: InitPose/IsSameAs/intersection/SetID/DeleteIntersectingObjects/broadcast/quad M11-062 and map M13-030 remain visible; acceptance is not guessed. R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): step 3 stamps every overlapping object, not only the first (0x006224B6..0x006224C4); step 7 quad uses the input pose argument (r8, 0x0062238C), not obj.GetPose(); the angle tolerance getter returns pi/4 but IsSameAs passes pi, so the angle never rejects. Helpers now M11-062 and M13-030 (IMPLEMENTATION_GAP).",
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X13BuilderTests.CliffUnknownHistoryStaysVisibleAndKnownBranchesLogBeforeErrorFlag"
@@ -10908,14 +10926,32 @@
       "subsystem": "M11-vision",
       "title": "BlockWorld helpers reached by AddMarkerlessObject (cliffs): IsSameAs, the intersecting predicate, GetBoundingQuad, SetID, InitPose, the 0x008CAD1C pose-state broadcast, DeleteIntersectingObjects",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: unread helpers on the AddMarkerlessObject path: IsSameAs, the predicate 0x00622908..0x0062297C, GetBoundingQuad<float>, ObservableObject::SetID, InitPose/SetPose(state 1), the tail 0x008CAD1C, DeleteIntersectingObjects."
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038: unread helpers on the AddMarkerlessObject path: IsSameAs, the predicate 0x00622908..0x0062297C, GetBoundingQuad<float>, ObservableObject::SetID, InitPose/SetPose(state 1), the tail 0x008CAD1C, DeleteIntersectingObjects.",
+        "re-analysis/research/20261012-cliff-world-helpers-check.md section 1: overlap search 0x0062243E..0x006224C4 (all matches stamped), CheckForOverlapHelper 0x0061FD98..0x0061FDF4, IsSameAs pi override 0x008769B4..0x008769E4, IsSameAs_WithAmbiguity 0x00846F4A..0x00847196 (silent parented failure 0x0084719A), intersection wrapper 0x00622908..0x0062297C and callable 0x0062750E..0x00627536, Intersects 0x00514800..0x00514912, Contains 0x004DF764..0x004DF7BC, triangle 0x004E03B8..0x004E047E, km* 0x008F61E4..0x008F638A, canonical corners 0x005025F0..0x00502652, GetBoundingQuadXY 0x00502C32..0x00502D72, GetBoundingQuad 0x004E6490..0x004E6596, ComputeCentroid 0x004DF7BE..0x004DF84C, SortCornersClockwise 0x004E7EFC..0x004E7F9E, SetID 0x004EF468..0x004EF528, ObjectID::Set 0x008412D8..0x008412E6 (counter never reset), InitPose/SetPose 0x004EF562..0x004EF644 (\"Object_-1\"), pose broadcast 0x00506F88..0x00506FB8, 0x00506288..0x005062DA (no message for a cliff), OnObjectPoseChanged 0x00624808..0x006248B8, DeleteIntersectingObjects 0x00622C68..0x00622C84 and 0x0062464C..0x00624732, DeleteLocatedObjects 0x0061D0A6..0x0061D602, ClearLocatedObjectHelper 0x00625C78..0x00625EF6."
       ],
       "effect": "Whether a detected cliff is added, merged or blocked in BlockWorld.",
       "provenance": "Opus check of R-M4-CLIFF (2026-10-12), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed helpers (split from M4-038).",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261012-cliff-world-helpers-check.md): build from the rows (job B-M3M4-16). Reused, not owned: cv::minAreaRect/RotatedRect::points (M13-024), SortCornersClockwise ties (M13-023), FindObjectOnTopOrUnderneathHelper (M13-007), BlockConfigurationManager::SetObjectPoseChanged (M11-037), SetLocalizedTo(null) (M11-007/M11-044), UnSetCarryingObjects (M12-007/M12-008), Pose3d tree ops (the M12 pose records). Open: the BlockWorld+0x74 writer (M11-063); the null map helper (M13-031). Previous notes: RECOVERABLE_GAP: read the listed helpers (split from M4-038).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-063",
+      "subsystem": "M11-vision",
+      "title": "BlockWorld+0x74: the writer of the pose-change queue flag that gates OnObjectPoseChanged logs and queue",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: OnObjectPoseChanged 0x00624808..0x006248B8 tests byte BlockWorld+0x74 (MultipleChanges 0x006248EC, FirstPoseForObject 0x00624924, PoseChange push); no strb to +0x74 found in 0x00610000..0x00630000."
+      ],
+      "effect": "Whether a new cliff (or any object) logs FirstPoseForObject and is queued as a PoseChange.",
+      "provenance": "Opus check of R-CLIFF-WORLD (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: find the writer(s) of BlockWorld+0x74 (possibly outside 0x00610000..0x00630000, or a wider store) and its value during normal running; then the queue consumer.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

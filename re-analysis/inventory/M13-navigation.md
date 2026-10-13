@@ -2514,3 +2514,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP (split from M4-038) | M13-030 MemoryMap insert of cliff data |
+
+
+## Check of R-CLIFF-WORLD (manager, 2026-10-13; research/20261012-cliff-world-helpers-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M13-030 |
+| New RECOVERABLE_GAP | M13-031 null map helper reachability |
+| Notes appended | M13-023 |

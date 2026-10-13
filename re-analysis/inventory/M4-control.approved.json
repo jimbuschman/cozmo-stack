@@ -1,6 +1,6 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-12",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M4-control.md",
   "inventory_sha256": "8dbfdb46ff0ea3f221184a09b90ef534d7530500e2621efd83dc6a694fe74716",
   "records": {

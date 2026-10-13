@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-12",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "6648b0fdbf0ddbcd90fd3135839bcfb81bbf4a8a8de12c2cab310ac4fa7c9925",
+  "inventory_sha256": "dcebec4a83676d2624f6551635b6d4b09ca2b6a8d43d1329cde268473ce3bf89",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -397,11 +397,22 @@
       "hardware_required": false
     },
     "M13-030": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The MemoryMap insert of cliff data (MemoryMapData_Cliff, QuadTree insert, helper +0x38 timestamp)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038 step 7: BlockWorld+0x54 = 1, MemoryMapData_Cliff (0x00684984), quad from GetBoundingQuadXY (0x00502612..0x00502650), insert through helper vtable+8, BlockWorld+0x58 = fmax(ts, helper+0x38()) (0x006226EA..)."
+        "re-analysis/research/20261012-m4-cliff-and-names-check.md section M4-038 step 7: BlockWorld+0x54 = 1, MemoryMapData_Cliff (0x00684984), quad from GetBoundingQuadXY (0x00502612..0x00502650), insert through helper vtable+8, BlockWorld+0x58 = fmax(ts, helper+0x38()) (0x006226EA..).",
+        "re-analysis/research/20261012-cliff-world-helpers-check.md section 2: MemoryMapData_Cliff ctor/Clone/Equals 0x00684984..0x00684A2C, NodeContent 0x0068C450..0x0068C4E2, AddMarkerlessObject insert (input pose r8 0x0062238C, normal 0x006225A8..0x006225C6, ts 0x00622390, type 14 branch 0x00622646..0x006226E6), MemoryMap::Insert 0x006817C6..0x006817E0 (QuadTree::Insert with 1), helper +0x38 0x00681934..0x0068193A, BlockWorld+0x58 fmax 0x006226EA..0x0062271E; quad-tree rows (Insert 0x00685008..0x00685130, Expand 0x00685200..0x0068543A, UpgradeRootLevel gate/log, Insert wrapper 0x00686CB4, Insert_Recursive 0x00686CF4..0x00686DDC, override rules, ForceSet, Subdivide parent timestamps, TryAutoMerge shared-object write) checked as M11-045 rows."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-031": {
+      "status": "RECOVERABLE_GAP",
+      "title": "GetCurrentMemoryMapHelper null result: reachability (callers dereference it unchecked)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261012-cliff-world-helpers-check.md: GetCurrentMemoryMapHelper 0x0067EA5C..0x0067EA88 returns null when MapComponent+0x1C == UnknownOriginID (GOT 0x0103E978) or no map exists; AddMarkerlessObject dereferences it at 0x006225FE->0x00622610 and 0x006226F4, ClearLocatedObjectHelper at 0x00625E96, with no check."
       ],
       "live_path": true,
       "hardware_required": false

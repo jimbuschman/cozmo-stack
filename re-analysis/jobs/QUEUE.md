@@ -54,6 +54,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 23 | [B-M3M4-14](B-M3M4-14.md) | open (cube lights: blend, modifier, loader) |
 | 24 | [B-M3M4-15](B-M3M4-15.md) | open, after B-M3M4-14 ($session_id, device-ID edge cases, M3-060 DAS events, cleanups) |
 | 25 | [B-M5-16](B-M5-16.md) | open, after B-M3M4-15 (M5-065 group-lookup miss, early-Robot sequence, M12-024 visibility, activity MISSINGs, cleanups) |
+| 26 | [B-M3M4-16](B-M3M4-16.md) | open, after B-M5-16 (cliff BlockWorld helpers M11-062, MemoryMap insert M13-030, null-helper MISSINGs) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
@@ -68,4 +69,4 @@ anything. BOARD.md is history; this file is the live queue.
 | 6 | [R-M9-029](../research/requests/20261012-m9-029-custom-song.md) | done (8ccc9ac5); adopted: M9-029 COMPATIBILITY_POLICY (CodeLab only) |
 | 7 | [R-M4-CLIFF](../research/requests/20261012-m4-cliff-and-names.md) | answered; checked (research/20261012-m4-cliff-and-names-check.md) |
 | 8 | [R-M4-LIGHTS](../research/requests/20261012-m4-cube-lights.md) | answered; checked (research/20261012-m4-cube-lights-check.md) |
-| 9 | [R-CLIFF-WORLD](../research/requests/20261012-cliff-world-helpers.md) | open (M11-062, M13-030) |
+| 9 | [R-CLIFF-WORLD](../research/requests/20261012-cliff-world-helpers.md) | answered; checked (research/20261012-cliff-world-helpers-check.md) |
