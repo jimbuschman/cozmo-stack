@@ -1,5 +1,7 @@
 # Pose3d / Rotation3d / Transform3d arithmetic (Opus extractor, 2026-10-13)
 
+> **Superseded in part (2026-10-14):** `research/20261014-pose-rows-recheck.md` re-checks every row here against the binary and overrides each row it marks CORRECTED. Read it first.
+
 - **Run:** read-only cozmo-extractor, after the B-M3M4-16 check (B5).
 - **Adopted:** by the manager on 2026-10-13.
 - **The finding:**

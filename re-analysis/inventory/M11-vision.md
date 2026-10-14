@@ -1506,3 +1506,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | BroadcastObjectPoseChanged has five callers | M11-062 (note) |
+
+
+## Pose-row recheck (manager, 2026-10-14; research/20261014-pose-rows-recheck.md)
+
+| Change | Records |
+| --- | --- |
+| 15 arithmetic rows and 6 Rodrigues/tree statements corrected before the B-POSE-1 rerun | M11-065, M11-066, M11-067, M11-068 (notes) |

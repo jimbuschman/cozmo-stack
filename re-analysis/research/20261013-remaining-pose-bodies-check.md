@@ -1,5 +1,7 @@
 # Opus check of R-POSE-REST (2026-10-13)
 
+> **Superseded in part (2026-10-14):** `research/20261014-pose-rows-recheck.md` re-checks every row here against the binary and overrides each row it marks CORRECTED. Read it first.
+
 - **Checked:** `research/20261013-remaining-pose-bodies.md` (Codex), against libcozmoEngine.so. Read-only
   cozmo-extractor; helpers are in `.scratch/poserest/`.
 - **Adopted:** by the manager on 2026-10-13. This file is a checked source for job B-POSE-1. Use the Codex report together

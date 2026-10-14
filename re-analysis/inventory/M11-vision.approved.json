@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-13",
+  "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "b11003151e5f75655d30e2b91b33432c01d11fc819143f814c6d5e9a3cccb6ee",
+  "inventory_sha256": "26d983c61730048eb3abcc0d4f1dad9079b78458debedf4d4a48e9e4bcb2e286",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",

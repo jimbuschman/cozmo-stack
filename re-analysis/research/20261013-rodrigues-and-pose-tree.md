@@ -1,5 +1,7 @@
 # cv::Rodrigues and the pose-tree copy semantics (Opus extractor, 2026-10-13)
 
+> **Superseded in part (2026-10-14):** `research/20261014-pose-rows-recheck.md` re-checks every row here against the binary and overrides each row it marks CORRECTED. Read it first.
+
 - **Run:** read-only cozmo-extractor, finishing `research/20261013-pose3d-arithmetic.md`.
 - **Adopted:** by the manager on 2026-10-13.
 - **Helpers:** `.scratch/rod/` (lief + capstone over any shipped .so).

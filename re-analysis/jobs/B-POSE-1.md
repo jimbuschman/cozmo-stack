@@ -4,6 +4,7 @@
 - **Status file:** `status/B-POSE-1.md`.
 - **Runs after B-M3M4-19.**
 - **Checked rows:**
+  - **`research/20261014-pose-rows-recheck.md` first:** it overrides every row it marks CORRECTED in the files below;
   - `research/20261013-pose3d-arithmetic.md` (R1–R41);
   - `research/20261013-rodrigues-and-pose-tree.md`.
 
