@@ -554,3 +554,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | SetCameraParams payload confirmed | M3-019 (note) |
+
+
+## Check of OV14 (manager, 2026-10-14; research/overnight/20261014-ov14-m11-057-check.md)
+
+| Change | Records |
+| --- | --- |
+| Auto-exposure coupling; provenance contradicted | M3-021 (note) |

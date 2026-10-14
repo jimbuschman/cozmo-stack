@@ -1571,3 +1571,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | OKAO is shipped and readable: BLOCKED_EXTERNAL -> RECOVERABLE_GAP, ported as a later layer | M11-016 |
 | Border-walk seed order: insertion order (approved departure) | M11-047 |
+
+
+## Check of OV14 (manager, 2026-10-14; research/overnight/20261014-ov14-m11-057-check.md)
+
+| Change | Records |
+| --- | --- |
+| Narrowed to the quantisation B1-B4, retitled: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-057 |
+| CheckImageQuality stage, IMPLEMENTATION_GAP | M11-080 (new) |
+| ImagingPipeline exposure adjustment, RECOVERABLE_GAP | M11-081 (new) |
+| Stale UNKNOWNs settled | M11-034, M11-060 (notes) |

@@ -6596,7 +6596,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CameraSettings: the constructor limits 1..66 ms and 0.1..4.0, current 16 / 2.0. HandleDefaultCameraParams, with no time-sync gate: 16 must lie in [msg+8, msg+0xA] (else BadInitialExposureTime and nothing more); then SetCameraSettings(16, f32 msg+4) against the limits in force; then max, min (1 if 0), minGain 0.1, maxGain f32 msg+0 and the gamma table installed and SetNextCameraParams queued. SetCameraSettings sends {gain, exposure, false} only when both are in range (NaN invalid), queues SetNextCameraParams (warning when one is pending) and raises CurrentCameraParams {g, e, auto-exposure 1}. Uses M2 correction C3 (fields 0 and 1 are f32).",
-      "unresolved": "built, awaiting strong verification: B-M3M4-5: regressions for ZeroMinExposureTime and Success; initialization handoff remains MISSING. Previous notes: built, awaiting strong verification: B-M3M4-3: exact OOR, settings-before-send, queued overwrite arguments, default errors with errG/break, zero-min debug and swapped Success labels. BadGammaCurve unreachable per 13.6. M11-059/060 handoffs retained. Previous manager-adopted instructions: Follow-up rows 13.6, ruling 14.5. IMPLEMENTATION_GAP: build from re-analysis/research/20261011-m3m4-fix-rows.md section 2 and the rulings in section 12. Before: Final settling pass: KEEP. Contradicted logs: IsExposureValid key \"VisionSystem.IsExposureValid.OOR\" (0x6B9E2C), format \"Exposure %dms not in range %dms to %dms\" (0x6B9E50) vs Camera.cs:677; BadInitialExposureTime format \"Initial exp time %ums outside range [%u,%u]\" (0x657EA8) plus the _errG store and break gate at 0x657DE4..0x657DF0 vs Camera.cs:715; NotInitialized key 0x657E28 vs invented text at Camera.cs:711. Omitted: IsGainValid \"VisionSystem.IsGainValid.OOR\" / \"Gain %f not in range %f to %f\"; SetCameraSettings info \"VisionComponent.SetCameraSettings\" / \"Exp:%ums Gain:%f\" before the send. Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed. Handoffs: the initial exposure value (1f) and VisionSystem::IsInitialized (1g) -> M11-059 (new); applying the pending params (1d) -> M11-060 (new). Build round: Camera.cs's constant 16 (InitialExposureTimeMs) and IsInitialized taken as true are silent stand-ins in doc comments; make them visible handoffs naming M11-059; SetCameraParams goes out through CozmoRobot.SendMessage (Camera.cs _send) without Robot::SendMessage's failure warning. Before: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-5-6.md): NOT YET. b8c1525 changed prose only; the residuals are visible. Before: Not reproduced exactly (SD3): (1f) the initial exposure is the constant 16 (the .data value and the shipped vision_config.json value), because this stack does not load vision_config.json; (1g) VisionSystem::IsInitialized is taken as always true. The engine's config load (rows 4a..4l: VisionComponent::Init's four reads, then VisionSystem::Init) and its failure behaviour belong to M11 (VisionSystem::Init: FaceTracker/MotionDetector/PetTracker, InitialVisionModes, InitialModeSchedules, open q4), so this stays IMPLEMENTATION_GAP until M11 builds it; the stack's jsoncpp reader (M1-029) already accepts the file's // comments. (1d) applying the pending params to the current exposure and gain is VisionSystem::Update's (M11) and is not done. B-M3M4-9 built, awaiting strong verification: SetCameraSettings/HandleDefaultCameraParams logs and send run outside _gate; validation, send, pending-parameter overwrite warning/store and success keep native order. B-M3M4-10 (2026-10-12), built, awaiting strong verification: SetNextCameraParams snapshots the prior slot and writes the replacement in one critical section, then emits the queued keyed warning after releasing it; two-thread regression checks exactly one predecessor warning and replacement order (0x006B229C..0x006B230C; adopted B-M3M4-10 lock correction). B-M3M4-12 (2026-10-12), built, awaiting strong verification: Chosen job option: suppress OverwritingPreviousParams while M11-060 pending-clear is unbuilt. A stale pending request instead emits a visible MISSING naming M11-060; NextCameraParams remains pending and updated, current exposure/gain are not invented. Existing camera regressions adjusted to the explicit suppression. Host missing-report state protected by settings lock; source logs stay outside it. Full-suite correction: the historical concurrent-camera regression now asserts no source overwrite warning, one M11-060 MISSING, and an unmixed pending tuple; its frozen test name is retained.",
+      "unresolved": "built, awaiting strong verification: B-M3M4-5: regressions for ZeroMinExposureTime and Success; initialization handoff remains MISSING. Previous notes: built, awaiting strong verification: B-M3M4-3: exact OOR, settings-before-send, queued overwrite arguments, default errors with errG/break, zero-min debug and swapped Success labels. BadGammaCurve unreachable per 13.6. M11-059/060 handoffs retained. Previous manager-adopted instructions: Follow-up rows 13.6, ruling 14.5. IMPLEMENTATION_GAP: build from re-analysis/research/20261011-m3m4-fix-rows.md section 2 and the rulings in section 12. Before: Final settling pass: KEEP. Contradicted logs: IsExposureValid key \"VisionSystem.IsExposureValid.OOR\" (0x6B9E2C), format \"Exposure %dms not in range %dms to %dms\" (0x6B9E50) vs Camera.cs:677; BadInitialExposureTime format \"Initial exp time %ums outside range [%u,%u]\" (0x657EA8) plus the _errG store and break gate at 0x657DE4..0x657DF0 vs Camera.cs:715; NotInitialized key 0x657E28 vs invented text at Camera.cs:711. Omitted: IsGainValid \"VisionSystem.IsGainValid.OOR\" / \"Gain %f not in range %f to %f\"; SetCameraSettings info \"VisionComponent.SetCameraSettings\" / \"Exp:%ums Gain:%f\" before the send. Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed. Handoffs: the initial exposure value (1f) and VisionSystem::IsInitialized (1g) -> M11-059 (new); applying the pending params (1d) -> M11-060 (new). Build round: Camera.cs's constant 16 (InitialExposureTimeMs) and IsInitialized taken as true are silent stand-ins in doc comments; make them visible handoffs naming M11-059; SetCameraParams goes out through CozmoRobot.SendMessage (Camera.cs _send) without Robot::SendMessage's failure warning. Before: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-5-6.md): NOT YET. b8c1525 changed prose only; the residuals are visible. Before: Not reproduced exactly (SD3): (1f) the initial exposure is the constant 16 (the .data value and the shipped vision_config.json value), because this stack does not load vision_config.json; (1g) VisionSystem::IsInitialized is taken as always true. The engine's config load (rows 4a..4l: VisionComponent::Init's four reads, then VisionSystem::Init) and its failure behaviour belong to M11 (VisionSystem::Init: FaceTracker/MotionDetector/PetTracker, InitialVisionModes, InitialModeSchedules, open q4), so this stays IMPLEMENTATION_GAP until M11 builds it; the stack's jsoncpp reader (M1-029) already accepts the file's // comments. (1d) applying the pending params to the current exposure and gain is VisionSystem::Update's (M11) and is not done. B-M3M4-9 built, awaiting strong verification: SetCameraSettings/HandleDefaultCameraParams logs and send run outside _gate; validation, send, pending-parameter overwrite warning/store and success keep native order. B-M3M4-10 (2026-10-12), built, awaiting strong verification: SetNextCameraParams snapshots the prior slot and writes the replacement in one critical section, then emits the queued keyed warning after releasing it; two-thread regression checks exactly one predecessor warning and replacement order (0x006B229C..0x006B230C; adopted B-M3M4-10 lock correction). B-M3M4-12 (2026-10-12), built, awaiting strong verification: Chosen job option: suppress OverwritingPreviousParams while M11-060 pending-clear is unbuilt. A stale pending request instead emits a visible MISSING naming M11-060; NextCameraParams remains pending and updated, current exposure/gain are not invented. Existing camera regressions adjusted to the explicit suppression. Host missing-report state protected by settings lock; source logs stay outside it. Full-suite correction: the historical concurrent-camera regression now asserts no source overwrite warning, one M11-060 MISSING, and an unmixed pending tuple; its frozen test name is retained. OV14 check (re-analysis/research/overnight/20261014-ov14-m11-057-check.md): owns the auto-exposure coupling. The provenance \"CurrentCameraParams {g, e, auto-exposure 1}\" is contradicted: the bool is the live VisionComponent+0x329 (0x00656188), default 1 (0x0065017C). EnableAutoExposure 0x00657EE8..0x00657EF2 stores b then SetNextMode(7, b); SetAndDisableAutoExposure 0x00657EF6..0x00657F0E calls SetCameraSettings first (broadcast carries the old byte), then +0x329 = 0 and SetNextMode(7, false). Callers: BehaviorTrackLaser 0x005FAD24, 0x005FBDA0, 0x005FBDAA; BehaviorFactoryTest 0x005D10C4.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_021_1k_DefaultCameraParamsSetsTheInitialExposureThenInstallsTheLimits, M3DeviceTests.M3_021_1k_AnInitialExposureOutsideTheRangeDoesNothing, M3DeviceTests.M3_021_1l_TheFirstSettingsAreCheckedAgainstTheConstructorLimits, M3DeviceTests.M3_021_1l_SetCameraSettingsRangeChecks, M3DeviceTests.B9_CameraLogAndSendFailureSubscribersCanReadTheSettingsLock, M3M4X10BuilderTests.CameraConcurrentRequestsProduceOneWarningForTheActualPredecessor, M3M4X12BuilderTests.CameraPendingClearGapIsVisibleAndDoesNotEmitStaleOverwriteWarning"
@@ -8227,7 +8227,8 @@
         "InitDefaultSchedules 0x006AEFDE: all 16 modes {true}, counter 0; sDefaultSchedules 0x0105C540",
         "vision-mode ids from VisionModeFromString 0x796BD4: Idle 0, DetectingMarkers 1, DetectingFaces 2, DetectingMotion 3, DetectingOverheadEdges 4, ReadingToolCode 5, ComputingCalibration 6, CheckingQuality 7, ComputingStatistics 8, DetectingPets 9, EstimatingFacialExpression 10, DetectingSmileAmount 11, DetectingGaze 12, DetectingBlinkAmount 13, LimitedExposure 14, DetectingLaserPoints 15, Count 16; the Update dispatcher calls ShouldProcessVisionMode with 8,1,2,9,3,4,5,6,0xF,7 (0x006B5122..0x006B55E4); the shipped config enables bits 0x0002/0x0004/0x0008/0x0010/0x0080/0x0100/0x0200/0x8000 and disables 10..13; the default of the unlisted modes 0,5,6,14 is UNKNOWN"
       ],
-      "test": ""
+      "test": "",
+      "unresolved": " OV14 check (re-analysis/research/overnight/20261014-ov14-m11-057-check.md): the \"default of the unlisted modes 0,5,6,14 is UNKNOWN\" is settled: the ctor memclr 0x006B004C..0x006B0056 zeroes the mask and Init enables only the listed modes, so all four default to off."
     },
     {
       "id": "M11-035",
@@ -11285,16 +11286,17 @@
     {
       "id": "M11-057",
       "subsystem": "M11-vision",
-      "title": "LimitedExposure: the vision system's reader of the exposure limit (M4-017 E9)",
+      "title": "LimitedExposure: the 10 ms exposure quantisation with the conditional maxE cap, applied at the end of CheckImageQuality's proposal stage when vision mode 14 is set",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "The exposure limit M4-017 sets has no reader in the stack, so it changes nothing downstream.",
       "provenance": "Named by the Opus settling pass for M3+M4 (2026-10-10, HEAD 3c994bc; jobs/B-M3M4.md \"Settling pass\"); M11-034 covers only the schedule.",
       "authority": "libcozmoEngine.so 3.4.0-1204 VisionSystem.",
       "evidence": [
-        "M4-017 row E9 (re-analysis/jobs/B-M3M4.md) names the LimitedExposure reader in VisionSystem; M11-034's evidence covers the schedule only."
+        "M4-017 row E9 (re-analysis/jobs/B-M3M4.md) names the LimitedExposure reader in VisionSystem; M11-034's evidence covers the schedule only.",
+        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: B1 0x006B30AE..0x006B30B4; B2 0x006B30B6..0x006B30F2; B3 0x006B30F4..0x006B3106; B4 placement (non-failure exits 0x006B2FA8, 0x006B3068, 0x006B30AC; failure exit 0x006B2F16 -> 0x006B30FC bypasses)."
       ],
-      "unresolved": "RECOVERABLE_GAP: extract the reader and its effect.",
+      "unresolved": "RECOVERABLE_GAP: extract the reader and its effect. Read 2026-10-14 (re-analysis/research/overnight/20261014-ov14-m11-057-check.md): narrowed to B1-B4, IMPLEMENTATION_GAP. Mode 14 is set only by the game messages SetHeadlight (tag 183) and EnableVisionMode; in the stack the producer is the headlight API (M4-017). The surrounding stage is M11-080; the ImagingPipeline is M11-081.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11346,7 +11348,7 @@
       "evidence": [
         "VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN"
       ],
-      "unresolved": "RECOVERABLE_GAP: read VisionSystem::Update from 0x006B4D5C for the consumer of the slot and what it applies. The stack queues NextCameraParams (Camera.cs) and never applies it.",
+      "unresolved": "RECOVERABLE_GAP: read VisionSystem::Update from 0x006B4D5C for the consumer of the slot and what it applies. The stack queues NextCameraParams (Camera.cs) and never applies it. OV14 check (re-analysis/research/overnight/20261014-ov14-m11-057-check.md): the consumer is 0x006B50C8..0x006B50D8: it copies +0xA4/+0xA8 to +0x98/+0x9C and clears +0xA0, with no quantisation, earlier in the same Update than mode 7 (reached from 0x006B504E).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11681,6 +11683,40 @@
       "effect": "Which interesting regions the AI computes from the map borders.",
       "provenance": "Opus check of OV11 (2026-10-14), manager record.",
       "unresolved": "RECOVERABLE_GAP: read GetBorders' segment logic, the two helpers, and the caller's cadence and enable path (through the AIInformationAnalyzer seam, M8-013).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-080",
+      "subsystem": "M11-vision",
+      "title": "CheckImageQuality: ROI weighting and MeterFromDetections, the proposal stage with NaN/boundary rules, the quality 1/2/3 decisions, the ImageQuality statics from vision_config, and Update's mode-7 block",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ROI head 0x006B2D4C..0x006B2F58; proposal 0x006B2F5A..0x006B30AC; statics 0x01051088..0x01051094 loaded at 0x006B07D8..0x006B0E3E (SetAutoExposureParams call 0x006B0A14); Update mode-7 block 0x006B55E2..0x006B5690."
+      ],
+      "effect": "Camera exposure and gain changes, and the image-quality result that drives the TooDark/TooBright errors.",
+      "provenance": "Opus check of OV14 (2026-10-14), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: port per the check file. ComputeExposureAdjustment, the histogram and ComputePercentile are the companion RECOVERABLE_GAP record.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-081",
+      "subsystem": "M11-vision",
+      "title": "ImagingPipeline exposure adjustment: ComputeExposureAdjustment (image, image+mask, vector), ImageBrightnessHistogram FillFromImage and ComputePercentile, SetExposureParameters, VisionSystem::SetAutoExposureParams",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ComputeExposureAdjustment 0x0085F748.., 0x0085FA02.., 0x0085FAE4..; FillFromImage 0x008731FC, 0x008733EC; ComputePercentile 0x00873624..0x00873774; SetExposureParameters 0x0085F374; SetAutoExposureParams 0x006B1858."
+      ],
+      "effect": "The exposure adjustment factor and the brightness percentiles.",
+      "provenance": "Opus check of OV14 (2026-10-14), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies completely (f32/f64 order, rounding, NaN).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

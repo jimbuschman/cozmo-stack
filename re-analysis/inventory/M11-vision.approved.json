@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "928a2c8f541edf66a08e25b3b4686a6398854d3df6c631d0e16a8a435bd89f45",
+  "inventory_sha256": "822819fafcb1e9ce1326fe1436394b4f389c2f55d96cbed3a881dfc31787fcc9",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -690,11 +690,12 @@
       "hardware_required": false
     },
     "M11-057": {
-      "status": "RECOVERABLE_GAP",
-      "title": "LimitedExposure: the vision system's reader of the exposure limit (M4-017 E9)",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "LimitedExposure: the 10 ms exposure quantisation with the conditional maxE cap, applied at the end of CheckImageQuality's proposal stage when vision mode 14 is set",
       "authority": "libcozmoEngine.so 3.4.0-1204 VisionSystem.",
       "evidence": [
-        "M4-017 row E9 (re-analysis/jobs/B-M3M4.md) names the LimitedExposure reader in VisionSystem; M11-034's evidence covers the schedule only."
+        "M4-017 row E9 (re-analysis/jobs/B-M3M4.md) names the LimitedExposure reader in VisionSystem; M11-034's evidence covers the schedule only.",
+        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: B1 0x006B30AE..0x006B30B4; B2 0x006B30B6..0x006B30F2; B3 0x006B30F4..0x006B3106; B4 placement (non-failure exits 0x006B2FA8, 0x006B3068, 0x006B30AC; failure exit 0x006B2F16 -> 0x006B30FC bypasses)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -927,6 +928,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: GetBorders 0x006894E0..0x00689AA6; CalculateBorderWaypointCenter 0x00689AF0..0x00689C08; MakeBorderSegment 0x00689C08..0x00689D80; HasBorders 0x00689354..0x006893AE; HasBorderSeed 0x006893B8..0x006894A6; MemoryMap vt+0x28 0x00681702, vt+0x2C 0x00681734; caller 0x00574FCC (seed 9, table 0x00C59AE0, two calls)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-080": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CheckImageQuality: ROI weighting and MeterFromDetections, the proposal stage with NaN/boundary rules, the quality 1/2/3 decisions, the ImageQuality statics from vision_config, and Update's mode-7 block",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ROI head 0x006B2D4C..0x006B2F58; proposal 0x006B2F5A..0x006B30AC; statics 0x01051088..0x01051094 loaded at 0x006B07D8..0x006B0E3E (SetAutoExposureParams call 0x006B0A14); Update mode-7 block 0x006B55E2..0x006B5690."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-081": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ImagingPipeline exposure adjustment: ComputeExposureAdjustment (image, image+mask, vector), ImageBrightnessHistogram FillFromImage and ComputePercentile, SetExposureParameters, VisionSystem::SetAutoExposureParams",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ComputeExposureAdjustment 0x0085F748.., 0x0085FA02.., 0x0085FAE4..; FillFromImage 0x008731FC, 0x008733EC; ComputePercentile 0x00873624..0x00873774; SetExposureParameters 0x0085F374; SetAutoExposureParams 0x006B1858."
       ],
       "live_path": true,
       "hardware_required": false
