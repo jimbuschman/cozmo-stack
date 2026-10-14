@@ -1,6 +1,6 @@
 DONE B-POSE-1 — 2026-10-14 — built, awaiting strong verification
 
-Claim pushed: e7f5d05c. Implementation commit: pending normal commit/push; pushed hash will be appended after the gate. No fidelity record is settled.
+Claim pushed: e7f5d05c. Implementation pushed: e5780c3ce7a00e2c65f2605996e62516195335cd (normal gate: fidelity PASS, 4710/4710 tests PASS, 0 skipped). No fidelity record is settled.
 
 Checked authority: research/20261014-pose-rows-recheck.md overrides the adopted 20261013-pose3d-arithmetic.md R1–R41, rodrigues-and-pose-tree.md, remaining-pose-bodies-check.md and its report. OV12 HasSameRootAs is adopted for M11-066. Required call targets were reopened in the shipped ARMv7 engine/OpenCV libraries, including camera initializer 0x0084B0AC. No own unchecked extraction was used to invent a behavior.
 
