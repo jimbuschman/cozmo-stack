@@ -1598,3 +1598,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | The libc++_shared.so %f formatter behind to_string(float), RECOVERABLE_GAP | M11-083 (new) |
 | BadRowNorm row text: visible MISSING in B-POSE-1 | M11-065 (note) |
+
+
+## Pose-tree extraction (manager, 2026-10-14; research/20261014-pose-tree-verifies.md)
+
+| Change | Records |
+| --- | --- |
+| Walk caps unreachable; Dev_Assert and RemoveOwner VERIFYs read (B-POSE-3) | M11-066, M11-077 (notes) |
+| Neck confirmed | M11-003 (note) |
+| Pose wrapper lifetimes, RECOVERABLE_GAP | M11-084 (new) |

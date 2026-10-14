@@ -1010,3 +1010,10 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | R8 null read unreachable; dtor gates | M12-040, M12-034 (notes) |
+
+
+## Pose-tree extraction (manager, 2026-10-14; research/20261014-pose-tree-verifies.md)
+
+| Change | Records |
+| --- | --- |
+| sb table bits | M12-021 (note) |

@@ -69,7 +69,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 29b | [B-M12-1](B-M12-1.md) | done d7316d1d; Opus check FAIL on one point (Dole send failures; research/20261013-b-m12-1-check.md), fix in B-M12-2 |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | done 985ba775; Opus check PASS (research/20261013-b-m3m4-19-pass.md); follow-up B-M3M4-23 |
 | 30a | [B-M3M4-22](B-M3M4-22.md) | done 51b42629; behaviour matches (research/20261013-b-m3m4-22-check.md); test-hygiene cleanup in B-M3M4-24 |
-| 31 | [B-POSE-1](B-POSE-1.md) | BLOCKED four times (R2, R18, R36 filename, the BadRowNorm %f formatter 74970f31); all resolved by the manager (the row text is a visible MISSING, M11-083); status file removed for the rerun; open, next |
+| 31 | [B-POSE-1](B-POSE-1.md) | done e5780c3c; Opus check FAIL (research/20261014-b-pose-1-check.md); fixed in B-POSE-2 (ddf1d511, Claude implementer) |
+| 31a0 | [B-POSE-3](B-POSE-3.md) | open, next (pose-tree VERIFYs M11-066/M11-077) |
 | 31a | [B-M11-1](B-M11-1.md) | open, after B-POSE-1 (Delocalize in full, UpdateObjectOrigin) |
 | 32 | [B-M3M4-21](B-M3M4-21.md) | open, after B-POSE-1 (dangling blended entry, cube-light root, LoadTime, cleanup) |
 | 33 | [B-M15-1](B-M15-1.md) | open, after B-M3M4-21 (backup manager: constructor, body, restore, wipe, restore list, app inputs) |

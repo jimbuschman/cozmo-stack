@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "4d2ce987400d51534bc6b02801bd51c6968c3fa706db73d629b3db57e1a8c543",
+  "inventory_sha256": "56c88267e462c5745bfa00a1d57170bb40ebb83e62d1b51fd40d715c877d2a71",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -971,6 +971,16 @@
       "authority": "libc++_shared.so shipped in the APK; libcozmoEngine.so 3.4.0-1204 call sites.",
       "evidence": [
         "re-analysis/research/20261014-pose-rows-recheck.md, Manager decision 1 (corrected from the B-POSE-1 block 74970f31): engine call 0x008495CE, space 0x008495D8; libc++_shared.so to_string(float) 0x000664F4..0x000665A4 (widen 0x00066530, %f literal 0x0006652E/0x000665C8), vsnprintf chain 0x0006656C -> 0x0007E270..0x0007E2B2 -> 0x00082528..0x000825A8 -> core 0x000813B0."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-084": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Pose wrapper lifetimes in production: whether any flow leaves a child under an unowned parent or drops an origin's last wrapper outside ~PoseOriginList (UnownedParent, NotLastOwner, ZeroOwners, ZeroOwnersWithID VERIFYs on a running robot)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261014-pose-tree-verifies.md: \"Still unread\": parent-pose lifetimes (robot +0x298, origins, object poses, temporaries), PoseOriginList erase/rejigger paths, inline wrapper attaches writing PoseBase+4 without +0x48, cross-thread pose-tree mutation."
       ],
       "live_path": true,
       "hardware_required": false
