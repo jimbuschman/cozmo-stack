@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **588 records** over 16 subsystems.
+Manifest of **589 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 270 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 51 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 272 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 15 | 2 | 10 | 0 | 0 | no | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 75 | 14 | 45 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 76 | 13 | 47 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 41 | 6 | 23 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 35 | 3 | 28 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
@@ -342,23 +342,14 @@ B-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. 
 * evidence: VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN
 * outstanding: RECOVERABLE_GAP: read VisionSystem::Update from 0x006B4D5C for the consumer of the slot and what it applies. The stack queues NextCameraParams (Camera.cs) and never applies it.
 
-**M11-072 — RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
-* effect: Which engine components react to a delocalize, and in what order.
-* rests on: Codex research checked by Opus (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found.
-* outstanding: RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038.
-
-**M11-073 — Reachability of PoseBase::GetParent() on a root pose (WrapExistingNode owners++ with no null guard faults at 0x008452BA)** (live path)
+**M11-073 — Whether any unguarded GetParent caller can see a root pose in normal running: the robot, object, PreActionPose and history pose producer invariants, and GetWithRespectTo's output parent** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs`
 * effect: Whether the original can crash asking a root pose for its parent.
 * rests on: Opus check of R-POSE-REST (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6).
-* outstanding: RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly.
+* evidence: re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6).; re-analysis/research/20261013-small-reads-1-check.md: "Still unread" list: InitPose 0x004EF562, ObjectPoseConfirmer setters 0x00505DE0..0x00506F16, SetOnRamp 0x0051664E/0x00516672, SetPoseOnCharger 0x005168BA, PreActionPose 0x0050DBE0/0x0050DDA8/0x0050DFFA/0x0050F9FE, history producers 0x00512BEE/0x0051271C/0x00515774/0x005159C8/0x005160BC/0x0051612C/0x006B26E8, 0x0062A588, SendAbsLocalizationUpdate 0x0051275C, GetWithRespectTo 0x00845A34.
+* outstanding: RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly. Split 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): the census and fault semantics moved to M11-076. Census is 55 calls (30 GetParent, 25 FindRoot), not "about 60"; 0x004DF674 is FindRoot. Remaining: the 23 unguarded rows' producer invariants (listed in the evidence). No root-to-fault witness shown.
 
 **M11-074 — Memory-map producers and readers not yet read: MapComponent::UpdateRobotPose (explored area), UpdateObjectPose, RemoveObservableObject, FlagInterestingEdgesAsUseless, ReviewInterestingEdges, ClearRobotToMarkers, FindContentIf/FindIf** (live path)
 
@@ -2257,6 +2248,24 @@ B-M3M4-19 B2 withdrawn per checked job. Live OnRobotDelocalized visibly names M1
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E1-E4: 0x00510D84..0x00510D9C; UiMessageHandler::Broadcast 0x00662508 (DeliverToGame 0x00661594 first, then the AnkiEvent emit 0x00662528..0x006625AE); E5(a): BlockConfigurationManager lambda 0x006172A6 sets +0xC = 1.
 * outstanding: IMPLEMENTATION_GAP: build (job B-M11-1). The cube-light subscriber is M4-048.
+
+**M11-072 — RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: Which engine components react to a delocalize, and in what order.
+* rests on: Codex research checked by Opus (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found.; re-analysis/research/20261013-small-reads-1-check.md: M11-072 section. Recipients in order: game delivery 0x00662522; BlockConfigurationManager +0xC 0x006172A6..0x006172B6; CantHandleTallStack x2 (HandleEvent 0x005BF268, AlwaysHandle 0x005ED240..0x005ED24E, ClearStack 0x005ED1E4..0x005ED1F8); CubeLightComponent 0x0063A390..0x0063A400; Face/Object PositionUpdate (no-op ResetReactionData 0x00612238..0x006122BE, returns 0x0060CF6C, 0x0061154A); CubeMoved fall-through 0x0060BEA8..0x0060BF64. Emit walk 0x00663C74..0x00663CA6, append 0x006646A6..0x006646B0.
+* outstanding: RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038. Read 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): IMPLEMENTATION_GAP, rows R1-R8 in emit order (game first, then insertion order: BlockConfigurationManager, CantHandleTallStack in each of the two containers, CubeLightComponent, then the strategies in reaction-map order); the construction-time Delocalize reaches only R1-R5. CubeLight's PlayLightAnim arguments belong to the CubeLight record. Residual: an indirect vt+0x28 Subscribe whose slot load is more than 60 instructions before the call was not excluded (not seen).
+
+**M11-076 — PoseBase::GetParent on a root pose faults (0x008452BA, M1-034 standing rule); FindRoot root-safe; PoseTreeNode::FindRoot 1000-step cycle guard; the 55-call census and the flatten helper 0x004DF628** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs`
+* effect: What a parent or root lookup on a pose does, including the original's crash on a root pose.
+* rests on: Split from M11-073 after the Opus check of R-SMALL-1 (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-small-reads-1-check.md: M11-073 / M11-076 section. GetParent 0x008453D4..0x0084541E, fault 0x008452BA; FindRoot 0x0084524E..0x0084526E; PoseTreeNode::FindRoot 0x008452CA..0x00845376 (guard 0x00845318); flatten helper 0x004DF628..0x004DF69C; guarded rows 0x00530E84, 0x005310B4, 0x00846D70/0x00846D7C, 0x00846FA4, 0x00848030.
+* outstanding: IMPLEMENTATION_GAP: GetParent on a root pose is skipped and logged visibly under the M1-034 standing rule (the original faults at 0x008452BA); FindRoot on a root returns the root; the internal walk stops after 1000 steps with sErrorF and returns the current node; the flatten helper copies a root, otherwise FindRoot + GetWithRespectTo and on failure sErrorF and a fresh root. Undefined-tree crash points 0x00846D82 and 0x0062BA30 likewise.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 

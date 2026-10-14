@@ -11419,14 +11419,15 @@
       "subsystem": "M11-vision",
       "title": "RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found."
+        "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found.",
+        "re-analysis/research/20261013-small-reads-1-check.md: M11-072 section. Recipients in order: game delivery 0x00662522; BlockConfigurationManager +0xC 0x006172A6..0x006172B6; CantHandleTallStack x2 (HandleEvent 0x005BF268, AlwaysHandle 0x005ED240..0x005ED24E, ClearStack 0x005ED1E4..0x005ED1F8); CubeLightComponent 0x0063A390..0x0063A400; Face/Object PositionUpdate (no-op ResetReactionData 0x00612238..0x006122BE, returns 0x0060CF6C, 0x0061154A); CubeMoved fall-through 0x0060BEA8..0x0060BF64. Emit walk 0x00663C74..0x00663CA6, append 0x006646A6..0x006646B0."
       ],
       "effect": "Which engine components react to a delocalize, and in what order.",
       "provenance": "Codex research checked by Opus (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038.",
+      "unresolved": "RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038. Read 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): IMPLEMENTATION_GAP, rows R1-R8 in emit order (game first, then insertion order: BlockConfigurationManager, CantHandleTallStack in each of the two containers, CubeLightComponent, then the strategies in reaction-map order); the construction-time Delocalize reaches only R1-R5. CubeLight's PlayLightAnim arguments belong to the CubeLight record. Residual: an indirect vt+0x28 Subscribe whose slot load is more than 60 instructions before the call was not excluded (not seen).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11434,16 +11435,17 @@
     {
       "id": "M11-073",
       "subsystem": "M11-vision",
-      "title": "Reachability of PoseBase::GetParent() on a root pose (WrapExistingNode owners++ with no null guard faults at 0x008452BA)",
+      "title": "Whether any unguarded GetParent caller can see a root pose in normal running: the robot, object, PreActionPose and history pose producer invariants, and GetWithRespectTo's output parent",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
       "status": "RECOVERABLE_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6)."
+        "re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6).",
+        "re-analysis/research/20261013-small-reads-1-check.md: \"Still unread\" list: InitPose 0x004EF562, ObjectPoseConfirmer setters 0x00505DE0..0x00506F16, SetOnRamp 0x0051664E/0x00516672, SetPoseOnCharger 0x005168BA, PreActionPose 0x0050DBE0/0x0050DDA8/0x0050DFFA/0x0050F9FE, history producers 0x00512BEE/0x0051271C/0x00515774/0x005159C8/0x005160BC/0x0051612C/0x006B26E8, 0x0062A588, SendAbsLocalizationUpdate 0x0051275C, GetWithRespectTo 0x00845A34."
       ],
       "effect": "Whether the original can crash asking a root pose for its parent.",
       "provenance": "Opus check of R-POSE-REST (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly.",
+      "unresolved": "RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly. Split 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): the census and fault semantics moved to M11-076. Census is 55 calls (30 GetParent, 25 FindRoot), not \"about 60\"; 0x004DF674 is FindRoot. Remaining: the 23 unguarded rows' producer invariants (listed in the evidence). No root-to-fault witness shown.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11478,6 +11480,23 @@
       "effect": "Whether and when the engine sends the memory map to the game side.",
       "provenance": "Opus check of R-QUADTREE (2026-10-13), manager record.",
       "unresolved": "RECOVERABLE_GAP: read the bodies; if it is an engine-to-game message, the engine side stays exact and the stack delivers it through the C# API (app-boundary rule).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-076",
+      "subsystem": "M11-vision",
+      "title": "PoseBase::GetParent on a root pose faults (0x008452BA, M1-034 standing rule); FindRoot root-safe; PoseTreeNode::FindRoot 1000-step cycle guard; the 55-call census and the flatten helper 0x004DF628",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-small-reads-1-check.md: M11-073 / M11-076 section. GetParent 0x008453D4..0x0084541E, fault 0x008452BA; FindRoot 0x0084524E..0x0084526E; PoseTreeNode::FindRoot 0x008452CA..0x00845376 (guard 0x00845318); flatten helper 0x004DF628..0x004DF69C; guarded rows 0x00530E84, 0x005310B4, 0x00846D70/0x00846D7C, 0x00846FA4, 0x00848030."
+      ],
+      "effect": "What a parent or root lookup on a pose does, including the original's crash on a root pose.",
+      "provenance": "Split from M11-073 after the Opus check of R-SMALL-1 (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: GetParent on a root pose is skipped and logged visibly under the M1-034 standing rule (the original faults at 0x008452BA); FindRoot on a root returns the root; the internal walk stops after 1000 steps with sErrorF and returns the current node; the flatten helper copies a root, otherwise FindRoot + GetWithRespectTo and on failure sErrorF and a fresh root. Undefined-tree crash points 0x00846D82 and 0x0062BA30 likewise.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

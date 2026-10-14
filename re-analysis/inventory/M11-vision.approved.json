@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "28965cbdc08e6b6fae17910936a45f649548cb32d53184c1f7dbf026dd61f7cc",
+  "inventory_sha256": "e411239487bf1e57a43caed755a03a6cab43c883e2e5d471b98ebd94aa9980b4",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -845,21 +845,23 @@
       "hardware_required": false
     },
     "M11-072": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found."
+        "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found.",
+        "re-analysis/research/20261013-small-reads-1-check.md: M11-072 section. Recipients in order: game delivery 0x00662522; BlockConfigurationManager +0xC 0x006172A6..0x006172B6; CantHandleTallStack x2 (HandleEvent 0x005BF268, AlwaysHandle 0x005ED240..0x005ED24E, ClearStack 0x005ED1E4..0x005ED1F8); CubeLightComponent 0x0063A390..0x0063A400; Face/Object PositionUpdate (no-op ResetReactionData 0x00612238..0x006122BE, returns 0x0060CF6C, 0x0061154A); CubeMoved fall-through 0x0060BEA8..0x0060BF64. Emit walk 0x00663C74..0x00663CA6, append 0x006646A6..0x006646B0."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-073": {
       "status": "RECOVERABLE_GAP",
-      "title": "Reachability of PoseBase::GetParent() on a root pose (WrapExistingNode owners++ with no null guard faults at 0x008452BA)",
+      "title": "Whether any unguarded GetParent caller can see a root pose in normal running: the robot, object, PreActionPose and history pose producer invariants, and GetWithRespectTo's output parent",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6)."
+        "re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6).",
+        "re-analysis/research/20261013-small-reads-1-check.md: \"Still unread\" list: InitPose 0x004EF562, ObjectPoseConfirmer setters 0x00505DE0..0x00506F16, SetOnRamp 0x0051664E/0x00516672, SetPoseOnCharger 0x005168BA, PreActionPose 0x0050DBE0/0x0050DDA8/0x0050DFFA/0x0050F9FE, history producers 0x00512BEE/0x0051271C/0x00515774/0x005159C8/0x005160BC/0x0051612C/0x006B26E8, 0x0062A588, SendAbsLocalizationUpdate 0x0051275C, GetWithRespectTo 0x00845A34."
       ],
       "live_path": true,
       "hardware_required": false
@@ -880,6 +882,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-quadtree-rest-check.md: MapComponent::Update 0x0067DC4C, BroadcastMap 0x0067DDB8 (..0x0067DE3B), QuadTree::Broadcast 0x006857FC..0x00685C07, BroadcastMemoryMapDraw from 0x00685C08."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-076": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PoseBase::GetParent on a root pose faults (0x008452BA, M1-034 standing rule); FindRoot root-safe; PoseTreeNode::FindRoot 1000-step cycle guard; the 55-call census and the flatten helper 0x004DF628",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-small-reads-1-check.md: M11-073 / M11-076 section. GetParent 0x008453D4..0x0084541E, fault 0x008452BA; FindRoot 0x0084524E..0x0084526E; PoseTreeNode::FindRoot 0x008452CA..0x00845376 (guard 0x00845318); flatten helper 0x004DF628..0x004DF69C; guarded rows 0x00530E84, 0x005310B4, 0x00846D70/0x00846D7C, 0x00846FA4, 0x00848030."
       ],
       "live_path": true,
       "hardware_required": false

@@ -1490,3 +1490,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Quad-tree subset read; split out of M11-048 into M11-045/046 and M13-032 rows | M11-048, M11-045, M11-046 |
 | New RECOVERABLE_GAP | M11-074 map producers and readers; M11-075 map broadcast |
 | Contradictions noted | M11-017, M14-007 |
+
+
+## Check of R-SMALL-1 (manager, 2026-10-13; research/20261013-small-reads-1-check.md)
+
+| Change | Records |
+| --- | --- |
+| RobotDelocalized recipients read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-072 |
+| GetParent/FindRoot census and fault split out, IMPLEMENTATION_GAP | M11-076 (new) |
+| Remainder (producer invariants), retitled, RECOVERABLE_GAP | M11-073 |

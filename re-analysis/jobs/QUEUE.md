@@ -75,6 +75,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 36 | [B-M3M4-25](B-M3M4-25.md) | open, after B-M3M4-24 (dispatch residue: 0x101CF, owner releases, re-Init order, connect timing) |
 | 37 | [B-M5-20](B-M5-20.md) | open, after B-M3M4-25 (empty-name warning, queued items) |
 | 38 | [B-M2M15-1](B-M2M15-1.md) | open, after B-M5-20 (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
+| 39 | [B-M11-2](B-M11-2.md) | open, after B-M2M15-1 (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
@@ -102,5 +103,5 @@ anything. BOARD.md is history; this file is the live queue.
 | 19 | [R-POSE-REST](../research/requests/20261013-remaining-pose-bodies.md) | answered; checked (research/20261013-remaining-pose-bodies-check.md) (M11-068) |
 | 20 | [R-DISPATCH-REST](../research/requests/20261013-dispatch-residue.md) | answered; checked (research/20261013-dispatch-residue-check.md) (M2-020) |
 | 21 | [R-QUADTREE](../research/requests/20261013-quadtree-rest.md) | answered (7ba29fbf); checked (research/20261013-quadtree-rest-check.md) |
-| 22 | [R-SMALL-1](../research/requests/20261013-small-reads-1.md) | answered (overnight P2); Opus check running |
+| 22 | [R-SMALL-1](../research/requests/20261013-small-reads-1.md) | answered (overnight P2); checked (research/20261013-small-reads-1-check.md): M11-072 to build, M11-073 split (M11-076 to build) |
 | 23 | [R-SMALL-2](../research/requests/20261013-small-reads-2.md) | answered (overnight P3); checked (research/20261013-small-reads-2-check.md): M15-044 to build, M2-022 split (M2-023 to build) |
