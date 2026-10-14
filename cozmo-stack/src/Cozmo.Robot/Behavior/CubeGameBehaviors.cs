@@ -1603,7 +1603,7 @@ public static class BeaconFloorGeometry
         var p=new Rotation3d(q.W,q.X,q.Y,q.Z).Rotate(new Vec3(px,py,pz));return ((float)p.X,(float)p.Y,(float)p.Z);
     }
 
-    /// <summary><c>Rotation3d::GetRotationMatrix</c> 0x0084AAE0 (the matrix entries; the closing <c>RotationMatrix3d::Renormalize</c> 0x008494E0 is NOT applied: unread, MISSING).</summary>
+    /// <summary><c>Rotation3d::GetRotationMatrix</c> 0x0084AAE0 (R17: the matrix entries, then the closing <c>RotationMatrix3d::Renormalize</c> 0x008494E0, R18; both applied by <see cref="Rotation3d.Matrix"/>).</summary>
     public static Mat3 RotationMatrix(Quat q)
     {
         return new Rotation3d(q.W,q.X,q.Y,q.Z).Matrix();

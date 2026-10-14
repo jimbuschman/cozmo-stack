@@ -199,6 +199,10 @@ public sealed class TrackedFace
         scale = scale / eyeDistance;                                                              // 0x0087E022
         float tx = scale * rx, ty = scale * ry, tz = scale * rz;                                   // 0x0087E026..0x0087E038
         DistanceMm = scale;
+        // MISSING: M14-001/M11-066 0x0087E042..0x0087E064: the native writes (tx, ty, tz) into the head pose's own translation,
+        // keeping the head pose's own rotation, and calls SetParent(camera). The stack's face consumers read a flattened
+        // world pose (no camera-parented tree here), so the previous flattening (camera rotation, camera-applied point) is kept.
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M14-001/M11-066 TrackedFace::UpdateTranslation 0x0087E042..0x0087E064: the native writes the camera-frame translation into the head pose, keeps the head pose's own rotation and calls SetParent(camera); the stack's consumers read a flattened world pose, so the head pose takes the camera's rotation and the camera-applied translation");
         HeadPose = new Pose3d(camera.Pose, camera.Pose.Apply(new Vec3(tx, ty, tz)));
     }
 }

@@ -220,7 +220,7 @@ public static class CubePreActionPoses
                 // as parent, then rotates it about Y by sb*pi/2 with Transform3d::RotateBy 0x0084BB3A (C-E7). The
                 // PreActionPose ctor re-roots to the marker's parent, so stored = marker.PoseOnObject ∘ built.
                 var built = new Pose3d(builtAngle, new Vec3(0, 0, 1), builtTranslation);
-                var rotated = RotateBy(built, new Vec3(0, 1, 0), sb * (Math.PI / 2));
+                var rotated = RotateBy(built, sb);
                 list.Add(new StoredElement(marker, marker.PoseOnObject.Compose(rotated), builtTranslation, builtAngle, sb));
             }
         }
@@ -303,14 +303,23 @@ public static class CubePreActionPoses
     };
 
     /// <summary>
-    /// <c>Transform3d::RotateBy</c> 0x0084BB3A: the translation is rotated by the matrix and the rotation is
-    /// pre-multiplied by it.
+    /// The guarded static sb table at 0x010590AC (built once at 0x004E5868..0x004E58E4): four
+    /// <c>RotationVector3d(Radians(float), Y_AXIS_3D)</c> (R21). Radians words: sb0 0x00000000 (movs r1,#0 at 0x004E586A),
+    /// sb1 0x3FC90FDB (movw/movt 0x004E5882/0x004E5888), sb2 0x40490FDB (0x004E58A4/0x004E58AA), sb3 0xBFC90FDB
+    /// (0x004E58C6/0x004E58CC).
     /// </summary>
-    public static Pose3d RotateBy(Pose3d pose, Vec3 axis, double angleRad)
-    {
-        var r = Mat3.AxisAngle(axis, angleRad);
-        return pose.RotateBy(Rotation3d.FromMatrix(r)); // R28: rotate point in f32, then pre-multiply/normalize quaternion.
-    }
+    // fidelity: M12-001, M12-021
+    internal static readonly int[] SbRadiansBits = { 0x00000000, 0x3FC90FDB, 0x40490FDB, unchecked((int)0xBFC90FDB) };
+    internal static readonly RotationVector3d[] SbRotations = SbRadiansBits
+        .Select(bits => new RotationVector3d(new Radians(BitConverter.Int32BitsToSingle(bits)), new Vec3(0, 1, 0))).ToArray();
+
+    /// <summary>
+    /// <c>Transform3d::RotateBy(RotationVector3d)</c> 0x0084BB3A with the table entry for <paramref name="sb"/> (0x004E5A1C, 0x004E5AC0,
+    /// 0x004E5B60, 0x004E5C36): R28 then R22, with no Rodrigues round trip. The translation is rotated (R7) and the rotation
+    /// pre-multiplied, normalised.
+    /// </summary>
+    // fidelity: M12-001
+    public static Pose3d RotateBy(Pose3d pose, int sb) => pose.RotateBy(SbRotations[sb]);
 
     /// <summary>
     /// <c>ActionableObject::GetCurrentPreActionPoses</c> 0x004DF850 / the copy-with-pose ctor

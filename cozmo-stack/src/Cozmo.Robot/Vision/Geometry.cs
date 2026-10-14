@@ -260,11 +260,12 @@ public sealed class Pose3d : IDisposable
         n.SetParent(parent.Node);
     }
     public void ClearParent()=>RequireNode().SetParent(null);
+    // fidelity: M11-076
     public bool TryGetParent(ref Pose3d output)
     {
         if(Node is null){output=new Pose3d();return true;} // Defined null-source case leaves a fresh identity result.
         if(Node.Parent is null)
-        {PoseDiagnostics.Missing("M1-034/M11-073 GetParent(root) fatal owner read 0x008452BA: skipped, previous output preserved");return false;}
+        {PoseDiagnostics.Missing("M1-034/M11-076 GetParent(root) fatal owner read 0x008452BA: skipped, previous output preserved");return false;}
         output=WrapExisting(Node.Parent);return true;
     }
     public Pose3d FindRoot()=>WrapExisting(RequireNode().Root());
@@ -280,6 +281,8 @@ public sealed class Pose3d : IDisposable
     public void Invert(){var n=RequireNode();n.Transform=n.Transform.Inverse();n.SetParent(null);}
     public Pose3d Inverse(){var result=new Pose3d(this);result.Invert();return result;}
     public Pose3d RotateBy(Rotation3d rotation){var result=new Pose3d(this);result.Node!.Transform=result.Transform.RotateBy(rotation);return result;}
+    // R28 RotateBy(RotationVector3d) 0x0084BB3A on a copy of this pose: r from R22, then t = r*t (R7), R = r*R normalised.
+    public Pose3d RotateBy(RotationVector3d rotation){var result=new Pose3d(this);result.Node!.Transform=result.Transform.RotateBy(rotation);return result;}
     public double AngleAroundZ=>Quaternion.AngleAroundZ;
     public static bool GetWithRespectTo(Pose3d from,Pose3d to,Pose3d output)
     {
@@ -338,11 +341,13 @@ public sealed class Pose3d : IDisposable
     public bool IsSameAsWithAmbiguity(Pose3d other,Vec3 distance,Radians tolerance,ref Vec3 delta,ref Radians angle,IReadOnlyList<Mat3> ambiguities,bool absolute)
     {
         if(ReferenceEquals(this,other))return true;
-        var n=RequireNode();using var relative=new Pose3d("");
-        if(n.Parent is not null&&ReferenceEquals(n.Parent,other.Node))relative.SetParent(other);
-        else if(n.Parent is not null)
+        // R38 / 0x00846F7E: a null node takes the cbz to GetWithRespectTo(P, this), whose NullInputPose VERIFY returns false;
+        // then PosesHaveDifferentOrigins and false. No throw.
+        var n=Node;using var relative=new Pose3d("");
+        if(n?.Parent is not null&&ReferenceEquals(n.Parent,other.Node))relative.SetParent(other);
+        else if(n?.Parent is not null)
         {using var parent=WrapExisting(n.Parent);if(!GetWithRespectTo(other,parent,relative))return false;}
-        else if(_legacyFrameInput&&other._legacyFrameInput&&!other.HasParent)
+        else if(n is not null&&_legacyFrameInput&&other._legacyFrameInput&&!other.HasParent)
         {
             PoseDiagnostics.Missing("M11-065/M11-066 legacy flattened IsSameAs inputs lack checked parent/root bindings; arithmetic only is built");
             relative.Node!.Transform=other.Transform;

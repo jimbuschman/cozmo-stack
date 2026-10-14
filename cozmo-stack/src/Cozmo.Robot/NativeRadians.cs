@@ -25,9 +25,11 @@ public struct Radians
     public static Radians operator -(Radians a,Radians b)=>new(a.Value-b.Value);
     public static Radians operator *(Radians a,float b)=>new(a.Value*b);
     public static Radians operator -(Radians a)=>new(-a.Value,a.RescaleEnabled);
-    public static Radians operator -(float a,Radians b)=>new(a-b.Value);
+    // R2 0x0084CA66..0x0084CA96: Radians(a) (flag set, rescaled) first, then rescaled(a) - b.raw, flag set, rescaled.
+    public static Radians operator -(float a,Radians b)=>new(new Radians(a).Value-b.Value);
+    // R2 0x0084CC0E..0x0084CC1E: a copy of a with its flag forced to 1 is always rescaled, whatever a's own flag.
     public static bool IsNear(Radians a,Radians b,Radians tolerance)
-    {float left=a.RescaleEnabled?Rescale(a.Value):a.Value;return MathF.Abs(Rescale(left-b.Value))<MathF.Abs(tolerance.Value);}
+    {float left=Rescale(a.Value);return MathF.Abs(Rescale(left-b.Value))<MathF.Abs(tolerance.Value);}
     public void Rescale(){if(RescaleEnabled)Value=Rescale(Value);}
     public static bool operator >(Radians a,Radians b)=>a.Value-b.Value>0&&!IsNear(a,b,new Radians(Epsilon));
     public static bool operator <(Radians a,Radians b)=>b>a;

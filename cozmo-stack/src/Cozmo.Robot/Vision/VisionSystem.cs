@@ -1268,14 +1268,14 @@ public static class TurnTowardsPose
     /// <c>threshold &gt;= |dv|</c> (0x005184AE) the angle is the answer (0x005185B2) unless k is 25, which is "MaxIterations" and 1 (0x005185C6..0x00518600); otherwise <c>angle += atan2f(dv, fy) * -0.8f</c>
     /// (0x005184BC..0x005184DA, -0.8f = 0xBF4CCCCD). After the 25th non-converged iteration the function returns 0 with the angle UNASSIGNED (the counter compared at 0x005185C6 is then 26): the caller's
     /// Radians local, 0, is the result.
-    /// <para>Scalar operations are binary32 in the engine's order. The pose algebra (the neck pose, <c>GetCameraPose</c>'s pre-multiply, <c>GetInverse</c>, the quaternion rotation of P) is this stack's double
+    /// <para>Scalar operations are binary32 in the engine's order. The pose algebra (the neck pose, <c>GetInverse</c>, the quaternion rotation of P) is this stack's double
     /// <see cref="Pose3d"/>, narrowed to binary32 for Q: the engine's own Transform3d/Rotation3d operations were not read here, MISSING (reported once) for the last bits.</para>
     /// </summary>
     // fidelity: M13-021
     public static uint ComputeHeadAngleToSeePose(CameraCalibration? cal, Pose3d poseInRobotFrame, float tolerance, out float angle, Action<string>? log = null)
     {
         angle = 0.0f;
-        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Robot::ComputeHeadAngleToSeePose 0x00518344: the neck-pose composition, GetCameraPose's pre-multiply, GetInverse and the rotation of P (0x004A4864, 0x004A8194, Transform3d) are this stack's double Pose3d algebra narrowed to binary32, not the engine's quaternion operations; the loop's scalar operations are binary32");
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("Robot::ComputeHeadAngleToSeePose 0x00518344: the neck-pose composition, GetInverse and the rotation of P (0x004A4864, 0x004A8194, Transform3d) are this stack's double Pose3d algebra narrowed to binary32, not the engine's quaternion operations; the loop's scalar operations are binary32");
         var wrt = poseInRobotFrame.WithRespectTo(new Pose3d(Mat3.Identity, HeadGeometry.NeckPositionMm)).Translation;     // 0x0051838E GetWithRespectTo(pose, [robot+0x2CC]); the pose arrives in the robot frame (0x0054A94C)
         float tx = (float)wrt.X, ty = (float)wrt.Y, tz = (float)wrt.Z;
         float sq = tx * tx;
@@ -1292,7 +1292,7 @@ public static class TurnTowardsPose
         var camInNeck = new Pose3d(HeadGeometry.DefaultHeadCamRotation, HeadGeometry.EngineHeadCamPositionMm);   // the engine's own composition (Robot::Robot 0x0050FF7C..0x0050FFBA); the vision model still uses the older z
         for (int k = 1; k <= 25; k++)
         {
-            var cam = new Pose3d(Mat3.AboutY(-(double)a), Vec3.Zero).Compose(camInNeck);           // GetCameraPose(a) relative to the neck
+            var cam = HeadGeometry.GetCameraPose(camInNeck, a);                                   // GetCameraPose(a) 0x00510FFC relative to the neck: RotateBy(RotationVector3d(Radians(-a), Y)) (R28, R22)
             var q = cam.Inverse().Apply(p);
             float qy = (float)q.Y, qz = (float)q.Z;
             if (qz <= eps) { log?.Invoke("Robot.ComputeHeadAngleToSeePose.BadProjectedZ"); return 1; }

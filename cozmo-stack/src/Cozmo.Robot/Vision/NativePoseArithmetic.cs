@@ -150,6 +150,8 @@ public struct Transform3d
     public Transform3d Inverse(){var r=Rotation.Inverse();return new(r,r.Rotate(Negate(Translation)));}
     public Transform3d RotateBy(Rotation3d r){var t=r.Rotate(Translation);return new(r*Rotation,t);}
     public Transform3d RotateBy(Radians a)=>RotateBy(Rotation3d.FromAngleAxis(a.Value,Rotation.Axis));
+    // R28 0x0084BB3A: RotateBy(RotationVector3d) builds r through R22 (an angle IsNear 0 takes the Z axis), then RotateBy(r).
+    public Transform3d RotateBy(RotationVector3d v)=>RotateBy(Rotation3d.FromRotationVector(v));
     public Transform3d TranslateForward(float distance)=>new(Rotation,Add(Rotation.Rotate(new(distance,0,0)),Translation));
     public void ApplyTo(IReadOnlyList<Vec3> input,List<Vec3> output)
     {

@@ -14,6 +14,9 @@ public class M12RVisBuildTests
 {
     private static readonly MarkerLibrary? Lib = MarkerLibrary.EmbeddedOrNull;
     private const double StackToleranceMm = 15.0;                     // 0x00632F0C
+    // Not a source value: the bound for re-expressing a stored offset through f32 pose compositions (R24-R27) at the
+    // test's magnitudes: below 512 mm one f32 ulp is at most 2^-15 mm, so 2^-11 mm is at least 16 ulps.
+    private const double OffsetTolMm = 8.0 / 16384.0;
     private static Pose3d At(double x, double y, double z = 0, double yaw = 0) => new(Mat3.AboutZ(yaw), new Vec3(x, y, z));
     private static readonly Func<IReadOnlyList<PreActionObstacle>> NoObstacles = () => Array.Empty<PreActionObstacle>();
 
@@ -689,9 +692,11 @@ public class M12RVisBuildTests
         Assert.Equal(PoseState.Dirty, top.PoseState);
         // the pose tree moves the object on top with the carried one: it keeps its offset from it
         rig.M.Docking.UpdateCarriedObjectPose();
-        // R36 direct-parent conversion can round through inverse/composition; the stored local transform is what must remain unchanged.
-        var offset = rig.M.Docking.Carrying.TopWrtCarried!.Translation;
-        Assert.Equal(relBefore.X, offset.X, 6); Assert.Equal(relBefore.Y, offset.Y, 6); Assert.Equal(relBefore.Z, offset.Z, 6);
+        // B-POSE-2 item 4: independent of Carrying.TopWrtCarried (computed by the same call as relBefore): the top cube's pose
+        // w.r.t. the carried cube, read from the world poses AFTER UpdateCarriedObjectPose (Docking.cs), equals the offset
+        // measured before the attach, within f32 round-off (see OffsetTolMm).
+        var offset = top.Pose.WithRespectTo(bottom.Pose).Translation;
+        Assert.Equal(relBefore.X, offset.X, OffsetTolMm); Assert.Equal(relBefore.Y, offset.Y, OffsetTolMm); Assert.Equal(relBefore.Z, offset.Z, OffsetTolMm);
         Assert.InRange(relBefore.Z, 44.0 - StackToleranceMm, 44.0 + StackToleranceMm);       // found by the 15.0 helper: one cube height up
         double bottomXBefore = bottom.Pose.Translation.X, topXBefore = top.Pose.Translation.X;
         rig.X = 40; rig.State();
@@ -1333,9 +1338,9 @@ public class M12RVisBuildTests
         Assert.True(dock.IsCompleted);
         Assert.Equal(0u, rig.M.Docking.LastAttachResult);
         Assert.Equal(8u, rig.M.Docking.Carrying.CarriedOnTopId);
-        // R36 re-expression has defined float roundoff; storage retention is the source guarantee.
-        var rel = rig.M.Docking.Carrying.TopWrtCarried!.Translation;
-        Assert.Equal(relBefore.X, rel.X, 6); Assert.Equal(relBefore.Y, rel.Y, 6); Assert.Equal(relBefore.Z, rel.Z, 6);
+        // B-POSE-2 item 4: independent of Carrying.TopWrtCarried: the world poses after the pick-up give the pre-attach offset.
+        var rel = top.Pose.WithRespectTo(bottom.Pose).Translation;
+        Assert.Equal(relBefore.X, rel.X, OffsetTolMm); Assert.Equal(relBefore.Y, rel.Y, OffsetTolMm); Assert.Equal(relBefore.Z, rel.Z, OffsetTolMm);
         Assert.True(bottom.Pose.Translation.X < 200);               // the carried cube is on the lift, not where it stood (260)
     }
 

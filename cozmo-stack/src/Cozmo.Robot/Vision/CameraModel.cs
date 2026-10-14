@@ -30,12 +30,31 @@ public static class HeadGeometry
         -1.0, 0.0, 0.0,
         0.0, -0.9976000189781189, -0.0697999969124794});
 
+    /// <summary>
+    /// <c>Robot::GetCameraPose(float headAngle)</c> 0x00510FFC..0x00511064, relative to the neck: (1) copy the head-cam pose
+    /// (robot+0x2D8, parent the neck); (2) <c>RotationVector3d(Radians(-a), Y_AXIS_3D)</c> (sign flip 0x00511016,
+    /// 0x0051101C..0x0051102A, R21); (3) <c>Transform3d::RotateBy(RotationVector3d)</c> on the copy (0x00511036, R28 then R22:
+    /// an angle IsNear 0 takes the Z axis, the translation is rotated by R7, the rotation pre-multiplied and normalised);
+    /// (4) SetName("Camera") (0x00511050). The head-cam pose here is this vision model's (its translation is M11-054's gap).
+    /// </summary>
+    // fidelity: M11-003
+    public static Pose3d GetCameraPose(float headAngleRad) => GetCameraPose(new Pose3d(DefaultHeadCamRotation, HeadCamPositionMm), headAngleRad);
+
+    internal static Pose3d GetCameraPose(Pose3d headCam, float headAngleRad)
+    {
+        var camera = headCam.RotateBy(new RotationVector3d(new Radians(-headAngleRad), new Vec3(0, 1, 0)));
+        camera.Name = "Camera";
+        return camera;
+    }
+
     /// <summary>The camera pose in the robot frame for a head angle (radians, positive = up).</summary>
     public static Pose3d CameraPoseInRobot(double headAngleRad)
     {
-        var neck = new Pose3d(-headAngleRad,new Vec3(0,1,0),NeckPositionMm);
-        var cam = new Pose3d(DefaultHeadCamRotation, HeadCamPositionMm);
-        return neck.Compose(cam);
+        // Robot::Robot builds the neck (robot+0x2CC) at 0x0050FF6A as Pose3d(Radians(0.0f) [0x0050FF26..0x0050FF28], Y_AXIS_3D
+        // [0x0050FF2C], (-13 = 0xC1500000, 0, 49 = 0x42440000), parent robot, name): by R30/R3 the identity quaternion.
+        // The stack flattens neck * camera into the robot frame.
+        var neck = new Pose3d(Mat3.Identity, NeckPositionMm);
+        return neck.Compose(GetCameraPose((float)headAngleRad));
     }
 
     /// <summary>The robot's pose in its world origin from a state message: X, Y, Z and yaw about Z.</summary>
