@@ -2571,3 +2571,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | ApplyAction(check) read, to build | M13-034 (note) |
 | State_c log text, plan logs on every plan, sEvent levels | M13-033 (note) |
+
+
+## Check of OV07 (manager, 2026-10-14; research/overnight/20261014-ov07-m13-021-check.md)
+
+| Change | Records |
+| --- | --- |
+| Narrowed to the MovementComponent/TrackLayer wrappers, retitled: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M13-021 |
+| Turn Init eye block and CheckIfDone rows; earlier +0xAC/+0xD9 note contradicted | M13-022 |
+| PoseNotSet and parentless consequence | M13-020 (note) |
+| TrackObjectAction ID writes, IMPLEMENTATION_GAP | M13-036 (new) |
+| TrackObjectAction selection and tail, RECOVERABLE_GAP | M13-037 (new) |

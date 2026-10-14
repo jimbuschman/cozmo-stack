@@ -540,3 +540,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | New COMPATIBILITY_POLICY | M3-063 backup messages and listing order |
+
+
+## Check of OV07 (manager, 2026-10-14; research/overnight/20261014-ov07-m13-021-check.md)
+
+| Change | Records |
+| --- | --- |
+| SendMessage warning metadata | M3-047 (note) |

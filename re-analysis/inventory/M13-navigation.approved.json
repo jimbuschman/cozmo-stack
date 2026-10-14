@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-13",
+  "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "bf843662bc66648ad047f262bb78227fdac9ce2411837968e7ec9dfdcf6b4c03",
+  "inventory_sha256": "3ee17b8c75904b24adcd30e11b9d97e136335611b8a6d0c9f32fb9a961aaf6ca",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -292,13 +292,14 @@
       "hardware_required": false
     },
     "M13-021": {
-      "status": "RECOVERABLE_GAP",
-      "title": "Unread MovementComponent and TrackLayerComponent bodies next to the turn and head actions",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "MovementComponent::MoveHeadToAngle and TurnInPlace wrappers (shared u8 id, tags 0x37/0x39, Pack layouts) and the TrackLayerComponent eye-shift/keep-alive wrappers",
       "authority": "libcozmoEngine.so 3.4.0-1204: MovementComponent::TurnInPlace, MoveHeadToAngle, LockTracks and UnlockTracks (the wire bodies) and the TrackLayerComponent AddOrUpdateEyeShift / RemoveKeepFaceAlive argument values (0x00546234..0x00546282) are unread; the rest of TurnInPlaceAction::CheckIfDone after the +0xD4 increment (0x0054645E..0x00546830) is unread; the 17 other +0xA8 byte stores (re-analysis/research/20260929-R-VIS-verify-M13-gap3.md) are unread; the head-angle functions are M13-026, the completion union and Preset constructor are in M13-022, the wrapper is M13-027",
       "evidence": [
         "0x00549C60..0x00549D2C the two constructions; 0x0054BB8C, 0x0054BC6C, 0x0054BA84",
         "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q4 and open questions",
-        "re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q5, open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap2.md objections 2 and 6"
+        "re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q5, open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap2.md objections 2 and 6",
+        "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: rows 1-3. MoveHeadToAngle 0x006407CC..0x0064088A, tag 0x007A861E..0x007A862E, Pack 0x007A2670..0x007A26C8; TurnInPlace 0x00640898..0x0064098E, tag 0x007A8768..0x007A8778, Pack 0x007A296A..0x007A29DA; AddEyeShift 0x0064F3C8..0x0064F498, RemoveEyeShift 0x0064F4F4, RemoveKeepFaceAlive 0x0064F2EC -> 0x0058CFAC..0x0058CFC0. (The earlier evidence 0x00549C60.. is superseded: it supports none of these bodies.)"
       ],
       "live_path": true,
       "hardware_required": false
@@ -311,7 +312,8 @@
         "0x005459D4..0x00546894 TurnInPlaceAction; 0x0054D3F8, 0x0054D624. Handoff (overlap ruling 2026-10-10): 0x00547E40..0x005488B8 MoveHeadToAngleAction is M4-001/M4-016's",
         "re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q5; re-analysis/research/20260929-R-VIS-verify-M13-gap2.md Q5 (PASS)",
         "0x005469A8..0x005469BE, 0x0054644A..0x0054645E, 0x0054834C..0x005483CC, 0x00548440..0x00548454 (0x0054834C..0x005483CC and 0x00548440..0x00548454 lie in MoveHeadToAngleAction: M4-016's)",
-        "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q4; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q4"
+        "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q4; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q4",
+        "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: rows 4-5. Init eye block and halfRevs 0x00546144..0x00546298; CheckIfDone 0x0054642C..0x0054689A, IsBodyInPosition 0x00546374..0x00546422, IsOffTreadsStateValid 0x00545EC4..0x00545F1A, u16 counters 0x01051024/0x01051026 (initial 10)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -459,6 +461,26 @@
       ],
       "live_path": true,
       "hardware_required": true
+    },
+    "M13-036": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "TrackObjectAction: ctor flag +0x120, Init checks and name, published tracked-object ID writes, null-selection return",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: row 6. ctor +0x120 0x005678BE; MC+0x20/+0x24 0x0063DA86; Init 0x005679CC..0x00567A28, 0x00567A30..0x00567B8A (stores 0x005679E4, 0x00567A14); null selection 0x00567F6C..0x00567FC0; direct ctor callers 0x0052AD1E and 0x0054AE1C both pass 1."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-037": {
+      "status": "RECOVERABLE_GAP",
+      "title": "TrackObjectAction selection and UpdateTracking tail: FindLocatedClosestMatchingTypeHelper, marker choice, NoObservedMarkers/NoClosestMarker, output angles; TurnTowardsObjectAction +0x192 setter",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: \"Still unread\": FindLocatedClosestMatchingTypeHelper (called at 0x00567D1C); UpdateTracking from 0x00567DA4 (0x00567FC2, 0x00568088); TurnTowardsObjectAction +0x192."
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
   }
 }
