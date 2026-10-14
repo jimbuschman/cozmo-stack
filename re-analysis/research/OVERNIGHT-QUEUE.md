@@ -54,5 +54,6 @@ The first three are the requests already written:
 | OV41 | requests/overnight/20261014-ov41-m9-025.md (M9-025: The exact waveform produced by the Wwise LFO between its extrema) | research/overnight/20261014-ov41-m9-025.md |
 | OV42 | requests/overnight/20261014-ov42-m11-074.md (M11-074: memory-map producers and readers) | research/overnight/20261014-ov42-map-producers.md |
 | OV43 | requests/overnight/20261014-ov43-m11-075.md (M11-075: memory-map broadcast to the game) | research/overnight/20261014-ov43-map-broadcast.md |
+| OV44 | requests/overnight/20261014-ov44-m2-022.md (M2-022: local subscribers to tags 0x60/0x81; dispatch inside ActionList::Clear) | research/overnight/20261014-ov44-m2-022.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
