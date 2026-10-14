@@ -214,7 +214,7 @@ identity rotation gives the zero axis, so r is R3/R4 applied to (cos(a/2), 0, 0,
 - Tf = a copy of from.node.T; Tt = a copy of to.node.T.
 - f = from.node; t = to.node.
 - d = depth(f) − depth(t), where depth is 1 + the number of ancestors (0x00845E8C..0x00845F02). At 1000 it logs
-  LoopBoundOverflow "%s:%d" (poseBase_impl.h line 0x189) and returns 1001.
+  LoopBoundOverflow "%s:%d" (**poseTreeNode.h** line 0x189; corrected 2026-10-14 from the B-POSE-1 block 60295b23, filename pointer 0x00845EB0 → 0x00C294C9) and returns 1001.
 
 **(a) Walk f up** (0x00845AB8..0x00845AE6). While d ≥ 1:
 1. Tf.PreComposeWith(f.parent.T).
@@ -462,3 +462,18 @@ PoseBase::operator= is at 0x00845940..0x008459BE.
    - cvCheckArr's [min, max) semantics.
 
    They stand as adopted. If the builder finds a contradiction, it stops with BLOCKED as before.
+
+## Every LoopBoundOverflow site in the pose tree (manager, 2026-10-14)
+
+Each is sErrorF, key `LoopBoundOverflow`, format "%s:%d" with (file, line), then the error flag and break-on-error.
+
+| Site | Address of the line constant | File | Line |
+| --- | --- | --- | --- |
+| GetTreeDepth (R36 setup) | 0x00845EB4 | poseTreeNode.h (0x00C294C9) | 0x189 |
+| GetWithRespectTo (a) | 0x00845AFC | poseBase_impl.h (0x00C29472) | 0x1A0 |
+| GetWithRespectTo (b) | 0x00845B8E | poseBase_impl.h (0x00C29472) | 0x1B6 |
+| GetWithRespectTo (c) | 0x00845C2C | poseBase_impl.h (0x00C29472) | 0x1D4 |
+| PoseTreeNode::FindRoot | 0x00845334 | poseTreeNode.h | 0x145 |
+| PoseTreeNode::HasSameRootAs (OV12 check) | — | poseTreeNode.h | 0x107, 0x10E |
+
+The file string is the full path `../../../../coretech/common/include/anki/common/basestation/math/<file>`.
