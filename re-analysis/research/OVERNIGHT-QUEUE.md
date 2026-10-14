@@ -57,5 +57,6 @@ The first three are the requests already written:
 | OV44 | requests/overnight/20261014-ov44-m2-022.md (M2-022: local subscribers to tags 0x60/0x81; dispatch inside ActionList::Clear) | research/overnight/20261014-ov44-m2-022.md |
 | OV45 | requests/overnight/20261014-ov45-m11-073.md (M11-073: can an unguarded GetParent caller see a root pose) | research/overnight/20261014-ov45-m11-073.md |
 | OV46 | requests/overnight/20261014-ov46-m12-043.md (M12-043: GetBoundingQuad corner order; PyramidBase duplicates; StopHelperWithoutCallback) | research/overnight/20261014-ov46-m12-043.md |
+| OV47 | requests/overnight/20261014-ov47-m12-044.md (M12-044: PreActionPose element escape analysis) | research/overnight/20261014-ov47-m12-044.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

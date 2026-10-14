@@ -977,3 +977,13 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | --- | --- |
 | Placement approach angle read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-039 |
 | Class name in MISSING corrected | M12-030 (note) |
+
+
+## Check of OV04 (manager, 2026-10-13; research/overnight/20261014-ov04-m12-038-check.md)
+
+| Change | Records |
+| --- | --- |
+| Height tolerance writer and propagation: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-038 |
+| Escape analysis, RECOVERABLE_GAP | M12-044 (new) |
+| Ctor bodies read | M12-001 (note) |
+| Base validity users | M12-036 (note) |

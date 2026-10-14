@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "1468ef6b057c62c128c6571a60fe7c51dc58e75c1dfa86487aee2f89a48e2ee3",
+  "inventory_sha256": "33b0a66349c9eb16c3922ccfb95534ff4a94d81f747724e26f586d4f118f1640",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -528,12 +528,13 @@
       "hardware_required": false
     },
     "M12-038": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The PreActionPose+0x14 height tolerance reader",
       "authority": "libcozmoEngine.so 3.4.0-1204: PreActionPose+0x14 is written by SetHeightTolerance 0x0050DAA4 (max|translation|/sqrt(3), 0x0050DB06) but no reader was found in GetCurrentPreActionPoses, the base IsPreActionPoseValid or IDockAction::GetPreActionPoses' compaction",
       "evidence": [
         "0x0050DAA4..0x0050DB10",
-        "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q2 (UNKNOWN row); re-analysis/research/20260929-R-VIS-verify-M12-gap3.md"
+        "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q2 (UNKNOWN row); re-analysis/research/20260929-R-VIS-verify-M12-gap3.md",
+        "re-analysis/research/overnight/20261014-ov04-m12-038-check.md: writer 0x0050DAA4..0x0050DB0E (literal 0x3F13CD3A at 0x0050DB10); propagation: copy ctor 0x0050E138..0x0050E166, range assign 0x004DFF64..0x004DFF88, GetCurrentPreActionPoses 0x004DFBEA..0x004DFC04, compaction 0x00550B3E..0x00550B5E, 0x00550B82..0x00550BA2; dispatch closure: only Charger 0x0101E100 and Ramp 0x0101FA90 override slot 0x10, base 0x004DF2C0 reads +4/+8 only."
       ],
       "live_path": true,
       "hardware_required": false
@@ -587,6 +588,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov02-m12-028-check.md: corners/midpoint 0x006177F0..0x00617A08, 0x00617A8C..0x00617C32, multimap 0x00618A4C (equal keys keep insertion order, NaN right); unread GetBoundingQuad<float> 0x004E6490..0x004E6598 and Block::GetBoundingQuadXY 0x004E62A2."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-044": {
+      "status": "RECOVERABLE_GAP",
+      "title": "PreActionPose element escape analysis: whether any consumer passes a PreActionPose element (not its pose) to a callee outside the census, which could read +0x14",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov04-m12-038-check.md: \"Still unread\": IDockAction::Init std::function targets 0x00551618, 0x00551654, 0x00551842; ComputePlaceRelObjectOffsetPoses 0x005558F4..0x00556540; DriveAndFlipBlockAction::GetPossiblePoses 0x0055E438..0x0055EB04; FlipBlockAction::Init 0x0055EDC8..0x0055F074; IsAtPreActionPoseWithVisualVerification 0x005B6F5C..0x005B7160; BehaviorDockingTestSimple 0x005CBC10..0x005CD180; BehaviorDriveInDesperation 0x005D9884..0x005D9BAC."
       ],
       "live_path": true,
       "hardware_required": false

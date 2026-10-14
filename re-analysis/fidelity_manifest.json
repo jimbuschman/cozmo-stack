@@ -3878,7 +3878,7 @@
       ],
       "effect": "a pre-action pose is built at the wrong distance or angle, or the drive threshold accepts a pose the engine would reject",
       "provenance": "the current code used 49 for PlaceOnGround and 56.5771 for Flipping as the distance, a planar X/Y threshold, and a guessed floor; none of that is the engine's",
-      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the Flipping corner is binary32 0x42624EEF (X = size.y*0.5f + corner, 0x004E583A..0x004E5934; Y = 0xC2624EEF), the close-enough threshold follows the binary32 sequence (0x00550102..0x00550164: vmul/vadd, vsqrt, sinf, vmul, vadd), the tolerance guard is operator> 0x0084CC90 (strict IsNear, so exactly 1e-5f now passes), OffsetEpsilon is 0x3727C5AC. Still open: the preceding validity filter is M12-036's; ComposeWorld's offset geometry (0x004DFA26..0x004DFB46) and IsRestingFlat are double where the engine is float; sinf/sqrt use MathF (libm stand-in); PreActionPose+0x14 has no reader found (M12-038); the per-object cache is never cleared.",
+      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): the Flipping corner is binary32 0x42624EEF (X = size.y*0.5f + corner, 0x004E583A..0x004E5934; Y = 0xC2624EEF), the close-enough threshold follows the binary32 sequence (0x00550102..0x00550164: vmul/vadd, vsqrt, sinf, vmul, vadd), the tolerance guard is operator> 0x0084CC90 (strict IsNear, so exactly 1e-5f now passes), OffsetEpsilon is 0x3727C5AC. Still open: the preceding validity filter is M12-036's; ComposeWorld's offset geometry (0x004DFA26..0x004DFB46) and IsRestingFlat are double where the engine is float; sinf/sqrt use MathF (libm stand-in); PreActionPose+0x14 has no reader found (M12-038); the per-object cache is never cleared. OV04 check (re-analysis/research/overnight/20261014-ov04-m12-038-check.md): the ctor bodies are read: point ctor 0x0050DB6C..0x0050DC80, pose ctor 0x0050DCFC..0x0050DE48 (PoseWrtMarkerParentInvalid and GetPoseWrtMarkerParentFailed errors, both continue), derived ctor 0x0050DF00..0x0050E04A with MakeUnitLength 0x0050E0C0..0x0050E132, distance ctor 0x0050DB14. \"+0x14 has no reader (M12-038)\" should read \"copied, never used in a decision\". GetCurrentPreActionPoses includes an inlined element assignment 0x004DFBEA..0x004DFC04.",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests; M12RVisBuildTests.M12_001_*; M12RVisBuildTests.M12_020_*; M12RVisBuildTests.M12_036_*"
@@ -4604,7 +4604,7 @@
         "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q2.4-2.8; re-analysis/research/20260929-R-VIS-verify-M12-gap3.md Q2 and objection 2.8"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Built for cube candidates: PreActionValidity.IsPreActionPoseValid (|R22-1| < 0x3E0930A4 with NaN invalid, the empty-vector shortcut, the swept footprint with 55.9/27.1/10-step and n = (int)floorf((L + 55.9)/10) (L = 0 gives 5), the direction multiplied by 1/len and the centre/left/right points accumulated by +10u per sample as the engine does (0x004DF3C2, 0x004DF3D2, 0x004DF582..0x004DF5DA), the own-ID skip and the own-quad-contains-centroid skip) and PreActionValidity.GetObstacles / ManipulationSystem.GetObstacles (ignore ids, minZ = robot z, maxZ = minZ + Robot::GetHeight, the exclusion predicate, M13-007 footprints). Read, not choices (fix-round-2 verifier): Quadrilateral::ComputeCentroid 0x004DF7BE = (c0 + c2 + c1 + c3) * 0.25 and CarryingComponent::GetCarryingObjects 0x00633BB0 inserts the carried id and the object on top. CHOICE: an obstacle or own footprint that cannot be computed (non-cube, tilted) is the M13-023 planar 22 mm stand-in (flagged IsStandIn, traced). Still open: the Ramp and Charger overrides (M12-034). CORRECTED in fix round 3: floorf, not ceilf; the earlier ceil-based counts in the tests were hand-rederived (n = 19 for the Front sweep, 5 for a zero-length one) and a test distinguishes floor from ceil.",
+      "unresolved": "Built for cube candidates: PreActionValidity.IsPreActionPoseValid (|R22-1| < 0x3E0930A4 with NaN invalid, the empty-vector shortcut, the swept footprint with 55.9/27.1/10-step and n = (int)floorf((L + 55.9)/10) (L = 0 gives 5), the direction multiplied by 1/len and the centre/left/right points accumulated by +10u per sample as the engine does (0x004DF3C2, 0x004DF3D2, 0x004DF582..0x004DF5DA), the own-ID skip and the own-quad-contains-centroid skip) and PreActionValidity.GetObstacles / ManipulationSystem.GetObstacles (ignore ids, minZ = robot z, maxZ = minZ + Robot::GetHeight, the exclusion predicate, M13-007 footprints). Read, not choices (fix-round-2 verifier): Quadrilateral::ComputeCentroid 0x004DF7BE = (c0 + c2 + c1 + c3) * 0.25 and CarryingComponent::GetCarryingObjects 0x00633BB0 inserts the carried id and the object on top. CHOICE: an obstacle or own footprint that cannot be computed (non-cube, tilted) is the M13-023 planar 22 mm stand-in (flagged IsStandIn, traced). Still open: the Ramp and Charger overrides (M12-034). CORRECTED in fix round 3: floorf, not ceilf; the earlier ceil-based counts in the tests were hand-rederived (n = 19 for the Front sweep, 5 for a zero-length one) and a test distinguishes floor from ceil. OV04 check (re-analysis/research/overnight/20261014-ov04-m12-038-check.md): the base IsPreActionPoseValid is also used by Bridge, FlatMat, MatPiece and Platform; only Charger and Ramp override (Ramp unreachable).",
       "hardware_required": false,
       "live_path": true,
       "test": "M12RVisBuildTests.M12_036_*; M12RVisBuildTests.M12_001_*; M12RVisBuildTests.M12_031_GetPreActionPosesApplies*"
@@ -4637,10 +4637,11 @@
       "authority": "libcozmoEngine.so 3.4.0-1204: PreActionPose+0x14 is written by SetHeightTolerance 0x0050DAA4 (max|translation|/sqrt(3), 0x0050DB06) but no reader was found in GetCurrentPreActionPoses, the base IsPreActionPoseValid or IDockAction::GetPreActionPoses' compaction",
       "evidence": [
         "0x0050DAA4..0x0050DB10",
-        "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q2 (UNKNOWN row); re-analysis/research/20260929-R-VIS-verify-M12-gap3.md"
+        "re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md Q2 (UNKNOWN row); re-analysis/research/20260929-R-VIS-verify-M12-gap3.md",
+        "re-analysis/research/overnight/20261014-ov04-m12-038-check.md: writer 0x0050DAA4..0x0050DB0E (literal 0x3F13CD3A at 0x0050DB10); propagation: copy ctor 0x0050E138..0x0050E166, range assign 0x004DFF64..0x004DFF88, GetCurrentPreActionPoses 0x004DFBEA..0x004DFC04, compaction 0x00550B3E..0x00550B5E, 0x00550B82..0x00550BA2; dispatch closure: only Charger 0x0101E100 and Ramp 0x0101FA90 override slot 0x10, base 0x004DF2C0 reads +4/+8 only."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "sweep .text for vldr sN,[rX,#0x14] with rX a PreActionPose element (Ramp and Charger IsPreActionPoseValid, other callers).",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "sweep .text for vldr sN,[rX,#0x14] with rX a PreActionPose element (Ramp and Charger IsPreActionPoseValid, other callers). Read 2026-10-13 (re-analysis/research/overnight/20261014-ov04-m12-038-check.md): IMPLEMENTATION_GAP: the writer is ordered |x|,|y|,|z| max selection (vcmpe + it mi, unordered keeps the left) then vmul by 0x3F13CD3A, not a divide by sqrt(3); +0x14 is copied bit for bit with +0x18 and never used in a decision in the closed dispatch and consumer set. The authority's \"no reader in the compaction\" is superseded: the compaction and GetCurrentPreActionPoses copy it. Remaining escape analysis split to M12-044 (RECOVERABLE_GAP).",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests"
@@ -9399,6 +9400,23 @@
       "effect": "Where the top cube of a pyramid is placed.",
       "provenance": "Opus check of OV02 (2026-10-13), manager record.",
       "unresolved": "RECOVERABLE_GAP: read GetBoundingQuad<float> (it fixes the corner order and so the tie order); also whether two PyramidBase entries can both contain A and B (T7 replace path reachability).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M12-044",
+      "subsystem": "M12-manipulation",
+      "title": "PreActionPose element escape analysis: whether any consumer passes a PreActionPose element (not its pose) to a callee outside the census, which could read +0x14",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov04-m12-038-check.md: \"Still unread\": IDockAction::Init std::function targets 0x00551618, 0x00551654, 0x00551842; ComputePlaceRelObjectOffsetPoses 0x005558F4..0x00556540; DriveAndFlipBlockAction::GetPossiblePoses 0x0055E438..0x0055EB04; FlipBlockAction::Init 0x0055EDC8..0x0055F074; IsAtPreActionPoseWithVisualVerification 0x005B6F5C..0x005B7160; BehaviorDockingTestSimple 0x005CBC10..0x005CD180; BehaviorDriveInDesperation 0x005D9884..0x005D9BAC."
+      ],
+      "effect": "Whether the height tolerance can change any decision through an untraced callee.",
+      "provenance": "Split from M12-038 after the Opus check of OV04 (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: trace the callee and argument flow of the listed consumers for element pointers escaping to callees outside the census.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
