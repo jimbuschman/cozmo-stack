@@ -2563,3 +2563,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Merge read (null source under the M1-034 standing rule) | M13-032 |
+
+
+## Check of B-M13-2 (manager, 2026-10-13; research/20261013-b-m13-2-check.md)
+
+| Change | Records |
+| --- | --- |
+| ApplyAction(check) read, to build | M13-034 (note) |
+| State_c log text, plan logs on every plan, sEvent levels | M13-033 (note) |
