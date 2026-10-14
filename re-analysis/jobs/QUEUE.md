@@ -59,7 +59,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 28 | [B-M3M4-18](B-M3M4-18.md) | done 212fec53; Opus check FAIL on scope only (research/20261013-b-m3m4-18-check.md); rest in B-M3M4-22 and B-M15-1 |
 | 29 | [B-M5-17](B-M5-17.md) | done b9040943; Opus check FAIL (production drives hang; research/20261013-b-m5-17-check.md), fixes in B-M5-18 |
 | 29a | [B-M5-18](B-M5-18.md) | done 5db4343b; Opus check FAIL (drives time out; research/20261013-b-m5-18-check.md), fixes in B-M5-19 |
-| 29a2 | [B-M5-19](B-M5-19.md) | URGENT, next after the job in progress (triplet, end-animation action) |
+| 29a2 | [B-M5-19](B-M5-19.md) | done 92278498; drives end in Success; Opus check FAIL on one log line (research/20261013-b-m5-19-check.md), fix in B-M5-20 |
 | 29c | [B-M13-1](B-M13-1.md) | open, after B-M12-1 and B-M5-19 (planner side: worker thread, both force values, planner choice) |
 | 29d | [B-M12-2](B-M12-2.md) | open, after B-M13-1 (Dole send failures, queued items) |
 | 29b | [B-M12-1](B-M12-1.md) | done d7316d1d; Opus check FAIL on one point (Dole send failures; research/20261013-b-m12-1-check.md), fix in B-M12-2 |
@@ -72,6 +72,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 34 | [B-M3M4-23](B-M3M4-23.md) | open, after B-M15-1 (every BlockWorld pose mutator outside the frame window) |
 | 35 | [B-M3M4-24](B-M3M4-24.md) | open, after B-M3M4-23 (test isolation, MISSING placement, B6 label test) |
 | 36 | [B-M3M4-25](B-M3M4-25.md) | open, after B-M3M4-24 (dispatch residue: 0x101CF, owner releases, re-Init order, connect timing) |
+| 37 | [B-M5-20](B-M5-20.md) | open, after B-M3M4-25 (empty-name warning, queued items) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
