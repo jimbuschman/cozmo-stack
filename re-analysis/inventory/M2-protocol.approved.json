@@ -2,7 +2,7 @@
   "subsystem": "M2-protocol",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "25c71229192480e1e040a787f7723a17fd8d2d1cb42ddac8429686b68d7fecb1",
+  "inventory_sha256": "ac59e8b609da90053ae7aa2eb1a3e2ba331ea70abd3c6f8875746d7535324536",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -245,11 +245,32 @@
       "hardware_required": false
     },
     "M2-020": {
-      "status": "RECOVERABLE_GAP",
-      "title": "Robot-message dispatch residue: Broadcast callers passing robot ID 0x1CF, early-unsubscribe paths, destruction during an emit, load completion before AddRobot",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Robot-message dispatch residue: wildcard ID 0x101CF (all-signals branch unreachable), handle reset/unlink, the 35 owner releases, re-Init appends before release",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-robot-message-subscribers-check.md: Emitter 0x0069DE18: robot ID == MessageHandler+0x1C (0x1CF, set 0x0069D004/0x0069D00E) emits every robot signal for the tag (0x0069DE32..0x0069DE4E); otherwise the robot signal, then the 0x1CF signal (0x0069DE50..0x0069DE74). LoadBehaviors is called from LoadNonConfigData 0x0051F452; its order against AddRobot is unread."
+        "re-analysis/research/20261013-robot-message-subscribers-check.md: Emitter 0x0069DE18: robot ID == MessageHandler+0x1C (0x1CF, set 0x0069D004/0x0069D00E) emits every robot signal for the tag (0x0069DE32..0x0069DE4E); otherwise the robot signal, then the 0x1CF signal (0x0069DE50..0x0069DE74). LoadBehaviors is called from LoadNonConfigData 0x0051F452; its order against AddRobot is unread.",
+        "re-analysis/research/20261013-dispatch-residue-check.md: wildcard 0x101CF at 0x0069D004..0x0069D00E; all-signals 0x0069DE32..0x0069DE4E unreachable (only caller 0x0069DABA with robot 1, 0x004ED07A); Reset 0x0051D8F8..0x0051D932, unlink 0x0051D338..0x0051D3A4; owner releases as tabled; re-Init order 0x00543FCA..0x00543FE2, 0x00551706..0x00551784."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-021": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "App input: when ConnectToRobot is sent (the app waits for EngineLoadingDataStatus ratio >= 1); the engine has no load-before-connect gate",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): ConnectToRobot handler 0x004ED020..0x004ED07C and AddRobot 0x004ED1E0..0x004ED1F2 have no state or loaded gate; engine states 1 -> 2 -> 3 (0x004ED5CC..0x004ED618, loader 0x00523570..0x005235FA); the app connects after ratio >= 1 (StartupManager.cs:322-341, ConnectionFlowController.cs:670-673)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-022": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Robot-message handlers that might synchronously destroy another subscriber of the same tag (C4, C5, DA, CA, CB, D5, EF); IActionRunner re-Init of a live action; ConnectToRobot registration site",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): \"Unread\" section: the handler bodies; the re-Init question; 0x004EE94A -> PLT 0x004A544C; ~Robot r5 at 0x0051120E; ProcessMessages with no robot 0x0069D8D8."
       ],
       "live_path": true,
       "hardware_required": false

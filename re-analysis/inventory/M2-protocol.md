@@ -802,3 +802,13 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M2-019 |
 | Notes appended | M2-020 |
+
+
+## Check of R-DISPATCH-REST (manager, 2026-10-13; research/20261013-dispatch-residue-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled 0x101CF) | M2-020 |
+| New COMPATIBILITY_POLICY | M2-021 connect timing |
+| New RECOVERABLE_GAP | M2-022 handler bodies |
+| Correction (0x101CF) | M2-018 |

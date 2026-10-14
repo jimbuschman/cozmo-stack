@@ -71,6 +71,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 33 | [B-M15-1](B-M15-1.md) | open, after B-M3M4-21 (backup manager: constructor, body, restore, wipe, restore list, app inputs) |
 | 34 | [B-M3M4-23](B-M3M4-23.md) | open, after B-M15-1 (every BlockWorld pose mutator outside the frame window) |
 | 35 | [B-M3M4-24](B-M3M4-24.md) | open, after B-M3M4-23 (test isolation, MISSING placement, B6 label test) |
+| 36 | [B-M3M4-25](B-M3M4-25.md) | open, after B-M3M4-24 (dispatch residue: 0x101CF, owner releases, re-Init order, connect timing) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
@@ -93,7 +94,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 14 | [R-BACKUP-REST](../research/requests/20261013-backup-manager-rest.md) | answered (Codex on the work PC); checked (research/20261013-backup-manager-rest-check.md) |
 | 15 | [R-PLANNERS](../research/requests/20261013-planner-internals.md) | answered; checked (research/20261013-planner-internals-check.md) |
 | 16 | [R-DELOC-CALLEES](../research/requests/20261013-delocalize-callees.md) | answered; checked (research/20261013-delocalize-callees-check.md) |
-| 17 | [R-PLAN-DEPS](../research/requests/20261013-planner-dependencies.md) | open (M13-034) |
-| 18 | [R-BACKUP-UNLOCK](../research/requests/20261013-backup-unlock-and-stoull.md) | open (M15-043) |
-| 19 | [R-POSE-REST](../research/requests/20261013-remaining-pose-bodies.md) | open (M11-068) |
-| 20 | [R-DISPATCH-REST](../research/requests/20261013-dispatch-residue.md) | open (M2-020) |
+| 17 | [R-PLAN-DEPS](../research/requests/20261013-planner-dependencies.md) | answered; checked (research/20261013-planner-dependencies-check.md) (M13-034) |
+| 18 | [R-BACKUP-UNLOCK](../research/requests/20261013-backup-unlock-and-stoull.md) | answered; checked (research/20261013-backup-unlock-and-stoull-check.md) (M15-043) |
+| 19 | [R-POSE-REST](../research/requests/20261013-remaining-pose-bodies.md) | answered; checked (research/20261013-remaining-pose-bodies-check.md) (M11-068) |
+| 20 | [R-DISPATCH-REST](../research/requests/20261013-dispatch-residue.md) | answered; checked (research/20261013-dispatch-residue-check.md) (M2-020) |

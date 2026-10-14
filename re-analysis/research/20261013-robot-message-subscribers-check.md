@@ -105,3 +105,6 @@ It doesn't follow per-tag registration.
 - The early-unsubscribe paths other than the RIC's.
 - Owner or signal destruction during an emit.
 - The action and F0..DC lambda addresses (not re-resolved).
+
+
+**Correction 2026-10-13** (`research/20261013-dispatch-residue-check.md`): the wildcard robot ID is **0x101CF**, not 0x1CF (`movt r3,#1` at 0x0069D008).
