@@ -2556,3 +2556,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled; the goal loop unreachable) | M13-034 |
+
+
+## Check of R-QUADTREE (manager, 2026-10-13; research/20261013-quadtree-rest-check.md)
+
+| Change | Records |
+| --- | --- |
+| Merge read (null source under the M1-034 standing rule) | M13-032 |

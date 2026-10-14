@@ -1481,3 +1481,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M11-068 |
 | New RECOVERABLE_GAP | M11-073 GetParent on a root pose |
+
+
+## Check of R-QUADTREE (manager, 2026-10-13; research/20261013-quadtree-rest-check.md)
+
+| Change | Records |
+| --- | --- |
+| Quad-tree subset read; split out of M11-048 into M11-045/046 and M13-032 rows | M11-048, M11-045, M11-046 |
+| New RECOVERABLE_GAP | M11-074 map producers and readers; M11-075 map broadcast |
+| Contradictions noted | M11-017, M14-007 |

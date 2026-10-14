@@ -1,6 +1,6 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-10-10",
+  "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M14-faces.md",
   "inventory_sha256": "00fd553962898e740004f6bea5e15f0492a8b734551b8616912b2607cfd2ee80",
   "records": {

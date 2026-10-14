@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "db2f14cf64288e6746b4908ddf5882a42e4cae3e2b95350c4e2ee6126d4817c0",
+  "inventory_sha256": "28965cbdc08e6b6fae17910936a45f649548cb32d53184c1f7dbf026dd61f7cc",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -860,6 +860,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-074": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Memory-map producers and readers not yet read: MapComponent::UpdateRobotPose (explored area), UpdateObjectPose, RemoveObservableObject, FlagInterestingEdgesAsUseless, ReviewInterestingEdges, ClearRobotToMarkers, FindContentIf/FindIf",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-quadtree-rest-check.md: UpdateRobotPose 0x0067E224..0x0067E50B; UpdateObjectPose 0x0067EA90..0x0067ECFB; RemoveObservableObject 0x0067F2C4..0x0067F58B; FlagInterestingEdgesAsUseless 0x0067E778..0x0067E85B; ReviewInterestingEdges/ClearRobotToMarkers 0x0067F58C..0x0067F7AB; FindContentIf 0x00681674..0x006816E7 and QuadTreeNode::FindIf 0x006884FC.."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-075": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Memory-map broadcast to the game: MapComponent::Update, BroadcastMap, QuadTree::Broadcast (MemoryMapQuadInfo), BroadcastMemoryMapDraw",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-quadtree-rest-check.md: MapComponent::Update 0x0067DC4C, BroadcastMap 0x0067DDB8 (..0x0067DE3B), QuadTree::Broadcast 0x006857FC..0x00685C07, BroadcastMemoryMapDraw from 0x00685C08."
       ],
       "live_path": true,
       "hardware_required": false
