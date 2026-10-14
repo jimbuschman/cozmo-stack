@@ -1003,3 +1003,10 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | IsActive-gated action dtors | M12-034, M12-023 (notes) |
+
+
+## Check of OV18 (manager, 2026-10-14; research/overnight/20261014-ov18-m8-015-check.md)
+
+| Change | Records |
+| --- | --- |
+| R8 null read unreachable; dtor gates | M12-040, M12-034 (notes) |

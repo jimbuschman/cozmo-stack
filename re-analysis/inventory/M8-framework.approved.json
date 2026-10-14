@@ -2,7 +2,7 @@
   "subsystem": "M8-framework",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "c304dbbe7929c75e5414f0595aeb9a1abc48dbb0996e8c162605af7af17906f6",
+  "inventory_sha256": "0a20972e82c8782030d4120241aa658d3c83adfc3577eec44d910ee5aa156a16",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -212,14 +212,15 @@
       "hardware_required": false
     },
     "M8-015": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ActionList/ActionQueue/IAction lifecycle, cancellation and Robot teardown",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0053E6A8..0x0053E6E0; 0x005409E2..0x00540A40; 0x00541146..0x00541238; 0x0053FAB2; Current Cancel then delete; pending direct deletion preserves existing result. Cancelled0x02000000 except NotStarted0x02000001; stop before unlock, watcher then broadcast. Existing B-ACTIONS candidate must be checked for full teardown effects and concrete descendants.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
         "P3/P4 full ActionList/ActionQueue/IAction lifecycle: ActionList 0x0053F580..0x0053F5F2, ActionQueue 0x0053F5F4..0x0053F70C, IActionRunner 0x00540370..0x0054063E, clock/timeout 0x00540D4A..0x00540E80, CheckIfDone 0x005549B8..0x005549F4 (20261006-M1M2-missing-triage.md P3/P4).",
-        "re-analysis/research/20261012-m8-play-animation-actions.md rows C2..C7, L14..L23, D5, S2..S4 and re-analysis/research/20261012-m8-play-animation-actions-check.md (the +0x57 gate on L17/L18/L20, the DeleteActionAndIter guard set at queue+0x10, ActionWatcher Start/EndUpdating 0x00540386/0x0054057E/0x00540630, the UpdateInternal status string 0x00540D46..0x00540F1C)."
+        "re-analysis/research/20261012-m8-play-animation-actions.md rows C2..C7, L14..L23, D5, S2..S4 and re-analysis/research/20261012-m8-play-animation-actions-check.md (the +0x57 gate on L17/L18/L20, the DeleteActionAndIter guard set at queue+0x10, ActionWatcher Start/EndUpdating 0x00540386/0x0054057E/0x00540630, the UpdateInternal status string 0x00540D46..0x00540F1C).",
+        "re-analysis/research/overnight/20261014-ov18-m8-015-check.md: L1-L9 0x00540370..0x0054063A, 0x00540D1C..0x00540F9C, 0x00540750..0x005407C0, 0x005409DC..0x00540A44; Q1-Q7 0x0053F580..0x0053F708, 0x0053DCE4..0x0053DD92, 0x0053E24C..0x0053E2F6, 0x0053DF2C..0x0053DFC8, 0x0053DE10..0x0053DE5C, 0x0053E690..0x0053E700; D1-D6, D12 0x0053F9E4..0x0053FB06, 0x00541084..0x00541286, 0x00541BB4..0x00541C04, 0x0054187E..0x005418DE; T2 List Clear 0x0053D916..0x0053D93A, 0x0053F938..0x0053F950, 0x0053FB5C..0x0053FB82; QueueAction front end 0x0053D93C..0x0053DAC8; position table 0x0053DA24..0x0053DB70."
       ],
       "live_path": true,
       "hardware_required": false
@@ -305,6 +306,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: \"Still unread\" list: 0x005B2FB8/0x005B2FC4/0x005B2FD2 (producer 0x005B2A5C..0x005B2F8B); 0x005B419C, 0x005B456C, 0x005B4818, 0x005B4CCC, 0x005B4E50, 0x005B4E78, 0x005B4EB0, 0x005B528C, 0x005B4806; 0x005A7936, 0x005A7942, 0x005AAD6E, 0x005B14D2; 0x005BC7C4, 0x00613C40, 0x00613C58, 0x00613C7A; 0x005DC506, 0x005D7B7A, 0x00604322, 0x005D36B6; 0x0060C3C4, 0x0060D0E4, 0x0060EA30, 0x0060F880, 0x00611708, 0x00611FD4, 0x0060B722."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-024": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Pending actions surviving Cancel(-1) through ~Robot: which shipped completion callbacks re-queue after CANCELLED, IBehavior +0xA0..+0xA2 at teardown, other tag-0x5A subscribers, and whether ~BehaviorManager/~BSM queue actions",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov18-m8-015-check.md: mechanisms 0x0053FA86..0x0053FAB2, 0x0053E6E8..0x0053E6EE, 0x0053E2DA..0x0053E2F2, 0x0053DF48..0x0053DF8A; callback PLTs 0x004B01C8, 0x004B2184, 0x004B219C, 0x004B297C, 0x004B2B5C, 0x004B34B0; tag-0x5A subscribers 0x004F0742, 0x005277B0, 0x005E7B5E; ~BehaviorManager PLT 0x004A7978, ~BSM PLT 0x004A796C."
       ],
       "live_path": true,
       "hardware_required": false

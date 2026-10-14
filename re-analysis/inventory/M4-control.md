@@ -766,3 +766,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | --- | --- |
 | libc++ __next_prime, RECOVERABLE_GAP | M4-050 (new) |
 | Note | M4-011 |
+
+
+## Check of OV18 (manager, 2026-10-14; research/overnight/20261014-ov18-m8-015-check.md)
+
+| Change | Records |
+| --- | --- |
+| OR wording | M4-026 (note) |

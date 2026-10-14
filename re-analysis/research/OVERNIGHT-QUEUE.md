@@ -66,5 +66,6 @@ The first three are the requests already written:
 | OV53 | requests/overnight/20261014-ov53-m11-081.md (M11-081: ImagingPipeline exposure adjustment) | research/overnight/20261014-ov53-m11-081.md |
 | OV54 | requests/overnight/20261014-ov54-m11-082.md (M11-082: getMemberNames order, LoadRobotConfigs failure) | research/overnight/20261014-ov54-m11-082.md |
 | OV55 | requests/overnight/20261014-ov55-m8-023.md (M8-023: behaviour teardown recursive recipients) | research/overnight/20261014-ov55-m8-023.md |
+| OV56 | requests/overnight/20261014-ov56-m8-024.md (M8-024: pending actions surviving to ~Robot) | research/overnight/20261014-ov56-m8-024.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

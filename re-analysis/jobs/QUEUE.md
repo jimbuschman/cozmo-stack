@@ -87,6 +87,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 45 | [B-M11-6](B-M11-6.md) | open, after B-M11-5 (CheckImageQuality M11-080; LimitedExposure M11-057; auto-exposure M3-021) |
 | 46 | [B-M11-7](B-M11-7.md) | open, after B-M11-6 (decode exception M11-058; vision Init M11-059; pending camera params M11-060) |
 | 47 | [B-M8-1](B-M8-1.md) | open, after B-M11-7 (behaviour teardown M8-016; Hiccup dtor M10-016; CloseLog M7-028) |
+| 48 | [B-M8-2](B-M8-2.md) | open, after B-M8-1 (action list/queue M8-015; TRACKS_LOCKED M8-007) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

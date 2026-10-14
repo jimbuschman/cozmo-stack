@@ -716,3 +716,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Behaviour-container teardown read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP; BSM activity path unreachable | M8-016 |
 | Unread recursive recipients, RECOVERABLE_GAP | M8-023 (new) |
+
+
+## Check of OV18 (manager, 2026-10-14; research/overnight/20261014-ov18-m8-015-check.md)
+
+| Change | Records |
+| --- | --- |
+| Action lifecycle read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP; QueueAction front end and position table | M8-015 |
+| Pending survivors at teardown, RECOVERABLE_GAP | M8-024 (new) |
+| TRACKS_LOCKED path contradicted | M8-007 (note) |
