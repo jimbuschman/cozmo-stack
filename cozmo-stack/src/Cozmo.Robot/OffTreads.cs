@@ -121,8 +121,9 @@ public sealed class OffTreadsClassifier
 
     // fidelity: M4-018
     /// <summary>
-    /// C11.2 L2 (0x00510A4A): <c>Robot::Delocalize</c> sets robot+0x2C4 = 0. The stack's Delocalize path is
-    /// <see cref="CozmoEngine.RobotDelocalized"/>; the runtime callers are M11 and not built.
+    /// C11.2 L2 (0x00510A4A): <c>Robot::Delocalize</c> sets robot+0x2C4 = 0. The stack's Delocalize is
+    /// <c>EngineRobot.Delocalize</c>, which calls this through <c>CozmoEngine.ClearDelocalizationCliffs</c> on every call:
+    /// the constructor's and the two runtime callers in VisionSystem (M11-019).
     /// </summary>
     internal void MarkDelocalized() => Robot2C4 = 0;
     /// <summary>+0x2B8 = −1 on a commit to OnTreads (A11). What it means is not in the rows (an M11 interface).</summary>

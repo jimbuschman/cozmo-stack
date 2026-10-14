@@ -150,7 +150,13 @@ public readonly struct Mat3
 // fidelity: M11-065, M11-066, M11-067, M11-068, M11-004
 internal sealed class PoseTreeNode
 {
-    internal Transform3d Transform;
+    // B-M11-8 verifier round 2 (reader-side race): the transform is published as an immutable box with Volatile.Write and
+    // read once per access with Volatile.Read, so a reader on another thread (the vision worker flattening a carried pose)
+    // sees either the old or the new Transform3d, never a torn mix of their fields. Values are copied unchanged (bit-identical).
+    // Stack plumbing; the native reads and writes these on one thread.
+    private sealed class TransformBox(Transform3d value){internal readonly Transform3d Value=value;}
+    private TransformBox _transformBox=new(default);
+    internal Transform3d Transform{get=>Volatile.Read(ref _transformBox).Value;set=>Volatile.Write(ref _transformBox,new TransformBox(value));}
     internal PoseTreeNode? Parent;
     internal string Name;
     internal uint Id,Owners;
@@ -223,7 +229,7 @@ public sealed class Pose3d : IDisposable
         if(MathF.Abs(angle.Value)<Radians.Epsilon)return;
         var axis=new Vec3(n.Z*0f-n.Y,n.X-n.Z*0f,n.Y*0f-n.X*0f);
         var plane=new Transform3d(Rotation3d.FromAngleAxis(angle.Value,axis),pose.PlaneOrigin.ToVec3());
-        Node!.Transform.PreComposeWith(ref plane);
+        {var t=Node!.Transform;t.PreComposeWith(ref plane);Node.Transform=t;} // one read, one publish (B-M11-8)
     }
     public Pose3d(Pose3d source)
     {
@@ -276,8 +282,14 @@ public sealed class Pose3d : IDisposable
     internal static Pose3d FromFlatRotation(Rotation3d q,Vec3 t)=>new(q,t,true); // Existing flat caller inputs still lack their checked parent binding.
     private static Pose3d Legacy(Transform3d t)=>new(t.Rotation,t.Translation,true);
     private Pose3d(Rotation3d q,Vec3 t,bool legacy):this(q,t){_legacyFrameInput=legacy;}
-    public void MultiplyBy(Pose3d other){var n=RequireNode();n.Transform.MultiplyBy(in other.RequireNode().Transform);}
-    public void PreComposeWith(Pose3d other)=>RequireNode().Transform.PreComposeWith(ref other.RequireNode().Transform);
+    public void MultiplyBy(Pose3d other){var n=RequireNode();var t=n.Transform;var b=other.RequireNode().Transform;t.MultiplyBy(in b);n.Transform=t;} // MultiplyBy reads b before writing this, so the copy matches an aliased call
+    public void PreComposeWith(Pose3d other)
+    {
+        var n=RequireNode();var o=other.RequireNode();var t=n.Transform;
+        if(ReferenceEquals(n,o))t.PreComposeWith(ref t); // R26: the aliased P sees the just-rotated t, as before
+        else{var p=o.Transform;t.PreComposeWith(ref p);}
+        n.Transform=t;
+    }
     public void Invert(){var n=RequireNode();n.Transform=n.Transform.Inverse();n.SetParent(null);}
     public Pose3d Inverse(){var result=new Pose3d(this);result.Invert();return result;}
     public Pose3d RotateBy(Rotation3d rotation){var result=new Pose3d(this);result.Node!.Transform=result.Transform.RotateBy(rotation);return result;}
@@ -297,24 +309,24 @@ public sealed class Pose3d : IDisposable
         int d=f.Depth()-t.Depth(),i=0;
         while(d>=1)
         {
-            tf.PreComposeWith(ref f.Parent!.Transform);f=f.Parent;
+            {var p=f.Parent!.Transform;tf.PreComposeWith(ref p);}f=f.Parent;
             if(ReferenceEquals(f.Parent,t)){output.Node.Transform=tf;output.SetParent(to);return true;}
             i++;d--;if(i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1A0);break;}
         }
         i=0;
         while(d+i<=-1)
         {
-            tt.PreComposeWith(ref t.Parent!.Transform);t=t.Parent;
+            {var p=t.Parent!.Transform;tt.PreComposeWith(ref p);}t=t.Parent;
             if(ReferenceEquals(t.Parent,f)){output.Node.Transform=tt.Inverse();output.SetParent(to);return true;}
             if(++i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1B6);break;}
         }
         i=0;
         while(!ReferenceEquals(f,t)&&!(f.Parent is not null&&t.Parent is not null&&ReferenceEquals(f.Parent,t.Parent)))
         {
-            tf.PreComposeWith(ref f.Parent!.Transform);tt.PreComposeWith(ref t.Parent!.Transform);f=f.Parent;t=t.Parent;
+            {var pf=f.Parent!.Transform;tf.PreComposeWith(ref pf);var pt=t.Parent!.Transform;tt.PreComposeWith(ref pt);}f=f.Parent;t=t.Parent;
             if(++i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1D4);break;}
         }
-        output.Node.Transform=tt.Inverse();output.Node.Transform.MultiplyBy(in tf);output.SetParent(to);return true;
+        {var r=tt.Inverse();r.MultiplyBy(in tf);output.Node.Transform=r;}output.SetParent(to);return true;
     }
     public Pose3d GetWithRespectToRoot()
     {

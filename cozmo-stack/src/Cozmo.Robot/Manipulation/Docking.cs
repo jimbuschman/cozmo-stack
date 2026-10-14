@@ -267,10 +267,45 @@ public sealed class DockingSystem : IDisposable
         // fidelity: M12-006
         if (Carrying.CarriedObjectId is { } id)
         {
-            if (forget) _vision.World.MarkUnknown(id);
-            else { UpdateCarriedObjectPose(); _vision.World.MarkReleased(id); }
+            // B-M11-8 item 3, not built (MISSING): 0x00633442 is GetWithRespectTo(obj pose, Robot::GetPose() 0x004EA398,
+            // out), the pose with respect to the robot, then AddRobotRelativeObservation(obj, pose, 2) 0x00633458. That
+            // call's body (where the object's pose is parented afterwards), the failure branches (0x00633562, the sErrorF
+            // after 0x00633462) and the on-top object's handling are unread, so the object stays parented to the lift.
+            // Until it is read, the coordinator's B-M11-8 follow-up applies the check's "or keep the legacy flatten for release":
+            // DetachReleasedFromLift below, so a placed cube no longer follows the lift.
+            if (_vision.World.GetObjectById(id) is { NativeCarryingTree: true })
+                Behavior.SteppedBehavior.ReportMissing("M12-006 SetCarriedObjectAsUnattached 0x006333D4: GetWithRespectTo 0x00633442 targets Robot::GetPose 0x004EA398 and AddRobotRelativeObservation 0x00633458 is unread; the released object is detached from the lift with the legacy world-pose flatten instead");
+            if (forget) { DetachReleasedFromLift(id); _vision.World.MarkUnknown(id); }
+            else { UpdateCarriedObjectPose(); DetachReleasedFromLift(id); _vision.World.MarkReleased(id); }
         }
         Carrying.UnsetCarrying();
+    }
+
+    /// <summary>
+    /// B-M11-8 item 3 stand-in (see <see cref="ReleaseCarriedObject"/>): the pre-a9425dad flatten. The carried object's world
+    /// pose is computed as the legacy UpdateCarriedObjectPose did, from the newest history state's robot pose and lift angle
+    /// with the attach-time pose on the lift (or the dock marker). The object on top gets that pose composed with its offset.
+    /// Both leave the lift tree. With no history state the legacy code left the pose where it was; here that is the tree's
+    /// current flattened pose. Runs under PoseTreeGate, with the log callbacks deferred until the gate is released.
+    /// </summary>
+    private void DetachReleasedFromLift(uint id)
+    {
+        if (_vision.World.GetObjectById(id) is not { NativeCarryingTree: true } obj) return;
+        var top = Carrying.CarriedOnTopId is { } topId && _vision.World.GetObjectById(topId) is { NativeCarryingTree: true } t ? t : null;
+        var r = _robot.Engine.Robot;
+        LogCallbackDeferral.RunGated(r?.PoseTreeGate ?? obj, () =>
+        {
+            Pose3d carriedPose;
+            if (_vision.History.Latest is { } state && (Carrying.ObjectWrtLift is not null || Carrying.DockMarker is not null))
+                carriedPose = Carrying.ObjectWrtLift is { } wrtLift
+                    ? LiftGeometry.CarriedObjectWorldPose(state.RobotPose, state.LiftAngleRad, wrtLift)
+                    : LiftGeometry.CarriedObjectWorldPose(state.RobotPose, state.LiftAngleRad, Carrying.DockMarker!);
+            else carriedPose = obj.Pose;   // the flattened snapshot of the tree
+            Pose3d? topPose = top is null ? null
+                : Carrying.TopWrtCarried is { } topWrt ? carriedPose.Compose(topWrt) : top.Pose;
+            _vision.World.DetachFromLift(obj, carriedPose);
+            if (top is not null) _vision.World.DetachFromLift(top, topPose!);
+        });
     }
 
     public void UpdateCarriedObjectPose()
@@ -279,12 +314,20 @@ public sealed class DockingSystem : IDisposable
         if (_vision.World.GetObjectById(id) is not { } obj) return;
         if(obj.NativeCarryingTree)
         {
-            if(_vision.History.Latest is {} latest&&_robot.Engine.Robot is {} r&&_vision.History.OriginId==r.CurrentOriginId)
+            if(_robot.Engine.Robot is {} r)
             {
-                // Preserve the existing raw-pose adapter as an input; native input/root binding remains M11-066.
-                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MISSING","M11-066 shared main pose still receives the existing history raw-pose candidate; complete native raw-pose writer/input binding is not built here");
-                r.MainPose.Node!.Transform=latest.RobotPose.Transform;
-                r.MainPose.SetParent(r.GetNativeOrigin(r.CurrentOriginId));
+                // B-M11-8 item 4: the same gate as Delocalize and ComputeLiftPose, so the origin check and the write below
+                // cannot interleave with a Delocalize's reset of MainPose (the native runs all three in Robot::Update).
+                LogCallbackDeferral.RunGated(r.PoseTreeGate,()=> // log callbacks run after the gate is released
+                {
+                    if(r.PoseHistory.Latest is {} latest&&r.PoseHistory.OriginId==r.CurrentOriginId) // = _vision.History (item 5)
+                    {
+                        // Preserve the existing raw-pose adapter as an input; native input/root binding remains M11-066.
+                        Behavior.SteppedBehavior.ReportMissing("M11-066 shared main pose still receives the existing history raw-pose candidate; complete native raw-pose writer/input binding is not built here");
+                        r.MainPose.Node!.Transform=latest.RobotPose.Transform;
+                        r.MainPose.SetParent(r.GetNativeOrigin(r.CurrentOriginId));
+                    }
+                });
             }
             return;
         }
@@ -369,9 +412,13 @@ public sealed class DockingSystem : IDisposable
         uint result=LiftGeometry.SetObjectAsAttachedToLift(Carrying,_vision.World,Configurations,_vision.History.Latest,objectId,markerCode,Log);
         if(result==0&&objectId is {} id&&_vision.World.GetObjectById(id) is {} obj&&Carrying.ObjectWrtLift is {} local&&_robot.Engine.Robot is {} robot)
         {
+            // B-M11-8 item 4: tree writes share the robot's pose gate; log callbacks run after it is released.
+            LogCallbackDeferral.RunGated(robot.PoseTreeGate,()=>
+            {
             obj.NativePose.Assign(local);obj.NativePose.SetParent(robot.LiftPose);obj.NativeCarryingTree=true;
             if(Carrying.CarriedOnTopId is {} topId&&Carrying.TopWrtCarried is {} topLocal&&_vision.World.GetObjectById(topId) is {} top)
             {top.NativePose.Assign(topLocal);top.NativePose.SetParent(obj.NativePose);top.NativeCarryingTree=true;}
+            });
         }
         return result;
     }

@@ -103,7 +103,6 @@ public sealed class VisionSystem : IDisposable
         // charger's, clears it. The world and the robot pose it reads are this system's.
         _platformStep = () => robot.Sensors.UpdateOnChargerPlatformFromWorld(World, World.CurrentRobotPose?.Invoke());
         robot.Engine.ChargerPlatformUpdate = _platformStep;
-        History = robot.Engine.Robot?.PoseHistory??new RobotStateHistory();
         Locator = new CubeLocator(this);
         robot.Message += OnMessage;
         // fidelity: M3-005, M3-022
@@ -117,7 +116,8 @@ public sealed class VisionSystem : IDisposable
         if (robot.CameraSettings.VisionEnabled) Enabled = true;
         robot.RobotRemoved += ResetToConstructed;
         // fidelity: M1-041
-        robot.StateHistoryCleared += History.Clear;
+        _historyCleared = () => History.Clear();
+        robot.StateHistoryCleared += _historyCleared;
         // fidelity: M4-023
         _doubleTapEnded = OnDoubleTapPendingEnded;
         robot.Cubes.DoubleTapPendingEnded += _doubleTapEnded;
@@ -209,7 +209,8 @@ public sealed class VisionSystem : IDisposable
         {
             if (!locked) Log?.Invoke($"vision reset: a frame was still being processed after {RemovalWait.TotalSeconds:F0} s; it is discarded at its next check");
             Calibration = _constructedCalibration;
-            History.ResetToConstructed();
+            // B-M11-8 round 2: a removal is expected to leave no robot, so this reset does not go through History's MISSING report.
+            (_robot.Engine.Robot?.PoseHistory ?? _noRobotHistory).ResetToConstructed();
             Imu.ResetToConstructed();
             World.ResetToConstructed();
             Faces.ResetToConstructed();
@@ -246,7 +247,23 @@ public sealed class VisionSystem : IDisposable
     public CameraCalibration? Calibration { get; set; }
     public MarkerDetector Detector { get; }
     public BlockWorld World { get; }
-    public RobotStateHistory History { get; }
+    // fidelity: M11-069, M11-070
+    /// <summary>
+    /// The robot's one history, Robot+0x390 (SetNewPose 0x00512708..0x0051271C, AddVisionOnlyState 0x005310D8), read from
+    /// the current robot on every use so a RemoveRobot/AddRobot cannot split vision-only and raw states (B-M11-8 item 5).
+    /// With no robot there is no native history; a detached one is used and reported as MISSING.
+    /// </summary>
+    public RobotStateHistory History
+    {
+        get
+        {
+            if (_robot.Engine.Robot is { } r) return r.PoseHistory;
+            Behavior.SteppedBehavior.ReportMissing("M11-069 VisionSystem.History with no Robot: the native history lives at Robot+0x390 and has no robot-less counterpart; a detached host history is used");
+            return _noRobotHistory;
+        }
+    }
+    private readonly RobotStateHistory _noRobotHistory = new();
+    private readonly Action _historyCleared;
     /// <summary>
     /// The engine's <c>ImuDataHistory</c> at <c>VisionComponent+0xb0</c> (C3.3), fed by
     /// <c>HandleImageImuData</c> 0x00535C20 and read by <c>WasRotatingTooFast</c> 0x0065359C.
@@ -648,12 +665,12 @@ public sealed class VisionSystem : IDisposable
                     World.NoteRobotState((s.Status & (uint)RobotStatusFlag.HeadInPos) == 0 || (s.Status & (uint)RobotStatusFlag.AreWheelsMoving) != 0,
                                          _robot.Sensors.OffTreadsState != OffTreadsState.OnTreads);
                 // fidelity: M11-044, M11-019
-                // The engine's Delocalize trigger (0x00512A62..0x00512A94, 0x00512B88..0x00512BA6): a treads commit that involves OnTreads (CozmoSensors.DelocalizeTrigger). +0x2C0 = 0, Robot::Delocalize,
-                // then a jump to 0x00512FB4 that skips the history and pose steps of UpdateFullRobotState: the history below does not take this state. NOT built: the pose steps outside the history
-                // (the cliff schedule and the rest of the sensor route still see the state), Delocalize's origin allocation and the (status & 2) argument (it only gates a warning, 0x00510C6A..0x00510C98) and the carried move gated by [[+0x284]+8] != -1 (the carried set decides here). RobotDelocalized carries the OLD origin id: AddNewOrigin is not built (M11-053).
+                // The engine's Delocalize trigger (0x00512A62..0x00512A94, 0x00512B88..0x00512BA6): a treads commit that involves OnTreads (CozmoSensors.DelocalizeTrigger). +0x2C0 = 0, Robot::Delocalize
+                // with (status & 2) != 0 (0x00512B98; it only gates a warning, 0x00510C6A..0x00510C98), then a jump to 0x00512FB4 that skips the history and pose steps of UpdateFullRobotState: the
+                // history below does not take this state. NOT built: the pose steps outside the history (the cliff schedule and the rest of the sensor route still see the state).
                 if (ReferenceEquals(_robot.Sensors.DelocalizeTrigger, s) && ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
                 {
-                    DelocalizeRobot((s.Status&2)!=0,true);
+                    DelocalizeRobot((s.Status&2)!=0);
                     break;
                 }
                 if (_robot.Engine.Robot?.OriginAccepted(s) != true) break;
@@ -662,7 +679,8 @@ public sealed class VisionSystem : IDisposable
                 // (0x00512BA6) and the 101st consecutive pose-frame-id mismatch (0x00512F96, after the state went into the history). A state that merely reports a different pose origin id is filed
                 // in the history and delocalizes nothing: the engine has no origin-change trigger (the stand-in that forgot objects on one is removed).
                 History.Add(s);
-                if (ReferenceEquals(_robot.Sensors.FrameMismatchDelocalizeTrigger, s)) DelocalizeRobot((s.Status&2)!=0,false);
+                // B-M11-8 item 2: this caller passes the actual carrying state, [[+0x284]+8] != -1 (0x00512F82..0x00512F96), not status & 2.
+                if (ReferenceEquals(_robot.Sensors.FrameMismatchDelocalizeTrigger, s)) DelocalizeRobot(_robot.Carrying.IsCarryingObject);
                 break;
             }
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
@@ -685,9 +703,9 @@ public sealed class VisionSystem : IDisposable
 
     /// <summary>The delocalization both runtime call sites share (M11-019): carried objects move across, the world forgets the rest, <see cref="RobotDelocalized"/> is raised.</summary>
     // fidelity: M11-019
-    private void DelocalizeRobot(bool suppliedCarrying,bool treadBoundary)
+    private void DelocalizeRobot(bool suppliedCarrying)
     {
-        if(treadBoundary)World.ResetPoseFrameMismatch();
+        World.ResetPoseFrameMismatch(); // +0x2C0 = 0 on both paths: 0x00512B9C (tread boundary), 0x00512F88 (frame mismatch).
         _robot.Engine.Robot?.Delocalize(suppliedCarrying);
         RobotDelocalized?.Invoke(World.CurrentOriginId);
     }
@@ -1101,7 +1119,7 @@ public sealed class VisionSystem : IDisposable
         _robot.CameraSettings.CalibrationInstalled -= OnCalibrationInstalled;
         _robot.CameraSettings.VisionEnabledSet -= OnVisionEnabledSet;
         _robot.RobotRemoved -= ResetToConstructed;
-        _robot.StateHistoryCleared -= History.Clear;
+        _robot.StateHistoryCleared -= _historyCleared;
         _robot.Cubes.DoubleTapPendingEnded -= _doubleTapEnded;
         // fidelity: M3-033, M3-034
         _robot.Engine.ConnectionFaceAlbumLoaded -= _faceAlbumLoaded;

@@ -132,7 +132,7 @@ public abstract class SteppedBehavior : IBehavior
     internal static void ReportMissing(string what)
     {
         lock (MissingSeen) if (!MissingSeen.Add(what)) return;
-        MissingReported?.Invoke("MISSING: " + what);
+        LogCallbackDeferral.Run(() => MissingReported?.Invoke("MISSING: " + what)); // B-M11-8: queued while this thread holds PoseTreeGate.
     }
 
     protected SteppedBehavior(string id, string behaviorClass)

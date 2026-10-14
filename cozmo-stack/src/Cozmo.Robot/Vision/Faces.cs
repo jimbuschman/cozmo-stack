@@ -268,8 +268,7 @@ public sealed record FaceObservation(FaceEntry Face, uint Timestamp, bool IsNew,
 /// 15000 ms (0x3A98) are removed ("Removing unnamed face %d at t=%d, because it hasn't been seen since
 /// t=%d"; "robot.vision.remove_unobserved_session_only_face"). Queries: <c>GetFaceIDsObservedSince(ts)</c>,
 /// <c>HasAnyFaces(ts)</c>, <c>GetLastObservedFace(pose)</c>, <c>GetFace(id)</c>, all restricted to faces whose
-/// pose is in the robot's current origin (<c>IsPoseInWorldOrigin</c>: this stack has one origin until a
-/// delocalisation, which clears the faces, <c>OnRobotDelocalized</c>).
+/// pose is in the robot's current origin (<c>IsPoseInWorldOrigin</c>; not modelled here, see <see cref="ShouldReturnFace"/>).
 /// </summary>
 public sealed class FaceWorld
 {
@@ -395,15 +394,17 @@ public sealed class FaceWorld
     /// entry+0 &lt; 1).
     /// </summary>
     /// <remarks>
-    /// The engine's third gate is <c>Robot::IsPoseInWorldOrigin(entry+0xF4)</c>. This stack has a single
-    /// origin: <see cref="OnRobotDelocalized"/> clears every face when the origin changes, so a stored
-    /// face's pose is always in the current origin and that gate cannot reject here.
+    /// The engine's third gate is <c>Robot::IsPoseInWorldOrigin(entry+0xF4)</c>. A delocalize does NOT clear the
+    /// faces (B-M11-8 item 1: <c>FaceWorld::OnRobotDelocalized</c> 0x004F55E4..0x004F563A only erases viz objects), so
+    /// a face seen before one is in an old origin and the engine's gate rejects it. A <see cref="FaceEntry"/> carries
+    /// no origin here, so that gate is not modelled and is reported as MISSING.
     /// </remarks>
     public bool ShouldReturnFace(FaceEntry entry, uint time, bool requireId = false)
     {
         if (entry.LastObservedTimestamp < time) return false;
         if (requireId && entry.Id < 1) return false;
-        return true;   // Robot::IsPoseInWorldOrigin: faces are cleared on delocalisation (M14-008)
+        Behavior.SteppedBehavior.ReportMissing("M14-008 FaceWorld::ShouldReturnFace's Robot::IsPoseInWorldOrigin(entry+0xF4) gate: faces now survive a delocalize (M11-069, FaceWorld::OnRobotDelocalized 0x004F55E4) and FaceEntry has no origin, so a face from an old origin is still returned");
+        return true;
     }
 
     // fidelity: M14-009
@@ -440,8 +441,13 @@ public sealed class FaceWorld
 
     public void ClearAllFaces() { List<int> ids; lock (_gate) { ids = _faces.Keys.ToList(); _faces.Clear(); } foreach (var id in ids) FaceDeleted?.Invoke(id); }
 
-    /// <summary><c>OnRobotDelocalized</c>: the faces' poses belong to the old origin.</summary>
-    public void OnRobotDelocalized() => ClearAllFaces();
+    /// <summary>
+    /// <c>FaceWorld::OnRobotDelocalized</c> 0x004F55E4..0x004F563A: for each face whose +0x120 is not the sentinel it
+    /// erases the viz object (EraseVizObject 0x004F5614) and stores the sentinel. VizManager produces no output
+    /// (V1-V6), so the body has nothing observable: no face is removed and no FaceDeleted is raised (B-M11-8 item 1).
+    /// </summary>
+    // fidelity: M11-069
+    public void OnRobotDelocalized() { }
 
     // fidelity: M1-025, M1-015
     /// <summary>

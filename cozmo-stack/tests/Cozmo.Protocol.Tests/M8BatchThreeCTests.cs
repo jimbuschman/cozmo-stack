@@ -353,6 +353,8 @@ public class M8BatchThreeCTests
         var h = Handlers(Whiteboard());
         var log = new List<string>();
         h.Log += log.Add;
+        var entries = new List<(EngineLogLevel Level, string? Channel, string Key, string Text)>();
+        h.SourceLog = (l, c, k, t) => entries.Add((l, c, k, t));
         h.RobotPose = () => At(0, 0, 10);                           // the robot's pose: z = 10
 
         h.HandleRobotObservedPossibleObject(At(1000, 0, 40), ObjectType.Block_LIGHTCUBE1);      // relative z = 30.0 exactly: accepted
@@ -360,10 +362,14 @@ public class M8BatchThreeCTests
         h.HandleRobotObservedPossibleObject(At(2000, 0, 40.5), ObjectType.Block_LIGHTCUBE1);    // relative z = 30.5: refused
         Assert.Single(h.PossibleObjects);
 
-        h.RobotPose = () => null;                                   // the failed relative-pose conversion logs and stops
+        h.RobotPose = () => null;                                   // the failed relative-pose conversion stops
         h.HandleRobotObservedPossibleObject(At(3000, 0, 0), ObjectType.Block_LIGHTCUBE1);
         Assert.Single(h.PossibleObjects);
-        Assert.Single(log);
+        // M8-014 row 6.2: sWarningF at 0x0056c6a6, empty data vector, key "AIWhiteboard.PossibleObject.NoRelPose" (0x0056c77c), text
+        // "Couldnt get pose WRT to robot" (0x0056c7a4), no varargs. Exactly one entry, and no MISSING anywhere.
+        var w = Assert.Single(entries);
+        Assert.Equal((EngineLogLevel.Warning, (string?)null, "AIWhiteboard.PossibleObject.NoRelPose", "Couldnt get pose WRT to robot"), w);
+        Assert.DoesNotContain(log, l => l.Contains("MISSING", StringComparison.Ordinal));
     }
 
     /// <summary>

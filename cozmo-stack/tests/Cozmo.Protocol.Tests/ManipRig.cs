@@ -256,7 +256,7 @@ internal sealed class Rig : IDisposable
                 var f = frames[_framesSeen];
                 foreach (var sm in f.Messages)
                 {
-                    if (sm.IsReliable) { lastSeq = sm.Seq; anyReliable = true; if (!_seenSeqs.Add(sm.Seq)) continue; }   // a resend of an unacked message
+                    if (sm.IsReliable) { lastSeq = sm.Seq; anyReliable = true; if (IsResend(sm.Seq)) continue; }   // a resend of an unacked message
                     if (sm.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)) continue;
                     RobotMessage m;
                     try { m = RobotMessage.Parse(sm.Payload); } catch (Exception) { continue; }
@@ -446,7 +446,17 @@ internal sealed class Rig : IDisposable
     }
 
     private bool _dockPending; private int _signals; private DockAction _dockAction;
-    private readonly HashSet<ushort> _seenSeqs = new();
+    // The fake robot's resend filter, wrap-aware (B-M11-8 round 4): the reliable sequence is 16-bit, so a never-trimmed set of seen
+    // numbers treated every message after the wrap (~65,536 messages, reached when Pump runs its 50 rounds under thread-pool latency)
+    // as a resend and dropped it, which hung SearchForBlockTests.M12_010 intermittently. A number at or behind the highest seen
+    // (serial distance 0 or >= 0x8000) is a resend; anything ahead is new.
+    private ushort _highestSeq; private bool _anySeq;
+    private bool IsResend(ushort seq)
+    {
+        if (_anySeq && unchecked((ushort)(seq - _highestSeq)) is 0 or >= 0x8000) return true;
+        _highestSeq = seq; _anySeq = true;
+        return false;
+    }
     private int CountSince<TMsg>(RobotMessage upTo) where TMsg : RobotMessage
     {
         int idx = Sent.IndexOf(upTo); int clear = Sent.FindLastIndex(idx, x => x is ClearPath);

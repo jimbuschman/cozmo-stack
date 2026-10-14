@@ -10,15 +10,21 @@ public sealed partial class EngineRobot
     private static readonly Pose3d MissingOrigin=new(""); // MissingOrigin's native name is not a checked input in this job.
     internal Pose3d MainPose {get;}=new("");
     internal Pose3d ForwardPose {get;}=new("");
-    internal Pose3d LiftPivot {get;}=new(Rotation3d.Identity,new(-41,0,45));
-    internal Pose3d LiftPose {get;}=new(Rotation3d.Identity,new(66,0,0));
+    // B-M11-8 queued: the ctor's names, "RobotLiftBase" (13 characters, 0x0050FFF8 -> 0x005109CC) for the pivot at +0x2E4 and
+    // "RobotLift" (9 characters, 0x0051004A -> 0x005109DC) for the lift at +0x2F0.
+    internal Pose3d LiftPivot {get;}=new(Rotation3d.Identity,new(-41,0,45),"RobotLiftBase");
+    internal Pose3d LiftPose {get;}=new(Rotation3d.Identity,new(66,0,0),"RobotLift");
+    // B-M11-8 item 4: Robot::Update runs Delocalize, ComputeLiftPose and the carried-pose write on one thread. Here the
+    // vision worker's UpdateCarriedObjectPose (DockingSystem) also writes MainPose, so the three writers share this gate.
+    internal readonly object PoseTreeGate=new();
     internal RobotStateHistory PoseHistory {get;}=new();
     internal byte VisionPoseUpdated;
     internal bool HasExternalInterface=true;
     internal Pose3d GetNativeOrigin(uint id)
     {
         if(_nativeOrigins.TryGetValue(id,out var root))return root;
-        PoseDiagnostics.Verify("PoseOriginList.GetOriginByID.BadID",FormattableString.Invariant($"MISSING: M11-053 checked BadID VERIFY condition/format at 0x00847C64; ID:{unchecked((int)id)}"));
+        // 0x00847C5C..0x00847C64: sVerifyFailedReturnFalse(key 0x00847D00, "VERIFY(%s): %d" 0x00C29749, condition 0x00847D24, id).
+        PoseDiagnostics.Verify("PoseOriginList.GetOriginByID.BadID",FormattableString.Invariant($"VERIFY(iter != _origins.end()): {unchecked((int)id)}"));
         return MissingOrigin;
     }
     internal void Delocalize(bool suppliedCarrying)
@@ -28,10 +34,18 @@ public sealed partial class EngineRobot
         if(world is not null){world.NativeOrigin=GetNativeOrigin;world.NativeForceFlush=()=>Engine.Das.ForceFlushNow();}
         world?.DelocalizeRobotFields(); // D1 before cliff statistics.
         Engine.ClearDelocalizationCliffs?.Invoke();
+        uint newId=0;
+        // B-M11-8 item 4: D3..D17 write the shared pose nodes and the origin list under the gate. The log callbacks raised in
+        // it are queued and run, in order, after the gate is released (LogCallbackDeferral.RunGated).
+        LogCallbackDeferral.RunGated(PoseTreeGate,()=>
+        {
         uint old=CurrentOriginId;
-        if(!AddOriginWithId(_nextOriginId))
-        {Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MISSING","M11-053 AddNewOrigin failure VERIFY 0x00847A92 text is not a checked row; previous origin retained");return;}
-        var origin=GetNativeOrigin(CurrentOriginId);
+        // B-M11-8 item 7: AddNewOrigin (0x00847A84..0x00847AA0) never aborts. A failed AddOriginWithID logs the VERIFY and
+        // returns the attempted ID; Delocalize stores it (0x00510A66..0x00510A70) and carries on with the unchanged current origin.
+        newId=_nextOriginId;
+        if(!AddOriginWithId(newId))
+            PoseDiagnostics.Verify("PoseOriginList.AddNewOrigin.AddWithIDFailed",FormattableString.Invariant($"VERIFY(success): ID:{unchecked((int)newId)}")); // key 0x00847AA8, "VERIFY(%s): ID:%d" 0x00C29737, condition 0x00847AD4
+        var origin=GetNativeOrigin(CurrentOriginId); // fp = PoseOriginList+0x14 (0x00510A70), the current origin either way.
         Engine.EmitSourceLog(EngineLogLevel.Event,null,"Robot.Delocalize",FormattableString.Invariant($"Delocalizing robot {unchecked((int)NativeRobotId)}. New origin: {origin.Name}. NumOrigins={_origins.Count}"));
         MainPose.Node!.Transform=new(Rotation3d.FromAngleAxis(0,new(0,0,1)),Vec3.Zero);MainPose.SetParent(origin);
         ForwardPose.Node!.Transform=new(Rotation3d.FromAngleAxis(0,new(0,0,1)),Vec3.Zero);ForwardPose.SetParent(origin);
@@ -54,9 +68,12 @@ public sealed partial class EngineRobot
             foreach(int id in objects)if(world.UpdateObjectOrigin(unchecked((uint)id),old)!=0)
                 Engine.EmitSourceLog(EngineLogLevel.Warning,null,"Robot.Delocalize.UpdateObjectOriginFailed",FormattableString.Invariant($"Object {id}"));
         }
-        world?.FinishDelocalization(CurrentOriginId);
+        });
+        // 0x00510D5A..0x00510D62: OnRobotDelocalized(AddNewOrigin's return). The zombie keep compares with the list's current origin
+        // (0x00620948..0x00620952), unchanged on a failure; the argument reaches only CreateLocalizedMemoryMap (0x006249D6).
+        world?.FinishDelocalization(CurrentOriginId,newId);
         foreach(var stage in new[]{"FaceWorld","AIComponent","BehaviorManager","MovementComponent"})
-            Engine.DelocalizationComponentHook?.Invoke(stage);
+            Engine.DelocalizationComponentHook?.Invoke(stage); // FaceWorld gets newId too (0x00510D68); its body has no observable output.
         if(HasExternalInterface)
         {
             Engine.DeliverDelocalizationToApp(); // E1–E4: app first, synchronous subscribers afterwards.
@@ -82,10 +99,24 @@ public sealed partial class EngineRobot
     {
         using(var root=value.GetWithRespectToRoot())SetPose(root);
         VisionPoseUpdated=1;PoseFrameId=unchecked(PoseFrameId+1);
-        return PoseHistory.AddVisionOnlyState(StoredState?.Timestamp??0,MainPose,PoseFrameId,StoredState?.HeadAngle??0,StoredState?.LiftAngle??0);
+        // B-M11-8 item 8: the head angle is Robot+0x2FC (Motion.HeadAngleRad: ctor 0xBEDF66F3 at 0x0051007C..0x00510086;
+        // SetHeadAngle 0x00513358 writes it only when +0x314 is set, clamping below 0xBEFA35DD to 0xBEDF66F3 and above
+        // 0x3F543B67 to 0x3F46D3F2), not the last state's report.
+        float head;
+        if(Engine.PublicationHeadAngle is {} headAngle)head=headAngle();
+        else
+        {
+            Behavior.SteppedBehavior.ReportMissing("M11-070 SetNewPose: no Robot+0x2FC owner (Motion) is bound to this engine; the ctor value 0xBEDF66F3 is used");
+            head=BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));
+        }
+        return PoseHistory.AddVisionOnlyState(StoredState?.Timestamp??0,MainPose,PoseFrameId,head,StoredState?.LiftAngle??0);
     }
     // fidelity: M12-027 — adopted OV01 rows L5–L8, needed by the carried tree's delocalization path.
     internal void ComputeLiftPose(float input)
+    {
+        LogCallbackDeferral.RunGated(PoseTreeGate,()=>ComputeLiftPoseLocked(input));
+    }
+    private void ComputeLiftPoseLocked(float input)
     {
         var initial=Rotation3d.FromAngleAxis(new Radians(input).Value,new(0,1,0));
         var t=new Transform3d(initial,new(66,0,0));
@@ -105,6 +136,9 @@ public sealed partial class CozmoEngine
     internal void DeliverDelocalizationToApp()
     {
         NativeUiDeliveryCount=unchecked(NativeUiDeliveryCount+1); // E3: UI+0xFC before delivery, including no connected app.
+        // Noted (B-M11-8 queued): the native DeliverToGame (0x00661594) hands the message to the app connection's buffer
+        // (E4/E5); the app reads it later. Under the app boundary (AGENTS.md) the stack calls its C# handlers here, inline,
+        // before the in-engine subscribers, so an app handler runs inside Delocalize where the native app would not.
         if(EngineToGameMessage is not {} handlers)return;
         foreach(Action<ushort,ReadOnlyMemory<byte>> handler in handlers.GetInvocationList())
             RunIsolated(()=>handler(0x32,ReadOnlyMemory<byte>.Empty)); // M1-034 host handler isolation.

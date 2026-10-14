@@ -71,7 +71,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 30a | [B-M3M4-22](B-M3M4-22.md) | done 51b42629; behaviour matches (research/20261013-b-m3m4-22-check.md); test-hygiene cleanup in B-M3M4-24 |
 | 31 | [B-POSE-1](B-POSE-1.md) | done e5780c3c; Opus check FAIL (research/20261014-b-pose-1-check.md); fixed in B-POSE-2 (ddf1d511, Claude implementer) |
 | 31a0 | [B-POSE-3](B-POSE-3.md) | open, next (pose-tree VERIFYs M11-066/M11-077) |
-| 31a | [B-M11-1](B-M11-1.md) | open, after B-POSE-1 (Delocalize in full, UpdateObjectOrigin) |
+| 31a | [B-M11-1](B-M11-1.md) | done a9425dad; Opus check FAIL (research/20261014-b-m11-1-check.md); fixed in B-M11-8 (Claude implementer, four verify rounds) |
 | 32 | [B-M3M4-21](B-M3M4-21.md) | open, after B-POSE-1 (dangling blended entry, cube-light root, LoadTime, cleanup) |
 | 33 | [B-M15-1](B-M15-1.md) | open, after B-M3M4-21 (backup manager: constructor, body, restore, wipe, restore list, app inputs) |
 | 34 | [B-M3M4-23](B-M3M4-23.md) | open, after B-M15-1 (every BlockWorld pose mutator outside the frame window) |
@@ -90,6 +90,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 47 | [B-M8-1](B-M8-1.md) | open, after B-M11-7 (behaviour teardown M8-016; Hiccup dtor M10-016; CloseLog M7-028) |
 | 48 | [B-M8-2](B-M8-2.md) | open, after B-M8-1 (action list/queue M8-015; TRACKS_LOCKED M8-007) |
 | 49 | [B-M8-3](B-M8-3.md) | open, after B-M8-2 (compound runtime M8-017; behaviour end request M8-019) |
+| 50 | [B-M12-4](B-M12-4.md) | open, after B-M8-3 (native put-down M12-006/M12-045) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

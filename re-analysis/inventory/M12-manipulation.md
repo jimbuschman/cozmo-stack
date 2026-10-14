@@ -1017,3 +1017,13 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | sb table bits | M12-021 (note) |
+
+
+## M12-006 extraction (manager, 2026-10-14; research/20261014-m12-006-unattach.md)
+
+| Change | Records |
+| --- | --- |
+| Reopened: EXACT_SOURCE -> IMPLEMENTATION_GAP; path read | M12-006 |
+| UnSetCarryingObjects + CarryState send + AddRobotRelativeObservation, IMPLEMENTATION_GAP | M12-045 (new) |
+| Remaining unattach reads, RECOVERABLE_GAP | M12-046 (new) |
+| SetPose cache clear | M12-001 (note) |

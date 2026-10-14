@@ -142,7 +142,10 @@ public sealed class AIWhiteboardHandlers
         }
         if (robotPose() is not { } robot)
         {
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AIWhiteboard.ConsiderNewPossibleObject", "could not express the pose relative to the robot (log text MISSING, 0x0056c54a..0x0056c55c)");
+            // M8-014 row 6.2 (research/20261002-R-BEH2-M8-gap1-extraction.md): a failed GetWithRespectTo (0x0056c55c beq.w 0x56c698)
+            // calls sWarningF with an empty data vector (0x0056c698..0x0056c6a2), key 0x0056c77c, format 0x0056c7a4 and no varargs
+            // (0x0056c6a6), then discards the possible object.
+            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "AIWhiteboard.PossibleObject.NoRelPose", "Couldnt get pose WRT to robot");
             return;
         }
         float relZ = (float)pose.WithRespectTo(robot).Translation.Z;

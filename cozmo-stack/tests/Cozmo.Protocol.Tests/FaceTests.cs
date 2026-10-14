@@ -243,8 +243,10 @@ public class FaceTests
         var smart = world.GetSmartFaceID(2);
         Assert.True(world.ChangeFaceID(2, 42, "Jim"));
         Assert.Equal(42, smart.Id); Assert.NotNull(world.GetFace(42)); Assert.Null(world.GetFace(2));
+        // M11-069 (B-M11-8 item 1): FaceWorld::OnRobotDelocalized 0x004F55E4..0x004F563A only erases viz objects (no output, V1-V6),
+        // so the faces are kept.
         world.OnRobotDelocalized();
-        Assert.Empty(world.Faces);
+        Assert.Equal(42, Assert.Single(world.Faces).Id);
     }
 
     [Fact]

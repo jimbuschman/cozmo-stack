@@ -106,8 +106,15 @@ internal sealed class SignalTestContext : SynchronizationContext, IDisposable
         }
     }
 
+    /// <summary>
+    /// Wall-clock bound on the pump-only spin of <see cref="Until"/> (B-M11-8 round 4): while ModelWorkPending stays true the loop
+    /// never reaches <see cref="Step"/>'s 2-minute timeout, so a lost signal would spin forever. Not a source value.
+    /// </summary>
+    private static readonly TimeSpan SpinWithoutContinuationLimit = TimeSpan.FromMinutes(2);
+
     public static void Until(Func<bool> done, Action? pump = null)
     {
+        var sinceProgress = System.Diagnostics.Stopwatch.StartNew();
         while (!done())
         {
             pump?.Invoke();
@@ -116,7 +123,11 @@ internal sealed class SignalTestContext : SynchronizationContext, IDisposable
             // transport/engine tick before awaiting another continuation from its response.
             bool firmwareNeedsPump = pump is not null && Current is SignalTestContext context
                 && context.ModelWorkPending;
-            if (!done() && continuations == 0 && !firmwareNeedsPump) Step();
+            if (continuations > 0) sinceProgress.Restart();
+            if (!done() && continuations == 0 && !firmwareNeedsPump) { Step(); sinceProgress.Restart(); }
+            else if (sinceProgress.Elapsed > SpinWithoutContinuationLimit)
+                throw new TimeoutException("Until spun for " + SpinWithoutContinuationLimit.TotalMinutes +
+                    " minutes pumping with no async continuation; the fixture lost its completion signal.");
         }
     }
 

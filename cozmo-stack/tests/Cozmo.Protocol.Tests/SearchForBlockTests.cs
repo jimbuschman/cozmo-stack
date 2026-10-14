@@ -136,6 +136,7 @@ public class SearchForBlockTests
         // The fake robot answers every path from rig.Pump, so no path wait may expire on wall-clock time: under host load the
         // 5 s drive timeout fired early, a state-1 child failed, and the state-2 sweep (ignoreFailure 0) ended after fewer drives.
         rig.M.Follower.TimeoutDelay = _ => new TaskCompletionSource().Task;
+        rig.HoldClock = true;   // B-M11-8 round 4: engine time does not race ahead while the pump waits on thread-pool hops
 
         var helper = new SearchForBlockHelper(rig.M, target.ObjectId, new EngineRandom(7u))
             { Wait = (t, c) => Task.CompletedTask };
@@ -177,6 +178,7 @@ public class SearchForBlockTests
         rig.M.World.MarkDirty(target.ObjectId);
         rig.Sent.Clear();
         rig.HoldPath = true;
+        rig.HoldClock = true;   // B-M11-8 round 4: engine time does not race ahead while the pump waits on thread-pool hops
         rig.M.Follower.TimeoutDelay = _ => new TaskCompletionSource().Task;   // paths end only by the signals below, never by wall-clock load
         var helper = new SearchForBlockHelper(rig.M, target.ObjectId, new EngineRandom(7u)) { Wait = (t, c) => Task.CompletedTask };
         var task = helper.RunAsync(default);

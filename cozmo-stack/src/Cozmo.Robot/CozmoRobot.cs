@@ -263,10 +263,6 @@ public sealed class CozmoRobot : IDisposable
         LocalizationWorld.Log += Engine.EmitStackLog;
         // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.
         Engine.ConstructorMapCreated = () => LocalizationWorld.ConstructMapComponent();
-        Engine.ConstructorMapOrigin = origin =>
-        {
-            LocalizationWorld.OnRobotDelocalizedMapOrigin(origin);
-        };
         LocalizationWorld.RobotTimestamp = () => State.Latest?.Timestamp ?? 0;
         LocalizationWorld.CurrentRobotPose = () => State.Latest is { } s
             ? new Vision.Pose3d(Vision.Mat3.AboutZ(s.PoseAngleRad), new Vision.Vec3(s.PoseX,s.PoseY,0)) : Vision.Pose3d.Identity;
@@ -312,20 +308,23 @@ public sealed class CozmoRobot : IDisposable
         Engine.ChargerPlatformUpdate = ChargerPlatformStepWithoutWorld;
         Engine.RobotStateHistoryClear = () => StateHistoryCleared?.Invoke();
         // fidelity: M4-019, M4-018
-        // SC4d: Robot::Delocalize calls ClearCliffRunningStats. The stack's Delocalize is the constructor's, which runs
-        // when the Robot is built on connection (M4-020 ConstructorDelocalize); the sensors exist by then.
-        // C11.2: Delocalize also sets robot+0x2C4 = 0 and raises RobotDelocalized, which the CubeLightComponent hears
-        // (S7: it sets comp+0x21, held until the flag returns to 1). The runtime Delocalize callers are M11 and not built.
+        // SC4d: Robot::Delocalize calls ClearCliffRunningStats (D2, 0x00510A5A) on every call: the constructor's
+        // (M4-020 ConstructorDelocalize) and the two runtime callers in VisionSystem (the tread boundary 0x00512BA6 and the
+        // 101st frame mismatch 0x00512F96, M11-019). C11.2: Delocalize also sets robot+0x2C4 = 0 and raises RobotDelocalized,
+        // which the CubeLightComponent hears (M4-048: it sets comp+0x21, held until the flag returns to 1).
         Engine.ClearDelocalizationCliffs = () =>
         {
             Sensors.ClearCliffRunningStats();
             Sensors.OffTreads.MarkDelocalized();
         };
         Engine.DelocalizationCubeHook=Lights.Cubes.OnRobotDelocalized;
+        // fidelity: M11-069
         Engine.DelocalizationComponentHook=stage=>
         {
-            if(stage=="FaceWorld"&&VisionModeRecipient is {} vision)vision.Faces.OnRobotDelocalized();
-            else Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MISSING","M11-069 "+stage+".OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)");
+            // B-M11-8 item 1: FaceWorld::OnRobotDelocalized (0x004F55E4..0x004F563A) only erases each face's viz object
+            // (0x004F5614) and stores the sentinel; VizManager produces no output (V1-V6), so nothing observable happens.
+            if(stage=="FaceWorld")return;
+            Behavior.SteppedBehavior.ReportMissing("M11-069 "+stage+".OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)");
         };
         // fidelity: M4-018
         // C11.2 L6: the cube-light refresh gate reads robot+0x2C4, the stack's OffTreadsClassifier.Robot2C4.

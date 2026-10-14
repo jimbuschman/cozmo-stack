@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "4f9882cb0eddd909a4a0366cf22369ea08c584c2981b873da7ac6df52c82e983",
+  "inventory_sha256": "160b8624d4cc724948967ff9b0e3489b34a585e2b16cd0e52fa0c6b7d18e22b5",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -91,7 +91,7 @@
       "hardware_required": false
     },
     "M12-006": {
-      "status": "EXACT_SOURCE",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Letting go of a carried object leaves it Dirty where the lift left it",
       "authority": "libcozmoEngine.so 3.4.0-1204: CarryingComponent::SetCarriedObjectAsUnattached(bool) 0x006333D4 takes the object pose with respect to the robot and hands it to ObjectPoseConfirmer::AddRobotRelativeObservation(object, pose, PoseState 2) 0x00633458; set, 0x00633930 also runs BlockWorld::DeleteLocatedObjects",
       "evidence": [
@@ -101,7 +101,8 @@
         "HandlePickAndPlaceResult 0x00533780: release only when blockStatus==1 (0x005337A8 cmp r0,#1 / 0x005337AA beq) and success!=0 (0x00533898 ldrb r0,[r5,#4] / 0x0053389A cbz 0x5338a6), with bool false (0x005338A0 movs r1,#0 / 0x005338A2 blx 0x4A7B7C SetCarriedObjectAsUnattached)",
         "attach only when blockStatus==2 (0x005337A4/0x005337A6) and success!=0 (0x00533848 ldrb / 0x0053384A cbz), via SetDockObjectAsAttachedToLift (0x00533850 blx 0x4AA06C)",
         "PickAndPlaceResult layout: +4 success (0x00533794 ldrb r1,[r5,#4]), +5 dockingResult (0x005337F8 ldrsb), +6 blockStatus (0x0053379E ldrb r0,[r5,#6])",
-        "VisionComponent::EnableMode(1,true) runs unconditionally in the BlockPlaced branch (0x005338AE blx 0x4A91CC)"
+        "VisionComponent::EnableMode(1,true) runs unconditionally in the BlockPlaced branch (0x005338AE blx 0x4A91CC)",
+        "re-analysis/research/20261014-m12-006-unattach.md: A1-A12 SetCarriedObjectAsUnattached 0x006333D4..0x006339A2 (warnings/errors CarryingObjectNotSpecified, CarryingObjectDoesNotExist, OriginMisMatch, Top*, Info ObjectPlaced; the robot-relative pose w.r.t. Robot::GetPose 0x004EA398; AddRobotRelativeObservation Dirty; GetCarryingObjects before UnSet; deleteLocated filter); callers C1-C9."
       ],
       "live_path": true,
       "hardware_required": false
@@ -599,6 +600,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov04-m12-038-check.md: \"Still unread\": IDockAction::Init std::function targets 0x00551618, 0x00551654, 0x00551842; ComputePlaceRelObjectOffsetPoses 0x005558F4..0x00556540; DriveAndFlipBlockAction::GetPossiblePoses 0x0055E438..0x0055EB04; FlipBlockAction::Init 0x0055EDC8..0x0055F074; IsAtPreActionPoseWithVisualVerification 0x005B6F5C..0x005B7160; BehaviorDockingTestSimple 0x005CBC10..0x005CD180; BehaviorDriveInDesperation 0x005D9884..0x005D9BAC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-045": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "UnSetCarryingObjects: ascending-ID walk, NullObject error, StillAttached / StillAttachedToSomething warnings, SendSetCarryState(CARRY_NONE) tag 0x49 reliable, carry field resets; and AddRobotRelativeObservation (re-parent to robot, flatten to root, SetPoseHelper state 2 with the broadcast, confirmer entry)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261014-m12-006-unattach.md: U1-U5 0x00633C0C..0x00633D80, SendSetCarryState 0x00632C44..0x00632C6E (tag 0x49); B1-B7 AddRobotRelativeObservation 0x00506B78..0x00506C48, SetPoseHelper 0x0050609C..0x005060FA, ActionableObject::SetPose 0x004E01E4..0x004E0226, Vision SetPose 0x004EF590..0x004EF646; callers C1-C9."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-046": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Unattach path still unread: BlockWorld::DeleteLocatedObjects body, CheckAndUpdateTreadsState order against Delocalize (past 0x00512188), the object-name helpers 0x004E80B8/0x004E8048, Robot::SetLocalizedTo body, SetCarryingObject 0x00633E78 (the attach-side CarryState send)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261014-m12-006-unattach.md: \"Still unread\" list: DeleteLocatedObjects PLT 0x004A715C; CheckAndUpdateTreadsState 0x00511E00..; 0x004E80B8, 0x004E8048; Robot::SetLocalizedTo; SetCarryingObject 0x00633E78."
       ],
       "live_path": true,
       "hardware_required": false

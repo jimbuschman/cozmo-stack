@@ -35,15 +35,22 @@ public sealed partial class BlockWorld
             return 0;
         }
     }
-    internal IReadOnlyList<ObservableObject> FinishDelocalization(uint origin)
+    internal IReadOnlyList<ObservableObject> FinishDelocalization(uint origin)=>FinishDelocalization(origin,origin);
+    /// <summary>
+    /// BlockWorld::OnRobotDelocalized(arg) 0x006249C4. <paramref name="currentOrigin"/> is the robot's PoseOriginList current
+    /// origin ID: DeleteObjectsFromZombieOrigins 0x00620920 keeps the bucket equal to [[this]+0x294]+0x10 (0x00620948..0x00620952).
+    /// <paramref name="mapOrigin"/> is the argument, AddNewOrigin's return, which goes only to CreateLocalizedMemoryMap (r5,
+    /// 0x006249D6). The two differ only after a failed AddOriginWithID, when the current origin is unchanged (B-M11-8 round 2).
+    /// </summary>
+    internal IReadOnlyList<ObservableObject> FinishDelocalization(uint currentOrigin,uint mapOrigin)
     {
         var deleted=new List<ObservableObject>();
         lock(_gate)
         {
-            CurrentOriginId=origin;
+            CurrentOriginId=currentOrigin; // host cache of the robot's current origin, not the argument
             foreach(var id in _located.Keys.Select(k=>k.Origin).Distinct().ToArray())
             {
-                if(id==origin||AnyRemainingLocalizableObjects(id))
+                if(id==currentOrigin||AnyRemainingLocalizableObjects(id))
                     Source(EngineLogLevel.Debug,"BlockWorld","BlockWorld.DeleteObjectsFromZombieOrigins.KeepingOrigin",FormattableString.Invariant($"Origin {unchecked((int)id)} is still good (keeping objects)"));
                 else
                 {
@@ -52,9 +59,9 @@ public sealed partial class BlockWorld
                 }
             }
         }
-        CreateLocalizedMemoryMap(origin);SelectedObjectId=null;
+        CreateLocalizedMemoryMap(mapOrigin);SelectedObjectId=null;
         UnbuiltBroadcastLocatedObjectStatesCalls++;
-        Source(EngineLogLevel.Warning,null,"MISSING","M11-038 BroadcastLocatedObjectStates 0x006249EC -> 0x0061E6C0 payload/recipient remains unbuilt; tail call accounted");
+        Behavior.SteppedBehavior.ReportMissing("M11-038 BroadcastLocatedObjectStates 0x006249EC -> 0x0061E6C0 payload/recipient remains unbuilt; tail call accounted"); // B-M11-8 item 6: stack channel, not the engine log stream.
         return deleted;
     }
 }

@@ -25,8 +25,11 @@ public sealed partial class CozmoEngine
     public event Action<string>? StackLogLine;
     internal void EmitStackLog(string line)
     {
-        FanOut(StackLogLine, line);
-        DisplayLogLine(line);
+        LogCallbackDeferral.Run(() => // B-M11-8: queued while this thread holds PoseTreeGate.
+        {
+            FanOut(StackLogLine, line);
+            DisplayLogLine(line);
+        }, ReportFault);
     }
     // fidelity: M3-053, M3-054
     public event Action<DisplayedEngineLog>? DisplayedLog;
@@ -69,10 +72,13 @@ public sealed partial class CozmoEngine
         }
         var pairs = new ReadOnlyDictionary<string, string>(data is null ? new() : new Dictionary<string, string>(data));
         var entry = new EngineLogEntry(level, channel, name, text, pairs) { TextUtf8 = utf8 };
-        if (LogEntry is { } entries)
-            foreach (Action<EngineLogEntry> subscriber in entries.GetInvocationList())
-                try { subscriber(entry); } catch (Exception e) { ReportFault(e); }
-        DisplayEngineEntry(entry);
+        LogCallbackDeferral.Run(() => // B-M11-8: the entry is built now; its dispatch waits while this thread holds PoseTreeGate.
+        {
+            if (LogEntry is { } entries)
+                foreach (Action<EngineLogEntry> subscriber in entries.GetInvocationList())
+                    try { subscriber(entry); } catch (Exception e) { ReportFault(e); }
+            DisplayEngineEntry(entry);
+        }, ReportFault);
     }
 
     // M5-008: MultiLoggerProvider::Flush -> DasLoggerProvider::Flush -> DASForceFlushNow.

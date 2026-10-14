@@ -21,7 +21,11 @@ internal sealed class DasControlStandIn : IDisposable
     internal string? GameAppenderName { get; private set; }
     internal uint GlobalsRevision { get; private set; }
 
-    private void Call(string name, params object?[] args) => CallObserved?.Invoke(new(name, args));
+    private void Call(string name, params object?[] args)
+    {
+        var call = new DasControlCall(name, args);
+        LogCallbackDeferral.Run(() => CallObserved?.Invoke(call)); // B-M11-8: keeps a flush in order with the deferred entries.
+    }
     internal void SetArchiveLogConfig(uint archive, uint unarchive, string suffix)
         => Call("DASSetArchiveLogConfig", archive, unarchive, suffix);
     // These are source resource descriptors. Absolute roots are app inputs, not fabricated paths.

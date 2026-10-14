@@ -1033,12 +1033,15 @@ public sealed partial class EngineRobot
     /// </summary>
     private void ConstructorDelocalize()
     {
-        Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MISSING","M11-066 main/forward/lift/pivot constructor names have no checked B-M11-1 input row; empty host placeholders retained");
+        // B-M11-8 item 6: a MISSING goes to the stack channel, never the engine log stream. The pivot and lift names are read
+        // (RobotLiftBase, RobotLift); the main and forward pose names are not in the rows.
+        Behavior.SteppedBehavior.ReportMissing("M11-066 Robot ctor main (+0x298) and forward (+0x2A4) pose names have no checked row; empty names retained");
         LiftPivot.SetParent(MainPose);LiftPose.SetParent(LiftPivot);
         PoseHistory.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
         PoseHistory.ForceFlush=()=>Engine.Das.ForceFlushNow();
         Delocalize(false);
         PoseFrameId=0; // Constructor post-Delocalize write 0x0051032C.
+        PoseHistory.Clear(); // B-M11-8 queued: RobotStateHistory::Clear on [+0x390] follows (0x00510328, 0x00510330).
     }
 
     // fidelity: M4-037 — AddOriginWithID 0x847BD8; duplicate verify-failed return.
@@ -1875,7 +1878,6 @@ public sealed partial class CozmoEngine : IDisposable
     /// (0x00512BA6) and the 101st frame mismatch (0x00512F82..0x00512F96) - run in VisionSystem (M11-019). Wired by CozmoRobot to <see cref="CozmoSensors.ClearCliffRunningStats"/>.
     /// </summary>
     internal Action? ConstructorMapCreated;
-    internal Action<uint>? ConstructorMapOrigin;
     internal Action? RobotDelocalized;
 
     // ---- the game-facing messages

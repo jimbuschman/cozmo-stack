@@ -735,16 +735,6 @@ public sealed partial class BlockWorld
         Maps.SourceLog = SourceLog; Maps.Missing = text => Log?.Invoke(text);
         Maps.CreateLocalizedMemoryMap(origin, id => id != CurrentOriginId && !_located.Values.Any(o => o.OriginId == id && CanBeUsedForLocalization(o)));
     }
-    internal void OnRobotDelocalizedMapOrigin(uint origin)
-    {
-        CurrentOriginId = origin;
-        lock (_gate)
-        {
-            var zombies = _located.Values.Select(o=>o.OriginId).Distinct().Where(id => id != origin && !_located.Values.Any(o=>o.OriginId == id && CanBeUsedForLocalization(o))).ToHashSet();
-            foreach (var key in _located.Keys.Where(k=>zombies.Contains(k.Origin)).ToArray()) _located.Remove(key);
-        }
-        CreateLocalizedMemoryMap(origin); SelectedObjectId = null;
-    }
     private readonly object _gate = new();
     // Native cliffs and vision run on one thread. Serialize only their frame window here;
     // never hold the object gate while callbacks acquire configuration/light locks.
@@ -840,7 +830,7 @@ public sealed partial class BlockWorld
     /// transform this stack does not have; counted in <see cref="UnbuiltSetLocalizedToMarkerLoops"/>). The engine has no reader of +0x2C8.
     /// </summary>
     public float Robot2C8 { get { lock (_gate) return _robot2C8; } }
-    /// <summary><c>Robot+0x2C0</c>: the frame-id-mismatch counter of <c>UpdateFullRobotState</c> (M11-053: incremented on a state whose frame id differs from Robot+0x2B0, Delocalize at 101; not built here). The tread-boundary trigger writes 0 (0x00512B88..0x00512B92) before it calls Delocalize.</summary>
+    /// <summary><c>Robot+0x2C0</c>: the frame-id-mismatch counter of <c>UpdateFullRobotState</c> (M11-053: incremented on a state whose frame id differs from Robot+0x2B0, Delocalize at 101; not built here). Both Delocalize callers write 0 before the call: the tread boundary (0x00512B9C) and the frame mismatch (0x00512F88); the counting itself is CozmoSensors'.</summary>
     public byte Robot2C0 { get { lock (_gate) return _robot2C0; } }
     private byte _robot2C0;
     // The Robot constructor calls Delocalize (M4-020), so these start where Delocalize leaves them.
@@ -912,17 +902,6 @@ public sealed partial class BlockWorld
         if(origin!=0)f.AllowedOrigins.Add(origin);
         f.Predicates.Add(CanBeUsedForLocalization);
         return FindLocatedObjectHelper(f, null, true) is not null;
-    }
-
-    /// <summary>
-    /// <c>UpdateFullRobotState</c>'s tread-boundary Delocalize (0x00512B88..0x00512BA6, M11-044): Robot+0x2C0 = 0 and then <c>Robot::Delocalize</c>, whose robot fields and object handling are
-    /// <see cref="OnRobotDelocalized"/>. NOT modelled (M11-053): the argument <c>(status &amp; 2) != 0</c>, which only gates a warning when it differs from ([[Robot+0x284]+8] != -1) (0x00510C6A..0x00510C98); the carried-object move, which the engine gates by [[+0x284]+8] != -1 (loop 0x00510CF0; here the carried set given by the caller decides); and the origin allocation (AddNewOrigin), so the RobotDelocalized event carries the OLD origin id.
-    /// </summary>
-    // fidelity: M11-044
-    internal IReadOnlyList<ObservableObject> DelocalizeOnTreadBoundary(IReadOnlySet<uint>? carriedObjectIds = null)
-    {
-        lock (_gate) _robot2C0 = 0;
-        return OnRobotDelocalized(carriedObjectIds);
     }
 
     /// <summary>
@@ -2794,6 +2773,17 @@ public sealed partial class BlockWorld
     public void SetCarriedPose(uint objectId, Pose3d pose)
     {
         if (GetLocatedObjectByIdHelper(objectId) is { } o) lock (_gate) o.Pose = pose;
+    }
+
+    /// <summary>
+    /// B-M11-8 item 3 stand-in (M12-006, COMPATIBILITY until SetCarriedObjectAsUnattached 0x006333D4 is read): the released
+    /// object leaves the lift tree. Its pose becomes the given flat world pose (the pre-a9425dad legacy computation), and the
+    /// flag that made <see cref="ObservableObject.Pose"/> flatten the tree is cleared, in one step under the world's lock.
+    /// The old node, still parented to the lift, is no longer the object's pose.
+    /// </summary>
+    internal void DetachFromLift(ObservableObject o, Pose3d pose)
+    {
+        lock (_gate) { o.Pose = pose; o.NativeCarryingTree = false; }
     }
 
     /// <summary>

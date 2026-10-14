@@ -767,8 +767,9 @@ public class M4ControlTests
     }
 
     /// <summary>
-    /// M11-044 (0x00512A62..0x00512A94): a commit where neither the old nor the new state is OnTreads (InAir to OnBack) gives r7 = 0: no Delocalize, the history takes the state and the
-    /// threshold schedule runs (the first accepted ordinary state sends {50}).
+    /// M11-044 (0x00512A62..0x00512A94): a commit where neither the old nor the new state is OnTreads (InAir to OnBack) gives r7 = 0: no Delocalize, the history takes the state and
+    /// each accepted state reaches the threshold schedule's S1 entry. No {50} send is asserted: the earlier Delocalize's D2 ClearCliffRunningStats resets the cliff variance, so a
+    /// threshold send is not guaranteed here.
     /// </summary>
     [Fact]
     public void M11_044_ACommitBetweenTwoOffTreadsStatesDoesNotDelocalize()
