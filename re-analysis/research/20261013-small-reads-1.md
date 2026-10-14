@@ -9,11 +9,11 @@
 | Behaviour registration overlooked by a Get_\<50\> search | CantHandleTallStack subscribes to 0x32 | 0x005ECB5E..0x005ECB80; u16 at 0x00C6EF80; Subscribe at 0x005BC99A |
 | Strategy registrations overlooked by that search | CubeMoved; FacePositionUpdated and ObjectPositionUpdated through their PositionUpdate base | 0x0060B810..0x0060B898; 0x006121BC..0x006121D8; 0x0060C610; 0x00611054 |
 | Shared strategy subscription | Set iteration passes each u16 to external interface vt+0x28 | 0x0060B4DC..0x0060B4FA |
-| Construction/registration order of these six recipients | Block manager → tall-stack behaviour → cube lights → face strategy → object strategy → cube-moved strategy, under the shipped successful initialization described below | 0x0050FC66, 0x0050FCAC, 0x0050FDDE, 0x00510396; reactionTrigger_behavior_map.json |
+| Construction/registration order of these seven instances | Block manager → tall-stack behaviour (BehaviorManager) → tall-stack behaviour (BehaviorSystemManager) → cube lights → face strategy → object strategy → cube-moved strategy, under the shipped successful initialization described below | 0x0050FC66, 0x0050FCAC, 0x0050FCBE, 0x0050FDDE, 0x00510396; reactionTrigger_behavior_map.json |
 | Invocation order | Synchronous, forward subscription-list order; game delivery precedes in-engine dispatch | 0x00662508..0x00662572; 0x00662590..0x006625B0; 0x00663C74..0x00663CBA; append at 0x006646A6..0x006646B2 |
 | CubeMoved::HandleRobotDelocalized reachability | Not called by its event dispatch; tag 0x32 falls through. The separately emitted method is an empty return | 0x0060BEA8..0x0060BF66; 0x0060C038 |
 | Position-update effect | Calls ResetReactionData; that function clears a field of a temporary copy, not the stored map element | 0x00612214..0x00612238; 0x0061226C..0x006122A4 |
-| Every possible Subscribe site, including indirect/dynamic tag producers | UNKNOWN as an exhaustive binary-wide negative claim. Six concrete recipients and their relative order are established; do not promote this to a proof that an additional dynamic subscriber is impossible | Search boundary and remaining work below |
+| Every possible Subscribe site, including indirect/dynamic tag producers | UNKNOWN as an exhaustive binary-wide negative claim. Seven concrete instances and their relative order are established; do not promote this to a proof that an additional dynamic subscriber is impossible | Search boundary and remaining work below |
 
 ## Item 2 coverage
 
@@ -70,18 +70,19 @@ Thus each tag-50 event calls base AlwaysHandleInternal `0x00612214`, which calls
 
 ### Registration and invocation order
 
-Robot construction creates BlockWorld at `0x0050FC66`; BlockWorld creates its BlockConfigurationManager at `0x0061BDC2`. It then creates BehaviorManager at `0x0050FCAC`. BehaviorManager creates BehaviorContainer at `0x005A08D6`, and that container creates configured behaviours while traversing its config map (`0x0059C34C` onward). CantHandleTallStack subscribes during its constructor, so its subscription precedes CubeLightComponent construction at `0x0050FDDE`. The config-map traversal is not itself claimed to be sorted; the relative ordering here follows from the enclosing component construction, not from an assumed ordering of that map.
+Robot construction creates BlockWorld at `0x0050FC66`; BlockWorld creates its BlockConfigurationManager at `0x0061BDC2`. It then creates BehaviorManager at `0x0050FCAC`. BehaviorManager creates BehaviorContainer at `0x005A08D6`, and that container creates configured behaviours while traversing its config map (`0x0059C34C` onward). Robot next creates BehaviorSystemManager at `0x0050FCBE`; this creates a second BehaviorContainer from the same configuration map at `0x005A5812` (map input at `0x005A5806..0x005A580A`). CantHandleTallStack therefore subscribes twice, once per container. Both subscriptions precede CubeLightComponent construction at `0x0050FDDE`. The config-map traversal is not itself claimed to be sorted; the relative ordering here follows from the enclosing component construction, not from an assumed ordering of that map.
 
-Much later, Robot calls InitReactionTriggerMap at `0x00510396`. It obtains `reactionTriggerBehaviorMap`, iterates begin/end (`0x005A16F6..0x005A171C`), constructs one strategy per entry (`0x005A17B6`) and retains it only if its target behaviour exists (`0x005A17CC..0x005A17D6`, deletion branch `0x005A1872`). The shipped file `re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/reactionTrigger_behavior_map.json` has FacePositionUpdated first, ObjectPositionUpdated fourth, CubeMoved sixth. The FistBump and Hiccup entries in between subscribe to other tags. With the shipped behaviours successfully loaded, the six recovered callbacks therefore run in this order:
+Much later, Robot calls InitReactionTriggerMap at `0x00510396`. It obtains `reactionTriggerBehaviorMap`, iterates begin/end (`0x005A16F6..0x005A171C`), constructs one strategy per entry (`0x005A17B6`) and retains it only if its target behaviour exists (`0x005A17CC..0x005A17D6`, deletion branch `0x005A1872`). The shipped file `re-analysis/obb/assets/cozmo_resources/config/engine/behaviorSystem/reactionTrigger_behavior_map.json` has FacePositionUpdated first, ObjectPositionUpdated fourth, CubeMoved sixth. The FistBump and Hiccup entries in between subscribe to other tags. With the shipped behaviours successfully loaded, the seven recovered callbacks therefore run in this order:
 
 1. BlockConfigurationManager.
-2. CantHandleTallStack.
-3. CubeLightComponent.
-4. FacePositionUpdated's PositionUpdate-base subscription.
-5. ObjectPositionUpdated's PositionUpdate-base subscription.
-6. CubeMoved.
+2. CantHandleTallStack owned by BehaviorManager.
+3. CantHandleTallStack owned by BehaviorSystemManager.
+4. CubeLightComponent.
+5. FacePositionUpdated's PositionUpdate-base subscription.
+6. ObjectPositionUpdated's PositionUpdate-base subscription.
+7. CubeMoved.
 
-During Robot's earlier construction-time Delocalize call at `0x00510324`, the reaction-map initialization has not occurred. The first three have already been constructed; the last three do not yet exist. This distinction prevents applying the final six-entry list retroactively to that earlier broadcast. Missing external interface prevents the subscriptions; missing/failed behaviour creation or destroyed strategy handles removes the corresponding recipient rather than reserving an empty ordering slot.
+During Robot's earlier construction-time Delocalize call at `0x00510324`, the reaction-map initialization has not occurred. The first four have already been constructed; the last three do not yet exist. This distinction prevents applying the final seven-entry list retroactively to that earlier broadcast. Missing external interface prevents the subscriptions; missing/failed behaviour creation or destroyed strategy handles removes the corresponding recipient rather than reserving an empty ordering slot.
 
 This order comes from the native signal implementation. E2G Subscribe `0x006626CC` selects the signal by the zero-extended tag in interface+0x20 and calls `0x0066411C`. Its slot allocator `0x00664684` appends before the circular-list sentinel: `[oldTail]=new`, `new.next=sentinel`, `new.prev=oldTail`, `sentinel.prev=new` at `0x006646A6..0x006646B0`. Broadcast `0x00662508` invokes DeliverToGame (vt+0x48) first, creates its timestamped event, then dispatches through `0x00662590`. The emitter at `0x00663C74` walks forward, invokes nonempty callbacks at `0x00663C90`, obtains next after each callback at `0x00663C94`, and holds/releases traversal references. It is not an unordered-map iteration over subscribers: the hash lookup picks one signal; its linked list supplies order. Reentrant subscription/removal would have to follow that actual list traversal; no snapshot semantics are asserted here.
 
@@ -89,7 +90,7 @@ This order comes from the native signal implementation. E2G Subscribe `0x006626C
 
 The search included payload-accessor callers, tag-0x32 dispatch comparisons, direct constant subscription helpers, IBehavior's E2G set wrapper, IReactionTriggerStrategy's E2G wrapper, its PositionUpdate base, and IWantsToRunStrategy's wrapper. The reaction factory's generic event constants at `0x00C75AC0..0x00C75ACA` are 0x22, 0x34, 0x1E, 0x3A, 0x35, 0x3C, not 0x32. Other inspected strategy constants include FistBump 0x8B (`0x00C76710`), Hiccup E2G 0x35 (`0x00C76812`), and PlacedOnCharger 0x39 (`0x00C76FD0`). The IBehavior tag-table search identified CantHandleTallStack in addition to the original two accessor callbacks.
 
-Nevertheless, this is not a complete proof over every indirect vt+0x28 call and every computed tag producer. In particular, the generic ConfigureRelevantEvents/SubscribeToTags families accept supplied sets, and this report has not closed every caller of those families and every interface-pointer alias. The six-recipient order is established for the recovered initialization paths; **global completeness remains UNKNOWN**. A follow-up must close those producer sets, including dynamically created behaviours and reconfiguration, before claiming a universally exhaustive subscriber list. No unchanged list is inferred merely from there being only two Get_\<50\> callers.
+Nevertheless, this is not a complete proof over every indirect vt+0x28 call and every computed tag producer. In particular, the generic ConfigureRelevantEvents/SubscribeToTags families accept supplied sets, and this report has not closed every caller of those families and every interface-pointer alias. The seven-instance order is established for the recovered initialization paths; **global completeness remains UNKNOWN**. A follow-up must close those producer sets, including dynamically created behaviours and reconfiguration, before claiming a universally exhaustive subscriber list. No unchanged list is inferred merely from there being only two Get_\<50\> callers.
 
 ## 2. GetParent/FindRoot census
 
@@ -171,11 +172,13 @@ The marker/preaction, located-object/stack/carrying, and pose-cluster families n
 
 Accordingly, the requested list of **demonstrated unguarded normal-running root faults is empty in this extraction**, but the proposition that no such faults exist remains UNKNOWN. The known safe public FindRoot calls and explicit guarded GetParent calls can be excluded from this particular root hazard; the P/U rows cannot yet be excluded. Under the standing M1-034 policy, a root-to-GetParent path, if established, would skip the smallest affected unit and log the owning record and fault at `0x008452BA`. This report does not choose an unproved skip boundary or change production behavior.
 
+The instance count was corrected after the second BehaviorContainer construction was rechecked at `0x005A57E6..0x005A5834`: there are seven recovered instances of six recipient types. The earlier six-instance count omitted BehaviorSystemManager's CantHandleTallStack. No conclusion depends on ordering the two containers' internal unordered maps.
+
 ## Manifest and handoff
 
 The current manifest was read, rather than inferred from older notes:
 
-- **M11-072**, RECOVERABLE_GAP: “RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized”; its evidence cites `20261013-delocalize-callees-check.md` and the earlier two Get_\<50\> callers. The extra behaviour and two position strategies above must be included before any subscriber-list claim is settled. Global negative completeness is still open.
+- **M11-072**, RECOVERABLE_GAP: “RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized”; its evidence cites `20261013-delocalize-callees-check.md` and the earlier two Get_\<50\> callers. The two extra behaviour instances and two position strategies above must be included before any subscriber-list claim is settled. Global negative completeness is still open.
 - **M11-073**, RECOVERABLE_GAP: “Reachability of PoseBase::GetParent() on a root pose (WrapExistingNode owners++ with no null guard faults at 0x008452BA)”; its evidence cites GetParent `0x008453D4..0x0084541E`, WrapExistingNode `0x0084529C..0x008452C0` and roughly 60 calls. The 55-call table distinguishes root-safe FindRoot from GetParent and records guarded/producer-dependent cases. Normal producer closure remains open.
 
 No fidelity reclassification is proposed here. Validation was static disassembly, relocation/tag-table inspection, shipped-config inspection and a direct-call census. No implementation regression test was added because this request permits research only. The answer is self-contained; local scratch disassemblies are not required evidence attachments and are not included in the P2 commit.
