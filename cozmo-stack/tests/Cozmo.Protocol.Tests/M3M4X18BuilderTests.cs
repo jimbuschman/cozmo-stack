@@ -107,7 +107,7 @@ public sealed class M3M4X18BuilderTests
     public void TapFilterWarningsPrecedeImplAndBackupMissingPrecedesHeadId()
     {
         using var rig=new M4ControlTests.Rig();Offline(rig);var order=new List<string>();
-        rig.Engine.LogEntry+=e=>order.Add(e.Name);rig.Engine.StackLogLine+=e=>{if(e.Contains("M15-033 | Backup::RobotConnected"))order.Add("backup-missing");};
+        rig.Engine.LogEntry+=e=>order.Add(e.Name);rig.Engine.StackLogLine+=e=>{if(e.Contains("M15-039 | Backup::RobotConnected"))order.Add("backup-missing");};
         rig.Engine.Broadcast(new ObjectMoved{ObjectID=unchecked((uint)-1)});
         Assert.Equal("BlockTapFilterComponent.HandleActiveObjectMoved.ObjectIDNull",order[0]);Assert.Equal("Robot.ActiveObjectMoved.UnknownActiveID",order[1]);
         order.Clear();rig.Engine.Broadcast(new ObjectStoppedMoving{ObjectID=99});Assert.Equal("BlockTapFilterComponent.HandleActiveObjectStopped.ObjectIDNull",order[0]);
@@ -157,22 +157,22 @@ public sealed class M3M4X18BuilderTests
         a.Dispose();calls.Clear();rig.Engine.Broadcast(new LiftLoad());Assert.Equal(new[]{"LiftLoadTest[0]","LiftLoadTest[1]","IDockAction"},calls);
     }
     [Fact]
-    public void EachConstructorReportsItsOwnMissingLoggerAndEmptyHeaderStopsAtUnreadRow()
+    public void EachConstructorBuildsItsLoggerAndEmptyHeaderStopsAtUnreadRow()
     {
         using var rig=new M4ControlTests.Rig();var logs=new List<string>();rig.Engine.StackLogLine+=logs.Add;Offline(rig);
-        Assert.Equal(6,logs.Count(e=>e.StartsWith("MISSING: M7-028 |")));
-        Assert.Equal(6,logs.Where(e=>e.StartsWith("MISSING: M7-028 |")).Distinct().Count());
+        Assert.DoesNotContain(logs,e=>e.Contains("logger/directory side effects remain unread"));
+        Assert.All(rig.Engine.Robot!.DevBehaviors,s=>{Assert.True(s.Factory.Logger.JsonMode);Assert.False(s.Factory.Logger.FileOpen);});
         rig.Engine.Broadcast(new FirmwareVersion());
         Assert.All(rig.Engine.Robot!.DevBehaviors,s=>Assert.Equal(0,s.Factory.Result));
         Assert.Equal(2,logs.Count(e=>e.Contains("FactoryTest Json::Reader::parse on an empty")));
     }
     [Fact]
-    public void UnknownInitialFactoryStateDoesNotFabricateDeadlineButKnownChangedStateUsesFloatTwenty()
+    public void NativeInitialFactoryStateZeroSetsTheFirstDeadlineToFloatTwenty()
     {
         using var rig=new M4ControlTests.Rig();Offline(rig);var sets=rig.Engine.Robot!.DevBehaviors;
-        sets[1].Factory.CurrentState=0; // Explicit fixture input, never a claim about the unread constructor.
+        Assert.All(sets,s=>Assert.Equal((byte)0,s.Factory.CurrentState!.Value));
         rig.Engine.Broadcast(new FirmwareVersion{Signature=Encoding.UTF8.GetBytes("{")});
-        Assert.Equal((byte)15,sets[0].Factory.CurrentState!.Value);Assert.Null(sets[0].Factory.StateDeadline);
+        Assert.Equal((byte)15,sets[0].Factory.CurrentState!.Value);Assert.Equal(rig.Engine.Timer.SecondsF+20f,sets[0].Factory.StateDeadline);
         Assert.Equal(rig.Engine.Timer.SecondsF+20f,sets[1].Factory.StateDeadline);
     }
     private sealed class MotorSource : IPanTiltRobot,INativeMotorAckSource

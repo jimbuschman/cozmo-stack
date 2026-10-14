@@ -153,6 +153,7 @@ public sealed partial class CozmoEngine
     internal void DestroyRobot(EngineRobot robot)
     {
         robot.Lifetime.Destroy();
+        robot.ReleaseCheckedDevStorage(); // Managed storage only; IBehavior's precise subscription destruction point remains M7-028 MISSING.
         RobotStorageFreed?.Invoke(RobotId); // managed object lifetime replaces native operator delete storage release.
     }
 }

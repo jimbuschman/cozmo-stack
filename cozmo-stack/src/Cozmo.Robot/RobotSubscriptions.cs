@@ -102,7 +102,7 @@ public sealed partial class EngineRobot
         InitCheckedDevSubscribers();
         Engine.PathComponentConstructed?.Invoke(this); // M12-032: the component owns its one first C6 subscription.
         // Backup is the first C9 subscriber, constructed with NVStorage before Impl.
-        AddMessage(RobotMessageId.RobotAvailable, _ => Engine.EmitStackLog("MISSING: M15-033 | Backup::RobotConnected 0x00519B78 -> 0x0051A010"), "Backup");
+        AddMessage(RobotMessageId.RobotAvailable, _ => Engine.EmitStackLog("MISSING: M15-039 | Backup::RobotConnected 0x00519B78 -> 0x0051A010; B-M15-1"), "Backup");
         AddMessage(new ObjectAccel().Id, m => Engine.CubeAccelRoute?.Invoke(m), "CubeAccel");
         AddMessage(RobotMessageId.ActiveObjectMoved, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");
         AddMessage(RobotMessageId.ActiveObjectStopped, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");
@@ -154,17 +154,17 @@ public sealed partial class EngineRobot
             new DefaultCameraParams(), new ImageChunk(), new ImageImuData(), new CliffEvent(), new PotentialCliff(),
             new RobotStopped(), new FallingStarted(), new FallingStopped(), new MotorCalibration() };
         foreach (var tag in deviceMessages.Select(m => m.Id))
-            if (!_implTags.Contains(tag)) AddMessage(tag, _ => { }, "Impl");
+            if (!_implTags.Contains(tag)) AddMessage(tag, _ => { },(byte)tag==0xB6?"BlockTapFilter":"Impl", routeDevice:true);
     }
     private ImuDiagnosticLog _imuLog = null!;
     internal ImuDiagnosticLog ImuLog => _imuLog;
-    private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback, string name = "Impl")
+    private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback, string name = "Impl", bool routeDevice = false)
     {
         if (name == "Impl") _implTags.Add(tag);
         _messagingHandles.Add(SubscribeMessage(tag, m =>
         {
             callback(m);
-            if (name == "Impl") Engine.DeviceRoute?.Invoke(m, _lastStateHandled);
+            if (name == "Impl" || routeDevice) Engine.DeviceRoute?.Invoke(m, _lastStateHandled);
         }, name));
     }
     internal RetainedSubscription SubscribeMessage(RobotMessageId tag, Action<RobotMessage> callback, string name)

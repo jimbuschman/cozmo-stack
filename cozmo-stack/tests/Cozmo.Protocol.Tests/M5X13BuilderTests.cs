@@ -46,7 +46,10 @@ public class M5X13BuilderTests : IDisposable
             // E07/E08/E09/E10/E11; subscription vectors release from the back.
             Assert.Equal(new[] { "unlink G2E F7", "unlink G2E E0", "unlink G2E DF", "unlink G2E DE", "unlink G2E DD", "unlink G2E DC", "unlink G2E DB", "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
                 "unlink G2E C4", "unlink G2E AD", "unlink G2E AF", "unlink G2E AE",
-                "unlink G2E B4", "robots", "abort", "join", "loader", "hub" }, order);
+                "unlink G2E B4", "robots", "abort", "join", "loader", "hub" }, order.Where(line => line is not ("unlink G2E 95" or "unlink E2G 35")));
+            // M7-028: managed subscription storage is retired; the native IBehavior destruction order remains unread.
+            Assert.Equal(2, order.Count(line => line == "unlink G2E 95"));
+            Assert.Equal(2, order.Count(line => line == "unlink E2G 35"));
             Assert.Throws<ObjectDisposedException>(() => hub.Subscribe(0x5A, true));
         }
         finally { resume.Set(); load.Wait(TimeSpan.FromSeconds(15)); Directory.Delete(root, true); }

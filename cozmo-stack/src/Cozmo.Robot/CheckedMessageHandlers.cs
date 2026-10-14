@@ -51,6 +51,7 @@ public sealed partial class EngineRobot
 
     // fidelity: M7-027 — two BehaviorContainers, manager's instances before system manager's.
     internal CheckedDevBehaviorSet[] DevBehaviors { get; private set; } = Array.Empty<CheckedDevBehaviorSet>();
+    internal void ReleaseCheckedDevStorage(){foreach(var set in DevBehaviors)set.Lift.ReleaseSubscriptionStorage();}
     private void InitCheckedDevSubscribers()
     {
         DevBehaviors = new[] { new CheckedDevBehaviorSet(this, 0), new CheckedDevBehaviorSet(this, 1) };
@@ -71,14 +72,11 @@ public sealed partial class EngineRobot
 internal sealed class CheckedDevBehaviorSet
 {
     internal CheckedFactoryTest Factory { get; }
-    internal CheckedDockingTest Docking { get; } = new();
+    internal CheckedDockingTest Docking { get; }
     internal CheckedLiftLoadTest Lift { get; }
     internal CheckedDevBehaviorSet(EngineRobot robot,int instance)
     {
-        Factory=new(robot); Lift=new(robot);
-        // fidelity: M7-028 — one visible MISSING per native logger-owning behaviour instance; no directory stand-in.
-        foreach(string name in new[]{"FactoryTest","DockingTestSimple","LiftLoadTest"})
-            robot.Engine.EmitStackLog($"MISSING: M7-028 | {name}[{instance}] constructor logger/directory side effects remain unread");
+        Factory=new(robot);Docking=new(robot);Lift=new(robot,instance);
     }
 }
 // fidelity: M7-027 — checked handler fields only; no guessed activation/update/logger lifecycle.
@@ -89,7 +87,7 @@ internal sealed class CheckedFactoryTest
     internal bool SawCubeOrCharger, PickAndPlacePassed, HeaderMismatch;
     internal string Version="", Build="";
     internal byte Result;
-    internal byte? CurrentState;
+    internal byte? CurrentState=0; // 0x005D0456, strb +0x128.
     internal float? StateDeadline;
     internal uint FailureTimestamp;
     internal Dictionary<int,uint> TimestampEntries = new();
@@ -97,10 +95,12 @@ internal sealed class CheckedFactoryTest
     internal long ResultTime;
     internal uint ResultField1D8;
     internal bool IsRunnableInternal => Result==0;
-    // The 72-byte logger-owned scratch entry has no checked initialization row; never fabricate its bytes.
+    // The 72-byte source timestamp array +0x230 has unread initial contents; never fabricate its bytes.
     internal record QueuedEntry(uint Tag,int StationId,byte Result,long Time,uint Zero,byte[]? Data);
     internal List<QueuedEntry> QueuedWrites = new();
     internal uint QueueCount;
+    // fidelity: M7-028 — FactoryTestLogger(true), JSON mode, memory only; no StartLog/CloseLog body claim.
+    internal readonly CheckedFactoryLogger Logger=new(true);
     internal CheckedFactoryTest(EngineRobot robot) => _robot=robot;
     private void Log(EngineLogLevel level,string key,string text,string? channel=null) => _robot.Engine.EmitSourceLog(level,channel,key,text);
     internal void Handle(RobotMessage message)
@@ -151,17 +151,21 @@ internal sealed class CheckedFactoryTest
         ResultField1D8=0;
         ResultTime=DateTimeOffset.UtcNow.ToUnixTimeSeconds(); // phone time(NULL) is a system-library input.
         QueuedWrites.Add(new(0x80000010,StationId,Result,ResultTime,ResultField1D8,null)); QueueCount=unchecked(QueueCount+1);
-        _robot.Engine.EmitStackLog("MISSING: M7-027 | FactoryTestResultEntry scratch bytes copied at 0x005D257E and Pack 0x005D259C have no checked initialization row; queued metadata retained, no NV write invented");
+        _robot.Engine.EmitStackLog("MISSING: M7-027 | FactoryTestResultEntry 0x48 bytes copied from timestamp array +0x230 at 0x005D257E have unread initial contents; Pack 0x005D259C remains unbuilt, queued metadata retained, no NV write invented");
         WritesSent=false;
         if (CurrentState is { } previousState)
         { if (previousState != 15) StateDeadline = _robot.Engine.Timer.SecondsF + 20f; }
-        else _robot.Engine.EmitStackLog("MISSING: M7-027 | FactoryTest initial +0x128 state has no checked row; SetCurrState deadline guard 0x005D14AE..0x005D14CA cannot be resolved");
         CurrentState=15; TimestampEntries[15]=_robot.Engine.Timer.TimeStampMs;
     }
 }
 // fidelity: M7-027
 internal sealed class CheckedDockingTest
 {
+    // fidelity: M7-028 — pathToResource(scope 2), no normalization, ignored CreateDirectory result; no file opens.
+    internal string LoggerDirectory {get;}
+    internal string LoggerExtension=>".log";
+    internal uint LoggerSize=>0x1400000;
+    internal CheckedDockingTest(EngineRobot robot){LoggerDirectory=CozmoEngine.AnimationCacheFile(robot.Engine.Options.AnimationCachePath,"dockingTest");_ = EngineFileUtils.CreateDirectory(LoggerDirectory);}
     internal uint Field258, BackingUpCount, Field260, Field268;
     internal bool DidHanns;
     internal void Handle(DockingStatus m) { if(m.Field1==0)BackingUpCount=unchecked(BackingUpCount+1);else if(m.Field1==1)DidHanns=true; }
@@ -172,12 +176,35 @@ internal sealed class CheckedLiftLoadTest
 {
     private readonly EngineRobot _robot;
     internal bool Running, Received, HasLoad;
-    internal uint Loads, All;
-    internal CheckedLiftLoadTest(EngineRobot robot)=>_robot=robot;
+    internal uint Loads, All; // +0x220, +0x21C.
+    // fidelity: M7-028 — checked L4 constructor fields and two external-interface subscriptions.
+    internal uint Field11C,Field120,Field124;
+    internal byte Field218,Field219=1;
+    internal ushort Field224=>(ushort)((Received?1:0)|((HasLoad?1:0)<<8));
+    internal string LoggerDirectory {get;}
+    internal string LoggerExtension=>".log";
+    internal uint LoggerSize=>0x1400000;
+    private readonly SubscriptionOwners _externalSubscriptions=new();
+    internal CheckedLiftLoadTest(EngineRobot robot,int instance)
+    {
+        _robot=robot;LoggerDirectory=CozmoEngine.AnimationCacheFile(robot.Engine.Options.AnimationCachePath,"liftLoadTest");_ = EngineFileUtils.CreateDirectory(LoggerDirectory);
+        _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x35,true,_=>robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] 0x35 callback body remains unread")));
+        _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x95,false,_=>robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] 0x95 callback body remains unread")));
+        robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] IBehavior base constructor 0x005D3F18 and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown");
+    }
+    internal void ReleaseSubscriptionStorage()=>_externalSubscriptions.Retire();
     internal void Handle(LiftLoad m)
     {
         if(!Running)return;
         Received=true;HasLoad=m.Field0;All=unchecked(All+1);if(HasLoad)Loads=unchecked(Loads+1);
         _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","BehaviorLiftLoadTest.HandleLiftLoad.HasLoad",$"{unchecked((int)Loads)} / {unchecked((int)All)}");
     }
+}
+// fidelity: M7-028 — checked L5 constructor mode. StartLog/CloseLog remain unread, no files are opened.
+internal sealed class CheckedFactoryLogger(bool jsonMode)
+{
+    internal readonly bool JsonMode=jsonMode;
+    internal readonly FirmwareJsonValue Root=new(); // Json::Value(nullValue), 0x006716D0..0x006716D6.
+    internal string Extension=>JsonMode?".json":".log";
+    internal bool FileOpen=>false;
 }
