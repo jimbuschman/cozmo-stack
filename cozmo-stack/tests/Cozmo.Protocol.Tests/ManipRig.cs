@@ -93,9 +93,9 @@ internal sealed class Rig : IDisposable
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
         Vision = new VisionSystem(Robot, Cal) { Enabled = false };
         M = new ManipulationSystem(Robot, Vision);
-        // These geometry/wire regressions isolate the unbuilt M12-024 animation lifecycle.
+        // These geometry/wire regressions isolate the M12-024 animation lifecycle.
         // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and
-        // exercise the real shared handler with explicit NoAnimation inputs; they do not verify native input recovery.
+        // exercise the shared handler; NoAnimation fixture cases are labelled separately from B-M5-19's default-input case.
         M.DrivingAnimationsForTest = () => new GeometryOnlyDrivingDependency();
         // M12-032: actual C6 messages and RobotState drive status; only planner internals remain modelled under M13-033.
         M.ErasePlannerObstaclesForTest=_=>{};

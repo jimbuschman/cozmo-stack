@@ -122,17 +122,18 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Equal(0u, handler.PlayEndAnim());
     }
     [Fact]
-    public void MissingDrivingInputsStopDecisionsAndDoNotFabricateQueueEntries()
+    public void MissingMoodAndNeedsFallThroughToDefaultAndQueueARealRunner()
     {
         using var robot = CozmoRobot.CreateOffline(); var handler = robot.Animations.DrivingAnimations;
         var lines = new List<string>(); robot.Engine.StackLogLine += lines.Add;
-        Assert.False(handler.Init(4, 99, false, false)); Assert.Equal(0, handler.State); Assert.False(handler.InputsReady);
+        Assert.True(handler.Init(4, 99, false, false)); Assert.Equal(0, handler.State); Assert.True(handler.InputsReady);
         Assert.Contains(lines, l => l.Contains("M5-063 M7-026 GetSimpleMood"));
         handler.Push(new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D), "test");
         Assert.True(handler.Init(4, 99, false, false)); handler.PlayDrivingLoopAnim();
-        Assert.Equal(0u, handler.LoopId); Assert.Equal(0, robot.Engine.Robot!.ActionList.QueueCount);
-        Assert.Contains(lines, l => l.Contains("M5-063 M8-005 TriggerLiftSafeAnimationAction"));
-        handler.HandleActionCompleted(0, 1);
+        Assert.NotEqual(0u, handler.LoopId); Assert.Equal(1, robot.Engine.Robot!.ActionList.QueueCount);
+        Assert.Contains(lines, l => l.Contains("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction"));
+        robot.Engine.Robot.ActionList.Update(); // No map/library: terminal NO_ANIM_NAME still emits E2G 5A.
+        robot.Engine.Robot.ActionList.Update();
         Assert.DoesNotContain(lines, l => l.Contains("M12-032 PathComponent.HasPathToFollow")); // P30 now reads the real constructor's Ready status.
         Assert.Equal(0, robot.Engine.Robot!.ActionList.QueueCount);
     }

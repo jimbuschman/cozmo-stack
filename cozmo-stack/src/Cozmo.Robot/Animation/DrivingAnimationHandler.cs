@@ -20,6 +20,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     private bool _unlock = true, _repeat;
     internal Func<int>? GetSimpleMoodForTest;
     internal Func<bool>? AreNeedsMetForTest;
+    internal Func<bool>? AreNeedsMet;
     internal Func<bool>? HasPathToFollowForTest;
     internal Func<DrivingAnimationRequest, IActionRunner>? CreateActionForTest;
     internal Action<string, uint>? CallObserved;
@@ -35,7 +36,8 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         Current = new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D); // checked ctor 0x004F0724..0x004F0728.
         StartId = LoopId = EndId = 0; _tracks = 0; _unlock = true; _repeat = false; _entries.Clear();
     }
-    private void Missing(string text) { if(_missingMessages.Add(text))robot.Engine.EmitStackLog("MISSING: M5-063 " + text); }
+    private void Missing(string text) => robot.Engine.EmitStackLog("MISSING: M5-063 " + text);
+    private void DriveMissing(string text) { if(_missingMessages.Add(text))Missing(text); }
     private void Warning(string key, string text) => robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, key, text);
     internal void Push(DrivingAnimations animations, string lockName)
     {
@@ -61,7 +63,6 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
         // UpdateCurrDrivingAnimations is called only here, before the Init stores.
         _missingMessages.Clear();
         bool selected=UpdateCurrent();
-        if(!selected)Current=null; // Unknown selection is not the constructor triplet.
         State = 0; StartId = LoopId = EndId = 0;
         _tracks = tracks; _tag = tag; _unlock = !argument3; _repeat = repeatWhilePath; // Init's fourth C++ parameter (not counting this).
         return selected;
@@ -70,16 +71,12 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     private bool UpdateCurrent()
     {
         if (_entries.Count != 0) { Current = _entries[^1].Animations; return true; }
-        if (GetSimpleMoodForTest is null)
-        {
-            Missing("M7-026 GetSimpleMood (0x004F0D42); selection stopped before mood/needs/default choice"); return false;
-        }
-        if (GetSimpleMoodForTest() == 1) { Current = new((AnimationTrigger)0x94, (AnimationTrigger)0x90, (AnimationTrigger)0x8C); return true; }
-        if (AreNeedsMetForTest is null)
-        {
-            Missing("M15-001 AreNeedsMet (0x004F0D5A); selection stopped before needs/default choice"); return false;
-        }
-        Current = AreNeedsMetForTest() ? new((AnimationTrigger)0x96, (AnimationTrigger)0x92, (AnimationTrigger)0x8E)
+        // MoodState has emotion values but no recovered GetSimpleMood; do not derive that enum from emotions.
+        if (GetSimpleMoodForTest is null) DriveMissing("M7-026 GetSimpleMood (0x004F0D42) unavailable; proceeding to the needs/default branch");
+        else if (GetSimpleMoodForTest() == 1) { Current = new((AnimationTrigger)0x94, (AnimationTrigger)0x90, (AnimationTrigger)0x8C); return true; }
+        var needs=AreNeedsMetForTest ?? AreNeedsMet;
+        if(needs is null)DriveMissing("M15-001 AreNeedsMet (0x004F0D5A) unavailable; proceeding to the default triplet");
+        Current = needs?.Invoke() == true ? new((AnimationTrigger)0x96, (AnimationTrigger)0x92, (AnimationTrigger)0x8E)
             : new((AnimationTrigger)0x95, (AnimationTrigger)0x91, (AnimationTrigger)0x8D);
         return true;
     }
@@ -166,8 +163,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     {
         var request = new DrivingAnimationRequest(trigger, 1, true, 0, BitConverter.Int32BitsToSingle(0x42700000), false);
         if (CreateActionForTest is { } factory) return factory(request);
-        Missing("M8-005 TriggerLiftSafeAnimationAction queued runner constructor 0x004F0E86/0x004F10A4; existing SteppedBehavior task helper is not an ActionList runner, so no ID or queued action is fabricated");
-        return null;
+        return new TriggerLiftSafeAnimationAction(robot, request);
     }
     private void Queue(IActionRunner action)
     {

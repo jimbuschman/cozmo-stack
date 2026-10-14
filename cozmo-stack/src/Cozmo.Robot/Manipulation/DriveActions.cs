@@ -194,8 +194,8 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         Dispose();
         // Stored Cancel bypasses IAction::UpdateInternal's callbacks. The queue's destruction
         // is the terminal boundary for the host task; no handler end call is added.
-        if(State!=EngineActionResult.Running
-            && _done?.TrySetResult((ActionResult)State)==true)_m.DriveResultObservedForTest?.Invoke((ActionResult)State);
+        // DeleteActionAndIter snapshots the stored full result, including RUNNING when QueueNow deletes without Cancel.
+        if(_done?.TrySetResult((ActionResult)State)==true)_m.DriveResultObservedForTest?.Invoke((ActionResult)State);
     }
 
 
@@ -982,6 +982,6 @@ public sealed class DriveStraightAction : ActionRunner, IDisposable
     public override void WatcherEnding()
     {
         Dispose();
-        if(State!=EngineActionResult.Running)_done?.TrySetResult((ActionResult)State);
+        _done?.TrySetResult((ActionResult)State);
     }
 }

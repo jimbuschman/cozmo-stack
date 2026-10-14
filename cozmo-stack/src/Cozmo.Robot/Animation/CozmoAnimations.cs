@@ -238,6 +238,7 @@ public sealed class CozmoAnimations : IDisposable
 
     // fidelity: M5-063 — same handler as the subscriptions, not a parallel implementation.
     internal DrivingAnimationHandler DrivingAnimations { get; }
+    internal Cozmo.Robot.Behavior.AnimationTriggerMap? DrivingTriggerMap { get; set; }
     public void PushDrivingAnimations(AnimationTrigger start, AnimationTrigger loop, AnimationTrigger end, string lockName)
     {
         var payload = new PushDrivingAnimationMessage(new(start, loop, end), lockName);
@@ -347,6 +348,8 @@ public sealed class CozmoAnimations : IDisposable
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot)
     {
+        try { DrivingTriggerMap = Cozmo.Robot.Behavior.AnimationTriggerMap.Load(assetsRoot); }
+        catch (FileNotFoundException) { DrivingTriggerMap = null; }
         AnimationLibrary? loaded = null;
         System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
         // X9 G1: LoadNonConfigData owns a loader thread; the API waits for that load's result.

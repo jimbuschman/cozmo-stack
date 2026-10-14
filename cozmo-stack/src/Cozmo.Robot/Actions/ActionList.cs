@@ -205,9 +205,7 @@ return 0;
         lock (_gate)
         {
             if (_clearing) return true;
-            bool any = false;
-            foreach (var q in _queues.Values) if (q.Cancel(type)) any = true;
-            return any;
+            return CancelQueues(q=>q.Cancel(type));
         }
     }
 
@@ -217,9 +215,26 @@ return 0;
         lock (_gate)
         {
             if (_clearing) return true;
-            bool any = false;
-            foreach (var q in _queues.Values) if (q.Cancel(idTag)) any = true;
-            return any;
+            return CancelQueues(q=>q.Cancel(idTag),idTag);
+        }
+    }
+
+    // C6: native map iteration remains valid when synchronous completion inserts a parallel queue.
+    // As in Update, read the next key after each call; managed enumerators cannot span that callout.
+    private bool CancelQueues(Func<ActionQueue,bool> cancel,uint? idTag=null)
+    {
+        bool any=false;int? previous=null;
+        while(true)
+        {
+            KeyValuePair<int,ActionQueue>? next=null;
+            foreach(var entry in _queues)if(previous is null || entry.Key>previous.Value){next=entry;break;}
+            if(next is not {} current)return any;
+            previous=current.Key;
+            if(cancel(current.Value))
+            {
+                if(any && idTag is {} tag)SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Warning,null,"ActionList.Cancel.DuplicateTags",$"Multiple actions from multiple slots cancelled with idTag={unchecked((int)tag)}");
+                any=true;
+            }
         }
     }
 
@@ -321,4 +336,3 @@ return 0;
     private static bool IsExternalTag(uint tag) =>
         (tag >= 0x00000001u && tag <= 0x000F4240u) || (tag >= 0x001E8481u && tag <= 0x002DC6C0u);
 }
-

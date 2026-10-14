@@ -986,8 +986,8 @@ public class NavigationTests
     }
 
     [Fact]
-    // M12-032 stand-in: the same production follower mapping feeds this behavior, not recovered native status.
-    public void PopAWheelieDriveCompletionDoesNotFabricateFailedAbort()
+    // Native M12-032 status, with an explicit NoAnimation driving fixture; this is not default production selection.
+    public void PopAWheelieNoAnimationFixtureDriveCompletionDoesNotFabricateFailedAbort()
     {
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;

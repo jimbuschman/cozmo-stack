@@ -69,6 +69,8 @@ public sealed class M5X17BuilderTests
     public void LoopCompletionDoubleUnlockResendsEnableTracksAndNamesPrintBoundary()
     {
         using var r=new M4ControlTests.Rig();r.ToSynced();r.State();var h=r.Robot.Animations.DrivingAnimations;h.Push(new((AnimationTrigger)0x23F,(AnimationTrigger)0x91,(AnimationTrigger)0x8D),"fixture");// No queued animation fixture: synchronous Cancel/completion re-entrance is the explicitly excluded M8-015 question.
+        h.CreateActionForTest=_=>new Probe();
+        r.Engine.Robot!.ActionList.Watcher.HasExternalInterface=false; // Component fixture: inject one loop completion below, suppress queue-generated re-entry.
         h.HasPathToFollowForTest=()=>false;h.Init(4,101,false,false);h.PlayStartAnim();
         r.Robot.Motion.LockTracks(4,"101","DriveToPose");int mark=r.Mark();var lines=new List<string>();var entries=new List<EngineLogEntry>();r.Engine.StackLogLine+=lines.Add;r.Engine.LogEntry+=entries.Add;
         h.HandleActionCompleted(h.LoopId,0x02000000); // cancelled loop: avoids the unbuilt zero-ID start completion.

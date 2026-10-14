@@ -8,7 +8,7 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public sealed class M5X18BuilderTests
 {
-    private static void ProductionInputs(Rig rig)
+    private static void NoAnimationFixtureInputs(Rig rig)
     {
         rig.M.DrivingAnimationsForTest=null;
         Assert.Null(rig.M.DriveTickForTest);Assert.Null(rig.M.StraightTickForTest);
@@ -17,9 +17,9 @@ public sealed class M5X18BuilderTests
         rig.Robot.Animations.PushDrivingAnimations((AnimationTrigger)0x23F,(AnimationTrigger)0x23F,(AnimationTrigger)0x23F,"fixture-input");
     }
     [Fact]
-    public void ProductionDriveCompletesWithSuccessUsingNativeM12_032StatusAndNoTestProvider()
+    public void NoAnimationFixtureDriveCompletesWithSuccessUsingNativeM12_032Status()
     {
-        using var signals=SignalTestContext.Install();using var rig=new Rig();ProductionInputs(rig);
+        using var signals=SignalTestContext.Install();using var rig=new Rig();NoAnimationFixtureInputs(rig);
         var observed=new List<string>();rig.Robot.Engine.StackLogLine+=observed.Add;
         using var d=new DriveToPoseAction(rig.M){Goal=new Pose3d(Mat3.Identity,new Vec3(150,0,0))};
         var result=SignalTestContext.Result(d.RunAsync(default),()=>rig.Pump());
@@ -27,9 +27,9 @@ public sealed class M5X18BuilderTests
         Assert.DoesNotContain(observed,s=>s.Contains("status/IDs mapping is a stand-in"));
     }
     [Fact]
-    public void ProductionStraightCompletesUsingNativeStatusAndTinyDistanceSendsNoPath()
+    public void NoAnimationFixtureStraightCompletesUsingNativeStatusAndTinyDistanceSendsNoPath()
     {
-        using var signals=SignalTestContext.Install();using var rig=new Rig();ProductionInputs(rig);
+        using var signals=SignalTestContext.Install();using var rig=new Rig();NoAnimationFixtureInputs(rig);
         using var d=new DriveStraightAction(rig.M,100);Assert.Equal(ActionResult.Success,SignalTestContext.Result(d.RunAsync(default),()=>rig.Pump()));Assert.False(d.CanInterrupt());
         int before=rig.M.Paths.Sent.Count;using var tiny=new DriveStraightAction(rig.M,BitConverter.Int32BitsToSingle(0x3727C5AB));
         Assert.Equal(ActionResult.Success,SignalTestContext.Result(tiny.RunAsync(default),rig.Tick));Assert.Equal(before,rig.M.Paths.Sent.Count);
@@ -38,14 +38,14 @@ public sealed class M5X18BuilderTests
     [InlineData(false)] [InlineData(true)]
     public void TokenCancelledBeforeFirstTickDeletesPendingDriveWithNativeNotStartedResult(bool straight)
     {
-        using var signals=SignalTestContext.Install();using var rig=new Rig();ProductionInputs(rig);using var cts=new CancellationTokenSource();cts.Cancel();
+        using var signals=SignalTestContext.Install();using var rig=new Rig();NoAnimationFixtureInputs(rig);using var cts=new CancellationTokenSource();cts.Cancel();
         Task<ActionResult> task=straight?new DriveStraightAction(rig.M,100).RunAsync(cts.Token):new DriveToPoseAction(rig.M){Goal=Pose3d.Identity}.RunAsync(cts.Token);
         Assert.Equal(0x02000001u,(uint)SignalTestContext.Result(task));Assert.Null(rig.Robot.Engine.Robot!.ActionList.GetCurrentAction());Assert.Empty(rig.M.Paths.Sent);
     }
     [Fact]
     public void CancellationRacingUpdateIsSerializedByActionListGate()
     {
-        using var signals=SignalTestContext.Install();using var rig=new Rig();ProductionInputs(rig);using var cts=new CancellationTokenSource();
+        using var signals=SignalTestContext.Install();using var rig=new Rig();NoAnimationFixtureInputs(rig);using var cts=new CancellationTokenSource();
         using var entered=new ManualResetEventSlim();using var release=new ManualResetEventSlim();using var cancelEntered=new ManualResetEventSlim();
         rig.M.DriveTickForTest=_=>{entered.Set();Assert.True(release.Wait(TimeSpan.FromSeconds(10)));return new DriveToPoseTick(2,0,Pose3d.Identity,67.7,0,0);};
         using var d=new DriveToPoseAction(rig.M){Goal=Pose3d.Identity};var result=d.RunAsync(cts.Token);

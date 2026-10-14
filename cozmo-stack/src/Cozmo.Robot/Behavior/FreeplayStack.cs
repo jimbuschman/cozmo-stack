@@ -120,6 +120,9 @@ public sealed class FreeplayStack : IDisposable
         // the behaviours report needs actions themselves (IBehavior::NeedActionCompleted 0x005BE40C), so the
         // context carries both the manager and every shipped behaviour's own needsActionID
         ctx.Needs ??= needs;
+        // fidelity: M5-063 — use the actual stack input when the needs component exists.
+        robot.Animations.DrivingAnimations.AreNeedsMet = ctx.Needs.State.AreNeedsMet;
+        robot.Animations.DrivingTriggerMap = ctx.Triggers;
         // the memory map the face behaviour asks before driving in (MapComponent::GetCurrentMemoryMapHelper)
         if (vision is not null && robot.Engine.Robot is not null) ctx.Map ??= vision.World.Maps.Current; // M13-031: one current-origin map owner
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
@@ -177,6 +180,7 @@ public sealed class FreeplayStack : IDisposable
         var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
+        stack._unsubscribe.Add(() => robot.Animations.DrivingAnimations.AreNeedsMet = null);
         robot.Engine.AIComponentUpdate = () => ai.Update(robot);
         if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
         stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);
