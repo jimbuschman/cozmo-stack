@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "8e1697052c8a9858e81fdf8a732214f72bfcdc389a3dc00151f2ea155c5bacb6",
+  "inventory_sha256": "2bb0942d613f9d191babfab709708693c02a4276311a8c9db85d5ff7a13b65f1",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -637,7 +637,8 @@
         "0x00531431..0x005315A6 GetRawStateAt",
         "0x0053068C..0x00530848 Interpolate",
         "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md",
-        "re-analysis/research/overnight/20261014-ov10-m11-042-check.md: H2 Interpolate 0x0053068C..0x00530848 (ctor memcpy 0x5B at 0x005304F4): only cliff channel 0 is blended; channels 1-3 stay 0xFFFF."
+        "re-analysis/research/overnight/20261014-ov10-m11-042-check.md: H2 Interpolate 0x0053068C..0x00530848 (ctor memcpy 0x5B at 0x005304F4): only cliff channel 0 is blended; channels 1-3 stay 0xFFFF.",
+        "re-analysis/research/overnight/20261014-ov12-m11-052-check.md: B1-B11, GetRawStateAt 0x00531430..0x00531648 (including L2 0x005315AC..0x00531632 and the nearest tail 0x00531634..0x00531648), Interpolate 0x0053068C..0x0053085A, HistRobotState ctor 0x005304B0..0x005304FE; caller census with each flag."
       ],
       "live_path": true,
       "hardware_required": false

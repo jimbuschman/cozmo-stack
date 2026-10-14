@@ -1536,3 +1536,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Dissolved into owners, retitled to the remaining unread items | M11-042 |
 | Rows added; stand-ins contradicted | M11-041, M11-013, M11-062, M11-037, M11-007, M11-044 (notes) |
 | Interpolate read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-052 |
+
+
+## Check of OV12 (manager, 2026-10-14; research/overnight/20261014-ov12-m11-052-check.md)
+
+| Change | Records |
+| --- | --- |
+| GetRawStateAt/Interpolate rows B1-B11; frame-ID (not origin) guard; nearest mode; caller census | M11-052 (note) |
+| HasSameRootAs assigned | M11-066 (note) |
