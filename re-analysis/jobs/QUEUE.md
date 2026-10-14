@@ -84,6 +84,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 43 | [B-M11-4](B-M11-4.md) | open, after B-M11-3 (vision/history/world/pose/map teardown, M11-055) |
 | 44 | [B-M11-5](B-M11-5.md) | open, after B-M11-4 (quad-tree border walk M11-047; seed order = insertion order, operator 2026-10-14) |
 | 45 | [B-M11-6](B-M11-6.md) | open, after B-M11-5 (CheckImageQuality M11-080; LimitedExposure M11-057; auto-exposure M3-021) |
+| 46 | [B-M11-7](B-M11-7.md) | open, after B-M11-6 (decode exception M11-058; vision Init M11-059; pending camera params M11-060) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

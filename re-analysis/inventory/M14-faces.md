@@ -443,3 +443,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Record | Change | Status |
 | --- | --- | --- |
 | M14-012 | Note: owner of the FaceAlbum/FaceEnrollment read callbacks (from M3-034; overlap ruling); the reads' gate is M11-059's. | IMPLEMENTATION_GAP |
+
+
+## Check of OV15-OV17 (manager, 2026-10-14; research/overnight/20261014-ov15-16-17-check.md)
+
+| Change | Records |
+| --- | --- |
+| One erase before the replay loop (contradiction) | M14-012 (note) |

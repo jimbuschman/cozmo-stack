@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "822819fafcb1e9ce1326fe1436394b4f389c2f55d96cbed3a881dfc31787fcc9",
+  "inventory_sha256": "b92c8af8cb51d9860888e1b40b70c68f7dfa414dc16226b515fe3c67d7a465b4",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -701,32 +701,35 @@
       "hardware_required": false
     },
     "M11-058": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "cv::Exception from the image decode: where it is caught and what happens to the frame",
       "authority": "libcozmoEngine.so 3.4.0-1204 VisionComponent / image-chunk handler.",
       "evidence": [
-        "DecodeImageHelper's imdecode call site 0x004F28C6 has only a cleanup landing pad (LSDA call site 0x004F28BC..0x004F28CA, lp 0x004F2EA0) ending in _Unwind_Resume (re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md O9)."
+        "DecodeImageHelper's imdecode call site 0x004F28C6 has only a cleanup landing pad (LSDA call site 0x004F28BC..0x004F28CA, lp 0x004F2EA0) ending in _Unwind_Resume (re-analysis/research/20261010-jpeg-lse-logs-oom-rows.md O9).",
+        "re-analysis/research/overnight/20261014-ov15-16-17-check.md: R1-R5: imdecode call sites cleanup-only in Gray 0x004F287C and RGB 0x004F2184 helpers (terminate via 0x004E39F8); routes 0x00652E6C, 0x0065304C, 0x0065222E; pre-decode effects 0x00652D52; no Processor completion 0x00652238..0x0065224C."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-059": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "VisionComponent::Init and VisionSystem::Init: the config reads, IsInitialized and the face-album load-or-erase branch",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "VisionComponent::Init 0x00650D20: ImageQuality.InitialExposureTime_ms into .data 0x01051054 (0x00650DAE..0x00650DCA; rows 4a..4l; vision_config.json:46 = 16); VisionSystem::Init (0x006B0658) called at 0x00650E36 (blx 0x4BA200), then cmp r6,#0; beq.w 0x650FB4 (0x00650E3C..0x00650E3E); non-zero: sErrorF 0x00650E58, the debug-break gate 0x00650E90..0x00650E9A, return 0x00650FB0",
-        "Zero: 0x00650FB4, a branch at 0x00650FE8..0x00650FFC, then LoadFaceAlbumFromRobot blx 0x4BA23C at 0x0065108A (body 0x006512A0 reads 0x184000 at 0x006512F0 and 0x183000 at 0x00651330); the other branch 0x0065100C..0x00651086 (EraseAllFaces 0x00651014, BroadcastLoadedNamesAndIDs 0x00651032) is unread; VisionSystem::IsInitialized 0x006B2CD6"
+        "Zero: 0x00650FB4, a branch at 0x00650FE8..0x00650FFC, then LoadFaceAlbumFromRobot blx 0x4BA23C at 0x0065108A (body 0x006512A0 reads 0x184000 at 0x006512F0 and 0x183000 at 0x00651330); the other branch 0x0065100C..0x00651086 (EraseAllFaces 0x00651014, BroadcastLoadedNamesAndIDs 0x00651032) is unread; VisionSystem::IsInitialized 0x006B2CD6",
+        "re-analysis/research/overnight/20261014-ov15-16-17-check.md: C1-C5 0x00650D56..0x00650FAE; A1-A7 0x00650FF8..0x00651630; S1-S10 VisionSystem::Init (profiler keys at 0x006B0E96/0x006B0ECC, SetAutoExposureParams 0x006B0A14, schedules 0x006B13C0.., +0x58 = 1 at 0x006B141A); SetExposureParameters 0x0085F374..0x0085F4AA; N1 Robot ctor gate 0x005103BC..0x005103D4; N2 LoadRobotConfigs 0x0052267C."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-060": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "VisionSystem::Update's application of the pending SetNextCameraParams to the current exposure and gain",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN"
+        "VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN",
+        "re-analysis/research/overnight/20261014-ov15-16-17-check.md: B1-B5: consumer 0x006B50C8..0x006B50D8 (after the gates 0x006B4D66..0x006B4D80 and both drains 0x006B4FB6..0x006B50C6, before ApplyCLAHE 0x006B50F2); producer 0x006B229C..0x006B230C; ctor 0x006B002A..0x006B0056."
       ],
       "live_path": true,
       "hardware_required": false
@@ -948,6 +951,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ComputeExposureAdjustment 0x0085F748.., 0x0085FA02.., 0x0085FAE4..; FillFromImage 0x008731FC, 0x008733EC; ComputePercentile 0x00873624..0x00873774; SetExposureParameters 0x0085F374; SetAutoExposureParams 0x006B1858."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-082": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Vision config loading: JsonCpp getMemberNames order (InitialVisionModes EnableMode order) and RobotDataLoader::LoadRobotConfigs' readAsJson failure branch",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov15-16-17-check.md: getMemberNames (CZString compare) at VisionSystem::Init InitialVisionModes; LoadRobotConfigs readAsJson 0x0052267C, failure branch 0x00522680.."
       ],
       "live_path": true,
       "hardware_required": false

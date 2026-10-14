@@ -561,3 +561,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | Auto-exposure coupling; provenance contradicted | M3-021 (note) |
+
+
+## Check of OV15-OV17 (manager, 2026-10-14; research/overnight/20261014-ov15-16-17-check.md)
+
+| Change | Records |
+| --- | --- |
+| No lock around the pending slot; FaceAlbum read gates | M3-021, M3-033 (notes) |
