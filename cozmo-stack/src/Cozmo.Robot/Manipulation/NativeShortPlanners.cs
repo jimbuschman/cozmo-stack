@@ -31,6 +31,12 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
     {
         _present=_error=false;
         if(goals.Count==0){missing("M1-034/M13-033 empty IPathPlanner goal-vector dereference 0x00508A60..0x00508A8E skipped");return 0;}
+        int best=ClosestGoal(start,goals);
+        missing("M13-033 ComputeClosestGoalPose Debug fields/rotation-axis formatting 0x00508870..0x0050890A not represented");
+        _goalIndex=unchecked((byte)best);_goal=goals[best];return ComputeNewPathIfNeeded(start,true);
+    }
+    internal static int ClosestGoal(Pose3d start,IReadOnlyList<Pose3d> goals)
+    {
         int best=0;float bestD=0;
         for(int i=0;i<goals.Count;i++)
         {
@@ -38,8 +44,7 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
             float d=x*x;d+=y*y;d+=z*z;
             if(i==0 || d<bestD){best=i;bestD=d;}
         }
-        missing("M13-033 ComputeClosestGoalPose Debug fields/rotation-axis formatting 0x00508870..0x0050890A not represented");
-        _goalIndex=unchecked((byte)best);_goal=goals[best];return ComputeNewPathIfNeeded(start,true);
+        return best;
     }
     public int ComputeNewPathIfNeeded(Pose3d start,bool force)
     {
@@ -78,13 +83,13 @@ internal sealed class NativeShortPlanner(bool minimal,SourceLogSink source,Actio
             if(backup>2.5f){float nx=x+(-backup)*MathF.Cos(yaw),ny=y+(-backup)*MathF.Sin(yaw);Line(x,y,nx,ny,-45);Info("MinimalAnglePlanner.Plan.Backup",F(-backup));x=nx;y=ny;}
             float ddx=gx-x,ddy=gy-y,bearing=MathF.Atan2(ddy,ddx),delta=EngineF.RadiansMinus(bearing,yaw);
             float length=(float)Math.Sqrt((double)ddx*ddx+(double)ddy*ddy);
-            if(!(length<=2.5f)) // Native BLE also preserves the unordered branch.
+            if(length>2.5f) // Native BLE skips the step on unordered operands.
             {
-                if(!((double)MathF.Abs(delta)<=0.01)){Turn(x,y,bearing,delta,1);Info("MinimalAnglePlanner.Plan.Turn0",F(delta));yaw=bearing;}
+                if((double)MathF.Abs(delta)>0.01){Turn(x,y,bearing,delta,1);Info("MinimalAnglePlanner.Plan.Turn0",F(delta));yaw=bearing;}
                 float nx=x+length*MathF.Cos(yaw),ny=y+length*MathF.Sin(yaw);Line(x,y,nx,ny,45);Info("MinimalAnglePlanner.Plan.Straight",F(length));x=nx;y=ny;
             }
             float end=EngineF.RadiansMinus(gyaw,yaw);
-            if(!((double)MathF.Abs(end)<=0.01)){Turn(x,y,gyaw,end,1);Info("MinimalAnglePlanner.Plan.Turn1",F(end));yaw=gyaw;}
+            if((double)MathF.Abs(end)>0.01){Turn(x,y,gyaw,end,1);Info("MinimalAnglePlanner.Plan.Turn1",F(end));yaw=gyaw;}
             Info("MinimalAnglePlanner.FinalPosition",$"({F(x)}, {F(y)}, {F(yaw*EngineF.Bits(0x42652EE1))}deg)");_path=output;
         }
         _present=true;return 1;

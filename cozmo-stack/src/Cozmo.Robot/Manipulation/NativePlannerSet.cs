@@ -12,8 +12,6 @@ internal sealed class NativePlannerSet : IDisposable
     internal IReadOnlyList<Pose3d> Goals=Array.Empty<Pose3d>();
     internal PathMotionProfile Profile=PathMotionProfile.Default;
     private readonly Action<string> _missing;
-    private IReadOnlyList<PathSegment> _lastPath=Array.Empty<PathSegment>();
-    private byte _lastIndex;
     private SourceLogSink Source= null!;
     internal bool IsDisposed;
     internal NativePlannerSet(ManipulationSystem m)
@@ -33,7 +31,9 @@ internal sealed class NativePlannerSet : IDisposable
     internal void Select()
     {
         if(Goals.Count==0)return;
-        float dx=(float)Goals[0].Translation.X-(float)Start.Translation.X,dy=(float)Goals[0].Translation.Y-(float)Start.Translation.Y;
+        int closest=NativeShortPlanner.ClosestGoal(Start,Goals);
+        var selectedGoal=Goals[closest];
+        float dx=(float)selectedGoal.Translation.X-(float)Start.Translation.X,dy=(float)selectedGoal.Translation.Y-(float)Start.Translation.Y;
         float d2=(float)((double)dx*dx+(double)dy*dy),heading=0,initial=0;
         if(!(d2<1600f))
         {
@@ -44,13 +44,14 @@ internal sealed class NativePlannerSet : IDisposable
         else
         {
             float yaw=(float)Start.AngleAroundZ;
-            heading=MathF.Abs(EngineF.RadiansMinus((float)Goals[0].AngleAroundZ,yaw));initial=MathF.Abs(EngineF.RadiansMinus(MathF.Atan2(dy,dx),yaw));
+            heading=MathF.Abs(EngineF.RadiansMinus((float)selectedGoal.AngleAroundZ,yaw));initial=MathF.Abs(EngineF.RadiansMinus(MathF.Atan2(dy,dx),yaw));
             bool min=d2>1f && heading<=EngineF.Bits(0x3F490FDB) && initial>EngineF.Bits(0x3E490FDB);
             Current=min?Minimal:Face;
             Source(EngineLogLevel.Info,"Planner",min?"PathComponent.SelectPlanner.ShortMinAngle":"PathComponent.SelectPlanner.Short",FormattableString.Invariant($"distance^2 is {d2:F6}, angleDelta is {heading:F6}, intiialTurnAngle is {initial:F6}, selecting short{(min?" min_angle":"")} planner '{Current.Name}'"));
         }
-        if(float.IsFinite(d2) && d2<2147483648f)_m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"robot.planner_selected",Current.Name,new Dictionary<string,string>{{"$data",unchecked((int)MathF.Round(d2,MidpointRounding.AwayFromZero)).ToString(System.Globalization.CultureInfo.InvariantCulture)}});
-        else _missing("M13-033 nonfinite/out-of-range roundf-to-int robot.planner_selected data conversion 0x0064A840 unrepresented; no guessed integer emitted");
+        float rounded=MathF.Round(d2,MidpointRounding.AwayFromZero);
+        int data=float.IsNaN(rounded)?0:rounded>=2147483648f?int.MaxValue:rounded<=-2147483648f?int.MinValue:(int)rounded;
+        _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"robot.planner_selected",Current.Name,new Dictionary<string,string>{{"$data",data.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
         Fallback=ReferenceEquals(Current,Lattice)?null:Lattice;
         _missing("M13-033 selection uses the stack pose input; source Robot root-conversion helper 0x004DF628..0x004DF6DC is separately incomplete, no full pose-origin claim");
     }
@@ -59,8 +60,9 @@ internal sealed class NativePlannerSet : IDisposable
     internal PathPlannerModelResult Read()
     {
         int status=Current?.CheckPlanningStatus??0;
-        if((status is 2 or 3) && Current is {} planner && planner.GetCompletePath(_m.RobotPose()??Start,Profile,out var path,out var index)){_lastPath=path;_lastIndex=index;}
-        return new(status,_lastPath,_lastIndex);
+        IReadOnlyList<PathSegment> path=Array.Empty<PathSegment>();byte index=0;
+        if((status is 2 or 3) && Current is {} planner && planner.GetCompletePath(_m.RobotPose()??Start,Profile,out var result,out var goal)){path=result;index=goal;}
+        return new(status,path,index);
     }
     internal bool UseFallback()
     {

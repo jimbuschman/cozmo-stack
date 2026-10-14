@@ -5,7 +5,8 @@ namespace Cozmo.Robot.Manipulation;
 // Checked dependency control/arithmetic; callers must supply separately owned source-backed geometry/ApplyAction.
 internal static class NativePlanDependencies
 {
-    internal static LatticeState Advance(LatticeState state,MotionPrimitive p)=>new(unchecked((short)(state.X+p.EndX)),unchecked((short)(state.Y+p.EndY)),(byte)p.EndTheta);
+    // ApplyAction(check=false), 0x008505BC..0x008505E6: StateID packs signed x14/y14 and theta4.
+    internal static LatticeState Advance(LatticeState state,MotionPrimitive p)=>LatticeState.FromId(new LatticeState(unchecked((short)(state.X+p.EndX)),unchecked((short)(state.Y+p.EndY)),(byte)p.EndTheta).Id);
     private static StateC Continuous(MotionPrimitiveSet p,LatticeState s)=>new(p.ResolutionMm*s.X,p.ResolutionMm*s.Y,p.Angles[s.Theta]);
     internal static (int Index,float Distance) FindClosest(MotionPrimitiveSet prims,LatticePlan? plan,StateC query)
     {

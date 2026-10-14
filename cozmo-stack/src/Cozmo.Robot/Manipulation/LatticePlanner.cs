@@ -946,7 +946,11 @@ public class LatticePlanner
     /// during the sleep and passes it to <c>Replan</c>; <c>ComputePath</c> tests it before every pop (0x00858886..0x00858890) (M13-018).
     /// </summary>
     // fidelity: M13-018
-    public bool RunFlag { get; private set; } = true;
+    private volatile bool _runFlag=true;
+    public bool RunFlag {get=>_runFlag;private set=>_runFlag=value;}
+    internal int LastNumExpansions=>_expansions;
+    internal int LastNumConsiderations=>_considerations;
+    internal long LastPlanningElapsedMs;
 
     /// <summary><c>LatticePlannerImpl::StopPlanning</c> 0x004FD1BA: clear the run flag.</summary>
     // fidelity: M13-018
@@ -1001,7 +1005,9 @@ public class LatticePlanner
                 slept += chunk;
             }
         }
+        long before=System.Diagnostics.Stopwatch.GetTimestamp();
         plan = ComputePath(start, goals);
+        LastPlanningElapsedMs=(System.Diagnostics.Stopwatch.GetTimestamp()-before)*1000/System.Diagnostics.Stopwatch.Frequency;
         if (plan is null) return PlanningResult.Failure;
         if (plan.Actions.Count == 0) return PlanningResult.EmptyPlan;
         return PlanningResult.Success;

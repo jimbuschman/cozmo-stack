@@ -249,8 +249,13 @@ internal sealed partial class PathComponent
         if(Field47)return;
         if(_nativePlanners?.Current is not null)
         {
-            int code=_nativePlanners.Restart();if(code==1)Field47=true;
-            else if(code==0 && !ReplanWithFallbackPlanner()){Abort(SendNative);SetStatus(6);}
+            int code=_nativePlanners.Restart();
+            if(code==1){_robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Planner","PathComponent.Replan.Running","ComputeNewPathIfNeeded running");Field47=true;}
+            else if(code==0)
+            {
+                if(ReplanWithFallbackPlanner())Info("PathComponent.RestartIfNeeded.Error.Fallback","computing a new path resulted in an error, switching to fallback");
+                else{Abort(SendNative);SetStatus(6);Info("PathComponent.RestartIfNeeded.Error.NoFallback","computing a new path resulted in an error but couldn't use fallback. Failing");}
+            }
             return;
         }
         if(ComputeNewPathIfNeeded is null){ModelGap();return;}
