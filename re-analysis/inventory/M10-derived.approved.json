@@ -1,8 +1,8 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-10-10",
+  "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M10-derived.md",
-  "inventory_sha256": "07a92ea668030a8bc5bbb6bf2d6e0344621fa5b0df3356eaae3a75d27013dc56",
+  "inventory_sha256": "c59e43fa157ce915c5057b920e227366fca08c7d34ba0acb832f246ef8eedb09",
   "records": {
     "M10-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -174,6 +174,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M10-016": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ReactionTriggerStrategyHiccup destructor: robot.hiccups.ended SELF_CURED DAS event when hiccups are active, and the _this clear",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: D1 0x0061024C..0x00610280 (test 0x00610264..0x00610266, global clear 0x00610278, base 0x0060B6F4); SendDasEvent 0x006102B8..0x0061035C (key 0x006103BC, $data 0x00610398, format 0x006103D0, SELF_CURED 0x006103A0); reached from ~BehaviorManager M1 via 0x005A47FE."
       ],
       "live_path": true,
       "hardware_required": false

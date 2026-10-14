@@ -147,7 +147,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M7-behaviour.md",
-        "approved": "2026-10-13",
+        "approved": "2026-10-14",
         "snapshot": "re-analysis/inventory/M7-behaviour.approved.json"
       }
     },
@@ -173,7 +173,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M9-wwise-music.md",
-        "approved": "2026-10-12",
+        "approved": "2026-10-14",
         "snapshot": "re-analysis/inventory/M9-wwise-music.approved.json"
       }
     },
@@ -186,7 +186,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M10-derived.md",
-        "approved": "2026-10-10",
+        "approved": "2026-10-14",
         "snapshot": "re-analysis/inventory/M10-derived.approved.json"
       }
     },
@@ -2816,7 +2816,7 @@
       "test": "WwiseSongTests.ThePerCubeShakeMeanIsARunningAverageFromCountOne; WwiseSongTests.UpdateTakesTheMaximumMeanAndResetsItEachTick; WwiseSongTests.AShakeAbovePointOneForOverHalfASecondLogsItsDuration",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
       "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. StopInternal posts a literal 0 and never writes the smoothed value at +0x140 (0x005EF2C6); the stack's Stop zeroes it, so the next run smooths from 0.",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. StopInternal posts a literal 0 and never writes the smoothed value at +0x140 (0x005EF2C6); the stack's Stop zeroes it, so the next run smooths from 0. OV19 check (re-analysis/research/overnight/20261014-ov19-m8-016-check.md): the evidence \"0x005A5CB4 (BehaviorSystemManager consumes 0/1/2)\" is on a dead path (BSM::Update has no caller); the live consumer is 0x005A2F68.",
       "hardware_required": false
     },
     {
@@ -6067,7 +6067,7 @@
         "class 0x39 BehaviorWait case constructs base IBehavior and installs the BehaviorWait vtable"
       ],
       "effect": "a shipped behaviour ID instantiates the wrong class, animation list or executable behavior",
-      "unresolved": "Opus verification of R-BEH2 batch 3 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-3.md): NOT YET. 76 of 79 classes report \"class not implemented\"; the second BehaviorContainer at robot+0x48 is unbuilt (use UNKNOWN); RequestAllBehaviorsList (0x0059C44C) is unbuilt; FistBump's seams are unset in production although SparksFistBump is bound; Behaviors.cs:67 uses Enum.TryParse, which accepts names the engine's map rejects; Implementable() builds duplicate objects. Before: built, awaiting strong verification: the container loop (0x0059c34c..0x0059c428), BehaviorClassFromString (cerr text, 0 = Bouncer), BehaviorIDFromString (cerr text, 0 = AcknowledgeFace; default 'IBeh.NoBehaviorIdSpecified'), AnimationTriggerFromString (cerr text, 0, only Count skipped), AddToFactory, the 79-way table (all 79 rows checked against the binary), FistBump (full state machine incl. the +0x84 gate, state-2 empty-callback turn, wrapped scan index N=2, terminal order, thresholds as bit patterns), ReactToSparked, and Hiccup's PlayAnim half are built. Config-built constructors exist for only PlayAnim, FistBump and ReactToSparked; the other 76 classes report 'class not implemented'. Still open: the second BehaviorContainer (robot+0x48) is not built and its use is UNKNOWN; RequestAllBehaviorsList (0x0059c44c..0x0059c676) is not built; FistBump's seams are MISSING in production (SmartPushIdleAnimation(0x23F = Count), EnableLiftPower/EnableHeadPower bodies, a live PanAndTiltAction (M13-020), BehaviorObjectiveAchieved's body and ordinals 7/8/9, the carry source); SparksFistBump is bound and can run live with those seams unset; ReactionTriggerStrategyFistBump/Hiccup/Sparked (M10) are not built, so the map rows for FistBump, Hiccup and Sparked remain unbound; Implementable() still hand-builds Hiccup, ReactToObstacle and six Feeding* PlayAnim objects that the container also builds (shadowed, dead in production); Behaviors.cs:67 Enum.TryParse is looser than the engine's name map. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the second BehaviorContainer is BehaviorSystemManager's (0x0050FCBE -> 0x005A5812), built from the same map, so every behaviour is instantiated twice; the dev test behaviours' constructor subscriptions are M7-027.",
+      "unresolved": "Opus verification of R-BEH2 batch 3 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-3.md): NOT YET. 76 of 79 classes report \"class not implemented\"; the second BehaviorContainer at robot+0x48 is unbuilt (use UNKNOWN); RequestAllBehaviorsList (0x0059C44C) is unbuilt; FistBump's seams are unset in production although SparksFistBump is bound; Behaviors.cs:67 uses Enum.TryParse, which accepts names the engine's map rejects; Implementable() builds duplicate objects. Before: built, awaiting strong verification: the container loop (0x0059c34c..0x0059c428), BehaviorClassFromString (cerr text, 0 = Bouncer), BehaviorIDFromString (cerr text, 0 = AcknowledgeFace; default 'IBeh.NoBehaviorIdSpecified'), AnimationTriggerFromString (cerr text, 0, only Count skipped), AddToFactory, the 79-way table (all 79 rows checked against the binary), FistBump (full state machine incl. the +0x84 gate, state-2 empty-callback turn, wrapped scan index N=2, terminal order, thresholds as bit patterns), ReactToSparked, and Hiccup's PlayAnim half are built. Config-built constructors exist for only PlayAnim, FistBump and ReactToSparked; the other 76 classes report 'class not implemented'. Still open: the second BehaviorContainer (robot+0x48) is not built and its use is UNKNOWN; RequestAllBehaviorsList (0x0059c44c..0x0059c676) is not built; FistBump's seams are MISSING in production (SmartPushIdleAnimation(0x23F = Count), EnableLiftPower/EnableHeadPower bodies, a live PanAndTiltAction (M13-020), BehaviorObjectiveAchieved's body and ordinals 7/8/9, the carry source); SparksFistBump is bound and can run live with those seams unset; ReactionTriggerStrategyFistBump/Hiccup/Sparked (M10) are not built, so the map rows for FistBump, Hiccup and Sparked remain unbound; Implementable() still hand-builds Hiccup, ReactToObstacle and six Feeding* PlayAnim objects that the container also builds (shadowed, dead in production); Behaviors.cs:67 Enum.TryParse is looser than the engine's name map. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the second BehaviorContainer is BehaviorSystemManager's (0x0050FCBE -> 0x005A5812), built from the same map, so every behaviour is instantiated twice; the dev test behaviours' constructor subscriptions are M7-027. OV19 check (re-analysis/research/overnight/20261014-ov19-m8-016-check.md): settled: the robot+0x48 container is BehaviorSystemManager's; its behaviours are constructed and destroyed but never initialised or ticked (the BSM activity path has no caller).",
       "hardware_required": false,
       "live_path": true,
       "test": "BehaviorFrameworkTests",
@@ -9257,15 +9257,16 @@
       "subsystem": "M8-framework",
       "title": "Behavior-container destruction and virtual children",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051112C; 0x0051113A; 0x005A0D22..0x005A0DF6; 0x005A5886..0x005A58D2; BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: build rows (~Robot slots 0x00511124..0x00511142; BSM ctor 0x005A57E6..0x005A5832 and dtor 0x005A5886..0x005A58D2; BehaviorManager dtor 0x005A0D22..0x005A0DF6; container 0x0059C704..0x0059C730; trees 0x005A479C..0x005A486A; IActivity 0x005B2F8C..0x005B2FEC; Freeplay hash 0x005AED50..0x005AEDBC; IBehavior 0x005BC75C..0x005BC81E; IWantsToRun 0x006134C4, 0x00613C1C)."
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "MISSING: BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement.",
+      "unresolved": "MISSING: BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN. Bind the native owner to its actual higher-layer production component and recover/check the complete recipient path before implementation or settlement. Read 2026-10-14 (re-analysis/research/overnight/20261014-ov19-m8-016-check.md): IMPLEMENTATION_GAP for the outer teardown rows. The BSM activity path (InitConfiguration 0x005A58D4, Update 0x005A5F44, UpdateActiveBehavior 0x005A5CB4) has no caller in the binary: unreachable. The Hiccup dtor DAS event is M10-016; the unread recursive recipients are M8-023. M1-034 sites: 0x005A5F52 (unreachable), 0x004EF1BC (null handle), pure-virtual traps.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9320,6 +9321,23 @@
         "UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4"
       ],
       "unresolved": "RECOVERABLE_GAP: read both bodies and their effects; M10-014 covers only the detector's destruction. The stack has no hook.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M10-016",
+      "subsystem": "M10-derived",
+      "title": "ReactionTriggerStrategyHiccup destructor: robot.hiccups.ended SELF_CURED DAS event when hiccups are active, and the _this clear",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/ReactionStrategies.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: D1 0x0061024C..0x00610280 (test 0x00610264..0x00610266, global clear 0x00610278, base 0x0060B6F4); SendDasEvent 0x006102B8..0x0061035C (key 0x006103BC, $data 0x00610398, format 0x006103D0, SELF_CURED 0x006103A0); reached from ~BehaviorManager M1 via 0x005A47FE."
+      ],
+      "effect": "A DAS event during robot teardown when Cozmo has hiccups.",
+      "provenance": "Opus check of OV19 (2026-10-14), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: port the dtor: if now > [this+0x2C], sEventF robot.hiccups.ended {$data: elapsed (now - [+0x54], or 0 when +0x54 == 0, as u32)} \"%s\" SELF_CURED; then clear the global _this; then the base.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11175,7 +11193,7 @@
       ],
       "effect": "Directories or files the engine creates on the device at robot connection.",
       "provenance": "Opus check of R-HANDLERS (2026-10-13), manager record.",
-      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): build L1-L5 (job B-M3M4-18), both instances. Input: M5-060 (cache path). Unread: the IBehavior base ctor; FactoryTestLogger StartLog/CloseLog. Previous notes: RECOVERABLE_GAP: read the RollingFileLogger ctor 0x0080DEFC..0x0080E050 and pathToResource scope 2, the rest of the LiftLoadTest ctor 0x005D3F48..0x005D401A, and FactoryTestLogger 0x00671658..; say what is created and whether anything is written.\nB-M3M4-22 built, awaiting strong verification: checked L1-L5 now run for both dev behavior containers. Raw M5-060 cache paths retain trailing slashes; each docking/lift instance calls the existing CreateDirectory prefix walk (0700, bound 200), ignoring failure without log or rollback. Rolling loggers open/write no files. Lift constructor fields and E2G 0x35 / G2E 0x95 registrations are represented; robot DA keeps the checked dispatch. FactoryTestLogger(true) holds a null JSON root in memory with .json mode. MISSING: IBehavior base constructor 0x005D3F18, external callback bodies, precise subscription destructor ordering, and FactoryTestLogger StartLog/CloseLog. Managed external subscription storage retires after robot lifetime teardown; this does not claim the unread native destruction order.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): build L1-L5 (job B-M3M4-18), both instances. Input: M5-060 (cache path). Unread: the IBehavior base ctor; FactoryTestLogger StartLog/CloseLog. Previous notes: RECOVERABLE_GAP: read the RollingFileLogger ctor 0x0080DEFC..0x0080E050 and pathToResource scope 2, the rest of the LiftLoadTest ctor 0x005D3F48..0x005D401A, and FactoryTestLogger 0x00671658..; say what is created and whether anything is written.\nB-M3M4-22 built, awaiting strong verification: checked L1-L5 now run for both dev behavior containers. Raw M5-060 cache paths retain trailing slashes; each docking/lift instance calls the existing CreateDirectory prefix walk (0700, bound 200), ignoring failure without log or rollback. Rolling loggers open/write no files. Lift constructor fields and E2G 0x35 / G2E 0x95 registrations are represented; robot DA keeps the checked dispatch. FactoryTestLogger(true) holds a null JSON root in memory with .json mode. MISSING: IBehavior base constructor 0x005D3F18, external callback bodies, precise subscription destructor ordering, and FactoryTestLogger StartLog/CloseLog. Managed external subscription storage retires after robot lifetime teardown; this does not claim the unread native destruction order. OV19 check (re-analysis/research/overnight/20261014-ov19-m8-016-check.md): CloseLog is read: FactoryTestLogger::~ (0x0067173C) always calls it; when +0x5C != 0: Info \"Unnamed\" FactoryTestLogger.CloseLog.Closing (empty format), write the JSON if +0xE8, close the filebuf; either way reset two strings. RollingFileLogger::~ (0x0080E090) stops its Dispatch queue, then closes its filebuf. StartLog is still unread.",
       "hardware_required": false,
       "live_path": true,
       "test": "; M3M4X22BuilderTests; M3M4X18BuilderTests"
@@ -11262,6 +11280,23 @@
       "effect": "Which triggers skip the robot.play_animation event.",
       "provenance": "Codex research R-M8-PLAY (2026-10-12), Opus-checked (109/109 rows confirmed), manager-adopted.",
       "unresolved": "RECOVERABLE_GAP: read the caller of 0x0052E9A0 and the config it reads.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M8-023",
+      "subsystem": "M8-framework",
+      "title": "Behavior teardown recursive recipients not yet read: IActivity unique children and their strategy/chooser types, ActivityStrategy derived bodies, std::function captures, derived behaviour children, reaction-strategy bodies other than Hiccup, other ProtoHandle instantiations",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: \"Still unread\" list: 0x005B2FB8/0x005B2FC4/0x005B2FD2 (producer 0x005B2A5C..0x005B2F8B); 0x005B419C, 0x005B456C, 0x005B4818, 0x005B4CCC, 0x005B4E50, 0x005B4E78, 0x005B4EB0, 0x005B528C, 0x005B4806; 0x005A7936, 0x005A7942, 0x005AAD6E, 0x005B14D2; 0x005BC7C4, 0x00613C40, 0x00613C58, 0x00613C7A; 0x005DC506, 0x005D7B7A, 0x00604322, 0x005D36B6; 0x0060C3C4, 0x0060D0E4, 0x0060EA30, 0x0060F880, 0x00611708, 0x00611FD4, 0x0060B722."
+      ],
+      "effect": "Logs, events or sends during behaviour teardown that the stack may not reproduce.",
+      "provenance": "Opus check of OV19 (2026-10-14), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed destructor bodies for logs, events, sends and external state writes.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

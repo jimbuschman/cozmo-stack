@@ -1352,3 +1352,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read) | M7-028 |
+
+
+## Check of OV19 (manager, 2026-10-14; research/overnight/20261014-ov19-m8-016-check.md)
+
+| Change | Records |
+| --- | --- |
+| CloseLog read; robot+0x48 container settled | M7-028, M7-018 (notes) |

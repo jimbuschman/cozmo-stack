@@ -2,7 +2,7 @@
   "subsystem": "M8-framework",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "88d856b8bbe0715fa15b6d61410fdf85b45ce8a9a4bc7717596e03f882664991",
+  "inventory_sha256": "c304dbbe7929c75e5414f0595aeb9a1abc48dbb0996e8c162605af7af17906f6",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -225,12 +225,13 @@
       "hardware_required": false
     },
     "M8-016": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Behavior-container destruction and virtual children",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051112C; 0x0051113A; 0x005A0D22..0x005A0DF6; 0x005A5886..0x005A58D2; BehaviorManager/BehaviorSystem shared/container destruction; virtual child call0x005A58AA and recursive effects UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: build rows (~Robot slots 0x00511124..0x00511142; BSM ctor 0x005A57E6..0x005A5832 and dtor 0x005A5886..0x005A58D2; BehaviorManager dtor 0x005A0D22..0x005A0DF6; container 0x0059C704..0x0059C730; trees 0x005A479C..0x005A486A; IActivity 0x005B2F8C..0x005B2FEC; Freeplay hash 0x005AED50..0x005AEDBC; IBehavior 0x005BC75C..0x005BC81E; IWantsToRun 0x006134C4, 0x00613C1C)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -294,6 +295,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m8-play-animation-actions.md row on 0x0052E9A0..0x0052EA0A; the caller chain and the config asset are not read."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-023": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Behavior teardown recursive recipients not yet read: IActivity unique children and their strategy/chooser types, ActivityStrategy derived bodies, std::function captures, derived behaviour children, reaction-strategy bodies other than Hiccup, other ProtoHandle instantiations",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: \"Still unread\" list: 0x005B2FB8/0x005B2FC4/0x005B2FD2 (producer 0x005B2A5C..0x005B2F8B); 0x005B419C, 0x005B456C, 0x005B4818, 0x005B4CCC, 0x005B4E50, 0x005B4E78, 0x005B4EB0, 0x005B528C, 0x005B4806; 0x005A7936, 0x005A7942, 0x005AAD6E, 0x005B14D2; 0x005BC7C4, 0x00613C40, 0x00613C58, 0x00613C7A; 0x005DC506, 0x005D7B7A, 0x00604322, 0x005D36B6; 0x0060C3C4, 0x0060D0E4, 0x0060EA30, 0x0060F880, 0x00611708, 0x00611FD4, 0x0060B722."
       ],
       "live_path": true,
       "hardware_required": false

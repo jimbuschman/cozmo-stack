@@ -474,3 +474,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- | --- |
 | M10-010 | Note: HandleFirmwareVersion and its parse are M3-024's (overlap ruling); this record keeps the SetPhysicalRobot flag and its gates. | IMPLEMENTATION_GAP |
 | M10-015 | NEW (S-8): RobotGyroDriftDetector::DetectGyroDrift/DetectBias per state (from M4-019). | RECOVERABLE_GAP |
+
+
+## Check of OV19 (manager, 2026-10-14; research/overnight/20261014-ov19-m8-016-check.md)
+
+| Change | Records |
+| --- | --- |
+| Hiccup strategy dtor DAS event, IMPLEMENTATION_GAP | M10-016 (new) |

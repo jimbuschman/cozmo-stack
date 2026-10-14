@@ -708,3 +708,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Dock actions surviving Cancel(-1) at ~Robot (R8) | M8-015 (note) |
+
+
+## Check of OV19 (manager, 2026-10-14; research/overnight/20261014-ov19-m8-016-check.md)
+
+| Change | Records |
+| --- | --- |
+| Behaviour-container teardown read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP; BSM activity path unreachable | M8-016 |
+| Unread recursive recipients, RECOVERABLE_GAP | M8-023 (new) |

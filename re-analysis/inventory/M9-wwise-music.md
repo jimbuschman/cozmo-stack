@@ -412,3 +412,10 @@ The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample 
 | --- | --- |
 | To COMPATIBILITY_POLICY (scope: CodeLab/SDK only) | M9-029 custom-song branch |
 
+
+
+## Check of OV19 (manager, 2026-10-14; research/overnight/20261014-ov19-m8-016-check.md)
+
+| Change | Records |
+| --- | --- |
+| Dead-path evidence noted | M9-003 (note) |
