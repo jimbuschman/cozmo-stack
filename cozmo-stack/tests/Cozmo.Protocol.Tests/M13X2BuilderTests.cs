@@ -92,7 +92,40 @@ public sealed class M13X2BuilderTests
             Assert.Equal(EngineLogLevel.Debug,entries[old].Level);Assert.Equal("Planner",entries[old].Channel);
             // Identity's tied magnitude branch is atan2f(-m01,m11): negative zero (pose R14), retained by ostream.
             Assert.Contains(entries,e=>e.Level==EngineLogLevel.Info&&e.Channel=="Unnamed"&&e.Key=="LatticePlanner"&&e.Text=="currentRobotState:(0,0,-0)");
-            Assert.Contains(entries,e=>e.Key=="LatticePlanner.GetPlan.OldPlanUnsafe"&&e.Text=="old plan unsafe! Will replan, starting from 0, keeping 0 actions from oldPlan.");
+            Assert.DoesNotContain(entries,e=>e.Key=="LatticePlanner.GetPlan.OldPlanUnsafe");
+        }
+    }
+    [Fact] [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
+    public void NonForcedEmptyPlanLogsUnsafeAfterForcePlan()
+    {
+        using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var runtime=rig.M.GetNativePlanners().Lattice!;
+        var entries=new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();rig.Robot.Engine.LogEntry+=entries.Enqueue;
+        Assert.Equal(1,runtime.ComputePath(Pose3d.Identity,new[]{At(0,0)}));
+        Assert.True(SpinWait.SpinUntil(()=>runtime.CheckPlanningStatus==3,TimeSpan.FromSeconds(10)));
+        lock(runtime.ContextMutex)
+        {
+            Assert.Equal(1,runtime.ComputeNewPathIfNeeded(Pose3d.Identity,false));
+            var logs=entries.ToArray();
+            int force=Array.FindIndex(logs,e=>e.Name=="LatticePlanner.GetPlan.ForcePlan");
+            int unsafePlan=Array.FindIndex(logs,e=>e.Name=="LatticePlanner.GetPlan.OldPlanUnsafe");
+            Assert.True(force>=0&&unsafePlan>force);
+            Assert.Equal(EngineLogLevel.Info,logs[unsafePlan].Level);Assert.Equal("Planner",logs[unsafePlan].Channel);
+            Assert.Equal("old plan unsafe! Will replan, starting from 0, keeping 0 actions from oldPlan.",logs[unsafePlan].Text);
+        }
+    }
+    [Fact] [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
+    public void CompletePathKeepsGoalFromSuccessfulWorkerPlan()
+    {
+        using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var runtime=rig.M.GetNativePlanners().Lattice!;
+        Assert.Equal(1,runtime.ComputePath(Pose3d.Identity,new[]{At(200,0,MathF.PI/2)}));
+        Assert.True(SpinWait.SpinUntil(()=>runtime.CheckPlanningStatus==2,TimeSpan.FromSeconds(10)));
+        lock(runtime.ContextMutex)
+        {
+            // A later backend search chooses goal 1. Native retrieval still reads the worker's +0x100 byte.
+            var result=runtime.Backend.DoPlanning(LatticePlanner.ToStateC(Pose3d.Identity),new[]{LatticePlanner.ToStateC(At(500,500)),LatticePlanner.ToStateC(Pose3d.Identity)},out _);
+            Assert.NotEqual(LatticePlanner.PlanningResult.Failure,result);Assert.Equal(1,runtime.Backend.ChosenGoalId);
+            Assert.True(runtime.GetCompletePath(Pose3d.Identity,PathMotionProfile.Default,out var path,out var goal));
+            Assert.Equal(0,goal);Assert.Equal(MathF.PI/2,Assert.IsType<PathSegment.PointTurn>(path.Last()).TargetAngleRad);
         }
     }
 }

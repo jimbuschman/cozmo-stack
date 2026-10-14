@@ -26,6 +26,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     internal bool F5;
     private volatile int _status;
     private uint _searchNum;
+    private byte _chosenGoal;
     private RetainedSubscription? _runModeSubscription;
     internal event Action<int>? StatusPublished;
     public string Name=>"LatticePlanner";
@@ -87,12 +88,13 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
                 {
                     Info("LatticePlanner.GetPlan.ForcePlan",FormattableString.Invariant($"Current state is {closest.Distance:F6} away from the plan (planIdx {closest.Index}), forcing replan from scratch"));_total=null;
                 }
+                var retained=_total ?? new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
+                var prefix=new LatticePlan(retained.Start,Array.Empty<MotionPrimitive>(),0,0);StateC endpoint=default;
+                // StartPlanning calls PlanIsSafe at 0x004FF424 only when force is false.
+                if(NativePlanDependencies.PlanIsSafe(retained,nearest.Index,40f,_backend.Env.Primitives,NativeApplyAction,ref prefix,ref endpoint,_missing))return 2;
+                Info("LatticePlanner.GetPlan.OldPlanUnsafe",$"old plan unsafe! Will replan, starting from {nearest.Index}, keeping {prefix.Actions.Count} actions from oldPlan.");
+                _total=prefix;if(prefix.Actions.Count!=0)_start=new Pose3d(Mat3.AboutZ(endpoint.Theta),new Vec3(endpoint.X,endpoint.Y,0));
             }
-            var retained=_total ?? new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
-            var prefix=new LatticePlan(retained.Start,Array.Empty<MotionPrimitive>(),0,0);StateC endpoint=default;
-            if(NativePlanDependencies.PlanIsSafe(retained,nearest.Index,40f,_backend.Env.Primitives,NativeApplyAction,ref prefix,ref endpoint,_missing))return 2;
-            Info("LatticePlanner.GetPlan.OldPlanUnsafe",$"old plan unsafe! Will replan, starting from {nearest.Index}, keeping {prefix.Actions.Count} actions from oldPlan.");
-            _total=prefix;if(prefix.Actions.Count!=0)_start=new Pose3d(Mat3.AboutZ(endpoint.Theta),new Vec3(endpoint.X,endpoint.Y,0));
             var stateLog=LatticePlanner.ToStateC(start);
             _source(EngineLogLevel.Info,"Unnamed","LatticePlanner","currentRobotState:("+LibcxxPrintf.FormatFloat(stateLog.X)+","+LibcxxPrintf.FormatFloat(stateLog.Y)+","+LibcxxPrintf.FormatFloat(stateLog.Theta)+")");
             if(!_backend.CheckContextStart(LatticePlanner.ToStateC(_start),out _))
@@ -125,9 +127,13 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             var end=prefix.States().Last();
             if(end!=plan.Start)
             {
-                _missing("M13-033 LatticePlanner.PlanMismatch 0x005003D0 and old/new-plan streaming text are unported; mismatch transient status is retained");Publish(0);
+                _missing("M13-033 LatticePlanner.PlanMismatch sError stream 0x005003D0 and its error side effects remain unported");
+                _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","totalPlan_:");_missing("M13-033 PrintPlan(total) 0x0050048E -> 0x00855E7C output remains unbuilt");
+                _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","new plan:");_missing("M13-033 PrintPlan(new) 0x005004D8 -> 0x00855E7C output remains unbuilt");
+                Publish(0);
             }
         }
+        _chosenGoal=unchecked((byte)_backend.ChosenGoalId); // 0x005004F0: success-tail snapshot at +0x100.
         _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","old plan");_missing("M13-033 PrintPlan 0x00500532 -> 0x00855E7C output remains unbuilt");
         _total=NativePlanDependencies.Append(_total ?? new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0),plan);
         _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","new plan");_missing("M13-033 PrintPlan 0x0050058A -> 0x00855E7C output remains unbuilt");
@@ -151,7 +157,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     public void StopPlanning(){if(_worker is not null && F3)_backend.SetRunFlag(false);}
     public bool GetCompletePath(Pose3d start,PathMotionProfile profile,out IReadOnlyList<PathSegment> path,out byte goal)
     {
-        path=Array.Empty<PathSegment>();goal=unchecked((byte)_backend.ChosenGoalId);
+        path=Array.Empty<PathSegment>();goal=_chosenGoal;
         if(_status is 0 or 1 || _total is null)return false;
         var nearest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,LatticePlanner.ToStateC(start));
         Info("LatticePlanner.GetCompletePath.Offset",FormattableString.Invariant($"Robot is {nearest.Distance:F6} from the plan, at index {nearest.Index}"));
@@ -171,7 +177,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             while(endpointIndex>0 && remaining.Actions[endpointIndex-1].EndX==0 && remaining.Actions[endpointIndex-1].EndY==0)endpointIndex--;
             var endpoint=remaining.States().ElementAt(endpointIndex);float endAngle=_backend.Env.Primitives.Angles[endpoint.Theta];
             if(raw.Count==0 && onlyTurnHeading is {} cachedTurn)endAngle=cachedTurn;
-            float desired=(float)_goals[_backend.ChosenGoalId].AngleAroundZ,delta=EngineF.RadiansMinus(desired,endAngle),speed=delta>0?2f:-2f;
+            float desired=(float)_goals[_chosenGoal].AngleAroundZ,delta=EngineF.RadiansMinus(desired,endAngle),speed=delta>0?2f:-2f;
             _missing("M13-034 final turn uses the retained ToPath candidate's lattice endpoint; native GetEndPose cached heading/primitive paths remain unbuilt (0x0085BF5C)");
             Info("LatticePlanner.ReplanIfNeeded.FinalAngleCorrection",FormattableString.Invariant($"LatticePlanner: Final angle off by {delta:F6} rad. DesiredAng = {desired:F6}, endAngle = {endAngle:F6}, rotSpeed = {speed:F6}. Adding point turn."));
             NativePathBuffer.Append(raw,new PathSegment.PointTurn(_backend.Env.Primitives.ResolutionMm*endpoint.X,_backend.Env.Primitives.ResolutionMm*endpoint.Y,desired,EngineF.Bits(0x3DB2B8C2),speed,10,10,true),_missing,"AppendPointTurn");
