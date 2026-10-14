@@ -383,7 +383,7 @@ public sealed class CozmoAnimations : IDisposable
                     Library = lib;
                     if (_loaderDestroyed) lib.AbortLoading();
                 }
-            }, cubeFiles => _robot.Lights.Cubes.Animations.LoadCollected(_robot.Engine.Options.ResourcesPath ?? assetsRoot,
+            }, cubeFiles => _robot.Lights.Cubes.Animations.LoadCollected(_robot.Engine.Options.ResourcesPath,
                 cubeFiles, _robot.Engine.Log,
                 (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text)));
         Library.Log = _robot.Engine.Log;

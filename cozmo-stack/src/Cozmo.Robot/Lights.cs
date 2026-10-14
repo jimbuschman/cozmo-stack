@@ -566,6 +566,7 @@ public sealed class CubeLightAnimations
 
     private Func<Action>? _standaloneLoad;
     private readonly object _loadGate = new();
+    private bool _loadRan;
     internal void EnsureLoaded()
     {
         Action? emit = null;
@@ -573,7 +574,7 @@ public sealed class CubeLightAnimations
         {
             var load = _standaloneLoad;
             _standaloneLoad = null;
-            if (load is not null) emit = load();
+            if (load is not null){_loadRan=true;emit=load();}
         }
         emit?.Invoke(); // No external callout while the initialization lock is held.
     }
@@ -581,7 +582,8 @@ public sealed class CubeLightAnimations
     {
         var c = new CubeLightAnimations();
         if (path is null) return c; // No resource input means no standalone initialization to retain.
-        // Host-only access before LoadFrom keeps the standalone light API available.
+        // Host-only access before LoadFrom performs the one standalone load. A later LoadCollected
+        // waits for this initialization lock, keeps these definitions, and does not parse/log them twice.
         c._standaloneLoad = () =>
         {
             var calls = new System.Collections.Concurrent.ConcurrentQueue<Action>();
@@ -593,8 +595,15 @@ public sealed class CubeLightAnimations
     }
     internal void LoadCollected(string? path, IReadOnlyList<string> files, Action<string>? log, SourceLogSink? sourceLog)
     {
-        lock (_loadGate) _standaloneLoad = null;
+        lock (_loadGate)
+        {
+            _standaloneLoad=null;
+            if(_loadRan)return;
+            _loadRan=true;
+        }
         // DispatchFiles logs on worker threads. Do not hold an initialization/state lock across those callouts.
+        // Host reads during collected-load callbacks see the definitions already installed, as before;
+        // they never start a second load or wait on the worker emitting the callback.
         LoadInto(this, path, log, sourceLog, files);
     }
 
@@ -640,7 +649,7 @@ public sealed class CubeLightAnimations
         else Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.TriggerMapNotFound", $"cube light trigger map not found at {map}");
         var directory = Path.Combine(resourcesPath, AnimationDirectory);
         if (!Directory.Exists(directory))
-        { Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.AnimationsNotFound", $"cube light animations not found at {directory}"); return; }
+        { Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.AnimationsNotFound", $"cube light animations not found at {directory}"); }
         var files = collectedFiles?.ToList() ?? new List<string>();
         if (collectedFiles is null) Collect(directory);
         var time = System.Diagnostics.Stopwatch.StartNew();
@@ -1122,8 +1131,8 @@ public sealed class CubeLightComponent
     /// advances to its next pattern when its timer expires (timer = now + that pattern's duration + the stored offset when their OR is nonzero, SetObjectLights),
     /// and is popped after its last pattern; an empty layer goes back to layer 2 and PickNextAnimForDefaultLayer
     /// plays Sleep/SleepNoFade, Carrying (0), Visible (0x25) or Connected (1).
-    /// A timer expires at now ≥ timer (0x00637998 <c>bhs</c>). A pattern whose timer is 0 - one with duration_ms 0, such
-    /// as connected.json's - holds unless +0x41 is set (0x0063798A..0x00637994, W4); +0x41 is set only by
+    /// A timer expires at now ≥ timer (0x00637998 <c>bhs</c>). The timer is 0 exactly when (duration_ms | offset) == 0,
+    /// and then holds unless +0x41 is set (0x0063798A..0x00637994, W4); +0x41 is set only by
     /// <see cref="StopAllAnimsOnLayer"/> and <see cref="StopLightAnim"/> (W2), and a pop with +0x41 set happens even
     /// though patterns remain.
     /// W4/P2/P3: after a pop, consecutive stopped entries are popped too (P2), and if an animation is left on the layer
@@ -1188,6 +1197,15 @@ public sealed class CubeLightComponent
                         int layer = info.CurrentLayer;
                         if (id is { } previousId) calls.Add(() => SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.Update.PlayingPrevious", $"Have previous anim {lower.Name} on layer {LayerName(layer)} id {previousId}"));
                         else calls.Add(() => Log("MISSING: M4-018 | Update.PlayingPrevious 0x00637AA4: native ObjectID unavailable"));
+                        // fidelity: M1-034
+                        // fidelity: M4-045 — list::assign shortened the shared slot beneath this entry.
+                        if(lower.Blended&&(uint)lower.Index>=(uint)lower.Anim.Length)
+                        {
+                            string skippedName=lower.Name;int skippedIndex=lower.Index,slotLength=lower.Anim.Length;
+                            calls.Add(()=>SourceLog(EngineLogLevel.Warning,null,"Stack.CubeLightComponent.SkipDanglingBlendedResend",
+                                FormattableString.Invariant($"M1-034 / M4-045: skipped resend of {skippedName}, index {skippedIndex} past shared slot length {slotLength}; native freed-node read 0x00637ACC..0x00637AE4; previous state retained")));
+                            continue;
+                        }
                         Send(type, lower.Anim[lower.Index], transition: true);
                         continue;
                     }

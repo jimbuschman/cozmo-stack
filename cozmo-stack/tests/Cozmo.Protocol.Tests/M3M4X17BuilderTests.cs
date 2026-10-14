@@ -96,8 +96,9 @@ public sealed class M3M4X17BuilderTests
             var library=CubeLightAnimations.Load(root,sourceLog:sink);Assert.NotNull(library.ForTrigger("Sleep"));Assert.Null(library.ForTrigger("Bad"));
             File.Delete(map);Directory.Delete(Path.Combine(root,CubeLightAnimations.AnimationDirectory),true);
             logs.Clear();CubeLightAnimations.Load(root,sourceLog:sink);
-            Assert.Equal(new[]{"cube light trigger map not found at "+map,"cube light animations not found at "+Path.Combine(root,CubeLightAnimations.AnimationDirectory)},logs.Select(e=>e.Text));
-            Assert.All(logs,e=>Assert.Equal(EngineLogLevel.Warning,e.Level));
+            Assert.Equal(new[]{"cube light trigger map not found at "+map,"cube light animations not found at "+Path.Combine(root,CubeLightAnimations.AnimationDirectory)},logs.Take(2).Select(e=>e.Text));
+            Assert.All(logs.Take(2),e=>Assert.Equal(EngineLogLevel.Warning,e.Level));
+            Assert.Equal(3,logs.Count);Assert.Equal("RobotDataLoader.LoadCubeLightAnimations.LoadTime",logs[2].Name);Assert.Equal(EngineLogLevel.Info,logs[2].Level);
         }
         finally {Directory.Delete(root,true);}
     }
