@@ -812,3 +812,11 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | New COMPATIBILITY_POLICY | M2-021 connect timing |
 | New RECOVERABLE_GAP | M2-022 handler bodies |
 | Correction (0x101CF) | M2-018 |
+
+
+## Check of R-SMALL-2 (manager, 2026-10-13; research/20261013-small-reads-2-check.md)
+
+| Change | Records |
+| --- | --- |
+| Read handler bodies split out as IMPLEMENTATION_GAP | M2-023 (new) |
+| Remainder (tag 0x60/0x81 recipients, C5 inside Clear), retitled, RECOVERABLE_GAP | M2-022 |

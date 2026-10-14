@@ -918,3 +918,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M15-043 |
 | New RECOVERABLE_GAP | M15-044 UnlockId table and InitConfig failure root |
 | Notes appended | M15-033, M15-040, M15-042 |
+
+
+## Check of R-SMALL-2 (manager, 2026-10-13; research/20261013-small-reads-2-check.md)
+
+| Change | Records |
+| --- | --- |
+| UnlockId table, readAsJson failure, InitConfig read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-044 |

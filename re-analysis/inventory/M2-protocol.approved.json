@@ -2,7 +2,7 @@
   "subsystem": "M2-protocol",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "ac59e8b609da90053ae7aa2eb1a3e2ba331ea70abd3c6f8875746d7535324536",
+  "inventory_sha256": "409dee32df9c92f65c656dfcc41fc23800bcf74ff651c93964fe80244f62bd1b",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -267,10 +267,21 @@
     },
     "M2-022": {
       "status": "RECOVERABLE_GAP",
-      "title": "Robot-message handlers that might synchronously destroy another subscriber of the same tag (C4, C5, DA, CA, CB, D5, EF); IActionRunner re-Init of a live action; ConnectToRobot registration site",
+      "title": "Local E2G subscribers to AnimationEvent (tag 0x60) and FirmwareUpdateComplete (tag 0x81), and whether a robot-message dispatch can run nested inside ActionList::Clear",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): \"Unread\" section: the handler bodies; the re-Init question; 0x004EE94A -> PLT 0x004A544C; ~Robot r5 at 0x0051120E; ProcessMessages with no robot 0x0069D8D8."
+        "re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): \"Unread\" section: the handler bodies; the re-Init question; 0x004EE94A -> PLT 0x004A544C; ~Robot r5 at 0x0051120E; ProcessMessages with no robot 0x0069D8D8.",
+        "re-analysis/research/20261013-small-reads-2-check.md: \"Still unread\" section. Read parts split to M2-023. Remaining: the vtable+0x28 Subscribe sites, rodata tag arrays, StrategyGeneric::ConfigureRelevantEvents 0x006137B6/0x0061389A, ReactionTriggerStrategyGeneric 0x0060F5D8; ActionList::Clear 0x0053D916..0x0053D93A with action dtors 0x00541084, 0x00543DAC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-023": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Robot-message handler bodies read for mid-emit safety: C4 motor acks, DA, CA, CB, D5 and C5 direct bodies, EF direct body, IActionRunner re-Init, ConnectToRobot registration, ~Robot BlockTapFilter teardown, ProcessMessages with no robot",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-small-reads-2-check.md: M2-023 section. C4 0x0054D3F8..0x0054D7B2; DA 0x00557E82..0x00557E9C; CA 0x005452F0..0x0054534E; CB 0x0054541C..0x005454F4; D5 0x0054561C..0x0054569E, 0x00545750..0x00545792, Broadcast(&&) 0x006625B0; C5 -> QueueAction(5) -> AddConcurrentAction 0x0053DF2C..0x0053E004; EF 0x00678064..0x0067811C, 0x00676D80..0x00676FA6; re-Init 0x00540D1C..0x00540F9C; ConnectToRobot 0x004EB5CC, 0x004EBB6C..0x004EBBC2, 0x004ED018; ~Robot 0x005111EA..0x00511220; ProcessMessages 0x0069D8BC..0x0069D8D8."
       ],
       "live_path": true,
       "hardware_required": false

@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **587 records** over 16 subsystems.
+Manifest of **588 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 53 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 268 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 270 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -25,7 +25,7 @@ remains after both, and they do not go away by working harder on this repository
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
 | M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
-| M2-protocol — CLAD messages and protocol helpers | 22 | 1 | 3 | 0 | 0 | no | no |
+| M2-protocol — CLAD messages and protocol helpers | 23 | 1 | 4 | 0 | 0 | no | no |
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 48 | 0 | 15 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 41 | 6 | 23 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 35 | 3 | 28 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 44 | 11 | 29 | 0 | 0 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 44 | 10 | 30 | 0 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -75,14 +75,14 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M2-protocol — CLAD messages and protocol helpers
 
-**M2-022 — Robot-message handlers that might synchronously destroy another subscriber of the same tag (C4, C5, DA, CA, CB, D5, EF); IActionRunner re-Init of a live action; ConnectToRobot registration site** (live path)
+**M2-022 — Local E2G subscribers to AnimationEvent (tag 0x60) and FirmwareUpdateComplete (tag 0x81), and whether a robot-message dispatch can run nested inside ActionList::Clear** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs`
 * effect: Whether a handler can change which subscribers a message reaches mid-emit.
 * rests on: Codex research checked by Opus (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): "Unread" section: the handler bodies; the re-Init question; 0x004EE94A -> PLT 0x004A544C; ~Robot r5 at 0x0051120E; ProcessMessages with no robot 0x0069D8D8.
-* outstanding: RECOVERABLE_GAP: read the listed bodies. A freed-memory read mid-emit, if reachable, falls under the M1-034 standing rule.
+* evidence: re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): "Unread" section: the handler bodies; the re-Init question; 0x004EE94A -> PLT 0x004A544C; ~Robot r5 at 0x0051120E; ProcessMessages with no robot 0x0069D8D8.; re-analysis/research/20261013-small-reads-2-check.md: "Still unread" section. Read parts split to M2-023. Remaining: the vtable+0x28 Subscribe sites, rodata tag arrays, StrategyGeneric::ConfigureRelevantEvents 0x006137B6/0x0061389A, ReactionTriggerStrategyGeneric 0x0060F5D8; ActionList::Clear 0x0053D916..0x0053D93A with action dtors 0x00541084, 0x00543DAC.
+* outstanding: RECOVERABLE_GAP: read the listed bodies. A freed-memory read mid-emit, if reachable, falls under the M1-034 standing rule. Split 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): the read bodies moved to M2-023. Still RECOVERABLE_GAP: who locally receives tags 0x60 and 0x81 (and synchronously or not), and the C5-inside-Clear sliver. A recipient mutating the firmware updater's tracked vector would make EF's writes stale (M1-034 standing rule).
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -567,15 +567,6 @@ B-M12-1 built, awaiting strong verification: existing Abort/ClearPath call actua
 * evidence: re-analysis/research/20261012-m4-046-anim-modifier.md: ActivityBuildPyramid::SetCubeLights StopAndPlay passes modifier = true (0x005A7D52..0x005A7D66) with node+0x28, filled by SetPyramidBaseLights (0x005A9238/0x005A928A) and UpdateDesiredLights (0x005A96F0, 0x005A9758, 0x005A97C4; sources unread); getters 0x005A9960, 0x005A9A3C, 0x005A9B00 read. Tracker erase on disconnect 0x005A7FD4 -> 0x005A7FFA.
 * outstanding: RECOVERABLE_GAP: read UpdateDesiredLights and SetPyramidBaseLights sources; and for reachability of M4-045 N2/N3: (a) who dispatches HandleObjectConnectionStateChange to activities and whether an inactive one receives it, (b) its order against BlockWorld's connected-object removal, (c) UpdateStateTrackerForUnrecognizedID 0x005A8004, (d) whether Update/OnDeselected can call SetCubeLights for a gone cube. Feeding (FeedingCubeController +0xAC modifier) is entered only through the app's ActivateHighLevelActivity(Feeding) as far as read.
 
-**M15-044 — UnlockId name-to-value table and InitConfig details: UnlockIdFromString map builder; the root state after a failed readAsJson** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
-* effect: Which UnlockIds the default unlocks map to, and the logs when the unlock config is missing.
-* rests on: Opus check of R-BACKUP-UNLOCK (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-backup-unlock-and-stoull-check.md: UnlockIdFromString static map builder E:0x00794D84..0x007957AC (undecoded); DataPlatform::readAsJson failure root state (PLT E:0x004A64E4) unread.
-* outstanding: RECOVERABLE_GAP: decode the builder's name->value pairs (cross-check Unity UnlockId.cs, authority 2), and read readAsJson's failure path for the root it leaves.
-
 ## Still to build: every IMPLEMENTATION_GAP
 
 Each of these is a question already answered. The original's behaviour is established and this stack knowingly does something else, so the work outstanding is writing it, not reading.
@@ -611,6 +602,15 @@ B-M3M4-18 built, awaiting strong verification: D2 copies all 44 bytes; exact 16-
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-robot-message-subscribers-check.md: Emitter 0x0069DE18: robot ID == MessageHandler+0x1C (0x1CF, set 0x0069D004/0x0069D00E) emits every robot signal for the tag (0x0069DE32..0x0069DE4E); otherwise the robot signal, then the 0x1CF signal (0x0069DE50..0x0069DE74). LoadBehaviors is called from LoadNonConfigData 0x0051F452; its order against AddRobot is unread.; re-analysis/research/20261013-dispatch-residue-check.md: wildcard 0x101CF at 0x0069D004..0x0069D00E; all-signals 0x0069DE32..0x0069DE4E unreachable (only caller 0x0069DABA with robot 1, 0x004ED07A); Reset 0x0051D8F8..0x0051D932, unlink 0x0051D338..0x0051D3A4; owner releases as tabled; re-Init order 0x00543FCA..0x00543FE2, 0x00551706..0x00551784.
 * outstanding: Read 2026-10-13 (re-analysis/research/20261013-dispatch-residue-check.md): build (job B-M3M4-25). Load-before-connect is M2-021 (app input); the unread handlers are M2-022. No production trigger frees the active signal or MessageHandler mid-emit. Previous notes: RECOVERABLE_GAP: find Broadcast callers that pass 0x1CF; read each subscriber's early-unsubscribe path (only the RIC's, 0x0052DFA4, is read); owner/signal destruction during an emit; the engine load/connect gating (LoadNonConfigData before AddRobot). Also: other readers of Impl+0x0C..+0x39 (the firmware-version copy and the mismatch flags), not searched (re-analysis/research/20261013-unported-message-handlers-check.md).
+
+**M2-023 — Robot-message handler bodies read for mid-emit safety: C4 motor acks, DA, CA, CB, D5 and C5 direct bodies, EF direct body, IActionRunner re-Init, ConnectToRobot registration, ~Robot BlockTapFilter teardown, ProcessMessages with no robot** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs`
+* effect: What each robot-message handler does to its own action, and that none of the read bodies destroys another subscriber mid-emit.
+* rests on: Split from M2-022 after the Opus check of R-SMALL-2 (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-small-reads-2-check.md: M2-023 section. C4 0x0054D3F8..0x0054D7B2; DA 0x00557E82..0x00557E9C; CA 0x005452F0..0x0054534E; CB 0x0054541C..0x005454F4; D5 0x0054561C..0x0054569E, 0x00545750..0x00545792, Broadcast(&&) 0x006625B0; C5 -> QueueAction(5) -> AddConcurrentAction 0x0053DF2C..0x0053E004; EF 0x00678064..0x0067811C, 0x00676D80..0x00676FA6; re-Init 0x00540D1C..0x00540F9C; ConnectToRobot 0x004EB5CC, 0x004EBB6C..0x004EBBC2, 0x004ED018; ~Robot 0x005111EA..0x00511220; ProcessMessages 0x0069D8BC..0x0069D8D8.
+* outstanding: IMPLEMENTATION_GAP: compare the stack's handlers with the check file's M2-023 rows (logs, flags, the CB +0x84 == 0 case that never ends, C5 with no action-state gate and QueueAction(5) without Init, D5 game delivery before the local emit). EF is the firmware updater: built only if the operator puts firmware update in scope (question open 2026-10-13); until then it is recorded, not built. The IsInSdkMode branch (0x0054044E) is out of scope (SDK).
 
 ### M3-device — Camera, display and audio device layer
 
@@ -3134,6 +3134,15 @@ B-M5-16 fixture correction: the NoFreePoses/needs-order regression enters the ch
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): U1/U2: RobotEventHandler subscription 0x005270E8 (called 0x00525970), handler 0x0051C5E4..0x0051C8C4; unread UnlockedIdsList::Unpack (PLT 0x004A8518), GetDefaultUnlocks (PLT 0x004A8554), IExternalInterface +0x1C, 0x0051C8FE..0x0051C930, 0x005257EE..0x00525970, 0x00529BC0; libc++_shared stoull 0x00065378..0x00065510 and __next_prime 0x0003B074..0x0003B6A0; Json::Value::asUInt and getMemberNames (0x008E6C68) throw paths.; re-analysis/research/20261013-backup-unlock-and-stoull-check.md (and re-analysis/research/20261013-backup-unlock-and-stoull.md): handler 0x0051C5E4..0x0051C944, subscription 0x005270F0 (gate 0x005257E8..0x005257EE), live entry 0x0052BE7A (0x00529BC0 dead), Unpack 0x00795DA6..0x00795E98, stale destination words (0x0051C63E..0x0051C696, read 0x0051C6BC), fallbacks 0x0051C822..0x0051C8C4, GetDefaultUnlocks 0x0064C09C..0x0064C0C8, InitConfig 0x0064BB68..0x0064BDB4 (per-entry DefaultValue Info), UnlockStatus::Pack u8 count 0x00717D42; C:stoull 0x00065378..0x0006550E; C:__next_prime 0x0003B038..0x0003B656; JsonCpp 0x008E89C2..0x008E8F80, 0x008E6B9A..0x008E6DC4.
 * outstanding: Read 2026-10-13 (re-analysis/research/20261013-backup-unlock-and-stoull-check.md): build (job B-M15-1). The stale-destination read falls under the M1-034 standing rule: push the deterministic words 0x182000 and 13 as the original would, stop before the freed pointer (word 2), log the skip visibly, send UnlockStatus with what was collected. stoull/JsonCpp throws fall under the M1-034 standing rule; bionic strtoull is EQUIVALENT_IMPLEMENTATION. The u8 count in Pack is an app-boundary note (the C# API carries the list). Unread: M15-044. Previous notes: RECOVERABLE_GAP: read the listed ranges.
+
+**M15-044 — UnlockId name-to-value table and InitConfig details: UnlockIdFromString map builder; the root state after a failed readAsJson** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/NvStorage.cs`
+* effect: Which UnlockIds the default unlocks map to, and the logs when the unlock config is missing.
+* rests on: Opus check of R-BACKUP-UNLOCK (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-backup-unlock-and-stoull-check.md: UnlockIdFromString static map builder E:0x00794D84..0x007957AC (undecoded); DataPlatform::readAsJson failure root state (PLT E:0x004A64E4) unread.; re-analysis/research/20261013-small-reads-2-check.md: M15-044 section. UnlockIdFromString map 0x00794D84..0x00795834 (81 pairs, emulated; std::cerr on a miss); readAsJson 0x0084BFD4..0x0084C206; JsonCpp Reader 0x008E075A..0x008E12EC; InitConfig 0x0064BB68..0x0064BDB4; callers 0x0064B89E..0x0064B8C4, 0x0064C09C..0x0064C0C8.
+* outstanding: RECOVERABLE_GAP: decode the builder's name->value pairs (cross-check Unity UnlockId.cs, authority 2), and read readAsJson's failure path for the root it leaves. Read 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): IMPLEMENTATION_GAP, build rows 1-6 of the check file: the 81-entry table; a miss writes "error: string '<name>' is not a valid UnlockId value" to stderr and returns 0; readAsJson parses even when the open fails and logs DataPlatform.readAsJson errors; the callers pass a fresh null root, so a missing file logs UnlockConfigJsonNotFound then MissingDefaults and leaves the set empty; a malformed file keeps the partial object. Crash paths (JsonCpp depth > 1000; a non-object non-null root at operator[]) fall under the M1-034 standing rule.
 
 ## What remains after both: blocked externally, or needing hardware
 
