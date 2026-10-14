@@ -62,7 +62,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 29a2 | [B-M5-19](B-M5-19.md) | done 92278498; drives end in Success; Opus check FAIL on one log line (research/20261013-b-m5-19-check.md), fix in B-M5-20 |
 | 29c | [B-M13-1](B-M13-1.md) | done 3becf79a; Opus check FAIL (final-turn regression; research/20261013-b-m13-1-check.md), fixes in B-M13-2 |
 | 29c2 | [B-M13-2](B-M13-2.md) | URGENT, next after the job in progress (final turn, closest goal, fresh path, logs) |
-| 29d | [B-M12-2](B-M12-2.md) | open, after B-M13-1 (Dole send failures, queued items) |
+| 29d | [B-M12-2](B-M12-2.md) | done dae131fe; Opus check PASS (research/20261013-b-m12-2-pass.md); two queued items in B-M5-20 |
 | 29b | [B-M12-1](B-M12-1.md) | done d7316d1d; Opus check FAIL on one point (Dole send failures; research/20261013-b-m12-1-check.md), fix in B-M12-2 |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | done 985ba775; Opus check PASS (research/20261013-b-m3m4-19-pass.md); follow-up B-M3M4-23 |
 | 30a | [B-M3M4-22](B-M3M4-22.md) | done 51b42629; behaviour matches (research/20261013-b-m3m4-22-check.md); test-hygiene cleanup in B-M3M4-24 |
