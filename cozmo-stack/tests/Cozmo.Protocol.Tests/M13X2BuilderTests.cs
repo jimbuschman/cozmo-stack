@@ -95,7 +95,7 @@ public sealed class M13X2BuilderTests
             Assert.DoesNotContain(entries,e=>e.Key=="LatticePlanner.GetPlan.OldPlanUnsafe");
         }
     }
-    [Fact] [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
+    [Fact] [Trait("Fidelity","M13-033")]
     public void NonForcedEmptyPlanLogsUnsafeAfterForcePlan()
     {
         using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var runtime=rig.M.GetNativePlanners().Lattice!;
@@ -113,7 +113,7 @@ public sealed class M13X2BuilderTests
             Assert.Equal("old plan unsafe! Will replan, starting from 0, keeping 0 actions from oldPlan.",logs[unsafePlan].Text);
         }
     }
-    [Fact] [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
+    [Fact] [Trait("Fidelity","M13-033")] [Trait("Fidelity","M13-034")]
     public void CompletePathKeepsGoalFromSuccessfulWorkerPlan()
     {
         using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var runtime=rig.M.GetNativePlanners().Lattice!;
@@ -126,6 +126,30 @@ public sealed class M13X2BuilderTests
             Assert.NotEqual(LatticePlanner.PlanningResult.Failure,result);Assert.Equal(1,runtime.Backend.ChosenGoalId);
             Assert.True(runtime.GetCompletePath(Pose3d.Identity,PathMotionProfile.Default,out var path,out var goal));
             Assert.Equal(0,goal);Assert.Equal(MathF.PI/2,Assert.IsType<PathSegment.PointTurn>(path.Last()).TargetAngleRad);
+        }
+    }
+    [Fact] [Trait("Fidelity","M13-033")]
+    public void FreshEmptyPlanRetrievalReportsPositionErrorAndClears()
+    {
+        // B-M13-6 (research/20261014-b-m13-5-check.md, blocking 1). Force path 0x004FEBD2 -> 0x004FECDA..0x004FECF6
+        // leaves an empty total with a zeroed start; DoPlanning stores 3 for an empty plan (0x00500212 -> 0x00500590).
+        using var rig=new Rig();Assert.True(rig.M.LoadPlanner(Obb()));var runtime=rig.M.GetNativePlanners().Lattice!;
+        var entries=new System.Collections.Concurrent.ConcurrentQueue<EngineLogEntry>();rig.Robot.Engine.LogEntry+=entries.Enqueue;
+        var missing=new System.Collections.Concurrent.ConcurrentQueue<string>();rig.Robot.Engine.StackLogLine+=missing.Enqueue;
+        var published=new System.Collections.Concurrent.ConcurrentQueue<int>();runtime.StatusPublished+=published.Enqueue;
+        Assert.Equal(1,runtime.ComputePath(Pose3d.Identity,new[]{At(0,0)}));
+        Assert.True(SpinWait.SpinUntil(()=>runtime.CheckPlanningStatus==3,TimeSpan.FromSeconds(10)));
+        lock(runtime.ContextMutex)
+        {
+            int before=published.Count;
+            Assert.False(runtime.GetCompletePath(Pose3d.Identity,PathMotionProfile.Default,out var path,out _)); // return 0
+            Assert.Empty(path);
+            // FindClosest on an empty plan: index 0, FLT_MAX (0x008569A4..0x008569BA); "%f" of FLT_MAX, at index 0 (0x004FFBF2).
+            Assert.Contains(entries,e=>e.Level==EngineLogLevel.Info&&e.Text=="Robot is 340282346638528859811704183484516925440.000000 from the plan, at index 0");
+            // RobotPositionError sEvent (0x004FFDE4) is unported and must surface as a MISSING.
+            Assert.Contains(missing,s=>s.StartsWith("MISSING: ")&&s.Contains("RobotPositionError"));
+            // Clear, then status 0 (0x004FFE2A).
+            Assert.Equal(new[]{0},published.Skip(before).ToArray());Assert.Equal(0,runtime.CheckPlanningStatus);
         }
     }
 }

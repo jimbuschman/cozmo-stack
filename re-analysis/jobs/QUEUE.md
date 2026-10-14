@@ -63,7 +63,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 29c | [B-M13-1](B-M13-1.md) | done 3becf79a; Opus check FAIL (final-turn regression; research/20261013-b-m13-1-check.md), fixes in B-M13-2 |
 | 29c2 | [B-M13-2](B-M13-2.md) | done 57abaaba; Opus check FAIL (plan logs, event levels; research/20261013-b-m13-2-check.md); final turn confirmed; fixes in B-M13-3 |
 | 29c3 | [B-M13-3](B-M13-3.md) | done 02fceff6; Opus check FAIL (OldPlanUnsafe on fresh plans, circular test; research/20261014-b-m13-3-check.md); fixes in B-M13-5 |
-| 29c4 | [B-M13-5](B-M13-5.md) | open, next after the job in progress (force=true skips OldPlanUnsafe; mismatch Debug calls; goal snapshot) |
+| 29c4 | [B-M13-5](B-M13-5.md) | done 5e95dc70; Opus check FAIL (fresh plan left the total null; research/20261014-b-m13-5-check.md); fixed in B-M13-6 |
+| 29c5 | [B-M13-6](B-M13-6.md) | done by the manager's Claude implementer (Codex out of budget); manager-reviewed |
 | 29d | [B-M12-2](B-M12-2.md) | done dae131fe; Opus check PASS (research/20261013-b-m12-2-pass.md); two queued items in B-M5-20 |
 | 29b | [B-M12-1](B-M12-1.md) | done d7316d1d; Opus check FAIL on one point (Dole send failures; research/20261013-b-m12-1-check.md), fix in B-M12-2 |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | done 985ba775; Opus check PASS (research/20261013-b-m3m4-19-pass.md); follow-up B-M3M4-23 |

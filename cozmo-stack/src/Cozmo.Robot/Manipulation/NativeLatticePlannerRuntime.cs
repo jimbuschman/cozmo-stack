@@ -78,7 +78,9 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             _start=start;
             _backend.SetReplanFlag(force);
             (int Index,float Distance) nearest=(0,float.MaxValue);
-            if(force)_total=null;
+            // fidelity: M13-033 force path 0x004FEBD2 -> 0x004FECDA..0x004FECF6: the total takes the zeroed start
+            // (0x004FEB6C..0x004FEB7C) and the empty action vector; PlanIsSafe and OldPlanUnsafe are skipped (B-M13-6).
+            if(force)_total=new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
             else
             {
                 _backend.Env.ImportBlockWorldObstacles(_world,_carried(),true,_ignore);
@@ -157,6 +159,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     public void StopPlanning(){if(_worker is not null && F3)_backend.SetRunFlag(false);}
     public bool GetCompletePath(Pose3d start,PathMotionProfile profile,out IReadOnlyList<PathSegment> path,out byte goal)
     {
+        // Native writes goal after the status 0/1 exits (0x004FFB8C); C# needs the out set first, and Read ignores it on false.
         path=Array.Empty<PathSegment>();goal=_chosenGoal;
         if(_status is 0 or 1 || _total is null)return false;
         var nearest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,LatticePlanner.ToStateC(start));
