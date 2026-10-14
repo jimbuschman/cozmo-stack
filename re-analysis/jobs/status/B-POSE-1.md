@@ -1,10 +1,10 @@
-BLOCKED B-POSE-1 — adopted R2 contradicts the reopened native rescale target at exact negative pi. Pushed blocker commit: pending.
+BLOCKED B-POSE-1 — adopted R2 contradicts the reopened native rescale target at exact negative pi. Pushed blocker commit: 0290e08bcca5761447cc43eeb7391de064210e35.
 
 The job was pulled/re-read after B-M13-1 and B-M12-2 were completely pushed. Claim commit425ed2d8. Read the arithmetic, Rodrigues/tree and remaining-pose check plus its adopted report. Stopped before integration/tests on the contradiction below. No production code change is committed; exploratory arithmetic/Rodrigues drafts are parked in ignored `.scratch/pose-drafts/`, outside the production source tree. No verification packet.
 
 ## Blocker: M11-065 R2
 
-Checked source `re-analysis/research/20261013-pose3d-arithmetic.md:20` says **[−pi, pi] is unchanged**. Reopening the cited rescale body (required by builder rule10) contradicts its lower endpoint:
+Checked source `re-analysis/research/20261013-pose3d-arithmetic.md:18` says **[−pi, pi] is unchanged**. Reopening the cited rescale body (required by builder rule10) contradicts its lower endpoint:
 
 - 0x0084C88A loads0xC0490FDB from0x0084C938 (negative float pi).
 - 0x0084C892 compares the stored angle with that value; 0x0084C89A **BLE** sends equality to0x0084C8AA.
@@ -29,6 +29,6 @@ Required next step: manager/extractor corrects/confirms the adopted R2 boundary.
 
 ## Validation / remaining work
 
-No focused behavioral tests or new full suite were run for an unintegrated port. The immediately preceding completed B-M12-2 full suite and normal gate passed4686/4686. This blocker changes only the job report and an appended M11-065 unresolved note plus regenerated FIDELITY_GAPS. Test references, titles, authorities, evidence and classifications are unchanged. fidelity.py regeneration and --check: passed (585 records); normal push gate: pending.
+No focused behavioral tests or new full suite were run for an unintegrated port. The immediately preceding completed B-M12-2 full suite and normal gate passed4686/4686. This blocker changes only the job report and an appended M11-065 unresolved note plus regenerated FIDELITY_GAPS. Test references, titles, authorities, evidence and classifications are unchanged. fidelity.py regeneration and --check: passed (585 records); normal records-only push gate: 786/786 passed (8s), push succeeded after rebase onto7ba29fbf.
 
 B-M11-1, B-M3M4-21 and B-M15-1 were not started, per the operator's stop-on-BLOCKED instruction.
