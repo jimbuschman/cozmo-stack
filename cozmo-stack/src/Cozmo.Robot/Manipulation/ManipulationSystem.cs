@@ -127,14 +127,14 @@ public sealed class ManipulationSystem : IDisposable
     public PathFollower Follower { get; }
 
     /// <summary>
-    /// Starts a path and returns its owner: the terminal-event reservation is taken before the first message
-    /// goes out, and an unfinished wait clears the path instead of leaving the firmware driving.
+    /// Starts a path and returns its owner with ExecuteCustomPath's result. Nonempty paths reserve before sending;
+    /// empty or failed starts return without an event wait. An unfinished successful wait clears its owned path.
     /// </summary>
     public PathRun StartPath(IReadOnlyList<PathSegment> path)
     {
         PathFollower.Reservation? reservation = null;
-        ushort id = Paths.Execute(path, newId => reservation = Follower.Reserve(newId));
-        return new PathRun(this, id, reservation!);
+        var execution = Paths.ExecuteWithResult(path, newId => reservation = Follower.Reserve(newId));
+        return new PathRun(this, execution.PathId, reservation, execution.Result);
     }
     public DockingSystem Docking { get; }
     public event Action<string>? Log;
@@ -236,22 +236,26 @@ public sealed class ManipulationSystem : IDisposable
 public sealed class PathRun : IDisposable
 {
     private readonly ManipulationSystem _m;
-    private readonly PathFollower.Reservation _reservation;
+    private readonly PathFollower.Reservation? _reservation;
     private int _ended;
 
-    internal PathRun(ManipulationSystem m, ushort pathId, PathFollower.Reservation reservation)
-    { _m = m; PathId = pathId; _reservation = reservation; }
+    internal PathRun(ManipulationSystem m, ushort pathId, PathFollower.Reservation? reservation,int result)
+    { _m = m; PathId = pathId; _reservation = reservation; Result=result; if(result!=0 || reservation is null)_ended=1; }
 
     public ushort PathId { get; }
+    /// <summary>ExecuteCustomPath's native return code: zero on success.</summary>
+    public int Result { get; }
     /// <summary>Whether the path was aborted because the wait was cancelled or timed out.</summary>
     public bool Aborted { get; private set; }
 
     /// <summary>
-    /// Waits for the path's terminal event. Null means the wait ended without one (timeout or cancellation),
-    /// and the path is cleared on the robot before returning.
+    /// Waits for the path's terminal event. A failed start returns null immediately (see Result); an empty success
+    /// completes locally. A successful nonempty wait that times out or is cancelled clears its owned path.
     /// </summary>
     public async Task<PathEventType?> WaitAsync(TimeSpan timeout, CancellationToken cancel)
     {
+        if(Result!=0)return null;
+        if(_reservation is null)return PathEventType.Completed; // Host empty-path completion; no synthetic engine event.
         var ev = await _reservation.WaitAsync(timeout, cancel);
         if (ev is null) Abort();
         else Interlocked.Exchange(ref _ended, 1);
@@ -276,7 +280,7 @@ public sealed class PathRun : IDisposable
     /// <summary>Whether this run's abort actually cleared the robot's path, or found it no longer owned.</summary>
     public bool ClearedRobotPath { get; private set; }
 
-    public void Dispose() => _reservation.Dispose();
+    public void Dispose() => _reservation?.Dispose();
 }
 
 public sealed class DockHelper

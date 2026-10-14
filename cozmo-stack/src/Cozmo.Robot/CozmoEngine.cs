@@ -1136,7 +1136,6 @@ public sealed partial class EngineRobot
         if (!TimeSynced) return false;
         FirstFullStateHandled = true;
         StoredState = s;
-        Engine.PathSegmentRoute?.Invoke(s.CurrPathSegment); // M12-032 P17/P18, before origin validation.
         if (Engine.StateStored is { } stored) Engine.RunIsolated(() => stored(s));
         if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
         {

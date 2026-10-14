@@ -85,7 +85,8 @@ internal sealed partial class PathComponent
                 PathSegment.Arc a=>new AppendPathSegmentArc{XCenterMm=a.CenterX,YCenterMm=a.CenterY,RadiusMm=a.RadiusMm,StartRad=a.StartAngleRad,SweepRad=a.SweepRad,Speed=new(){SpeedMmps=a.SpeedMmps,AccelMmps2=a.AccelMmps2,DecelMmps2=a.DecelMmps2}},
                 PathSegment.PointTurn t=>new AppendPathSegmentPointTurn{XMm=t.X,YMm=t.Y,TargetAngleRad=t.TargetAngleRad,AngleToleranceRad=t.AngleToleranceRad,UseShortestDirection=t.UseShortestDirection,Speed=new(){SpeedMmps=t.SpeedRadPerSec,AccelMmps2=t.AccelRadPerSec2,DecelMmps2=t.DecelRadPerSec2}},_=>null
             };
-            if(message is {} m)SendNative(m);
+            if(message is {} m && !SendNative(m))
+            {Error("PathDolerOuter.Dole","ERROR: failed to send message!");return;}
             LastDoledIndex=unchecked((ushort)i);
         }
     }
@@ -122,7 +123,9 @@ internal sealed partial class PathComponent
         if(RobotRootOriginInput is {} root && CurrentOriginInput is not null && root()!=ParamsOrigin)
         {MissingOnce("M12-032 DriveCenterOriginMismatch VERIFY formatting 0x0064AE5A unbuilt");SetStatus(0);return 1;}
         if(GoalRootOriginInput is {} goalRoot && ContainsOriginInput is {} contains)
+        {
             for(int i=0;i<goals;i++)if(!contains(goalRoot(i))){MissingOnce("M12-032 OriginMismatch warning 0x0064AE08 argument handoff unbuilt");SetStatus(0);return 1;}
+        }
         else MissingOnce("M12-032 goal origin/ComputeDriveCenterPose gates unbuilt; no native origin validation claim");
         _computeModel=compute;PlannerSlot10=stop;
         SelectPlanner(goals);

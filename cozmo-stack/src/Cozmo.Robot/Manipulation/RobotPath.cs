@@ -116,11 +116,17 @@ public sealed class PathSender
     }
     public ushort Execute(IReadOnlyList<PathSegment> path,Action<ushort>? reserve=null)
     {
+        var execution=ExecuteWithResult(path,reserve);
+        if(execution.Result!=0)_robot.Engine.EmitStackLog("MISSING: M12-002 PathSender host caller must handle ExecuteCustomPath failure; legacy ushort API has no Result output");
+        return execution.PathId;
+    }
+    /// <summary>Host API: preserves ExecuteCustomPath's result without changing its wire path.</summary>
+    public (ushort PathId,int Result) ExecuteWithResult(IReadOnlyList<PathSegment> path,Action<ushort>? reserve=null)
+    {
         int result=0;
         if(_robot.Engine.Robot is {} owner)owner.ActionList.WithGate(()=>result=_path.ExecuteCustomPath(path,false,reserve));
         else result=_path.ExecuteCustomPath(path,false,reserve);
-        if(result!=0)_robot.Engine.EmitStackLog("MISSING: M12-002 PathSender host caller must handle ExecuteCustomPath failure; legacy ushort API has no Result output");
-        return _path.Field42;
+        return (_path.Field42,result);
     }
     public void Abort(){if(_robot.Engine.Robot is {} owner)owner.ActionList.WithGate(()=>_path.Abort(Send));else _path.Abort(Send); }
     // Host reservation API only. Native actions/destructors use the one global component and never this ownership gate.
