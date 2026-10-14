@@ -547,3 +547,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | SendMessage warning metadata | M3-047 (note) |
+
+
+## Check of OV10 (manager, 2026-10-14; research/overnight/20261014-ov10-m11-042-check.md)
+
+| Change | Records |
+| --- | --- |
+| SetCameraParams payload confirmed | M3-019 (note) |

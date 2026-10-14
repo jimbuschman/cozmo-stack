@@ -1527,3 +1527,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Sort ties stable by input index | M11-062 (note) |
+
+
+## Check of OV10 (manager, 2026-10-14; research/overnight/20261014-ov10-m11-042-check.md)
+
+| Change | Records |
+| --- | --- |
+| Dissolved into owners, retitled to the remaining unread items | M11-042 |
+| Rows added; stand-ins contradicted | M11-041, M11-013, M11-062, M11-037, M11-007, M11-044 (notes) |
+| Interpolate read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-052 |

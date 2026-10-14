@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "9f0ba2e2eb30190450d099784e938a6cc6820a4fd084cef69001870d680a19b0",
+  "inventory_sha256": "8e1697052c8a9858e81fdf8a732214f72bfcdc389a3dc00151f2ea155c5bacb6",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -518,11 +518,12 @@
     },
     "M11-042": {
       "status": "RECOVERABLE_GAP",
-      "title": "Unread bodies next to the BlockWorld observation path",
+      "title": "Still unread next to the BlockWorld observation path: IsVisibleFrom projection/occlusion, FindLocatedObjectHelper returnFirst=0 result, subscriber bodies behind 0x0064E704, calibration null at CheckForUnobservedObjects",
       "authority": "libcozmoEngine.so 3.4.0-1204: CreateActiveObjectByType (0x00623296 call); the Clone bodies of Charger and the non-active blocks; the virtual SetID users CreateFixedCustomObject and AddMarkerlessObject (vtable +0x24 by pattern only); ObservableObject vtable +0x58; HandleActiveObjectConnectionState error branch 0x00533CB8; RemoveConnectedActiveObject; Robot::HandleConnectedToObject; the full MarkObjectUnknown body 0x00507128 (stack-walk order, message fields); IsVisibleFrom (camera at VisionComponent+0x24, 0.7854 rad, 40.0); the names of the MovementComponent bytes +0xA/+0xC and Robot+0x280 byte +4; the SetCameraParams contents sent at 0x00658414; the BlockConfigurationManager container slot-0 functions (Stack, PyramidBase, Pyramid), PruneFullPyramids and NotifyBroadcaster; the RobotDelocalized emitter (0x00510D88); R-VIS batch-A verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA.md): GetLastVisuallyMatchedTime, the IsVisibleFrom pads, the warning clock and CanBeUsedForLocalization are now READ (see M11-037, M11-013 and M11-007) and no longer belong here; still unread: CreateActiveObjectByType, the error branches 0x00533B58/0x00533CB8, Robot::HandleConnectedToObject, the rest of RemoveConnectedActiveObject, OnObjectPoseChanged between the +0x74 gate and the append, UpdateMarkerObservationTimes 0x0062114A / SetObservationTimes 0x006292DC / DeleteIntersectingObjects 0x00622C84, the Charger IsActive and Clone bodies, UnknownOriginID / FindLocatedObjectClosestToHelper, DockingComponent+4 and ObservableObject vtable +0x58; R-VIS batch-A re-verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA2.md): the Charger CanBeUsedForLocalization slot, the IsMoving virtual and GetLastImageTimeStamp are READ (see M11-007 and M11-044)",
       "evidence": [
         "re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'",
-        "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md 'Stays open'"
+        "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md 'Stays open'",
+        "re-analysis/research/overnight/20261014-ov10-m11-042-check.md: read rows moved to M11-041, M11-013, M11-062, M11-037, M11-007, M11-044, M11-052; remaining: ObservableObject::IsVisibleFrom 0x00876774, KnownMarker::IsVisibleFrom, FindLocatedObjectHelper, 0x0064E704, VisionComponent+0x28."
       ],
       "live_path": true,
       "hardware_required": false
@@ -629,13 +630,14 @@
       "hardware_required": false
     },
     "M11-052": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotStateHistory::GetRawStateAt interpolation and HistRobotState::Interpolate",
       "authority": "libcozmoEngine.so 3.4.0-1204, GetRawStateAt 0x00531431: lower_bound(t); end -> return 1 (0x00531466..0x00531472); first key > t -> return 1 (0x0053146A..0x00531470); exact key copies that state (0x0053147E..0x0053149C); otherwise before = previous node; if the two origin ids ([r6+0x24] != [r7+0x24], 0x005314BA..0x005314C0) differ log (0x00531574) and return 0x06000000; with flag 1 GetWithRespectTo(after pose, before pose, tmp) 0x00531504 (result != 1 -> 0x005315A6 error, 0x06000000); f = (float)(t - before.key) / (float)(after.key - before.key) (0x00531510..0x00531524); Interpolate(out, before, after, tmp, f). Interpolate 0x0053068C..0x00530848: RobotState (0x5C bytes from +0xC) copied from after, or from before when f < 0.49999 (literal 0x00530884; 0x005306A8..0x005306BE); RobotState +4 from before (0x005306C2); floats at RobotState +0x20, +0x24, +0x28 (head angle), +0x2C (lift angle) = before + (after - before) * f (0x005306CA..0x00530766); the u16 at RobotState +0x50 = roundf(before + (int)(after - before) * f) (0x005306FE..0x00530734) with -1,-1 fill from +0x50 (0x005306EE); pose translation = before.t + f * tmp.t, angle = before.angleZ + f * tmp.angleZ, Z_AXIS_3D, parent = before.GetParent(), empty name, built through Pose3d(Radians, axis, translation, parent, name) 0x0053082A and HistRobotState(Pose3d, RobotState) 0x00530848. Not resolved: whether tmp is in the frame of before or its parent (needs PoseBase::GetWithRespectTo, PLT 0x4A40FC).",
       "evidence": [
         "0x00531431..0x005315A6 GetRawStateAt",
         "0x0053068C..0x00530848 Interpolate",
-        "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md"
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md",
+        "re-analysis/research/overnight/20261014-ov10-m11-042-check.md: H2 Interpolate 0x0053068C..0x00530848 (ctor memcpy 0x5B at 0x005304F4): only cliff channel 0 is blended; channels 1-3 stay 0xFFFF."
       ],
       "live_path": true,
       "hardware_required": false
