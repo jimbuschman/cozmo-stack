@@ -130,7 +130,7 @@ public class HardwareCatalogFidelityTests
     [InlineData("A", "M9-023", "HARDWARE_ONLY")]
     [InlineData("A2", "M9-027", "IMPLEMENTATION_GAP")]
     [InlineData("A3", "M9-011", "IMPLEMENTATION_GAP")]
-    [InlineData("Y", "M11-016", "BLOCKED_EXTERNAL")]
+    [InlineData("Y", "M11-016", "RECOVERABLE_GAP")]
     [InlineData("I", "M4-013", "HARDWARE_ONLY")]
     public void UnresolvedUncertaintyIsVisibleInTheCheckItAffects(string check, string record, string status)
     {
