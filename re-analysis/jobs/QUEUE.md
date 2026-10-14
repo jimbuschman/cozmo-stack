@@ -99,3 +99,6 @@ anything. BOARD.md is history; this file is the live queue.
 | 18 | [R-BACKUP-UNLOCK](../research/requests/20261013-backup-unlock-and-stoull.md) | answered; checked (research/20261013-backup-unlock-and-stoull-check.md) (M15-043) |
 | 19 | [R-POSE-REST](../research/requests/20261013-remaining-pose-bodies.md) | answered; checked (research/20261013-remaining-pose-bodies-check.md) (M11-068) |
 | 20 | [R-DISPATCH-REST](../research/requests/20261013-dispatch-residue.md) | answered; checked (research/20261013-dispatch-residue-check.md) (M2-020) |
+| 21 | [R-QUADTREE](../research/requests/20261013-quadtree-rest.md) | open (M11-048; the map migration needs it) |
+| 22 | [R-SMALL-1](../research/requests/20261013-small-reads-1.md) | open (M11-072, M11-073) |
+| 23 | [R-SMALL-2](../research/requests/20261013-small-reads-2.md) | open (M15-044, M2-022) |
