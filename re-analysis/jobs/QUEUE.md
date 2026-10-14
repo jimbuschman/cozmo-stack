@@ -13,7 +13,7 @@ anything. BOARD.md is history; this file is the live queue.
    - Builder: write `status/<job>.md` with `CLAIMED Codex <date>`, then commit and push.
    - Research: no claim step.
 4. Run it under its own rules:
-   - builder jobs: `CODEX-BUILDER.md` rules 1–10;
+   - builder jobs: `CODEX-BUILDER.md` rules 1–12 (11: MISSING never in the engine log; 12: threads follow the original);
    - research jobs: `research/README.md`, plus the push rule below.
 5. Finish it.
    - Builder: write the report into `status/<job>.md`, beginning `DONE` or `BLOCKED`, then commit and push.

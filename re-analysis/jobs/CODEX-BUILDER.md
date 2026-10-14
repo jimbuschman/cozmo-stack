@@ -46,3 +46,10 @@ rules.
 
     A call with no C# counterpart is either built, or listed as MISSING with its address. Also **reopen the call target
     of every row you build on.** A row can misname a function: M1-024's D1 did.
+11. **A MISSING never goes into the engine log stream** (manager, 2026-10-14; B-POSE-1 and B-M11-1 both failed on it).
+    Report a MISSING with `SteppedBehavior.ReportMissing` (the stack's own channel, deduplicated). Never call
+    `EmitSourceLog`/`EmitEngineLog` or a VERIFY with a "MISSING" key or text. Engine log entries are only what the
+    original logs. A guard test enforces this.
+12. **Threads follow the original.** Code the original runs on one thread (Robot::Update, the message handlers) must not
+    move onto the vision worker or another thread in the stack, unless one gate is shared with every writer of the same
+    state. B-M11-1 failed on a race this way.
