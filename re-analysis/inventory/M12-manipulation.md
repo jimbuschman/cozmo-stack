@@ -969,3 +969,11 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | PlaceRelObjectHelper lifecycle, IMPLEMENTATION_GAP | M12-042 (new) |
 | PyramidBase interior geometry, RECOVERABLE_GAP | M12-043 (new) |
 | Legacy ctor CHOICE settled by the producers | M12-025 (note) |
+
+
+## Check of OV05 (manager, 2026-10-13; research/overnight/20261014-ov05-m12-039-check.md)
+
+| Change | Records |
+| --- | --- |
+| Placement approach angle read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-039 |
+| Class name in MISSING corrected | M12-030 (note) |

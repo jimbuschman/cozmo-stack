@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "a7d50228397de20064c86191406d60249594701afb2df97079346aca7f5fed59",
+  "inventory_sha256": "1468ef6b057c62c128c6571a60fe7c51dc58e75c1dfa86487aee2f89a48e2ee3",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -539,12 +539,13 @@
       "hardware_required": false
     },
     "M12-039": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ComputePlacementApproachAngle 0x005504A0 and the X/Y angle functions",
       "authority": "libcozmoEngine.so 3.4.0-1204: DriveToPlaceCarriedObjectAction::Init calls ComputePlacementApproachAngle 0x005504A0 (result codes 0x03000011, 0x03000004, 0x0300000B, 0x03000005 read; its body and the angle helper's inputs are readable but unread) and the helper 0x00550858 uses Rotation3d::GetAngleAroundXaxis / GetAngleAroundYaxis (PLT 0x004AB914 / 0x004AB908), which the C# stubs with NotSupportedException",
       "evidence": [
         "0x005504A0, 0x00550858..0x005508C4, PLT 0x004AB914, 0x004AB908",
-        "re-analysis/research/20260929-R-VIS-verify-M12-fix2.md objection 6"
+        "re-analysis/research/20260929-R-VIS-verify-M12-fix2.md objection 6",
+        "re-analysis/research/overnight/20261014-ov05-m12-039-check.md: B1 ComputePlacementApproachAngle 0x005504A0..0x0055071C; B2 GetRotatedParentAxis<Z> 0x005507A0..0x00550856, helper 0x00550858..0x005508C6; B3 RotationMatrix3d angles 0x0084B370..0x0084B47E (M11-068); B4 Radians 0x0084C832, 0x0084C846, 0x0084C87C..0x0084C936, 0x0084CB04..0x0084CB28."
       ],
       "live_path": true,
       "hardware_required": false
