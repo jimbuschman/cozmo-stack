@@ -11,6 +11,7 @@ namespace Cozmo.Protocol.Tests;
 /// M1-042. Every expected value comes from a row of re-analysis/inventory/M1-transport.md, named in each test.
 /// The engine runs over a fake transport port, ticked by hand, so the per-tick order is observable.
 /// </summary>
+[Collection("SteppedBehavior missing-report statics")]       // B9 reads the process-global _errG (EngineErrorState.ErrorFlagSet) at log time
 public class EngineAppLayerTests
 {
     // T3/T4: transport -> UpdateFullRobotState gate -> device route -> cliff store -> Touch Update.
