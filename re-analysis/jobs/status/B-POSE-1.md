@@ -1,4 +1,4 @@
-BLOCKED — B-POSE-1: adopted formatter authority contradicts the required call targets. No production port committed. Metadata commit/push: pending.
+BLOCKED — B-POSE-1: adopted formatter authority contradicts the required call targets. No production port committed. Metadata pushed: 74970f319523f751aa5ab0a996c93912f1e92fee.
 
 All three earlier blockers (Radians negative-pi, NaN row repair, GetTreeDepth filename) were corrected and are not the current blocker. Pull completed before selecting this first eligible job; claim pushed as 8b55e04e.
 
@@ -20,4 +20,4 @@ Manager instruction applied: pose-rows-recheck.md Manager decisions says “If t
 
 Manifest: only appended M11-065/M11-067 unresolved/test text; no status/title/evidence/authority/approval fields changed. Earlier notes retained. FIDELITY_GAPS.md regenerated. This is blocker metadata, not a completed arithmetic implementation.
 
-Validation: fidelity.py and --check passed (602 records); focused FidelityManifestTests passed 10/10 (642 ms); unchanged-production full suite passed 4695/4695 (3 m 45 s). No new arithmetic regression or JIT no-FMA claim; no production code changed; all untracked research files retained. No hardware run, verification packet, branch or worktree. Commit/push through normal hooks; never --no-verify.
+Validation: fidelity.py and --check passed (602 records); focused FidelityManifestTests passed 10/10 (642 ms); unchanged-production full suite passed 4695/4695 (3 m 45 s). No new arithmetic regression or JIT no-FMA claim; no production code changed; all untracked research files retained. No hardware run, verification packet, branch or worktree. Metadata rebase preserved both sides after main advanced; fidelity.py and --check passed again (604 records). Normal records-only push gate passed 786/786 (9 s), then pushed 74970f31. Never --no-verify. Queue stopped at this BLOCKED job.
