@@ -154,6 +154,9 @@ public sealed class DriveToPoseAction : ActionRunner, IDisposable
         MissingSource("M13-021 MovementComponent.MoveHeadToAngle primitive in Init is unbuilt; a queued MoveHeadToAngleAction would cancel the drive and is not substituted");
         _goalIndex.Value=0; // P5, shared byte +0x88.
         var native=_m.Robot.Motion.Path;
+        var planners=_m.GetNativePlanners();
+        planners.Configure(start.Value,Goals is {Count:>0}?Goals:new[]{goal},Profile,IgnoreObstacleIds);
+        native.SetNativePlanners(planners);native.ObjectsChangedInput=()=>_m.World.DidObjectsChange;
         var selectedPlanner=_m.Planner;
         int started=native.StartDrivingToPose(Goals is {Count:>0}?Goals.Count:1,_goalIndex,false,() =>
         {

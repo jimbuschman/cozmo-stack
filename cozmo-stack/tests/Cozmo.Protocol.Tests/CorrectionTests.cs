@@ -411,6 +411,7 @@ public class CorrectionTests
     /// that used to sit behind a planning failure is still gone (M13-005).
     /// </summary>
     [Fact]
+    [Trait("Fidelity", "M13-035")]
     public void ASoftObstacleDoesNotBlockTheGoal()
     {
         using var signals = SignalTestContext.Install();
@@ -434,7 +435,7 @@ public class CorrectionTests
 
         // the soft obstacle does not fail the plan; the action plans and sends a path
         Assert.Equal(ActionResult.Success, r);
-        Assert.Contains(drive.Trace, l => l.Contains("lattice plan"));
+        Assert.Equal(2, rig.M.NativePlanners!.Lattice!.CheckPlanningStatus);
         // the straight-line fallback that used to sit here is gone (M13-005)
         Assert.DoesNotContain(drive.Trace, l => l.Contains("straight line"));
         Assert.Contains(rig.M.Paths.Sent, m => m is ExecutePath);
@@ -442,11 +443,12 @@ public class CorrectionTests
 
     /// <summary>
     /// M13-005. A planning failure sends no path and does not fall back to a straight line. The shipped
-    /// import only ever makes soft obstacles, so a real goal is never rejected; this forces <c>PlanTo</c> to
-    /// return null (the engine's <c>Replan == 0</c>) and checks <c>DriveToPoseAction</c> returns the
+    /// import only ever makes soft obstacles, so a real goal is never rejected; this clears the worker run flag
+    /// (the engine's <c>Replan == 0</c>) and checks <c>DriveToPoseAction</c> returns the
     /// planning failure and sends nothing.
     /// </summary>
     [Fact]
+    [Trait("Fidelity", "M13-035")]
     public void APlannerFailureSendsNoPathEvenWhenTheStraightLineIsClear()
     {
         using var signals = SignalTestContext.Install();
@@ -456,25 +458,23 @@ public class CorrectionTests
         if (prims is null) return;
         using var rig = new Rig();
         Assert.True(rig.M.LoadPlanner(obb));
-        rig.M.Planner = new NullPlanner(new LatticeEnvironment(prims));
+        rig.M.Planner!.PlanningStarted += () => rig.M.Planner.SetRunFlag(false); // controlled cancellation input
         rig.Pump(); rig.Sent.Clear(); rig.M.Paths.Sent.Clear();
 
         var drive = new DriveToPoseAction(rig.M) { Goal = new Pose3d(Mat3.Identity, new Vec3(250, 0, 22)) };
-        var r = SignalTestContext.Result(drive.RunAsync(default), rig.Tick);
+        var r = SignalTestContext.Result(drive.RunAsync(default), () =>
+        {
+            rig.Pump();
+            if(rig.Robot.Motion.Path.DriveToPoseStatus==6)
+                rig.Send(new PathFollowingEvent { EventId=0, EventType=(byte)PathEventType.Interrupted }); // controlled C6 failure acknowledgement, M13-035
+        });
         rig.Pump();
 
         Assert.Equal(ActionResult.PathPlanningFailedAbort, r);
-        Assert.Contains(drive.Trace, l => l.Contains("no path sent"));
+        Assert.Equal(0, rig.M.NativePlanners!.Lattice!.CheckPlanningStatus);
         Assert.DoesNotContain(drive.Trace, l => l.Contains("straight line"));
         Assert.DoesNotContain(rig.M.Paths.Sent, m => m is ExecutePath);
         Assert.DoesNotContain(rig.Sent, m => m is ExecutePath);
-    }
-
-    /// <summary>Test double: <c>PlanTo</c> always returns null, the engine's <c>Replan == 0</c>.</summary>
-    private sealed class NullPlanner : LatticePlanner
-    {
-        public NullPlanner(LatticeEnvironment env) : base(env) { }
-        public override (LatticePlan Plan, IReadOnlyList<PathSegment> Path, Pose3d Goal)? PlanTo(Pose3d start, IReadOnlyList<Pose3d> goals, PathMotionProfile profile) => null;
     }
 
     // ---------------------------------------------------------------- 13: the native lift presets

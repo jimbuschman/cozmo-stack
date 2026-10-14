@@ -410,6 +410,7 @@ public class RFixBatch2Tests
     /// ends the action (0x00500202). Driven through DriveToPoseAction's live entry: the planner is made to wait, StopPlanning clears its flag, and nothing goes on the wire.
     /// </summary>
     [Fact]
+    [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
     public void M13_005_AStoppedPlanSendsNoPathThroughDriveToPoseAction()
     {
         var obb = ObbRoot();
@@ -424,12 +425,12 @@ public class RFixBatch2Tests
         var task = Task.Run(async () => { var run=drive.RunAsync(default); rig.Tick(); return await run; }); // planning now enters on the ActionList tick; its worker lets StopPlanning reach it
         Assert.True(planning.Wait(TimeSpan.FromMinutes(2)), "the planning worker never entered DoPlanning");
         rig.M.Planner.StopPlanning();
-        SignalTestContext.Run(task, () => { rig.Pump(); });
+        SignalTestContext.Run(task, () => { rig.Pump(); if(rig.Robot.Motion.Path.DriveToPoseStatus==6)rig.Send(new PathFollowingEvent{EventId=0,EventType=(byte)PathEventType.Interrupted}); }); // controlled C6 input, not a hardware timing claim (M13-035)
         Assert.True(task.IsCompleted);
         Assert.Equal(ActionResult.PathPlanningFailedAbort, task.Result);
         Assert.Equal(LatticePlanner.PlanningResult.Failure, rig.M.Planner.LastPlanningResult);
         Assert.DoesNotContain(rig.Sent, m => m is ExecutePath or AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn);
-        Assert.Contains(drive.Trace, l => l.Contains("PlanningFailed"));
+        Assert.Equal(0,rig.M.Planner.NativeRuntime!.CheckPlanningStatus);
     }
 
     // ------------------------------------------------------------------ M13-011: the segment words
@@ -1056,6 +1057,8 @@ public class RFixBatch2Tests
         if (prims is null) return;
         var planner = new LatticePlanner(new LatticeEnvironment(prims)) { ArtificialPlannerDelayMs = 50 };
         planner.StopPlanning();
+        Assert.True(planner.RunFlag); // Native StopPlanning cannot clear it without a running worker.
+        planner.SetRunFlag(false); // Explicit source input for this direct DoPlanning test.
         var result = planner.DoPlanning(new StateC(0, 0, 0), new[] { new StateC(100, 0, 0) }, out var plan);
         Assert.Equal(LatticePlanner.PlanningResult.Failure, result);
         Assert.Null(plan);

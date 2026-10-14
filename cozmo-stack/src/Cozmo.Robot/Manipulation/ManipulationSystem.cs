@@ -82,6 +82,8 @@ public sealed class ManipulationSystem : IDisposable
     /// for short, clear goals; LOCAL_POLICY fallback).
     /// </summary>
     public LatticePlanner? Planner { get; set; }
+    internal NativePlannerSet? NativePlanners;
+    internal NativePlannerSet GetNativePlanners()=>NativePlanners is null || NativePlanners.IsDisposed?NativePlanners=new(this):NativePlanners;
 
     /// <summary>Attaches the lattice planner from an OBB root's <c>cozmo_mprim.json</c>; false when the file is missing.</summary>
     public bool LoadPlanner(string obbRoot)
@@ -89,6 +91,7 @@ public sealed class ManipulationSystem : IDisposable
         var prims = MotionPrimitiveSet.FromObb(obbRoot);
         if (prims is null) return false;
         Planner = new LatticePlanner(new LatticeEnvironment(prims));
+        NativePlanners?.Dispose();NativePlanners=null;GetNativePlanners(); // native worker exists before the first ComputePath
         return true;
     }
 
@@ -210,6 +213,7 @@ public sealed class ManipulationSystem : IDisposable
 
     public void Dispose()
     {
+        NativePlanners?.Stop();NativePlanners?.Dispose();
         Follower.Dispose();
         Docking.Dispose();
     }

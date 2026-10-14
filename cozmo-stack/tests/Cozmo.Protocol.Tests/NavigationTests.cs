@@ -190,6 +190,7 @@ public class NavigationTests
     }
 
     [Fact]
+    [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
     public void DriveToPoseUsesTheLatticePlannerAndTheFakeRobotArrives()
     {
         using var signals = SignalTestContext.Install();
@@ -201,13 +202,14 @@ public class NavigationTests
         var task = drive.RunAsync(default);
         SignalTestContext.Run(task, () => rig.Pump());
         Assert.Equal(ActionResult.Success, task.Result);
-        Assert.Contains(drive.Trace, l => l.Contains("lattice plan"));
+        Assert.Equal(2,rig.M.NativePlanners!.Lattice!.CheckPlanningStatus);
         Assert.InRange(rig.X, 240, 260); Assert.InRange(rig.Y, 110, 130);
         Assert.InRange(Math.Abs(StraightLinePlanner.Wrap(rig.Angle - Math.PI / 2)), 0, 0.05);
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine || m is AppendPathSegmentArc);
     }
 
     [Fact]
+    [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
     public void DriveToObjectWithThePlannerTreatsOtherCubesAsObstaclesButNotTheTarget()
     {
         using var signals = SignalTestContext.Install();

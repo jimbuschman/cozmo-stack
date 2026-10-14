@@ -1483,7 +1483,7 @@ internal sealed partial class PathComponent
     private readonly CozmoRobot _robot;
     private readonly HashSet<string> _missingReported = new();
 
-    internal PathComponent(CozmoRobot robot) { _robot=robot; PathDolerClearPath=ClearDoler; }
+    internal PathComponent(CozmoRobot robot) { _robot=robot; InitNativeShortPlanners(); PathDolerClearPath=ClearDoler; }
 
     /// <summary>
     /// +0x38: the ERobotDriveToPoseStatus (M12-023). 4 (Ready) from the constructor (PathComponent::PathComponent 0x00648B14 movs r0,#4;

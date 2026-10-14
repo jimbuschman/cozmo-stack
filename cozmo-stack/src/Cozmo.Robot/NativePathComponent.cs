@@ -21,6 +21,14 @@ internal sealed partial class PathComponent
     private Func<PathPlannerModelResult>? _computeModel;
     private Func<PathPlannerModelResult>? _fallbackModel;
     private PathPlannerModelResult? _plan;
+    private NativePlannerSet? _nativePlanners;
+    internal NativeShortPlanner NativeFace=null!,NativeMinimal=null!;
+    private void InitNativeShortPlanners()
+    {
+        SourceLogSink source=(level,channel,key,text)=>_robot.Engine.EmitSourceLog(level,channel,key,text);
+        Action<string> missing=text=>_robot.Engine.EmitStackLog("MISSING: "+text);
+        NativeFace=new(false,source,missing);NativeMinimal=new(true,source,missing);
+    }
     private Action<string>? _modelMissing;
     internal Func<bool>? PlannerPathIsSafe;
     internal Func<bool>? PlannerSkipSafetyCheck;
@@ -33,8 +41,9 @@ internal sealed partial class PathComponent
     private RetainedSubscription? _pathSubscription;
     internal void Attach(EngineRobot owner){_pathSubscription?.Dispose();_pathSubscription=owner.SubscribeMessage(new PathFollowingEvent().Id,m=>owner.ActionList.WithGate(()=>OnPathEvent((PathFollowingEvent)m)),"Path");}
     private PathGoalIndex? _goalIndex;
-    internal int PlannerStatus => _plan?.Status??1;
-    private void ModelGap()=>_modelMissing?.Invoke("M13-033 planner choice/status use the stack's existing planner; native planner internals remain unread");
+    internal int PlannerStatus => _nativePlanners?.Current?.CheckPlanningStatus??_plan?.Status??1;
+    private void ModelGap(){if(_nativePlanners?.Current is null)_modelMissing?.Invoke("M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate");}
+    internal void SetNativePlanners(NativePlannerSet planners)=>_nativePlanners=planners;
     private bool StatusMask(uint mask){int shift=DriveToPoseStatus&0x7F;return shift<32 && ((mask>>shift)&1)!=0;} // ARM register LSR, not C#'s modulo-32 shift.
     internal bool IsActive => StatusMask(0xE);
     internal bool HasPathToFollow => StatusMask(0xC);
@@ -53,7 +62,7 @@ internal sealed partial class PathComponent
     }
     private bool SendNative(RobotMessage message)=>SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
     private void ErasePath(){if(ErasePathHook is {} erase)erase(CozmoEngine.RobotId);else MissingOnce("M12-032 VizManager.ErasePath 0x006BFACE recipient is unbuilt");}
-    private void ResetMachine(){_pathSubscription?.Dispose();_pathSubscription=null;PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
+    private void ResetMachine(){_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
     internal void ClearDoler(){_dolerPath=Array.Empty<PathSegment>();LastDoledIndex=0xFFFF;DoleSegmentCount=0;}
     internal void SetDolerPath(IReadOnlyList<PathSegment> path)
     {
@@ -104,7 +113,7 @@ internal sealed partial class PathComponent
     internal int StartDrivingToPose(int goals,PathGoalIndex index,bool manual,Func<PathPlannerModelResult> compute,Action stop,Action<string> missing)
     {
         if(goals==0){Warning("PathComponent.StartDrivingToPose.NoTargetPoses","Can't start driving with no provided targets");return 1;}
-        _modelMissing=missing;missing("M13-033 planner choice/status use the stack's existing planner; native planner internals remain unread");
+        _modelMissing=missing;
         if(Field47){PlannerSlot10?.Invoke();Field47=false;}
         if(IsActive){Info("PathComponent.StartDrivingToPose.AlreadyBusy",$"Path component status was '{Name(DriveToPoseStatus)}'. Aborting current plan");Abort(SendNative);}
         Field46=manual;_goalIndex=index;SharedPath=index;
@@ -124,15 +133,17 @@ internal sealed partial class PathComponent
     internal void SelectPlanner(int goals)
     {
         if(goals==0){Warning("PathComponent.SelectPlanner.NoTargets","can't select a planner with no target poses");return;}
-        ModelGap(); // P29 SelectPlannerHelper is explicitly unread (M13-033).
+        _nativePlanners?.Select();ModelGap();
     }
     internal bool StartPlanner()
     {
+        if(_nativePlanners?.Current is not null){if(_nativePlanners.StartPlanning()==0)return ReplanWithFallbackPlanner();Field47=true;PlannerSlot10=_nativePlanners.Stop;return true;}
         if(_computeModel is null){Error("PathComponent.StartPlanner.NoSelectedPlanner","Must select planner before starting");return false;}
         _plan=_computeModel();if(_plan.Status==0)return ReplanWithFallbackPlanner();Field47=true;return true;
     }
     internal bool ReplanWithFallbackPlanner()
     {
+        if(_nativePlanners?.Current is not null){bool ok=_nativePlanners.UseFallback();if(ok){Field47=true;PlannerSlot10=_nativePlanners.Stop;}return ok;}
         if(_fallbackModel is null)return false;_computeModel=_fallbackModel;_fallbackModel=null;
         if(!StartPlanner())return false;ModelGap();MissingOnce("M12-032 robot.fallback_planner_used 0x00649EBC native old-name payload unavailable");return true;
     }
@@ -153,14 +164,20 @@ internal sealed partial class PathComponent
     }
     internal void HandlePlanComplete()
     {
+        if(_nativePlanners?.Current is not null)_plan=_nativePlanners.Read();
         if(_plan is not {} plan)return;
         if((byte)plan.Path.Count!=0)
         {
             if(PlannerSkipSafetyCheck is {} skip && !skip() && PlannerPathIsSafe is {} safe && !safe())
             {if(ReplanWithFallbackPlanner())Info("PathComponent.Update.Planner.Collisions","Planner returned a path with obstacles, using fallback planner instead");else{Abort(SendNative);SetStatus(6);Info("PathComponent.Update.Planner.Collisions.ReplanFail","Planner returned a path with obstacles, can't get valid fallback plan, failing");}return;}
+            else if(_nativePlanners?.Current is {} selected)
+            {
+                if(!selected.SkipsSafetyCheck && _nativePlanners.Lattice is not null)MissingOnce("M13-034 slot 0x18 -> 0x1C PathIsSafe body needs separately-owned PathSegment geometry helpers; candidate short path safety is not claimed source-backed");
+            }
             else if(PlannerSkipSafetyCheck is null)ModelGap();
         }
-        ModelGap();MissingOnce("M12-032 robot.plan_complete 0x0064A024 native planner-name payload unavailable");
+        if(_nativePlanners?.Current is {} chosen)_robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"robot.plan_complete",chosen.Name,new Dictionary<string,string>{{"$data",((byte)plan.Path.Count).ToString(System.Globalization.CultureInfo.InvariantCulture)}});
+        else{ModelGap();MissingOnce("M12-032 robot.plan_complete 0x0064A024 native planner-name payload unavailable");}
         if((byte)plan.Path.Count!=0)
         {
             Info("PathComponent.Update.Planner.CompleteWithPlan","Running planner complete with a plan");
@@ -226,6 +243,13 @@ internal sealed partial class PathComponent
     }
     internal void RestartPlannerIfNeeded()
     {
+        if(Field47)return;
+        if(_nativePlanners?.Current is not null)
+        {
+            int code=_nativePlanners.Restart();if(code==1)Field47=true;
+            else if(code==0 && !ReplanWithFallbackPlanner()){Abort(SendNative);SetStatus(6);}
+            return;
+        }
         if(ComputeNewPathIfNeeded is null){ModelGap();return;}
         if(ComputeNewPathIfNeeded()){Field47=true;MissingOnce("M12-032 RestartPlannerIfNeeded log at 0x00649C64 arguments unbuilt");}
         else if(!ReplanWithFallbackPlanner()){Abort(SendNative);SetStatus(6);MissingOnce("M12-032 RestartPlannerIfNeeded failure info/debug at 0x00649C9E/0x00649CE0 arguments unbuilt");}

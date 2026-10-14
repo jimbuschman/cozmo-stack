@@ -893,6 +893,7 @@ public sealed class LatticeEnvironment
 /// <summary>A plan: the start state and the primitives taken from it (<c>Anki::Planning::xythetaPlan</c>).</summary>
 public sealed record LatticePlan(LatticeState Start, IReadOnlyList<MotionPrimitive> Actions, float Cost, int Expansions)
 {
+    internal IReadOnlyList<float> Penalties {get;init;}=Array.Empty<float>();
     public IEnumerable<LatticeState> States()
     {
         var s = Start; yield return s;
@@ -911,8 +912,8 @@ public sealed record LatticePlan(LatticeState Start, IReadOnlyList<MotionPrimiti
 /// <b>The heuristic shares one best-cost map with the goal expansion.</b> <c>ExpandCollisionStatesFromGoal</c> writes the planner's map (planner+0xAC) and <c>heur</c> reads it first; a state not in it
 /// goes to <c>heur_internal</c>, whose value is NOT stored back: <c>min over goals of (float)(1/60.0 * (double)distance + (double)goalCost)</c> with the distance <c>GetDistanceBetween(State_c, State)</c>.
 ///
-/// NOT BUILT (MISSING): the reuse of a still-safe previous plan (<c>PlanIsSafe</c>, 0x008587AC..0x008587C6) - the live caller always passes the replan flag, which skips it - and
-/// <c>LatticePlannerImpl::GetCompletePath</c> (<see cref="ToPath"/> is a labelled stand-in for it).
+/// Native worker/reuse dispatch is owned by NativeLatticePlannerRuntime. ToPath remains an explicitly reported
+/// candidate where native cached primitive paths and PathSegment helpers have not been built.
 /// </summary>
 // fidelity: M13-018
 public class LatticePlanner
@@ -949,13 +950,16 @@ public class LatticePlanner
 
     /// <summary><c>LatticePlannerImpl::StopPlanning</c> 0x004FD1BA: clear the run flag.</summary>
     // fidelity: M13-018
-    public void StopPlanning() => RunFlag = false;
+    internal NativeLatticePlannerRuntime? NativeRuntime;
+    public void StopPlanning() => NativeRuntime?.StopPlanning();
+    internal void SetRunFlag(bool value)=>RunFlag=value;
+    internal void SetReplanFlag(bool value)=>ReplanFlag=value;
 
     /// <summary>The engine's <c>DoPlanning</c> result: 0 failure, 3 empty plan, 2 success.</summary>
     // fidelity: M13-018
     public enum PlanningResult { Failure = 0, EmptyPlan = 3, Success = 2 }
 
-    /// <summary>The result of the last <see cref="PlanTo"/>: the engine's <c>DoPlanning</c> codes.</summary>
+    /// <summary>Host outcome of the last PlanTo; production observes NativeRuntime's F8.</summary>
     // fidelity: M13-018
     public PlanningResult LastPlanningResult { get; private set; } = PlanningResult.Failure;
 
@@ -964,10 +968,8 @@ public class LatticePlanner
     /// 1 (0x004FF310) and import the world's obstacles. <paramref name="forceReplan"/> true selects the
     /// 7.0/6.0 padding pair (bool 0 at 0x004FEEFE); false would first select 2.0/1.0 (bool 1 at 0x004FEC38)
     /// and then reuse a safe old plan through <c>FindClosestPlanSegmentToPose</c> 0x00856310 and
-    /// <c>PlanIsSafe</c> 0x00850B78 (return 2 at 0x004FF42E). That false branch is <b>unreachable engine
-    /// code</b>: all three recovered <c>ComputePath</c> callers pass true (<c>ComputePathHelper</c> 0x004FD330,
-    /// <c>FaceAndApproachPlanner</c> 0x004F355C, <c>MinimalAnglePlanner</c> 0x00503BC2; Appendix G 4d), so
-    /// only the true/live path is built here.
+    /// <c>PlanIsSafe</c> 0x00850B78. The false branch is live through PathComponent restart.
+    /// This method is the legacy obstacle-import tool surface; production dispatch uses NativeRuntime.
     /// </summary>
     // fidelity: M13-018
     public void StartPlanning(BlockWorld world, uint? carriedObjectId, bool forceReplan, IEnumerable<uint>? ignore = null)
@@ -980,7 +982,8 @@ public class LatticePlanner
     /// <summary>
     /// <c>LatticePlannerImpl::DoPlanning</c> 0x00500090: sleep in <c>min(remaining, 10) ms</c> chunks up to
     /// <see cref="ArtificialPlannerDelayMs"/> (impl+0x108) checking the run flag each iteration, then plan.
-    /// Returns 0 when the plan failed, 3 when it succeeded with an empty segment list and 2 on success.
+    /// Host outcome classification only. Native callers observe F8; the native DoPlanning return register
+    /// is clobbered by cleanup and is not a recovered return-value ABI.
     /// </summary>
     // fidelity: M13-018
     internal event Action? PlanningStarted;
@@ -1283,12 +1286,14 @@ public class LatticePlanner
     private LatticePlan? BuildPlan(LatticeState start, uint goalId)
     {
         var steps = new List<MotionPrimitive>();
+        var penalties=new List<float>();
         uint s = goalId;
         int n = 0;
         while (s != start.Id)
         {
             var e = _table[s];
             steps.Add(e.Prim!);
+            penalties.Add(e.Penalty);
             s = e.Parent;
             n++;
             if (n >= 1000)                                                              // 0x0085A616 cmp r5,#0x3e8; blo loops: the 1000th step falls to the error
@@ -1298,7 +1303,8 @@ public class LatticePlanner
             }
         }
         steps.Reverse();
-        return new LatticePlan(start, steps, LastFinalCost, _expansions);
+        penalties.Reverse();
+        return new LatticePlan(start, steps, LastFinalCost, _expansions){Penalties=penalties};
     }
 
     /// <summary>The planner entry from poses: <c>LatticePlannerImpl</c> turns a <c>Pose3d</c> into a <c>State_c</c> (x, y, <c>GetAngleAroundZaxis</c>) as binary32 (0x004FEB84..0x004FEBA6).</summary>
@@ -1331,7 +1337,7 @@ public class LatticePlanner
                     if (b.EndTheta == b.StartTheta && (b.EndX != 0 || b.EndY != 0) && bAct.Reverse == action.Reverse) j++; else break;
                 }
                 var s1 = states[j + 1];
-                float speed = action.Reverse ? -p.ReverseSpeedMmps : p.SpeedMmps;
+                float speed = action.Reverse ? -p.SpeedMmps : p.SpeedMmps; // Native ApplyMotionProfile uses profile+0 with source direction.
                 path.Add(new PathSegment.Line(res * (float)s0.X, res * (float)s0.Y, res * (float)s1.X, res * (float)s1.Y, speed, p.AccelMmps2, p.DecelMmps2));
                 i = j + 1;
                 continue;

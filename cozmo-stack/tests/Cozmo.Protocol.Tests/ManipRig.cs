@@ -97,7 +97,7 @@ internal sealed class Rig : IDisposable
         // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and
         // exercise the shared handler; NoAnimation fixture cases are labelled separately from B-M5-19's default-input case.
         M.DrivingAnimationsForTest = () => new GeometryOnlyDrivingDependency();
-        // M12-032: actual C6 messages and RobotState drive status; only planner internals remain modelled under M13-033.
+        // M12-032: actual C6 messages and RobotState drive status; M13-033 uses its real worker when assets load.
         M.ErasePlannerObstaclesForTest=_=>{};
         // the look-around waits are real seconds on a robot; a rig takes them instantly
         M.Wait = (t, c) => Task.CompletedTask;
@@ -237,11 +237,17 @@ internal sealed class Rig : IDisposable
     /// </summary>
     public List<RobotMessage> Pump(int maxRounds=50)
     {
+        // M13-035 HARDWARE_ONLY: freeze fixture time while the actual CPU worker finishes.
+        // This harness wait asserts no production tick count or scheduling latency.
+        if(M.NativePlanners?.Lattice is {} lattice && (lattice.F0 || lattice.F3))
+            Xunit.Assert.True(SpinWait.SpinUntil(()=>!lattice.F0 && !lattice.F3,TimeSpan.FromSeconds(30)),"planner worker did not finish");
         bool queuedWireWork=_signalContext?.ModelWorkPending??false;
         _signalContext?.BeginFirmwarePump();
         var fresh = new List<RobotMessage>();
         for (int round = 0; round < maxRounds; round++)
         {
+            if(M.NativePlanners?.Lattice is {} active && (active.F0 || active.F3))
+                Xunit.Assert.True(SpinWait.SpinUntil(()=>!active.F0 && !active.F3,TimeSpan.FromSeconds(30)),"planner worker did not finish");
             var frames = Robot.Transport.OfflineOutbound;
             int before = fresh.Count;
             ushort lastSeq = 0; bool anyReliable = false;
