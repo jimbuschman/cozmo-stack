@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "632f546f185db3beb545cc5a4bbe91a40d5c3df0a7decbd7105ff8405d9ff8fe",
+  "inventory_sha256": "a9673ef75dfbe25b2c9707432fcba7d24c506c4d5ee02cb9f09d55e5a46db30c",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -575,12 +575,13 @@
       "hardware_required": false
     },
     "M11-047": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The quad tree's border walk (FindBorders, AddBorderWaypoint, FillBorder)",
       "authority": "libcozmoEngine.so 3.4.0-1204: the border cache key is type<<32|flags, a new entry is dirty (flag byte 1); any node type change or destruction marks every entry dirty; the waypoint is {from, to, dir}, from a type-9 node with a flagged neighbour, walked by a wall-follower; FillBorder inserts a one-point polygon at each de-duplicated from-node centre straight into QuadTreeNode::Insert (0x0068A206; no NaN gate, no Expand), so a level-0 seed becomes one type-10 cell and a merged block four type-10 cells around its centre. FindBorders iterates an unordered_set of node pointers, so the exact waypoint order depends on heap addresses and is not read; kDebugFindBorders (0x00C88160) is unreferenced (the pc-relative pairs at 0x00689AB8, 0x0068ABAC, 0x0068B1EE resolve to 0x00C88161, the empty piecewise_construct_t)",
       "evidence": [
         "0x00689AB8, 0x0068ABAC, 0x0068B1EE, 0x0068A206, 0x00689ACC, 0x0068B1F4",
-        "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md rows 4.x; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (4.1, 4.2, 4.5 PASS; 4.7 corrected)"
+        "re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md rows 4.x; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (4.1, 4.2, 4.5 PASS; 4.7 corrected)",
+        "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: rows a-g. FindSingleNeighbor 0x006881B4..0x00688214 (table 0x01051064), AddSmallestDescendants 0x00688104..0x006881B0, AddSmallestNeighbors 0x00688220..0x0068824E; cache 0x00689AA8..0x00689AE8, 0x0068C18A..0x0068C242, InvalidateBorders 0x0068923A..0x0068928A; CheckedInfo 0x0068A9F4..0x0068AB94, 0x0068C244..0x0068C286; FindBorders 0x0068AB98..0x0068B096; waypoints 0x0068A998..0x0068A9F2, 0x0068BC90..0x0068BD62; FillBorder 0x00689FAC..0x0068A2D6; FillBorderInternal 0x006813B0..0x00681400."
       ],
       "live_path": true,
       "hardware_required": false
@@ -916,6 +917,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov13-m11-055-check.md: \"Still unread\": Camera::~Camera (PLT 0x004A7D68), ImageCache (PLT 0x004BEE38), CLAHE (PLT 0x004BEF70), FaceRecognizer trees 0x0086A0DA..0x0086A1C4, PreActionPose/ActiveLED 0x004E6956..0x004E6966, FaceRecognitionMatch 0x004F5EBA, handle specialisations 0x004EF1C2/0x004EF1CC, VisionSystem+0x14 writers."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-079": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Quad-tree border consumer: GetBorders, CalculateBorderWaypointCenter, MakeBorderSegment, HasBorders/HasBorderSeed, and the caller AIInfoAnalysisProcCalculateInterestingRegions",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: GetBorders 0x006894E0..0x00689AA6; CalculateBorderWaypointCenter 0x00689AF0..0x00689C08; MakeBorderSegment 0x00689C08..0x00689D80; HasBorders 0x00689354..0x006893AE; HasBorderSeed 0x006893B8..0x006894A6; MemoryMap vt+0x28 0x00681702, vt+0x2C 0x00681734; caller 0x00574FCC (seed 9, table 0x00C59AE0, two calls)."
       ],
       "live_path": true,
       "hardware_required": false

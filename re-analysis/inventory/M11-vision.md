@@ -1554,3 +1554,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Unread teardown leaves, RECOVERABLE_GAP | M11-078 (new) |
 | OKAO justification weak (operator question) | M11-016 (note) |
 | Verify sink | M11-077 (note) |
+
+
+## Check of OV11 (manager, 2026-10-14; research/overnight/20261014-ov11-m11-047-check.md)
+
+| Change | Records |
+| --- | --- |
+| Border walk read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (rows a-g); seed order an operator decision | M11-047 |
+| Border consumer, RECOVERABLE_GAP | M11-079 (new) |
+| Notes | M11-048, M11-017, M11-045 |

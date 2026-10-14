@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-13",
+  "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "1590d41c62ffe6bdc9a06e3e5881b1ef485e5f4673b1c9c14425940be0377f8d",
+  "inventory_sha256": "ddd2fcf6249c44c87997052c1fec696a2b833e9445b0ea18755be0d575a17248",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -609,6 +609,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov01-m12-027-check.md: S1-S3 rows. BroadcastObjectPoseStateChanged state tail 0x00506288..0x005062DA (vtable +0xC gate; base returns 0 at 0x004E0240); OnActiveObjectPoseStateChanged 0x00639828..0x006398D8: PlayLightAnim(id, trigger 0x25 Visible or 1 Connected, layer 2, empty function, false, zeroed ObjectLights (memclr8 0x75 bytes, +0x78/+0x7C at 0x00639856/0x0063988C), 0). Unity CubeAnimationTrigger.cs (names, authority 2)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-050": {
+      "status": "RECOVERABLE_GAP",
+      "title": "libc++ __next_prime (unordered-container bucket counts)",
+      "authority": "libc++_shared.so (shipped in the APK).",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: libc++_shared.so 0x0003B038 (Thumb, 1640 bytes); used by every unordered_map/unordered_set rehash in the engine (e.g. 0x0068B68A); M4-011's \"2, 5, 11, 23\" relies on it."
       ],
       "live_path": true,
       "hardware_required": false

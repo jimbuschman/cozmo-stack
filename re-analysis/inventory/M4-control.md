@@ -758,3 +758,11 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | --- | --- |
 | Time-sync flag also gates the lift update | M4-020 (note) |
 | Cube-light pose-state callback, IMPLEMENTATION_GAP | M4-049 (new) |
+
+
+## Check of OV11 (manager, 2026-10-14; research/overnight/20261014-ov11-m11-047-check.md)
+
+| Change | Records |
+| --- | --- |
+| libc++ __next_prime, RECOVERABLE_GAP | M4-050 (new) |
+| Note | M4-011 |
