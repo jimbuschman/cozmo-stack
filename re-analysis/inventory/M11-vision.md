@@ -1563,3 +1563,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Border walk read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (rows a-g); seed order an operator decision | M11-047 |
 | Border consumer, RECOVERABLE_GAP | M11-079 (new) |
 | Notes | M11-048, M11-017, M11-045 |
+
+
+## Operator decisions (2026-10-14)
+
+| Change | Records |
+| --- | --- |
+| OKAO is shipped and readable: BLOCKED_EXTERNAL -> RECOVERABLE_GAP, ported as a later layer | M11-016 |
+| Border-walk seed order: insertion order (approved departure) | M11-047 |

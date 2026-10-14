@@ -122,6 +122,11 @@ stack implements that feature.
   image with a visible MISSING, where the original would decode it. The operator's robot sent only encoding 8 (M3-050),
   and the engine cannot request 5/6/7.
 - **M2-017, failed field reads** (operator, 2026-10-09): 0/false; the original leaves uninitialised stack contents.
+- **M11-047, the border-walk seed order** (operator, 2026-10-14).
+  - **The original:** iterates a type set (`unordered_set` of quad-tree node pointers, murmur2 hash) whose order follows
+    the phone's heap addresses (bionic malloc, not shipped).
+  - **The stack:** iterates the seeds in insertion order (the order the nodes entered the type set), deterministically.
+    Everything else in the walk stays exact (`research/overnight/20261014-ov11-m11-047-check.md`).
 
 Apply no other departure without the operator.
 

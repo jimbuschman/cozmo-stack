@@ -82,7 +82,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 41 | [B-M13-4](B-M13-4.md) | open, after B-M12-3 (movement/track-layer wrappers M13-021; turn CheckIfDone M13-022; M13-020; TrackObjectAction M13-036; path abort/destruction M13-029, corner sort M13-023, pose destruction M11-077) |
 | 42 | [B-M11-3](B-M11-3.md) | open, after B-M13-4 (BlockWorld observation-path rows from OV10: M11-041/013/062/037/007/044/052) |
 | 43 | [B-M11-4](B-M11-4.md) | open, after B-M11-3 (vision/history/world/pose/map teardown, M11-055) |
-| 44 | [B-M11-5](B-M11-5.md) | open, after B-M11-4 (quad-tree border walk M11-047; seed order MISSING pending operator) |
+| 44 | [B-M11-5](B-M11-5.md) | open, after B-M11-4 (quad-tree border walk M11-047; seed order = insertion order, operator 2026-10-14) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

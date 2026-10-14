@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "a9673ef75dfbe25b2c9707432fcba7d24c506c4d5ee02cb9f09d55e5a46db30c",
+  "inventory_sha256": "928a2c8f541edf66a08e25b3b4686a6398854d3df6c631d0e16a8a435bd89f45",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -209,7 +209,7 @@
       "hardware_required": false
     },
     "M11-016": {
-      "status": "BLOCKED_EXTERNAL",
+      "status": "RECOVERABLE_GAP",
       "title": "Face, pet and motion detection",
       "authority": "Omron OKAO, 177 OKAO_* exports of proprietary code; no Anki algorithm exists to transcribe",
       "evidence": [
