@@ -11475,7 +11475,7 @@
         "Call targets from NVStorageComponent: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, destructor 0x0051A5F0; backup-read sink 0x0051DF34 (re-analysis/research/20261010-nv-write-dispatch-rows.md; settling pass).",
         "re-analysis/research/20261013-backup-manager-rest-check.md: WriteBackupFile 0x0051A66C..0x0051A7F6 (onboarding gate, key/len/data format, Filename not set error, WriteFile \"wb\" 0x0080385A..0x008038D4), committed-map order (libc++ unordered_map, identity hash, growth 0x0051B45C..0x0051B4A2, small primes), IsValidTag 0x0051AC26..0x0051AC60, ReadAll 0x0051AC76..0x0051AD40 (+0x58 gate, ordinal/total), sink 0x0051DF35..0x0051DFFE, QueueDataToWrite 0x0051AE0E..0x0051AE90, WriteDataForTag 0x0051B068..0x0051B1F2, WipeAll 0x0051B530..0x0051B54A, dtor 0x0051A5F0..0x0051A636."
       ],
-      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-backup-manager-rest-check.md): build (job B-M15-1). Order exact up to 211 buckets (beyond: M15-043). The reads-versus-C9 order (an early sink WriteBackupFile logs Filename not set) is M3's queue order. Previous notes: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the Backup manager subscribes C9 in the NVStorage constructor (0x00519B78, gated on HasExternalInterface 0x00519B34) -> RobotConnected 0x0051A010 (unread), first on C9 before Impl and the RIC. Split 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): RobotConnected is M15-039; the constructor side effects are M15-038. Still unread here: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, the dtor 0x0051A5F0, the sink 0x0051DF34, WriteBackupFile 0x0051A66C..0x0051A907.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-backup-manager-rest-check.md): build (job B-M15-1). Order exact up to 211 buckets (beyond: M15-043). The reads-versus-C9 order (an early sink WriteBackupFile logs Filename not set) is M3's queue order. Previous notes: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns, from the M3 split: the RDBM read sink 0x0051DF34 (M3-034), the backup call after a write-family result (M3-031/M3-043: WipeAll when op == 3, otherwise WriteDataForTag) and QueueDataToWrite (M3-043), and the destruction reached at 0x00643F48 (M3-038). Before: RECOVERABLE_GAP: extract the four bodies and the sink. The NV callers log visible MISSING lines until then. R-SUBSCRIBERS check (re-analysis/research/20261013-robot-message-subscribers-check.md): the Backup manager subscribes C9 in the NVStorage constructor (0x00519B78, gated on HasExternalInterface 0x00519B34) -> RobotConnected 0x0051A010 (unread), first on C9 before Impl and the RIC. Split 2026-10-13 (re-analysis/research/20261013-test-loggers-and-backup-check.md): RobotConnected is M15-039; the constructor side effects are M15-038. Still unread here: QueueDataToWrite 0x0051AE04, WriteDataForTag 0x0051B060, WipeAll 0x0051B530, the dtor 0x0051A5F0, the sink 0x0051DF34, WriteBackupFile 0x0051A66C..0x0051A907. R-BACKUP-UNLOCK check (re-analysis/research/20261013-backup-unlock-and-stoull-check.md): rehash E:0x0051DD18..0x0051DDA6 and __rehash E:0x0051DDA8..0x0051DEC0 are standard libc++ (read); __next_prime is fully read (C:0x0003B038..0x0003B656), so the order is exact for any bucket count; the 211-bucket limit is lifted.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11595,7 +11595,7 @@
       ],
       "effect": "What a restore writes to the robot and reports, and the backup file writes around it.",
       "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: build (job B-M15-1). Input: M3-063. Operator question pending: a malformed name/stats/backup file reaches std::terminate (stoull, JsonCpp, ParseBackupFile); until ruled, a visible MISSING at each point.",
+      "unresolved": "IMPLEMENTATION_GAP: build (job B-M15-1). Input: M3-063. Operator question pending: a malformed name/stats/backup file reaches std::terminate (stoull, JsonCpp, ParseBackupFile); until ruled, a visible MISSING at each point. Superseded 2026-10-13: the malformed-file throws (stoull, JsonCpp, ParseBackupFile) fall under the M1-034 standing rule for crash paths (AGENTS.md, operator 2026-10-13), not a pending operator question.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11629,7 +11629,7 @@
       ],
       "effect": "Which backups the app is offered and whether it is prompted.",
       "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: build (job B-M15-1); stoull is the unread record. Input: M3-063. Operator question pending: a malformed name/stats/backup file reaches std::terminate (stoull, JsonCpp, ParseBackupFile); until ruled, a visible MISSING at each point.",
+      "unresolved": "IMPLEMENTATION_GAP: build (job B-M15-1); stoull is the unread record. Input: M3-063. Operator question pending: a malformed name/stats/backup file reaches std::terminate (stoull, JsonCpp, ParseBackupFile); until ruled, a visible MISSING at each point. Superseded 2026-10-13: the malformed-file throws (stoull, JsonCpp, ParseBackupFile) fall under the M1-034 standing rule for crash paths (AGENTS.md, operator 2026-10-13), not a pending operator question.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11637,16 +11637,34 @@
     {
       "id": "M15-043",
       "subsystem": "M15-freeplay",
-      "title": "Backup unread pieces: RequestUnlockDataFromBackup (0x6E) internals, std::stoull (libc++_shared), __next_prime above 211, JsonCpp throw paths",
+      "title": "RequestUnlockDataFromBackup (live entry 0x0052BE7A), GetDefaultUnlocks/InitConfig, std::stoull, libc++ __next_prime, JsonCpp asUInt/getMemberNames throws",
+      "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): U1/U2: RobotEventHandler subscription 0x005270E8 (called 0x00525970), handler 0x0051C5E4..0x0051C8C4; unread UnlockedIdsList::Unpack (PLT 0x004A8518), GetDefaultUnlocks (PLT 0x004A8554), IExternalInterface +0x1C, 0x0051C8FE..0x0051C930, 0x005257EE..0x00525970, 0x00529BC0; libc++_shared stoull 0x00065378..0x00065510 and __next_prime 0x0003B074..0x0003B6A0; Json::Value::asUInt and getMemberNames (0x008E6C68) throw paths.",
+        "re-analysis/research/20261013-backup-unlock-and-stoull-check.md (and re-analysis/research/20261013-backup-unlock-and-stoull.md): handler 0x0051C5E4..0x0051C944, subscription 0x005270F0 (gate 0x005257E8..0x005257EE), live entry 0x0052BE7A (0x00529BC0 dead), Unpack 0x00795DA6..0x00795E98, stale destination words (0x0051C63E..0x0051C696, read 0x0051C6BC), fallbacks 0x0051C822..0x0051C8C4, GetDefaultUnlocks 0x0064C09C..0x0064C0C8, InitConfig 0x0064BB68..0x0064BDB4 (per-entry DefaultValue Info), UnlockStatus::Pack u8 count 0x00717D42; C:stoull 0x00065378..0x0006550E; C:__next_prime 0x0003B038..0x0003B656; JsonCpp 0x008E89C2..0x008E8F80, 0x008E6B9A..0x008E6DC4."
+      ],
+      "effect": "The unlock state restored from a backup, and exact behaviour on unusual names and large maps.",
+      "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-backup-unlock-and-stoull-check.md): build (job B-M15-1). The stale-destination read falls under the M1-034 standing rule: push the deterministic words 0x182000 and 13 as the original would, stop before the freed pointer (word 2), log the skip visibly, send UnlockStatus with what was collected. stoull/JsonCpp throws fall under the M1-034 standing rule; bionic strtoull is EQUIVALENT_IMPLEMENTATION. The u8 count in Pack is an app-boundary note (the C# API carries the list). Unread: M15-044. Previous notes: RECOVERABLE_GAP: read the listed ranges.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-044",
+      "subsystem": "M15-freeplay",
+      "title": "UnlockId name-to-value table and InitConfig details: UnlockIdFromString map builder; the root state after a failed readAsJson",
       "location": "cozmo-stack/src/Cozmo.Robot/NvStorage.cs",
       "status": "RECOVERABLE_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): U1/U2: RobotEventHandler subscription 0x005270E8 (called 0x00525970), handler 0x0051C5E4..0x0051C8C4; unread UnlockedIdsList::Unpack (PLT 0x004A8518), GetDefaultUnlocks (PLT 0x004A8554), IExternalInterface +0x1C, 0x0051C8FE..0x0051C930, 0x005257EE..0x00525970, 0x00529BC0; libc++_shared stoull 0x00065378..0x00065510 and __next_prime 0x0003B074..0x0003B6A0; Json::Value::asUInt and getMemberNames (0x008E6C68) throw paths."
+        "re-analysis/research/20261013-backup-unlock-and-stoull-check.md: UnlockIdFromString static map builder E:0x00794D84..0x007957AC (undecoded); DataPlatform::readAsJson failure root state (PLT E:0x004A64E4) unread."
       ],
-      "effect": "The unlock state restored from a backup, and exact behaviour on unusual names and large maps.",
-      "provenance": "Codex research (work PC) checked by Opus (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed ranges.",
+      "effect": "Which UnlockIds the default unlocks map to, and the logs when the unlock config is missing.",
+      "provenance": "Opus check of R-BACKUP-UNLOCK (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: decode the builder's name->value pairs (cross-check Unity UnlockId.cs, authority 2), and read readAsJson's failure path for the root it leaves.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

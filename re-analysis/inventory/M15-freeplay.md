@@ -909,3 +909,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP | M15-040 restore, M15-041 wipe, M15-042 restore list |
 | New RECOVERABLE_GAP | M15-043 unlock-from-backup, stoull, primes, JsonCpp throws |
 | Notes appended | M15-039 |
+
+
+## Check of R-BACKUP-UNLOCK (manager, 2026-10-13; research/20261013-backup-unlock-and-stoull-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M15-043 |
+| New RECOVERABLE_GAP | M15-044 UnlockId table and InitConfig failure root |
+| Notes appended | M15-033, M15-040, M15-042 |
