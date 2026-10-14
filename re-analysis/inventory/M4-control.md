@@ -773,3 +773,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | OR wording | M4-026 (note) |
+
+
+## Check of OV20/OV21 (manager, 2026-10-14; research/overnight/20261014-ov20-21-check.md)
+
+| Change | Records |
+| --- | --- |
+| Execution owned by M8-017/M8-015 | M4-028 (note) |

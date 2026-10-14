@@ -725,3 +725,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Action lifecycle read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP; QueueAction front end and position table | M8-015 |
 | Pending survivors at teardown, RECOVERABLE_GAP | M8-024 (new) |
 | TRACKS_LOCKED path contradicted | M8-007 (note) |
+
+
+## Check of OV20/OV21 (manager, 2026-10-14; research/overnight/20261014-ov20-21-check.md)
+
+| Change | Records |
+| --- | --- |
+| Compound runtime retitled: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-017 |
+| Behaviour end request: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-019 |
+| Notes and contradictions | M8-015, M8-003, M8-001, M8-012, M8-009 |
