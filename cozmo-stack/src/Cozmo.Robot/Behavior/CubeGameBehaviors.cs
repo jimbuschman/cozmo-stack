@@ -1363,7 +1363,7 @@ public sealed class BringCubeToBeaconBehavior : ManipulationBehavior
             CandidateLog?.Add((i, j));
             // 0x005E09E0..0x005E0DF2
             var (tx, ty, tz, rotated) = BeaconFloorGeometry.CandidateTranslation(rot, spacing, i, j, bx, by, bz);
-            var pose = last = new Pose3d(BeaconFloorGeometry.RotationMatrix(rot), new Vec3(tx, ty, tz));                      // *out = Pose3d(rot, t, origin, ""), BEFORE any test (0x005E0A96..0x005E0A9E)
+            var pose = last = Pose3d.FromFlatRotation(new Rotation3d(rot.W,rot.X,rot.Y,rot.Z),new Vec3(tx,ty,tz));                      // *out = Pose3d(rot, t, origin, ""), BEFORE any test (0x005E0A96..0x005E0A9E)
             float d2 = rotated.X * rotated.X;
             d2 += rotated.Y * rotated.Y;
             d2 += rotated.Z * rotated.Z;
@@ -1588,113 +1588,31 @@ public static class BeaconFloorGeometry
     /// <summary><c>Rotation3d::Rotation3d(Radians, Point3f const&amp;)</c> 0x0084A506..0x0084A596 (cosf and sinf are <see cref="MathF"/>, the stack's libm policy).</summary>
     public static Quat RotationAboutAxis(float angle, float ax, float ay, float az)
     {
-        float half = angle * 0.5f;                       // vmov.f32 s0,#0.5; vmul.f32 0x0084A526..0x0084A52E
-        float c = MathF.Cos(half), s = MathF.Sin(half);  // 0x0084A538, 0x0084A540
-        double w = c, x = s * ax, y = s * ay, z = s * az; // vmul.f32 s6 * axis, 0x0084A558..0x0084A562; vcvt.f64.f32 0x0084A568..0x0084A574
-        return Normalize(w, x, y, z);
+        var q=Rotation3d.FromAngleAxis(angle,new Vec3(ax,ay,az));return new(q.W,q.X,q.Y,q.Z);
     }
 
     /// <summary><c>UnitQuaternion_&lt;double&gt;::Normalize</c> 0x00849DB8..0x00849E52.</summary>
     public static Quat Normalize(double w, double x, double y, double z)
     {
-        double n2 = w * w;
-        n2 += x * x;
-        n2 += y * y;
-        n2 += z * z;
-        if (Math.Abs(1.0 - n2) < NormalizeTolerance)    // vcmpe d3,d4; bpl -> the sqrt path (so NaN takes it)
-        {
-            double scale = 2.0 / (n2 + 1.0);             // vadd, vdiv 0x00849DF4..0x00849DFE
-            return new Quat(scale * w, scale * x, scale * y, scale * z);
-        }
-        double len = Math.Sqrt(n2);
-        return new Quat(w / len, x / len, y / len, z / len);
+        var q=new Rotation3d(w,x,y,z).Normalized();return new(q.W,q.X,q.Y,q.Z);
     }
 
     /// <summary><c>Rotation3d::operator*(Point3f const&amp;)</c> 0x0084ACA6 into <c>UnitQuaternion_&lt;float&gt;::operator*(Point3f)</c> 0x00849C1C, each f32 operation in the listed order.</summary>
     public static (float X, float Y, float Z) Rotate(Quat q, float px, float py, float pz)
     {
-        float a = (float)q.W, b = (float)q.X, c = (float)q.Y, d = (float)q.Z;     // vcvt.f32.f64 0x0084ACCC
-        float aa = a * a, bb = b * b, ab = a * b, ac = a * c, ad = a * d, bd = b * d, bc = b * c, cd = c * d;   // 0x00849C24..0x00849C54
-        float aa_bb = aa - bb;
-        float aa_pl_bb = aa + bb;
-        float cc = c * c;
-        float ad2 = ad + ad;
-        float dd = d * d;
-        float bc2 = bc + bc;
-        float cd2 = cd + cd;
-        float ab2 = ab + ab;
-        float ac2 = ac + ac;
-        float bd2 = bd + bd;
-        float m3 = aa_bb + cc;
-        float m8 = aa_pl_bb - cc;
-        float m4 = aa_bb - cc;
-        float s5 = bc2 + ad2;
-        float s0 = bc2 - ad2;
-        float s7 = ab2 + cd2;
-        float s9 = bd2 - ac2;
-        m3 = m3 - dd;
-        float s2 = m8 - dd;
-        m4 = m4 + dd;
-        float s6 = cd2 - ab2;
-        float t10 = px * s5;
-        float t8 = py * s7;
-        float t7 = px * s9;
-        float t12 = m3 * py;
-        float t14 = ac2 + bd2;
-        float t0 = py * s0;
-        float t2 = px * s2;
-        float t4 = m4 * pz;
-        float t6 = s6 * pz;
-        t8 = t7 + t8;
-        t10 = t12 + t10;
-        t12 = t14 * pz;
-        t0 = t2 + t0;
-        t2 = t4 + t8;
-        t4 = t6 + t10;
-        t0 = t12 + t0;
-        return (t0, t4, t2);                                                     // stored [r0], [r0+4], [r0+8]
+        var p=new Rotation3d(q.W,q.X,q.Y,q.Z).Rotate(new Vec3(px,py,pz));return ((float)p.X,(float)p.Y,(float)p.Z);
     }
 
     /// <summary><c>Rotation3d::GetRotationMatrix</c> 0x0084AAE0 (the matrix entries; the closing <c>RotationMatrix3d::Renormalize</c> 0x008494E0 is NOT applied: unread, MISSING).</summary>
     public static Mat3 RotationMatrix(Quat q)
     {
-        double w = q.W, x = q.X, y = q.Y, z = q.Z;
-        float zz = (float)(z * z), yy = (float)(y * y), zw = (float)(z * w), xx = (float)(x * x), xy = (float)(x * y), xw = (float)(x * w), yz = (float)(y * z);
-        float yw = (float)(y * w), xz = (float)(x * z);
-        float s3 = yy + zz;
-        float s4 = xx + zz;
-        float s6 = xx + yy;
-        float s12 = xz + yw;
-        float s14 = xz - yw;
-        float s7 = xy - zw;
-        float s8 = xy + zw;
-        float s10 = yz - xw;
-        float s0 = yz + xw;
-        float s1 = s3 * -2.0f;
-        s4 = s4 + s4;
-        s6 = s6 + s6;
-        float m01 = s7 + s7;
-        float m02 = s12 + s12;
-        float m10 = s8 + s8;
-        float m12 = s10 + s10;
-        float m20 = s14 + s14;
-        float m21 = s0 + s0;
-        float m00 = s1 + 1.0f;
-        float m11 = 1.0f - s4;
-        float m22 = 1.0f - s6;
-        return new Mat3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
+        return new Rotation3d(q.W,q.X,q.Y,q.Z).Matrix();
     }
 
     /// <summary><c>Rotation3d::GetAngleAroundZaxis</c> 0x0084AA1C from the matrix entries (f32): <c>atan2f(R10, R00)</c> when <c>R10^2 + R00^2 &gt; R01^2 + R11^2</c>, else <c>atan2f(-R01, R11)</c>; then <c>Radians(float)</c>.</summary>
     public static float AngleAroundZ(Mat3 r)
     {
-        float r00 = (float)r[0, 0], r10 = (float)r[1, 0], r01 = (float)r[0, 1], r11 = (float)r[1, 1];
-        float s8 = r01 * r01;
-        s8 = s8 + r11 * r11;
-        float s10 = r10 * r10;
-        s10 = s10 + r00 * r00;
-        float angle = s10 > s8 ? MathF.Atan2(r10, r00) : MathF.Atan2(-r01, r11);
-        return EngineRadians32.Rescale(angle);
+        return (float)r.AngleAroundZ;
     }
 
     /// <summary>
@@ -1716,7 +1634,7 @@ public static class BeaconFloorGeometry
             if (d2 < best) { best = d2; closest = o; }                                  // 0x005E0886 vcmpe s0,s16; itt mi
         }
         if (closest is null) return null;
-        return RotationAboutAxis(AngleAroundZ(closest.Pose.Rotation), 0.0f, 0.0f, 1.0f);
+        return RotationAboutAxis((float)closest.Pose.AngleAroundZ, 0.0f, 0.0f, 1.0f);
     }
 
     /// <summary>

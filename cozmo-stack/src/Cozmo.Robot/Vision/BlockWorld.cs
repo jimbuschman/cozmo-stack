@@ -333,12 +333,13 @@ public sealed class ObservableObject
     /// </summary>
     public bool IsRestingFlat(double toleranceRad)
     {
-        var r = Pose.Rotation;
-        // the object's own Z in the parent frame is the third column of R
-        double x = Math.Abs(r[0, 2]), y = Math.Abs(r[1, 2]), z = Math.Abs(r[2, 2]);
-        double dot = Math.Max(z, Math.Max(x, y));
-        return Math.Acos(Math.Min(1.0, dot)) < toleranceRad;
+        var r=Pose.Rotation;
+        float dot=(float)r[2,0];float y=(float)r[2,1],z=(float)r[2,2];
+        if(MathF.Abs(y)>MathF.Abs(dot))dot=y;if(MathF.Abs(z)>MathF.Abs(dot))dot=z;
+        float angle=MathF.Acos(MathF.Abs(dot)); // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped acosf, no clamp.
+        return new Radians(angle)<new Radians((float)toleranceRad); // 0x0087755C -> R2 operator<, excludes IsNear.
     }
+
 
     /// <summary>
     /// <c>ObservableObject::IsVisibleFrom(camera, maxFaceNormalAngle, minMarkerImageSize, xBorderPad,

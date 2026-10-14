@@ -33,7 +33,7 @@ public sealed class M13X1BuilderTests
         var logs=new List<(string Key,string Text)>();var p=new NativeShortPlanner(true,(_,_,k,t)=>logs.Add((k,t)),_=>{});
         p.ComputePath(At(10,0),new[]{At(0,0)});
         Assert.Contains(logs,x=>x.Key=="MinimalAnglePlanner.Plan.Backup"&&x.Text=="-10.000000");
-        Assert.Contains(logs,x=>x.Key=="MinimalAnglePlanner.FinalPosition"&&x.Text=="(0.000000, 0.000000, 0.000000deg)");
+        Assert.Contains(logs,x=>x.Key=="MinimalAnglePlanner.FinalPosition"&&x.Text=="(0.000000, 0.000000, -0.000000deg)");
     }
     [Fact]
     [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]

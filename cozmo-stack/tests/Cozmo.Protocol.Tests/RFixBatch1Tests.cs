@@ -42,11 +42,11 @@ public class RFixBatch1Tests
         var left = markers.First(m => m.Face == BlockFace.Left).PoseOnObject.Rotation;
         var top = markers.First(m => m.Face == BlockFace.Top).PoseOnObject.Rotation;
         var bottom = markers.First(m => m.Face == BlockFace.Bottom).PoseOnObject.Rotation;
-        Assert.Equal(-4.371139000186241e-08, front[0, 0], 12);
-        Assert.Equal(-4.371139000186241e-08, back[0, 0], 12);
-        Assert.Equal(-8.742278000372475e-08, left[1, 0], 12);
-        Assert.Equal(-3.3649042996408696e-08, top[0, 0], 12);
-        Assert.Equal(-3.3649042996408696e-08, bottom[0, 0], 12);
+        Assert.Equal(0.0, front[0, 0]); // R3/R4/R17: quarter-turn q components narrow products to exactly 0.5.
+        Assert.Equal(0.0, back[0, 0]);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0xB3BBBD2E), left[1, 0]);
+        Assert.Equal(0.0, top[0, 0]); // R17 xx/yy/zz narrow to 0.25 for the normalized 120-degree quaternion.
+        Assert.Equal(0.0, bottom[0, 0]);
     }
 
     // ------------------------------------------------------------------ M11-008 / M11-010

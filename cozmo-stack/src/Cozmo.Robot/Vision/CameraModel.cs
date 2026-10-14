@@ -25,21 +25,21 @@ public static class HeadGeometry
     public static readonly Vec3 HeadCamPositionMm = new(17.52, 0.0, 17.52);
     /// <summary>The engine's RobotHeadCam translation from the neck, as bits (Robot::Robot 0x0050FF7C..0x0050FFBA). Used only by ComputeHeadAngleToSeePose.</summary>
     public static readonly Vec3 EngineHeadCamPositionMm = new(BitConverter.Int32BitsToSingle(0x418C28F6), 0.0, BitConverter.Int32BitsToSingle(unchecked((int)0xC1000000)));
-    public static readonly Mat3 DefaultHeadCamRotation = new(
+    public static readonly Mat3 DefaultHeadCamRotation = Mat3.FromInitializerRows(new double[]{
         0.0, -0.0697999969124794, 0.9976000189781189,
         -1.0, 0.0, 0.0,
-        0.0, -0.9976000189781189, -0.0697999969124794);
+        0.0, -0.9976000189781189, -0.0697999969124794});
 
     /// <summary>The camera pose in the robot frame for a head angle (radians, positive = up).</summary>
     public static Pose3d CameraPoseInRobot(double headAngleRad)
     {
-        var neck = new Pose3d(Mat3.AboutY(-headAngleRad), NeckPositionMm);
+        var neck = new Pose3d(-headAngleRad,new Vec3(0,1,0),NeckPositionMm);
         var cam = new Pose3d(DefaultHeadCamRotation, HeadCamPositionMm);
         return neck.Compose(cam);
     }
 
     /// <summary>The robot's pose in its world origin from a state message: X, Y, Z and yaw about Z.</summary>
-    public static Pose3d RobotPose(in RobotPose p) => new(Mat3.AboutZ(p.Angle), new Vec3(p.X, p.Y, p.Z));
+    public static Pose3d RobotPose(in RobotPose p) => new(p.Angle,new Vec3(0,0,1),new Vec3(p.X,p.Y,p.Z));
 
     /// <summary>The camera pose in the world for a robot pose and head angle.</summary>
     public static Pose3d CameraPoseInWorld(Pose3d robotPose, double headAngleRad) => robotPose.Compose(CameraPoseInRobot(headAngleRad));

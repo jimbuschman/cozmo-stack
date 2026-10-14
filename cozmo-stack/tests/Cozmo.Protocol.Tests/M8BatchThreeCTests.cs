@@ -312,25 +312,25 @@ public class M8BatchThreeCTests
     [Fact]
     public void TheDefaultTiltFollowsTheEnginesLargestComponentSelection()
     {
-        static Pose3d Row2(double a, double b, double c) =>
-            new(new Mat3(1, 0, 0, 0, 1, 0, a, b, c), Vec3.Zero);   // only row 2 is read
+        static Mat3 Row2(double a, double b, double c) =>
+            new(1, 0, 0, 0, 1, 0, a, b, c);   // only row 2 is read
 
         // identity: row 2 = (0,0,1): s = 0; |0| > |0| no; |1| > |0| yes -> s = 1; acos(1) = 0
         Assert.Equal(0f, AIWhiteboardHandlers.RotatedParentZTilt(Pose3d.Identity));
         // counter-example: pi/2 about Y gives row 2 = (-1, 0, 0): s = -1; nothing is larger; acos(|-1|) = 0 (the R22-only formula gave pi/2)
         Assert.Equal(0f, AIWhiteboardHandlers.RotatedParentZTilt(new Pose3d(Mat3.AboutY(Math.PI / 2), Vec3.Zero)), 3);
-        Assert.Equal(0f, AIWhiteboardHandlers.RotatedParentZTilt(Row2(-1, 0, 0)));
+        Assert.Equal(0f, AIWhiteboardHandlers.RotatedParentZTiltMatrix(Row2(-1, 0, 0)));
         // R22 dominant: (0.6, 0, -0.8): s = 0.6; |0| > 0.6 no; |-0.8| > 0.6 yes -> s = -0.8; acos(0.8) = 0.6435011
-        Assert.Equal(0.6435011f, AIWhiteboardHandlers.RotatedParentZTilt(Row2(0.6, 0, -0.8)), 5);
+        Assert.Equal(0.6435011f, AIWhiteboardHandlers.RotatedParentZTiltMatrix(Row2(0.6, 0, -0.8)), 5);
         // v1 dominant: (0.3, -0.9, 0.2): |-0.9| > 0.3 -> s = -0.9; |0.2| > 0.9 no; acos(0.9) = 0.4510268
-        Assert.Equal(0.4510268f, AIWhiteboardHandlers.RotatedParentZTilt(Row2(0.3, -0.9, 0.2)), 5);
+        Assert.Equal(0.4510268f, AIWhiteboardHandlers.RotatedParentZTiltMatrix(Row2(0.3, -0.9, 0.2)), 5);
         // ties keep the earlier component (strict >): (0.5, -0.5, 0.5) -> s = 0.5 throughout; acos(0.5) = 1.0471976
-        Assert.Equal(1.0471976f, AIWhiteboardHandlers.RotatedParentZTilt(Row2(0.5, -0.5, 0.5)), 5);
+        Assert.Equal(1.0471976f, AIWhiteboardHandlers.RotatedParentZTiltMatrix(Row2(0.5, -0.5, 0.5)), 5);
         // a tie in sign: (-0.5, 0.5, 0.5): s stays v0 = -0.5, |s| = 0.5; the tilt is the same, only |s| is used
-        Assert.Equal(1.0471976f, AIWhiteboardHandlers.RotatedParentZTilt(Row2(-0.5, 0.5, 0.5)), 5);
+        Assert.Equal(1.0471976f, AIWhiteboardHandlers.RotatedParentZTiltMatrix(Row2(-0.5, 0.5, 0.5)), 5);
         // the property's default is that function
         var h = new AIWhiteboardHandlers(Whiteboard(), () => 0);
-        Assert.Equal(AIWhiteboardHandlers.RotatedParentZTilt(Row2(0.6, 0, -0.8)), h.TiltRadiansOf(Row2(0.6, 0, -0.8)));
+        Assert.Equal(0f,h.TiltRadiansOf(Pose3d.Identity));
     }
 
     [Fact]

@@ -62,7 +62,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         a.PoseNameNode = new PoseTreeNameNode("Object_300") { Parent = new PoseTreeNameNode("Origin1") };
         b.PoseNameNode = new PoseTreeNameNode("Object_301") { Parent = a.PoseNameNode.Parent };
         w.AddLocatedObject(a);w.AddLocatedObject(b);
-        var returned = w.AddMarkerlessObject(At(0,0,0,Math.PI),ObjectType.CliffDetection);
+        var returned = w.AddMarkerlessObject(new Pose3d(Math.PI,new Vec3(0,0,1),Vec3.Zero),ObjectType.CliffDetection);
         Assert.Same(a,returned); Assert.Equal(777u,a.LastObservedTimestamp);Assert.Equal(777u,b.LastObservedTimestamp);
         Assert.Equal(2,w.LocatedObjects.Count); // both boundary hits; angle pi cannot reject
     }

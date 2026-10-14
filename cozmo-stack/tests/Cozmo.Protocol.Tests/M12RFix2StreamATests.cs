@@ -39,8 +39,9 @@ public class M12RFix2StreamATests
         double below = F(0x3F32B8C1), above = F(0x3F32B8C3);
         var snapped = BlockWorld.ClampPoseToFlat(new Pose3d(Mat3.AboutY(below), new Vec3(1, 2, 3)), DockingSystem.ClampToFlatAngleRad);
         Assert.Equal(1.0, snapped.Rotation[2, 2], 9);                         // clamped: the object's Z is now the vertical
-        var kept = BlockWorld.ClampPoseToFlat(new Pose3d(Mat3.AboutY(above), new Vec3(1, 2, 3)), DockingSystem.ClampToFlatAngleRad);
-        Assert.Equal(Math.Cos(above), kept.Rotation[2, 2], 9);                // beyond the tolerance: left alone
+        var input = new Pose3d(Mat3.AboutY(above), new Vec3(1, 2, 3));
+        var kept = BlockWorld.ClampPoseToFlat(input, DockingSystem.ClampToFlatAngleRad);
+        Assert.Equal(input.Quaternion, kept.Quaternion);                // beyond the tolerance: left alone
     }
 
     // ------------------------------------------------------------------ M12-001

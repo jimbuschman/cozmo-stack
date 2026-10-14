@@ -611,7 +611,7 @@ public class M12RVisBuildTests
         Assert.Equal(13.0 + 4.0, p.Translation.X, 9);               // sqrt(9 + 16 + 144) = 13
         Assert.Equal(0.0, p.Translation.Y, 9);
         Assert.Equal(-12.5, p.Translation.Z, 9);
-        Assert.Equal(0.6, p.AngleAroundZ, 9);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x3F19999A), p.AngleAroundZ);
     }
 
     private static uint Attach(Rig rig, uint? id, MarkerType code) => rig.M.Docking.SetObjectAsAttachedToLift(id, code);
@@ -689,7 +689,8 @@ public class M12RVisBuildTests
         Assert.Equal(PoseState.Dirty, top.PoseState);
         // the pose tree moves the object on top with the carried one: it keeps its offset from it
         rig.M.Docking.UpdateCarriedObjectPose();
-        var offset = top.Pose.WithRespectTo(bottom.Pose).Translation;
+        // R36 direct-parent conversion can round through inverse/composition; the stored local transform is what must remain unchanged.
+        var offset = rig.M.Docking.Carrying.TopWrtCarried!.Translation;
         Assert.Equal(relBefore.X, offset.X, 6); Assert.Equal(relBefore.Y, offset.Y, 6); Assert.Equal(relBefore.Z, offset.Z, 6);
         Assert.InRange(relBefore.Z, 44.0 - StackToleranceMm, 44.0 + StackToleranceMm);       // found by the 15.0 helper: one cube height up
         double bottomXBefore = bottom.Pose.Translation.X, topXBefore = top.Pose.Translation.X;
@@ -931,7 +932,7 @@ public class M12RVisBuildTests
         Assert.Equal(3, list.Count);
         Assert.Equal(150.0, list[0].WorldPose.Translation.X);
         Assert.Equal(101.0, list[1].WorldPose.Translation.Z);
-        Assert.Equal(0.6, list[2].WorldPose.AngleAroundZ, 9);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x3F19999A), list[2].WorldPose.AngleAroundZ);
         Assert.False(DockPreActionPoses.RemoveMatchingPredockPose(At(1000, 1000), list));
     }
 
@@ -1191,8 +1192,8 @@ public class M12RVisBuildTests
         var status = PlaceRelObjectOffsetPoses.Filter(obj, 50, 0, At(1000, 1000), DistinctCal(), IdentityCentre, new[] { E1, E2, E3, E4 }, out var poses, out _);
         Assert.Equal(ActionResult.Success, status);
         Assert.Equal(2, poses.Count);
-        Assert.Equal(32.6, poses[0].Translation.X, 6); Assert.Equal(-97.0, poses[0].Translation.Y, 6);
-        Assert.Equal(32.6, poses[1].Translation.X, 6); Assert.Equal(97.0, poses[1].Translation.Y, 6);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x42026666), poses[0].Translation.X, 6); Assert.Equal(-97.0, poses[0].Translation.Y, 6);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x42026666), poses[1].Translation.X, 6); Assert.Equal(97.0, poses[1].Translation.Y, 6);
     }
 
     /// <summary>
@@ -1225,8 +1226,8 @@ public class M12RVisBuildTests
             Assert.Equal(ActionResult.Success, PlaceRelObjectOffsetPoses.Filter(obj, 50, 0, At(1000, 1000), DistinctCal(), IdentityCentre, new[] { e }, out var p, out _));
             return Assert.Single(p);
         }
-        Assert.Equal(32.6, Run(Math.PI / 2 + 0.03).Translation.X, 6);
-        Assert.Equal(32.6, Run(-Math.PI / 2 - 0.03).Translation.X, 6);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x42026666), Run(Math.PI / 2 + 0.03).Translation.X, 6);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x42026666), Run(-Math.PI / 2 - 0.03).Translation.X, 6);
         Assert.Equal(50.0, Run(Math.PI / 2 + 0.04).Translation.X, 6);
     }
 
@@ -1332,7 +1333,8 @@ public class M12RVisBuildTests
         Assert.True(dock.IsCompleted);
         Assert.Equal(0u, rig.M.Docking.LastAttachResult);
         Assert.Equal(8u, rig.M.Docking.Carrying.CarriedOnTopId);
-        var rel = top.Pose.WithRespectTo(bottom.Pose).Translation;
+        // R36 re-expression has defined float roundoff; storage retention is the source guarantee.
+        var rel = rig.M.Docking.Carrying.TopWrtCarried!.Translation;
         Assert.Equal(relBefore.X, rel.X, 6); Assert.Equal(relBefore.Y, rel.Y, 6); Assert.Equal(relBefore.Z, rel.Z, 6);
         Assert.True(bottom.Pose.Translation.X < 200);               // the carried cube is on the lift, not where it stood (260)
     }
@@ -1418,7 +1420,8 @@ public class M12RVisBuildTests
         Assert.Equal(valid, PreActionValidity.IsPreActionPoseValid(cube, pose, Array.Empty<PreActionObstacle>()));
         Assert.Equal(valid, PreActionValidity.IsPreActionPoseValid(cube, pose, new[] { Obstacle(9, 1000, 1000) }));   // the same rule runs before the obstacle test
         var nan = new PreActionPose(PreActionType.Docking, front, new Pose3d(new Mat3(double.NaN, 0, 0, 0, 1, 0, 0, 0, double.NaN), new Vec3(0, 0, 0)), 75.0);
-        Assert.False(PreActionValidity.IsPreActionPoseValid(cube, nan, Array.Empty<PreActionObstacle>()));
+        // R19/R20: NaN matrix converts to zero vector, then identity quaternion, before this gate.
+        Assert.True(PreActionValidity.IsPreActionPoseValid(cube, nan, Array.Empty<PreActionObstacle>()));
     }
 
     /// <summary>
@@ -1878,7 +1881,7 @@ public class M12RVisBuildTests
         var t = pick.RunAsync(default); Spin(t, rig, () => rig.Frame());
         Assert.Equal(new[] { typeof(VisuallyVerifyNoObjectAtPose), typeof(TurnTowardsObject) }, exec.Ran.Select(a => a.GetType()));
         var verify = (VisuallyVerifyNoObjectAtPose)exec.Ran[0];
-        Assert.Equal(now.X, verify.Pose.Translation.X, 6); Assert.Equal(now.Y, verify.Pose.Translation.Y, 6); Assert.Equal(now.Z + 44.0, verify.Pose.Translation.Z, 6);
+        Assert.Equal(now.X, verify.Pose.Translation.X, 6); Assert.Equal(now.Y, verify.Pose.Translation.Y, 6); Assert.Equal((double)((float)now.Z+44f), verify.Pose.Translation.Z);
         Assert.Equal(new Vec3(22, 22, 22), verify.HalfSize);
         Assert.Equal(new uint[] { 7 }, verify.IgnoreIds);
         var turn = (TurnTowardsObject)exec.Ran[1];

@@ -497,8 +497,8 @@ public sealed class MountChargerAction
         var obj = _m.World.GetLocatedObjectById(ChargerId);
         var robot = _m.RobotPose();
         if (obj is null || robot is null) return false;
-        float chargerYaw = (float)EngineRadians.GetAngleAroundZaxis(obj.Pose.Rotation);
-        float robotYaw = (float)EngineRadians.GetAngleAroundZaxis(robot.Value.Rotation);
+        float chargerYaw = (float)obj.Pose.AngleAroundZ;
+        float robotYaw = (float)robot.Value.AngleAroundZ;
         float diff = (float)EngineRadians.Rescale(chargerYaw - robotYaw);
         return !(MathF.Abs(diff) > RetryHeadingWindowRad);
     }
@@ -536,7 +536,7 @@ public sealed class MountChargerAction
         public LivePanTiltRobot(ManipulationSystem m) => _m = m;
         public bool OnTreads => _m.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
         public uint OriginId => _m.Robot.Engine.Robot?.CurrentOriginId ?? 0;
-        public float PoseAngleAroundZ => _m.RobotPose() is { } p ? (float)EngineRadians.GetAngleAroundZaxis(p.Rotation) : 0f;
+        public float PoseAngleAroundZ => _m.RobotPose() is { } p ? (float)p.AngleAroundZ : 0f;
         public float HeadAngle => _m.Robot.Motion.HeadAngleRad;
         public bool BodyMoving => _m.Robot.Motion.BodyMoving;
         public bool HeadMoving => _m.Robot.Motion.HeadMoving;

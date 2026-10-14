@@ -46,7 +46,8 @@ public class RestingFlatTests
     public void TheToleranceBoundaryIsTheBinary32TenDegrees()
     {
         float below = BitConverter.UInt32BitsToSingle(0x3E32B8C1), above = BitConverter.UInt32BitsToSingle(0x3E32B8C4);
-        Assert.True(CubeWith(Mat3.AboutY(below)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
+        // R2 operator< treats this near-tolerance angle as equal, and strict less rejects it.
+        Assert.False(CubeWith(Mat3.AboutY(below)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
         Assert.False(CubeWith(Mat3.AboutY(above)).IsRestingFlat(StackBlocksBehavior.RestingFlatToleranceRad));
     }
 

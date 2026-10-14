@@ -116,6 +116,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     internal (LatticeState State,float Penalty) NativeApplyAction(LatticeState state,MotionPrimitive primitive,bool check)=>_backend.Env.ApplyAction(state,primitive.ActionIndex,check);
     private void DoPlanning()
     {
+        using var poseLogs=Pose3d.UseSourceLog(_source,_engine is null?null:_engine.Das.ForceFlushNow);
         Publish(1);
         var result=_backend.DoPlanning(LatticePlanner.ToStateC(_start),_goals.Select(LatticePlanner.ToStateC).ToArray(),out var plan);
         string eventName=result==LatticePlanner.PlanningResult.Failure?"robot.lattice_planner_failure":"robot.lattice_planner_success";

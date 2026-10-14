@@ -309,7 +309,7 @@ public static class CubePreActionPoses
     public static Pose3d RotateBy(Pose3d pose, Vec3 axis, double angleRad)
     {
         var r = Mat3.AxisAngle(axis, angleRad);
-        return new Pose3d(r * pose.Rotation, r * pose.Translation);
+        return pose.RotateBy(Rotation3d.FromMatrix(r)); // R28: rotate point in f32, then pre-multiply/normalize quaternion.
     }
 
     /// <summary>
@@ -361,7 +361,7 @@ public static class CubePreActionPoses
         }
         double len = stored.Translation.Length;
         var pushed = len <= 0 ? stored.Translation : stored.Translation.Normalized() * (len + b);
-        return objectPose.Compose(new Pose3d(stored.Rotation, pushed));
+        return objectPose.Compose(new Pose3d(stored, pushed));
     }
 
     /// <summary>
@@ -460,12 +460,8 @@ public static class EngineRadians
     /// <c>Rotation3d::GetAngleAroundZaxis</c> 0x0084AA1C (matrix version 0x0084B424..0x0084B47C): <c>atan2f(R10, R00)</c> when
     /// <c>R10^2 + R00^2 &gt; R01^2 + R11^2</c>, otherwise <c>atan2f(-R01, R11)</c>; the result goes through <c>Radians(float)</c>.
     /// </summary>
-    public static double GetAngleAroundZaxis(Mat3 r)
-    {
-        double r00 = r[0, 0], r10 = r[1, 0], r01 = r[0, 1], r11 = r[1, 1];
-        double angle = r10 * r10 + r00 * r00 > r01 * r01 + r11 * r11 ? Math.Atan2(r10, r00) : Math.Atan2(-r01, r11);
-        return Rescale(angle);
-    }
+    public static double GetAngleAroundZaxis(Mat3 r)=>(float)r.AngleAroundZ;
+
 }
 
 /// <summary>
@@ -498,7 +494,7 @@ public sealed record ObjectPoseQueries(Func<ObservableObject, double, Pose3d> ZR
     {
         var l = obj.Pose;
         double dimZ = CubeGeometry.DimInParentFrameZ(obj);
-        double yaw = EngineRadians.GetAngleAroundZaxis(l.Rotation);
+        double yaw = l.AngleAroundZ;
         var t = new Vec3(obj.Pose.Translation.X, obj.Pose.Translation.Y, l.Translation.Z + dimZ * f);
         return new Pose3d(yaw, new Vec3(0, 0, 1), t);
     }
@@ -766,7 +762,7 @@ public static class DockPreActionPoses
         return ActionResult.DidNotReachPreActionPose;
     }
 
-    private static double EngineRotationYaw(Pose3d pose) => EngineRadians.GetAngleAroundZaxis(pose.Rotation);
+    private static double EngineRotationYaw(Pose3d pose) => pose.AngleAroundZ;
 
     /// <summary>
     /// <c>IDockAction::RemoveMatchingPredockPose(match, poses)</c> 0x00551418: for each pose <c>p</c>, if <c>p.IsSameAs(match, Point3(100, 100, 100),
@@ -859,7 +855,7 @@ public static class PlaceRelObjectOffsetPoses
                 if (erase) { list.RemoveAt(i); trace?.Add("erased: other axis near the object centre"); continue; }
             }
             // 12.11 (Q3.5): yaw = GetAngleAroundZaxis(L); Radians::IsNear is a STRICT < on the wrapped difference (M12-033); Radians(4.712389) rescales to about -pi/2
-            double yaw = EngineRadians.GetAngleAroundZaxis(local.Rotation);
+            double yaw = local.AngleAroundZ;
             bool mode1 = EngineRadians.IsNear(yaw, BitConverter.UInt32BitsToSingle(0x3FC90FDB), FacingToleranceRad)
                          || EngineRadians.IsNear(yaw, BitConverter.UInt32BitsToSingle(0x4096CBE4), FacingToleranceRad);
             double d = mode1 ? y : x, o = mode1 ? b : a;
@@ -892,7 +888,7 @@ public static class PlaceRelObjectOffsetPoses
             if (mode1) { xs = Math.Min(limit, Math.Max(-limit, a)); ys = b; }
             else { xs = a; ys = Math.Min(limit, Math.Max(-limit, b)); }
             // 12.15 / Q4.6: shift in the object-centre frame, then back to the world origin
-            var shifted = new Pose3d(local.Rotation, new Vec3(x + xs, y + ys, local.Translation.Z));
+            var shifted = new Pose3d(local, new Vec3(x + xs, y + ys, local.Translation.Z));
             var world = centre.Compose(shifted);
             list[i] = world;
             // 12.16 / 12.17: the threshold pair (shifted element first, object pose second), z 100.0

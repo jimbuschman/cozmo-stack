@@ -1062,7 +1062,9 @@ public class M11RVisBuildTests : IDisposable
         w.AddVisualObservation(nearer, null, false, 0);
         var observed = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(105, 0, 25)) };
         // both are within 35.2 mm however far round they are turned; the walk meets 30 first (5 mm off, the tolerance narrows to 5), then 31 (1 mm off, inside the narrowed 5): the last accepted wins
-        Assert.Same(nearer, w.FindObjectMatchForObservation(observed));
+        // R38 box uses the first pose's frame after the sphere narrows Y tolerance to zero.
+        // The rotated nearer pose has nonzero local Y and is rejected.
+        Assert.Same(near, w.FindObjectMatchForObservation(observed));
         var observed2 = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(99, 0, 25)) };
         // 1 mm from the first, 5 from the second: the second is outside the narrowed tolerance, so the first stays
         Assert.Same(near, w.FindObjectMatchForObservation(observed2));
@@ -1316,7 +1318,7 @@ public class M11RVisBuildTests : IDisposable
         Assert.Equal(0, id);                                                                              // the first SetID of the process
         var o = Assert.Single(w.ConnectedObjects);
         Assert.Equal(PoseState.Unknown, o.PoseState);                                                     // no PoseState
-        Assert.Equal(Pose3d.Identity, o.Pose);                                                            // no pose
+        Assert.Equal(Rotation3d.Identity, o.Pose.Quaternion);Assert.Equal(Vec3.Zero,o.Pose.Translation);                                                            // no pose
         Assert.Equal(1, o.ActiveId); Assert.Equal(0xAu, o.FactoryId);
         Assert.Equal(id, w.AddConnectedActiveObject(1, 0xA, ObjectType.Block_LIGHTCUBE1));                // FoundMatchingObjectAtSameSlot
         Assert.Same(o, Assert.Single(w.ConnectedObjects));

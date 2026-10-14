@@ -416,7 +416,7 @@ public abstract class DockActionBase
         {
             var pose = target.Pose;
             double dx = RotatedParentAxis.DimInParentFrame(target, 0), dy = RotatedParentAxis.DimInParentFrame(target, 1), dz = RotatedParentAxis.DimInParentFrame(target, 2);
-            var raised = new Pose3d(pose.Rotation, new Vec3(pose.Translation.X, pose.Translation.Y, pose.Translation.Z + dz));
+            var raised = new Pose3d(pose, new Vec3(pose.Translation.X, pose.Translation.Y, pose.Translation.Z + dz));
             compound.Add(new VisuallyVerifyNoObjectAtPose(raised, new Vec3(0.5 * dx, 0.5 * dy, 0.5 * dz), new[] { target.ObjectId }));
         }
         if (TurnTowardsObjectEnabled)
@@ -878,7 +878,7 @@ public sealed class PlaceRelObjectAction : DockActionBase
         var robot = M.RobotPose();
         if (robot is null) return ActionResult.Abort;
         var centre = Queries.ZRotatedPointAboveObjectCenter(obj, TransformPointAboveCentre);
-        double psi = EngineRadians.GetAngleAroundZaxis(centre.WithRespectTo(robot.Value).Rotation);
+        double psi = centre.WithRespectTo(robot.Value).AngleAroundZ;
         double halfPi = BitConverter.UInt32BitsToSingle(0x3FC90FDB), pi = BitConverter.UInt32BitsToSingle(0x40490FDB);
         double a = OffsetA, b = OffsetB, a2, b2;
         if (IsWithinAlignmentTolerance(psi)) { a2 = -a; b2 = b; }

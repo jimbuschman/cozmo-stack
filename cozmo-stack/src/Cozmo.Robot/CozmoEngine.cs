@@ -2002,6 +2002,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     private int TickAt(long elapsedNs)
     {
+        using var poseLogs=Vision.Pose3d.UseSourceLog((level,channel,key,text)=>EmitSourceLog(level,channel,key,text),Das.ForceFlushNow);
         lock (_tickLock)
         {
             _inTick = true;

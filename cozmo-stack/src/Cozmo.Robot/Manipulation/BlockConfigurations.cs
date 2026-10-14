@@ -713,7 +713,7 @@ public static class ObjectFootprint
     /// <summary><c>Robot::GetBoundingQuadXY(pose, padding)</c> 0x00514D74.</summary>
     public static Quadrilateral RobotBoundingQuadXY(Pose3d robotPose, float padding)
     {
-        float heading = (float)EngineRadians.GetAngleAroundZaxis(robotPose.Rotation);
+        float heading = (float)robotPose.AngleAroundZ;
         var q = LatticeEnvironment.RobotQuad(heading, padding);
         float tx = (float)robotPose.Translation.X, ty = (float)robotPose.Translation.Y;
         Point2f T(P2f p) => new(tx + p.X, ty + p.Y);

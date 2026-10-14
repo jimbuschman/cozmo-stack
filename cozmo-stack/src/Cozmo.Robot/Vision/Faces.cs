@@ -199,7 +199,7 @@ public sealed class TrackedFace
         scale = scale / eyeDistance;                                                              // 0x0087E022
         float tx = scale * rx, ty = scale * ry, tz = scale * rz;                                   // 0x0087E026..0x0087E038
         DistanceMm = scale;
-        HeadPose = new Pose3d(camera.Pose.Rotation, camera.Pose.Apply(new Vec3(tx, ty, tz)));
+        HeadPose = new Pose3d(camera.Pose, camera.Pose.Apply(new Vec3(tx, ty, tz)));
     }
 }
 
@@ -324,7 +324,7 @@ public sealed class FaceWorld
             // (0x004F4784..0x004F47A8); its rotation still comes from the TrackedFace. A new entry, and a
             // parts observation, take the face's full pose.
             entry.HeadPose = existing && !face.HasEyeParts
-                ? new Pose3d(face.HeadPose.Rotation, prev.Translation)
+                ? new Pose3d(face.HeadPose, prev.Translation)
                 : face.HeadPose;
             entry.Rect = face.Rect; entry.LastObservedTimestamp = face.Timestamp; entry.TimesObserved++;
             entry.Expression = face.MaxExpression();

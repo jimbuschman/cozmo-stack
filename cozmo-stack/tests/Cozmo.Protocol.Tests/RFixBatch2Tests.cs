@@ -858,7 +858,7 @@ public class RFixBatch2Tests
 
     /// <summary>
     /// M13-025: the charger's GetBoundingQuadXY (slot +0x50 = Vision::ObservableObject::GetBoundingQuadXY 0x0087713A over Charger::GetCanonicalCorners 0x004E9A50, padding 0): the eight corners
-    /// (x 0/96, y -40/40, z 0/31) rotated x' = (x*m0 + y*m1) + z*m2, y' = (x*m3 + y*m4) + z*m5, cv::minAreaRect, RotatedRect::points, SortCornersClockwise, then the pose's x, y. Expected words are
+    /// (x 0/96, y -40/40, z 0/31) rotated x' = (x*m0 + y*m1) + z*m2, y' = (x*m3 + y*m4) + z*m5, cv::minAreaRect, RotatedRect::points, SortCornersClockwise, then the pose's x, y. Expected words use pose R3/R4/R17 before
     /// the independent float32 emulation in the scratch generator of the same formulas on top of port.py (the cited M13-024 port), for four yaws.
     /// </summary>
     [Fact]
@@ -869,11 +869,11 @@ public class RFixBatch2Tests
             (0.0, 100.0, 50.0, new[] { 0x42C80000u, 0x41200000u, 0x42C80000u, 0x42B40000u, 0x43440000u, 0x41200000u, 0x43440000u, 0x42B40000u }),
             (0.3, -20.0, 10.0, new[] { 0xC102DDF8u, 0xC1E1B528u, 0xC1FE9104u, 0x4240DA95u, 0x42A710F3u, 0x3E203F00u, 0x426F90E2u, 0x42992AB4u }),
             (3.0, 250.0, -75.0, new[] { 0x431550E0u, 0xC2CA1AB8u, 0x43209B03u, 0xC1AED284u, 0x43745AEEu, 0xC2E5330Cu, 0x437FA511u, 0xC20D99EAu }),
-            (-1.2, 0.0, 0.0, new[] { 0xC01FB1A0u, 0xC2CFF0AAu, 0xC2152054u, 0xC167E8BCu, 0x429022C4u, 0xC295F67Eu, 0x4215204Eu, 0x4167E8ACu }),
+            (-1.2, 0.0, 0.0, new[] { 0xC01FB1D0u, 0xC2CFF0ACu, 0xC2152051u, 0xC167E8ACu, 0x429022C4u, 0xC295F680u, 0x42152055u, 0x4167E8ACu }),
         };
         foreach (var (yaw, tx, ty, expected) in cases)
         {
-            var q = ObjectFootprint.ChargerBoundingQuadXY(new Pose3d(Mat3.AboutZ(yaw), new Vec3(tx, ty, 0)), 0f);
+            var q = ObjectFootprint.ChargerBoundingQuadXY(new Pose3d(yaw,new Vec3(0,0,1),new Vec3(tx,ty,0)),0f);
             var got = Enumerable.Range(0, 4).SelectMany(i => new[] { Bits(q[i].X), Bits(q[i].Y) }).ToArray();
             Assert.True(expected.SequenceEqual(got), $"yaw {yaw}: " + string.Join(",", got.Select(g => "0x" + g.ToString("X8"))));
         }

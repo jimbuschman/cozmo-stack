@@ -67,8 +67,11 @@ public sealed class AIWhiteboardHandlers
 
     /// <summary>The default <see cref="TiltRadiansOf"/>.</summary>
     public static float RotatedParentZTilt(Pose3d pose)
+    =>RotatedParentZTiltMatrix(pose.Rotation);
+
+    public static float RotatedParentZTiltMatrix(Mat3 matrix)
     {
-        float v0 = (float)pose.Rotation[2, 0], v1 = (float)pose.Rotation[2, 1], v2 = (float)pose.Rotation[2, 2];
+        float v0 = (float)matrix[2, 0], v1 = (float)matrix[2, 1], v2 = (float)matrix[2, 2];
         float s = v0;
         if (MathF.Abs(v1) > MathF.Abs(v0)) s = v1;     // 0x5507c8..
         if (MathF.Abs(v2) > MathF.Abs(s)) s = v2;      // ..0x55084a

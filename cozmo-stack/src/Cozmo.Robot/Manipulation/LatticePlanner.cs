@@ -1335,7 +1335,7 @@ public class LatticePlanner
     }
 
     /// <summary>The planner entry from poses: <c>LatticePlannerImpl</c> turns a <c>Pose3d</c> into a <c>State_c</c> (x, y, <c>GetAngleAroundZaxis</c>) as binary32 (0x004FEB84..0x004FEBA6).</summary>
-    public static StateC ToStateC(Pose3d pose) => new((float)pose.Translation.X, (float)pose.Translation.Y, (float)EngineRadians.GetAngleAroundZaxis(pose.Rotation));
+    public static StateC ToStateC(Pose3d pose) => new((float)pose.Translation.X, (float)pose.Translation.Y, (float)pose.AngleAroundZ);
 
     /// <summary>
     /// STAND-IN for <c>LatticePlannerImpl::GetCompletePath</c> (MISSING, not built): the plan as robot path segments. Straight primitives in a row merge into one line; an in-place turn is a

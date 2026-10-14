@@ -1,3 +1,4 @@
+using Cozmo.Transport;
 namespace Cozmo.Robot.Vision;
 
 /// <summary>A 3-vector in double precision. Millimetres for positions.</summary>
@@ -28,155 +29,346 @@ public readonly record struct Vec2(double X, double Y)
     public override string ToString() => $"({X:F1}, {Y:F1})";
 }
 
-/// <summary>A 3x3 rotation matrix (row-major), the engine's <c>Anki::RotationMatrix3d</c>.</summary>
+// fidelity: M11-065, M11-067, M11-068
+/// <summary>Engine RotationMatrix3d: row-major binary32. Quaternion-backed poses rotate points directly.</summary>
 public readonly struct Mat3
 {
-    private readonly double[] _m;
-
-    public Mat3(double m00, double m01, double m02, double m10, double m11, double m12, double m20, double m21, double m22)
-        => _m = new[] { m00, m01, m02, m10, m11, m12, m20, m21, m22 };
-
-    public Mat3(ReadOnlySpan<double> rowMajor)
+    private readonly float[] _m;
+    public Mat3(double a,double b,double c,double d,double e,double f,double g,double h,double i)
+        =>_m=new[]{(float)a,(float)b,(float)c,(float)d,(float)e,(float)f,(float)g,(float)h,(float)i};
+    public Mat3(ReadOnlySpan<double> values)
+    {if(values.Length!=9)throw new ArgumentException("9 values",nameof(values));_m=new float[9];for(int i=0;i<9;i++)_m[i]=(float)values[i];}
+    // R-POSE-REST section3 / RotationMatrix3d initializer_list: copy nine, then Renormalize.
+    // Plain constructors remain raw matrix carriers for helper fixtures and CV boundaries.
+    internal static Mat3 FromInitializerRows(ReadOnlySpan<double> values)
     {
-        if (rowMajor.Length != 9) throw new ArgumentException("9 values", nameof(rowMajor));
-        _m = rowMajor.ToArray();
+        if(values.Length<9){PoseDiagnostics.Missing("M1-034/M11-068 short matrix initializer would read beyond the list at 0x00849900..0x00849936; initializer skipped");throw new ArgumentException("Nine source words required",nameof(values));}
+        return new Mat3(values[..9]).Orthonormalized();
     }
-
-    public static readonly Mat3 Identity = new(1, 0, 0, 0, 1, 0, 0, 0, 1);
-
-    public double this[int r, int c] => _m[r * 3 + c];
-
-    public Vec3 Row(int r) => new(_m[r * 3], _m[r * 3 + 1], _m[r * 3 + 2]);
-    public Vec3 Column(int c) => new(_m[c], _m[3 + c], _m[6 + c]);
-
-    public static Vec3 operator *(Mat3 m, Vec3 v) => new(
-        m._m[0] * v.X + m._m[1] * v.Y + m._m[2] * v.Z,
-        m._m[3] * v.X + m._m[4] * v.Y + m._m[5] * v.Z,
-        m._m[6] * v.X + m._m[7] * v.Y + m._m[8] * v.Z);
-
-    public static Mat3 operator *(Mat3 a, Mat3 b)
+    public static readonly Mat3 Identity=new(1,0,0,0,1,0,0,0,1);
+    public double this[int row,int col]=>_m[row*3+col];
+    public Vec3 Row(int r)=>new(_m[r*3],_m[r*3+1],_m[r*3+2]);
+    public Vec3 Column(int c)=>new(_m[c],_m[c+3],_m[c+6]);
+    // Generic matrix/Point3d API is retained as a candidate; engine pose rotation is Rotation3d.Rotate (R7/R8).
+    public static Vec3 operator *(Mat3 m,Vec3 v)=>new(m._m[0]*v.X+m._m[1]*v.Y+m._m[2]*v.Z,
+        m._m[3]*v.X+m._m[4]*v.Y+m._m[5]*v.Z,m._m[6]*v.X+m._m[7]*v.Y+m._m[8]*v.Z);
+    public static Mat3 operator *(Mat3 a,Mat3 b)
     {
-        var r = new double[9];
-        for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-                r[i * 3 + j] = a._m[i * 3] * b._m[j] + a._m[i * 3 + 1] * b._m[3 + j] + a._m[i * 3 + 2] * b._m[6 + j];
-        return new Mat3(r);
+        var result=new double[9];
+        for(int i=0;i<3;i++)for(int j=0;j<3;j++)
+        {float v=0;v+=a._m[i*3]*b._m[j];v+=a._m[i*3+1]*b._m[3+j];v+=a._m[i*3+2]*b._m[6+j];result[i*3+j]=v;}
+        return new Mat3(result).Orthonormalized();
     }
-
-    public Mat3 Transposed() => new(_m[0], _m[3], _m[6], _m[1], _m[4], _m[7], _m[2], _m[5], _m[8]);
-
-    /// <summary>Rodrigues: rotation of <paramref name="angleRad"/> about a unit <paramref name="axis"/>.</summary>
-    public static Mat3 AxisAngle(Vec3 axis, double angleRad)
+    public Mat3 Transposed()=>new(_m[0],_m[3],_m[6],_m[1],_m[4],_m[7],_m[2],_m[5],_m[8]);
+    public static Mat3 AxisAngle(Vec3 axis,double angle)=>NativeRodrigues.VectorToMatrix(new RotationVector3d(new Radians((float)angle),axis).MatrixVector());
+    public static Mat3 AboutX(double angle)=>AxisAngle(new(1,0,0),angle);
+    public static Mat3 AboutY(double angle)=>AxisAngle(new(0,1,0),angle);
+    public static Mat3 AboutZ(double angle)=>AxisAngle(new(0,0,1),angle);
+    public static Mat3 FromRotationVector(Vec3 vector)=>NativeRodrigues.VectorToMatrix(new RotationVector3d(vector).MatrixVector());
+    public Vec3 ToRotationVector()=>NativeRodrigues.MatrixToVector(this);
+    private float Projected(float a,float b,float c,float d,bool negateFirst,bool negateSecond)
     {
-        var a = axis.Normalized();
-        double c = Math.Cos(angleRad), s = Math.Sin(angleRad), t = 1 - c;
-        return new Mat3(
-            t * a.X * a.X + c, t * a.X * a.Y - s * a.Z, t * a.X * a.Z + s * a.Y,
-            t * a.X * a.Y + s * a.Z, t * a.Y * a.Y + c, t * a.Y * a.Z - s * a.X,
-            t * a.X * a.Z - s * a.Y, t * a.Y * a.Z + s * a.X, t * a.Z * a.Z + c);
+        float n1=a*a;n1+=b*b;float n2=c*c;n2+=d*d;
+        // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped atan2f; R42/X/Y widths and branches remain exact.
+        float value=n1>n2?MathF.Atan2(negateFirst?-a:a,b):MathF.Atan2(negateSecond?-c:c,d);
+        return Radians.Rescale(value);
     }
-
-    public static Mat3 AboutX(double a) => AxisAngle(new Vec3(1, 0, 0), a);
-    public static Mat3 AboutY(double a) => AxisAngle(new Vec3(0, 1, 0), a);
-    public static Mat3 AboutZ(double a) => AxisAngle(new Vec3(0, 0, 1), a);
-
-    /// <summary>Rotation vector (axis * angle) to matrix; the engine's <c>RotationVector3d</c> constructor.</summary>
-    public static Mat3 FromRotationVector(Vec3 rv)
+    public double AngleAroundZ=>Projected(_m[3],_m[0],_m[1],_m[4],false,true);
+    public float AngleAroundX=>Projected(_m[7],_m[4],_m[5],_m[8],false,true);
+    public float AngleAroundY=>Projected(_m[6],_m[0],_m[2],_m[8],true,false);
+    public float Angle
     {
-        double angle = rv.Length;
-        return angle < 1e-12 ? Identity : AxisAngle(rv / angle, angle);
+        get{float v=_m[0]+_m[4];v+=_m[8];v+=-1;v*=0.5f;
+            return Radians.Rescale(MathF.Acos(v));} // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped acosf, no clamp.
     }
-
-    /// <summary>Inverse of <see cref="FromRotationVector"/>.</summary>
-    public Vec3 ToRotationVector()
-    {
-        double tr = _m[0] + _m[4] + _m[8];
-        double cos = Math.Clamp((tr - 1) / 2, -1, 1);
-        double angle = Math.Acos(cos);
-        if (angle < 1e-12) return Vec3.Zero;
-        var axis = new Vec3(_m[7] - _m[5], _m[2] - _m[6], _m[3] - _m[1]);
-        if (Math.PI - angle < 1e-6)
-        {
-            // near pi the antisymmetric part vanishes; take the axis from the symmetric part
-            var d = new Vec3(Math.Sqrt(Math.Max(0, (_m[0] + 1) / 2)), Math.Sqrt(Math.Max(0, (_m[4] + 1) / 2)), Math.Sqrt(Math.Max(0, (_m[8] + 1) / 2)));
-            if (_m[1] < 0) d = d with { Y = -d.Y };
-            if (_m[2] < 0) d = d with { Z = -d.Z };
-            return d.Normalized() * angle;
-        }
-        return axis.Normalized() * angle;
-    }
-
-    /// <summary>The engine's <c>Rotation3d::GetAngleAroundZaxis</c>: atan2 of the rotated X axis.</summary>
-    public double AngleAroundZ => Math.Atan2(_m[3], _m[0]);
-
-    /// <summary>Angle in radians between this rotation and another (the geodesic distance).</summary>
-    public double AngularDistance(Mat3 other) => (Transposed() * other).ToRotationVector().Length;
-
-    /// <summary>Re-orthonormalise after accumulated numeric error (Gram-Schmidt on the columns).</summary>
+    public double AngularDistance(Mat3 other)=>(this*other.Transposed()).Angle;
+    public Mat3 Abs(){var values=new double[9];for(int i=0;i<9;i++)values[i]=MathF.Abs(_m[i]);return new(values);}
     public Mat3 Orthonormalized()
     {
-        var c0 = Column(0).Normalized();
-        var c1 = (Column(1) - c0 * c0.Dot(Column(1))).Normalized();
-        var c2 = c0.Cross(c1);
-        return new Mat3(c0.X, c1.X, c2.X, c0.Y, c1.Y, c2.Y, c0.Z, c1.Z, c2.Z);
+        for(int i=0;i<3;i++)
+        {
+            float v=_m[i*3]*_m[i*3];v+=_m[i*3+1]*_m[i*3+1];v+=_m[i*3+2]*_m[i*3+2];
+            float norm=MathF.Sqrt(v); // IEEE vsqrt / unshipped NaN sqrtf fallback M13-023(e).
+            float error=norm-1;
+            if(!(MathF.Abs(error)<BitConverter.Int32BitsToSingle(0x3C23D70A)))
+            {
+                string row="MISSING: M11-083 shipped std::to_string(float) %f row elements (0x008495CE)";
+                PoseDiagnostics.Warning("RotationMatrixBase.Renormalize.BadRowNorm","Norm of row "+i+" = "+PoseDiagnostics.Fixed(norm)+"! (Expecting near 1.0) Row = ["+row+"]");
+                return NativeRodrigues.VectorToMatrix(NativeRodrigues.MatrixToVector(this));
+            }
+            if(norm<BitConverter.Int32BitsToSingle(0x3F7FFFEF)||norm>1)
+                return NativeRodrigues.VectorToMatrix(NativeRodrigues.MatrixToVector(this));
+        }
+        return this;
     }
-
-    public override string ToString() => $"[{Row(0)}; {Row(1)}; {Row(2)}]";
+    public static Mat3 FromEuler(Radians x,Radians y,Radians z)
+    {
+        // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped cosf/sinf; native call order y,x,z.
+        float cb=MathF.Cos(y.Value),sb=MathF.Sin(y.Value),ca=MathF.Cos(x.Value),sa=MathF.Sin(x.Value),cc=MathF.Cos(z.Value),sc=MathF.Sin(z.Value);
+        float u=sb*ca,v=sb*sa;
+        float m01=v*cc;m01-=ca*sc;float m02=u*cc;m02+=sa*sc;
+        float m11=ca*cc;m11+=v*sc;float m12=u*sc;m12-=sa*cc;
+        return new(cb*cc,m01,m02,cb*sc,m11,m12,-sb,cb*sa,cb*ca);
+    }
+    public bool GetEulerAngles(ref Radians x,ref Radians y,ref Radians z)
+    {
+        float m20=_m[6];
+        if(MathF.Abs(MathF.Abs(m20)-1)<Radians.Epsilon)
+        {
+            z.Assign(0);y.Assign(m20>0?-Radians.Pi*0.5f:Radians.Pi*0.5f);
+            x.Assign(m20>0?MathF.Atan2(-_m[1],-_m[2]):MathF.Atan2(_m[1],_m[2])); // M13-023(e) atan2f.
+            return true;
+        }
+        y.Assign(-MathF.Asin(m20)); // M13-023(e) asinf; no clamp. Destination's existing flag is retained.
+        float k=1/MathF.Cos(y.Value); // M13-023(e) cosf.
+        x.Assign(MathF.Atan2(_m[7]*k,_m[8]*k));z.Assign(MathF.Atan2(_m[3]*k,_m[0]*k)); // M13-023(e) atan2f.
+        return false;
+    }
+    public bool GetEulerAngles(RadiansOutput x,RadiansOutput y,RadiansOutput z,RadiansOutput? x2=null,RadiansOutput? y2=null,RadiansOutput? z2=null)
+    {
+        bool singular=GetEulerAngles(ref x.Value,ref y.Value,ref z.Value);
+        if(singular)
+        {
+            if(x2 is not null)x2.Value.Assign(x.Value);
+            if(y2 is not null)y2.Value.Assign(y.Value);
+            if(z2 is not null)z2.Value.Assign(z.Value);
+        }
+        else if(x2 is not null)
+        {
+            if(y2 is null||z2 is null)
+            {PoseDiagnostics.Missing("M1-034/M11-068 GetEulerAngles alternate-x without alternate-y/z would dereference null at 0x0084B23C..0x0084B310; alternate solution skipped, previous outputs preserved");return false;}
+            y2.Value.Assign(Radians.Pi-y.Value); // Float-minus-Radians constructs a rescaled flag-set result.
+            float k=1/MathF.Cos(y2.Value.Value); // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped cosf.
+            x2.Value.Assign(MathF.Atan2(_m[7]*k,_m[8]*k)); // EQUIVALENT_IMPLEMENTATION M13-023(e): atan2f.
+            z2.Value.Assign(MathF.Atan2(_m[3]*k,_m[0]*k)); // EQUIVALENT_IMPLEMENTATION M13-023(e): atan2f.
+        }
+        return singular;
+    }
+    public override string ToString()=>"["+Row(0)+"; "+Row(1)+"; "+Row(2)+"]";
 }
 
-/// <summary>
-/// A rigid transform: the engine's <c>Anki::Pose3d</c> without the parent chain. <c>p_world = R * p_local + T</c>.
-/// Poses in this stack are all expressed with respect to the robot's world origin, so the parent chain the
-/// engine keeps (<c>PoseBase::GetWithRespectTo</c>) reduces to plain composition.
-/// </summary>
-public readonly record struct Pose3d(Mat3 Rotation, Vec3 Translation)
+// fidelity: M11-065, M11-066, M11-067, M11-068, M11-004
+internal sealed class PoseTreeNode
 {
-    public static readonly Pose3d Identity = new(Mat3.Identity, Vec3.Zero);
-
-    public Pose3d(double angleRad, Vec3 axis, Vec3 translation) : this(Mat3.AxisAngle(axis, angleRad), translation) { }
-
-    /// <summary>Apply: local point to parent frame.</summary>
-    public Vec3 Apply(Vec3 p) => Rotation * p + Translation;
-
-    /// <summary>this ∘ other: <c>other</c> expressed in this pose's parent frame.</summary>
-    public Pose3d Compose(Pose3d other) => new(Rotation * other.Rotation, Rotation * other.Translation + Translation);
-
-    public Pose3d Inverse()
+    internal Transform3d Transform;
+    internal PoseTreeNode? Parent;
+    internal string Name;
+    internal uint Id,Owners;
+    internal PoseTreeNode(Transform3d transform,string name,PoseTreeNode? parent)
+    {Transform=transform;Name=name;SetParent(parent);}
+    internal void SetParent(PoseTreeNode? parent)
     {
-        var rt = Rotation.Transposed();
-        return new Pose3d(rt, -(rt * Translation));
+        Parent=parent;
+        PoseDiagnostics.Missing("M11-067 Dev_AssertIsValidParentPointer 0x008460C8 parent-pointer validation/diagnostics has no checked body; parent-pointer arithmetic only is built");
     }
-
-    /// <summary>The engine's <c>GetWithRespectTo</c> for two poses sharing a root: this pose in <paramref name="frame"/>.</summary>
-    public Pose3d WithRespectTo(Pose3d frame) => frame.Inverse().Compose(this);
-
-    /// <summary>Angle of the pose's X axis about Z, the robot's heading convention.</summary>
-    public double AngleAroundZ => Rotation.AngleAroundZ;
-
-    /// <summary>
-    /// The engine's <c>Pose3d::IsSameAs(other, distThreshold, angleThreshold)</c>: translation within the
-    /// threshold on every axis and rotation within the angle.
-    /// </summary>
-    public bool IsSameAs(Pose3d other, double distThresholdMm, double angleThresholdRad)
+    internal static bool HasSameRoot(PoseTreeNode? a,PoseTreeNode? b)
     {
-        var d = Translation - other.Translation;
-        if (Math.Abs(d.X) > distThresholdMm || Math.Abs(d.Y) > distThresholdMm || Math.Abs(d.Z) > distThresholdMm) return false;
-        return Rotation.AngularDistance(other.Rotation) <= angleThresholdRad;
+        if(a is null||b is null)return false;
+        static PoseTreeNode Walk(PoseTreeNode n,int line)
+        {
+            int count=0;
+            while(n.Parent is not null)
+            {n=n.Parent;if(++count==1000){PoseDiagnostics.Loop("poseTreeNode.h",line);break;}}
+            return n;
+        }
+        return ReferenceEquals(Walk(a,0x107),Walk(b,0x10E));
     }
-
-    /// <summary>
-    /// The engine's <c>Pose3d::IsSameAs(other, Point3f, Radians, Point3f* delta, Radians* rotDelta)</c>
-    /// 0x4A7060: a per-axis translation tolerance (the object-match thunk returns the extent scaled by 0.8)
-    /// and the rotation within the angle; <paramref name="delta"/> is the translation difference, which the
-    /// closest-match predicate narrows to <c>abs(delta)</c>.
-    /// </summary>
-    // fidelity: M11-004
-    public bool IsSameAs(Pose3d other, Vec3 distThresholdMm, double angleThresholdRad, out Vec3 delta)
+    internal int Depth()
     {
-        delta = Translation - other.Translation;
-        if (Math.Abs(delta.X) > distThresholdMm.X || Math.Abs(delta.Y) > distThresholdMm.Y || Math.Abs(delta.Z) > distThresholdMm.Z) return false;
-        return Rotation.AngularDistance(other.Rotation) <= angleThresholdRad;
+        int depth=1;var n=this;
+        while(n.Parent is not null)
+        {n=n.Parent;if(++depth==1001){PoseDiagnostics.Loop("poseTreeNode.h",0x189);return 1001;}}
+        return depth;
     }
+    internal PoseTreeNode Root()
+    {
+        var n=Parent??this;int count=0;
+        while(n.Parent is not null)
+        {n=n.Parent;if(++count==1000){PoseDiagnostics.Loop("poseTreeNode.h",0x145);break;}}
+        return n;
+    }
+}
 
-    public override string ToString() => $"T={Translation} yaw={AngleAroundZ * 180 / Math.PI:F1}deg";
+/// <summary>Native Pose3d wrapper: a shared node containing a double quaternion and binary32 translation.</summary>
+public sealed class Pose3d : IDisposable
+{
+    internal PoseTreeNode? Node;
+    private readonly bool _legacyFrameInput;
+    internal static bool UnownedParentsAllowed;
+    public static Pose3d Identity=>new(Mat3.Identity,Vec3.Zero);
+    public Pose3d Value=>this; // Existing nullable-value API unwrap; no new node is made.
+    public Mat3 Rotation=>Quaternion.Matrix();
+    public Rotation3d Quaternion=>RequireNode().Transform.Rotation;
+    public Vec3 Translation=>RequireNode().Transform.Translation;
+    public Transform3d Transform=>RequireNode().Transform;
+    public string Name {get=>RequireNode().Name;set=>RequireNode().Name=value;}
+    public uint Id {get=>RequireNode().Id;set=>RequireNode().Id=value;}
+    public uint Owners=>RequireNode().Owners;
+    public bool IsRoot=>Node is null||Node.Parent is null;
+    public bool HasParent=>Node?.Parent is not null;
+    public static IDisposable UseSourceLog(SourceLogSink source,Action? forceFlush=null)=>PoseDiagnostics.Use(source,forceFlush);
+    public Pose3d(string name="",Pose3d? parent=null):this(new Transform3d(Rotation3d.Identity,Vec3.Zero),name,parent){}
+    public Pose3d(Transform3d transform,string name="",Pose3d? parent=null)
+    {Node=new(transform,name,parent?.Node);Node.Owners=1;}
+    public Pose3d(Rotation3d rotation,Vec3 translation,string name="",Pose3d? parent=null):this(new Transform3d(rotation,translation),name,parent){}
+    // API migration for a retained rotation: R23/R30 copy the quaternion, not a matrix round trip.
+    public Pose3d(Pose3d rotationFrom,Vec3 translation):this(rotationFrom.Quaternion,translation)
+    {_legacyFrameInput=rotationFrom._legacyFrameInput;}
+    public Pose3d(Mat3 rotation,Vec3 translation):this(Rotation3d.FromMatrix(rotation),translation){_legacyFrameInput=true;}
+    public Pose3d(double angleRad,Vec3 axis,Vec3 translation):this(Rotation3d.FromAngleAxis(new Radians((float)angleRad).Value,axis),translation){_legacyFrameInput=true;}
+    public Pose3d(Pose2d pose):this(Rotation3d.FromAngleAxis(pose.Transform.Angle.Value,new Vec3(0,0,1)),new Vec3(pose.Transform.Translation.X,pose.Transform.Translation.Y,0))
+    {
+        var n=pose.PlaneNormal;float dot=n.X*0f;dot+=n.Y*0f;dot+=n.Z*1f;
+        var angle=new Radians(MathF.Acos(dot)); // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped acosf.
+        if(MathF.Abs(angle.Value)<Radians.Epsilon)return;
+        var axis=new Vec3(n.Z*0f-n.Y,n.X-n.Z*0f,n.Y*0f-n.X*0f);
+        var plane=new Transform3d(Rotation3d.FromAngleAxis(angle.Value,axis),pose.PlaneOrigin.ToVec3());
+        Node!.Transform.PreComposeWith(ref plane);
+    }
+    public Pose3d(Pose3d source)
+    {
+        var other=source.RequireNode();Node=new(other.Transform,CopyName(other.Name),other.Parent);Node.Owners=1;
+        _legacyFrameInput=source._legacyFrameInput;
+    }
+    private Pose3d(PoseTreeNode node){Node=node;node.Owners++;}
+    internal static Pose3d WrapExisting(PoseTreeNode node)=>new(node);
+    private static string CopyName(string name)=>name.Length==0?name:name+"_COPY";
+    private PoseTreeNode RequireNode()=>Node??throw new InvalidOperationException("MISSING: M1-034/M11-067 null pose node operation skipped");
+    public Pose3d DeepCopy()=>new(this);
+    public void Assign(Pose3d source)
+    {
+        if(ReferenceEquals(this,source))return;
+        if(source.Node is null)
+        {
+            var n=RequireNode();
+            if(n.Owners==0){PoseDiagnostics.Missing("M11-067 RemoveOwner ZeroOwners VERIFY 0x008448B4 has no fully checked log row; decrement skipped");}
+            else n.Owners--;
+            if(n.Owners==0&&!UnownedParentsAllowed)
+                PoseDiagnostics.Missing("M11-067 assignment-null NotLastOwner VERIFY 0x0084594A..0x008459B8 requires native shared_ptr use_count/diagnostic ownership, not inferred from C# references");
+            Node=null;return;
+        }
+        var other=source.Node;var node=RequireNode();
+        node.SetParent(other.Parent);node.Transform=other.Transform;node.Name=CopyName(other.Name);
+    }
+    public void SetParent(Pose3d parent)
+    {
+        var n=RequireNode();
+        if(parent.Node is null)
+        {PoseDiagnostics.Missing("M1-034/M11-068 SetParent null node fatal read 0x00844A48: skipped, previous parent preserved");return;}
+        if(!UnownedParentsAllowed&&parent.Node.Owners==0)
+            PoseDiagnostics.Verify("PoseBase.SetParent.UnownedParent","VERIFY(otherPose.IsOwned()): Setting parent of "+PoseDiagnostics.Integer(n.Id)+"("+PoseDiagnostics.CString(n.Name)+") to unowned pose "+PoseDiagnostics.Integer(parent.Node.Id)+"("+PoseDiagnostics.CString(parent.Node.Name)+")");
+        n.SetParent(parent.Node);
+    }
+    public void ClearParent()=>RequireNode().SetParent(null);
+    public bool TryGetParent(ref Pose3d output)
+    {
+        if(Node is null){output=new Pose3d();return true;} // Defined null-source case leaves a fresh identity result.
+        if(Node.Parent is null)
+        {PoseDiagnostics.Missing("M1-034/M11-073 GetParent(root) fatal owner read 0x008452BA: skipped, previous output preserved");return false;}
+        output=WrapExisting(Node.Parent);return true;
+    }
+    public Pose3d FindRoot()=>WrapExisting(RequireNode().Root());
+    public Vec3 Apply(Vec3 point)=>Transform.Apply(point);
+    public void ApplyTo(IReadOnlyList<Vec3> input,List<Vec3> output)=>Transform.ApplyTo(input,output);
+    public Pose3d Compose(Pose3d other)
+    {var p=new Pose3d(Transform.Compose(other.Transform));return _legacyFrameInput&&other._legacyFrameInput?Legacy(p.Transform):p;}
+    internal static Pose3d FromFlatRotation(Rotation3d q,Vec3 t)=>new(q,t,true); // Existing flat caller inputs still lack their checked parent binding.
+    private static Pose3d Legacy(Transform3d t)=>new(t.Rotation,t.Translation,true);
+    private Pose3d(Rotation3d q,Vec3 t,bool legacy):this(q,t){_legacyFrameInput=legacy;}
+    public void MultiplyBy(Pose3d other){var n=RequireNode();n.Transform.MultiplyBy(in other.RequireNode().Transform);}
+    public void PreComposeWith(Pose3d other)=>RequireNode().Transform.PreComposeWith(ref other.RequireNode().Transform);
+    public void Invert(){var n=RequireNode();n.Transform=n.Transform.Inverse();n.SetParent(null);}
+    public Pose3d Inverse(){var result=new Pose3d(this);result.Invert();return result;}
+    public Pose3d RotateBy(Rotation3d rotation){var result=new Pose3d(this);result.Node!.Transform=result.Transform.RotateBy(rotation);return result;}
+    public double AngleAroundZ=>Quaternion.AngleAroundZ;
+    public static bool GetWithRespectTo(Pose3d from,Pose3d to,Pose3d output)
+    {
+        if(from.Node is null||to.Node is null||output.Node is null)
+        {
+            PoseDiagnostics.Verify("PoseBase.GetWithRespectTo.NullInputPose","VERIFY(!fromPose.IsNull() && !toPose.IsNull() && !P_wrt_other.IsNull()): FromNull:"+(from.Node is null?"Y":"N")+" ToNull:"+(to.Node is null?"Y":"N")+" WrtOtherNull:"+(output.Node is null?"Y":"N"));return false;
+        }
+        if(ReferenceEquals(from,to))
+        {PoseDiagnostics.Warning("PoseBase.GetWithRespectTo.FromEqualsTo","Pose w.r.t. itself requested.");output.Assign(from);output.SetParent(from);return true;}
+        if(!PoseTreeNode.HasSameRoot(from.Node,to.Node))return false;
+        var tf=from.Node.Transform;var tt=to.Node.Transform;var f=from.Node;var t=to.Node;
+        int d=f.Depth()-t.Depth(),i=0;
+        while(d>=1)
+        {
+            tf.PreComposeWith(ref f.Parent!.Transform);f=f.Parent;
+            if(ReferenceEquals(f.Parent,t)){output.Node.Transform=tf;output.SetParent(to);return true;}
+            i++;d--;if(i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1A0);break;}
+        }
+        i=0;
+        while(d+i<=-1)
+        {
+            tt.PreComposeWith(ref t.Parent!.Transform);t=t.Parent;
+            if(ReferenceEquals(t.Parent,f)){output.Node.Transform=tt.Inverse();output.SetParent(to);return true;}
+            if(++i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1B6);break;}
+        }
+        i=0;
+        while(!ReferenceEquals(f,t)&&!(f.Parent is not null&&t.Parent is not null&&ReferenceEquals(f.Parent,t.Parent)))
+        {
+            tf.PreComposeWith(ref f.Parent!.Transform);tt.PreComposeWith(ref t.Parent!.Transform);f=f.Parent;t=t.Parent;
+            if(++i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1D4);break;}
+        }
+        output.Node.Transform=tt.Inverse();output.Node.Transform.MultiplyBy(in tf);output.SetParent(to);return true;
+    }
+    public Pose3d GetWithRespectToRoot()
+    {
+        var output=new Pose3d("");
+        if(IsRoot)output.Assign(this);
+        else {using var root=FindRoot();if(!GetWithRespectTo(this,root,output))PoseDiagnostics.Error("Pose3d.GetWithRespectToRoot.Failed","Could not get pose w.r.t. its own root. This should never happen.");}
+        return output;
+    }
+    public bool TryWithRespectTo(Pose3d frame,Pose3d output)=>GetWithRespectTo(this,frame,output);
+    public Pose3d WithRespectTo(Pose3d frame)
+    {
+        var output=new Pose3d("");if(GetWithRespectTo(this,frame,output))return output;
+        if(_legacyFrameInput&&frame._legacyFrameInput&&!HasParent&&!frame.HasParent)
+        {
+            // Existing host API supplies flattened values, not native frame nodes. This old path is still a gap.
+            PoseDiagnostics.Missing("M11-066 legacy flattened WithRespectTo inputs have no checked root-node binding; existing flat reduction remains an unverified caller candidate");
+            return Legacy(frame.Transform.Inverse().Compose(Transform));
+        }
+        throw new InvalidOperationException("MISSING: M11-066 caller has not handled unrelated pose roots");
+    }
+    public bool IsSameAs(Pose3d other,double distance,double angle)=>IsSameAs(other,new Vec3(distance,distance,distance),angle,out _);
+    public bool IsSameAs(Pose3d other,Vec3 distance,double angle,out Vec3 delta)
+    {delta=Vec3.Zero;var radians=new Radians();return IsSameAsWithAmbiguity(other,distance,new Radians((float)angle),ref delta,ref radians,Array.Empty<Mat3>(),false);}
+    public bool IsSameAsWithAmbiguity(Pose3d other,Vec3 distance,Radians tolerance,ref Vec3 delta,ref Radians angle,IReadOnlyList<Mat3> ambiguities,bool absolute)
+    {
+        if(ReferenceEquals(this,other))return true;
+        var n=RequireNode();using var relative=new Pose3d("");
+        if(n.Parent is not null&&ReferenceEquals(n.Parent,other.Node))relative.SetParent(other);
+        else if(n.Parent is not null)
+        {using var parent=WrapExisting(n.Parent);if(!GetWithRespectTo(other,parent,relative))return false;}
+        else if(_legacyFrameInput&&other._legacyFrameInput&&!other.HasParent)
+        {
+            PoseDiagnostics.Missing("M11-065/M11-066 legacy flattened IsSameAs inputs lack checked parent/root bindings; arithmetic only is built");
+            relative.Node!.Transform=other.Transform;
+        }
+        else if(!GetWithRespectTo(other,this,relative))
+        {PoseDiagnostics.Warning("Pose3d.IsSameAs.PosesHaveDifferentOrigins","Could not get other pose w.r.t. this pose. Returning not same.");return false;}
+        float x=(float)relative.Translation.X-(float)Translation.X,y=(float)relative.Translation.Y-(float)Translation.Y,z=(float)relative.Translation.Z-(float)Translation.Z;
+        delta=new(x,y,z);float tx=(float)distance.X,ty=(float)distance.Y,tz=(float)distance.Z;
+        if(MathF.Abs(tx-ty)<Radians.Epsilon&&MathF.Abs(tx-tz)<Radians.Epsilon)
+        {float sum=x*x;sum+=y*y;sum+=z*z;if(sum>tx*tx)return false;}
+        else
+        {var local=Quaternion.Inverse().Rotate(delta);if(MathF.Abs((float)local.X)>tx||MathF.Abs((float)local.Y)>ty||MathF.Abs((float)local.Z)>tz)return false;}
+        if(tolerance>=new Radians(Radians.Pi))return true;
+        angle.Assign(new Radians(Quaternion.AngleDiff(relative.Quaternion)));
+        if(angle<=tolerance)return true;
+        if(ambiguities.Count==0)return false;
+        var matrix=(Quaternion.Inverse()*relative.Quaternion).Matrix();if(absolute)matrix=matrix.Abs();
+        foreach(var a in ambiguities)if(new Radians((float)matrix.AngularDistance(a))<tolerance)return true;
+        return false;
+    }
+    public void Dispose()
+    {
+        if(Node is not {} n)return;
+        PoseDiagnostics.Missing("M11-077 pose destruction/owner-release side effects are pending their checked owning job; explicit wrapper release only");
+        if(n.Owners!=0)n.Owners--;Node=null;
+        // C# wrapper release is explicit. Native malformed underflow/zero-owner diagnostics remain unbuilt.
+    }
+    public override string ToString()=>"T="+Translation+" yaw="+(AngleAroundZ*180/Math.PI).ToString("F1")+"deg";
 }

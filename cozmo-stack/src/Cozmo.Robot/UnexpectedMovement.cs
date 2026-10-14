@@ -89,7 +89,7 @@ public static class UnexpectedMovementResponse
     /// B15 steps 1..2: the historical pose with its 32-byte Rotation3d overwritten by the robot's current rotation,
     /// which is the pose SetNewPose receives.
     /// </summary>
-    public static Pose3d RewoundPose(Pose3d historical, Pose3d now) => new(now.Rotation, historical.Translation);
+    public static Pose3d RewoundPose(Pose3d historical, Pose3d now) => new(now, historical.Translation);
 
     /// <summary>The word the engine puts in "Adding obstacle %s robot" (log strings 0x63EAC8..0x63EAF0).</summary>
     public static string Name(UnexpectedMovementSide side) => side switch

@@ -283,7 +283,7 @@ public sealed class AIWhiteboard
         {
             if (!table.TryGetValue(objectId, out var list)) table[objectId] = list = new List<FailureInfo>();
             if ((uint)list.Count >= (uint)FailureCap(failure)) list.RemoveAt(0);
-            list.Add(new FailureInfo(pose, (float)_clockSec()));
+            list.Add(new FailureInfo(pose.DeepCopy(), (float)_clockSec())); // Native emplace copies the Pose3d through R30/tree copy ctor.
         }
     }
 
@@ -368,19 +368,7 @@ public sealed class AIWhiteboard
     // fidelity: M15-024
     internal static bool IsSameAs(Pose3d entry, Pose3d query, float distMm, float angleRad)
     {
-        float vx = (float)query.Translation.X - (float)entry.Translation.X;
-        float vy = (float)query.Translation.Y - (float)entry.Translation.Y;
-        float vz = (float)query.Translation.Z - (float)entry.Translation.Z;
-        // thresholds (d, d, d): |d - d| < 1e-5f holds for every finite d, so the spherical branch is the one taken
-        float d2 = vx * vx;
-        d2 += vy * vy;
-        d2 += vz * vz;
-        float thr2 = distMm * distMm;
-        if (d2 > thr2) return false;
-        float pi = BitConverter.Int32BitsToSingle(0x40490FDB);
-        if (EngineRadians32.Ge(angleRad, pi)) return true;
-        float diff = EngineRadians32.AngleDiff(entry.Rotation, query.Rotation);
-        return EngineRadians32.Le(diff, angleRad);
+        return entry.IsSameAs(query,distMm,angleRad);
     }
 
     /// <summary>
@@ -422,84 +410,11 @@ public sealed record FailureInfo(Pose3d Pose, float TimeSec);
 // fidelity: M15-024
 public static class EngineRadians32
 {
-    private static readonly float Pi = BitConverter.Int32BitsToSingle(0x40490FDB);
-    private static readonly float NegPi = BitConverter.Int32BitsToSingle(unchecked((int)0xC0490FDB));
-    private static readonly float TwoPi = BitConverter.Int32BitsToSingle(0x40C90FDB);
-    private static readonly float NegTwoPi = BitConverter.Int32BitsToSingle(unchecked((int)0xC0C90FDB));
-    private static readonly float Eps = BitConverter.Int32BitsToSingle(0x3727C5AC);
-
-    /// <summary><c>Radians::rescale</c>: a value in (-pi, pi] is unchanged; |v| &lt; 10 steps by 2pi; larger: <c>v - (float)(int)ceilf(v / 2pi - 0.5f) * 2pi</c>; NaN passes through.</summary>
-    public static float Rescale(float v)
-    {
-        if (float.IsNaN(v)) return v;
-        if (v > NegPi && !(v > Pi)) return v;
-        if (MathF.Abs(v) < 10.0f)
-        {
-            while (!(v > NegPi)) v += TwoPi;
-            while (v > Pi) v += NegTwoPi;
-            return v;
-        }
-        float q = v / TwoPi + -0.5f;
-        float c = MathF.Ceiling(q);
-        return v - (float)(int)c * TwoPi;
-    }
-
-    /// <summary><c>Radians::IsNear(a, b, tol)</c> 0x0084CC0A.</summary>
-    public static bool IsNear(float a, float b, float tol)
-    {
-        float diff = Rescale(Rescale(a) - b);
-        return MathF.Abs(diff) < MathF.Abs(tol);
-    }
-
-    /// <summary><c>operator&gt;</c> 0x0084CC90.</summary>
-    public static bool Gt(float a, float b)
-    {
-        float d = a - b;
-        if (!(d > 0f)) return false;
-        return !IsNear(a, b, Eps);
-    }
-
-    /// <summary><c>operator&gt;=</c> 0x0084CCDC.</summary>
-    public static bool Ge(float a, float b) => Gt(a, b) || IsNear(a, b, Eps);
-
-    /// <summary><c>operator&lt;=</c> 0x0084CD1C: <c>b &gt;= a</c>.</summary>
-    public static bool Le(float a, float b) => Ge(b, a);
-
-    /// <summary>
-    /// <c>Rotation3d::GetAngleDiffFrom</c> 0x0084A694 as <c>Radians(float)</c> (rescaled): identical quaternions (all four components equal) give 0; otherwise <c>c = q1.q2</c> summed as
-    /// <c>((w1w2 + x1x2) + y1y2) + z1z2</c> in double, clamped to [-1, 1] (NaN becomes -1: <c>vcmpe d0,d1; it gt</c>), and the angle is <c>acos(2c*c + (-1))</c> narrowed to f32. The stack holds rotation matrices,
-    /// so the quaternions come from them (the dot product enters squared, so the quaternion sign is immaterial); identical matrices stand for identical quaternions.
-    /// </summary>
-    public static float AngleDiff(Mat3 a, Mat3 b)
-    {
-        bool same = true;
-        for (int i = 0; i < 3; i++) for (int k = 0; k < 3; k++) if (a[i, k] != b[i, k]) same = false;
-        if (same) return Rescale(0.0f);
-        var (aw, ax, ay, az) = Quaternion(a);
-        var (bw, bx, by, bz) = Quaternion(b);
-        double dot = aw * bw;
-        dot += ax * bx;
-        dot += ay * by;
-        dot += az * bz;
-        double c = -1.0;
-        if (dot > -1.0) c = dot;
-        double hi = 1.0;
-        if (c < 1.0) hi = c;
-        double twice = hi + hi;
-        double v = hi * twice;
-        v += -1.0;
-        return Rescale((float)Math.Acos(v));
-    }
-
-    /// <summary>The unit quaternion (w, x, y, z) of a rotation matrix (Shepperd's method; the stack's matrices stand where the engine has quaternions).</summary>
-    private static (double W, double X, double Y, double Z) Quaternion(Mat3 m)
-    {
-        double tr = m[0, 0] + m[1, 1] + m[2, 2];
-        double w, x, y, z;
-        if (tr > 0) { double s = Math.Sqrt(tr + 1.0) * 2; w = 0.25 * s; x = (m[2, 1] - m[1, 2]) / s; y = (m[0, 2] - m[2, 0]) / s; z = (m[1, 0] - m[0, 1]) / s; }
-        else if (m[0, 0] > m[1, 1] && m[0, 0] > m[2, 2]) { double s = Math.Sqrt(1.0 + m[0, 0] - m[1, 1] - m[2, 2]) * 2; w = (m[2, 1] - m[1, 2]) / s; x = 0.25 * s; y = (m[0, 1] + m[1, 0]) / s; z = (m[0, 2] + m[2, 0]) / s; }
-        else if (m[1, 1] > m[2, 2]) { double s = Math.Sqrt(1.0 + m[1, 1] - m[0, 0] - m[2, 2]) * 2; w = (m[0, 2] - m[2, 0]) / s; x = (m[0, 1] + m[1, 0]) / s; y = 0.25 * s; z = (m[1, 2] + m[2, 1]) / s; }
-        else { double s = Math.Sqrt(1.0 + m[2, 2] - m[0, 0] - m[1, 1]) * 2; w = (m[1, 0] - m[0, 1]) / s; x = (m[0, 2] + m[2, 0]) / s; y = (m[1, 2] + m[2, 1]) / s; z = 0.25 * s; }
-        return (w, x, y, z);
-    }
+    // API facade; the source arithmetic is owned by the shared pose port.
+    public static float Rescale(float v)=>Radians.Rescale(v);
+    public static bool IsNear(float a,float b,float tol)=>Radians.IsNear(a,b,tol);
+    public static bool Gt(float a,float b)=>Radians.Greater(a,b);
+    public static bool Ge(float a,float b)=>Radians.GreaterEqual(a,b);
+    public static bool Le(float a,float b)=>Radians.LessEqual(a,b);
+    public static float AngleDiff(Mat3 a,Mat3 b)=>Rotation3d.FromMatrix(a).AngleDiff(Rotation3d.FromMatrix(b));
 }

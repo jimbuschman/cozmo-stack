@@ -244,8 +244,10 @@ public class NavigationTests
         // M13-009: Point2 x = 27.0 (width) at sp+0x14, y = 20.0 (height) at sp+0x18.
         Assert.Equal(27.0, m.SizeMm); Assert.Equal(20.0, m.HeightMm);
         var corners = m.CornersOnObject();
-        Assert.Equal(27.0, (corners[2] - corners[0]).Length, 6);                   // TL -> TR is the width
-        Assert.Equal(20.0, (corners[0] - corners[1]).Length, 6);                   // TL -> BL is the height
+        // R8: narrowed unit quaternion has ww=zz=0.5-2^-25, so point scale is 1-2^-24.
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x41D7FFFF), (corners[2] - corners[0]).Length);                   // TL -> TR is the width
+        // R29: +22 rounding gives upper z=32, lower z=12+2^-20.
+        Assert.Equal(20.0-Math.ScaleB(1,-20), (corners[0] - corners[1]).Length);                   // TL -> BL is the height
         var normal = m.NormalOnObject;
         Assert.Equal(-1.0, normal.X, 6);                                            // facing out of the charger
         // 0x41B00000 in the charger constructor is 22, not 11
@@ -270,17 +272,17 @@ public class NavigationTests
         Assert.Equal(-15.5, ChargerGeometry.PreDockZOffsetMm);
 
         var pre = ChargerGeometry.PreDockPose(At(200, 0, 0));
-        Assert.Equal(200 - 164.0, pre.Translation.X, 6);
+        // R8/R24: -250*(1-2^-24), then +86 and +200 at f32 widths.
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x42100004), pre.Translation.X);
         // the marker pose is -pi/2 as the engine's float (0xBFC90FDB), so the 250 mm offset rotates to y = -250 * cosf(-1.5707964f) = 1.09278e-5 (not exactly 0): 0x004E9BBC and 0x004E9FE4..0x004EA018
-        float markerAngle = BitConverter.UInt32BitsToSingle(0xBFC90FDB);
-        float expectedY = 0.0f * MathF.Sin(markerAngle) + -250.0f * MathF.Cos(markerAngle);          // RotationMatrix2d: y' = x*sin + y*cos with the pose-local (0, -250)
-        Assert.Equal(expectedY, pre.Translation.Y, 9);
-        Assert.Equal(6.5, pre.Translation.Z, 6);
+        // R3/R4 gives equal-magnitude quaternion components; R8 diagonal is exactly zero.
+        Assert.Equal(0.0, pre.Translation.Y);
+        Assert.Equal((double)BitConverter.UInt32BitsToSingle(0x40D00002), pre.Translation.Z);
         Assert.Equal(0.0, pre.AngleAroundZ, 6);            // facing along the charger's +X, into it
 
         // and the docked pose is half a turn from it, 194 mm further on
         var docked = ChargerGeometry.DockedRobotPose(At(200, 0, 0));
-        Assert.Equal(194.0, docked.Translation.X - pre.Translation.X, 6);
+        Assert.Equal(194.0-Math.ScaleB(1,-16), docked.Translation.X-pre.Translation.X);
     }
 
     /// <summary>
