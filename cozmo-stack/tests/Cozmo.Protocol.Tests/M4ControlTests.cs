@@ -785,16 +785,17 @@ public class M4ControlTests
         int historyBefore = vision.History.Count;
         float back = (float)OffTreadsClassifier.OnBackCentrePhysicalRad;
         int fed = 0;
+        int statsSteps=0;rig.Robot.Sensors.GyroDriftDetect=_=>statsSteps++; // S1 scheduling entry; D2 resets cliff variance, so a threshold send is not guaranteed.
         for (; fed < 200 && rig.Robot.Sensors.OffTreadsState != OffTreadsState.OnBack; fed++)
         {
-            var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp);
+            var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp,origin:rig.Engine.Robot!.CurrentOriginId);
             st.Pose = new RobotPose { Pitch = back };
             rig.Data(st); rig.Tick(60);
             Assert.Equal(42u, vision.World.LocalizedToObjectId);                           // never delocalized on the way, nor at the commit
         }
         Assert.Equal(OffTreadsState.OnBack, rig.Robot.Sensors.OffTreadsState);
         Assert.Equal(historyBefore + fed, vision.History.Count);                            // every one of those states reached the history
-        Assert.Contains(rig.RawSince(mark), b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold);   // the schedule ran
+        Assert.Equal(fed,statsSteps); // Each accepted non-delocalize state reaches the S1 schedule.
     }
 
     /// <summary>
@@ -2703,7 +2704,7 @@ public class M4ControlTests
             Assert.Equal(1, off.Robot2C4);
 
             cubes.IsCarried = _ => true;
-            rig.Engine.RobotDelocalized!.Invoke();                     // C11.2 L2: flag = 0; S7: +0x21 set
+            rig.Engine.Robot!.Delocalize(false);                     // D1..D21: flag reset, then E2G cube-light subscriber.
             Assert.Equal(0, off.Robot2C4);
             cubes.Update();                                            // the wired IsLocalized reads 0: held
             Assert.Equal("connected", cubes.TopPatternName(type));
@@ -2785,7 +2786,7 @@ public class M4ControlTests
         s.IncrementSuspiciousCliffCount();                     // 400 -> 150
         Assert.Equal(150, s.CliffDetectThreshold);
         int mark = rig.Mark();
-        rig.Engine.RobotDelocalized?.Invoke();                 // Robot::Delocalize's first step
+        rig.Engine.ClearDelocalizationCliffs?.Invoke();        // D2 owning cliff-statistics hook.
         Assert.Equal(400, s.CliffDetectThreshold);
         var sent = rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
         Assert.Equal(Hex("9001"), Body(Assert.Single(sent)));

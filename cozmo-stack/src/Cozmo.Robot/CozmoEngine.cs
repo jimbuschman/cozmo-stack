@@ -742,9 +742,10 @@ public sealed partial class EngineRobot
     private int? _crashReportIndex;
     private volatile bool _timeSynced, _readyToStream, _firstFullState, _streamGate;
 
-    internal EngineRobot(CozmoEngine engine, bool queueConnectionReads = false)
+    internal EngineRobot(CozmoEngine engine, bool queueConnectionReads = false,uint robotId=CozmoEngine.RobotId)
     {
         Engine = engine;
+        NativeRobotId=robotId;
         Idle = new IdleTimeoutComponent(this);
         _actionList = new ActionList(engine.Log, (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text));
         // D2: initially off until host lifetime binding wires GameSend to the E2G signal (M5-063).
@@ -973,6 +974,7 @@ public sealed partial class EngineRobot
     internal void SyncTime()
     {
         TimeSynced = false;
+        PoseHistory.Clear();
         if (Engine.RobotStateHistoryClear is { } clear) Engine.RunIsolated(clear);
         // fidelity: M2-004
         // SyncTime {u32 GetCurrentTimeStamp() (0x00515266), f32 -20.0 (0xC1A00000, 0x0051526C/0x00515270)}
@@ -1031,10 +1033,12 @@ public sealed partial class EngineRobot
     /// </summary>
     private void ConstructorDelocalize()
     {
-        Engine.RobotDelocalized?.Invoke();   // SC4d: ClearCliffRunningStats is the first thing Robot::Delocalize does
-        AddOriginWithId(_nextOriginId);
-        Engine.ConstructorMapOrigin?.Invoke(CurrentOriginId); // M13-032 OnRobotDelocalized after AddNewOrigin
-        PoseFrameId = 0;
+        Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MISSING","M11-066 main/forward/lift/pivot constructor names have no checked B-M11-1 input row; empty host placeholders retained");
+        LiftPivot.SetParent(MainPose);LiftPose.SetParent(LiftPivot);
+        PoseHistory.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
+        PoseHistory.ForceFlush=()=>Engine.Das.ForceFlushNow();
+        Delocalize(false);
+        PoseFrameId=0; // Constructor post-Delocalize write 0x0051032C.
     }
 
     // fidelity: M4-037 — AddOriginWithID 0x847BD8; duplicate verify-failed return.
@@ -1043,6 +1047,7 @@ public sealed partial class EngineRobot
         OriginNames.Missing = Engine.EmitStackLog;
         if (!OriginNames.AddOriginWithId(id, (l, c, k, t) => Engine.EmitSourceLog(l, c, k, t))) return false;
         _origins.Add(id); CurrentOriginId = id;
+        _nativeOrigins[id]=new Vision.Pose3d(PoseOriginNames.NameOf(id)){Id=id};
         _nextOriginId = OriginNames.NextId;
         return true;
     }
@@ -1136,6 +1141,7 @@ public sealed partial class EngineRobot
         if (!TimeSynced) return false;
         FirstFullStateHandled = true;
         StoredState = s;
+        ComputeLiftPose(s.LiftAngle); // OV01: after time-sync gate, before cliff/touch/path/treads and origin gate; no epsilon.
         if (Engine.StateStored is { } stored) Engine.RunIsolated(() => stored(s));
         if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
         {
@@ -1585,7 +1591,7 @@ internal sealed class RobotManager
         // fidelity: M3-033
         // The engine's Robot constructor queues the connection-time NV reads; the RIC is the handshake path, so
         // the offline seam (withRic false) queues none.
-        var r = new EngineRobot(_engine, queueConnectionReads: withRic);
+        var r = new EngineRobot(_engine, queueConnectionReads: withRic,robotId:id);
         lock (_membershipGate)
         {
             RobotEntries.Add(id, r);

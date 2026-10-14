@@ -1809,7 +1809,7 @@ public class M11RVisBuildTests : IDisposable
         w.SetLocalizedTo(o);
         w.NoteRobotState(true, false);
         Assert.Equal((byte)1, w.Robot2C4);
-        w.OnRobotDelocalized();
+        w.DelocalizeRobotFields(); // D1 is Robot's reset, before BlockWorld's D19 hook.
         Assert.Null(w.LocalizedToObjectId);
         Assert.Equal((byte)0, w.Robot2C4);
         Assert.Equal((byte)0, w.Robot2C5);

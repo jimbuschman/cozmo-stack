@@ -980,12 +980,18 @@ public sealed class CubeLightComponent
     private void Log(string l) => _robot.Engine.Log(l);
     private void SourceLog(EngineLogLevel level, string? channel, string key, string text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
 
-    // fidelity: M4-018
+    // fidelity: M4-018, M4-048
     /// <summary>
     /// S7 (0x0063A3A8): the engine's RobotDelocalized handler sets comp+0x21, requesting that the default layer
     /// be re-picked for every object. <see cref="Update"/> applies it once robot+0x2C4 is non-zero (C11.2 L6).
     /// </summary>
-    internal void OnRobotDelocalized() { lock (_gate) _refreshRequested = true; }
+    internal void OnRobotDelocalized()
+    {
+        KeyValuePair<ObjectType,ObjectInfo>[] objects;
+        lock(_gate){_refreshRequested=true;objects=_infos.OrderBy(kv=>unchecked((int)kv.Value.ObjectId)).ToArray();}
+        foreach(var pair in objects)
+            if(!_robot.Carrying.IsCarryingObjectId(pair.Value.ObjectId))PlayLightAnim(pair.Key,"Connected",2);
+    }
 
     // fidelity: M4-018
     /// <summary>

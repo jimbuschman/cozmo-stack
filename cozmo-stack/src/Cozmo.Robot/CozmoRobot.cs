@@ -258,6 +258,8 @@ public sealed class CozmoRobot : IDisposable
                                  CubeLightAnimations.CreateDeferred(Engine.Options.ResourcesPath, Engine.Log, (level, channel, key, text) =>
                                  { lock (_lightLoadingLogs) _cubeLoadingLogs.Add((level, channel, key, text)); }));
         LocalizationWorld.SourceLog = (l, c, k, t) => Engine.EmitSourceLog(l, c, k, t);
+        Engine.DelocalizationWorld=LocalizationWorld;
+        LocalizationWorld.DelocalizeRuntime=()=>Engine.Robot?.Delocalize(Carrying.IsCarryingObject);
         LocalizationWorld.Log += Engine.EmitStackLog;
         // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.
         Engine.ConstructorMapCreated = () => LocalizationWorld.ConstructMapComponent();
@@ -314,11 +316,16 @@ public sealed class CozmoRobot : IDisposable
         // when the Robot is built on connection (M4-020 ConstructorDelocalize); the sensors exist by then.
         // C11.2: Delocalize also sets robot+0x2C4 = 0 and raises RobotDelocalized, which the CubeLightComponent hears
         // (S7: it sets comp+0x21, held until the flag returns to 1). The runtime Delocalize callers are M11 and not built.
-        Engine.RobotDelocalized = () =>
+        Engine.ClearDelocalizationCliffs = () =>
         {
             Sensors.ClearCliffRunningStats();
             Sensors.OffTreads.MarkDelocalized();
-            Lights.Cubes.OnRobotDelocalized();
+        };
+        Engine.DelocalizationCubeHook=Lights.Cubes.OnRobotDelocalized;
+        Engine.DelocalizationComponentHook=stage=>
+        {
+            if(stage=="FaceWorld"&&VisionModeRecipient is {} vision)vision.Faces.OnRobotDelocalized();
+            else Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MISSING","M11-069 "+stage+".OnRobotDelocalized body/recipient is not built here (0x00510D66..0x00510D80)");
         };
         // fidelity: M4-018
         // C11.2 L6: the cube-light refresh gate reads robot+0x2C4, the stack's OffTreadsClassifier.Robot2C4.

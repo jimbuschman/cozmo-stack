@@ -17,7 +17,7 @@ public readonly record struct VisionPoseData(uint Timestamp, Pose3d RobotPose, d
 /// carries the robot timestamp of its exposure, can be paired with the pose and head angle at that moment
 /// (<c>Robot::GetComputedStateAt</c>). Also answers whether the robot was moving around that time.
 /// </summary>
-public sealed class RobotStateHistory
+public sealed partial class RobotStateHistory
 {
     private readonly record struct Entry(uint Timestamp, RobotPose Pose, float HeadAngle, float LiftAngle, uint Status,
                                         uint OriginId);
@@ -76,6 +76,7 @@ public sealed class RobotStateHistory
         {
             _entries.Clear();
             _computed.Clear();
+            VisionOnly.Clear();
             _originId = 0;
         }
     }
@@ -84,7 +85,7 @@ public sealed class RobotStateHistory
     /// <summary>RobotStateHistory::Clear, which Robot::SyncTime runs (M1 CD18): every state is dropped.</summary>
     internal void Clear()
     {
-        lock (_gate) { _entries.Clear(); _computed.Clear(); }
+        lock (_gate) { _entries.Clear(); _computed.Clear(); VisionOnly.Clear(); }
     }
 
     /// <summary>The origin the robot's poses are currently reported in, from its state stream.</summary>

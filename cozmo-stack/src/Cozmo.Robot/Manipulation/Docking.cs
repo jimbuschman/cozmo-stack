@@ -277,6 +277,17 @@ public sealed class DockingSystem : IDisposable
     {
         if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
         if (_vision.World.GetObjectById(id) is not { } obj) return;
+        if(obj.NativeCarryingTree)
+        {
+            if(_vision.History.Latest is {} latest&&_robot.Engine.Robot is {} r&&_vision.History.OriginId==r.CurrentOriginId)
+            {
+                // Preserve the existing raw-pose adapter as an input; native input/root binding remains M11-066.
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"MISSING","M11-066 shared main pose still receives the existing history raw-pose candidate; complete native raw-pose writer/input binding is not built here");
+                r.MainPose.Node!.Transform=latest.RobotPose.Transform;
+                r.MainPose.SetParent(r.GetNativeOrigin(r.CurrentOriginId));
+            }
+            return;
+        }
         if (_vision.History.Latest is not { } state) return;
         // fidelity: M12-008
         // The pose it was attached at keeps its rotation (SetObjectAsAttachedToLift step 6); an object marked as carried
@@ -353,8 +364,17 @@ public sealed class DockingSystem : IDisposable
 
     /// <summary><c>CarryingComponent::SetObjectAsAttachedToLift</c> 0x00632CC4 (M12-008): see <see cref="LiftGeometry.SetObjectAsAttachedToLift"/>. Returns 0 on success.</summary>
     // fidelity: M12-008
-    public uint SetObjectAsAttachedToLift(uint? objectId, MarkerType markerCode) =>
-        LiftGeometry.SetObjectAsAttachedToLift(Carrying, _vision.World, Configurations, _vision.History.Latest, objectId, markerCode, Log);
+    public uint SetObjectAsAttachedToLift(uint? objectId, MarkerType markerCode)
+    {
+        uint result=LiftGeometry.SetObjectAsAttachedToLift(Carrying,_vision.World,Configurations,_vision.History.Latest,objectId,markerCode,Log);
+        if(result==0&&objectId is {} id&&_vision.World.GetObjectById(id) is {} obj&&Carrying.ObjectWrtLift is {} local&&_robot.Engine.Robot is {} robot)
+        {
+            obj.NativePose.Assign(local);obj.NativePose.SetParent(robot.LiftPose);obj.NativeCarryingTree=true;
+            if(Carrying.CarriedOnTopId is {} topId&&Carrying.TopWrtCarried is {} topLocal&&_vision.World.GetObjectById(topId) is {} top)
+            {top.NativePose.Assign(topLocal);top.NativePose.SetParent(obj.NativePose);top.NativeCarryingTree=true;}
+        }
+        return result;
+    }
 
     /// <summary>
     /// The engine's message for a dock, field for field.

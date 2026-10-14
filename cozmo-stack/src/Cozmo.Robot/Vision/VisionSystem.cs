@@ -103,7 +103,7 @@ public sealed class VisionSystem : IDisposable
         // charger's, clears it. The world and the robot pose it reads are this system's.
         _platformStep = () => robot.Sensors.UpdateOnChargerPlatformFromWorld(World, World.CurrentRobotPose?.Invoke());
         robot.Engine.ChargerPlatformUpdate = _platformStep;
-        History = new RobotStateHistory();
+        History = robot.Engine.Robot?.PoseHistory??new RobotStateHistory();
         Locator = new CubeLocator(this);
         robot.Message += OnMessage;
         // fidelity: M3-005, M3-022
@@ -653,7 +653,7 @@ public sealed class VisionSystem : IDisposable
                 // (the cliff schedule and the rest of the sensor route still see the state), Delocalize's origin allocation and the (status & 2) argument (it only gates a warning, 0x00510C6A..0x00510C98) and the carried move gated by [[+0x284]+8] != -1 (the carried set decides here). RobotDelocalized carries the OLD origin id: AddNewOrigin is not built (M11-053).
                 if (ReferenceEquals(_robot.Sensors.DelocalizeTrigger, s) && ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
                 {
-                    DelocalizeRobot();
+                    DelocalizeRobot((s.Status&2)!=0,true);
                     break;
                 }
                 if (_robot.Engine.Robot?.OriginAccepted(s) != true) break;
@@ -662,7 +662,7 @@ public sealed class VisionSystem : IDisposable
                 // (0x00512BA6) and the 101st consecutive pose-frame-id mismatch (0x00512F96, after the state went into the history). A state that merely reports a different pose origin id is filed
                 // in the history and delocalizes nothing: the engine has no origin-change trigger (the stand-in that forgot objects on one is removed).
                 History.Add(s);
-                if (ReferenceEquals(_robot.Sensors.FrameMismatchDelocalizeTrigger, s)) DelocalizeRobot();
+                if (ReferenceEquals(_robot.Sensors.FrameMismatchDelocalizeTrigger, s)) DelocalizeRobot((s.Status&2)!=0,false);
                 break;
             }
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
@@ -685,10 +685,11 @@ public sealed class VisionSystem : IDisposable
 
     /// <summary>The delocalization both runtime call sites share (M11-019): carried objects move across, the world forgets the rest, <see cref="RobotDelocalized"/> is raised.</summary>
     // fidelity: M11-019
-    private void DelocalizeRobot()
+    private void DelocalizeRobot(bool suppliedCarrying,bool treadBoundary)
     {
-        World.DelocalizeOnTreadBoundary(CarriedObjectIds());
-        RobotDelocalized?.Invoke(History.OriginId);
+        if(treadBoundary)World.ResetPoseFrameMismatch();
+        _robot.Engine.Robot?.Delocalize(suppliedCarrying);
+        RobotDelocalized?.Invoke(World.CurrentOriginId);
     }
 
     // fidelity: M11-041, M11-042

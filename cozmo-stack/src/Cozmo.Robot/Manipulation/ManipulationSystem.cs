@@ -19,6 +19,7 @@ public sealed class ManipulationSystem : IDisposable
         Docking.Log += l => Log?.Invoke(l);
         Configurations = new BlockConfigurationManager(vision.World, () => ClockSec());
         Docking.Configurations = Configurations;      // SetObjectAsAttachedToLift step 9 sets its dirty flag (M12-008)
+        robot.Engine.DelocalizationConfigurationHook=()=>Configurations.ForceUpdate=true; // M11-071 lambda 0x006172A6.
         Whiteboard = new AIWhiteboard(vision.World, () => ClockSec());
         // AIWhiteboard::Init 0x0056a394 registers the three handlers through the robot's external interface
         // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This

@@ -229,7 +229,15 @@ public sealed class ObservableObject
     /// <summary>vtable +0x5C, <c>IsUnique</c>: 1 for ActiveCube (0x004E3882) and Charger (0x004E3883), 0 in the base (0x004E02AE).</summary>
     public bool IsUnique => CubeGeometry.IsCube(Type) || Type == ObjectType.Charger_Basic;
     /// <summary>Pose in the robot's world origin; meaningful while <see cref="PoseState"/> is not Unknown.</summary>
-    public Pose3d Pose { get; internal set; } = Pose3d.Identity;
+    private Pose3d _pose=Pose3d.Identity;
+    internal Pose3d NativePose=>_pose;
+    internal bool NativeCarryingTree;
+    // The public world-coordinate API remains a snapshot. The native carried path owns one shared node.
+    public Pose3d Pose
+    {
+        get{if(!NativeCarryingTree)return _pose;using var flat=_pose.GetWithRespectToRoot();return Pose3d.FromFlatRotation(flat.Quaternion,flat.Translation);}
+        internal set=>_pose=value;
+    }
     public PoseState PoseState { get; internal set; } = PoseState.Unknown;
     public bool IsLocated => PoseState != PoseState.Unknown;
     /// <summary>Robot timestamp of the frame that last observed the object (obj+0x1C).</summary>
@@ -333,7 +341,7 @@ public sealed class ObservableObject
     /// </summary>
     public bool IsRestingFlat(double toleranceRad)
     {
-        var r=Pose.Rotation;
+        using var flat=NativePose.GetWithRespectToRoot();var r=flat.Rotation;
         float dot=(float)r[2,0];float y=(float)r[2,1],z=(float)r[2,2];
         if(MathF.Abs(y)>MathF.Abs(dot))dot=y;if(MathF.Abs(z)>MathF.Abs(dot))dot=z;
         float angle=MathF.Acos(MathF.Abs(dot)); // EQUIVALENT_IMPLEMENTATION M13-023(e): unshipped acosf, no clamp.
@@ -606,7 +614,7 @@ internal readonly record struct PoseChange(uint Id, Pose3d Pose, PoseState State
 /// confirmed object's pose (M11-044). Not built, each visible where it would run: <c>LocalizeRobot</c>'s <c>LocalizeToObject</c> and <c>Rejigger</c> (counted, M11-044),
 /// the collision dirty pass (<c>CheckForCollisionWithRobot</c>'s vtable +0x58, M11-042), the game-side broadcasts (no EngineToGame message types in this stack, M11-038).
 /// </summary>
-public sealed class BlockWorld
+public sealed partial class BlockWorld
 {
     /// <summary><c>CheckForUnobservedObjects</c>'s rotation gate: 0.174533 rad/s (10 deg/s).</summary>
     // fidelity: M11-004
@@ -896,9 +904,12 @@ public sealed class BlockWorld
     /// <c>FindLocatedObjectHelper(filter, empty modify, returnFirst = 1)</c> (0x00626FD2); the result is normalised to 0/1 (0x0062704C).
     /// </summary>
     // fidelity: M11-044
-    public bool AnyRemainingLocalizableObjects()
+    public bool AnyRemainingLocalizableObjects()=>AnyRemainingLocalizableObjects(0);
+    // fidelity: M11-070
+    public bool AnyRemainingLocalizableObjects(uint origin)
     {
         var f = new BlockWorldFilter { OriginMode = (OriginMode)3 };
+        if(origin!=0)f.AllowedOrigins.Add(origin);
         f.Predicates.Add(CanBeUsedForLocalization);
         return FindLocatedObjectHelper(f, null, true) is not null;
     }
@@ -1164,6 +1175,8 @@ public sealed class BlockWorld
             _located.Clear();
             _forgotten.Clear();
             _connectedObjects.Clear();
+            CurrentOriginId=1;NativeOrigin=null;NativeForceFlush=null;_fixtureOrigins.Clear();
+            UnbuiltBroadcastLocatedObjectStatesCalls=0;
             _confirmations.Clear();
             _poseChanges.Clear();
             _appendPoseChanges = false;
@@ -1178,7 +1191,7 @@ public sealed class BlockWorld
 
             _localizedTo = ObservableObject.UnassignedId;
             _movedSinceLocalized = 0;
-            _robot2C4 = 0; _robot2C5 = 0; _robot2C8 = -1.0f;
+            _robot2C0=0;_robot2C4 = 0; _robot2C5 = 0; _robot2C8 = -1.0f;
             LiftOccluderPoints = Array.Empty<Vec3>();          // the VisionComponent that held them is deleted with the Robot
         }
     }
@@ -2715,13 +2728,14 @@ public sealed class BlockWorld
     }
 
     /// <summary><c>ObjectPoseConfirmer::AddInExistingPose(obj)</c> 0x00506F48: an entry keyed by the object's ID with count, misses, times and pointer all zero and the object's current pose; an entry already there is kept (emplace).</summary>
-    // fidelity: M11-043
+    // fidelity: M11-043, M11-070
     private void AddInExistingPose(ObservableObject obj)
     {
         lock (_gate)
         {
             if (!_confirmations.TryGetValue((int)obj.ObjectId, out var entry))
-                _confirmations[(int)obj.ObjectId] = entry = new PoseConfirmation { Pose = obj.Pose };
+                _confirmations[(int)obj.ObjectId] = entry = new PoseConfirmation{Pose=new Pose3d("")};
+            entry.Pose.Assign(obj.NativePose); // C5: existing entry keeps counts/times, but always assigns the native pose.
             obj.Confirmation = entry;
         }
     }
@@ -2857,28 +2871,8 @@ public sealed class BlockWorld
     // fidelity: M11-019
     public IReadOnlyList<ObservableObject> OnRobotDelocalized(IReadOnlySet<uint>? carriedObjectIds = null)
     {
-        Missing("M11-069 Robot.Delocalize / UpdateObjectOrigin full path is deferred to B-M11-1; AddNewOrigin and fresh-map runtime transition are not built by B-M3M4-19");
-        var forgotten = new List<ObservableObject>();
-        List<ObservableObject> located;
-        DelocalizeRobotFields();                                   // Robot::Delocalize's own writes (0x00510A46..)
-        lock (_gate) located = _located.Values.Where(o => o.IsLocated).ToList();
-        ClearConfirmer();
-        foreach (var o in located)
-        {
-            if (carriedObjectIds is not null && carriedObjectIds.Contains(o.ObjectId)) continue;
-            PoseState prev;
-            lock (_gate)
-            {
-                prev = o.PoseState; o.PoseState = PoseState.Unknown;
-                _located.Remove(KeyOf(o));
-                _forgotten[o.ObjectId] = o;
-            }
-            PoseStateChanged?.Invoke(o, prev, PoseState.Unknown);
-            forgotten.Add(o);
-        }
-        CreateLocalizedMemoryMap(CurrentOriginId);
-        SelectedObjectId = null;
-        return forgotten;
+        if(DelocalizeRuntime is {} runtime){runtime();return Array.Empty<ObservableObject>();}
+        return FinishDelocalization(CurrentOriginId); // Standalone world entry has no Robot owner.
     }
 
     /// <summary>

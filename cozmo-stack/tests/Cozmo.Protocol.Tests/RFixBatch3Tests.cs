@@ -301,7 +301,8 @@ public class RFixBatch3Tests : IDisposable
         Assert.Single(rig.Vision.World.LocatedObjects);
         Mismatch();
         Assert.Equal(1, delocalized);
-        Assert.Empty(rig.Vision.World.LocatedObjects);
+        Assert.Single(rig.Vision.World.LocatedObjects); // D19 keeps the localizable old bucket, without a PoseState write.
+        Assert.DoesNotContain(rig.Vision.World.LocatedObjects,o=>o.OriginId==rig.Vision.World.CurrentOriginId);
         // 00512F40 calls sErrorF (not an unlevelled log); native format at00BE697E.
         Assert.Contains(engineLog, l => l == "error: Robot.UpdateFullRobotState.MismatchedFrameIDs: Robot[5] and engine[0] frameIDs are mismatched, delocalizing");
         for (int i = 0; i < 100; i++) Mismatch();                    // the counter was cleared: another 100 do nothing

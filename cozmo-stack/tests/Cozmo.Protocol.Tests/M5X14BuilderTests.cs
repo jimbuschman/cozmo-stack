@@ -15,7 +15,7 @@ public sealed class M5X14BuilderTests : IDisposable
     {
         using var robot = CozmoRobot.CreateForTest(new Port(), () => 0);
         var entries = new List<string>();
-        robot.Engine.LogEntry += e => entries.Add(e.Name ?? "");
+        robot.Engine.LogEntry += e => {if(e.Name?.StartsWith("Animation",StringComparison.Ordinal)==true)entries.Add(e.Name);}; // D5 adds unrelated Robot.Delocalize logs after animation construction.
         robot.Engine.Robots.AddRobot(1, false);
         Assert.Equal(new[] { "AnimationTriggerResponsesContainer::GetResponse", "AnimationGroupContainer.GetAnimationGroup_Const.InvalidName", "AnimationStreamer.Constructor.BadNeutralAnimGroup" }, entries);
         string root = Directory.CreateTempSubdirectory("m514-").FullName;

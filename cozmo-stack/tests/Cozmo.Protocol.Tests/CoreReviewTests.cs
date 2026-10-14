@@ -951,11 +951,12 @@ public class CoreReviewTests
         if (rig.NoLibrary) return;
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22));
         var cube = Assert.Single(rig.Frame().Objects).Object;
-        rig.M.Docking.Carrying.SetCarrying(cube.ObjectId);
+        Assert.Equal(0u,rig.M.Docking.SetObjectAsAttachedToLift(cube.ObjectId,cube.Markers[0].Code));
 
         rig.State(flags: (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos | RobotStatusFlag.IsPickedUp));
 
         Assert.NotNull(rig.M.World.GetLocatedObjectById(cube.ObjectId));
+        Assert.Equal(rig.Robot.Engine.Robot!.CurrentOriginId,cube.OriginId); // U6–U11 moved through the actual carried tree.
     }
 
     /// <summary>
