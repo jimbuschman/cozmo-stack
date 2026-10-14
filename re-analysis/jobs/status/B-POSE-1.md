@@ -1,6 +1,6 @@
 BLOCKED — adopted R18 contradicts the required Renormalize target reopening (NaN branch).
 
-Claim: 499721a3. No B-POSE-1 production implementation commit. Metadata/report commit: pending.
+Claim: 499721a3. No B-POSE-1 production implementation commit. Metadata/report commit: 07b96e18f29443ee0cf6d6a9d21c9dc15307e19f, pushed to main on 2026-10-14. The initial push was interrupted before completion; the normal retry passed the gate and pushed successfully.
 The previous R2 blocker is resolved: the manager's corrected (-pi, pi] row was re-read and used in the parked draft. This is a different blocker.
 
 ## Primary evidence and conflict
@@ -45,4 +45,4 @@ Manifest impact: append-only unresolved notes for M11-065 and M11-067; tests, st
 
 `python -I re-analysis/tools/fidelity.py` and `--check`: PASS (587 records). Manifest semantic audit: exactly two append-only unresolved changes, all other fields preserved. `git diff --check`: PASS.
 
-Unchanged-code full suite: PASS, 4,691/4,691, zero skipped, 3m46s. No new pose regression result is claimed. Normal push gate: pending. Stop the builder loop here under QUEUE rule 8.
+Unchanged-code full suite: PASS, 4,691/4,691, zero skipped, 3m46s. No new pose regression result is claimed. Normal push gate: PASS, records-only suite 786/786, zero skipped, 9s. No hook bypass. Stop the builder loop here under QUEUE rule 8.
