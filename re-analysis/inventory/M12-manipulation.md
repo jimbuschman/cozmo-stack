@@ -996,3 +996,10 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Carrying/docking lifetime read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (R1-R4) | M12-040 |
 | Reopened: tagged Abort() cancels _pending, native writes nothing: EXACT_SOURCE -> IMPLEMENTATION_GAP | M12-018 |
 | AbortDocking result discarded in the dock-action dtor | M12-034 (note) |
+
+
+## Check of OV09 (manager, 2026-10-14; research/overnight/20261014-ov09-m13-029-check.md)
+
+| Change | Records |
+| --- | --- |
+| IsActive-gated action dtors | M12-034, M12-023 (notes) |

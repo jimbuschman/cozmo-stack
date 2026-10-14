@@ -1513,3 +1513,17 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | 15 arithmetic rows and 6 Rodrigues/tree statements corrected before the B-POSE-1 rerun | M11-065, M11-066, M11-067, M11-068 (notes) |
+
+
+## Check of OV09 (manager, 2026-10-14; research/overnight/20261014-ov09-m13-029-check.md)
+
+| Change | Records |
+| --- | --- |
+| Pose destruction path, IMPLEMENTATION_GAP | M11-077 (new) |
+
+
+## Check of OV08 (manager, 2026-10-14; research/overnight/20261014-ov08-m13-023-check.md)
+
+| Change | Records |
+| --- | --- |
+| Sort ties stable by input index | M11-062 (note) |

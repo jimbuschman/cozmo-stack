@@ -2,7 +2,7 @@
   "subsystem": "M13-navigation",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "3ee17b8c75904b24adcd30e11b9d97e136335611b8a6d0c9f32fb9a961aaf6ca",
+  "inventory_sha256": "f4d00e49df60deac4f72f727e0bbf826c634162a639ed0342cb6d335fe27c149",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -319,12 +319,13 @@
       "hardware_required": false
     },
     "M13-023": {
-      "status": "RECOVERABLE_GAP",
-      "title": "The remaining unread pieces of the footprint path (corner-list writers, cv::Rodrigues, SortCornersClockwise ties, the bionic libm)",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Footprint corner ordering: SortCornersClockwise (centroid, atan2f, __sort4/sort3 ties, Quadrilateral slots) and the cv::Rectangle fallback (empty input, bounds, center); corner writers read and unreachable/out of scope",
       "authority": "libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M13-gap3.md): cv::minAreaRect is now read (M13-024) and the bounding-quad overrides for every class are resolved (M13-025). Still unread: (a) the writers of the MatPiece/FlatMat corner vector at sub-object +0x7C (getter 0x00502DD8) and of the CustomObject corner vector at +0x64 (getter 0x004EF78A); (b) cv::Rodrigues in libopencv_calib3d.so, used through RotationMatrixBase<3>::RenormalizeHelper 0x008499B0 by Rotation3d::GetRotationMatrix 0x0084AAE0, on which the numeric result of the BASE Vision::ObservableObject::GetBoundingQuadXY (0x0087713A) depends; (c) the tie behaviour of Quadrilateral::SortCornersClockwise 0x004E7EFC for equal atan2 angles (a degenerate footprint) and the body of Rectangle<float>::InitFromPointContainer (the minAreaRect failure fallback); (d) Robot::GetCameraPose(float) and the Robot members at +0x2CC and +0x258; (e) equivalence of the Android bionic libm sin, cos, atan2 and atan2f (system library that does not ship in the APK) with the host's: a policy question, not source-recoverable",
       "evidence": [
         "0x00502DD8, 0x004EF78A the corner getters; 0x0084AAE0, 0x008494E0, 0x008499B0 the rotation-matrix path; 0x004E7EFC SortCornersClockwise; 0x004E6778 InitFromPointContainer",
-        "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'"
+        "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md open questions; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md 'What stays open'",
+        "re-analysis/research/overnight/20261014-ov08-m13-023-check.md: S1-S6 0x004DF7BE..0x004DF84C, 0x004E7EFC..0x004E7F9C, 0x004E8260..0x004E8342, 0x004E847E..0x004E84E8, 0x004E8508..0x004E8642, 0x004E7E9C..0x004E7EFA; R1-R3 0x004E81B4..0x004E825E, 0x004E676A..0x004E67C4. Corner writers: MatPiece 0x00502DD8..0x00502ECE, FlatMat 0x004F6B58..0x004F70C0 (no constructor caller outside CloneType); CustomObject 0x004EF790..0x004F0340, clone 0x004F0470..0x004F04DC (callers only BlockWorld DefineCustom*/CreateFixedCustomObject handlers 0x0061E1EC..0x0061E6xx and DockingTestSimple 0x005CC1C0)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -388,12 +389,13 @@
       "hardware_required": false
     },
     "M13-029": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Path/planner abort and destruction",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x00649100..0x006491BA; 0x00649220..0x0064929E; 0x00649002; 0x0051127E..0x00511288; Path destructor calls Abort again, including another ClearPath send attempt. Pose vector destruction does not invoke callbacks. Planner virtual cancellation descendants UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov09-m13-029-check.md: rows A 0x00649100..0x006491BA, C 0x00649220..0x0064929E (ErasePath 0x006BFACE..0x006BFAE2), D3-D7 0x004F1A06, 0x004FD1A2..0x004FD1CC, 0x0064B252/0x0064B28E/0x0064B306, 0x004F19AC..0x004F19F0, 0x0085C7B4, W4-W7 0x004FD154..0x004FD18E, 0x005018E8..0x00501A04, 0x008583D4..0x00858428, 0x00851DDC..0x00851E12, T 0x0051111E..0x00511120, 0x0051127E..0x00511288, 0x00648FFC..0x00649080."
       ],
       "live_path": true,
       "hardware_required": false

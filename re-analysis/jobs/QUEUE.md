@@ -62,7 +62,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 29a2 | [B-M5-19](B-M5-19.md) | done 92278498; drives end in Success; Opus check FAIL on one log line (research/20261013-b-m5-19-check.md), fix in B-M5-20 |
 | 29c | [B-M13-1](B-M13-1.md) | done 3becf79a; Opus check FAIL (final-turn regression; research/20261013-b-m13-1-check.md), fixes in B-M13-2 |
 | 29c2 | [B-M13-2](B-M13-2.md) | done 57abaaba; Opus check FAIL (plan logs, event levels; research/20261013-b-m13-2-check.md); final turn confirmed; fixes in B-M13-3 |
-| 29c3 | [B-M13-3](B-M13-3.md) | open, next after the job in progress (plan logs, sEvent levels, restart path, ApplyAction) |
+| 29c3 | [B-M13-3](B-M13-3.md) | done 02fceff6; Opus check FAIL (OldPlanUnsafe on fresh plans, circular test; research/20261014-b-m13-3-check.md); fixes in B-M13-5 |
+| 29c4 | [B-M13-5](B-M13-5.md) | open, next after the job in progress (force=true skips OldPlanUnsafe; mismatch Debug calls; goal snapshot) |
 | 29d | [B-M12-2](B-M12-2.md) | done dae131fe; Opus check PASS (research/20261013-b-m12-2-pass.md); two queued items in B-M5-20 |
 | 29b | [B-M12-1](B-M12-1.md) | done d7316d1d; Opus check FAIL on one point (Dole send failures; research/20261013-b-m12-1-check.md), fix in B-M12-2 |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | done 985ba775; Opus check PASS (research/20261013-b-m3m4-19-pass.md); follow-up B-M3M4-23 |
@@ -78,7 +79,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 38 | [B-M2M15-1](B-M2M15-1.md) | open, after B-M5-20 (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
 | 39 | [B-M11-2](B-M11-2.md) | open, after B-M2M15-1 (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
 | 40 | [B-M12-3](B-M12-3.md) | open, after B-M11-2 (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018) |
-| 41 | [B-M13-4](B-M13-4.md) | open, after B-M12-3 (movement/track-layer wrappers M13-021; turn CheckIfDone M13-022; M13-020; TrackObjectAction M13-036) |
+| 41 | [B-M13-4](B-M13-4.md) | open, after B-M12-3 (movement/track-layer wrappers M13-021; turn CheckIfDone M13-022; M13-020; TrackObjectAction M13-036; path abort/destruction M13-029, corner sort M13-023, pose destruction M11-077) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

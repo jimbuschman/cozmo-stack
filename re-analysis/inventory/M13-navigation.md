@@ -2582,3 +2582,24 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | PoseNotSet and parentless consequence | M13-020 (note) |
 | TrackObjectAction ID writes, IMPLEMENTATION_GAP | M13-036 (new) |
 | TrackObjectAction selection and tail, RECOVERABLE_GAP | M13-037 (new) |
+
+
+## Check of OV09 (manager, 2026-10-14; research/overnight/20261014-ov09-m13-029-check.md)
+
+| Change | Records |
+| --- | --- |
+| Path/planner abort and destruction read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M13-029 |
+| IsActive-gated DriveStraight dtor | M13-013 (note) |
+
+
+## Check of OV08 (manager, 2026-10-14; research/overnight/20261014-ov08-m13-023-check.md)
+
+| Change | Records |
+| --- | --- |
+| Corner sort and Rectangle fallback read, retitled: RECOVERABLE_GAP -> IMPLEMENTATION_GAP; corner writers unreachable/out of scope | M13-023 |
+
+## Check of B-M13-3 (manager, 2026-10-14; research/20261014-b-m13-3-check.md)
+
+| Change | Records |
+| --- | --- |
+| force=true skips OldPlanUnsafe; mismatch Debug calls; goal snapshot | M13-033 (note) |

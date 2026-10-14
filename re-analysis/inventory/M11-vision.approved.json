@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "26d983c61730048eb3abcc0d4f1dad9079b78458debedf4d4a48e9e4bcb2e286",
+  "inventory_sha256": "9f0ba2e2eb30190450d099784e938a6cc6820a4fd084cef69001870d680a19b0",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -892,6 +892,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-small-reads-1-check.md: M11-073 / M11-076 section. GetParent 0x008453D4..0x0084541E, fault 0x008452BA; FindRoot 0x0084524E..0x0084526E; PoseTreeNode::FindRoot 0x008452CA..0x00845376 (guard 0x00845318); flatten helper 0x004DF628..0x004DF69C; guarded rows 0x00530E84, 0x005310B4, 0x00846D70/0x00846D7C, 0x00846FA4, 0x00848030."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-077": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Pose destruction path: PoseBase<Pose3d> destructor, RemoveOwner, the NotLastOwner verify, PoseTreeNode destructor",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov09-m13-029-check.md: P1 ~PoseBase 0x008450F4..0x00845166 (Pose3d vtable 0x0101CD00 slot 0 -> 0x008450F5); P2 RemoveOwner 0x008448B4..0x00844914; P3 verify call 0x00845156 (key PoseBase.Destructor.NotLastOwner, condition _node.use_count() == 1); P4 PoseTreeNode dtor 0x0084605C..0x0084609C, SetParent 0x008449EA..0x00844A10."
       ],
       "live_path": true,
       "hardware_required": false
