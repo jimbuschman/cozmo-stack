@@ -4393,7 +4393,7 @@
         "re-analysis/research/20260929-R-VIS-M12-gap2-extraction.md Q6, Q7; re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q6, Q7"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Built as before plus: the LEGACY constructor PlaceRelObjectAction(m, id, onTop) is A = B = 0, transform skipped, +0x95 false; its Offsets are kept apart as raw docking-error-signal offsets and touch nothing else (CheckPreActionPose stays true, OffsetB 0, +0xBB 0, DockingMethod Default), CHOICE because the producers of the callers' arguments are unread (M12-028). What still changes for the legacy callers (CubeGameBehaviors 597/645/1049, ManipulationBehaviors 313): onTop true now needs CanStackOnTopOfObject and otherwise returns 0x03000004 (SelectDockAction, source-backed); not carrying is 0x03000011 (was 0x03000000); the turn/marker/placement-clear flow is the PRE-BATCH stand-in unchanged (turn, marker facing the robot, VerifyNoObjectAtPlacementPose, no visible-marker wait, no 0x0300001D path; fix round 3); the pre-action check (when a caller leaves it on) goes through the validity cone/obstacles. Wire bytes: unchanged (byte 4 by onTop as before, byte 5 false, byte 7 0). Still open, so IMPLEMENTATION_GAP: (a) the pre-dock wire route (DriveToPlaceRelObjectAction 0x0055C7D0) is not built and FromWireMessage has NO production caller; (b) stored-but-unconsumed fields (+0xF0, +0xFC, +0x100, +0xC0 beyond the compound gate, IDockAction types 0x15/0x18/0x19); (d) the transform's exact-equality boundary is tested on the compare helper.",
+      "unresolved": "Built as before plus: the LEGACY constructor PlaceRelObjectAction(m, id, onTop) is A = B = 0, transform skipped, +0x95 false; its Offsets are kept apart as raw docking-error-signal offsets and touch nothing else (CheckPreActionPose stays true, OffsetB 0, +0xBB 0, DockingMethod Default), CHOICE because the producers of the callers' arguments are unread (M12-028). What still changes for the legacy callers (CubeGameBehaviors 597/645/1049, ManipulationBehaviors 313): onTop true now needs CanStackOnTopOfObject and otherwise returns 0x03000004 (SelectDockAction, source-backed); not carrying is 0x03000011 (was 0x03000000); the turn/marker/placement-clear flow is the PRE-BATCH stand-in unchanged (turn, marker facing the robot, VerifyNoObjectAtPlacementPose, no visible-marker wait, no 0x0300001D path; fix round 3); the pre-action check (when a caller leaves it on) goes through the validity cone/obstacles. Wire bytes: unchanged (byte 4 by onTop as before, byte 5 false, byte 7 0). Still open, so IMPLEMENTATION_GAP: (a) the pre-dock wire route (DriveToPlaceRelObjectAction 0x0055C7D0) is not built and FromWireMessage has NO production caller; (b) stored-but-unconsumed fields (+0xF0, +0xFC, +0x100, +0xC0 beyond the compound gate, IDockAction types 0x15/0x18/0x19); (d) the transform's exact-equality boundary is tested on the compare helper. OV02 check (re-analysis/research/overnight/20261014-ov02-m12-028-check.md): the native producers settle the legacy-ctor CHOICE: every native caller passes (low, A, B, skip) per M12-028's tuples, and the pyramid paths run the transform. Map each stack caller of the legacy ctor to its native producer.",
       "hardware_required": false,
       "live_path": true,
       "test": "M12RVisBuildTests.M12_025_*; M12RVisBuildTests.M12_017_*; M12RVisBuildTests.M12_005_*; M12RVisBuildTests.M12_028_*"
@@ -4446,10 +4446,11 @@
       "authority": "libcozmoEngine.so 3.4.0-1204: the setter 0x005586AC is called at exactly 0x005585F8, 0x0055889C, 0x0055C8A8, 0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A and 0x005B58C2 (re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q9); the default functions (0x005585F8, 0x0055889C), the DriveToHelper functor (0x005B58C2) and the PlaceRel installer (0x0055C8A8, never installed on the wire) are read in M12-029. Still unread: the flip-block installer bodies at 0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A, and the PlaceRelObjectParameters built by BehaviorStackBlocks::TransitionToStackingBlock 0x005C9588 (constant 0x00C69140 = {0,0,1}), BehaviorBuildPyramid::TransitionToPlacingTopBlock 0x005DC266 and BehaviorBuildPyramidBase::TransitionToPlacingBaseBlock 0x005DCE44; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): the four flip-block installers (0x0055E2CA L1, 0x0055E3E0 L2, 0x0055EB74 L3, 0x0055EC2A L4) and DriveAndFlipBlockAction::GetPossiblePoses are read: see M12-035. Still unread: the PlaceRelObjectParameters producers (0x005C9588, 0x005DC266, 0x005DCE44)",
       "evidence": [
         "0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A, 0x005B58C2 the installers; 0x005C9588, 0x005DC266, 0x005DCE44 the parameter producers",
-        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q1, Q2 and open questions 2 and 6"
+        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q1, Q2 and open questions 2 and 6",
+        "re-analysis/research/overnight/20261014-ov02-m12-028-check.md: rows 1-5. Stack 0x005C9520..0x005C961A; top 0x005DC08C..0x005DC322 (+0x005DD134, 0x005DC78A, 0x005DC7F0..0x005DC9A4); base 0x005DCDA4..0x005DCF38; UpdateBlockPlacementOffsets 0x005DD140..0x005DD3B4; CheckBaseBlockPoseIsFree 0x005DD650..0x005DD8FC with 0x0061F8EC..0x0061F9E0 and 0x00627F92..0x00628064."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "The flip installers (L1..L4) are built (M12-035). Still unread: the PlaceRelObjectParameters producers (0x005C9588, 0x005DC266, 0x005DCE44), behaviour-owned. Because the legacy PlaceRelObjectAction(m, id, onTop) constructor's arguments have no recorded producer, its callers (CubeGameBehaviors.cs:597/645/1049, ManipulationBehaviors.cs:313) keep the pre-batch behaviour wherever the inventory is silent: Offsets sent unchanged as raw error-signal offsets, CheckPreActionPose true, DockingMethod Default, the pre-batch turn / marker-facing / placement-clear stand-in with no visible-marker wait. Caller-visible changes that remain, each from a source-backed record: onTop true and !CanStackOnTopOfObject -> 0x03000004 (SelectDockAction, M12-017); not carrying -> 0x03000011 instead of 0x03000000; a pre-action check left on now runs through GetPreActionPoses with the validity cone and obstacles (0x03000010 / 0x03000005 / 0x04000001 / 0x03000004 for a carried target); the dock error-signal marker for legacy callers is unchanged (MarkerFacing).",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "The flip installers (L1..L4) are built (M12-035). Still unread: the PlaceRelObjectParameters producers (0x005C9588, 0x005DC266, 0x005DCE44), behaviour-owned. Because the legacy PlaceRelObjectAction(m, id, onTop) constructor's arguments have no recorded producer, its callers (CubeGameBehaviors.cs:597/645/1049, ManipulationBehaviors.cs:313) keep the pre-batch behaviour wherever the inventory is silent: Offsets sent unchanged as raw error-signal offsets, CheckPreActionPose true, DockingMethod Default, the pre-batch turn / marker-facing / placement-clear stand-in with no visible-marker wait. Caller-visible changes that remain, each from a source-backed record: onTop true and !CanStackOnTopOfObject -> 0x03000004 (SelectDockAction, M12-017); not carrying -> 0x03000011 instead of 0x03000000; a pre-action check left on now runs through GetPreActionPoses with the validity cone and obstacles (0x03000010 / 0x03000005 / 0x04000001 / 0x03000004 for a carried target); the dock error-signal marker for legacy callers is unchanged (MarkerFacing). Read 2026-10-13 (re-analysis/research/overnight/20261014-ov02-m12-028-check.md): IMPLEMENTATION_GAP, rows 1-5. Tuples: stack (low 0, A=B=0, skip check 1), pyramid top (low 0, midpoint, skip 0), pyramid base (low 1, chosen candidate, skip 0); they replace the stand-in \"Offsets sent unchanged as raw error-signal offsets\". The free check allows only LightCube/Block families in the current origin, ignoring the static block (M11-004 filter). The helper lifecycle is M12-042; the top midpoint geometry is M12-043 (RECOVERABLE_GAP). A second top delegation replaces the first (SmartDelegateToHelper); reachability unread.",
       "hardware_required": false,
       "live_path": true,
       "test": "ManipulationTests; M12RVisBuildTests.M12_035_*; M12RVisBuildTests.M12_028_*"
@@ -9366,6 +9367,40 @@
       "hardware_required": true,
       "live_path": true,
       "test": "HardwareCatalogFidelityTests.DrivingChecksExposeTheUncapturedFirmwareClearPathResponse"
+    },
+    {
+      "id": "M12-042",
+      "subsystem": "M12-manipulation",
+      "title": "PlaceRelObjectHelper lifecycle: ctor, Init (pre-action check, DriveTo delegation), StartPlaceRelObject (3-attempt counter), RespondToPlaceRelResult, MarkFailedToStackOrPlace",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/DockActions.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov02-m12-028-check.md: ctor 0x005B8F00..0x005B8F82; Init 0x005B8FD0..0x005B90FE; Start 0x005B9168..0x005B930E; Respond 0x005B94C0..0x005B952E; MarkFailed 0x005B93A8..0x005B9460; invokers 0x005B956A, 0x005B95D6."
+      ],
+      "effect": "How a behaviour's place-relative request is driven to, retried and marked failed.",
+      "provenance": "Opus check of OV02 (2026-10-13), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: port per the check file (F1-F8, the Respond table, MarkFailed with SetFailedToUse 1 or 2 and the 1-rad-about-Z pose). Dependencies: M12-031 (pre-action check), M12-022 (DriveToHelper), M8-011 (SmartDelegateToHelper), M15-024 (whiteboard). Unread: StopHelperWithoutCallback, IHelper::OnDelegateSuccess/Failure, DriveToHelper body.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M12-043",
+      "subsystem": "M12-manipulation",
+      "title": "PyramidBase interior geometry: corners and midpoint for the pyramid top placement (GetBoundingQuad<float> corner order)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov02-m12-028-check.md: corners/midpoint 0x006177F0..0x00617A08, 0x00617A8C..0x00617C32, multimap 0x00618A4C (equal keys keep insertion order, NaN right); unread GetBoundingQuad<float> 0x004E6490..0x004E6598 and Block::GetBoundingQuadXY 0x004E62A2."
+      ],
+      "effect": "Where the top cube of a pyramid is placed.",
+      "provenance": "Opus check of OV02 (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read GetBoundingQuad<float> (it fixes the corner order and so the tie order); also whether two PyramidBase entries can both contain A and B (T7 replace path reachability).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M13-029",

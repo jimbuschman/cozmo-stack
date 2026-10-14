@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "8218aa9b78932215abce7f4c2a0d48e40150c1946720c2e5c57769ebcc6f20dd",
+  "inventory_sha256": "a7d50228397de20064c86191406d60249594701afb2df97079346aca7f5fed59",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -407,12 +407,13 @@
       "hardware_required": false
     },
     "M12-028": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The behaviour-owned PlaceRelObjectParameters producers",
       "authority": "libcozmoEngine.so 3.4.0-1204: the setter 0x005586AC is called at exactly 0x005585F8, 0x0055889C, 0x0055C8A8, 0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A and 0x005B58C2 (re-analysis/research/20260929-R-VIS-verify-M12-gap2.md Q9); the default functions (0x005585F8, 0x0055889C), the DriveToHelper functor (0x005B58C2) and the PlaceRel installer (0x0055C8A8, never installed on the wire) are read in M12-029. Still unread: the flip-block installer bodies at 0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A, and the PlaceRelObjectParameters built by BehaviorStackBlocks::TransitionToStackingBlock 0x005C9588 (constant 0x00C69140 = {0,0,1}), BehaviorBuildPyramid::TransitionToPlacingTopBlock 0x005DC266 and BehaviorBuildPyramidBase::TransitionToPlacingBaseBlock 0x005DCE44; R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): the four flip-block installers (0x0055E2CA L1, 0x0055E3E0 L2, 0x0055EB74 L3, 0x0055EC2A L4) and DriveAndFlipBlockAction::GetPossiblePoses are read: see M12-035. Still unread: the PlaceRelObjectParameters producers (0x005C9588, 0x005DC266, 0x005DCE44)",
       "evidence": [
         "0x0055E2CA, 0x0055E3E0, 0x0055EB74, 0x0055EC2A, 0x005B58C2 the installers; 0x005C9588, 0x005DC266, 0x005DCE44 the parameter producers",
-        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q1, Q2 and open questions 2 and 6"
+        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q1, Q2 and open questions 2 and 6",
+        "re-analysis/research/overnight/20261014-ov02-m12-028-check.md: rows 1-5. Stack 0x005C9520..0x005C961A; top 0x005DC08C..0x005DC322 (+0x005DD134, 0x005DC78A, 0x005DC7F0..0x005DC9A4); base 0x005DCDA4..0x005DCF38; UpdateBlockPlacementOffsets 0x005DD140..0x005DD3B4; CheckBaseBlockPoseIsFree 0x005DD650..0x005DD8FC with 0x0061F8EC..0x0061F9E0 and 0x00627F92..0x00628064."
       ],
       "live_path": true,
       "hardware_required": false
@@ -568,6 +569,26 @@
       ],
       "live_path": true,
       "hardware_required": true
+    },
+    "M12-042": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "PlaceRelObjectHelper lifecycle: ctor, Init (pre-action check, DriveTo delegation), StartPlaceRelObject (3-attempt counter), RespondToPlaceRelResult, MarkFailedToStackOrPlace",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov02-m12-028-check.md: ctor 0x005B8F00..0x005B8F82; Init 0x005B8FD0..0x005B90FE; Start 0x005B9168..0x005B930E; Respond 0x005B94C0..0x005B952E; MarkFailed 0x005B93A8..0x005B9460; invokers 0x005B956A, 0x005B95D6."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M12-043": {
+      "status": "RECOVERABLE_GAP",
+      "title": "PyramidBase interior geometry: corners and midpoint for the pyramid top placement (GetBoundingQuad<float> corner order)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov02-m12-028-check.md: corners/midpoint 0x006177F0..0x00617A08, 0x00617A8C..0x00617C32, multimap 0x00618A4C (equal keys keep insertion order, NaN right); unread GetBoundingQuad<float> 0x004E6490..0x004E6598 and Block::GetBoundingQuadXY 0x004E62A2."
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
   }
 }

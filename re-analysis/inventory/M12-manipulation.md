@@ -959,3 +959,13 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | --- | --- |
 | Dock-action handler registration, deleted-target handler, +0xF0 sources: RECOVERABLE_GAP -> IMPLEMENTATION_GAP; Ramp unreachable | M12-034 |
 | Re-Init replaces C5/DA handles (lead) | M12-017 (note) |
+
+
+## Check of OV02 (manager, 2026-10-13; research/overnight/20261014-ov02-m12-028-check.md)
+
+| Change | Records |
+| --- | --- |
+| PlaceRel producers read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-028 |
+| PlaceRelObjectHelper lifecycle, IMPLEMENTATION_GAP | M12-042 (new) |
+| PyramidBase interior geometry, RECOVERABLE_GAP | M12-043 (new) |
+| Legacy ctor CHOICE settled by the producers | M12-025 (note) |
