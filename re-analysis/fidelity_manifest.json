@@ -11286,7 +11286,7 @@
       ],
       "effect": "Every pose, rotation and angle the engine computes, to the last bit; tolerance decisions (IsSameAs, cliff Equals, intersections) at boundaries.",
       "provenance": "Opus extractor read of the Pose3d arithmetic (2026-10-13), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: one exact port replacing Geometry.cs Mat3/Pose3d internals (job to follow the cv::Rodrigues read). libm (cosf, sinf, acos, acosf, atan2f, sqrt, ceilf) is bionic and does not ship: EQUIVALENT_IMPLEMENTATION for those calls only; operands, widths and order stay exact. The cv::Rodrigues paths (R19, R20, R41) are the unread record.",
+      "unresolved": "IMPLEMENTATION_GAP: one exact port replacing Geometry.cs Mat3/Pose3d internals (job to follow the cv::Rodrigues read). libm (cosf, sinf, acos, acosf, atan2f, sqrt, ceilf) is bionic and does not ship: EQUIVALENT_IMPLEMENTATION for those calls only; operands, widths and order stay exact. The cv::Rodrigues paths (R19, R20, R41) are the unread record.\nB-POSE-1 BLOCKED (2026-10-13): adopted pose3d-arithmetic R2 says the initial interval [-pi,pi] is unchanged. Reopening the required target shows 0x0084C892 compare against negative-pi literal0xC0490FDB, 0x0084C89A BLE to0x0084C8AA, then 0x0084C8C4 does not take BHI at equality and0x0084C8CA adds float2pi0x40C90FDB, returning positive-pi0x40490FDB. Thus negative-pi is not unchanged; initial interval is (-pi,pi]. Builder cannot silently amend an adopted row from its own reading. No production port committed; drafts parked in ignored scratch; manager/extractor correction needed before resuming. Other B-POSE-1 records unchanged. See status/B-POSE-1.md.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
