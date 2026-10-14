@@ -1499,3 +1499,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RobotDelocalized recipients read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-072 |
 | GetParent/FindRoot census and fault split out, IMPLEMENTATION_GAP | M11-076 (new) |
 | Remainder (producer invariants), retitled, RECOVERABLE_GAP | M11-073 |
+
+
+## Check of OV01 (manager, 2026-10-13; research/overnight/20261014-ov01-m12-027-check.md)
+
+| Change | Records |
+| --- | --- |
+| BroadcastObjectPoseChanged has five callers | M11-062 (note) |

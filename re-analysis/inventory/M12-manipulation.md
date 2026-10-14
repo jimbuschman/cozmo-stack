@@ -944,3 +944,18 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M12-032 |
 | New HARDWARE_ONLY | M12-041 robot events after ClearPath |
 | Notes appended | M12-023, M12-002 |
+
+
+## Check of OV01 (manager, 2026-10-13; research/overnight/20261014-ov01-m12-027-check.md)
+
+| Change | Records |
+| --- | --- |
+| Lift pose per-tick update read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (rows 1-4) | M12-027 |
+
+
+## Check of OV03 (manager, 2026-10-13; research/overnight/20261014-ov03-m12-034-check.md)
+
+| Change | Records |
+| --- | --- |
+| Dock-action handler registration, deleted-target handler, +0xF0 sources: RECOVERABLE_GAP -> IMPLEMENTATION_GAP; Ramp unreachable | M12-034 |
+| Re-Init replaces C5/DA handles (lead) | M12-017 (note) |

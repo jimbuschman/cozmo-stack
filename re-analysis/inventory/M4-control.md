@@ -750,3 +750,11 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | New IMPLEMENTATION_GAP | M4-048 cube lights on delocalize |
+
+
+## Check of OV01 (manager, 2026-10-13; research/overnight/20261014-ov01-m12-027-check.md)
+
+| Change | Records |
+| --- | --- |
+| Time-sync flag also gates the lift update | M4-020 (note) |
+| Cube-light pose-state callback, IMPLEMENTATION_GAP | M4-049 (new) |

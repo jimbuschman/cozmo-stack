@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "335c8c00babd064c4f5ca49857a9b5b2ecf282b87079de9425b6e35cd5c3d33a",
+  "inventory_sha256": "8218aa9b78932215abce7f4c2a0d48e40150c1946720c2e5c57769ebcc6f20dd",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -395,12 +395,13 @@
       "hardware_required": false
     },
     "M12-027": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The lift pose's per-tick update and the BroadcastObjectPoseChanged chain",
       "authority": "libcozmoEngine.so 3.4.0-1204: a carried object's pose parent is the lift pose (M12-008), so it follows the lift only through the pose tree; Robot::ComputeLiftPose 0x005151AC and where the lift pose is updated per tick were not read. ObjectPoseConfirmer::BroadcastObjectPoseChanged 0x00506F88 is called by AddObjectRelativeObservation (0x00506D48) and AddLiftRelativeObservation (0x00506E9E); whether and how it reaches BlockWorld::OnObjectPoseChanged 0x00624808 was not read",
       "evidence": [
         "0x005151AC ComputeLiftPose; 0x00506F88 BroadcastObjectPoseChanged; 0x00624808 OnObjectPoseChanged",
-        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q3"
+        "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q3",
+        "re-analysis/research/overnight/20261014-ov01-m12-027-check.md: build rows 1-4. RobotState entry 0x00537F52..0x00537F66; gate/store/call 0x0051293C..0x0051296E (gate = time-sync flag +0x29, owned by M4-020); ComputeLiftPose 0x005151AC..0x00515214 with 0x005126BC..0x005126EA, 0x008449A0, RotateBy 0x0084BB3A..0x0084BB68 (arithmetic per M11-065); ctor 0x0050FFE0..0x00510060; AddLiftRelativeObservation 0x00506E5C..0x00506EDC."
       ],
       "live_path": true,
       "hardware_required": false
@@ -479,12 +480,13 @@
       "hardware_required": false
     },
     "M12-034": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Unread dock-action handler bodies and the ramp/charger validity overrides",
       "authority": "libcozmoEngine.so 3.4.0-1204: IDockAction::Init subscribes to tags 0xC5 and 0xDA and the external interface (0x005516EA, 0x00551750) but the handler bodies are unread; SetupTurnAndVerifyAction 0x00551F9C is unread; ComputePlacementApproachAngle's angle helper 0x00550858 and axis table are unread; also unread: DrivingAnimationHandler (M12-024), CubeLightComponent (M10), and the flip-block installer bodies (M12-028); R-VIS gap 3 (re-analysis/research/20260929-R-VIS-M12-gap3-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M12-gap3.md): SetupTurnAndVerifyAction and the angle helper are read (M12-037, M12-030). Still unread: the handler bodies for tags 0xC5 (movingLiftPostDock) and 0xDA (liftLoad) and the external-interface handler; the wire-factory [+0xF7]/[+0xB9] store sites for the two PlaceRelObject actions take their values from the message; the ComputePlacementApproachAngle body 0x005504A0 and Rotation3d::GetAngleAroundXaxis/Yaxis (PLT 0x004AB914 / 0x004AB908) are readable and now owned by M12-039",
       "evidence": [
         "0x005516EA, 0x00551750, 0x00551F9C, 0x00550858",
-        "re-analysis/research/20260929-R-VIS-verify-M12-gap2.md 'What stays open'"
+        "re-analysis/research/20260929-R-VIS-verify-M12-gap2.md 'What stays open'",
+        "re-analysis/research/overnight/20261014-ov03-m12-034-check.md: build rows 1-4. Registration/lifetime 0x005516DE..0x005517C0, 0x00551EDC..0x00551F66, dtor 0x0055745C..0x005575B2; +0xF0 sources 0x005503D6, 0x005536EE, 0x00554C68..0x00554C94, 0x005565E0; RobotDeletedLocatedObject 0x005524C0..0x00552510 with CheckIfDone 0x005521BE..0x005521C6/0x005522BC/0x005523DC; Charger 0x004EA648; Ramp 0x0050F9AC..0x0050FA9E read and unreachable (ctor callers 0x0050F89A only, inside CloneType)."
       ],
       "live_path": true,
       "hardware_required": false

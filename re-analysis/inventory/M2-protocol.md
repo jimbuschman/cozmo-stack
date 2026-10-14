@@ -820,3 +820,10 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | --- | --- |
 | Read handler bodies split out as IMPLEMENTATION_GAP | M2-023 (new) |
 | Remainder (tag 0x60/0x81 recipients, C5 inside Clear), retitled, RECOVERABLE_GAP | M2-022 |
+
+
+## Check of OV03 (manager, 2026-10-13; research/overnight/20261014-ov03-m12-034-check.md)
+
+| Change | Records |
+| --- | --- |
+| C5 trigger sources | M2-023 (note) |

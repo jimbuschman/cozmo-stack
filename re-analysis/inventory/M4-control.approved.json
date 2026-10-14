@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "3d5a847e44f4ae932a647c375ebee920be4e6ea3829e52f4e1eeb050e6700c6c",
+  "inventory_sha256": "1590d41c62ffe6bdc9a06e3e5881b1ef485e5f4673b1c9c14425940be0377f8d",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -599,6 +599,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E5(b): 0x0063A390 (lambda 0x0063AC46), +0x21 store, carried test 0x0063A3D0, PlayLightAnim(id, CubeAnimationTrigger 1, layer 2, empty callback, false, zeroed ObjectLights, 0) 0x0063A3A6..0x0063A438."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-049": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CubeLightComponent::OnActiveObjectPoseStateChanged: the cube-light reaction to an active object's pose-state change",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov01-m12-027-check.md: S1-S3 rows. BroadcastObjectPoseStateChanged state tail 0x00506288..0x005062DA (vtable +0xC gate; base returns 0 at 0x004E0240); OnActiveObjectPoseStateChanged 0x00639828..0x006398D8: PlayLightAnim(id, trigger 0x25 Visible or 1 Connected, layer 2, empty function, false, zeroed ObjectLights (memclr8 0x75 bytes, +0x78/+0x7C at 0x00639856/0x0063988C), 0). Unity CubeAnimationTrigger.cs (names, authority 2)."
       ],
       "live_path": true,
       "hardware_required": false
