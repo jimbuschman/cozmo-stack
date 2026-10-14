@@ -701,3 +701,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Note | M8-020: the cozmo_sings_custom remap is CodeLab-only (M9-029) |
 
+
+
+## Check of OV06 (manager, 2026-10-14; research/overnight/20261014-ov06-m12-040-check.md)
+
+| Change | Records |
+| --- | --- |
+| Dock actions surviving Cancel(-1) at ~Robot (R8) | M8-015 (note) |
