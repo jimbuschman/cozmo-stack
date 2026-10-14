@@ -1473,3 +1473,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M11-070 |
 | New IMPLEMENTATION_GAP | M11-071 broadcast order and BlockConfiguration flag |
 | New RECOVERABLE_GAP | M11-072 subscriber list |
+
+
+## Check of R-POSE-REST (manager, 2026-10-13; research/20261013-remaining-pose-bodies-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M11-068 |
+| New RECOVERABLE_GAP | M11-073 GetParent on a root pose |

@@ -52,9 +52,12 @@ intersection, the cliff normal and the IsSameAs box test.
    - Remove the partial duplicates (CubeGameBehaviors.cs BeaconFloorGeometry, AIWhiteboard.cs EngineRadians32 with its
      Shepperd's conversion) in favour of the port.
    - In the status file, list every call site you changed and why.
-6. **Unread pieces** (M11-068): UnitQuaternion<double>·Point3d, the Euler and matrix X/Y constructors, IsValid, Abs,
-   ApplyTo(vector), Pose2d/Transform2d, and the GetParent/FindRoot wrappers. Where the stack needs one, give a visible
-   MISSING naming M11-068 rather than a guess.
+6. **The remaining pose bodies (M11-068),** now read (`research/20261013-remaining-pose-bodies-check.md`, with the Codex
+   report it checks): the Euler constructor and GetEulerAngles; the matrix X/Y angles (NaN picks the second pair); Abs;
+   ApplyTo(vector); RotationMatrix2d, Transform2d and Pose2d (including Pose2d(Transform2d)'s zero normal); GetParent and
+   FindRoot sharing the node (owners++); Radians operator= rescaling only when the destination's flag is set; and
+   SetParent's unowned VERIFY. GetParent() on a root is M11-073: if the stack can call it on a root, give a visible
+   MISSING naming M11-073.
 7. **The fixed points and the tests:**
    - unit tests for R3, R4 (both branches), R6, R8, R13 (including the equality and clamp edges), R14 (both branches),
      R17/R18 (a row norm just over 1.0 goes to the helper), Rodrigues round trips including the 180° and NaN cases,
@@ -64,7 +67,7 @@ intersection, the cliff normal and the IsSameAs box test.
 
 ## Out of scope
 
-Status changes. Reading M11-068.
+Status changes. Reading M11-073.
 
 **Manifest:** append to test lists and `unresolved`; never replace.
 

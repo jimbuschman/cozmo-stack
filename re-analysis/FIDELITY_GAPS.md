@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **581 records** over 16 subsystems.
+Manifest of **582 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 186 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 52 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 264 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 265 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 60 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 15 | 2 | 10 | 0 | 0 | no | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 72 | 12 | 44 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 73 | 12 | 45 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 41 | 6 | 23 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 35 | 4 | 27 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
@@ -341,15 +341,6 @@ B-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. 
 * evidence: VisionSystem::SetNextCameraParams 0x006B229C queues the params (M3-021 1d); the consumer in VisionSystem::Update (read from 0x006B4D5C) is UNKNOWN
 * outstanding: RECOVERABLE_GAP: read VisionSystem::Update from 0x006B4D5C for the consumer of the slot and what it applies. The stack queues NextCameraParams (Camera.cs) and never applies it.
 
-**M11-068 — Remaining unread pose bodies: UnitQuaternion<double>*Point3d, Euler/matrix X/Y ctors, IsValid, Abs, ApplyTo(vector), Pose2d/Transform2d, GetParent/FindRoot wrappers; reachability of SetParent with a null parent node** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs`
-* effect: Pose math on the less-used paths, and whether the original can crash on a null parent.
-* rests on: Pose3d reads (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-pose3d-arithmetic.md "Not read" and re-analysis/research/20261013-rodrigues-and-pose-tree.md "Unread": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52).
-* outstanding: RECOVERABLE_GAP: read the listed bodies; find whether SetParent is ever called with a pose whose node is null (if reachable, the crash needs an operator ruling).
-
 **M11-072 — RobotDelocalized subscriber list and order: the Subscribe(tag 0x32) sites, and the reachability of ReactionTriggerStrategyCubeMoved::HandleRobotDelocalized** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
@@ -358,6 +349,15 @@ B-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found.
 * outstanding: RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038.
+
+**M11-073 — Reachability of PoseBase::GetParent() on a root pose (WrapExistingNode owners++ with no null guard faults at 0x008452BA)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs`
+* effect: Whether the original can crash asking a root pose for its parent.
+* rests on: Opus check of R-POSE-REST (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6).
+* outstanding: RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -2194,6 +2194,15 @@ B-M3M4-19 built, awaiting strong verification: the strict float/unordered play-a
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-pose3d-arithmetic.md: "Not read" section: cv::Rodrigues via RenormalizeHelper 0x008499B0..0x00849A10, Rotation3d(RotationMatrix3d) 0x0084A3F4..0x0084A45C, RotationMatrix3d(angle, axis) 0x0084ADA4..0x0084AF34; PoseBase::operator= 0x00845940, SetParent 0x00844A14, PoseTreeNode ctors 0x00845F44/0x00845FE4; UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; Euler/matrix X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; the Pose2d/Transform2d family 0x0084B619..0x0084B92A.; re-analysis/research/20261013-rodrigues-and-pose-tree.md: cvRodrigues2 calib3d 0xF28E..0xFB9A (vector->matrix in double, DBL_EPSILON identity, R = c1*rrt + c*I + s*[r]x; matrix->vector cvCheckArr [-100,100) -> zero, cvSVD -> JacobiSVDImpl_<double> core 0x595C0..0x59B56 with OpenCV hypot 0x56EB0, GEMM U*Vt, s<1e-5 and 180-degree branches, acos), wrapper 0x111F8..0x1133E; PoseBase copy ctor 0x008458F0..0x0084592A, node copy ctor 0x00845FE4..0x00846044, operator= 0x00845940..0x00845A2E, SetParent 0x00844A14..0x00844A7A, node SetParent 0x008449EA..0x00844A10, WrapExistingNode 0x0084529C..0x008452C0, GetWithRespectTo write order 0x00845A34..0x00845E04.
 * outstanding: Read 2026-10-13 (re-analysis/research/20261013-rodrigues-and-pose-tree.md): build with M11-065/M11-066 (job B-POSE-1). libm cos/sin/acos inside Rodrigues are the phone libm (not shipped): EQUIVALENT_IMPLEMENTATION for those calls only, as for the other libm calls (M13-023(e)); everything else, including the Jacobi SVD and OpenCV hypot, is shipped code and exact. A NaN/Inf/out-of-range matrix renormalises to the identity. The remaining unread bodies are M11-068. Previous notes: RECOVERABLE_GAP: read cv::Rodrigues (both directions, CV_32F) in the shipped libopencv_calib3d.so (shipped code: exact, not libm), and the tree copy semantics (both being read); then the remaining bodies.
+
+**M11-068 — Remaining pose bodies: Euler ctor and GetEulerAngles, matrix X/Y angles, Abs, ApplyTo(vector), Transform2d/Pose2d, GetParent/FindRoot sharing, Radians operator=, SetParent unowned VERIFY (null-node path unreachable)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs`
+* effect: Pose math on the less-used paths, and whether the original can crash on a null parent.
+* rests on: Pose3d reads (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-pose3d-arithmetic.md "Not read" and re-analysis/research/20261013-rodrigues-and-pose-tree.md "Unread": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52).; re-analysis/research/20261013-remaining-pose-bodies-check.md (and re-analysis/research/20261013-remaining-pose-bodies.md): UnitQuaternion<double>*Point3d 0x00849F90..0x0084A060 (no caller); Euler/GetEulerAngles/X/Y 0x0084AF98..0x0084B422 (NaN picks the second pair, 0x0084B3A4/0x0084B3FE); IsValid 0x008497DA..0x0084985E and the 0x00849900 ctor (no callers); Abs 0x0084B51E..0x0084B55C; ApplyTo(vector) 0x0065671C..0x0065682E; RotationMatrix2d 0x0084A19C..0x0084A1EE; Transform2d 0x0084B618..0x0084B928; Pose2d ctors 0x008463D8..0x0084660C; GetParent/FindRoot/Wrap 0x0084520C..0x0084541E; Radians operator= 0x0084C846/0x0084C884; SetParent 0x00844A14..0x00844A7A (the null-node path unreachable: no producer of a null node).
+* outstanding: Read 2026-10-13 (re-analysis/research/20261013-remaining-pose-bodies-check.md): build with B-POSE-1. The null-node SetParent crash is unreachable (no defined execution yields a null node). GetParent() on a root is M11-073. Items with no engine caller (UnitQuaternion<double>*Point3d, IsValid, the 0x00849900 ctor) need not be built unless the stack calls them. Previous notes: RECOVERABLE_GAP: read the listed bodies; find whether SetParent is ever called with a pose whose node is null (if reachable, the crash needs an operator ruling).
 
 **M11-069 — BlockWorld::UpdateObjectOrigin: bucket lookup, same-root gate, FindRoot re-key with overwrite, AddInExistingPose, cascaded erase; and Robot::Delocalize's full sequence (old-origin capture, pose resets, logs, carried set, OnRobotDelocalized tail broadcast)** (live path)
 

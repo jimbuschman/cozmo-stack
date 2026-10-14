@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "ee335265d2ca72bec0d675a6013c523135fadc012f4e4d9114798c22279d7aa5",
+  "inventory_sha256": "db2f14cf64288e6746b4908ddf5882a42e4cae3e2b95350c4e2ee6126d4817c0",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -803,11 +803,12 @@
       "hardware_required": false
     },
     "M11-068": {
-      "status": "RECOVERABLE_GAP",
-      "title": "Remaining unread pose bodies: UnitQuaternion<double>*Point3d, Euler/matrix X/Y ctors, IsValid, Abs, ApplyTo(vector), Pose2d/Transform2d, GetParent/FindRoot wrappers; reachability of SetParent with a null parent node",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Remaining pose bodies: Euler ctor and GetEulerAngles, matrix X/Y angles, Abs, ApplyTo(vector), Transform2d/Pose2d, GetParent/FindRoot sharing, Radians operator=, SetParent unowned VERIFY (null-node path unreachable)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-pose3d-arithmetic.md \"Not read\" and re-analysis/research/20261013-rodrigues-and-pose-tree.md \"Unread\": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52)."
+        "re-analysis/research/20261013-pose3d-arithmetic.md \"Not read\" and re-analysis/research/20261013-rodrigues-and-pose-tree.md \"Unread\": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52).",
+        "re-analysis/research/20261013-remaining-pose-bodies-check.md (and re-analysis/research/20261013-remaining-pose-bodies.md): UnitQuaternion<double>*Point3d 0x00849F90..0x0084A060 (no caller); Euler/GetEulerAngles/X/Y 0x0084AF98..0x0084B422 (NaN picks the second pair, 0x0084B3A4/0x0084B3FE); IsValid 0x008497DA..0x0084985E and the 0x00849900 ctor (no callers); Abs 0x0084B51E..0x0084B55C; ApplyTo(vector) 0x0065671C..0x0065682E; RotationMatrix2d 0x0084A19C..0x0084A1EE; Transform2d 0x0084B618..0x0084B928; Pose2d ctors 0x008463D8..0x0084660C; GetParent/FindRoot/Wrap 0x0084520C..0x0084541E; Radians operator= 0x0084C846/0x0084C884; SetParent 0x00844A14..0x00844A7A (the null-node path unreachable: no producer of a null node)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -849,6 +850,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-073": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Reachability of PoseBase::GetParent() on a root pose (WrapExistingNode owners++ with no null guard faults at 0x008452BA)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6)."
       ],
       "live_path": true,
       "hardware_required": false

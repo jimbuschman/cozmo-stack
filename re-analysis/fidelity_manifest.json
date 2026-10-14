@@ -11293,16 +11293,17 @@
     {
       "id": "M11-068",
       "subsystem": "M11-vision",
-      "title": "Remaining unread pose bodies: UnitQuaternion<double>*Point3d, Euler/matrix X/Y ctors, IsValid, Abs, ApplyTo(vector), Pose2d/Transform2d, GetParent/FindRoot wrappers; reachability of SetParent with a null parent node",
+      "title": "Remaining pose bodies: Euler ctor and GetEulerAngles, matrix X/Y angles, Abs, ApplyTo(vector), Transform2d/Pose2d, GetParent/FindRoot sharing, Radians operator=, SetParent unowned VERIFY (null-node path unreachable)",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-pose3d-arithmetic.md \"Not read\" and re-analysis/research/20261013-rodrigues-and-pose-tree.md \"Unread\": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52)."
+        "re-analysis/research/20261013-pose3d-arithmetic.md \"Not read\" and re-analysis/research/20261013-rodrigues-and-pose-tree.md \"Unread\": UnitQuaternion<double>*Point3d 0x00849F90..0x0084A062; RotationMatrix3d Euler and X/Y 0x0084AF98..0x0084B424; IsValid 0x008497D0..0x008498E4; Abs 0x0084B51E; ApplyTo(vector) 0x0065671C; Pose2d/Transform2d 0x0084B619..0x0084B92A; GetParent 0x008453D4..0x00845448; FindRoot 0x0084520C..0x0084529C; PoseBase::SetParent null-parent-node log reads [null+0x38]/[null+0x44] (0x00844A46..0x00844A52).",
+        "re-analysis/research/20261013-remaining-pose-bodies-check.md (and re-analysis/research/20261013-remaining-pose-bodies.md): UnitQuaternion<double>*Point3d 0x00849F90..0x0084A060 (no caller); Euler/GetEulerAngles/X/Y 0x0084AF98..0x0084B422 (NaN picks the second pair, 0x0084B3A4/0x0084B3FE); IsValid 0x008497DA..0x0084985E and the 0x00849900 ctor (no callers); Abs 0x0084B51E..0x0084B55C; ApplyTo(vector) 0x0065671C..0x0065682E; RotationMatrix2d 0x0084A19C..0x0084A1EE; Transform2d 0x0084B618..0x0084B928; Pose2d ctors 0x008463D8..0x0084660C; GetParent/FindRoot/Wrap 0x0084520C..0x0084541E; Radians operator= 0x0084C846/0x0084C884; SetParent 0x00844A14..0x00844A7A (the null-node path unreachable: no producer of a null node)."
       ],
       "effect": "Pose math on the less-used paths, and whether the original can crash on a null parent.",
       "provenance": "Pose3d reads (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed bodies; find whether SetParent is ever called with a pose whose node is null (if reachable, the crash needs an operator ruling).",
+      "unresolved": "Read 2026-10-13 (re-analysis/research/20261013-remaining-pose-bodies-check.md): build with B-POSE-1. The null-node SetParent crash is unreachable (no defined execution yields a null node). GetParent() on a root is M11-073. Items with no engine caller (UnitQuaternion<double>*Point3d, IsValid, the 0x00849900 ctor) need not be built unless the stack calls them. Previous notes: RECOVERABLE_GAP: read the listed bodies; find whether SetParent is ever called with a pose whose node is null (if reachable, the crash needs an operator ruling).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11372,6 +11373,23 @@
       "effect": "Which engine components react to a delocalize, and in what order.",
       "provenance": "Codex research checked by Opus (2026-10-13), manager record.",
       "unresolved": "RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-073",
+      "subsystem": "M11-vision",
+      "title": "Reachability of PoseBase::GetParent() on a root pose (WrapExistingNode owners++ with no null guard faults at 0x008452BA)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Geometry.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6)."
+      ],
+      "effect": "Whether the original can crash asking a root pose for its parent.",
+      "provenance": "Opus check of R-POSE-REST (2026-10-13), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
