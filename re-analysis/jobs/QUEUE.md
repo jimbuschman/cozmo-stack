@@ -64,12 +64,13 @@ anything. BOARD.md is history; this file is the live queue.
 | 29d | [B-M12-2](B-M12-2.md) | open, after B-M13-1 (Dole send failures, queued items) |
 | 29b | [B-M12-1](B-M12-1.md) | done d7316d1d; Opus check FAIL on one point (Dole send failures; research/20261013-b-m12-1-check.md), fix in B-M12-2 |
 | 30 | [B-M3M4-19](B-M3M4-19.md) | done 985ba775; Opus check PASS (research/20261013-b-m3m4-19-pass.md); follow-up B-M3M4-23 |
-| 30a | [B-M3M4-22](B-M3M4-22.md) | open, after B-M3M4-19 (M7-028 directories, B-M3M4-18 queued items) |
+| 30a | [B-M3M4-22](B-M3M4-22.md) | done 51b42629; behaviour matches (research/20261013-b-m3m4-22-check.md); test-hygiene cleanup in B-M3M4-24 |
 | 31 | [B-POSE-1](B-POSE-1.md) | open, after B-M3M4-19 (exact Pose3d/Rotation3d/Transform3d port, cv::Rodrigues, pose tree; migrate Geometry.cs) |
 | 31a | [B-M11-1](B-M11-1.md) | open, after B-POSE-1 (Delocalize in full, UpdateObjectOrigin) |
 | 32 | [B-M3M4-21](B-M3M4-21.md) | open, after B-POSE-1 (dangling blended entry, cube-light root, LoadTime, cleanup) |
 | 33 | [B-M15-1](B-M15-1.md) | open, after B-M3M4-21 (backup manager: constructor, body, restore, wipe, restore list, app inputs) |
 | 34 | [B-M3M4-23](B-M3M4-23.md) | open, after B-M15-1 (every BlockWorld pose mutator outside the frame window) |
+| 35 | [B-M3M4-24](B-M3M4-24.md) | open, after B-M3M4-23 (test isolation, MISSING placement, B6 label test) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
