@@ -1,8 +1,8 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-10-09",
+  "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "2a2aaa148649bb396ff8bc505a25305e5901e1c88a16ea6d59c628f71186ef08",
+  "inventory_sha256": "b9aa3e6a3119581132a471211e95499f001f6a7f03c8ccee7030375806cf80e8",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -373,7 +373,7 @@
       "hardware_required": false
     },
     "M1-029": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Firmware version check against the shipped firmware header",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -574,7 +574,7 @@
       "hardware_required": false
     },
     "M1-046": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Channel/member subscription retirement recipients",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -586,7 +586,7 @@
       "hardware_required": false
     },
     "M1-047": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Transport executor topology and shipped priority request",
       "authority": "libcozmoEngine.so 3.4.0-1204 executor constructors/priority helper.",
       "evidence": [
@@ -600,7 +600,7 @@
       "hardware_required": false
     },
     "M1-048": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "UDPTransport shipped socket state machine and send/receive decisions",
       "authority": "libcozmoEngine.so 3.4.0-1204 UDPTransport OpenSocket/CloseSocket/Send/Receive/Update.",
       "evidence": [
@@ -631,7 +631,7 @@
       "hardware_required": false
     },
     "M1-050": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "External-interface disconnect/report delivery",
       "authority": "libcozmoEngine.so 3.4.0-1204 RobotManager::RemoveRobot.",
       "evidence": [
@@ -662,7 +662,7 @@
       "hardware_required": false
     },
     "M1-053": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Outgoing RobotState publication from the engine tick",
       "authority": "libcozmoEngine.so 3.4.0-1204 UpdateAllRobots/RobotState getter.",
       "evidence": [

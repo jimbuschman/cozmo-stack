@@ -60,5 +60,6 @@ The first three are the requests already written:
 | OV47 | requests/overnight/20261014-ov47-m12-044.md (M12-044: PreActionPose element escape analysis) | research/overnight/20261014-ov47-m12-044.md |
 | OV48 | requests/overnight/20261014-ov48-m13-037.md (M13-037: TrackObjectAction selection and UpdateTracking tail) | research/overnight/20261014-ov48-m13-037.md |
 | OV49 | requests/overnight/20261014-ov49-m11-042.md (M11-042: IsVisibleFrom, FindLocatedObjectHelper result, subscribers, null calibration) | research/overnight/20261014-ov49-m11-042.md |
+| OV50 | requests/overnight/20261014-ov50-m11-078.md (M11-078: vision/world teardown leaves) | research/overnight/20261014-ov50-m11-078.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

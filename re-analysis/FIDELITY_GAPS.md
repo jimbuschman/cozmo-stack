@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **596 records** over 16 subsystems.
+Manifest of **597 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 185 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 44 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 287 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 288 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 22 | 6 | 15 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 15 | 2 | 10 | 0 | 0 | no | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 77 | 12 | 49 | 1 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 78 | 12 | 50 | 1 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 44 | 2 | 31 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 37 | 1 | 32 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
@@ -52,7 +52,7 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | ACCEPTED | 39 | 0 | 0 | 3 |
+| M1-transport | INVENTORY_APPROVED | 39 | 0 | 0 | 3 |
 | M2-protocol | INVENTORY_APPROVED | 16 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 35 | 0 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 23 | 0 | 0 | 3 |
@@ -277,17 +277,6 @@ B-M5-19 built, awaiting strong verification: real driving completions exposed ma
 * evidence: re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md 'not done'; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md 'Open'; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md 'Still open'
 * outstanding: read each item; OpenCV numerics may be exact black boxes only if the shipped OpenCV is emulated (the emu tools in re-analysis/tools/emu). R-CLIFF-WORLD check (re-analysis/research/20261012-cliff-world-helpers-check.md): still unread for the cliff insert: GetOverlapType and FastPolygon ctor/Contains (0x00688290 and callees), UpgradeRootLevel body 0x006876FA..0x006879C0, ShiftRoot 0x00686DF8..0x0068743E, processor bodies 0x00688E50..0x006890AA and 0x0068928C..0x0068934C, ClearDescendants 0x00687E1C, SwapChildrenAndContent 0x00687600, DestroyNodes 0x0068768A. Also unread: MemoryMap vt+0xC (the merge used by UpdateMapOrigins, slot 0x0067DF78) and its null-argument handling (M13-032). Update 2026-10-13 (re-analysis/research/20261013-play-area-check.md): now read, moved to M11-045: the processor bodies, ClearDescendants, SwapChildrenAndContent, DestroyNodes. Still unread: ShiftRoot, UpgradeRootLevel body, QuadTreeNode::Transform (0x0068846E) and their area effect; GetOverlapType/FastPolygon; the MemoryMap merge. Split 2026-10-13 (re-analysis/research/20261013-quadtree-rest-check.md): the quad-tree subset is fully read (B1-B7: FastPolygon/LineSegment, GetOverlapType, ResetBoundingBox, UpgradeRootLevel/Expand, ShiftRoot with 20 ForceSet and 12 Swap sites, Transform, Merge) and moves to M11-045 / M11-046 / M13-032 as build rows. Still unread here: the OpenCV numerics, kmLine2WithLineIntersection, the AIWhiteboard +0x50 maximum and 3.0/6.0 uses, the UpdateAllResults loop and its five handlers, DropStatsWindowLength, AddSmallestDescendants (directional) 0x00688104 and the CheckedInfo bit indexing (M11-047).
 
-**M11-055 — Vision/history/world/pose/map lifetime recipients** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
-* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
-* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: 0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
-* outstanding: S7: vision/world/pose/map boundaries 0x0051115E..0x005111AC, 0x0051124C..0x0051126A, 0x005112CE, 0x00511310..0x005113DE. Thread join is shipped; descendants UNKNOWN. Source triage S7. Source: re-analysis/research/20261006-M1M2-missing-triage.md.
-B-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: B-M3M4-16 adds the managed map owner to the existing ResetToConstructed device boundary (restores empty constructor state and the new BlockWorld counters). No recursive destructor implementation is inferred; MISSING cites MapComponent destructor 0x0067DC00..0x0067DC28. The native Delete/construct boundary remains the existing M1-025 owner.
-B-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. Existing full removal regression confirms the world returns to constructor state; no native lifecycle implementation/status change.
-
 **M11-056 — SDK camera and custom-world reset recipients** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
@@ -359,6 +348,15 @@ B-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-quadtree-rest-check.md: MapComponent::Update 0x0067DC4C, BroadcastMap 0x0067DDB8 (..0x0067DE3B), QuadTree::Broadcast 0x006857FC..0x00685C07, BroadcastMemoryMapDraw from 0x00685C08.
 * outstanding: RECOVERABLE_GAP: read the bodies; if it is an engine-to-game message, the engine side stays exact and the stack delivers it through the C# API (app-boundary rule).
+
+**M11-078 — Vision/world teardown leaves not yet read: result-list and deque payload dtors, Camera::~Camera, ImageCache, CalibImage/Image vectors, CLAHE finalizer, FaceRecognizer trees, the ObservableObject dtor census beyond cube/charger, subscriber handle specialisations, VisionSystem profiler key** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: Logs or sends during teardown that the stack may not reproduce.
+* rests on: Split from M11-055 after the Opus check of OV13 (2026-10-14), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov13-m11-055-check.md: "Still unread": Camera::~Camera (PLT 0x004A7D68), ImageCache (PLT 0x004BEE38), CLAHE (PLT 0x004BEF70), FaceRecognizer trees 0x0086A0DA..0x0086A1C4, PreActionPose/ActiveLED 0x004E6956..0x004E6966, FaceRecognitionMatch 0x004F5EBA, handle specialisations 0x004EF1C2/0x004EF1CC, VisionSystem+0x14 writers.
+* outstanding: RECOVERABLE_GAP: read the listed bodies for logs, sends and state changes.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -2091,6 +2089,17 @@ B-M3M4-19 B2 is explicitly MISSING, per revised job: full Robot.Delocalize/Updat
 * evidence: Robot::Robot 0x0050FF7C..0x0050FFBA builds RobotHeadCam: x = movw/movt 0x418C28F6 (17.52) at 0x0050FF7C, z = `mov.w r1,#0xC1000000` (-8.0) at 0x0050FF8A stored at 0x0050FF8E, passed as r2 = sp+0x48 at 0x0050FFB2 to the Pose3d constructor (PLT 0x4A6C40) with the neck pose at robot+0x2CC as parent; the neck is x = 0xC1500000 (-13.0), z = 0x42440000 (49.0) at 0x0050FF36 and 0x0050FF40 (a Unicorn run of 0x0050FF7C..0x0050FFBA confirmed (17.52, 0, -8.0))
 * outstanding: R-FIX2 (2026-10-04): found by the verifier of the floor-placement batch: HeadGeometry.HeadCamPositionMm in CameraModel.cs is (17.52, 0, 17.52), the engine's z is -8.0. The engine's value is used only inside TurnTowardsPose.ComputeHeadAngleToSeePose (HeadGeometry.EngineHeadCamPositionMm). Applying it to the vision model moves the camera 25.52 mm lower and three tests that estimate marker poses (CORE005_TheChargerDockingSignalUsesTheMarkersRealShape, NavigationTests.AChargerInViewIsLocalisedWithoutBeingConnected, DriveToObjectWithThePlannerTreatsOtherCubesAsObstaclesButNotTheTarget) then miss by 10-19 mm, because PoseEstimation.cs is a local stand-in for cv::solvePnP (homography init plus Levenberg-Marquardt) that is ill-conditioned for a small near-frontal planar marker. Needs the exact solvePnP and corner pipeline (M11 extraction) before the constant can change; no capture or acceptance bundle contains marker or cube poses, so hardware cannot discriminate 17.52 from -8.0 (the engine binary wins). Not built.
 
+**M11-055 — Vision/history/world/pose/map lifetime recipients** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt; re-analysis/research/overnight/20261014-ov13-m11-055-check.md: R1-R7 (~Robot 0x0051115E..0x005114EC), V1-V3 with V2b worker exit 0x00651F08..0x006522A8, V4-V7 order 0x0065259E..0x00652718 / 0x006B1E92..0x006B2142, profiler 0x0087CFD0.., pet/face/recognizer shutdown 0x0087C7F0..0x0087C8C6 / 0x0086C598..0x0086CA4C / 0x0086284C..0x00862986, BlockWorld 0x0061CCFC..0x0061CDBA / 0x006272F4..0x00627430, cube/charger thunk 0x004E399C, viz no-send, map/QuadTree, origin list 0x00847944..0x008479DE.
+* outstanding: S7: vision/world/pose/map boundaries 0x0051115E..0x005111AC, 0x0051124C..0x0051126A, 0x005112CE, 0x00511310..0x005113DE. Thread join is shipped; descendants UNKNOWN. Source triage S7. Source: re-analysis/research/20261006-M1M2-missing-triage.md.
+B-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: B-M3M4-16 adds the managed map owner to the existing ResetToConstructed device boundary (restores empty constructor state and the new BlockWorld counters). No recursive destructor implementation is inferred; MISSING cites MapComponent destructor 0x0067DC00..0x0067DC28. The native Delete/construct boundary remains the existing M1-025 owner.
+B-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. Existing full removal regression confirms the world returns to constructor state; no native lifecycle implementation/status change. Read 2026-10-14 (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): IMPLEMENTATION_GAP for the listed rows. The pose rows belong to M11-077; the unread leaves are M11-078. The OKAO handle deletes stay at the M11-016 boundary (the stack holds no OKAO handles). Crash points (M1-034 standing rule): the terminate landing pads and a null handle in ScopedHandleContainer cleanup (0x004EF1C2).
+
 **M11-061 — The vision-mode request queue: VisionComponent::EnableMode, VisionSystem::SetNextMode, the Update drain and VisionSystem::EnableMode's mask** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
@@ -2229,7 +2238,7 @@ B-M3M4-19 B2 withdrawn per checked job. Live OnRobotDelocalized visibly names M1
 * rests on: Opus check of OV09 (2026-10-14), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov09-m13-029-check.md: P1 ~PoseBase 0x008450F4..0x00845166 (Pose3d vtable 0x0101CD00 slot 0 -> 0x008450F5); P2 RemoveOwner 0x008448B4..0x00844914; P3 verify call 0x00845156 (key PoseBase.Destructor.NotLastOwner, condition _node.use_count() == 1); P4 PoseTreeNode dtor 0x0084605C..0x0084609C, SetParent 0x008449EA..0x00844A10.
-* outstanding: IMPLEMENTATION_GAP: port P1-P4 with the B-POSE-1 pose tree. Unread: the PoseTreeNode bookkeeping tail 0x008D148C and the Pose3d node shared_ptr on_zero_shared.
+* outstanding: IMPLEMENTATION_GAP: port P1-P4 with the B-POSE-1 pose tree. Unread: the PoseTreeNode bookkeeping tail 0x008D148C and the Pose3d node shared_ptr on_zero_shared. OV13 check (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): confirmed again; the verify sink is sVerifyFailedReturnFalse 0x0080D9A4..0x0080DA34 (sErrorV, _errG, sDumpCallstack "VERIFY", provider slot +0x14, returns 0).
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -2818,7 +2827,7 @@ B-M3M4-19 built, awaiting strong verification: Current returns null during host 
 * outstanding: IMPLEMENTATION_GAP: build in job B-M3M4-16. Unread: the MemoryMap merge (vt+0xC, slot 0x0067DF78) and its null-argument handling (M11-048); the Robot destructor teardown order.
 B-M3M4-16 (2026-10-13), built, awaiting strong verification: MapComponent empty/Unknown constructor, zombie-before-create events printing argument origin, map emplace/current selection, checked BlockWorld zombie-bucket erase and selection reset, and first constructor origin hook built. UpdateMapOrigins wrapper orders object update/NullMapFound/error/new map/MISSING merge/current/erase; successful Rejigger caller unavailable M11-044, explicitly reported there. MemoryMap merge vt+0xC remains M11-048.
 B-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: Each EngineRobot constructs a fresh MapComponent before its first delocalization, while VisionSystem reuses that live owner. Managed device-removal resets discard the old owner; recursive native destructor effects remain M11-055/M11-045 MISSING. Omission (re-analysis/research/20261013-delocalize-and-update-object-origin.md): OnRobotDelocalized ends with a tail call to BroadcastLocatedObjectStates (0x006249EC -> PLT 0x004B7E78).
-B-M3M4-19 built, awaiting strong verification: null current map after deferred Reset is handled without creating an invented replacement map. CozmoRobot owns the single EmitStackLog subscription; VisionSystem no longer duplicates it. Current map lifetime delocalization change is deferred to B-M11-1. R-QUADTREE check (re-analysis/research/20261013-quadtree-rest-check.md): the merge is read (Merge 0x006813A8 -> QuadTree::Merge 0x00685504..0x00685720: leaf collection, MakeQuadXY, ApplyTo, SortCornersClockwise/ImportQuad2d corner order asc0, asc3, asc2, asc1, budget = ceilf(dist/1280)). The old map is looked up with operator[] (0x0067DE8E), so an absent key gives a null source and the original crashes at 0x00688254: covered by the M1-034 standing rule if reachable.
+B-M3M4-19 built, awaiting strong verification: null current map after deferred Reset is handled without creating an invented replacement map. CozmoRobot owns the single EmitStackLog subscription; VisionSystem no longer duplicates it. Current map lifetime delocalization change is deferred to B-M11-1. R-QUADTREE check (re-analysis/research/20261013-quadtree-rest-check.md): the merge is read (Merge 0x006813A8 -> QuadTree::Merge 0x00685504..0x00685720: leaf collection, MakeQuadXY, ApplyTo, SortCornersClockwise/ImportQuad2d corner order asc0, asc3, asc2, asc1, budget = ceilf(dist/1280)). The old map is looked up with operator[] (0x0067DE8E), so an absent key gives a null source and the original crashes at 0x00688254: covered by the M1-034 standing rule if reachable. OV13 check (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): the Robot destructor order is read: PoseOriginList 0x005113C2..0x005113D0, then MapComponent +0x25C 0x005114DC..0x005114EC, after BlockWorld 0x005112CE.
 
 **M13-033 — Planner side of PathComponent: planner construction, SelectPlannerHelper, lattice ComputePath/ComputeNewPathIfNeeded/StartPlanning (both force values, safe-prefix retention), async worker and F0-F8 flags, StopPlanning guard, GetCompletePath, the short planners, IPathPlanner wrappers, slot 0x20/0x18 safety dispatch** (live path)
 
@@ -3237,7 +3246,7 @@ B-M5-16 fixture correction: the NoFreePoses/needs-order regression enters the ch
 | M3-008 | M3-device | HARDWARE_ONLY | How the firmware maps pair bits to physical display rows, and the robot playback period | only the robot can answer it Observed 2026-10-12 (re-analysis/acceptance/hardware/20261012-062328-M3M4-HW): Row mapping: all 5 patterns agree with the engine model (pair bit 0 = row 2k, bit 1 = row 2k+1); the script graded 3 as differing only by literal text matching (operator answers "top lef bottom right", "left higher", "fine line whole face" are the model). Playback: the operator timed the 30-frame bar at 1/2/4 s for host intervals 34/67/133 ms (send spans about 0.97/2.0/4.0 s), so the robot shows each face frame as it arrives; no separate playback period was observed. NumAnimBytesPlayed meaning stays unestablished. |
 | M3-016 | M3-device | HARDWARE_ONLY | Whether firmware 2457 emits colour frames in this format, and how the robot reacts to EnableColorImages | only the robot can answer it Observed 2026-10-12 (re-analysis/acceptance/hardware/20261012-062328-M3M4-HW): EnableColorImages(true) alone (P1, the engine path) gives colour frames: 57 of 58 frames carry encoding 8 on the wire with first data byte 0x01 (read as encoding 9, the colour flag), a 3-component JPEG 160 wide for a reported 320x240 (half-width colour); the first frame after the enable was still grey. P2 (tool-only StartCamera) the same; P3 (disable) returns to grey 320x240 single-component. |
 | M9-023 | M9-wwise-music | HARDWARE_ONLY | How the stock app and robot sounded when singing | Only an original-app/robot recording can establish the final audible result; a hardware pass verifies sound but cannot raise source provenance. |
-| M11-016 | M11-vision | BLOCKED_EXTERNAL | Face, pet and motion detection | nothing recoverable: the detector is third-party binary code |
+| M11-016 | M11-vision | BLOCKED_EXTERNAL | Face, pet and motion detection | nothing recoverable: the detector is third-party binary code OV13 check (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): the justification "the detector is third-party binary code" is weak under "Exact, always": the OKAO/OMCV code ships inside libcozmoEngine.so and its delete paths and mapping tables are readable (0x00933AAC, 0x00921944, tables 0x00E08E28, 0x00E34944, 0x00E594D8). Status question raised with the operator 2026-10-14. |
 | M14-006 | M14-faces | BLOCKED_EXTERNAL | Text to speech is not implemented | the voice model and the plug-in are third-party binaries |
 | M4-013 | M4-control | HARDWARE_ONLY | Whether the robot honours StartMotorCalibration after its connection-time calibration | only a robot can show whether the request is honoured Observed 2026-10-12 (re-analysis/acceptance/hardware/20261012-062328-M3M4-HW): StartMotorCalibration(head) after the connection-time calibration is honoured: MotorCalibration started at +47 ms and finished at +1228 ms. The head was already at its lower stop (-0.423 rad) and moved 0.014 rad, so the operator saw no motion. |
 | M5-036 | M5-animation | HARDWARE_ONLY | Robot-side animation behaviour: AbortAnimation handling and leftovers, Start without End and the unbounded keep-alive stream, locked-track suppression, animStarted/animEnded echo | only the robot can answer it |

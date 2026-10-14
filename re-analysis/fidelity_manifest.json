@@ -65,11 +65,10 @@
       "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true,
       "review": {
-        "state": "ACCEPTED",
+        "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M1-transport.md",
-        "approved": "2026-10-09",
+        "approved": "2026-10-14",
         "snapshot": "re-analysis/inventory/M1-transport.approved.json",
-        "accepted_commit": "8ff5546",
         "accepted": "2026-10-09"
       }
     },
@@ -778,7 +777,7 @@
       ],
       "effect": "a second connect, a response at the wrong time, or a local disconnect is handled differently",
       "provenance": "reproduced by the code; settled after the device-reset change (CozmoRobot.ResetDevices on RemoveRobot, CB33/CC26/CC27) passed its targeted read-only re-verification (2026-09-24). Residuals outside M1 (named, not settled here): (a) the upper-layer Robot components built in Robot::Robot 0x0050FBF1 are not reset on RemoveRobot (DockingSystem Carrying/CarryingComponent, DockingComponent, PathFollower, BehaviorManager, MoodManager, IdleBehavior, ReactiveBehavior, CubeMovedReactionStrategy, MapComponent -> MemoryMap, AIComponent -> FreeplaySystem) - M12-M15; (b) CD21 connection-time NV CameraCalib read (0x006583BA) is not implemented; the reset drops a caller-read calibration - M3 interface; (c) VisionSystem.Enabled kept across a removal is UNKNOWN (the VisionComponent constructor zeroes +0x48..+0x4B, 0x006500EE); (d) the 2 s bound on waiting for the in-flight frame is local (the source joins unbounded, 0x0065257C).",
-      "unresolved": "M1 retains outer ExitSdkMode/disconnect order and gates, including external-exit charger unlock attempt after disconnect is queued (E17 regression). E1-E5 -> M8-018, M7-024, M15-031, M3-039, M4-029/-030 and M11-056; E8 -> M15-032; E9 -> M4-031. E6 remains M1-051; E7 remains M1-052. Exceptions follow approved M1-034. Sources: 20261006-M1M2-missing-triage.md E1-E9; 0x00660918..0x0063DE96; 0x0069E1DC..0x0069E1FE.",
+      "unresolved": "M1 retains outer ExitSdkMode/disconnect order and gates, including external-exit charger unlock attempt after disconnect is queued (E17 regression). E1-E5 -> M8-018, M7-024, M15-031, M3-039, M4-029/-030 and M11-056; E8 -> M15-032; E9 -> M4-031. E6 remains M1-051; E7 remains M1-052. Exceptions follow approved M1-034. Sources: 20261006-M1M2-missing-triage.md E1-E9; 0x00660918..0x0063DE96; 0x0069E1DC..0x0069E1FE. OV13 check (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): the unbounded vision join (0x0065257C) waits for any in-flight UpdateVisionSystem plus at most one 2 ms sleep; the worker logs Info \"VisionComponent.Processor\" \"Terminated Robot VisionComponent::Processor thread\" before the join returns (0x00651F08..0x006522A8).",
       "hardware_required": false,
       "live_path": true,
       "test": "TransportRepairTests.B33_DisposeWhileConnectingSendsTheDisconnectRequestThenStops, EngineAppLayerTests.M1_025_B23_TheConnectionResponseMovesState1To2AndResetsTheReason, EngineAppLayerTests.M1_025_B2_CB36_ASecondConnectToRobotIsIgnoredWhileTheRobotExists, EngineAppLayerTests.M1_025_B2_CB4_ConnectToRobotBuildsTheRobotBeforeAnyExchange, EngineAppLayerTests.M1_025_CB38_AConnectionEventFromAnotherAddressIsHandledAsTheRobots, EngineAppLayerTests.M1_025_CB3_ASimulatedRobotUsesPort5552, EngineAppLayerTests.M1_025_CC18_DisconnectReasonValues, EngineAppLayerTests.M1_025_CC23_ClearResetsTheAddressSoALaterDisconnectCurrentSendsNothing, EngineAppLayerTests.M1_025_CC27_NoAutomaticReconnectAndALaterConnectToRobotBuildsAfresh, EngineAppLayerTests.M1_025_CC29_CC30_DisconnectCurrentDisconnectsOnceAndRemovesTheRobot, EngineAppLayerTests.M1_025_CC30_ArrivalsQueuedAfterTheMarkerAreDropped, EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed, EngineAppLayerTests.M1_025_M1_015_CC27_AfterRemovalASecondConnectStartsFromAFreshRobot, EngineAppLayerTests.M1_025_M1_015_CB33_AFrameInFlightAtTheRemovalLeavesNothingBehind, EngineAppLayerTests.M1_025_M1_015_CB33_APlayRunningAtTheRemovalEndsAndSendsNoMoreFrames, EngineAppLayerTests.CheckedSdkExit_IndependentEduAndExternalGates, EngineAppLayerTests.CheckedSdkExit_RemainingModeStillUpdatesCommunicationWithoutEqualitySuppression, EngineAppLayerTests.CheckedSdkExit_ResetHandoffsPrecedeBlockPoolAndConnectedFlagClear, EngineAppLayerTests.CheckedSdkExit_ChargerGateAndOneEntryErase"
@@ -3800,7 +3799,7 @@
         "OKAO_DT_* exports"
       ],
       "status": "BLOCKED_EXTERNAL",
-      "unresolved": "nothing recoverable: the detector is third-party binary code",
+      "unresolved": "nothing recoverable: the detector is third-party binary code OV13 check (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): the justification \"the detector is third-party binary code\" is weak under \"Exact, always\": the OKAO/OMCV code ships inside libcozmoEngine.so and its delete paths and mapping tables are readable (0x00933AAC, 0x00921944, tables 0x00E08E28, 0x00E34944, 0x00E594D8). Status question raised with the operator 2026-10-14.",
       "hardware_required": false,
       "live_path": true,
       "test": "FaceTests"
@@ -9328,15 +9327,16 @@
       "subsystem": "M11-vision",
       "title": "Vision/history/world/pose/map lifetime recipients",
       "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov13-m11-055-check.md: R1-R7 (~Robot 0x0051115E..0x005114EC), V1-V3 with V2b worker exit 0x00651F08..0x006522A8, V4-V7 order 0x0065259E..0x00652718 / 0x006B1E92..0x006B2142, profiler 0x0087CFD0.., pet/face/recognizer shutdown 0x0087C7F0..0x0087C8C6 / 0x0086C598..0x0086CA4C / 0x0086284C..0x00862986, BlockWorld 0x0061CCFC..0x0061CDBA / 0x006272F4..0x00627430, cube/charger thunk 0x004E399C, viz no-send, map/QuadTree, origin list 0x00847944..0x008479DE."
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "S7: vision/world/pose/map boundaries 0x0051115E..0x005111AC, 0x0051124C..0x0051126A, 0x005112CE, 0x00511310..0x005113DE. Thread join is shipped; descendants UNKNOWN. Source triage S7. Source: re-analysis/research/20261006-M1M2-missing-triage.md.\nB-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: B-M3M4-16 adds the managed map owner to the existing ResetToConstructed device boundary (restores empty constructor state and the new BlockWorld counters). No recursive destructor implementation is inferred; MISSING cites MapComponent destructor 0x0067DC00..0x0067DC28. The native Delete/construct boundary remains the existing M1-025 owner.\nB-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. Existing full removal regression confirms the world returns to constructor state; no native lifecycle implementation/status change.",
+      "unresolved": "S7: vision/world/pose/map boundaries 0x0051115E..0x005111AC, 0x0051124C..0x0051126A, 0x005112CE, 0x00511310..0x005113DE. Thread join is shipped; descendants UNKNOWN. Source triage S7. Source: re-analysis/research/20261006-M1M2-missing-triage.md.\nB-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: B-M3M4-16 adds the managed map owner to the existing ResetToConstructed device boundary (restores empty constructor state and the new BlockWorld counters). No recursive destructor implementation is inferred; MISSING cites MapComponent destructor 0x0067DC00..0x0067DC28. The native Delete/construct boundary remains the existing M1-025 owner.\nB-M3M4-19: ResetToConstructed clears the new per-frame diagnostic dedupe flags. Existing full removal regression confirms the world returns to constructor state; no native lifecycle implementation/status change. Read 2026-10-14 (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): IMPLEMENTATION_GAP for the listed rows. The pose rows belong to M11-077; the unread leaves are M11-078. The OKAO handle deletes stay at the M11-016 boundary (the stack holds no OKAO handles). Crash points (M1-034 standing rule): the terminate landing pads and a null handle in ScopedHandleContainer cleanup (0x004EF1C2).",
       "hardware_required": false,
       "live_path": true,
       "test": "; EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed; M3M4X16BuilderTests; EngineAppLayerTests.M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed (B-M3M4-19)"
@@ -9495,7 +9495,7 @@
       ],
       "effect": "Which memory maps exist, the zombie/keep-alive DAS events, and that the current map helper is never null with a robot.",
       "provenance": "Opus extractor read of M11-063/M13-031 (2026-10-13), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: build in job B-M3M4-16. Unread: the MemoryMap merge (vt+0xC, slot 0x0067DF78) and its null-argument handling (M11-048); the Robot destructor teardown order.\nB-M3M4-16 (2026-10-13), built, awaiting strong verification: MapComponent empty/Unknown constructor, zombie-before-create events printing argument origin, map emplace/current selection, checked BlockWorld zombie-bucket erase and selection reset, and first constructor origin hook built. UpdateMapOrigins wrapper orders object update/NullMapFound/error/new map/MISSING merge/current/erase; successful Rejigger caller unavailable M11-044, explicitly reported there. MemoryMap merge vt+0xC remains M11-048.\nB-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: Each EngineRobot constructs a fresh MapComponent before its first delocalization, while VisionSystem reuses that live owner. Managed device-removal resets discard the old owner; recursive native destructor effects remain M11-055/M11-045 MISSING. Omission (re-analysis/research/20261013-delocalize-and-update-object-origin.md): OnRobotDelocalized ends with a tail call to BroadcastLocatedObjectStates (0x006249EC -> PLT 0x004B7E78).\nB-M3M4-19 built, awaiting strong verification: null current map after deferred Reset is handled without creating an invented replacement map. CozmoRobot owns the single EmitStackLog subscription; VisionSystem no longer duplicates it. Current map lifetime delocalization change is deferred to B-M11-1. R-QUADTREE check (re-analysis/research/20261013-quadtree-rest-check.md): the merge is read (Merge 0x006813A8 -> QuadTree::Merge 0x00685504..0x00685720: leaf collection, MakeQuadXY, ApplyTo, SortCornersClockwise/ImportQuad2d corner order asc0, asc3, asc2, asc1, budget = ceilf(dist/1280)). The old map is looked up with operator[] (0x0067DE8E), so an absent key gives a null source and the original crashes at 0x00688254: covered by the M1-034 standing rule if reachable.",
+      "unresolved": "IMPLEMENTATION_GAP: build in job B-M3M4-16. Unread: the MemoryMap merge (vt+0xC, slot 0x0067DF78) and its null-argument handling (M11-048); the Robot destructor teardown order.\nB-M3M4-16 (2026-10-13), built, awaiting strong verification: MapComponent empty/Unknown constructor, zombie-before-create events printing argument origin, map emplace/current selection, checked BlockWorld zombie-bucket erase and selection reset, and first constructor origin hook built. UpdateMapOrigins wrapper orders object update/NullMapFound/error/new map/MISSING merge/current/erase; successful Rejigger caller unavailable M11-044, explicitly reported there. MemoryMap merge vt+0xC remains M11-048.\nB-M3M4-16 refinement (2026-10-13), built, awaiting strong verification: Each EngineRobot constructs a fresh MapComponent before its first delocalization, while VisionSystem reuses that live owner. Managed device-removal resets discard the old owner; recursive native destructor effects remain M11-055/M11-045 MISSING. Omission (re-analysis/research/20261013-delocalize-and-update-object-origin.md): OnRobotDelocalized ends with a tail call to BroadcastLocatedObjectStates (0x006249EC -> PLT 0x004B7E78).\nB-M3M4-19 built, awaiting strong verification: null current map after deferred Reset is handled without creating an invented replacement map. CozmoRobot owns the single EmitStackLog subscription; VisionSystem no longer duplicates it. Current map lifetime delocalization change is deferred to B-M11-1. R-QUADTREE check (re-analysis/research/20261013-quadtree-rest-check.md): the merge is read (Merge 0x006813A8 -> QuadTree::Merge 0x00685504..0x00685720: leaf collection, MakeQuadXY, ApplyTo, SortCornersClockwise/ImportQuad2d corner order asc0, asc3, asc2, asc1, budget = ceilf(dist/1280)). The old map is looked up with operator[] (0x0067DE8E), so an absent key gives a null source and the original crashes at 0x00688254: covered by the M1-034 standing rule if reachable. OV13 check (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): the Robot destructor order is read: PoseOriginList 0x005113C2..0x005113D0, then MapComponent +0x25C 0x005114DC..0x005114EC, after BlockWorld 0x005112CE.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3M4X16BuilderTests; M3M4X19BuilderTests; M3M4X16BuilderTests; M11RVisBuildTests (B-M3M4-19)"
@@ -11628,7 +11628,24 @@
       ],
       "effect": "What destroying a pose does to the pose tree's ownership counts, and the verify it logs.",
       "provenance": "Opus check of OV09 (2026-10-14), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: port P1-P4 with the B-POSE-1 pose tree. Unread: the PoseTreeNode bookkeeping tail 0x008D148C and the Pose3d node shared_ptr on_zero_shared.",
+      "unresolved": "IMPLEMENTATION_GAP: port P1-P4 with the B-POSE-1 pose tree. Unread: the PoseTreeNode bookkeeping tail 0x008D148C and the Pose3d node shared_ptr on_zero_shared. OV13 check (re-analysis/research/overnight/20261014-ov13-m11-055-check.md): confirmed again; the verify sink is sVerifyFailedReturnFalse 0x0080D9A4..0x0080DA34 (sErrorV, _errG, sDumpCallstack \"VERIFY\", provider slot +0x14, returns 0).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M11-078",
+      "subsystem": "M11-vision",
+      "title": "Vision/world teardown leaves not yet read: result-list and deque payload dtors, Camera::~Camera, ImageCache, CalibImage/Image vectors, CLAHE finalizer, FaceRecognizer trees, the ObservableObject dtor census beyond cube/charger, subscriber handle specialisations, VisionSystem profiler key",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov13-m11-055-check.md: \"Still unread\": Camera::~Camera (PLT 0x004A7D68), ImageCache (PLT 0x004BEE38), CLAHE (PLT 0x004BEF70), FaceRecognizer trees 0x0086A0DA..0x0086A1C4, PreActionPose/ActiveLED 0x004E6956..0x004E6966, FaceRecognitionMatch 0x004F5EBA, handle specialisations 0x004EF1C2/0x004EF1CC, VisionSystem+0x14 writers."
+      ],
+      "effect": "Logs or sends during teardown that the stack may not reproduce.",
+      "provenance": "Split from M11-055 after the Opus check of OV13 (2026-10-14), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies for logs, sends and state changes.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

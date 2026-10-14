@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-14",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "2bb0942d613f9d191babfab709708693c02a4276311a8c9db85d5ff7a13b65f1",
+  "inventory_sha256": "632f546f185db3beb545cc5a4bbe91a40d5c3df0a7decbd7105ff8405d9ff8fe",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -667,12 +667,13 @@
       "hardware_required": false
     },
     "M11-055": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Vision/history/world/pose/map lifetime recipients",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051115E..0x005111AC; 0x00652554..0x00652592; 0x0051124C..0x0051126A; 0x005112CE; 0x00511310..0x005113DE; 0x0061CCFC..0x0061CDBA; 0x0067DC00..0x0067DC28; Vision run=false, nonnull handle then unbounded join, VisionSystem destruction/free. History (M11-051/052), active-object table, confirmer, poses/origins, BlockWorld and Map (M11-045) are higher effects. Existing ResetToConstructed/2-second wait candidates do not prove them. Recursive effects UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov13-m11-055-check.md: R1-R7 (~Robot 0x0051115E..0x005114EC), V1-V3 with V2b worker exit 0x00651F08..0x006522A8, V4-V7 order 0x0065259E..0x00652718 / 0x006B1E92..0x006B2142, profiler 0x0087CFD0.., pet/face/recognizer shutdown 0x0087C7F0..0x0087C8C6 / 0x0086C598..0x0086CA4C / 0x0086284C..0x00862986, BlockWorld 0x0061CCFC..0x0061CDBA / 0x006272F4..0x00627430, cube/charger thunk 0x004E399C, viz no-send, map/QuadTree, origin list 0x00847944..0x008479DE."
       ],
       "live_path": true,
       "hardware_required": false
@@ -905,6 +906,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov09-m13-029-check.md: P1 ~PoseBase 0x008450F4..0x00845166 (Pose3d vtable 0x0101CD00 slot 0 -> 0x008450F5); P2 RemoveOwner 0x008448B4..0x00844914; P3 verify call 0x00845156 (key PoseBase.Destructor.NotLastOwner, condition _node.use_count() == 1); P4 PoseTreeNode dtor 0x0084605C..0x0084609C, SetParent 0x008449EA..0x00844A10."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-078": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Vision/world teardown leaves not yet read: result-list and deque payload dtors, Camera::~Camera, ImageCache, CalibImage/Image vectors, CLAHE finalizer, FaceRecognizer trees, the ObservableObject dtor census beyond cube/charger, subscriber handle specialisations, VisionSystem profiler key",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov13-m11-055-check.md: \"Still unread\": Camera::~Camera (PLT 0x004A7D68), ImageCache (PLT 0x004BEE38), CLAHE (PLT 0x004BEF70), FaceRecognizer trees 0x0086A0DA..0x0086A1C4, PreActionPose/ActiveLED 0x004E6956..0x004E6966, FaceRecognitionMatch 0x004F5EBA, handle specialisations 0x004EF1C2/0x004EF1CC, VisionSystem+0x14 writers."
       ],
       "live_path": true,
       "hardware_required": false

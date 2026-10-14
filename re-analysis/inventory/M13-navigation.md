@@ -2603,3 +2603,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | force=true skips OldPlanUnsafe; mismatch Debug calls; goal snapshot | M13-033 (note) |
+
+
+## Check of OV13 (manager, 2026-10-14; research/overnight/20261014-ov13-m11-055-check.md)
+
+| Change | Records |
+| --- | --- |
+| Robot destructor order read | M13-032 (note) |

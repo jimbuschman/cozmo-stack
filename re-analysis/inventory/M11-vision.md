@@ -1544,3 +1544,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | GetRawStateAt/Interpolate rows B1-B11; frame-ID (not origin) guard; nearest mode; caller census | M11-052 (note) |
 | HasSameRootAs assigned | M11-066 (note) |
+
+
+## Check of OV13 (manager, 2026-10-14; research/overnight/20261014-ov13-m11-055-check.md)
+
+| Change | Records |
+| --- | --- |
+| Vision/world teardown read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-055 |
+| Unread teardown leaves, RECOVERABLE_GAP | M11-078 (new) |
+| OKAO justification weak (operator question) | M11-016 (note) |
+| Verify sink | M11-077 (note) |

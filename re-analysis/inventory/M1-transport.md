@@ -766,3 +766,10 @@ M1-022 continues to own host syscall/resolver/descriptor/errno representations. 
 Rule10 follow-up for M1-048: independent bounded review reopened the U1/U2 fixed diagnostics and found invented format text/wrong BindInUse/BindFailed tag paths. Corrected exact literals at 0x00C289FE/0x00C28A1C,0x00C28A7E/0x00C28A9E,0x00C28BEC/0x00C28C0E,0x00C28C87/0x00C28CAA and U6 ReadFailed format0x00C28E84; host policy covers argument representations only. See final-correction-calls.md for call accounting.
 
 M1-048 Rule10 U5/U6 follow-up: exact short-send, non-IP and send-failure tags/formats/arguments were independently checked at 0x0083A3A4,0x0083A608,0x0083A5C0 (literals0x0083A42C/0x0083A450,0x0083A6D4/0x0083A6F8,0x00C28D72); UDPTransport.ReadFailed tag at0x0083AC48. Host-native errno/descriptor/address representations remain policy; fixed source text is now preserved. M1-053 no-state info explicitly represents channel Unnamed.
+
+
+## Check of OV13 (manager, 2026-10-14; research/overnight/20261014-ov13-m11-055-check.md)
+
+| Change | Records |
+| --- | --- |
+| Vision worker exit before the join | M1-025 (note) |
