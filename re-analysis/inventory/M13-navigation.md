@@ -2549,3 +2549,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled) | M13-033 |
 | New RECOVERABLE_GAP | M13-034 planner dependencies |
 | New HARDWARE_ONLY | M13-035 planner thread scheduling |
+
+
+## Check of R-PLAN-DEPS (manager, 2026-10-13; research/20261013-planner-dependencies-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP (read; retitled; the goal loop unreachable) | M13-034 |

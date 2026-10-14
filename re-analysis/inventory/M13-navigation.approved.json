@@ -2,7 +2,7 @@
   "subsystem": "M13-navigation",
   "approved": "2026-10-13",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "3d0f04dc41e988484b600b532950383bdeae02e5d2d5618b3fac1713bd5b5a1d",
+  "inventory_sha256": "779d86f3754fc532d7aa65636877985d6f182bb8640f270abd8716f4f26f1bdb",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -440,11 +440,12 @@
       "hardware_required": false
     },
     "M13-034": {
-      "status": "RECOVERABLE_GAP",
-      "title": "Planner dependencies still unread: DidObjectsChange, AppendToPath, PathIsSafe/ApplyPathSegment, Path::Append*, xythetaPlan::Append, FindClosestPlanSegmentToPose, the ComputePath goal loop, ApplyMotionProfile sub-ranges, MinimalAngle compares",
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Planner dependencies: DidObjectsChange (+0x54) and its writers, FindClosestPlanSegmentToPose, PlanIsSafe/PathIsSafe/ApplyPathSegment, xythetaPlan::Append, AppendToPath and Path::Append*, ApplyMotionProfile sub-ranges, MinimalAngle compares (the ComputePath F4==0 goal loop unreachable)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-planner-internals-check.md (and re-analysis/research/20261013-planner-internals.md): \"Unread\" section: 0x00623020, 0x00855D90, 0x00850E34, 0x00850610, 0x0085CE88, 0x0085D3C8, 0x0085D46C, 0x00851870, 0x00856310, 0x004FE7F6..0x004FE9E2, 0x00508C14..0x00508D90, 0x00508F48..0x0050906E, 0x00509070..0x005090DE, 0x00503E7A..0x00503EA2."
+        "re-analysis/research/20261013-planner-internals-check.md (and re-analysis/research/20261013-planner-internals.md): \"Unread\" section: 0x00623020, 0x00855D90, 0x00850E34, 0x00850610, 0x0085CE88, 0x0085D3C8, 0x0085D46C, 0x00851870, 0x00856310, 0x004FE7F6..0x004FE9E2, 0x00508C14..0x00508D90, 0x00508F48..0x0050906E, 0x00509070..0x005090DE, 0x00503E7A..0x00503EA2.",
+        "re-analysis/research/20261013-planner-dependencies-check.md (and re-analysis/research/20261013-planner-dependencies.md): DidObjectsChange 0x00623020 and writers 0x0061E2D8/0x006211E6/0x00622596/0x00625E82/0x00624FAC; FindClosestPlanSegmentToPose 0x00856310..0x008569BA; PlanIsSafe 0x00850B88..0x00850D88 (startIndex >= count -> 1; old penalty pushed); PathIsSafe 0x00850E34..0x00850EB0; ApplyPathSegment 0x00850610..0x00850A70 (returns the accumulated penalty, 0x008509F2 skips 0x008509F4); Append 0x00851870..0x00851896; AppendToPath 0x00855D90..0x00855E74; AddSegmentsToPath 0x0085595A..0x00855AAE; Path ctor 0x0085C714..0x0085C746; Append* 0x0085CE88/0x0085D3C8/0x0085D46C; ApplyMotionProfile 0x00508C14..0x005090DE; MinimalAngle 0x00503E7A..0x00504174; goal loop 0x004FE75A..0x004FE9DC unreachable (+0xF4 written only by the ctor, 0x004FCCE2)."
       ],
       "live_path": true,
       "hardware_required": false
