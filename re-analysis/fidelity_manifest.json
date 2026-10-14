@@ -82,7 +82,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M2-protocol.md",
-        "approved": "2026-10-13",
+        "approved": "2026-10-14",
         "snapshot": "re-analysis/inventory/M2-protocol.approved.json",
         "accepted": "2026-10-09"
       }
@@ -6520,7 +6520,7 @@
       ],
       "effect": "Whether a handler can change which subscribers a message reaches mid-emit.",
       "provenance": "Codex research checked by Opus (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed bodies. A freed-memory read mid-emit, if reachable, falls under the M1-034 standing rule. Split 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): the read bodies moved to M2-023. Still RECOVERABLE_GAP: who locally receives tags 0x60 and 0x81 (and synchronously or not), and the C5-inside-Clear sliver. A recipient mutating the firmware updater's tracked vector would make EF's writes stale (M1-034 standing rule).",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies. A freed-memory read mid-emit, if reachable, falls under the M1-034 standing rule. Split 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): the read bodies moved to M2-023. Still RECOVERABLE_GAP: who locally receives tags 0x60 and 0x81 (and synchronously or not), and the C5-inside-Clear sliver. A recipient mutating the firmware updater's tracked vector would make EF's writes stale (M1-034 standing rule). Operator 2026-10-14 (AGENTS.md scope): robot firmware update is not supported; the FirmwareUpdater paths are unreachable in the stack and not built. So the tag 0x81 (FirmwareUpdateComplete) recipient question and EF's stale-vector writes are moot; what remains is the tag 0x60 (AnimationEvent) recipients and the C5-inside-Clear sliver.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -6537,7 +6537,7 @@
       ],
       "effect": "What each robot-message handler does to its own action, and that none of the read bodies destroys another subscriber mid-emit.",
       "provenance": "Split from M2-022 after the Opus check of R-SMALL-2 (2026-10-13), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: compare the stack's handlers with the check file's M2-023 rows (logs, flags, the CB +0x84 == 0 case that never ends, C5 with no action-state gate and QueueAction(5) without Init, D5 game delivery before the local emit). EF is the firmware updater: built only if the operator puts firmware update in scope (question open 2026-10-13); until then it is recorded, not built. The IsInSdkMode branch (0x0054044E) is out of scope (SDK). OV03 check (re-analysis/research/overnight/20261014-ov03-m12-034-check.md): C5's trigger +0xF0 is 0x23F (Count, no-op) except Pickup 0x207, PlaceRel 0x208/0x209, Roll 0x20A (M12-034 row 2); the InvalidAnimation and ActionMismatch warnings and the \"Playing animation %s \" Info (trailing space) are confirmed at 0x00557D18, 0x00557D30, 0x00557CA2.",
+      "unresolved": "IMPLEMENTATION_GAP: compare the stack's handlers with the check file's M2-023 rows (logs, flags, the CB +0x84 == 0 case that never ends, C5 with no action-state gate and QueueAction(5) without Init, D5 game delivery before the local emit). EF is the firmware updater: built only if the operator puts firmware update in scope (question open 2026-10-13); until then it is recorded, not built. The IsInSdkMode branch (0x0054044E) is out of scope (SDK). OV03 check (re-analysis/research/overnight/20261014-ov03-m12-034-check.md): C5's trigger +0xF0 is 0x23F (Count, no-op) except Pickup 0x207, PlaceRel 0x208/0x209, Roll 0x20A (M12-034 row 2); the InvalidAnimation and ActionMismatch warnings and the \"Playing animation %s \" Info (trailing space) are confirmed at 0x00557D18, 0x00557D30, 0x00557CA2. Operator 2026-10-14 (AGENTS.md scope): robot firmware update is not supported; the FirmwareUpdater paths are unreachable in the stack and not built. EF (the flash-write ack handler) is therefore recorded, not built.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

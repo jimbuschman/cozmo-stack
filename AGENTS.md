@@ -53,6 +53,7 @@ the Unity screens and flows, user profiles, the Android Java layer and the app's
 - **Where the engine needs an input the app supplied** (stored volume, a profile, Android network callbacks), the stack
   supplies it from its own settings or host events. Each one is recorded as a COMPATIBILITY_POLICY naming the input.
 - **SDK mode is not supported,** neither external SDK programs nor the internal SDK mode the app enters for CodeLab and Edu mode. Its engine paths are unreachable and are recorded as such.
+- **Robot firmware update is not supported** (operator, 2026-10-14). Only the app starts the engine's FirmwareUpdater, and the stack accepts any firmware (M1-040). The updater's engine paths (for example the flash-write ack handler EF and FirmwareUpdateComplete) are unreachable in the stack and are recorded as such, not built.
 
 App-layer code is still evidence of what the engine receives, and stays authority 2. It isn't reproduced unless the
 stack implements that feature.
