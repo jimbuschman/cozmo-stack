@@ -454,8 +454,18 @@ PoseBase::operator= is at 0x00845940..0x008459BE.
 
 ## Manager decisions
 
-1. **The BadRowNorm text** formats each row element with `%f` through bionic snprintf: NaN prints "nan" and Inf "inf".
-   The stack must print the same (LibcxxPrintf / the existing bionic `%f` port), not .NET's "NaN".
+1. **The BadRowNorm text (corrected 2026-10-14, from the B-POSE-1 block 74970f31).**
+   - **The source:** each row element goes through `std::to_string(float)` (0x008495CE), followed by a space
+     (0x008495D8). In the shipped `libc++_shared.so`, that is `to_string` 0x000664F4..0x000665A4: it widens the float
+     (0x00066530), then a `%f` vsnprintf **bundled in libc++_shared.so** (0x0006656C → 0x0007E270..0x0007E2B2 →
+     0x00082528..0x000825A8 → core 0x000813B0).
+   - **It isn't bionic,** and it isn't the stack's LibcxxPrintf (which ports only %g and the integer conversions).
+   - **That formatter is unread.** It is the new record named in M11-065.
+   - **For B-POSE-1:**
+     - build every arithmetic row and the warning itself: key, format, the `%d` row index, the `%f` norm, and the
+       helper call;
+     - emit the `Row = [%s]` element text as a **visible MISSING placeholder**, naming that record;
+     - do **not** substitute .NET formatting.
 2. **Three items not re-read first-hand this pass,** taken from the earlier `.scratch/rod` dumps:
    - the cvSVD wrapper's eps = 10·DBL_EPSILON and minval = DBL_MIN;
    - cvConvertScale's rounding;

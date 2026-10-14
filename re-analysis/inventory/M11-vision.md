@@ -1590,3 +1590,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Decode exception, Init, pending camera params: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-058, M11-059, M11-060 |
 | Config loading order and failure, RECOVERABLE_GAP | M11-082 (new) |
 | Notes | M11-081, M11-033, M11-034, M11-016 |
+
+
+## B-POSE-1 block 74970f31 (manager, 2026-10-14)
+
+| Change | Records |
+| --- | --- |
+| The libc++_shared.so %f formatter behind to_string(float), RECOVERABLE_GAP | M11-083 (new) |
+| BadRowNorm row text: visible MISSING in B-POSE-1 | M11-065 (note) |
