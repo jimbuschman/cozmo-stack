@@ -76,26 +76,25 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         {
             _start=start;
             _backend.SetReplanFlag(force);
+            (int Index,float Distance) nearest=(0,float.MaxValue);
             if(force)_total=null;
             else
             {
                 _backend.Env.ImportBlockWorldObstacles(_world,_carried(),true,_ignore);
                 var closest=NativePlanDependencies.FindClosest(_backend.Env.Primitives,_total,LatticePlanner.ToStateC(start));
+                nearest=closest;
                 if(closest.Distance>=20f)
                 {
                     Info("LatticePlanner.GetPlan.ForcePlan",FormattableString.Invariant($"Current state is {closest.Distance:F6} away from the plan (planIdx {closest.Index}), forcing replan from scratch"));_total=null;
                 }
-                if(_total is {} old)
-                {
-                    if(closest.Index<old.Actions.Count){_missing("M13-034 ApplyAction(check=true) 0x00850478..0x0085060C lacks a checked collision body; reuse item stopped visibly, old plan retained, no dispatch");return 2;}
-                    // Empty remainder does not call the unavailable collision body.
-                    var prefix=new LatticePlan(old.Start,Array.Empty<MotionPrimitive>(),0,0);StateC endpoint=default;
-                    if(NativePlanDependencies.PlanIsSafe(old,closest.Index,40f,_backend.Env.Primitives,NativeApplyAction,ref prefix,ref endpoint,_missing))return 2;
-                    Info("LatticePlanner.GetPlan.OldPlanUnsafe",$"old plan unsafe! Will replan, starting from {closest.Index}, keeping {prefix.Actions.Count} actions from oldPlan.");
-                    _total=prefix;if(prefix.Actions.Count!=0)_start=new Pose3d(Mat3.AboutZ(endpoint.Theta),new Vec3(endpoint.X,endpoint.Y,0));
-                }
             }
-            _missing("M13-033 currentRobotState State_c stream formatting at 0x004FEE3C -> 0x0084FD18 remains unbuilt; no guessed engine payload emitted");
+            var retained=_total ?? new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0);
+            var prefix=new LatticePlan(retained.Start,Array.Empty<MotionPrimitive>(),0,0);StateC endpoint=default;
+            if(NativePlanDependencies.PlanIsSafe(retained,nearest.Index,40f,_backend.Env.Primitives,NativeApplyAction,ref prefix,ref endpoint,_missing))return 2;
+            Info("LatticePlanner.GetPlan.OldPlanUnsafe",$"old plan unsafe! Will replan, starting from {nearest.Index}, keeping {prefix.Actions.Count} actions from oldPlan.");
+            _total=prefix;if(prefix.Actions.Count!=0)_start=new Pose3d(Mat3.AboutZ(endpoint.Theta),new Vec3(endpoint.X,endpoint.Y,0));
+            var stateLog=LatticePlanner.ToStateC(start);
+            _source(EngineLogLevel.Info,"Unnamed","LatticePlanner","currentRobotState:("+LibcxxPrintf.FormatFloat(stateLog.X)+","+LibcxxPrintf.FormatFloat(stateLog.Y)+","+LibcxxPrintf.FormatFloat(stateLog.Theta)+")");
             if(!_backend.CheckContextStart(LatticePlanner.ToStateC(_start),out _))
             {Info("LatticePlanner.ReplanIfNeeded.InvalidStart","could not set start");return 0;}
             if(!_backend.CheckContextGoals(_goals.Select(LatticePlanner.ToStateC).ToArray(),new(),new()))
@@ -110,17 +109,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         }
         finally{Monitor.Exit(ContextMutex);}
     }
-    private (LatticeState State,float Penalty) NativeApplyAction(LatticeState state,MotionPrimitive primitive,bool check)
-    {
-        var buckets=_backend.Env.Primitives.ByAngle;
-        if(state.Theta>=buckets.Count || primitive.ActionIndex<0 || primitive.ActionIndex>=buckets[state.Theta].Count)return(state,0); // invalid lookup leaves StateID untouched, 0x008505BC..0x008505E6
-        if(check)
-        {
-            _missing("M13-034 ApplyAction 0x00850478..0x0085060C is unread; stopping this safety/reuse item rather than substituting the different SuccessorIterator penalty");
-            return (state,float.NaN); // Not dispatched: StartPlanning stops this item before the checking callback.
-        }
-        return (NativePlanDependencies.Advance(state,primitive),0);
-    }
+    internal (LatticeState State,float Penalty) NativeApplyAction(LatticeState state,MotionPrimitive primitive,bool check)=>_backend.Env.ApplyAction(state,primitive.ActionIndex,check);
     private void DoPlanning()
     {
         Publish(1);
@@ -138,11 +127,10 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
             {
                 _missing("M13-033 LatticePlanner.PlanMismatch 0x005003D0 and old/new-plan streaming text are unported; mismatch transient status is retained");Publish(0);
             }
-            _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","old plan");_missing("M13-033 PrintPlan 0x0050050C -> 0x00855E7C output remains unbuilt");
-            _total=NativePlanDependencies.Append(prefix,plan);
-            _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","new plan");_missing("M13-033 PrintPlan 0x00500562 -> 0x00855E7C output remains unbuilt");
         }
-        else _total=plan;
+        _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","old plan");_missing("M13-033 PrintPlan 0x00500532 -> 0x00855E7C output remains unbuilt");
+        _total=NativePlanDependencies.Append(_total ?? new LatticePlan(default,Array.Empty<MotionPrimitive>(),0,0),plan);
+        _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","new plan");_missing("M13-033 PrintPlan 0x0050058A -> 0x00855E7C output remains unbuilt");
         Publish(2);
     }
     private void Worker()
@@ -169,7 +157,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
         Info("LatticePlanner.GetCompletePath.Offset",FormattableString.Invariant($"Robot is {nearest.Distance:F6} from the plan, at index {nearest.Index}"));
         if(nearest.Distance>=20f){_missing("M13-033 RobotPositionError event/format at 0x004FFDCC..0x004FFE2A remains unported");_total=null;Publish(0);return false;}
         _source(EngineLogLevel.Debug,"Planner","LatticePlannerImpl","total path:");
-        _missing("M13-033 PrintPlan 0x004FFC4A -> 0x00855E7C output remains unbuilt");
+        _missing("M13-033 Path::PrintPath call 0x004FFC76 output remains unbuilt");
         _missing("M13-034 AppendToPath cached primitive paths/MotionPrimitive.Create and RelativePathTurn.ExtendPath are unbuilt; existing ToPath geometry remains a labelled candidate, not the native AppendToPath implementation");
         var remaining=_total with{Start=_total.States().ElementAt(nearest.Index),Actions=_total.Actions.Skip(nearest.Index).ToArray(),Penalties=_total.Penalties.Skip(nearest.Index).ToArray()};
         var raw=_backend.ToPath(remaining,null,profile).ToList();

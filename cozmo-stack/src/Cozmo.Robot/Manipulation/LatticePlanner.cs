@@ -585,6 +585,27 @@ public sealed class LatticeEnvironment
     public int ObstacleCount => _obstacleCount;
     /// <summary>The C-space polygons of one heading, in the order they were added.</summary>
     public IReadOnlyList<(FastPolygonF Poly, float Penalty)> Bucket(int theta) => _buckets[theta];
+    // fidelity: M13-034
+    // xythetaEnvironment::ApplyAction 0x00850478..0x0085060C; distinct from SuccessorIterator.
+    internal (LatticeState State,float Penalty) ApplyAction(LatticeState state,int actionIndex,bool check)
+    {
+        if(state.Theta>=Primitives.ByAngle.Count || actionIndex<0 || actionIndex>=Primitives.ByAngle[state.Theta].Count)
+            return(state,EngineF.Bits(0x447A4000));
+        var primitive=Primitives.ByAngle[state.Theta][actionIndex];float penalty=0;
+        if(check)
+        {
+            float x=Primitives.ResolutionMm*state.X,y=Primitives.ResolutionMm*state.Y;
+            foreach(var sample in primitive.Intermediate)
+                foreach(var obstacle in _buckets[sample.ThetaIndex])
+                    if(obstacle.Poly.Contains(x+sample.X,y+sample.Y))
+                    {
+                        float contribution=obstacle.Penalty*sample.Reciprocal;
+                        penalty+=contribution;
+                        if(penalty>=EngineF.Bits(0x447A0000))return(state,penalty);
+                    }
+        }
+        return(NativePlanDependencies.Advance(state,primitive),penalty);
+    }
     /// <summary>The engine's CoreTechPrint / warning lines, for tests and the log.</summary>
     public event Action<string>? Log;
     internal void RaiseLog(string line) => Log?.Invoke(line);

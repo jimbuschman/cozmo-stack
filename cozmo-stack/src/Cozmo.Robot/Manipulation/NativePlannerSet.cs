@@ -51,7 +51,7 @@ internal sealed class NativePlannerSet : IDisposable
         }
         float rounded=MathF.Round(d2,MidpointRounding.AwayFromZero);
         int data=float.IsNaN(rounded)?0:rounded>=2147483648f?int.MaxValue:rounded<=-2147483648f?int.MinValue:(int)rounded;
-        _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"robot.planner_selected",Current.Name,new Dictionary<string,string>{{"$data",data.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
+        _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.planner_selected",Current.Name,new Dictionary<string,string>{{"$data",data.ToString(System.Globalization.CultureInfo.InvariantCulture)}});
         Fallback=ReferenceEquals(Current,Lattice)?null:Lattice;
         _missing("M13-033 selection uses the stack pose input; source Robot root-conversion helper 0x004DF628..0x004DF6DC is separately incomplete, no full pose-origin claim");
     }
@@ -68,7 +68,7 @@ internal sealed class NativePlannerSet : IDisposable
     {
         if(Fallback is not {} next)return false;string old=Current?.Name??"";Current=next;Fallback=null;
         bool started=StartPlanning()!=0;
-        if(started)_m.Robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"robot.fallback_planner_used",old);
+        if(started)_m.Robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.fallback_planner_used",old);
         return started;
     }
     internal void Stop()=>Current?.StopPlanning();

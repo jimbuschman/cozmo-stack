@@ -179,7 +179,7 @@ internal sealed partial class PathComponent
             }
             else if(PlannerSkipSafetyCheck is null)ModelGap();
         }
-        if(_nativePlanners?.Current is {} chosen)_robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"robot.plan_complete",chosen.Name,new Dictionary<string,string>{{"$data",((byte)plan.Path.Count).ToString(System.Globalization.CultureInfo.InvariantCulture)}});
+        if(_nativePlanners?.Current is {} chosen)_robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.plan_complete",chosen.Name,new Dictionary<string,string>{{"$data",((byte)plan.Path.Count).ToString(System.Globalization.CultureInfo.InvariantCulture)}});
         else{ModelGap();MissingOnce("M12-032 robot.plan_complete 0x0064A024 native planner-name payload unavailable");}
         if((byte)plan.Path.Count!=0)
         {
@@ -254,7 +254,7 @@ internal sealed partial class PathComponent
             else if(code==0)
             {
                 if(ReplanWithFallbackPlanner())Info("PathComponent.RestartIfNeeded.Error.Fallback","computing a new path resulted in an error, switching to fallback");
-                else{Abort(SendNative);SetStatus(6);Info("PathComponent.RestartIfNeeded.Error.NoFallback","computing a new path resulted in an error but couldn't use fallback. Failing");}
+                else{Info("PathComponent.RestartIfNeeded.Error.NoFallback","computing a new path resulted in an error but couldn't use fallback. Failing");Abort(SendNative);SetStatus(6);}
             }
             return;
         }
