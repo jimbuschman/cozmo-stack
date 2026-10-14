@@ -1,6 +1,6 @@
 BLOCKED — corrected R36's GetTreeDepth overflow log names the wrong source filename.
 
-Claim 0e5a4af1. B-M13-3 was completed and pushed first (implementation 02fceff6; report 496fac5c). B-POSE-1 blocker metadata commit/push: pending. No pose production implementation commit.
+Claim 0e5a4af1. B-M13-3 was completed and pushed first (implementation 02fceff6; report 496fac5c). B-POSE-1 blocker metadata commit 60295b2314d33c04897d9a0bc6d735359bd450c4 pushed to main on 2026-10-14. No pose production implementation commit.
 
 ## Checked row and required target reopening
 
@@ -44,4 +44,4 @@ Manifest impact: **only append M11-066 unresolved**. All test strings, statuses,
 
 ## Validation
 
-Fidelity regeneration/check: PASS, 595 records. Semantic audit: exactly one append to M11-066 unresolved; all test lists and other record fields preserved. Whitespace check: PASS. Unchanged-code full suite: 4,693/4,693 PASS, zero skipped, 5m05s. Normal push gate: pending. No B-POSE-1 implementation regression result is claimed.
+Fidelity regeneration/check: PASS, initially 595 records; after rebase 596 records. Semantic audit: exactly one append to M11-066 unresolved; all test lists and other record fields preserved. Whitespace check: PASS. Unchanged-code full suite: 4,693/4,693 PASS, zero skipped, 5m05s. Normal push gate: PASS, records-only suite 786/786, zero skipped, 8s. The R36 conflict was rechecked against the latest pulled override file before pushing and remained unresolved. No B-POSE-1 implementation regression result is claimed.
