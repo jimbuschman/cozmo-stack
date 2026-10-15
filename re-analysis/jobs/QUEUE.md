@@ -111,6 +111,9 @@ anything. BOARD.md is history; this file is the live queue.
 | 61 | [B-M9-1](B-M9-1.md) | open, after B-M11-9 (Wwise MIDI note path M9-013; velocity/level M9-014; envelope stop M9-024) |
 | 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | open, after B-M9-2 (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
+| 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |
+| 65 | [B-M11-10](B-M11-10.md) | open, after B-M8-5 |
+| 66 | [B-M15-4](B-M15-4.md) | open, after B-M11-10 |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

@@ -960,3 +960,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Note | M15-008 |
+
+
+## Check of OV56-OV58 (manager, 2026-10-15; research/overnight/20261015-ov56-58-check.md)
+
+| Change | Records |
+| --- | --- |
+| Lab definitions: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-049 |
+| AutoActivate and tags: RECOVERABLE_GAP | M15-052 (new) |
+| Lab user id input: IMPLEMENTATION_GAP | M15-053 (new) |

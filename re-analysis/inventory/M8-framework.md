@@ -758,3 +758,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | ProcessClearQuad: RECOVERABLE_GAP | M8-026 (new) |
 | Note (no ActionWatcher callbacks in Clear) | M8-024 |
+
+
+## Check of OV56-OV58 (manager, 2026-10-15; research/overnight/20261015-ov56-58-check.md)
+
+| Change | Records |
+| --- | --- |
+| Teardown mechanics evidence | M8-015 |
+| Narrowed to the callback census | M8-024 |

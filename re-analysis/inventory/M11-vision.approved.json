@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "a49eee854e6118ab8adcb03672557386b7af62c84ee2c2dc2e4375207334e99e",
+  "inventory_sha256": "ff9c72f76ccc49247951eb6c56744c403f863f841b2b798a8e3df5d78aa25398",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -969,11 +969,12 @@
       "hardware_required": false
     },
     "M11-083": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The %f formatter bundled in libc++_shared.so behind std::to_string(float): the conversion, rounding and special values used by Renormalize's BadRowNorm row text",
       "authority": "libc++_shared.so shipped in the APK; libcozmoEngine.so 3.4.0-1204 call sites.",
       "evidence": [
-        "re-analysis/research/20261014-pose-rows-recheck.md, Manager decision 1 (corrected from the B-POSE-1 block 74970f31): engine call 0x008495CE, space 0x008495D8; libc++_shared.so to_string(float) 0x000664F4..0x000665A4 (widen 0x00066530, %f literal 0x0006652E/0x000665C8), vsnprintf chain 0x0006656C -> 0x0007E270..0x0007E2B2 -> 0x00082528..0x000825A8 -> core 0x000813B0."
+        "re-analysis/research/20261014-pose-rows-recheck.md, Manager decision 1 (corrected from the B-POSE-1 block 74970f31): engine call 0x008495CE, space 0x008495D8; libc++_shared.so to_string(float) 0x000664F4..0x000665A4 (widen 0x00066530, %f literal 0x0006652E/0x000665C8), vsnprintf chain 0x0006656C -> 0x0007E270..0x0007E2B2 -> 0x00082528..0x000825A8 -> core 0x000813B0.",
+        "re-analysis/research/overnight/20261015-ov56-58-check.md: libc++ entry 0x0006651A..0x00066580; vsnprintf 0x00082550..0x000825A6; sign/NaN/inf 0x000815BC..0x000816EA; fraction 0x000816F4..0x00081712; limbs 0x0008199C..0x00081A2A; j=p 0x00081A66..0x00081A96; rounding literals 0x000824D0/0x000824D8, 0x000821B8; callers 20 float + 2 double."
       ],
       "live_path": true,
       "hardware_required": false

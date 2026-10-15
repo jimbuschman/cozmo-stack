@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "26e416ed00c41ac295d0f7ebc621737a1e67b959bcd5e1ba7f99db67a4d4cb3b",
+  "inventory_sha256": "ef742afcd53b9b222be7233bf5325245068535b32f9a4dbd1186926387e2debf",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -598,11 +598,12 @@
       "hardware_required": false
     },
     "M15-049": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Lab experiment definitions: AnkiLab::Load (experiments.json) and the InitExperiments enable tail",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: AnkiLab::Load 0x007EBDE0..0x007EBF38; InitExperiments tail 0x006A56D0..0x006A5744; Enable(!ShouldABTestingBeDisabled) 0x006A5614..0x006A5622; kForceDisableABTesting 0x0105D940 (.bss)."
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: AnkiLab::Load 0x007EBDE0..0x007EBF38; InitExperiments tail 0x006A56D0..0x006A5744; Enable(!ShouldABTestingBeDisabled) 0x006A5614..0x006A5622; kForceDisableABTesting 0x0105D940 (.bss).",
+        "re-analysis/research/overnight/20261015-ov56-58-check.md: init order 0x004EC9CE, 0x004EC9D6; loader 0x00522EFC..0x00522F44; Load 0x007EBDEA..0x007EBE98; setters 0x008F9C7C..0x008F9CEE, 0x008F81B8..0x008F8234, 0x008F959A..0x008F98BE, 0x008F8472..0x008F84D2; ActivationMode 0x008F887E..0x008F8964; Enable(true) 0x007EBC3C..0x007EBC7C; InitExperiments 0x006A5614..0x006A56CE; disable predicate 0x007EE96C..0x007EE984 (map size at 0x0105D978; static ctor 0x004D9234..0x004D9244); mfgId 0x007B1756..0x007B1772, word0 -> ric+0x24 at 0x0052E30A."
       ],
       "live_path": true,
       "hardware_required": false
@@ -623,6 +624,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov31-32-33-check.md: UpdateChooserPhase 0x005A8854..0x005A90C8; Get*BlockID 0x005A878A, 0x005A87CC, 0x005A880E; UpdateMusic veneer 0x008CBD5C; FindBehaviorByID(4) 0x005A741C, FindBehaviorByID(3) 0x005A7444, unchecked uses 0x005A9424, 0x005A9458, 0x005A9462."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-052": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Lab AutoActivate descendants and audience-tag qualification: ActivateExperiment, ActivateExperimentInternal, VerifyTags, qualified tags, InitializeABInterface",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov56-58-check.md: AutoActivate loop 0x007ECF58..0x007ED02C (mode==1 only; system_clock now/1e6); ActivateExperiment 0x007EC09C, ActivateExperimentInternal 0x007EC134..0x007EC330; VerifyTags 0x007EF274..0x007EF310; GetQualifiedTags/CalculateQualifiedTags 0x007EF370..0x007EF4E2; InitializeABInterface 0x007EE7EC..0x007EE808 (Codex claims, not re-checked). Shipped report_test_auto is automatic with audience tag \"app_user_d0\"."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-053": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Lab user id input: the DAS device id (Java DAS.getDeviceID) used as the AutoActivate user id and the no-robot fallback of the ID supplier",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov56-58-check.md: DASGetPlatform()->vt+0x10 -> libDAS DASPlatform_Android 0x00036AD0 -> 0x00028AF6 returns +0x1C, filled from Java DAS.getDeviceID (libDAS 0x0002833A..0x0002837E; sources/com/anki/daslib/DAS.java:159); ID supplier 0x006A61C6..0x006A6204."
       ],
       "live_path": true,
       "hardware_required": false

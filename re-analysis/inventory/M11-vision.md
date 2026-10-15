@@ -1655,3 +1655,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Dissolved into M11-010 / M11-004 / M13 records: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-042 |
 | Visibility bodies read | M11-010 (evidence) |
 | Predicate citation contradicted | M11-004 (note) |
+
+
+## Check of OV56-OV58 (manager, 2026-10-15; research/overnight/20261015-ov56-58-check.md)
+
+| Change | Records |
+| --- | --- |
+| to_string(float) %f: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-083 |
