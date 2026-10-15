@@ -450,3 +450,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | One erase before the replay loop (contradiction) | M14-012 (note) |
+
+
+## Check of OV31-OV33 (manager, 2026-10-15; research/overnight/20261015-ov31-32-33-check.md)
+
+| Change | Records |
+| --- | --- |
+| Pet/face-world and speech lifetime: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M14-013 |

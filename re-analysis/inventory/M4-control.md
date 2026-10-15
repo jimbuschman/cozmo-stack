@@ -787,3 +787,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | Gates the gyro detectors too | M4-019 (note) |
+
+
+## Check of OV31-OV33 (manager, 2026-10-15; research/overnight/20261015-ov31-32-33-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note (standing rule; disconnect survival) | M4-045 |

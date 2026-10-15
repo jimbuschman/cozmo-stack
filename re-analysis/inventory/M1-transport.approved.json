@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "57a28781169b4e0153c5483044931eba1e77fb3653ef056364b3c9abf2add810",
+  "inventory_sha256": "63a12c4419620358a534739e60cbe914032f5a1fcc07d89cc50137a38eda0328",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",

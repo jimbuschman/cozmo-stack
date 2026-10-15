@@ -1607,3 +1607,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Walk caps unreachable; Dev_Assert and RemoveOwner VERIFYs read (B-POSE-3) | M11-066, M11-077 (notes) |
 | Neck confirmed | M11-003 (note) |
 | Pose wrapper lifetimes, RECOVERABLE_GAP | M11-084 (new) |
+
+
+## Check of OV31-OV33 (manager, 2026-10-15; research/overnight/20261015-ov31-32-33-check.md)
+
+| Change | Records |
+| --- | --- |
+| Cube disconnect tail: RECOVERABLE_GAP | M11-085 (new) |
+| Note | M11-041 |

@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **617 records** over 16 subsystems.
+Manifest of **621 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 38 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 315 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 39 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 318 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,11 +34,11 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 25 | 3 | 21 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 84 | 13 | 56 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 85 | 14 | 56 | 0 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 46 | 3 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 37 | 1 | 32 | 0 | 1 | no | no |
-| M14-faces — Face and pet pipeline | 13 | 1 | 10 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 48 | 5 | 38 | 1 | 0 | no | no |
+| M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
+| M15-freeplay — Needs, activities and freeplay | 51 | 6 | 40 | 1 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -342,6 +342,15 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 * evidence: re-analysis/research/20261014-pose-tree-verifies.md: "Still unread": parent-pose lifetimes (robot +0x298, origins, object poses, temporaries), PoseOriginList erase/rejigger paths, inline wrapper attaches writing PoseBase+4 without +0x48, cross-thread pose-tree mutation.
 * outstanding: RECOVERABLE_GAP: census the parent-pose lifetimes and the origin erase paths.
 
+**M11-085 — HandleActiveObjectConnectionState disconnect tail: HandleDisconnectedFromObject, the Recvd Info, VizManager, and the broadcast only when RemoveConnectedActiveObject returned an ID** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/BlockWorld.cs`
+* effect: What a cube disconnect logs and broadcasts.
+* rests on: Opus check of OV31-OV33 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov31-32-33-check.md: 0x00533CB2 HandleDisconnectedFromObject; Info "Robot.HandleActiveObjectConnectionState.Recvd" 0x00533CD4; VizManager::SendObjectConnectionState 0x00533D0C; adds/beq 0x00533D10..0x00533D12 gates ObjectConnectionState on ID != -1.
+* outstanding: RECOVERABLE_GAP: read the Robot::HandleDisconnectedFromObject body and the full 0x00533CB2..0x00533D30 tail (log arguments, payload). M11-041 cites only 0x00533B3C..0x00533C34.
+
 ### M12-manipulation — Docking, carrying and pre-action poses
 
 **M12-043 — PyramidBase interior geometry: corners and midpoint for the pyramid top placement (GetBoundingQuad<float> corner order)** (live path)
@@ -382,17 +391,6 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 * evidence: re-analysis/research/overnight/20261014-ov07-m13-021-check.md: "Still unread": FindLocatedClosestMatchingTypeHelper (called at 0x00567D1C); UpdateTracking from 0x00567DA4 (0x00567FC2, 0x00568088); TurnTowardsObjectAction +0x192.
 * outstanding: RECOVERABLE_GAP: read the listed bodies completely.
 
-### M14-faces — Face and pet pipeline
-
-**M14-013 — Pet/face-world and speech lifetime recipients** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs`
-* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
-* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: 0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt
-* outstanding: S10: pet/face/speech owners 0x0051128C..0x005112C6 and 0x005114A6..0x005114B4; M14-006 world/speech consumer. Recursive/audio owners only if identified. Source triage S10. Source: re-analysis/research/20261006-M1M2-missing-triage.md.
-
 ### M15-freeplay — Needs, activities and freeplay
 
 **M15-031 — SDK high-level activity activation recipient** (live path)
@@ -413,24 +411,6 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 * evidence: Enter 0x0065E104..0x0065E224; Exit 0x0065E2A4..0x0065E43E; UI exit 0x00661546..0x00661566; fields UNKNOWN (triage E8).
 * outstanding: Recover telemetry field construction, producer gates and ordering. M15-028 is only Robot lifetime telemetry/context.
 
-**M15-036 — The Lab read: ReadLabAssignmentsFromRobot (tag 0x196000) and its callback into CozmoExperiments::RestoreLoadedActiveExperiments** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: the robot's stored lab assignments are not restored, so experiment-dependent behaviour differs
-* rests on: Cross-layer split (manager, 2026-10-10): S-11 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M3-033/M3-034.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Read(0x196000) at 0x006A5B1E from the mfgId lambda (0x0052E3A6..0x0052E3B2, M3-033 #13); callback 0x10317B8+0x14 = 0x006A6486 -> CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34 (exports)
-* outstanding: RECOVERABLE_GAP: read the callback and RestoreLoadedActiveExperiments. The stack's callback is a no-op (CozmoEngine.cs:1408).
-
-**M15-037 — ActivityBuildPyramid cube-light modifiers and tracker lifecycle (the live modifier=true PlayLightAnim caller)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
-* effect: Pyramid-building cube lights, and whether M4-045's NullActiveObject + modifier heap read is reachable.
-* rests on: Opus extractor read of M4-046 (2026-10-12), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m4-046-anim-modifier.md: ActivityBuildPyramid::SetCubeLights StopAndPlay passes modifier = true (0x005A7D52..0x005A7D66) with node+0x28, filled by SetPyramidBaseLights (0x005A9238/0x005A928A) and UpdateDesiredLights (0x005A96F0, 0x005A9758, 0x005A97C4; sources unread); getters 0x005A9960, 0x005A9A3C, 0x005A9B00 read. Tracker erase on disconnect 0x005A7FD4 -> 0x005A7FFA.
-* outstanding: RECOVERABLE_GAP: read UpdateDesiredLights and SetPyramidBaseLights sources; and for reachability of M4-045 N2/N3: (a) who dispatches HandleObjectConnectionStateChange to activities and whether an inactive one receives it, (b) its order against BlockWorld's connected-object removal, (c) UpdateStateTrackerForUnrecognizedID 0x005A8004, (d) whether Update/OnDeselected can call SetCubeLights for a gone cube. Feeding (FeedingCubeController +0xAC modifier) is entered only through the app's ActivateHighLevelActivity(Feeding) as far as read.
-
 **M15-045 — AIComponent teardown recursive recipients: BehaviorHelper IHelper types and callables, ObjectInteraction entries and ProcessInfo callables, BorderSegment release, SevereNeeds/RequestGame/AIWhiteboard handle inventories, Workout/ObjectInteraction/Whiteboard/Analyzer inner bodies** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
@@ -439,6 +419,33 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x00569D38..0x00569D66; 0x0056A0AE..; 0x00569FD2..; 0x00569F9A; the inner bodies named.
 * outstanding: RECOVERABLE_GAP: read the listed bodies.
+
+**M15-049 — Lab experiment definitions: AnkiLab::Load (experiments.json) and the InitExperiments enable tail** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: Which experiments exist, hence every RestoreActiveExperiment result.
+* rests on: Opus check of OV31-OV33 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov31-32-33-check.md: AnkiLab::Load 0x007EBDE0..0x007EBF38; InitExperiments tail 0x006A56D0..0x006A5744; Enable(!ShouldABTestingBeDisabled) 0x006A5614..0x006A5622; kForceDisableABTesting 0x0105D940 (.bss).
+* outstanding: RECOVERABLE_GAP: read Load and the InitExperiments tail; say whether experiments.json ships and what it defines. Also re-read which mfgId field the connection lambda stores at ric+0x24 (0x0052E304..0x0052E3A2), passed as the user id.
+
+**M15-050 — Lab assignments writeback: PossiblyWriteLabAssignmentsToRobot and WriteLabAssignmentsToRobot (NV tag 0x196000)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: A connection-time NV write of the lab assignments.
+* rests on: Opus check of OV31-OV33 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov31-32-33-check.md: PossiblyWriteLabAssignmentsToRobot 0x006A5DE4..0x006A60C4 (head read: compares +0x94 stride 0x18 with +0xA0 stride 0x24); WriteLabAssignmentsToRobot 0x006A57F0..0x006A5A3C; callers NeedsManager::InitAfterReadFromRobotAttempt 0x00694622, SetGameBeingPaused handler 0x006990DA.
+* outstanding: RECOVERABLE_GAP: read both bodies, the comparison, the packed payload, the write callback and logs.
+
+**M15-051 — ActivityBuildPyramid producers: UpdateChooserPhase and the Get*BlockID calls, the Update caller, BehaviorManager +0x58..+0x65 writers, the UpdateMusic target, the +0xC0/+0xC8 behaviour lookups** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: Which cubes BuildPyramid assigns and when its Update runs, hence its cube lights.
+* rests on: Opus check of OV31-OV33 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov31-32-33-check.md: UpdateChooserPhase 0x005A8854..0x005A90C8; Get*BlockID 0x005A878A, 0x005A87CC, 0x005A880E; UpdateMusic veneer 0x008CBD5C; FindBehaviorByID(4) 0x005A741C, FindBehaviorByID(3) 0x005A7444, unchecked uses 0x005A9424, 0x005A9458, 0x005A9462.
+* outstanding: RECOVERABLE_GAP: read the listed producers; find the vtable caller of Update (only while selected?); find the writers of BehaviorManager +0x58/+0x5C/+0x60/+0x64/+0x65; say whether behaviours 4 and 3 always exist in the shipped config (if absent the unchecked dereferences are M1-034).
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -646,7 +653,7 @@ B-M3M4-26 (2026-10-15), built, awaiting strong verification: both file-reader an
 B-M3M4-14 built, awaiting strong verification: every play blends its selected source; modifier|blend result and !backBlended gate; per-layer blended slot/name/byte; non-blended zero-duration clear. Null connected object with modifier gives visible MISSING M4-045/M15-037 at the unread reachability / heap timer boundary. B-M3M4-14 check (re-analysis/research/20261013-b-m3m4-14-check.md): the blended slot is shared (list::assign into node+0x44+12*layer at 0x006385B6; info+0x10/+0x14 point into it, 0x00638698..0x006386A8; Update walks it 0x006379A6..0x006379AE), so a later blended play on the layer changes what an earlier buried blended entry resumes with; and Update uses timer = now + dur + [+0x44] when (dur | [+0x44]) != 0, holding while timer == 0 (0x00637B3A..0x00637B4E, 0x0063798A..0x00637994). Fix in B-M3M4-17.
 B-M3M4-17 built, awaiting strong verification: each object/layer owns one mutable blend slot and all pushed blended entries refer to it; list assignment (0x006385B6, 0x00638698..0x006386A8) updates patterns resumed by a buried entry. Update holds on stored timer==0 and unsigned now<timer (0x0063798A..0x006379A2); advancing clears then uses wrapping now+dur+offset iff their OR is nonzero (0x00637B3A..0x00637B4E). Public durationMs+timerOffsetMs compatibility mapping to the ONE native +0x44 int is documented. Null-active-object/BuildPyramid reachability remains MISSING M15-037. B-M3M4-17 check (re-analysis/research/20261013-b-m3m4-17-check.md): a buried blended entry can point past a shorter later slot (list::assign 0x006385B6 erases extra nodes); the P3 resend (0x00637ACC..0x00637AE4) then reads a freed node: undefined behaviour, reachable with shipped SpeedTapWin then Flash. Needs an operator ruling (M1-034-style) or a visible MISSING; job B-M3M4-21.
 built, awaiting strong verification: B-M3M4-21 (2026-10-14) implements the approved M1-034 dangling blended-entry resend skip at 0x00637ACC..0x00637AE4. Shipped SpeedTapWin index1, non-blended Dance_01, then shorter blended Flash reproduces the state; both later plays expire and another cube queued send survives. Defined in-range resend/timer paths unchanged; no status settlement. See jobs/status/B-M3M4-21.md.
-B-M3M4-26 (2026-10-15), built, awaiting strong verification: a shrinking shared-slot assign at 0x006385B6 permanently marks every buried blended entry whose iterator index is outside the shorter list; later slot growth cannot revive it. P3 still logs PlayingPrevious then skips only the resend at native freed-node reads 0x00637ACC..0x00637AE4, retaining timer/index/entry. A subsequent eligible Update, including Stop, skips the freed node->next read at 0x006379A6..0x006379AA, visibly retires that smallest dangling entry and preserves lower entries; normal lower resumption/default handling follows. Both skip keys are stack-only M1-034 diagnostics. Crafted timelines use shipped SpeedTapWin 770/500 ms, Dance_01 984 ms and Flash 600 ms. Existing callback/control-block pieces at 0x006379C6..0x00637A48 remain unclaimed (no checked builder callback row); no status change.
+B-M3M4-26 (2026-10-15), built, awaiting strong verification: a shrinking shared-slot assign at 0x006385B6 permanently marks every buried blended entry whose iterator index is outside the shorter list; later slot growth cannot revive it. P3 still logs PlayingPrevious then skips only the resend at native freed-node reads 0x00637ACC..0x00637AE4, retaining timer/index/entry. A subsequent eligible Update, including Stop, skips the freed node->next read at 0x006379A6..0x006379AA, visibly retires that smallest dangling entry and preserves lower entries; normal lower resumption/default handling follows. Both skip keys are stack-only M1-034 diagnostics. Crafted timelines use shipped SpeedTapWin 770/500 ms, Dance_01 984 ms and Flash 600 ms. Existing callback/control-block pieces at 0x006379C6..0x00637A48 remain unclaimed (no checked builder callback row); no status change. OV32 check (re-analysis/research/overnight/20261015-ov31-32-33-check.md): "If reachable, it needs an operator ruling" is superseded by the 2026-10-13 standing M1-034 rule. The cube-light ObjectInfo map entry survives a disconnect (handler returns at 0x00639CE4..0x00639CE8; only whole-map destroys), so admission passes for a disconnected cube; open: PlayLightAnim post-admission for a null object 0x00638310..0x0063880C.
 
 **M4-046 — ApplyAnimModifier body and the PlayLightAnim callers that pass modifier = true** (live path)
 
@@ -2056,7 +2063,7 @@ built, awaiting strong verification: B-M11-1 (2026-10-14): D19 BroadcastLocatedO
 * rests on: recovered by the R-VIS gap pass 1
 * best authority: libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q4a, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): AddConnectedActiveObject 0x0062302C: activeID >= 5 (signed compare, 0x00623040) warns and returns -1; the same slot occupied with the same factoryID and type returns the existing ID, else a ConflictingActiveID error and RemoveConnectedActiveObject; a connected object with the same factoryID only logs; CreateActiveObjectByType null returns -1; then it searches located objects of that type in all origins: with the same activeID it takes the first (same factoryID: new.ID = that ID; factoryID 0: adopt and update activeID/factoryID on every located object of the type; a different nonzero factoryID: MismatchedFactoryID error, DeleteLocatedObjects for that ID, fresh SetID); with none of that activeID: none of the type -> fresh SetID, otherwise every such object is marked Dirty (MarkObjectDirty(o,false)) and updated (activeID -1: set both; factoryID equal: set activeID; else set both if factoryID != 0) and new.ID = the first one's ID; the new object is registered in m_connectedObjects with no pose or PoseState. The caller HandleActiveObjectConnectionState 0x00533B3C (range test unsigned, cmp r7,#4 bhi at 0x00533B58) logs Connected (0x00533BF4) and calls Robot::HandleConnectedToObject(activeID, factoryID, type) at 0x00533C34 after an ID other than -1
 * evidence: 0x0062302C..0x00623B76 AddConnectedActiveObject; 0x00623296 CreateActiveObjectByType call; 0x00623550 MarkObjectDirty; 0x00623804 MismatchedFactoryID; 0x006238D4 DeleteLocatedObjects; 0x00533B3C..0x00533C34 the caller; re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q4a; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q4a branch structure PASS; objection 3: the HandleConnectedToObject call)
-* outstanding: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): overlap ruling: HandleActiveObjectConnectionState 0x00533B3C..0x00533C34, its slot > 4 gate (0x00533B56) included, is this record's; M4-009 keeps Moved/Stopped/UpAxisChanged. Before: BUILT: AddConnectedActiveObject (range, occupied slot, FactoryIDAlreadyUsed, located objects with the activeID a/b/c, none with the activeID, registration with no pose), RemoveConnectedActiveObject (erase), HandleActiveObjectConnectionState (unsigned range, connect, disconnect), wired from VisionSystem. NOT SETTLED, visible: CreateActiveObjectByType for a type other than a light cube throws NotSupportedException (unread), the error branches 0x00533B58 and 0x00533CB8 (logged only), Robot::HandleConnectedToObject (stays CozmoCubes.Handle, M4), the rest of RemoveConnectedActiveObject's body. LOCAL, not the engine's: VisionSystem still forgets a cube's located object when the cube disconnects. B-M3M4-9 built, awaiting strong verification: robot.accessory_connection events precede Add/RemoveConnectedActiveObject in RouteToDevices, use 0x%x,%s and structured $data connected/disconnected; Recvd follows connection handling and precedes broadcast to cube lights. OV10 check (re-analysis/research/overnight/20261014-ov10-m11-042-check.md): owns F1, C1, C2 (to build). Contradicted: CreateActiveObjectByType accepts the Charger (13) and returns null with an error for other non-cube types; 0x00533B58 (slot > 4) is silent; 0x00533CB8 (ID -1) goes to the Recvd log and viz with no broadcast; on disconnect RemoveConnectedActiveObject (C2) removes the connected active object and, through an OriginMode 2 filter, applies to the located objects with that ID, rather than VisionSystem forgetting it. C3 (Robot::HandleConnectedToObject) belongs to the M4 cube-connection record.
+* outstanding: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): overlap ruling: HandleActiveObjectConnectionState 0x00533B3C..0x00533C34, its slot > 4 gate (0x00533B56) included, is this record's; M4-009 keeps Moved/Stopped/UpAxisChanged. Before: BUILT: AddConnectedActiveObject (range, occupied slot, FactoryIDAlreadyUsed, located objects with the activeID a/b/c, none with the activeID, registration with no pose), RemoveConnectedActiveObject (erase), HandleActiveObjectConnectionState (unsigned range, connect, disconnect), wired from VisionSystem. NOT SETTLED, visible: CreateActiveObjectByType for a type other than a light cube throws NotSupportedException (unread), the error branches 0x00533B58 and 0x00533CB8 (logged only), Robot::HandleConnectedToObject (stays CozmoCubes.Handle, M4), the rest of RemoveConnectedActiveObject's body. LOCAL, not the engine's: VisionSystem still forgets a cube's located object when the cube disconnects. B-M3M4-9 built, awaiting strong verification: robot.accessory_connection events precede Add/RemoveConnectedActiveObject in RouteToDevices, use 0x%x,%s and structured $data connected/disconnected; Recvd follows connection handling and precedes broadcast to cube lights. OV10 check (re-analysis/research/overnight/20261014-ov10-m11-042-check.md): owns F1, C1, C2 (to build). Contradicted: CreateActiveObjectByType accepts the Charger (13) and returns null with an error for other non-cube types; 0x00533B58 (slot > 4) is silent; 0x00533CB8 (ID -1) goes to the Recvd log and viz with no broadcast; on disconnect RemoveConnectedActiveObject (C2) removes the connected active object and, through an OriginMode 2 filter, applies to the located objects with that ID, rather than VisionSystem forgetting it. C3 (Robot::HandleConnectedToObject) belongs to the M4 cube-connection record. OV32 check (re-analysis/research/overnight/20261015-ov31-32-33-check.md): the disconnect tail 0x00533CB2..0x00533D30 is M11-085.
 
 **M11-043 — BlockWorld::UpdateObjectOrigins: re-keying located objects between origins** (live path)
 
@@ -3142,6 +3149,15 @@ B-M11-8 (2026-10-14; fixes from re-analysis/research/20261014-b-m11-1-check.md; 
 * evidence: 0x006512EA/0x00651330 reads NV tags 0x184000/0x183000; 0x0065A876..0x0065A896 installs the data under the vision mutex.; 0x00651594..0x00651612 broadcasts RobotErasedAllEnrolledFaces before each LoadedKnownFace.; 0x00657180..0x0065720E obtains and size-checks both vectors; 0x006573A0..0x006573EA writes album then enrollment after four-byte padding, with erase paths for empty data.; 0x005FE520/0x005FE528 constructs and broadcasts FaceEnrollmentCompleted.
 * outstanding: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns the FaceAlbum/FaceEnrollment read callbacks (0x0065A860; the ReadFaceEnrollData logs 0x0065A8F0/0x0065A916, built under M3-034); M3-034 is retired into this and the M15 records. The gate on the reads (VisionSystem::Init's result) is M11-059's. Before: Built: NV 0x184000/0x183000 read/write orchestration, install under the vision mutex, clear-then-replay observable events, size-check against the tag maxima, four-byte padding, ordered write/erase. InstallSerializedFaceData now drives the M14-011 recognizer's SetSerializedData; GetSerializedFaceData calls the enrollment serializer only when the album vector is non-empty (C5-12); SaveFaceAlbumToRobot erases both tags only when both vectors are empty, album first and enrollment only on the album erase's success (C5-13), and otherwise writes both. MISSING: the album byte vector's serialization inverse is OKAO's RestoreAlbum boundary (M11-016), so the album side still round-trips as raw bytes; the EngineToGame broadcasts RobotErasedAllEnrolledFaces/LoadedKnownFace/FaceEnrollmentCompleted (M2/M10); the connection-time invocation is M3-033's queue. OV15-17 check (re-analysis/research/overnight/20261014-ov15-16-17-check.md): contradicted: the replay sends ONE RobotErasedAllEnrolledFaces (0x0065159C) before the loop 0x006515B8..0x00651630, not one per entry; the file branch also sends an earlier erase through EraseAllFaces (0x00651538).
 
+**M14-013 — Pet/face-world and speech lifetime recipients** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs`
+* effect: A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.
+* rests on: Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: 0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt; re-analysis/research/overnight/20261015-ov31-32-33-check.md: L1 0x0051128C..0x005112D2, 0x005114A6..0x005114B4; L2 0x0050BC4C..0x0050BC6E; L3 0x004F5E9E..0x004F5EE8, 0x004EAE94..0x004EAEC6, 0x004EF1B8..0x004EF1CE; L5-L7 0x0069E464..0x0069E49A, 0x007FB900..0x007FB918, 0x007FBB80, 0x007FC684..0x007FC770, 0x007FD0BE..0x007FD128, in-flight 0x0069F430..0x0069F518, CreateAudioData 0x0069EF10..0x0069F03E.
+* outstanding: S10: pet/face/speech owners 0x0051128C..0x005112C6 and 0x005114A6..0x005114B4; M14-006 world/speech consumer. Recursive/audio owners only if identified. Source triage S10. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov31-32-33-check.md): IMPLEMENTATION_GAP for L1-L3 and the speech teardown order. The in-flight synthesis branch is reachable only if a host TTS replaces M14-006 (BLOCKED_EXTERNAL) and is not built. Pose diagnostics are M11-077/M11-084; StopExecution is M5-064/M1-047. M1-034 points (not shown reachable): 0x007FB900 null queue, 0x004EF1BE null handle.
+
 ### M15-freeplay — Needs, activities and freeplay
 
 **M15-001 — NeedsManager initialization, periodic update and need-bracket rules** (live path)
@@ -3413,6 +3429,24 @@ B-M15-1 (2026-10-15), built, awaiting strong verification: configured ascending 
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: Read queued at 0x0063CA52 (tag 0x195000, M3-033 #2); callback 0x102EF3C+0x14 = 0x0063D7C4 (+0x104 = 1, Unpack, SendInventoryAllToGame, RequestDefaultSparks on -1; M3-034's summary); re-analysis/research/overnight/20261014-ov28-29-30-check.md: callback slot +0x18 (0x0102EF54 = 0x0063D7C5); ctor 0x0063C90C..0x0063C93A (words 2..63 never written); Init order 0x00510368..0x0051037C; callback 0x0063D7C4..0x0063D888; decoder 0x0077D7BA..0x0077D7E8; sink 0x0063D30C..0x0063D356 (InventoryStatus tag 0x6F); RequestDefaultSparks tag 0x70 via 0x00511DE8..0x00511DFC.
 * outstanding: RECOVERABLE_GAP: only M3-034's summary exists; read the callback body and its sink. The stack's callback is a no-op (CozmoEngine.cs:735). Read 2026-10-15 (re-analysis/research/overnight/20261014-ov28-29-30-check.md): IMPLEMENTATION_GAP. Manager ruling (by analogy with the approved M2-017; the operator may overrule): on the normal -1 path the original sends InventoryStatus carrying 62 never-written words; the stack sends them as 0 and logs that once on the stack channel naming this ruling. The starting Sparks amount is an app input (COMPATIBILITY_POLICY, Unity GiveStartingInventory). Unread: AddInventoryAmount 0x0063D05C..0x0063D268, WriteCurrentInventoryToRobot 0x0063D3A4..0x0063D57C, subscription helpers 0x0063CB8C..0x0063CDCC.
+
+**M15-036 — The Lab read: ReadLabAssignmentsFromRobot (tag 0x196000) and its callback into CozmoExperiments::RestoreLoadedActiveExperiments** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: the robot's stored lab assignments are not restored, so experiment-dependent behaviour differs
+* rests on: Cross-layer split (manager, 2026-10-10): S-11 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M3-033/M3-034.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Read(0x196000) at 0x006A5B1E from the mfgId lambda (0x0052E3A6..0x0052E3B2, M3-033 #13); callback 0x10317B8+0x14 = 0x006A6486 -> CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34 (exports); re-analysis/research/overnight/20261015-ov31-32-33-check.md: entry 0x0052E3A2..0x0052E3B2; queue 0x006A5AB4..0x006A5B82; callback slot +0x18 (0x010317D0 = 0x006A6487); dispatch 0x006A5C3C..0x006A5D2A; decode 0x0078A970..0x0078A9CE, 0x0078D378..0x0078D3F8, 0x006C235C..0x006C2384, 0x006C39B0..0x006C3A18; restore 0x006A5C46..0x006A5C80, 0x007ECE38..0x007ECF44, 0x007EDBA2..0x007EDD5C, 0x007EE038..0x007EE0A6; signal 0x007EBF42..0x007EC014, 0x007ED0B6..0x007ED0F4; listener 0x004EB61E..0x004EB63E, 0x004EF212..0x004EF218, 0x006A60C4..0x006A60D0.
+* outstanding: RECOVERABLE_GAP: read the callback and RestoreLoadedActiveExperiments. The stack's callback is a no-op (CozmoEngine.cs:1408). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov31-32-33-check.md): IMPLEMENTATION_GAP for the read path through the copy into +0xA0; the build waits for M15-049 (definitions) and M15-050 (writeback). Corrections: the callback slot is +0x18 (+0x14 is the delete thunk); the stack is now a NoSink at CozmoEngine.cs:1514. The clock is EQUIVALENT_IMPLEMENTATION (phone system library). M1-034: dangling captured this at 0x006A648A (teardown race only).
+
+**M15-037 — ActivityBuildPyramid cube-light modifiers and tracker lifecycle (the live modifier=true PlayLightAnim caller)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: Pyramid-building cube lights, and whether M4-045's NullActiveObject + modifier heap read is reachable.
+* rests on: Opus extractor read of M4-046 (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m4-046-anim-modifier.md: ActivityBuildPyramid::SetCubeLights StopAndPlay passes modifier = true (0x005A7D52..0x005A7D66) with node+0x28, filled by SetPyramidBaseLights (0x005A9238/0x005A928A) and UpdateDesiredLights (0x005A96F0, 0x005A9758, 0x005A97C4; sources unread); getters 0x005A9960, 0x005A9A3C, 0x005A9B00 read. Tracker erase on disconnect 0x005A7FD4 -> 0x005A7FFA.; re-analysis/research/overnight/20261015-ov31-32-33-check.md: B1 0x005A768A..0x005A76E8, 0x005AA1B2..0x005AA1C8; B2 0x005A7FD4..0x005A7FFA; B3 0x005A80B6..0x005A81EA; B4 0x005AA2C6..0x005AA2DE, 0x005A85A2; B5 0x005A92C0..0x005A94B6; B6 0x005A9558..0x005A964E; B7 0x005A90C8..0x005A92B4 (argument order 0x005A9220..0x005A928A, 0x005A912A..0x005A9142); B8 0x005A7BFE..0x005A7E7A, 0x005A7AB8..0x005A7B64, 0x0062A1B0..0x0062A1DC.
+* outstanding: RECOVERABLE_GAP: read UpdateDesiredLights and SetPyramidBaseLights sources; and for reachability of M4-045 N2/N3: (a) who dispatches HandleObjectConnectionStateChange to activities and whether an inactive one receives it, (b) its order against BlockWorld's connected-object removal, (c) UpdateStateTrackerForUnrecognizedID 0x005A8004, (d) whether Update/OnDeselected can call SetCubeLights for a gone cube. Feeding (FeedingCubeController +0xAC modifier) is entered only through the app's ActivateHighLevelActivity(Feeding) as far as read. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov31-32-33-check.md): IMPLEMENTATION_GAP for rows B1-B8; the build waits for M15-051 (producers). The axis-map miss is unreachable (no M1-034 entry). The VERIFY then null dereference at 0x005A85A2 is M1-034. The M4-045 N2/N3 witness stays with M4-045. The cube-light map entry survives a disconnect.
 
 **M15-038 — RobotDataBackupManager constructor: the robotBackups directory, backup_config.json tagsToBackup, and the HasExternalInterface-gated subscriptions** (live path)
 

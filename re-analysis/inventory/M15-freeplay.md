@@ -945,3 +945,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | FP execution mode, BLOCKED_EXTERNAL | M15-047 (new) |
 | ForceSetNeedsLevels handler, IMPLEMENTATION_GAP | M15-048 (new) |
 | Notes | M15-046, M15-014 |
+
+
+## Check of OV31-OV33 (manager, 2026-10-15; research/overnight/20261015-ov31-32-33-check.md)
+
+| Change | Records |
+| --- | --- |
+| Lab read, BuildPyramid rows B1-B8: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-036, M15-037 |
+| Lab definitions, lab writeback, BuildPyramid producers: RECOVERABLE_GAP | M15-049, M15-050, M15-051 (new) |

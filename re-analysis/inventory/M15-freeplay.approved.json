@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "70f98d4d44eafabd56464415cae690b33acc1910eb2446483a1cdd021982fb00",
+  "inventory_sha256": "dcf6993ac52c8dc81e8c942ba173ba59265f1b225cf414aed4bea1d413bab28d",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -463,21 +463,23 @@
       "hardware_required": false
     },
     "M15-036": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The Lab read: ReadLabAssignmentsFromRobot (tag 0x196000) and its callback into CozmoExperiments::RestoreLoadedActiveExperiments",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Read(0x196000) at 0x006A5B1E from the mfgId lambda (0x0052E3A6..0x0052E3B2, M3-033 #13); callback 0x10317B8+0x14 = 0x006A6486 -> CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34 (exports)"
+        "Read(0x196000) at 0x006A5B1E from the mfgId lambda (0x0052E3A6..0x0052E3B2, M3-033 #13); callback 0x10317B8+0x14 = 0x006A6486 -> CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34 (exports)",
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: entry 0x0052E3A2..0x0052E3B2; queue 0x006A5AB4..0x006A5B82; callback slot +0x18 (0x010317D0 = 0x006A6487); dispatch 0x006A5C3C..0x006A5D2A; decode 0x0078A970..0x0078A9CE, 0x0078D378..0x0078D3F8, 0x006C235C..0x006C2384, 0x006C39B0..0x006C3A18; restore 0x006A5C46..0x006A5C80, 0x007ECE38..0x007ECF44, 0x007EDBA2..0x007EDD5C, 0x007EE038..0x007EE0A6; signal 0x007EBF42..0x007EC014, 0x007ED0B6..0x007ED0F4; listener 0x004EB61E..0x004EB63E, 0x004EF212..0x004EF218, 0x006A60C4..0x006A60D0."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-037": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ActivityBuildPyramid cube-light modifiers and tracker lifecycle (the live modifier=true PlayLightAnim caller)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m4-046-anim-modifier.md: ActivityBuildPyramid::SetCubeLights StopAndPlay passes modifier = true (0x005A7D52..0x005A7D66) with node+0x28, filled by SetPyramidBaseLights (0x005A9238/0x005A928A) and UpdateDesiredLights (0x005A96F0, 0x005A9758, 0x005A97C4; sources unread); getters 0x005A9960, 0x005A9A3C, 0x005A9B00 read. Tracker erase on disconnect 0x005A7FD4 -> 0x005A7FFA."
+        "re-analysis/research/20261012-m4-046-anim-modifier.md: ActivityBuildPyramid::SetCubeLights StopAndPlay passes modifier = true (0x005A7D52..0x005A7D66) with node+0x28, filled by SetPyramidBaseLights (0x005A9238/0x005A928A) and UpdateDesiredLights (0x005A96F0, 0x005A9758, 0x005A97C4; sources unread); getters 0x005A9960, 0x005A9A3C, 0x005A9B00 read. Tracker erase on disconnect 0x005A7FD4 -> 0x005A7FFA.",
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: B1 0x005A768A..0x005A76E8, 0x005AA1B2..0x005AA1C8; B2 0x005A7FD4..0x005A7FFA; B3 0x005A80B6..0x005A81EA; B4 0x005AA2C6..0x005AA2DE, 0x005A85A2; B5 0x005A92C0..0x005A94B6; B6 0x005A9558..0x005A964E; B7 0x005A90C8..0x005A92B4 (argument order 0x005A9220..0x005A928A, 0x005A912A..0x005A9142); B8 0x005A7BFE..0x005A7E7A, 0x005A7AB8..0x005A7B64, 0x0062A1B0..0x0062A1DC."
       ],
       "live_path": true,
       "hardware_required": false
@@ -591,6 +593,36 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 and every shipped .so.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov28-29-30-check.md: 0x00697DA4..0x00698002 (log keys 0x006980EC/0x00698110; clamp 0x00697E6C..0x00697EBA; event name 0x00698160); subscribe tag 0xC6 at 0x0069284C."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-049": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Lab experiment definitions: AnkiLab::Load (experiments.json) and the InitExperiments enable tail",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: AnkiLab::Load 0x007EBDE0..0x007EBF38; InitExperiments tail 0x006A56D0..0x006A5744; Enable(!ShouldABTestingBeDisabled) 0x006A5614..0x006A5622; kForceDisableABTesting 0x0105D940 (.bss)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-050": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Lab assignments writeback: PossiblyWriteLabAssignmentsToRobot and WriteLabAssignmentsToRobot (NV tag 0x196000)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: PossiblyWriteLabAssignmentsToRobot 0x006A5DE4..0x006A60C4 (head read: compares +0x94 stride 0x18 with +0xA0 stride 0x24); WriteLabAssignmentsToRobot 0x006A57F0..0x006A5A3C; callers NeedsManager::InitAfterReadFromRobotAttempt 0x00694622, SetGameBeingPaused handler 0x006990DA."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-051": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ActivityBuildPyramid producers: UpdateChooserPhase and the Get*BlockID calls, the Update caller, BehaviorManager +0x58..+0x65 writers, the UpdateMusic target, the +0xC0/+0xC8 behaviour lookups",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: UpdateChooserPhase 0x005A8854..0x005A90C8; Get*BlockID 0x005A878A, 0x005A87CC, 0x005A880E; UpdateMusic veneer 0x008CBD5C; FindBehaviorByID(4) 0x005A741C, FindBehaviorByID(3) 0x005A7444, unchecked uses 0x005A9424, 0x005A9458, 0x005A9462."
       ],
       "live_path": true,
       "hardware_required": false

@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-14",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "56c88267e462c5745bfa00a1d57170bb40ebb83e62d1b51fd40d715c877d2a71",
+  "inventory_sha256": "9c681ebba6a34e1749c2829a92ae8a85ed0bc7032529ff57dad8326df09c54fa",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -981,6 +981,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261014-pose-tree-verifies.md: \"Still unread\": parent-pose lifetimes (robot +0x298, origins, object poses, temporaries), PoseOriginList erase/rejigger paths, inline wrapper attaches writing PoseBase+4 without +0x48, cross-thread pose-tree mutation."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-085": {
+      "status": "RECOVERABLE_GAP",
+      "title": "HandleActiveObjectConnectionState disconnect tail: HandleDisconnectedFromObject, the Recvd Info, VizManager, and the broadcast only when RemoveConnectedActiveObject returned an ID",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: 0x00533CB2 HandleDisconnectedFromObject; Info \"Robot.HandleActiveObjectConnectionState.Recvd\" 0x00533CD4; VizManager::SendObjectConnectionState 0x00533D0C; adds/beq 0x00533D10..0x00533D12 gates ObjectConnectionState on ID != -1."
       ],
       "live_path": true,
       "hardware_required": false

@@ -68,5 +68,9 @@ The first three are the requests already written:
 | OV55 | requests/overnight/20261014-ov55-m8-023.md (M8-023: behaviour teardown recursive recipients) | research/overnight/20261014-ov55-m8-023.md |
 | OV56 | requests/overnight/20261014-ov56-m8-024.md (M8-024: pending actions surviving to ~Robot) | research/overnight/20261014-ov56-m8-024.md |
 | OV57 | requests/overnight/20261014-ov57-m11-083.md (M11-083: libc++_shared %f formatter) | research/overnight/20261014-ov57-m11-083.md |
+| OV58 | requests/overnight/20261015-ov58-m15-049.md (M15-049: Lab experiment definitions: AnkiLab::Load (experiments.json) and the I) | research/overnight/20261015-ov58-m15-049.md |
+| OV59 | requests/overnight/20261015-ov59-m15-050.md (M15-050: Lab assignments writeback: PossiblyWriteLabAssignmentsToRobot and Writ) | research/overnight/20261015-ov59-m15-050.md |
+| OV60 | requests/overnight/20261015-ov60-m15-051.md (M15-051: ActivityBuildPyramid producers: UpdateChooserPhase and the Get*BlockID) | research/overnight/20261015-ov60-m15-051.md |
+| OV61 | requests/overnight/20261015-ov61-m11-085.md (M11-085: HandleActiveObjectConnectionState disconnect tail: HandleDisconnectedF) | research/overnight/20261015-ov61-m11-085.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
