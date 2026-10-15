@@ -705,6 +705,7 @@ public sealed class VisionSystem : IDisposable
     // fidelity: M11-019
     private void DelocalizeRobot(bool suppliedCarrying)
     {
+        using var frameMutation = World.EnterPoseMutation();
         World.ResetPoseFrameMismatch(); // +0x2C0 = 0 on both paths: 0x00512B9C (tread boundary), 0x00512F88 (frame mismatch).
         _robot.Engine.Robot?.Delocalize(suppliedCarrying);
         RobotDelocalized?.Invoke(World.CurrentOriginId);
@@ -719,6 +720,7 @@ public sealed class VisionSystem : IDisposable
     /// </summary>
     internal void HandleObjectConnectionState(ObjectConnectionState cs)
     {
+        using var frameMutation = World.EnterPoseMutation();
         uint? worldId = cs.Connected ? null : World.ConnectedObjectIdForActiveId(cs.ObjectID);
         try { World.HandleActiveObjectConnectionState(cs.ObjectID, cs.FactoryID, cs.ObjectType, cs.Connected); }
         catch (NotSupportedException e) { Log?.Invoke($"object {cs.ObjectID}: {e.Message}"); }
@@ -1082,6 +1084,7 @@ public sealed class VisionSystem : IDisposable
     /// gone. The world has already forgotten its located objects by the time this is raised; a caller
     /// with spatial state of its own - the memory map above all, which the engine rebuilds for the new
     /// origin - clears it here.
+    /// Handlers run while the vision frame gate is held. They must not block waiting for vision work.
     /// </summary>
     public event Action<uint>? RobotDelocalized;
 

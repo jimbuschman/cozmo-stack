@@ -790,6 +790,8 @@ public sealed class CozmoCubes
         {
             Log("MISSING: M4-009 / M11-004 | FindLocatedMatchingObjects needs the attached BlockWorld"); return;
         }
+        // Native message work is whole between frames (0x004ED62E before 0x004ED648).
+        using var frameMutation = world.EnterPoseMutation();
         var filter = new Vision.BlockWorldFilter { OriginMode = Vision.OriginMode.InAnyFrame };
         filter.Predicates.Add(o => o.ActiveId == unchecked((int)activeId));
         var objects = world.FindLocatedMatchingObjects(filter);
