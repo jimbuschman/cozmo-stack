@@ -147,7 +147,7 @@ public readonly struct Mat3
     public override string ToString()=>"["+Row(0)+"; "+Row(1)+"; "+Row(2)+"]";
 }
 
-// fidelity: M11-065, M11-066, M11-067, M11-068, M11-004
+// fidelity: M11-065, M11-066, M11-067, M11-068, M11-004, M11-077
 internal sealed class PoseTreeNode
 {
     // B-M11-8 verifier round 2 (reader-side race): the transform is published as an immutable box with Volatile.Write and
@@ -165,7 +165,26 @@ internal sealed class PoseTreeNode
     internal void SetParent(PoseTreeNode? parent)
     {
         Parent=parent;
-        PoseDiagnostics.Missing("M11-067 Dev_AssertIsValidParentPointer 0x008460C8 parent-pointer validation/diagnostics has no checked body; parent-pointer arithmetic only is built");
+    }
+    // Checked 0x008460C8..0x00846124: the diagnostic returns false but every listed caller continues.
+    internal void AssertParent()
+    {
+        if(Parent is not {} parent||Pose3d.UnownedParentsAllowed||parent.Owners!=0)return;
+        PoseDiagnostics.Verify("PoseBase.Dev_AssertIsValidParentPointer.UnownedParent",
+            "VERIFY(parent->_ownerCount > 0): Pose "+PoseDiagnostics.Integer(Id)+"("+PoseDiagnostics.CString(Name)+") has parent "+PoseDiagnostics.Integer(parent.Id)+"("+PoseDiagnostics.CString(parent.Name)+") which is not owned by any PoseBase wrapper");
+    }
+    internal void RemoveOwner()
+    {
+        if(Owners==0){PoseDiagnostics.Verify("PoseBase.PoseTreeNode.RemoveOwner.ZeroOwners","VERIFY(_ownerCount > 0): ");return;}
+        if(--Owners!=0||Pose3d.UnownedParentsAllowed||Id==0)return;
+        PoseDiagnostics.Verify("PoseBase.PoseTreeNode.RemoveOwner.ZeroOwnersWithID",
+            "VERIFY(GetID() == 0): Pose "+PoseDiagnostics.CString(Name)+" has non-zero ID="+PoseDiagnostics.Integer(Id)+" but just had its last owner removed");
+    }
+    internal bool HasSameParent(PoseTreeNode other)
+    {
+        if(ReferenceEquals(this,other))return true;
+        AssertParent();if(Parent is null)return false;
+        other.AssertParent();return ReferenceEquals(Parent,other.Parent);
     }
     internal static bool HasSameRoot(PoseTreeNode? a,PoseTreeNode? b)
     {
@@ -173,8 +192,8 @@ internal sealed class PoseTreeNode
         static PoseTreeNode Walk(PoseTreeNode n,int line)
         {
             int count=0;
-            while(n.Parent is not null)
-            {n=n.Parent;if(++count==1000){PoseDiagnostics.Loop("poseTreeNode.h",line);break;}}
+            while(true)
+            {n.AssertParent();if(n.Parent is null)break;n=n.Parent;if(++count==1000){PoseDiagnostics.Loop("poseTreeNode.h",line);break;}}
             return n;
         }
         return ReferenceEquals(Walk(a,0x107),Walk(b,0x10E));
@@ -189,8 +208,8 @@ internal sealed class PoseTreeNode
     internal PoseTreeNode Root()
     {
         var n=Parent??this;int count=0;
-        while(n.Parent is not null)
-        {n=n.Parent;if(++count==1000){PoseDiagnostics.Loop("poseTreeNode.h",0x145);break;}}
+        while(true)
+        {n.AssertParent();if(n.Parent is null)break;n.AssertParent();n=n.Parent;if(++count==1000){PoseDiagnostics.Loop("poseTreeNode.h",0x145);break;}}
         return n;
     }
 }
@@ -210,8 +229,8 @@ public sealed class Pose3d : IDisposable
     public string Name {get=>RequireNode().Name;set=>RequireNode().Name=value;}
     public uint Id {get=>RequireNode().Id;set=>RequireNode().Id=value;}
     public uint Owners=>RequireNode().Owners;
-    public bool IsRoot=>Node is null||Node.Parent is null;
-    public bool HasParent=>Node?.Parent is not null;
+    public bool IsRoot{get{Node?.AssertParent();return Node is null||Node.Parent is null;}}
+    public bool HasParent{get{Node?.AssertParent();return Node?.Parent is not null;}}
     public static IDisposable UseSourceLog(SourceLogSink source,Action? forceFlush=null)=>PoseDiagnostics.Use(source,forceFlush);
     public Pose3d(string name="",Pose3d? parent=null):this(new Transform3d(Rotation3d.Identity,Vec3.Zero),name,parent){}
     public Pose3d(Transform3d transform,string name="",Pose3d? parent=null)
@@ -247,8 +266,7 @@ public sealed class Pose3d : IDisposable
         if(source.Node is null)
         {
             var n=RequireNode();
-            if(n.Owners==0){PoseDiagnostics.Missing("M11-067 RemoveOwner ZeroOwners VERIFY 0x008448B4 has no fully checked log row; decrement skipped");}
-            else n.Owners--;
+            n.RemoveOwner();
             if(n.Owners==0&&!UnownedParentsAllowed)
                 PoseDiagnostics.Missing("M11-067 assignment-null NotLastOwner VERIFY 0x0084594A..0x008459B8 requires native shared_ptr use_count/diagnostic ownership, not inferred from C# references");
             Node=null;return;
@@ -270,11 +288,12 @@ public sealed class Pose3d : IDisposable
     public bool TryGetParent(ref Pose3d output)
     {
         if(Node is null){output=new Pose3d();return true;} // Defined null-source case leaves a fresh identity result.
+        Node.AssertParent();
         if(Node.Parent is null)
         {PoseDiagnostics.Missing("M1-034/M11-076 GetParent(root) fatal owner read 0x008452BA: skipped, previous output preserved");return false;}
         output=WrapExisting(Node.Parent);return true;
     }
-    public Pose3d FindRoot()=>WrapExisting(RequireNode().Root());
+    public Pose3d FindRoot(){var n=RequireNode();n.AssertParent();return WrapExisting(n.Parent is null?n:n.Root());}
     public Vec3 Apply(Vec3 point)=>Transform.Apply(point);
     public void ApplyTo(IReadOnlyList<Vec3> input,List<Vec3> output)=>Transform.ApplyTo(input,output);
     public Pose3d Compose(Pose3d other)
@@ -309,21 +328,23 @@ public sealed class Pose3d : IDisposable
         int d=f.Depth()-t.Depth(),i=0;
         while(d>=1)
         {
-            {var p=f.Parent!.Transform;tf.PreComposeWith(ref p);}f=f.Parent;
+            {var p=f.Parent!.Transform;tf.PreComposeWith(ref p);}f.AssertParent();f=f.Parent;
+            f.AssertParent();
             if(ReferenceEquals(f.Parent,t)){output.Node.Transform=tf;output.SetParent(to);return true;}
             i++;d--;if(i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1A0);break;}
         }
         i=0;
         while(d+i<=-1)
         {
-            {var p=t.Parent!.Transform;tt.PreComposeWith(ref p);}t=t.Parent;
+            {var p=t.Parent!.Transform;tt.PreComposeWith(ref p);}t.AssertParent();t=t.Parent;
+            t.AssertParent();
             if(ReferenceEquals(t.Parent,f)){output.Node.Transform=tt.Inverse();output.SetParent(to);return true;}
             if(++i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1B6);break;}
         }
         i=0;
-        while(!ReferenceEquals(f,t)&&!(f.Parent is not null&&t.Parent is not null&&ReferenceEquals(f.Parent,t.Parent)))
+        while(!ReferenceEquals(f,t)&&!t.HasSameParent(f))
         {
-            {var pf=f.Parent!.Transform;tf.PreComposeWith(ref pf);var pt=t.Parent!.Transform;tt.PreComposeWith(ref pt);}f=f.Parent;t=t.Parent;
+            {var pf=f.Parent!.Transform;tf.PreComposeWith(ref pf);var pt=t.Parent!.Transform;tt.PreComposeWith(ref pt);}t.AssertParent();t=t.Parent;f.AssertParent();f=f.Parent;
             if(++i==1000){PoseDiagnostics.Loop("poseBase_impl.h",0x1D4);break;}
         }
         {var r=tt.Inverse();r.MultiplyBy(in tf);output.Node.Transform=r;}output.SetParent(to);return true;
@@ -355,10 +376,10 @@ public sealed class Pose3d : IDisposable
         if(ReferenceEquals(this,other))return true;
         // R38 / 0x00846F7E: a null node takes the cbz to GetWithRespectTo(P, this), whose NullInputPose VERIFY returns false;
         // then PosesHaveDifferentOrigins and false. No throw.
-        var n=Node;using var relative=new Pose3d("");
+        var n=Node;using var relative=new Pose3d("");n?.AssertParent();
         if(n?.Parent is not null&&ReferenceEquals(n.Parent,other.Node))relative.SetParent(other);
         else if(n?.Parent is not null)
-        {using var parent=WrapExisting(n.Parent);if(!GetWithRespectTo(other,parent,relative))return false;}
+        {n.AssertParent();using var parent=WrapExisting(n.Parent);if(!GetWithRespectTo(other,parent,relative))return false;}
         else if(n is not null&&_legacyFrameInput&&other._legacyFrameInput&&!other.HasParent)
         {
             PoseDiagnostics.Missing("M11-065/M11-066 legacy flattened IsSameAs inputs lack checked parent/root bindings; arithmetic only is built");
@@ -384,8 +405,7 @@ public sealed class Pose3d : IDisposable
     {
         if(Node is not {} n)return;
         PoseDiagnostics.Missing("M11-077 pose destruction/owner-release side effects are pending their checked owning job; explicit wrapper release only");
-        if(n.Owners!=0)n.Owners--;Node=null;
-        // C# wrapper release is explicit. Native malformed underflow/zero-owner diagnostics remain unbuilt.
+        n.RemoveOwner();Node=null;
     }
     public override string ToString()=>"T="+Translation+" yaw="+(AngleAroundZ*180/Math.PI).ToString("F1")+"deg";
 }

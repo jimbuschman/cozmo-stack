@@ -6,6 +6,19 @@ namespace Cozmo.Robot;
 public sealed partial class EngineRobot
 {
     private readonly Dictionary<uint,Pose3d> _nativeOrigins=new();
+    // fidelity: M11-077 — ~PoseOriginList 0x00847944..0x008479DE.
+    // Delete each ordered-map unique_ptr while unowned parents are allowed; restore before tree-node storage release.
+    internal void DestroyPoseOriginOwners()
+    {
+        using var scope=Pose3d.UseSourceLog((l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t),Engine.Das.ForceFlushNow);
+        LogCallbackDeferral.RunGated(PoseTreeGate,()=>
+        {
+            bool prior=Pose3d.UnownedParentsAllowed;Pose3d.UnownedParentsAllowed=true;
+            try{foreach(var entry in _nativeOrigins.OrderBy(e=>e.Key))entry.Value.Dispose();}
+            finally{Pose3d.UnownedParentsAllowed=prior;}
+            _nativeOrigins.Clear();
+        });
+    }
     internal uint NativeRobotId {get;}
     private static readonly Pose3d MissingOrigin=new(""); // MissingOrigin's native name is not a checked input in this job.
     internal Pose3d MainPose {get;}=new("");

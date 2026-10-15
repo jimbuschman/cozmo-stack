@@ -232,7 +232,7 @@ public sealed class NativePoseBuilderTestsBPose2
     }
 
     /// <summary>Item 1: PoseDiagnostics.Missing goes to the stack's MISSING channel (SteppedBehavior.ReportMissing, deduplicated), never
-    /// into the engine source sink the engine binds in TickAt (CozmoEngine.cs). The native logs nothing at these points (0x008460C8).</summary>
+    /// into the engine source sink the engine binds in TickAt (CozmoEngine.cs). B-POSE-3 builds the conditional parent VERIFY separately.</summary>
     [Fact]
     public void PoseMissingNeverEntersTheEngineSourceLog()
     {
@@ -241,12 +241,12 @@ public sealed class NativePoseBuilderTestsBPose2
         SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=On;
         try
         {
-            using(var p=new Pose3d("p")){}                                             // SetParent and Dispose report MISSING
+            using(var p=new Pose3d("p")){}                                             // Remaining destruction gaps report MISSING.
             using(var q=new Pose3d("q")){}
         }
         finally{SteppedBehavior.MissingReported-=On;}
         Assert.DoesNotContain(entries,e=>e.Key=="MISSING"||e.Text.StartsWith("MISSING"));
-        Assert.Single(stack,l=>l.StartsWith("MISSING: M11-067 Dev_AssertIsValidParentPointer"));
+        Assert.DoesNotContain(stack,l=>l.StartsWith("MISSING: M11-067 Dev_AssertIsValidParentPointer"));
         Assert.Single(stack,l=>l.StartsWith("MISSING: M11-077"));
     }
 }

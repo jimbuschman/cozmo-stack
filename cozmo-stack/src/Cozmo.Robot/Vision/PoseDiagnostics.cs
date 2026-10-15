@@ -11,8 +11,7 @@ internal static class PoseDiagnostics
     private sealed class Scope(Context? prior):IDisposable {public void Dispose()=>Current.Value=prior;}
     internal static IDisposable Use(SourceLogSink sink,Action? flush=null)
     {var old=Current.Value;Current.Value=new(sink,flush);return new Scope(old);}
-    // Stack MISSING channel only (deduplicated per message); the native logs nothing at these points
-    // (Dev_AssertIsValidParentPointer 0x008460C8, destruction), so a MISSING never enters the engine source sink.
+    // Stack MISSING channel only. Checked conditional native VERIFYs use Verify below.
     internal static void Missing(string text)=>SteppedBehavior.ReportMissing(text);
     internal static void Warning(string key,string text)=>Log(EngineLogLevel.Warning,key,text);
     internal static void Error(string key,string text){Log(EngineLogLevel.Error,key,text);EngineErrorState.StoreAndMaybeBreak();}
