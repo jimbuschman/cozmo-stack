@@ -3171,3 +3171,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP | M6-029 AudioMultiplexer teardown |
+
+
+## Check of OV25-OV27 (manager, 2026-10-15; research/overnight/20261014-ov25-26-27-check.md)
+
+| Change | Records |
+| --- | --- |
+| RobotAudioClient teardown, IMPLEMENTATION_GAP | M6-030 (new) |

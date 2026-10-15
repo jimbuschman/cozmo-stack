@@ -925,3 +925,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | UnlockId table, readAsJson failure, InitConfig read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-044 |
+
+
+## Check of OV25-OV27 (manager, 2026-10-15; research/overnight/20261014-ov25-26-27-check.md)
+
+| Change | Records |
+| --- | --- |
+| Disconnect/teardown order, telemetry lifetime, repair decay: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-027, M15-028, M15-029 |
+| AI recursive recipients, RECOVERABLE_GAP | M15-045 (new) |
+| NeedsState::ApplyDelta, IMPLEMENTATION_GAP | M15-046 (new) |
+| Notes | M15-014, M15-004 |

@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-10-12",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "18d58a8229894edbcfe496b519f28a3db2fb46332267fdefb9aa4c10407abccf",
+  "inventory_sha256": "43d4bfcd216fa00757d874d00f43857c3d45f45b92d84709d3952cf2a6537eda",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -432,6 +432,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-030": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "RobotAudioClient teardown: Dispatch Stop, Release, abort and clear the +0x38 animation, unregister game objects 7, 8, 9, 10, 6, then the deque, hash and base",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: ~RobotAudioClient 0x00599A6C..0x00599ADA; Unregister error strings 0x00599DD4/0x00599E00, 0x00594C24/0x00594C54."
       ],
       "live_path": true,
       "hardware_required": false

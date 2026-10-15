@@ -96,6 +96,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 51 | [B-M8-4](B-M8-4.md) | open, after B-M12-4 (DAS animation blacklist load M8-022; M8-025) |
 | 52 | [B-M10-1](B-M10-1.md) | open, after B-M8-4 (BlockFilter/gyro lifetime M10-014; drift/bias detectors M10-015; raw IMU magnitude M10-017) |
 | 53 | [B-M3M4-27](B-M3M4-27.md) | open, after B-M10-1 (cleanups from the B-M3M4-26 pass) |
+| 54 | [B-M15-2](B-M15-2.md) | open, after B-M3M4-27 (disconnect/teardown M15-027/028; repair decay M15-029; ApplyDelta M15-046; audio teardown M6-030) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

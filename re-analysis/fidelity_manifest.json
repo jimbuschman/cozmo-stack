@@ -134,7 +134,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-        "approved": "2026-10-12",
+        "approved": "2026-10-15",
         "snapshot": "re-analysis/inventory/M6-wwise-bank.approved.json"
       }
     },
@@ -251,7 +251,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M15-freeplay.md",
-        "approved": "2026-10-13",
+        "approved": "2026-10-15",
         "snapshot": "re-analysis/inventory/M15-freeplay.approved.json"
       }
     },
@@ -5564,7 +5564,7 @@
         "needs_config.json"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): GetDecayMultipliers (0x0069C214: start 1.0f, f32 compare bge 0x0069C278, vmul.f32) and NumDamagedPartsForRepairLevel (0x0069CCAC) in binary32; the model is one entry per JSON entry (threshold + affected pairs; the outer scan stops at the FIRST entry with level >= threshold and applies its whole pair vector once). Still open: NeedsState levels stay double (narrowed to float at the two functions); a NaN level would match in the C# but never in the engine.",
+      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-03): GetDecayMultipliers (0x0069C214: start 1.0f, f32 compare bge 0x0069C278, vmul.f32) and NumDamagedPartsForRepairLevel (0x0069CCAC) in binary32; the model is one entry per JSON entry (threshold + affected pairs; the outer scan stops at the FIRST entry with level >= threshold and applies its whole pair vector once). Still open: NeedsState levels stay double (narrowed to float at the two functions); a NaN level would match in the C# but never in the engine. OV27 check (re-analysis/research/overnight/20261014-ov25-26-27-check.md): \"a NaN level would never match in the engine\" holds only for GetDecayMultipliers (BGE); NumDamagedPartsForRepairLevel (0x0069CCD0) and PossiblyDamageParts (0x0069C638) count every threshold on NaN (BMI).",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig"
@@ -5782,7 +5782,7 @@
         "+0x30 OpenAppAfterDisconnect counter 0x006936CE, 0x006990EC, 0x00695922, 0x00699A1C, 0x00693CC6"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns the Needs read callback 0x0069BEB2 (FinishReadFromRobot + InitAfterReadFromRobotAttempt), from M3-034. Before: Codex review of B-CORE2 (re-analysis/research/20260930-B-CORE2-review.md), checked by the manager's Opus verifier where noted: DEFECT. The buffered connection read holds; the enum-keyed JSON and version branches, the stars/onboarding write callers and the DateTime-anchored 61 s throttle (0x006998B4..0x00699BB8, 0x0069481C..0x00694EE4, 0x00695494..0x00695763) are not reproduced. Before: built, awaiting strong verification: B-CORE2 batch 2 (connection reads). Engine-vs-stack ownership deviation: the engine queues the connection Needs read 0x194000 from its mfgId handler (0x0052E3B2 -> 0x006943F8 -> 0x006944B4..0x0069453E) instead of NeedsManager::InitAfterSerialNumberAcquired, because this stack builds the NeedsManager (FreeplayStack) after the handshake; the engine buffers the terminal NvResult and a later NeedsManager adopts it (CozmoEngine.ConnectionNeedsResult / ConnectionNeedsRead). InitAfterSerialNumberAcquired keeps the +0x1CC/+0x34/+0x1CA/+0x1C8 bookkeeping and adopts the engine read when the engine queued it; StartReadFromRobot remains the manager's own queue method for the direct tests. Before: Built from corrections C2 (Appendix F), C2 addendum (Appendix G), C3 (Appendix H), C4 (Appendix I) and C5 (Appendix J) of re-analysis/inventory/M15-freeplay.md: the mfgId callback needs connection with mfgId word 0 after the connection response (and before the unbuilt M3-033 lab-assignment read), InitAfterSerialNumberAcquired, the NV read of key 0x194000 with its callback and immediate fallback, the per-serial filename needsState_<serial>.json, the nine-case robot/device resolution (now comparing the +0x1B8 device timestamp snapshot with the robot timeLastWritten) with SendNeedsStateToGame and RobotChangedFromLastSession, the device write, the robot write (StartWriteToRobot/FinishWriteToRobot/PossiblyStartWriteToRobot) with its 116-byte binary NeedsStateOnRobot (layout in M15-017), the NVStorageComponent read-queued and write terminals, and the construction-time device path: InitInternal (InitReset, the fixed-file AttemptReadFromDevice with its +0x1B8 snapshot, the default state on failure, WriteToDevice(true), the app_start DAS event and LocalNotifications::Generate), the +0x30 OpenAppAfterDisconnect counter, SendTimeSinceBackgroundedDasEvent, and the host device directory wired from FreeplayStack/FreeplayTool --state-dir with the WriteToDevice seam. Still unbuilt: the exact J6/J7 JSON shapes and version branches of ReadFromDevice/WriteToDevice (the engine writes CurNeedLevel/PartIsDamaged as objects keyed by EnumToString and ForceNextSong as an UnlockId string, and reads TimeLastDisconnected/TimeLastAppBackgrounded/OpenAppAfterDisconnect/TimeCreated/TimeLastStarAwarded; the stack round-trips its own array shape and so cannot read an app-written file); the UpdateStarsState and RegisterOnboardingComplete PossiblyStartWriteToRobot callers, which belong to the app stars/onboarding economy; and the 61 s throttle anchor (the stack uses its own _lastWriteSec rather than the +8/+0xC DateTime the engine compares against). Whether the robot ever omits RobotToEngine mfgId tag 0xED is firmware behaviour and stays HARDWARE_ONLY; it is not designed around.",
+      "unresolved": "Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): this record owns the Needs read callback 0x0069BEB2 (FinishReadFromRobot + InitAfterReadFromRobotAttempt), from M3-034. Before: Codex review of B-CORE2 (re-analysis/research/20260930-B-CORE2-review.md), checked by the manager's Opus verifier where noted: DEFECT. The buffered connection read holds; the enum-keyed JSON and version branches, the stars/onboarding write callers and the DateTime-anchored 61 s throttle (0x006998B4..0x00699BB8, 0x0069481C..0x00694EE4, 0x00695494..0x00695763) are not reproduced. Before: built, awaiting strong verification: B-CORE2 batch 2 (connection reads). Engine-vs-stack ownership deviation: the engine queues the connection Needs read 0x194000 from its mfgId handler (0x0052E3B2 -> 0x006943F8 -> 0x006944B4..0x0069453E) instead of NeedsManager::InitAfterSerialNumberAcquired, because this stack builds the NeedsManager (FreeplayStack) after the handshake; the engine buffers the terminal NvResult and a later NeedsManager adopts it (CozmoEngine.ConnectionNeedsResult / ConnectionNeedsRead). InitAfterSerialNumberAcquired keeps the +0x1CC/+0x34/+0x1CA/+0x1C8 bookkeeping and adopts the engine read when the engine queued it; StartReadFromRobot remains the manager's own queue method for the direct tests. Before: Built from corrections C2 (Appendix F), C2 addendum (Appendix G), C3 (Appendix H), C4 (Appendix I) and C5 (Appendix J) of re-analysis/inventory/M15-freeplay.md: the mfgId callback needs connection with mfgId word 0 after the connection response (and before the unbuilt M3-033 lab-assignment read), InitAfterSerialNumberAcquired, the NV read of key 0x194000 with its callback and immediate fallback, the per-serial filename needsState_<serial>.json, the nine-case robot/device resolution (now comparing the +0x1B8 device timestamp snapshot with the robot timeLastWritten) with SendNeedsStateToGame and RobotChangedFromLastSession, the device write, the robot write (StartWriteToRobot/FinishWriteToRobot/PossiblyStartWriteToRobot) with its 116-byte binary NeedsStateOnRobot (layout in M15-017), the NVStorageComponent read-queued and write terminals, and the construction-time device path: InitInternal (InitReset, the fixed-file AttemptReadFromDevice with its +0x1B8 snapshot, the default state on failure, WriteToDevice(true), the app_start DAS event and LocalNotifications::Generate), the +0x30 OpenAppAfterDisconnect counter, SendTimeSinceBackgroundedDasEvent, and the host device directory wired from FreeplayStack/FreeplayTool --state-dir with the WriteToDevice seam. Still unbuilt: the exact J6/J7 JSON shapes and version branches of ReadFromDevice/WriteToDevice (the engine writes CurNeedLevel/PartIsDamaged as objects keyed by EnumToString and ForceNextSong as an UnlockId string, and reads TimeLastDisconnected/TimeLastAppBackgrounded/OpenAppAfterDisconnect/TimeCreated/TimeLastStarAwarded; the stack round-trips its own array shape and so cannot read an app-written file); the UpdateStarsState and RegisterOnboardingComplete PossiblyStartWriteToRobot callers, which belong to the app stars/onboarding economy; and the 61 s throttle anchor (the stack uses its own _lastWriteSec rather than the +8/+0xC DateTime the engine compares against). Whether the robot ever omits RobotToEngine mfgId tag 0xED is firmware behaviour and stays HARDWARE_ONLY; it is not designed around. OV25 check (re-analysis/research/overnight/20261014-ov25-26-27-check.md): contradicted wording: the key is \"TimeLastDisconnect\" (0x00C4A308, global 0x0105C358, writer 0x00693C80 and ReadFromDevice 0x006999CA); there is no \"TimeLastDisconnected\".",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests"
@@ -7976,6 +7976,23 @@
       "test": ""
     },
     {
+      "id": "M6-030",
+      "subsystem": "M6-wwise-bank",
+      "title": "RobotAudioClient teardown: Dispatch Stop, Release, abort and clear the +0x38 animation, unregister game objects 7, 8, 9, 10, 6, then the deque, hash and base",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/AnimationAudio.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: ~RobotAudioClient 0x00599A6C..0x00599ADA; Unregister error strings 0x00599DD4/0x00599E00, 0x00594C24/0x00594C54."
+      ],
+      "effect": "Audio teardown at robot removal, including any Unregister error logs.",
+      "provenance": "Opus check of OV25-OV27 (2026-10-15), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP for the direct sequence. Unread: the executor task captures (0x007FB878.., 0x007FC58C..0x007FC762), AbortAnimation 0x0059678E, ClearCurrentAnimation 0x00599B00, and which game objects 6..10 are registered at a normal disconnect (unregistered ones log an Error and set _errG on every teardown).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
       "id": "M11-021",
       "subsystem": "M11-vision",
       "title": "The per-frame marker-mode gate",
@@ -9686,15 +9703,16 @@
       "subsystem": "M15-freeplay",
       "title": "Disconnect persistence, ForceUpdate and AI/progression/inventory destruction",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x00695908..0x0069594A; 0x0056EEB8; 0x0056EC48..0x0056EDE2; 0x00569CB2..0x00569DAC; 0x005111BE..0x005111EA; 0x00511314..0x00511338; Needs stores time/connection state and writes device unless paused; DAS brackets/levels. ForceUpdate telemetry, AI children, progression/inventory are higher effects; payloads and recursive children UNKNOWN. Live Needs disconnect hook runs at T4 before teardown.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: removal order 0x0052F2C4..0x0052F2FA; ~Robot head 0x005110D4..0x00511120; progression 0x005111BE..0x005111EE; inventory 0x00511314..0x00511338; AIComponent slots 0x00569CB2..0x00569DAC, explicit null 0x0051126A..0x0051127A."
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "S11: Needs disconnect 0x00695908..0x0069594A; AI/progression/inventory 0x005111BE..0x005111EA and 0x00511314..0x00511338; ForceUpdate 0x0056EEB8. Payload/children UNKNOWN. Source triage S11. Source: re-analysis/research/20261006-M1M2-missing-triage.md.",
+      "unresolved": "S11: Needs disconnect 0x00695908..0x0069594A; AI/progression/inventory 0x005111BE..0x005111EA and 0x00511314..0x00511338; ForceUpdate 0x0056EEB8. Payload/children UNKNOWN. Source triage S11. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov25-26-27-check.md): IMPLEMENTATION_GAP for the cross-component order and the direct destruction (progression nulled after its free; inventory nulled first; AI slots nulled before delete). Needs/persistence/SendData stay with M15-016/M15-014/M15-015; the recursive AI recipients are M15-045.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9704,15 +9722,16 @@
       "subsystem": "M15-freeplay",
       "title": "App telemetry/context/member lifetime recipients",
       "location": "cozmo-stack/src/Cozmo.Robot/RobotLifetime.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0050B734..0x0050B748; 0x0052F2EE; 0x005110EE; 0x0051155C..0x005115A2; 0x005115F0; Perf stops if+A; DAS unpause, destructor event, context/string/robot-member retirement and base/member tail. Perf/DAS recipient fields and recursive effects UNKNOWN; M1 owns calls/order only.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: E2 0x005110E2..0x005110EE; E4 0x0050FC5C..0x0050FCE4; E5/E6 0x0051155C..0x005115F8; Perf P1 0x00509418..0x0050947C, P2 0x0050B734..0x0050B748, P6 0x0050B1F4..0x0050B212/0x0050B456..0x0050B466; S1-S3 0x00519320..0x00519344, 0x00511098..0x005110C4, 0x00518AF8..0x00518B5E."
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "S12: Perf 0x0050B734..0x0050B748; DAS 0x0052F2EE; destructor event 0x005110EE; members 0x0051155C..0x005115A2; tail 0x005115F0. M1 owns invocation order; fields/descendants UNKNOWN. Source triage S12. Source: re-analysis/research/20261006-M1M2-missing-triage.md.",
+      "unresolved": "S12: Perf 0x0050B734..0x0050B748; DAS 0x0052F2EE; destructor event 0x005110EE; members 0x0051155C..0x005115A2; tail 0x005115F0. M1 owns invocation order; fields/descendants UNKNOWN. Source triage S12. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov25-26-27-check.md): IMPLEMENTATION_GAP. Every disconnect logs one Info \"PerfMetric.DumpFiles\" \"Nothing to dump; buffer is empty\" and nothing else from Perf; Stop/Start/Reset/status/Dump are unreachable in the shipped engine (no caller, no address reference, no writer of Perf+0xA; an inlined copy is not excluded) and are not built. RobotAudioClient teardown is M6-030.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11924,14 +11943,15 @@
       "subsystem": "M15-freeplay",
       "title": "Repair need mutation and random part-damage contract",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "Repair crossing can mutate wrong state or choose parts with different RNG/order.",
       "provenance": "Callback wired; mutation/RNG body unread.",
       "authority": "libcozmoEngine.so 3.4.0-1204 repair callback and PossiblyDamageParts.",
       "evidence": [
-        "f32 store 0x0069C522; dirty +0x88 at 0x0069C528; repair id0 calls PossiblyDamageParts(1) at 0x0069C52E..0x0069C536; recipient 0x0069C5D8..0x0069C77A (triage D1)."
+        "f32 store 0x0069C522; dirty +0x88 at 0x0069C528; repair id0 calls PossiblyDamageParts(1) at 0x0069C52E..0x0069C536; recipient 0x0069C5D8..0x0069C77A (triage D1).",
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: D1-D6 0x0069C3CC..0x0069C536; T1-T8 0x0069C5D8..0x0069C776, 0x0069CAD8..0x0069CB0C, 0x0069CCDE..0x0069CD2E; RNG 0x0082F9B0..0x0082FB62; thresholds 0x0068EB48..0x0068EBF8; Update 0x00695C9C..0x00695DC0."
       ],
-      "unresolved": "Recover exact mutation, RNG draws/order and selected part behavior.",
+      "unresolved": "Recover exact mutation, RNG draws/order and selected part behavior. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov25-26-27-check.md): IMPLEMENTATION_GAP for decay and part damage (NaN level counts every threshold; RandInt drawn every pass; two-word RNG consumption). Endpoint chain: u rounds to 1.0 for b = 0xFFFFFFFF, a >= 0xFFFFFC00 -> Pick returns 3 -> key 3 inserted -> null EnumToString in the sEvent -> WriteToDevice Json operator[](nullptr) at 0x00693E10..0x00693E18, a probable M1-034 crash point (unconfirmed in JsonCpp). ApplyDelta is M15-046.",
       "hardware_required": false,
       "live_path": true,
       "test": "NeedsDecayCheckedRowsTests plus emulator repair/RNG fixtures after extraction."
@@ -12191,6 +12211,40 @@
       "effect": "Which UnlockIds the default unlocks map to, and the logs when the unlock config is missing.",
       "provenance": "Opus check of R-BACKUP-UNLOCK (2026-10-13), manager record.",
       "unresolved": "RECOVERABLE_GAP: decode the builder's name->value pairs (cross-check Unity UnlockId.cs, authority 2), and read readAsJson's failure path for the root it leaves. Read 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): IMPLEMENTATION_GAP, build rows 1-6 of the check file: the 81-entry table; a miss writes \"error: string '<name>' is not a valid UnlockId value\" to stderr and returns 0; readAsJson parses even when the open fails and logs DataPlatform.readAsJson errors; the callers pass a fresh null root, so a missing file logs UnlockConfigJsonNotFound then MissingDefaults and leaves the set empty; a malformed file keeps the partial object. Crash paths (JsonCpp depth > 1000; a non-object non-null root at operator[]) fall under the M1-034 standing rule.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-045",
+      "subsystem": "M15-freeplay",
+      "title": "AIComponent teardown recursive recipients: BehaviorHelper IHelper types and callables, ObjectInteraction entries and ProcessInfo callables, BorderSegment release, SevereNeeds/RequestGame/AIWhiteboard handle inventories, Workout/ObjectInteraction/Whiteboard/Analyzer inner bodies",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x00569D38..0x00569D66; 0x0056A0AE..; 0x00569FD2..; 0x00569F9A; the inner bodies named."
+      ],
+      "effect": "Logs or sends during AI teardown.",
+      "provenance": "Opus check of OV25-OV27 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M15-046",
+      "subsystem": "M15-freeplay",
+      "title": "NeedsState::ApplyDelta: random delta, clamp, the Full-threshold return value, Energy snap to max, Repair cap/floor by damaged parts, PossiblyDamageParts on a negative repair delta",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x0069C8C8..0x0069CAC0 (missing map key read 0x0069C9AE..0x0069C9B4); callers RegisterNeedsActionCompletedInternal 0x006968DE, SetNeedsPauseStates 0x00698AC8."
+      ],
+      "effect": "How a needs action changes a need level and when it damages parts.",
+      "provenance": "Opus check of OV25-OV27 (2026-10-15), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: port per the check file. Unread: the return-value consumer in RegisterNeedsActionCompletedInternal (0x006968DE..) and the SetNeedsPauseStates body (0x00698918.., an app input). The missing-key read is M1-034.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
