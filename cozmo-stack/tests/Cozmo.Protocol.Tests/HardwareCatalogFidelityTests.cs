@@ -126,7 +126,7 @@ public class HardwareCatalogFidelityTests
     [Theory]
     [InlineData("LINK", "M1-033", "HARDWARE_ONLY")]
     [InlineData("E", "M3-016", "HARDWARE_ONLY")]
-    [InlineData("A", "M9-013", "RECOVERABLE_GAP")]
+    [InlineData("A", "M9-013", "IMPLEMENTATION_GAP")]
     [InlineData("A", "M9-023", "HARDWARE_ONLY")]
     [InlineData("A2", "M9-027", "IMPLEMENTATION_GAP")]
     [InlineData("A3", "M9-011", "IMPLEMENTATION_GAP")]
