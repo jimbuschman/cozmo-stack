@@ -794,3 +794,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | Note (standing rule; disconnect survival) | M4-045 |
+
+
+## Check of OV50-OV52 (manager, 2026-10-15; research/overnight/20261015-ov50-52-check.md)
+
+| Change | Records |
+| --- | --- |
+| __next_prime: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (to confirm; location corrected) | M4-050 |

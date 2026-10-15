@@ -2,7 +2,7 @@
   "subsystem": "M8-framework",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "aca8b178eaddb2258cb27764b7278e79642638b26e6b0acb79e4cce228e06f1f",
+  "inventory_sha256": "760b19763c93f4753f33388079f66794a7d87be224590b42acb8c6b6278da770",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",

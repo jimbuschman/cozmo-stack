@@ -1669,3 +1669,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Exposure adjustment; vision config order and failure tail: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-081, M11-082 |
+
+
+## Check of OV50-OV52 (manager, 2026-10-15; research/overnight/20261015-ov50-52-check.md)
+
+| Change | Records |
+| --- | --- |
+| Teardown leaves, border consumer: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-078, M11-079 |
+| InterestingEdge data class; teardown residue: RECOVERABLE_GAP | M11-089, M11-090 (new) |
+| Corrections | M11-055 |

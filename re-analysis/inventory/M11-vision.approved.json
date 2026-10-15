@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "a55a0c275d4bec31cf49f9061fcebe2727ab46f818fb8fe2489e488a97eb3edb",
+  "inventory_sha256": "f8b2cd3c6e72ae03f1687e7c946aa8fb7b50d96b3ea7a54afe6dfd0f61c29ff5",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -919,21 +919,23 @@
       "hardware_required": false
     },
     "M11-078": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Vision/world teardown leaves not yet read: result-list and deque payload dtors, Camera::~Camera, ImageCache, CalibImage/Image vectors, CLAHE finalizer, FaceRecognizer trees, the ObservableObject dtor census beyond cube/charger, subscriber handle specialisations, VisionSystem profiler key",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov13-m11-055-check.md: \"Still unread\": Camera::~Camera (PLT 0x004A7D68), ImageCache (PLT 0x004BEE38), CLAHE (PLT 0x004BEF70), FaceRecognizer trees 0x0086A0DA..0x0086A1C4, PreActionPose/ActiveLED 0x004E6956..0x004E6966, FaceRecognitionMatch 0x004F5EBA, handle specialisations 0x004EF1C2/0x004EF1CC, VisionSystem+0x14 writers."
+        "re-analysis/research/overnight/20261014-ov13-m11-055-check.md: \"Still unread\": Camera::~Camera (PLT 0x004A7D68), ImageCache (PLT 0x004BEE38), CLAHE (PLT 0x004BEF70), FaceRecognizer trees 0x0086A0DA..0x0086A1C4, PreActionPose/ActiveLED 0x004E6956..0x004E6966, FaceRecognitionMatch 0x004F5EBA, handle specialisations 0x004EF1C2/0x004EF1CC, VisionSystem+0x14 writers.",
+        "re-analysis/research/overnight/20261015-ov50-52-check.md: result lists 0x006586EC..0x00658A92; deque 0x006B9F68..0x006BA092; VisionSystem dtor 0x006B1E9C..0x006B2142; Camera 0x0085DEB8..0x0085DED8; ImageCache 0x006BA616..0x006BA6FC; CLAHE 0x006B017C, 0x006B04E8..0x006B051A, imgproc 0x0002037C..0x00020814, core 0x000816B4..0x000816D4; FaceRecognizer 0x0086A0DA..0x0086A1C4; Block 0x004E691E..0x004E697C; Ramp 0x0050EE6C..0x0050EEBA; MarkerlessObject 0x00502AA0..0x00502B06; ProtoHandle reset 0x0051D8F8..0x0051D932, remove 0x0051D338..0x0051D3A4; profiler 0x006AFFD8, 0x0087CF50..0x0087CFA4, 0x006B0EE6..0x006B0F2A."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-079": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Quad-tree border consumer: GetBorders, CalculateBorderWaypointCenter, MakeBorderSegment, HasBorders/HasBorderSeed, and the caller AIInfoAnalysisProcCalculateInterestingRegions",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: GetBorders 0x006894E0..0x00689AA6; CalculateBorderWaypointCenter 0x00689AF0..0x00689C08; MakeBorderSegment 0x00689C08..0x00689D80; HasBorders 0x00689354..0x006893AE; HasBorderSeed 0x006893B8..0x006894A6; MemoryMap vt+0x28 0x00681702, vt+0x2C 0x00681734; caller 0x00574FCC (seed 9, table 0x00C59AE0, two calls)."
+        "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: GetBorders 0x006894E0..0x00689AA6; CalculateBorderWaypointCenter 0x00689AF0..0x00689C08; MakeBorderSegment 0x00689C08..0x00689D80; HasBorders 0x00689354..0x006893AE; HasBorderSeed 0x006893B8..0x006894A6; MemoryMap vt+0x28 0x00681702, vt+0x2C 0x00681734; caller 0x00574FCC (seed 9, table 0x00C59AE0, two calls).",
+        "re-analysis/research/overnight/20261015-ov50-52-check.md: HasBorders 0x00689354..0x006893AE; HasBorderSeed 0x006893B8..0x006894A6; GetBorders 0x006894E0..0x00689AA6; equality targets 0x00680758..0x00680764, 0x006849DC..0x00684A2C, 0x00684BAC..0x00684BFC, 0x00684AE8..0x00684B08; centre 0x00689AF0..0x00689C06; normals 0x0068C56C/0x0068C57C; segment 0x00689C08..0x00689D76; MakeUnitLength 0x0050E0C0..0x0050E130; caller 0x00574FCC..0x00575054; analyzer 0x0057428C..0x00574334, 0x00569F24, 0x00513EAC, IsProcessRunning 0x00574974..0x00574A00."
       ],
       "live_path": true,
       "hardware_required": false
@@ -1027,6 +1029,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov42-44-check.md: base slot 0x004E02AE returns 0; ActiveObject-family slot 0x004E3882 returns 1; CustomObject 0x004F04FA returns byte +0x9C; callers 0x0067EB38..0x0067EC2E (+0x5C), 0x0067ED06..0x0067F0BC (+0x50)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-089": {
+      "status": "RECOVERABLE_GAP",
+      "title": "InterestingEdge (type 9) map data class, MemoryMap::HasBorders callers, and BehaviorVisitInterestingEdge's consumers of the border output",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov50-52-check.md: border caller 0x00574FCC..0x00575054 (seed 9 then 6); equality targets read (base type-only 0x00680758..0x00680764); BehaviorVisitInterestingEdge IsRunnableInternal 0x005E6520, PickGoals 0x005E682C (BorderRegionScore); HasBorders vt+0x28 callers not found by a direct scan."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-090": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Vision/world teardown residue: std::function capture finalizers in the eight ProtoHandle remove routines, StdMatAllocator::deallocate, and whether Ramp/Bridge/FlatMat/Platform/HumanHead/Block_* are ever instantiated",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov50-52-check.md: remove routines vt+0x10/+0x14 (per OV50); core getDefaultAllocator 0x000815C0 -> 0x00081568; Ramp::Ramp only from Ramp::CloneType 0x0050F89A (direct-call scan; vtable/VTT references not scanned)."
       ],
       "live_path": true,
       "hardware_required": false

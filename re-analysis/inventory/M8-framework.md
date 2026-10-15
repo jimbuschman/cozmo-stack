@@ -775,3 +775,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Behaviour teardown recipients: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-023 |
 | ProtoHandle callable census: RECOVERABLE_GAP | M8-027 (new) |
 | Note (+0x88 census) | M8-024 |
+
+
+## Check of OV50-OV52 (manager, 2026-10-15; research/overnight/20261015-ov50-52-check.md)
+
+| Change | Records |
+| --- | --- |
+| Required-process gate rows | M8-013 (note) |

@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "fa6f071e476c50820cb839abb4f7ce1316e2dc3b5413fc84e77d814665a0e3f2",
+  "inventory_sha256": "c30fce1876b01ee62104480776e2633da7d467571482cf3c0edb87c85d63ff25",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -614,11 +614,12 @@
       "hardware_required": false
     },
     "M4-050": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "libc++ __next_prime (unordered-container bucket counts)",
       "authority": "libc++_shared.so (shipped in the APK).",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: libc++_shared.so 0x0003B038 (Thumb, 1640 bytes); used by every unordered_map/unordered_set rehash in the engine (e.g. 0x0068B68A); M4-011's \"2, 5, 11, 23\" relies on it."
+        "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: libc++_shared.so 0x0003B038 (Thumb, 1640 bytes); used by every unordered_map/unordered_set rehash in the engine (e.g. 0x0068B68A); M4-011's \"2, 5, 11, 23\" relies on it.",
+        "re-analysis/research/overnight/20261015-ov50-52-check.md: libc++ 0x0003B038..0x0003B656 (small table 0x0009B480, residues 0x0009B540, trial division, wheel, overflow_error); engine rehash wrapper 0x00537C80..0x00537D0C = 0x0068B68A..0x0068B716, length_error 0x00537D1C / 0x0068B724; independent re-implementation matches for n in 1..199999."
       ],
       "live_path": true,
       "hardware_required": false
