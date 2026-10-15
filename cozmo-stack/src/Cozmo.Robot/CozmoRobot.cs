@@ -381,7 +381,7 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.BlockFilterInit = LoadBlockPool;
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
-        Engine.LoadHostBehaviorMap(fixture: transport is not null || port is not null);
+        Engine.LoadHostBehaviorMap();
     }
 
     private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _lightLoadingLogs = new();

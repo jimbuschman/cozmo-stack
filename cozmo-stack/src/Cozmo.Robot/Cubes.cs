@@ -366,6 +366,7 @@ public sealed class CozmoCubes
     // fidelity: M2-020 — retain the same per-tag registration point, in the component's owner vector.
     internal void AttachRobot(EngineRobot robot)
     {
+        // B6 DeviceRoute(m, true) currently has no effect; kept at the checked component registration point.
         _tapSubscriptions.Add(robot.SubscribeMessage(new ObjectTapped().Id,m=>_robot.Engine.DeviceRoute?.Invoke(m,true),"BlockTapFilter"));
         _tapSubscriptions.Add(robot.SubscribeMessage(RobotMessageId.ActiveObjectMoved,m=>_robot.Engine.TapFilterRoute?.Invoke(m),"BlockTapFilter"));
         _tapSubscriptions.Add(robot.SubscribeMessage(RobotMessageId.ActiveObjectStopped,m=>_robot.Engine.TapFilterRoute?.Invoke(m),"BlockTapFilter"));

@@ -2055,8 +2055,8 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     public void ConnectToRobot(IPAddress ip, bool isSimulated = false)
     {
-        // fidelity: M2-021 — host/app input, not a native ConnectToRobot state gate.
-        if (!HostBehaviorMapLoaded) throw new InvalidOperationException("M2-021: load the host behavior map before connecting.");
+        // fidelity: M2-021 — app load timing does not gate this native ConnectToRobot handler.
+        // 0x004ED020..0x004ED07C and AddRobot 0x004ED1E0..0x004ED1F2 have no load check.
         Post(() =>
     {
         if (Robots.RobotExists(RobotId)) { EmitStackLog("info: Robot already connected"); return; }
@@ -2073,16 +2073,14 @@ public sealed partial class CozmoEngine : IDisposable
     });
     }
 
-    // fidelity: M2-021 — the app waits for completed loading (including LoadBehaviors) before connecting.
+    // fidelity: M2-021 — retained host input; the app's load timing is not a construction/connect rejection.
     internal bool HostBehaviorMapLoaded { get; private set; }
     internal IReadOnlyDictionary<Behavior.BehaviorID,System.Text.Json.JsonElement>? HostBehaviorMap { get; private set; }
-    internal void LoadHostBehaviorMap(bool fixture)
+    internal void LoadHostBehaviorMap()
     {
-        if (Options.ResourcesPath is null && !fixture)
-            throw new InvalidOperationException("M2-021: production requires a resources path to load the behavior map before connecting.");
         HostBehaviorMap = Options.ResourcesPath is { } resources
             ? Behavior.BehaviorConfigLoader.LoadResources(resources, EmitStackLog, (level,channel,key,text)=>EmitSourceLog(level,channel,key,text))
-            : new Dictionary<Behavior.BehaviorID,System.Text.Json.JsonElement>(); // Explicit empty offline/test corpus.
+            : new Dictionary<Behavior.BehaviorID,System.Text.Json.JsonElement>(); // Null ResourcesPath is supported: no resource load to await.
         HostBehaviorMapLoaded = true; // A failed loader never publishes readiness.
     }
     internal Action<EngineRobot>? BindCubeMessageOwners;

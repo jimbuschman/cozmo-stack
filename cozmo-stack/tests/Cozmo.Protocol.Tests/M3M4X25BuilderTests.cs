@@ -43,21 +43,6 @@ public sealed class M3M4X25BuilderTests
     }
 
     [Fact]
-    public void LivePathOwnerReplacementPublishesItsNewTailBeforeOldUnlinkObservation()
-    {
-        using var rig=new M4ControlTests.Rig();rig.ToSynced();var robot=rig.Engine.Robot!;
-        var names=new List<string>();
-        using var peer=robot.SubscribeMessage(new PathFollowingEvent().Id,_=>{},"peer");
-        rig.Engine.MessageDispatchObservedForTest=(tag,name)=>{if(tag==new PathFollowingEvent().Id)names.Add(name);};
-        rig.Engine.MessageSubscriptionReleasedForTest=(tag,name)=>{
-            if(name=="Path")rig.Engine.Broadcast(new PathFollowingEvent());
-        };
-        rig.Robot.Motion.Path.Attach(robot);
-        Assert.Equal(new[]{"peer","Path"},names);
-        rig.Engine.MessageSubscriptionReleasedForTest=null;
-    }
-
-    [Fact]
     public void RicReverseClearFinishesBeforeItsResponseIsDelivered()
     {
         using var rig=new M4ControlTests.Rig();var released=new List<byte>();bool response=false;
@@ -101,17 +86,18 @@ public sealed class M3M4X25BuilderTests
     }
 
     [Fact]
-    public void EarlyHostConnectCannotQueueAnythingBeforeTheMapIsLoaded()
+    public void EarlyHostConnectWithNoResourcesQueuesWithoutAConstructionOrLoadException()
     {
-        bool rejected=false;
+        bool queued=false;
         using var rig=new M4ControlTests.Rig(engineOptions:new CozmoEngineOptions());
         // Exercise the unready engine before its host constructor publishes it.
         using var robot=CozmoRobot.CreateForTest(rig.Port,()=>0,engineCreated:e=>{
             Assert.False(e.HostBehaviorMapLoaded);
-            Assert.Throws<InvalidOperationException>(()=>e.ConnectToRobot(M4ControlTests.Rig.RobotIp));
-            Assert.Null(e.Robot);Assert.Null(e.RobotAddressInUse);rejected=true;
+            e.ConnectToRobot(M4ControlTests.Rig.RobotIp);
+            Assert.Null(e.Robot);Assert.Null(e.RobotAddressInUse);queued=true;
         });
-        Assert.True(rejected);Assert.True(robot.Engine.HostBehaviorMapLoaded);
+        Assert.True(queued);Assert.True(robot.Engine.HostBehaviorMapLoaded);
+        robot.Engine.Tick();Assert.NotNull(robot.Engine.Robot);
     }
 
     [Fact]

@@ -1048,6 +1048,7 @@ public sealed class NvStorageComponent : IDisposable
 
     private RetainedSubscription? _rawSubscription;
     // fidelity: M2-020 — CD belongs to NVStorage, not the public host endpoint.
+    // Native CD subscribes once in the NVStorage ctor; Replace here does not establish native re-Init.
     internal void AttachRobot(EngineRobot robot)
     {
         var next=robot.SubscribeMessage(new NVOpResult().Id,m=>OnResult((NVOpResult)m),"NVStorage");

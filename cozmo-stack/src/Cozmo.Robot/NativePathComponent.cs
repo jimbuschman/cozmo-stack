@@ -39,6 +39,7 @@ internal sealed partial class PathComponent
     internal Action? RejiggerInput;
     internal uint ParamsOrigin {get=>PlannerObjectsField0C;set=>PlannerObjectsField0C=value;}
     private RetainedSubscription? _pathSubscription;
+    // Native C6 subscribes once in the Path ctor; this host binding helper is not a native re-Init path.
     internal void Attach(EngineRobot owner){RetainedSubscription.Replace(ref _pathSubscription,owner.SubscribeMessage(new PathFollowingEvent().Id,m=>owner.ActionList.WithGate(()=>OnPathEvent((PathFollowingEvent)m)),"Path"));}
     // fidelity: M2-020 — destructor Abort precedes C6 release, 0x00649006..0x0064900A.
     internal void DestroyRawOwner(EngineRobot robot)

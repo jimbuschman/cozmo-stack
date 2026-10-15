@@ -120,7 +120,7 @@ public sealed partial class EngineRobot
     private void InitSubscriptions()
     {
         _robotMessages.UndefinedTail=()=>Engine.EmitStackLog("M1-034 / M2-020: native freed successor 0x0069E294..0x0069E29A; skipped remaining emit tail");
-        Behavior.SteppedBehavior.ReportMissing("M2-020 native PlayAnimationAction CA/CB/D5 and IDockAction +0xE4/DA/C5 owner/re-Init wiring is not built; current animation/dock host lifecycles do not supply those native owner slots. Dev-behavior container destruction points and TracePrinter B0/CF callback bodies remain unbuilt; their native release rows do not establish those surrounding lifecycles");
+        Behavior.SteppedBehavior.ReportMissing("M2-020 native PlayAnimationAction CA/CB/D5 and IDockAction +0xE4/DA/C5 owner/re-Init wiring is not built; current animation/dock host lifecycles do not supply those native owner slots. Dev-behavior container destruction points and TracePrinter B0 Trace / EC WifiFlashID callback bodies remain unbuilt (CF CrashReport is built); their native release rows do not establish those surrounding lifecycles");
         // Idle is constructed before Messaging. The C# host API supplies the
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));
@@ -169,9 +169,10 @@ public sealed partial class EngineRobot
         _imuLog = new ImuDiagnosticLog(this);
         AddMessage(RobotMessageId.ImuDataChunk, m => _imuLog.HandleImuData((IMUDataChunk)m));
         AddMessage(RobotMessageId.ImuRawDataChunk, m => _imuLog.HandleImuRawData((IMURawDataChunk)m));
-        // L35/I9: ~Messaging releases the subscription vector (0x00532A48), then the filebuf destructor closes the IMU
-        // stream (0x00532A64 -> 0x005010B4 -> close 0x0050111C): sync, fclose, no ClosingLogFile diagnostic.
-        Lifetime.Bind(0x518, _ => { _traceHandles.Retire(); _messagingHandles.Retire(); _imuLog.Destroy(); });
+        // fidelity: M2-020 — ~Messaging: embedded TracePrinter vector (0x00532A44..0x00532A48),
+        // IMU filebuf close (0x00532A64 -> 0x005010B4), then Impl own vector (0x00532A6E..0x00532A74).
+        // Filebuf destruction syncs/closes with no ClosingLogFile diagnostic.
+        Lifetime.Bind(0x518, _ => { _traceHandles.Retire(); _imuLog.Destroy(); _messagingHandles.Retire(); });
         // Only the existing live device handlers are bridged here. No subscriber is invented for an unported tag.
         RobotMessage[] deviceMessages = { new ObjectMoved(), new ObjectStoppedMoving(), new ObjectTapped(),
             new ObjectConnectionState(), new ObjectPowerLevel(), new ObjectUpAxisChanged(), new ObjectAvailable(),
