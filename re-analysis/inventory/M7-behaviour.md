@@ -1368,3 +1368,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Mood destruction: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M7-023 |
 | DockingTestSimple unreachable outside SDK (stays RECOVERABLE_GAP, live_path false) | M7-022 |
 | Note | M7-027 |
+
+
+## Check of OV36-OV37 (manager, 2026-10-15; research/overnight/20261015-ov36-37-check.md)
+
+| Change | Records |
+| --- | --- |
+| TrackLaser colour snapshot/restore: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M7-025 |
+| Rest of TrackLaser: RECOVERABLE_GAP | M7-029 (new) |

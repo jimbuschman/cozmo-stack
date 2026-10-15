@@ -1623,3 +1623,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | GetNamedPathToRoot, IMPLEMENTATION_GAP | M11-086 (new) |
 | Notes | M11-065, M11-070 |
+
+
+## Check of OV36-OV37 (manager, 2026-10-15; research/overnight/20261015-ov36-37-check.md)
+
+| Change | Records |
+| --- | --- |
+| Exposure/gain validity bounds: RECOVERABLE_GAP | M11-087 (new) |

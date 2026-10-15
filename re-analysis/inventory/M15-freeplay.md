@@ -953,3 +953,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Lab read, BuildPyramid rows B1-B8: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-036, M15-037 |
 | Lab definitions, lab writeback, BuildPyramid producers: RECOVERABLE_GAP | M15-049, M15-050, M15-051 (new) |
+
+
+## Check of OV36-OV37 (manager, 2026-10-15; research/overnight/20261015-ov36-37-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note | M15-008 |

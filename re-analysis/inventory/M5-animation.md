@@ -944,3 +944,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Note (VizManager SetText is a no-op) | M5-042 |
+
+
+## Check of OV36-OV37 (manager, 2026-10-15; research/overnight/20261015-ov36-37-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note (shutdown trigger) | M5-055 |

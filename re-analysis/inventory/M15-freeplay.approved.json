@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "dcf6993ac52c8dc81e8c942ba173ba59265f1b225cf414aed4bea1d413bab28d",
+  "inventory_sha256": "26e416ed00c41ac295d0f7ebc621737a1e67b959bcd5e1ba7f99db67a4d4cb3b",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",

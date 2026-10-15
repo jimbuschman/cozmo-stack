@@ -72,5 +72,10 @@ The first three are the requests already written:
 | OV59 | requests/overnight/20261015-ov59-m15-050.md (M15-050: Lab assignments writeback: PossiblyWriteLabAssignmentsToRobot and Writ) | research/overnight/20261015-ov59-m15-050.md |
 | OV60 | requests/overnight/20261015-ov60-m15-051.md (M15-051: ActivityBuildPyramid producers: UpdateChooserPhase and the Get*BlockID) | research/overnight/20261015-ov60-m15-051.md |
 | OV61 | requests/overnight/20261015-ov61-m11-085.md (M11-085: HandleActiveObjectConnectionState disconnect tail: HandleDisconnectedF) | research/overnight/20261015-ov61-m11-085.md |
+| OV62 | requests/overnight/20261015-ov62-m7-029.md (M7-029: BehaviorTrackLaser states, tracking/pounce and laser observation (ever) | research/overnight/20261015-ov62-m7-029.md |
+| OV63 | requests/overnight/20261015-ov63-m11-087.md (M11-087: VisionSystem::IsExposureValid / IsGainValid bounds used by VisionCompo) | research/overnight/20261015-ov63-m11-087.md |
+| OV64 | requests/overnight/20261015-ov64-m6-031.md (M6-031: Wwise Term dispatcher at shutdown: thread stop, bus teardown, memory-m) | research/overnight/20261015-ov64-m6-031.md |
+| OV65 | requests/overnight/20261015-ov65-m6-032.md (M6-032: Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destr) | research/overnight/20261015-ov65-m6-032.md |
+| OV66 | requests/overnight/20261015-ov66-m6-033.md (M6-033: Audio stream hook and device teardown at shutdown) | research/overnight/20261015-ov66-m6-033.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

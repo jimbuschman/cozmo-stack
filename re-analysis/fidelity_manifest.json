@@ -121,7 +121,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M5-animation.md",
-        "approved": "2026-10-13",
+        "approved": "2026-10-15",
         "snapshot": "re-analysis/inventory/M5-animation.approved.json"
       }
     },
@@ -5644,7 +5644,7 @@
         "ActivityGatherCubes::Update 0x005AF2F0"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-04): TransitionToObjectPickedUp in the engine's order (carried-object check, lookup, active-beacon check, FindFreeCubeToStackOn 0x005DF46A, TryToStackOn 0x005DF4F2, then NeedActionCompleted PickupCube 0x005DF59C), AIBeacon::IsLocWithinBeacon, the stack-callback StackCompleted per lambda 0x005E142C (category 0 StackCube 0x2A then FireEmotionEvents; category 4 retries only while carried == candidate and attempt <= 2; category 3 and a failed retry test log and SetFailedToUse(target, 1); every other category does nothing); the floor branch is now built (M15-019..M15-025). Still open: DriveToPlaceOnObjectAction (0x005DFE0E) is unbuilt: the stack branch runs the old PlaceRelObjectHelper as a labelled stand-in; ProgressionUnlockComponent::IsUnlocked(StackTwoCubes = 10) has no component (a live-path default: treated as unlocked); ActivityGatherCubes (Update 0x005AF27C, NeedActionCompleted(0x14) at 0x005AF2F0, its gate 0x005AF2A8..0x005AF2AE and the one-shot flag at +0x78) and the PeekABoo/TrackLaser/GuardDog behaviours are not built; the retry-taken branch of StackCompleted has no test.",
+      "unresolved": "built, awaiting strong verification (R-FIX2, 2026-10-04): TransitionToObjectPickedUp in the engine's order (carried-object check, lookup, active-beacon check, FindFreeCubeToStackOn 0x005DF46A, TryToStackOn 0x005DF4F2, then NeedActionCompleted PickupCube 0x005DF59C), AIBeacon::IsLocWithinBeacon, the stack-callback StackCompleted per lambda 0x005E142C (category 0 StackCube 0x2A then FireEmotionEvents; category 4 retries only while carried == candidate and attempt <= 2; category 3 and a failed retry test log and SetFailedToUse(target, 1); every other category does nothing); the floor branch is now built (M15-019..M15-025). Still open: DriveToPlaceOnObjectAction (0x005DFE0E) is unbuilt: the stack branch runs the old PlaceRelObjectHelper as a labelled stand-in; ProgressionUnlockComponent::IsUnlocked(StackTwoCubes = 10) has no component (a live-path default: treated as unlocked); ActivityGatherCubes (Update 0x005AF27C, NeedActionCompleted(0x14) at 0x005AF2F0, its gate 0x005AF2A8..0x005AF2AE and the one-shot flag at +0x78) and the PeekABoo/TrackLaser/GuardDog behaviours are not built; the retry-taken branch of StackCompleted has no test. OV36 check (re-analysis/research/overnight/20261015-ov36-37-check.md): TrackLaser's colour snapshot/restore is M7-025 (to build); the rest is M7-029.",
       "hardware_required": false,
       "live_path": true,
       "test": "FreeplayTests.NeedsActionsAreReportedByTheBehavioursAndNotByTheActivity"
@@ -6637,7 +6637,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "EXACT_SOURCE",
       "provenance": "compared against re-analysis/inventory/M3-device.md on 2026-09-24 and reproduced by the code (M3 batch): CameraSettings.EnableColorImages stores the flag (+0x32A; false from construction and after a removal) and sends EnableColorImages {b}; nothing is sent at connection; decoding follows each image's encoding. CozmoRobot.StartCamera (this stack's call) goes through it.",
-      "unresolved": "Settled EXACT_SOURCE by the Opus final settling pass (2026-10-11, HEAD 8f035387; jobs/B-M3M4.md \"Final settling pass\"). Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): the reader (BehaviorTrackLaser, 0x005FAC64/0x005FBDAE) is a handoff to M7-025 (new). The StartCamera text below is stale: CozmoRobot.StartCamera is policy M3-044. Path unchanged: strb.w r1,[r0,#0x32A] 0x006582D6; EngineToRobot(EnableColorImages) blx 0x4BA824 0x00658308; Robot::SendMessage blx 0x4A5368 0x00658314. Build round: the send goes through CozmoRobot.SendMessage (Camera.cs) without Robot::SendMessage's failure warning. Before: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-1-2.md): NEEDS EXTRACTION. CozmoRobot.StartCamera (CozmoRobot.cs:529-534) sends EnableColorImages and an ImageRequest, and no row covers it. Before: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. CozmoRobot.StartCamera sends EnableColorImages{0} plus an extra ImageRequest, called by every hardware tool; no decision records it.",
+      "unresolved": "Settled EXACT_SOURCE by the Opus final settling pass (2026-10-11, HEAD 8f035387; jobs/B-M3M4.md \"Final settling pass\"). Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): the reader (BehaviorTrackLaser, 0x005FAC64/0x005FBDAE) is a handoff to M7-025 (new). The StartCamera text below is stale: CozmoRobot.StartCamera is policy M3-044. Path unchanged: strb.w r1,[r0,#0x32A] 0x006582D6; EngineToRobot(EnableColorImages) blx 0x4BA824 0x00658308; Robot::SendMessage blx 0x4A5368 0x00658314. Build round: the send goes through CozmoRobot.SendMessage (Camera.cs) without Robot::SendMessage's failure warning. Before: Opus verification of B-CORE (2026-09-30, re-analysis/research/20260930-B-CORE-verify-1-2.md): NEEDS EXTRACTION. CozmoRobot.StartCamera (CozmoRobot.cs:529-534) sends EnableColorImages and an ImageRequest, and no row covers it. Before: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. CozmoRobot.StartCamera sends EnableColorImages{0} plus an extra ImageRequest, called by every hardware tool; no decision records it. OV36 check (re-analysis/research/overnight/20261015-ov36-37-check.md): the handoff's \"readers 0x005FAC64, 0x005FBDAE\" is wrong: only 0x005FAC64 reads V+0x32A; 0x005FBDAE reads TrackLaser's own +0x1C8.",
       "hardware_required": false,
       "live_path": true,
       "test": "M3DeviceTests.M3_023_A24_EnableColorImagesStoresAndSends, M3DeviceTests.M3_019_M3_022_M3_023_1h_TheConnectionSendsSetCameraParamsAndQueuesTheCalibrationRead"
@@ -7964,14 +7964,15 @@
       "subsystem": "M6-wwise-bank",
       "title": "Context +0xC AudioMultiplexer teardown (CozmoAudioController, AudioEngineController)",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C)."
+        "re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C).",
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: gate 0x004EA84C tests DataPlatform* (mov r5,r1 0x004EA73C; production 0x004EB286..0x004EB28C); ~CozmoContext 0x004EABBA..0x004EAC14; mux 0x008DEB08..0x008DEB4E, 0x008DF6E0..0x008DF758; derived 0x005946F0..0x0059472C; base 0x008D1C1C..0x008D1D0E; plug-in holders 0x008DC124..0x008DC178, 0x008DD552..0x008DD59A, 0x008DB2AC..0x008DB2FE; inputs AudioUnityInput 0x004EDC8A..0x004EDC96 / 0x00591BA0..0x00591BBE, AudioEngineInput 0x004ED260..0x004ED26C / 0x00590AA0..0x00590AE6; runtime sequence 0x008D8048..0x008D80A2."
       ],
       "effect": "What the audio engine does at shutdown.",
       "provenance": "Opus extractor read of the M5 teardown members (2026-10-12), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the chain past its first level.",
+      "unresolved": "RECOVERABLE_GAP: read the chain past its first level. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov36-37-check.md): IMPLEMENTATION_GAP for the Anki wrapper order and both input types. Correction: the construction gate tests DataPlatform*, not the external interface. Split out: Wwise Term M6-031, Hijack destroy path M6-032, stream hook/device M6-033. The shutdown trigger (Unity OnDisable -> cozmo_shutdown 0x006668D8) is an app input; see M5-055.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -7989,6 +7990,57 @@
       "effect": "Audio teardown at robot removal, including any Unregister error logs.",
       "provenance": "Opus check of OV25-OV27 (2026-10-15), manager record.",
       "unresolved": "IMPLEMENTATION_GAP for the direct sequence. Unread: the executor task captures (0x007FB878.., 0x007FC58C..0x007FC762), AbortAnimation 0x0059678E, ClearCurrentAnimation 0x00599B00, and which game objects 6..10 are registered at a normal disconnect (unregistered ones log an Error and set _errG on every teardown).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-031",
+      "subsystem": "M6-wwise-bank",
+      "title": "Wwise Term dispatcher at shutdown: thread stop, bus teardown, memory-manager order and the manager-list tail",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: head 0x0099DCEC..0x0099DE00 re-read (init byte +0x6C, 0x009B0350 -> 0x009D4058 / 0x00A40B18, +0x70 vt+0x1C, 0x009E5FE4, 0x00A3D4E0, 0x00A40D44 with null bus skipped at 0x00A40DFC, 0x0099DA54(0x40), seven descriptors +0x10..+0x58, 0x00A38890); tail 0x0099DE00..0x0099E318 not re-read; OV37 rows 7, 19, 20, 22 and 0x009D3EC4..0x009D3F38 not re-checked."
+      ],
+      "effect": "Logs, thread stop and file closes at audio shutdown.",
+      "provenance": "Opus check of OV36-OV37 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the tail and the unchecked rows. Not ADP-1 DSP: all exact. M1-034 points: 0x00A40D84/0x00A40D88 (write 0xD0, then udf).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-032",
+      "subsystem": "M6-wwise-bank",
+      "title": "Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destroy lambda after the controller map is destroyed",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info \"CozmoAudioController.HijackAudioPlugin\" \"Destroy Plugin id: %d callback\"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C)."
+      ],
+      "effect": "A shutdown log, and possibly a use-after-destroy.",
+      "provenance": "Opus check of OV36-OV37 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-033",
+      "subsystem": "M6-wwise-bank",
+      "title": "Audio stream hook and device teardown at shutdown",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread."
+      ],
+      "effect": "File closes and device stop at audio shutdown.",
+      "provenance": "Opus check of OV36-OV37 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the callees. M1-034: 0x008D9914 (write to address 4, broken list invariant), 0x008D8062 -> terminate.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11027,7 +11079,7 @@
       ],
       "effect": "Whether an engine shutdown aborts a running load and unlinks subscriptions, and in what order.",
       "provenance": "Second M5 Opus settling pass (2026-10-12), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): engine +0x3C is DeviceDataManager (not PerfMetric), +0x40 DebugConsoleManager, +0x50 DasToSdkHandler; their teardown is unlink only. Order before ~CozmoContext: BaseStationTimer global clear and removeInstance (0x004EC6A0..0x004EC6B4), VizManager::Disconnect (out of scope), AnimationTransfer (M5-059). The engine +4 subscription vector is released at 0x004EC71C after the hub is gone (expired-token no-ops). Context members: no observable effects in PerfMetric, CozmoExperiments, NeedsManager (no WriteToDevice); unread parts are M5-064 and M6-029. Lead (re-analysis/research/20261012-m5-driving-handler-read.md): after removeInstance, BaseStationTimer::getInstance() re-creates a zeroed instance and gTickTimeProvider is null; check whether any later teardown step (RemoveRobots, robot destructors) reads the time. B-M5-15 (2026-10-12), built, awaiting strong verification: AnimationTransfer cleanup and concrete quiet unfed member subscription releases now precede RemoveRobots/context teardown.",
+      "unresolved": "IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): engine +0x3C is DeviceDataManager (not PerfMetric), +0x40 DebugConsoleManager, +0x50 DasToSdkHandler; their teardown is unlink only. Order before ~CozmoContext: BaseStationTimer global clear and removeInstance (0x004EC6A0..0x004EC6B4), VizManager::Disconnect (out of scope), AnimationTransfer (M5-059). The engine +4 subscription vector is released at 0x004EC71C after the hub is gone (expired-token no-ops). Context members: no observable effects in PerfMetric, CozmoExperiments, NeedsManager (no WriteToDevice); unread parts are M5-064 and M6-029. Lead (re-analysis/research/20261012-m5-driving-handler-read.md): after removeInstance, BaseStationTimer::getInstance() re-creates a zeroed instance and gTickTimeProvider is null; check whether any later teardown step (RemoveRobots, robot destructors) reads the time. B-M5-15 (2026-10-12), built, awaiting strong verification: AnimationTransfer cleanup and concrete quiet unfed member subscription releases now precede RemoveRobots/context teardown. OV37 check (re-analysis/research/overnight/20261015-ov36-37-check.md): the original's teardown trigger is Unity RobotEngineManager.OnDisable -> CozmoBinding.Shutdown -> cozmo_shutdown 0x006668D8 -> ~CozmoAPI (PLT 0x004BB79C) -> ... -> ~CozmoContext; the ~CozmoAPI/~CozmoEngine links are unread. The trigger is an app input: the stack's host shutdown supplies it.",
       "hardware_required": false,
       "live_path": true,
       "test": "M5X13BuilderTests.ShutdownUnlinksRobotsThenAbortsAndJoinsLoaderBeforeHub, M5X13BuilderTests.ShutdownJoinsTickerWithoutHoldingRobotMembershipLock, M5X15BuilderTests.CacheCleanupRunsAtConstructionAndBeforeRobotDestruction"
@@ -11228,14 +11280,15 @@
       "subsystem": "M7-behaviour",
       "title": "BehaviorTrackLaser's read of VisionComponent+0x32A (the EnableColorImages flag) and its effect",
       "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "the laser-tracking behaviour acts on a different camera colour state",
       "provenance": "Cross-layer split (manager, 2026-10-10): S-10 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M3-023 3b.",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)"
+        "Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)",
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: Init 0x005FAC10..0x005FAC4C; snapshot 0x005FAC56..0x005FAC80 (V+0x32A -> behaviour +0x1C8); schedule 0x005FAC84..0x005FAD0C; darken 0x005FAD10..0x005FAD24, 0x00657EF6..0x00657F0E, 0x006560C8..0x006561AA; force 0x005FAD28..0x005FAD4E; resume 0x005FBBAC..0x005FBBC8; Stop 0x005FBD14..0x005FBD3A; Cleanup 0x005FBD48..0x005FBDDA with TransitionToState log 0x005C0CA8..0x005C0D1C; IsRunnable 0x005FAAB0..0x005FAB70."
       ],
-      "unresolved": "RECOVERABLE_GAP: read what BehaviorTrackLaser does with the flag at 0x005FAC64 and 0x005FBDAE. Nothing else in the manifest owns BehaviorTrackLaser (M15-008 only names TrackLaser among the activities).",
+      "unresolved": "RECOVERABLE_GAP: read what BehaviorTrackLaser does with the flag at 0x005FAC64 and 0x005FBDAE. Nothing else in the manifest owns BehaviorTrackLaser (M15-008 only names TrackLaser among the activities). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov36-37-check.md): IMPLEMENTATION_GAP for the colour/exposure snapshot, force and restore. Correction: the only reader of V+0x32A is 0x005FAC64; 0x005FBDAE reads behaviour +0x1C8 (the saved byte; restore has no compare). The rest of TrackLaser is M7-029; the validity bounds are M11-087. Reachable only in the Sparked activity SparksTrackLaser via the app spark request (SetRequestedSpark 0x005A3EAC): operator question whether the stack API exposes spark requests. M1-034: 0x005FAC60/64 null VisionComponent, 0x00657EDC null VisionSystem.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -11292,6 +11345,23 @@
       "hardware_required": false,
       "live_path": true,
       "test": "; M3M4X22BuilderTests; M3M4X18BuilderTests; M3M4X22BuilderTests.LiftCallbackBodyGapsAreReportedWhenTheConstructorRuns; M3M4X22BuilderTests.OfflineAndSharedRigUseDistinctOwnedCachesAndDeleteThemAfterDisposal"
+    },
+    {
+      "id": "M7-029",
+      "subsystem": "M7-behaviour",
+      "title": "BehaviorTrackLaser states, tracking/pounce and laser observation (everything outside the colour/exposure snapshot and restore)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: states 0x005FADC8..0x005FBBAB and 0x005FBBCC..0x005FBD13; track/pounce 0x005FBE84..0x005FC1D7; observation 0x005FC1D8..0x005FC5CB."
+      ],
+      "effect": "What TrackLaser does while running.",
+      "provenance": "Opus check of OV36-OV37 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed ranges. Reachable only through a spark request (see M7-025).",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M8-018",
@@ -11974,6 +12044,23 @@
       "hardware_required": false,
       "live_path": true,
       "test": "; PoseTreeVerifyBuilderTests"
+    },
+    {
+      "id": "M11-087",
+      "subsystem": "M11-vision",
+      "title": "VisionSystem::IsExposureValid / IsGainValid bounds used by VisionComponent::SetCameraSettings",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: PLT 0x004BA698 / 0x004BA6A4, gates at 0x006560E6..0x006560FE (rejection: no log, no send; V+0x329=0 and SetNextMode(7,false) still follow at 0x00657EFE..0x00657F0E)."
+      ],
+      "effect": "Whether a SetCameraParams message is sent for a given exposure/gain.",
+      "provenance": "Opus check of OV36-OV37 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read both bodies and their bounds; say whether TrackLaser's darken values pass.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M15-029",

@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "86fc8fd096fa8c5b7b3a2272ed0dd3026f825734529c46f40751d313fefa2704",
+  "inventory_sha256": "7df9a1df1d516a54c0303ddf5ef18f8932190144d206b2be282f725056245135",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1001,6 +1001,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261015-b-pose-4-check.md: wrapper 0x00845524..0x00845542 (\"NullNode\" 0x00C2934F); walk 0x00845548..0x0084564C (\"(UNNAMED)\" 0x00C29519, \" -> \" 0x00C29523, name node+0x38, position node+0x20, parent node+0x30, cap 0x3E8); overflow sErrorF 0x0084560C (\"LoopBoundOverflow\" 0x00BFBFD5, \"%s:%d\" 0x00BFBFE7, file 0x00C294C9, line 0x15C), _errG and break 0x00845632..0x00845646; caller AddVisionOnlyState 0x005311C2..0x005311E6 (flag false)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-087": {
+      "status": "RECOVERABLE_GAP",
+      "title": "VisionSystem::IsExposureValid / IsGainValid bounds used by VisionComponent::SetCameraSettings",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: PLT 0x004BA698 / 0x004BA6A4, gates at 0x006560E6..0x006560FE (rejection: no log, no send; V+0x329=0 and SetNextMode(7,false) still follow at 0x00657EFE..0x00657F0E)."
       ],
       "live_path": true,
       "hardware_required": false

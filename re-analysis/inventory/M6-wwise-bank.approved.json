@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "43d4bfcd216fa00757d874d00f43857c3d45f45b92d84709d3952cf2a6537eda",
+  "inventory_sha256": "2ed541852020e02130674476d6363a72b29405e9052fc5741b438ebe0542eb8f",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -427,11 +427,12 @@
       "hardware_required": false
     },
     "M6-029": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Context +0xC AudioMultiplexer teardown (CozmoAudioController, AudioEngineController)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C)."
+        "re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C).",
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: gate 0x004EA84C tests DataPlatform* (mov r5,r1 0x004EA73C; production 0x004EB286..0x004EB28C); ~CozmoContext 0x004EABBA..0x004EAC14; mux 0x008DEB08..0x008DEB4E, 0x008DF6E0..0x008DF758; derived 0x005946F0..0x0059472C; base 0x008D1C1C..0x008D1D0E; plug-in holders 0x008DC124..0x008DC178, 0x008DD552..0x008DD59A, 0x008DB2AC..0x008DB2FE; inputs AudioUnityInput 0x004EDC8A..0x004EDC96 / 0x00591BA0..0x00591BBE, AudioEngineInput 0x004ED260..0x004ED26C / 0x00590AA0..0x00590AE6; runtime sequence 0x008D8048..0x008D80A2."
       ],
       "live_path": true,
       "hardware_required": false
@@ -442,6 +443,36 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov25-26-27-check.md: ~RobotAudioClient 0x00599A6C..0x00599ADA; Unregister error strings 0x00599DD4/0x00599E00, 0x00594C24/0x00594C54."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-031": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise Term dispatcher at shutdown: thread stop, bus teardown, memory-manager order and the manager-list tail",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: head 0x0099DCEC..0x0099DE00 re-read (init byte +0x6C, 0x009B0350 -> 0x009D4058 / 0x00A40B18, +0x70 vt+0x1C, 0x009E5FE4, 0x00A3D4E0, 0x00A40D44 with null bus skipped at 0x00A40DFC, 0x0099DA54(0x40), seven descriptors +0x10..+0x58, 0x00A38890); tail 0x0099DE00..0x0099E318 not re-read; OV37 rows 7, 19, 20, 22 and 0x009D3EC4..0x009D3F38 not re-checked."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-032": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destroy lambda after the controller map is destroyed",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info \"CozmoAudioController.HijackAudioPlugin\" \"Destroy Plugin id: %d callback\"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-033": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Audio stream hook and device teardown at shutdown",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread."
       ],
       "live_path": true,
       "hardware_required": false

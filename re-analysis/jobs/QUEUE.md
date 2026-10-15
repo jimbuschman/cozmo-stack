@@ -103,6 +103,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 55 | [B-M15-3](B-M15-3.md) | open, after B-M15-2 (needs exceptional values M15-030; unlock/inventory NV callbacks M15-034/035; ForceSet M15-048) |
 | 56 | [B-M14-1](B-M14-1.md) | open, after B-M15-3 (pet/face-world and speech lifetime M14-013) |
 | 57 | [B-M7-1](B-M7-1.md) | open, after B-M14-1 (mood destruction M7-023) |
+| 58 | [B-M7-2](B-M7-2.md) | open, after B-M7-1 (TrackLaser colour/exposure snapshot and restore M7-025) |
+| 59 | [B-M6-1](B-M6-1.md) | open, after B-M7-2 (audio multiplexer/controller teardown order M6-029) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

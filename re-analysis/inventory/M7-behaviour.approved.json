@@ -2,7 +2,7 @@
   "subsystem": "M7-behaviour",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "a4aedcb1b7457f16ccc158772d005a29509176bc5d4ef29f87dcf013c45304ad",
+  "inventory_sha256": "cb7d731f260de326a556d8d57a2dc2575f8ab9ca3fd174bd77b78882de97cb24",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -320,11 +320,12 @@
       "hardware_required": false
     },
     "M7-025": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BehaviorTrackLaser's read of VisionComponent+0x32A (the EnableColorImages flag) and its effect",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)"
+        "Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)",
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: Init 0x005FAC10..0x005FAC4C; snapshot 0x005FAC56..0x005FAC80 (V+0x32A -> behaviour +0x1C8); schedule 0x005FAC84..0x005FAD0C; darken 0x005FAD10..0x005FAD24, 0x00657EF6..0x00657F0E, 0x006560C8..0x006561AA; force 0x005FAD28..0x005FAD4E; resume 0x005FBBAC..0x005FBBC8; Stop 0x005FBD14..0x005FBD3A; Cleanup 0x005FBD48..0x005FBDDA with TransitionToState log 0x005C0CA8..0x005C0D1C; IsRunnable 0x005FAAB0..0x005FAB70."
       ],
       "live_path": true,
       "hardware_required": false
@@ -357,6 +358,16 @@
       "evidence": [
         "re-analysis/research/20261013-unported-message-handlers-check.md: DockingTestSimple ctor 0x005CB04E..0x005CB0A8 and LiftLoadTest ctor 0x005D3F32.. build RollingFileLogger(nullptr, pathToResource(scope 2, \"dockingTest\"/\"liftLoadTest\"), kDefaultFileExtension, 0x1400000); its ctor 0x0080DEFC calls FileUtils::CreateDirectory (0x0080DFCC); FactoryTest ctor builds FactoryTestLogger (0x005D051A -> 0x00671658). Each behaviour is built twice.",
         "re-analysis/research/20261013-test-loggers-and-backup-check.md section M7-028: RollingFileLogger ctor 0x0080DEFC..0x0080DFD4 (CreateDirectory(path, false, true), result ignored; no file opened), CreateDirectory walk 0x008028F0..0x008029C8, dtor 0x0080E090..0x0080E11E; paths scope 2 = cache path + \"/dockingTest\" | \"/liftLoadTest\"; LiftLoadTest ctor state and 0x35/0x95/DA subscriptions 0x005D3F20..0x005D4048; FactoryTestLogger(true) 0x00671658..0x006716E0 memory only."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M7-029": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BehaviorTrackLaser states, tracking/pounce and laser observation (everything outside the colour/exposure snapshot and restore)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: states 0x005FADC8..0x005FBBAB and 0x005FBBCC..0x005FBD13; track/pounce 0x005FBE84..0x005FC1D7; observation 0x005FC1D8..0x005FC5CB."
       ],
       "live_path": true,
       "hardware_required": false

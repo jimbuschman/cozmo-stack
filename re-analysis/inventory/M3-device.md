@@ -575,3 +575,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | Callback slots are +0x18 | M3-034 (note) |
+
+
+## Check of OV36-OV37 (manager, 2026-10-15; research/overnight/20261015-ov36-37-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note (V+0x32A reader) | M3-023 |

@@ -1,8 +1,8 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-10-13",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M5-animation.md",
-  "inventory_sha256": "2d039e0eac07bfa2068e5f3c2fc9e371a13ec41cadaa779a5c1cccd6f57fef04",
+  "inventory_sha256": "51f2e6a2b8315a3ec895a29a2cf7d404c065494253e5f8c98d435c5c8c687ad6",
   "records": {
     "M5-001": {
       "status": "IMPLEMENTATION_GAP",

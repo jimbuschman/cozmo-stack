@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **622 records** over 16 subsystems.
+Manifest of **627 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 38 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 320 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 41 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 322 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -29,12 +29,12 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 50 | 1 | 16 | 0 | 3 | no | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 30 | 1 | 26 | 0 | 0 | no | no |
-| M7-behaviour — Idle, mood and reactions | 28 | 2 | 21 | 0 | 0 | no | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 33 | 3 | 27 | 0 | 0 | no | no |
+| M7-behaviour — Idle, mood and reactions | 29 | 2 | 22 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 25 | 3 | 21 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 86 | 14 | 57 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 87 | 15 | 57 | 0 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 46 | 3 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 37 | 1 | 32 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
@@ -108,14 +108,32 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
-**M6-029 — Context +0xC AudioMultiplexer teardown (CozmoAudioController, AudioEngineController)** (live path)
+**M6-031 — Wwise Term dispatcher at shutdown: thread stop, bus teardown, memory-manager order and the manager-list tail** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: What the audio engine does at shutdown.
-* rests on: Opus extractor read of the M5 teardown members (2026-10-12), manager record.
+* effect: Logs, thread stop and file closes at audio shutdown.
+* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C).
-* outstanding: RECOVERABLE_GAP: read the chain past its first level.
+* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: head 0x0099DCEC..0x0099DE00 re-read (init byte +0x6C, 0x009B0350 -> 0x009D4058 / 0x00A40B18, +0x70 vt+0x1C, 0x009E5FE4, 0x00A3D4E0, 0x00A40D44 with null bus skipped at 0x00A40DFC, 0x0099DA54(0x40), seven descriptors +0x10..+0x58, 0x00A38890); tail 0x0099DE00..0x0099E318 not re-read; OV37 rows 7, 19, 20, 22 and 0x009D3EC4..0x009D3F38 not re-checked.
+* outstanding: RECOVERABLE_GAP: read the tail and the unchecked rows. Not ADP-1 DSP: all exact. M1-034 points: 0x00A40D84/0x00A40D88 (write 0xD0, then udf).
+
+**M6-032 — Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destroy lambda after the controller map is destroyed** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: A shutdown log, and possibly a use-after-destroy.
+* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info "CozmoAudioController.HijackAudioPlugin" "Destroy Plugin id: %d callback"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C).
+* outstanding: RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly).
+
+**M6-033 — Audio stream hook and device teardown at shutdown** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: File closes and device stop at audio shutdown.
+* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread.
+* outstanding: RECOVERABLE_GAP: read the callees. M1-034: 0x008D9914 (write to address 4, broken list invariant), 0x008D8062 -> terminate.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -137,14 +155,14 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: RemoveDisableReactionsLock("sdk") dispatch at 0x0065DD9A; concrete body UNKNOWN (triage E2).
 * outstanding: Recover named-lock receiver/state transitions; do not infer from message name.
 
-**M7-025 — BehaviorTrackLaser's read of VisionComponent+0x32A (the EnableColorImages flag) and its effect** (live path)
+**M7-029 — BehaviorTrackLaser states, tracking/pounce and laser observation (everything outside the colour/exposure snapshot and restore)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs`
-* effect: the laser-tracking behaviour acts on a different camera colour state
-* rests on: Cross-layer split (manager, 2026-10-10): S-10 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M3-023 3b.
-* best authority: libcozmoEngine.so 3.4.0-1204
-* evidence: Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md)
-* outstanding: RECOVERABLE_GAP: read what BehaviorTrackLaser does with the flag at 0x005FAC64 and 0x005FBDAE. Nothing else in the manifest owns BehaviorTrackLaser (M15-008 only names TrackLaser among the activities).
+* effect: What TrackLaser does while running.
+* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: states 0x005FADC8..0x005FBBAB and 0x005FBBCC..0x005FBD13; track/pounce 0x005FBE84..0x005FC1D7; observation 0x005FC1D8..0x005FC5CB.
+* outstanding: RECOVERABLE_GAP: read the listed ranges. Reachable only through a spark request (see M7-025).
 
 ### M8-framework — Behaviour framework and scoring
 
@@ -341,6 +359,15 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov31-32-33-check.md: 0x00533CB2 HandleDisconnectedFromObject; Info "Robot.HandleActiveObjectConnectionState.Recvd" 0x00533CD4; VizManager::SendObjectConnectionState 0x00533D0C; adds/beq 0x00533D10..0x00533D12 gates ObjectConnectionState on ID != -1.
 * outstanding: RECOVERABLE_GAP: read the Robot::HandleDisconnectedFromObject body and the full 0x00533CB2..0x00533D30 tail (log arguments, payload). M11-041 cites only 0x00533B3C..0x00533C34.
+
+**M11-087 — VisionSystem::IsExposureValid / IsGainValid bounds used by VisionComponent::SetCameraSettings** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: Whether a SetCameraParams message is sent for a given exposure/gain.
+* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: PLT 0x004BA698 / 0x004BA6A4, gates at 0x006560E6..0x006560FE (rejection: no log, no send; V+0x329=0 and SetNextMode(7,false) still follow at 0x00657EFE..0x00657F0E).
+* outstanding: RECOVERABLE_GAP: read both bodies and their bounds; say whether TrackLaser's darken values pass.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -852,7 +879,7 @@ B-M5-16 built, awaiting strong verification: idle C3 lookup calls the native log
 * rests on: Second M5 Opus settling pass (2026-10-12), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read.; re-analysis/research/20261012-m5-teardown-reads.md item 1 (Opus-checked 14/14): ~CozmoEngine 0x004EC68C..0x004EC722 (+0x64, vectors +0x50/+0x40, +0x3C, +0x38, +0x34 CozmoContext, +0x30 UiMessageHandler, Json +0x18, vector +4) and wrapper 0x004EC79C; ~CozmoContext 0x004EAAAC..0x004EAC14 calls RobotManager::RemoveRobots first (0x004EAABE -> 0x0052F428..0x0052F472); ~Robot 0x00511512..0x0051154A; ~AnimationStreamer 0x0057AF48..0x0057AFDA (+0xC base subscription, tag 0xB4, released last); ~RobotDataLoader 0x0051F0C6..0x0051F0EA (runs after RobotManager); ~UiMessageHandler 0x0066011C..0x00660192; signal destructors 0x006634B8 (E2G) and 0x00663620 (G2E). So the UiMessageHandler and both signal maps are alive when the Robots release their subscriptions.
-* outstanding: IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): engine +0x3C is DeviceDataManager (not PerfMetric), +0x40 DebugConsoleManager, +0x50 DasToSdkHandler; their teardown is unlink only. Order before ~CozmoContext: BaseStationTimer global clear and removeInstance (0x004EC6A0..0x004EC6B4), VizManager::Disconnect (out of scope), AnimationTransfer (M5-059). The engine +4 subscription vector is released at 0x004EC71C after the hub is gone (expired-token no-ops). Context members: no observable effects in PerfMetric, CozmoExperiments, NeedsManager (no WriteToDevice); unread parts are M5-064 and M6-029. Lead (re-analysis/research/20261012-m5-driving-handler-read.md): after removeInstance, BaseStationTimer::getInstance() re-creates a zeroed instance and gTickTimeProvider is null; check whether any later teardown step (RemoveRobots, robot destructors) reads the time. B-M5-15 (2026-10-12), built, awaiting strong verification: AnimationTransfer cleanup and concrete quiet unfed member subscription releases now precede RemoveRobots/context teardown.
+* outstanding: IMPLEMENTATION_GAP: build the destruction order. UNKNOWN: the type of engine+0x38 (null on the normal path, 0x004EB292). Who destroys the engine is the app (CozmoAPI teardown): a host input under the app-boundary rule. Previous notes: RECOVERABLE_GAP: read ~CozmoEngine and its member destructor order. B-M5-13 (2026-10-12), built, awaiting strong verification: Engine.Dispose follows the built context parts: RemoveRobots directly destroys native-order robot lifetimes without disconnect notifications, then loader abort/store and join, then G2E/E2G signal maps. CozmoRobot.Dispose delegates this order; LoadFrom retains the load thread and publishes its abort recipient before collection. The checked normal ownership order is 0x004EC68C..0x004EC722, 0x004EAABE -> 0x0052F428..0x0052F472, loader0x0051F0C6..0x0051F0EA, UI maps0x0066016E..0x00660184. Absent engine/context members and callback recipients are not invented; exceptional/concurrent shutdown outside the checked normal chain is unclaimed. B-M5-13 shutdown correction: map-key snapshot is taken under the host membership lock, component destruction runs outside it, then map cleanup occurs under the lock (same pattern as RemoveRobot), so the offline ticker can finish its membership reads before join returns; native destruction order unchanged. Read 2026-10-12 (re-analysis/research/20261012-m5-teardown-members.md): engine +0x3C is DeviceDataManager (not PerfMetric), +0x40 DebugConsoleManager, +0x50 DasToSdkHandler; their teardown is unlink only. Order before ~CozmoContext: BaseStationTimer global clear and removeInstance (0x004EC6A0..0x004EC6B4), VizManager::Disconnect (out of scope), AnimationTransfer (M5-059). The engine +4 subscription vector is released at 0x004EC71C after the hub is gone (expired-token no-ops). Context members: no observable effects in PerfMetric, CozmoExperiments, NeedsManager (no WriteToDevice); unread parts are M5-064 and M6-029. Lead (re-analysis/research/20261012-m5-driving-handler-read.md): after removeInstance, BaseStationTimer::getInstance() re-creates a zeroed instance and gTickTimeProvider is null; check whether any later teardown step (RemoveRobots, robot destructors) reads the time. B-M5-15 (2026-10-12), built, awaiting strong verification: AnimationTransfer cleanup and concrete quiet unfed member subscription releases now precede RemoveRobots/context teardown. OV37 check (re-analysis/research/overnight/20261015-ov36-37-check.md): the original's teardown trigger is Unity RobotEngineManager.OnDisable -> CozmoBinding.Shutdown -> cozmo_shutdown 0x006668D8 -> ~CozmoAPI (PLT 0x004BB79C) -> ... -> ~CozmoContext; the ~CozmoAPI/~CozmoEngine links are unread. The trigger is an app input: the stack's host shutdown supplies it.
 
 **M5-059 — AnimationTransfer CleanUp(1) at engine construction and destruction: delete <cache>/TestAnim.json** (live path)
 
@@ -1142,6 +1169,15 @@ B-M5-16 built, awaiting strong verification: dedicated native GetGroupForSource 
 * evidence: CreateAudioAnimation 0x00599FF0: the +0x3C source switch (cmp r0,#0/#2/#1 0x0059A074..0x0059A07C), the two constructions 0x0059A082..0x0059A0B6, the post-construction state check ldrb.w r0,[r6,#0x3C] 0x0059A0BA (states 4/5), the source-0 clear 0x0059A11C..0x0059A12E (per M3-024's record, not re-read); the client's initial source is null (0x005994E6)
 * outstanding: built in part under M3-024 (R-FIX2, 2026-10-03), awaiting strong verification: branched at the call site in AnimationScheduler (CreateAudioAnimationLocked): source 2 keeps the on-robot streaming stand-in, source 1 streams nothing and reports MISSING (RobotAudioAnimationOnDevice is M6-016's), source 0 or null clears the track and creates nothing; the post-construction check (0x0059A0BA) reports MISSING. Build round: the code tagged M3-024 (AnimationScheduler.cs:472/835, CozmoAnimations.cs:165) is retagged M6-028.
 
+**M6-029 — Context +0xC AudioMultiplexer teardown (CozmoAudioController, AudioEngineController)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: What the audio engine does at shutdown.
+* rests on: Opus extractor read of the M5 teardown members (2026-10-12), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m5-teardown-members.md: ~CozmoContext slot 1 on +0xC -> 0x008DEB08: deletes CozmoAudioController (0x005946F0 -> AudioEngineController dtor 0x008D1C1C: ClearGarbageCollector, plug-in interface, 0x008D8048 ...), then the input connections (+0x10 list, each +0xC virtual delete); present only with an external interface (0x004EA84C).; re-analysis/research/overnight/20261015-ov36-37-check.md: gate 0x004EA84C tests DataPlatform* (mov r5,r1 0x004EA73C; production 0x004EB286..0x004EB28C); ~CozmoContext 0x004EABBA..0x004EAC14; mux 0x008DEB08..0x008DEB4E, 0x008DF6E0..0x008DF758; derived 0x005946F0..0x0059472C; base 0x008D1C1C..0x008D1D0E; plug-in holders 0x008DC124..0x008DC178, 0x008DD552..0x008DD59A, 0x008DB2AC..0x008DB2FE; inputs AudioUnityInput 0x004EDC8A..0x004EDC96 / 0x00591BA0..0x00591BBE, AudioEngineInput 0x004ED260..0x004ED26C / 0x00590AA0..0x00590AE6; runtime sequence 0x008D8048..0x008D80A2.
+* outstanding: RECOVERABLE_GAP: read the chain past its first level. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov36-37-check.md): IMPLEMENTATION_GAP for the Anki wrapper order and both input types. Correction: the construction gate tests DataPlatform*, not the external interface. Split out: Wwise Term M6-031, Hijack destroy path M6-032, stream hook/device M6-033. The shutdown trigger (Unity OnDisable -> cozmo_shutdown 0x006668D8) is an app input; see M5-055.
+
 **M6-030 — RobotAudioClient teardown: Dispatch Stop, Release, abort and clear the +0x38 animation, unregister game objects 7, 8, 9, 10, 6, then the deque, hash and base** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/AnimationAudio.cs`
@@ -1315,6 +1351,15 @@ B-M5-18 removes the stale ReactToCliff shouldPlayAnimation-parameter MISSING. Th
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: 0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN.; Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt; re-analysis/research/overnight/20261015-ov34-35-check.md: L3 0x005110D4..0x005111C4 (owner nulled after delete 0x005111C4); gates 0x0067AE18..0x0067AE30; children 0x0067AE34..0x0067AE74 (0x004EAE94, 0x0067C0CC, 0x0067C0FC); subscription retirement 0x004EF184..0x004EF1CE, 0x00664EB8, 0x0066365C, 0x00663696, closure destroy 0x0067C228; sole caller BLX 0x005111B6 via PLT 0x004A7A80.
 * outstanding: S4: Robot nulls ActionList at 0x00511150 then invokes mood 0x005111B6; recipient 0x0067AE14. Preserve cross-component order; destructor children UNKNOWN. Source triage S4. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov34-35-check.md): IMPLEMENTATION_GAP for the owner-null placement, the gates, the child order and the 0xC3 subscription retirement (no handler runs). The ActionList-unregister branch 0x0067AE2A..0x0067AE30 is unreachable (sole caller after 0x00511150 nulls +0x250); not built. Mood callbacks during AbortAll/ActionList::Clear are M8-024. M1-034 points (not reachable): 0x0067AE76..0x0067AEB8, 0x004EF1BE.
+
+**M7-025 — BehaviorTrackLaser's read of VisionComponent+0x32A (the EnableColorImages flag) and its effect** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorContainer.cs`
+* effect: the laser-tracking behaviour acts on a different camera colour state
+* rests on: Cross-layer split (manager, 2026-10-10): S-10 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M3-023 3b.
+* best authority: libcozmoEngine.so 3.4.0-1204
+* evidence: Readers of VisionComponent+0x32A: 0x005FAC64, 0x005FBDAE (BehaviorTrackLaser; M3-023 3b); BehaviorTrackLaser's EnableColorImages calls 0x005FAD2E/0x005FBDB6 (re-analysis/research/20261010-m3044-camera-start-rows.md); re-analysis/research/overnight/20261015-ov36-37-check.md: Init 0x005FAC10..0x005FAC4C; snapshot 0x005FAC56..0x005FAC80 (V+0x32A -> behaviour +0x1C8); schedule 0x005FAC84..0x005FAD0C; darken 0x005FAD10..0x005FAD24, 0x00657EF6..0x00657F0E, 0x006560C8..0x006561AA; force 0x005FAD28..0x005FAD4E; resume 0x005FBBAC..0x005FBBC8; Stop 0x005FBD14..0x005FBD3A; Cleanup 0x005FBD48..0x005FBDDA with TransitionToState log 0x005C0CA8..0x005C0D1C; IsRunnable 0x005FAAB0..0x005FAB70.
+* outstanding: RECOVERABLE_GAP: read what BehaviorTrackLaser does with the flag at 0x005FAC64 and 0x005FBDAE. Nothing else in the manifest owns BehaviorTrackLaser (M15-008 only names TrackLaser among the activities). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov36-37-check.md): IMPLEMENTATION_GAP for the colour/exposure snapshot, force and restore. Correction: the only reader of V+0x32A is 0x005FAC64; 0x005FBDAE reads behaviour +0x1C8 (the saved byte; restore has no compare). The rest of TrackLaser is M7-029; the validity bounds are M11-087. Reachable only in the Sparked activity SparksTrackLaser via the app spark request (SetRequestedSpark 0x005A3EAC): operator question whether the stack API exposes spark requests. M1-034: 0x005FAC60/64 null VisionComponent, 0x00657EDC null VisionSystem.
 
 **M7-026 — MoodManager::GetSimpleMood and the mood time MoodManager+0x130 (inputs to the animation group draw)** (live path)
 
@@ -3252,7 +3297,7 @@ B-M5-18 corrects the OnSelected comment to actual time-store/strategy/public-sta
 * rests on: libcozmoEngine.so
 * best authority: libcozmoEngine.so
 * evidence: ActivityFreeplay::CalculateDesiredActivityFromObjects 0x005ADF4C; IBehavior::ExtractNeedsActionIDFromConfig 0x005BBAE8; IBehavior::NeedActionCompleted 0x005BE40C; ActivityGatherCubes::Update 0x005AF2F0
-* outstanding: built, awaiting strong verification (R-FIX2, 2026-10-04): TransitionToObjectPickedUp in the engine's order (carried-object check, lookup, active-beacon check, FindFreeCubeToStackOn 0x005DF46A, TryToStackOn 0x005DF4F2, then NeedActionCompleted PickupCube 0x005DF59C), AIBeacon::IsLocWithinBeacon, the stack-callback StackCompleted per lambda 0x005E142C (category 0 StackCube 0x2A then FireEmotionEvents; category 4 retries only while carried == candidate and attempt <= 2; category 3 and a failed retry test log and SetFailedToUse(target, 1); every other category does nothing); the floor branch is now built (M15-019..M15-025). Still open: DriveToPlaceOnObjectAction (0x005DFE0E) is unbuilt: the stack branch runs the old PlaceRelObjectHelper as a labelled stand-in; ProgressionUnlockComponent::IsUnlocked(StackTwoCubes = 10) has no component (a live-path default: treated as unlocked); ActivityGatherCubes (Update 0x005AF27C, NeedActionCompleted(0x14) at 0x005AF2F0, its gate 0x005AF2A8..0x005AF2AE and the one-shot flag at +0x78) and the PeekABoo/TrackLaser/GuardDog behaviours are not built; the retry-taken branch of StackCompleted has no test.
+* outstanding: built, awaiting strong verification (R-FIX2, 2026-10-04): TransitionToObjectPickedUp in the engine's order (carried-object check, lookup, active-beacon check, FindFreeCubeToStackOn 0x005DF46A, TryToStackOn 0x005DF4F2, then NeedActionCompleted PickupCube 0x005DF59C), AIBeacon::IsLocWithinBeacon, the stack-callback StackCompleted per lambda 0x005E142C (category 0 StackCube 0x2A then FireEmotionEvents; category 4 retries only while carried == candidate and attempt <= 2; category 3 and a failed retry test log and SetFailedToUse(target, 1); every other category does nothing); the floor branch is now built (M15-019..M15-025). Still open: DriveToPlaceOnObjectAction (0x005DFE0E) is unbuilt: the stack branch runs the old PlaceRelObjectHelper as a labelled stand-in; ProgressionUnlockComponent::IsUnlocked(StackTwoCubes = 10) has no component (a live-path default: treated as unlocked); ActivityGatherCubes (Update 0x005AF27C, NeedActionCompleted(0x14) at 0x005AF2F0, its gate 0x005AF2A8..0x005AF2AE and the one-shot flag at +0x78) and the PeekABoo/TrackLaser/GuardDog behaviours are not built; the retry-taken branch of StackCompleted has no test. OV36 check (re-analysis/research/overnight/20261015-ov36-37-check.md): TrackLaser's colour snapshot/restore is M7-025 (to build); the rest is M7-029.
 
 **M15-009 — Emotion event names fired when a cube is placed in a beacon** (live path)
 

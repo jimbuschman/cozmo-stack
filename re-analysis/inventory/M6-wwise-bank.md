@@ -3178,3 +3178,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | RobotAudioClient teardown, IMPLEMENTATION_GAP | M6-030 (new) |
+
+
+## Check of OV36-OV37 (manager, 2026-10-15; research/overnight/20261015-ov36-37-check.md)
+
+| Change | Records |
+| --- | --- |
+| Audio multiplexer wrapper teardown: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-029 |
+| Wwise Term, Hijack destroy path, stream/device teardown: RECOVERABLE_GAP | M6-031, M6-032, M6-033 (new) |
