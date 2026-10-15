@@ -1,4 +1,4 @@
-DONE B-POSE-3 — 2026-10-15 — built, awaiting strong verification; implementation commit recorded after push.
+DONE B-POSE-3 — 2026-10-15 — built, awaiting strong verification; pushed implementation commit 1cc1b6b69eb87f152926671c0118855bbb1f245f.
 
 Claim pushed: 2fe064e8. No fidelity classification was changed. M11-066/M11-067/M11-077 test and unresolved strings were appended, preserving all prior text. No hardware run or verification packet.
 
@@ -186,3 +186,5 @@ Calls in reopened cited instruction spans are listed below. Existing arithmetic/
 | 0x00847A02 | Managed string/vector storage release; MISSING native shared storage bookkeeping (M11-077) |
 | 0x00847A0E | MISSING native helper/indirect storage or overload tail #0x847a38; enclosing path not expanded beyond checked rows (M11-067/M11-077) |
 | 0x00847A14 | MISSING native helper/indirect storage or overload tail #0x4e39f8; enclosing path not expanded beyond checked rows (M11-067/M11-077) |
+
+Push gate: 4759/4759 passed, zero skipped (5m20s). Main advanced during the gate; clean rebase and normal push succeeded. The hook reused its byte-identical code/records pass. Pushed implementation: 1cc1b6b69eb87f152926671c0118855bbb1f245f.
