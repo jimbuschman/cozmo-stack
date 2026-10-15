@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "ea249cd9dcc74441d0a7a02be5c0a93ba90b7fd22b20b485ee96304a030af7da",
+  "inventory_sha256": "f9f152764044bdc6161aa067d0ff20c61c4255fdc4d77cafac318ba32a9181ea",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -994,11 +994,12 @@
       "hardware_required": false
     },
     "M11-085": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "HandleActiveObjectConnectionState disconnect tail: HandleDisconnectedFromObject, the Recvd Info, VizManager, and the broadcast only when RemoveConnectedActiveObject returned an ID",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: 0x00533CB2 HandleDisconnectedFromObject; Info \"Robot.HandleActiveObjectConnectionState.Recvd\" 0x00533CD4; VizManager::SendObjectConnectionState 0x00533D0C; adds/beq 0x00533D10..0x00533D12 gates ObjectConnectionState on ID != -1."
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: 0x00533CB2 HandleDisconnectedFromObject; Info \"Robot.HandleActiveObjectConnectionState.Recvd\" 0x00533CD4; VizManager::SendObjectConnectionState 0x00533D0C; adds/beq 0x00533D10..0x00533D12 gates ObjectConnectionState on ID != -1.",
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: pool gate 0x00533CA4..0x00533CB8; Recvd Info 0x00533CBC..0x00533CD4; Viz no send 0x00533CFA..0x00533D0C, 0x006C05EE..0x006C0608; E2G tag 0x0D ID-gated 0x00533D10..0x00533D32, Pack 0x007AFEC0..0x007AFF02, raw bool 0x0083C0CC..0x0083C0EE; Broadcast 0x00511DE8..0x00511DFC."
       ],
       "live_path": true,
       "hardware_required": false

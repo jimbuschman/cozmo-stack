@@ -120,6 +120,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 69 | [B-M11-12](B-M11-12.md) | open, after B-M8-6 (border consumer M11-079; teardown leaves M11-078; __next_prime tests M4-050; required-process gate M8-013) |
 | 70 | [B-M7-3](B-M7-3.md) | open, after B-M11-12 |
 | 71 | [B-M6-2](B-M6-2.md) | open, after B-M7-3 |
+| 72 | [B-M15-5](B-M15-5.md) | open, after B-M6-2 |
+| 73 | [B-M11-13](B-M11-13.md) | open, after B-M15-5 |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

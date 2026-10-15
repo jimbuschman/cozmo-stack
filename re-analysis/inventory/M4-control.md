@@ -801,3 +801,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | __next_prime: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (to confirm; location corrected) | M4-050 |
+
+
+## Check of OV59-OV61 (manager, 2026-10-15; research/overnight/20261015-ov59-61-check.md)
+
+| Change | Records |
+| --- | --- |
+| CD7 gains the factory-ID mismatch branch and both Info logs; LC8a gains the returned-ID != -1 gate (0x00533CA6..0x00533CA8) | M4-010 (note) |

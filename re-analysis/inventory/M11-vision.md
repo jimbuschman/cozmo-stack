@@ -1685,3 +1685,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Exposure/gain predicate semantics: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-087 |
+
+
+## Check of OV59-OV61 (manager, 2026-10-15; research/overnight/20261015-ov59-61-check.md)
+
+| Change | Records |
+| --- | --- |
+| Cube disconnect tail: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-085 |

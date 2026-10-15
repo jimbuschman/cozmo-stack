@@ -969,3 +969,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Lab definitions: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-049 |
 | AutoActivate and tags: RECOVERABLE_GAP | M15-052 (new) |
 | Lab user id input: IMPLEMENTATION_GAP | M15-053 (new) |
+
+
+## Check of OV59-OV61 (manager, 2026-10-15; research/overnight/20261015-ov59-61-check.md)
+
+| Change | Records |
+| --- | --- |
+| Lab writeback; BuildPyramid producers: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-050, M15-051 |
+| BuildPyramid behaviour choice: IMPLEMENTATION_GAP | M15-054 (new) |
+| Activity Update forwarding / spark state; cube disconnect consumers: RECOVERABLE_GAP | M15-055, M15-056 (new) |
+| Note (SetGameBeingPaused input) | M15-016 |

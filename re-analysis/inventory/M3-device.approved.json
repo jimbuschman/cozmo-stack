@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "ae5c2c76ce19da13710f41c08ebb787083435eb6ccae6c77f04792abebd2afc7",
+  "inventory_sha256": "5ea3222d14a5fbd4b1ff6df3d7270d0c7923e6544010e9c58db05117a2693be5",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",

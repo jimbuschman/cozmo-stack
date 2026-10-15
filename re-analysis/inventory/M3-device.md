@@ -589,3 +589,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | Note (ownership) | M3-021 |
+
+
+## Check of OV59-OV61 (manager, 2026-10-15; research/overnight/20261015-ov59-61-check.md)
+
+| Change | Records |
+| --- | --- |
+| NV round4 pad bytes sent as 0 (manager ruling) | M3-043 (note) |

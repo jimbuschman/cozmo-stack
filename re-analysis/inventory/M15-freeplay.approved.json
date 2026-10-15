@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "ef742afcd53b9b222be7233bf5325245068535b32f9a4dbd1186926387e2debf",
+  "inventory_sha256": "e0608aa8885bb3486f87f2183ecc482f72cedd426759a6ff14749882c363ec60",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -609,21 +609,23 @@
       "hardware_required": false
     },
     "M15-050": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Lab assignments writeback: PossiblyWriteLabAssignmentsToRobot and WriteLabAssignmentsToRobot (NV tag 0x196000)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: PossiblyWriteLabAssignmentsToRobot 0x006A5DE4..0x006A60C4 (head read: compares +0x94 stride 0x18 with +0xA0 stride 0x24); WriteLabAssignmentsToRobot 0x006A57F0..0x006A5A3C; callers NeedsManager::InitAfterReadFromRobotAttempt 0x00694622, SetGameBeingPaused handler 0x006990DA."
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: PossiblyWriteLabAssignmentsToRobot 0x006A5DE4..0x006A60C4 (head read: compares +0x94 stride 0x18 with +0xA0 stride 0x24); WriteLabAssignmentsToRobot 0x006A57F0..0x006A5A3C; callers NeedsManager::InitAfterReadFromRobotAttempt 0x00694622, SetGameBeingPaused handler 0x006990DA.",
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: callers 0x0069BEB2..0x0069BED4, 0x006943F8..0x00694400, 0x0069461C..0x00694622, 0x00698FBA..0x00698FC2, 0x006990D6..0x006990DA; compare 0x006A5DEC..0x006A5F18; Info 0x006A5F1A..0x006A5F30; writer 0x006A5F56..0x006A5F5E; cache refresh 0x006A5F62..0x006A6014, 0x006A5A3C..0x006A5A88; Write 0x006A57F0..0x006A5962 (robot gate 0x006A5802..0x006A5810, pack 0x006A5814..0x006A58BE, NV 0x006A58BC..0x006A58D4, failure 0x006A58EE..0x006A5938); serializer 0x0078A926..0x0078A96E, 0x0078A5F0..0x0078A60E, 0x006C22DC..0x006C2326, 0x0078A9D0..0x0078AA14."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-051": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ActivityBuildPyramid producers: UpdateChooserPhase and the Get*BlockID calls, the Update caller, BehaviorManager +0x58..+0x65 writers, the UpdateMusic target, the +0xC0/+0xC8 behaviour lookups",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: UpdateChooserPhase 0x005A8854..0x005A90C8; Get*BlockID 0x005A878A, 0x005A87CC, 0x005A880E; UpdateMusic veneer 0x008CBD5C; FindBehaviorByID(4) 0x005A741C, FindBehaviorByID(3) 0x005A7444, unchecked uses 0x005A9424, 0x005A9458, 0x005A9462."
+        "re-analysis/research/overnight/20261015-ov31-32-33-check.md: UpdateChooserPhase 0x005A8854..0x005A90C8; Get*BlockID 0x005A878A, 0x005A87CC, 0x005A880E; UpdateMusic veneer 0x008CBD5C; FindBehaviorByID(4) 0x005A741C, FindBehaviorByID(3) 0x005A7444, unchecked uses 0x005A9424, 0x005A9458, 0x005A9462.",
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: UpdateChooserPhase 0x005A7A54..0x005A7AB6, 0x005A97EC..0x005A9826 (the evidence's 0x005A8854 is GetDesiredActiveBehaviorInternal); group 0x005A8294..0x005A8300 (table 0x00C617BA); notify 0x005A9828..0x005A98F8; assignments 0x005A872C..0x005A884E, getters 0x005DD5F4..0x005DD64C; Update 0x005A92C0..0x005A93D8; stage 0x005A93DC..0x005A94B6; UpdateMusic 0x005A94B8..0x005A94D8 (veneer 0x008CBD5C -> 0x004AF034); manager writers 0x005A08E8..0x005A0900, 0x005A3EB2..0x005A3EE6, 0x005A41A6..0x005A4226, 0x005A3C92..0x005A3C9A; setter callers ActivateSpark, SparkUnlocked 0x005A3DC6, RequestATrick 0x0056E766, CompleteSparkLogic 0x005B1BFC..0x005B1C0A; SwitchToRequestedSpark caller 0x005AE484; lookups 0x005A741C..0x005A7460, 0x0059C98E..0x0059C9C6."
       ],
       "live_path": true,
       "hardware_required": false
@@ -644,6 +646,36 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov56-58-check.md: DASGetPlatform()->vt+0x10 -> libDAS DASPlatform_Android 0x00036AD0 -> 0x00028AF6 returns +0x1C, filled from Java DAS.getDeviceID (libDAS 0x0002833A..0x0002837E; sources/com/anki/daslib/DAS.java:159); ID supplier 0x006A61C6..0x006A6204."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-054": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivityBuildPyramid behaviour choice: GetDesiredActiveBehaviorInternal, UpdateProperties, ChooseSetup, ChooseBuilding, ThankUser, RespondPossiblyRoll",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: GetDesiredActiveBehaviorInternal 0x005A8854..0x005A89BA (phase 0 chooses nothing 0x005A888C..0x005A8896 -> 0x005A890C); UpdateProperties 0x005A89FC..0x005A8A9C; ChooseSetup 0x005A8A9E..0x005A8AD0; ChooseBuilding 0x005A8AE2..0x005A8BFE; ThankUser 0x005A8C32..0x005A8D76 (+0x99 also on the skipped-current-roll path 0x005A8CB0 -> 0x005A8CFA); RespondPossiblyRoll 0x005A8D8C..0x005A900A (non-upright unrunnable roll falls into the upright branch 0x005A8E50..0x005A8F4C)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-055": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Activity Update forwarding: ActivityFreeplay::Update to the current sub-activity, and ActivitySparked::Update spark-state logic (CheckIfSparkShouldEnd, CompleteSparkLogic, reset) before forwarding to its delegate",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFreeplay::Update 0x005AD9D0..0x005AD9DE (+0x80 vt+0x20, null returns 0); ActivitySparked::Update 0x005B186C..0x005B18D0 (spark state, then +0xC4 vt+0x20); CheckIfSparkShouldEnd 0x005B18D4..; two ActivityBuildPyramid instances (activities/freeplay/buildPyramid.json, activities/sparks/sparksBuildPyramid.json)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-056": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Cube disconnect consumers: ActivityFeeding and BehaviorGuardDog handlers of E2G ObjectConnectionState (tag 0x0D) and their subscription lifetimes",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFeeding 0x005AD146 -> 0x008CBDEC -> 0x005AC9CC; BehaviorGuardDog::HandleWhileRunning 0x005F4D52 -> 0x008CC6FC -> 0x005F4E30 (acts on disconnect 0x005F4E36..0x005F4E38); CubeLightComponent 0x00639CD0 no-op on disconnect; CubeAccelComponent 0x00635D6A no-op."
       ],
       "live_path": true,
       "hardware_required": false

@@ -113,5 +113,8 @@ The first three are the requests already written:
 | OV79 | requests/overnight/20261015-ov79-m15-052.md (M15-052: Lab AutoActivate descendants and audience-tag qualification: ActivateE) | research/overnight/20261015-ov79-m15-052.md |
 | OV80 | requests/overnight/20261015-ov80-m11-089.md (M11-089: InterestingEdge (type 9) map data class, MemoryMap::HasBorders callers) | research/overnight/20261015-ov80-m11-089.md |
 | OV81 | requests/overnight/20261015-ov81-m11-090.md (M11-090: Vision/world teardown residue: std::function capture finalizers in the) | research/overnight/20261015-ov81-m11-090.md |
+| OV82 | requests/overnight/20261015-ov82-m15-055.md (M15-055: Activity Update forwarding: ActivityFreeplay::Update to the current su) | research/overnight/20261015-ov82-m15-055.md |
+| OV83 | requests/overnight/20261015-ov83-m15-056.md (M15-056: Cube disconnect consumers: ActivityFeeding and BehaviorGuardDog handle) | research/overnight/20261015-ov83-m15-056.md |
+| OV84 | requests/overnight/20261015-ov84-m6-034.md (M6-034: Wwise Term recipients: the manager-list tail, head calls, allocator in) | research/overnight/20261015-ov84-m6-034.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
