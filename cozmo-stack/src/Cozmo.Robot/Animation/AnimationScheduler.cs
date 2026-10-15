@@ -641,6 +641,8 @@ public sealed class AnimationScheduler
     public IReadOnlyList<string> FaceLayerNames { get { lock (_gate) return _tlc.Face.AllLayers.Select(l => l.Name).ToArray(); } }
 
     internal TrackLayerComponent Layers => _tlc;
+    internal object NativeLayerGate => _gate;
+    internal void WithTrackLayers(Action<TrackLayerComponent> body) => LogCallbackDeferral.RunGated(_gate, () => body(_tlc));
 
     /// <summary>Identifies the animation currently streaming; changes whenever one starts or ends.</summary>
     public long Generation { get { lock (_gate) return _generation; } }

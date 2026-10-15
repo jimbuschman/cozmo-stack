@@ -69,7 +69,8 @@ internal sealed partial class PathComponent
         Info("PathComponent.TransitionStatus",$"{Name(DriveToPoseStatus)} -> {Name(next)}");DriveToPoseStatus=next;
     }
     private bool SendNative(RobotMessage message)=>SendPathMessage?.Invoke(message)??(message is AppendPathSegmentLine or AppendPathSegmentArc or AppendPathSegmentPointTurn?_robot.SendToHandler(message):_robot.SendMessage(message));
-    private void ErasePath(){if(ErasePathHook is {} erase)erase(CozmoEngine.RobotId);else MissingOnce("M12-032 VizManager.ErasePath 0x006BFACE recipient is unbuilt");}
+    // fidelity: M13-029 - ErasePath builds a local Viz tag21 and sends nothing.
+    private void ErasePath() => ErasePathHook?.Invoke(CozmoEngine.RobotId);
     private void ResetMachine(){_pathSubscription?.Dispose();_pathSubscription=null;_nativePlanners?.Dispose();_nativePlanners=null;InitNativeShortPlanners();PlannerSlot10=null;_computeModel=_fallbackModel=null;_plan=null;_goalIndex=null;ParamsOrigin=0;ClearDoler();}
     internal void ClearDoler(){_dolerPath=Array.Empty<PathSegment>();LastDoledIndex=0xFFFF;DoleSegmentCount=0;}
     internal void SetDolerPath(IReadOnlyList<PathSegment> path)

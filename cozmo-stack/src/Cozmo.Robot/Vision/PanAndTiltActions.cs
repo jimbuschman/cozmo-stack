@@ -123,7 +123,10 @@ public sealed record TurnTowardsPoseEnv(Pose3d RobotPose, double RobotHeadAngleR
                                         Func<Pose3d, double?>? ComputeHeadAngleToSeePose,
                                         Func<Vec3, double>? GetAbsoluteHeadAngleToLookAtPose,
                                         Func<Pose3d, Pose3d?>? WithRespectToRobot = null,
-                                        Action<string>? Log = null);
+                                        Action<string>? Log = null,
+                                        SourceLogSink? SourceLog = null,
+                                        Pose3d? WorldOrigin = null,
+                                        Action? ForceFlush = null);
 
 /// <summary>
 /// The engine's <c>TurnTowardsPoseAction</c> as a <see cref="PanAndTiltAction"/> (M13-020). Constructors 0x00549F10 (max turn) and 0x0054B344
@@ -154,7 +157,7 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
         MaxTurnAbsRad = MathF.Abs((float)maxTurnRad);     // +0x170 = abs(maxTurn)
     }
 
-    public TurnTowardsPoseCompound(Pose3d pose, double maxTurnRad) : this(maxTurnRad) { Pose = pose; PoseSet = true; }
+    public TurnTowardsPoseCompound(Pose3d pose, double maxTurnRad) : this(maxTurnRad) { Pose = new Pose3d(pose); PoseSet = true; }
 
     /// <summary>+0x164: the pose to look at, in this stack's world frame.</summary>
     public Pose3d? Pose { get; private set; }
@@ -162,8 +165,10 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
     public bool PoseSet { get; private set; }
     /// <summary>+0x170.</summary>
     public double MaxTurnAbsRad { get; }
-    /// <summary>Whether the pose has a parent (the world origin here, always true): a parentless pose is only re-parented.</summary>
-    public bool PoseHasParent { get; set; } = true;
+    /// <summary>Native HasParent, with the retained M11-066 flat-input adapter and an explicit host test override.</summary>
+    private bool? _hasParentOverride;
+    // Flat host inputs retain the labelled M11-066 adapter; native tree inputs use the checked HasParent branch.
+    public bool PoseHasParent { get => _hasParentOverride ?? (Pose is {} pose && (pose.HasLegacyFrameInput || pose.HasParent)); set => _hasParentOverride=value; }
     /// <summary>The byte at +0x179.</summary>
     public bool Byte0x179 { get; private set; }
 
@@ -210,27 +215,41 @@ public sealed class TurnTowardsPoseCompound : PanAndTiltAction
     }
 
     /// <summary><c>SetPose</c> 0x0054A8E8: +0x164 = pose, +0x178 = 1.</summary>
-    public void SetPose(Pose3d pose) { Pose = pose; PoseSet = true; }
+    public void SetPose(Pose3d pose) { if(Pose is null)Pose=new Pose3d(pose);else Pose.AssignInputValue(pose);PoseSet=true; }
 
     /// <summary><c>TurnTowardsPoseAction::Init</c> 0x0054A8FC as far as <c>PanAndTiltAction::Init</c>; <paramref name="callPanAndTiltInit"/> is false when it returned before it.</summary>
     public uint InitPose(TurnTowardsPoseEnv env, out bool callPanAndTiltInit)
     {
+        using var sourceScope=env.SourceLog is {} sink ? Pose3d.UseSourceLog(sink,env.ForceFlush) : null;
+        void Emit(EngineLogLevel level,string? channel,string key,string text) => SourceLogDispatch.GetSink(env.SourceLog,env.Log)?.Invoke(level,channel,key,text);
         callPanAndTiltInit = false;
         Byte0x179 = false;                                                    // (1)
         PanAngleRad = 0;
-        if (!PoseSet || Pose is not { } pose) { env.Log?.Invoke("TurnTowardsPoseAction.Init: no pose set"); return BadPose; }   // (2) 0x0054A9B8
+        if (!PoseSet || Pose is not { } pose)
+        {
+            Emit(EngineLogLevel.Error,null,"TurnTowardsPoseAction.Init.PoseNotSet","");
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return BadPose;
+        }   // (2) 0x0054A9B8
         Vec3 rel;
-        // NOTE (test-only branch): with PoseHasParent = false (no production caller sets it; the default is true) the engine keeps the pose in the world-origin frame (0x0054AA4E) and
-        // GetWithRespectTo(neck) in ComputeHeadAngleToSeePose does the full transform from there; this port passes such a pose to ComputeHeadAngleToSeePose as if it were robot-frame, which differs
-        // from the engine whenever the robot is not at the origin.
-        Pose3d inRobot = pose;                                                // the pose after the in-place conversion at 0x0054A94C: this is what ComputeHeadAngleToSeePose and the fallback receive
-        if (!PoseHasParent) { env.Log?.Invoke("TurnTowardsPoseAction.Init: pose has no parent, using the world origin"); rel = pose.Translation; }   // (3) 0x0054AA4E
+        Pose3d inRobot = pose;
+        if (!PoseHasParent)
+        {
+            Emit(EngineLogLevel.Info,"Actions","TurnTowardsPoseAction.Init.AssumingRobotOriginAsParent","");
+            if(env.WorldOrigin is {} origin)pose.SetParent(origin);
+            else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-020 parentless Init 0x0054AA14..0x0054AA58: host environment has no native world-origin owner; reparent unit skipped rather than inventing a parent");
+            rel=pose.Translation;
+        }
         else
         {
             var r = env.WithRespectToRobot is { } f ? f(pose) : pose.WithRespectTo(env.RobotPose);
-            if (r is not { } wrt) { env.Log?.Invoke("TurnTowardsPoseAction.Init: pose is not in the robot's origin"); return BadPose; }   // 0x0054A952
+            if (r is not { } wrt)
+            {
+                using var targetRoot=pose.FindRoot();using var robotRoot=env.RobotPose.FindRoot();
+                Emit(EngineLogLevel.Warning,null,"TurnTowardsPoseAction.Init.PoseOriginFailure",FormattableString.Invariant($"Could not get pose (in frame {unchecked((int)targetRoot.Id)}) w.r.t. robot pose (in frame {unchecked((int)robotRoot.Id)})."));
+                return BadPose;
+            }   // 0x0054A952
             rel = wrt.Translation;
-            inRobot = wrt;
+            pose.AssignInputValue(wrt);inRobot=pose;
         }
         if (MaxTurnAbsRad > 0)                                                // (4) 0x0054AC8A
         {
@@ -281,6 +300,17 @@ internal interface INativeMotorAckSource
     IDisposable SubscribeMotorAck(Action<byte> callback);
 }
 
+// Native live inputs and layer calls; absent services leave a visible MISSING instead of invented arguments.
+internal interface INativePanTiltServices
+{
+    object StateGate { get; }
+    SourceLogSink SourceLog { get; }
+    string OffTreadsName { get; }
+    void RemoveKeepFaceAlive(int duration);
+    byte AddEyeShift(byte tag, float x);
+    void RemoveEyeShift(byte tag, int duration);
+}
+
 public interface IPanTiltRobot
 {
     /// <summary>[robot+0x355] == 0 (OnTreads), what <c>IsOffTreadsStateValid</c> 0x00545EC4 tests.</summary>
@@ -295,9 +325,9 @@ public interface IPanTiltRobot
     bool BodyMoving { get; }
     /// <summary>[movementComponent+0xA].</summary>
     bool HeadMoving { get; }
-    /// <summary><c>MovementComponent::TurnInPlace</c>; 0 = success. Body unread (M13-021).</summary>
+    /// <summary><c>MovementComponent::TurnInPlace</c>; 0 = success. Checked component wrapper (M13-021).</summary>
     uint TurnInPlace(float targetRad, float speed, float accel, float toleranceRad, ushort numHalfRevolutions, bool isAbsolute, out byte actionId);
-    /// <summary><c>MovementComponent::MoveHeadToAngle</c>; 0 = success. Body unread (M13-021).</summary>
+    /// <summary><c>MovementComponent::MoveHeadToAngle</c>; 0 = success. Checked component wrapper (M13-021).</summary>
     uint MoveHeadToAngle(float angleRad, float speed, float accel, float durationSec, out byte actionId);
 }
 
@@ -307,11 +337,10 @@ public interface IPanTiltRobot
 /// <c>CheckIfDone</c> 0x0054642C, the motorActionAck handler 0x0054D3F8. Field names are not in the binary; they are named by offset.
 /// Angles are float32 and normalised with <see cref="EngineRadians.Rescale"/> (<c>Radians</c>).
 ///
-/// Not built: <c>MovementComponent::TurnInPlace</c> (<see cref="IPanTiltRobot.TurnInPlace"/>), the eye shift (<c>RemoveKeepFaceAlive(0x21)</c> and
-/// <c>AddOrUpdateEyeShift</c> at 0x00546234..0x00546282, whose argument values are unread, M13-021: <see cref="EyeShiftRequests"/> records that
-/// the branch ran, and +0xD9 stays 0), <c>GetCompletionUnion</c> 0x005469A8, the random variability draw (<c>IAction::GetRNG</c>; a non-zero
-/// +0xB8 needs <see cref="RandomInRange"/>). Whether the +0xAC store at 0x0054620C is inside the +0xD8 branch is not in the inventory; it is
-/// made unconditionally, which is unobservable because +0xAC is read only under +0xD9, which this build never sets.
+/// OV07 builds the direct movement wrappers and the bounded turn Init/completion rows. The live eye-creation call stops visibly
+/// until TurnInPlaceAction's destructor cleanup has an adopted row (0x00545B94..0x00545BD4). Completion eye-removal consumes an
+/// existing tag; it is tested with an explicit native-state input and is not claimed to make live creation safe.
+/// GetCompletionUnion, nonzero-variability RNG and the full IActionRunner lifecycle remain separately unbuilt.
 /// </summary>
 // fidelity: M13-022
 public sealed class TurnInPlaceAction : IDisposable
@@ -326,18 +355,48 @@ public sealed class TurnInPlaceAction : IDisposable
     public const int MotorActionAckTag = 0xC4;
 
     private readonly IPanTiltRobot _robot;
+    private readonly object _stateGate;
+    internal static readonly object DiagnosticCounterGate = new();
+    internal static ushort WaitingAckCounter = 10, AngleNotReachedCounter = 10;
+    public uint Tag { get; }
+    private bool _disposed;
+    private T Gated<T>(Func<T> body) { T result=default!; LogCallbackDeferral.RunGated(_stateGate,()=>result=body()); return result; }
+    private void Gated(Action body) => LogCallbackDeferral.RunGated(_stateGate,body);
+    private void Emit(EngineLogLevel level, string? channel, string key, string text)
+    {
+        if (_robot is INativePanTiltServices native) native.SourceLog(level,channel,key,text);
+        else LogCallbackDeferral.Run(() => SourceLogDispatch.GetSink(null,Log)?.Invoke(level,channel,key,text));
+    }
+    private static string Fixed(float v,int decimals=1,bool signed=false)
+    {
+        if(float.IsNaN(v))return (BitConverter.SingleToInt32Bits(v)<0?"-":signed?"+":"")+"nan";
+        if(float.IsPositiveInfinity(v))return signed?"+inf":"inf";
+        if(float.IsNegativeInfinity(v))return "-inf";
+        string text=((double)v).ToString("F"+decimals,System.Globalization.CultureInfo.InvariantCulture);
+        return signed && (BitConverter.SingleToUInt32Bits(v)&0x80000000)==0 ? "+"+text : text;
+    }
+    private static float Degrees(float v) => v*BitConverter.Int32BitsToSingle(0x42652EE1);
+    private string PositionText(string prefix) => FormattableString.Invariant($"[{unchecked((int)Tag)}] {prefix}{Fixed(Degrees(Angle0x8C))}deg vs. {Fixed(Degrees(Angle0x9C))}deg(+/-{Fixed(Degrees(Variability0xB8))}), angDistTravd={Fixed(Degrees(Float0xA8),signed:true)}deg, angDistExpc={Fixed(Degrees(Float0xA4),signed:true)}deg (tol: {Fixed(Degrees(Tolerance0xB0),6)}) (pfid: {unchecked((int)_robot.OriginId)})");
     private readonly IDisposable? _ackSubscription;
     public event Action<string>? Log;
     private readonly List<string> _eyeShiftRequests = new();
     public IReadOnlyList<string> EyeShiftRequests => _eyeShiftRequests;
     /// <summary>The draw for the +0xB8 variability; null unless the caller supplies the engine's RNG (unread).</summary>
-    public Func<float, float>? RandomInRange { get; set; }
+    private Func<float,float>? _randomInRange;
+    public Func<float,float>? RandomInRange { get { lock(_stateGate)return _randomInRange; } set { lock(_stateGate)_randomInRange=value; } }
 
-    public void Dispose() => _ackSubscription?.Dispose();
+    public void Dispose() => Gated(() =>
+    {
+        if (_disposed) return;
+        _disposed=true; _ackSubscription?.Dispose(); ActionRunnerTagCounter.Global.Release(Tag);
+    });
 
     public TurnInPlaceAction(IPanTiltRobot robot, float angle, bool isAbsolute)
     {
         _robot = robot;
+        _stateGate=(robot as INativePanTiltServices)?.StateGate ?? new object();
+        uint tag; do { tag=ActionRunnerTagCounter.Global.NextIdTag(); } while (!ActionRunnerTagCounter.Global.TryReserve(tag));
+        Tag=tag;
         _ackSubscription = (robot as INativeMotorAckSource)?.SubscribeMotorAck(HandleMotorActionAck);
         Byte0x84 = false; Byte0x85 = false;
         Angle0x88 = angle;
@@ -362,7 +421,8 @@ public sealed class TurnInPlaceAction : IDisposable
     public float Float0xA8 { get; private set; }
     public float Float0xAC { get; private set; }
     public float Tolerance0xB0 { get; private set; }
-    public float Variability0xB8 { get; set; }
+    private float _variability;
+    public float Variability0xB8 { get { lock(_stateGate)return _variability; } set { lock(_stateGate)_variability=value; } }
     public bool IsAbsolute { get; }                       // +0xC0
     public float Speed0xC4 { get; private set; }
     public float Accel0xC8 { get; private set; }
@@ -373,12 +433,14 @@ public sealed class TurnInPlaceAction : IDisposable
     public bool Byte0xDB { get; private set; }           // a TurnInPlace was sent
     public bool Byte0xDC { get; private set; }           // its ack arrived
     /// <summary>+0xD8, copied from PanAndTiltAction's +0x126 (the constructor sets 1).</summary>
-    public bool Byte0xD8 { get; set; }
+    private bool _useEyes;
+    public bool Byte0xD8 { get { lock(_stateGate)return _useEyes; } set { lock(_stateGate)_useEyes=value; } }
     public byte Byte0xD9 { get; private set; }
-    private int _logCounter;
+
 
     /// <summary><c>SetMaxSpeed</c> 0x00545C08: |speed| above 5.235988 warns, sets +0xCC and stores the limit with the caller's sign; 0 restores +0x78 and leaves +0xCC; else +0xCC = 1, +0xC4 = speed.</summary>
-    public void SetMaxSpeed(float speed)
+    public void SetMaxSpeed(float speed) => Gated(() => SetMaxSpeedUnderGate(speed));
+    private void SetMaxSpeedUnderGate(float speed)
     {
         if (MathF.Abs(speed) > DefaultMaxSpeed) { Log?.Invoke("TurnInPlaceAction.SetMaxSpeed: speed above the limit"); Byte0xCC = true; Speed0xC4 = MathF.CopySign(DefaultMaxSpeed, speed); }
         else if (speed == 0) Speed0xC4 = DefaultMaxSpeed;
@@ -386,14 +448,16 @@ public sealed class TurnInPlaceAction : IDisposable
     }
 
     /// <summary><c>SetAccel</c> 0x00545D14: 0 -> +0xC8 = [+0x7C]; else +0xCC = 1, +0xC8 = accel.</summary>
-    public void SetAccel(float accel)
+    public void SetAccel(float accel) => Gated(() => SetAccelUnderGate(accel));
+    private void SetAccelUnderGate(float accel)
     {
         if (accel == 0) Accel0xC8 = DefaultAccel;
         else { Byte0xCC = true; Accel0xC8 = accel; }
     }
 
     /// <summary><c>SetTolerance</c> 0x00545D50: +0xB0 = |tol|; below 2 degrees it is raised to 2 degrees (info "UseDefault" when |tol| &lt; 1e-5, else a warning).</summary>
-    public void SetTolerance(float tolerance)
+    public void SetTolerance(float tolerance) => Gated(() => SetToleranceUnderGate(tolerance));
+    private void SetToleranceUnderGate(float tolerance)
     {
         Tolerance0xB0 = MathF.Abs(tolerance);
         if (Tolerance0xB0 >= MinToleranceRad) return;
@@ -402,12 +466,21 @@ public sealed class TurnInPlaceAction : IDisposable
     }
 
     /// <summary><c>IsOffTreadsStateValid</c> 0x00545EC4: valid iff [robot+0x355] == 0.</summary>
-    public bool IsOffTreadsStateValid() { if (_robot.OnTreads) return true; Log?.Invoke("TurnInPlaceAction: invalid off-treads state"); return false; }
+    public bool IsOffTreadsStateValid() => Gated(IsOffTreadsStateValidUnderGate);
+    private bool IsOffTreadsStateValidUnderGate()
+    {
+        if (_robot.OnTreads) return true;
+        if (_robot is INativePanTiltServices native)
+            Emit(EngineLogLevel.Warning,null,"TurnInPlaceAction.OffTreadsStateInvalid",FormattableString.Invariant($"[{unchecked((int)Tag)}] Off tread state {native.OffTreadsName} is invalid for TurnInPlace"));
+        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-022 OffTreadsStateInvalid 0x00545EEA: host IPanTiltRobot supplies only OnTreads, not the native signed enum argument; diagnostic not invented");
+        return false;
+    }
 
     /// <summary><c>Init</c> 0x00545FA0.</summary>
-    public uint Init()
+    public uint Init() => Gated(InitUnderGate);
+    private uint InitUnderGate()
     {
-        if (!IsOffTreadsStateValid()) return PanTiltResult.InvalidOffTreadsState;                                    // (1)
+        if (!IsOffTreadsStateValidUnderGate()) return PanTiltResult.InvalidOffTreadsState;                                    // (1)
         Origin0xD0 = _robot.OriginId; OriginChanges0xD4 = 0;                                                         // (2)
         Angle0x8C = _robot.PoseAngleAroundZ;                                                                         // (3)
         float s16 = 0;                                                                                               // (4)
@@ -415,14 +488,14 @@ public sealed class TurnInPlaceAction : IDisposable
             s16 = (RandomInRange ?? throw new NotSupportedException("IAction::GetRNG is unread: a non-zero variability needs RandomInRange"))(Variability0xB8);
         if (IsAbsolute)                                                                                              // (5)
         {
-            Angle0x9C = (float)EngineRadians.Rescale(Angle0x88 + s16);
-            Float0xA4 = (float)EngineRadians.Rescale(Angle0x9C - Angle0x8C);
+            Angle0x9C = Radians.Rescale(Angle0x88 + s16);
+            Float0xA4 = Radians.Rescale(Angle0x9C - Angle0x8C);
         }
         else
         {
             if (MathF.Abs(Angle0x88) > MaxRevolutions * TwoPi) { Log?.Invoke("TurnInPlaceAction.Init.AngleTooLarge"); return PanTiltResult.Abort; }   // 0x03000000
             Angle0x88 -= Float0xA8;
-            Angle0x9C = (float)EngineRadians.Rescale(Angle0x8C + Angle0x88 + s16);
+            Angle0x9C = Radians.Rescale(Angle0x8C + Angle0x88 + s16);
             Float0xA4 = s16 + Angle0x88;
             uint bits = (BitConverter.SingleToUInt32Bits(Speed0xC4) & 0x7FFFFFFFu) | (BitConverter.SingleToUInt32Bits(Angle0x88) & 0x80000000u);   // bfi r1, r0, #0x1f, #1 (0x0054610C)
             Speed0xC4 = BitConverter.UInt32BitsToSingle(bits);
@@ -430,52 +503,98 @@ public sealed class TurnInPlaceAction : IDisposable
         Angle0x94 = Angle0x8C; Float0xA8 = 0;                                                                        // (6)
         Byte0x84 = IsBodyInPosition(); Byte0xDB = false; Byte0xDC = false; Byte0x85 = false;                         // (7)
         if (Byte0x84) return 0;
-        ushort halfRevs = IsAbsolute ? (ushort)0 : (ushort)MathF.Floor(MathF.Abs(Float0xA4) / MathF.PI);            // (8)
+        float turns=MathF.Floor(MathF.Abs(Float0xA4/BitConverter.Int32BitsToSingle(0x40490FDB)));
+        uint count=float.IsNaN(turns)||turns<=0 ? 0u : turns>=4294967296f ? uint.MaxValue : (uint)turns;
+        ushort halfRevs = IsAbsolute ? (ushort)0 : unchecked((ushort)count);            // (8)
         if (_robot.TurnInPlace(Angle0x9C, Speed0xC4, Accel0xC8, Tolerance0xB0, halfRevs, IsAbsolute, out byte id) != 0) { ActionId0xDA = id; return PanTiltResult.SendMessageToRobotFailed; }
         ActionId0xDA = id;
         Byte0xDB = true;                                                                                             // (9)
-        Float0xAC = 0.5f * MathF.Abs(Float0xA4);                                                                     // 0x0054620C
-        if (Byte0xD8) _eyeShiftRequests.Add("RemoveKeepFaceAlive(0x21); AddOrUpdateEyeShift(TurnInPlaceEyeDart) - arguments unread (M13-021)");
+        if (Byte0xD8)
+        {
+            if (_robot is INativePanTiltServices native) native.RemoveKeepFaceAlive(33);
+            float clipped=Float0xA4,limit=BitConverter.Int32BitsToSingle(0x3FC6D3F2);
+            if(clipped>=limit)clipped=limit; else if(clipped<=-limit)clipped=-limit;
+            Float0xAC=MathF.Abs(Float0xA4)*0.5f;
+            float x=MathF.Tan(clipped)*BitConverter.Int32BitsToSingle(0x418C28F6);
+            x*=BitConverter.Int32BitsToSingle(0x3F9D89D9);
+            _eyeShiftRequests.Add("RemoveKeepFaceAlive(33); AddOrUpdateEyeShift(TurnInPlaceEyeDart,132)");
+            _ = x; // Checked argument arithmetic; the lifetime-dependent call unit stops here.
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-021/M13-022 BLOCKED live TurnInPlace eye activation at 0x00546286: the AddEyeShift wrapper is checked, but required turn-dtor cleanup 0x00545B94..0x00545BD4 (call 0x00545BBC) has no adopted checked body row in OV07 or the supplied prior M13 checks. Persistent layer creation is skipped; no tag or cleanup duration is invented. Unadopted Q18 X2 is a lead for the manager, not build authority");
+        }
         return 0;
     }
 
     /// <summary><c>IsBodyInPosition</c> 0x00546374; writes the current angle to +0x8C.</summary>
-    public bool IsBodyInPosition()
+    public bool IsBodyInPosition() => Gated(IsBodyInPositionUnderGate);
+    private bool IsBodyInPositionUnderGate()
     {
         Angle0x8C = _robot.PoseAngleAroundZ;
         float remaining = MathF.Abs(Float0xA4 - Float0xA8);
-        if (remaining >= MathF.PI) return false;
-        bool near = EngineRadians.IsNear(Angle0x8C, Angle0x9C, Tolerance0xB0 + 1e-5f);
+        if (!(remaining < BitConverter.Int32BitsToSingle(0x40490FDB))) return false;
+        bool near = Radians.IsNear(Angle0x8C, Angle0x9C, Tolerance0xB0 + BitConverter.Int32BitsToSingle(0x3727C5AC));
         bool ok = OriginChanges0xD4 != 0 ? near || remaining < MathF.Abs(Tolerance0xB0) : near;
         return ok && !_robot.BodyMoving;
     }
 
     /// <summary>The motorActionAck handler 0x0054D3F8 (tag 0xC4): the ack of this action's TurnInPlace sets +0xDC.</summary>
-    public void HandleMotorActionAck(byte actionId) { if (Byte0xDB && actionId == ActionId0xDA) Byte0xDC = true; }
+    public void HandleMotorActionAck(byte actionId) => Gated(() => { if (Byte0xDB && actionId == ActionId0xDA) Byte0xDC = true; });
 
     /// <summary><c>CheckIfDone</c> 0x0054642C.</summary>
-    public uint CheckIfDone()
+    public uint CheckIfDone() => Gated(CheckIfDoneUnderGate);
+    private uint CheckIfDoneUnderGate()
     {
-        if (Byte0xDB && !Byte0xDC) { if (++_logCounter % 11 == 0) Log?.Invoke("TurnInPlaceAction: waiting for the motor ack"); return PanTiltResult.Running; }   // (a)
-        if (_robot.OriginId != Origin0xD0)                                                                           // (b)
+        if (Byte0xDB && !Byte0xDC)
         {
-            OriginChanges0xD4++; Log?.Invoke("TurnInPlaceAction: origin changed"); Origin0xD0 = _robot.OriginId; Angle0x94 = _robot.PoseAngleAroundZ;
+            lock(DiagnosticCounterGate)
+            {
+                WaitingAckCounter=unchecked((ushort)(WaitingAckCounter+1));
+                if(WaitingAckCounter>=11)
+                {
+                    Emit(EngineLogLevel.Debug,"Actions","TurnInPlaceAction.CheckIfDone.WaitingForAck",FormattableString.Invariant($"[{unchecked((int)Tag)}] ActionID: {ActionId0xDA}"));
+                    WaitingAckCounter=0;
+                }
+            }
+            return PanTiltResult.Running;
         }
-        Byte0x84 = Byte0x84 || IsBodyInPosition();                                                                   // (c)
-        Float0xA8 += (float)EngineRadians.Rescale(Angle0x8C - Angle0x94);
-        Angle0x94 = Angle0x8C;
-        if (Byte0xD9 != 0 && (Byte0x84 || MathF.Abs(Float0xA8) > Float0xAC))                                         // (d)
-        { _eyeShiftRequests.Add("RemoveEyeShift(+0xD9, 99)"); Byte0xD9 = 0; }
-        if (_robot.BodyMoving) Byte0x85 = true;                                                                      // (e)
-        uint result;
-        if (Byte0x84) { Log?.Invoke("TurnInPlaceAction: in position"); result = PanTiltResult.Success; }              // (f)
-        else                                                                                                         // (g)
+        uint currentFrame=_robot.OriginId;
+        if(currentFrame!=Origin0xD0)
         {
-            if (++_logCounter % 11 == 0) Log?.Invoke("TurnInPlaceAction: turning");
-            result = PanTiltResult.Running;
-            if (!_robot.BodyMoving && Byte0x85) { Log?.Invoke("TurnInPlaceAction: stopped without reaching the angle"); result = PanTiltResult.MotorStoppedMakingProgress; }
+            ++OriginChanges0xD4;
+            bool inPosition=IsBodyInPositionUnderGate();
+            Emit(EngineLogLevel.Info,"Actions","TurnInPlaceAction.CheckIfDone.PfidChanged",FormattableString.Invariant($"[{unchecked((int)Tag)}] pose frame ID changed (old={unchecked((int)Origin0xD0)}, new={unchecked((int)currentFrame)}). No longer comparing angles to check if done - using angular distance traversed instead. (relocalizedCnt={unchecked((int)OriginChanges0xD4)}) (inPositionNow={(inPosition?1:0)})"));
+            Origin0xD0=_robot.OriginId;Angle0x94=_robot.PoseAngleAroundZ;
         }
-        return IsOffTreadsStateValid() ? result : PanTiltResult.InvalidOffTreadsState;                               // (h)
+        if(!Byte0x84)Byte0x84=IsBodyInPositionUnderGate();
+        Float0xA8+=Radians.Rescale(Angle0x8C-Angle0x94);
+        Angle0x94=Angle0x8C;
+        if(Byte0xD9!=0 && (Byte0x84 || MathF.Abs(Float0xA8)>Float0xAC))
+        {
+            Emit(EngineLogLevel.Debug,"Actions","TurnInPlaceAction.CheckIfDone.RemovingEyeShift",$"Currently at {Fixed(Degrees(Angle0x8C))}deg, on the way to {Fixed(Degrees(Angle0x9C))}deg (traversed {Fixed(Degrees(Float0xA8))}deg)");
+            if(_robot is INativePanTiltServices native)native.RemoveEyeShift(Byte0xD9,99);
+            Byte0xD9=0;_eyeShiftRequests.Add("RemoveEyeShift(+0xD9, 99)");
+        }
+        bool moving=_robot.BodyMoving;
+        if(moving)Byte0x85=true;
+        uint result=PanTiltResult.Running;
+        if(Byte0x84){Emit(EngineLogLevel.Info,"Actions","TurnInPlaceAction.CheckIfDone.InPosition",PositionText("In Position: "));result=0;}
+        else
+        {
+            lock(DiagnosticCounterGate)
+            {
+                AngleNotReachedCounter=unchecked((ushort)(AngleNotReachedCounter+1));
+                if(AngleNotReachedCounter>=11)
+                {
+                    Emit(EngineLogLevel.Debug,"Actions","TurnInPlaceAction.CheckIfDone.AngleNotReached",PositionText("Waiting for body to reach angle: "));
+                    AngleNotReachedCounter=0;
+                }
+            }
+            if(!moving && Byte0x85)
+            {
+                Emit(EngineLogLevel.Warning,null,"TurnInPlaceAction.StoppedMakingProgress",FormattableString.Invariant($"[{unchecked((int)Tag)}] giving up since we stopped moving. currentAngle={Fixed(Degrees(Angle0x8C))}deg, target={Fixed(Degrees(Angle0x9C))}deg, angDistExp={Fixed(Degrees(Float0xA4))}deg, angDistTrav={Fixed(Degrees(Float0xA8))}deg (pfid: {unchecked((int)_robot.OriginId)})"));
+                result=PanTiltResult.MotorStoppedMakingProgress;
+            }
+        }
+        return IsOffTreadsStateValidUnderGate()?result:PanTiltResult.InvalidOffTreadsState;
     }
 }
 

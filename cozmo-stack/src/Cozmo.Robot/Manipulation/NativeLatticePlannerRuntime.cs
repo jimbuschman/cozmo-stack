@@ -19,7 +19,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     private IReadOnlyList<Pose3d> _goals=Array.Empty<Pose3d>();
     private IEnumerable<uint>? _ignore;
     private LatticePlan? _total;
-    private bool _disposed;
+    private int _disposed;
     internal volatile bool F0,F1,F3;
     internal bool F2=>_backend.RunFlag;
     internal bool F4=>true; // Only ctor writes 1; the other goal loop is unreachable.
@@ -144,6 +144,7 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     }
     private void Worker()
     {
+        if (F1) return; // OV09 W1: an exit request observed at thread entry precedes pending work.
         while(true)
         {
             lock(ContextMutex)
@@ -190,8 +191,8 @@ internal sealed class NativeLatticePlannerRuntime : INativePathPlanner,IDisposab
     }
     public void Dispose()
     {
-        if(_disposed)return;_disposed=true;F1=true;_wake.Set();
+        if(Interlocked.Exchange(ref _disposed,1)!=0)return;F1=true;_wake.Set();
         _source(EngineLogLevel.Debug,"Planner","LatticePlanner.DestroyThread.Join","");_worker.Join();
-        _source(EngineLogLevel.Debug,"Planner","LatticePlanner.DestroyThread.Joined","");_wake.Dispose();_runModeSubscription?.Dispose();_runModeSubscription=null;_backend.NativeRuntime=null;
+        _source(EngineLogLevel.Debug,"Planner","LatticePlanner.DestroyThread.Joined","");_runModeSubscription?.Dispose();_runModeSubscription=null;_wake.Dispose();_backend.NativeRuntime=null;
     }
 }

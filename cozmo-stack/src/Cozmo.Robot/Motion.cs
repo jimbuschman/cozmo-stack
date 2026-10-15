@@ -212,6 +212,19 @@ public sealed class CozmoMotion
         lock (_gate) return unchecked(++_actionIdCounter);
     }
 
+    // fidelity: M13-021 - native component primitives, no action/track/connection gate.
+    internal uint MoveHeadToAngle(float angle, float speed, float accel, float duration, out byte id)
+    {
+        id = NextActionId();
+        return _robot.SendMessage(new SetHeadAngle(angle, speed, accel, duration, id), reliable: true) ? 0u : 1u;
+    }
+    internal uint TurnInPlace(float angle, float speed, float accel, float tolerance, ushort halfRevs, bool absolute, out byte id)
+    {
+        id = NextActionId();
+        return _robot.SendMessage(new SetBodyAngle { AngleRad=angle, MaxSpeedRadPerSec=speed, AccelRadPerSec2=accel,
+            ToleranceRad=tolerance, NumHalfRevolutions=halfRevs, IsAbsolute=absolute, ActionId=id }, reliable: true) ? 0u : 1u;
+    }
+
     // fidelity: M4-001
     /// <summary>
     /// The engine's head limits, written as the engine's float bits. MoveHeadToAngleAction clips a rescaled commanded
@@ -1503,9 +1516,10 @@ internal sealed partial class PathComponent
     /// <summary>+0x46 (cleared by Abort) and +0x47 (cleared only when a planner is set).</summary>
     internal bool Field46, Field47;
     /// <summary>The shared path pair at +0x30/+0x34: Abort nulls it and releases it.</summary>
-    internal object? SharedPath;
+    internal PathGoalIndex? SharedPath { get => _goalIndex; set => _goalIndex = value; }
     /// <summary>The 12-byte inline objects of the vector at [+0x50]; each one's destructor is its vtable slot 0.</summary>
-    internal readonly List<Action> PlannerObjects = new();
+    internal readonly List<Cozmo.Robot.Vision.Pose3d> PlannerObjects = new();
+    internal Action<Cozmo.Robot.Vision.Pose3d>? PoseReleaseObservedForTest;
     /// <summary>[[+0x50]+0x0C]: Abort stores <see cref="UnknownOriginId"/> here after destroying the objects (0x006491AC..0x006491B4).</summary>
     internal uint PlannerObjectsField0C;
 
@@ -1561,7 +1575,8 @@ internal sealed partial class PathComponent
                       ?? ((uint)DriveToPoseStatus < StatusNames.Length ? StatusNames[DriveToPoseStatus] : null);
         if (name is null) MissingOnce($"ERobotDriveToPoseStatus name for status {DriveToPoseStatus}, read past the table at 0x0102F610; PathComponent.Abort log is unported");
         else _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Planner", "PathComponent.Abort", $"Aborting from status '{name}'");
-        if (PlannerSlot10 is { } planner) { planner(); Field47 = false; }
+        if (_nativePlanners?.Current is not null) { _nativePlanners.Stop(); Field47=false; }
+        else if (PlannerSlot10 is { } planner) { planner(); Field47 = false; }
         SharedPath = null;
         int cleared = ClearPath(send);
         int status = DriveToPoseStatus;
@@ -1576,7 +1591,8 @@ internal sealed partial class PathComponent
         {
             var destroy = PlannerObjects[^1];
             PlannerObjects.RemoveAt(PlannerObjects.Count - 1);          // the end pointer moves before the call (0x0064919C)
-            destroy();
+            PoseReleaseObservedForTest?.Invoke(destroy);
+            destroy.Dispose();
         }
         PlannerObjectsField0C = UnknownOriginId;
         return cleared;
@@ -1591,8 +1607,7 @@ internal sealed partial class PathComponent
     internal int ClearPath(Func<RobotMessage, bool>? send = null)
     {
         if (Field42 != 0) Field4A = Field42;
-        if (ErasePathHook is { } erase) erase(CozmoEngine.RobotId);
-        else MissingOnce("VizManager::ErasePath 0x006BFACE (M11): the visualization recipient is not built");
+        ErasePath();
         // PathDolerOuter at +4 is built when the context is set (0x00648B56) by the engine (ctor 0x00648B76..0x00648B92; call 0x0064924A..0x0064924E).
         if (PathDolerClearPath is { } doler) doler();
         else MissingOnce("PathDolerOuter::ClearPath 0x005082B0 (M11): the path doler is not built");

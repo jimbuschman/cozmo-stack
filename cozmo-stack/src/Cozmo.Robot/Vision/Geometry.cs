@@ -237,6 +237,7 @@ public sealed class Pose3d : IDisposable
 {
     internal PoseTreeNode? Node;
     private bool _legacyFrameInput;
+    internal bool HasLegacyFrameInput => _legacyFrameInput;
     internal static bool UnownedParentsAllowed;
     public static Pose3d Identity=>new(Mat3.Identity,Vec3.Zero);
     public Pose3d Value=>this; // Existing nullable-value API unwrap; no new node is made.
@@ -429,7 +430,7 @@ public sealed class Pose3d : IDisposable
     public void Dispose()
     {
         if(Node is not {} n)return;
-        PoseDiagnostics.Missing("M11-077 pose destruction/owner-release side effects are pending their checked owning job; explicit wrapper release only");
+        PoseDiagnostics.Missing("M11-077: RemoveOwner is built (0x008448B4..0x00844914); NotLastOwner 0x0084510E..0x0084515E needs native shared-control use_count, and final-node destruction/bookkeeping 0x0084605C..0x0084609C -> 0x008D148C remains unbuilt; C# reachability is not used as a native reference count");
         n.RemoveOwner();Node=null;
     }
     public override string ToString()=>"T="+Translation+" yaw="+(AngleAroundZ*180/Math.PI).ToString("F1")+"deg";

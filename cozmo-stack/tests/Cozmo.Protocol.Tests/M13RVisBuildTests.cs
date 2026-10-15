@@ -758,13 +758,18 @@ public class M13RVisBuildTests
     [Fact]
     public void M13_020_TurnTowardsPoseInitReturnsBadPoseForAnUnsetOrUnreachablePose()
     {
-        var unset = new TurnTowardsPoseCompound(Math.PI);
-        Assert.Equal(0x03000005u, unset.InitPose(PoseEnv(), out bool go));
-        Assert.False(go);
-        var withPose = new TurnTowardsPoseCompound(new Pose3d(Mat3.Identity, new Vec3(100, 0, 0)), Math.PI);
-        Assert.Equal(0x03000005u, withPose.InitPose(PoseEnv(wrt: _ => null), out go));
-        Assert.False(go);
-        Assert.Equal(0x03000005u, TurnTowardsPoseCompound.BadPose);
+        bool prior=Cozmo.Transport.EngineErrorState.ErrorFlagSet;
+        try
+        {
+            var unset = new TurnTowardsPoseCompound(Math.PI);
+            Assert.Equal(0x03000005u, unset.InitPose(PoseEnv(), out bool go));
+            Assert.False(go);
+            var withPose = new TurnTowardsPoseCompound(new Pose3d(Mat3.Identity, new Vec3(100, 0, 0)), Math.PI);
+            Assert.Equal(0x03000005u, withPose.InitPose(PoseEnv(wrt: _ => null), out go));
+            Assert.False(go);
+            Assert.Equal(0x03000005u, TurnTowardsPoseCompound.BadPose);
+        }
+        finally{Cozmo.Transport.EngineErrorState.ErrorFlagSet=prior;}
     }
 
     /// <summary>

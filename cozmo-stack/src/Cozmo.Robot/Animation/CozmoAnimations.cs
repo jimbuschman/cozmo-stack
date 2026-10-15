@@ -303,6 +303,10 @@ public sealed class CozmoAnimations : IDisposable
     /// </summary>
     internal bool EngineDriven => _robot.Engine.IsProduction;
 
+    // fidelity: M13-021 - host exclusion shared with all existing layer writers.
+    internal object NativeLayerGate => _scheduler.NativeLayerGate;
+    internal void WithTrackLayers(Action<TrackLayerComponent> body) => _scheduler.WithTrackLayers(body);
+
     // fidelity: M3-013
     /// <summary>AnimationStreamer::Update for one engine tick (called by Robot::Update only while streaming is open).</summary>
     internal int EngineUpdate()

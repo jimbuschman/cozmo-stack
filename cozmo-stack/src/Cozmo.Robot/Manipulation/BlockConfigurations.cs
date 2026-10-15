@@ -425,9 +425,8 @@ public static class Footprint
         foreach (double si in new[] { -0.5, 0.5 })
             foreach (double sj in new[] { -0.5, 0.5 })
                 corners.Add(new Point2f((float)(r[0, i] * si * dim[i] + r[0, j] * sj * dim[j]), (float)(r[1, i] * si * dim[i] + r[1, j] * sj * dim[j])));
-        // Quadrilateral::ComputeCentroid 0x004DF7BE..0x004DF84A: ((c0 + c2) + c1) + c3, then * 0.25f
-        float cx = (((corners[0].X + corners[2].X) + corners[1].X) + corners[3].X) * 0.25f, cy = (((corners[0].Y + corners[2].Y) + corners[1].Y) + corners[3].Y) * 0.25f;
-        var s = corners.OrderBy(p => MathF.Atan2(p.Y - cy, p.X - cx)).ToArray();                   // SortCornersClockwise: ascending atan2
+        // Reuse the same checked four-corner sort, even in this retained planar input adapter.
+        var s = ObjectFootprint.SortCornersClockwise(corners.ToArray());
         float tx = (float)atPose.Translation.X, ty = (float)atPose.Translation.Y;
         Point2f T(Point2f p) => new(p.X + tx, p.Y + ty);
         quad = new Quadrilateral(T(s[0]), T(s[3]), T(s[1]), T(s[2]));                             // stored [0]=s0, [1]=s3, [2]=s1, [3]=s2
@@ -449,6 +448,22 @@ public static class MinAreaRectF
 {
     /// <summary>cv::RotatedRect: centre, size and the angle in degrees.</summary>
     public readonly record struct RotatedRect(float Cx, float Cy, float W, float H, float AngleDeg);
+
+    // fidelity: M13-023 - Rectangle::InitFromPointContainer and its fallback consumer.
+    internal static RotatedRect RectangleFallback(IReadOnlyList<Point2f> points)
+    {
+        if (points.Count == 0) return new(0f,0f,0f,0f,0f);
+        float minX=points[0].X,maxX=minX,minY=points[0].Y,maxY=minY;
+        foreach (var point in points.Skip(1))
+        {
+            if (minX>point.X) minX=point.X;
+            if (minY>point.Y) minY=point.Y;
+            if (maxY<point.Y) maxY=point.Y;
+            if (maxX<point.X) maxX=point.X;
+        }
+        float width=maxX-minX,height=maxY-minY;
+        return new(minX+width*0.5f,minY+height*0.5f,width,height,0f);
+    }
 
     private static int Sign(float v) => (v > 0f ? 1 : 0) - (v < 0f ? 1 : 0);
     private static bool Lt(Point2f a, Point2f b) => a.X < b.X || (a.X == b.X && a.Y < b.Y);
@@ -665,17 +680,10 @@ public static class ObjectFootprint
                 (x*(float)r[1,0] + y*(float)r[1,1]) + z*(float)r[1,2]));
         }
         var c = MinAreaRectF.Points(MinAreaRectF.Compute(pts));
-        float cx = (((c[0].X+c[2].X)+c[1].X)+c[3].X)*.25f, cy = (((c[0].Y+c[2].Y)+c[1].Y)+c[3].Y)*.25f;
-        var angles = c.Select(p => MathF.Atan2(p.Y-cy,p.X-cx)).ToArray();
-        if (angles.Distinct().Count() != 4)
-        {
-            missing("M11-062 / M13-023: SortCornersClockwise equal-angle libc++ tie order 0x004E8260/0x004E85BE remains unbuilt");
-            throw new NotSupportedException("MISSING: M13-023 SortCornersClockwise tie order; footprint stopped");
-        }
-        var sorted = SortCornersClockwise(c);
+        var sorted = SortQuadrilateral(c);
         float tx = (float)pose.Translation.X, ty = (float)pose.Translation.Y;
         Point2f T(Point2f p) => new(p.X+tx,p.Y+ty);
-        return new Quadrilateral(T(sorted[0]),T(sorted[3]),T(sorted[1]),T(sorted[2]));
+        return new Quadrilateral(T(sorted[0]),T(sorted[1]),T(sorted[2]),T(sorted[3]));
     }
 
     private static bool SignBit(float v) => BitConverter.SingleToInt32Bits(v) < 0;
@@ -699,21 +707,45 @@ public static class ObjectFootprint
             pts.Add(new Point2f(rx, ry));
         }
         var rect = MinAreaRectF.Points(MinAreaRectF.Compute(pts));
-        var sorted = SortCornersClockwise(rect);
+        var sorted = SortQuadrilateral(rect);
         float tx = (float)atPose.Translation.X, ty = (float)atPose.Translation.Y;
         Point2f T(Point2f p) => new(tx + p.X, ty + p.Y);
-        return new Quadrilateral(T(sorted[0]), T(sorted[3]), T(sorted[1]), T(sorted[2]));
+        return new Quadrilateral(T(sorted[0]), T(sorted[1]), T(sorted[2]), T(sorted[3]));
     }
 
     /// <summary>The charger's quad at a pose (<c>GetBoundingQuadXY(pose, padding)</c> through slot +0x50).</summary>
     public static Quadrilateral ChargerBoundingQuadXY(Pose3d atPose, float padding) => ObservableObjectBoundingQuadXY(ChargerCanonicalCorners, atPose, padding);
 
     /// <summary><c>Quadrilateral::SortCornersClockwise</c> as <see cref="Footprint"/> reads it (0x004E7EFC..0x004E7F9A): ascending atan2 about the centroid.</summary>
-    private static Point2f[] SortCornersClockwise(Point2f[] c)
+    internal static Quadrilateral SortQuadrilateral(Point2f[] corners)
     {
-        // Quadrilateral::ComputeCentroid 0x004DF7BE..0x004DF84A: ((c0 + c2) + c1) + c3, each float add, then * 0.25f
-        float cx = (((c[0].X + c[2].X) + c[1].X) + c[3].X) * 0.25f, cy = (((c[0].Y + c[2].Y) + c[1].Y) + c[3].Y) * 0.25f;
-        return c.OrderBy(p => MathF.Atan2(p.Y - cy, p.X - cx)).ToArray();
+        var sorted=SortCornersClockwise(corners);
+        return new(sorted[0],sorted[3],sorted[1],sorted[2]); // Native integer word copies; no arithmetic.
+    }
+
+    // fidelity: M13-023 - S1-S6, including literal unordered comparison branches.
+    internal static Point2f[] SortCornersClockwise(Point2f[] c)
+    {
+        float cx = (((c[0].X+c[2].X)+c[1].X)+c[3].X)*0.25f;
+        float cy = (((c[0].Y+c[2].Y)+c[1].Y)+c[3].Y)*0.25f;
+        var keys = c.Select(p => MathF.Atan2(p.Y-cy,p.X-cx)).ToArray();
+        var order = SortFourAngles(keys);
+        return order.Select(index => c[index]).ToArray();
+    }
+    internal static int[] SortFourAngles(float[] keys)
+    {
+        var order = new[] {0,1,2,3};
+        bool Less(int right,int left) => keys[order[right]] < keys[order[left]];
+        void Swap(int x,int y) => (order[x],order[y])=(order[y],order[x]);
+        // __sort3 exact branch tree, then __sort4's adjacent insertion.
+        if (Less(1,0))
+        {
+            if (Less(2,1)) Swap(0,2);
+            else { Swap(0,1); if (Less(2,1)) Swap(1,2); }
+        }
+        else if (Less(2,1)) { Swap(1,2); if (Less(1,0)) Swap(0,1); }
+        for(int right=3;right>0 && Less(right,right-1);--right) Swap(right,right-1);
+        return order;
     }
 
     /// <summary><c>Robot::GetBoundingQuadXY(pose, padding)</c> 0x00514D74.</summary>

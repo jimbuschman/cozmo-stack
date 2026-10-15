@@ -429,13 +429,14 @@ public class M4AbortSleepTests
         path.StatusName = s => $"status{s}";
         path.PlannerSlot10 = () => order.Add("planner+0x10");
         path.Field47 = true; path.Field46 = true;
-        path.SharedPath = new object();
+        path.SharedPath = new PathGoalIndex { Value=9 };
         path.Field42 = 0x1234; path.Field4A = 0x0001;
         path.PlannerObjectsField0C = 7;
         path.ErasePathHook = id => order.Add($"erase:{id}");
         path.PathDolerClearPath = () => order.Add("doler");
         path.SetDriveToPoseStatusHook = s => order.Add($"status:{s}");
-        for (int i = 0; i < 3; i++) { int n = i; path.PlannerObjects.Add(() => { order.Add($"destroy{n}"); Assert.Equal(n, path.PlannerObjects.Count); }); }
+        for (int i=0;i<3;i++) path.PlannerObjects.Add(new Cozmo.Robot.Vision.Pose3d(i.ToString()));
+        path.PoseReleaseObservedForTest=pose=>{int n=int.Parse(pose.Name);order.Add($"destroy{n}");Assert.Equal(n,path.PlannerObjects.Count);};
         int mark = rig.Mark();
         int result = path.Abort();
         Assert.Equal(0, result);                       // ClearPath's send succeeded: Result 0
@@ -477,7 +478,7 @@ public class M4AbortSleepTests
     /// guess a result.
     /// </summary>
     [Fact]
-    public void M4_026_A3_TheBuiltStatusHelperRetainsTheMissingVizRecipient()
+    public void M4_026_A3_TheBuiltStatusHelperAndErasePathSendNoVizMessage()
     {
         using var rig = new Rig();
         rig.ToSynced();
@@ -488,7 +489,7 @@ public class M4AbortSleepTests
         var lines = rig.LogLines();
         Assert.Equal(4,path.DriveToPoseStatus);
         Assert.DoesNotContain(lines,l=>l.StartsWith("MISSING: PathComponent::SetDriveToPoseStatus 0x006492C4"));
-        Assert.Equal(1, lines.Count(l => l.StartsWith("MISSING: VizManager::ErasePath 0x006BFACE")));
+        Assert.DoesNotContain(lines,l=>l.StartsWith("MISSING: VizManager::ErasePath 0x006BFACE"));
     }
 
     // ------------------------------------------------------------------------------------------------ M4-027

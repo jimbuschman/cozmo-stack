@@ -271,6 +271,7 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     /// <summary>RemoveKeepFaceAlive(dur) (L7, 0x0058CFAC..0x0058CFBE): RemovePersistentLayer(dart tag, dur), tag = 0.</summary>
     public void RemoveKeepFaceAlive(int dur)
     {
+        if (DartTag == 0) return; // OV07 E5: manager+1C guard precedes removal.
         RemovePersistentLayer(DartTag, dur);
         DartTag = 0;
     }
@@ -793,6 +794,11 @@ internal sealed class TrackLayerComponent
         else face.Combine(use);
         return true;
     }
+
+    // fidelity: M13-021 - OV07 wrapper delegates to the existing checked M5 generator/layer owner.
+    internal void AddEyeShift(ref byte tag,string name,float x,float y,uint duration,float xMax,float yMax,float up,float down,float outer) =>
+        Face.AddOrUpdateEyeShift(ref tag,name,x,y,duration,xMax,yMax,up,down,outer);
+    internal void RemoveEyeShift(byte tag,int duration) => Face.RemovePersistentLayer(tag,duration);
 
     /// <summary>InitStream's RemoveKeepFaceAlive(99) and the other removal callers (L7).</summary>
     public void RemoveKeepFaceAlive(int dur) => Face.RemoveKeepFaceAlive(dur);

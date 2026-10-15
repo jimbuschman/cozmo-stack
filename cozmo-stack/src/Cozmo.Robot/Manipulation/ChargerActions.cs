@@ -526,32 +526,54 @@ public sealed class MountChargerAction
     }
 
     /// <summary>
-    /// What <see cref="TurnInPlaceAction"/> reads from the live robot (M13-022's <c>IPanTiltRobot</c>). <c>MovementComponent::TurnInPlace</c>'s body is unread (M13-021), so the send is the
-    /// <c>SetBodyAngle</c> message the turn path of this stack already builds (<see cref="TurnTowardsPose.Message"/>, M11-014), with the shared action-id counter (M4-005).
+    /// Live turn inputs and checked MovementComponent wrappers (M13-021/022). State and face-layer mutations share the scheduler gate;
+    /// the pose read uses the existing pose-tree gate. Persistent turn-eye creation remains BLOCKED on the missing checked destructor row.
     /// </summary>
-    internal sealed class LivePanTiltRobot : IPanTiltRobot, INativeMotorAckSource
+    internal sealed class LivePanTiltRobot : IPanTiltRobot, INativeMotorAckSource, INativePanTiltServices
     {
         public IDisposable SubscribeMotorAck(Action<byte> callback) => _m.Robot.Engine.Robot!.SubscribeMessage(
             RobotMessageId.MotorActionAck, m => callback(((MotorActionAck)m).ActionId), "TurnAction");
 
         private readonly ManipulationSystem _m;
         public LivePanTiltRobot(ManipulationSystem m) => _m = m;
+        public object StateGate => _m.Robot.Animations.NativeLayerGate;
+        public SourceLogSink SourceLog => (level,channel,key,text) => _m.Robot.Engine.EmitSourceLog(level,channel,key,text);
+        public string OffTreadsName => Enum.GetName(_m.Robot.Sensors.OffTreadsState) ?? "(null)";
+        public void RemoveKeepFaceAlive(int duration) => _m.Robot.Animations.WithTrackLayers(layers => layers.RemoveKeepFaceAlive(duration));
+        public byte AddEyeShift(byte tag, float x)
+        {
+            _m.Robot.Animations.WithTrackLayers(layers => layers.AddEyeShift(ref tag,"TurnInPlaceEyeDart",x,0,132,64,128,
+                BitConverter.Int32BitsToSingle(0x3F8CCCCD),BitConverter.Int32BitsToSingle(0x3F59999A),BitConverter.Int32BitsToSingle(0x3DCCCCCD)));
+            return tag;
+        }
+        public void RemoveEyeShift(byte tag, int duration) => _m.Robot.Animations.WithTrackLayers(layers => layers.RemoveEyeShift(tag,duration));
         public bool OnTreads => _m.Robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
-        public uint OriginId => _m.Robot.Engine.Robot?.CurrentOriginId ?? 0;
-        public float PoseAngleAroundZ => _m.RobotPose() is { } p ? (float)p.AngleAroundZ : 0f;
+        public uint OriginId => _m.Robot.Engine.Robot?.PoseFrameId ?? 0;
+        public float PoseAngleAroundZ
+        {
+            get
+            {
+                var native=_m.Robot.Engine.Robot;
+                if(native is null){SteppedBehavior.ReportMissing("M13-022 Robot::GetPose 0x004EA398 has no native owner; host turn pose input is unavailable");return 0;}
+                float angle=0;
+                LogCallbackDeferral.RunGated(native.PoseTreeGate,()=>
+                {
+                    using var logs=Pose3d.UseSourceLog(SourceLog,_m.Robot.Engine.Das.ForceFlushNow);
+                    _ = native.GetCheckedMainPose(); // Preserve the checked source VERIFY calls.
+                    SteppedBehavior.ReportMissing("M11-066/M13-022 Robot::GetPose yaw at 0x005464C6 -> 0x004EA398: full live MainPose input binding is unbuilt; the constructor-owned node is not substituted for the existing labelled history-pose input");
+                    angle=_m.RobotPose() is {} pose ? (float)pose.AngleAroundZ : 0f;
+                });
+                return angle;
+            }
+        }
         public float HeadAngle => _m.Robot.Motion.HeadAngleRad;
         public bool BodyMoving => _m.Robot.Motion.BodyMoving;
         public bool HeadMoving => _m.Robot.Motion.HeadMoving;
 
-        public uint TurnInPlace(float targetRad, float speed, float accel, float toleranceRad, ushort numHalfRevolutions, bool isAbsolute, out byte actionId)
-        {
-            actionId = _m.Robot.Motion.NextActionId();
-            var msg = TurnTowardsPose.Message(targetRad, speed, accel, toleranceRad, numHalfRevolutions, isAbsolute, actionId);
-            return _m.Robot.SendMessage(msg, flush: true) ? 0u : PanTiltResult.SendMessageToRobotFailed;
-        }
-
+        public uint TurnInPlace(float targetRad, float speed, float accel, float toleranceRad, ushort numHalfRevolutions, bool isAbsolute, out byte actionId) =>
+            _m.Robot.Motion.TurnInPlace(targetRad, speed, accel, toleranceRad, numHalfRevolutions, isAbsolute, out actionId);
         public uint MoveHeadToAngle(float angleRad, float speed, float accel, float durationSec, out byte actionId) =>
-            throw new NotSupportedException("The mount sends its head move through CozmoMotion.SetHeadAngleAsync (M4); MovementComponent::MoveHeadToAngle's body is unread (M13-021).");
+            _m.Robot.Motion.MoveHeadToAngle(angleRad, speed, accel, durationSec, out actionId);
     }
 }
 

@@ -1108,7 +1108,7 @@ public sealed partial class EngineRobot
         // (0x00513558), format "Robot %d failed to send a message type %s" (0x0051356C), with Robot+0x10 (the
         // robot id) and EngineToRobotTagToString(tag) (0x007AF8D0, the catalog's CLAD member name).
         string tag = MessageCatalog.ById.TryGetValue(m.Id, out var info) ? info.Member : what;
-        Engine.EmitEngineLog(EngineLogLevel.Warning, null, "Robot.SendMessage", $"Robot {CozmoEngine.RobotId} failed to send a message type {tag}",
+        Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.SendMessage", $"Robot {CozmoEngine.RobotId} failed to send a message type {tag}",
             new Dictionary<string, string> { ["$data"] = tag });
         return false;
     }

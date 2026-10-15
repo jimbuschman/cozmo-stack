@@ -52,7 +52,10 @@ public sealed class TurnTowardsPoseAction
         var robot = latest.Value.RobotPose;
         var env = new TurnTowardsPoseEnv(robot, latest.Value.HeadAngleRad,
             p => TurnTowardsPose.ComputeHeadAngleToSeePose(_v.Calibration, p, TurnTowardsPoseCompound.SeePoseToleranceRad, out var seen, _v.LogLine) == 0 ? seen : null,   // Robot::ComputeHeadAngleToSeePose(pose, &rad, 0.01f); non-zero is the engine's failure result
-            null, null, _v.LogLine);
+            null, null, _v.LogLine,
+            (level,channel,key,text)=>_v.Robot.Engine.EmitSourceLog(level,channel,key,text),
+            _v.Robot.Engine.Robot is {} native ? native.GetNativeOrigin(native.CurrentOriginId) : null,
+            _v.Robot.Engine.Das.ForceFlushNow);
         uint r = _compound.InitPose(env, out _);
         RelativeTurnRad = _compound.PanAngleRad;
         if (r == 0 && !_compound.Byte0x179) HeadAngleRad = _compound.HeadAngleRad;
