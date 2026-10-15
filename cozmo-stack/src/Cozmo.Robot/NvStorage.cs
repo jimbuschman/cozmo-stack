@@ -262,7 +262,6 @@ public sealed class NvStorageComponent : IDisposable
         using var logEmission = new LogEmission(this);
         _robot = robot;
         ConstructedSetStateLocked();
-        robot.Message += OnMessage;
         // InitSizeTable 0x00643B48..0x00643CE0: log successor differences in the static tree.
         // DE000/DE030 are inserted after the first walk; later constructors walk them too,
         // before DE030's value is overwritten by the factory-block rule at 0x00643CE0.
@@ -1038,6 +1037,7 @@ public sealed class NvStorageComponent : IDisposable
     // fidelity: M3-038, M15-033 — the checked NV D0 at Robot+0x260 also runs on shutdown without ResetDevices.
     internal void ReleaseForRobot()
     {
+        _rawSubscription?.Dispose(); _rawSubscription=null; // M2-020: +0x128 before queues/backup, 0x00643ED2..0x00643EF6.
         lock (_gate) DestroyLocked();
         _robot.Engine.Backup?.Dispose(); _robot.Engine.Backup = null;
     }
@@ -1046,7 +1046,13 @@ public sealed class NvStorageComponent : IDisposable
     // SetState(0) line belongs to the next robot's component, which OnDisconnected stands in for.
     private void DestroyLocked() { _onIdle.Clear(); _queue.Clear(); _inFlight = null; ResetSavedToConstructed(); _readTag = 0x198000; _readPending = false; }
 
-    private void OnMessage(RobotMessage m) { if (m is NVOpResult r) OnResult(r); }
+    private RetainedSubscription? _rawSubscription;
+    // fidelity: M2-020 — CD belongs to NVStorage, not the public host endpoint.
+    internal void AttachRobot(EngineRobot robot)
+    {
+        var next=robot.SubscribeMessage(new NVOpResult().Id,m=>OnResult((NVOpResult)m),"NVStorage");
+        RetainedSubscription.Replace(ref _rawSubscription,next);
+    }
 
     private readonly record struct Completion(Action<NvResult>? Callback, NvResult Result, List<NVStorageOpResult>? Broadcasts, bool ReadCallback, uint Tag, PendingRequest Request, uint NameTag, byte Op);
 
@@ -1397,7 +1403,6 @@ public sealed class NvStorageComponent : IDisposable
     public void Dispose()
     {
         using var logEmission = new LogEmission(this);
-        _robot.Message -= OnMessage;
         ReleaseForRobot();
     }
 }

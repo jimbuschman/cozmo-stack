@@ -2910,9 +2910,11 @@ public class M3DeviceTests
         rig.ToSuccess();
         DrainCalibrationRead(rig);
         var nv = rig.Robot.Engine.NvStorage!;
-        nv.OnDisconnected();
-        rig.Data(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[3] });
-        rig.Tick();
+        // Rebuild the Robot through its actual constructor so NV's new CD handle exists.
+        // Resetting old state alone intentionally no longer leaves the destroyed native handle installed (M2-020).
+        rig.Robot.Engine.Robots.RemoveRobot(CozmoEngine.RobotId,wasConnecting:false);
+        rig.Robot.Engine.Robots.AddRobot(CozmoEngine.RobotId,withRic:false);
+        rig.Robot.Engine.Broadcast(new NVOpResult { Tag = 0x182000, Op = 0, Result = 0, Length = 0, Data = new byte[3] });
         Assert.Contains("warning: NVStorageComponent.HandleNVOpResult.AckdTagNeverRequested: Tag recvd: 0x182000, BaseTag: 0x182000, " +
                         "ExpectedBaseTag: 0x198000 (pending 0), BlobSize: 3, result: NV_OKAY", nv.Log);
     }

@@ -135,9 +135,14 @@ public static class BehaviorConfigLoader
     /// The files are read as jsoncpp reads them: comments and trailing commas are tolerated.
     /// </summary>
     public static Dictionary<BehaviorID, JsonElement> Load(string obbRoot, Action<string>? log = null, SourceLogSink? sourceLog = null)
+        => LoadDirectory(DirectoryFor(obbRoot), log, sourceLog);
+
+    internal static Dictionary<BehaviorID, JsonElement> LoadResources(string resourcesRoot, Action<string>? log, SourceLogSink? sourceLog)
+        => LoadDirectory(Path.Combine(resourcesRoot, RelativeDirectory), log, sourceLog);
+
+    private static Dictionary<BehaviorID, JsonElement> LoadDirectory(string dir, Action<string>? log, SourceLogSink? sourceLog)
     {
         var map = new Dictionary<BehaviorID, JsonElement>();
-        var dir = DirectoryFor(obbRoot);
         if (!Directory.Exists(dir)) return map;
         var options = new JsonDocumentOptions { CommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
         foreach (var path in Directory.EnumerateFiles(dir, "*.json", SearchOption.AllDirectories).OrderBy(x => x, StringComparer.Ordinal))

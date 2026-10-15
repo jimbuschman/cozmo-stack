@@ -1130,6 +1130,7 @@ bool requireCalibration = true)
         // fidelity: M4-027 — 0x00633FF8..0x00634014: null logger delete, then deque storage.
         lifetime.Bind(0x288, _ => { }); // managed deque/no native logger owner.
         lifetime.Bind(-3, _ => AbortAll(robot));
+        lifetime.Bind(0x5C, _ => Path.DestroyRawOwner(robot));
         lifetime.Bind(0x450, _ => _robot.Cubes.DestroyTapFilter());
         lifetime.Bind(0x278, _ => _robot.CubeAccel.ResetToConstructed());
         lifetime.Bind(0x274, _ => _robot.Lights.Body.ResetToConstructed());
@@ -1389,7 +1390,8 @@ bool requireCalibration = true)
             // fidelity: M4-016
             // L11 (0x0054D138..0x0054D15A): ~MoveLiftToHeightAction releases its MotorActionAck subscription (+0xA0) first, then
             // tails to the IActionRunner destructor (the stop and unlock tail, the watcher's ActionEnding).
-            if (!IsHead) Owner.ReleaseAckSubscription(this);
+            // M2-020: head +0xB4 is also released before the base tail (0x005484B4..0x005484C4).
+            Owner.ReleaseAckSubscription(this);
             base.WatcherEnding();
             Owner.ActionEnded(this);
         }

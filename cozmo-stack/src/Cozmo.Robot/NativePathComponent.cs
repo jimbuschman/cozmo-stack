@@ -39,7 +39,14 @@ internal sealed partial class PathComponent
     internal Action? RejiggerInput;
     internal uint ParamsOrigin {get=>PlannerObjectsField0C;set=>PlannerObjectsField0C=value;}
     private RetainedSubscription? _pathSubscription;
-    internal void Attach(EngineRobot owner){_pathSubscription?.Dispose();_pathSubscription=owner.SubscribeMessage(new PathFollowingEvent().Id,m=>owner.ActionList.WithGate(()=>OnPathEvent((PathFollowingEvent)m)),"Path");}
+    internal void Attach(EngineRobot owner){RetainedSubscription.Replace(ref _pathSubscription,owner.SubscribeMessage(new PathFollowingEvent().Id,m=>owner.ActionList.WithGate(()=>OnPathEvent((PathFollowingEvent)m)),"Path"));}
+    // fidelity: M2-020 — destructor Abort precedes C6 release, 0x00649006..0x0064900A.
+    internal void DestroyRawOwner(EngineRobot robot)
+    {
+        Abort(robot.SendChecked);
+        _pathSubscription?.Dispose();_pathSubscription=null;
+        Behavior.SteppedBehavior.ReportMissing("M2-020 PathComponent destructor after C6 release 0x0064900A: remaining planner/doler destruction at this lifetime point is not built; existing managed reset remains separate");
+    }
     private PathGoalIndex? _goalIndex;
     internal int PlannerStatus => _nativePlanners?.Current?.CheckPlanningStatus??_plan?.Status??1;
     private void ModelGap(){if(_nativePlanners?.Current is null)_modelMissing?.Invoke("M13-033 native lattice inputs unavailable; legacy model remains a labelled candidate");}

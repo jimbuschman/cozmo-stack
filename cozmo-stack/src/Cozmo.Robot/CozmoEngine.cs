@@ -1537,6 +1537,7 @@ internal sealed class RobotInitialConnection
         ResponseSent = true;
         for (int i = _mfgId.Count - 1; i >= 0; i--) { _mfgId[i].Active = false; _mfgId[i].Handle?.Dispose(); }
         for (int i = _handles.Count - 1; i >= 0; i--) { _handles[i].Active = false; _handles[i].Handle?.Dispose(); }
+        _mfgId.Clear(); _handles.Clear(); // M2-020: native vector clear retains capacity, not its callable owners.
         _engine.BroadcastConnectionResponse(new RobotConnectionResponse(result, fw, Serial, BodyHwVersion, BodyColor));
     }
 
@@ -2052,7 +2053,11 @@ public sealed partial class CozmoEngine : IDisposable
     /// The needs edge <see cref="ConnectToRobotHandled"/> is raised after AddRobot in both the failed and the
     /// success path (M15-016, J13).
     /// </summary>
-    public void ConnectToRobot(IPAddress ip, bool isSimulated = false) => Post(() =>
+    public void ConnectToRobot(IPAddress ip, bool isSimulated = false)
+    {
+        // fidelity: M2-021 — host/app input, not a native ConnectToRobot state gate.
+        if (!HostBehaviorMapLoaded) throw new InvalidOperationException("M2-021: load the host behavior map before connecting.");
+        Post(() =>
     {
         if (Robots.RobotExists(RobotId)) { EmitStackLog("info: Robot already connected"); return; }
         Rcm.Connect(ip, isSimulated);
@@ -2066,6 +2071,21 @@ public sealed partial class CozmoEngine : IDisposable
         if (handled is not null) foreach (var t in handled.GetInvocationList()) Isolated((Action)t);
         Das.Pause(true); // fidelity: M3-055 — 0x004ED114, after the needs edge at0x004ED10A.
     });
+    }
+
+    // fidelity: M2-021 — the app waits for completed loading (including LoadBehaviors) before connecting.
+    internal bool HostBehaviorMapLoaded { get; private set; }
+    internal IReadOnlyDictionary<Behavior.BehaviorID,System.Text.Json.JsonElement>? HostBehaviorMap { get; private set; }
+    internal void LoadHostBehaviorMap(bool fixture)
+    {
+        if (Options.ResourcesPath is null && !fixture)
+            throw new InvalidOperationException("M2-021: production requires a resources path to load the behavior map before connecting.");
+        HostBehaviorMap = Options.ResourcesPath is { } resources
+            ? Behavior.BehaviorConfigLoader.LoadResources(resources, EmitStackLog, (level,channel,key,text)=>EmitSourceLog(level,channel,key,text))
+            : new Dictionary<Behavior.BehaviorID,System.Text.Json.JsonElement>(); // Explicit empty offline/test corpus.
+        HostBehaviorMapLoaded = true; // A failed loader never publishes readiness.
+    }
+    internal Action<EngineRobot>? BindCubeMessageOwners;
 
     // fidelity: M1-051, M1-052
     // SDK mode is not supported (AGENTS.md "Scope: the app boundary"): it is never entered here, so the engine's SDK
@@ -2167,7 +2187,10 @@ public sealed partial class CozmoEngine : IDisposable
         // fidelity: M1-046
         robot?.DeliverMessage(m);
         // All native subscribers, including the RIC, are on the robot's per-tag signal.
-        // No native registration uses the 0x1CF signal; the host endpoint follows synchronous native delivery.
+        // fidelity: M2-020 — native wildcard ID is 0x101CF (0x0069D004..0x0069D00E).
+        // The lookup after the own-robot signal (0x0069DE66..0x0069DE74) always misses: no registration uses it.
+        // ProcessMessages supplies the only constructed robot ID, 1. The all-signals branch is unreachable,
+        // so it is deliberately not implemented. The host endpoint follows synchronous native delivery.
         if (PublicRoute is { } p) Isolated(() => p(m));
     }
 

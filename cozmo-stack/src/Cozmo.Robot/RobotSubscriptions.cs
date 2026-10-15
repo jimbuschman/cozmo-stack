@@ -13,6 +13,9 @@ internal sealed class RetainedSubscription : IDisposable
     private int _owners = 1;
     internal RetainedSubscription(Action unsubscribe) => _unsubscribe = unsubscribe;
     internal RetainedSubscription Retain() { ++_owners; return this; }
+    // fidelity: M2-020 — shared slot assignment: new Subscribe has already appended before old release.
+    internal static void Replace(ref RetainedSubscription? slot, RetainedSubscription next)
+    { var old=slot;slot=next;old?.Dispose(); }
     public void Dispose()
     {
         if (_owners == 0 || --_owners != 0) return;
@@ -30,10 +33,13 @@ internal sealed class SubscriptionSignal<T>
     {
         internal Action<T>? Callback;
         internal Node Next = null!, Prev = null!;
+        internal bool Linked=true;
+        internal int EmitReferences;
     }
+    internal Action? UndefinedTail;
     private readonly Dictionary<int, Node> _signals = new();
     private readonly object _gate = new();
-    internal RetainedSubscription Subscribe(int tag, Action<T> callback)
+    internal RetainedSubscription Subscribe(int tag, Action<T> callback, Action? unlinked = null)
     {
         Node node;
         lock (_gate)
@@ -51,9 +57,11 @@ internal sealed class SubscriptionSignal<T>
             {
                 if (node.Callback is null) return;
                 node.Callback = null;
+                node.Linked=false;
                 node.Prev.Next = node.Next; node.Next.Prev = node.Prev;
                 // Removed nodes retain their OWN links, including a currently executing node.
             }
+            unlinked?.Invoke(); // Test observer only, outside the storage gate.
         });
     }
     internal void Deliver(int tag, T message)
@@ -63,9 +71,23 @@ internal sealed class SubscriptionSignal<T>
         while (node != sentinel)
         {
             Action<T>? callback;
-            lock (_gate) callback = node.Callback;
-            callback?.Invoke(message); // External callouts never hold the storage lock.
-            lock (_gate) node = node.Next;
+            lock (_gate) { ++node.EmitReferences; callback = node.Callback; }
+            try { callback?.Invoke(message); } // External callouts never hold the storage lock.
+            catch { lock(_gate)--node.EmitReferences; throw; }
+            bool undefined;
+            lock (_gate)
+            {
+                var next=node.Next;
+                undefined=next!=sentinel&&!next.Linked&&next.EmitReferences==0;
+                --node.EmitReferences;node=next;
+            }
+            if(undefined)
+            {
+                // fidelity: M1-034, M2-020 — detached current.next names freed storage, not a defined skip.
+                if(UndefinedTail is {} skip)skip();
+                else Behavior.SteppedBehavior.ReportMissing("M1-034 / M2-020: native freed successor 0x0069E294..0x0069E29A; skipped remaining emit tail");
+                return;
+            }
         }
     }
 }
@@ -75,6 +97,7 @@ internal sealed class SubscriptionOwners
 {
     private readonly List<RetainedSubscription> _handles = new();
     internal void Add(RetainedSubscription handle) => _handles.Add(handle);
+    internal void AddFirst(RetainedSubscription handle) => _handles.Insert(0, handle);
     internal void Retire()
     {
         // U1: vector end -= 8 before __release_shared, 004EAEA2..004EAEBA.
@@ -87,7 +110,7 @@ public sealed partial class EngineRobot
 {
     private readonly SubscriptionSignal<RobotMessage> _robotMessages = new();
     private readonly SubscriptionSignal<byte> _idleMessages = new();
-    private readonly SubscriptionOwners _messagingHandles = new(), _idleHandles = new();
+    private readonly SubscriptionOwners _messagingHandles = new(), _idleHandles = new(), _traceHandles = new();
     private bool _lastStateHandled;
     private readonly HashSet<RobotMessageId> _implTags = new();
 
@@ -96,19 +119,20 @@ public sealed partial class EngineRobot
     // fidelity: M1-046
     private void InitSubscriptions()
     {
+        _robotMessages.UndefinedTail=()=>Engine.EmitStackLog("M1-034 / M2-020: native freed successor 0x0069E294..0x0069E29A; skipped remaining emit tail");
+        Behavior.SteppedBehavior.ReportMissing("M2-020 native PlayAnimationAction CA/CB/D5 and IDockAction +0xE4/DA/C5 owner/re-Init wiring is not built; current animation/dock host lifecycles do not supply those native owner slots. Dev-behavior container destruction points and TracePrinter B0/CF callback bodies remain unbuilt; their native release rows do not establish those surrounding lifecycles");
         // Idle is constructed before Messaging. The C# host API supplies the
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));
         InitCheckedDevSubscribers();
         Engine.PathComponentConstructed?.Invoke(this); // M12-032: the component owns its one first C6 subscription.
         // Backup is the first C9 subscriber, constructed with NVStorage before Impl.
-        AddMessage(RobotMessageId.RobotAvailable, m => Engine.Backup?.Files.RobotConnected(((RobotAvailable)m).SerialNumberHead), "Backup");
-        AddMessage(new ObjectAccel().Id, m => Engine.CubeAccelRoute?.Invoke(m), "CubeAccel");
-        AddMessage(RobotMessageId.ActiveObjectMoved, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");
-        AddMessage(RobotMessageId.ActiveObjectStopped, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");
+        Engine.Backup?.AttachRobot(this);
+        Engine.NvStorage?.AttachRobot(this);
+        Engine.BindCubeMessageOwners?.Invoke(this);
         AddMessage(RobotMessageId.SyncTimeAck, _ => HandleSyncTimeAck());
         AddMessage(RobotMessageId.State, m => _lastStateHandled = UpdateFullRobotState((RobotState)m));
-        AddMessage(RobotMessageId.CrashReport, _ => TracePrinterOnCrashReport());
+        AddMessage(RobotMessageId.CrashReport, _ => TracePrinterOnCrashReport(), "TracePrinter", owners:_traceHandles);
         AddMessage(RobotMessageId.AnimState, m => HandleAnimationState((AnimationState)m));
         // fidelity: M3-055 — HandleRobotSetHeadID 0x5367D8 and HandleRobotSetBodyID 0x536FF0.
         AddMessage(RobotMessageId.RobotAvailable, m =>
@@ -147,29 +171,33 @@ public sealed partial class EngineRobot
         AddMessage(RobotMessageId.ImuRawDataChunk, m => _imuLog.HandleImuRawData((IMURawDataChunk)m));
         // L35/I9: ~Messaging releases the subscription vector (0x00532A48), then the filebuf destructor closes the IMU
         // stream (0x00532A64 -> 0x005010B4 -> close 0x0050111C): sync, fclose, no ClosingLogFile diagnostic.
-        Lifetime.Bind(0x518, _ => { _messagingHandles.Retire(); _imuLog.Destroy(); });
+        Lifetime.Bind(0x518, _ => { _traceHandles.Retire(); _messagingHandles.Retire(); _imuLog.Destroy(); });
         // Only the existing live device handlers are bridged here. No subscriber is invented for an unported tag.
         RobotMessage[] deviceMessages = { new ObjectMoved(), new ObjectStoppedMoving(), new ObjectTapped(),
             new ObjectConnectionState(), new ObjectPowerLevel(), new ObjectUpAxisChanged(), new ObjectAvailable(),
             new DefaultCameraParams(), new ImageChunk(), new ImageImuData(), new CliffEvent(), new PotentialCliff(),
             new RobotStopped(), new FallingStarted(), new FallingStopped(), new MotorCalibration() };
         foreach (var tag in deviceMessages.Select(m => m.Id))
-            if (!_implTags.Contains(tag)) AddMessage(tag, _ => { },(byte)tag==0xB6?"BlockTapFilter":"Impl", routeDevice:true);
+            if ((byte)tag!=0xB6 && !_implTags.Contains(tag)) AddMessage(tag, _ => { },"Impl", routeDevice:true);
     }
     private ImuDiagnosticLog _imuLog = null!;
     internal ImuDiagnosticLog ImuLog => _imuLog;
-    private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback, string name = "Impl", bool routeDevice = false)
+    private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback, string name = "Impl", bool routeDevice = false, SubscriptionOwners? owners = null)
     {
         if (name == "Impl") _implTags.Add(tag);
-        _messagingHandles.Add(SubscribeMessage(tag, m =>
+        (owners ?? _messagingHandles).Add(SubscribeMessage(tag, m =>
         {
             callback(m);
             if (name == "Impl" || routeDevice) Engine.DeviceRoute?.Invoke(m, _lastStateHandled);
         }, name));
     }
     internal RetainedSubscription SubscribeMessage(RobotMessageId tag, Action<RobotMessage> callback, string name)
-        => _robotMessages.Subscribe((int)tag, m => Engine.DeliverIsolated(() =>
-        { Engine.MessageDispatchObservedForTest?.Invoke(tag, name); callback(m); }));
+    {
+        var weakEngine=new WeakReference<CozmoEngine>(Engine);
+        return _robotMessages.Subscribe((int)tag, m => Engine.DeliverIsolated(() =>
+        { Engine.MessageDispatchObservedForTest?.Invoke(tag, name); callback(m); }),
+        ()=>{if(weakEngine.TryGetTarget(out var engine))engine.MessageSubscriptionReleasedForTest?.Invoke(tag,name);});
+    }
     internal bool DeliverMessage(RobotMessage message)
     {
         _lastStateHandled = message is not RobotState;
@@ -181,5 +209,6 @@ public sealed partial class EngineRobot
 
 public sealed partial class CozmoEngine
 {
+    internal Action<RobotMessageId,string>? MessageSubscriptionReleasedForTest;
     internal void DeliverIsolated(Action callback) => Isolated(callback);
 }

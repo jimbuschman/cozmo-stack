@@ -350,8 +350,8 @@ public sealed class CozmoCubes
     // fidelity: M4-027
     /// <summary>
     /// The tap filter's deletion at 0x005111EA..0x00511224 (T1): the ObjectTapped list (+0x2C) and the DoubleTapInfo tree (+0x20)
-    /// are destroyed, silently (no broadcast, no log); the shared filter and the subscription vector are not state of this
-    /// stack. Run by the Robot's Lifetime slot 0x450 (<see cref="CozmoMotion.BindRobotLifetime"/>).
+    /// are destroyed, silently (no broadcast, no log), then its retained subscription vector is retired.
+    /// Run by the Robot's Lifetime slot 0x450 (<see cref="CozmoMotion.BindRobotLifetime"/>).
     /// </summary>
     internal void DestroyTapFilter()
     {
@@ -360,6 +360,15 @@ public sealed class CozmoCubes
             _tapQueue.Clear();
             _doubleTaps.Clear();
         }
+        _tapSubscriptions.Retire(); // M2-020: the component owns B6/B4/B5, not Impl.
+    }
+    private readonly SubscriptionOwners _tapSubscriptions = new();
+    // fidelity: M2-020 — retain the same per-tag registration point, in the component's owner vector.
+    internal void AttachRobot(EngineRobot robot)
+    {
+        _tapSubscriptions.Add(robot.SubscribeMessage(new ObjectTapped().Id,m=>_robot.Engine.DeviceRoute?.Invoke(m,true),"BlockTapFilter"));
+        _tapSubscriptions.Add(robot.SubscribeMessage(RobotMessageId.ActiveObjectMoved,m=>_robot.Engine.TapFilterRoute?.Invoke(m),"BlockTapFilter"));
+        _tapSubscriptions.Add(robot.SubscribeMessage(RobotMessageId.ActiveObjectStopped,m=>_robot.Engine.TapFilterRoute?.Invoke(m),"BlockTapFilter"));
     }
 
     /// <summary>Whether the tap filter is on (+0x18).</summary>

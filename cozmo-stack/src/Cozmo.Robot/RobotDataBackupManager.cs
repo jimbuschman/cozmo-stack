@@ -15,6 +15,9 @@ internal sealed class RobotDataBackupManager : IDisposable
     private readonly Dictionary<uint,Queue<byte[]>> _pending = new();
     private readonly SubscriptionOwners _handles = new();
     internal uint PendingCount;
+    // fidelity: M2-020 — the native +8 vector starts with C9, then the three app handles.
+    internal void AttachRobot(EngineRobot robot) => _handles.AddFirst(robot.SubscribeMessage(
+        Cozmo.Protocol.RobotMessageId.RobotAvailable,m=>Files.RobotConnected(((Cozmo.Protocol.RobotAvailable)m).SerialNumberHead),"Backup"));
     internal byte Onboarding;
     internal bool CompletedOnboarding { get => Onboarding != 0; set => Onboarding = value ? (byte)1 : (byte)0; }
     private bool _failed, _disposed;

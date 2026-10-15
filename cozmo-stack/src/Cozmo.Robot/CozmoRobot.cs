@@ -293,6 +293,7 @@ public sealed partial class CozmoRobot : IDisposable
         Sensors = new CozmoSensors(this, State);
         Cubes = new CozmoCubes(this);
         CubeAccel = new CubeAccelStreams(this);
+        Engine.BindCubeMessageOwners = robot => { CubeAccel.AttachRobot(robot); Cubes.AttachRobot(robot); };
         Animations = new CozmoAnimations(this);
         Face = new CozmoFace(this);
         // fidelity: M3-017, M3-013
@@ -380,6 +381,7 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.BlockFilterInit = LoadBlockPool;
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
+        Engine.LoadHostBehaviorMap(fixture: transport is not null || port is not null);
     }
 
     private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _lightLoadingLogs = new();

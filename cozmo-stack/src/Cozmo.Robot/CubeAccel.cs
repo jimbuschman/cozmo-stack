@@ -101,6 +101,10 @@ public sealed class CubeAccelStreams
     private readonly Dictionary<uint, List<CubeShakeListener>> _listeners = new();
 
     internal CubeAccelStreams(CozmoRobot robot) => _robot = robot;
+    private readonly SubscriptionOwners _rawSubscriptions = new();
+    // fidelity: M2-020 — F5 is released by CubeAccel's own destructor/list clear.
+    internal void AttachRobot(EngineRobot robot) => _rawSubscriptions.Add(robot.SubscribeMessage(
+        new ObjectAccel().Id,m=>Handle(m),"CubeAccel"));
 
     /// <summary>The object ids whose accelerometer stream is on because something is listening.</summary>
     public IReadOnlyCollection<uint> Streaming { get { lock (_gate) return _listeners.Keys.ToList(); } }
@@ -141,6 +145,7 @@ public sealed class CubeAccelStreams
     /// </summary>
     internal void ResetToConstructed()
     {
+        _rawSubscriptions.Retire(); // 0x0063542A..0x0063542E, before history destruction.
         lock (_gate) _listeners.Clear();
     }
 

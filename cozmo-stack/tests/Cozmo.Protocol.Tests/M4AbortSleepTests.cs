@@ -86,6 +86,10 @@ public class M4AbortSleepTests
     // AbortAnimation 0x8D (A6), StopAllMotors 0x3B (A8). EnableAnimTracks is 0x9E (A10).
     private const string ClearPathHex = "3C0000", AbortDockingHex = "43", AbortAnimationHex = "8D", StopAllMotorsHex = "3B";
 
+    // B-M3M4-25 / M13-029: removal also reaches PathComponent::~PathComponent,
+    // 0x00649002 Abort, then C6 release 0x00649006..0x0064900A. This adds the final
+    // ClearPath after AbortAll; it is not a movement/light destructor side effect.
+
     // ------------------------------------------------------------------------------------------------ M4-026
 
     /// <summary>
@@ -102,7 +106,7 @@ public class M4AbortSleepTests
         rig.State();
         int mark = rig.Mark();
         Remove(rig);
-        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, StopAllMotorsHex }, rig.HexSince(mark));
+        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, StopAllMotorsHex, ClearPathHex }, rig.HexSince(mark));
         Assert.Contains(rig.LogLines(), l => l.StartsWith("info: [Planner] PathComponent.Abort: Aborting from status '"));
     }
 
@@ -121,7 +125,7 @@ public class M4AbortSleepTests
         _ = rig.Robot.Motion.DriveWheelsAsync(20f, 20f, confirmWithin: TimeSpan.FromMilliseconds(1), requireCalibration: false);
         int mark = rig.Mark();
         Remove(rig);
-        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, "9E04", StopAllMotorsHex }, rig.HexSince(mark));
+        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, "9E04", StopAllMotorsHex, ClearPathHex }, rig.HexSince(mark));
     }
 
     /// <summary>
@@ -176,7 +180,7 @@ public class M4AbortSleepTests
     /// <summary>
     /// M4-026 A1/A3/A4 with Robot::SendMessage's failure warning (0x00513558 channel "Robot.SendMessage", 0x0051356C "Robot %d failed to send a message type %s"):
     /// HandleDisconnectMessage clears the connection data before RemoveRobot (CC23), so every send of AbortAll fails and warns, in AbortAll's order:
-    /// ClearPath, AbortDocking, AbortAnimation, StopAllMotors. Nothing goes out on the wire.
+    /// ClearPath, AbortDocking, AbortAnimation, StopAllMotors, then the Path destructor ClearPath. Nothing goes out on the wire.
     /// </summary>
     [Fact]
     public void M4_026_A1_RemovalAfterTheLinkIsDownWarnsForEachFailedSend()
@@ -198,6 +202,7 @@ public class M4AbortSleepTests
             "warning: Robot.SendMessage: Robot 1 failed to send a message type abortDocking",
             "warning: Robot.SendMessage: Robot 1 failed to send a message type abortAnimation",
             "warning: Robot.SendMessage: Robot 1 failed to send a message type stop",
+            "warning: Robot.SendMessage: Robot 1 failed to send a message type clearPath", // M13-029: Path destructor Abort again.
         }, warnings);
     }
 
@@ -491,7 +496,7 @@ public class M4AbortSleepTests
     /// <summary>
     /// M4-027 T4/T8/T9/T18 (0x00511500..0x00511512, 0x00641CFC..0x00641D38): the Movement deleting destructor destroys the lock trees
     /// and calls no StopAllMotors, UnlockTracks or EnableAnimTracks. HEAD is held by another holder when the Robot is removed:
-    /// the messages are exactly AbortAll's four (the direct-drive flags are clear, so A7's gate keeps its helper calls away), no
+    /// the messages are AbortAll's four followed by Path destructor's ClearPath (the direct-drive flags are clear, so A7's gate keeps its helper calls away), no
     /// EnableAnimTracks follows, and afterwards nothing is locked.
     /// </summary>
     [Fact]
@@ -503,7 +508,7 @@ public class M4AbortSleepTests
         rig.Robot.Motion.LockTracks(1, "X");
         int mark = rig.Mark();
         Remove(rig);
-        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, StopAllMotorsHex }, rig.HexSince(mark));
+        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, StopAllMotorsHex, ClearPathHex }, rig.HexSince(mark));
         Assert.Equal(0, rig.Robot.Motion.LockedTracks);
     }
 
@@ -529,7 +534,7 @@ public class M4AbortSleepTests
     /// <summary>
     /// M4-027 T3/T15/T16/T24/T25 (0x0051143E..0x0051148C): the backpack and cube light components are deleted without a light-off
     /// send ("Weak release is not an explicit unsubscribe or a light-off send", the CurrentAnimInfo function objects are destroyed,
-    /// not invoked). A backpack pattern is playing when the Robot is removed: nothing but AbortAll's four messages goes out.
+    /// not invoked). A backpack pattern is playing when the Robot is removed: only AbortAll's four messages plus the Path destructor's ClearPath go out.
     /// </summary>
     [Fact]
     public void M4_027_T15_TheLightDestructorsSendNoLightOff()
@@ -540,7 +545,7 @@ public class M4AbortSleepTests
         rig.Robot.Lights.SetBackpack(LedColor.Red);
         int mark = rig.Mark();
         Remove(rig);
-        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, StopAllMotorsHex }, rig.HexSince(mark));
+        Assert.Equal(new[] { ClearPathHex, AbortDockingHex, AbortAnimationHex, StopAllMotorsHex, ClearPathHex }, rig.HexSince(mark));
     }
 
     /// <summary>
