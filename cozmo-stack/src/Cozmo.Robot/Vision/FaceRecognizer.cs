@@ -1,3 +1,4 @@
+using Cozmo.Transport;
 using Cozmo.Protocol;
 
 namespace Cozmo.Robot.Vision;
@@ -294,6 +295,28 @@ public sealed class FaceRecognizer
         {
             _common = okao.CreateCommon();
             _album = okao.CreateAlbum();
+        }
+    }
+
+    // fidelity: M11-055
+    internal SourceLogSink? SourceLog;
+    /// <summary>The checked album recipient of Shutdown, 0x0086286A..0x008628C6.</summary>
+    internal int Shutdown()
+    {
+        lock (_gate)
+        {
+            Behavior.SteppedBehavior.ReportMissing("M11-055 FaceRecognizer::Shutdown 0x00862852..0x00862866, 0x008628C6..0x00862982: native worker/merge-feature/feature ownership has no producer in the stack; only the owned album recipient is built");
+            if (_album is { } album)
+            {
+                if (_okao.DeleteAlbumHandle(album) != 0)
+                {
+                    SourceLog?.Invoke(EngineLogLevel.Error, null,
+                        "FaceRecognizer.Shutdown.FaceLibAlbumHandleDeleteFail", "");
+                    EngineErrorState.StoreAndMaybeBreak();
+                }
+                _album = null;
+            }
+            return 0;
         }
     }
 

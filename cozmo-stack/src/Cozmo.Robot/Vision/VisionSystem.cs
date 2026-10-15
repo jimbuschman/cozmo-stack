@@ -32,7 +32,7 @@ public sealed record VisionFrameResult(uint ImageId, uint Timestamp, VisionPoseD
 /// The engine refuses to run without a camera calibration; so does this. Frames arriving while one is being
 /// processed are dropped (the engine processes at most one image at a time as well).
 /// </summary>
-public sealed class VisionSystem : IDisposable
+public sealed partial class VisionSystem : IDisposable
 {
     private readonly CozmoRobot _robot;
     private readonly object _busy = new();
@@ -49,6 +49,7 @@ public sealed class VisionSystem : IDisposable
     public VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
         _robot = robot;
+        LifetimeProfiler.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
         Calibration = calibration;
         _constructedCalibration = calibration;
         Detector = detector ?? new MarkerDetector();
@@ -56,6 +57,7 @@ public sealed class VisionSystem : IDisposable
         // fidelity: M14-011
         Recognizer = new FaceRecognizer(okaoRecognizer ?? new OkaoFaceRecognizer());
         Recognizer.Log += l => Log?.Invoke(l);
+        Recognizer.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
         // fidelity: M11-041
         // The world keeps its own connected objects (BlockWorld::AddConnectedActiveObject, fed by ObjectConnectionState below), and
         // reads the carrying and treads state from the components that own them.
@@ -733,6 +735,11 @@ public sealed class VisionSystem : IDisposable
     /// <summary>The one pending image (VisionComponent's "next" slot, +0x74) and the removal epoch it arrived in.</summary>
     private (CameraFrame Frame, int Removal)? _next;
     private bool _processorRunning;
+    private Thread? _processorThread;
+    private volatile bool _processorRun = true;
+    // Native +0x4B has no shipped writer; internal input seam exercises its checked read.
+    internal volatile bool SkipProcessorPass;
+    private bool _disposed;
 
     /// <summary>The Processor thread's sleep between polls: <c>sleep_for(2,000,000 ns)</c> (0x001E8480 built at 0x00651FDA, called at 0x0065225E).</summary>
     // fidelity: M11-040
@@ -757,45 +764,82 @@ public sealed class VisionSystem : IDisposable
         if (!Enabled) return;
         lock (_mailbox)
         {
+            if (!_processorRun || _disposed) return;
             if (_next is { } pending)
             {
                 FramesDropped++;
                 Log?.Invoke($"VisionComponent.SetNextImage.DroppedFrame: Setting next image with t={f.Timestamp}, but existing next image from t={pending.Frame.Timestamp} not yet processed");
             }
             _next = (f, Volatile.Read(ref _removals));
-            if (_processorRunning) return;
-            _processorRunning = true;
+            if (_processorThread is not null) return;
+            _processorThread = new Thread(Processor) { IsBackground = true };
+            _processorThread.Start();
         }
-        Task.Run(Processor);
     }
 
-    /// <summary>
-    /// <c>VisionComponent::Processor</c> 0x00651F08: while there is a pending image, take it (0x0065201A..0x00652216), run
-    /// <c>UpdateVisionSystem</c> without holding the mailbox lock (0x0065222E), discard the pending slot (0x00652234..0x0065224C), sleep 2 ms
-    /// (0x0065225E). The engine's thread polls for as long as it runs; this worker leaves when the slot is empty at a poll and is started again
-    /// by the next hand-in, which a frame arriving in the sleep still finds (the loop re-checks after it).
-    /// </summary>
-    // fidelity: M11-040
+    // fidelity: M11-055, M11-040
+    // OV13 V2b: poll until +0x4A is cleared, skip on +0x4B, and sleep on every pass.
+    // Thread creation remains the host's lazy start; native Init/start is M11-059.
     private void Processor()
     {
-        while (true)
+        try
         {
-            (CameraFrame Frame, int Removal) taken;
-            lock (_mailbox)
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "VisionComponent.Processor",
+                "Starting Robot VisionComponent::Processor thread...");
+            Thread.CurrentThread.Name = "VisionSystem"; // pthread_self/setname_np, 0x00651F54..0x00651F5C
+            SteppedBehavior.ReportMissing("M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership");
+            while (_processorRun)
             {
-                if (_next is not { } n) { _processorRunning = false; Monitor.PulseAll(_mailbox); return; }
-                taken = n;
-                _next = null;
+                (CameraFrame Frame, int Removal)? taken = null;
+                lock (_mailbox)
+                {
+                    if (!SkipProcessorPass && _next is { } n)
+                    {
+                        taken = n;
+                        _next = null;
+                        _processorRunning = true;
+                    }
+                }
+                if (taken is { } frame)
+                {
+                    try { ProcessFrame(frame.Frame, frame.Removal); }
+                    catch (Exception e) { Log?.Invoke($"frame {frame.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
+                    finally
+                    {
+                        lock (_mailbox)
+                        {
+                            _next = null; // clear the slot after UpdateVisionSystem; latest arrivals are discarded
+                            _processorRunning = false;
+                            Monitor.PulseAll(_mailbox);
+                        }
+                    }
+                }
+                Thread.Sleep(ProcessorPollInterval);
             }
-            try { ProcessFrame(taken.Frame, taken.Removal); }
-            catch (Exception e) { Log?.Invoke($"frame {taken.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
-            lock (_mailbox) _next = null;                        // a frame that arrived meanwhile is discarded, not processed and not counted
-            Thread.Sleep(ProcessorPollInterval);
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "VisionComponent.Processor",
+                "Terminated Robot VisionComponent::Processor thread");
+        }
+        finally
+        {
+            lock (_mailbox) { _processorRunning = false; Monitor.PulseAll(_mailbox); }
         }
     }
     internal void WaitForProcessorIdle()
     {
-        lock (_mailbox) while (_processorRunning) Monitor.Wait(_mailbox);
+        lock (_mailbox) while (_processorRunning || (_processorRun && _next is not null)) Monitor.Wait(_mailbox);
+    }
+
+    // V1 then V2; imported join is represented by Thread.Join without a timeout.
+    private void StopProcessor()
+    {
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Unnamed",
+            "ImageBase.CloseAllDisplayWindows.NoDisplayOnAndroidOrIOS", "");
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Unnamed",
+            "ImageBase.CloseAllDisplayWindows.NoDisplayOnAndroidOrIOS", "");
+        Thread? thread;
+        lock (_mailbox) { _processorRun = false; thread = _processorThread; }
+        thread?.Join();
+        lock (_mailbox) { _next = null; Monitor.PulseAll(_mailbox); }
     }
 
     /// <summary>
@@ -1104,6 +1148,18 @@ public sealed class VisionSystem : IDisposable
 
     public void Dispose()
     {
+        lock (_disposeGate)
+        {
+            if (_disposed) return;
+            _disposed = true;
+        }
+        // Do not hold a host lock across join or callbacks on the worker's exit log.
+        StopProcessor();
+        // V3-V7 depend on native recipient ownership, not host reset/GC.
+        SteppedBehavior.ReportMissing("M11-055 V3-V7 0x00652580..0x00652718 / 0x006B1E92..0x006B2142: native VisionSystem/member ownership and recursive recipient teardown are not built; host subscriptions are detached after join");
+        Recognizer.Shutdown();
+        SteppedBehavior.ReportMissing("M11-055 Profiler timer producers/Tic/Toc and VisionSystem::Init PerformanceLogging binding 0x006B0E5C..0x006B0F2A are not built; native timer input boundary only, no host Stopwatch data substituted");
+        LifetimeProfiler.Dispose();
         if (_robot.Lights.DetachVisionSystem(this))
         {
             _robot.Lights.Cubes.IsLocalized = () => _robot.Sensors.OffTreads.Robot2C4 != 0;
