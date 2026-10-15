@@ -1,8 +1,8 @@
 {
   "subsystem": "M9-wwise-music",
-  "approved": "2026-10-14",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "8a36051b12e80d95809b70c215dff2f6b7c0be6badcdcc4973f5cb13c7a9f09d",
+  "inventory_sha256": "2ed784a57f2212b25d9c51b052727db9728e03b37c3d1b493801f99c2a7a525b",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -276,25 +276,27 @@
       "hardware_required": true
     },
     "M9-024": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Whether the note-off envelope stops the voice it is attached to",
       "authority": "statically linked Wwise runtime in libcozmoEngine.so",
       "evidence": [
         "0x009D552C..0x009D55F3",
         "0x009D5934..0x009D6598",
-        "0x009D7FC0..0x009D8137"
+        "0x009D7FC0..0x009D8137",
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: stop mechanics: vtables 0x0103B218 / 0x0103B288; predicate 0x009D552C..0x009D55F0; acquire 0x009D7FC0..0x009D8134; stop policy 0x009D7EA4..0x009D7F34 (default 1, 0x004DDF48); cleanup 0x009E21FC..0x009E24A8; retire 0x009E2510..0x009E2550; 0x009E2AE4..0x009E2BCC; PBI stop 0x00A01280..0x00A013A4, 0x00A35980..0x00A35994; fatal growth 0x009E3524..0x009E36C4 (M1-034)."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-025": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "The exact waveform produced by the Wwise LFO between its extrema",
       "authority": "statically linked Wwise runtime in libcozmoEngine.so",
       "evidence": [
         "0x009D671C..0x009D7727",
         "0x009D7FC0..0x009D8137",
-        "0x009E266C..0x009E2813"
+        "0x009E266C..0x009E2813",
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: state vtable 0x0103B268 (GOT 0x01040124); oscillator S+0x90..+0xA4; depth 0x009D67BC..0x009D6914; setter 0x009E203C..0x009E2138; coefficient/step/phase 0x009D7390..0x009D7724; geometry 0x009E1F5C..0x009E1FAC; evaluator 0x009E32FC..0x009E34A4, 0x009E4484..0x009E4548; mode 0 0x009E416C..0x009E4480, scalar from 0x009E4994; publication 0x009E45FC..0x009E464C, 0x009E3784..0x009E37F8."
       ],
       "live_path": true,
       "hardware_required": false
@@ -343,6 +345,46 @@
       "evidence": [
         "re-analysis/research/20261012-m5-settling-2.md: SetStreamingAnimation 0x0057B24E..0x0057B29A, the custom-song branch: CreateCustomSongAnimation, its info log, +0x38 = +0x3C (inventory row A7, \"NEW (M9 interface)\").",
         "re-analysis/research/20261012-m9-029-custom-song.md (Opus-checked 20/22 confirmed, 0 wrong): the branch gate is the customSong argument == 1 (0x0057B24E..0x0057B256); CreateCustomSongAnimation 0x0057A978..0x0057ABC0 clones the template, rebuilds RobotAudio from the +0x74 notes (table 0xC59B7C, 500 ms per beat unit), trims below 8000 ms; ReplaceNotesInSong (G2E 0xC4) handler 0x0057A890 is the only writer of +0x74; the only producer of the custom flag is PlayAnimationAction::Init remapping \"cozmo_sings_custom\" (0x00543F3A..0x00543F96; the only flag-setting caller of the pointer overload, BL scan); the only app sender of that name and of ReplaceNotesInSong is CodeLabGame.cs:2101..2117, inside internal SDK mode (CodeLabGame.cs:967)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-030": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise envelope initializer and timing: S+0x38 deadline from the modulator initializer, sustain time, evaluator phases",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: S+0x38 = parameter+8 set by initializer vt+0x18 0x009D5934 (0x009E27B0..0x009E27BC); initializer 0x009D5934..0x009D671C; 0x009E1D8C..0x009E1F54; sustain property 13 default -1.0."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-031": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise MIDI note-off release: voice-kind dispatch (0x00A3E920), kind computation (0x009EE174), PBI vt+0x1C loop break, PBI+0x38",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: note-off 0x00A3EA3C..0x00A3EB44 -> 0x00A3E920..0x00A3EA34 (PBI+0x38 = offset when PBI+0x34 null at 0x00A3E98C, else 0x009E805C; target vt+0x10; kind 2 -> 0x009FF5D0 (+0x1B8=1, 0x009D3558(4,PBI)); kind 3 -> A01280 with PBI+0x1F8 = offset; kinds 0/1 nothing); kind from 0x00A023D4..0x00A02444 via 0x009EE174..0x009EE220, 0x009FAEC4..0x009FAEE4 (property 0x2E default 1 at 0x004DE12C); flag mapping 0x009F6FE0..0x009F7010. Shipped: get-in 403781184 kind 0; 462443456 kind 2; 774902407 kind 1."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-032": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise modulator byte +0x44 writer (scalar vs buffered LFO output) for the shipped pitch-bound vibrato",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: writer 0x009E72DC..0x009E730C in 0x009E6EDC (sticky; set when [r7+0x24] != 1 and [r7+4] in {0,7}); consumer geometry 0x009E1F5C..0x009E1FAC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-033": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise engine sample-rate and frame-count globals used by the LFO (fixed 48000 step base)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: reads at 0x009E20A4 (attack x live sample rate) and 0x009E1F80 (frame count T); LFO step uses fixed 48000 (literals 0x009D7540, 0x009D7564)."
       ],
       "live_path": true,
       "hardware_required": false

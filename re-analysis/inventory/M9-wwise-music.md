@@ -419,3 +419,12 @@ The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample 
 | Change | Records |
 | --- | --- |
 | Dead-path evidence noted | M9-003 (note) |
+
+
+## Check of OV38-OV41 (manager, 2026-10-15; research/overnight/20261015-ov38-41-check.md)
+
+| Change | Records |
+| --- | --- |
+| Envelope stop mechanics, LFO mode 0: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M9-024, M9-025 |
+| Envelope timing, note-off voice kinds, byte +0x44, sample-rate globals: RECOVERABLE_GAP | M9-030, M9-031, M9-032, M9-033 (new) |
+| Notes | M9-013, M9-014, M9-012 (lead), M9-010 |

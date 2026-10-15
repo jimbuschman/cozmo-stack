@@ -173,7 +173,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M9-wwise-music.md",
-        "approved": "2026-10-14",
+        "approved": "2026-10-15",
         "snapshot": "re-analysis/inventory/M9-wwise-music.approved.json"
       }
     },
@@ -2945,7 +2945,7 @@
       "test": "WwiseSongTests.ALoopingSoundSoundsForAsLongAsTheNoteIsHeld",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
       "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
-      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. held-note length depends on PBI vt+0x1C for code-2 entries (unread); the engine replays the Sound recorded at note-on (0x00A3E6A8..0x00A3E728), the stack makes a fresh draw; the fade question is deferred to a comment; the test is circular.",
+      "unresolved": "Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. held-note length depends on PBI vt+0x1C for code-2 entries (unread); the engine replays the Sound recorded at note-on (0x00A3E6A8..0x00A3E728), the stack makes a fresh draw; the fade question is deferred to a comment; the test is circular. OV40 check (re-analysis/research/overnight/20261015-ov38-41-check.md): PBI vt+0x1C for code-2 entries is read (0x009FF5D0: loop count 1, notify 4); the path also runs 0x00A3E920 and the kind computation 0x009EE174, now M9-031.",
       "hardware_required": false
     },
     {
@@ -2983,7 +2983,7 @@
       "test": "WwiseModulatorTests.NoNodeInAnyShippedBankCouldHaveMidiNoteTrackingEnabled",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
       "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
-      "unresolved": null,
+      "unresolved": " OV38-41 check (re-analysis/research/overnight/20261015-ov38-41-check.md): LEAD, not a finding: the runtime note-tracking flag may be NodeBase +0x47 bits 2-3 (authored bits 3-4, 0x009F6FE4..0x009F7010), not property 45; 15 Sounds outside the singing closure set authored bit 0x10. The consumer of +0x47 bits 2-3 is unread; a follow-up pass checks it.",
       "hardware_required": false
     },
     {
@@ -3000,7 +3000,7 @@
         "0x00A78D10..0x00A78DE3"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "Trace the runtime MIDI-event entry from the post-load music/actor-mixer vtables through child filtering for MIDI target 110896138 and establish whether branch 403781184 receives the notes.",
+      "unresolved": "Trace the runtime MIDI-event entry from the post-load music/actor-mixer vtables through child filtering for MIDI target 110896138 and establish whether branch 403781184 receives the notes. OV38 check (re-analysis/research/overnight/20261015-ov38-41-check.md): rows confirmed: Layer fan-out 0x009D0758..0x009D0BCC, filter 0x009EE454..0x009EE940, RanSeq single step 0x00A0A6FC..0x00A0A850 (no retry), play 0x00A0AFDC; all 46 MIDI tracks target 110896138. Stays RECOVERABLE_GAP until E1-E12 (0x00A3C4B8..0x00A3C744, 0x00A70738..0x00A70888, 0x00A71B34..0x00A71BF4, 0x00A3DB48..0x00A3DE08) are re-checked. The effect text is wrong: get-in receives every note-on; audibility depends on selection and 12 single-pitch RanSeq gates (they are RanSeq, not Sounds; M9-022).",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseSongTests.TheRenderSaysHowManyVoicesEachBranchOfTheSamplerContributed"
@@ -3019,7 +3019,7 @@
         "re-analysis/research/20260928-I-M9-gap3-extraction.md"
       ],
       "status": "RECOVERABLE_GAP",
-      "unresolved": "Trace the MIDI velocity byte from the runtime event entry through every per-voice gain and RTPC input when the bank sets no velocity binding.",
+      "unresolved": "Trace the MIDI velocity byte from the runtime event entry through every per-voice gain and RTPC input when the bank sets no velocity binding. OV39 check (re-analysis/research/overnight/20261015-ov38-41-check.md): V5-V7, G4, G6 confirmed (0x00A00384..0x00A00478, 0x00A149C8..0x00A149FC, 0x009FFF24..0x009FFFA8, 0x009D5070..0x009D50A0); no shipped binding of source 0x81. Stays RECOVERABLE_GAP: G1-G3/G8 not re-checked; source-context consumers A1EA68, A01E24, A562B8 and PBI+0x168/+0x16C writers unread.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseClipWindowTests.NothingUnderTheSamplerAsksForTheNoteVelocity"
@@ -3199,10 +3199,11 @@
       "evidence": [
         "0x009D552C..0x009D55F3",
         "0x009D5934..0x009D6598",
-        "0x009D7FC0..0x009D8137"
+        "0x009D7FC0..0x009D8137",
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: stop mechanics: vtables 0x0103B218 / 0x0103B288; predicate 0x009D552C..0x009D55F0; acquire 0x009D7FC0..0x009D8134; stop policy 0x009D7EA4..0x009D7F34 (default 1, 0x004DDF48); cleanup 0x009E21FC..0x009E24A8; retire 0x009E2510..0x009E2550; 0x009E2AE4..0x009E2BCC; PBI stop 0x00A01280..0x00A013A4, 0x00A35980..0x00A35994; fatal growth 0x009E3524..0x009E36C4 (M1-034)."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "Trace the type-22 property-15 boolean from virtual method 0x009D552C through the per-voice object and identify whether it stops the attached note-off voice.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Trace the type-22 property-15 boolean from virtual method 0x009D552C through the per-voice object and identify whether it stops the attached note-off voice. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov38-41-check.md): IMPLEMENTATION_GAP for the envelope stop mechanics only. Correction: property 15 is the trigger selector (shipped value 2); the stop gate is property 1. Split: timing M9-030, note-off voice-kind dispatch M9-031. Not singing-only: six vo_external envelopes (selector 1, policy 1) reach the same stop path. Whether a held note is cut depends on M9-030 and M9-031.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseSongTests.ALoopingSoundSoundsForAsLongAsTheNoteIsHeld"
@@ -3218,10 +3219,11 @@
       "evidence": [
         "0x009D671C..0x009D7727",
         "0x009D7FC0..0x009D8137",
-        "0x009E266C..0x009E2813"
+        "0x009E266C..0x009E2813",
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: state vtable 0x0103B268 (GOT 0x01040124); oscillator S+0x90..+0xA4; depth 0x009D67BC..0x009D6914; setter 0x009E203C..0x009E2138; coefficient/step/phase 0x009D7390..0x009D7724; geometry 0x009E1F5C..0x009E1FAC; evaluator 0x009E32FC..0x009E34A4, 0x009E4484..0x009E4548; mode 0 0x009E416C..0x009E4480, scalar from 0x009E4994; publication 0x009E45FC..0x009E464C, 0x009E3784..0x009E37F8."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov38-41-check.md): IMPLEMENTATION_GAP for mode 0 (A*(1+sin p)/2, unipolar). Corrections: the state vtable is 0x0103B268 (not 0x0104B268); the oscillator is S+0x90..+0xA4 (not +0x34..+0x48). ADP-1 boundary: shape, mode, phase, 48000 base, scalar/buffered choice, scheduling, ramp, publication gate and the polynomial constants/f32 order are EXACT; only smoothing-coefficient libm rounding (unreached) and per-sample pitch application in the resampler may be equivalent. Build waits for M9-032 (+0x44) and M9-033 (sample rate). Modes 1-4: shipped bindings map to 0 cents; recorded, not built.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseLiveVibratoTests.TheChangeIsThePitchModulationTheBindingDescribes"
@@ -3301,6 +3303,74 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M5X13BuilderTests.CustomSongIsRejectedBeforeLookupLocksOrReplacingExistingPlay, M5X14BuilderTests.ArbitraryBehaviorReportsCustomSongBeforeLibraryLookup"
+    },
+    {
+      "id": "M9-030",
+      "subsystem": "M9-wwise-music",
+      "title": "Wwise envelope initializer and timing: S+0x38 deadline from the modulator initializer, sustain time, evaluator phases",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: S+0x38 = parameter+8 set by initializer vt+0x18 0x009D5934 (0x009E27B0..0x009E27BC); initializer 0x009D5934..0x009D671C; 0x009E1D8C..0x009E1F54; sustain property 13 default -1.0."
+      ],
+      "effect": "When an envelope (including the singing note-off envelope) ends and stops its voice.",
+      "provenance": "Opus check of OV38-OV41 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the initializer, 0x009E1D8C..0x009E1F54 and the evaluator phase bodies.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M9-031",
+      "subsystem": "M9-wwise-music",
+      "title": "Wwise MIDI note-off release: voice-kind dispatch (0x00A3E920), kind computation (0x009EE174), PBI vt+0x1C loop break, PBI+0x38",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: note-off 0x00A3EA3C..0x00A3EB44 -> 0x00A3E920..0x00A3EA34 (PBI+0x38 = offset when PBI+0x34 null at 0x00A3E98C, else 0x009E805C; target vt+0x10; kind 2 -> 0x009FF5D0 (+0x1B8=1, 0x009D3558(4,PBI)); kind 3 -> A01280 with PBI+0x1F8 = offset; kinds 0/1 nothing); kind from 0x00A023D4..0x00A02444 via 0x009EE174..0x009EE220, 0x009FAEC4..0x009FAEE4 (property 0x2E default 1 at 0x004DE12C); flag mapping 0x009F6FE0..0x009F7010. Shipped: get-in 403781184 kind 0; 462443456 kind 2; 774902407 kind 1."
+      ],
+      "effect": "What a MIDI note-off does to each sung voice.",
+      "provenance": "Opus check of OV38-OV41 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read what PBI+0x38 does, target vt+0x10, and 0x009E805C. Overlaps M9-010's path.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M9-032",
+      "subsystem": "M9-wwise-music",
+      "title": "Wwise modulator byte +0x44 writer (scalar vs buffered LFO output) for the shipped pitch-bound vibrato",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: writer 0x009E72DC..0x009E730C in 0x009E6EDC (sticky; set when [r7+0x24] != 1 and [r7+4] in {0,7}); consumer geometry 0x009E1F5C..0x009E1FAC."
+      ],
+      "effect": "Whether the vibrato is one value per audio frame or a per-sample buffer.",
+      "provenance": "Opus check of OV38-OV41 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: decode the subscriber record +4/+0x24 of 0x009E6EDC and its callers; settle +0x44 for the pitch binding of LFO 528935089.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M9-033",
+      "subsystem": "M9-wwise-music",
+      "title": "Wwise engine sample-rate and frame-count globals used by the LFO (fixed 48000 step base)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: reads at 0x009E20A4 (attack x live sample rate) and 0x009E1F80 (frame count T); LFO step uses fixed 48000 (literals 0x009D7540, 0x009D7564)."
+      ],
+      "effect": "The vibrato's real-time frequency (f x engine rate / 48000).",
+      "provenance": "Opus check of OV38-OV41 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: identify the globals, their writers and the shipped engine configuration values.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
     },
     {
       "id": "M10-001",
