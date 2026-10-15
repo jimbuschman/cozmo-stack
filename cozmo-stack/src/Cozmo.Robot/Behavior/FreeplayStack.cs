@@ -122,6 +122,7 @@ public sealed class FreeplayStack : IDisposable
         ctx.Needs ??= needs;
         // fidelity: M5-063 — use the actual stack input when the needs component exists.
         robot.Animations.DrivingAnimations.AreNeedsMet = ctx.Needs.State.AreNeedsMet;
+        var previousDrivingTriggerMap = robot.Animations.DrivingTriggerMap;
         robot.Animations.DrivingTriggerMap = ctx.Triggers;
         // the memory map the face behaviour asks before driving in (MapComponent::GetCurrentMemoryMapHelper)
         if (vision is not null && robot.Engine.Robot is not null) ctx.Map ??= vision.World.Maps.Current; // M13-031: one current-origin map owner
@@ -181,6 +182,7 @@ public sealed class FreeplayStack : IDisposable
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
         stack._unsubscribe.Add(() => robot.Animations.DrivingAnimations.AreNeedsMet = null);
+        stack._unsubscribe.Add(() => robot.Animations.DrivingTriggerMap = previousDrivingTriggerMap);
         robot.Engine.AIComponentUpdate = () => ai.Update(robot);
         if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
         stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);

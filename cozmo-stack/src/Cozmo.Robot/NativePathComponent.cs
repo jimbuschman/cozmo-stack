@@ -92,7 +92,9 @@ internal sealed partial class PathComponent
                 PathSegment.Arc a=>new AppendPathSegmentArc{XCenterMm=a.CenterX,YCenterMm=a.CenterY,RadiusMm=a.RadiusMm,StartRad=a.StartAngleRad,SweepRad=a.SweepRad,Speed=new(){SpeedMmps=a.SpeedMmps,AccelMmps2=a.AccelMmps2,DecelMmps2=a.DecelMmps2}},
                 PathSegment.PointTurn t=>new AppendPathSegmentPointTurn{XMm=t.X,YMm=t.Y,TargetAngleRad=t.TargetAngleRad,AngleToleranceRad=t.AngleToleranceRad,UseShortestDirection=t.UseShortestDirection,Speed=new(){SpeedMmps=t.SpeedRadPerSec,AccelMmps2=t.AccelRadPerSec2,DecelMmps2=t.DecelRadPerSec2}},_=>null
             };
-            if(message is {} m && !SendNative(m))
+            if(message is null)
+            {Error("Invalid path segment","Can't send path segment of unknown type");return;}
+            if(!SendNative(message))
             {Error("PathDolerOuter.Dole","ERROR: failed to send message!");return;}
             LastDoledIndex=unchecked((ushort)i);
         }

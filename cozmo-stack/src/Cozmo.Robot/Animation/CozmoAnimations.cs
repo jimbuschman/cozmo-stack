@@ -350,6 +350,11 @@ public sealed class CozmoAnimations : IDisposable
     {
         try { DrivingTriggerMap = Cozmo.Robot.Behavior.AnimationTriggerMap.Load(assetsRoot); }
         catch (FileNotFoundException) { DrivingTriggerMap = null; }
+        catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or InvalidOperationException)
+        {
+            // fidelity: M1-034, M7-002 — lose this malformed map only; retain any prior map and load the clips.
+            _robot.Engine.EmitStackLog($"M1-034 / M7-002: skipping malformed AnimationTriggerMap.json; previous map retained: {e.Message}");
+        }
         AnimationLibrary? loaded = null;
         System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
         // X9 G1: LoadNonConfigData owns a loader thread; the API waits for that load's result.

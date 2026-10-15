@@ -134,6 +134,12 @@ public abstract class SteppedBehavior : IBehavior
         lock (MissingSeen) if (!MissingSeen.Add(what)) return;
         LogCallbackDeferral.Run(() => MissingReported?.Invoke("MISSING: " + what)); // B-M11-8: queued while this thread holds PoseTreeGate.
     }
+    // Host diagnostic scope: a drive owns this set and replaces it on its next Init.
+    internal static void ReportMissing(string what, ISet<string> scope)
+    {
+        lock (scope) if (!scope.Add(what)) return;
+        LogCallbackDeferral.Run(() => MissingReported?.Invoke("MISSING: " + what));
+    }
 
     protected SteppedBehavior(string id, string behaviorClass)
     {

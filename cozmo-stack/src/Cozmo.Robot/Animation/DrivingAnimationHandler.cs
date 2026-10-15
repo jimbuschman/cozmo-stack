@@ -12,7 +12,7 @@ internal sealed record DrivingAnimationRequest(AnimationTrigger Trigger, int Arg
 internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimationHandler
 {
     private readonly List<(DrivingAnimations Animations, string LockName)> _entries = new();
-    private readonly HashSet<string> _missingMessages=new();
+    private HashSet<string> _missingMessages=new();
     private EngineRobot? _owner;
     private byte _tracks;
     // Native constructor never writes +0x44 (tag); this managed default is latent until Init assigns it.
@@ -61,7 +61,7 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     public bool Init(byte tracks, uint tag, bool argument3, bool repeatWhilePath)
     {
         // UpdateCurrDrivingAnimations is called only here, before the Init stores.
-        _missingMessages.Clear();
+        _missingMessages=new();
         bool selected=UpdateCurrent();
         State = 0; StartId = LoopId = EndId = 0;
         _tracks = tracks; _tag = tag; _unlock = !argument3; _repeat = repeatWhilePath; // Init's fourth C++ parameter (not counting this).
@@ -163,7 +163,8 @@ internal sealed class DrivingAnimationHandler(CozmoRobot robot) : IDrivingAnimat
     {
         var request = new DrivingAnimationRequest(trigger, 1, true, 0, BitConverter.Int32BitsToSingle(0x42700000), false);
         if (CreateActionForTest is { } factory) return factory(request);
-        return new TriggerLiftSafeAnimationAction(robot, request);
+        var driveScope=_missingMessages;
+        return new TriggerLiftSafeAnimationAction(robot, request,text=>SteppedBehavior.ReportMissing(text,driveScope));
     }
     private void Queue(IActionRunner action)
     {

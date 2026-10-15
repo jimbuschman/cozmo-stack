@@ -183,6 +183,8 @@ public sealed class HostDriveStraightTick : IDriveStraightTick
         var p = PathMotionProfile.Default;
         float speed = _distanceMm < 0 ? -Math.Abs(_speedMmps) : Math.Abs(_speedMmps);
         using var run = _m.StartPath(new PathSegment[] { new PathSegment.Line(robot.Value.Translation.X, robot.Value.Translation.Y, to.X, to.Y, speed, p.AccelMmps2, p.DecelMmps2) });
+        // fidelity: M13-013 — bounded host-adapter correction, not a full native straight-action port.
+        if (run.Result != 0) return (ActionResult)0x03000016; // Native Init failure, 0x005476C6..0x005476D0.
         var ev = await run.WaitAsync(Timeout.InfiniteTimeSpan, cancel);
         return ev == PathEventType.Completed ? ActionResult.Success
              : ev is null ? ActionResult.CancelledWhileRunning

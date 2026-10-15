@@ -12,9 +12,13 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
     private AnimationTicket? _ticket;
     private string _clip="";
     private bool _destroyed;
-    internal TriggerLiftSafeAnimationAction(CozmoRobot robot, DrivingAnimationRequest request) : base(0x1A, (uint)request.Argument4)
+    private readonly Action<string> _missing;
+    internal TriggerLiftSafeAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null) : base(0x1A, (uint)request.Argument4)
     {
-        _robot=robot;Request=request;TimeoutSeconds=request.Argument5;
+        _robot=robot;Request=request;_missing=missing??Behavior.SteppedBehavior.ReportMissing;
+        // 0x00543C96..0x00543CB2: only forever loops with the default 60.0f timeout.
+        TimeoutSeconds=request.Argument2==0 && request.Argument5==BitConverter.Int32BitsToSingle(0x42700000)
+            ? BitConverter.Int32BitsToSingle(0x7F7FFFFF) : request.Argument5;
         SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);Log=robot.Engine.EmitStackLog;
         // Checked M8-005/007 lift-safe ctor gate, 0x00544714..0x00544732.
         if(robot.Motion.IsCarryingObject?.Invoke()==true && robot.Sensors.OffTreadsState==OffTreadsState.OnTreads)RequiredTrackMask|=2;
@@ -26,7 +30,7 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
         }
         Missing("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction callback lifecycle is incomplete: CA/CB/D5/5F subscriptions, completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction semantics; existing playback ticket supplies completion so driving does not remain RUNNING forever");
     }
-    private void Missing(string text)=>_robot.Engine.EmitStackLog("MISSING: "+text);
+    private void Missing(string text)=>_missing(text);
     protected override string ActionName=>"PlayAnimation"+(_group??"");
     protected override float EngineClockSeconds=>_robot.Engine.Timer.SecondsF;
     public override bool CanInterrupt()=>false;
@@ -47,7 +51,6 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
         _clip=library.GetAnimationNameFromGroup(_group,Request.Argument6);
         if(_clip.Length==0)
         {
-            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"TriggerAnimationAction.NoAnimationForTrigger",$"Event: {Request.Trigger}");
             return 0x0300000C;
         }
         _ticket=_robot.Animations.PlayTracked(_clip,Request.Argument3,numLoops:Request.Argument2);
