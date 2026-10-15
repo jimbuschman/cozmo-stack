@@ -850,7 +850,9 @@ public sealed class CantHandleTallStackBehavior : ManipulationBehavior
     public double InitialWait { get; } public double DownWait { get; } public double UpWait { get; }
     public double MovedThresholdMm { get; }
     public Phase CurrentPhase { get; private set; }
-    public StackOfCubes? TargetStack { get; private set; }
+    private TallStackDelocalizationData _delocalization = new();
+    internal void BindDelocalizationData(TallStackDelocalizationData data) => _delocalization = data;
+    public StackOfCubes? TargetStack { get => _delocalization.Stack; private set => _delocalization.Stack = value; }
     private Dictionary<uint, Pose3d> _posesAtStart = new();
 
     private StackOfCubes? Tallest() { var s = M.Configurations.GetTallestStack(); return s is not null && s.StackHeight >= MinimumStackHeight && M.World.GetLocatedObjectById(s.BottomBlockId) is not null ? s : null; }
@@ -862,6 +864,7 @@ public sealed class CantHandleTallStackBehavior : ManipulationBehavior
     {
         TargetStack = Tallest();
         if (TargetStack is null) { Finish(); return; }
+        _delocalization.HasStoredPose = true; // M7 checked InitInternal +0x124 write, 0x005ECE74.
         _posesAtStart = TargetStack.BlockIds.Select(id => M.World.GetObjectById(id)).Where(o => o is not null).ToDictionary(o => o!.ObjectId, o => o!.Pose);
         CurrentPhase = Phase.LookingUpAndDown;
         Wait(InitialWait, () =>

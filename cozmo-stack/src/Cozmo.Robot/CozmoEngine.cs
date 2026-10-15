@@ -756,7 +756,9 @@ public sealed partial class EngineRobot
         _actionList.Watcher.HasExternalInterface = false;
         InitLifetime();
         Engine.ConstructorMapCreated?.Invoke(); // M13-032 new MapComponent owner, before first Delocalize
+        InitDelocalizationRecipients();
         ConstructorDelocalize();
+        InitDelocalizationStrategyRecipients();
         if (queueConnectionReads) QueueConnectionReads();
     }
 

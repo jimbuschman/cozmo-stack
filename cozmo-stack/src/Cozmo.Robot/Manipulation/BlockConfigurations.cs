@@ -115,7 +115,13 @@ public sealed class BlockConfigurationManager
     /// This stack's Update is always a full rebuild, so the flag is set for fidelity and cleared here.
     /// </summary>
     // fidelity: M13-014
-    public bool ForceUpdate { get; set; }
+    private bool _forceUpdate;
+    internal Func<EngineRobot?>? NativeRobot;
+    public bool ForceUpdate
+    {
+        get => NativeRobot?.Invoke() is {} robot ? robot.BlockConfigurationForceUpdate : _forceUpdate;
+        set { if (NativeRobot?.Invoke() is {} robot) robot.BlockConfigurationForceUpdate = value; else _forceUpdate = value; }
+    }
 
     /// <summary>
     /// Rebuilds every configuration from the located cubes and publishes the result as one snapshot, so a

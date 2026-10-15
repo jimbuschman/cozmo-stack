@@ -313,6 +313,7 @@ public sealed class Pose3d : IDisposable
         {PoseDiagnostics.Missing("M1-034/M11-076 GetParent(root) fatal owner read 0x008452BA: skipped, previous output preserved");return false;}
         output=WrapExisting(Node.Parent);return true;
     }
+    // fidelity: M11-076 — public root-safe branch 0x0084524E; internal 1000-step walk 0x008452D4..0x0084537C.
     public Pose3d FindRoot(){var n=RequireNode();n.AssertParent();return WrapExisting(n.Parent is null?n:n.Root());}
     public Vec3 Apply(Vec3 point)=>Transform.Apply(point);
     public void ApplyTo(IReadOnlyList<Vec3> input,List<Vec3> output)=>Transform.ApplyTo(input,output);
@@ -369,6 +370,7 @@ public sealed class Pose3d : IDisposable
         }
         {var r=tt.Inverse();r.MultiplyBy(in tf);output.Node.Transform=r;}output.SetParent(to);return true;
     }
+    // fidelity: M11-076 — root copy / FindRoot / GetWithRespectTo / failure error and fresh root, 0x004DF628..0x004DF6DA.
     public Pose3d GetWithRespectToRoot()
     {
         var output=new Pose3d("");

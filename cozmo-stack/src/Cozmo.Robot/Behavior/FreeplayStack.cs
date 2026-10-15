@@ -151,6 +151,10 @@ public sealed class FreeplayStack : IDisposable
         }
         // BehaviorManager::FinishCurrentBehavior switches to the empty running info {none, none, NoneTrigger}
         // (0x005a38f4/0x005a38fe): 0x16 is the ReactionTrigger NoneTrigger, not a behaviour, so nothing is bound here.
+        // The host manager's behavior uses the same checked fields as its native container callback.
+        if (bound.TryGetValue("CantHandleTallStack", out var tall) && tall is CantHandleTallStackBehavior tallStack
+            && robot.Engine.Robot?.TallStackContainers.FirstOrDefault() is {} nativeTall)
+            tallStack.BindDelocalizationData(nativeTall);
         var manager = new BehaviorManager(ctx);
         if (m is not null) m.ReactionLocks = manager;       // M15-022: PlaceObjectOnGroundAction::Init takes its reaction lock on the robot's BehaviorManager for every caller; the newest stack's manager is the robot's
         if (withReactions)

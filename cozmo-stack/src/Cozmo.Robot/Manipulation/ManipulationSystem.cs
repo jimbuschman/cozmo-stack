@@ -17,9 +17,9 @@ public sealed class ManipulationSystem : IDisposable
         Follower = new PathFollower(robot);
         Docking = new DockingSystem(robot, vision);
         Docking.Log += l => Log?.Invoke(l);
-        Configurations = new BlockConfigurationManager(vision.World, () => ClockSec());
+        Configurations = new BlockConfigurationManager(vision.World, () => ClockSec()) { NativeRobot = () => robot.Engine.Robot };
         Docking.Configurations = Configurations;      // SetObjectAsAttachedToLift step 9 sets its dirty flag (M12-008)
-        robot.Engine.DelocalizationConfigurationHook=()=>Configurations.ForceUpdate=true; // M11-071 lambda 0x006172A6.
+        // M11-072: the native R2 callback owns +0xC even before this host facade exists.
         Whiteboard = new AIWhiteboard(vision.World, () => ClockSec());
         // AIWhiteboard::Init 0x0056a394 registers the three handlers through the robot's external interface
         // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This

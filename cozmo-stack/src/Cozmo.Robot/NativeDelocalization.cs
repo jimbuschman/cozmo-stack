@@ -93,8 +93,7 @@ public sealed partial class EngineRobot
         if(HasExternalInterface)
         {
             Engine.DeliverDelocalizationToApp(); // E1–E4: app first, synchronous subscribers afterwards.
-            Engine.DelocalizationConfigurationHook?.Invoke(); // M11-072 complete list/order unread; job orders (a), then (b).
-            Engine.DelocalizationCubeHook?.Invoke();
+            // fidelity: M11-072 — R2..R8 are insertion-ordered UI subscriptions, not separate pre-emit hooks.
             Engine.AnimationMessages.Deliver(0x32,true);
         }
     }
