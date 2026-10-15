@@ -1,4 +1,4 @@
-DONE B-POSE-5 — 2026-10-15 — built checked rows, awaiting strong verification; optional position formatter MISSING; implementation push pending.
+DONE B-POSE-5 — 2026-10-15 — built checked rows, awaiting strong verification; optional position formatter MISSING; pushed implementation fabc3280a0b8ae38f2814398eeec166be6a8af0b.
 
 Claim 1dc4544b. Checked source: manager-adopted research/20261015-b-pose-4-check.md. No status/evidence/frozen-field changes, hardware run or verification packet. Builder rule 2 stops the unchecked formatter unit while the other checked rows are built.
 
@@ -54,3 +54,5 @@ Reopened the checked sites and direct targets locally: named-walk wrapper/node, 
 | 0x008479AA indirect / 0x008479D6 | Existing ascending origin Dispose and map clear after flag restore. MISSING native shared-control-block/NotLastOwner/destructor internals remain M11-077, unclaimed |
 
 No new file/stream operations, counters or global state. Other GetNamedPathToRoot callers remain out of scope. No MISSING is emitted into the engine source stream.
+
+Pushed implementation fabc3280a0b8ae38f2814398eeec166be6a8af0b. Normal gate fidelity passed; 4821/4821 tests passed, zero skipped, 4m32s. Main advanced during the run; rebased over research-only commit 606223b9 and the normal hook confirmed identical code/records already passed before successful push. Optional Point3 formatter remains MISSING exactly as documented above.
