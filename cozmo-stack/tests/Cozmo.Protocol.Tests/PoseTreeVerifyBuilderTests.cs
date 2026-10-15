@@ -196,7 +196,7 @@ public sealed class PoseTreeVerifyBuilderTests
         var logs=new List<EngineLogEntry>();engine.LogEntry+=entry=>
         {
             if(entry.Name=="poseoriginlist.destructor")
-            {Assert.Equal(0u,node.Owners);Assert.False(Pose3d.UnownedParentsAllowed);Assert.False(System.Threading.Monitor.IsEntered(native.PoseTreeGate));} // Callback is deferred until the single gated teardown completes.
+            {Assert.Equal(0u,node.Owners);Assert.False(Pose3d.UnownedParentsAllowed);Assert.False(System.Threading.Monitor.IsEntered(native.PoseTreeGate));} // Host timing: the stack delivers this log callback only after the gate is released, so it sees the finished teardown (Owners == 0). The native still builds the event first (0x0084795E); no native receiver can observe the pose tree.
             logs.Add(entry);
         };
         engine.Robots.RemoveRobots();

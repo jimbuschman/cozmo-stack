@@ -80,7 +80,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 33 | [B-M15-1](B-M15-1.md) | done d096ffcb; Opus check FAIL (two log texts; research/20261015-b-m15-1-check.md); fixed in B-M15-1b f5696c57 (PASS) |
 | 34 | [B-M3M4-23](B-M3M4-23.md) | done 66f6cfc0; Opus check PASS (research/20261015-b-m3m4-23-pass.md); handler-level races in B-M3M4-28 |
 | 35 | [B-M3M4-24](B-M3M4-24.md) | done 70360684; Opus check PASS (research/20261015-b-m3m4-24-pass.md); three host-tool items queued there |
-| 35a | [B-M3M4-28](B-M3M4-28.md) | open, after B-M3M4-24 (robot-message world handlers atomic against vision frames; rule 12) |
+| 35a | [B-M3M4-28](B-M3M4-28.md) | done f0d753e9; Opus check PASS (research/20261015-b-m3m4-28-pass.md); item 7 comment done by the manager |
 | 36 | [B-M3M4-25](B-M3M4-25.md) | open, after B-M3M4-24 (dispatch residue: 0x101CF, owner releases, re-Init order, connect timing) |
 | 37 | [B-M5-20](B-M5-20.md) | open, after B-M3M4-25 (empty-name warning, queued items) |
 | 38 | [B-M2M15-1](B-M2M15-1.md) | open, after B-M5-20 (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
