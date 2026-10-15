@@ -72,10 +72,11 @@ anything. BOARD.md is history; this file is the live queue.
 | 31 | [B-POSE-1](B-POSE-1.md) | done e5780c3c; Opus check FAIL (research/20261014-b-pose-1-check.md); fixed in B-POSE-2 (ddf1d511, Claude implementer) |
 | 31a0 | [B-POSE-3](B-POSE-3.md) | done 1cc1b6b6; Opus check FAIL (IsSameAs parent-wrapper check count; poseoriginlist.destructor event; research/20261015-b-pose-3-check.md); fixes in B-POSE-4 |
 | 31a1 | [B-POSE-4](B-POSE-4.md) | open, next (third Dev_Assert in IsSameAs; poseoriginlist.destructor event first) |
+| 31a2 | [B-M15-1b](B-M15-1b.md) | open, after B-POSE-4 (UnlockConfigJsonNotFound relative path; ReadAllBackupDataFromRobot key; skip-site tags) |
 | 31a | [B-M11-1](B-M11-1.md) | done a9425dad; Opus check FAIL (research/20261014-b-m11-1-check.md); fixed in B-M11-8 (Claude implementer, four verify rounds) |
 | 32 | [B-M3M4-21](B-M3M4-21.md) | done e27e9fbf; Opus check FAIL (dangling blended entry: advance read and shrink marking; research/20261014-b-m3m4-21-check.md); fixes in B-M3M4-26 |
 | 32a | [B-M3M4-26](B-M3M4-26.md) | done 316b979a; Opus check PASS (research/20261015-b-m3m4-26-pass.md); cleanups in B-M3M4-27 |
-| 33 | [B-M15-1](B-M15-1.md) | open, after B-M3M4-21 (backup manager: constructor, body, restore, wipe, restore list, app inputs) |
+| 33 | [B-M15-1](B-M15-1.md) | done d096ffcb; Opus check FAIL (two log texts; research/20261015-b-m15-1-check.md); fixes in B-M15-1b |
 | 34 | [B-M3M4-23](B-M3M4-23.md) | open, after B-M15-1 (every BlockWorld pose mutator outside the frame window) |
 | 35 | [B-M3M4-24](B-M3M4-24.md) | open, after B-M3M4-23 (test isolation, MISSING placement, B6 label test) |
 | 36 | [B-M3M4-25](B-M3M4-25.md) | open, after B-M3M4-24 (dispatch residue: 0x101CF, owner releases, re-Init order, connect timing) |
