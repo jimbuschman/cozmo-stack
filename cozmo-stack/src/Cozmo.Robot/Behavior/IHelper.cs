@@ -86,6 +86,8 @@ public abstract class IHelper : BSRunnable
     public DelegateProperties Delegation { get; } = new();
     /// <summary>+0x1c.</summary>
     public BehaviorStatus Status => _status;
+    // Checked subclass response writers (M12-042) store the same +1C field.
+    protected void StoreStatus(BehaviorStatus value) => _status = value;
     /// <summary>+0x2c.</summary>
     public bool InitHasRun => _initHasRun;
     /// <summary>+0x98 (float).</summary>

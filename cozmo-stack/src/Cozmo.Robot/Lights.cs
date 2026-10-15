@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Cozmo.Protocol;
+using Cozmo.Robot.Vision;
 
 namespace Cozmo.Robot;
 
@@ -1037,6 +1038,28 @@ public sealed class CubeLightComponent
     /// (b) is the requested layer's stack (0x006382FC..0x0063831C).
     /// </summary>
     // fidelity: M4-041, M4-045, M4-046
+    // fidelity: M4-049 — OV01 S3, direct callback only. The active-object virtual gate remains MISSING in BlockWorld.
+    internal Action<uint,string,int,bool,CubeLightModifier,int>? PoseStatePlayObservedForTest;
+    internal void OnActiveObjectPoseStateChanged(uint objectId, PoseState oldState, PoseState state)
+    {
+        if (oldState == state) return;
+        var zero = new CubeLightModifier(new LedPattern[4],0,0,System.Numerics.Vector2.Zero);
+        string trigger = state==PoseState.Known?"Visible":"Connected";
+        PoseStatePlayObservedForTest?.Invoke(objectId,trigger,2,false,zero,0);
+        PlayLightAnimForObjectId(objectId,trigger,2,false,zero,0);
+    }
+    private bool PlayLightAnimForObjectId(uint id,string trigger,int layer,bool modifier,CubeLightModifier lights,int offset)
+    {
+        ObjectType? type=null;
+        lock(_gate) foreach(var entry in _infos) if(entry.Value.ObjectId==id){type=entry.Key;break;}
+        if(type is not {} found)
+        {
+            SourceLog(EngineLogLevel.Info,"CubeLightComponent","CubeLightComponent.PlayLightAnim.InvalidObjectID",$"No object with id {id} exists in _objectInfo map can't play animation");
+            return false;
+        }
+        return PlayLightAnimCore(found,trigger,layer,0,modifier,lights,offset,id);
+    }
+
     public bool PlayLightAnim(ObjectType type, string trigger, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
         => PlayLightAnim(type, trigger, EngineLayer, 0, modifier, lights, timerOffsetMs);
 
@@ -1044,6 +1067,8 @@ public sealed class CubeLightComponent
     /// stored as the single native signed int at CurrentAnimInfo+0x44. Both initial and subsequent
     /// patterns use that same offset; durationMs does not replace a pattern's duration.</summary>
     public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
+        => PlayLightAnimCore(type,trigger,layer,durationMs,modifier,lights,timerOffsetMs,null);
+    private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId)
     {
         Animations.EnsureLoaded(); // Standalone host initialization precedes the component state lock.
         Playing pushed;
@@ -1057,12 +1082,12 @@ public sealed class CubeLightComponent
             lock (_gate)
             {
                 var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type);
-                if (connected is null && (!_infos.TryGetValue(type, out var retained) || retained.ObjectId == uint.MaxValue))
+                if (nativeObjectId is null && connected is null && (!_infos.TryGetValue(type, out var retained) || retained.ObjectId == uint.MaxValue))
                 { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real BlockWorld ObjectID; active-slot fallback is not used"); return false; }
-                uint id = connected?.ObjectId ?? _infos[type].ObjectId;
+                uint id = nativeObjectId ?? connected?.ObjectId ?? _infos[type].ObjectId;
                 objectId = id;
                 string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
-                if (!_infos.TryGetValue(type, out var info)) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.InvalidObjectID", $"No object with id {id} exists in _objectInfo map can't play animation"); return false; }
+                if (!_infos.TryGetValue(type, out var info) || (nativeObjectId is not null && info.ObjectId != id)) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.InvalidObjectID", $"No object with id {id} exists in _objectInfo map can't play animation"); return false; }
                 var stack = info.Layers[layer];
                 if (stack.Count > 0 && !stack[^1].CanBeOverridden) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.CantBeOverridden", $"Current anim {stack[^1].Name} can not be overridden on object {id} layer {layerName}"); return false; }
                 string name = Animations.AnimationForTrigger(trigger);

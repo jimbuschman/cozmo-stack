@@ -236,7 +236,7 @@ internal sealed class PoseTreeNode
 public sealed class Pose3d : IDisposable
 {
     internal PoseTreeNode? Node;
-    private readonly bool _legacyFrameInput;
+    private bool _legacyFrameInput;
     internal static bool UnownedParentsAllowed;
     public static Pose3d Identity=>new(Mat3.Identity,Vec3.Zero);
     public Pose3d Value=>this; // Existing nullable-value API unwrap; no new node is made.
@@ -280,6 +280,9 @@ public sealed class Pose3d : IDisposable
     private static string CopyName(string name)=>name.Length==0?name:name+"_COPY";
     private PoseTreeNode RequireNode()=>Node??throw new InvalidOperationException("MISSING: M1-034/M11-067 null pose node operation skipped");
     public Pose3d DeepCopy()=>new(this);
+    // C# input-provenance metadata follows a stored value copy. It does not establish native root binding (M11-066).
+    // Native owners that call Assign keep their own adapter context; embedded confirmer values preserve their input's context.
+    internal void AssignInputValue(Pose3d source) { Assign(source); _legacyFrameInput=source._legacyFrameInput; }
     public void Assign(Pose3d source)
     {
         if(ReferenceEquals(this,source))return;

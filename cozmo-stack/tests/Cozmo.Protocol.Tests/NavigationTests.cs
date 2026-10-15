@@ -1108,6 +1108,8 @@ public class NavigationTests
     [Fact]
     public void BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther()
     {
+        // Historical test name retained. OV02 proves the producer tuple; the DriveToHelper body remains unread,
+        // so this regression stops at the live producer rather than certifying the former stand-in's whole placement.
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
@@ -1115,26 +1117,20 @@ public class NavigationTests
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE2, CubeAt(240, -90)));
         Assert.Equal(2, rig.Frame().Objects.Count);
         var ctx = Ctx(rig);
+        ctx.AI = new AIComponent(() => (int)rig.Robot.Engine.Robot!.CurrentOriginId);
         var b = new BuildPyramidBaseBehavior(rig.M, "BuildPyramidBase");
+        PlaceRelObjectHelper? produced = null;
+        b.PlacementHelperCreatedForTest = h => produced = h;
         Assert.True(Runnable(b, ctx));
-        // when the carried cube is placed, the fake world moves it beside the static one
-        rig.OnDockResult = () =>
-        {
-            if (rig.M.Docking.Carrying.IsCarryingObject && b.StaticBlockId is { } s)
-            {
-                var stat = rig.M.World.GetLocatedObjectById(s)!.Pose.Translation;
-                var placed = CubeAt(stat.X, stat.Y - 56);
-                if (b.BaseBlockId == 7) rig.Cube = placed; else rig.MoreCubes[0] = (ObjectType.Block_LIGHTCUBE2, placed);
-            }
-        };
-        RunToEnd(rig, b, ctx, frames: () => true, ms: 60000);
-        Assert.Contains(b.Trace, l => l.Contains("PickupBlockHelper"));
-        Assert.True(b.Trace.Any(l => l.Contains("PlaceRelObjectHelper")), string.Join(" | ", b.Trace));
-        Assert.True(b.Trace.Any(l => l.Contains("BuildPyramidReactToBase")), string.Join(" | ", b.Trace));
-        var docks = rig.Sent.OfType<DockWithObject>().Select(d => (DockAction)d.ToBytes()[17]).ToList();
-        Assert.Contains(DockAction.PickupLow, docks);
-        Assert.Contains(DockAction.PlaceLow, docks);
-        Assert.Equal(BuildPyramidBaseBehavior.Phase.Idle, b.CurrentPhase);
+        using var scope = new BehaviorScope();
+        b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
+        SignalTestContext.Until(() => produced is not null, () => { rig.Frame(); rig.Pump(); b.Update(ctx,rig.Clock.NowMs); });
+        Assert.Contains(rig.Sent.OfType<DockWithObject>(), d => d.DockAction == (byte)DockAction.PickupLow);
+        Assert.NotNull(produced);
+        Assert.Equal(b.StaticBlockId, produced!.Target);
+        Assert.True(produced.Low);Assert.False(produced.SkipTransform);
+        Assert.True((Math.Abs(produced.A)==56 && produced.B==0) || (produced.A==0 && Math.Abs(produced.B)==56));
+        b.Stop(BehaviorStopReason.Interrupted);
     }
 
     [Fact]

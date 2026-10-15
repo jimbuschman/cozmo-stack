@@ -20,6 +20,28 @@ public abstract class ManipulationBehavior : ActionBehavior
     protected void RunAction(string what, Func<CancellationToken, Task<ActionResult>> action, Action<ActionResult> onDone) =>
         RunAction(what, action, onDone, ActionResult.Abort);
 
+    protected override bool KeepsRunningWithoutAction => base.KeepsRunningWithoutAction || HasLiveHelper;
+    internal void StartPlacementFromHelper(PlaceRelObjectAction action, Action<ActionResult> response)
+    {
+        ReportMissing("M12-042 StartActingWithResponseAnim at 0x005B927A: response-animation wrapper is not built; the existing host action adapter supplies the checked action/result callback, without claiming wrapper animation behavior");
+        RunAction("PlaceRelObjectAction", action.RunAsync, response);
+    }
+    internal Action<PlaceRelObjectHelper>? PlacementHelperCreatedForTest;
+    protected bool DelegatePlacement(uint target, bool low, float a, float b, bool skip, Action<CozmoRobot>? success, Action<CozmoRobot>? failure)
+    {
+        if (Context?.AI is not {} ai)
+        {
+            ReportMissing("M12-042 PlaceRelObjectHelper factory 0x005B55C8..0x005B5606: no AI helper-component owner is bound to this host behavior; placement delegation is skipped");
+            return false;
+        }
+        var placement = new PlaceRelObjectHelper(M, this, ai.Helpers.Factory, target, low, a, b, skip);
+        PlacementHelperCreatedForTest?.Invoke(placement);
+        IHelper? raw = placement;
+        var helper = ai.Helpers.AddHelperToComponent(ref raw);
+        try { return SmartDelegateToHelper(helper, success, failure); }
+        finally { helper.Release(); }
+    }
+
     /// <summary>The closest located cube that is not being carried, or null.</summary>
     protected ObservableObject? ClosestCube(Func<ObservableObject, bool>? filter = null)
     {
@@ -373,16 +395,17 @@ public sealed class StackBlocksBehavior : ManipulationBehavior
     private void TransitionToStackingBlock()
     {
         CurrentPhase = Phase.StackingBlock;
-        if (!M.Docking.Carrying.IsCarryingObject) { Log("BehaviorStackBlocks.FailBackToPickup: wanted to stack, but we aren't carrying a block"); TransitionToPickingUpBlock(); return; }
-        var bottom = ClosestValidBottom(TopObjectId);
-        if (bottom is null) { Log("no valid bottom block"); CurrentPhase = Phase.Idle; Finish(); return; }
-        BottomObjectId = bottom.ObjectId;
-        var helper = new DockHelper(M);
-        RunAction($"PlaceRelObjectHelper({bottom.ObjectId})", ct => helper.RunAsync(bottom.ObjectId, PreActionType.PlaceRelative, () => new PlaceRelObjectAction(M, bottom.ObjectId, onTop: true), ct), r =>
+        SetStateName("StackingBlock");
+        if (M.Docking.Carrying.CarriedObjectId is not {} carried || carried != TopObjectId)
         {
-            foreach (var l in helper.Trace) Log("  " + l);
-            if (r == ActionResult.Success) TransitionToPlayingFinalAnim(); else TransitionToFailedToStack(r);
-        });
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","BehaviorStackBlocks.FailBackToPickup","wanted to stack, but we aren't carrying a block");
+            TransitionToPickingUpBlock();return;
+        }
+        // The checked producer consumes +12C; it does not choose a different nearest target here.
+        if (BottomObjectId is null)
+            ReportMissing("M12-028 BehaviorStackBlocks +0x12C bottom-target writer before 0x005C956A is not built; the existing invalid ObjectID (-1) is retained rather than adding a closest-target query to this producer");
+        DelegatePlacement(BottomObjectId??uint.MaxValue,false,0,0,true,_=>TransitionToPlayingFinalAnim(),_=>TransitionToFailedToStack(ActionResult.Abort));
+        IncreaseScoreWhileActing(BitConverter.Int32BitsToSingle(0x3F4CCCCD));
     }
 
     private void TransitionToPlayingFinalAnim()

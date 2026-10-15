@@ -1092,15 +1092,23 @@ public class CoreReviewTests
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(150, 0, 22));
         var cube = Assert.Single(rig.Frame().Objects).Object;
 
-        // the original thinks it is carrying the cube; the replacement does not
+        // Both facades refer to the one native CarryingComponent (M12-040).
         var original = rig.M;
         original.Docking.Carrying.SetCarrying(cube.ObjectId);
         Assert.True(rig.Vision.IsCarryingObject!(cube.ObjectId));
 
         original.Dispose();
-        var replacement = new ManipulationSystem(rig.Robot, rig.Vision);
+        using var replacement = new ManipulationSystem(rig.Robot, rig.Vision);
+        Assert.Same(original.Docking.Carrying, replacement.Docking.Carrying);
+        Assert.Same(rig.Robot.Engine.Robot!.CarryingOwner, replacement.Docking.Carrying);
+        Assert.True(rig.Vision.IsCarryingObject!(cube.ObjectId));
+        Assert.Contains(cube.ObjectId, rig.Vision.CarriedObjects!());
+        var oldCallback = (Delegate)typeof(DockingSystem).GetField("_carriedPose", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(original.Docking)!;
+        var callbacks = (Delegate?)typeof(VisionSystem).GetField("FrameProcessed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(rig.Vision);
+        Assert.DoesNotContain(oldCallback, callbacks?.GetInvocationList() ?? Array.Empty<Delegate>());
+        replacement.Docking.Carrying.UnsetCarrying();
 
-        // the vision system now answers from the replacement, which is carrying nothing
+        // The explicit owner mutation clears carrying; constructing a facade does not.
         Assert.False(rig.Vision.IsCarryingObject?.Invoke(cube.ObjectId) ?? false);
         Assert.Empty(rig.Vision.CarriedObjects?.Invoke() ?? new HashSet<uint>());
 

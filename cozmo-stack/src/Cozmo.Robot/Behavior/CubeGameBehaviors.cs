@@ -635,19 +635,17 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     private void TransitionToPlacingBaseBlock()
     {
         CurrentPhase = Phase.PlacingBaseBlock;
-        uint target = StaticBlockId!.Value;
-        var stat = M.World.GetLocatedObjectById(target);
-        if (stat is null) { Log($"BehaviorBuildPyramidBase.TransitionToPlacingBaseBlock.NullObject: Object {target} is NULL"); Finish(); return; }
-        // UpdateBlockPlacementOffsets: beside the static block, one block dimension plus the gap, on the side the robot approaches from
-        double offset = CubeGeometry.CubeSizeMm + BasePlacementGapMm;
-        var helper = new DockHelper(M);
-        RunAction($"PlaceRelObjectHelper({target}, beside)", ct => helper.RunAsync(target, PreActionType.PlaceRelative,
-            () => new PlaceRelObjectAction(M, target, onTop: false) { Offsets = (0, offset, 0) }, ct), r =>
+        SetStateName("PlacingBaseBlock");
+        SteppedBehavior.ReportMissing("M12-028 SetBehaviorStateLights(empty,false) 0x005DCDCC..0x005DCE0C: the state-light body is unread; no substitute light command is sent");
+        uint target=StaticBlockId??uint.MaxValue;
+        if (M.World.GetLocatedObjectById(target) is null)
         {
-            foreach (var l in helper.Trace) Log("  " + l);
-            if (r != ActionResult.Success) { Log($"placing the base block failed: {r}"); Finish(); return; }
-            TransitionToObservingBase();
-        });
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramidBase.TransitionToPlacingBaseBlock.NullObject",FormattableString.Invariant($"Object {unchecked((int)target)} is NULL"));
+            StaticBlockId=null;return;
+        }
+        float a=0,b=0;
+        PlacementProducerGeometry.UpdateOffsets(M,target,BaseBlockId??uint.MaxValue,ref a,ref b);
+        DelegatePlacement(target,true,a,b,false,_=>TransitionToObservingBase(),null);
     }
 
     private void TransitionToObservingBase()
@@ -679,23 +677,22 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     private void TransitionToPlacingTopBlock()
     {
         CurrentPhase = Phase.PlacingTopBlock;
-        var pyramidBase = M.Configurations.PyramidBases.FirstOrDefault();
-        if (pyramidBase is null) { Log("BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject"); Finish(); return; }
-        // the top block goes over the base's interior midpoint: place relative to the nearer base block, offset half a block sideways towards the midpoint
-        var robot = M.RobotPose();
-        var left = M.World.GetLocatedObjectById(pyramidBase.LeftBlockId); var right = M.World.GetLocatedObjectById(pyramidBase.RightBlockId);
-        if (left is null || right is null || robot is null) { Finish(); return; }
-        var target = (left.Pose.Translation - robot.Value.Translation).Length <= (right.Pose.Translation - robot.Value.Translation).Length ? left : right;
-        var toMid = pyramidBase.InteriorMidpoint - target.Pose.Translation;
-        double side = Math.Sqrt(toMid.X * toMid.X + toMid.Y * toMid.Y);
-        var helper = new DockHelper(M);
-        RunAction($"PlaceRelObjectHelper({target.ObjectId}, on the base midpoint)", ct => helper.RunAsync(target.ObjectId, PreActionType.PlaceRelative,
-            () => new PlaceRelObjectAction(M, target.ObjectId, onTop: true) { Offsets = (0, side, 0) }, ct), r =>
+        SetStateName("PlacingTopBlock");
+        SteppedBehavior.ReportMissing("M12-028 SmartDisableReactionsWithLock at 0x005DC0B4..0x005DC0D6: checked wrapper array/name, manager disable-body remains M7-014; no stand-in reaction lock is installed");
+        uint a=StaticBlockId??uint.MaxValue,b=BaseBlockId??uint.MaxValue;
+        var targetA=M.World.GetLocatedObjectById(a);var targetB=M.World.GetLocatedObjectById(b);
+        if (targetA is null || targetB is null)
         {
-            foreach (var l in helper.Trace) Log("  " + l);
-            if (r != ActionResult.Success) { Log($"placing the top block failed: {r}"); Finish(); return; }
-            TransitionToReactingToPyramid();
-        });
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject",FormattableString.Invariant($"Object {unchecked((int)a)} is NULL"));
+            StaticBlockId=null;return;
+        }
+        foreach(var entry in M.Configurations.PyramidBases)
+        {
+            bool Contains(uint id)=>entry.LeftBlockId==id||entry.RightBlockId==id;
+            if (!Contains(b) || !Contains(a)) continue;
+            SteppedBehavior.ReportMissing("M12-043/M12-028 GetBaseInteriorMidpoint at 0x005DC1DC -> 0x00617A8C..0x00617C32: GetBoundingQuad<float> corner order 0x004E6490..0x004E6598 is unread; top placement stops at this unit, with no nearest-block/sideways-offset guess");
+            return;
+        }
     }
 
     private void TransitionToReactingToPyramid()

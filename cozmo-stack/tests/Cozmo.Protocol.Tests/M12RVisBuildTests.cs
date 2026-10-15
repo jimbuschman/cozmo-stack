@@ -1367,7 +1367,7 @@ public class M12RVisBuildTests
 
     /// <summary>
     /// M12-008, AddLiftRelativeObservation 0x00506E5C (SetPose Known, count 1) and AddObjectRelativeObservation 0x00506CD8 (SetPose Dirty): the write runs under the world's lock and raises
-    /// PoseStateChanged when the state changes, as MarkReleased does; BroadcastObjectPoseChanged (M12-027, unread) is counted, and the counter is atomic (4 threads x 1000 calls add exactly 4000).
+    /// PoseStateChanged when the state changes, as MarkReleased does; OV01 now supplies the real synchronous broadcast. The historical test name is retained; four threads x 1000 calls reach the configuration recipient exactly 4000 times and add nothing to the obsolete unread counter.
     /// </summary>
     [Fact]
     public void M12_008_TheConfirmerWritesAreSynchronisedAndTheBroadcastCounterIsAtomic()
@@ -1385,9 +1385,13 @@ public class M12RVisBuildTests
         Assert.Equal(PoseState.Known, obj.PoseState); Assert.Equal(1, obj.PoseConfirmationCount);
         Assert.Equal(new[] { (PoseState.Known, PoseState.Dirty), (PoseState.Dirty, PoseState.Known) }, changes);
         int before = ObjectPoseConfirmerRelative.UnreadBroadcasts;
+        int broadcasts = 0;
+        var previous = rig.Vision.World.SetObjectPoseChanged;
+        rig.Vision.World.SetObjectPoseChanged = (id, state) => { Interlocked.Increment(ref broadcasts); previous?.Invoke(id, state); };
         var threads = Enumerable.Range(0, 4).Select(_ => new Thread(() => { for (int i = 0; i < 1000; i++) ObjectPoseConfirmerRelative.AddLiftRelativeObservation(rig.Vision.World, obj, At(20, 0, 30)); })).ToList();
         threads.ForEach(t => t.Start()); threads.ForEach(t => t.Join());
-        Assert.Equal(before + 4000, ObjectPoseConfirmerRelative.UnreadBroadcasts);
+        Assert.Equal(4000, broadcasts); // OV01: real synchronous broadcast on every call, including unchanged state.
+        Assert.Equal(before, ObjectPoseConfirmerRelative.UnreadBroadcasts);
     }
 
     // ================================================================== R-VIS M12 fix round 2: records M12-001, 008, 012, 017, 025, 030, 031, 035, 036, 037
@@ -1982,7 +1986,10 @@ public class M12RVisBuildTests
         Assert.Equal(300.0, act.Clone.Pose.Translation.X, 9); Assert.Equal(100.0, act.Clone.Pose.Translation.Y, 9);
         Assert.Contains(rig.Sent, m => m is ExecutePath);                        // the inner InitHelper found poses and drove
         var approach = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, true, false, false, 0.0);
-        await Assert.ThrowsAsync<NotSupportedException>(() => approach.RunAsync(default));
+        // OV05 now runs the real calculation. This older flat-world fixture has disjoint pose roots,
+        // so GetWithRespectTo returns the checked failure before clone/InitHelper; the parented success case is in M12CheckedRowsBuilderTests.
+        Assert.Equal((ActionResult)0x03000005, await approach.RunAsync(default));
+        Assert.Null(approach.Clone);
         rig.M.Docking.Carrying.UnsetCarrying();
         var gone = new DriveToPlaceCarriedObjectAction(rig.M, placement, true, false, false, false, 0.0);      // built with nothing carried: the invalid id
         rig.M.Docking.Carrying.SetCarrying(7);
@@ -2073,16 +2080,16 @@ public class M12RVisBuildTests
         var flipped = Mat3.AboutX(Math.PI) * Mat3.AboutZ(0.5);
         Assert.Equal(-(Math.PI - 0.5), PlacementApproachAngle.Helper(flipped), 6);
         // the axis rule with injected X/Y functions (rows 0 and 1 are irrelevant, only row 2 is read)
-        double Arm(double x, double y, double z) => PlacementApproachAngle.Helper(new Mat3(1, 0, 0, 0, 1, 0, x, y, z), _ => 11, _ => 22);
-        Assert.Equal(11.0, Arm(0.5, 0.5, 0.5));       // a three-way tie prefers X
-        Assert.Equal(-11.0, Arm(-0.6, 0.1, 0.1));     // X dominant, negative: -X
-        Assert.Equal(22.0, Arm(0.4, 0.5, 0.5));       // Y beats X strictly; Z does not beat Y (a tie)
-        Assert.Equal(-22.0, Arm(0.1, -0.7, 0.2));
-        Assert.Equal(11.0, Arm(0.4, 0.4, 0.0));       // (0.4, 0.4, 0): X (a tie with Y), positive
-        Assert.Equal(-11.0, Arm(0, 0, 0));            // a zero component is not strictly > 0: the negative sign
-        // the X and Y arms are visible stubs until Rotation3d::GetAngleAroundXaxis / Yaxis are read
-        Assert.Throws<NotSupportedException>(() => PlacementApproachAngle.Helper(new Mat3(1, 0, 0, 0, 1, 0, 1, 0, 0)));
-        Assert.Throws<NotSupportedException>(() => PlacementApproachAngle.Helper(new Mat3(1, 0, 0, 0, 1, 0, 0, 1, 0)));
+        double Arm(double x, double y, double z) => PlacementApproachAngle.Helper(new Mat3(1, 0, 0, 0, 1, 0, x, y, z), _ => 0.25, _ => 0.5);
+        Assert.Equal(0.25, Arm(0.5, 0.5, 0.5));       // a three-way tie prefers X
+        Assert.Equal(-0.25, Arm(-0.6, 0.1, 0.1));     // X dominant, negative: -X
+        Assert.Equal(0.5, Arm(0.4, 0.5, 0.5));       // Y beats X strictly; Z does not beat Y (a tie)
+        Assert.Equal(-0.5, Arm(0.1, -0.7, 0.2));
+        Assert.Equal(0.25, Arm(0.4, 0.4, 0.0));       // (0.4, 0.4, 0): X (a tie with Y), positive
+        Assert.Equal(-0.25, Arm(0, 0, 0));            // a zero component is not strictly > 0: the negative sign
+        // OV05/M11-068: the RotationMatrix3d X/Y bodies are built; these direct matrix fixtures select atan2(0,1).
+        Assert.Equal(0, PlacementApproachAngle.Helper(new Mat3(1, 0, 0, 0, 1, 0, 1, 0, 0)));
+        Assert.Equal(0, PlacementApproachAngle.Helper(new Mat3(1, 0, 0, 0, 1, 0, 0, 1, 0)));
     }
 
     // ------------------------------------------------------------------ M12-035

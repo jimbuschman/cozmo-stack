@@ -98,15 +98,15 @@ public static class LiftGeometry
     /// <item><c>SetCarryingObject</c>, the BlockConfigurationManager dirty flag (+0xC) = 1, and the result of
     ///   <c>AddLiftRelativeObservation(obj, objWrtLift)</c> (0x006331AE..0x006331CC).</item>
     /// </list>
-    /// The C# has no pose tree, so a pose "with respect to" a parent is kept as the world pose the parent chain would
-    /// give; <c>GetWithRespectTo</c> never fails here, except that a missing robot state (no pose to derive the lift pose from)
+    /// This helper retains the existing flat-input calculation (M12-008/M11-066), which produces the world pose the parent chain would
+    /// give. The live DockingSystem supplies the shared lift node and parents the argument before its broadcast; a missing robot state (no pose to derive the lift pose from)
     /// takes step 5's failure return. The object placed on top follows the carried object because the engine parents it to
     /// it (<c>SetParent(obj.pose)</c>, 0x00633006..0x00633010): see <see cref="CarryingComponent.TopWrtCarried"/>.
     /// </summary>
     // fidelity: M12-008
     public static uint SetObjectAsAttachedToLift(CarryingComponent carrying, BlockWorld world,
                                                  BlockConfigurationManager? configurations, VisionPoseData? state,
-                                                 uint? objectId, MarkerType markerCode, Action<string>? log = null)
+                                                 uint? objectId, MarkerType markerCode, Action<string>? log = null, Pose3d? liveLiftPose = null)
     {
         using var frameMutation=world.EnterPoseMutation();
         if (objectId is not { } id) { log?.Invoke("SetObjectAsAttachedToLift: no object id (-1)"); return AttachFailed; }
@@ -133,7 +133,15 @@ public static class LiftGeometry
         }
         carrying.AttachToLift(id, marker, objWrtLift, topId, topWrtCarried);
         if (configurations is not null) configurations.ForceUpdate = true;
-        return ObjectPoseConfirmerRelative.AddLiftRelativeObservation(world, obj, liftWorld.Compose(objWrtLift));
+        var argument = liftWorld.Compose(objWrtLift);
+        if (liveLiftPose is not null)
+        {
+            // The existing raw-pose attachment calculation remains M12-008's candidate; the checked live argument has the lift parent before SetPose/broadcast.
+            argument = new Pose3d(objWrtLift);
+            argument.SetParent(liveLiftPose);
+            obj.NativeCarryingTree = true;
+        }
+        return ObjectPoseConfirmerRelative.AddLiftRelativeObservation(world, obj, argument);
     }
 }
 
@@ -176,8 +184,7 @@ public static class ObjectPoseConfirmerRelative
     // fidelity: M12-008
     public static uint AddLiftRelativeObservation(BlockWorld world, ObservableObject obj, Pose3d worldPose)
     {
-        world.ApplyRelativeObservation(obj, worldPose, PoseState.Known, confirmationCount: 1);
-        Interlocked.Increment(ref _unreadBroadcasts);          // M12-027: 0x00506E9E BroadcastObjectPoseChanged not read
+        world.ApplyLiftObservation(obj, worldPose);
         return 0;
     }
 }

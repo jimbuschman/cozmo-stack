@@ -76,6 +76,8 @@ public sealed class CarryingComponent
     private readonly object _gate = new();
     private uint? _carried;
     private KnownMarker? _dockMarker;
+    // fidelity: M12-040 — Carrying ctor 0x00632A68..0x00632A82, IDs -1 and marker 3.
+    internal ushort NativeMarkerCode = 3;
 
     public bool IsCarryingObject { get { lock (_gate) return _carried is not null; } }
     public uint? CarriedObjectId { get { lock (_gate) return _carried; } }
@@ -158,11 +160,14 @@ public sealed class DockingSystem : IDisposable
     /// with. Default −1 (represented as null); the only writer is <c>DockWithObject</c>; <c>AbortDocking</c>
     /// does not reset it. The Moved (CD10a) and Stopped (CD10b) broadcasts exclude a cube whose id equals it.
     /// </summary>
-    public uint? DockTargetObjectId { get; private set; }
+    private readonly DockingComponentData _native;
+    public uint? DockTargetObjectId { get => _native.TargetId; private set => _native.TargetId = value; }
 
     public DockingSystem(CozmoRobot robot, VisionSystem vision)
     {
         _robot = robot; _vision = vision;
+        _native = robot.Engine.Robot?.DockingOwner ?? new DockingComponentData();
+        Carrying = robot.Engine.Robot?.CarryingOwner ?? new CarryingComponent();
         // fidelity: M1-053
         // Publication reads this active supplier. Its replacement/lifetime semantics remain M12's.
         robot.Carrying = Carrying;
@@ -181,7 +186,7 @@ public sealed class DockingSystem : IDisposable
         vision.CarriedObjects = _carriedObjects;
         // The engine parents the carried object to the lift, so it follows for free; here the chain is
         // recomposed whenever a new state arrives.
-        _carriedPose = _ => UpdateCarriedObjectPose();
+        _carriedPose = _ => UpdateSharedRobotPose(); // M12-027: no per-frame carried-object pose writes/broadcasts.
         vision.FrameProcessed += _carriedPose;
     }
 
@@ -189,7 +194,7 @@ public sealed class DockingSystem : IDisposable
     private readonly Func<IReadOnlySet<uint>> _carriedObjects;
     private readonly Action<VisionFrameResult> _carriedPose;
 
-    public CarryingComponent Carrying { get; } = new();
+    public CarryingComponent Carrying { get; }
     public List<RobotMessage> Sent { get; } = new();
     public int ErrorSignalsSent { get; private set; }
     public event Action<string>? Log;
@@ -222,6 +227,20 @@ public sealed class DockingSystem : IDisposable
         var lift = _robot.Engine.Robot!.SubscribeMessage(RobotMessageId.LiftLoad,
             m => LiftLoad?.Invoke(((Cozmo.Protocol.LiftLoad)m).Field0), "IDockAction");
         return new HandlerRegistration(this, id, lift);
+    }
+
+    // fidelity: M12-034 — live action-owned slots; public legacy helper above remains a host test adapter.
+    internal IDisposable RegisterActionHandlers(DockActionBase owner, DockAction action)
+    {
+        DockActionSubscriptions? subscriptions = null;
+        LogCallbackDeferral.RunGated(owner.NativeDockGate, () =>
+        {
+            owner.SetSelectedDockAction(action); // Init step 5 has selected +80 before H1 subscribes.
+            owner.Subscriptions ??= new DockActionSubscriptions(_robot, owner);
+            owner.Subscriptions.Init(action);
+            subscriptions = owner.Subscriptions;
+        });
+        return subscriptions!;
     }
 
     private sealed class HandlerRegistration : IDisposable
@@ -310,13 +329,11 @@ public sealed class DockingSystem : IDisposable
         });
     }
 
-    public void UpdateCarriedObjectPose()
+    private void UpdateSharedRobotPose()
     {
         using var frameMutation=_vision.World.EnterPoseMutation();
-        if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
-        if (_vision.World.GetObjectById(id) is not { } obj) return;
-        if(obj.NativeCarryingTree)
-        {
+        if (Carrying.CarriedObjectId is not {} id || Carrying.DockMarker is null
+            || _vision.World.GetObjectById(id) is not { NativeCarryingTree: true }) return;
             if(_robot.Engine.Robot is {} r)
             {
                 // B-M11-8 item 4: the same gate as Delocalize and ComputeLiftPose, so the origin check and the write below
@@ -332,8 +349,14 @@ public sealed class DockingSystem : IDisposable
                     }
                 });
             }
-            return;
-        }
+    }
+
+    public void UpdateCarriedObjectPose()
+    {
+        using var frameMutation=_vision.World.EnterPoseMutation();
+        if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
+        if (_vision.World.GetObjectById(id) is not { } obj) return;
+        if(obj.NativeCarryingTree) { UpdateSharedRobotPose(); return; }
         if (_vision.History.Latest is not { } state) return;
         // fidelity: M12-008
         // The pose it was attached at keeps its rotation (SetObjectAsAttachedToLift step 6); an object marked as carried
@@ -359,7 +382,7 @@ public sealed class DockingSystem : IDisposable
     /// (0x00533790..0x0053379A, M12-008). No reader is in the inventory.
     /// </summary>
     // fidelity: M12-008
-    public bool DockingSuccessByte { get; private set; }
+    public bool DockingSuccessByte { get => _native.Success; private set => _native.Success = value; }
 
     /// <summary>
     /// <c>DockingComponent::CanStackOnTopOfObject</c> 0x0063C5C4 (M12-012) = <see cref="CanInteractWithObjectHelper"/> 0x0063C654 and then
@@ -413,13 +436,13 @@ public sealed class DockingSystem : IDisposable
     public uint SetObjectAsAttachedToLift(uint? objectId, MarkerType markerCode)
     {
         using var frameMutation=_vision.World.EnterPoseMutation();
-        uint result=LiftGeometry.SetObjectAsAttachedToLift(Carrying,_vision.World,Configurations,_vision.History.Latest,objectId,markerCode,Log);
+        uint result=LiftGeometry.SetObjectAsAttachedToLift(Carrying,_vision.World,Configurations,_vision.History.Latest,objectId,markerCode,Log,_robot.Engine.Robot?.LiftPose);
         if(result==0&&objectId is {} id&&_vision.World.GetObjectById(id) is {} obj&&Carrying.ObjectWrtLift is {} local&&_robot.Engine.Robot is {} robot)
         {
             // B-M11-8 item 4: tree writes share the robot's pose gate; log callbacks run after it is released.
             LogCallbackDeferral.RunGated(robot.PoseTreeGate,()=>
             {
-            obj.NativePose.Assign(local);obj.NativePose.SetParent(robot.LiftPose);obj.NativeCarryingTree=true;
+            if (!obj.NativeCarryingTree) { obj.NativePose.Assign(local);obj.NativePose.SetParent(robot.LiftPose);obj.NativeCarryingTree=true; }
             if(Carrying.CarriedOnTopId is {} topId&&Carrying.TopWrtCarried is {} topLocal&&_vision.World.GetObjectById(topId) is {} top)
             {top.NativePose.Assign(topLocal);top.NativePose.SetParent(obj.NativePose);top.NativeCarryingTree=true;}
             });
@@ -560,11 +583,12 @@ public sealed class DockingSystem : IDisposable
     }
 
     /// <summary><c>DockingComponent::AbortDocking</c>.</summary>
-    public void Abort()
+    public bool Abort()
     {
-        // fidelity: M12-018
-        Send(new AbortDocking());
-        lock (_gate) { _pending?.TrySetCanceled(); _pending = null; _active = null; }
+        // fidelity: M12-018 — 0x0063BE10..0x0063BE5E: send result only, no state writes.
+        var message = new AbortDocking();
+        Sent.Add(message);
+        return _robot.SendMessage(message, reliable: true);
     }
 
     private void OnFrame(VisionFrameResult r)

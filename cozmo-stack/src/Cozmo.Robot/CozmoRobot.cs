@@ -319,6 +319,7 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.StateStored = s => Cubes.Connections.SetRobotTime(s.Timestamp);
         // fidelity: M1-053
         Engine.PublicationPose = Sensors.PublicationPose;
+        Engine.CarryingOwnerConstructed = value => Carrying = value; // M12-040: fresh +284 storage, before constructor Delocalize.
         Engine.PublicationCarrying = () => (unchecked((int)(Carrying.CarriedObjectId ?? uint.MaxValue)),
             unchecked((int)(Carrying.CarriedOnTopId ?? uint.MaxValue)));
         Engine.PublicationHeadTracking = () => Motion.HeadTrackingObjectId;

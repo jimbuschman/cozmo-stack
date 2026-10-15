@@ -2,9 +2,11 @@ namespace Cozmo.Robot;
 
 // fidelity: M5-055, M5-056
 // UI +0x38 G2E and +0x20 E2G use the same checked list/token algorithm.
-// Managed storage replaces allocations and refcount frees; no concurrency contract is added.
+// Managed storage replaces allocations and refcount frees. The host async action adapter
+// shares this topology gate with every writer; callbacks execute outside it.
 internal sealed class UiSubscriptionHub : IDisposable
 {
+    private readonly object _gate = new();
     private readonly Dictionary<ushort, Signal> _g2e = new(), _e2g = new();
     private bool _disposed;
     internal Action<string>? ReleaseObserved;
@@ -31,49 +33,66 @@ internal sealed class UiSubscriptionHub : IDisposable
 
     internal RetainedSubscription SubscribeMessage(ushort tag, bool engineToGame, Action<object?>? callback)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        var map = engineToGame ? _e2g : _g2e;
-        if (!map.TryGetValue(tag, out var signal)) map.Add(tag, signal = new Signal());
-        var node = signal.Nodes.AddLast(callback); // factory inserts before sentinel.
-        var weak = new WeakReference<Token>(signal.Lifetime);
-        // The signal address is borrowed. Keeping managed storage reachable does not keep
-        // its native lifetime token alive: Destroy explicitly retires the signal's owner.
-        return new RetainedSubscription(() =>
+        lock (_gate)
         {
-            if (!weak.TryGetTarget(out var token) || !token.Lock()) return;
-            token.Release(); // 0x00664710..0x00664718: drop temporary lock BEFORE signal traversal.
-            ReleaseObserved?.Invoke("token released");
-            for (var cursor = signal.Nodes.First; cursor is not null; cursor = cursor.Next)
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            var map = engineToGame ? _e2g : _g2e;
+            if (!map.TryGetValue(tag, out var signal)) map.Add(tag, signal = new Signal());
+            var node = signal.Nodes.AddLast(callback); // factory inserts before sentinel.
+            var weak = new WeakReference<Token>(signal.Lifetime);
+            // The signal address is borrowed. Keeping managed storage reachable does not keep
+            // its native lifetime token alive: Destroy explicitly retires the signal's owner.
+            return new RetainedSubscription(() =>
             {
-                if (!ReferenceEquals(cursor, node)) continue;
-                cursor.Value = null; // callback destruction precedes neighbor patching.
-                signal.Nodes.Remove(cursor); // 0x006634F4..0x0066352A, then node refcount/free.
-                ReleaseObserved?.Invoke($"unlink {(engineToGame ? "E2G" : "G2E")} {tag:X2}");
-                break;
-            }
-        });
+                lock (_gate)
+                {
+                    if (!weak.TryGetTarget(out var token) || !token.Lock()) return;
+                    token.Release(); // 0x00664710..0x00664718: drop temporary lock BEFORE signal traversal.
+                    ReleaseObserved?.Invoke("token released");
+                    for (var cursor = signal.Nodes.First; cursor is not null; cursor = cursor.Next)
+                    {
+                        if (!ReferenceEquals(cursor, node)) continue;
+                        cursor.Value = null; // callback destruction precedes neighbor patching.
+                        signal.Nodes.Remove(cursor); // 0x006634F4..0x0066352A, then node refcount/free.
+                        ReleaseObserved?.Invoke($"unlink {(engineToGame ? "E2G" : "G2E")} {tag:X2}");
+                        break;
+                    }
+                }
+            });
+        }
     }
 
     internal int Count(ushort tag, bool engineToGame)
-        => (engineToGame ? _e2g : _g2e).GetValueOrDefault(tag)?.Nodes.Count ?? 0;
+    {
+        lock (_gate) return (engineToGame ? _e2g : _g2e).GetValueOrDefault(tag)?.Nodes.Count ?? 0;
+    }
 
     internal void Deliver(ushort tag, bool engineToGame, object? payload = null)
     {
-        if ((engineToGame ? _e2g : _g2e).TryGetValue(tag, out var signal))
+        var snapshot = new List<LinkedListNode<Action<object?>?>>();
+        lock (_gate)
         {
-            var snapshot = new List<LinkedListNode<Action<object?>?>>();
+            if (!(engineToGame ? _e2g : _g2e).TryGetValue(tag, out var signal)) return;
             for (var node = signal.Nodes.First; node is not null; node = node.Next) snapshot.Add(node);
-            foreach (var node in snapshot) node.Value?.Invoke(payload);
+        }
+        foreach (var node in snapshot)
+        {
+            Action<object?>? callback;
+            lock (_gate) callback = node.Value;
+            callback?.Invoke(payload);
         }
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
-        _disposed = true;
-        foreach (var signal in _g2e.Values) signal.Destroy();
-        _g2e.Clear();
-        foreach (var signal in _e2g.Values) signal.Destroy();
-        _e2g.Clear();
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            foreach (var signal in _g2e.Values) signal.Destroy();
+            _g2e.Clear();
+            foreach (var signal in _e2g.Values) signal.Destroy();
+            _e2g.Clear();
+        }
     }
 }

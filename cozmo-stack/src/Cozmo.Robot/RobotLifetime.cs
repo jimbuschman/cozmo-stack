@@ -109,6 +109,9 @@ public sealed partial class EngineRobot
         Lifetime = new(this);
         var actions = ActionList;
         Lifetime.Bind(0x250, _ => actions.Dispose());
+        // fidelity: M12-040 — raw releases 0x005113FA..0x00511418; no component reset/send/dtor.
+        Lifetime.Bind(0x284, _ => { CarryingOwner = null; Engine.DockingCarryingOwnerObservedForTest?.Invoke("drop Carrying"); });
+        Lifetime.Bind(0x280, _ => { DockingOwner = null; Engine.DockingCarryingOwnerObservedForTest?.Invoke("drop Docking"); });
         if(Engine.NvStorage is {} nv)Lifetime.Bind(0x260,_=>nv.ReleaseForRobot()); // M3-038/M15-033, 0x005112E4 -> NV D0 -> backup destructor.
         Lifetime.Bind(0x294, _ => DestroyPoseOriginOwners()); // M11-077: the ordered origin owners, under AllowUnownedParents.
         InitSubscriptions();

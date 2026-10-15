@@ -1424,7 +1424,9 @@ public class M11RVisBuildTests : IDisposable
         Assert.Equal(new Vec3(1150, 0, 22), w.GetLocatedObjectById(11)!.Pose.Translation);
         Assert.Equal(new Vec3(50, 0, 40), w.GetLocatedObjectById(12)!.Pose.Translation);                  // carried: its own pose
         Assert.Equal(0, d.PoseConfirmationCount);                                                         // the confirmer was cleared; AddInExistingPose makes entries with count 0
-        Assert.Equal(d.Pose, d.ReferencePose);                                                            // holding the object's current pose
+        Assert.Equal(d.Pose.Transform, d.ReferencePose.Transform);                                        // native embedded Pose3d copies the current value.
+        Assert.NotSame(d.Pose.Node, d.ReferencePose.Node);
+        Assert.Same(d.Pose.Node!.Parent, d.ReferencePose.Node!.Parent);
         Assert.Equal(1, forced);
         Assert.Equal(1, w.UnbuiltBroadcastLocatedObjectStatesCalls);                                      // no message type in this stack: counted
     }

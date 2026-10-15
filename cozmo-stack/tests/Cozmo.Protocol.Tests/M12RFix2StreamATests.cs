@@ -180,8 +180,9 @@ public class M12RFix2StreamATests
         rig.M.Docking.LiftLoad += lifts.Add; rig.M.Docking.MovingLiftPostDock += posts.Add;
         rig.Send(new LiftLoad { Field0 = true });
         rig.Send(new MovingLiftPostDock { Field0 = (byte)DockAction.PickupLow });
-        Assert.Equal(new[] { true }, lifts);
-        Assert.Equal(new[] { true }, posts);                                         // the byte equals the action's DockAction (+0x80): M12-005 compare
+        Assert.Equal(1, pick.LiftLoadState); // OV03/M2-023: DA stores +C2 only, without a host callback.
+        Assert.Empty(lifts);
+        Assert.Empty(posts);                                         // the byte equals the action's DockAction (+0x80): M12-005 compare
 
         // one millisecond past the boundary: failed
         rig.T = stamp + 501 - 33;
@@ -195,7 +196,8 @@ public class M12RFix2StreamATests
         // the action is gone: its handlers are unregistered, so the same messages reach nobody
         rig.Send(new LiftLoad { Field0 = true });
         rig.Send(new MovingLiftPostDock { Field0 = (byte)DockAction.PickupLow });
-        Assert.Single(lifts); Assert.Single(posts);
+        Assert.Empty(lifts); Assert.Empty(posts);
+        Assert.Equal(1, pick.LiftLoadState); // retired DA cannot overwrite its prior value.
     }
 
     /// <summary>

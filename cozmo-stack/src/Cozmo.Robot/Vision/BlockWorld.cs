@@ -129,7 +129,9 @@ internal static class ObjectIdSpace
 // fidelity: M11-007
 internal sealed class PoseConfirmation
 {
-    public Pose3d Pose = Pose3d.Identity;
+    // fidelity: M12-027, M11-007 — embedded Pose3d at node+18 is assigned in place, never a borrowed object wrapper.
+    private readonly Pose3d _pose = new("");
+    public Pose3d Pose { get => _pose; set => _pose.AssignInputValue(value); }
     public ObservableObject? Stored;
     public int Count;
     public int Misses;
@@ -773,7 +775,14 @@ public sealed partial class BlockWorld
     private bool _appendPoseChanges;            // this+0x74
     private bool _didObjectsChange;             // this+0x54
     private uint _lastImageTimestamp;           // Robot::GetLastImageTimeStamp
-    private readonly List<PoseChange> _poseChanges = new();   // this+0x68
+    private readonly List<PoseChange> _poseChanges = new();
+    // fidelity: M11-063 — the queue owns each copied old pose (0x0062496E..0x006249A8), released by its list clear (0x00624F78).
+    private void ClearPoseChanges()
+    {
+        foreach (var change in _poseChanges) change.Pose.Dispose();
+        _poseChanges.Clear();
+    }
+   // this+0x68
 
     /// <summary>
     /// M11-004: the native <c>static unordered_map&lt;int,float&gt;</c> at 0x0105B388 that rate-limits the "not connected"
@@ -1171,7 +1180,7 @@ public sealed partial class BlockWorld
             CurrentOriginId=1;NativeOrigin=null;NativeForceFlush=null;_fixtureOrigins.Clear();
             UnbuiltBroadcastLocatedObjectStatesCalls=0;
             _confirmations.Clear();
-            _poseChanges.Clear();
+            ClearPoseChanges();
             _appendPoseChanges = false;
             _didObjectsChange = false;
             _markerTimestamp = 0;
@@ -1375,7 +1384,7 @@ public sealed partial class BlockWorld
         }
         // Robot::GetLastImageTimeStamp: the empty-list branch (0x00625028), UpdatePoseOfStackedObjects and UpdateMarkerlessObjects (0x0062521A) use it
         uint lastImage = LastImageTimestamp?.Invoke() ?? timestamp;
-        lock (_gate) { _poseChanges.Clear(); _appendPoseChanges = true; _lastImageTimestamp = lastImage; }
+        lock (_gate) { ClearPoseChanges(); _appendPoseChanges = true; _lastImageTimestamp = lastImage; }
         var observations = new List<ObjectObservation>();
         var forgotten = new List<ObservableObject>();
         bool r7 = true;
@@ -2207,7 +2216,7 @@ public sealed partial class BlockWorld
                 {key="BlockWorld.OnObjectPoseChanged.MultipleChanges";text=$"Object '{unchecked((int)obj.ObjectId)}' is changing its pose again this tick. Ignoring second change";}
             else if (oldState == PoseState.Unknown)
                 {key="BlockWorld.OnObjectPoseChanged.FirstPoseForObject";text=$"Object '{unchecked((int)obj.ObjectId)}' is setting its first pose. Not queueing change.";}
-            else if (oldPose is { } pose) _poseChanges.Add(new PoseChange(obj.ObjectId,pose,oldState));
+            else if (oldPose is { } pose) _poseChanges.Add(new PoseChange(obj.ObjectId,new Pose3d(pose),oldState));
             else missing="M11-063 oldPose dereference 0x00624884: nonzero old state requires a pose";
         }
         if(key is not null)Source(EngineLogLevel.Info,"BlockWorld",key,text!);
@@ -2215,7 +2224,10 @@ public sealed partial class BlockWorld
         if (SetObjectPoseChanged is { } set) set(obj.ObjectId,obj.PoseState);
         else if(!_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892 has no stack counterpart (once per frame)");}
         // MapComponent::UpdateObjectPose immediately returns for family 6, on both calls. No game message for a cliff.
-        if (obj.Family != ObjectFamily.MarkerlessObject && oldState != obj.PoseState) PoseStateChanged?.Invoke(obj,oldState,obj.PoseState);
+        if (oldState != obj.PoseState)
+            Missing("M4-049 active-object vtable +0xC gate at 0x005062B8..0x005062DA is unread; no cube-light pose-state callback is inferred from an object family");
+        if (obj.Family != ObjectFamily.MarkerlessObject && oldState != obj.PoseState)
+            PoseStateChanged?.Invoke(obj,oldState,obj.PoseState);
     }
 
     // ------------------------------------------------------------------------- CheckForUnobservedObjects
@@ -2866,6 +2878,29 @@ public sealed partial class BlockWorld
             if (confirmationCount is { } count) entry.Count = count;
         });
         BroadcastObjectPoseChanged(obj, oldPose, prev);
+    }
+
+    // fidelity: M12-027 — AddLiftRelativeObservation direct body only.
+    internal void ApplyLiftObservation(ObservableObject obj, Pose3d pose)
+    {
+        using var frameMutation=EnterPoseMutation();
+        PoseState prev=default;Pose3d oldPose=null!;
+        LogCallbackDeferral.RunGated(_gate,()=>
+        {
+            prev = obj.PoseState; oldPose = new Pose3d(obj.NativePose);
+            obj.SetPose(pose, -1.0f, PoseState.Known);
+        });
+        // fidelity: M12-027 — SetPose, broadcast, then confirmer entry (0x00506E94/9E/EC0..ED6).
+        try { BroadcastObjectPoseChanged(obj, oldPose, prev); }
+        finally { oldPose.Dispose(); }
+        LogCallbackDeferral.RunGated(_gate,()=>
+        {
+            var entry = EntryForOrCreate(obj.ObjectId);
+            obj.Confirmation = entry;
+            entry.Count = 1; // 0x00506ECC, before Pose3d assignment.
+            entry.Pose = pose; // argument pose, assigned in place, not the post-broadcast object pose.
+            entry.LastPoseUpdatedTime = obj.LastObservedTimestamp;
+        });
     }
 
     /// <summary>

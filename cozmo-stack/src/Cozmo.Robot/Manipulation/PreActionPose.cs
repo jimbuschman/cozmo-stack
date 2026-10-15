@@ -15,6 +15,27 @@ public enum PreActionType : byte { Docking = 0, PlaceRelative = 1, PlaceOnGround
 // fidelity: M12-001
 public sealed record PreActionPose(PreActionType Type, KnownMarker Marker, Pose3d WorldPose, double DistanceMm)
 {
+    // fidelity: M12-038 — 0x0050DAA4..0x0050DB0E; copied by the record copy constructor/with.
+    public float HeightToleranceMm { get; init; } = ComputeHeightTolerance(WorldPose.Translation);
+    private float _distance = (float)DistanceMm;
+    public double DistanceMm { get => _distance; init => _distance = (float)value; }
+    internal static float ComputeHeightTolerance(Vec3 translation)
+    {
+        float x = MathF.Abs((float)translation.X), y = MathF.Abs((float)translation.Y), z = MathF.Abs((float)translation.Z);
+        float s = y < z ? z : y;
+        s = x < s ? s : x;
+        return s * BitConverter.Int32BitsToSingle(0x3F13CD3A);
+    }
+    // fidelity: M12-001 — 0x0050E0C0..0x0050E132, unchanged input on <=0 or unordered sum.
+    internal static float MakeUnitLength(ref Vec3 t)
+    {
+        float x = (float)t.X, y = (float)t.Y, z = (float)t.Z;
+        float sum = x*x; sum += y*y; sum += z*z;
+        if (!(sum > 0)) return 0;
+        float len = MathF.Sqrt(sum), inverse = 1f / len;
+        t = new Vec3(x * inverse, y * inverse, z * inverse);
+        return len;
+    }
     /// <summary>
     /// The built <c>Pose3d(angle, Z_AXIS, translation)</c>'s translation, in the marker's frame (C-E7):
     /// Docking/Rolling <c>(0, -65, -size.z/2)</c>; PlaceRelative <c>(0, -100, -size.z/2)</c>; PlaceOnGround
@@ -196,7 +217,11 @@ public static class CubePreActionPoses
     }
 
     /// <summary>One element of <c>Block::GeneratePreActionPoses</c>'s output: the pose stored in the object's cache vector (marker-local, before the push-out).</summary>
-    public sealed record StoredElement(KnownMarker Marker, Pose3d Stored, Vec3 BuiltTranslation, double BuiltAngle, int Sb);
+    public sealed record StoredElement(KnownMarker Marker, Pose3d Stored, Vec3 BuiltTranslation, double BuiltAngle, int Sb)
+    {
+        // fidelity: M12-038 — the stored element includes +14, alongside its existing +18 value.
+        public float HeightToleranceMm { get; init; } = PreActionPose.ComputeHeightTolerance(Stored.Translation);
+    }
 
     /// <summary>
     /// <c>Block::GeneratePreActionPoses</c> 0x004E5808 for one action type (M12-001, M12-021): the cache vector's elements in the engine's order
@@ -205,6 +230,7 @@ public static class CubePreActionPoses
     // fidelity: M12-001, M12-021
     public static List<StoredElement> GenerateStored(ObservableObject cube, PreActionType type)
     {
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-001 PreActionPose ctor integration 0x0050DB14/0x0050DB6C/0x0050DCFC/0x0050DF00: stored/world cache still uses the existing flat marker/object adapter; IsChildOf body called at 0x0050DD4E and complete native marker-parent input binding are not checked here, so the two constructor error/continue paths and derived SetParent(P.GetParent()) 0x0050DFFA..0x0050E002 are not claimed built. Height tolerance and MakeUnitLength arithmetic are built independently");
         var list = new List<StoredElement>();
         if (type is PreActionType.Entry or PreActionType.None) return list;
         var size = CubeGeometry.SizeOf(cube.Type);
@@ -368,8 +394,10 @@ public static class CubePreActionPoses
             double dist2 = Math.Sqrt(px * px + py * py);
             b = dist2 >= d ? d : (dist2 > 0 ? dist2 : 0);
         }
-        double len = stored.Translation.Length;
-        var pushed = len <= 0 ? stored.Translation : stored.Translation.Normalized() * (len + b);
+        var unit = stored.Translation;
+        float len = PreActionPose.MakeUnitLength(ref unit);
+        float scale = len + (float)b;
+        var pushed = new Vec3((float)unit.X * scale, (float)unit.Y * scale, (float)unit.Z * scale);
         return objectPose.Compose(new Pose3d(stored, pushed));
     }
 

@@ -727,8 +727,7 @@ public sealed class DriveToObjectAction
 /// <c>+0x179</c> (<c>checkDestinationFree</c> by inference). The carried id at construction is <c>[robot+0x284]+8</c>, or the invalid id when nothing is carried.</para>
 ///
 /// <para><c>Init</c> 0x00559DB8: (1) no carried object is 0x03000011; (2) <c>[+0x7C]</c> becomes the carried id and the object is looked up by the constructor's id
-/// (<c>+0x78</c>): missing is 0x03000004; (3) with <c>+0x178</c> the approach angle comes from <c>ComputePlacementApproachAngle</c> 0x005504A0: only its angle helper
-/// 0x00550858 is in the inventory (<see cref="PlacementApproachAngle"/>), not the function's own body, so that case throws <see cref="NotSupportedException"/>;
+/// (<c>+0x78</c>): missing is 0x03000004; (3) with <c>+0x178</c> the approach angle comes from <c>ComputePlacementApproachAngle</c> 0x005504A0: the OV05 checked calculation is built through <see cref="PlacementApproachAngle"/>; native IAction state/tag integration remains explicitly MISSING;
 /// (4) a clone of the object is put at the placement pose (<c>InitPose</c>, Known) and <c>DriveToObjectAction::InitHelper(clone)</c> runs; <c>DriveToObjectAction::Init</c> is
 /// NOT called (so no cube light). <c>ObservableObject::Clone</c> (ActiveCube thunk 0x004E3954 -&gt; 0x004E38D4) is <c>new ActiveCube(ObjectType)</c> and keeps NOTHING: the clone has
 /// ObjectID -1 (here <see cref="uint.MaxValue"/>), ActiveID -1 and FactoryID 0 (0x0087660E, 0x004E0C4C..0x004E0C58), so the inner <c>GetPreActionPoses</c> does not see a carried
@@ -808,7 +807,7 @@ public sealed class DriveToPlaceCarriedObjectAction
     public PreActionType ActionType { get; }
     /// <summary><c>+0x16C</c>.</summary>
     public Pose3d PlacementPose { get; }
-    /// <summary><c>+0x178</c>: when set, <c>Init</c> asks <c>ComputePlacementApproachAngle</c> (a visible stub, M12-034).</summary>
+    /// <summary><c>+0x178</c>: when set, <c>Init</c> asks <c>ComputePlacementApproachAngle</c> (OV05 / M12-039).</summary>
     public bool FlagAt0x178 { get; }
     /// <summary><c>+0x179</c>: when set, <c>CheckIfDone</c> fails with 0x04000008 while the placement goal is not free.</summary>
     public bool FlagAt0x179 { get; }
@@ -842,18 +841,40 @@ public sealed class DriveToPlaceCarriedObjectAction
     /// <summary><c>Init</c> 0x00559DB8 up to and including the start of the inner <c>InitHelper</c>; returns the first non-zero <c>Init</c> result or the inner compound's result.</summary>
     public async Task<ActionResult> RunAsync(CancellationToken cancel)
     {
-        if (_m.Docking.Carrying.CarriedObjectId is null)
+        var carriedId = _m.Docking.Carrying.CarriedObjectId;
+        if (carriedId is null)
         {
+            if (_m.Robot.Engine.Robot is {} native)
+                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"DriveToPlaceCarriedObjectAction.CheckPreconditions.NotCarryingObject",FormattableString.Invariant($"Robot {unchecked((int)native.NativeRobotId)} cannot place an object because it is not carrying anything."));
+            else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-030 no native Robot owner for Init precondition diagnostic at 0x00559EC0; diagnostic is skipped, no Robot ID is invented");
             _trace.Add("DriveToPlaceCarriedObjectAction.CheckPreconditions.NotCarryingObject");
             return ActionResult.NotCarryingObjectAbort;
         }
         if (_m.World.GetLocatedObjectById(CarriedIdAtConstruction) is not { } obj)
         {
+            if (_m.Robot.Engine.Robot is {} native)
+            {
+                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"DriveToPlaceCarriedObjectAction.CheckPreconditions.NoObjectWithID",FormattableString.Invariant($"Robot {unchecked((int)native.NativeRobotId)}'s block world does not have an ActionableObject with ID={unchecked((int)carriedId.Value)}."));
+                EngineErrorState.StoreAndMaybeBreak();
+            }
+            else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-030 no native Robot owner for Init precondition diagnostic at 0x00559E6C; diagnostic is skipped, no Robot ID is invented");
             _trace.Add("DriveToPlaceCarriedObjectAction.CheckPreconditions.NoObjectWithID");
             return ActionResult.BadObject;
         }
         if (FlagAt0x178)
-            throw new NotSupportedException("M12-039 RECOVERABLE_GAP: ComputePlacementApproachAngle 0x005504A0 (Init step 3) is readable but unread; only its angle helper 0x00550858 (PlacementApproachAngle) is built, so the +0x178 case is a visible stub.");
+        {
+            float angle = 0;
+            var computed = PlacementApproachAngle.Compute(_m, PlacementPose, ref angle);
+            if (computed != ActionResult.Success)
+            {
+                _m.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "DriveToPlaceCarriedObjectAction.Init.FailedToComputeApproachAngle", "");
+                return computed;
+            }
+            // The host DriveToObjectAction has no native IAction tag/state owner for SetApproachAngle's diagnostic.
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-030 SetApproachAngle 0x00558A90..0x00558B3A: native IAction tag/state owner is absent in the host drive adapter; Init-time angle fields are supplied, but its exact diagnostic/state guard is not built");
+            _inner.UseApproachAngle = true;
+            _inner.ApproachAngleRad = angle;
+        }
         // ObservableObject::Clone keeps nothing: ObjectID -1 (uint.MaxValue here), a fresh marker set, no pose; then InitPose(+0x16C, Known).
         _clone = new ObservableObject(uint.MaxValue, obj.Type, CubeGeometry.MarkersFor(obj.Type)) { Pose = PlacementPose, PoseState = PoseState.Known };
         // [+0x7C] := the carried id is not modelled separately: the inner action turns towards (and tests carrying for) CarriedIdAtConstruction, which is the
@@ -880,21 +901,58 @@ public sealed class DriveToPlaceCarriedObjectAction
 /// <see cref="RotatedParentAxis"/>), then <c>tbb</c> on <c>axis + 3</c> (table 04 0A 10 1A 1A 1F 24 at 0x00550872; an index above 6 takes the default arm): -3 gives
 /// <c>-GetAngleAroundZaxis</c>, -2 <c>-GetAngleAroundYaxis</c>, -1 <c>-GetAngleAroundXaxis</c>, 0 and 1 <c>+GetAngleAroundXaxis</c>, 2 <c>+GetAngleAroundYaxis</c>, 3
 /// <c>+GetAngleAroundZaxis</c>, any other value <c>+GetAngleAroundXaxis</c>. <c>GetAngleAroundZaxis</c> is M12-033's (<see cref="EngineRadians.GetAngleAroundZaxis"/>); the bodies
-/// of <c>Rotation3d::GetAngleAroundXaxis</c> and <c>GetAngleAroundYaxis</c> are readable but unread (M12-039 RECOVERABLE_GAP, not built), so those arms call the two functions given, which throw by default.
+/// of <c>RotationMatrix3d::GetAngleAroundXaxis</c> and <c>GetAngleAroundYaxis</c> are built under M11-068 and used by default.
 /// </summary>
 // fidelity: M12-030, M12-039
 public static class PlacementApproachAngle
 {
+    // fidelity: M12-039 — OV05 B1/B2; the output word is written only on the success tail.
+    public static ActionResult Compute(ManipulationSystem m, Pose3d target, ref float output)
+    {
+        var engine = m.Robot.Engine;
+        using var mutation = m.World.EnterPoseMutation();
+        using var logs = Pose3d.UseSourceLog((l,c,k,t) => engine.EmitSourceLog(l,c,k,t), engine.Das.ForceFlushNow);
+        if (m.Docking.Carrying.CarriedObjectId is not {} id)
+        {
+            engine.EmitSourceLog(EngineLogLevel.Info, "Actions", "ComputePlacementApproachAngle.NoCarriedObject", "");
+            return (ActionResult)0x03000011;
+        }
+        var carried = m.World.GetLocatedObjectById(id);
+        if (carried is null)
+        {
+            engine.EmitSourceLog(EngineLogLevel.Warning, null, "DriveToActions.ComputePlacementApproachAngle.NullObject", FormattableString.Invariant($"ObjectID={unchecked((int)id)}"));
+            return (ActionResult)0x03000004;
+        }
+        int targetAxis = RotatedParentAxis.Get(target.Rotation, 2);
+        int carriedAxis = RotatedParentAxis.Get(carried.NativePose.Rotation, 2);
+        if (carriedAxis != targetAxis)
+        {
+            engine.EmitSourceLog(EngineLogLevel.Warning, null, "ComputePlacementApproachAngle.MismatchedUpAxes", FormattableString.Invariant($"Carried up axis: {carriedAxis} , target up axis: {targetAxis}"));
+            return (ActionResult)0x0300000B;
+        }
+        using var relative = new Pose3d("");
+        var robot = engine.Robot!;
+        if (!Pose3d.GetWithRespectTo(carried.NativePose, robot.GetCheckedMainPose(), relative))
+        {
+            engine.EmitSourceLog(EngineLogLevel.Warning, null, "ComputePlacementApproachAngle.FailedToComputeObjectWrtRobotPose", "");
+            return (ActionResult)0x03000005;
+        }
+        using var inverse = relative.Inverse();
+        inverse.PreComposeWith(target);
+        output = (float)Helper(inverse.Rotation);
+        return ActionResult.Success;
+    }
+
     public static double Helper(Mat3 r, Func<Mat3, double>? angleAroundX = null, Func<Mat3, double>? angleAroundY = null)
     {
-        angleAroundX ??= _ => throw new NotSupportedException("M12-039 RECOVERABLE_GAP: Rotation3d::GetAngleAroundXaxis (PLT 0x4AB914) is readable but unread (helper 0x00550858 arms -1, 0, 1 and the default).");
-        angleAroundY ??= _ => throw new NotSupportedException("M12-039 RECOVERABLE_GAP: Rotation3d::GetAngleAroundYaxis (PLT 0x4AB908) is readable but unread (helper 0x00550858 arms -2 and 2).");
+        angleAroundX ??= matrix => matrix.AngleAroundX; // M11-068 checked RotationMatrix3d, 0x0084B370.
+        angleAroundY ??= matrix => matrix.AngleAroundY; // M11-068 checked RotationMatrix3d, 0x0084B3CA.
         int axis = RotatedParentAxis.Get(r, 2);
         return axis switch
         {
-            -3 => -EngineRadians.GetAngleAroundZaxis(r),
-            -2 => -angleAroundY(r),
-            -1 => -angleAroundX(r),
+            -3 => Radians.Rescale(-(float)EngineRadians.GetAngleAroundZaxis(r)),
+            -2 => Radians.Rescale(-(float)angleAroundY(r)),
+            -1 => Radians.Rescale(-(float)angleAroundX(r)),
             2 => angleAroundY(r),
             3 => EngineRadians.GetAngleAroundZaxis(r),
             _ => angleAroundX(r),                                            // 0, 1 and every other value

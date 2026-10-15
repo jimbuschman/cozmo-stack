@@ -754,6 +754,7 @@ public sealed partial class EngineRobot
         // D2: initially off until host lifetime binding wires GameSend to the E2G signal (M5-063).
         // The public completed-action payload/union boundary remains owned by M7-020.
         _actionList.Watcher.HasExternalInterface = false;
+        InitDockingCarryingOwners();
         InitLifetime();
         Engine.ConstructorMapCreated?.Invoke(); // M13-032 new MapComponent owner, before first Delocalize
         InitDelocalizationRecipients();

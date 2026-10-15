@@ -249,11 +249,22 @@ public abstract class DockActionBase
 
     protected DockActionBase(ManipulationSystem m, uint objectId) { M = m; ObjectId = objectId; SubActions = new StandInDockSubActions(m); }
 
-    public uint ObjectId { get; }
+    // Host async action continuations share this gate with native message callbacks.
+    internal readonly object NativeDockGate = new();
+    private uint _objectId;
+    public uint ObjectId { get { lock (NativeDockGate) return _objectId; } private set { lock (NativeDockGate) _objectId = value; } }
+    internal void InvalidateDockTarget() => ObjectId = uint.MaxValue;
+    private byte _liftLoadState;
+    internal byte LiftLoadState { get { lock (NativeDockGate) return _liftLoadState; } set { lock (NativeDockGate) _liftLoadState = value; } } // +C2; direct DA body belongs to M2-023.
+    internal DockActionSubscriptions? Subscriptions;
+    internal int LiftAnimationTrigger => this switch { PickupObjectAction => 0x207, PlaceRelObjectAction place => place.Field0xF0, RollObjectAction => 0x20A, _ => 0x23F };
+    internal ActionResult CheckDeletedTarget() => ObjectId == uint.MaxValue ? (ActionResult)0x03000004 : ActionResult.Running;
     public PathMotionProfile Profile { get; set; } = PathMotionProfile.Default;
     /// <summary>The engine's <c>_shouldCheckPreActionPose</c> (set false by the helpers when they just drove there).</summary>
     public bool CheckPreActionPose { get; set; } = true;
-    public DockAction? SelectedDockAction { get; protected set; }
+    private DockAction? _selectedDockAction;
+    public DockAction? SelectedDockAction { get { lock (NativeDockGate) return _selectedDockAction; } protected set { lock (NativeDockGate) _selectedDockAction = value; } }
+    internal void SetSelectedDockAction(DockAction selected) => SelectedDockAction=selected;
     public DockResult? Result { get; protected set; }
     /// <summary>The bool <c>IDockAction::CheckIfDone</c> stores from <c>AddSquint</c> at <c>IDockAction+0xF4</c> (M12-017).</summary>
     public bool DockSquintAdded { get; private set; }
@@ -471,7 +482,8 @@ public abstract class DockActionBase
         SelectedDockAction = action;
         // (6) 0x005516EA / 0x00551750: the action's own 0xC5 and 0xDA handlers, registered here and gone with the action (the bodies are M12-034, unbuilt)
         // fidelity: M12-017
-        using var handlerRegistration = M.Docking.RegisterActionHandlers(action);
+        using var handlerRegistration = M.Docking.RegisterActionHandlers(this, action);
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-017/M12-034: native CheckIfDone 0x005521AC is an engine action-update entry; this host async dock adapter checks deleted-target on resumption, not during a suspended sub-action. Native scheduler and full pre-unsubscribe destructor cleanup 0x0055745C..0x00557582 remain unbuilt");
         // (7)
         Field0x82 = 3; Field0x84 = 3;
         KnownMarker? marker = null;
@@ -518,6 +530,8 @@ public abstract class DockActionBase
             if (compound != ActionResult.Success) return compound;
         }
 
+        if (CheckDeletedTarget() != ActionResult.Running) return CheckDeletedTarget();
+
         // IDockAction::CheckIfDone 0x005521AC: DockWithObject is called first (0x005522AE). The docking squint (0x00552394; AddDockSquint below installs it) is added on the
         // first tick on which the robot reports IS_PICKING_OR_PLACING (byte [[+0xCC]+4], +0x94 the previous value; DockingSystem.OnMessage) and only while
         // ShouldApplyDockingSquint 0x005524AC holds: [[[robot+0x264]+0x30]+0x14] (the severe-need id) != 1.
@@ -526,6 +540,7 @@ public abstract class DockActionBase
         var result = await M.Docking.DockAsync(target, marker, action, Profile, ox, oy, oa,
                                                unlockLiftTrack: DockFlag95, method: DockingMethod, flag8: DockFlag8, cancel: cancel,
                                                onPickingOrPlacingRise: () => { if (ShouldApplyDockingSquint()) DockSquintAdded = AddDockSquint(); });
+        if (CheckDeletedTarget() != ActionResult.Running) return CheckDeletedTarget();
         if (result is null) return cancel.IsCancellationRequested ? ActionResult.CancelledWhileRunning : ActionResult.Timeout;
         Result = result;
         _trace.Add($"dock result {result}");
@@ -542,6 +557,7 @@ public abstract class DockActionBase
             if (M.ClockSec() >= _actionStartSec + 30.0) { _trace.Add("IAction.Update.TimedOut: the action timed out after 30.0 seconds."); return ActionResult.Timeout; }
             Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("IDockAction::CheckIfDone re-entry while Verify returns RUNNING: the engine calls it on every action update; this stack waits for the next RobotState message with a new timestamp (not itemised)");
             if (!await NextRobotStateAsync(cancel)) return ActionResult.CancelledWhileRunning;
+            if (CheckDeletedTarget() != ActionResult.Running) return CheckDeletedTarget();
             verified = Verify(M.World.GetObjectById(ObjectId), result);
             _trace.Add($"Verify -> {verified}");
         }
@@ -819,9 +835,10 @@ public sealed class PlaceRelObjectAction : DockActionBase
     // fidelity: M12-025
     private void ApplyOffsetRuleOfTheConstructor()
     {
-        if (Math.Abs(OffsetA) >= TinyOffset || Math.Abs(OffsetB) >= TinyOffset)
+        if (!(Math.Abs((float)OffsetA) < (float)TinyOffset) || !(Math.Abs((float)OffsetB) < (float)TinyOffset))
         {
             CheckPreActionPose = false;                    // +0xB9 = 0 (0x00554CC8..0x00554CDE)
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Actions", "PlaceRelObjectAction.Constructor.WillNotCheckPreDockPoses", "Pre-dock pose is at an offset, so preDock pose check won't run");
             _trace.Add("PlaceRelObjectAction.Constructor.WillNotCheckPreDockPoses");
         }
     }

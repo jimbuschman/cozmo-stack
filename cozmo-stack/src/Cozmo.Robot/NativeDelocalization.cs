@@ -97,6 +97,17 @@ public sealed partial class EngineRobot
             Engine.AnimationMessages.Deliver(0x32,true);
         }
     }
+    // fidelity: M12-039 — direct dependency Robot::GetPose 0x004EA398..0x004EA472, OV05.
+    internal Pose3d GetCheckedMainPose()
+    {
+        using var root = MainPose.FindRoot();
+        var origin = GetNativeOrigin(CurrentOriginId);
+        if (root.Id != CurrentOriginId)
+            PoseDiagnostics.Verify("Robot.GetPose.BadPoseRootOrWorldOriginID", FormattableString.Invariant($"VERIFY(_pose.GetRootID() == GetWorldOriginID()): WorldOriginID:{unchecked((int)CurrentOriginId)}({origin.Name}), RootID:{unchecked((int)root.Id)}"));
+        if (!PoseTreeNode.HasSameRoot(MainPose.Node, origin.Node))
+            PoseDiagnostics.Verify("Robot.GetPose.PoseOriginNotWorldOrigin", $"VERIFY(_pose.HasSameRootAs(GetWorldOrigin())): WorldOrigin: {origin.GetNamedPathToRoot(false)}, Pose: {MainPose.GetNamedPathToRoot(false)}");
+        return MainPose; // Both VERIFY results are ignored by the original.
+    }
     internal void SetPose(Pose3d value)
     {
         if(!PoseTreeNode.HasSameRoot(value.Node,GetNativeOrigin(CurrentOriginId).Node))
