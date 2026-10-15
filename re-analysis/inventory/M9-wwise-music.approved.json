@@ -2,7 +2,7 @@
   "subsystem": "M9-wwise-music",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "2ed784a57f2212b25d9c51b052727db9728e03b37c3d1b493801f99c2a7a525b",
+  "inventory_sha256": "4850dcb2c598c8cd667386cf16a72f8edbca56fea703d50e45f7dd52842c8aa1",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -145,31 +145,34 @@
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
         "M6 gapE 3.3",
-        "Cozmo.bnk node property 45 absence"
+        "Cozmo.bnk node property 45 absence",
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: corrected evidence: loader 0x009F6F74..0x009F7010 (authored bit4 -> +0x47 bit3 = enable; bit3 -> bit2 = override); resolver 0x009FAE18..0x009FAEB4 (property 0x2D/45 is the root note); sole consumer CAkSound vt+0xAC 0x00A1DAB8, pitch += (key - root) * 100.0f only when channel != 0xFF (0x00A1DAEC..0x00A1DB40); ordinary play sets channel 0xFF (0x009AA734..0x009AA748, 0x00A2E540..0x00A2E598, 0x00A62A68..0x00A62AF4); census of 2886 objects in 6 banks: none sets authored bit3 or bit4."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-013": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Whether Wwise routes MIDI notes into the singing sampler get-in branch",
       "authority": "statically linked Wwise runtime in libcozmoEngine.so",
       "evidence": [
         "0x009B3260..0x009B4033",
         "0x009BBF9C..0x009BC17B",
-        "0x00A78D10..0x00A78DE3"
+        "0x00A78D10..0x00A78DE3",
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: R1-R8 0x0099B8E8..0x0099B9FC, 0x00A3D234..0x00A3D318, 0x0099239C..0x00992424, 0x00A3BE04..0x00A3BF00, 0x009A7EB0..0x009A7FA8, 0x009ED51C..0x009ED644, 0x009D273C..0x009D27C4, 0x00A3CBE0..0x00A3CC84; E1-E12 0x0097D14C..0x0097D1E4, 0x00983638..0x0098370C, 0x00A3C4C8..0x00A3C740, 0x00A3D370..0x00A3D3B4, 0x00A70738..0x00A71128, 0x00A71938..0x00A71BF0, 0x00A3DD0C..0x00A3E830, 0x00A3EA3C..0x00A3EB44."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-014": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Whether MIDI note velocity implicitly changes voice level",
       "authority": "statically linked Wwise runtime in libcozmoEngine.so",
       "evidence": [
         "0x009B3260..0x009B4033",
         "0x00A78D10..0x00A78DE3",
-        "re-analysis/research/20260928-I-M9-gap3-extraction.md"
+        "re-analysis/research/20260928-I-M9-gap3-extraction.md",
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: G1 0x009FFAF4..0x009FFC50; G2 0x009FFC54..0x009FFD10; G3 0x009FFD14..0x009FFE18, 0x009FF368..0x009FF40C; G8 0x00A4B5D8..0x00A4B674 (thunk 0x009FF414, sub-vtable 0x0103B804); fade writers 0x00A00134, 0x00A0022C, 0x009FF41C..0x009FF4C4, 0x00A00888, 0x00A01348, 0x00A01D6C, 0x00A021D4, 0x009FF750, 0x00A0146C, 0x00A0166C; source contexts 0x00A1EA68, 0x00A01E24, 0x00A562B8..0x00A563B0; velocity census (ARM 0x940000..0xAB0000)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -385,6 +388,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov38-41-check.md: reads at 0x009E20A4 (attack x live sample rate) and 0x009E1F80 (frame count T); LFO step uses fixed 48000 (literals 0x009D7540, 0x009D7564)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-034": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise MIDI path boundary callees: A04384 prefix, owner vt+4, A70C84 (CC 120/123), A717A4, A3EB4C retire, the 97D14C vt+0x70/981DBC branch and the 0x0097D1EC byte-set path, R8 tails",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: A04384 called at 0x00A70F74..0x00A70F84; owner vt+4 at E6 0x00A71B34..0x00A71BF0; A70C84 at 0x00A71024..0x00A71048; A717A4 at E9 0x00A71938..; A3EB4C at 0x00A71A50..0x00A71AD0; vt+0x70 / 0x00981DBC in 0x0097D14C..0x0097D1E4; R8 tails after 0x00A3CC88."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-035": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise general parameter collector bodies (9EF258, 9FBE74, A11590)",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: called from the voice parameter paths (G rows 0x009FFAF4..0x009FFE18; CAkSound vt+0xAC base call before 0x00A1DAEC); their inputs carry no velocity (census in re-analysis/research/overnight/20261015-m9-recheck-1.md)."
       ],
       "live_path": true,
       "hardware_required": false

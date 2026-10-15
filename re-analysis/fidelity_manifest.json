@@ -2977,13 +2977,14 @@
       "evidence": [
         "re-analysis/inventory/M6-wwise-bank.md",
         "M6 gapE 3.3",
-        "Cozmo.bnk node property 45 absence"
+        "Cozmo.bnk node property 45 absence",
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: corrected evidence: loader 0x009F6F74..0x009F7010 (authored bit4 -> +0x47 bit3 = enable; bit3 -> bit2 = override); resolver 0x009FAE18..0x009FAEB4 (property 0x2D/45 is the root note); sole consumer CAkSound vt+0xAC 0x00A1DAB8, pitch += (key - root) * 100.0f only when channel != 0xFF (0x00A1DAEC..0x00A1DB40); ordinary play sets channel 0xFF (0x009AA734..0x009AA748, 0x00A2E540..0x00A2E598, 0x00A62A68..0x00A62AF4); census of 2886 objects in 6 banks: none sets authored bit3 or bit4."
       ],
       "live_path": true,
       "test": "WwiseModulatorTests.NoNodeInAnyShippedBankCouldHaveMidiNoteTrackingEnabled",
       "effect": "singing behavior, timing, selection or rendered audio differs from the official app",
       "provenance": "built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path",
-      "unresolved": " OV38-41 check (re-analysis/research/overnight/20261015-ov38-41-check.md): LEAD, not a finding: the runtime note-tracking flag may be NodeBase +0x47 bits 2-3 (authored bits 3-4, 0x009F6FE4..0x009F7010), not property 45; 15 Sounds outside the singing closure set authored bit 0x10. The consumer of +0x47 bits 2-3 is unread; a follow-up pass checks it.",
+      "unresolved": " OV38-41 check (re-analysis/research/overnight/20261015-ov38-41-check.md): LEAD, not a finding: the runtime note-tracking flag may be NodeBase +0x47 bits 2-3 (authored bits 3-4, 0x009F6FE4..0x009F7010), not property 45; 15 Sounds outside the singing closure set authored bit 0x10. The consumer of +0x47 bits 2-3 is unread; a follow-up pass checks it. Re-check 2026-10-15 (re-analysis/research/overnight/20261015-m9-recheck-1.md): the conclusion holds; the original evidence (\"property 45 absence\") was the wrong property: 45 is the root note, the enable flag is +0x47 bit3. The OV38-41 check's \"15 Sounds set authored bit 0x10\" lead is withdrawn (not reproduced; likely a misaligned parse of the 15 plug-in Sounds).",
       "hardware_required": false
     },
     {
@@ -2997,10 +2998,11 @@
       "evidence": [
         "0x009B3260..0x009B4033",
         "0x009BBF9C..0x009BC17B",
-        "0x00A78D10..0x00A78DE3"
+        "0x00A78D10..0x00A78DE3",
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: R1-R8 0x0099B8E8..0x0099B9FC, 0x00A3D234..0x00A3D318, 0x0099239C..0x00992424, 0x00A3BE04..0x00A3BF00, 0x009A7EB0..0x009A7FA8, 0x009ED51C..0x009ED644, 0x009D273C..0x009D27C4, 0x00A3CBE0..0x00A3CC84; E1-E12 0x0097D14C..0x0097D1E4, 0x00983638..0x0098370C, 0x00A3C4C8..0x00A3C740, 0x00A3D370..0x00A3D3B4, 0x00A70738..0x00A71128, 0x00A71938..0x00A71BF0, 0x00A3DD0C..0x00A3E830, 0x00A3EA3C..0x00A3EB44."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "Trace the runtime MIDI-event entry from the post-load music/actor-mixer vtables through child filtering for MIDI target 110896138 and establish whether branch 403781184 receives the notes. OV38 check (re-analysis/research/overnight/20261015-ov38-41-check.md): rows confirmed: Layer fan-out 0x009D0758..0x009D0BCC, filter 0x009EE454..0x009EE940, RanSeq single step 0x00A0A6FC..0x00A0A850 (no retry), play 0x00A0AFDC; all 46 MIDI tracks target 110896138. Stays RECOVERABLE_GAP until E1-E12 (0x00A3C4B8..0x00A3C744, 0x00A70738..0x00A70888, 0x00A71B34..0x00A71BF4, 0x00A3DB48..0x00A3DE08) are re-checked. The effect text is wrong: get-in receives every note-on; audibility depends on selection and 12 single-pitch RanSeq gates (they are RanSeq, not Sounds; M9-022).",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Trace the runtime MIDI-event entry from the post-load music/actor-mixer vtables through child filtering for MIDI target 110896138 and establish whether branch 403781184 receives the notes. OV38 check (re-analysis/research/overnight/20261015-ov38-41-check.md): rows confirmed: Layer fan-out 0x009D0758..0x009D0BCC, filter 0x009EE454..0x009EE940, RanSeq single step 0x00A0A6FC..0x00A0A850 (no retry), play 0x00A0AFDC; all 46 MIDI tracks target 110896138. Stays RECOVERABLE_GAP until E1-E12 (0x00A3C4B8..0x00A3C744, 0x00A70738..0x00A70888, 0x00A71B34..0x00A71BF4, 0x00A3DB48..0x00A3DE08) are re-checked. The effect text is wrong: get-in receives every note-on; audibility depends on selection and 12 single-pitch RanSeq gates (they are RanSeq, not Sounds; M9-022). Re-check 2026-10-15 (re-analysis/research/overnight/20261015-m9-recheck-1.md): IMPLEMENTATION_GAP: build R1-R8, E1-E12 with new rows E2b, E4b, E7b (unmatched note-off dropped; note-off inherits the note-on velocity), E7d, E9b, plus OV38 F1-F5 and L1-L7. Corrections: A04384 is a prefix call, not an alternate path; R+0x88 is the note state; a failed allocation or A3DE10 != 1 drops the note. The effect text: get-in receives every admitted nonzero-velocity note-on; whether it sounds depends on selection and the 12 single-pitch RanSeq gates (M9-022). Boundaries: M9-034; parser M9-005; A3E920 M9-031.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseSongTests.TheRenderSaysHowManyVoicesEachBranchOfTheSamplerContributed"
@@ -3016,10 +3018,11 @@
       "evidence": [
         "0x009B3260..0x009B4033",
         "0x00A78D10..0x00A78DE3",
-        "re-analysis/research/20260928-I-M9-gap3-extraction.md"
+        "re-analysis/research/20260928-I-M9-gap3-extraction.md",
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: G1 0x009FFAF4..0x009FFC50; G2 0x009FFC54..0x009FFD10; G3 0x009FFD14..0x009FFE18, 0x009FF368..0x009FF40C; G8 0x00A4B5D8..0x00A4B674 (thunk 0x009FF414, sub-vtable 0x0103B804); fade writers 0x00A00134, 0x00A0022C, 0x009FF41C..0x009FF4C4, 0x00A00888, 0x00A01348, 0x00A01D6C, 0x00A021D4, 0x009FF750, 0x00A0146C, 0x00A0166C; source contexts 0x00A1EA68, 0x00A01E24, 0x00A562B8..0x00A563B0; velocity census (ARM 0x940000..0xAB0000)."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "Trace the MIDI velocity byte from the runtime event entry through every per-voice gain and RTPC input when the bank sets no velocity binding. OV39 check (re-analysis/research/overnight/20261015-ov38-41-check.md): V5-V7, G4, G6 confirmed (0x00A00384..0x00A00478, 0x00A149C8..0x00A149FC, 0x009FFF24..0x009FFFA8, 0x009D5070..0x009D50A0); no shipped binding of source 0x81. Stays RECOVERABLE_GAP: G1-G3/G8 not re-checked; source-context consumers A1EA68, A01E24, A562B8 and PBI+0x168/+0x16C writers unread.",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "Trace the MIDI velocity byte from the runtime event entry through every per-voice gain and RTPC input when the bank sets no velocity binding. OV39 check (re-analysis/research/overnight/20261015-ov38-41-check.md): V5-V7, G4, G6 confirmed (0x00A00384..0x00A00478, 0x00A149C8..0x00A149FC, 0x009FFF24..0x009FFFA8, 0x009D5070..0x009D50A0); no shipped binding of source 0x81. Stays RECOVERABLE_GAP: G1-G3/G8 not re-checked; source-context consumers A1EA68, A01E24, A562B8 and PBI+0x168/+0x16C writers unread. Re-check 2026-10-15 (re-analysis/research/overnight/20261015-m9-recheck-1.md): IMPLEMENTATION_GAP. Answer: in shipped content MIDI velocity never changes voice level (only filter shift, zero/nonzero gates, unbound source 0x81, and E7b inheritance). ADP-1 (manager ruling): the dB->linear polynomial 0x00A4B608..0x00A4B674 is gain arithmetic and may be EQUIVALENT_IMPLEMENTATION subject to the equivalence test; its inputs PBI+0x3C/+0x40, the cache gate and the fade writers stay exact. Unread: M9-035 (parameter collector), the callers of the A366F4 transition manager.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseClipWindowTests.NothingUnderTheSamplerAsksForTheNoteVelocity"
@@ -3368,6 +3371,40 @@
       "effect": "The vibrato's real-time frequency (f x engine rate / 48000).",
       "provenance": "Opus check of OV38-OV41 (2026-10-15), manager record.",
       "unresolved": "RECOVERABLE_GAP: identify the globals, their writers and the shipped engine configuration values.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M9-034",
+      "subsystem": "M9-wwise-music",
+      "title": "Wwise MIDI path boundary callees: A04384 prefix, owner vt+4, A70C84 (CC 120/123), A717A4, A3EB4C retire, the 97D14C vt+0x70/981DBC branch and the 0x0097D1EC byte-set path, R8 tails",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: A04384 called at 0x00A70F74..0x00A70F84; owner vt+4 at E6 0x00A71B34..0x00A71BF0; A70C84 at 0x00A71024..0x00A71048; A717A4 at E9 0x00A71938..; A3EB4C at 0x00A71A50..0x00A71AD0; vt+0x70 / 0x00981DBC in 0x0097D14C..0x0097D1E4; R8 tails after 0x00A3CC88."
+      ],
+      "effect": "MIDI note lifetime, CC 120/123 (all notes off) handling and frame scheduling.",
+      "provenance": "Opus M9 re-check 1 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read each body; scan the 46 shipped MIDI payloads through the reader (M9-005) for CC 0x78/0x7B.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M9-035",
+      "subsystem": "M9-wwise-music",
+      "title": "Wwise general parameter collector bodies (9EF258, 9FBE74, A11590)",
+      "location": "cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-m9-recheck-1.md: called from the voice parameter paths (G rows 0x009FFAF4..0x009FFE18; CAkSound vt+0xAC base call before 0x00A1DAEC); their inputs carry no velocity (census in re-analysis/research/overnight/20261015-m9-recheck-1.md)."
+      ],
+      "effect": "Voice parameter values other than velocity.",
+      "provenance": "Opus M9 re-check 1 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the three bodies.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

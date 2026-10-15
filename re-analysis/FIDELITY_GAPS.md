@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **633 records** over 16 subsystems.
+Manifest of **635 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 43 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 326 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 328 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -32,7 +32,7 @@ remains after both, and they do not go away by working harder on this repository
 | M6-wwise-bank — Wwise bank reading and codecs | 33 | 3 | 27 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 2 | 22 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 26 | 4 | 21 | 0 | 0 | no | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 33 | 6 | 19 | 0 | 1 | no | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 35 | 6 | 21 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 88 | 14 | 59 | 0 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 46 | 3 | 33 | 0 | 1 | no | no |
@@ -204,24 +204,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
-**M9-013 — Whether Wwise routes MIDI notes into the singing sampler get-in branch** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: a get-in recording is layered onto roughly every sung note of every song, or none at all
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-013; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: statically linked Wwise runtime in libcozmoEngine.so
-* evidence: 0x009B3260..0x009B4033; 0x009BBF9C..0x009BC17B; 0x00A78D10..0x00A78DE3
-* outstanding: Trace the runtime MIDI-event entry from the post-load music/actor-mixer vtables through child filtering for MIDI target 110896138 and establish whether branch 403781184 receives the notes. OV38 check (re-analysis/research/overnight/20261015-ov38-41-check.md): rows confirmed: Layer fan-out 0x009D0758..0x009D0BCC, filter 0x009EE454..0x009EE940, RanSeq single step 0x00A0A6FC..0x00A0A850 (no retry), play 0x00A0AFDC; all 46 MIDI tracks target 110896138. Stays RECOVERABLE_GAP until E1-E12 (0x00A3C4B8..0x00A3C744, 0x00A70738..0x00A70888, 0x00A71B34..0x00A71BF4, 0x00A3DB48..0x00A3DE08) are re-checked. The effect text is wrong: get-in receives every note-on; audibility depends on selection and 12 single-pitch RanSeq gates (they are RanSeq, not Sounds; M9-022).
-
-**M9-014 — Whether MIDI note velocity implicitly changes voice level** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: the softer notes of a song come out quieter, or every note comes out at the same level
-* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-014; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
-* best authority: statically linked Wwise runtime in libcozmoEngine.so
-* evidence: 0x009B3260..0x009B4033; 0x00A78D10..0x00A78DE3; re-analysis/research/20260928-I-M9-gap3-extraction.md
-* outstanding: Trace the MIDI velocity byte from the runtime event entry through every per-voice gain and RTPC input when the bank sets no velocity binding. OV39 check (re-analysis/research/overnight/20261015-ov38-41-check.md): V5-V7, G4, G6 confirmed (0x00A00384..0x00A00478, 0x00A149C8..0x00A149FC, 0x009FFF24..0x009FFFA8, 0x009D5070..0x009D50A0); no shipped binding of source 0x81. Stays RECOVERABLE_GAP: G1-G3/G8 not re-checked; source-context consumers A1EA68, A01E24, A562B8 and PBI+0x168/+0x16C writers unread.
-
 **M9-030 — Wwise envelope initializer and timing: S+0x38 deadline from the modulator initializer, sustain time, evaluator phases** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs`
@@ -257,6 +239,24 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.
 * evidence: re-analysis/research/overnight/20261015-ov38-41-check.md: reads at 0x009E20A4 (attack x live sample rate) and 0x009E1F80 (frame count T); LFO step uses fixed 48000 (literals 0x009D7540, 0x009D7564).
 * outstanding: RECOVERABLE_GAP: identify the globals, their writers and the shipped engine configuration values.
+
+**M9-034 — Wwise MIDI path boundary callees: A04384 prefix, owner vt+4, A70C84 (CC 120/123), A717A4, A3EB4C retire, the 97D14C vt+0x70/981DBC branch and the 0x0097D1EC byte-set path, R8 tails** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: MIDI note lifetime, CC 120/123 (all notes off) handling and frame scheduling.
+* rests on: Opus M9 re-check 1 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.
+* evidence: re-analysis/research/overnight/20261015-m9-recheck-1.md: A04384 called at 0x00A70F74..0x00A70F84; owner vt+4 at E6 0x00A71B34..0x00A71BF0; A70C84 at 0x00A71024..0x00A71048; A717A4 at E9 0x00A71938..; A3EB4C at 0x00A71A50..0x00A71AD0; vt+0x70 / 0x00981DBC in 0x0097D14C..0x0097D1E4; R8 tails after 0x00A3CC88.
+* outstanding: RECOVERABLE_GAP: read each body; scan the 46 shipped MIDI payloads through the reader (M9-005) for CC 0x78/0x7B.
+
+**M9-035 — Wwise general parameter collector bodies (9EF258, 9FBE74, A11590)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: Voice parameter values other than velocity.
+* rests on: Opus M9 re-check 1 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.
+* evidence: re-analysis/research/overnight/20261015-m9-recheck-1.md: called from the voice parameter paths (G rows 0x009FFAF4..0x009FFE18; CAkSound vt+0xAC base call before 0x00A1DAEC); their inputs carry no velocity (census in re-analysis/research/overnight/20261015-m9-recheck-1.md).
+* outstanding: RECOVERABLE_GAP: read the three bodies.
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -1712,6 +1712,24 @@ B-M5-20 (2026-10-15), built, awaiting strong verification: removed NoAnimationFo
 * best authority: approved M6 inventory and shipped Init.bnk
 * evidence: re-analysis/inventory/M6-wwise-bank.md; 0x00AA257C; 0x00AA18F4
 * outstanding: The exact Robot_Bus_1 chain (two EQs, limiter, Hijack order) and its recovered DSP are built and wired, but the engine runs the bus at the 48000 Hz Wwise mix rate and the Hijack resamples to 22320 (M6-018 / gapC 4.6/4.8), while this stack still renders and runs the chain at 22320. Wiring the Wwise mix rate and the Hijack resample is M6-017/M6-018; this record settles with them.
+
+**M9-013 — Whether Wwise routes MIDI notes into the singing sampler get-in branch** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: a get-in recording is layered onto roughly every sung note of every song, or none at all
+* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-013; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
+* best authority: statically linked Wwise runtime in libcozmoEngine.so
+* evidence: 0x009B3260..0x009B4033; 0x009BBF9C..0x009BC17B; 0x00A78D10..0x00A78DE3; re-analysis/research/overnight/20261015-m9-recheck-1.md: R1-R8 0x0099B8E8..0x0099B9FC, 0x00A3D234..0x00A3D318, 0x0099239C..0x00992424, 0x00A3BE04..0x00A3BF00, 0x009A7EB0..0x009A7FA8, 0x009ED51C..0x009ED644, 0x009D273C..0x009D27C4, 0x00A3CBE0..0x00A3CC84; E1-E12 0x0097D14C..0x0097D1E4, 0x00983638..0x0098370C, 0x00A3C4C8..0x00A3C740, 0x00A3D370..0x00A3D3B4, 0x00A70738..0x00A71128, 0x00A71938..0x00A71BF0, 0x00A3DD0C..0x00A3E830, 0x00A3EA3C..0x00A3EB44.
+* outstanding: Trace the runtime MIDI-event entry from the post-load music/actor-mixer vtables through child filtering for MIDI target 110896138 and establish whether branch 403781184 receives the notes. OV38 check (re-analysis/research/overnight/20261015-ov38-41-check.md): rows confirmed: Layer fan-out 0x009D0758..0x009D0BCC, filter 0x009EE454..0x009EE940, RanSeq single step 0x00A0A6FC..0x00A0A850 (no retry), play 0x00A0AFDC; all 46 MIDI tracks target 110896138. Stays RECOVERABLE_GAP until E1-E12 (0x00A3C4B8..0x00A3C744, 0x00A70738..0x00A70888, 0x00A71B34..0x00A71BF4, 0x00A3DB48..0x00A3DE08) are re-checked. The effect text is wrong: get-in receives every note-on; audibility depends on selection and 12 single-pitch RanSeq gates (they are RanSeq, not Sounds; M9-022). Re-check 2026-10-15 (re-analysis/research/overnight/20261015-m9-recheck-1.md): IMPLEMENTATION_GAP: build R1-R8, E1-E12 with new rows E2b, E4b, E7b (unmatched note-off dropped; note-off inherits the note-on velocity), E7d, E9b, plus OV38 F1-F5 and L1-L7. Corrections: A04384 is a prefix call, not an alternate path; R+0x88 is the note state; a failed allocation or A3DE10 != 1 drops the note. The effect text: get-in receives every admitted nonzero-velocity note-on; whether it sounds depends on selection and the 12 single-pitch RanSeq gates (M9-022). Boundaries: M9-034; parser M9-005; A3E920 M9-031.
+
+**M9-014 — Whether MIDI note velocity implicitly changes voice level** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: the softer notes of a song come out quieter, or every note comes out at the same level
+* rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-014; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
+* best authority: statically linked Wwise runtime in libcozmoEngine.so
+* evidence: 0x009B3260..0x009B4033; 0x00A78D10..0x00A78DE3; re-analysis/research/20260928-I-M9-gap3-extraction.md; re-analysis/research/overnight/20261015-m9-recheck-1.md: G1 0x009FFAF4..0x009FFC50; G2 0x009FFC54..0x009FFD10; G3 0x009FFD14..0x009FFE18, 0x009FF368..0x009FF40C; G8 0x00A4B5D8..0x00A4B674 (thunk 0x009FF414, sub-vtable 0x0103B804); fade writers 0x00A00134, 0x00A0022C, 0x009FF41C..0x009FF4C4, 0x00A00888, 0x00A01348, 0x00A01D6C, 0x00A021D4, 0x009FF750, 0x00A0146C, 0x00A0166C; source contexts 0x00A1EA68, 0x00A01E24, 0x00A562B8..0x00A563B0; velocity census (ARM 0x940000..0xAB0000).
+* outstanding: Trace the MIDI velocity byte from the runtime event entry through every per-voice gain and RTPC input when the bank sets no velocity binding. OV39 check (re-analysis/research/overnight/20261015-ov38-41-check.md): V5-V7, G4, G6 confirmed (0x00A00384..0x00A00478, 0x00A149C8..0x00A149FC, 0x009FFF24..0x009FFFA8, 0x009D5070..0x009D50A0); no shipped binding of source 0x81. Stays RECOVERABLE_GAP: G1-G3/G8 not re-checked; source-context consumers A1EA68, A01E24, A562B8 and PBI+0x168/+0x16C writers unread. Re-check 2026-10-15 (re-analysis/research/overnight/20261015-m9-recheck-1.md): IMPLEMENTATION_GAP. Answer: in shipped content MIDI velocity never changes voice level (only filter shift, zero/nonzero gates, unbound source 0x81, and E7b inheritance). ADP-1 (manager ruling): the dB->linear polynomial 0x00A4B608..0x00A4B674 is gain arithmetic and may be EQUIVALENT_IMPLEMENTATION subject to the equivalence test; its inputs PBI+0x3C/+0x40, the cache gate and the fade writers stay exact. Unread: M9-035 (parameter collector), the callers of the A366F4 transition manager.
 
 **M9-015 — Each play draws container selections afresh using Wwise's own LCG** (live path)
 
