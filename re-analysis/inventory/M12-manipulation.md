@@ -1027,3 +1027,11 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | UnSetCarryingObjects + CarryState send + AddRobotRelativeObservation, IMPLEMENTATION_GAP | M12-045 (new) |
 | Remaining unattach reads, RECOVERABLE_GAP | M12-046 (new) |
 | SetPose cache clear | M12-001 (note) |
+
+
+## Check of OV45-OV47 (manager, 2026-10-15; research/overnight/20261015-ov45-47-check.md)
+
+| Change | Records |
+| --- | --- |
+| Pyramid-base geometry, PreActionPose +0x14: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-043, M12-044 |
+| Helper stop, BuildPyramid top loop; candidate crash points: RECOVERABLE_GAP | M12-047, M12-048 (new) |

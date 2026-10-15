@@ -84,5 +84,8 @@ The first three are the requests already written:
 | OV71 | requests/overnight/20261015-ov71-m9-036.md (M9-036: Wwise envelope remaining arithmetic: early-release (deadline before de) | research/overnight/20261015-ov71-m9-036.md |
 | OV72 | requests/overnight/20261015-ov72-m9-035.md (M9-035: Wwise general parameter collector bodies (9EF258, 9FBE74, A11590)) | research/overnight/20261015-ov72-m9-035.md |
 | OV73 | requests/overnight/20261015-ov73-m9-038.md (M9-038: Wwise live RTPC updates to modulator states: who calls state vt+0x08 () | research/overnight/20261015-ov73-m9-038.md |
+| OV74 | requests/overnight/20261015-ov74-m12-047.md (M12-047: Behavior helper stop semantics (StopHelperWithoutCallback, ClearStackF) | research/overnight/20261015-ov74-m12-047.md |
+| OV75 | requests/overnight/20261015-ov75-m12-048.md (M12-048: Candidate crash points in pre-action pose consumers: CrossBridge GetDo) | research/overnight/20261015-ov75-m12-048.md |
+| OV76 | requests/overnight/20261015-ov76-m11-073.md (M11-073: Whether any unguarded GetParent caller can see a root pose in normal r) | research/overnight/20261015-ov76-m11-073.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

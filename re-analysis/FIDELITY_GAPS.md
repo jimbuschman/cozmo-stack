@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **638 records** over 16 subsystems.
+Manifest of **640 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 42 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 332 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 334 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -35,7 +35,7 @@ remains after both, and they do not go away by working harder on this repository
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 38 | 5 | 25 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 88 | 14 | 59 | 0 | 0 | no | no |
-| M12-manipulation — Docking, carrying and pre-action poses | 46 | 3 | 33 | 0 | 1 | no | no |
+| M12-manipulation — Docking, carrying and pre-action poses | 48 | 3 | 35 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 37 | 1 | 32 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
 | M15-freeplay — Needs, activities and freeplay | 51 | 6 | 40 | 1 | 0 | no | no |
@@ -294,7 +294,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Opus check of R-POSE-REST (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6).; re-analysis/research/20261013-small-reads-1-check.md: "Still unread" list: InitPose 0x004EF562, ObjectPoseConfirmer setters 0x00505DE0..0x00506F16, SetOnRamp 0x0051664E/0x00516672, SetPoseOnCharger 0x005168BA, PreActionPose 0x0050DBE0/0x0050DDA8/0x0050DFFA/0x0050F9FE, history producers 0x00512BEE/0x0051271C/0x00515774/0x005159C8/0x005160BC/0x0051612C/0x006B26E8, 0x0062A588, SendAbsLocalizationUpdate 0x0051275C, GetWithRespectTo 0x00845A34.
-* outstanding: RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly. Split 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): the census and fault semantics moved to M11-076. Census is 55 calls (30 GetParent, 25 FindRoot), not "about 60"; 0x004DF674 is FindRoot. Remaining: the 23 unguarded rows' producer invariants (listed in the evidence). No root-to-fault witness shown.
+* outstanding: RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly. Split 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): the census and fault semantics moved to M11-076. Census is 55 calls (30 GetParent, 25 FindRoot), not "about 60"; 0x004DF674 is FindRoot. Remaining: the 23 unguarded rows' producer invariants (listed in the evidence). No root-to-fault witness shown. OV45 check (re-analysis/research/overnight/20261015-ov45-47-check.md): narrowed. Rows 1, 2, 21 cannot be a root; row 4 (0x0050F9FE) and the on-ramp history root (0x00512BE2 -> 0x00512BEE) are unreachable (no Ramp is constructed; SetOnRamp 0x0051650E..0x00516530; M12-034). Rows 5-9: cannot given the producers, small remainder (latest-vision-state getter, HistRobotState::SetPose 0x0051516E, the 0x00512EC4 exit). Open: inline writes to robot+0x298 (rows 10-18, 20; 0x0061E27C may be SDK-only) and the object-pose writer closure (rows 3, 19, 22, 23: ObjectPoseConfirmer 0x00505DE0..0x00506F16, BlockWorld add/update, producer of 0x0062BA30). ClearParent's only caller is DetectFaces 0x006B37E4. Its evidence's Ramp producer is unreachable.
 
 **M11-078 — Vision/world teardown leaves not yet read: result-list and deque payload dtors, Camera::~Camera, ImageCache, CalibImage/Image vectors, CLAHE finalizer, FaceRecognizer trees, the ObservableObject dtor census beyond cube/charger, subscriber handle specialisations, VisionSystem profiler key** (live path)
 
@@ -380,24 +380,6 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
-**M12-043 — PyramidBase interior geometry: corners and midpoint for the pyramid top placement (GetBoundingQuad<float> corner order)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs`
-* effect: Where the top cube of a pyramid is placed.
-* rests on: Opus check of OV02 (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261014-ov02-m12-028-check.md: corners/midpoint 0x006177F0..0x00617A08, 0x00617A8C..0x00617C32, multimap 0x00618A4C (equal keys keep insertion order, NaN right); unread GetBoundingQuad<float> 0x004E6490..0x004E6598 and Block::GetBoundingQuadXY 0x004E62A2.
-* outstanding: RECOVERABLE_GAP: read GetBoundingQuad<float> (it fixes the corner order and so the tie order); also whether two PyramidBase entries can both contain A and B (T7 replace path reachability).
-
-**M12-044 — PreActionPose element escape analysis: whether any consumer passes a PreActionPose element (not its pose) to a callee outside the census, which could read +0x14** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs`
-* effect: Whether the height tolerance can change any decision through an untraced callee.
-* rests on: Split from M12-038 after the Opus check of OV04 (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261014-ov04-m12-038-check.md: "Still unread": IDockAction::Init std::function targets 0x00551618, 0x00551654, 0x00551842; ComputePlaceRelObjectOffsetPoses 0x005558F4..0x00556540; DriveAndFlipBlockAction::GetPossiblePoses 0x0055E438..0x0055EB04; FlipBlockAction::Init 0x0055EDC8..0x0055F074; IsAtPreActionPoseWithVisualVerification 0x005B6F5C..0x005B7160; BehaviorDockingTestSimple 0x005CBC10..0x005CD180; BehaviorDriveInDesperation 0x005D9884..0x005D9BAC.
-* outstanding: RECOVERABLE_GAP: trace the callee and argument flow of the listed consumers for element pointers escaping to callees outside the census.
-
 **M12-046 — Unattach path still unread: BlockWorld::DeleteLocatedObjects body, CheckAndUpdateTreadsState order against Delocalize (past 0x00512188), the object-name helpers 0x004E80B8/0x004E8048, Robot::SetLocalizedTo body, SetCarryingObject 0x00633E78 (the attach-side CarryState send)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Manipulation/Docking.cs`
@@ -406,6 +388,24 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261014-m12-006-unattach.md: "Still unread" list: DeleteLocatedObjects PLT 0x004A715C; CheckAndUpdateTreadsState 0x00511E00..; 0x004E80B8, 0x004E8048; Robot::SetLocalizedTo; SetCarryingObject 0x00633E78.
 * outstanding: RECOVERABLE_GAP: read the listed bodies.
+
+**M12-047 — Behavior helper stop semantics (StopHelperWithoutCallback, ClearStackFromTopToIter, SmartStopHelper) with IHelper::Stop downstream, and BehaviorBuildPyramid's top-loop source list** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs`
+* effect: What stopping a behaviour helper does, and which pyramid bases BuildPyramid tries.
+* rests on: Opus check of OV45-OV47 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov45-47-check.md: StopHelperWithoutCallback 0x0056DCBC..0x0056DCDA (compares the first stack entry only; ClearStackFromTopToIter then returns 1); ClearStackFromTopToIter 0x0056DCE0..0x0056DD92 (Stop(top, isActive on first pass), pop, release; 1000-bound sErrorF line 0x106, _errG, break); IBehavior SmartStopHelper 0x005BD21C..0x005BD2CE (weak +0xC8, helper +0xC4, log <name>.SmartStopHelper, robot+0x264 -> +0x10); SmartDelegateToHelper ignores the result 0x005BEBE8.
+* outstanding: RECOVERABLE_GAP: read IHelper::Stop downstream (concrete StopInternal, LogStopEvent, StopActing) and which list BehaviorBuildPyramid's top loop iterates. M1-034 candidate: empty stack at 0x0056DCC6 (reachability unread).
+
+**M12-048 — Candidate crash points in pre-action pose consumers: CrossBridge GetDockMarker2 out-of-bounds read and DriveAndFlip index -1** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs`
+* effect: Whether a shipped path reads past a pre-action pose vector.
+* rests on: Opus check of OV45-OV47 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov45-47-check.md: CrossBridge GetDockMarker2 0x0055722C..0x0055723A reads begin+(1-idx)*28+4 unchecked (constructor caller TraverseObjectAction::UpdateInternal 0x0054B16A); DriveAndFlip::GetPossiblePoses indexes with the closest index initialised to -1 at 0x0055E4BC (0x0055E59C).
+* outstanding: RECOVERABLE_GAP: is a Bridge object ever constructed in the shipped app; can IDockAction::GetPreActionPoses 0x005508C8 leave the index at -1 with a non-empty vector. If reachable, the M1-034 standing rule applies.
 
 ### M13-navigation — Planning, charger and block configurations
 
@@ -2905,6 +2905,24 @@ B-M13-3 built, awaiting strong verification: robot.plan_complete is explicit Eve
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov02-m12-028-check.md: ctor 0x005B8F00..0x005B8F82; Init 0x005B8FD0..0x005B90FE; Start 0x005B9168..0x005B930E; Respond 0x005B94C0..0x005B952E; MarkFailed 0x005B93A8..0x005B9460; invokers 0x005B956A, 0x005B95D6.
 * outstanding: IMPLEMENTATION_GAP: port per the check file (F1-F8, the Respond table, MarkFailed with SetFailedToUse 1 or 2 and the 1-rad-about-Z pose). Dependencies: M12-031 (pre-action check), M12-022 (DriveToHelper), M8-011 (SmartDelegateToHelper), M15-024 (whiteboard). Unread: StopHelperWithoutCallback, IHelper::OnDelegateSuccess/Failure, DriveToHelper body.
+
+**M12-043 — PyramidBase interior geometry: corners and midpoint for the pyramid top placement (GetBoundingQuad<float> corner order)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/BlockConfigurations.cs`
+* effect: Where the top cube of a pyramid is placed.
+* rests on: Opus check of OV02 (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov02-m12-028-check.md: corners/midpoint 0x006177F0..0x00617A08, 0x00617A8C..0x00617C32, multimap 0x00618A4C (equal keys keep insertion order, NaN right); unread GetBoundingQuad<float> 0x004E6490..0x004E6598 and Block::GetBoundingQuadXY 0x004E62A2.; re-analysis/research/overnight/20261015-ov45-47-check.md: quad call 0x00617818..0x00617824; GetCanonicalCorners 0x004E60D8..0x004E6146 (8 corners at +-0.5: (-,-,+),(+,-,+),(-,-,-),(+,-,-),(-,+,+),(+,+,+),(-,+,-),(+,+,-)); pad/scale/rotate 0x004E62C0..0x004E6386; minAreaRect points opencv_core 0x00086188..0x0008627A; Quad 0x004E64FE..0x004E655A; centroid 0x004DF7BE..0x004DF84C; sort 0x004E7F24..0x004E7F96, 0x004E8508..0x004E8642; translation 0x004E639A..0x004E63B2; insertion 0x00617826..0x006179BC; midpoint 0x00617B98..0x00617BF6; container 0x006168EC..0x006169C4; builder 0x0061830A..0x006183B4; cache 0x0062C5A2..0x0062C616.
+* outstanding: RECOVERABLE_GAP: read GetBoundingQuad<float> (it fixes the corner order and so the tie order); also whether two PyramidBase entries can both contain A and B (T7 replace path reachability). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov45-47-check.md): IMPLEMENTATION_GAP for the pyramid-base geometry and container (duplicate AB not producible in a normal world). Helper stop semantics and BehaviorBuildPyramid's top-loop source are M12-047. Not re-verified: convexHull/minAreaRect internals (opencv), LSDA catch at 0x004E65C6.
+
+**M12-044 — PreActionPose element escape analysis: whether any consumer passes a PreActionPose element (not its pose) to a callee outside the census, which could read +0x14** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Manipulation/PreActionPose.cs`
+* effect: Whether the height tolerance can change any decision through an untraced callee.
+* rests on: Split from M12-038 after the Opus check of OV04 (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov04-m12-038-check.md: "Still unread": IDockAction::Init std::function targets 0x00551618, 0x00551654, 0x00551842; ComputePlaceRelObjectOffsetPoses 0x005558F4..0x00556540; DriveAndFlipBlockAction::GetPossiblePoses 0x0055E438..0x0055EB04; FlipBlockAction::Init 0x0055EDC8..0x0055F074; IsAtPreActionPoseWithVisualVerification 0x005B6F5C..0x005B7160; BehaviorDockingTestSimple 0x005CBC10..0x005CD180; BehaviorDriveInDesperation 0x005D9884..0x005D9BAC.; re-analysis/research/overnight/20261015-ov45-47-check.md: Init dispatch virtual slots +0x3C/+0x38/+0x34 (0x00551612..0x00551618, 0x0055164C..0x00551654, 0x0055182E..0x00551842; element read E+4 only 0x0055182A..0x0055183A); consumers 0x00555A2A..0x00555A64, 0x0055E59C..0x0055E756, 0x0055EE62, 0x005B7054..0x005B70C2, 0x005D999C..0x005D9A00; destructor 0x004DFFA2..0x004DFFCE; census PLT 0x004A4210 / 0x004AB950 (13 sites), destructor PLT 0x004A41C8 (37 sites): closed.
+* outstanding: RECOVERABLE_GAP: trace the callee and argument flow of the listed consumers for element pointers escaping to callees outside the census. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov45-47-check.md): IMPLEMENTATION_GAP: no consumer decides on +0x14 (closed census); the build confirms the stack never does. Correction: the "std::function targets 0x00551618, 0x00551654, 0x00551842" are virtual slots +0x3C/+0x38/+0x34. Candidate crash points: M12-048.
 
 **M12-045 — UnSetCarryingObjects: ascending-ID walk, NullObject error, StillAttached / StillAttachedToSomething warnings, SendSetCarryState(CARRY_NONE) tag 0x49 reliable, carry field resets; and AddRobotRelativeObservation (re-parent to robot, flatten to root, SetPoseHelper state 2 with the broadcast, confirmer entry)** (live path)
 
