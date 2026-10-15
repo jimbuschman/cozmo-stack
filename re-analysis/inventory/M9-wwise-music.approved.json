@@ -2,7 +2,7 @@
   "subsystem": "M9-wwise-music",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "1752f1c4ef40866ba233ad4409560e2fb925ecdad60c0d8f6a86bdd9a4fdff2e",
+  "inventory_sha256": "8c0a4517e301b53290ef80531d5f2f4ab36d56968f0dfdcf6f651b8972bafb45",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -299,7 +299,8 @@
         "0x009D671C..0x009D7727",
         "0x009D7FC0..0x009D8137",
         "0x009E266C..0x009E2813",
-        "re-analysis/research/overnight/20261015-ov38-41-check.md: state vtable 0x0103B268 (GOT 0x01040124); oscillator S+0x90..+0xA4; depth 0x009D67BC..0x009D6914; setter 0x009E203C..0x009E2138; coefficient/step/phase 0x009D7390..0x009D7724; geometry 0x009E1F5C..0x009E1FAC; evaluator 0x009E32FC..0x009E34A4, 0x009E4484..0x009E4548; mode 0 0x009E416C..0x009E4480, scalar from 0x009E4994; publication 0x009E45FC..0x009E464C, 0x009E3784..0x009E37F8."
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: state vtable 0x0103B268 (GOT 0x01040124); oscillator S+0x90..+0xA4; depth 0x009D67BC..0x009D6914; setter 0x009E203C..0x009E2138; coefficient/step/phase 0x009D7390..0x009D7724; geometry 0x009E1F5C..0x009E1FAC; evaluator 0x009E32FC..0x009E34A4, 0x009E4484..0x009E4548; mode 0 0x009E416C..0x009E4480, scalar from 0x009E4994; publication 0x009E45FC..0x009E464C, 0x009E3784..0x009E37F8.",
+        "re-analysis/research/overnight/20261015-m9-recheck-3.md: initializer 0x009D671C..0x009D7390 (caller 0x009E2784..0x009E27C4; defaults 0x0108DAA8 via 0x004DDF0C..0x004DDF94; RTPC gate bits 0x009D576C..0x009D57E0; range LCG 0x0108D868; depth 0x009D6754..0x009D6920, no-range path 0x009D75E8; waveform 0x009D69F4; frequency clamp literal 0x009D6C3C; attack 0x009D71A8..0x009D720C; phase 0x009D7364..0x009D738C); coefficient block join 0x009D7390, phase overwrite 0x009D74E0..0x009D7508."
       ],
       "live_path": true,
       "hardware_required": false
@@ -432,6 +433,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
       "evidence": [
         "re-analysis/research/overnight/20261015-m9-recheck-2.md: holder creators 0x00A70D90 / 0x00A71138, clip queue 0x00A70738; pump 0x00A71938 (called 0x00A71BF0, 0x00A71D44) vs modulator tick 0x009E6D2C in Perform 0x009AF9F4..0x009AFAB8; scope-1 gate 0x009D8038..0x009D8054 <- PBI+0x1BF bit2 <- params+0x128 bit2 (0x00A002C0..0x00A002D0), writer on 0x00A3DB48 unread; voice vt+0x54 via 0x009D3B70; 0x00A6B2E8; 0x009AB1F4, 0x009AB8AC, 0x009F4A64."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-038": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise live RTPC updates to modulator states: who calls state vt+0x08 (LFO 0x009E203C, envelope 0x009E1D8C) when a game parameter changes",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime).",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-m9-recheck-3.md: LFO state setter 0x009E203C (table word 0x0103B270) has an index-0 depth path 0x009E2084..0x009E2090 (f32 /100 into S+0x74, no dirty flag); envelope setter 0x009E1D8C..0x009E1F4C; the caller on an RTPC change is unread."
       ],
       "live_path": true,
       "hardware_required": false

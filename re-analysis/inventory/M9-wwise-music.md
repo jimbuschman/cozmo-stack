@@ -446,3 +446,12 @@ The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample 
 | Envelope timing, note-off release, byte +0x44, rate globals: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M9-030, M9-031, M9-032, M9-033 |
 | Envelope remaining arithmetic, note-off remaining callees: RECOVERABLE_GAP | M9-036, M9-037 (new) |
 | Notes | M9-024, M9-025 |
+
+
+## M9 re-check 3 (manager, 2026-10-15; research/overnight/20261015-m9-recheck-3.md)
+
+| Change | Records |
+| --- | --- |
+| LFO initializer read; mode-0 build proceeds | M9-025 (note) |
+| Live RTPC updates to modulator states: RECOVERABLE_GAP | M9-038 (new) |
+| Note | M9-008 |

@@ -107,6 +107,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 59 | [B-M6-1](B-M6-1.md) | open, after B-M7-2 (audio multiplexer/controller teardown order M6-029) |
 | 60 | [B-M11-9](B-M11-9.md) | open, after B-M6-1 (memory-map producers M11-074; aging M11-075; stream unreachable) |
 | 61 | [B-M9-1](B-M9-1.md) | open, after B-M11-9 (Wwise MIDI note path M9-013; velocity/level M9-014; envelope stop M9-024) |
+| 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

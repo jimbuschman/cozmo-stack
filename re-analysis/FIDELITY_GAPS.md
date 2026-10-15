@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **637 records** over 16 subsystems.
+Manifest of **638 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 41 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 42 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 332 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -32,7 +32,7 @@ remains after both, and they do not go away by working harder on this repository
 | M6-wwise-bank — Wwise bank reading and codecs | 33 | 3 | 27 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 2 | 22 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 26 | 4 | 21 | 0 | 0 | no | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 37 | 4 | 25 | 0 | 1 | no | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 38 | 5 | 25 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 88 | 14 | 59 | 0 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 46 | 3 | 33 | 0 | 1 | no | no |
@@ -239,6 +239,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.
 * evidence: re-analysis/research/overnight/20261015-m9-recheck-2.md: holder creators 0x00A70D90 / 0x00A71138, clip queue 0x00A70738; pump 0x00A71938 (called 0x00A71BF0, 0x00A71D44) vs modulator tick 0x009E6D2C in Perform 0x009AF9F4..0x009AFAB8; scope-1 gate 0x009D8038..0x009D8054 <- PBI+0x1BF bit2 <- params+0x128 bit2 (0x00A002C0..0x00A002D0), writer on 0x00A3DB48 unread; voice vt+0x54 via 0x009D3B70; 0x00A6B2E8; 0x009AB1F4, 0x009AB8AC, 0x009F4A64.
 * outstanding: RECOVERABLE_GAP: read the listed bodies and orders; then state, for the shipped singing content, exactly when (if ever) 381606890 stops its voice.
+
+**M9-038 — Wwise live RTPC updates to modulator states: who calls state vt+0x08 (LFO 0x009E203C, envelope 0x009E1D8C) when a game parameter changes** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseModulator.cs`
+* effect: Whether the singing vibrato's depth follows Cozmo_Singing_Vibrato changes after note-on.
+* rests on: Opus M9 re-check 3 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime).
+* evidence: re-analysis/research/overnight/20261015-m9-recheck-3.md: LFO state setter 0x009E203C (table word 0x0103B270) has an index-0 depth path 0x009E2084..0x009E2090 (f32 /100 into S+0x74, no dirty flag); envelope setter 0x009E1D8C..0x009E1F4C; the caller on an RTPC change is unread.
+* outstanding: RECOVERABLE_GAP: find every caller of state vt+0x08 and the RTPC-change dispatch that reaches it; say whether a posted Cozmo_Singing_Vibrato change updates an already-running vibrato, and when (which tick).
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -1666,7 +1675,7 @@ B-M5-20 (2026-10-15), built, awaiting strong verification: removed NoAnimationFo
 * rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
 * best authority: shipped Wwise bank and libcozmoEngine.so
 * evidence: 0x009D671C..0x009D7727; 0x005EF184..0x005EF18C; Cozmo.bnk objects 528935089 and 110896138
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the depth RTPC is evaluated by the per-voice initializer only; the stack re-reads it every block, an uncited behaviour its test asserts.
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the depth RTPC is evaluated by the per-voice initializer only; the stack re-reads it every block, an uncited behaviour its test asserts. Re-check 3 (re-analysis/research/overnight/20261015-m9-recheck-3.md): "the depth RTPC is evaluated by the per-voice initializer only" is not established: the LFO state setter 0x009E203C has an index-0 depth path (0x009E2084..0x009E2090); its caller is M9-038. Waveform converts with vcvt.s32 in the initializer (0x009D69F4) but vcvt.u32 in the live setter (0x009E2100).
 
 **M9-009 — Modulator bindings evaluate their curves and accumulate onto the named property** (live path)
 
@@ -1764,8 +1773,8 @@ B-M5-20 (2026-10-15), built, awaiting strong verification: removed NoAnimationFo
 * effect: with a cube being shaken, the vibrato sharpens and flattens, or only sharpens, and by a different amount at each instant
 * rests on: Inventory-approved source path in re-analysis/inventory/M9-wwise-music.md for M9-025; implementation has not yet been compared except where this record is an explicit policy or unresolved source gap.
 * best authority: statically linked Wwise runtime in libcozmoEngine.so
-* evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813; re-analysis/research/overnight/20261015-ov38-41-check.md: state vtable 0x0103B268 (GOT 0x01040124); oscillator S+0x90..+0xA4; depth 0x009D67BC..0x009D6914; setter 0x009E203C..0x009E2138; coefficient/step/phase 0x009D7390..0x009D7724; geometry 0x009E1F5C..0x009E1FAC; evaluator 0x009E32FC..0x009E34A4, 0x009E4484..0x009E4548; mode 0 0x009E416C..0x009E4480, scalar from 0x009E4994; publication 0x009E45FC..0x009E464C, 0x009E3784..0x009E37F8.
-* outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov38-41-check.md): IMPLEMENTATION_GAP for mode 0 (A*(1+sin p)/2, unipolar). Corrections: the state vtable is 0x0103B268 (not 0x0104B268); the oscillator is S+0x90..+0xA4 (not +0x34..+0x48). ADP-1 boundary: shape, mode, phase, 48000 base, scalar/buffered choice, scheduling, ramp, publication gate and the polynomial constants/f32 order are EXACT; only smoothing-coefficient libm rounding (unreached) and per-sample pitch application in the resampler may be equivalent. Build waits for M9-032 (+0x44) and M9-033 (sample rate). Modes 1-4: shipped bindings map to 0 cents; recorded, not built. Re-check 2 (re-analysis/research/overnight/20261015-m9-recheck-2.md): +0x44 = 0 for the vibrato (scalar W3 path); R/T from M6-018. The mode-0 build waits only on the Opus check of the LFO initializer prefix 0x009D671C..0x009D7390.
+* evidence: 0x009D671C..0x009D7727; 0x009D7FC0..0x009D8137; 0x009E266C..0x009E2813; re-analysis/research/overnight/20261015-ov38-41-check.md: state vtable 0x0103B268 (GOT 0x01040124); oscillator S+0x90..+0xA4; depth 0x009D67BC..0x009D6914; setter 0x009E203C..0x009E2138; coefficient/step/phase 0x009D7390..0x009D7724; geometry 0x009E1F5C..0x009E1FAC; evaluator 0x009E32FC..0x009E34A4, 0x009E4484..0x009E4548; mode 0 0x009E416C..0x009E4480, scalar from 0x009E4994; publication 0x009E45FC..0x009E464C, 0x009E3784..0x009E37F8.; re-analysis/research/overnight/20261015-m9-recheck-3.md: initializer 0x009D671C..0x009D7390 (caller 0x009E2784..0x009E27C4; defaults 0x0108DAA8 via 0x004DDF0C..0x004DDF94; RTPC gate bits 0x009D576C..0x009D57E0; range LCG 0x0108D868; depth 0x009D6754..0x009D6920, no-range path 0x009D75E8; waveform 0x009D69F4; frequency clamp literal 0x009D6C3C; attack 0x009D71A8..0x009D720C; phase 0x009D7364..0x009D738C); coefficient block join 0x009D7390, phase overwrite 0x009D74E0..0x009D7508.
+* outstanding: Follow the type-21 per-voice object created at 0x009D7FC0 through vtable 0x0104B268 and map reads of LFO state +0x34..+0x48 to the waveform sample equation. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov38-41-check.md): IMPLEMENTATION_GAP for mode 0 (A*(1+sin p)/2, unipolar). Corrections: the state vtable is 0x0103B268 (not 0x0104B268); the oscillator is S+0x90..+0xA4 (not +0x34..+0x48). ADP-1 boundary: shape, mode, phase, 48000 base, scalar/buffered choice, scheduling, ramp, publication gate and the polynomial constants/f32 order are EXACT; only smoothing-coefficient libm rounding (unreached) and per-sample pitch application in the resampler may be equivalent. Build waits for M9-032 (+0x44) and M9-033 (sample rate). Modes 1-4: shipped bindings map to 0 cents; recorded, not built. Re-check 2 (re-analysis/research/overnight/20261015-m9-recheck-2.md): +0x44 = 0 for the vibrato (scalar W3 path); R/T from M6-018. The mode-0 build waits only on the Opus check of the LFO initializer prefix 0x009D671C..0x009D7390. Re-check 3 (re-analysis/research/overnight/20261015-m9-recheck-3.md): the initializer is read; the mode-0 build proceeds (job B-M9-2). Corrections: the depth clamp (<0 -> 0, >100 -> 1.0) applies only with a range entry; without one it is v/100 unclamped; the old-phase rescale is overwritten at init. The vibrato depth comes from A11590 (M9-035, unread: MISSING at that call); live updates are M9-038. Shipped vibrato after init: depth A11590/100, attack 9600 at R=48000, frequency 5.5, PWM 0.5, smoothing 0, mode 0, phase 0.
 
 **M9-026 — The shipped parametric EQ and peak-limiter arithmetic** (live path)
 

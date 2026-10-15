@@ -82,5 +82,7 @@ The first three are the requests already written:
 | OV69 | requests/overnight/20261015-ov69-m8-026.md (M8-026: AIWhiteboard::ProcessClearQuad: PossibleObjects erase predicate and Up) | research/overnight/20261015-ov69-m8-026.md |
 | OV70 | requests/overnight/20261015-ov70-m9-037.md (M9-037: Wwise note-off remaining callees: holder look-ahead and pump order vs ) | research/overnight/20261015-ov70-m9-037.md |
 | OV71 | requests/overnight/20261015-ov71-m9-036.md (M9-036: Wwise envelope remaining arithmetic: early-release (deadline before de) | research/overnight/20261015-ov71-m9-036.md |
+| OV72 | requests/overnight/20261015-ov72-m9-035.md (M9-035: Wwise general parameter collector bodies (9EF258, 9FBE74, A11590)) | research/overnight/20261015-ov72-m9-035.md |
+| OV73 | requests/overnight/20261015-ov73-m9-038.md (M9-038: Wwise live RTPC updates to modulator states: who calls state vt+0x08 () | research/overnight/20261015-ov73-m9-038.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
