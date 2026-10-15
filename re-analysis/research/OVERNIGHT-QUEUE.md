@@ -116,5 +116,6 @@ The first three are the requests already written:
 | OV82 | requests/overnight/20261015-ov82-m15-055.md (M15-055: Activity Update forwarding: ActivityFreeplay::Update to the current su) | research/overnight/20261015-ov82-m15-055.md |
 | OV83 | requests/overnight/20261015-ov83-m15-056.md (M15-056: Cube disconnect consumers: ActivityFeeding and BehaviorGuardDog handle) | research/overnight/20261015-ov83-m15-056.md |
 | OV84 | requests/overnight/20261015-ov84-m6-034.md (M6-034: Wwise Term recipients: the manager-list tail, head calls, allocator in) | research/overnight/20261015-ov84-m6-034.md |
+| OV85 | requests/overnight/20261015-ov85-setmarkerasobserved.md (M11-013: SetMarkerAsObserved, unblocks B-M11-3) | research/overnight/20261015-ov85-setmarkerasobserved.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
