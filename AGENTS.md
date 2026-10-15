@@ -131,6 +131,13 @@ stack implements that feature.
     matching data pointers into an `unordered_set` (murmur2 hash, 0x006884FC..0x006886F4), so its order follows heap
     addresses too. The stack returns them in insertion order: the order the post-order walk first finds them. Everything
     else stays exact (`research/overnight/20261015-ov42-44-check.md`).
+  - **Extended to two more cases** (operator, 2026-10-15; `research/overnight/20261015-ov50-52-check.md`). Everything else
+    stays exact.
+    - **GetBorders' region area sum (M11-079):** the f32 area terms (0x006899D0..0x006899F4) are added in insertion
+      order, the order the nodes entered the pointer set, instead of heap-address iteration order.
+    - **The profiler's teardown print order (M11-078 / M11-055):** ~Profiler's timer lines (0x0087CFD4..0x0087CFE8) are
+      printed in insertion order, the order the timers were created, instead of `std::hash<const char*>` over
+      string-literal addresses.
 
 Apply no other departure without the operator.
 
