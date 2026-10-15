@@ -50,18 +50,20 @@ public sealed class M3M4X28BuilderTests
     }
 
     [Fact]
-    public void DisconnectKeepsLocatedQueryAndMarkUnknownInOneFrameWindow()
+    public void DisconnectLocatedUpdateRemainsInsideOneFrameWindow()
     {
         using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
         rig.ToSynced();rig.State();var world=vision.World;
         rig.Data(new ObjectConnectionState{ObjectID=0,FactoryID=123,ObjectType=ObjectType.Block_LIGHTCUBE1,Connected=true});rig.Tick();
         uint id=world.ConnectedObjectIdForActiveId(0)!.Value;
-        var located=new ObservableObject(id,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        var located=new ObservableObject(id,ObjectType.ProxObstacle,Array.Empty<KnownMarker>())
             {ActiveId=0,OriginId=world.CurrentOriginId,Pose=Pose3d.Identity,PoseState=PoseState.Known};
         world.AddLocatedObject(located);
-        FrameCannotSplitHandler(world,pause=>vision.Log+=line=>{if(line.Contains("disconnected: its pose is no longer known"))pause();},
+        // Pause the checked C2 NotActive branch between the two independent virtual guards.
+        // Disconnect retains this located instance; it does not invoke the old local MarkUnknown path.
+        FrameCannotSplitHandler(world,pause=>rig.Engine.LogEntry+=entry=>{if(entry.Name=="ObservableObject.SetActiveID.NotActive")pause();},
             ()=>{rig.Data(new ObjectConnectionState{ObjectID=0,FactoryID=123,ObjectType=ObjectType.Block_LIGHTCUBE1,Connected=false});rig.Tick();});
-        Assert.Equal(PoseState.Unknown,located.PoseState);
+        Assert.Equal(PoseState.Known,located.PoseState);Assert.Contains(located,world.LocatedObjects);
     }
 
     [Fact]

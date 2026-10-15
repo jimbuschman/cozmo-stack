@@ -817,7 +817,7 @@ public class M11RVisBuildTests : IDisposable
         var o2 = Cube(w2, 1, At(150, 0), state: PoseState.Dirty); w2.AddLocatedObject(o2);
         w2.CheckForUnobservedObjects(cam, 1000, false, false);
         Assert.Contains(log, l => l.Contains("MarkObjectUnobservedFailed"));
-        Assert.False(BlockWorld.PaddingIsBuilt);                                      // xPad/yPad stay 0 and say so
+        Assert.True(BlockWorld.PaddingIsBuilt);                                       // OV10 O3: distance-dependent full-word pads
     }
 
     /// <summary>
@@ -1332,17 +1332,17 @@ public class M11RVisBuildTests : IDisposable
         w.AddConnectedActiveObject(2, 0xB, ObjectType.Block_LIGHTCUBE2);                                  // the factoryID is already used
         Assert.Contains(log, l => l.Contains("FactoryIDAlreadyUsed"));
         Assert.Equal(2, w.ConnectedObjects.Count);
-        Assert.Equal(-1, w.HandleActiveObjectConnectionState(1, 0xB, ObjectType.Block_LIGHTCUBE1, false));  // RemoveConnectedActiveObject on a disconnection
+        Assert.Equal(id, w.HandleActiveObjectConnectionState(1, 0xB, ObjectType.Block_LIGHTCUBE1, false));  // RemoveConnectedActiveObject on a disconnection
         Assert.Single(w.ConnectedObjects);
     }
 
     /// <summary>M11-041, CreateActiveObjectByType (0x00623296) is unread (M11-042): a type other than a light cube throws instead of guessing whether the engine returns null.</summary>
     [Fact]
-    public void M11_041_CreateActiveObjectByTypeForOtherTypesIsAVisibleStub()
+    public void M11_041_CreateActiveObjectByTypeAcceptsCharger()
     {
         var w = new BlockWorld();
-        Assert.Throws<NotSupportedException>(() => w.AddConnectedActiveObject(0, 0xA, ObjectType.Charger_Basic));
-        Assert.Empty(w.ConnectedObjects);
+        Assert.NotEqual(-1,w.AddConnectedActiveObject(0,0xA,ObjectType.Charger_Basic));
+        Assert.True(Assert.Single(w.ConnectedObjects).IsActive);
     }
 
     /// <summary>
@@ -1980,6 +1980,9 @@ public class M11RVisBuildTests : IDisposable
     [Fact]
     public void M11_044_SetLocalizedToCanFailWithoutWritingAndThePropagatesTheFailure()
     {
+        bool oldError=EngineErrorState.ErrorFlagSet;
+        try
+        {
         var (w, m, p) = UsableRig();
         w.NoteRobotState(true, false);
         Assert.False(w.SetLocalizedTo(new ObservableObject(ObjectType.Block_LIGHTCUBE1, Array.Empty<KnownMarker>())));    // ID -1
@@ -1998,6 +2001,9 @@ public class M11RVisBuildTests : IDisposable
         w.MarkerPosesRelativeToCamera = null;
         w.SetLocalizedTo(m);
         Assert.Equal(1, w.UnbuiltSetLocalizedToMarkerLoops);                           // unwired: visible
+        }
+        finally {EngineErrorState.ErrorFlagSet=oldError;}
+
     }
 
     /// <summary>

@@ -14,6 +14,9 @@ public enum ObjectFamily : sbyte { Invalid = -1, Unknown = 0, Block = 1, LightCu
 /// <summary>One marker on a known object: which marker, where it sits on the object, and how big it is.</summary>
 public sealed record KnownMarker(MarkerType Code, BlockFace Face, Pose3d PoseOnObject, double SizeMm)
 {
+    // fidelity: M11-013 - native per-object marker node+0x50; never shared with the type definition.
+    internal uint? LastObservedTimestamp { get; set; } // null: native producer/default not yet checked/bound
+
     /// <summary>The marker's height when it is not square (the charger's marker is 20 x 27 mm); defaults to <see cref="SizeMm"/>.</summary>
     public double HeightMm { get; init; } = double.NaN;
     private double H => double.IsNaN(HeightMm) ? SizeMm : HeightMm;

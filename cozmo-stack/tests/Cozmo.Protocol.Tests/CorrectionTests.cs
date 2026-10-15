@@ -341,7 +341,7 @@ public class CorrectionTests
     // ---------------------------------------------------------------- 7: a disconnected cube
 
     [Fact]
-    public void ADisconnectedCubeStopsBeingLocatedAndActionable()
+    public void ADisconnectedCubeRetainsItsLocatedPoseAndClearsConnectionIDs()
     {
         if (MarkerLibrary.EmbeddedOrNull is null) return;
         using var rig = new Rig();
@@ -349,15 +349,15 @@ public class CorrectionTests
         var seen = rig.Frame();
         uint cubeId = seen.Objects[0].Object.ObjectId;
         Assert.True(rig.Vision.Locator.IsLocated(cubeId));
-        rig.M.Configurations.Update();
 
         rig.Send(new ObjectConnectionState { ObjectID = rig.ActiveIdOf(cubeId), FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
 
-        Assert.False(rig.Vision.Locator.IsLocated(cubeId));
-        Assert.Null(rig.Vision.World.GetLocatedObjectById(cubeId));
-        Assert.DoesNotContain(rig.Vision.World.LocatedObjects, o => o.ObjectId == cubeId);
-        rig.M.Configurations.Update();
-        Assert.Empty(rig.M.Configurations.Stacks);
+        // OV10 C2: disconnect clears the connection identity in every origin, retaining the stored pose/state.
+        Assert.True(rig.Vision.Locator.IsLocated(cubeId));
+        var retained=rig.Vision.World.GetLocatedObjectById(cubeId);
+        Assert.Same(seen.Objects[0].Object,retained);
+        Assert.Equal(-1,retained!.ActiveId);Assert.Equal(0u,retained.FactoryId);
+        Assert.Contains(retained,rig.Vision.World.LocatedObjects);
     }
 
     // ---------------------------------------------------------------- 9: the path lifecycle

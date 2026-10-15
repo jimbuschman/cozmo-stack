@@ -552,12 +552,6 @@ public class NavigationTests
         Assert.Equal(100, rig.M.Configurations.FirstSeenSec(pb));
         Assert.True(rig.M.Configurations.IsObjectPartOfConfigurationType(7, BlockConfigurationType.PyramidBase));
         Assert.Empty(rig.M.Configurations.Pyramids);
-        // the third cube on top of the midpoint completes a pyramid
-        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE3, CubeAt(260, 14, 0, 66)));
-        clock = 103;
-        rig.Frame();
-        Assert.Single(rig.M.Configurations.Pyramids);
-        Assert.Equal(103, rig.M.Configurations.FirstSeenSec(rig.M.Configurations.Pyramids[0]));
         // OnConfigSeen: runnable within 5 s of the base being seen, not after
         var ctx = Ctx(rig);
         var seen = OnConfigSeenBehavior.RespondToPyramidBase(rig.M);
@@ -567,13 +561,20 @@ public class NavigationTests
         RunToEnd(rig, seen, ctx);
         Assert.Contains(seen.Trace, l => l.Contains("BuildPyramidReactToBase"));
         Assert.False(Runnable(seen, ctx));                                          // reacted already
+        // the third cube on top of the midpoint completes a pyramid
+        rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE3, CubeAt(260, 14, 0, 66)));
+        clock = 106;
+        rig.Frame();
+        Assert.Single(rig.M.Configurations.Pyramids);
+        Assert.Empty(rig.M.Configurations.PyramidBases); // OV10 K3 prunes bases belonging to complete pyramids.
+        Assert.Equal(106, rig.M.Configurations.FirstSeenSec(rig.M.Configurations.Pyramids[0]));
         // the reactions to a pyramid arm a 100 s cooldown and do nothing else
         var react = ReactToConfigurationBehavior.ReactToPyramid(rig.M);
         Assert.True(Runnable(react, ctx));
         RunToEnd(rig, react, ctx);
-        Assert.Equal(204.5, react.NextAllowedSec);
+        Assert.Equal(206, react.NextAllowedSec);
         Assert.False(Runnable(react, ctx));
-        clock = 205; Assert.True(Runnable(react, ctx));
+        clock = 207; Assert.True(Runnable(react, ctx));
     }
 
     // ------------------------------------------------------------------ the whiteboard and the workouts

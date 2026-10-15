@@ -70,6 +70,7 @@ public sealed class VisionSystem : IDisposable
         robot.Lights.AttachVisionSystem(this);   // set-recipient + take-pending, atomic with SetHeadlight
         World.IsCarryingObject = id => Carrying(id);
         World.OnTreads = () => robot.Sensors.OffTreadsState == OffTreadsState.OnTreads;
+        World.PickingOrPlacing = () => robot.State.Latest?.Has(RobotStatusFlag.IsPickingOrPlacing) ?? false;
         // fidelity: M11-037
         // VisionComponent::SetPhysicalRobot writes the lift occluder points when the firmware version arrives (0x0051397C). The event fires once, so a system built
         // after the firmware version was handled (the tools build it after connecting) catches up from what the engine robot recorded: PhysicalRobotRecorded is set when the
@@ -721,19 +722,9 @@ public sealed class VisionSystem : IDisposable
     internal void HandleObjectConnectionState(ObjectConnectionState cs)
     {
         using var frameMutation = World.EnterPoseMutation();
-        uint? worldId = cs.Connected ? null : World.ConnectedObjectIdForActiveId(cs.ObjectID);
         try { World.HandleActiveObjectConnectionState(cs.ObjectID, cs.FactoryID, cs.ObjectType, cs.Connected); }
         catch (NotSupportedException e) { Log?.Invoke($"object {cs.ObjectID}: {e.Message}"); }
-        if (!cs.Connected && worldId is { } id) OnCubeDisconnected(id);
-    }
-
-    // A cube that has dropped its radio link cannot be tracked or docked with any more, and its last pose will go stale the moment someone
-    // moves it. LOCAL: this stack forgets the located object (the engine's disconnection handling does not delete it, M11-042).
-    private void OnCubeDisconnected(uint objectId)
-    {
-        if (World.GetObjectById(objectId) is not { } o || o.PoseState == PoseState.Unknown) return;
-        Log?.Invoke($"object {objectId} disconnected: its pose is no longer known");
-        World.MarkUnknown(objectId);
+        // OV10 C2 retains located poses; removal clears only the active/factory IDs.
     }
 
     // ------------------------------------------------------------------------------ the mailbox (M11-040, M11-049)

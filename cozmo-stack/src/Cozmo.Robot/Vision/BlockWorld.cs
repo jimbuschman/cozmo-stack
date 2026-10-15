@@ -198,7 +198,7 @@ public sealed class ObservableObject
 
     public ObservableObject(uint objectId, ObjectType type, IReadOnlyList<KnownMarker> markers)
     {
-        ObjectId = objectId; Type = type; Markers = markers;
+        ObjectId = objectId; Type = type; Markers = markers.Select(m => m with { LastObservedTimestamp = null }).ToArray();
         Family = FamilyOf(type);
     }
 
@@ -226,8 +226,9 @@ public sealed class ObservableObject
     internal PoseTreeNameNode? PoseNameNode;
     /// <summary>obj+0x10 <c>fromDistance</c>, stored by <c>SetPose</c>; -1 when set without one.</summary>
     public double FromDistance { get; internal set; } = -1.0;
-    /// <summary>vtable +0x0C, <c>IsActive</c>: 1 for an ActiveCube (0x004E385C). NOTE (M11-042): the Charger's value is unread; this stack treats it as passive.</summary>
-    public bool IsActive => CubeGeometry.IsActiveObjectType(Type);
+    /// <summary>OV10 F2: vtable +0x0C is 1 for ActiveCube and Charger; localization eligibility is a separate slot.</summary>
+    // fidelity: M11-013
+    public bool IsActive => CubeGeometry.IsCube(Type) || Type == ObjectType.Charger_Basic;
     /// <summary>vtable +0x5C, <c>IsUnique</c>: 1 for ActiveCube (0x004E3882) and Charger (0x004E3883), 0 in the base (0x004E02AE).</summary>
     public bool IsUnique => CubeGeometry.IsCube(Type) || Type == ObjectType.Charger_Basic;
     /// <summary>Pose in the robot's world origin; meaningful while <see cref="PoseState"/> is not Unknown.</summary>
@@ -312,12 +313,12 @@ public sealed class ObservableObject
     { SetPose(pose,-1,state); PoseInitialized = 1; }
 
     /// <summary>
-    /// <c>Clone</c> (vtable +0x00). <c>ActiveCube::Clone</c> 0x004E3954 is a fresh <c>ActiveCube(type)</c>, not a copy: no ID, no
-    /// pose, no ActiveID/FactoryID. M11-042 (visible): the Clone bodies of Charger and of the non-active blocks are unread; the
-    /// same construction is used for the Charger, which is UNVERIFIED.
+    /// OV10 F2 fresh clone contracts: no ID, pose, observation timestamps or active/factory IDs are copied.
+    /// Existing type/marker definitions remain the constructor input; full per-type geometry remains separately owned.
     /// </summary>
-    // fidelity: M11-042
-    public ObservableObject Clone() => new(Type, Markers);
+    // fidelity: M11-013
+    public ObservableObject Clone() => new(Type, Type == ObjectType.Charger_Basic || CubeGeometry.IsCube(Type)
+        ? CubeGeometry.MarkersFor(Type) : Markers); // fresh definitions, never observation timestamps or connection IDs
 
     /// <summary>
     /// The engine's <c>ObservableObject::GetTopFaceOrientation</c>-style up axis: the object axis nearest world +Z.
@@ -471,7 +472,7 @@ public sealed class ObservableObject
         if (MathF.Sqrt(sq) < minSize) return NotVisibleReason.TooSmall;
 
         // 0x0087E7BA..0x0087E7FE: IsWithinFieldOfView(p0), (p2), (p1), (p3) with the u16 pads
-        ushort xp = (ushort)xPad, yp = (ushort)yPad;
+        uint xp = PadWord(xPad), yp = PadWord(yPad);
         foreach (int i in new[] { 0, 2, 1, 3 })
             if (!IsWithinFieldOfView(pf[2 * i], pf[2 * i + 1], xp, yp, camera.Calibration.Columns, camera.Calibration.Rows))
                 return NotVisibleReason.OutsideFieldOfView;
@@ -494,13 +495,17 @@ public sealed class ObservableObject
     /// <c>y &lt; (rows - yPad)</c> (the u16 at +0, 0x0085E1AE..0x0085E1C4). The upper bounds are exclusive and a pad shrinks the area.
     /// </summary>
     // fidelity: M11-010
-    internal static bool IsWithinFieldOfView(float x, float y, ushort xPad, ushort yPad, int columns, int rows)
+    internal static bool IsWithinFieldOfView(float x, float y, uint xPad, uint yPad, int columns, int rows)
     {
         if (float.IsNaN(x) || float.IsNaN(y)) return false;
         if (!(y >= (float)yPad && x >= (float)xPad)) return false;
-        if (!(x < (float)((ushort)columns - xPad))) return false;
-        return y < (float)((ushort)rows - yPad);
+        if (!(x < (float)unchecked((int)((uint)(ushort)columns - xPad)))) return false;
+        return y < (float)unchecked((int)((uint)(ushort)rows - yPad));
     }
+
+    // fidelity: M11-037 - VCVT.U32.F32, truncating with saturation (OV10 O3).
+    private static uint PadWord(double value) => !(value > 0) ? 0 : value >= 4294967296d ? uint.MaxValue : (uint)value;
+    internal static uint SaturatingU32(float value) => !(value > 0) ? 0 : value >= 4294967296f ? uint.MaxValue : (uint)value;
 
     /// <summary>
     /// <c>Camera::Project3dPoint</c> 0x0085E264..0x0085E418 in binary32: <c>z &lt;= 0</c> (<c>vcmpe s0,#0 / bls</c>; a NaN z goes on) writes (NaN, NaN); otherwise x/z and y/z, then,
@@ -805,6 +810,7 @@ public sealed partial class BlockWorld
     public Func<bool>? OnTreads { get; set; }
     /// <summary>The ObjectID at <c>[Robot+0x280]+0xC</c> (the DockingComponent's object, name unread). Unwired means none.</summary>
     public Func<uint?>? DockingObjectId { get; set; }
+    internal Func<bool>? PickingOrPlacing;
     /// <summary><c>CarryingComponent::UnSetCarryObject(id)</c>, called by <c>UpdatePoseInInstance</c> 0x00505F5A..0x00505FBC. Unwired: the call is logged and counted, not made.</summary>
     public Action<uint>? UnSetCarryObject { get; set; }
     /// <summary>The <c>BlockConfigurationManager</c> byte [+0xC] set to 1 by <c>UpdateObjectOrigins</c> (0x006206EA). Unwired: the call is counted.</summary>
@@ -862,6 +868,8 @@ public sealed partial class BlockWorld
     /// running minimum of squared marker distance the loop stores into Robot+0x2C8 is recovered (see <see cref="Robot2C8"/>) but not built for the same reason.
     /// </summary>
     public Func<ObservableObject, bool>? MarkerPosesRelativeToCamera { get; set; }
+    // fidelity: M11-044 - supplied native GetWithRespectTo result per marker, in list order.
+    internal Func<ObservableObject, KnownMarker, Pose3d?>? MarkerPoseInCamera;
     /// <summary>How many times <see cref="SetLocalizedTo"/> ran an object through it without <see cref="MarkerPosesRelativeToCamera"/> (the loop was not run; M11-044).</summary>
     public int UnbuiltSetLocalizedToMarkerLoops { get; private set; }
 
@@ -877,16 +885,47 @@ public sealed partial class BlockWorld
     {
         using var frameMutation=EnterPoseMutation();
         if (obj is null) { lock(_gate){_localizedTo=ObservableObject.UnassignedId;_robot2C4=1;}return true; }
-        if (obj.ObjectId == ObservableObject.UnassignedId) { Log?.Invoke("Robot.SetLocalizedTo.IdNotSet"); return false; }
-        if (MarkerPosesRelativeToCamera is { } loop)
+        if (obj.ObjectId == ObservableObject.UnassignedId)
+        {
+            Source(EngineLogLevel.Error,null,"Robot.SetLocalizedTo.IdNotSet","Cannot localize to an object with no ID set");
+            EngineErrorState.StoreAndMaybeBreak(); return false;
+        }
+        if (MarkerPoseInCamera is { } relative)
+        {
+            uint threshold=0;
+            foreach(var marker in obj.Markers)
+            {
+                if(marker.LastObservedTimestamp is not {} observed)
+                {
+                    Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 SetLocalizedTo 0x005123AE: marker timestamp producer/default is unbuilt; marker loop stopped without inventing its threshold input");
+                    return false;
+                }
+                if(observed < threshold)continue;
+                using var pose=relative(obj,marker);
+                if(pose is null)
+                {
+                    Source(EngineLogLevel.Error,null,"Robot.SetLocalizedTo.MarkerOriginProblem","Could not get pose of marker w.r.t. robot camera");
+                    EngineErrorState.StoreAndMaybeBreak();return false;
+                }
+                float x=(float)pose.Translation.X,y=(float)pose.Translation.Y,z=(float)pose.Translation.Z;
+                float squared=x*x;squared+=y*y;squared+=z*z;
+                lock(_gate)if(_robot2C8<0 || squared<_robot2C8)
+                {_robot2C8=squared;threshold=observed;}
+            }
+        }
+        else if (MarkerPosesRelativeToCamera is { } loop)
         {
             if (!loop(obj))
             {
-                Log?.Invoke($"Robot.SetLocalizedTo: a marker pose of object {obj.ObjectId} could not be expressed relative to the camera; not localized");   // log text not sourced
-                return false;
+                Source(EngineLogLevel.Error,null,"Robot.SetLocalizedTo.MarkerOriginProblem","Could not get pose of marker w.r.t. robot camera");
+                EngineErrorState.StoreAndMaybeBreak();return false;
             }
         }
-        else UnbuiltSetLocalizedToMarkerLoops++;
+        else
+        {
+            UnbuiltSetLocalizedToMarkerLoops++;
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-044 SetLocalizedTo marker loop 0x005123AE..0x00512456: native marker-node pose/camera owner binding is unbuilt; no squared-distance producer is inferred from the retained flat model");
+        }
         lock (_gate)
         {
             _localizedTo = obj.ObjectId;
@@ -992,8 +1031,8 @@ public sealed partial class BlockWorld
     public uint TimeOfLastChangeField => _timeOfLastChange;
     private uint _timeOfLastChange;
 
-    /// <summary>Whether <c>CheckForUnobservedObjects</c> builds the xPad/yPad terms (0x0062206E..0x006220DA). It does not: the field names behind them are unread, so both pads are 0.</summary>
-    public const bool PaddingIsBuilt = false;
+    /// <summary>OV10 O3 pad arithmetic is built. The existing flat camera/object input adapter does not establish complete native pose binding.</summary>
+    public const bool PaddingIsBuilt = true;
 
     private bool Carrying(uint id) => IsCarryingObject?.Invoke(id) ?? false;
     internal void LogLine(string line) => Log?.Invoke(line);
@@ -1152,6 +1191,9 @@ public sealed partial class BlockWorld
 
     private Quadrilateral MarkerlessQuad(ObservableObject obj, Pose3d pose)
     { var s = MarkerlessObject.SizeByType(obj.Type)!.Value; return ObjectFootprint.MarkerlessBoundingQuadXY(new Vec3(s.X,s.Y,s.Z), pose, 0, Missing); }
+    private Quadrilateral QuadFor(ObservableObject obj,float padding) => obj.Family == ObjectFamily.MarkerlessObject
+        ? ObjectFootprint.MarkerlessBoundingQuadXY(MarkerlessObject.SizeByType(obj.Type) is {} size ? new Vec3(size.X,size.Y,size.Z) : throw new NotSupportedException("M11-062 markerless size unavailable"),obj.Pose,padding,Missing)
+        : obj.Type == ObjectType.Charger_Basic ? ObjectFootprint.ChargerBoundingQuadXY(obj.Pose,padding) : Footprint.GetBoundingQuadXY(obj,obj.Pose,padding);
     private Quadrilateral QuadFor(ObservableObject obj) => obj.Family == ObjectFamily.MarkerlessObject ? MarkerlessQuad(obj, obj.Pose)
         : obj.Type == ObjectType.Charger_Basic ? ObjectFootprint.ChargerBoundingQuadXY(obj.Pose, 0) : Footprint.GetBoundingQuadXY(obj, obj.Pose, 0);
 
@@ -1437,7 +1479,12 @@ public sealed partial class BlockWorld
     /// pass visible through <see cref="UnbuiltCollisionDirtyPassRuns"/>.
     /// </summary>
     // fidelity: M11-042
-    private void CollisionDirtyPass() => UnbuiltCollisionDirtyPassRuns++;
+    private void CollisionDirtyPass()
+    {
+        if (PickingOrPlacing?.Invoke() == true) return;
+        UnbuiltCollisionDirtyPassRuns++;
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 CheckForCollisionWithRobot 0x0062593C..0x00625B88: complete native object/world/Robot::GetPose input binding and owned footprint recipients are not supplied by these wrapper rows; collision predicate/modify unit remains unbuilt");
+    }
 
     /// <summary>How many frames reached the collision dirty pass that this stack does not build (M11-042).</summary>
     public int UnbuiltCollisionDirtyPassRuns { get; private set; }
@@ -1504,6 +1551,7 @@ public sealed partial class BlockWorld
                 instance.SetPose(placed, -1.0, PoseState.Dirty);                                            // InitPose 0x00625580
                 instance.LastObservedTimestamp = seenMarkers[0].Timestamp;                                   // 0x006255AC
                 instance.LastObservedMarkers = seenMarkers.Select(s => s.Code).ToList();
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-013/M11-006 SetMarkerAsObserved at 0x0062559C -> 0x00876DA8: the checked call passes the first prototype timestamp and 0x3DCCCCCD, but its node+0x50 writer/body is not supplied; no timestamp writer is inferred from the method name");
                 var xs = seenMarkers.SelectMany(s => s.Corners).Select(p => p.X).ToList();
                 var ys = seenMarkers.SelectMany(s => s.Corners).Select(p => p.Y).ToList();
                 instance.LastImageRect = (xs.Min(), ys.Min(), xs.Max() - xs.Min(), ys.Max() - ys.Min());
@@ -1597,17 +1645,15 @@ public sealed partial class BlockWorld
         return LocalizeRobotResultForTest?.Invoke() ?? potentials.LocalizeRobot();                                         // 0x00621304
     }
 
-    /// <summary>
-    /// <c>UpdateMarkerObservationTimes(instance)</c> 0x0062114A. M11-042: its body is unread. The marker codes, image rectangle, solve
-    /// error and observation count this stack keeps on the located object for the docking code are the result it carries.
-    /// </summary>
-    // fidelity: M11-042
-    private static void UpdateMarkerObservationTimes(ObservableObject located, ObservableObject instance)
+    /// <summary>OV10 O4: positional unsigned-max merge; object timestamp is the preceding plain store.</summary>
+    // fidelity: M11-013
+    internal static void UpdateMarkerObservationTimes(ObservableObject located, ObservableObject instance)
     {
-        located.LastObservedMarkers = instance.LastObservedMarkers;
-        located.LastImageRect = instance.LastImageRect;
-        located.LastReprojectionRmsPx = instance.LastReprojectionRmsPx;
-        located.TimesObserved++;
+        int count=Math.Min(located.Markers.Count,instance.Markers.Count);
+        if(located.Markers.Take(count).Any(m=>!m.LastObservedTimestamp.HasValue) || instance.Markers.Take(count).Any(m=>!m.LastObservedTimestamp.HasValue))
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-013 UpdateMarkerObservationTimes 0x00876C9C..0x00876CCA: native marker timestamps lack a checked/bound producer; merge unit skipped instead of using invented default timestamps");
+        else for (int i=0;i<count;++i)
+            located.Markers[i].LastObservedTimestamp=Math.Max(located.Markers[i].LastObservedTimestamp!.Value,instance.Markers[i].LastObservedTimestamp!.Value);
     }
 
     /// <summary>
@@ -2187,14 +2233,24 @@ public sealed partial class BlockWorld
     {
         var filter = new BlockWorldFilter(); filter.AllowedTypes.Add(ObjectType.ProxObstacle);
         // Native allowed-type set {14}, even for the newly added object; current origin only.
-        try
-        {
-            var quad = QuadFor(obj);
-            filter.Predicates.Add(o => QuadFor(o).Intersects(quad));
-            DeleteLocatedObjects(filter);
-        }
+        try { DeleteIntersectingObjects(obj,0,filter); }
         catch (NotSupportedException e)
         { Missing("M11-062 / M13-023 DeleteIntersectingObjects footprint 0x0062464C; " + e.Message); }
+    }
+
+    // fidelity: M11-062 - OV10 O5, 0x0062464C..0x00624732; source filters alone control self deletion.
+    internal List<ObservableObject> DeleteIntersectingObjects(ObservableObject target,float padding,BlockWorldFilter filter)
+    {
+        using var frameMutation=EnterPoseMutation();
+        var quad=QuadFor(target,padding);
+        return DeleteIntersectingObjects(quad,padding,filter);
+    }
+    internal List<ObservableObject> DeleteIntersectingObjects(Quadrilateral target,float padding,BlockWorldFilter filter)
+    {
+        using var frameMutation=EnterPoseMutation();
+        var copy=filter.Clone();
+        copy.Predicates.Add(candidate=>QuadFor(candidate,padding).Intersects(target));
+        return DeleteLocatedObjects(copy);
     }
 
     /// <summary>
@@ -2271,7 +2327,11 @@ public sealed partial class BlockWorld
             var o = GetLocatedObjectByIdHelper(id);
             if (o is null) continue;
             if (o.Markers.Count == 0) continue;
-            bool visible = o.IsVisibleFrom(camera, VisibilityNormalAngleRad, MinVisibleMarkerSizePx, 0, 0,
+            // Retained flat camera/object input adapter; the complete native marker/pose binding remains explicit.
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 CheckForUnobservedObjects pads 0x00621E8C..0x00622102 use the retained flat camera/object adapter; complete native object/camera pose-owner binding is unbuilt");
+            using var inverse = camera.Pose.Inverse(); using var relative = inverse.Compose(o.Pose);
+            var (xPad,yPad) = ObservationPads(relative.Translation, camera.Calibration, o.Markers[0]);
+            bool visible = o.IsVisibleFrom(camera, VisibilityNormalAngleRad, MinVisibleMarkerSizePx, xPad, yPad,
                                            out var reason, out bool hasNothingBehind);
             bool dirtyWithNothingBehind = !visible && hasNothingBehind && o.PoseState == PoseState.Dirty;
             if (!visible && !dirtyWithNothingBehind) continue;
@@ -2279,6 +2339,19 @@ public sealed partial class BlockWorld
             if (MarkObjectUnobserved(o, forgotten) != 0) Log?.Invoke("BlockWorld.CheckForUnobservedObjects.MarkObjectUnobservedFailed");
         }
         return forgotten;
+    }
+
+    // fidelity: M11-037 - OV10 O3 0x00621E8C..0x00622102. Input is object translation in camera frame.
+    internal static (uint X,uint Y) ObservationPads(Vec3 translation, CameraCalibration calibration, KnownMarker first)
+    {
+        float x=(float)translation.X,y=(float)translation.Y,z=(float)translation.Z;
+        float squared=x*x; squared+=y*y; squared+=z*z;
+        float distance=MathF.Sqrt(squared);
+        float factor=2f-distance/250f;
+        float xp=(float)calibration.FocalLengthX*(float)first.SizeMm; xp*=factor; xp/=250f;
+        float height=double.IsNaN(first.HeightMm)?(float)first.SizeMm:(float)first.HeightMm;
+        float yp=(float)calibration.FocalLengthY*height; yp=factor*yp; yp/=250f;
+        return (ObservableObject.SaturatingU32(xp),ObservableObject.SaturatingU32(yp));
     }
 
     // ----------------------------------------------------------------------------------- lift occluder
@@ -2603,32 +2676,54 @@ public sealed partial class BlockWorld
         return (int)created.ObjectId;
     }
 
-    /// <summary>
-    /// <c>CreateActiveObjectByType(type, activeID, factoryID)</c> (called at 0x00623296). Its body is unread (M11-042): a light cube is an
-    /// <c>ActiveCube(type)</c> with its ActiveID and FactoryID set; any other type throws <see cref="NotSupportedException"/> rather than guessing
-    /// whether the engine returns null for it.
-    /// </summary>
-    // fidelity: M11-042
+    /// <summary>OV10 F1: types1-3 or13; unsupported types log Error and return null.</summary>
+    // fidelity: M11-041
     private ObservableObject? CreateActiveObjectByType(ObjectType type, int activeId, uint factoryId)
     {
-        if (!CubeGeometry.IsCube(type))
-            throw new NotSupportedException($"M11-042: CreateActiveObjectByType (0x00623296) is unread for {type}");
+        if (!CubeGeometry.IsCube(type) && type != ObjectType.Charger_Basic)
+        {
+            Source(EngineLogLevel.Error, null, "CreateActiveObjectByType.UnsupportedObjectType",
+                $"Cannot create active object for given '{CubeConnections.ObjectTypeName(type)}' object type");
+            EngineErrorState.StoreAndMaybeBreak();
+            return null;
+        }
         return new ObservableObject(type, CubeGeometry.MarkersFor(type)) { ActiveId = activeId, FactoryId = factoryId, OriginId = CurrentOriginId };
     }
 
     /// <summary>
-    /// <c>BlockWorld::RemoveConnectedActiveObject(activeID)</c> 0x006243A0: erases the connected object of that slot from the connected map
-    /// (0x00624432; H1.6). The rest of its body is unread (M11-042).
+    /// OV10 C2: erase a matching connected entry and clear connection IDs on located instances in every origin.
+    /// Return the saved ObjectID, retaining located pose/state; an erased ID -1 skips the remaining entries of that type.
     /// </summary>
-    // fidelity: M11-041, M11-042
-    public void RemoveConnectedActiveObject(int activeId)
+    // fidelity: M11-041
+    public int RemoveConnectedActiveObject(int activeId)
     {
         using var frameMutation=EnterPoseMutation();
+        int id = -1;
         lock (_gate)
         {
-            var key = _connectedObjects.Where(kv => kv.Value.ActiveId == activeId).Select(kv => kv.Key).Cast<(int, int, int)?>().FirstOrDefault();
-            if (key is { } k) _connectedObjects.Remove(k);
+            foreach (var family in _connectedObjects.GroupBy(k => k.Key.Family).ToArray())
+            foreach (var type in family.GroupBy(k => k.Key.Type))
+            foreach (var entry in type.ToArray())
+            {
+                if (entry.Value.ActiveId != activeId) continue;
+                id = unchecked((int)entry.Value.ObjectId);
+                _connectedObjects.Remove(entry.Key);
+                if (id == -1) break; // Skip the remaining IDs in this type, then continue the outer walk.
+                goto Found;
+            }
         }
+        return -1;
+    Found:
+        var filter = new BlockWorldFilter { OriginMode = OriginMode.InAnyFrame };
+        filter.AllowedIds.Add(unchecked((uint)id));
+        FindLocatedObjectHelper(filter, obj =>
+        {
+            if (obj.IsActive) obj.ActiveId = -1;
+            else Source(EngineLogLevel.Warning,null,"ObservableObject.SetActiveID.NotActive",$"ID: {unchecked((int)obj.ObjectId)}");
+            if (obj.IsActive) obj.FactoryId = 0;
+            else Source(EngineLogLevel.Warning,null,"ObservableObject.SetFactoryID.NotActive",$"ID: {unchecked((int)obj.ObjectId)}");
+        }, false);
+        return id;
     }
 
     /// <summary>
@@ -2640,27 +2735,19 @@ public sealed partial class BlockWorld
     /// <c>HandleConnectedToObject</c>, which stays this stack's cube connection code (<c>CozmoCubes.Handle</c>, M4) and is not repeated here.
     /// Returns the ObjectID, or -1.
     /// </summary>
-    // fidelity: M11-041, M11-042
+    // fidelity: M11-041
     public int HandleActiveObjectConnectionState(uint activeId, uint factoryId, ObjectType type, bool connected)
     {
         using var frameMutation=EnterPoseMutation();
-        if (activeId > 4)
-        {
-            Log?.Invoke($"Robot.HandleActiveObjectConnectionState: activeID {activeId} is above 4; the error branch at 0x00533B58 is unread");
-            return -1;
-        }
+        if (activeId > 4) return -1;
         if (!connected)
         {
-            RemoveConnectedActiveObject((int)activeId);
-            return -1;
+            return RemoveConnectedActiveObject((int)activeId);
         }
         int id = AddConnectedActiveObject((int)activeId, factoryId, type);
-        if (id == -1)
-        {
-            Log?.Invoke($"Robot.HandleActiveObjectConnectionState: AddConnectedActiveObject returned -1 for activeID {activeId}; the branch at 0x00533CB8 is unread");
-            return -1;
-        }
-        Log?.Invoke($"Robot.HandleActiveObjectConnectionState.Connected: activeID {activeId} factory 0x{factoryId:x} {type} ObjectID {id}");
+        if (id == -1) return -1;
+        Source(EngineLogLevel.Info,"Unnamed","Robot.HandleActiveObjectConnectionState.Connected",
+            $"Object {id} (activeID {activeId}, factoryID 0x{factoryId:x}, objectType '{CubeConnections.ObjectTypeName(type)}')");
         return id;
     }
 

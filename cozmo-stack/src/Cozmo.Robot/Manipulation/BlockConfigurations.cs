@@ -106,7 +106,13 @@ public sealed class BlockConfigurationManager
     public bool IsObjectPartOfConfigurationType(uint objectId, BlockConfigurationType t) => Cache(t).Any(c => c.ContainsBlock(objectId));
 
     /// <summary><c>StackConfigurationContainer::GetTallestStack</c>.</summary>
-    public StackOfCubes? GetTallestStack() => Stacks.OrderByDescending(s => s.StackHeight).FirstOrDefault();
+    // fidelity: M11-037 - OV10 K4: strict greater keeps the first equal-height result; empty is expired/null.
+    public StackOfCubes? GetTallestStack()
+    {
+        StackOfCubes? best=null;
+        foreach(var stack in Stacks)if(best is null || stack.StackHeight>best.StackHeight)best=stack;
+        return best;
+    }
 
     /// <summary>
     /// BlockConfigurationManager+0xC (M13-014): set to 1 to force all block configurations to recompute on
@@ -135,6 +141,7 @@ public sealed class BlockConfigurationManager
         lock (_updateGate) (newlySeen, now) = BuildLocked();
         // the event goes out after the swap, so a handler that reads the manager sees the new view
         foreach (var c in newlySeen) ConfigurationSeen?.Invoke(c, now);
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-037 NotifyBroadcasterOfConfigurationManagerUpdate 0x0064DCAA..0x0064DD78: complete native RobotPublicState owner/fieldwise-copy source is unbuilt; no public-state or game message is fabricated from the host configuration snapshot");
     }
 
     private (List<BlockConfiguration> NewlySeen, double Now) BuildLocked()
@@ -155,6 +162,7 @@ public sealed class BlockConfigurationManager
         foreach (PyramidBase b in bases)
             foreach (var top in cubes)
                 if (!b.ContainsBlock(top.ObjectId) && ObjectIsOnTopOfBase(b, top)) pyramids.Add(new Pyramid(b, top.ObjectId));
+        PruneFullPyramids(bases,pyramids);
         var cache = new Dictionary<BlockConfigurationType, IReadOnlyList<BlockConfiguration>>
         {
             [BlockConfigurationType.StackOfCubes] = stacks,
@@ -175,6 +183,19 @@ public sealed class BlockConfigurationManager
         }
         Volatile.Write(ref _snapshot, new Snapshot(cache, firstSeen));
         return (newlySeen, now);
+    }
+
+    // fidelity: M11-037 - OV10 K3 0x0062C72E..0x0062C7C8, equality0x006174F8..0x00617518.
+    internal static void PruneFullPyramids(List<BlockConfiguration> bases,IReadOnlyList<BlockConfiguration> pyramids)
+    {
+        if(bases.Count==0 || pyramids.Count==0)return;
+        for(int i=0;i<bases.Count;)
+        {
+            var current=(PyramidBase)bases[i];
+            bool remove=current.LeftBlockId!=current.RightBlockId && pyramids.Cast<Pyramid>().Any(p=>
+                current.LeftBlockId==p.Base.LeftBlockId && current.RightBlockId==p.Base.RightBlockId);
+            if(remove)bases.RemoveAt(i);else ++i;
+        }
     }
 
     /// <summary><c>StackOfCubes::BuildTallestStackForObject</c>: walk down to the bottom, then up, bound 8 each way.</summary>
