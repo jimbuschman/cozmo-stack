@@ -78,8 +78,9 @@ anything. BOARD.md is history; this file is the live queue.
 | 32 | [B-M3M4-21](B-M3M4-21.md) | done e27e9fbf; Opus check FAIL (dangling blended entry: advance read and shrink marking; research/20261014-b-m3m4-21-check.md); fixes in B-M3M4-26 |
 | 32a | [B-M3M4-26](B-M3M4-26.md) | done 316b979a; Opus check PASS (research/20261015-b-m3m4-26-pass.md); cleanups in B-M3M4-27 |
 | 33 | [B-M15-1](B-M15-1.md) | done d096ffcb; Opus check FAIL (two log texts; research/20261015-b-m15-1-check.md); fixed in B-M15-1b f5696c57 (PASS) |
-| 34 | [B-M3M4-23](B-M3M4-23.md) | open, after B-M15-1 (every BlockWorld pose mutator outside the frame window) |
+| 34 | [B-M3M4-23](B-M3M4-23.md) | done 66f6cfc0; Opus check PASS (research/20261015-b-m3m4-23-pass.md); handler-level races in B-M3M4-28 |
 | 35 | [B-M3M4-24](B-M3M4-24.md) | open, after B-M3M4-23 (test isolation, MISSING placement, B6 label test) |
+| 35a | [B-M3M4-28](B-M3M4-28.md) | open, after B-M3M4-24 (robot-message world handlers atomic against vision frames; rule 12) |
 | 36 | [B-M3M4-25](B-M3M4-25.md) | open, after B-M3M4-24 (dispatch residue: 0x101CF, owner releases, re-Init order, connect timing) |
 | 37 | [B-M5-20](B-M5-20.md) | open, after B-M3M4-25 (empty-name warning, queued items) |
 | 38 | [B-M2M15-1](B-M2M15-1.md) | open, after B-M5-20 (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
