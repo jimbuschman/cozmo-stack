@@ -80,5 +80,7 @@ The first three are the requests already written:
 | OV67 | requests/overnight/20261015-ov67-activatespark.md (M15-006: ActivateSpark handler, operator decision to expose spark requests) | research/overnight/20261015-ov67-activatespark.md |
 | OV68 | requests/overnight/20261015-ov68-m11-088.md (M11-088: ObservableObject virtual +0x5C / +0x50 overrides per concrete class (m) | research/overnight/20261015-ov68-m11-088.md |
 | OV69 | requests/overnight/20261015-ov69-m8-026.md (M8-026: AIWhiteboard::ProcessClearQuad: PossibleObjects erase predicate and Up) | research/overnight/20261015-ov69-m8-026.md |
+| OV70 | requests/overnight/20261015-ov70-m9-037.md (M9-037: Wwise note-off remaining callees: holder look-ahead and pump order vs ) | research/overnight/20261015-ov70-m9-037.md |
+| OV71 | requests/overnight/20261015-ov71-m9-036.md (M9-036: Wwise envelope remaining arithmetic: early-release (deadline before de) | research/overnight/20261015-ov71-m9-036.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

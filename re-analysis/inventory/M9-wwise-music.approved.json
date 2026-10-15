@@ -2,7 +2,7 @@
   "subsystem": "M9-wwise-music",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "4850dcb2c598c8cd667386cf16a72f8edbca56fea703d50e45f7dd52842c8aa1",
+  "inventory_sha256": "1752f1c4ef40866ba233ad4409560e2fb925ecdad60c0d8f6a86bdd9a4fdff2e",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -353,41 +353,45 @@
       "hardware_required": false
     },
     "M9-030": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise envelope initializer and timing: S+0x38 deadline from the modulator initializer, sustain time, evaluator phases",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov38-41-check.md: S+0x38 = parameter+8 set by initializer vt+0x18 0x009D5934 (0x009E27B0..0x009E27BC); initializer 0x009D5934..0x009D671C; 0x009E1D8C..0x009E1F54; sustain property 13 default -1.0."
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: S+0x38 = parameter+8 set by initializer vt+0x18 0x009D5934 (0x009E27B0..0x009E27BC); initializer 0x009D5934..0x009D671C; 0x009E1D8C..0x009E1F54; sustain property 13 default -1.0.",
+        "re-analysis/research/overnight/20261015-m9-recheck-2.md: defaults 0x004DDF0C..0x004DDF94 (table 0x0108DAA8); initializer 0x009D5934..0x009D671C (third arg is the state; LCG 0x0108D868); S+0x38 0x009E27B0..0x009E27BC; live setter 0x009E1D8C..0x009E1F4C; geometry 0x009E1FB8..0x009E1FF4; initial value 0x009E2000; input record 0x009E2D18..0x009E2D8C; scalar evaluator 0x009E387C..0x009E3DD4 (v0 shift 0x009E4CA8); buffered evaluator 0x009E52F8..0x009E5808; delivery 0x009E8248..0x009E83C8."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-031": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise MIDI note-off release: voice-kind dispatch (0x00A3E920), kind computation (0x009EE174), PBI vt+0x1C loop break, PBI+0x38",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov38-41-check.md: note-off 0x00A3EA3C..0x00A3EB44 -> 0x00A3E920..0x00A3EA34 (PBI+0x38 = offset when PBI+0x34 null at 0x00A3E98C, else 0x009E805C; target vt+0x10; kind 2 -> 0x009FF5D0 (+0x1B8=1, 0x009D3558(4,PBI)); kind 3 -> A01280 with PBI+0x1F8 = offset; kinds 0/1 nothing); kind from 0x00A023D4..0x00A02444 via 0x009EE174..0x009EE220, 0x009FAEC4..0x009FAEE4 (property 0x2E default 1 at 0x004DE12C); flag mapping 0x009F6FE0..0x009F7010. Shipped: get-in 403781184 kind 0; 462443456 kind 2; 774902407 kind 1."
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: note-off 0x00A3EA3C..0x00A3EB44 -> 0x00A3E920..0x00A3EA34 (PBI+0x38 = offset when PBI+0x34 null at 0x00A3E98C, else 0x009E805C; target vt+0x10; kind 2 -> 0x009FF5D0 (+0x1B8=1, 0x009D3558(4,PBI)); kind 3 -> A01280 with PBI+0x1F8 = offset; kinds 0/1 nothing); kind from 0x00A023D4..0x00A02444 via 0x009EE174..0x009EE220, 0x009FAEC4..0x009FAEE4 (property 0x2E default 1 at 0x004DE12C); flag mapping 0x009F6FE0..0x009F7010. Shipped: get-in 403781184 kind 0; 462443456 kind 2; 774902407 kind 1.",
+        "re-analysis/research/overnight/20261015-m9-recheck-2.md: pump 0x00A3EA3C..0x00A3EB24 (release before propagation in the due frame; propagation on first processing); PBI+0x34/+0x38 {owner, pending deadline} init 0x009E8728 from 0x009BC964, writer 0x00A3E98C, reader 0x009DD8E8..0x009DD900, other writer 0x009BCF08; 0x009E805C..0x009E8088 -> 0x009E21D0..0x009E21F8; target vt+0x10 0x00A70928 / 0x00A3CE78 (ctx+0xFC bit4, hard stop 0x00A3BDB8..0x00A3BDCC), true path 0x00A3E94C..0x00A3E96C; dispatch 0x00A3E9B4..0x00A3EA2C; base PBI vt+0x1C 0x009FF5D0, command 4 drained 0x009D3B70; propagation 0x00A3E6A8..0x00A3E7DC."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-032": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise modulator byte +0x44 writer (scalar vs buffered LFO output) for the shipped pitch-bound vibrato",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov38-41-check.md: writer 0x009E72DC..0x009E730C in 0x009E6EDC (sticky; set when [r7+0x24] != 1 and [r7+4] in {0,7}); consumer geometry 0x009E1F5C..0x009E1FAC."
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: writer 0x009E72DC..0x009E730C in 0x009E6EDC (sticky; set when [r7+0x24] != 1 and [r7+4] in {0,7}); consumer geometry 0x009E1F5C..0x009E1FAC.",
+        "re-analysis/research/overnight/20261015-m9-recheck-2.md: ctor zeroes +0x44 (0x009D7BFC, 0x009D7C84); sole writer 0x009E730C in 0x009E6EDC (caller 0x00A11D6C in SubscribeRTPC 0x00A117C8, rtpcType 2); record +4 paramID, +0x24 subscriber type (0x00A119B4..0x00A11A14); node bindings type 2 (0x00A1A338, 0x00A1A374/0x00A1A380); shipped: vibrato LFO 528935089 param 2 -> 0 (scalar), envelope 381606890 param 0 -> 1."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-033": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise engine sample-rate and frame-count globals used by the LFO (fixed 48000 step base)",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov38-41-check.md: reads at 0x009E20A4 (attack x live sample rate) and 0x009E1F80 (frame count T); LFO step uses fixed 48000 (literals 0x009D7540, 0x009D7564)."
+        "re-analysis/research/overnight/20261015-ov38-41-check.md: reads at 0x009E20A4 (attack x live sample rate) and 0x009E1F80 (frame count T); LFO step uses fixed 48000 (literals 0x009D7540, 0x009D7564).",
+        "re-analysis/research/overnight/20261015-m9-recheck-2.md: R u32 0x0105243C (.data 48000), T u16 0x01052440 (1024) via GOT 0x01040068 / 0x01040058; writers SetRate 0x00A1C784, SetFrame 0x00A1C7E8 from platform init 0x00A57724; R selection 0x00A56E88..0x00A56EA4, 0x00A578B4..0x00A578C8; T 0x00A577B8..0x00A57830; LFO fixed 48000 literal 0x009D7564; attack 0x009E2098..0x009E20D4; geometry 0x009E1F5C..0x009E1FAC."
       ],
       "live_path": true,
       "hardware_required": false
@@ -408,6 +412,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
       "evidence": [
         "re-analysis/research/overnight/20261015-m9-recheck-1.md: called from the voice parameter paths (G rows 0x009FFAF4..0x009FFE18; CAkSound vt+0xAC base call before 0x00A1DAEC); their inputs carry no velocity (census in re-analysis/research/overnight/20261015-m9-recheck-1.md)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-036": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise envelope remaining arithmetic: early-release (deadline before decay end), buffered NEON ramp emitter bodies, the O+0xC tick-maximum consumer",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-m9-recheck-2.md: early release 0x009E3B34..0x009E3CC8, 0x009E4CFC..0x009E4D2C; emitters 0x009E5880..0x009E5E8C; O+0xC consumer after delivery 0x009E8248."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-037": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise note-off remaining callees: holder look-ahead and pump order vs the modulator tick, the params+0x128 bit2 writer on note-on, voice vt+0x54 loop break, continuous PBI 0x00A6B2E8, pending actions 0x009AB1F4 and C4/C5",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime) and the shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-m9-recheck-2.md: holder creators 0x00A70D90 / 0x00A71138, clip queue 0x00A70738; pump 0x00A71938 (called 0x00A71BF0, 0x00A71D44) vs modulator tick 0x009E6D2C in Perform 0x009AF9F4..0x009AFAB8; scope-1 gate 0x009D8038..0x009D8054 <- PBI+0x1BF bit2 <- params+0x128 bit2 (0x00A002C0..0x00A002D0), writer on 0x00A3DB48 unread; voice vt+0x54 via 0x009D3B70; 0x00A6B2E8; 0x009AB1F4, 0x009AB8AC, 0x009F4A64."
       ],
       "live_path": true,
       "hardware_required": false
