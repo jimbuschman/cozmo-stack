@@ -77,5 +77,6 @@ The first three are the requests already written:
 | OV64 | requests/overnight/20261015-ov64-m6-031.md (M6-031: Wwise Term dispatcher at shutdown: thread stop, bus teardown, memory-m) | research/overnight/20261015-ov64-m6-031.md |
 | OV65 | requests/overnight/20261015-ov65-m6-032.md (M6-032: Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destr) | research/overnight/20261015-ov65-m6-032.md |
 | OV66 | requests/overnight/20261015-ov66-m6-033.md (M6-033: Audio stream hook and device teardown at shutdown) | research/overnight/20261015-ov66-m6-033.md |
+| OV67 | requests/overnight/20261015-ov67-activatespark.md (M15-006: ActivateSpark handler, operator decision to expose spark requests) | research/overnight/20261015-ov67-activatespark.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
