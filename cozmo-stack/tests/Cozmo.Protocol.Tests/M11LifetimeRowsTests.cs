@@ -30,6 +30,7 @@ public sealed class M11LifetimeRowsTests
         var disposal=Task.Run(vision.Dispose);
         try
         {
+            Assert.True(SpinWait.SpinUntil(()=>entries.Count(e=>e.Entry.Name=="ImageBase.CloseAllDisplayWindows.NoDisplayOnAndroidOrIOS")==2,3000));
             // The old removal wait is two seconds; destructor join must outlast it.
             await Task.Delay(2150);
             Assert.False(disposal.IsCompleted);
@@ -74,6 +75,32 @@ public sealed class M11LifetimeRowsTests
         Assert.DoesNotContain(entries,e=>e.Text.Contains("Terminated Robot"));
         vision.Dispose();
         Assert.Single(entries,e=>e.Text=="Terminated Robot VisionComponent::Processor thread");
+    }
+
+    [Fact]
+    public void DisposalFromAFrameCallbackIsRejectedBeforeStoppingTheWorker()
+    {
+        using var robot=CozmoRobot.CreateOffline();
+        using var vision=new VisionSystem(robot) { Enabled=true };
+        using var callback=new ManualResetEventSlim();
+        using var secondFrame=new ManualResetEventSlim();
+        Exception? failure=null;
+        vision.Log+=text=>
+        {
+            if (text.Contains("policy M3-020")) secondFrame.Set();
+            if (!text.Contains("Must be initialized")) return;
+            failure=Record.Exception(vision.Dispose);
+            callback.Set();
+        };
+        vision.HandOverFrame(Frame());
+        Assert.True(callback.Wait(3000));
+        Assert.IsType<InvalidOperationException>(failure);
+        vision.WaitForProcessorIdle();
+        vision.Calibration=Calibration;
+        vision.HandOverFrame(Frame(2));
+        Assert.True(secondFrame.Wait(3000));
+        vision.WaitForProcessorIdle(); // guard retained the worker and the owner's state
+        vision.Dispose();
     }
 
     [Fact]

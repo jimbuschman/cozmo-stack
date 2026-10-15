@@ -1148,9 +1148,13 @@ public sealed partial class VisionSystem : IDisposable
 
     public void Dispose()
     {
+        // This is a host API precondition: native Robot teardown runs on its owner thread.
+        // Reject before changing state, so a frame callback cannot join its own worker.
         lock (_disposeGate)
         {
             if (_disposed) return;
+            if (ReferenceEquals(Thread.CurrentThread, _processorThread))
+                throw new InvalidOperationException("Dispose VisionSystem outside its Processor callback.");
             _disposed = true;
         }
         // Do not hold a host lock across join or callbacks on the worker's exit log.
