@@ -313,7 +313,8 @@
         "re-analysis/research/20260929-R-VIS-M13-gap2-extraction.md Q5; re-analysis/research/20260929-R-VIS-verify-M13-gap2.md Q5 (PASS)",
         "0x005469A8..0x005469BE, 0x0054644A..0x0054645E, 0x0054834C..0x005483CC, 0x00548440..0x00548454 (0x0054834C..0x005483CC and 0x00548440..0x00548454 lie in MoveHeadToAngleAction: M4-016's)",
         "re-analysis/research/20260929-R-VIS-M13-gap3-extraction.md Q4; re-analysis/research/20260929-R-VIS-verify-M13-gap3.md Q4",
-        "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: rows 4-5. Init eye block and halfRevs 0x00546144..0x00546298; CheckIfDone 0x0054642C..0x0054689A, IsBodyInPosition 0x00546374..0x00546422, IsOffTreadsStateValid 0x00545EC4..0x00545F1A, u16 counters 0x01051024/0x01051026 (initial 10)."
+        "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: rows 4-5. Init eye block and halfRevs 0x00546144..0x00546298; CheckIfDone 0x0054642C..0x0054689A, IsBodyInPosition 0x00546374..0x00546422, IsOffTreadsStateValid 0x00545EC4..0x00545F1A, u16 counters 0x01051024/0x01051026 (initial 10).",
+        "re-analysis/research/20261015-turn-eye-dtor-check.md: TurnInPlaceAction D1 0x00545B94..0x00545BD4 (vptr first; if +0xD8 and tag +0xD9: RemoveEyeShift(+4->+0xC0, tag, 0) 0x00545BBC, tag=0 0x00545BC0; release +0xE4 0x00545BC4..0x00545BCA; tail ~IActionRunner via veneer 0x008CB50C -> 0x004AAB4C); D0 0x00545BF4..0x00545BFE (operator delete via 0x008CA88C -> 0x004A40CC)."
       ],
       "live_path": true,
       "hardware_required": false

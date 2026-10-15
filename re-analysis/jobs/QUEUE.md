@@ -89,7 +89,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 38 | [B-M2M15-1](B-M2M15-1.md) | open, after B-M5-20 (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
 | 39 | [B-M11-2](B-M11-2.md) | open, after B-M2M15-1 (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
 | 40 | [B-M12-3](B-M12-3.md) | open, after B-M11-2 (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018) |
-| 41 | [B-M13-4](B-M13-4.md) | open, after B-M12-3 (movement/track-layer wrappers M13-021; turn CheckIfDone M13-022; M13-020; TrackObjectAction M13-036; path abort/destruction M13-029, corner sort M13-023, pose destruction M11-077) |
+| 41 | [B-M13-4](B-M13-4.md) | BLOCKED (turn-eye destructor row; bounded part pushed 730ccc23); checked row added (research/20261015-turn-eye-dtor-check.md); finished by B-M13-7 |
+| 41a | [B-M13-7](B-M13-7.md) | open, NEXT (TurnInPlaceAction live eye layer and destructor cleanup) |
 | 42 | [B-M11-3](B-M11-3.md) | open, after B-M13-4 (BlockWorld observation-path rows from OV10: M11-041/013/062/037/007/044/052) |
 | 43 | [B-M11-4](B-M11-4.md) | open, after B-M11-3 (vision/history/world/pose/map teardown, M11-055) |
 | 44 | [B-M11-5](B-M11-5.md) | open, after B-M11-4 (quad-tree border walk M11-047; seed order = insertion order, operator 2026-10-14) |
