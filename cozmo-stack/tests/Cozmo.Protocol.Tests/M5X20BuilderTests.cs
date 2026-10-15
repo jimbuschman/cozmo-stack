@@ -14,9 +14,9 @@ public sealed class M5X20BuilderTests
     private static string Assets(string group="missing")
     {
         var root=Directory.CreateTempSubdirectory("b520-assets-").FullName;
-        Directory.CreateDirectory(Path.Combine(root,"animations"));Directory.CreateDirectory(Path.Combine(root,"animationGroups"));
+        Directory.CreateDirectory(Path.Combine(root,"animationGroupMaps"));Directory.CreateDirectory(Path.Combine(root,"animations"));Directory.CreateDirectory(Path.Combine(root,"animationGroups"));
         File.WriteAllText(Path.Combine(root,"animations","a.json"),"{\"a\":[]}");
-        File.WriteAllText(Path.Combine(root,"AnimationTriggerMap.json"),System.Text.Json.JsonSerializer.Serialize(new{
+        File.WriteAllText(Path.Combine(root,"animationGroupMaps","AnimationTriggerMap.json"),System.Text.Json.JsonSerializer.Serialize(new{
             Pairs=new[]{new{CladEvent=((AnimationTrigger)0x95).ToString(),AnimName=group}}
         }));return root;
     }
@@ -63,7 +63,7 @@ public sealed class M5X20BuilderTests
         try
         {
             using var robot=CozmoRobot.CreateOffline();robot.Animations.LoadFrom(root);var prior=robot.Animations.DrivingTriggerMap;
-            File.WriteAllText(Path.Combine(root,"AnimationTriggerMap.json"),malformed);
+            File.WriteAllText(Path.Combine(root,"animationGroupMaps","AnimationTriggerMap.json"),malformed);
             var stack=new List<string>();robot.Engine.StackLogLine+=stack.Add;
             var loaded=robot.Animations.LoadFrom(root);
             Assert.Contains("a",loaded.ClipNames);Assert.Same(prior,robot.Animations.DrivingTriggerMap);
@@ -91,7 +91,7 @@ public sealed class M5X20BuilderTests
         {
             using var robot=CozmoRobot.CreateOffline();var previous=AnimationTriggerMap.Load(root);robot.Animations.DrivingTriggerMap=previous;
             Func<bool> previousNeeds=()=>false;robot.Animations.DrivingAnimations.AreNeedsMet=previousNeeds;
-            File.WriteAllText(Path.Combine(root,"AnimationTriggerMap.json"),"{\"Pairs\":[]}");var replacement=AnimationTriggerMap.Load(root);
+            File.WriteAllText(Path.Combine(root,"animationGroupMaps","AnimationTriggerMap.json"),"{\"Pairs\":[]}");var replacement=AnimationTriggerMap.Load(root);
             var context=new BehaviorContext{Robot=robot,Triggers=replacement};
             var obb=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../re-analysis/obb"));
             using(var stack=FreeplayStack.Create(obb,robot,context,()=>0,withReactions:false,needsDirectory:root))

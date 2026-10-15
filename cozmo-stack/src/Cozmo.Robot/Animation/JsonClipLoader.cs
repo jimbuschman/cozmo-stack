@@ -16,7 +16,7 @@ internal static class JsonClipLoader
     public const string ProceduralAnimName = "_PROCEDURAL_";
 
     /// <summary>A JsonCpp conversion that throws (a value out of range, a non-number): the load stops there.</summary>
-    private sealed class JsonCppException : Exception
+    internal sealed class JsonCppException : Exception
     {
         public JsonCppException(string m) : base(m) { }
     }

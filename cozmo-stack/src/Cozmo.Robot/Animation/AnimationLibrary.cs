@@ -191,27 +191,9 @@ public sealed class AnimationTriggerResponses
         return responses;
     }
 
-    public static AnimationTriggerResponses Load(string? dir)
-    {
-        var r = new AnimationTriggerResponses();
-        if (dir is null || !Directory.Exists(dir)) return r;
-        foreach (var f in Directory.EnumerateFiles(dir, "*.json", SearchOption.AllDirectories))
-        {
-            try
-            {
-                using var doc = JsonDocument.Parse(File.ReadAllText(f));
-                if (!doc.RootElement.TryGetProperty("Pairs", out var pairs) || pairs.ValueKind != JsonValueKind.Array) continue;
-                foreach (var p in pairs.EnumerateArray())
-                {
-                    string key = p.TryGetProperty("CladEvent", out var k) && k.ValueKind == JsonValueKind.String ? k.GetString()! : "";
-                    string val = p.TryGetProperty("AnimName", out var v) && v.ValueKind == JsonValueKind.String ? v.GetString()! : "";
-                    r._pairs.TryAdd(key, val);
-                }
-            }
-            catch (JsonException) { }
-        }
-        return r;
-    }
+    public static AnimationTriggerResponses Load(string? dir, Action<string>? log = null, SourceLogSink? sourceLog = null) =>
+        dir is null || !Directory.Exists(dir) ? new AnimationTriggerResponses() :
+            Cozmo.Robot.Behavior.AnimationTriggerMap.LoadDirectory(dir, log, sourceLog).ToResponses();
 
     /// <summary>GetResponse (0x00670810..0x00670920).</summary>
     public string GetResponse(AnimationTrigger trigger)
@@ -355,7 +337,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         // L0: LoadNonConfigData 0x0051F3BC..0x0051F3CE: groups, cube lights, backpack lights, faces.
         loadCubeFiles?.Invoke(cubeFiles);
         afterGroups?.Invoke();
-        lib.Triggers = triggerResponses ?? AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
+        lib.Triggers = triggerResponses ?? AnimationTriggerResponses.Load(Cozmo.Robot.Behavior.AnimationTriggerMap.ResourceDirectory(assetsRoot), log, sourceLog);
         lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
         return lib;
     }
@@ -489,7 +471,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     }
 
     // X9 G2b: recurse at the directory entry, not after emitting all parent files. Host enumeration order is input.
-    private static IEnumerable<string> WalkFilesInReaddirOrder(string path)
+    internal static IEnumerable<string> WalkFilesInReaddirOrder(string path)
     {
         foreach (var entry in new DirectoryInfo(path).EnumerateFileSystemInfos())
         {
