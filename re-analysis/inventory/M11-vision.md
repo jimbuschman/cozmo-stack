@@ -1678,3 +1678,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Teardown leaves, border consumer: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-078, M11-079 |
 | InterestingEdge data class; teardown residue: RECOVERABLE_GAP | M11-089, M11-090 (new) |
 | Corrections | M11-055 |
+
+
+## Check of OV62-OV64 (manager, 2026-10-15; research/overnight/20261015-ov62-64-check.md)
+
+| Change | Records |
+| --- | --- |
+| Exposure/gain predicate semantics: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-087 |

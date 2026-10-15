@@ -3186,3 +3186,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Audio multiplexer wrapper teardown: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-029 |
 | Wwise Term, Hijack destroy path, stream/device teardown: RECOVERABLE_GAP | M6-031, M6-032, M6-033 (new) |
+
+
+## Check of OV62-OV64 (manager, 2026-10-15; research/overnight/20261015-ov62-64-check.md)
+
+| Change | Records |
+| --- | --- |
+| Wwise Term dispatcher: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-031 |
+| Term recipients: RECOVERABLE_GAP | M6-034 (new) |

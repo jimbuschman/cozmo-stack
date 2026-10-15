@@ -1376,3 +1376,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | TrackLaser colour snapshot/restore: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M7-025 |
 | Rest of TrackLaser: RECOVERABLE_GAP | M7-029 (new) |
+
+
+## Check of OV62-OV64 (manager, 2026-10-15; research/overnight/20261015-ov62-64-check.md)
+
+| Change | Records |
+| --- | --- |
+| TrackLaser (non-colour): RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M7-029 |
+| Note (ownership) | M7-025 |

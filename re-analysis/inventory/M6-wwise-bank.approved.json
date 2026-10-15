@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "2ed541852020e02130674476d6363a72b29405e9052fc5741b438ebe0542eb8f",
+  "inventory_sha256": "a67b1121d3b597b29e651248ee2fb0e6a6fca99345e366b541c6003f4b0b9796",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -448,11 +448,12 @@
       "hardware_required": false
     },
     "M6-031": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise Term dispatcher at shutdown: thread stop, bus teardown, memory-manager order and the manager-list tail",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov36-37-check.md: head 0x0099DCEC..0x0099DE00 re-read (init byte +0x6C, 0x009B0350 -> 0x009D4058 / 0x00A40B18, +0x70 vt+0x1C, 0x009E5FE4, 0x00A3D4E0, 0x00A40D44 with null bus skipped at 0x00A40DFC, 0x0099DA54(0x40), seven descriptors +0x10..+0x58, 0x00A38890); tail 0x0099DE00..0x0099E318 not re-read; OV37 rows 7, 19, 20, 22 and 0x009D3EC4..0x009D3F38 not re-checked."
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: head 0x0099DCEC..0x0099DE00 re-read (init byte +0x6C, 0x009B0350 -> 0x009D4058 / 0x00A40B18, +0x70 vt+0x1C, 0x009E5FE4, 0x00A3D4E0, 0x00A40D44 with null bus skipped at 0x00A40DFC, 0x0099DA54(0x40), seven descriptors +0x10..+0x58, 0x00A38890); tail 0x0099DE00..0x0099E318 not re-read; OV37 rows 7, 19, 20, 22 and 0x009D3EC4..0x009D3F38 not re-checked.",
+        "re-analysis/research/overnight/20261015-ov62-64-check.md: G 0x0108D868, P 0x01052418; head 0x0099DCEC..0x0099DDB8; tail 0x0099DDC0..0x0099E318; 9B0350 (config +0x3D: 9D4058 -> 9EAF90, or A40B18); A40B18..A40BB0; 9EAF90..9EB0E4; active drain A40D44..A40DC8; bus loop (pool word 0x01052428 via GOT 0x010400A8, 0x00A40DEC..0x00A40DF4); pending drain 9D3EC4..9D3F38; memory Term A7A6F0..A7A784, A7AEC4..A7AF78."
       ],
       "live_path": true,
       "hardware_required": false
@@ -473,6 +474,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-034": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise Term recipients: the manager-list tail, head calls, allocator internals and virtual slots called by the Term dispatcher",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov62-64-check.md: tail recipients 9AD064, 9A99DC, 9A7BFC, 9A7DB0, 9FEBCC, 9FEB80, A36044, A0D370, A0C200, A030CC, 9C7AF4, A05288, 9CC540, A322D8, A307C4, A274E8, A273A8, A109D0, A0E1A8, 9E5F6C, 9E5EF8, 9A7904; head calls 9E5FE4, A3D4E0, 99DA54, A38890; allocator A7A988, A7AAE8, A7B8FC, A7A588; virtual slots at 99DD2C, 99DE28, 99DE50; node call 9EB014."
       ],
       "live_path": true,
       "hardware_required": false

@@ -582,3 +582,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | Note (V+0x32A reader) | M3-023 |
+
+
+## Check of OV62-OV64 (manager, 2026-10-15; research/overnight/20261015-ov62-64-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note (ownership) | M3-021 |

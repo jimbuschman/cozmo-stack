@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "f8b2cd3c6e72ae03f1687e7c946aa8fb7b50d96b3ea7a54afe6dfd0f61c29ff5",
+  "inventory_sha256": "ea249cd9dcc74441d0a7a02be5c0a93ba90b7fd22b20b485ee96304a030af7da",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1014,11 +1014,12 @@
       "hardware_required": false
     },
     "M11-087": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "VisionSystem::IsExposureValid / IsGainValid bounds used by VisionComponent::SetCameraSettings",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov36-37-check.md: PLT 0x004BA698 / 0x004BA6A4, gates at 0x006560E6..0x006560FE (rejection: no log, no send; V+0x329=0 and SetNextMode(7,false) still follow at 0x00657EFE..0x00657F0E)."
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: PLT 0x004BA698 / 0x004BA6A4, gates at 0x006560E6..0x006560FE (rejection: no log, no send; V+0x329=0 and SetNextMode(7,false) still follow at 0x00657EFE..0x00657F0E).",
+        "re-analysis/research/overnight/20261015-ov62-64-check.md: IsExposureValid 0x006B9DA4..0x006B9E02 (signed inclusive; Warning VisionSystem.IsExposureValid.OOR 0x006B9DD8); IsGainValid 0x006B9E78..0x006B9EFC (ordered f32, NaN rejects; Warning VisionSystem.IsGainValid.OOR 0x006B9ED2); ctor bounds 0x006B002A..0x006B004A; SetCameraExposureParams 0x006B93CA, 0x006B9416..0x006B941E; SetCameraSettings 0x006560C8..0x006561CD (exposure first); darken full u32 0x005FAD1C..0x005FAD20, 0x00657EFA."
       ],
       "live_path": true,
       "hardware_required": false
