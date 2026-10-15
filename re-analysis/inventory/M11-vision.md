@@ -1615,3 +1615,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Cube disconnect tail: RECOVERABLE_GAP | M11-085 (new) |
 | Note | M11-041 |
+
+
+## Check of B-POSE-4 (manager, 2026-10-15; research/20261015-b-pose-4-check.md)
+
+| Change | Records |
+| --- | --- |
+| GetNamedPathToRoot, IMPLEMENTATION_GAP | M11-086 (new) |
+| Notes | M11-065, M11-070 |

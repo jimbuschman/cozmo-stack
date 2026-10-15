@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **621 records** over 16 subsystems.
+Manifest of **622 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 39 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 318 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 319 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -34,7 +34,7 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 25 | 3 | 21 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 85 | 14 | 56 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 86 | 14 | 57 | 0 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 46 | 3 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 37 | 1 | 32 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
@@ -2280,7 +2280,7 @@ B-POSE-1 rerun BLOCKED (2026-10-13): R2 was corrected and is no longer the block
 B-POSE-1 rerun BLOCKED (2026-10-14): prior R2/R18/R36 blockers are corrected. New contradiction in adopted pose-rows-recheck Manager decision 1 (lines 457-458): row elements do not call unshipped bionic snprintf. Engine Renormalize calls std::to_string(float) at 0x008495CE and appends a space at 0x008495D8; shipped libc++_shared.so to_string(float) 0x000664F4..0x000665A4 widens to double, uses %f at 0x0006652E, calls local wrapper 0x0007E270 at 0x0006656C, then shipped vsnprintf 0x00082528 at 0x0007E292 and shipped printf core 0x000813B0 at 0x00082598. Existing LibcxxPrintf ports g/integer conversions only; its f path is not built or a checked row supplied by this job. Lowercase nan/inf and six places alone do not establish exact finite conversion. Need manager correction and checked shipped %f conversion rows or a checked adoption of an existing exact port before implementing this shared warning path; no own unchecked formatter extraction built and no production change committed. All classifications and prior notes preserved; see jobs/status/B-POSE-1.md. B-POSE-1 block 74970f31 (2026-10-14): the BadRowNorm row elements go through std::to_string(float) into a %f vsnprintf bundled in libc++_shared.so, not bionic: unread, M11-083. B-POSE-1 builds the warning with the row text as a visible MISSING placeholder.
 built, awaiting strong verification: B-POSE-1 (2026-10-14) replaces shared pose storage with double quaternion and binary32 translation; builds checked R2-R30/R33/R34/R38-R42 arithmetic, f32 point rotation, normalized products, matrix repair and direct quaternion yaw. Test expectation changes and per-record files/lines/ranges are in jobs/status/B-POSE-1.md. No status/evidence settlement. MISSING: native PoseStruct3d origin binding/VERIFY serialization R31/R32; flattened caller parent/root binding; generic Mat3*Vec3 double-point carrier is not a claimed native quaternion<double>*Point3d path. System libm only is EQUIVALENT_IMPLEMENTATION M13-023(e), surrounding arithmetic/order stays exact; BadRowNorm row element formatter remains M11-083.
 B-POSE-2 (2026-10-14, research/20261014-b-pose-1-check.md): items 5/6: Radians IsNear always rescales a copy of a with the flag forced on (0x0084CC0E..0x0084CC1E); float - Radians builds Radians(a) first (0x0084CA66..0x0084CA96). Item 1: PoseDiagnostics.Missing goes to the stack MISSING channel only (SteppedBehavior.ReportMissing, deduplicated), never the engine source sink. Transform3d/Pose3d.RotateBy(RotationVector3d) added (R28 0x0084BB3A -> R22). Not settled.
-B-POSE-4 (2026-10-15), built, awaiting strong verification: IsSameAsWithAmbiguity parent-wrapper branch now calls public TryGetParent after its two existing parent checks: native 0x00846F8A/9E -> GetParent 0x00846FAA -> check 0x00845412 -> wrap -> GetWithRespectTo 0x00846FB4. Regression proves exactly three unowned-parent VERIFYs before temporary ownership suppresses later checks.
+B-POSE-4 (2026-10-15), built, awaiting strong verification: IsSameAsWithAmbiguity parent-wrapper branch now calls public TryGetParent after its two existing parent checks: native 0x00846F8A/9E -> GetParent 0x00846FAA -> check 0x00845412 -> wrap -> GetWithRespectTo 0x00846FB4. Regression proves exactly three unowned-parent VERIFYs before temporary ownership suppresses later checks. B-POSE-4 check (re-analysis/research/20261015-b-pose-4-check.md): with a null other.node, `cbz r4` at 0x00846F84 skips the first Dev_Assert (0x00846F8A) and the parent==other compare; only 0x00846F9E and GetParent 0x00845412 run.
 
 **M11-066 — The pose tree: GetWithRespectTo (null/alias checks, depth walk, Tt^-1*Tf, 1000-step LoopBoundOverflow) and GetWithRespectToRoot (rows R35-R37)** (live path)
 
@@ -2345,7 +2345,7 @@ B-M11-8 follow-up: no log callback (LogEntry, stack log, display, MISSING channe
 * outstanding: Read 2026-10-13 (re-analysis/research/20261013-delocalize-callees-check.md): build (job B-M11-1). VizManager output is exactly nothing, so reproducing no output is exact (not a departure). IsRestingFlat uses Radians operator< (M4-001). The broadcast and its in-engine subscribers are M11-071, M4-048, M11-072. Previous notes: RECOVERABLE_GAP: read the listed bodies. Whether VizManager output is in scope is an operator question (it targets a developer visualiser).
 built, awaiting strong verification: B-M11-1 (2026-10-14): SetPose preserves name, same-root VERIFY, forward-pose f32 offset (-20 or 0), SetNewPose unconditional history continuation, frame/update flag, native default 0x5B state, vision-only rejection/overwrite/new-insert/cull branches, per-origin localization query, and emplace default/always-pose-assignment built. History raw-map/cull/composition dependencies remain existing M11-051/052/044 gaps. Viz output is exactly absent. See jobs/status/B-M11-1.md for files/lines, binary ranges, tests and every MISSING.
 B-M11-8 (2026-10-14; fixes from re-analysis/research/20261014-b-m11-1-check.md; see jobs/status/B-M11-8.md): item 8: SetNewPose passes Robot+0x2FC (Motion.HeadAngleRad: ctor 0xBEDF66F3, SetHeadAngle 0x00513358 gated on +0x314, clamps 0xBEFA35DD->0xBEDF66F3 and 0x3F543B67->0x3F46D3F2) as the history head angle, not the last state's report. Item 5: one history (Robot+0x390). The lift angle argument is unchanged (StoredState.LiftAngle; not in the check).
-B-POSE-4 (2026-10-15), built, awaiting strong verification: AddVisionOnlyState flatten check now runs public HasParent, GetParent, IsRoot and temporary wrapper disposal in native order (0x005310B4/C2/C8/D0), rather than direct parent-parent loads. Crafted unowned two-level ancestry proves all three conditional VERIFY sites; no history insert on nonflattened failure.
+B-POSE-4 (2026-10-15), built, awaiting strong verification: AddVisionOnlyState flatten check now runs public HasParent, GetParent, IsRoot and temporary wrapper disposal in native order (0x005310B4/C2/C8/D0), rather than direct parent-parent loads. Crafted unowned two-level ancestry proves all three conditional VERIFY sites; no history insert on nonflattened failure. B-POSE-4 check (re-analysis/research/20261015-b-pose-4-check.md): the NonFlattenedPose text must use GetNamedPathToRoot(false) (M11-086); the stack prints only the pose name until B-POSE-5.
 
 **M11-071 — RobotDelocalized broadcast order (app delivery first, then the synchronous in-engine tag-0x32 emit) and BlockConfigurationManager's delocalized flag** (live path)
 
@@ -2397,6 +2397,15 @@ B-POSE-4 (2026-10-15), built, awaiting strong verification: origin-owner teardow
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ROI head 0x006B2D4C..0x006B2F58; proposal 0x006B2F5A..0x006B30AC; statics 0x01051088..0x01051094 loaded at 0x006B07D8..0x006B0E3E (SetAutoExposureParams call 0x006B0A14); Update mode-7 block 0x006B55E2..0x006B5690.
 * outstanding: IMPLEMENTATION_GAP: port per the check file. ComputeExposureAdjustment, the histogram and ComputePercentile are the companion RECOVERABLE_GAP record.
+
+**M11-086 — PoseBase::GetNamedPathToRoot: NullNode, node names joined by ' -> ', (UNNAMED) for empty, optional position, 1000-step LoopBoundOverflow** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/NativeVisionOnlyHistory.cs`
+* effect: The pose path text in pose diagnostics (NonFlattenedPose).
+* rests on: Manager read during the B-POSE-4 check (2026-10-15).
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261015-b-pose-4-check.md: wrapper 0x00845524..0x00845542 ("NullNode" 0x00C2934F); walk 0x00845548..0x0084564C ("(UNNAMED)" 0x00C29519, " -> " 0x00C29523, name node+0x38, position node+0x20, parent node+0x30, cap 0x3E8); overflow sErrorF 0x0084560C ("LoopBoundOverflow" 0x00BFBFD5, "%s:%d" 0x00BFBFE7, file 0x00C294C9, line 0x15C), _errG and break 0x00845632..0x00845646; caller AddVisionOnlyState 0x005311C2..0x005311E6 (flag false).
+* outstanding: IMPLEMENTATION_GAP: port it and use it in the NonFlattenedPose error. Other callers not enumerated.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
