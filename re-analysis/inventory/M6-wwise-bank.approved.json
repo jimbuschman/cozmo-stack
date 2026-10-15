@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "a67b1121d3b597b29e651248ee2fb0e6a6fca99345e366b541c6003f4b0b9796",
+  "inventory_sha256": "e3dc392287142a658350ea18527bbab6f2c90a16006a0f7be1a13a2bf57be586",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -459,21 +459,23 @@
       "hardware_required": false
     },
     "M6-032": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destroy lambda after the controller map is destroyed",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info \"CozmoAudioController.HijackAudioPlugin\" \"Destroy Plugin id: %d callback\"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C)."
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info \"CozmoAudioController.HijackAudioPlugin\" \"Destroy Plugin id: %d callback\"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C).",
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: setup 0x005942C6..0x00594354; fx capture 0x008DB4D6..0x008DB4EA, 0x008DBC36..0x008DBC4A; lambdas destroy 0x00595FE0..0x005960AC, process 0x00596148..0x005961B2; map death 0x005946F0..0x00594716, 0x00594E5E..0x00594E80; find fault 0x00595DDE..0x00595E38; bucket count kept after 5 registrations 0x0059963A..0x0059966A, unregister 0x00599A6C..0x00599AD6, 0x00594AFC..0x00594BF6; Term drain 0x00A40D44..0x00A40E50; bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC; Hijack Term 0x008DBDF8..0x008DBE2C."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M6-033": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Audio stream hook and device teardown at shutdown",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread."
+        "re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread.",
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: hook shutdown 0x008D80AC..0x008D80D6; package drain 0x008D98F2..0x008D9932; producer 0x008D9848..0x008D98A0; node dtor 0x008D9E48..0x008D9E7E, 0x008D66EA..0x008D674F; registration removal 0x0096091C..0x009609B0; owned files 0x008D6C38..0x008D6CC4; device dispatcher 0x009606E8..0x0096073C; hook init 0x008D6C02..0x008D6C36; blocking Term 0x00961798..0x009617DC; worker stop 0x0097CE74..0x0097CF28."
       ],
       "live_path": true,
       "hardware_required": false
@@ -484,6 +486,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov62-64-check.md: tail recipients 9AD064, 9A99DC, 9A7BFC, 9A7DB0, 9FEBCC, 9FEB80, A36044, A0D370, A0C200, A030CC, 9C7AF4, A05288, 9CC540, A322D8, A307C4, A274E8, A273A8, A109D0, A0E1A8, 9E5F6C, 9E5EF8, 9A7904; head calls 9E5FE4, A3D4E0, 99DA54, A38890; allocator A7A988, A7AAE8, A7B8FC, A7A588; virtual slots at 99DD2C, 99DE28, 99DE50; node call 9EB014."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-035": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise bus state +0x1BC transitions (what moves a bus from 1 back to 4): callers of the stage setters 0x00A4F36C, 0x00A4F544 and siblings",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: init writes 4 (0x00A4F220); processing 4 -> 1 (0x00A4FA00..0x00A4FA04, 0x00A4FC20..0x00A4FC24); stage setters write 4 if already 0x11 else 1 (0x00A4F36C..0x00A4F65C); sweep keeps state-1 buses (0x00A43F64..0x00A44064)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-036": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Audio device storage cleanup at shutdown: 0x0096D624..0x0096FE6F, 0x00969DBC, 0x0097CC20, stream vt+8 at 0x008D9E54, allocator bodies",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: blocking Term 0x00961798..0x009617DC calls 0x0097CE74 then 0x0096D624; node dtor stream vt+8 at 0x008D9E54; allocator veneers 0x00A7AEC4, 0x00A7A988, 0x00A7AA48."
       ],
       "live_path": true,
       "hardware_required": false

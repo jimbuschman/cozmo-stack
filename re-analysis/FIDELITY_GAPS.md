@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **651 records** over 16 subsystems.
+Manifest of **656 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 35 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 352 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 357 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -29,7 +29,7 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 50 | 0 | 17 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 34 | 3 | 28 | 0 | 0 | no | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 36 | 3 | 30 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 1 | 23 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 4 | 22 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 38 | 5 | 25 | 0 | 1 | no | no |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 48 | 3 | 35 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 39 | 1 | 33 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 56 | 6 | 45 | 1 | 0 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 59 | 6 | 48 | 1 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -97,24 +97,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
-**M6-032 — Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destroy lambda after the controller map is destroyed** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: A shutdown log, and possibly a use-after-destroy.
-* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info "CozmoAudioController.HijackAudioPlugin" "Destroy Plugin id: %d callback"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C).
-* outstanding: RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly).
-
-**M6-033 — Audio stream hook and device teardown at shutdown** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: File closes and device stop at audio shutdown.
-* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread.
-* outstanding: RECOVERABLE_GAP: read the callees. M1-034: 0x008D9914 (write to address 4, broken list invariant), 0x008D8062 -> terminate.
-
 **M6-034 — Wwise Term recipients: the manager-list tail, head calls, allocator internals and virtual slots called by the Term dispatcher** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
@@ -123,6 +105,24 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).
 * evidence: re-analysis/research/overnight/20261015-ov62-64-check.md: tail recipients 9AD064, 9A99DC, 9A7BFC, 9A7DB0, 9FEBCC, 9FEB80, A36044, A0D370, A0C200, A030CC, 9C7AF4, A05288, 9CC540, A322D8, A307C4, A274E8, A273A8, A109D0, A0E1A8, 9E5F6C, 9E5EF8, 9A7904; head calls 9E5FE4, A3D4E0, 99DA54, A38890; allocator A7A988, A7AAE8, A7B8FC, A7A588; virtual slots at 99DD2C, 99DE28, 99DE50; node call 9EB014.
 * outstanding: RECOVERABLE_GAP: read the listed bodies (ARM; literals are pc+8). A4F6F0/A4EED8 stay with M6-032; 9D40C4 with M6-025/M6-032.
+
+**M6-035 — Wwise bus state +0x1BC transitions (what moves a bus from 1 back to 4): callers of the stage setters 0x00A4F36C, 0x00A4F544 and siblings** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: Whether the robot bus (with the Hijack FX) can still exist after the controller map dies at shutdown.
+* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: init writes 4 (0x00A4F220); processing 4 -> 1 (0x00A4FA00..0x00A4FA04, 0x00A4FC20..0x00A4FC24); stage setters write 4 if already 0x11 else 1 (0x00A4F36C..0x00A4F65C); sweep keeps state-1 buses (0x00A43F64..0x00A44064).
+* outstanding: RECOVERABLE_GAP: read the callers of the stage setters.
+
+**M6-036 — Audio device storage cleanup at shutdown: 0x0096D624..0x0096FE6F, 0x00969DBC, 0x0097CC20, stream vt+8 at 0x008D9E54, allocator bodies** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: File closes and device effects at audio shutdown.
+* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: blocking Term 0x00961798..0x009617DC calls 0x0097CE74 then 0x0096D624; node dtor stream vt+8 at 0x008D9E54; allocator veneers 0x00A7AEC4, 0x00A7A988, 0x00A7AA48.
+* outstanding: RECOVERABLE_GAP: read the listed bodies.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -361,7 +361,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Dispatch known; receiver UNKNOWN.
 * best authority: libcozmoEngine.so 3.4.0-1204 ResetRobot.
 * evidence: ActivateHighLevelActivity(1) at 0x0065DDBA; receiver body UNKNOWN (triage E2).
-* outstanding: Recover concrete activity receiver and transitions separately from ResetRobot dispatch.
+* outstanding: Recover concrete activity receiver and transitions separately from ResetRobot dispatch. OV67 check (re-analysis/research/overnight/20261015-ov65-67-check.md): the BehaviorManager high-level-activity adapter 0x005A4FA2..0x005A4FE0 is read (M15-058); SetCurrentActivity 0x005A106C is still unread.
 
 **M15-032 — SDK transition telemetry fields and producers** (live path)
 
@@ -397,7 +397,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Opus check of OV59-OV61 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFreeplay::Update 0x005AD9D0..0x005AD9DE (+0x80 vt+0x20, null returns 0); ActivitySparked::Update 0x005B186C..0x005B18D0 (spark state, then +0xC4 vt+0x20); CheckIfSparkShouldEnd 0x005B18D4..; two ActivityBuildPyramid instances (activities/freeplay/buildPyramid.json, activities/sparks/sparksBuildPyramid.json).
-* outstanding: RECOVERABLE_GAP: read ActivitySparked::Update completely, CheckIfSparkShouldEnd, CompleteSparkLogic (0x005B1BFC..), the reset to state 5.
+* outstanding: RECOVERABLE_GAP: read ActivitySparked::Update completely, CheckIfSparkShouldEnd, CompleteSparkLogic (0x005B1BFC..), the reset to state 5. OV67 check (re-analysis/research/overnight/20261015-ov65-67-check.md): the ActivitySparked spark-state logic (Update/checks/end/interrupt 0x005B186C..0x005B1A16) is read and owned by M15-059; this record keeps only the ActivityFreeplay forwarding hop.
 
 **M15-056 — Cube disconnect consumers: ActivityFeeding and BehaviorGuardDog handlers of E2G ObjectConnectionState (tag 0x0D) and their subscription lifetimes** (live path)
 
@@ -1157,7 +1157,25 @@ B-M5-16 built, awaiting strong verification: dedicated native GetGroupForSource 
 * rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: head 0x0099DCEC..0x0099DE00 re-read (init byte +0x6C, 0x009B0350 -> 0x009D4058 / 0x00A40B18, +0x70 vt+0x1C, 0x009E5FE4, 0x00A3D4E0, 0x00A40D44 with null bus skipped at 0x00A40DFC, 0x0099DA54(0x40), seven descriptors +0x10..+0x58, 0x00A38890); tail 0x0099DE00..0x0099E318 not re-read; OV37 rows 7, 19, 20, 22 and 0x009D3EC4..0x009D3F38 not re-checked.; re-analysis/research/overnight/20261015-ov62-64-check.md: G 0x0108D868, P 0x01052418; head 0x0099DCEC..0x0099DDB8; tail 0x0099DDC0..0x0099E318; 9B0350 (config +0x3D: 9D4058 -> 9EAF90, or A40B18); A40B18..A40BB0; 9EAF90..9EB0E4; active drain A40D44..A40DC8; bus loop (pool word 0x01052428 via GOT 0x010400A8, 0x00A40DEC..0x00A40DF4); pending drain 9D3EC4..9D3F38; memory Term A7A6F0..A7A784, A7AEC4..A7AF78.
-* outstanding: RECOVERABLE_GAP: read the tail and the unchecked rows. Not ADP-1 DSP: all exact. M1-034 points: 0x00A40D84/0x00A40D88 (write 0xD0, then udf). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov62-64-check.md): IMPLEMENTATION_GAP for the dispatcher's local rows. Corrections to OV64: 0x0108DF48 (not 109DF48), 0x0108DAA0 (not 109DAA0), the bus free uses pool word 0x01052428 (not P). Recipients: M6-034. M1-034 traps (reachability unknown): 0x00A40D84/88, 0x009D3F04/08, 0x009EAFD8/DC. No logs, sends or DSP.
+* outstanding: RECOVERABLE_GAP: read the tail and the unchecked rows. Not ADP-1 DSP: all exact. M1-034 points: 0x00A40D84/0x00A40D88 (write 0xD0, then udf). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov62-64-check.md): IMPLEMENTATION_GAP for the dispatcher's local rows. Corrections to OV64: 0x0108DF48 (not 109DF48), 0x0108DAA0 (not 109DAA0), the bus free uses pool word 0x01052428 (not P). Recipients: M6-034. M1-034 traps (reachability unknown): 0x00A40D84/88, 0x009D3F04/08, 0x009EAFD8/DC. No logs, sends or DSP. OV66 check (re-analysis/research/overnight/20261015-ov65-67-check.md): additional M1-034 list-invariant trap at 0x009EAFD4..0x009EAFDC (store to 4, udf).
+
+**M6-032 — Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destroy lambda after the controller map is destroyed** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: A shutdown log, and possibly a use-after-destroy.
+* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info "CozmoAudioController.HijackAudioPlugin" "Destroy Plugin id: %d callback"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C).; re-analysis/research/overnight/20261015-ov65-67-check.md: setup 0x005942C6..0x00594354; fx capture 0x008DB4D6..0x008DB4EA, 0x008DBC36..0x008DBC4A; lambdas destroy 0x00595FE0..0x005960AC, process 0x00596148..0x005961B2; map death 0x005946F0..0x00594716, 0x00594E5E..0x00594E80; find fault 0x00595DDE..0x00595E38; bucket count kept after 5 registrations 0x0059963A..0x0059966A, unregister 0x00599A6C..0x00599AD6, 0x00594AFC..0x00594BF6; Term drain 0x00A40D44..0x00A40E50; bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC; Hijack Term 0x008DBDF8..0x008DBE2C.
+* outstanding: RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov65-67-check.md): IMPLEMENTATION_GAP. Live map: exact Info, find, CloseAudioBuffer/UpdateBuffer or NotFound Info. After map death both lambdas fault at 0x00595E08 (bucket pointer 0, count non-zero once a Robot existed): M1-034 skips, logged visibly: destroy 0x00596030 (after its Info 0x00596002), process 0x0059615A. Whether it fires at shutdown depends on audio activity and thread timing (HARDWARE_ONLY). Bus state transitions: M6-035.
+
+**M6-033 — Audio stream hook and device teardown at shutdown** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: File closes and device stop at audio shutdown.
+* rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread.; re-analysis/research/overnight/20261015-ov65-67-check.md: hook shutdown 0x008D80AC..0x008D80D6; package drain 0x008D98F2..0x008D9932; producer 0x008D9848..0x008D98A0; node dtor 0x008D9E48..0x008D9E7E, 0x008D66EA..0x008D674F; registration removal 0x0096091C..0x009609B0; owned files 0x008D6C38..0x008D6CC4; device dispatcher 0x009606E8..0x0096073C; hook init 0x008D6C02..0x008D6C36; blocking Term 0x00961798..0x009617DC; worker stop 0x0097CE74..0x0097CF28.
+* outstanding: RECOVERABLE_GAP: read the callees. M1-034: 0x008D9914 (write to address 4, broken list invariant), 0x008D8062 -> terminate. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov65-67-check.md): IMPLEMENTATION_GAP for the hook, package, registration, device-dispatch and worker-stop rows (M1-034: 0x008D9914, 0x008D8062). Device storage cleanup: M6-036.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -3488,7 +3506,7 @@ B-M5-17 restores M15-005 fidelity tag and cooldown comment from incorrect M15-00
 * outstanding: The inbound ActivateSpark message (sets BehaviorManager+0x60/+0x65, 0x005A3C92..0x005A3C9A) and the requested-activity message (+0x90) are unbuilt, so SetRequestedSpark/RequestNewActivity have no production caller. The selection/re-selection, interlude, null-pick, OnSelected/OnDeselected, reward-pending and the reselect logic are built.
 B-M5-16 caller gaps now visible: Activity OnSelected/OnDeselected report M5-063/M15-006 driving Push/Remove callsites; FreeplaySystem routes them to the real engine stack-log recipient. Existing activity clock/strategy behavior retained; driving triplet/lock lifecycle remains unbuilt.
 built, awaiting strong verification: B-M5-17 places selected lifecycle MISSING calls after time store/strategy then UpdateActivity, and deselected RemoveIdle before RemoveDriving after time/strategy. Driving/idle calls gated on explicit trigger !=0x23F. PublicStateBroadcaster UpdateActivity 0x005B3154, SmartPushIdleAnimation 0x005B31BC, RemoveIdleAnimation 0x005B340C and Push/Remove driving 0x005B319A/0x005B3450 remain unbuilt handoffs; no fabricated handler stack mutation.
-B-M5-18 corrects the OnSelected comment to actual time-store/strategy/public-state/driving/idle ordering. No lifecycle behavior added or record settled. Operator decision 2026-10-15 ("yes probably", answering research/overnight/20261015-ov36-37-check.md question 1): the stack API passes the app's spark request (ActivateSpark) to the engine handler, as an app input under the app-boundary rule. The ActivateSpark handler (seam FreeplaySystem.SetRequestedSpark) is still unbuilt; its handler rows beyond case tag 0 (0x005A3C92..0x005A3C9A) need extraction before it is built.
+B-M5-18 corrects the OnSelected comment to actual time-store/strategy/public-state/driving/idle ordering. No lifecycle behavior added or record settled. Operator decision 2026-10-15 ("yes probably", answering research/overnight/20261015-ov36-37-check.md question 1): the stack API passes the app's spark request (ActivateSpark) to the engine handler, as an app input under the app-boundary rule. The ActivateSpark handler (seam FreeplaySystem.SetRequestedSpark) is still unbuilt; its handler rows beyond case tag 0 (0x005A3C92..0x005A3C9A) need extraction before it is built. OV67 check (re-analysis/research/overnight/20261015-ov65-67-check.md): the ActivateSpark handler is M15-057, the spark fields/setter/switch M15-058, the ActivitySparked lifecycle M15-059; this record keeps the Freeplay pick and switch rows (0x005AE29C..0x005AE762).
 
 **M15-008 — Desired activity from objects and behavior-owned needs-action reporting** (live path)
 
@@ -3859,6 +3877,33 @@ B-M15-1b (2026-10-15): Correction to earlier builder wording: only the temporary
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov59-61-check.md: GetDesiredActiveBehaviorInternal 0x005A8854..0x005A89BA (phase 0 chooses nothing 0x005A888C..0x005A8896 -> 0x005A890C); UpdateProperties 0x005A89FC..0x005A8A9C; ChooseSetup 0x005A8A9E..0x005A8AD0; ChooseBuilding 0x005A8AE2..0x005A8BFE; ThankUser 0x005A8C32..0x005A8D76 (+0x99 also on the skipped-current-roll path 0x005A8CB0 -> 0x005A8CFA); RespondPossiblyRoll 0x005A8D8C..0x005A900A (non-upright unrunnable roll falls into the upright branch 0x005A8E50..0x005A8F4C).
 * outstanding: IMPLEMENTATION_GAP: build with the three corrections. Chooser vt+0x28 and IsRunnable stay with M8-013. M1-034 (not reached with shipped data): +0xC8 0x005A8AFA, +0xC0 0x005A8B5C, +0xB8 0x005A8A12/0x005A8C9E/0x005A8DA8, +0xB0 0x005A8CB4.
+
+**M15-057 — BehaviorManagerMessage handler (G2E 0x96): ActivateSpark, SparkUnlocked, DoATrickRequest (RequestATrick, cost 3, AddInventoryAmount), PlayAGameRequest, bad-tag error** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: What the app's spark, random-trick and random-game requests do in the engine.
+* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: subscription 0x005A15AC..0x005A15CE, adapter 0x005A5136..0x005A514A; dispatch 0x005A3C70..0x005A3C78; case 0 0x005A3C80..0x005A3C9A; case 1 0x005A3DB4..0x005A3DC6; case 2 0x005A3CA0..0x005A3D5A (cost table 0x00C91424, 0x0077E0CC..0x0077E0DE); RequestATrick 0x0056E6D0..0x0056E838; case 3 0x005A3DCA..0x005A3DD6; bad tag 0x005A3D5C..0x005A3DAE. App side: MessageGameToEngine.cs:163, BehaviorManagerMessageUnion.cs:8-15, ActivateSpark.cs:68, Robot.cs:1670-1698.
+* outstanding: IMPLEMENTATION_GAP. RandInt and IsUnlocked bodies are handoffs. Which union cases the stack API exposes is an operator question (ActivateSpark already yes). SparkUnlocked has no Unity sender.
+
+**M15-058 — BehaviorManager spark fields: init, SetRequestedSpark, SwitchToRequestedSpark, high-level-activity adapter clear** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: Which spark is active and requested.
+* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: field init 0x005A08DA..0x005A0900; setter 0x005A3EAC..0x005A3F0E ("BehaviorManager.SetRequestedSpark" "requested %s spark is '%s'"); switch 0x005A4198..0x005A422C (Info first; +0x60 not cleared); adapter 0x005A4FA2..0x005A4FE0 (SetCurrentActivity body 0x005A106C unread, overlaps M15-031); writers ctor, 0x005A3C9A, 0x005A3EB2/0x005A3EB6, 0x005A4220/0x005A4224/0x005A4226, 0x005A4FDC/0x005A4FDE.
+* outstanding: IMPLEMENTATION_GAP. SetCurrentActivity 0x005A106C unread (M15-031).
+
+**M15-059 — ActivitySparked lifecycle: OnSelected (HardSparkStartedByEngine tag 131), OnDeselected (StopAllAnims), objective/observed, Update/checks/end/interrupt, get-in/out, Complete (meta.upgrade_replay_* events, HardSparkEndedByEngine tag 132)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/FreeplaySystem.cs`
+* effect: How a sparked activity runs and ends, and what the app is told.
+* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: OnSelected 0x005B1518..0x005B16DC, 0x005B171C; OnDeselected 0x005B1780..0x005B179E; objective/observed 0x005B181E..0x005B1866; Update/check/end/interrupt 0x005B186C..0x005B1A16; get-in/out 0x005B1D18..0x005B1F2A, hard max 0x005B1F94..0x005B2066; Complete 0x005B1A90..0x005B1C2E, 0x005B2094.
+* outstanding: IMPLEMENTATION_GAP. Unread: ResetLightsAndAnimations 0x005B17A2..0x005B181D, the ReloadFromConfig exception tail 0x005B11AA..0x005B1255.
 
 ## What remains after both: blocked externally, or needing hardware
 

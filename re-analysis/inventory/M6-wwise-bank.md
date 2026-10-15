@@ -3194,3 +3194,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Wwise Term dispatcher: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-031 |
 | Term recipients: RECOVERABLE_GAP | M6-034 (new) |
+
+
+## Check of OV65-OV67 (manager, 2026-10-15; research/overnight/20261015-ov65-67-check.md)
+
+| Change | Records |
+| --- | --- |
+| Hijack shutdown path; stream/device teardown: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-032, M6-033 |
+| Bus state transitions; device storage cleanup: RECOVERABLE_GAP | M6-035, M6-036 (new) |
+| Note (M1-034 point) | M6-031 |

@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "e0608aa8885bb3486f87f2183ecc482f72cedd426759a6ff14749882c363ec60",
+  "inventory_sha256": "856a2e810981792e249d79a893cbf11bd59a5c469b699540c4613dc74d428bc1",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -676,6 +676,36 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFeeding 0x005AD146 -> 0x008CBDEC -> 0x005AC9CC; BehaviorGuardDog::HandleWhileRunning 0x005F4D52 -> 0x008CC6FC -> 0x005F4E30 (acts on disconnect 0x005F4E36..0x005F4E38); CubeLightComponent 0x00639CD0 no-op on disconnect; CubeAccelComponent 0x00635D6A no-op."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-057": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorManagerMessage handler (G2E 0x96): ActivateSpark, SparkUnlocked, DoATrickRequest (RequestATrick, cost 3, AddInventoryAmount), PlayAGameRequest, bad-tag error",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: subscription 0x005A15AC..0x005A15CE, adapter 0x005A5136..0x005A514A; dispatch 0x005A3C70..0x005A3C78; case 0 0x005A3C80..0x005A3C9A; case 1 0x005A3DB4..0x005A3DC6; case 2 0x005A3CA0..0x005A3D5A (cost table 0x00C91424, 0x0077E0CC..0x0077E0DE); RequestATrick 0x0056E6D0..0x0056E838; case 3 0x005A3DCA..0x005A3DD6; bad tag 0x005A3D5C..0x005A3DAE. App side: MessageGameToEngine.cs:163, BehaviorManagerMessageUnion.cs:8-15, ActivateSpark.cs:68, Robot.cs:1670-1698."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-058": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorManager spark fields: init, SetRequestedSpark, SwitchToRequestedSpark, high-level-activity adapter clear",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: field init 0x005A08DA..0x005A0900; setter 0x005A3EAC..0x005A3F0E (\"BehaviorManager.SetRequestedSpark\" \"requested %s spark is '%s'\"); switch 0x005A4198..0x005A422C (Info first; +0x60 not cleared); adapter 0x005A4FA2..0x005A4FE0 (SetCurrentActivity body 0x005A106C unread, overlaps M15-031); writers ctor, 0x005A3C9A, 0x005A3EB2/0x005A3EB6, 0x005A4220/0x005A4224/0x005A4226, 0x005A4FDC/0x005A4FDE."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-059": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "ActivitySparked lifecycle: OnSelected (HardSparkStartedByEngine tag 131), OnDeselected (StopAllAnims), objective/observed, Update/checks/end/interrupt, get-in/out, Complete (meta.upgrade_replay_* events, HardSparkEndedByEngine tag 132)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: OnSelected 0x005B1518..0x005B16DC, 0x005B171C; OnDeselected 0x005B1780..0x005B179E; objective/observed 0x005B181E..0x005B1866; Update/check/end/interrupt 0x005B186C..0x005B1A16; get-in/out 0x005B1D18..0x005B1F2A, hard max 0x005B1F94..0x005B2066; Complete 0x005B1A90..0x005B1C2E, 0x005B2094."
       ],
       "live_path": true,
       "hardware_required": false

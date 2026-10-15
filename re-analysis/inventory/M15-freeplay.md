@@ -979,3 +979,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | BuildPyramid behaviour choice: IMPLEMENTATION_GAP | M15-054 (new) |
 | Activity Update forwarding / spark state; cube disconnect consumers: RECOVERABLE_GAP | M15-055, M15-056 (new) |
 | Note (SetGameBeingPaused input) | M15-016 |
+
+
+## Check of OV65-OV67 (manager, 2026-10-15; research/overnight/20261015-ov65-67-check.md)
+
+| Change | Records |
+| --- | --- |
+| ActivateSpark handler; spark fields; ActivitySparked lifecycle: IMPLEMENTATION_GAP | M15-057, M15-058, M15-059 (new) |
+| Notes | M15-006, M15-055, M15-031 |
