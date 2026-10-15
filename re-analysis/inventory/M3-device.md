@@ -568,3 +568,10 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | No lock around the pending slot; FaceAlbum read gates | M3-021, M3-033 (notes) |
+
+
+## Check of OV28-OV30 (manager, 2026-10-15; research/overnight/20261014-ov28-29-30-check.md)
+
+| Change | Records |
+| --- | --- |
+| Callback slots are +0x18 | M3-034 (note) |

@@ -935,3 +935,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | AI recursive recipients, RECOVERABLE_GAP | M15-045 (new) |
 | NeedsState::ApplyDelta, IMPLEMENTATION_GAP | M15-046 (new) |
 | Notes | M15-014, M15-004 |
+
+
+## Check of OV28-OV30 (manager, 2026-10-15; research/overnight/20261014-ov28-29-30-check.md)
+
+| Change | Records |
+| --- | --- |
+| Needs exceptional values, unlock and inventory NV callbacks: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-030, M15-034, M15-035 |
+| FP execution mode, BLOCKED_EXTERNAL | M15-047 (new) |
+| ForceSetNeedsLevels handler, IMPLEMENTATION_GAP | M15-048 (new) |
+| Notes | M15-046, M15-014 |

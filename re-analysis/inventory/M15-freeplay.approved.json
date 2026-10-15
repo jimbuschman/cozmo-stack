@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "69c8052eee92db568144917bf37818dad09aa8394a3f508d12d93368965cc7bf",
+  "inventory_sha256": "70f98d4d44eafabd56464415cae690b33acc1910eb2446483a1cdd021982fb00",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -399,11 +399,12 @@
       "hardware_required": false
     },
     "M15-030": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Needs binary32 exceptional-value propagation",
       "authority": "libcozmoEngine.so 3.4.0-1204 NeedsState::ApplyDecay.",
       "evidence": [
-        "Compare/arithmetic 0x0069C48A, 0x0069C4A8..0x0069C4EE; clamp 0x0069C512; store 0x0069C544; M15-001/-004 own inputs (triage D3)."
+        "Compare/arithmetic 0x0069C48A, 0x0069C4A8..0x0069C4EE; clamp 0x0069C512; store 0x0069C544; M15-001/-004 own inputs (triage D3).",
+        "re-analysis/research/overnight/20261014-ov28-29-30-check.md: exceptional branches 0x0069C41A..0x0069C54C (store 0x0069C522; insert-on-missing 0x0069C43E), 0x0069C1A6..0x0069C1FE, 0x0069C62C..0x0069C640, 0x0069CCC4..0x0069CCDC, 0x0069C26C..0x0069C2A8, 0x00695CBE..0x00695CC6, pause window 0x00695D34..0x00695D86, elapsed producer 0x00695304..0x00695374, raw-bit copy 0x0069389E..0x006938AC."
       ],
       "live_path": true,
       "hardware_required": false
@@ -440,21 +441,23 @@
       "hardware_required": false
     },
     "M15-034": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ProgressionUnlockComponent's NV read callback (tag 0x182000) and its sink",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Read queued at 0x0064BEFA (tag 0x182000, M3-033 #1); callback 0x102F6B8+0x14 = 0x0064CE34 (defaults on -1, SendUnlockStatus; M3-034's summary)"
+        "Read queued at 0x0064BEFA (tag 0x182000, M3-033 #1); callback 0x102F6B8+0x14 = 0x0064CE34 (defaults on -1, SendUnlockStatus; M3-034's summary)",
+        "re-analysis/research/overnight/20261014-ov28-29-30-check.md: callback slot +0x18 (0x0102F6D0 = 0x0064CE35); dispatch 0x0064CE3E..0x0064CE4A; decode 0x0064CEEE..0x0064CF54, 0x00795DA6..0x00795DCC; replace and filter 0x0064CF08..0x0064CF5C; SendUnlockStatus 0x0064C700..0x0064C7D0 (tag 0x6D); -1 path 0x0064D00A..0x0064D064, NotifyGameDefaultUnlocksSet 0x0064C0FC..0x0064C13E (tag 0x6E); errors 0x0064CF62..0x0064D008."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-035": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "InventoryComponent's NV read callback (tag 0x195000) and its sink",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "Read queued at 0x0063CA52 (tag 0x195000, M3-033 #2); callback 0x102EF3C+0x14 = 0x0063D7C4 (+0x104 = 1, Unpack, SendInventoryAllToGame, RequestDefaultSparks on -1; M3-034's summary)"
+        "Read queued at 0x0063CA52 (tag 0x195000, M3-033 #2); callback 0x102EF3C+0x14 = 0x0063D7C4 (+0x104 = 1, Unpack, SendInventoryAllToGame, RequestDefaultSparks on -1; M3-034's summary)",
+        "re-analysis/research/overnight/20261014-ov28-29-30-check.md: callback slot +0x18 (0x0102EF54 = 0x0063D7C5); ctor 0x0063C90C..0x0063C93A (words 2..63 never written); Init order 0x00510368..0x0051037C; callback 0x0063D7C4..0x0063D888; decoder 0x0077D7BA..0x0077D7E8; sink 0x0063D30C..0x0063D356 (InventoryStatus tag 0x6F); RequestDefaultSparks tag 0x70 via 0x00511DE8..0x00511DFC."
       ],
       "live_path": true,
       "hardware_required": false
@@ -568,6 +571,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x0069C8C8..0x0069CAC0 (missing map key read 0x0069C9AE..0x0069C9B4); callers RegisterNeedsActionCompletedInternal 0x006968DE, SetNeedsPauseStates 0x00698AC8."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-047": {
+      "status": "BLOCKED_EXTERNAL",
+      "title": "The floating-point execution mode (FPSCR FZ/DN/rounding) of the engine threads",
+      "authority": "libcozmoEngine.so 3.4.0-1204 and every shipped .so.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov28-29-30-check.md: scan of every executable section of all 28 shipped .so files: no VMSR FPSCR writer except libtbb restoring a captured value (0xE422, 0xF790, 0xF814, 0x156D2, 0x156EC); no import of fesetenv/fesetround/feupdateenv/feholdexcept/fesetexceptflag/feenableexcept."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-048": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The ForceSetNeedsLevels handler: log, clamp (NaN kept), dirty, SendNeedsStateToGame(NoAction), needs.force_set_needs_levels event",
+      "authority": "libcozmoEngine.so 3.4.0-1204 and every shipped .so.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov28-29-30-check.md: 0x00697DA4..0x00698002 (log keys 0x006980EC/0x00698110; clamp 0x00697E6C..0x00697EBA; event name 0x00698160); subscribe tag 0xC6 at 0x0069284C."
       ],
       "live_path": true,
       "hardware_required": false
