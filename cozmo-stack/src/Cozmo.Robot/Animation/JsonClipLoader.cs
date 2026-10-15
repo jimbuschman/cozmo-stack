@@ -116,7 +116,7 @@ internal static class JsonClipLoader
 
     // ------------------------------------------------------------------ JsonCpp (J1.4)
 
-    private static string AsString(JsonElement value)
+    internal static string AsString(JsonElement value)
     {
         if (value.ValueKind == JsonValueKind.String) return value.GetString()!;
         if (value.ValueKind is JsonValueKind.Array or JsonValueKind.Object)

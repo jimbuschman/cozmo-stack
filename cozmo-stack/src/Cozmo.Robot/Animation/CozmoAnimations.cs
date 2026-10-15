@@ -348,12 +348,13 @@ public sealed class CozmoAnimations : IDisposable
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
     public AnimationLibrary LoadFrom(string assetsRoot)
     {
-        try { DrivingTriggerMap = Cozmo.Robot.Behavior.AnimationTriggerMap.Load(assetsRoot); }
+        try { DrivingTriggerMap = Cozmo.Robot.Behavior.AnimationTriggerMap.Load(assetsRoot, _robot.Engine.EmitStackLog,
+            (level,channel,key,text) => _robot.Engine.EmitSourceLog(level,channel,key,text)); }
         catch (FileNotFoundException) { DrivingTriggerMap = null; }
-        catch (Exception e) when (e is System.Text.Json.JsonException or InvalidDataException or InvalidOperationException)
+        catch (Cozmo.Robot.Behavior.AnimationTriggerMap.NonObjectRootException)
         {
-            // fidelity: M1-034, M7-002 — lose this malformed map only; retain any prior map and load the clips.
-            _robot.Engine.EmitStackLog($"M1-034 / M7-002: skipping malformed AnimationTriggerMap.json; previous map retained: {e.Message}");
+            // fidelity: M1-034, M7-002 — only the terminating non-object isMember path, call 0x006704A0.
+            _robot.Engine.EmitStackLog($"M1-034 / M7-002: skipping malformed AnimationTriggerMap.json; previous map retained; non-object root at native isMember call 0x006704A0 / find throw 0x008EB06E");
         }
         AnimationLibrary? loaded = null;
         System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
@@ -391,7 +392,9 @@ public sealed class CozmoAnimations : IDisposable
             }, cubeFiles => _robot.Lights.Cubes.Animations.LoadCollected(_robot.Engine.Options.ResourcesPath,
                 cubeFiles, _robot.Engine.Log,
                 (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text)),
-                cubeResourceRoot:()=>_robot.Engine.Options.ResourcesPath);
+                cubeResourceRoot:()=>_robot.Engine.Options.ResourcesPath,
+                // Reuse the checked load result; do not parse this file again through the legacy library adapter.
+                triggerResponses:DrivingTriggerMap?.ToResponses() ?? new AnimationTriggerResponses());
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)

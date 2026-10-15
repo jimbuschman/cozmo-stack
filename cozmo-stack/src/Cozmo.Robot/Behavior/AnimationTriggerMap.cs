@@ -37,7 +37,7 @@ public sealed record TriggerResolution(AnimationTrigger Trigger)
 // fidelity: M7-002
 public sealed class AnimationTriggerMap
 {
-    private readonly Dictionary<AnimationTrigger, string> _groups = new();
+    private readonly Dictionary<string, string> _groups = new(StringComparer.Ordinal);
     private readonly List<string> _unknownTriggers = new();
 
     /// <summary>How many triggers the loaded file mapped.</summary>
@@ -56,24 +56,29 @@ public sealed class AnimationTriggerMap
     /// Loads <c>AnimationTriggerMap.json</c>. Accepts either the file itself or a directory that contains
     /// it, at any depth, so the OBB root can be passed straight in.
     /// </summary>
-    public static AnimationTriggerMap Load(string path)
+    public static AnimationTriggerMap Load(string path) => Load(path, null, null);
+    // fidelity: M5-034 — checked Load 0x00670438..0x0067075C, failure rows 0x00670492..0x006704F4.
+    internal sealed class NonObjectRootException : Exception { }
+    internal static AnimationTriggerMap Load(string path, Action<string>? log, SourceLogSink? sourceLog)
     {
         var file = ResolveFile(path)
             ?? throw new FileNotFoundException($"no AnimationTriggerMap.json under '{path}'");
         var map = new AnimationTriggerMap { Source = file };
 
-        using var doc = JsonDocument.Parse(File.ReadAllText(file));
+        using var doc = AnimationLibrary.ReadAsJson(file, log, sourceLog);
+        if (doc is null) return map; // false read: its own Error/errG, not an M1-034 path.
+        if (doc.RootElement.ValueKind == JsonValueKind.Null) return map;
+        if (doc.RootElement.ValueKind != JsonValueKind.Object) throw new NonObjectRootException();
         if (!doc.RootElement.TryGetProperty("Pairs", out var pairs) || pairs.ValueKind != JsonValueKind.Array)
-            throw new InvalidDataException($"{file}: no Pairs array");
+            return map;
 
         foreach (var pair in pairs.EnumerateArray())
         {
-            var ev = pair.TryGetProperty("CladEvent", out var e) ? e.GetString() : null;
-            var anim = pair.TryGetProperty("AnimName", out var a) ? a.GetString() : null;
+            var ev = pair.TryGetProperty("CladEvent", out var e) ? JsonClipLoader.AsString(e) : null;
+            var anim = pair.TryGetProperty("AnimName", out var a) ? JsonClipLoader.AsString(a) : null;
             if (ev is null || anim is null) continue;
-            if (Enum.TryParse<AnimationTrigger>(ev, ignoreCase: false, out var trigger))
-                map._groups[trigger] = anim;
-            else
+            map._groups.TryAdd(ev, anim); // native string key and first insertion; no numeric enum parsing.
+            if (!Enum.TryParse<AnimationTrigger>(ev, ignoreCase: false, out var trigger) || Enum.GetName(trigger) != ev)
                 map._unknownTriggers.Add(ev);
         }
         return map;
@@ -89,12 +94,16 @@ public sealed class AnimationTriggerMap
                         .FirstOrDefault();
     }
 
+    internal AnimationTriggerResponses ToResponses() => AnimationTriggerResponses.FromPairs(_groups);
+
     /// <summary>The group a trigger names, or null when the shipped map does not name one.</summary>
     public string? GroupFor(AnimationTrigger trigger) =>
-        _groups.TryGetValue(trigger, out var g) ? g : null;
+        Enum.GetName(trigger) is {} key && _groups.TryGetValue(key, out var g) ? g : null;
 
     /// <summary>Every trigger the map covers.</summary>
-    public IReadOnlyCollection<AnimationTrigger> Triggers => _groups.Keys;
+    public IReadOnlyCollection<AnimationTrigger> Triggers => _groups.Keys
+        .Where(k => Enum.TryParse<AnimationTrigger>(k, false, out var t) && Enum.GetName(t) == k)
+        .Select(k => Enum.Parse<AnimationTrigger>(k)).ToArray();
 
     /// <summary>
     /// Walks the whole chain for one trigger and records each step:

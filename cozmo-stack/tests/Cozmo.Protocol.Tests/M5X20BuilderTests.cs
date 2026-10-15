@@ -56,9 +56,8 @@ public sealed class M5X20BuilderTests
     }
 
     [Theory]
-    [InlineData("{")] [InlineData("{}")] [InlineData("[]")]
-    [InlineData("{\"Pairs\":[{\"CladEvent\":1,\"AnimName\":\"g\"}]}")]
-    public void MalformedTriggerMapKeepsPriorMapAndStillLoadsClips(string malformed)
+    [InlineData("[]")] [InlineData("1")]
+    public void NonObjectTriggerMapKeepsPriorMapAndStillLoadsClips(string malformed)
     {
         var root=Assets();
         try
@@ -91,12 +90,14 @@ public sealed class M5X20BuilderTests
         try
         {
             using var robot=CozmoRobot.CreateOffline();var previous=AnimationTriggerMap.Load(root);robot.Animations.DrivingTriggerMap=previous;
+            Func<bool> previousNeeds=()=>false;robot.Animations.DrivingAnimations.AreNeedsMet=previousNeeds;
             File.WriteAllText(Path.Combine(root,"AnimationTriggerMap.json"),"{\"Pairs\":[]}");var replacement=AnimationTriggerMap.Load(root);
             var context=new BehaviorContext{Robot=robot,Triggers=replacement};
             var obb=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../re-analysis/obb"));
             using(var stack=FreeplayStack.Create(obb,robot,context,()=>0,withReactions:false,needsDirectory:root))
                 Assert.Same(replacement,robot.Animations.DrivingTriggerMap);
             Assert.Same(previous,robot.Animations.DrivingTriggerMap);
+            Assert.Same(previousNeeds,robot.Animations.DrivingAnimations.AreNeedsMet);
         }
         finally{Directory.Delete(root,true);}
     }

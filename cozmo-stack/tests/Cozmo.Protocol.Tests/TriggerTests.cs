@@ -79,7 +79,9 @@ public class TriggerTests
         try
         {
             var map = AnimationTriggerMap.Load(dir);
-            Assert.Equal(1, map.Count);
+            // Native Load stores string keys without enum filtering (M5-034 C7).
+            Assert.Equal(2, map.Count);
+            Assert.Single(map.Triggers); // only the named enum key is exposed by the typed host view.
             Assert.Equal("NotARealTrigger", Assert.Single(map.UnknownTriggers));
         }
         finally { Directory.Delete(dir, true); }

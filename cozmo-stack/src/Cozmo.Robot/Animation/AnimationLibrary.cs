@@ -183,6 +183,14 @@ public sealed class AnimationTriggerResponses
     public SourceLogSink? SourceLog { get; set; }
     public int Count => _pairs.Count;
 
+    // The engine and its driving facade share the same parsed string-key container.
+    internal static AnimationTriggerResponses FromPairs(IEnumerable<KeyValuePair<string,string>> pairs)
+    {
+        var responses = new AnimationTriggerResponses();
+        foreach (var pair in pairs) responses._pairs.TryAdd(pair.Key, pair.Value);
+        return responses;
+    }
+
     public static AnimationTriggerResponses Load(string? dir)
     {
         var r = new AnimationTriggerResponses();
@@ -293,7 +301,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
     internal static AnimationLibrary OpenForLoad(string assetsRoot, Action<string>? log, SourceLogSink? sourceLog,
         EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups,
         Action<string>? beforeStat = null, Action<AnimationLibrary>? loaderCreated = null,
-        Action<IReadOnlyList<string>>? loadCubeFiles = null, Func<string?>? cubeResourceRoot = null)
+        Action<IReadOnlyList<string>>? loadCubeFiles = null, Func<string?>? cubeResourceRoot = null,
+        AnimationTriggerResponses? triggerResponses = null)
     {
         var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
         loaderCreated?.Invoke(lib);
@@ -346,7 +355,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         // L0: LoadNonConfigData 0x0051F3BC..0x0051F3CE: groups, cube lights, backpack lights, faces.
         loadCubeFiles?.Invoke(cubeFiles);
         afterGroups?.Invoke();
-        lib.Triggers = AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
+        lib.Triggers = triggerResponses ?? AnimationTriggerResponses.Load(FindDir(assetsRoot, "animationGroupMaps"));
         lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
         return lib;
     }
@@ -368,18 +377,19 @@ public sealed class AnimationLibrary : IAnimationCatalog
         foreach (var thread in workers) thread.Join();
     }
     // fidelity: M5-051
-    private JsonDocument? ReadAsJson(string path)
+    private JsonDocument? ReadAsJson(string path) => ReadAsJson(path, Log, SourceLog);
+    internal static JsonDocument? ReadAsJson(string path, Action<string>? log, SourceLogSink? sourceLog)
     {
         try
         {
             string text = File.ReadAllText(path);
             if (ExceedsJsonValueDepth(text))
-            { Log?.Invoke($"Loader file skipped (M1-034): JsonCpp stack-limit fatal path in {path}"); return null; }
+            { log?.Invoke($"Loader file skipped (M1-034): JsonCpp stack-limit fatal path in {path}"); return null; }
             return JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 1000 });
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
         {
-            ReportReadAsJsonFailure(path, null, Log, SourceLog);
+            ReportReadAsJsonFailure(path, null, log, sourceLog);
             return null;
         }
     }
