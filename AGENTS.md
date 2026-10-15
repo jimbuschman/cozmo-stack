@@ -127,6 +127,10 @@ stack implements that feature.
     the phone's heap addresses (bionic malloc, not shipped).
   - **The stack:** iterates the seeds in insertion order (the order the nodes entered the type set), deterministically.
     Everything else in the walk stays exact (`research/overnight/20261014-ov11-m11-047-check.md`).
+  - **Extended to the memory map's FindIf results** (operator, 2026-10-15; M11-074). FindContentIf/FindIf collects the
+    matching data pointers into an `unordered_set` (murmur2 hash, 0x006884FC..0x006886F4), so its order follows heap
+    addresses too. The stack returns them in insertion order: the order the post-order walk first finds them. Everything
+    else stays exact (`research/overnight/20261015-ov42-44-check.md`).
 
 Apply no other departure without the operator.
 
