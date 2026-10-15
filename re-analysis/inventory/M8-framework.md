@@ -734,3 +734,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Compound runtime retitled: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-017 |
 | Behaviour end request: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-019 |
 | Notes and contradictions | M8-015, M8-003, M8-001, M8-012, M8-009 |
+
+
+## Check of OV22 (manager, 2026-10-15; research/overnight/20261014-ov22-m8-022-check.md)
+
+| Change | Records |
+| --- | --- |
+| DAS animation blacklist load read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-022 |
+| robot.init.time_spent_ms, IMPLEMENTATION_GAP | M8-025 (new) |
+| Gate/event ownership | M8-021 (note) |

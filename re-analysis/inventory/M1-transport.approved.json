@@ -1,8 +1,8 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-10-14",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "b9aa3e6a3119581132a471211e95499f001f6a7f03c8ccee7030375806cf80e8",
+  "inventory_sha256": "57a28781169b4e0153c5483044931eba1e77fb3653ef056364b3c9abf2add810",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -671,6 +671,16 @@
         "Manager adopted P2a-P2m: re-analysis/jobs/B-M1M2.md Rows checked (manager, 2026-10-09); re-analysis/research/20261009-M1-053-projection-rows.md. GetRobotState 0x005180D8..0x00518252; pose struct 0x00846D38..0x00846DEE; quaternion angle 0x0084AA1C..0x0084AAB8; Radians 0x0084C832..0x0084C87C; packed 109-byte layout 0x00711970..0x00711A62. EngineRobotState.cs uses binary64 products followed by binary32 norms and native unordered branch.",
         "Lift projection 0x0051818E..0x0051819E includes final +0.0; status 0x005181BA..0x005181E8 starts +0x350, animation !=0 adds40, FF original|840, carrying!=-1 adds2. IDs/gameStatus use owning CarryingComponent/BlockWorld/MovementComponent getters. Tracking constructor -1 at 0x0063DA86; processed-image getter VisionComponent+0xE8 at 0x006527A2.",
         "Correction: static wrapping u16 no-state counter at 0x0105101C increments before >=11 info/reset at 0x0052F720..0x0052F774, Unnamed/RobotManager.UpdateAllRobots/Not sending robot %d state (none available). UnknownOriginID GOT 0x0103E978 -> 0x00C97B20 uint0; warning Robot.GetRobotState.BadOriginID with empty format 0x00BE3F00 at 0x0051810C..0x00518122 precedes angle/head/lift reads. sinf/atan2f are undefined ELF imports (external phone libm). Source: re-analysis/research/20261009-M1-final-opus-pass.md; reopened targets/literals in re-analysis/research/20261009-M1-final-correction-native.txt"
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-054": {
+      "status": "RECOVERABLE_GAP",
+      "title": "CozmoEngine::Init before RobotManager::Init: the +0x10 Info, the three advertising-key isMember errors (return 1), UiMessageHandler::Init, vslot+8; and RobotManager::BroadcastAvailableAnimations",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov22-m8-022-check.md: Info 0x004EC7B4..0x004EC7CC; isMember 0x004EC81C/0x004EC82C/0x004EC83E with bodies 0x004EC898..0x004EC962; UiMessageHandler::Init 0x004EC846..0x004EC896; vslot+8 0x004EC96A..0x004EC9C8; BroadcastAvailableAnimations call 0x0052E76E (body unread)."
       ],
       "live_path": true,
       "hardware_required": false

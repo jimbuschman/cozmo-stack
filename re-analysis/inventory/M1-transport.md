@@ -773,3 +773,10 @@ M1-048 Rule10 U5/U6 follow-up: exact short-send, non-IP and send-failure tags/fo
 | Change | Records |
 | --- | --- |
 | Vision worker exit before the join | M1-025 (note) |
+
+
+## Check of OV22 (manager, 2026-10-15; research/overnight/20261014-ov22-m8-022-check.md)
+
+| Change | Records |
+| --- | --- |
+| Engine-init gates and BroadcastAvailableAnimations, RECOVERABLE_GAP | M1-054 (new) |

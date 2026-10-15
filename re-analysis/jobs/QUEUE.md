@@ -92,6 +92,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 48 | [B-M8-2](B-M8-2.md) | open, after B-M8-1 (action list/queue M8-015; TRACKS_LOCKED M8-007) |
 | 49 | [B-M8-3](B-M8-3.md) | open, after B-M8-2 (compound runtime M8-017; behaviour end request M8-019) |
 | 50 | [B-M12-4](B-M12-4.md) | open, after B-M8-3 (native put-down M12-006/M12-045) |
+| 51 | [B-M8-4](B-M8-4.md) | open, after B-M12-4 (DAS animation blacklist load M8-022; M8-025) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

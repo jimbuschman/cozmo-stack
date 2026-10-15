@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **609 records** over 16 subsystems.
+Manifest of **611 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 45 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 301 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 303 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 1 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -24,14 +24,14 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 53 | 0 | 0 | 0 | 1 | yes | yes |
+| M1-transport — UDP transport and reliability | 54 | 1 | 0 | 0 | 1 | no | yes |
 | M2-protocol — CLAD messages and protocol helpers | 23 | 1 | 4 | 0 | 0 | no | no |
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 50 | 1 | 16 | 0 | 3 | no | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 29 | 1 | 25 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 28 | 3 | 20 | 0 | 0 | no | no |
-| M8-framework — Behaviour framework and scoring | 24 | 4 | 19 | 0 | 0 | no | no |
+| M8-framework — Behaviour framework and scoring | 25 | 3 | 21 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 29 | 4 | 17 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 16 | 2 | 11 | 0 | 0 | no | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 84 | 13 | 56 | 0 | 0 | no | no |
@@ -72,6 +72,17 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
+
+### M1-transport — UDP transport and reliability
+
+**M1-054 — CozmoEngine::Init before RobotManager::Init: the +0x10 Info, the three advertising-key isMember errors (return 1), UiMessageHandler::Init, vslot+8; and RobotManager::BroadcastAvailableAnimations** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: Whether engine init stops before the robot manager loads, and the available-animations broadcast.
+* rests on: Opus check of OV22 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov22-m8-022-check.md: Info 0x004EC7B4..0x004EC7CC; isMember 0x004EC81C/0x004EC82C/0x004EC83E with bodies 0x004EC898..0x004EC962; UiMessageHandler::Init 0x004EC846..0x004EC896; vslot+8 0x004EC96A..0x004EC9C8; BroadcastAvailableAnimations call 0x0052E76E (body unread).
+* outstanding: RECOVERABLE_GAP: read the log keys/formats and BroadcastAvailableAnimations; the engine config is an app input (COMPATIBILITY_POLICY input).
 
 ### M2-protocol — CLAD messages and protocol helpers
 
@@ -154,15 +165,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204 ResetRobot.
 * evidence: ResetRobot 0x0065DCFC..0x0065DF98 invokes external slot +0x0C repeatedly; child contracts E2-E5 remain separate (triage E1).
 * outstanding: Recover subscriber traversal/order/gates and bind verified children to M7-024, M15-031, M3-039, M4-029/-030 and M11-056.
-
-**M8-022 — LoadDasBlacklistedAnimationTriggers and its configuration source** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Actions/IActionRunner.cs`
-* effect: Which triggers skip the robot.play_animation event.
-* rests on: Codex research R-M8-PLAY (2026-10-12), Opus-checked (109/109 rows confirmed), manager-adopted.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261012-m8-play-animation-actions.md row on 0x0052E9A0..0x0052EA0A; the caller chain and the config asset are not read.
-* outstanding: RECOVERABLE_GAP: read the caller of 0x0052E9A0 and the config it reads.
 
 **M8-023 — Behavior teardown recursive recipients not yet read: IActivity unique children and their strategy/chooser types, ActivityStrategy derived bodies, std::function captures, derived behaviour children, reaction-strategy bodies other than Hiccup, other ProtoHandle instantiations** (live path)
 
@@ -1571,7 +1573,25 @@ B-M5-19 built, awaiting strong verification: driving calls now have a concrete A
 * evidence: re-analysis/research/20261012-m8-play-animation-actions.md rows T1..T12, D4, L11..L13: ctor 0x00544228, SetAnimGroupFromTrigger 0x0054432C (Has == 1 before Get; empty-group warning TriggerAnimationAction.EmptyAnimGroupNameForTrigger "Event: %s" at 0x005443AC), Init 0x0054443C (NO_ANIM_NAME 0x0300000C; GetAnimationNameFromGroup with the robot and strictCooldown; blacklist set walk +0x8C/+0x90; sEvent robot.play_animation, value +0x78, $data trigger + ":" + group at 0x005445BC), vtable 0x010215BC.
 * outstanding: Build with M8-020. Depends on M5-034 (trigger mapping) and M5-011 (the group choice). The blacklist contents are M8-022. The Init lookup (GetAnimationNameFromGroup 0x0054446E -> 0x0057AE80) logs M5-065 on a miss; the stack's Resolve does an extra GetGroup (AnimationTriggerMap.cs:117) with no native counterpart.
 B-M5-16 built, awaiting strong verification: TriggerAction Init Resolve reaches GetAnimationNameFromGroup even when its silent host presence probe would have missed; exactly one M5-065 error through RunTriggerAction. No extra logging lookup in host candidate diagnostics.
-B-M5-19 built, awaiting strong verification: real driving action constructor consumes the existing trigger map, reports found/empty-group source logs, selects the group through GetAnimationNameFromGroup(strictCooldown=false), returns NO_ANIM_NAME on missing group/name and uses existing PlayTracked for successful playback. Native driving arguments and lift-safe constructor mask gate are represented. Visible MISSING: robot.play_animation DAS blacklist/event, cached-pointer retry and concrete callback/union lifecycle; existing backend ticket completion is used so the drive never waits forever on an absent action. No full TriggerAnimationAction claim.
+B-M5-19 built, awaiting strong verification: real driving action constructor consumes the existing trigger map, reports found/empty-group source logs, selects the group through GetAnimationNameFromGroup(strictCooldown=false), returns NO_ANIM_NAME on missing group/name and uses existing PlayTracked for successful playback. Native driving arguments and lift-safe constructor mask gate are represented. Visible MISSING: robot.play_animation DAS blacklist/event, cached-pointer retry and concrete callback/union lifecycle; existing backend ticket completion is used so the drive never waits forever on an absent action. No full TriggerAnimationAction claim. OV22 check (re-analysis/research/overnight/20261014-ov22-m8-022-check.md): owns the blacklist gate and event (0x00544494..0x005444DA, strings 0x005446B8/0x005446BC/0x005446C4); the blacklist contents are M8-022 (six shipped triggers: 0x98, 0x9A, 0x9C, 0x9E, 0xA3, 0x146).
+
+**M8-022 — LoadDasBlacklistedAnimationTriggers and its configuration source** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Actions/IActionRunner.cs`
+* effect: Which triggers skip the robot.play_animation event.
+* rests on: Codex research R-M8-PLAY (2026-10-12), Opus-checked (109/109 rows confirmed), manager-adopted.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261012-m8-play-animation-actions.md row on 0x0052E9A0..0x0052EA0A; the caller chain and the config asset are not read.; re-analysis/research/overnight/20261014-ov22-m8-022-check.md: rows 1-7. Loader ctor 0x0051EF0E..0x0051EF16; LoadRobotConfigs read 0x00522CE0..0x00522DBC (filename 0x00BE833B); failed-read state 0x008E082C..0x008E088C, 0x008E0A14..0x008E0B30; hand-off 0x004EC9CA..0x004ECA1E; RobotManager::Init order 0x0052E744..0x0052E776; empty set 0x0052E504..0x0052E516; loader 0x0052E9A0..0x0052EA20 (key 0x01059EC0); FromString miss 0x007647A0..0x00764818.
+* outstanding: RECOVERABLE_GAP: read the caller of 0x0052E9A0 and the config it reads. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov22-m8-022-check.md): IMPLEMENTATION_GAP, rows 1-7: a missing or empty das_event_config.json leaves the root null (three logs: DataPlatform error, Unnamed debug, DasEventConfigJsonNotFound) and the blacklist empty; an unknown name writes the cerr line and inserts enum 0; JsonCpp throws are M1-034 skips. The consumer gate and robot.play_animation stay M8-021's. New: M8-025 (robot.init.time_spent_ms), M1-054 (engine-init gates, RECOVERABLE).
+
+**M8-025 — RobotManager::Init's robot.init.time_spent_ms DAS event (steady_clock difference in ms, int64 truncated)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Actions/IActionRunner.cs`
+* effect: A DAS event at robot init.
+* rests on: Opus check of OV22 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov22-m8-022-check.md: sEventF 0x0052E86C, format "%lld" 0x0052E888; clocks 0x0052E75A and 0x0052E77A..0x0052E7B0 (ns difference / 1,000,000 via ldivmod).
+* outstanding: IMPLEMENTATION_GAP: port it in RobotManager::Init's order (job B-M8-4).
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
