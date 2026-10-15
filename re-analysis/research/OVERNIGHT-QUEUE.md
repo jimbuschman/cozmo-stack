@@ -4,6 +4,27 @@ One request at a time, in this order. **Each request starts only after the previ
 pushed.** The research push rule (QUEUE.md, operator 2026-10-11) applies: commit and push only that request's own answer file
 (the answer column below).
 
+## When every request here is answered (manager, 2026-10-15)
+
+When no request in the table below is still unanswered, don't stop. Pre-flight the builder's queue instead.
+
+1. **Pick the jobs.** Take the next three open jobs in `re-analysis/jobs/QUEUE.md`: those with status `open`, and no file
+   at `jobs/status/<job>.md`. Skip any job that already has a pre-flight file.
+2. **Check every item of each job** against the checked sources it names:
+   - **The citations:** every address, range, log text, constant and record the item relies on must appear in a checked
+     row, meaning a manager-adopted `*-check.md` or `*-pass.md`, or a record's evidence. Find the row that supports each
+     one.
+   - **The gaps:** list each step the builder would have to mark MISSING, because no checked row covers it. Give the
+     native address and what is unknown.
+   - **The conflicts:** list anything in the job text that contradicts the checked rows or the current manifest. Quote
+     both.
+3. **Write the result** to `research/preflight/<job>.md`. Put a table first (item, supported or MISSING or conflict,
+   citation), then the details.
+4. **Push it** under the research push rule: commit and push only that file.
+5. **Don't edit** the job, the manifest or any code. Pre-flight is read-only research (authority 6). The manager checks
+   it and fixes the job.
+6. **New requests come first.** If new requests have appeared in this file, answer those before any more pre-flight.
+
 The first three are the requests already written:
 
 | # | request | answer |
