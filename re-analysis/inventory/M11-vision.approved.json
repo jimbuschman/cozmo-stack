@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "ff9c72f76ccc49247951eb6c56744c403f863f841b2b798a8e3df5d78aa25398",
+  "inventory_sha256": "a55a0c275d4bec31cf49f9061fcebe2727ab46f818fb8fe2489e488a97eb3edb",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -949,21 +949,23 @@
       "hardware_required": false
     },
     "M11-081": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ImagingPipeline exposure adjustment: ComputeExposureAdjustment (image, image+mask, vector), ImageBrightnessHistogram FillFromImage and ComputePercentile, SetExposureParameters, VisionSystem::SetAutoExposureParams",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ComputeExposureAdjustment 0x0085F748.., 0x0085FA02.., 0x0085FAE4..; FillFromImage 0x008731FC, 0x008733EC; ComputePercentile 0x00873624..0x00873774; SetExposureParameters 0x0085F374; SetAutoExposureParams 0x006B1858."
+        "re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ComputeExposureAdjustment 0x0085F748.., 0x0085FA02.., 0x0085FAE4..; FillFromImage 0x008731FC, 0x008733EC; ComputePercentile 0x00873624..0x00873774; SetExposureParameters 0x0085F374; SetAutoExposureParams 0x006B1858.",
+        "re-analysis/research/overnight/20261015-ov53-55-check.md: SetExposureParameters 0x0085F378..0x0085F4AA; SetAutoExposureParams 0x006B1858..0x006B18DC; Init inputs 0x006B09FC..0x006B0A36; histogram reset/fill 0x008731F0..0x0087332E; weighted fill 0x008733EC..0x0087356A; percentile 0x00873624..0x008736DA; image+mask 0x0085F748..0x0085F918; image-only 0x0085FA02..0x0085FA7C; callers 0x006B2EAA, 0x006B2F10, 0x006B2FE0."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-082": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Vision config loading: JsonCpp getMemberNames order (InitialVisionModes EnableMode order) and RobotDataLoader::LoadRobotConfigs' readAsJson failure branch",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov15-16-17-check.md: getMemberNames (CZString compare) at VisionSystem::Init InitialVisionModes; LoadRobotConfigs readAsJson 0x0052267C, failure branch 0x00522680.."
+        "re-analysis/research/overnight/20261014-ov15-16-17-check.md: getMemberNames (CZString compare) at VisionSystem::Init InitialVisionModes; LoadRobotConfigs readAsJson 0x0052267C, failure branch 0x00522680..",
+        "re-analysis/research/overnight/20261015-ov53-55-check.md: getMemberNames 0x008E6B90..0x008E6D08; CZString::operator< 0x008E7E4C..0x008E7ECC; EnableMode loop 0x006B116E..0x006B11EA (sorted 12 keys, false values still passed); loader failure tail 0x0052266A..0x005226EE; readAsJson 0x0084BFD4..0x0084C206; no rollback 0x008E082C..0x008E0916, 0x008E0F30..0x008E0F6A; Init result ignored 0x005103BA..0x005103D4."
       ],
       "live_path": true,
       "hardware_required": false

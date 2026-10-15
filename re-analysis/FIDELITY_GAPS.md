@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **644 records** over 16 subsystems.
+Manifest of **645 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 41 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 339 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 39 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 342 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -31,10 +31,10 @@ remains after both, and they do not go away by working harder on this repository
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 33 | 3 | 27 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 2 | 22 | 0 | 0 | no | no |
-| M8-framework — Behaviour framework and scoring | 26 | 4 | 21 | 0 | 0 | no | no |
+| M8-framework — Behaviour framework and scoring | 27 | 4 | 22 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 38 | 5 | 25 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 88 | 12 | 61 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 88 | 10 | 63 | 0 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 48 | 3 | 35 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 39 | 1 | 33 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
@@ -175,15 +175,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: ResetRobot 0x0065DCFC..0x0065DF98 invokes external slot +0x0C repeatedly; child contracts E2-E5 remain separate (triage E1).
 * outstanding: Recover subscriber traversal/order/gates and bind verified children to M7-024, M15-031, M3-039, M4-029/-030 and M11-056.
 
-**M8-023 — Behavior teardown recursive recipients not yet read: IActivity unique children and their strategy/chooser types, ActivityStrategy derived bodies, std::function captures, derived behaviour children, reaction-strategy bodies other than Hiccup, other ProtoHandle instantiations** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
-* effect: Logs, events or sends during behaviour teardown that the stack may not reproduce.
-* rests on: Opus check of OV19 (2026-10-14), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261014-ov19-m8-016-check.md: "Still unread" list: 0x005B2FB8/0x005B2FC4/0x005B2FD2 (producer 0x005B2A5C..0x005B2F8B); 0x005B419C, 0x005B456C, 0x005B4818, 0x005B4CCC, 0x005B4E50, 0x005B4E78, 0x005B4EB0, 0x005B528C, 0x005B4806; 0x005A7936, 0x005A7942, 0x005AAD6E, 0x005B14D2; 0x005BC7C4, 0x00613C40, 0x00613C58, 0x00613C7A; 0x005DC506, 0x005D7B7A, 0x00604322, 0x005D36B6; 0x0060C3C4, 0x0060D0E4, 0x0060EA30, 0x0060F880, 0x00611708, 0x00611FD4, 0x0060B722.
-* outstanding: RECOVERABLE_GAP: read the listed destructor bodies for logs, events, sends and external state writes.
-
 **M8-024 — Pending actions surviving Cancel(-1) through ~Robot: which shipped completion callbacks re-queue after CANCELLED, IBehavior +0xA0..+0xA2 at teardown, other tag-0x5A subscribers, and whether ~BehaviorManager/~BSM queue actions** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Actions/ActionList.cs`
@@ -191,7 +182,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Split from M8-015 after the Opus check of OV18 (2026-10-14), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov18-m8-015-check.md: mechanisms 0x0053FA86..0x0053FAB2, 0x0053E6E8..0x0053E6EE, 0x0053E2DA..0x0053E2F2, 0x0053DF48..0x0053DF8A; callback PLTs 0x004B01C8, 0x004B2184, 0x004B219C, 0x004B297C, 0x004B2B5C, 0x004B34B0; tag-0x5A subscribers 0x004F0742, 0x005277B0, 0x005E7B5E; ~BehaviorManager PLT 0x004A7978, ~BSM PLT 0x004A796C.
-* outstanding: RECOVERABLE_GAP: census the callbacks; the M1-034 null read at 0x005A3A84 is not reachable (every survivor is NOT_STARTED; +0xC4 only set by the SDK-only FacePlantAction). OV35 check (re-analysis/research/overnight/20261015-ov34-35-check.md): also read whether ActionWatcher callbacks fire during AbortAll (0x00511120) and ActionList::Clear (0x00511146): ActionQueue::Clear 0x0053F96A -> DeleteActionAndIter 0x0053F9E4..0x0053FB54 publishes RobotCompletedAction (0x0053FA3A..0x0053FAB2); MoodManager's action-ended callback (0x0067AF34) is still registered then. OV44 check (re-analysis/research/overnight/20261015-ov42-44-check.md): ActionWatcher callbacks do not fire inside ActionList::Clear: ActionEnding (from the dtor 0x00541238) only pushes to the deque at watcher+0x34 (0x00541C04); callbacks run only at 0x005418AE in ActionWatcher::Update, called only from ActionList::Update 0x0053F5E6. So MoodManager::HandleActionEnded does not run during Clear. Local tag-0x5A subscribers do fire synchronously (0x0053FAB2). AbortAll 0x00511120 still unread. OV56 check (re-analysis/research/overnight/20261015-ov56-58-check.md): narrowed to the callback census and survivor reachability (teardown mechanics moved to M8-015). With the Clear lock-out nothing new is queued during Clear; only a survivor existing when Clear starts matters. Open: the census; ExploreLookAround selectability at disconnect (chain 0x005E2932..0x005E2CD2, RNG draws during teardown); RemoveRobot recipients 0x0052F2AC/0x0052F2CC; PathComponent::Abort 0x00649152/0x00649188; behaviour ownership at Clear. M1-034 candidate: StartActing during Clear double-deletes (0x0053DCFE then 0x005BDC04) if an IBehavior outlives ~BehaviorManager/~BSM. Lead: +0x88 reassigned during its own callback (0x005BE220, 0x005BDB46).
+* outstanding: RECOVERABLE_GAP: census the callbacks; the M1-034 null read at 0x005A3A84 is not reachable (every survivor is NOT_STARTED; +0xC4 only set by the SDK-only FacePlantAction). OV35 check (re-analysis/research/overnight/20261015-ov34-35-check.md): also read whether ActionWatcher callbacks fire during AbortAll (0x00511120) and ActionList::Clear (0x00511146): ActionQueue::Clear 0x0053F96A -> DeleteActionAndIter 0x0053F9E4..0x0053FB54 publishes RobotCompletedAction (0x0053FA3A..0x0053FAB2); MoodManager's action-ended callback (0x0067AF34) is still registered then. OV44 check (re-analysis/research/overnight/20261015-ov42-44-check.md): ActionWatcher callbacks do not fire inside ActionList::Clear: ActionEnding (from the dtor 0x00541238) only pushes to the deque at watcher+0x34 (0x00541C04); callbacks run only at 0x005418AE in ActionWatcher::Update, called only from ActionList::Update 0x0053F5E6. So MoodManager::HandleActionEnded does not run during Clear. Local tag-0x5A subscribers do fire synchronously (0x0053FAB2). AbortAll 0x00511120 still unread. OV56 check (re-analysis/research/overnight/20261015-ov56-58-check.md): narrowed to the callback census and survivor reachability (teardown mechanics moved to M8-015). With the Clear lock-out nothing new is queued during Clear; only a survivor existing when Clear starts matters. Open: the census; ExploreLookAround selectability at disconnect (chain 0x005E2932..0x005E2CD2, RNG draws during teardown); RemoveRobot recipients 0x0052F2AC/0x0052F2CC; PathComponent::Abort 0x00649152/0x00649188; behaviour ownership at Clear. M1-034 candidate: StartActing during Clear double-deletes (0x0053DCFE then 0x005BDC04) if an IBehavior outlives ~BehaviorManager/~BSM. Lead: +0x88 reassigned during its own callback (0x005BE220, 0x005BDB46). OV55 check (re-analysis/research/overnight/20261015-ov53-55-check.md): the census also covers IBehavior +0x88 (set by the StartActing family at 0x005BDB40; cleared only at Init 0x005BCCC6, StopOnNextActionComplete 0x005BD694 and HandleActionComplete 0x005BE210; StopActing does not clear it, so a capture can be alive at teardown).
 
 **M8-026 — AIWhiteboard::ProcessClearQuad: PossibleObjects erase predicate and UpdatePossibleObjectRender** (live path)
 
@@ -201,6 +192,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov42-44-check.md: 0x0056AC84..0x0056AD56 (predicate 0x0056CCFC called twice; UpdatePossibleObjectRender 0x0056A6D4 with VizManager calls); callers MapComponent UpdateRobotPose 0x0067E414..0x0067E486 and ClearRobotToMarkers 0x0067F5B8..0x0067F714.
 * outstanding: RECOVERABLE_GAP: read the predicate, the erase and the render path (Viz calls may be no-ops: check SendVizMessage bx lr).
+
+**M8-027 — ProtoHandle subscriber-callable census: which callables the 8 ProtoHandle kinds hold at teardown and what destroying them does** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
+* effect: Side effects of destroying subscriber callables at robot and engine teardown.
+* rests on: Opus check of OV53-OV55 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov53-55-check.md: ProtoHandle vtables (8) confirmed; EngineToGame release 0x00664708, unlink 0x006634F4 (nulls the callable, decrements node refcount +0x20, frees at zero 0x0066352E..0x00663560).
+* outstanding: RECOVERABLE_GAP: enumerate the subscriber callables held by ProtoHandles at teardown and read each destroy body (expected mostly bx lr).
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
@@ -304,24 +304,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov11-m11-047-check.md: GetBorders 0x006894E0..0x00689AA6; CalculateBorderWaypointCenter 0x00689AF0..0x00689C08; MakeBorderSegment 0x00689C08..0x00689D80; HasBorders 0x00689354..0x006893AE; HasBorderSeed 0x006893B8..0x006894A6; MemoryMap vt+0x28 0x00681702, vt+0x2C 0x00681734; caller 0x00574FCC (seed 9, table 0x00C59AE0, two calls).
 * outstanding: RECOVERABLE_GAP: read GetBorders' segment logic, the two helpers, and the caller's cadence and enable path (through the AIInformationAnalyzer seam, M8-013).
-
-**M11-081 — ImagingPipeline exposure adjustment: ComputeExposureAdjustment (image, image+mask, vector), ImageBrightnessHistogram FillFromImage and ComputePercentile, SetExposureParameters, VisionSystem::SetAutoExposureParams** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
-* effect: The exposure adjustment factor and the brightness percentiles.
-* rests on: Opus check of OV14 (2026-10-14), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ComputeExposureAdjustment 0x0085F748.., 0x0085FA02.., 0x0085FAE4..; FillFromImage 0x008731FC, 0x008733EC; ComputePercentile 0x00873624..0x00873774; SetExposureParameters 0x0085F374; SetAutoExposureParams 0x006B1858.
-* outstanding: RECOVERABLE_GAP: read the listed bodies completely (f32/f64 order, rounding, NaN). OV15-17 check (re-analysis/research/overnight/20261014-ov15-16-17-check.md): SetExposureParameters 0x0085F374..0x0085F4AA and SetAutoExposureParams 0x006B1858..0x006B18DC are now read (checks max-change, mid-percentile, subSample; bounds 0xB727C5AC/0x3F800054 with bmi/bgt so NaN passes; subSample <= 0 rejected; failure 0x03000000); the rest of this record stays unread.
-
-**M11-082 — Vision config loading: JsonCpp getMemberNames order (InitialVisionModes EnableMode order) and RobotDataLoader::LoadRobotConfigs' readAsJson failure branch** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
-* effect: The order of the EnableMode Info logs, and what happens when vision_config.json can't be read.
-* rests on: Opus check of OV15-OV17 (2026-10-14), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261014-ov15-16-17-check.md: getMemberNames (CZString compare) at VisionSystem::Init InitialVisionModes; LoadRobotConfigs readAsJson 0x0052267C, failure branch 0x00522680..
-* outstanding: RECOVERABLE_GAP: read JsonCpp getMemberNames / CZString ordering in this build and the LoadRobotConfigs failure branch.
 
 **M11-084 — Pose wrapper lifetimes in production: whether any flow leaves a child under an unowned parent or drops an origin's last wrapper outside ~PoseOriginList (UnownedParent, NotLastOwner, ZeroOwners, ZeroOwnersWithID VERIFYs on a running robot)** (live path)
 
@@ -1601,6 +1583,15 @@ B-M5-20 (2026-10-15), built, awaiting strong verification: removed NoAnimationFo
 * evidence: re-analysis/research/20261012-m8-play-animation-actions.md row on 0x0052E9A0..0x0052EA0A; the caller chain and the config asset are not read.; re-analysis/research/overnight/20261014-ov22-m8-022-check.md: rows 1-7. Loader ctor 0x0051EF0E..0x0051EF16; LoadRobotConfigs read 0x00522CE0..0x00522DBC (filename 0x00BE833B); failed-read state 0x008E082C..0x008E088C, 0x008E0A14..0x008E0B30; hand-off 0x004EC9CA..0x004ECA1E; RobotManager::Init order 0x0052E744..0x0052E776; empty set 0x0052E504..0x0052E516; loader 0x0052E9A0..0x0052EA20 (key 0x01059EC0); FromString miss 0x007647A0..0x00764818.
 * outstanding: RECOVERABLE_GAP: read the caller of 0x0052E9A0 and the config it reads. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov22-m8-022-check.md): IMPLEMENTATION_GAP, rows 1-7: a missing or empty das_event_config.json leaves the root null (three logs: DataPlatform error, Unnamed debug, DasEventConfigJsonNotFound) and the blacklist empty; an unknown name writes the cerr line and inserts enum 0; JsonCpp throws are M1-034 skips. The consumer gate and robot.play_animation stay M8-021's. New: M8-025 (robot.init.time_spent_ms), M1-054 (engine-init gates, RECOVERABLE).
 
+**M8-023 — Behavior teardown recursive recipients not yet read: IActivity unique children and their strategy/chooser types, ActivityStrategy derived bodies, std::function captures, derived behaviour children, reaction-strategy bodies other than Hiccup, other ProtoHandle instantiations** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/BehaviorManager.cs`
+* effect: Logs, events or sends during behaviour teardown that the stack may not reproduce.
+* rests on: Opus check of OV19 (2026-10-14), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov19-m8-016-check.md: "Still unread" list: 0x005B2FB8/0x005B2FC4/0x005B2FD2 (producer 0x005B2A5C..0x005B2F8B); 0x005B419C, 0x005B456C, 0x005B4818, 0x005B4CCC, 0x005B4E50, 0x005B4E78, 0x005B4EB0, 0x005B528C, 0x005B4806; 0x005A7936, 0x005A7942, 0x005AAD6E, 0x005B14D2; 0x005BC7C4, 0x00613C40, 0x00613C58, 0x00613C7A; 0x005DC506, 0x005D7B7A, 0x00604322, 0x005D36B6; 0x0060C3C4, 0x0060D0E4, 0x0060EA30, 0x0060F880, 0x00611708, 0x00611FD4, 0x0060B722.; re-analysis/research/overnight/20261015-ov53-55-check.md: IActivity dtor 0x005B2FAC..0x005B2FD2; ReadConfig 0x005B2D7E..0x005B2E34 (+0x24 producer 0x005B2D7E..0x005B2DC6, +0x28 0x005B2DC8..0x005B2E14); chooser factory 0x00609C88 (D1 0x0060A238, 0x0060AFA8, 0x0060B1F8); strategy factory tbb 0x005B3BE2, dtors 0x005B419C..0x005B5258; WantsToRun factory tbb 0x00614726 (also IBehavior::ReadFromJson 0x005BC24C -> +0x38, deleted 0x005BC7F0); BuildPyramid/Feeding/Sparked 0x005A7894, 0x005AACBC, 0x005B1484; Block_Cube1x1 0x004E772C, 0x004E6F80, EraseVisualization 0x004E6932..0x004E6936; FactoryTest 0x005D3692, 0x005D36B6, CloseLog 0x006717B8..0x00671848; reactions 0x0060B6F4..0x00611FD4; closures: StrategyGeneric function slots (writers 0x0060F4C6, 0x006137C0, 0x006138A4, 0x0061422C; destroys bx lr), BuildPyramidBase +0x140 (0x005DBCA2..0x005DBCB2, 0x005DC600), FactoryTest +0x180 (0x005D04E2, offset scan).
+* outstanding: RECOVERABLE_GAP: read the listed destructor bodies for logs, events, sends and external state writes. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov53-55-check.md): IMPLEMENTATION_GAP for the destructor bodies/orders and closures 1-3 (closure 3 accepted on the offset scan: FactoryTest cannot run in the shipped app outside SDK, so nothing observable depends on it). CloseLog fires only if StartLog ran (never in the shipped app). EraseVisualization's VizManager traffic is dead (SendVizMessage bx lr 0x006C05EC). The IBehavior +0x88 capture census is M8-024's; the ProtoHandle callable census is M8-027. Pure-virtual traps 0x005B5298, 0x006134E4, 0x0060B72C unreachable.
+
 **M8-025 — RobotManager::Init's robot.init.time_spent_ms DAS event (steady_clock difference in ms, int64 truncated)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Actions/IActionRunner.cs`
@@ -2581,6 +2572,24 @@ B-POSE-5 (2026-10-15), built, awaiting strong verification: origin-list event/co
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ROI head 0x006B2D4C..0x006B2F58; proposal 0x006B2F5A..0x006B30AC; statics 0x01051088..0x01051094 loaded at 0x006B07D8..0x006B0E3E (SetAutoExposureParams call 0x006B0A14); Update mode-7 block 0x006B55E2..0x006B5690.
 * outstanding: IMPLEMENTATION_GAP: port per the check file. ComputeExposureAdjustment, the histogram and ComputePercentile are the companion RECOVERABLE_GAP record.
+
+**M11-081 — ImagingPipeline exposure adjustment: ComputeExposureAdjustment (image, image+mask, vector), ImageBrightnessHistogram FillFromImage and ComputePercentile, SetExposureParameters, VisionSystem::SetAutoExposureParams** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: The exposure adjustment factor and the brightness percentiles.
+* rests on: Opus check of OV14 (2026-10-14), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov14-m11-057-check.md: ComputeExposureAdjustment 0x0085F748.., 0x0085FA02.., 0x0085FAE4..; FillFromImage 0x008731FC, 0x008733EC; ComputePercentile 0x00873624..0x00873774; SetExposureParameters 0x0085F374; SetAutoExposureParams 0x006B1858.; re-analysis/research/overnight/20261015-ov53-55-check.md: SetExposureParameters 0x0085F378..0x0085F4AA; SetAutoExposureParams 0x006B1858..0x006B18DC; Init inputs 0x006B09FC..0x006B0A36; histogram reset/fill 0x008731F0..0x0087332E; weighted fill 0x008733EC..0x0087356A; percentile 0x00873624..0x008736DA; image+mask 0x0085F748..0x0085F918; image-only 0x0085FA02..0x0085FA7C; callers 0x006B2EAA, 0x006B2F10, 0x006B2FE0.
+* outstanding: RECOVERABLE_GAP: read the listed bodies completely (f32/f64 order, rounding, NaN). OV15-17 check (re-analysis/research/overnight/20261014-ov15-16-17-check.md): SetExposureParameters 0x0085F374..0x0085F4AA and SetAutoExposureParams 0x006B1858..0x006B18DC are now read (checks max-change, mid-percentile, subSample; bounds 0xB727C5AC/0x3F800054 with bmi/bgt so NaN passes; subSample <= 0 rejected; failure 0x03000000); the rest of this record stays unread. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov53-55-check.md): IMPLEMENTATION_GAP. The vector overload 0x0085FAE4 has no caller: unreachable, not built. roundf is exact IEEE (no ADP-1 question). Masks/ROIs/factor application stay with M11-057.
+
+**M11-082 — Vision config loading: JsonCpp getMemberNames order (InitialVisionModes EnableMode order) and RobotDataLoader::LoadRobotConfigs' readAsJson failure branch** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
+* effect: The order of the EnableMode Info logs, and what happens when vision_config.json can't be read.
+* rests on: Opus check of OV15-OV17 (2026-10-14), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261014-ov15-16-17-check.md: getMemberNames (CZString compare) at VisionSystem::Init InitialVisionModes; LoadRobotConfigs readAsJson 0x0052267C, failure branch 0x00522680..; re-analysis/research/overnight/20261015-ov53-55-check.md: getMemberNames 0x008E6B90..0x008E6D08; CZString::operator< 0x008E7E4C..0x008E7ECC; EnableMode loop 0x006B116E..0x006B11EA (sorted 12 keys, false values still passed); loader failure tail 0x0052266A..0x005226EE; readAsJson 0x0084BFD4..0x0084C206; no rollback 0x008E082C..0x008E0916, 0x008E0F30..0x008E0F6A; Init result ignored 0x005103BA..0x005103D4.
+* outstanding: RECOVERABLE_GAP: read JsonCpp getMemberNames / CZString ordering in this build and the LoadRobotConfigs failure branch. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov53-55-check.md): IMPLEMENTATION_GAP for the sorted EnableMode order and the defined failure tail (logs, VisionConfigJsonNotFound, continue, no clear). The shipped vision_config.json parses: the failure tail and partial-object contents are unreachable with shipped assets (partial contents not built). getMemberNames/CZString throws are M1-034 skips.
 
 **M11-083 — The %f formatter bundled in libc++_shared.so behind std::to_string(float): the conversion, rounding and special values used by Renormalize's BadRowNorm row text** (live path)
 

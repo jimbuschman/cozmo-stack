@@ -2,7 +2,7 @@
   "subsystem": "M8-framework",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "7f6f60342b0c0ac283472b764351f795548f8dc29e67650813316cf8769142c2",
+  "inventory_sha256": "aca8b178eaddb2258cb27764b7278e79642638b26e6b0acb79e4cce228e06f1f",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -305,11 +305,12 @@
       "hardware_required": false
     },
     "M8-023": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Behavior teardown recursive recipients not yet read: IActivity unique children and their strategy/chooser types, ActivityStrategy derived bodies, std::function captures, derived behaviour children, reaction-strategy bodies other than Hiccup, other ProtoHandle instantiations",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: \"Still unread\" list: 0x005B2FB8/0x005B2FC4/0x005B2FD2 (producer 0x005B2A5C..0x005B2F8B); 0x005B419C, 0x005B456C, 0x005B4818, 0x005B4CCC, 0x005B4E50, 0x005B4E78, 0x005B4EB0, 0x005B528C, 0x005B4806; 0x005A7936, 0x005A7942, 0x005AAD6E, 0x005B14D2; 0x005BC7C4, 0x00613C40, 0x00613C58, 0x00613C7A; 0x005DC506, 0x005D7B7A, 0x00604322, 0x005D36B6; 0x0060C3C4, 0x0060D0E4, 0x0060EA30, 0x0060F880, 0x00611708, 0x00611FD4, 0x0060B722."
+        "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: \"Still unread\" list: 0x005B2FB8/0x005B2FC4/0x005B2FD2 (producer 0x005B2A5C..0x005B2F8B); 0x005B419C, 0x005B456C, 0x005B4818, 0x005B4CCC, 0x005B4E50, 0x005B4E78, 0x005B4EB0, 0x005B528C, 0x005B4806; 0x005A7936, 0x005A7942, 0x005AAD6E, 0x005B14D2; 0x005BC7C4, 0x00613C40, 0x00613C58, 0x00613C7A; 0x005DC506, 0x005D7B7A, 0x00604322, 0x005D36B6; 0x0060C3C4, 0x0060D0E4, 0x0060EA30, 0x0060F880, 0x00611708, 0x00611FD4, 0x0060B722.",
+        "re-analysis/research/overnight/20261015-ov53-55-check.md: IActivity dtor 0x005B2FAC..0x005B2FD2; ReadConfig 0x005B2D7E..0x005B2E34 (+0x24 producer 0x005B2D7E..0x005B2DC6, +0x28 0x005B2DC8..0x005B2E14); chooser factory 0x00609C88 (D1 0x0060A238, 0x0060AFA8, 0x0060B1F8); strategy factory tbb 0x005B3BE2, dtors 0x005B419C..0x005B5258; WantsToRun factory tbb 0x00614726 (also IBehavior::ReadFromJson 0x005BC24C -> +0x38, deleted 0x005BC7F0); BuildPyramid/Feeding/Sparked 0x005A7894, 0x005AACBC, 0x005B1484; Block_Cube1x1 0x004E772C, 0x004E6F80, EraseVisualization 0x004E6932..0x004E6936; FactoryTest 0x005D3692, 0x005D36B6, CloseLog 0x006717B8..0x00671848; reactions 0x0060B6F4..0x00611FD4; closures: StrategyGeneric function slots (writers 0x0060F4C6, 0x006137C0, 0x006138A4, 0x0061422C; destroys bx lr), BuildPyramidBase +0x140 (0x005DBCA2..0x005DBCB2, 0x005DC600), FactoryTest +0x180 (0x005D04E2, offset scan)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -340,6 +341,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov42-44-check.md: 0x0056AC84..0x0056AD56 (predicate 0x0056CCFC called twice; UpdatePossibleObjectRender 0x0056A6D4 with VizManager calls); callers MapComponent UpdateRobotPose 0x0067E414..0x0067E486 and ClearRobotToMarkers 0x0067F5B8..0x0067F714."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M8-027": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ProtoHandle subscriber-callable census: which callables the 8 ProtoHandle kinds hold at teardown and what destroying them does",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov53-55-check.md: ProtoHandle vtables (8) confirmed; EngineToGame release 0x00664708, unlink 0x006634F4 (nulls the callable, decrements node refcount +0x20, frees at zero 0x0066352E..0x00663560)."
       ],
       "live_path": true,
       "hardware_required": false

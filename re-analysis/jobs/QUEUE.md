@@ -114,6 +114,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |
 | 65 | [B-M11-10](B-M11-10.md) | open, after B-M8-5 |
 | 66 | [B-M15-4](B-M15-4.md) | open, after B-M11-10 |
+| 67 | [B-M11-11](B-M11-11.md) | open, after B-M15-4 |
+| 68 | [B-M8-6](B-M8-6.md) | open, after B-M11-11 |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

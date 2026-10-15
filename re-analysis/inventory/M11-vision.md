@@ -1662,3 +1662,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | to_string(float) %f: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-083 |
+
+
+## Check of OV53-OV55 (manager, 2026-10-15; research/overnight/20261015-ov53-55-check.md)
+
+| Change | Records |
+| --- | --- |
+| Exposure adjustment; vision config order and failure tail: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-081, M11-082 |
