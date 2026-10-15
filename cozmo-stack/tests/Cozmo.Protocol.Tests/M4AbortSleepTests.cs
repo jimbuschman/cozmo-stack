@@ -14,7 +14,7 @@ namespace Cozmo.Protocol.Tests;
 /// (disassembly addresses of libcozmoEngine.so). The live entry is RobotManager::RemoveRobot's deletion of the Robot
 /// (RobotLifetime.Destroy: slot -3 is AbortAll at 0x00511120) on the production CozmoRobot.
 /// </summary>
-[Collection("SteppedBehavior missing-report statics")]
+[Collection("M5 process statics")]
 public class M4AbortSleepTests
 {
     private sealed class FakePort : IEngineTransport

@@ -15,7 +15,7 @@ namespace Cozmo.Protocol.Tests;
 /// inventory (Appendix A rows A*, B*, C*; Appendix B rows 1a..1q, 2a..2f, 3a..3b), named in each test, never from what
 /// the code returns.
 /// </summary>
-[Collection("SteppedBehavior missing-report statics")]
+[Collection("M5 process statics")]
 public class M3DeviceTests
 {
     // Frozen manifest names retained as executable aliases of their current source-oracle regressions.

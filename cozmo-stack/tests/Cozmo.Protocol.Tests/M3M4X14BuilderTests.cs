@@ -4,7 +4,7 @@ using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
-[Collection("SteppedBehavior missing-report statics")]
+[Collection("M5 process statics")]
 public sealed class M3M4X14BuilderTests : IDisposable
 {
     private readonly bool _error = EngineErrorState.ErrorFlagSet;

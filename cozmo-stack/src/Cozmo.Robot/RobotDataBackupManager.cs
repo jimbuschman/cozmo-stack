@@ -38,11 +38,12 @@ internal sealed class RobotDataBackupManager : IDisposable
             foreach (var member in BackupFiles.Members(Json.Member(root,"tagsToBackup"))) tags.Add(Json.AsUInt(member.Value));
             Tags.UnionWith(tags);
         }
-        catch (JsonLogicError) { Files.Skip("M15-038","0x00519CFE / JsonCpp asUInt/getMemberNames",config); }
+        // fidelity: M1-034, M15-038
+        catch (JsonLogicError) { Files.Skip("M15-038","0x00519CB0 / 0x00519D0C (JsonCpp getMemberNames/asUInt)",config); }
     }
     internal void ReadAll()
     {
-        if (PendingCount != 0) { Files.Log(EngineLogLevel.Warning,"ReadAllDataFromRobot","Have pending requests so not reading"); return; }
+        if (PendingCount != 0) { Files.Log(EngineLogLevel.Warning,"ReadAllBackupDataFromRobot","Have pending requests so not reading"); return; }
         int ordinal = 0, total = Tags.Count;
         foreach (uint tag in Tags) { ++PendingCount; int index = ++ordinal; Nv.Read(tag,r => ReadSink(tag,index,total,r)); }
     }

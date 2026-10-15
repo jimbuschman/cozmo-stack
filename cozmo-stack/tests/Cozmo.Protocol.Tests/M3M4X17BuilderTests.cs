@@ -3,7 +3,7 @@ using System.Text;
 using Cozmo.Robot;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
-[Collection("SteppedBehavior missing-report statics")]
+[Collection("M5 process statics")]
 public sealed class M3M4X17BuilderTests
 {
     private static string Repo()

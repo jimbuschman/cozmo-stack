@@ -14,7 +14,7 @@ namespace Cozmo.Protocol.Tests;
 /// in the files is the shipped libc++ formatter's output as recorded in the oracle fixture
 /// (Fixtures/m3_041_libcxx_printf_oracle.json), never the C# formatter's.
 /// </summary>
-[Collection("SteppedBehavior missing-report statics")]
+[Collection("M5 process statics")]
 public class M3ImuLogLiveTests
 {
     private sealed class FakePort : IEngineTransport

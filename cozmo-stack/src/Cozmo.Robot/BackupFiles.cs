@@ -13,6 +13,7 @@ internal sealed class BackupFiles(CozmoEngine engine)
     private static string Basename = ""; // native process global 0x01059D80, not one filename per Robot.
     private static readonly SortedSet<uint> Defaults = new(); // 0x0105B560; size is the initialization gate.
     private static string Join(string root, string name) => root + (name.Length != 0 && name[0] != '/' ? "/" : "") + name;
+    // fidelity: M3-062 — resource-scope root is a host app input.
     internal string? Resource(string name) => engine.Options.ResourcesPath is {} root ? Join(root,name) : null;
     internal static bool RegularFile(string path) => File.Exists(path) && !Directory.Exists(path);
     internal static bool CreateDirectory(string path)
@@ -27,13 +28,14 @@ internal sealed class BackupFiles(CozmoEngine engine)
     internal static void Missing(string text) => Behavior.SteppedBehavior.ReportMissing(text);
     // fidelity: M1-034 — policy skips are stack diagnostics, never invented engine entries (builder rule 11).
     internal void Skip(string record, string address, string unit) => engine.EmitStackLog(
-        $"Stack.RobotDataBackupManager.SkipMalformed: M1-034 / {record}: skipped {unit}; original undefined/terminating access at {address}; prior state kept");
+        $"Stack.RobotDataBackupManager.SkipMalformed: M1-034 / {record}: skipped {unit}; original undefined/terminating access at {address}; prior state kept; downstream absent-data path follows");
     internal bool JsonWasSkipped { get; private set; }
     internal bool ReadJson(string path, out FirmwareJsonValue root)
     {
         root = new(); JsonWasSkipped = false; bool ok = false;
         try { ok = Json.TryParseFirst(File.ReadAllBytes(path), out var doc); root = doc.RootElement; }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        // fidelity: M1-034, M15-038, M15-039, M15-040, M15-043
         catch (JsonRuntimeError) { JsonWasSkipped = true; Skip("M15-038/M15-039/M15-040/M15-043", "0x008E0D92", path); return false; }
         catch (JsonMissingSource e) { JsonWasSkipped = true; Missing("M15-038/M15-039/M15-040/M15-043 reader dependency: "+e.Message); return false; }
         if (ok) return true;
@@ -62,6 +64,7 @@ internal sealed class BackupFiles(CozmoEngine engine)
         if (existed && !ReadJson(path, out root))
         { if (!JsonWasSkipped) Error("RobotConnected.ReadStatsFailed", "Failed to read statsForBackup.json"); return; }
         try { IncrementConnectionCount(root, key, existed); }
+        // fidelity: M1-034, M15-039
         catch (JsonLogicError) { Skip("M15-039", "0x0051A088..0x0051A0C8 / 0x008E89C2", path); return; }
         engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "DataPlatform.writeAsJson", $"writing to {path}");
         if (!CreateDirectory(Path.GetDirectoryName(path)!))
@@ -88,6 +91,7 @@ internal sealed class BackupFiles(CozmoEngine engine)
                 if (count > maximum) { maximum = count; name = Encoding.UTF8.GetString(Convert.FromHexString(member.Key)); }
             }
         }
+        // fidelity: M1-034, M15-040
         catch (JsonLogicError) { Skip("M15-040","0x0051BBAC / 0x008E6C68 / 0x008E89C2",path); return null; }
         if (name.Length == 0) { Error("GetFileToUseForBackup.NoFile","Could not find a backup file to use from statsForBackup.json"); return null; }
         return name + ".backup";
@@ -134,6 +138,7 @@ internal sealed class BackupFiles(CozmoEngine engine)
                 string name = entry.Name; if (name.Length < 7) continue;
                 int end = name.IndexOf(".backup",StringComparison.Ordinal); if (end < 0) continue;
                 try { ulong key = Stoull(name[..end]); Info("RobotConnected.AllBackups","Have backup for " + key.ToString(CultureInfo.InvariantCulture)); keys.Add(unchecked((uint)Stoull(name[..end]))); }
+                // fidelity: M1-034, M15-042, M15-043
                 catch (Exception e) when (e is FormatException or OverflowException) { Skip("M15-042/M15-043","0x0051C336 / libc++ 0x00065428..0x00065490",name); }
             }
         }
@@ -184,11 +189,12 @@ internal sealed class BackupFiles(CozmoEngine engine)
         { Missing("M3-062/M15-043: GetDefaultUnlocks has no host ResourcesPath input; InitConfig resource read is unavailable, defaults retained"); return Defaults.ToArray(); }
         if (!ReadJson(path,out var root))
         {
-            if (!JsonWasSkipped) { engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.UnlockConfigJsonNotFound",$"Unlock Json config file {path} not found."); EngineErrorState.StoreAndMaybeBreak(); }
+            if (!JsonWasSkipped) { engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.UnlockConfigJsonNotFound","Unlock Json config file config/engine/unlock_config_nurture.json not found."); EngineErrorState.StoreAndMaybeBreak(); }
             Missing("M15-043 InitConfig 0x0064BBA6..0x0064BC06 continues after failed read but the resulting root is UNKNOWN; remaining config unit skipped and defaults retained"); return Defaults.ToArray();
         }
         FirmwareJsonValue list;
         try { list = Json.Member(root,"defaultUnlocks"); }
+        // fidelity: M1-034, M15-043
         catch (JsonLogicError) { Skip("M15-043","0x0064BC2E / JsonCpp object lookup",path); return Defaults.ToArray(); }
         if (list.Kind != FirmwareJsonKind.Array)
         { engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.MissingDefaults","missing key 'defaultUnlocks'"); EngineErrorState.StoreAndMaybeBreak(); return Defaults.ToArray(); }

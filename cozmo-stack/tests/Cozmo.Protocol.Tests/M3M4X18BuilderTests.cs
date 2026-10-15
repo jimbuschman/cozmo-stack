@@ -7,7 +7,7 @@ using Cozmo.Robot.Manipulation;
 using Cozmo.Transport;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
-[Collection("SteppedBehavior missing-report statics")]
+[Collection("M5 process statics")]
 public sealed class M3M4X18BuilderTests
 {
     private static void Offline(M4ControlTests.Rig rig) => rig.Engine.InitOfflineLink(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback,5551));

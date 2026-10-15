@@ -40,6 +40,31 @@ public sealed class M15BackupBuilderTests
     { using var bytes = new MemoryStream(); using var w = new BinaryWriter(bytes); w.Write(tag); w.Write((uint)data.Length); w.Write(data); return bytes.ToArray(); }
     private static byte[] Words(params uint[] values) => values.SelectMany(BitConverter.GetBytes).ToArray();
     [Fact]
+    public void PendingReadAllUsesTheNativeWarningKeyAndKeepsThePendingRequest()
+    {
+        using var rig=new Rig();rig.Backup.PendingCount=1;rig.Logs.Clear();
+        rig.Backup.ReadAll();var entry=Assert.Single(rig.Logs);
+        Assert.Equal("RobotDataBackupManager.ReadAllBackupDataFromRobot",entry.Name);
+        Assert.Equal(EngineLogLevel.Warning,entry.Level);Assert.Null(entry.Channel);
+        Assert.Equal("(tc0000) : Have pending requests so not reading",entry.Text); // M3-048 logger wrapper, tick zero.
+        Assert.Equal(1u,rig.Backup.PendingCount);Assert.Empty(rig.Reports);
+    }
+    [Fact]
+    public void MissingUnlockConfigErrorUsesTheNativeRelativePath()
+    {
+        BackupFiles.ClearDefaultsForTest();bool prior=EngineErrorState.ErrorFlagSet;
+        try
+        {
+            using var rig=new Rig();EngineErrorState.ErrorFlagSet=false;
+            rig.Robot.RequestUnlockDataFromBackup();rig.Tick();
+            var entry=Assert.Single(rig.Logs.Where(l=>l.Name=="ProgressionUnlockComponent.InitDefaults.UnlockConfigJsonNotFound"));
+            Assert.Equal(EngineLogLevel.Error,entry.Level);Assert.Null(entry.Channel);
+            Assert.Equal("(tc0000) : Unlock Json config file config/engine/unlock_config_nurture.json not found.",entry.Text);
+            Assert.True(EngineErrorState.ErrorFlagSet);
+        }
+        finally {BackupFiles.ClearDefaultsForTest();EngineErrorState.ErrorFlagSet=prior;}
+    }
+    [Fact]
     public void ConstructorUsesConfiguredSortedSetAndPendingHostRequestsRunOnTheEngineThread()
     {
         using var rig = new Rig("{\"tagsToBackup\":{\"z\":1581056,\"a\":1572864,\"duplicate\":1581056}}");
@@ -73,7 +98,7 @@ public sealed class M15BackupBuilderTests
         using(var rig = new Rig("{\"tagsToBackup\":{\"a\":1572864,\"z\":\"bad\"}}"))
         {
             Assert.Empty(rig.Backup.Tags); // First valid name must not survive the lost file.
-            Assert.Contains(rig.Stack,l => l.Contains("M1-034 / M15-038") && l.Contains("0x00519CFE"));
+            Assert.Contains(rig.Stack,l => l.Contains("M1-034 / M15-038") && l.Contains("0x00519CB0 / 0x00519D0C"));
         }
     }
     [Fact]
@@ -139,7 +164,7 @@ public sealed class M15BackupBuilderTests
     public void MalformedStatsKeepsTheOldGlobalBasenameAndFile(string stats)
     {
         using var rig = new Rig(); rig.Backup.Files.RobotConnected(41); rig.Stats(stats); rig.Backup.Files.RobotConnected(42);
-        Assert.Contains(rig.Stack,l => l.Contains("M1-034 / M15-039") && l.Contains("0x008E89C2"));
+        Assert.Contains(rig.Stack,l => l.Contains("M1-034 / M15-039") && l.Contains("0x008E89C2") && l.Contains("downstream absent-data path follows"));
         rig.Backup.CompletedOnboarding = true; rig.Backup.WriteBackupFile();
         Assert.True(File.Exists(rig.Backup.Files.DirectoryPath + "41.backup")); Assert.False(File.Exists(rig.Backup.Files.DirectoryPath + "42.backup"));
         Assert.Equal(stats,File.ReadAllText(rig.Backup.Files.DirectoryPath + "statsForBackup.json"));
