@@ -527,7 +527,7 @@ public sealed class MountChargerAction
 
     /// <summary>
     /// Live turn inputs and checked MovementComponent wrappers (M13-021/022). State and face-layer mutations share the scheduler gate;
-    /// the pose read uses the existing pose-tree gate. Persistent turn-eye creation remains BLOCKED on the missing checked destructor row.
+    /// the pose read uses the existing pose-tree gate. Persistent turn-eye creation and cleanup use the adopted M13-022 rows.
     /// </summary>
     internal sealed class LivePanTiltRobot : IPanTiltRobot, INativeMotorAckSource, INativePanTiltServices
     {

@@ -92,8 +92,7 @@ public sealed class M13CheckedRowsBuilderTests
     public void InPositionEyeRemovalAndOffTreadsLogsHaveSourceOrderAndArguments()
     {
         var input=new Input();using var action=new TurnInPlaceAction(input,1,false);action.Init();action.HandleMotorActionAck(7);
-        // The checked completion row consumes a pre-existing native tag. Live activation is BLOCKED on its destructor row.
-        typeof(TurnInPlaceAction).GetProperty("Byte0xD9")!.SetValue(action,(byte)9);
+        Assert.Equal((byte)9, action.Byte0xD9); // Created by the checked Init wrapper.
         input.PoseAngleAroundZ=1;input.OnTreads=false;
         Assert.Equal(PanTiltResult.InvalidOffTreadsState,action.CheckIfDone());
         Assert.Equal(new[]{"TurnInPlaceAction.CheckIfDone.RemovingEyeShift","TurnInPlaceAction.CheckIfDone.InPosition","TurnInPlaceAction.OffTreadsStateInvalid"},input.Logs.Select(e=>e.Key));
@@ -140,10 +139,7 @@ public sealed class M13CheckedRowsBuilderTests
         Assert.InRange(service.PoseAngleAroundZ,0.249999f,0.250001f); // Explicit retained history adapter, not proof of native MainPose binding.
         Assert.Equal(0f,(float)rig.Engine.Robot.MainPose.AngleAroundZ);
         using var turn=new TurnInPlaceAction(service,1,false);
-        Assert.Equal(0u,turn.Init());Assert.Equal((byte)0,turn.Byte0xD9); // No unowned persistent layer is installed.
-        rig.Robot.Animations.WithTrackLayers(layers=>Assert.DoesNotContain(layers.Face.AllLayers,l=>l.Name=="TurnInPlaceEyeDart"));
-        byte wrapperTag=service.AddEyeShift(0,1f); // Direct checked wrapper, with explicit test-owned removal.
-        Assert.NotEqual((byte)0,wrapperTag);
+        Assert.Equal(0u,turn.Init());Assert.NotEqual((byte)0,turn.Byte0xD9);
         rig.Robot.Animations.WithTrackLayers(layers=>
         {
             var layer=Assert.Single(layers.Face.AllLayers.Where(l=>l.Name=="TurnInPlaceEyeDart"));
@@ -156,7 +152,9 @@ public sealed class M13CheckedRowsBuilderTests
             Assert.True(attempted.Wait(TimeSpan.FromSeconds(5)));Assert.False(ack.Wait(TimeSpan.FromMilliseconds(50)));Assert.False(turn.Byte0xDC);
         }
         await ack.WaitAsync(TimeSpan.FromSeconds(5));Assert.True(turn.Byte0xDC);
-        service.RemoveEyeShift(wrapperTag,0);
+        turn.Dispose();
+        Assert.Equal((byte)0,turn.Byte0xD9);
+        rig.Robot.Animations.WithTrackLayers(layers=>Assert.DoesNotContain(layers.Face.AllLayers,l=>l.Name=="TurnInPlaceEyeDart"));
     }
 
     [Fact]

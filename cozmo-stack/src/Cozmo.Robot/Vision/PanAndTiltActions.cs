@@ -337,9 +337,8 @@ public interface IPanTiltRobot
 /// <c>CheckIfDone</c> 0x0054642C, the motorActionAck handler 0x0054D3F8. Field names are not in the binary; they are named by offset.
 /// Angles are float32 and normalised with <see cref="EngineRadians.Rescale"/> (<c>Radians</c>).
 ///
-/// OV07 builds the direct movement wrappers and the bounded turn Init/completion rows. The live eye-creation call stops visibly
-/// until TurnInPlaceAction's destructor cleanup has an adopted row (0x00545B94..0x00545BD4). Completion eye-removal consumes an
-/// existing tag; it is tested with an explicit native-state input and is not claimed to make live creation safe.
+/// OV07 builds the direct movement wrappers and bounded turn Init/completion rows. The adopted 20261015 turn-eye destructor
+/// row adds persistent-layer cleanup before C4 retirement and the existing base-tag teardown (0x00545B94..0x00545BD4).
 /// GetCompletionUnion, nonzero-variability RNG and the full IActionRunner lifecycle remain separately unbuilt.
 /// </summary>
 // fidelity: M13-022
@@ -388,7 +387,15 @@ public sealed class TurnInPlaceAction : IDisposable
     public void Dispose() => Gated(() =>
     {
         if (_disposed) return;
-        _disposed=true; _ackSubscription?.Dispose(); ActionRunnerTagCounter.Global.Release(Tag);
+        _disposed = true;
+        // M13-022: D1 0x00545B9A..0x00545BC0. Both guards precede the call; zero the tag after removal.
+        if (Byte0xD8 && Byte0xD9 != 0)
+        {
+            if (_robot is INativePanTiltServices native) native.RemoveEyeShift(Byte0xD9, 0);
+            Byte0xD9 = 0;
+        }
+        _ackSubscription?.Dispose();                         // +E4 release, 0x00545BC4..0x00545BCA
+        ActionRunnerTagCounter.Global.Release(Tag);           // existing base-tag teardown, after the C4 owner
     });
 
     public TurnInPlaceAction(IPanTiltRobot robot, float angle, bool isAbsolute)
@@ -518,8 +525,8 @@ public sealed class TurnInPlaceAction : IDisposable
             float x=MathF.Tan(clipped)*BitConverter.Int32BitsToSingle(0x418C28F6);
             x*=BitConverter.Int32BitsToSingle(0x3F9D89D9);
             _eyeShiftRequests.Add("RemoveKeepFaceAlive(33); AddOrUpdateEyeShift(TurnInPlaceEyeDart,132)");
-            _ = x; // Checked argument arithmetic; the lifetime-dependent call unit stops here.
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-021/M13-022 BLOCKED live TurnInPlace eye activation at 0x00546286: the AddEyeShift wrapper is checked, but required turn-dtor cleanup 0x00545B94..0x00545BD4 (call 0x00545BBC) has no adopted checked body row in OV07 or the supplied prior M13 checks. Persistent layer creation is skipped; no tag or cleanup duration is invented. Unadopted Q18 X2 is a lead for the manager, not build authority");
+            if (_robot is INativePanTiltServices layers) Byte0xD9 = layers.AddEyeShift(Byte0xD9, x);
+            else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M13-021/M13-022 Init 0x00546286: host IPanTiltRobot has no track-layer service; eye creation skipped");
         }
         return 0;
     }
