@@ -827,3 +827,10 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | Change | Records |
 | --- | --- |
 | C5 trigger sources | M2-023 (note) |
+
+
+## Check of OV42-OV44 (manager, 2026-10-15; research/overnight/20261015-ov42-44-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note (queue-clear rows) | M2-022 |

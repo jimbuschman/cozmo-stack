@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **631 records** over 16 subsystems.
+Manifest of **633 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 43 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 324 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 326 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -31,10 +31,10 @@ remains after both, and they do not go away by working harder on this repository
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
 | M6-wwise-bank — Wwise bank reading and codecs | 33 | 3 | 27 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 2 | 22 | 0 | 0 | no | no |
-| M8-framework — Behaviour framework and scoring | 25 | 3 | 21 | 0 | 0 | no | no |
+| M8-framework — Behaviour framework and scoring | 26 | 4 | 21 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 33 | 6 | 19 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 87 | 15 | 57 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 88 | 14 | 59 | 0 | 0 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 46 | 3 | 33 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 37 | 1 | 32 | 0 | 1 | no | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
@@ -93,7 +93,7 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Codex research checked by Opus (2026-10-13), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): "Unread" section: the handler bodies; the re-Init question; 0x004EE94A -> PLT 0x004A544C; ~Robot r5 at 0x0051120E; ProcessMessages with no robot 0x0069D8D8.; re-analysis/research/20261013-small-reads-2-check.md: "Still unread" section. Read parts split to M2-023. Remaining: the vtable+0x28 Subscribe sites, rodata tag arrays, StrategyGeneric::ConfigureRelevantEvents 0x006137B6/0x0061389A, ReactionTriggerStrategyGeneric 0x0060F5D8; ActionList::Clear 0x0053D916..0x0053D93A with action dtors 0x00541084, 0x00543DAC.
-* outstanding: RECOVERABLE_GAP: read the listed bodies. A freed-memory read mid-emit, if reachable, falls under the M1-034 standing rule. Split 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): the read bodies moved to M2-023. Still RECOVERABLE_GAP: who locally receives tags 0x60 and 0x81 (and synchronously or not), and the C5-inside-Clear sliver. A recipient mutating the firmware updater's tracked vector would make EF's writes stale (M1-034 standing rule). Operator 2026-10-14 (AGENTS.md scope): robot firmware update is not supported; the FirmwareUpdater paths are unreachable in the stack and not built. So the tag 0x81 (FirmwareUpdateComplete) recipient question and EF's stale-vector writes are moot; what remains is the tag 0x60 (AnimationEvent) recipients and the C5-inside-Clear sliver.
+* outstanding: RECOVERABLE_GAP: read the listed bodies. A freed-memory read mid-emit, if reachable, falls under the M1-034 standing rule. Split 2026-10-13 (re-analysis/research/20261013-small-reads-2-check.md): the read bodies moved to M2-023. Still RECOVERABLE_GAP: who locally receives tags 0x60 and 0x81 (and synchronously or not), and the C5-inside-Clear sliver. A recipient mutating the firmware updater's tracked vector would make EF's writes stale (M1-034 standing rule). Operator 2026-10-14 (AGENTS.md scope): robot firmware update is not supported; the FirmwareUpdater paths are unreachable in the stack and not built. So the tag 0x81 (FirmwareUpdateComplete) recipient question and EF's stale-vector writes are moot; what remains is the tag 0x60 (AnimationEvent) recipients and the C5-inside-Clear sliver. OV44 check (re-analysis/research/overnight/20261015-ov42-44-check.md): rows added: ActionQueue::Clear cancels the current action first (0x0053F97C); DeleteActionAndIter has a reentry guard on the tag set at queue+0x10 (0x0053FA12..0x0053FA1C), builds no RobotCompletedAction for INTERRUPTED 0x03000009 (0x0053FA42..0x0053FA50), order PrepForCompletion, message, delete, unlink, Broadcast 0x0053FAB2 (local 0x5A subscribers synchronous). Abort loads the external interface unchecked (0x0057B3F8..0x0057B400). No E2G tag-0x60 subscriber found by immediate scan; exhaustive proof needs type-resolved registrations. Nested dispatch inside Clear neither shown nor excluded.
 
 ### M4-control — Motion, sensors, lights and cubes
 
@@ -191,7 +191,16 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * rests on: Split from M8-015 after the Opus check of OV18 (2026-10-14), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov18-m8-015-check.md: mechanisms 0x0053FA86..0x0053FAB2, 0x0053E6E8..0x0053E6EE, 0x0053E2DA..0x0053E2F2, 0x0053DF48..0x0053DF8A; callback PLTs 0x004B01C8, 0x004B2184, 0x004B219C, 0x004B297C, 0x004B2B5C, 0x004B34B0; tag-0x5A subscribers 0x004F0742, 0x005277B0, 0x005E7B5E; ~BehaviorManager PLT 0x004A7978, ~BSM PLT 0x004A796C.
-* outstanding: RECOVERABLE_GAP: census the callbacks; the M1-034 null read at 0x005A3A84 is not reachable (every survivor is NOT_STARTED; +0xC4 only set by the SDK-only FacePlantAction). OV35 check (re-analysis/research/overnight/20261015-ov34-35-check.md): also read whether ActionWatcher callbacks fire during AbortAll (0x00511120) and ActionList::Clear (0x00511146): ActionQueue::Clear 0x0053F96A -> DeleteActionAndIter 0x0053F9E4..0x0053FB54 publishes RobotCompletedAction (0x0053FA3A..0x0053FAB2); MoodManager's action-ended callback (0x0067AF34) is still registered then.
+* outstanding: RECOVERABLE_GAP: census the callbacks; the M1-034 null read at 0x005A3A84 is not reachable (every survivor is NOT_STARTED; +0xC4 only set by the SDK-only FacePlantAction). OV35 check (re-analysis/research/overnight/20261015-ov34-35-check.md): also read whether ActionWatcher callbacks fire during AbortAll (0x00511120) and ActionList::Clear (0x00511146): ActionQueue::Clear 0x0053F96A -> DeleteActionAndIter 0x0053F9E4..0x0053FB54 publishes RobotCompletedAction (0x0053FA3A..0x0053FAB2); MoodManager's action-ended callback (0x0067AF34) is still registered then. OV44 check (re-analysis/research/overnight/20261015-ov42-44-check.md): ActionWatcher callbacks do not fire inside ActionList::Clear: ActionEnding (from the dtor 0x00541238) only pushes to the deque at watcher+0x34 (0x00541C04); callbacks run only at 0x005418AE in ActionWatcher::Update, called only from ActionList::Update 0x0053F5E6. So MoodManager::HandleActionEnded does not run during Clear. Local tag-0x5A subscribers do fire synchronously (0x0053FAB2). AbortAll 0x00511120 still unread.
+
+**M8-026 — AIWhiteboard::ProcessClearQuad: PossibleObjects erase predicate and UpdatePossibleObjectRender** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: Which possible objects the whiteboard forgets when the robot or a marker clears an area.
+* rests on: Opus check of OV42-OV44 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov42-44-check.md: 0x0056AC84..0x0056AD56 (predicate 0x0056CCFC called twice; UpdatePossibleObjectRender 0x0056A6D4 with VizManager calls); callers MapComponent UpdateRobotPose 0x0067E414..0x0067E486 and ClearRobotToMarkers 0x0067F5B8..0x0067F714.
+* outstanding: RECOVERABLE_GAP: read the predicate, the erase and the render path (Viz calls may be no-ops: check SendVizMessage bx lr).
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
@@ -296,24 +305,6 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * evidence: re-analysis/research/20261013-remaining-pose-bodies-check.md: GetParent 0x008453D4..0x0084541E wraps the parent node with no null check; WrapExistingNode 0x0084529C..0x008452C0 increments [node+0x48]; about 60 GetParent/FindRoot call sites (from 0x004DF674 to 0x008775F6).; re-analysis/research/20261013-small-reads-1-check.md: "Still unread" list: InitPose 0x004EF562, ObjectPoseConfirmer setters 0x00505DE0..0x00506F16, SetOnRamp 0x0051664E/0x00516672, SetPoseOnCharger 0x005168BA, PreActionPose 0x0050DBE0/0x0050DDA8/0x0050DFFA/0x0050F9FE, history producers 0x00512BEE/0x0051271C/0x00515774/0x005159C8/0x005160BC/0x0051612C/0x006B26E8, 0x0062A588, SendAbsLocalizationUpdate 0x0051275C, GetWithRespectTo 0x00845A34.
 * outstanding: RECOVERABLE_GAP: read the guard (HasParent/IsRoot or equivalent) before each GetParent call site. If any is reachable on a root, the M1-034 standing rule for crash paths (operator, 2026-10-13) applies: skip, keep the state, log visibly. Split 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): the census and fault semantics moved to M11-076. Census is 55 calls (30 GetParent, 25 FindRoot), not "about 60"; 0x004DF674 is FindRoot. Remaining: the 23 unguarded rows' producer invariants (listed in the evidence). No root-to-fault witness shown.
 
-**M11-074 — Memory-map producers and readers not yet read: MapComponent::UpdateRobotPose (explored area), UpdateObjectPose, RemoveObservableObject, FlagInterestingEdgesAsUseless, ReviewInterestingEdges, ClearRobotToMarkers, FindContentIf/FindIf** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
-* effect: What goes into the memory map as the robot drives and sees objects, and what the planner reads from it.
-* rests on: Opus check of R-QUADTREE (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-quadtree-rest-check.md: UpdateRobotPose 0x0067E224..0x0067E50B; UpdateObjectPose 0x0067EA90..0x0067ECFB; RemoveObservableObject 0x0067F2C4..0x0067F58B; FlagInterestingEdgesAsUseless 0x0067E778..0x0067E85B; ReviewInterestingEdges/ClearRobotToMarkers 0x0067F58C..0x0067F7AB; FindContentIf 0x00681674..0x006816E7 and QuadTreeNode::FindIf 0x006884FC..
-* outstanding: RECOVERABLE_GAP: read the listed bodies completely. Needed before all map content moves into the quad tree (the stack's MemoryMap._regions writers are stand-ins for these).
-
-**M11-075 — Memory-map broadcast to the game: MapComponent::Update, BroadcastMap, QuadTree::Broadcast (MemoryMapQuadInfo), BroadcastMemoryMapDraw** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
-* effect: Whether and when the engine sends the memory map to the game side.
-* rests on: Opus check of R-QUADTREE (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-quadtree-rest-check.md: MapComponent::Update 0x0067DC4C, BroadcastMap 0x0067DDB8 (..0x0067DE3B), QuadTree::Broadcast 0x006857FC..0x00685C07, BroadcastMemoryMapDraw from 0x00685C08.
-* outstanding: RECOVERABLE_GAP: read the bodies; if it is an engine-to-game message, the engine side stays exact and the stack delivers it through the C# API (app-boundary rule).
-
 **M11-078 — Vision/world teardown leaves not yet read: result-list and deque payload dtors, Camera::~Camera, ImageCache, CalibImage/Image vectors, CLAHE finalizer, FaceRecognizer trees, the ObservableObject dtor census beyond cube/charger, subscriber handle specialisations, VisionSystem profiler key** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Vision/VisionSystem.cs`
@@ -386,6 +377,15 @@ B-POSE-1 (2026-10-14): manager-authorized BadRowNorm Row=[MISSING: M11-083 ...] 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: PLT 0x004BA698 / 0x004BA6A4, gates at 0x006560E6..0x006560FE (rejection: no log, no send; V+0x329=0 and SetNextMode(7,false) still follow at 0x00657EFE..0x00657F0E).
 * outstanding: RECOVERABLE_GAP: read both bodies and their bounds; say whether TrackLaser's darken values pass.
+
+**M11-088 — ObservableObject virtual +0x5C / +0x50 overrides per concrete class (map Add/Remove and quad)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: Whether a pose change re-adds an object to the memory map, and its quad.
+* rests on: Opus check of OV42-OV44 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov42-44-check.md: base slot 0x004E02AE returns 0; ActiveObject-family slot 0x004E3882 returns 1; CustomObject 0x004F04FA returns byte +0x9C; callers 0x0067EB38..0x0067EC2E (+0x5C), 0x0067ED06..0x0067F0BC (+0x50).
+* outstanding: RECOVERABLE_GAP: map each concrete class (cubes, charger, custom, markerless) to its ObservableObject-subobject vtable slots +0x50/+0x5C and read the bodies.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -2190,7 +2190,7 @@ B-M3M4-19 built, awaiting strong verification: all current explored-area readers
 * rests on: recovered by the R-VIS gap pass 2
 * best authority: libcozmoEngine.so 3.4.0-1204 (re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md, verified in re-analysis/research/20260929-R-VIS-verify-M11-gap2.md): the polygon MemoryMap::TransformContent 0x0068147C (via 0x006814F4) calls QuadTreeNode::Transform 0x00688378 (PLT 0x4BCA8C), not QuadTreeProcessor::Transform 0x0068A414 (the whole-map overload): overlap 0 returns false; every child is transformed then TryAutoMerge runs; the function is called on the node's own content (skipped when the content pointer is null, 0x006883E2); a changed content goes through ForceSet (0x0068846E); every leaf that overlaps the polygon in any way is converted whole (no subdivision, no containment test, no override table); the ground-plane lambda (0x00680B54, identical to 0x00680C2C) turns type 9 into a type-0 object carrying the stamps. HasCollisionRayWithTypes 0x00689D80/0x00689F0A: a two-point polygon walks the tree; a zero flag with no children is false with no overlap test; a non-zero flag returns overlap != 0 without consulting children; a zero flag with children descends children 0..3 in order; an endpoint within 1e-5 of a cell counts as inside; a subdivided parent holds fresh Unknown (type 0) content, so a mask that includes type 0 returns true on any overlap without descending (0x00689F5C)
 * evidence: 0x0068147C..0x006814F4, 0x00688378..0x00688476 Transform; 0x00689D80..0x00689F5C the ray walk; re-analysis/research/20260929-R-VIS-M11-gap2-extraction.md; re-analysis/research/20260929-R-VIS-verify-M11-gap2.md (2.1-2.4, 3.1-3.3 PASS)
-* outstanding: build Transform and the ray walk exactly. LineSegment::IntersectsWith (PLT 0x4BD080) is M11-048 (RECOVERABLE_GAP). M14-007's claim that the ray answers 'exactly rather than to the tree's precision' is contradicted by this record and is corrected in M14-007. R-QUADTREE check (re-analysis/research/20261013-quadtree-rest-check.md): Transform 0x00688378..0x00688474 also runs the callback on internal nodes (result dropped), ForceSets a node that became a leaf through TryAutoMerge, does not report child changes, and its wrapper writes no dirty byte; the whole-map TransformContent 0x0068140C -> 0x0068A414 (caller FlagInterestingEdgesAsUseless, M11-074). HasContentType answers only for the cached set {3,6,7,8,9,10} (mask 0x7C8).
+* outstanding: build Transform and the ray walk exactly. LineSegment::IntersectsWith (PLT 0x4BD080) is M11-048 (RECOVERABLE_GAP). M14-007's claim that the ray answers 'exactly rather than to the tree's precision' is contradicted by this record and is corrected in M14-007. R-QUADTREE check (re-analysis/research/20261013-quadtree-rest-check.md): Transform 0x00688378..0x00688474 also runs the callback on internal nodes (result dropped), ForceSets a node that became a leaf through TryAutoMerge, does not report child changes, and its wrapper writes no dirty byte; the whole-map TransformContent 0x0068140C -> 0x0068A414 (caller FlagInterestingEdgesAsUseless, M11-074). HasContentType answers only for the cached set {3,6,7,8,9,10} (mask 0x7C8). OV42 check (re-analysis/research/overnight/20261015-ov42-44-check.md): contradicted wording: FlagInterestingEdgesAsUseless has no caller; the whole-map TransformContent callers are MapComponent::Update aging (0x0067DCF4) and RemoveObservableObject (0x0067F368).
 
 **M11-047 — The quad tree's border walk (FindBorders, AddBorderWaypoint, FillBorder)** (live path)
 
@@ -2460,6 +2460,24 @@ B-M11-8 (2026-10-14; fixes from re-analysis/research/20261014-b-m11-1-check.md; 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261013-delocalize-callees-check.md (and re-analysis/research/20261013-delocalize-callees.md): E6: only two Get_<50> callers were found (0x006172AE, 0x0063AC4E); 0x0060C038 has no caller found.; re-analysis/research/20261013-small-reads-1-check.md: M11-072 section. Recipients in order: game delivery 0x00662522; BlockConfigurationManager +0xC 0x006172A6..0x006172B6; CantHandleTallStack x2 (HandleEvent 0x005BF268, AlwaysHandle 0x005ED240..0x005ED24E, ClearStack 0x005ED1E4..0x005ED1F8); CubeLightComponent 0x0063A390..0x0063A400; Face/Object PositionUpdate (no-op ResetReactionData 0x00612238..0x006122BE, returns 0x0060CF6C, 0x0061154A); CubeMoved fall-through 0x0060BEA8..0x0060BF64. Emit walk 0x00663C74..0x00663CA6, append 0x006646A6..0x006646B0.
 * outstanding: RECOVERABLE_GAP: read the Subscribe(tag 0x32) sites (UiMessageHandler vt+0x28) in the CubeLightComponent and BlockConfigurationManager setup, and the behaviour-strategy dispatch to 0x0060C038. Read 2026-10-13 (re-analysis/research/20261013-small-reads-1-check.md): IMPLEMENTATION_GAP, rows R1-R8 in emit order (game first, then insertion order: BlockConfigurationManager, CantHandleTallStack in each of the two containers, CubeLightComponent, then the strategies in reaction-map order); the construction-time Delocalize reaches only R1-R5. CubeLight's PlayLightAnim arguments belong to the CubeLight record. Residual: an indirect vt+0x28 Subscribe whose slot load is more than 60 instructions before the call was not excluded (not seen).
+
+**M11-074 — Memory-map producers and readers not yet read: MapComponent::UpdateRobotPose (explored area), UpdateObjectPose, RemoveObservableObject, FlagInterestingEdgesAsUseless, ReviewInterestingEdges, ClearRobotToMarkers, FindContentIf/FindIf** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: What goes into the memory map as the robot drives and sees objects, and what the planner reads from it.
+* rests on: Opus check of R-QUADTREE (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-quadtree-rest-check.md: UpdateRobotPose 0x0067E224..0x0067E50B; UpdateObjectPose 0x0067EA90..0x0067ECFB; RemoveObservableObject 0x0067F2C4..0x0067F58B; FlagInterestingEdgesAsUseless 0x0067E778..0x0067E85B; ReviewInterestingEdges/ClearRobotToMarkers 0x0067F58C..0x0067F7AB; FindContentIf 0x00681674..0x006816E7 and QuadTreeNode::FindIf 0x006884FC..; re-analysis/research/overnight/20261015-ov42-44-check.md: R1-R6 0x0067E23A..0x0067E486 (cliff byte writer 0x005356C6..0x005356D4); O1-O8 0x0067EA9A..0x0067F0BC; caller order 0x00506F98..0x00506FB8, 0x00506296..0x005062D6 (double Add); D1-D3 0x0067F4C4..0x0067F544, 0x0067F2DE..0x0067F368, 0x006810E0..0x00681172; C1-C5 0x0067F5B8..0x0067F714, caller 0x00506A86..0x00506A98; Q1-Q6 0x00681674..0x006816DC, 0x006884FC..0x006886F4.
+* outstanding: RECOVERABLE_GAP: read the listed bodies completely. Needed before all map content moves into the quad tree (the stack's MemoryMap._regions writers are stand-ins for these). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov42-44-check.md): IMPLEMENTATION_GAP for UpdateRobotPose, object add/remove (with the double Add), ClearRobotToMarkers. Unreachable (no reference in the binary): FlagInterestingEdgesAsUseless 0x0067E778, ReviewInterestingEdges 0x0067F58C; not built. New: M11-088 (+0x5C/+0x50 per class), M8-026 (ProcessClearQuad). FindIf result order follows heap addresses: not built until the operator decides whether the M11-047 departure extends to it and M13-003's consumer 0x004FDF1C..0x004FDF8C is read. M1-034 points: 0x0067E38C, 0x0067E3E4, 0x0067E444, 0x0067EF14, 0x0067EFF6, 0x0067F6D0, 0x0067EC3C, 0x0068878C.
+
+**M11-075 — Memory-map broadcast to the game: MapComponent::Update, BroadcastMap, QuadTree::Broadcast (MemoryMapQuadInfo), BroadcastMemoryMapDraw** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: Whether and when the engine sends the memory map to the game side.
+* rests on: Opus check of R-QUADTREE (2026-10-13), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/20261013-quadtree-rest-check.md: MapComponent::Update 0x0067DC4C, BroadcastMap 0x0067DDB8 (..0x0067DE3B), QuadTree::Broadcast 0x006857FC..0x00685C07, BroadcastMemoryMapDraw from 0x00685C08.; re-analysis/research/overnight/20261015-ov42-44-check.md: tick join 0x0051422A..0x0051424C; ctor 0x0067D9FE..0x0067DB48; setters 0x006807EA..0x006807F8 (144), 0x0068085E..0x006808A0 (145); aging 0x0067DC68..0x0067DD20 and callback 0x006808F4..0x00680962; BroadcastMap 0x0067DDBC..0x0067DE32; stream 0x00685810..0x00685904, leaves 0x00687B08..0x00687B7E; sink 0x00511DE8..0x00511DFC -> 0x00662508 -> 0x00662590; Viz draw 0x00685C18..0x00685C6C dead (DrawMap bx lr 0x0067EA5A).
+* outstanding: RECOVERABLE_GAP: read the bodies; if it is an engine-to-game message, the engine side stays exact and the stack delivers it through the C# API (app-boundary rule). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov42-44-check.md): IMPLEMENTATION_GAP for the per-tick aging, the setters' engine handlers and BroadcastMap's early return. The memory-map stream is unreachable in the shipped app (no Unity sender of G2E 145; interval stays -1.0f) and is not built; the debug Viz draw is dead code. Operator question: whether the stack API exposes the frequency setter. M1-034 points (unreachable path): 0x0067DE2A, 0x00687B2A.
 
 **M11-076 — PoseBase::GetParent on a root pose faults (0x008452BA, M1-034 standing rule); FindRoot root-safe; PoseTreeNode::FindRoot 1000-step cycle guard; the 55-call census and the flatten helper 0x004DF628** (live path)
 

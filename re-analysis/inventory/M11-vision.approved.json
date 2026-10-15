@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "7df9a1df1d516a54c0303ddf5ef18f8932190144d206b2be282f725056245135",
+  "inventory_sha256": "0bbe3d2653c4f7af633830be5feb8ca60784d37e33d981977e89efb4e90e507a",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -876,21 +876,23 @@
       "hardware_required": false
     },
     "M11-074": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Memory-map producers and readers not yet read: MapComponent::UpdateRobotPose (explored area), UpdateObjectPose, RemoveObservableObject, FlagInterestingEdgesAsUseless, ReviewInterestingEdges, ClearRobotToMarkers, FindContentIf/FindIf",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-quadtree-rest-check.md: UpdateRobotPose 0x0067E224..0x0067E50B; UpdateObjectPose 0x0067EA90..0x0067ECFB; RemoveObservableObject 0x0067F2C4..0x0067F58B; FlagInterestingEdgesAsUseless 0x0067E778..0x0067E85B; ReviewInterestingEdges/ClearRobotToMarkers 0x0067F58C..0x0067F7AB; FindContentIf 0x00681674..0x006816E7 and QuadTreeNode::FindIf 0x006884FC.."
+        "re-analysis/research/20261013-quadtree-rest-check.md: UpdateRobotPose 0x0067E224..0x0067E50B; UpdateObjectPose 0x0067EA90..0x0067ECFB; RemoveObservableObject 0x0067F2C4..0x0067F58B; FlagInterestingEdgesAsUseless 0x0067E778..0x0067E85B; ReviewInterestingEdges/ClearRobotToMarkers 0x0067F58C..0x0067F7AB; FindContentIf 0x00681674..0x006816E7 and QuadTreeNode::FindIf 0x006884FC..",
+        "re-analysis/research/overnight/20261015-ov42-44-check.md: R1-R6 0x0067E23A..0x0067E486 (cliff byte writer 0x005356C6..0x005356D4); O1-O8 0x0067EA9A..0x0067F0BC; caller order 0x00506F98..0x00506FB8, 0x00506296..0x005062D6 (double Add); D1-D3 0x0067F4C4..0x0067F544, 0x0067F2DE..0x0067F368, 0x006810E0..0x00681172; C1-C5 0x0067F5B8..0x0067F714, caller 0x00506A86..0x00506A98; Q1-Q6 0x00681674..0x006816DC, 0x006884FC..0x006886F4."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-075": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Memory-map broadcast to the game: MapComponent::Update, BroadcastMap, QuadTree::Broadcast (MemoryMapQuadInfo), BroadcastMemoryMapDraw",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261013-quadtree-rest-check.md: MapComponent::Update 0x0067DC4C, BroadcastMap 0x0067DDB8 (..0x0067DE3B), QuadTree::Broadcast 0x006857FC..0x00685C07, BroadcastMemoryMapDraw from 0x00685C08."
+        "re-analysis/research/20261013-quadtree-rest-check.md: MapComponent::Update 0x0067DC4C, BroadcastMap 0x0067DDB8 (..0x0067DE3B), QuadTree::Broadcast 0x006857FC..0x00685C07, BroadcastMemoryMapDraw from 0x00685C08.",
+        "re-analysis/research/overnight/20261015-ov42-44-check.md: tick join 0x0051422A..0x0051424C; ctor 0x0067D9FE..0x0067DB48; setters 0x006807EA..0x006807F8 (144), 0x0068085E..0x006808A0 (145); aging 0x0067DC68..0x0067DD20 and callback 0x006808F4..0x00680962; BroadcastMap 0x0067DDBC..0x0067DE32; stream 0x00685810..0x00685904, leaves 0x00687B08..0x00687B7E; sink 0x00511DE8..0x00511DFC -> 0x00662508 -> 0x00662590; Viz draw 0x00685C18..0x00685C6C dead (DrawMap bx lr 0x0067EA5A)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -1011,6 +1013,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov36-37-check.md: PLT 0x004BA698 / 0x004BA6A4, gates at 0x006560E6..0x006560FE (rejection: no log, no send; V+0x329=0 and SetNextMode(7,false) still follow at 0x00657EFE..0x00657F0E)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-088": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ObservableObject virtual +0x5C / +0x50 overrides per concrete class (map Add/Remove and quad)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov42-44-check.md: base slot 0x004E02AE returns 0; ActiveObject-family slot 0x004E3882 returns 1; CustomObject 0x004F04FA returns byte +0x9C; callers 0x0067EB38..0x0067EC2E (+0x5C), 0x0067ED06..0x0067F0BC (+0x50)."
       ],
       "live_path": true,
       "hardware_required": false

@@ -1630,3 +1630,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Exposure/gain validity bounds: RECOVERABLE_GAP | M11-087 (new) |
+
+
+## Check of OV42-OV44 (manager, 2026-10-15; research/overnight/20261015-ov42-44-check.md)
+
+| Change | Records |
+| --- | --- |
+| Memory-map producers and aging: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (stream unreachable) | M11-074, M11-075 |
+| Per-class +0x5C/+0x50 overrides: RECOVERABLE_GAP | M11-088 (new) |
+| Note | M11-046 |

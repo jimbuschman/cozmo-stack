@@ -78,5 +78,7 @@ The first three are the requests already written:
 | OV65 | requests/overnight/20261015-ov65-m6-032.md (M6-032: Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destr) | research/overnight/20261015-ov65-m6-032.md |
 | OV66 | requests/overnight/20261015-ov66-m6-033.md (M6-033: Audio stream hook and device teardown at shutdown) | research/overnight/20261015-ov66-m6-033.md |
 | OV67 | requests/overnight/20261015-ov67-activatespark.md (M15-006: ActivateSpark handler, operator decision to expose spark requests) | research/overnight/20261015-ov67-activatespark.md |
+| OV68 | requests/overnight/20261015-ov68-m11-088.md (M11-088: ObservableObject virtual +0x5C / +0x50 overrides per concrete class (m) | research/overnight/20261015-ov68-m11-088.md |
+| OV69 | requests/overnight/20261015-ov69-m8-026.md (M8-026: AIWhiteboard::ProcessClearQuad: PossibleObjects erase predicate and Up) | research/overnight/20261015-ov69-m8-026.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

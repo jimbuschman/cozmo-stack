@@ -750,3 +750,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Note (mood callbacks during teardown) | M8-024 |
+
+
+## Check of OV42-OV44 (manager, 2026-10-15; research/overnight/20261015-ov42-44-check.md)
+
+| Change | Records |
+| --- | --- |
+| ProcessClearQuad: RECOVERABLE_GAP | M8-026 (new) |
+| Note (no ActionWatcher callbacks in Clear) | M8-024 |
