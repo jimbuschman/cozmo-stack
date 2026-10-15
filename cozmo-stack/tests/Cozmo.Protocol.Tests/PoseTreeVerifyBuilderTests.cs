@@ -1,4 +1,5 @@
 using Cozmo.Robot;
+using Cozmo.Robot.Behavior;
 using Cozmo.Robot.Vision;
 using Cozmo.Transport;
 using Xunit;
@@ -112,6 +113,59 @@ public sealed class PoseTreeVerifyBuilderTests
         finally{for(int i=poses.Count-1;i>=0;--i)poses[i].Dispose();}
     }
     [Fact]
+    public void NamedPathUsesChildParentRootOrderAndUnnamedWithoutOwnerChecks()
+    {
+        using var root=new Pose3d("root");var parent=new Pose3d("",root);using var child=new Pose3d("child",parent);
+        parent.Dispose();using var capture=new Capture();
+        Assert.Equal("child -> (UNNAMED) -> root",child.GetNamedPathToRoot(false));Assert.Empty(capture.Logs);
+        Assert.Equal("root",root.GetNamedPathToRoot());
+        using var embedded=new Pose3d("a\0b",root);Assert.Equal("a\0b -> root",embedded.GetNamedPathToRoot());
+        using var nullPose=new Pose3d();nullPose.Dispose();Assert.Equal("NullNode",nullPose.GetNamedPathToRoot());
+        Assert.Equal("NullNode",nullPose.GetNamedPathToRoot(true)); // Wrapper returns before the optional formatter.
+    }
+    [Theory]
+    [InlineData(1000)] [InlineData(1001)]
+    public void NamedPathChecksTheCapBeforeAppendingAndReturnsItsPartialString(int nodes)
+    {
+        var poses=new List<Pose3d>{new("n")};for(int i=1;i<nodes;++i)poses.Add(new Pose3d("n",poses[^1]));
+        using var capture=new Capture();bool prior=EngineErrorState.ErrorFlagSet;
+        try
+        {
+            EngineErrorState.ErrorFlagSet=false;string result=poses[^1].GetNamedPathToRoot();
+            Assert.Equal(string.Join(" -> ",Enumerable.Repeat("n",1000))+(nodes==1001?" -> ":""),result);
+            if(nodes==1000){Assert.Empty(capture.Logs);Assert.False(EngineErrorState.ErrorFlagSet);}
+            else
+            {
+                var entry=Assert.Single(capture.Logs);Assert.Equal(EngineLogLevel.Error,entry.Level);Assert.Null(entry.Channel);
+                Assert.Equal("LoopBoundOverflow",entry.Key);
+                Assert.Equal("../../../../coretech/common/include/anki/common/basestation/math/poseTreeNode.h:348",entry.Text);
+                Assert.True(EngineErrorState.ErrorFlagSet);Assert.Equal(0,capture.Flushes); // sErrorF, not VERIFY.
+            }
+        }
+        finally{for(int i=poses.Count-1;i>=0;--i)poses[i].Dispose();EngineErrorState.ErrorFlagSet=prior;}
+    }
+    [Fact]
+    public void OptionalPositionFormatterIsVisibleMissingAndNeverGuessedIntoSourceLogs()
+    {
+        using var pose=new Pose3d("p");using var capture=new Capture();var missing=new List<string>();
+        void OnMissing(string text)=>missing.Add(text);
+        SteppedBehavior.ResetMissingForTests();SteppedBehavior.MissingReported+=OnMissing;
+        try{Assert.Throws<NotSupportedException>(()=>pose.GetNamedPathToRoot(true));}
+        finally{SteppedBehavior.MissingReported-=OnMissing;}
+        Assert.Single(missing,m=>m.Contains("M11-086")&&m.Contains("Point3<float>::ToString"));Assert.Empty(capture.Logs);
+    }
+    [Fact]
+    public void NullOtherNodeSkipsTheFirstParentCheckAndLeavesTwoParentVerifies()
+    {
+        using var root=new Pose3d("root");var parent=new Pose3d("parent",root);using var child=new Pose3d("child",parent);
+        using var source=new Pose3d();source.Dispose();using var other=new Pose3d();other.Assign(source);Assert.Null(other.Node);
+        parent.Dispose();using var capture=new Capture();var delta=Vec3.Zero;var angle=new Radians();
+        Assert.False(child.IsSameAsWithAmbiguity(other,Vec3.Zero,new Radians(Radians.Pi),ref delta,ref angle,Array.Empty<Mat3>(),false));
+        Assert.Equal(2,capture.Unowned);
+        Assert.Single(capture.Logs,l=>l.Key=="PoseBase.GetWithRespectTo.NullInputPose");
+        Assert.DoesNotContain(capture.Logs,l=>l.Level==EngineLogLevel.Warning);
+    }
+    [Fact]
     public void SameAsParentWrapperPerformsAllThreeChecksBeforeItAddsAnOwner()
     {
         using var root=new Pose3d("root");var parent=new Pose3d("parent",root);using var child=new Pose3d("child",parent);
@@ -125,11 +179,13 @@ public sealed class PoseTreeVerifyBuilderTests
     public void VisionOnlyFlatteningUsesHasParentGetParentAndIsRootChecks()
     {
         var root=new Pose3d("root");var parent=new Pose3d("parent",root);using var child=new Pose3d("child",parent);
-        root.Dispose();parent.Dispose();using var capture=new Capture();var history=new RobotStateHistory();
+        root.Dispose();parent.Dispose();using var capture=new Capture();var history=new RobotStateHistory{SourceLog=(l,c,k,t)=>capture.Logs.Add((l,c,k,t))};
         Assert.Equal(1u,history.AddVisionOnlyState(1,child,1,0,0));
         Assert.Equal(3,capture.Unowned);Assert.Equal(3,capture.Flushes);
         Assert.Contains("Pose 0(child)",capture.Logs[0].Text);Assert.Contains("Pose 0(child)",capture.Logs[1].Text);Assert.Contains("Pose 0(parent)",capture.Logs[2].Text);
         Assert.Equal(0u,child.Node!.Parent!.Owners);Assert.Empty(history.VisionOnly);
+        var error=Assert.Single(capture.Logs,l=>l.Key=="RobotStateHistory.AddVisionOnlyState.NonFlattenedPose");
+        Assert.Equal("Pose object inside pose stamp should be flattened (child -> parent -> root)",error.Text);
     }
     [Fact]
     public void LiveOriginListDestructionSuppressesIdVerifyAndRestoresTheFlag()
@@ -140,7 +196,7 @@ public sealed class PoseTreeVerifyBuilderTests
         var logs=new List<EngineLogEntry>();engine.LogEntry+=entry=>
         {
             if(entry.Name=="poseoriginlist.destructor")
-            {Assert.Equal(1u,node.Owners);Assert.False(Pose3d.UnownedParentsAllowed);Assert.False(System.Threading.Monitor.IsEntered(native.PoseTreeGate));}
+            {Assert.Equal(0u,node.Owners);Assert.False(Pose3d.UnownedParentsAllowed);Assert.False(System.Threading.Monitor.IsEntered(native.PoseTreeGate));} // Callback is deferred until the single gated teardown completes.
             logs.Add(entry);
         };
         engine.Robots.RemoveRobots();

@@ -212,6 +212,24 @@ internal sealed class PoseTreeNode
         {n.AssertParent();if(n.Parent is null)break;n.AssertParent();n=n.Parent;if(++count==1000){PoseDiagnostics.Loop("poseTreeNode.h",0x145);break;}}
         return n;
     }
+    // fidelity: M11-086 — checked name-only walk, 0x00845548..0x0084564C; no parent-owner checks.
+    internal string GetNamedPathToRoot(bool includePosition)
+    {
+        var text=new System.Text.StringBuilder();PoseTreeNode? node=this;int count=0;
+        while(true)
+        {
+            if(count>=1000){PoseDiagnostics.Loop("poseTreeNode.h",348);break;}
+            text.Append(node.Name.Length==0?"(UNNAMED)":node.Name);
+            if(includePosition)
+            {
+                const string missing="M11-086 GetNamedPathToRoot(true): Point3<float>::ToString 0x00846138 (call 0x008455B4) has no checked formatter-body row; optional position unit is not built";
+                PoseDiagnostics.Missing(missing);throw new NotSupportedException("MISSING: "+missing);
+            }
+            node=node.Parent;if(node is null)break;
+            text.Append(" -> ");++count;
+        }
+        return text.ToString();
+    }
 }
 
 /// <summary>Native Pose3d wrapper: a shared node containing a double quaternion and binary32 translation.</summary>
@@ -231,6 +249,8 @@ public sealed class Pose3d : IDisposable
     public uint Owners=>RequireNode().Owners;
     public bool IsRoot{get{Node?.AssertParent();return Node is null||Node.Parent is null;}}
     public bool HasParent{get{Node?.AssertParent();return Node?.Parent is not null;}}
+    // fidelity: M11-086 — wrapper 0x00845524..0x00845542.
+    public string GetNamedPathToRoot(bool includePosition=false)=>Node?.GetNamedPathToRoot(includePosition)??"NullNode";
     public static IDisposable UseSourceLog(SourceLogSink source,Action? forceFlush=null)=>PoseDiagnostics.Use(source,forceFlush);
     public Pose3d(string name="",Pose3d? parent=null):this(new Transform3d(Rotation3d.Identity,Vec3.Zero),name,parent){}
     public Pose3d(Transform3d transform,string name="",Pose3d? parent=null)
@@ -376,11 +396,11 @@ public sealed class Pose3d : IDisposable
         if(ReferenceEquals(this,other))return true;
         // R38 / 0x00846F7E: a null node takes the cbz to GetWithRespectTo(P, this), whose NullInputPose VERIFY returns false;
         // then PosesHaveDifferentOrigins and false. No throw.
-        var n=Node;using var relative=new Pose3d("");n?.AssertParent();
-        if(n?.Parent is not null&&ReferenceEquals(n.Parent,other.Node))relative.SetParent(other);
+        var n=Node;using var relative=new Pose3d("");if(other.Node is not null)n?.AssertParent();
+        if(other.Node is not null&&n?.Parent is not null&&ReferenceEquals(n.Parent,other.Node))relative.SetParent(other);
         else if(n?.Parent is not null)
         {n.AssertParent();Pose3d parent=null!;if(!TryGetParent(ref parent))return false;using(parent){if(!GetWithRespectTo(other,parent,relative))return false;}}
-        else if(n is not null&&_legacyFrameInput&&other._legacyFrameInput&&!other.HasParent)
+        else if(n is not null&&other.Node is not null&&_legacyFrameInput&&other._legacyFrameInput&&!other.HasParent)
         {
             PoseDiagnostics.Missing("M11-065/M11-066 legacy flattened IsSameAs inputs lack checked parent/root bindings; arithmetic only is built");
             relative.Node!.Transform=other.Transform;

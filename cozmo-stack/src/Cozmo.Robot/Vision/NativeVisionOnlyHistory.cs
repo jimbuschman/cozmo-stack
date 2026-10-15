@@ -25,7 +25,8 @@ public sealed partial class RobotStateHistory
                 bool flattened;
                 using(parent)flattened=parent.IsRoot; // 0x005310B4/C2/C8/D0, public checks then wrapper destruction.
                 if(!flattened)
-                {Error("RobotStateHistory.AddVisionOnlyState.NonFlattenedPose",FormattableString.Invariant($"Pose object inside pose stamp should be flattened ({PoseDiagnostics.CString(pose.Name)})"));return 1;}
+                // fidelity: M11-086 — 0x005311CA, name-only path is the %s argument at 0x005311E6.
+                {Error("RobotStateHistory.AddVisionOnlyState.NonFlattenedPose",FormattableString.Invariant($"Pose object inside pose stamp should be flattened ({PoseDiagnostics.CString(pose.GetNamedPathToRoot(false))})"));return 1;}
             }
             uint newest=_entries.Count==0?0:_entries.Max(e=>e.Timestamp);
             if(_entries.Count!=0&&newest>WindowMs&&timestamp<newest-WindowMs)

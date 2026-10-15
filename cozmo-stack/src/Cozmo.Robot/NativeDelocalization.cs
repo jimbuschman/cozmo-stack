@@ -11,12 +11,10 @@ public sealed partial class EngineRobot
     internal void DestroyPoseOriginOwners()
     {
         using var scope=Pose3d.UseSourceLog((l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t),Engine.Das.ForceFlushNow);
-        // fidelity: M11-055 — event first, before the flag and origin resets (0x0084795E).
-        // Snapshot under the pose gate, then emit with callbacks outside it. The origin list is engine-thread owned.
-        int count;lock(PoseTreeGate)count=_nativeOrigins.Count;
-        Engine.EmitSourceLog(EngineLogLevel.Event,null,"poseoriginlist.destructor",count.ToString(System.Globalization.CultureInfo.InvariantCulture));
         LogCallbackDeferral.RunGated(PoseTreeGate,()=>
         {
+            // fidelity: M11-055 — one gated body: event first, then flag/reset/restore/tree clear.
+            Engine.EmitSourceLog(EngineLogLevel.Event,null,"poseoriginlist.destructor",_nativeOrigins.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
             bool prior=Pose3d.UnownedParentsAllowed;Pose3d.UnownedParentsAllowed=true;
             try{foreach(var entry in _nativeOrigins.OrderBy(e=>e.Key))entry.Value.Dispose();}
             finally{Pose3d.UnownedParentsAllowed=prior;}
