@@ -781,7 +781,7 @@ public class EngineAppLayerTests
 
         public Rig(CozmoEngineOptions? options = null)
         {
-            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, options ?? new CozmoEngineOptions { BlockPoolPath = "" });
+            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, _backupResources.Options(options));
             Engine.PublicationCounter = new RobotStatePublicationCounter();
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
             Engine.ConnectionResponse += Responses.Add;
@@ -862,7 +862,8 @@ public class EngineAppLayerTests
         }
 
         public bool Logged(string part) { lock (Log) return Log.Any(l => l.Contains(part)); }
-        public void Dispose() => Robot.Dispose();
+        private readonly BackupTestResources _backupResources = new();
+        public void Dispose() { Robot.Dispose(); _backupResources.Dispose(); }
     }
 
     private static string TempResources(uint version, uint time)
@@ -870,6 +871,7 @@ public class EngineAppLayerTests
         var dir = Path.Combine(Path.GetTempPath(), "cozmo-hdr-" + Guid.NewGuid().ToString("N"));
         var fw = Path.Combine(dir, "config", "engine", "firmware");
         Directory.CreateDirectory(fw);
+        File.Copy(BackupTestResources.ShippedConfig(),Path.Combine(dir,"config/engine/backup_config.json"));
         var bytes = new byte[0x900];
         Encoding.UTF8.GetBytes($"{{\"version\": {version}, \"time\": {time}, \"build\": \"DEVELOPMENT\"}}").CopyTo(bytes, 0);
         File.WriteAllBytes(Path.Combine(fw, "cozmo.safe"), bytes);
@@ -2572,6 +2574,7 @@ public class EngineAppLayerTests
         Assert.True(vision.Enabled);
 
         using var fresh = new Rig();
+        _ = fresh.Robot.Lights.Cubes.Animations.ForTrigger("Sleep"); // Both resource-backed deferred loaders have run once.
         using var freshVision = new Cozmo.Robot.Vision.VisionSystem(fresh.Robot, constructedCal) { Enabled = false };
         Assert.Equal(held, new object[] { robot.State, robot.Camera, robot.Display, robot.Audio, robot.Motion, robot.Lights, robot.Sensors,
                                           robot.Cubes, robot.CubeAccel, robot.Animations, robot.Face, vision.History, vision.World });

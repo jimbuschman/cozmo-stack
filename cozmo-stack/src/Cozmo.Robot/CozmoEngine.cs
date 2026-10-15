@@ -57,6 +57,8 @@ public sealed class RobotConnectionException : IOException
 /// <summary>Where the engine finds its inputs, and the app defaults policy M1-042 sends.</summary>
 public sealed class CozmoEngineOptions
 {
+    // fidelity: M3-061 — host replacement for app DataPlatformFilesPath/persistentDataPath; scope 0 appends /output.
+    public string FilesPath { get; init; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"cozmo-stack");
     // fidelity: M1-029
     /// <summary>
     /// DataPlatformResourcesPath: the extracted <c>cozmo_resources</c> directory (G5.34, G5.35). The firmware
@@ -745,6 +747,7 @@ public sealed partial class EngineRobot
     internal EngineRobot(CozmoEngine engine, bool queueConnectionReads = false,uint robotId=CozmoEngine.RobotId)
     {
         Engine = engine;
+        engine.NvStorage?.EnsureBackup(); // M15-038: the new Robot's NV owner precedes Messaging's first C9 subscription.
         NativeRobotId=robotId;
         Idle = new IdleTimeoutComponent(this);
         _actionList = new ActionList(engine.Log, (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text));
@@ -762,7 +765,7 @@ public sealed partial class EngineRobot
     /// Robot::Robot queues the connection-time NV reads (nv-pass3-connection-queue.md Q2 2c..2g): #1
     /// ProgressionUnlock 0x182000 (0x64BEFA), #2 Inventory 0x195000 (0x63CA52), #3/#4 FaceAlbum/Enrollment
     /// 0x184000/0x183000 (0x6512F0/0x651330, VisionComponent::Init -> VisionSystem::Init ->
-    /// LoadFaceAlbumFromRobot), then #5..#12 the eight RobotDataBackupManager backup reads in ascending order
+    /// LoadFaceAlbumFromRobot), then the configured RobotDataBackupManager reads in ascending order (#5..#12 with the shipped config)
     /// (0x51AD0A; backup_config.json "tagsToBackup": 0x180000, 0x181000, 0x182000, 0x183000, 0x184000,
     /// 0x194000, 0x195000, 0x196000). The reads sit in the FIFO before the handshake and go out one per
     /// Robot::Update after Gate A. Only the constructor path (<see cref="RobotManager.AddRobot"/> with a RIC)
@@ -770,9 +773,8 @@ public sealed partial class EngineRobot
     /// M3-034: #3's empty callback fills the album bytes (the engine's VC+0x2F4); #4's terminal success raises
     /// <see cref="CozmoEngine.ConnectionFaceAlbumLoaded"/> with the album and the enrollment, and the result is
     /// kept for a VisionSystem built after ConnectAsync returns (the read completes after Gate A, which is after
-    /// the connection response). ProgressionUnlock, Inventory and the backup reads have no component in this
-    /// stack: they queue and complete with a sink that reports MISSING and names the owning record (M15-034, M15-035,
-    /// M15-033).
+    /// the connection response). ProgressionUnlock and Inventory still report their missing sinks (M15-034/M15-035).
+    /// The backup sink is the counted RobotDataBackupManager path (M15-033).
     /// M11-059: the FaceAlbum/Enrollment pair is queued in the engine only past the branch at 0x00650E3C (VisionSystem::Init's
     /// outcome, then the album load-or-erase branch 0x00650FB4..0x0065108A), so it is gated on
     /// <see cref="CozmoEngine.FaceAlbumReadsGate"/>; with no hook set the gate is reported MISSING and the pair is queued as before.
@@ -809,7 +811,7 @@ public sealed partial class EngineRobot
             Engine.RaiseConnectionFaceAlbumLoaded(_faceAlbum.ToArray(), r.Data);
         });
     backupReads:
-        foreach (uint tag in BackupReadTags) nv.Read(tag, NoSink("M15-033", $"RobotDataBackupManager's backup read callback for tag 0x{tag:X}"));       // #5..#12 RDBM backup
+        Engine.Backup?.ReadAll(); // M15-033: configured ascending set and counted native backup sink.
     }
 
     /// <summary>The sink of a connection read whose owning layer is unbuilt: it reports MISSING naming the record, once per process.</summary>
@@ -828,9 +830,7 @@ public sealed partial class EngineRobot
     internal void ClearFaceAlbum() => _faceAlbum.Clear();
 
     // fidelity: M3-033
-    /// <summary>The eight RobotDataBackupManager tags, ascending (backup_config.json "tagsToBackup", 0x51AD0A).</summary>
-    internal static readonly uint[] BackupReadTags =
-        { 0x180000, 0x181000, 0x182000, 0x183000, 0x184000, 0x194000, 0x195000, 0x196000 };
+    /// <summary>Backup tags are read from the manager's resource-scope backup_config.json.</summary>
 
     /// <summary>Robot+0x29: set by SyncTimeAck (CD19), cleared by Robot::SyncTime (CB23).</summary>
     public bool TimeSynced { get => _timeSynced; internal set => _timeSynced = value; }
@@ -2317,6 +2317,7 @@ public sealed partial class CozmoEngine : IDisposable
         DestroyDataLoader?.Invoke(); // context +0x1C, after RobotManager: abort then join.
         DestructionObserved?.Invoke("loader");
         AnimationMessages.Dispose(); // G2E map, then E2G map (0x0066016E..0x00660184).
+        _backupUnlockHandle?.Dispose(); // expired context signal; no callback.
         DestructionObserved?.Invoke("hub");
     }
 }

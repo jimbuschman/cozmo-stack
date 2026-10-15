@@ -107,11 +107,11 @@ public sealed class M3M4X18BuilderTests
     public void TapFilterWarningsPrecedeImplAndBackupMissingPrecedesHeadId()
     {
         using var rig=new M4ControlTests.Rig();Offline(rig);var order=new List<string>();
-        rig.Engine.LogEntry+=e=>order.Add(e.Name);rig.Engine.StackLogLine+=e=>{if(e.Contains("M15-039 | Backup::RobotConnected"))order.Add("backup-missing");};
+        rig.Engine.LogEntry+=e=>order.Add(e.Name);
         rig.Engine.Broadcast(new ObjectMoved{ObjectID=unchecked((uint)-1)});
         Assert.Equal("BlockTapFilterComponent.HandleActiveObjectMoved.ObjectIDNull",order[0]);Assert.Equal("Robot.ActiveObjectMoved.UnknownActiveID",order[1]);
         order.Clear();rig.Engine.Broadcast(new ObjectStoppedMoving{ObjectID=99});Assert.Equal("BlockTapFilterComponent.HandleActiveObjectStopped.ObjectIDNull",order[0]);
-        order.Clear();rig.Engine.Broadcast(new RobotAvailable());Assert.Equal(new[]{"backup-missing","robot.handle_robot_set_head_id"},order);
+        order.Clear();rig.Engine.Broadcast(new RobotAvailable());Assert.Equal(new[]{"DataPlatform.writeAsJson","robot.handle_robot_set_head_id"},order);
     }
     [Fact]
     public void DeviceIdUtf8BomIsKeptAndSharedOfflineFixtureUsesATemporaryPath()

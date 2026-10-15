@@ -44,7 +44,9 @@ public class M5X13BuilderTests : IDisposable
             Assert.True(load.Wait(TimeSpan.FromSeconds(15)));
             Assert.Empty(load.Result.GroupNames); // +0x278 gate prevents group definition.
             // E07/E08/E09/E10/E11; subscription vectors release from the back.
-            Assert.Equal(new[] { "unlink G2E F7", "unlink G2E E0", "unlink G2E DF", "unlink G2E DE", "unlink G2E DD", "unlink G2E DC", "unlink G2E DB", "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
+            // NV +0x260 is released at 0x005112E4; its backup destructor (0x00643F48 -> 0x0051A5F0)
+            // retires the constructor's 6B/6D/6C handle vector from the back before the streamer owners.
+            Assert.Equal(new[] { "unlink G2E F7", "unlink G2E E0", "unlink G2E DF", "unlink G2E DE", "unlink G2E DD", "unlink G2E DC", "unlink G2E DB", "unlink G2E 6C", "unlink G2E 6D", "unlink G2E 6B", "unlink G2E B6", "unlink G2E B5", "unlink E2G 5A",
                 "unlink G2E C4", "unlink G2E AD", "unlink G2E AF", "unlink G2E AE",
                 "unlink G2E B4", "robots", "abort", "join", "loader", "hub" }, order.Where(line => line is not ("unlink G2E 95" or "unlink E2G 35")));
             // M7-028: managed subscription storage is retired; the native IBehavior destruction order remains unread.

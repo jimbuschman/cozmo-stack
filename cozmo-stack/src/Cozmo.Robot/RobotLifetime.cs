@@ -109,6 +109,7 @@ public sealed partial class EngineRobot
         Lifetime = new(this);
         var actions = ActionList;
         Lifetime.Bind(0x250, _ => actions.Dispose());
+        if(Engine.NvStorage is {} nv)Lifetime.Bind(0x260,_=>nv.ReleaseForRobot()); // M3-038/M15-033, 0x005112E4 -> NV D0 -> backup destructor.
         Lifetime.Bind(0x294, _ => DestroyPoseOriginOwners()); // M11-077: the ordered origin owners, under AllowUnownedParents.
         InitSubscriptions();
         // fidelity: M4-026, M4-027

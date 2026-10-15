@@ -625,7 +625,7 @@ public class M3DeviceTests
             if (e.Name == "NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback") order.Add("executing");
         };
         nv.NVStorageOpResultBroadcast += b => { order.Add("broadcast"); broadcasts.Add(b); };
-        nv.Erase(0x182000, r => order.Add("callback"), broadcast: true);
+        nv.Erase(0x182000, r => { order.Add("callback"); Assert.True(rig.Engine.Backup!.HasPendingData(0x182000)); }, broadcast: true);
         rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = result });
         rig.Tick();
@@ -634,10 +634,7 @@ public class M3DeviceTests
         var b0 = Assert.Single(broadcasts);
         Assert.Equal((0x182000u, NvStorageComponent.OpErase, result, 0), (b0.Tag, b0.Op, b0.Result, b0.Index));
         Assert.Empty(b0.Data);
-        var log = nv.Log;
-        int cb = log.ToList().FindIndex(l => l.Contains("ExecutingWriteCallback"));
-        int backup = log.ToList().FindIndex(l => l.StartsWith("MISSING: RobotDataBackupManager::WriteDataForTag(0x182000, " + result + ", False)"));
-        Assert.True(cb >= 0 && backup > cb, "the backup call follows the callback");
+        Assert.False(rig.Engine.Backup!.HasPendingData(0x182000)); // The mirror is cleared after the callback, at 0x00643418.
     }
 
     /// <summary>
@@ -653,13 +650,14 @@ public class M3DeviceTests
         var nv = rig.Robot.Engine.NvStorage!;
         var broadcasts = new List<NVStorageOpResult>();
         nv.NVStorageOpResultBroadcast += broadcasts.Add;
+        rig.Engine.Backup!.Committed.Put(0x182000,new byte[]{7});
         nv.Request(0x182000, 0, NvStorageComponent.OpWipeAll, Array.Empty<byte>(), _ => { }, broadcast: true);
         rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpWipeAll, Result = 0 });
         rig.Tick();
         Assert.Contains("debug: NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback: NVEntry_NEXT_SLOT", nv.Log);
         Assert.Equal(0x198000u, Assert.Single(broadcasts).Tag);
-        Assert.Contains(nv.Log, l => l.StartsWith("MISSING: RobotDataBackupManager::WipeAll"));
+        Assert.Empty(rig.Engine.Backup.Committed.Nodes);
     }
 
     /// <summary>
@@ -2398,7 +2396,8 @@ public class M3DeviceTests
         public static readonly IPEndPoint RobotEp = new(RobotIp, 5551);
         public const string ShippedFw = "{\"version\": 2381, \"time\": 1546972025, \"build\": \"DEVELOPMENT\"}";
 
-        public Rig() => Robot = CozmoRobot.CreateForTest(Port, () => NowNs, new CozmoEngineOptions { BlockPoolPath = "" });
+        private readonly BackupTestResources _backupResources = new();
+        public Rig() => Robot = CozmoRobot.CreateForTest(Port, () => NowNs, _backupResources.Options());
         public void Tick() { NowNs += 60_000_000; Engine.Tick(); }
         public void Data(RobotMessage m) => Port.Raise(ReceiverMarker.Data, RobotEp, m.ToBytes());
         /// <summary>The transport's OnDisconnected marker (CB32/CB33), handled at the next tick as RemoveRobot.</summary>
@@ -2422,7 +2421,7 @@ public class M3DeviceTests
             Tick();
         }
 
-        public void Dispose() => Robot.Dispose();
+        public void Dispose() { Robot.Dispose(); _backupResources.Dispose(); }
     }
 
     /// <summary>
@@ -2573,7 +2572,8 @@ public class M3DeviceTests
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M11-059 | the FaceAlbum/Enrollment read pair"));
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M15-034 | "));
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M15-035 | "));
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-033 | "));
+                Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M15-033 | "));
+                Assert.Equal(0u,rig.Engine.Backup!.PendingCount);
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M15-036 | "));
             }
         }
@@ -3477,8 +3477,8 @@ public class M3DeviceTests
             Assert.True(needs.HasRobotCopy);
             Assert.Contains(missing, line => line.Contains("M15-034 | ProgressionUnlockComponent's NV read callback 0x0064CE34: this stack has no component for it, so the read completes and its result is dropped"));
             Assert.Contains(missing, line => line.Contains("M15-035 | InventoryComponent's NV read callback 0x0063D7C4: this stack has no component for it, so the read completes and its result is dropped"));
-            foreach (var tag in new[] { "180000", "181000", "182000", "183000", "184000", "194000", "195000", "196000" })
-                Assert.Contains(missing, line => line.Contains($"M15-033 | RobotDataBackupManager's backup read callback for tag 0x{tag}: this stack has no component for it, so the read completes and its result is dropped"));
+            Assert.DoesNotContain(missing,line=>line.Contains("M15-033 | RobotDataBackupManager's backup read callback"));
+            Assert.Equal(0u,rig.Engine.Backup!.PendingCount);
             Assert.Contains(missing, line => line.Contains("M15-036 | the Lab read's callback 0x006A6486 into CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34: this stack has no component for it, so the read completes and its result is dropped"));
         }
         finally { rig.Robot.Engine.SerialNumberAcquired -= needs.InitAfterSerialNumberAcquired; needs.DetachConnectionRead(); }

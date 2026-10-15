@@ -188,7 +188,7 @@ internal static class EventFan
 /// This is the device layer only: it turns the verified protocol into camera frames, face images,
 /// audio and robot state. Actions, animations, navigation and behaviours belong above it.
 /// </summary>
-public sealed class CozmoRobot : IDisposable
+public sealed partial class CozmoRobot : IDisposable
 {
     public ReliableTransport Transport { get; }
     public CozmoCamera Camera { get; } = new();
@@ -289,6 +289,7 @@ public sealed class CozmoRobot : IDisposable
         // One robot-level NV storage owner serves every read (NVStorageComponent): the VisionComponent's
         // connection-time calibration read is queued on it rather than subscribing on its own.
         Engine.NvStorage = new NvStorageComponent(this);
+        Engine.InitBackupContext(); // M15-043: context-owned static unlock handler, also usable without a Robot.
         // fidelity: M3-019, M3-022, M3-013
         Engine.VisionConnected = CameraSettings.OnRobotConnected;
         Engine.AnimationStreamerUpdate = Animations.EngineUpdate;

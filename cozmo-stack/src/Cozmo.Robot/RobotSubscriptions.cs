@@ -102,7 +102,7 @@ public sealed partial class EngineRobot
         InitCheckedDevSubscribers();
         Engine.PathComponentConstructed?.Invoke(this); // M12-032: the component owns its one first C6 subscription.
         // Backup is the first C9 subscriber, constructed with NVStorage before Impl.
-        AddMessage(RobotMessageId.RobotAvailable, _ => Engine.EmitStackLog("MISSING: M15-039 | Backup::RobotConnected 0x00519B78 -> 0x0051A010; B-M15-1"), "Backup");
+        AddMessage(RobotMessageId.RobotAvailable, m => Engine.Backup?.Files.RobotConnected(((RobotAvailable)m).SerialNumberHead), "Backup");
         AddMessage(new ObjectAccel().Id, m => Engine.CubeAccelRoute?.Invoke(m), "CubeAccel");
         AddMessage(RobotMessageId.ActiveObjectMoved, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");
         AddMessage(RobotMessageId.ActiveObjectStopped, m => Engine.TapFilterRoute?.Invoke(m), "BlockTapFilter");

@@ -724,8 +724,13 @@ public sealed class NvStorageComponent : IDisposable
     private static string TagNameOrMissing(uint tag) =>
         NvEntryTagName(tag) ?? "(null)";   // bionic printf's NULL %s (manager ruling 2026-10-10)
 
-    private void QueueDataToWriteMissing(uint tag, int bytes) =>
-        LogCall($"MISSING: RobotDataBackupManager::QueueDataToWrite(0x{tag:x}, {bytes} bytes) (M15-033 is the recipient, 0x0051AE04): the backup manager is not built");
+    // fidelity: M15-033, M15-038 — component created with each Robot, not recreated during removal.
+    internal void EnsureBackup() => _robot.Engine.Backup ??= new RobotDataBackupManager(_robot.Engine);
+    private void QueueDataToWrite(uint tag, byte[] data)
+    {
+        byte[] copy = data.ToArray();
+        _pendingLogCalls.Enqueue(() => _robot.Engine.Backup?.QueueDataToWrite(tag,copy)); // callouts remain outside the NV lock.
+    }
 
     private void DispatchReadLocked(PendingRequest req)
     {
@@ -766,7 +771,7 @@ public sealed class NvStorageComponent : IDisposable
         _saved.Length = req.EraseSize != 0 ? (int)req.EraseSize : MaxSizeForEntryTagLogged(req.Tag);
         LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.ProcessRequest.SendingErase", $"{TagNameOrMissing(req.Tag)} (Tag: 0x{req.Tag:x}) size: {(uint)_saved.Length}");
         SendSavedLocked(req);
-        QueueDataToWriteMissing(req.Tag, 0);
+        QueueDataToWrite(req.Tag, Array.Empty<byte>());
         SetStateLocked(1);
     }
 
@@ -786,7 +791,7 @@ public sealed class NvStorageComponent : IDisposable
         req.AckTag = req.Tag;
         req.Deadline = SyncedClock + ReadTimeoutTicks;
         req.AckAwaited = false;
-        QueueDataToWriteMissing(req.Tag, req.Data.Length);
+        QueueDataToWrite(req.Tag, req.Data);
         LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.ProcessRequest.SendingWrite", $"StartTag: 0x{req.Tag:x} ({TagNameOrMissing(req.Tag)}), timeoutTime: {(int)req.Deadline.Value}, currTime: {(int)SyncedClock}");
         SetStateLocked(1);
     }
@@ -1026,7 +1031,15 @@ public sealed class NvStorageComponent : IDisposable
         // fidelity: M3-027
         // N12 (0x00643F26..0x00643F44): the request deque is destroyed, then the saved Data (+0xE8) is freed, before the backup
         // manager's destructor (M15). A later robot's component is built afresh, so its saved Data starts null again (N1).
-        lock (_gate) { DestroyLocked(); ConstructedSetStateLocked(); }
+        ReleaseForRobot();
+        lock (_gate) ConstructedSetStateLocked();
+    }
+
+    // fidelity: M3-038, M15-033 — the checked NV D0 at Robot+0x260 also runs on shutdown without ResetDevices.
+    internal void ReleaseForRobot()
+    {
+        lock (_gate) DestroyLocked();
+        _robot.Engine.Backup?.Dispose(); _robot.Engine.Backup = null;
     }
 
     // The destructor's part only: ~NVStorageComponent (0x00643F22..0x00643F6A) calls no SetState; the constructor's
@@ -1308,10 +1321,8 @@ public sealed class NvStorageComponent : IDisposable
                 FlushLogCalls();
                 c.Callback.Invoke(c.Result);
             }
-            lock (_gate)
-                LogCall(c.Op == OpWipeAll
-                    ? "MISSING: RobotDataBackupManager::WipeAll (M15-033 is the recipient, 0x00643406): the backup manager is not built"
-                    : $"MISSING: RobotDataBackupManager::WriteDataForTag(0x{c.NameTag:x}, {c.Result.Result}, {c.Op == OpWrite}) (M15-033 is the recipient, 0x00643418): the backup manager is not built");
+            if(c.Op == OpWipeAll) _robot.Engine.Backup?.WipeAll();
+            else _robot.Engine.Backup?.WriteDataForTag(c.NameTag,c.Result.Result,c.Op == OpWrite);
         }
         else
         {
@@ -1387,7 +1398,7 @@ public sealed class NvStorageComponent : IDisposable
     {
         using var logEmission = new LogEmission(this);
         _robot.Message -= OnMessage;
-        lock (_gate) DestroyLocked();
+        ReleaseForRobot();
     }
 }
 

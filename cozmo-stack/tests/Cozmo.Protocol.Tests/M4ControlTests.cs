@@ -414,9 +414,9 @@ public class M4ControlTests
         private uint _ts = 100;
 
         private readonly VisionSystem? _fixtureWorld;
-        public Rig(string? resources = null, bool attachWorld = true)
+        public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null)
         {
-            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources });
+            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, engineOptions ?? new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources });
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
             if (attachWorld && resources is not null) _fixtureWorld = new VisionSystem(Robot, CameraCalibration.Nominal()) { Enabled = false };
         }
