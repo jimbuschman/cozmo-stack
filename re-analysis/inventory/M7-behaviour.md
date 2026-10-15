@@ -1359,3 +1359,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | CloseLog read; robot+0x48 container settled | M7-028, M7-018 (notes) |
+
+
+## Check of OV34-OV35 (manager, 2026-10-15; research/overnight/20261015-ov34-35-check.md)
+
+| Change | Records |
+| --- | --- |
+| Mood destruction: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M7-023 |
+| DockingTestSimple unreachable outside SDK (stays RECOVERABLE_GAP, live_path false) | M7-022 |
+| Note | M7-027 |

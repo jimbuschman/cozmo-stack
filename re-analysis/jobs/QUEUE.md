@@ -101,6 +101,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 54 | [B-M15-2](B-M15-2.md) | open, after B-M3M4-27 (disconnect/teardown M15-027/028; repair decay M15-029; ApplyDelta M15-046; audio teardown M6-030) |
 | 55 | [B-M15-3](B-M15-3.md) | open, after B-M15-2 (needs exceptional values M15-030; unlock/inventory NV callbacks M15-034/035; ForceSet M15-048) |
 | 56 | [B-M14-1](B-M14-1.md) | open, after B-M15-3 (pet/face-world and speech lifetime M14-013) |
+| 57 | [B-M7-1](B-M7-1.md) | open, after B-M14-1 (mood destruction M7-023) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

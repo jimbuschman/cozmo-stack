@@ -1,8 +1,8 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-14",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
-  "inventory_sha256": "71e0da791f4d39351fff9a6d9a216d5d20cd99a39fb13e3dfe1b900b43da12c0",
+  "inventory_sha256": "a4aedcb1b7457f16ccc158772d005a29509176bc5d4ef29f87dcf013c45304ad",
   "records": {
     "M7-001": {
       "status": "EXACT_SOURCE",
@@ -291,18 +291,20 @@
       "evidence": [
         "BehaviorDockingTestSimple::UpdateInternal 0x005cbc10..0x005ccc3f",
         "M7 gap1 G7",
-        "P2 second GetRobotState caller: BehaviorDockingTestSimple::UpdateInternal calls getter at 0x005CC31E, stores its projection at +0x270 and enters state 3 at 0x005CC326..0x005CC32C; not a game publication caller. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so."
+        "P2 second GetRobotState caller: BehaviorDockingTestSimple::UpdateInternal calls getter at 0x005CC31E, stores its projection at +0x270 and enters state 3 at 0x005CC326..0x005CC32C; not a game publication caller. Source: 20261006-M1M2-missing-triage.md P2; reopened libcozmoEngine.so.",
+        "re-analysis/research/overnight/20261015-ov34-35-check.md: reachability: constructed 0x0059C324 -> 0x0059CA88; only runnable via ExecuteBehaviorByID 0x0060AA6A..0x0060AAA8 (Selection); no shipped config names it except devBehaviors/dockingTestSimple.json; no FindBehavior* call site loads ID 9; the app's only free-ID sender is the dead debug BehaviorPane.cs:166."
       ],
       "live_path": false,
       "hardware_required": false
     },
     "M7-023": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Mood destruction with already-null ActionList dependency",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0067AE14..0x0067AE74; 0x00511150; 0x005111B6; Callback-id/Robot/ActionList gates precede unregister; normal Robot teardown already nulled ActionList, so skips unregister. Remaining destructor children UNKNOWN.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261015-ov34-35-check.md: L3 0x005110D4..0x005111C4 (owner nulled after delete 0x005111C4); gates 0x0067AE18..0x0067AE30; children 0x0067AE34..0x0067AE74 (0x004EAE94, 0x0067C0CC, 0x0067C0FC); subscription retirement 0x004EF184..0x004EF1CE, 0x00664EB8, 0x0066365C, 0x00663696, closure destroy 0x0067C228; sole caller BLX 0x005111B6 via PLT 0x004A7A80."
       ],
       "live_path": true,
       "hardware_required": false

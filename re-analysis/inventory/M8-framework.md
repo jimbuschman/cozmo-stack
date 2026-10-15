@@ -743,3 +743,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | DAS animation blacklist load read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-022 |
 | robot.init.time_spent_ms, IMPLEMENTATION_GAP | M8-025 (new) |
 | Gate/event ownership | M8-021 (note) |
+
+
+## Check of OV34-OV35 (manager, 2026-10-15; research/overnight/20261015-ov34-35-check.md)
+
+| Change | Records |
+| --- | --- |
+| Note (mood callbacks during teardown) | M8-024 |
