@@ -706,7 +706,12 @@ public sealed partial class BlockWorld
     /// <see cref="UpdateObjectOrigins"/> ever moves an object out of it.
     /// </summary>
     // fidelity: M11-004
-    public uint CurrentOriginId { get; set; } = 1;
+    private uint _currentOriginId=1;
+    public uint CurrentOriginId
+    {
+        get=>_currentOriginId;
+        set { using var frameMutation=EnterPoseMutation();lock(_gate)_currentOriginId=value; }
+    }
     // fidelity: M4-037
     internal SourceLogSink? SourceLog;
     internal string RootName(ObservableObject obj) => obj.PoseNameNode?.FindRoot(SourceLog).Name ?? PoseOriginNames.NameOf(obj.OriginId);
@@ -732,12 +737,15 @@ public sealed partial class BlockWorld
     private void Missing(string text) => Log?.Invoke("MISSING: " + text);
     internal void CreateLocalizedMemoryMap(uint origin)
     {
+        using var frameMutation=EnterPoseMutation();
         Maps.SourceLog = SourceLog; Maps.Missing = text => Log?.Invoke(text);
         Maps.CreateLocalizedMemoryMap(origin, id => id != CurrentOriginId && !_located.Values.Any(o => o.OriginId == id && CanBeUsedForLocalization(o)));
     }
     private readonly object _gate = new();
-    // Native cliffs and vision run on one thread. Serialize only their frame window here;
-    // never hold the object gate while callbacks acquire configuration/light locks.
+    // Native pose writers and vision run on one engine thread. Every host pose mutation takes this gate first,
+    // before _gate or the robot's PoseTreeGate. World callbacks run without _gate.
+    // A subscriber running inside a frame MUST NOT synchronously post a game message: Post -> Kick -> _tickLock
+    // would invert the engine tick's _tickLock -> FrameGate order. Post after returning from the frame callback.
     internal readonly object FrameGate = new();
     private bool _missingMapTimeReported, _missingPoseChangedReported;
     private double MapLastObservedTime
@@ -858,19 +866,20 @@ public sealed partial class BlockWorld
     // fidelity: M11-044
     public bool SetLocalizedTo(ObservableObject? obj)
     {
+        using var frameMutation=EnterPoseMutation();
+        if (obj is null) { lock(_gate){_localizedTo=ObservableObject.UnassignedId;_robot2C4=1;}return true; }
+        if (obj.ObjectId == ObservableObject.UnassignedId) { Log?.Invoke("Robot.SetLocalizedTo.IdNotSet"); return false; }
+        if (MarkerPosesRelativeToCamera is { } loop)
+        {
+            if (!loop(obj))
+            {
+                Log?.Invoke($"Robot.SetLocalizedTo: a marker pose of object {obj.ObjectId} could not be expressed relative to the camera; not localized");   // log text not sourced
+                return false;
+            }
+        }
+        else UnbuiltSetLocalizedToMarkerLoops++;
         lock (_gate)
         {
-            if (obj is null) { _localizedTo = ObservableObject.UnassignedId; _robot2C4 = 1; return true; }
-            if (obj.ObjectId == ObservableObject.UnassignedId) { Log?.Invoke("Robot.SetLocalizedTo.IdNotSet"); return false; }
-            if (MarkerPosesRelativeToCamera is { } loop)
-            {
-                if (!loop(obj))
-                {
-                    Log?.Invoke($"Robot.SetLocalizedTo: a marker pose of object {obj.ObjectId} could not be expressed relative to the camera; not localized");   // log text not sourced
-                    return false;
-                }
-            }
-            else UnbuiltSetLocalizedToMarkerLoops++;
             _localizedTo = obj.ObjectId;
             _movedSinceLocalized = 0;
             _robot2C4 = 1;
@@ -885,6 +894,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-044
     internal void DelocalizeRobotFields()
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate) { _localizedTo = ObservableObject.UnassignedId; _robot2C4 = 0; _robot2C8 = -1.0f; _robot2C5 = 0; }
     }
 
@@ -911,6 +921,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-044
     internal void ClearLocalizationOnTreads()
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate) { _robot2C4 = 1; _localizedTo = ObservableObject.UnassignedId; }
     }
 
@@ -921,6 +932,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-044
     public void NoteRobotState(bool movementBytesNonZero, bool notOnTreads)
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate) _movedSinceLocalized |= (byte)(movementBytesNonZero || notOnTreads ? 1 : 0);
     }
 
@@ -938,6 +950,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-044
     internal uint LocalizeToObject(ObservableObject? observed, ObservableObject? existing)
     {
+        using var frameMutation=EnterPoseMutation();
         if (existing is null) { Log?.Invoke("Robot.LocalizeToObject.ExistingObjectPieceNullPointer"); return 1; }
         if (!CanBeUsedForLocalization(existing) || (ShouldIgnoreMovementDueToDoubleTap?.Invoke(existing.ObjectId) ?? false))
         {
@@ -1149,6 +1162,7 @@ public sealed partial class BlockWorld
     /// </summary>
     internal void ResetToConstructed()
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate)
         {
             _located.Clear();
@@ -1165,14 +1179,14 @@ public sealed partial class BlockWorld
             _lastPlayAreaTime = 0; _timeOfLastChange = 0; SelectedObjectId = null;
             _missingMapTimeReported=_missingPoseChangedReported=false;
             Maps = new SourceMapComponent(); // discard removed robot's owner; next Robot constructs its own
-            if (!_deferMap) CreateLocalizedMemoryMap(1);
-            Missing("M11-055 / M11-045 MapComponent destructor 0x0067DC00..0x0067DC28: recursive native teardown effects remain unread; managed owner discarded");
 
             _localizedTo = ObservableObject.UnassignedId;
             _movedSinceLocalized = 0;
             _robot2C0=0;_robot2C4 = 0; _robot2C5 = 0; _robot2C8 = -1.0f;
             LiftOccluderPoints = Array.Empty<Vec3>();          // the VisionComponent that held them is deleted with the Robot
         }
+        if (!_deferMap) CreateLocalizedMemoryMap(1);
+        Missing("M11-055 / M11-045 MapComponent destructor 0x0067DC00..0x0067DC28: recursive native teardown effects remain unread; managed owner discarded");
     }
 
     private static (uint Origin, int Family, int Type, int Id) KeyOf(ObservableObject o) =>
@@ -1226,6 +1240,7 @@ public sealed partial class BlockWorld
 
     public ObservableObject? FindLocatedObjectHelper(BlockWorldFilter filter, Action<ObservableObject>? modifyFn, bool returnFirstOnly)
     {
+        using var frameMutation=modifyFn is not null ? EnterPoseMutation() : (FrameMutationScope?)null;
         var f = filter.Clone();
         if (f.OnlyConsiderLatestUpdate)
         {
@@ -1281,6 +1296,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-004
     public ObservableObject? FindConnectedObjectHelper(BlockWorldFilter filter, Action<ObservableObject>? modifyFn, bool returnFirstOnly)
     {
+        using var frameMutation=modifyFn is not null ? EnterPoseMutation() : (FrameMutationScope?)null;
         List<KeyValuePair<(int Family, int Type, int Id), ObservableObject>> snapshot;
         lock (_gate) snapshot = _connectedObjects.ToList();
         ObservableObject? result = null;
@@ -1792,6 +1808,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-007
     internal bool AddVisualObservation(ObservableObject observed, ObservableObject? existing, bool wasCameraMoving, double dist)
     {
+        using var frameMutation=EnterPoseMutation();
         PoseConfirmation entry;
         bool remade;
         lock (_gate)
@@ -1934,6 +1951,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-007
     internal bool SetPoseStateHelper(ObservableObject obj, PoseState state)
     {
+        using var frameMutation=EnterPoseMutation();
         if (state == PoseState.Unknown)
         {
             Log?.Invoke("ObjectPoseConfirmer.SetPoseStateHelper.CantSetInvalidPoseState: cannot set PoseState to Invalid");
@@ -1962,6 +1980,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-007
     internal void MarkObjectDirty(ObservableObject obj, bool propagate)
     {
+        using var frameMutation=EnterPoseMutation();
         SetPoseStateHelper(obj, PoseState.Dirty);
         if (!propagate) return;
         if (FindObjectOnTopOrUnderneathHelper(obj, StackToleranceMm, true) is { } other)
@@ -1980,6 +1999,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-007
     internal uint MarkObjectUnobserved(ObservableObject obj, List<ObservableObject>? forgotten = null)
     {
+        using var frameMutation=EnterPoseMutation();
         var entry = EntryFor(obj.ObjectId);
         if (entry is null)
         {
@@ -2012,6 +2032,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-007
     internal IReadOnlyList<ObservableObject> MarkObjectUnknown(ObservableObject obj, bool propagate)
     {
+        using var frameMutation=EnterPoseMutation();
         var victims = new List<ObservableObject> { obj };
         if (propagate)
         {
@@ -2043,13 +2064,15 @@ public sealed partial class BlockWorld
     // fidelity: M11-062
     internal List<ObservableObject> DeleteLocatedObjects(BlockWorldFilter filter)
     {
+        using var frameMutation=EnterPoseMutation();
         // Null entries are erased before ID/predicate filtering (native 0x0061D402).
-        lock (_gate)
-        foreach (var pair in _located.Where(kv => kv.Value is null).ToArray())
+        KeyValuePair<(uint Origin,int Family,int Type,int Id),ObservableObject>[] nulls;
+        lock (_gate) nulls=_located.Where(kv => kv.Value is null).ToArray();
+        foreach (var pair in nulls)
         {
             Source(EngineLogLevel.Warning, null, "BlockWorld.DeleteLocatedObjects.NullObject",
                 $"Deleting null object in origin {unchecked((int)pair.Key.Origin)} with Family:{(ObjectFamily)pair.Key.Family} Type:{(ObjectType)pair.Key.Type} ID:{pair.Key.Id}");
-            _located.Remove(pair.Key);
+            lock (_gate) _located.Remove(pair.Key);
         }
         var victims = FindLocatedMatchingObjects(filter);
         var deleted = new List<ObservableObject>();
@@ -2077,6 +2100,7 @@ public sealed partial class BlockWorld
 
     internal void ClearLocatedObjectHelper(ObservableObject? obj)
     {
+        using var frameMutation=EnterPoseMutation();
         if (obj is null)
         { Source(EngineLogLevel.Warning,null,"BlockWorld.ClearObjectHelper.NullObjectPointer","BlockWorld asked to clear a null object pointer."); return; }
         if (LocalizedToObjectId == obj.ObjectId)
@@ -2113,6 +2137,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-013
     internal void AddLocatedObject(ObservableObject obj)
     {
+        using var frameMutation=EnterPoseMutation();
         var connected = GetConnectedActiveObjectByIdHelper(obj.ObjectId);
         if (connected is not null)
         {
@@ -2173,16 +2198,20 @@ public sealed partial class BlockWorld
     // fidelity: M11-063, M11-037
     internal void BroadcastObjectPoseChanged(ObservableObject obj, Pose3d? oldPose, PoseState oldState)
     {
+        using var frameMutation=EnterPoseMutation();
+        string? key=null,text=null,missing=null;
         lock (_gate)
         if (_appendPoseChanges)
         {
             if (_poseChanges.Any(c => c.Id == obj.ObjectId))
-                Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.OnObjectPoseChanged.MultipleChanges",$"Object '{unchecked((int)obj.ObjectId)}' is changing its pose again this tick. Ignoring second change");
+                {key="BlockWorld.OnObjectPoseChanged.MultipleChanges";text=$"Object '{unchecked((int)obj.ObjectId)}' is changing its pose again this tick. Ignoring second change";}
             else if (oldState == PoseState.Unknown)
-                Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.OnObjectPoseChanged.FirstPoseForObject",$"Object '{unchecked((int)obj.ObjectId)}' is setting its first pose. Not queueing change.");
+                {key="BlockWorld.OnObjectPoseChanged.FirstPoseForObject";text=$"Object '{unchecked((int)obj.ObjectId)}' is setting its first pose. Not queueing change.";}
             else if (oldPose is { } pose) _poseChanges.Add(new PoseChange(obj.ObjectId,pose,oldState));
-            else Missing("M11-063 oldPose dereference 0x00624884: nonzero old state requires a pose");
+            else missing="M11-063 oldPose dereference 0x00624884: nonzero old state requires a pose";
         }
+        if(key is not null)Source(EngineLogLevel.Info,"BlockWorld",key,text!);
+        if(missing is not null)Missing(missing);
         if (SetObjectPoseChanged is { } set) set(obj.ObjectId,obj.PoseState);
         else if(!_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892 has no stack counterpart (once per frame)");}
         // MapComponent::UpdateObjectPose immediately returns for family 6, on both calls. No game message for a cliff.
@@ -2206,6 +2235,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-004, M11-007, M11-008, M11-010, M11-037, M11-042
     public IReadOnlyList<ObservableObject> CheckForUnobservedObjects(CameraModel camera, uint timestamp, bool robotMoving, bool rotatingTooFast)
     {
+        using var frameMutation=EnterPoseMutation();
         var forgotten = new List<ObservableObject>();
         if (!OnTreadsNow()) return forgotten;
         if (robotMoving) return forgotten;
@@ -2300,6 +2330,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-037
     public void UpdatePoseOfStackedObjects()
     {
+        using var frameMutation=EnterPoseMutation();
         uint lastImage = _lastImageTimestamp;
         for (int index = 0; ; index++)
         {
@@ -2388,6 +2419,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-037
     public void UpdateMarkerlessObjects(uint timestamp, Pose3d robotPose)
     {
+        using var frameMutation=EnterPoseMutation();
         var f = new BlockWorldFilter();
         f.AllowedFamilies.Add(ObjectFamily.MarkerlessObject);
         f.AllowedTypes.Add(ObjectType.CliffDetection);
@@ -2464,6 +2496,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-041
     public int AddConnectedActiveObject(int activeId, uint factoryId, ObjectType type)
     {
+        using var frameMutation=EnterPoseMutation();
         if (activeId >= 5)
         {
             Log?.Invoke($"BlockWorld.AddConnectedActiveObject.InvalidActiveID: activeID {activeId}");
@@ -2578,6 +2611,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-041, M11-042
     public void RemoveConnectedActiveObject(int activeId)
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate)
         {
             var key = _connectedObjects.Where(kv => kv.Value.ActiveId == activeId).Select(kv => kv.Key).Cast<(int, int, int)?>().FirstOrDefault();
@@ -2597,6 +2631,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-041, M11-042
     public int HandleActiveObjectConnectionState(uint activeId, uint factoryId, ObjectType type, bool connected)
     {
+        using var frameMutation=EnterPoseMutation();
         if (activeId > 4)
         {
             Log?.Invoke($"Robot.HandleActiveObjectConnectionState: activeID {activeId} is above 4; the error branch at 0x00533B58 is unread");
@@ -2637,6 +2672,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-043
     public uint UpdateObjectOrigins(uint oldOriginId, uint newOriginId, Pose3d oldOriginWrtNew)
     {
+        using var frameMutation=EnterPoseMutation();
         ClearConfirmer();                                                                                              // 0x00620594
         uint flag = 0;
         var first = new BlockWorldFilter { OriginMode = OriginMode.Custom };
@@ -2710,19 +2746,20 @@ public sealed partial class BlockWorld
     // fidelity: M11-043, M11-070
     private void AddInExistingPose(ObservableObject obj)
     {
-        lock (_gate)
+        LogCallbackDeferral.RunGated(_gate,()=>
         {
             if (!_confirmations.TryGetValue((int)obj.ObjectId, out var entry))
                 _confirmations[(int)obj.ObjectId] = entry = new PoseConfirmation{Pose=new Pose3d("")};
             entry.Pose.Assign(obj.NativePose); // C5: existing entry keeps counts/times, but always assigns the native pose.
             obj.Confirmation = entry;
-        }
+        });
     }
 
     /// <summary><c>ObjectPoseConfirmer::Clear()</c> 0x005077EC: every entry, with all its counts and misses, is dropped.</summary>
     // fidelity: M11-043
     internal void ClearConfirmer()
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate)
         {
             _confirmations.Clear();
@@ -2746,10 +2783,12 @@ public sealed partial class BlockWorld
     // fidelity: M4-009, M11-009 — manager-checked 0x00534924..0x0053494A.
     internal void ApplyMovedOrStopped(ObservableObject matched, bool moving)
     {
+        using var frameMutation=EnterPoseMutation();
         PoseState? previous = null;
+        bool carried=IsCarryingObject?.Invoke(matched.ObjectId)==true;
         lock (_gate)
         {
-            if (IsCarryingObject?.Invoke(matched.ObjectId) != true && matched.PoseState == PoseState.Known)
+            if (!carried && matched.PoseState == PoseState.Known)
             {
                 previous = StorePoseState(matched, PoseState.Dirty);
             }
@@ -2760,6 +2799,7 @@ public sealed partial class BlockWorld
 
     public void MarkDirty(uint objectId)
     {
+        using var frameMutation=EnterPoseMutation();
         var o = GetLocatedObjectByIdHelper(objectId);
         if (o is null || o.PoseState != PoseState.Known) return;
         MarkObjectDirty(o, false);
@@ -2772,7 +2812,8 @@ public sealed partial class BlockWorld
     /// </summary>
     public void SetCarriedPose(uint objectId, Pose3d pose)
     {
-        if (GetLocatedObjectByIdHelper(objectId) is { } o) lock (_gate) o.Pose = pose;
+        using var frameMutation=EnterPoseMutation();
+        if (GetLocatedObjectByIdHelper(objectId) is { } o) LogCallbackDeferral.RunGated(_gate,()=>o.Pose=pose);
     }
 
     /// <summary>
@@ -2783,7 +2824,8 @@ public sealed partial class BlockWorld
     /// </summary>
     internal void DetachFromLift(ObservableObject o, Pose3d pose)
     {
-        lock (_gate) { o.Pose = pose; o.NativeCarryingTree = false; }
+        using var frameMutation=EnterPoseMutation();
+        LogCallbackDeferral.RunGated(_gate,()=>{o.Pose=pose;o.NativeCarryingTree=false;});
     }
 
     /// <summary>
@@ -2793,6 +2835,7 @@ public sealed partial class BlockWorld
     /// </summary>
     public void MarkReleased(uint objectId)
     {
+        using var frameMutation=EnterPoseMutation();
         var o = GetObjectById(objectId);
         if (o is null) return;
         PoseState prev;
@@ -2811,8 +2854,9 @@ public sealed partial class BlockWorld
     // fidelity: M12-008
     internal void ApplyRelativeObservation(ObservableObject obj, Pose3d pose, PoseState state, int? confirmationCount)
     {
-        PoseState prev; Pose3d oldPose;
-        lock (_gate)
+        using var frameMutation=EnterPoseMutation();
+        PoseState prev=default;Pose3d oldPose=null!;
+        LogCallbackDeferral.RunGated(_gate,()=>
         {
             prev = obj.PoseState; oldPose = obj.Pose;
             obj.Pose = pose; obj.PoseState = state;
@@ -2820,7 +2864,7 @@ public sealed partial class BlockWorld
             obj.Confirmation = entry;
             entry.Pose = pose;
             if (confirmationCount is { } count) entry.Count = count;
-        }
+        });
         BroadcastObjectPoseChanged(obj, oldPose, prev);
     }
 
@@ -2831,12 +2875,14 @@ public sealed partial class BlockWorld
     // fidelity: M4-009 — connected-object SetIsMoving 0x005343C8..0x00534402 / 0x00534A62..0x00534AA0.
     internal void SetConnectedMoving(uint objectId, bool moving)
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate)
             foreach (var o in _connectedObjects.Values) if (o.ObjectId == objectId) o.IsMoving = moving;
     }
 
     public void SetMoving(uint objectId, bool moving)
     {
+        using var frameMutation=EnterPoseMutation();
         lock (_gate)
         {
             foreach (var o in _located.Values) if (o.ObjectId == objectId) o.IsMoving = moving;
@@ -2861,6 +2907,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-019
     public IReadOnlyList<ObservableObject> OnRobotDelocalized(IReadOnlySet<uint>? carriedObjectIds = null)
     {
+        using var frameMutation=EnterPoseMutation();
         if(DelocalizeRuntime is {} runtime){runtime();return Array.Empty<ObservableObject>();}
         return FinishDelocalization(CurrentOriginId); // Standalone world entry has no Robot owner.
     }
@@ -2872,6 +2919,7 @@ public sealed partial class BlockWorld
     /// </summary>
     public void MarkUnknown(uint objectId)
     {
+        using var frameMutation=EnterPoseMutation();
         ObservableObject? o; PoseState prev;
         lock (_gate)
         {

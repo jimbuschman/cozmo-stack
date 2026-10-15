@@ -46,6 +46,7 @@ public sealed partial class EngineRobot
     }
     internal void Delocalize(bool suppliedCarrying)
     {
+        using var frameMutation=Engine.DelocalizationWorld?.EnterPoseMutation();
         using var scope=Pose3d.UseSourceLog((l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t),()=>Engine.Das.ForceFlushNow());
         var world=Engine.DelocalizationWorld;
         if(world is not null){world.NativeOrigin=GetNativeOrigin;world.NativeForceFlush=()=>Engine.Das.ForceFlushNow();}
@@ -131,6 +132,7 @@ public sealed partial class EngineRobot
     // fidelity: M12-027 — adopted OV01 rows L5–L8, needed by the carried tree's delocalization path.
     internal void ComputeLiftPose(float input)
     {
+        using var frameMutation=Engine.DelocalizationWorld?.EnterPoseMutation(); // LiftPose is also the carried objects' parent.
         LogCallbackDeferral.RunGated(PoseTreeGate,()=>ComputeLiftPoseLocked(input));
     }
     private void ComputeLiftPoseLocked(float input)

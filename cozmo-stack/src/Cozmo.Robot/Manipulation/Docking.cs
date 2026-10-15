@@ -264,6 +264,7 @@ public sealed class DockingSystem : IDisposable
     /// </summary>
     public void ReleaseCarriedObject(bool forget = false)
     {
+        using var frameMutation=_vision.World.EnterPoseMutation();
         // fidelity: M12-006
         if (Carrying.CarriedObjectId is { } id)
         {
@@ -290,6 +291,7 @@ public sealed class DockingSystem : IDisposable
     /// </summary>
     private void DetachReleasedFromLift(uint id)
     {
+        using var frameMutation=_vision.World.EnterPoseMutation();
         if (_vision.World.GetObjectById(id) is not { NativeCarryingTree: true } obj) return;
         var top = Carrying.CarriedOnTopId is { } topId && _vision.World.GetObjectById(topId) is { NativeCarryingTree: true } t ? t : null;
         var r = _robot.Engine.Robot;
@@ -310,6 +312,7 @@ public sealed class DockingSystem : IDisposable
 
     public void UpdateCarriedObjectPose()
     {
+        using var frameMutation=_vision.World.EnterPoseMutation();
         if (Carrying.CarriedObjectId is not { } id || Carrying.DockMarker is not { } marker) return;
         if (_vision.World.GetObjectById(id) is not { } obj) return;
         if(obj.NativeCarryingTree)
@@ -409,6 +412,7 @@ public sealed class DockingSystem : IDisposable
     // fidelity: M12-008
     public uint SetObjectAsAttachedToLift(uint? objectId, MarkerType markerCode)
     {
+        using var frameMutation=_vision.World.EnterPoseMutation();
         uint result=LiftGeometry.SetObjectAsAttachedToLift(Carrying,_vision.World,Configurations,_vision.History.Latest,objectId,markerCode,Log);
         if(result==0&&objectId is {} id&&_vision.World.GetObjectById(id) is {} obj&&Carrying.ObjectWrtLift is {} local&&_robot.Engine.Robot is {} robot)
         {

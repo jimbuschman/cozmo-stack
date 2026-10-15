@@ -108,6 +108,7 @@ public static class LiftGeometry
                                                  BlockConfigurationManager? configurations, VisionPoseData? state,
                                                  uint? objectId, MarkerType markerCode, Action<string>? log = null)
     {
+        using var frameMutation=world.EnterPoseMutation();
         if (objectId is not { } id) { log?.Invoke("SetObjectAsAttachedToLift: no object id (-1)"); return AttachFailed; }
         if (carrying.IsCarryingObject) { log?.Invoke("SetObjectAsAttachedToLift: already carrying an object"); return AttachFailed; }
         var obj = world.GetLocatedObjectById(id);

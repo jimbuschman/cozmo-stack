@@ -16,24 +16,24 @@ public sealed partial class BlockWorld
     }
     public uint UpdateObjectOrigin(uint objectId,uint oldOrigin)
     {
+        using var frameMutation=EnterPoseMutation();
         using var scope=Pose3d.UseSourceLog((l,c,k,t)=>Source(l,c,k,t),NativeForceFlush);
+        bool hasOrigin;KeyValuePair<(uint Origin,int Family,int Type,int Id),ObservableObject> found;
         lock(_gate)
-        {
-            if(!_located.Keys.Any(k=>k.Origin==oldOrigin))
+        {hasOrigin=_located.Keys.Any(k=>k.Origin==oldOrigin);found=_located.FirstOrDefault(kv=>kv.Key.Origin==oldOrigin&&kv.Key.Id==unchecked((int)objectId));}
+            if(!hasOrigin)
             {Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.UpdateObjectOrigin.BadOrigin",FormattableString.Invariant($"Origin {unchecked((int)oldOrigin)} not found"));return 1;}
             var old=GetNativeOrigin(oldOrigin);
-            var found=_located.FirstOrDefault(kv=>kv.Key.Origin==oldOrigin&&kv.Key.Id==unchecked((int)objectId));
             if(found.Value is not {} obj)
             {Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.UpdateObjectOrigin.ObjectNotFound",FormattableString.Invariant($"Object {unchecked((int)objectId)} not found in origin {PoseDiagnostics.CString(old.Name)}"));return 1;}
             if(PoseTreeNode.HasSameRoot(obj.NativePose.Node,old.Node))return 0;
             using var root=obj.NativePose.FindRoot();
             Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.UpdateObjectOrigin.ObjectFound",FormattableString.Invariant($"Updating ObjectID {unchecked((int)objectId)} from origin {PoseDiagnostics.CString(old.Name)} to {PoseDiagnostics.CString(root.Name)}"));
-            _located[(root.Id,(int)obj.Family,(int)obj.Type,unchecked((int)objectId))]=obj;
+            lock(_gate)_located[(root.Id,(int)obj.Family,(int)obj.Type,unchecked((int)objectId))]=obj;
             AddInExistingPose(obj);
-            _located.Remove(found.Key); // Flattened sorted map naturally removes empty type/family/origin levels.
-            obj.OriginId=root.Id; // Host cache of the pose's already-changed root; no native pose/state write.
+            lock(_gate)
+            {_located.Remove(found.Key);obj.OriginId=root.Id;} // Host root cache; flattened map removes empty levels.
             return 0;
-        }
     }
     internal IReadOnlyList<ObservableObject> FinishDelocalization(uint origin)=>FinishDelocalization(origin,origin);
     /// <summary>
@@ -44,20 +44,19 @@ public sealed partial class BlockWorld
     /// </summary>
     internal IReadOnlyList<ObservableObject> FinishDelocalization(uint currentOrigin,uint mapOrigin)
     {
+        using var frameMutation=EnterPoseMutation();
         var deleted=new List<ObservableObject>();
-        lock(_gate)
+        uint[] origins;
+        lock(_gate){CurrentOriginId=currentOrigin;origins=_located.Keys.Select(k=>k.Origin).Distinct().ToArray();}
+        foreach(var id in origins)
         {
-            CurrentOriginId=currentOrigin; // host cache of the robot's current origin, not the argument
-            foreach(var id in _located.Keys.Select(k=>k.Origin).Distinct().ToArray())
-            {
                 if(id==currentOrigin||AnyRemainingLocalizableObjects(id))
                     Source(EngineLogLevel.Debug,"BlockWorld","BlockWorld.DeleteObjectsFromZombieOrigins.KeepingOrigin",FormattableString.Invariant($"Origin {unchecked((int)id)} is still good (keeping objects)"));
                 else
                 {
                     Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.DeleteObjectsFromZombieOrigins.DeletingOrigin",FormattableString.Invariant($"Deleting objects from Origin {unchecked((int)id)} because it was zombie"));
-                    foreach(var key in _located.Keys.Where(k=>k.Origin==id).ToArray()){deleted.Add(_located[key]);_located.Remove(key);}
+                    lock(_gate)foreach(var key in _located.Keys.Where(k=>k.Origin==id).ToArray()){deleted.Add(_located[key]);_located.Remove(key);}
                 }
-            }
         }
         CreateLocalizedMemoryMap(mapOrigin);SelectedObjectId=null;
         UnbuiltBroadcastLocatedObjectStatesCalls++;
