@@ -112,13 +112,41 @@ public sealed class PoseTreeVerifyBuilderTests
         finally{for(int i=poses.Count-1;i>=0;--i)poses[i].Dispose();}
     }
     [Fact]
+    public void SameAsParentWrapperPerformsAllThreeChecksBeforeItAddsAnOwner()
+    {
+        using var root=new Pose3d("root");var parent=new Pose3d("parent",root);using var child=new Pose3d("child",parent);
+        parent.Dispose();using var capture=new Capture();var delta=Vec3.Zero;var angle=new Radians();
+        Assert.True(child.IsSameAsWithAmbiguity(root,Vec3.Zero,new Radians(Radians.Pi),ref delta,ref angle,Array.Empty<Mat3>(),false));
+        Assert.Equal(3,capture.Unowned);Assert.Equal(3,capture.Flushes);
+        Assert.All(capture.Logs,l=>Assert.Contains("Pose 0(child) has parent 0(parent)",l.Text));
+        Assert.Equal(0u,child.Node!.Parent!.Owners); // The public GetParent's temporary owner was released.
+    }
+    [Fact]
+    public void VisionOnlyFlatteningUsesHasParentGetParentAndIsRootChecks()
+    {
+        var root=new Pose3d("root");var parent=new Pose3d("parent",root);using var child=new Pose3d("child",parent);
+        root.Dispose();parent.Dispose();using var capture=new Capture();var history=new RobotStateHistory();
+        Assert.Equal(1u,history.AddVisionOnlyState(1,child,1,0,0));
+        Assert.Equal(3,capture.Unowned);Assert.Equal(3,capture.Flushes);
+        Assert.Contains("Pose 0(child)",capture.Logs[0].Text);Assert.Contains("Pose 0(child)",capture.Logs[1].Text);Assert.Contains("Pose 0(parent)",capture.Logs[2].Text);
+        Assert.Equal(0u,child.Node!.Parent!.Owners);Assert.Empty(history.VisionOnly);
+    }
+    [Fact]
     public void LiveOriginListDestructionSuppressesIdVerifyAndRestoresTheFlag()
     {
         using var robot=CozmoRobot.CreateOffline();var engine=robot.Engine;engine.Robots.AddRobot(CozmoEngine.RobotId);
         var native=engine.Robot!;var root=native.GetNativeOrigin(native.CurrentOriginId);var node=root.Node!;
-        var logs=new List<EngineLogEntry>();engine.LogEntry+=logs.Add;
+        Assert.True(native.AddOriginWithId(native.CurrentOriginId+1));
+        var logs=new List<EngineLogEntry>();engine.LogEntry+=entry=>
+        {
+            if(entry.Name=="poseoriginlist.destructor")
+            {Assert.Equal(1u,node.Owners);Assert.False(Pose3d.UnownedParentsAllowed);Assert.False(System.Threading.Monitor.IsEntered(native.PoseTreeGate));}
+            logs.Add(entry);
+        };
         engine.Robots.RemoveRobots();
         Assert.Equal(0u,node.Owners);Assert.False(Pose3d.UnownedParentsAllowed);
+        var entry=Assert.Single(logs.Where(l=>l.Name=="poseoriginlist.destructor"));
+        Assert.Equal(EngineLogLevel.Event,entry.Level);Assert.Null(entry.Channel);Assert.Equal("2",entry.Text);
         Assert.DoesNotContain(logs,l=>l.Name=="PoseBase.PoseTreeNode.RemoveOwner.ZeroOwnersWithID");
     }
 }

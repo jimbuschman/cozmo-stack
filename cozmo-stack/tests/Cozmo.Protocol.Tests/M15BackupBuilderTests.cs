@@ -3,7 +3,7 @@ using Cozmo.Transport;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
 
-[Collection("SteppedBehavior missing-report statics")]
+[Collection("M5 process statics")] // Shares the process-static unowned-parent flag with pose/removal tests.
 public sealed class M15BackupBuilderTests
 {
     private sealed class Port : IEngineTransport

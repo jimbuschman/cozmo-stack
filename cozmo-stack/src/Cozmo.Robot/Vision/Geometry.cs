@@ -379,7 +379,7 @@ public sealed class Pose3d : IDisposable
         var n=Node;using var relative=new Pose3d("");n?.AssertParent();
         if(n?.Parent is not null&&ReferenceEquals(n.Parent,other.Node))relative.SetParent(other);
         else if(n?.Parent is not null)
-        {n.AssertParent();using var parent=WrapExisting(n.Parent);if(!GetWithRespectTo(other,parent,relative))return false;}
+        {n.AssertParent();Pose3d parent=null!;if(!TryGetParent(ref parent))return false;using(parent){if(!GetWithRespectTo(other,parent,relative))return false;}}
         else if(n is not null&&_legacyFrameInput&&other._legacyFrameInput&&!other.HasParent)
         {
             PoseDiagnostics.Missing("M11-065/M11-066 legacy flattened IsSameAs inputs lack checked parent/root bindings; arithmetic only is built");
