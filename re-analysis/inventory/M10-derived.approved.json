@@ -1,8 +1,8 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-10-14",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M10-derived.md",
-  "inventory_sha256": "c59e43fa157ce915c5057b920e227366fca08c7d34ba0acb832f246ef8eedb09",
+  "inventory_sha256": "d90ffbe2fbac14a1a57d0a904f02f896f2c01cda55195bb6e5096bfa36fb06a6",
   "records": {
     "M10-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -158,22 +158,24 @@
       "hardware_required": false
     },
     "M10-014": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BlockFilter and gyro-drift lifetime effects",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov23-24-check.md: B1 0x00510174..0x00510188, ctor 0x00619A2C..0x00619D84 (tags E7,E5,E6,E9,EA,EB via slot +0x2C), gyro 0x0050FE10..0x0050FE20 / 0x0052C53C..0x0052C566; B2 0x0051121A..0x00511250; B3 bind destroy slots 0x0061B778/0x0061B77A; B4 0x00511418..0x00511424."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M10-015": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotGyroDriftDetector::DetectGyroDrift and DetectBias on each RobotState",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4"
+        "UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4",
+        "re-analysis/research/overnight/20261014-ov23-24-check.md: R1 hook 0x00512FB4..0x00512FCE; R2 DetectGyroDrift 0x0052C568..0x0052C770; R3 DetectBias 0x0052C804..0x0052CB24; inputs MovementComponent 0x0063E31A, HandleCliffEvent 0x005356C6..0x005356D4."
       ],
       "live_path": true,
       "hardware_required": false
@@ -184,6 +186,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov19-m8-016-check.md: D1 0x0061024C..0x00610280 (test 0x00610264..0x00610266, global clear 0x00610278, base 0x0060B6F4); SendDasEvent 0x006102B8..0x0061035C (key 0x006103BC, $data 0x00610398, format 0x006103D0, SELF_CURED 0x006103A0); reached from ~BehaviorManager M1 via 0x005A47FE."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M10-017": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "The raw IMU magnitude at R+0x378 in UpdateFullRobotState: vsqrt((x2+y2)+z2) with the sqrtf fallback on NaN",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov23-24-check.md: UFRS 0x005129C0..0x00512A1E (bvc to sqrtf), store R+0x378; R+0x37C smoothing is M7-021."
       ],
       "live_path": true,
       "hardware_required": false

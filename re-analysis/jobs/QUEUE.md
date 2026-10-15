@@ -93,6 +93,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 49 | [B-M8-3](B-M8-3.md) | open, after B-M8-2 (compound runtime M8-017; behaviour end request M8-019) |
 | 50 | [B-M12-4](B-M12-4.md) | open, after B-M8-3 (native put-down M12-006/M12-045) |
 | 51 | [B-M8-4](B-M8-4.md) | open, after B-M12-4 (DAS animation blacklist load M8-022; M8-025) |
+| 52 | [B-M10-1](B-M10-1.md) | open, after B-M8-4 (BlockFilter/gyro lifetime M10-014; drift/bias detectors M10-015; raw IMU magnitude M10-017) |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)

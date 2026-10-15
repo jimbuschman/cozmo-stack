@@ -481,3 +481,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Hiccup strategy dtor DAS event, IMPLEMENTATION_GAP | M10-016 (new) |
+
+
+## Check of OV23/OV24 (manager, 2026-10-15; research/overnight/20261014-ov23-24-check.md)
+
+| Change | Records |
+| --- | --- |
+| BlockFilter/gyro lifetime and the drift/bias detectors: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M10-014, M10-015 |
+| Raw IMU magnitude, IMPLEMENTATION_GAP | M10-017 (new) |
+| Note | M10-012 |

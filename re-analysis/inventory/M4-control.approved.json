@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-14",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "5c39223983de48e7a1588df3ddeb98a2cccd20ab47fb994d72e88315d810806e",
+  "inventory_sha256": "0d6f308a7bed122c43fc8f4c2a1a7f512ff45452a5139df9b243ce25ece2abdf",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",

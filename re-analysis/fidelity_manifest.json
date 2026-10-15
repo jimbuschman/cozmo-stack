@@ -108,7 +108,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M4-control.md",
-        "approved": "2026-10-14",
+        "approved": "2026-10-15",
         "snapshot": "re-analysis/inventory/M4-control.approved.json"
       }
     },
@@ -181,12 +181,12 @@
       "id": "M10-derived",
       "name": "Derived robot state and reaction strategies",
       "milestone": "M10",
-      "source_investigation_exhausted": false,
+      "source_investigation_exhausted": true,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M10-derived.md",
-        "approved": "2026-10-14",
+        "approved": "2026-10-15",
         "snapshot": "re-analysis/inventory/M10-derived.approved.json"
       }
     },
@@ -7072,7 +7072,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "IMPLEMENTATION_GAP",
       "provenance": "compared against re-analysis/inventory/M4-control.md on 2026-09-25 (M4 batch): CliffSensorComponent defaults (enabled, cache 400, raw 0xFFFF, SC1); SendCliffDetectThresholdToRobot always sends (SC3); CliffEvent with the sensor disabled and flags != 0 is dropped (SC5); the game EnableCliffSensor only stores +4 (SC6); PotentialCliff -> StopAllMotors + EnableStopOnCliff{0} (SC7); EnableStopOnCliff only from the caller (SC8); the first accepted state of the current frame sends 50 and 400 follows once after more than 50 mm (SC4, SC4e). Verifier round (2026-09-25, corrections C1..C5): the threshold schedule runs only for a state that passed the origin check (C3). Re-verify round (2026-09-25, C6..C8): C7 (rows D1..D5): the distance behind the 400 threshold is the XY displacement of the drive centre, MoveRobotPoseForward(pose, -20 mm) = (x + d cos(theta), y + d sin(theta), 0), between the robot pose before and after each accepted state's pose update, added on every state whose frame id matches from the first one (CozmoSensors.CliffThresholdSchedule). C8 (rows P1..P6): SetOnChargerPlatform(b) = b or the contacts flag, with RobotOnChargerPlatformEvent and 50/400 on a change; set true by SetOnCharger on the rising IS_ON_CHARGER edge, left alone by SetOnCharger(false), set false by a committed off-treads change to anything but OnTreads; SC7: a PotentialCliff on the platform is ignored.",
-      "unresolved": "built, awaiting strong verification: B-M3M4-5: ClearCliffRunningStats clears count and restores threshold cache, then emits event and sends outside sensor lock, then clears stats; regression checks order and lock release. Previous notes: built, awaiting strong verification: B-M3M4-3: HandleRobotStopped event first with structured variance $data; restoring-threshold event and send before sample/mean/variance/M2 clear. Welford below-two behavior retained. Previous manager-adopted instructions: IMPLEMENTATION_GAP: build from re-analysis/research/20261011-m3m4-fix-rows.md section 6 and the rulings in section 12. Before: Final settling pass: KEEP. Omitted: HandleRobotStopped's sEventF with $data = to_string(cliff+0x3C) (0x005353A4..0x005353F6, H2), see M3-048. Below size 2 the engine leaves +0x3C unchanged (blo at 0x0063470E); the C# writes 0. Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed. Build round: Sensors.cs:91-98 and :795-806 leave Cancel(-1) and RequestCurrentBehaviorEndImmediately unwired with a comment only, although EngineRobot.ActionList exists: wire Cancel(-1) to M8-015's ActionList and make the behaviour end a visible handoff naming M8-019 (new); DetectGyroDrift/DetectBias get a hook naming M10-015 (new); the threshold and EnableStopOnCliff sends lack Robot::SendMessage's failure warning. Before: built, awaiting strong verification: checked C12.3/C13.2/C13.3 lower counter/treads/history-window slices confirmed already live, 2026-10-09. Treads changes leave counter0 and jump to unconditional stats, match resets0, mismatch increments and 101 resets after error log/_errG/debug-break gate before the Delocalize trigger. Fixed MismatchedFrameIDs to sErrorF level and exact unsigned fields; running cliff history retains 3000 ms. Existing source-derived reset/treads/first100 tests retained. MISSING: actual M11 AddRobotStateToHistory/GetLastStateWithFrameID failure results, Delocalize/origin/charger geometry; H4 M7 behavior end and M8 Cancel(-1). Rule10 census also identifies DetectGyroDrift at 00512FBA and DetectBias at 00512FC4 without a live counterpart; their M10/manager allocation and checked recipient rows are still needed, not guessed. No synthetic history success added. B-M3M4-9 built, awaiting strong verification: Threshold-change info precedes cache store/send; Count/NewThreshold events bracket cache reduction before send and count reset; each walked sample logs timestamp/value; Undetected and both PotentialCliff branches use explicit source calls; variance reads locked. MISSING: ComputeCliffPose/AddCliff 0x00535548..0x005356E6 and 0x00634980 have no checked bodies, so Detected coordinates (0x00535602) and ComputeCliffPoseFailed/error/errG/break (0x00535682..0x005356BC) remain visibly missing rather than invented success/failure. B-M3M4-10 (2026-10-12), built, awaiting strong verification: UpdateCliffDetectThreshold clears +0x1C after the successor walk/logs, at 0x006344AC..0x006344AE; regression observes the nonzero timestamp during each source debug callback. MISSING: PotentialCliff +0x34B drone branch at 0x00535898..0x00535924: action-list current type0x1B gate, TriggerLiftSafeAnimationAction(DroneModeCliffEvent) construction and queued action need higher-layer recovery/checked rows. EnableDroneMode ingress remains absent; no surrogate action or new mode is introduced. B-M3M4-12 (2026-10-12), built, awaiting strong verification: ComputeCliffPose/AddCliff runtime MISSING names M4-038; no-drone-mode input doc names M4-039. No geometry/drone implementation invented.",
+      "unresolved": "built, awaiting strong verification: B-M3M4-5: ClearCliffRunningStats clears count and restores threshold cache, then emits event and sends outside sensor lock, then clears stats; regression checks order and lock release. Previous notes: built, awaiting strong verification: B-M3M4-3: HandleRobotStopped event first with structured variance $data; restoring-threshold event and send before sample/mean/variance/M2 clear. Welford below-two behavior retained. Previous manager-adopted instructions: IMPLEMENTATION_GAP: build from re-analysis/research/20261011-m3m4-fix-rows.md section 6 and the rulings in section 12. Before: Final settling pass: KEEP. Omitted: HandleRobotStopped's sEventF with $data = to_string(cliff+0x3C) (0x005353A4..0x005353F6, H2), see M3-048. Below size 2 the engine leaves +0x3C unchanged (blo at 0x0063470E); the C# writes 0. Before: Cross-layer split (manager, 2026-10-10; re-analysis/research/20261010-m3m4-cross-layer-splits.md, Opus extractor at f56329c): narrowed. Build round: Sensors.cs:91-98 and :795-806 leave Cancel(-1) and RequestCurrentBehaviorEndImmediately unwired with a comment only, although EngineRobot.ActionList exists: wire Cancel(-1) to M8-015's ActionList and make the behaviour end a visible handoff naming M8-019 (new); DetectGyroDrift/DetectBias get a hook naming M10-015 (new); the threshold and EnableStopOnCliff sends lack Robot::SendMessage's failure warning. Before: built, awaiting strong verification: checked C12.3/C13.2/C13.3 lower counter/treads/history-window slices confirmed already live, 2026-10-09. Treads changes leave counter0 and jump to unconditional stats, match resets0, mismatch increments and 101 resets after error log/_errG/debug-break gate before the Delocalize trigger. Fixed MismatchedFrameIDs to sErrorF level and exact unsigned fields; running cliff history retains 3000 ms. Existing source-derived reset/treads/first100 tests retained. MISSING: actual M11 AddRobotStateToHistory/GetLastStateWithFrameID failure results, Delocalize/origin/charger geometry; H4 M7 behavior end and M8 Cancel(-1). Rule10 census also identifies DetectGyroDrift at 00512FBA and DetectBias at 00512FC4 without a live counterpart; their M10/manager allocation and checked recipient rows are still needed, not guessed. No synthetic history success added. B-M3M4-9 built, awaiting strong verification: Threshold-change info precedes cache store/send; Count/NewThreshold events bracket cache reduction before send and count reset; each walked sample logs timestamp/value; Undetected and both PotentialCliff branches use explicit source calls; variance reads locked. MISSING: ComputeCliffPose/AddCliff 0x00535548..0x005356E6 and 0x00634980 have no checked bodies, so Detected coordinates (0x00535602) and ComputeCliffPoseFailed/error/errG/break (0x00535682..0x005356BC) remain visibly missing rather than invented success/failure. B-M3M4-10 (2026-10-12), built, awaiting strong verification: UpdateCliffDetectThreshold clears +0x1C after the successor walk/logs, at 0x006344AC..0x006344AE; regression observes the nonzero timestamp during each source debug callback. MISSING: PotentialCliff +0x34B drone branch at 0x00535898..0x00535924: action-list current type0x1B gate, TriggerLiftSafeAnimationAction(DroneModeCliffEvent) construction and queued action need higher-layer recovery/checked rows. EnableDroneMode ingress remains absent; no surrogate action or new mode is introduced. B-M3M4-12 (2026-10-12), built, awaiting strong verification: ComputeCliffPose/AddCliff runtime MISSING names M4-038; no-drone-mode input doc names M4-039. No geometry/drone implementation invented. OV24 check (re-analysis/research/overnight/20261014-ov23-24-check.md): its C12.4/C13.2 gates (including the GetLastStateWithFrameID failure 0x0051307A..0x00513110) also gate the gyro detectors (M10-015).",
       "hardware_required": false,
       "live_path": true,
       "test": "M4ControlTests.M4_019_SC1_SC5_SC6_CliffDefaultsAndTheDisabledDrop, M4ControlTests.M4_019_SC7_PotentialCliffStopsAllMotorsAndDisablesStopOnCliff, M4ControlTests.M4_019_SC4_SC8_TheThresholdSchedule, M4ControlTests.M4_019_C7_TheDistanceIsTheDriveCentreDisplacement, M4ControlTests.M4_019_C8_SC7_TheChargerPlatform, M4ControlTests.B9_CliffThresholdCountAndLiveUndetectedLogsKeepNativeOrder, M4ControlTests.M4_019_SC4b_TheSuspiciousWalkSends150"
@@ -7459,7 +7459,7 @@
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "status": "EXACT_SOURCE",
       "provenance": "the native paths at the cited addresses, reproduced in the stack and compared against the frozen inventory on 2026-09-25",
-      "unresolved": null,
+      "unresolved": " OV24 check (re-analysis/research/overnight/20261014-ov23-24-check.md): the raw-magnitude computation 0x005129C0..0x00512A1E is not covered here; it is M10-017.",
       "hardware_required": false,
       "live_path": true,
       "test": "DerivedStateTests.TheAccelerometerFiltersMatchTheEngineConstants"
@@ -9298,15 +9298,16 @@
       "subsystem": "M10-derived",
       "title": "BlockFilter and gyro-drift lifetime effects",
       "location": "cozmo-stack/src/Cozmo.Robot/CubeConnections.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "0x0051121A..0x0051124C; 0x00511418..0x00511424; 0x0050FE1C..0x0050FE20; BlockFilter+0x44C releases members; gyro+0x27C is raw delete. Classifier/filter state effects UNKNOWN; history is M11 and TapFilter is M4.",
-        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt"
+        "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+        "re-analysis/research/overnight/20261014-ov23-24-check.md: B1 0x00510174..0x00510188, ctor 0x00619A2C..0x00619D84 (tags E7,E5,E6,E9,EA,EB via slot +0x2C), gyro 0x0050FE10..0x0050FE20 / 0x0052C53C..0x0052C566; B2 0x0051121A..0x00511250; B3 bind destroy slots 0x0061B778/0x0061B77A; B4 0x00511418..0x00511424."
       ],
       "effect": "A removed Robot or queued sleep action retains state, emits different messages or invokes callbacks in a different order.",
       "provenance": "Cited cross-layer inventory correction authorized by B-M1M2 Rows checked (manager, 2026-10-05). Interfaces/known effects only; no higher-layer build or settlement.",
-      "unresolved": "S6: classifier/filter/gyro boundaries 0x0051121A..0x0051124C and 0x00511418..0x00511424; identity 0x0050FE1C..0x0050FE20. Effects UNKNOWN. Source triage S6. Source: re-analysis/research/20261006-M1M2-missing-triage.md.",
+      "unresolved": "S6: classifier/filter/gyro boundaries 0x0051121A..0x0051124C and 0x00511418..0x00511424; identity 0x0050FE1C..0x0050FE20. Effects UNKNOWN. Source triage S6. Source: re-analysis/research/20261006-M1M2-missing-triage.md. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov23-24-check.md): IMPLEMENTATION_GAP for B1-B4; the subscription release mechanism is M1-046/M5-056 (cited, not re-owned). Crash points (M1-034): 0x004EF1BE (null handle); the ~Robot landing-pad copy of the gyro delete at 0x00511752..0x0051175E (exception-only).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9316,14 +9317,15 @@
       "subsystem": "M10-derived",
       "title": "RobotGyroDriftDetector::DetectGyroDrift and DetectBias on each RobotState",
       "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "effect": "gyro drift or bias is not detected, so its reports, and whatever reads them, differ",
       "provenance": "Cross-layer split (manager, 2026-10-10): S-8 of re-analysis/research/20261010-m3m4-cross-layer-splits.md, from M4-019 (rule-10 census).",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
-        "UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4"
+        "UpdateFullRobotState: ldr.w r0,[r4,#0x27C]; blx 0x4A7C6C RobotGyroDriftDetector::DetectGyroDrift 0x00512FB4..0x00512FBA and blx 0x4A7C78 DetectBias 0x00512FC4",
+        "re-analysis/research/overnight/20261014-ov23-24-check.md: R1 hook 0x00512FB4..0x00512FCE; R2 DetectGyroDrift 0x0052C568..0x0052C770; R3 DetectBias 0x0052C804..0x0052CB24; inputs MovementComponent 0x0063E31A, HandleCliffEvent 0x005356C6..0x005356D4."
       ],
-      "unresolved": "RECOVERABLE_GAP: read both bodies and their effects; M10-014 covers only the detector's destruction. The stack has no hook.",
+      "unresolved": "RECOVERABLE_GAP: read both bodies and their effects; M10-014 covers only the detector's destruction. The stack has no hook. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov23-24-check.md): IMPLEMENTATION_GAP. The hook is gated by UFRS H1 and M4-019 C12.4/C13.2, including the GetLastStateWithFrameID failure (0x0051307A..0x00513110) that skips both detectors. Dependencies cited, not re-owned: M11-065 yaw, NativeRadians, GetPose verifies, libm; the to_string(float) text is M11-083 (visible MISSING until it settles). The raw magnitude input is M10-017. The ctor min = 0 / reset max = 0 asymmetry is kept as the original.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9341,6 +9343,23 @@
       "effect": "A DAS event during robot teardown when Cozmo has hiccups.",
       "provenance": "Opus check of OV19 (2026-10-14), manager record.",
       "unresolved": "IMPLEMENTATION_GAP: port the dtor: if now > [this+0x2C], sEventF robot.hiccups.ended {$data: elapsed (now - [+0x54], or 0 when +0x54 == 0, as u32)} \"%s\" SELF_CURED; then clear the global _this; then the base.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M10-017",
+      "subsystem": "M10-derived",
+      "title": "The raw IMU magnitude at R+0x378 in UpdateFullRobotState: vsqrt((x2+y2)+z2) with the sqrtf fallback on NaN",
+      "location": "cozmo-stack/src/Cozmo.Robot/Sensors.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261014-ov23-24-check.md: UFRS 0x005129C0..0x00512A1E (bvc to sqrtf), store R+0x378; R+0x37C smoothing is M7-021."
+      ],
+      "effect": "The value DetectBias filters.",
+      "provenance": "Opus check of OV24 (2026-10-15), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: compute R+0x378 in this order on each accepted RobotState (job B-M10-1).",
       "hardware_required": false,
       "live_path": true,
       "test": ""
