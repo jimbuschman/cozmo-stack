@@ -76,7 +76,7 @@ public class M5LastReadsTests
     public void R45_1_3_R46_7_8_ShippedLoadUsesSharedInstanceAndAllFourResultsInOrder()
     {
         string root = Resources();
-        using var robot = CozmoRobot.CreateOffline();
+        using var robot = ResourceRobot(root); // Cube collection is scope Resources, independent of LoadFrom's assetsRoot.
         var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
         var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
         var library = robot.Animations.LoadFrom(root);
@@ -210,7 +210,7 @@ public class M5LastReadsTests
     [Fact]
     public void B_M5_4_RepeatHostLoadUsesAFreshNativePopulation()
     {
-        using var robot = CozmoRobot.CreateOffline();
+        using var robot = ResourceRobot(Resources());
         robot.Animations.LoadFrom(Resources());
         var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
         var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
@@ -230,7 +230,7 @@ public class M5LastReadsTests
             foreach (string dir in dirs) Directory.CreateDirectory(Path.Combine(root, dir));
             for (int type = 0; type < 4; type++)
                 if (type != absent) File.WriteAllText(Path.Combine(root, dirs[type], "a.json"), type == 0 ? "{\"a\":[]}" : "{}");
-            using var robot = CozmoRobot.CreateOffline();
+            using var robot = ResourceRobot(root);
             var entries = new ConcurrentQueue<EngineLogEntry>(); robot.Engine.LogEntry += entries.Enqueue;
             var diagnostics = new ConcurrentQueue<string>(); robot.Engine.StackLogLine += diagnostics.Enqueue;
             robot.Animations.LoadFrom(root);
@@ -258,5 +258,7 @@ public class M5LastReadsTests
         }
         throw new DirectoryNotFoundException("Shipped resources required for R46-7 regression");
     }
+    private static CozmoRobot ResourceRobot(string root) => CozmoRobot.CreateForTest(new Port(),()=>1_000_000_000,
+        new CozmoEngineOptions{ResourcesPath=root,BlockPoolPath=""});
 }
 

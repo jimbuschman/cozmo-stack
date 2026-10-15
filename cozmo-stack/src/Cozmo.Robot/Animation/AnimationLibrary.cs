@@ -293,7 +293,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     internal static AnimationLibrary OpenForLoad(string assetsRoot, Action<string>? log, SourceLogSink? sourceLog,
         EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups,
         Action<string>? beforeStat = null, Action<AnimationLibrary>? loaderCreated = null,
-        Action<IReadOnlyList<string>>? loadCubeFiles = null)
+        Action<IReadOnlyList<string>>? loadCubeFiles = null, Func<string?>? cubeResourceRoot = null)
     {
         var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
         loaderCreated?.Invoke(lib);
@@ -308,7 +308,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
         bool freshCollect = beginCollect();
         beforeCollect?.Invoke();
         var files = CollectFiles(new[] { animations, FindConfigDirectory(assetsRoot, "animations") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
-        var cubeFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/cubeLights") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
+        string? cubeRoot=cubeResourceRoot is null?assetsRoot:cubeResourceRoot();
+        string? cubeDirectory=cubeResourceRoot is null?FindConfigDirectory(assetsRoot,"lights/cubeLights")
+            :cubeRoot is null?null:Path.Combine(cubeRoot,CubeLightAnimations.AnimationDirectory);
+        if(cubeDirectory is not null&&!Directory.Exists(cubeDirectory))cubeDirectory=null; // Failed native opendir leaves this vector empty.
+        var cubeFiles = CollectFiles(new[] { cubeDirectory }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
         var backpackFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/backpackLights") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
         var groupFiles = CollectFiles(new[] { groups }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
         EmitCollectResults(new[] { files.Count, groupFiles.Count, cubeFiles.Count, backpackFiles.Count },

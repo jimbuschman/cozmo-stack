@@ -636,7 +636,8 @@ public sealed class CubeLightAnimations
     private static void LoadInto(CubeLightAnimations c, string? resourcesPath, Action<string>? log,
         SourceLogSink? sourceLog, IReadOnlyList<string>? collectedFiles)
     {
-        if (resourcesPath is null) return;
+        var time = System.Diagnostics.Stopwatch.StartNew();
+        if (resourcesPath is null) { EmitLoadTime(); return; }
         var map = Path.Combine(resourcesPath, TriggerMapPath);
         if (File.Exists(map) && BackpackLightAnimations.TryParse(File.ReadAllBytes(map), out var md))
         {
@@ -652,7 +653,7 @@ public sealed class CubeLightAnimations
         { Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.AnimationsNotFound", $"cube light animations not found at {directory}"); }
         var files = collectedFiles?.ToList() ?? new List<string>();
         if (collectedFiles is null) Collect(directory);
-        var time = System.Diagnostics.Stopwatch.StartNew();
+        time.Restart();
         object definitionsGate = new();
         Animation.AnimationLibrary.DispatchFiles(files, file =>
         {
@@ -675,12 +676,12 @@ public sealed class CubeLightAnimations
             catch (Exception e) when (e is JsonLogicError or JsonRuntimeError)
             { Skip(file, e); }
         });
-        Emit(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadCubeLightAnimations.LoadTime",
-            $"Time to load cube light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
+        EmitLoadTime();
 
         void Emit(EngineLogLevel level, string? channel, string key, string text) => SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(level, channel, key, text);
-        void Skip(string file, Exception e) => Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.SkipFatalFile",
-            $"M1-034 / M4-044: skipping cube light file {file}: {e.Message}; keeping any previous definition");
+        void EmitLoadTime() => Emit(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadCubeLightAnimations.LoadTime",
+            $"Time to load cube light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
+        void Skip(string file, Exception e) => SkipFatalFile(log,file,e);
         void Collect(string path)
         {
             string[] entries;
@@ -700,6 +701,13 @@ public sealed class CubeLightAnimations
                 files.Add(file);
             }
         }
+    }
+
+    // fidelity: M1-034, M4-044 — policy diagnostics never enter the engine source stream.
+    private static void SkipFatalFile(Action<string>? log,string file,Exception error)
+    {
+        string text=$"Stack.CubeLightLoader.SkipFatalFile: M1-034 / M4-044: skipping cube light file {file}: {error.Message}; keeping any previous definition";
+        if(log is {} sink)sink(text);else Behavior.SteppedBehavior.ReportMissing(text);
     }
 
     internal void Define(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
@@ -736,7 +744,7 @@ public sealed class CubeLightAnimations
         }
         // fidelity: M1-034, M4-044 — skip the complete definition, retaining the prior list.
         catch (JsonLogicError e)
-        { Emit(EngineLogLevel.Warning, "Stack.CubeLightLoader.SkipFatalFile", $"M1-034 / M4-044: skipping cube light file {file ?? "<definition>"}: {e.Message}; keeping any previous definition"); }
+        { SkipFatalFile(log,file??"<definition>",e); }
     }
 
     private static bool Has(FirmwareJsonValue value, string key)
@@ -843,6 +851,7 @@ public sealed class CubeLightComponent
         public string Trigger = "";
         public int TimerOffset;
         public bool Blended;
+        public bool Dangling; // A freed native list node stays freed even if a later assign grows the slot.
         public int Index;
         public uint TimerMs;
         public bool CanBeOverridden;
@@ -1091,6 +1100,9 @@ public sealed class CubeLightComponent
                 string playingName = name;
                 if (useBlended)
                 {
+                    if(blended.Length<info.BlendedSlots[layer].Patterns.Length)
+                        foreach(var buried in stack)
+                            if(buried.Blended&&buried.Index>=blended.Length)buried.Dangling=true;
                     info.BlendedSlots[layer].Patterns = blended;
                     playingName = stack.Count == 0 ? name : stack[^1].Name + "+" + name;
                 }
@@ -1174,7 +1186,13 @@ public sealed class CubeLightComponent
                     if (top.PendingSend) continue;
                     bool waiting = top.TimerMs == 0 || now < top.TimerMs;
                     if (waiting && !top.Stop) continue;                 // W4: holds
-                    if (!top.Stop)
+                    // fidelity: M1-034, M4-045 — advance also dereferences the freed node, even with +0x41 set.
+                    if(top.Dangling)
+                    {
+                        string name=top.Name;int index=top.Index;bool stopped=top.Stop;
+                        calls.Add(()=>Log(FormattableString.Invariant($"Stack.CubeLightComponent.SkipDanglingBlendedAdvance: M1-034 / M4-045: skipped {(stopped?"Stop":"advance")} of dangling {name}, index {index}; native freed-node read 0x006379A6..0x006379AA; retiring this entry, preserving lower entries")));
+                    }
+                    else if (!top.Stop)
                     {
                         top.Index++;
                         if (top.Index < top.Anim.Length)
@@ -1199,11 +1217,10 @@ public sealed class CubeLightComponent
                         else calls.Add(() => Log("MISSING: M4-018 | Update.PlayingPrevious 0x00637AA4: native ObjectID unavailable"));
                         // fidelity: M1-034
                         // fidelity: M4-045 — list::assign shortened the shared slot beneath this entry.
-                        if(lower.Blended&&(uint)lower.Index>=(uint)lower.Anim.Length)
+                        if(lower.Dangling)
                         {
                             string skippedName=lower.Name;int skippedIndex=lower.Index,slotLength=lower.Anim.Length;
-                            calls.Add(()=>SourceLog(EngineLogLevel.Warning,null,"Stack.CubeLightComponent.SkipDanglingBlendedResend",
-                                FormattableString.Invariant($"M1-034 / M4-045: skipped resend of {skippedName}, index {skippedIndex} past shared slot length {slotLength}; native freed-node read 0x00637ACC..0x00637AE4; previous state retained")));
+                            calls.Add(()=>Log(FormattableString.Invariant($"Stack.CubeLightComponent.SkipDanglingBlendedResend: M1-034 / M4-045: skipped resend of dangling {skippedName}, index {skippedIndex}, current shared slot length {slotLength}; native freed-node read 0x00637ACC..0x00637AE4; previous state retained")));
                             continue;
                         }
                         Send(type, lower.Anim[lower.Index], transition: true);

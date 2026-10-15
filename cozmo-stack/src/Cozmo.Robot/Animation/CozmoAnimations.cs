@@ -385,7 +385,8 @@ public sealed class CozmoAnimations : IDisposable
                 }
             }, cubeFiles => _robot.Lights.Cubes.Animations.LoadCollected(_robot.Engine.Options.ResourcesPath,
                 cubeFiles, _robot.Engine.Log,
-                (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text)));
+                (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text)),
+                cubeResourceRoot:()=>_robot.Engine.Options.ResourcesPath);
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)

@@ -80,8 +80,9 @@ public sealed class M3M4X14BuilderTests : IDisposable
             };
             // A crafted file traverses the production file reader, every fatal category is covered.
             File.WriteAllText(Path.Combine(root,CubeLightAnimations.AnimationDirectory,"fatal.bin"),payload);
-            var lib=CubeLightAnimations.Load(root,sourceLog:Capture(logs));
-            Assert.NotNull(lib.ForTrigger("Sleep")); Assert.Contains(logs,e=>e.Name=="Stack.CubeLightLoader.SkipFatalFile" && e.Text.Contains("M1-034 / M4-044"));
+            var stack=new List<string>();var lib=CubeLightAnimations.Load(root,log:stack.Add,sourceLog:Capture(logs));
+            Assert.NotNull(lib.ForTrigger("Sleep")); Assert.Contains(stack,e=>e.StartsWith("Stack.CubeLightLoader.SkipFatalFile:") && e.Contains("M1-034 / M4-044"));
+            Assert.DoesNotContain(logs,e=>e.Name=="Stack.CubeLightLoader.SkipFatalFile");
             if(kind!="stack")
             {
                 var old=lib.ForTrigger("WakeUp"); Define(lib,payload,logs); Assert.Same(old,lib.ForTrigger("WakeUp"));
