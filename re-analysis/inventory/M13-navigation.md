@@ -2610,3 +2610,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Robot destructor order read | M13-032 (note) |
+
+
+## Check of OV48-OV49 (manager, 2026-10-15; research/overnight/20261015-ov48-49-check.md)
+
+| Change | Records |
+| --- | --- |
+| TrackObjectAction selection: unreachable in the shipped app (live_path false) | M13-037; note M13-036 |
+| BehaviorAudioClient lifetime: RECOVERABLE_GAP | M13-038 (new) |
+| BehaviorAudioClient handler: IMPLEMENTATION_GAP (waits on M13-038) | M13-039 (new) |

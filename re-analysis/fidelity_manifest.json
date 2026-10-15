@@ -225,7 +225,7 @@
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M13-navigation.md",
-        "approved": "2026-10-14",
+        "approved": "2026-10-15",
         "snapshot": "re-analysis/inventory/M13-navigation.approved.json"
       }
     },
@@ -3723,7 +3723,7 @@
       "hardware_required": false,
       "effect": "an unconnected cube is dropped where the engine keeps it, and the motion/rotation gates differ",
       "provenance": "the stack's BlockWorld.cs connected-object rule and gates are to be compared against the instructions above",
-      "unresolved": "BUILT (fix round): FindLocatedObjectHelper (filter copy, onlyLatest predicate, ascending origin/family/type/ID walk, originMode 0/1/2/other, last-passing-wins or first with returnFirstOnly, modify function), FindLocatedMatchingObjects, FindConnectedObjectHelper, the connected lookup by ObjectID, FindObjectMatchForObservation (unique a..e; non-unique closest with abs(delta) written back to the translation AND angle tolerance and the observed object's own ID ignored, fallback with IsSameAs ignoring the angle), the non-unique located lookup without a carried predicate, the unique lookup's predicate 0x006215C4 (= IsUnique(), always true), the WasMoving/WasRotatingTooFast/WasCameraMoving gates, PotentialObjectsForLocalizingTo (M11-044). STILL OPEN: this stack's single pose origin (BlockWorld.CurrentOriginId) stands in for [[Robot+0x294]+0x10]; the FindLocatedObjectHelper tail checks 0x0061ED94..0x0061F078 beyond those read; the extra tail of FindConnectedObjectHelper (0x0061F129..0x0061F2A0).\nbuilt, awaiting strong verification: B-M11-1 (2026-10-14): Per-origin localization query uses existing checked mode-3 filter/predicate and native strict resting-flat angle through GetWithRespectToRoot. No filter/predicate broad settlement. See jobs/status/B-M11-1.md for files/lines, binary ranges, tests and every MISSING.\nB-M3M4-28 (2026-10-15), built, awaiting strong verification: MovementLocatedLoop holds FrameGate across FindLocatedMatchingObjects and all ApplyMovedOrStopped calls. Census correction: FindLocatedMatchingObjects supplies list.Add as modifyFn and therefore takes the frame gate even though it looks like a query; only null-modifyFn walks are exempt."
+      "unresolved": "BUILT (fix round): FindLocatedObjectHelper (filter copy, onlyLatest predicate, ascending origin/family/type/ID walk, originMode 0/1/2/other, last-passing-wins or first with returnFirstOnly, modify function), FindLocatedMatchingObjects, FindConnectedObjectHelper, the connected lookup by ObjectID, FindObjectMatchForObservation (unique a..e; non-unique closest with abs(delta) written back to the translation AND angle tolerance and the observed object's own ID ignored, fallback with IsSameAs ignoring the angle), the non-unique located lookup without a carried predicate, the unique lookup's predicate 0x006215C4 (= IsUnique(), always true), the WasMoving/WasRotatingTooFast/WasCameraMoving gates, PotentialObjectsForLocalizingTo (M11-044). STILL OPEN: this stack's single pose origin (BlockWorld.CurrentOriginId) stands in for [[Robot+0x294]+0x10]; the FindLocatedObjectHelper tail checks 0x0061ED94..0x0061F078 beyond those read; the extra tail of FindConnectedObjectHelper (0x0061F129..0x0061F2A0).\nbuilt, awaiting strong verification: B-M11-1 (2026-10-14): Per-origin localization query uses existing checked mode-3 filter/predicate and native strict resting-flat angle through GetWithRespectToRoot. No filter/predicate broad settlement. See jobs/status/B-M11-1.md for files/lines, binary ranges, tests and every MISSING.\nB-M3M4-28 (2026-10-15), built, awaiting strong verification: MovementLocatedLoop holds FrameGate across FindLocatedMatchingObjects and all ApplyMovedOrStopped calls. Census correction: FindLocatedMatchingObjects supplies list.Add as modifyFn and therefore takes the frame gate even though it looks like a query; only null-modifyFn walks are exempt. OV49 check (re-analysis/research/overnight/20261015-ov48-49-check.md): CONTRADICTED citation: 0x0061FA68 installs vtable 0x0102DDD4 whose operator is 0x006280DA (requires +0x4C AND +0x48 equality, calls ObservableObject::IsSameAs 0x0062810E); 0x006281DA is the type helper's predicate (M13-037). \"Closest wins\" is stepwise bound narrowing, not a nearest-distance minimum. The built code must be re-checked against this (overnight request)."
     },
     {
       "subsystem": "M11-vision",
@@ -3840,7 +3840,8 @@
         "Anki::Vision::NotVisibleReasonToString 0x0087E96C is one indexed load from a table of nine string pointers: IS_VISIBLE, CAMERA_NOT_CALIBRATED, POSE_PROBLEM, BEHIND_CAMERA, NORMAL_NOT_ALIGNED, TOO_SMALL, OUTSIDE_FOV, OCCLUDED, NOTHING_BEHIND",
         "KnownMarker::IsVisibleFrom 0x0087E4A8 writes all nine: 5 TOO_SMALL 0x0087E7B6, 6 OUTSIDE_FOV 0x0087E83A, 7 OCCLUDED 0x0087E836, 8 NOTHING_BEHIND 0x0087E87A",
         "BlockWorld::UpdateObservedMarkers 0x00624F98 clears the occluder list; BlockWorld::AddAndUpdateObjects 0x006211CC adds one entry per observed marker; the frame sequence itself is M11-037",
-        "BlockWorld::CheckForUnobservedObjects forgets an object either when it should have been visible (0x00622132) or when nothing was behind it and its pose is Dirty (0x0062211E)"
+        "BlockWorld::CheckForUnobservedObjects forgets an object either when it should have been visible (0x00622132) or when nothing was behind it and its pose is Dirty (0x0062211E)",
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: visibility bodies from OV49: wrapper/reason 8 0x00876774..0x0087683E, 0x00876678..0x00876710; gates 0x0087E4C2..0x0087E520, 0x0087E64A..0x0087E6C2; corners 0x004DD7D8..0x004DD818, 0x0087E2E8..0x0087E342, 0x0050343C..0x00503520; facing 0x0087E548..0x0087E646, 0x0050E0C0..0x0050E130; projection 0x0085E264..0x0085E536; size/FOV 0x0087E6F2..0x0087E83A, 0x0085E13C..0x0085E1C6; occlusion 0x0087E800..0x0087E836, 0x00878278..0x00878306; behind 0x0087E83E..0x0087E87A, 0x008783C8..0x0087846C, 0x0087855C..0x008785F4, 0x004F67C0..0x004F6888; caller args 0x006220E2..0x0062212A."
       ],
       "prior": "occlusion was not modelled and a marker that passed the geometric tests counted as visible; the reason enum's names and values were this stack's own",
       "live_path": true,
@@ -3849,7 +3850,7 @@
       "hardware_required": false,
       "effect": "an object is forgotten or kept differently from the engine",
       "provenance": "the stack BlockWorld.cs occlusion model is to be compared against the instructions above",
-      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): MarkerVisibility rewritten in binary32 in the engine's order (reason 3 first, MakeUnitLength 0x0050E0C0, acosf(-dot) > max, the diagonals against the minimum size, IsWithinFieldOfView 0x0085E13C with u16 insets and NaN rejected, occlusion p0,p2,p1,p3, NothingBehind at the depth (((z0+z2)+z1)+z3)*0.25f), and the engine's Project3dPoint (z <= 0 gives NaN, distortion terms by coefficient count). Still open: Pose3d/CameraModel/OccluderList are double; acosf/cosf/atan2f use MathF as libm f32 stand-ins; a distortion coefficient count of 1..3 reads heap past the end in the engine (reported MISSING); IsOccluded/IsAnythingBehind bodies (0x00878278 / 0x008783C8) are not the engine's algorithm (MISSING)."
+      "unresolved": "built, awaiting strong verification (R-FIX, 2026-10-03): MarkerVisibility rewritten in binary32 in the engine's order (reason 3 first, MakeUnitLength 0x0050E0C0, acosf(-dot) > max, the diagonals against the minimum size, IsWithinFieldOfView 0x0085E13C with u16 insets and NaN rejected, occlusion p0,p2,p1,p3, NothingBehind at the depth (((z0+z2)+z1)+z3)*0.25f), and the engine's Project3dPoint (z <= 0 gives NaN, distortion terms by coefficient count). Still open: Pose3d/CameraModel/OccluderList are double; acosf/cosf/atan2f use MathF as libm f32 stand-ins; a distortion coefficient count of 1..3 reads heap past the end in the engine (reported MISSING); IsOccluded/IsAnythingBehind bodies (0x00878278 / 0x008783C8) are not the engine's algorithm (MISSING). OV49 check (re-analysis/research/overnight/20261015-ov48-49-check.md): the IsOccluded / IsAnythingBehind bodies previously MISSING are now read (evidence); build them. M1-034 candidate: distortion count 1-3 reads past the vector (0x0085E2B2, 0x0085E33A); the CLAD carries 8 (M11-039 owns the copy)."
     },
     {
       "subsystem": "M11-vision",
@@ -8605,8 +8606,8 @@
         "re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md 'Stays open'",
         "re-analysis/research/overnight/20261014-ov10-m11-042-check.md: read rows moved to M11-041, M11-013, M11-062, M11-037, M11-007, M11-044, M11-052; remaining: ObservableObject::IsVisibleFrom 0x00876774, KnownMarker::IsVisibleFrom, FindLocatedObjectHelper, 0x0064E704, VisionComponent+0x28."
       ],
-      "status": "RECOVERABLE_GAP",
-      "unresolved": "STILL UNREAD, visible in code (each names M11-042): CreateActiveObjectByType (NotSupportedException for non-cubes), the Clone bodies of Charger and the non-active blocks (Charger built as a fresh object, unverified), the Charger's IsActive value (treated as passive), the virtual SetID users CreateFixedCustomObject and AddMarkerlessObject, ObservableObject vtable +0x58 (the collision dirty pass is a counted stub), HandleActiveObjectConnectionState's error branches, RemoveConnectedActiveObject's body, Robot::HandleConnectedToObject, MarkObjectUnknown's message fields, IsVisibleFrom's pads (xPad/yPad 0), UpdateMarkerObservationTimes, DeleteIntersectingObjects (counted stub), the MovementComponent bytes' and Robot+0x280 byte +4's names, the roles of DockingComponent+0xC and MovementComponent+0x20, the name of Robot+0x355, the SetCameraParams contents, the BlockConfigurationManager container slot-0 functions, the predicate of BlockWorld::AnyRemainingLocalizableObjects 0x00626EF4 (FindLocatedObjectHelper with one predicate; a stand-in uses CanBeUsedForLocalization), the field-by-field blend of HistRobotState::Interpolate (0x005314D0..0x00531534; the fraction is known), what the marker loop of Robot::SetLocalizedTo minimises into Robot+0x2C8 (0x00512442) and its GetWithRespectTo of a marker pose to the camera pose, PruneFullPyramids/NotifyBroadcaster and the RobotDelocalized emitter. Read and no longer listed: GetLastVisuallyMatchedTime, CanBeUsedForLocalization for the ActiveCube (with its IsMoving test) and for the Charger and other non-cube types (false), the MarkObjectUnknown walk (upward only, a carried result continues it), GetComputedStateAt (exact computed timestamp). OV10 check (re-analysis/research/overnight/20261014-ov10-m11-042-check.md): dissolved into its owners; the stand-ins (Charger passive, pads 0, DeleteIntersectingObjects counted stub) are superseded. What remains is in the title (RECOVERABLE_GAP).",
+      "status": "IMPLEMENTATION_GAP",
+      "unresolved": "STILL UNREAD, visible in code (each names M11-042): CreateActiveObjectByType (NotSupportedException for non-cubes), the Clone bodies of Charger and the non-active blocks (Charger built as a fresh object, unverified), the Charger's IsActive value (treated as passive), the virtual SetID users CreateFixedCustomObject and AddMarkerlessObject, ObservableObject vtable +0x58 (the collision dirty pass is a counted stub), HandleActiveObjectConnectionState's error branches, RemoveConnectedActiveObject's body, Robot::HandleConnectedToObject, MarkObjectUnknown's message fields, IsVisibleFrom's pads (xPad/yPad 0), UpdateMarkerObservationTimes, DeleteIntersectingObjects (counted stub), the MovementComponent bytes' and Robot+0x280 byte +4's names, the roles of DockingComponent+0xC and MovementComponent+0x20, the name of Robot+0x355, the SetCameraParams contents, the BlockConfigurationManager container slot-0 functions, the predicate of BlockWorld::AnyRemainingLocalizableObjects 0x00626EF4 (FindLocatedObjectHelper with one predicate; a stand-in uses CanBeUsedForLocalization), the field-by-field blend of HistRobotState::Interpolate (0x005314D0..0x00531534; the fraction is known), what the marker loop of Robot::SetLocalizedTo minimises into Robot+0x2C8 (0x00512442) and its GetWithRespectTo of a marker pose to the camera pose, PruneFullPyramids/NotifyBroadcaster and the RobotDelocalized emitter. Read and no longer listed: GetLastVisuallyMatchedTime, CanBeUsedForLocalization for the ActiveCube (with its IsMoving test) and for the Charger and other non-cube types (false), the MarkObjectUnknown walk (upward only, a carried result continues it), GetComputedStateAt (exact computed timestamp). OV10 check (re-analysis/research/overnight/20261014-ov10-m11-042-check.md): dissolved into its owners; the stand-ins (Charger passive, pads 0, DeleteIntersectingObjects counted stub) are superseded. What remains is in the title (RECOVERABLE_GAP). OV49 check (re-analysis/research/overnight/20261015-ov48-49-check.md): DISSOLVED: nothing of its own remains. Visibility -> M11-010; returnFirst=0 -> M11-004 (built); subscriber -> M13-038 and M13-039; calibration null reads 0x00621F58/0x00622060 unreachable on the shipped route (CheckForUnobservedObjects <- UpdateObservedMarkers 0x0062504E/0x006250CA <- UpdateAllResults 0x00654DF4). The older \"STILL UNREAD\" list is superseded.",
       "hardware_required": false,
       "live_path": true,
       "test": "M11RVisBuildTests"
@@ -9911,7 +9912,7 @@
       ],
       "effect": "Which object the robot tracks and what it publishes as the tracked ID.",
       "provenance": "Opus check of OV07 (2026-10-14), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: port row 6. The +0x120 == 0 path has no direct caller (indirect construction not excluded). Selection and the UpdateTracking tail are in the companion RECOVERABLE_GAP record.",
+      "unresolved": "IMPLEMENTATION_GAP: port row 6. The +0x120 == 0 path has no direct caller (indirect construction not excluded). Selection and the UpdateTracking tail are in the companion RECOVERABLE_GAP record. OV48 check (re-analysis/research/overnight/20261015-ov48-49-check.md): shares M13-037's unreachability in the shipped app (TrackObjectAction is only constructed at 0x0052AD20 and 0x0054AE1E, neither reached with a valid ID by the shipped app). Status unchanged pending the operator's answer on exposing TrackToObject.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9928,7 +9929,41 @@
       ],
       "effect": "How the tracked object and the head/body angles are chosen each tick.",
       "provenance": "Opus check of OV07 (2026-10-14), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed bodies completely.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies completely. OV48 check (re-analysis/research/overnight/20261015-ov48-49-check.md): all rows confirmed (selection 0x0061FBFC..0x0061FD8C, 0x006281DA..0x00628262, 0x0061EB78..0x0061F030, 0x00846EA4..0x008471A6; markers 0x00567DA4..0x00567EFC, 0x00876C50..0x00876C98; outputs 0x00567EFC..0x00567F68; fails 0x00567FC2..0x005680DA; +0x192 0x00549DC0..0x00549E28, 0x0052B0CC..0x0052B110, 0x0054ADF2..0x0054AF60 incl. the omitted TrackingNotsupported warning; Robot::GetPose VERIFYs 0x004EA398..0x004EA46E). UNREACHABLE in the shipped app: all 23 in-engine TurnTowardsObjectAction constructions pass headTrack=0, all six app calls pass headTrackWhenDone=false, the app sends TrackToObject only with -1 (rejected at 0x00567A3A..0x00567A44). live_path set false; not built. Operator question: expose TrackToObject with a real ID / headTrackWhenDone=true?",
+      "hardware_required": false,
+      "live_path": false,
+      "test": ""
+    },
+    {
+      "id": "M13-038",
+      "subsystem": "M13-navigation",
+      "title": "BehaviorAudioClient instances and lifetime: two clients (BehaviorManager, BehaviorSystemManager) subscribe to the public-state broadcaster; whether both stay subscribed; the re-entrant double ActivateSparkedMusic",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: Subscribe 0x00591F08 in the ctor; constructed by BehaviorManager 0x005A0914 and BehaviorSystemManager 0x005A5828, both built in Robot::Robot (0x0050FCAC, 0x0050FCBE); emitter 0x0064DE5E..0x0064DE7A -> 0x0064E656..0x0064E668 (synchronous, skips empty slots); re-entrance via the unlock 0x1D path and UpdateBroadcastBehaviorStage 0x0064DA44..0x0064DB86 (broadcaster state+0 copied at 0x0064DB44..0x0064DB58)."
+      ],
+      "effect": "How many times each public-state change drives music and Wwise state, and whether sparked music is activated twice.",
+      "provenance": "Opus check of OV48-OV49 (2026-10-15), manager record.",
+      "unresolved": "RECOVERABLE_GAP: trace the writers and destructors of BehaviorManager+0x68 and BehaviorSystemManager+0x10 (do both clients stay alive and subscribed for the session); trace the writers of broadcaster state+0 to settle the double activation.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M13-039",
+      "subsystem": "M13-navigation",
+      "title": "BehaviorAudioClient::HandleRobotPublicStateChange and helpers: world events, round, spark, needs, dim, activity music, GuardDog and Feeding stages, unlock cache; SetSparkedMusicState input",
+      "location": "cozmo-stack/src/Cozmo.Robot/Manipulation/Workouts.cs",
+      "status": "IMPLEMENTATION_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: handler 0x005921EE..0x00592258; helpers 0x0059225C..0x00592720, 0x00591FC4..0x00592190 (round table 0x00C5B65C, activity map 0x00C5B5F0, eighties 0x00573B70..0x00573B9A, 0x00573E30..0x00573E7E); handler lambda 0x01023D98 -> 0x00592B1E -> 0x004AF07C; SetSparkedMusicState (G2E 0xA3) lambda 0x00592A9E..0x00592ABA, client+0xC initial 0 (0x00591E56)."
+      ],
+      "effect": "Spark and activity music, Wwise states driven by Cozmo's public state.",
+      "provenance": "Opus check of OV48-OV49 (2026-10-15), manager record.",
+      "unresolved": "IMPLEMENTATION_GAP: the build waits for M13-038 (two instances). SetSparkedMusicState is an app input (SparksDetailModal.cs:309, OnboardingDoTrickStage.cs:82); without it client+0xC stays 0, every spark logs InvalidMusicState and no spark music plays: operator question whether the stack API passes it (manager recommendation: yes, with the spark requests). Round-table index past 11 not reached by shipped stages (max 5).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

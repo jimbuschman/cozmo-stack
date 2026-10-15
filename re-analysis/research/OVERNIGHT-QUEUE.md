@@ -87,5 +87,7 @@ The first three are the requests already written:
 | OV74 | requests/overnight/20261015-ov74-m12-047.md (M12-047: Behavior helper stop semantics (StopHelperWithoutCallback, ClearStackF) | research/overnight/20261015-ov74-m12-047.md |
 | OV75 | requests/overnight/20261015-ov75-m12-048.md (M12-048: Candidate crash points in pre-action pose consumers: CrossBridge GetDo) | research/overnight/20261015-ov75-m12-048.md |
 | OV76 | requests/overnight/20261015-ov76-m11-073.md (M11-073: Whether any unguarded GetParent caller can see a root pose in normal r) | research/overnight/20261015-ov76-m11-073.md |
+| OV77 | requests/overnight/20261015-ov77-m13-038.md (M13-038: BehaviorAudioClient instances and lifetime: two clients (BehaviorManag) | research/overnight/20261015-ov77-m13-038.md |
+| OV78 | requests/overnight/20261015-ov78-m11-004.md (M11-004: BlockWorld connected-object rule, moving and rotating gates, position-) | research/overnight/20261015-ov78-m11-004.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "6378dc738c0d4afa5e24d3ce62596e90ddf53d9a5b591e389439459aedd07197",
+  "inventory_sha256": "a49eee854e6118ab8adcb03672557386b7af62c84ee2c2dc2e4375207334e99e",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -140,7 +140,8 @@
         "Anki::Vision::NotVisibleReasonToString 0x0087E96C is one indexed load from a table of nine string pointers: IS_VISIBLE, CAMERA_NOT_CALIBRATED, POSE_PROBLEM, BEHIND_CAMERA, NORMAL_NOT_ALIGNED, TOO_SMALL, OUTSIDE_FOV, OCCLUDED, NOTHING_BEHIND",
         "KnownMarker::IsVisibleFrom 0x0087E4A8 writes all nine: 5 TOO_SMALL 0x0087E7B6, 6 OUTSIDE_FOV 0x0087E83A, 7 OCCLUDED 0x0087E836, 8 NOTHING_BEHIND 0x0087E87A",
         "BlockWorld::UpdateObservedMarkers 0x00624F98 clears the occluder list; BlockWorld::AddAndUpdateObjects 0x006211CC adds one entry per observed marker; the frame sequence itself is M11-037",
-        "BlockWorld::CheckForUnobservedObjects forgets an object either when it should have been visible (0x00622132) or when nothing was behind it and its pose is Dirty (0x0062211E)"
+        "BlockWorld::CheckForUnobservedObjects forgets an object either when it should have been visible (0x00622132) or when nothing was behind it and its pose is Dirty (0x0062211E)",
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: visibility bodies from OV49: wrapper/reason 8 0x00876774..0x0087683E, 0x00876678..0x00876710; gates 0x0087E4C2..0x0087E520, 0x0087E64A..0x0087E6C2; corners 0x004DD7D8..0x004DD818, 0x0087E2E8..0x0087E342, 0x0050343C..0x00503520; facing 0x0087E548..0x0087E646, 0x0050E0C0..0x0050E130; projection 0x0085E264..0x0085E536; size/FOV 0x0087E6F2..0x0087E83A, 0x0085E13C..0x0085E1C6; occlusion 0x0087E800..0x0087E836, 0x00878278..0x00878306; behind 0x0087E83E..0x0087E87A, 0x008783C8..0x0087846C, 0x0087855C..0x008785F4, 0x004F67C0..0x004F6888; caller args 0x006220E2..0x0062212A."
       ],
       "live_path": true,
       "hardware_required": false
@@ -517,7 +518,7 @@
       "hardware_required": false
     },
     "M11-042": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Still unread next to the BlockWorld observation path: IsVisibleFrom projection/occlusion, FindLocatedObjectHelper returnFirst=0 result, subscriber bodies behind 0x0064E704, calibration null at CheckForUnobservedObjects",
       "authority": "libcozmoEngine.so 3.4.0-1204: CreateActiveObjectByType (0x00623296 call); the Clone bodies of Charger and the non-active blocks; the virtual SetID users CreateFixedCustomObject and AddMarkerlessObject (vtable +0x24 by pattern only); ObservableObject vtable +0x58; HandleActiveObjectConnectionState error branch 0x00533CB8; RemoveConnectedActiveObject; Robot::HandleConnectedToObject; the full MarkObjectUnknown body 0x00507128 (stack-walk order, message fields); IsVisibleFrom (camera at VisionComponent+0x24, 0.7854 rad, 40.0); the names of the MovementComponent bytes +0xA/+0xC and Robot+0x280 byte +4; the SetCameraParams contents sent at 0x00658414; the BlockConfigurationManager container slot-0 functions (Stack, PyramidBase, Pyramid), PruneFullPyramids and NotifyBroadcaster; the RobotDelocalized emitter (0x00510D88); R-VIS batch-A verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA.md): GetLastVisuallyMatchedTime, the IsVisibleFrom pads, the warning clock and CanBeUsedForLocalization are now READ (see M11-037, M11-013 and M11-007) and no longer belong here; still unread: CreateActiveObjectByType, the error branches 0x00533B58/0x00533CB8, Robot::HandleConnectedToObject, the rest of RemoveConnectedActiveObject, OnObjectPoseChanged between the +0x74 gate and the append, UpdateMarkerObservationTimes 0x0062114A / SetObservationTimes 0x006292DC / DeleteIntersectingObjects 0x00622C84, the Charger IsActive and Clone bodies, UnknownOriginID / FindLocatedObjectClosestToHelper, DockingComponent+4 and ObservableObject vtable +0x58; R-VIS batch-A re-verifier (re-analysis/research/20260929-R-VIS-verify-M11-batchA2.md): the Charger CanBeUsedForLocalization slot, the IsMoving virtual and GetLastImageTimeStamp are READ (see M11-007 and M11-044)",
       "evidence": [

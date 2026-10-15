@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-14",
+  "approved": "2026-10-15",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "5acf6d40f3436568333fca591e1143c3343f3f0088c7c4baa8bdb5ee8a9a224c",
+  "inventory_sha256": "0a27a929b8bab4a612c0379ad79c5f5043d08172757aff98a20fba0bf64e90c2",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -480,6 +480,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: \"Still unread\": FindLocatedClosestMatchingTypeHelper (called at 0x00567D1C); UpdateTracking from 0x00567DA4 (0x00567FC2, 0x00568088); TurnTowardsObjectAction +0x192."
+      ],
+      "live_path": false,
+      "hardware_required": false
+    },
+    "M13-038": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BehaviorAudioClient instances and lifetime: two clients (BehaviorManager, BehaviorSystemManager) subscribe to the public-state broadcaster; whether both stay subscribed; the re-entrant double ActivateSparkedMusic",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: Subscribe 0x00591F08 in the ctor; constructed by BehaviorManager 0x005A0914 and BehaviorSystemManager 0x005A5828, both built in Robot::Robot (0x0050FCAC, 0x0050FCBE); emitter 0x0064DE5E..0x0064DE7A -> 0x0064E656..0x0064E668 (synchronous, skips empty slots); re-entrance via the unlock 0x1D path and UpdateBroadcastBehaviorStage 0x0064DA44..0x0064DB86 (broadcaster state+0 copied at 0x0064DB44..0x0064DB58)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M13-039": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "BehaviorAudioClient::HandleRobotPublicStateChange and helpers: world events, round, spark, needs, dim, activity music, GuardDog and Feeding stages, unlock cache; SetSparkedMusicState input",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: handler 0x005921EE..0x00592258; helpers 0x0059225C..0x00592720, 0x00591FC4..0x00592190 (round table 0x00C5B65C, activity map 0x00C5B5F0, eighties 0x00573B70..0x00573B9A, 0x00573E30..0x00573E7E); handler lambda 0x01023D98 -> 0x00592B1E -> 0x004AF07C; SetSparkedMusicState (G2E 0xA3) lambda 0x00592A9E..0x00592ABA, client+0xC initial 0 (0x00591E56)."
       ],
       "live_path": true,
       "hardware_required": false

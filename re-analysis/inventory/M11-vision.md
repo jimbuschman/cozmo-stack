@@ -1646,3 +1646,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Narrowed (stays RECOVERABLE_GAP) | M11-073 |
+
+
+## Check of OV48-OV49 (manager, 2026-10-15; research/overnight/20261015-ov48-49-check.md)
+
+| Change | Records |
+| --- | --- |
+| Dissolved into M11-010 / M11-004 / M13 records: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-042 |
+| Visibility bodies read | M11-010 (evidence) |
+| Predicate citation contradicted | M11-004 (note) |
