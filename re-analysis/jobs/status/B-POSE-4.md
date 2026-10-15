@@ -1,4 +1,4 @@
-DONE B-POSE-4 — 2026-10-15 — built, awaiting strong verification; implementation push pending.
+DONE B-POSE-4 — 2026-10-15 — built, awaiting strong verification; pushed implementation d12b58fce4a659834d9eb4d75664fcd957c8217a.
 
 Claim: 3bcab8ac. Checked source: manager-adopted research/20261015-b-pose-3-check.md, blocking 1–2 and queued 3–5. Reopened the local native call sites and targets; no new unchecked behavior added. No status changes, hardware run or verification packet.
 
@@ -47,3 +47,5 @@ Focused: 65/65 passed (PoseTreeVerifyBuilderTests, NativePoseBuilderTests, Nativ
 | 0x00844AC8; 0x00844AFC | Node overload conditional checks reopened; not extra wrapper calls introduced here |
 
 No new filesystem operations or counters. No MISSING enters the source engine stream. Remaining native ownership/destructor gaps are explicitly retained; this is a bounded correction to the adopted rows, not whole-pose-path settlement.
+
+Push gate: fidelity passed; 4790/4790 tests passed, zero skipped, 5m21s. Implementation d12b58fce4a659834d9eb4d75664fcd957c8217a pushed successfully after a clean rebase over the manager research commit.
