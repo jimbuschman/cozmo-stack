@@ -82,8 +82,9 @@ anything. BOARD.md is history; this file is the live queue.
 | 35 | [B-M3M4-24](B-M3M4-24.md) | done 70360684; Opus check PASS (research/20261015-b-m3m4-24-pass.md); three host-tool items queued there |
 | 35a | [B-M3M4-28](B-M3M4-28.md) | done f0d753e9; Opus check PASS (research/20261015-b-m3m4-28-pass.md); item 7 comment done by the manager |
 | 36 | [B-M3M4-25](B-M3M4-25.md) | done f6fc3664; Opus check FAIL (construction-time connection gate throws; research/20261015-b-m3m4-25-check.md); fixes in B-M3M4-29 |
-| 37 | [B-M5-20](B-M5-20.md) | open, after B-M3M4-25 (empty-name warning, queued items) |
+| 37 | [B-M5-20](B-M5-20.md) | done 166a157e; Opus check PASS (research/20261015-b-m5-20-pass.md); queued items in B-M5-21 |
 | 36a | [B-M3M4-29](B-M3M4-29.md) | open, NEXT after B-M5-20 (remove the construction-time connection gate that breaks hardware tools; dispatch-residue cleanup) |
+| 36b | [B-M5-21](B-M5-21.md) | open, after B-M3M4-29 (trigger-responses loader failure paths; Freeplay restore order) |
 | 38 | [B-M2M15-1](B-M2M15-1.md) | open, after B-M5-20 (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
 | 39 | [B-M11-2](B-M11-2.md) | open, after B-M2M15-1 (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
 | 40 | [B-M12-3](B-M12-3.md) | open, after B-M11-2 (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018) |
