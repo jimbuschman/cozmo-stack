@@ -62,7 +62,10 @@ public class M5LastReadsTests
     public void R45_5_ProductionStartEmitsNamedSeed()
     {
         var port = new Port();
-        using var engine = new CozmoEngine(port, null);
+        string cache=Directory.CreateTempSubdirectory("seed-test-cache-").FullName;
+        try
+        {
+        using var engine = new CozmoEngine(port,new CozmoEngineOptions{AnimationCachePath=cache});
         var entries = new ConcurrentQueue<EngineLogEntry>(); engine.LogEntry += entries.Enqueue;
         engine.StartProduction(0, () => 123);
         Assert.True(port.Started);
@@ -70,6 +73,8 @@ public class M5LastReadsTests
         Assert.Equal(EngineLogLevel.Event, entry.Level);
         Assert.Equal("123", entry.Text);
         Assert.Equal("CozmoContext", entry.Data["$data"]);
+        }
+        finally{Directory.Delete(cache,true);}
     }
 
     [Fact]

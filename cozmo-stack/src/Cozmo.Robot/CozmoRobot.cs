@@ -227,6 +227,27 @@ public sealed partial class CozmoRobot : IDisposable
     /// drain (M1-024), and every message the devices send goes through its send path (M1-026).
     /// </summary>
     public CozmoEngine Engine { get; }
+    private string? _ownedOfflineAnimationCache;
+
+    // Test/replay seam only. Production Create keeps CozmoEngineOptions' app cache default unchanged.
+    private static CozmoRobot CreateWithOfflineCache(TransportOptions? options,ReliableTransport transport,
+        CozmoEngineOptions settings,IEngineTransport? port=null,Func<long>? engineClock=null,
+        Action<CozmoEngine>? engineCreated=null,Action<string>? beforeAnimationFileStat=null)
+    {
+        string? owned=null;
+        if(settings.AnimationCachePath==new CozmoEngineOptions().AnimationCachePath)
+        {
+            owned=Directory.CreateTempSubdirectory("cozmo-offline-cache-").FullName;
+            settings=new CozmoEngineOptions {
+                FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,
+                DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,
+                AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
+                DataPlatformPersistentPath=settings.DataPlatformPersistentPath,RobotVolume=settings.RobotVolume,
+            };
+        }
+        try{return new CozmoRobot(options,transport,settings,port,engineClock,engineCreated,beforeAnimationFileStat){_ownedOfflineAnimationCache=owned};}
+        catch{if(owned is not null)Directory.Delete(owned,true);throw;}
+    }
 
     private CozmoRobot(TransportOptions? options, ReliableTransport? transport, CozmoEngineOptions? engineOptions,
                        IEngineTransport? port = null, Func<long>? engineClock = null,
@@ -420,7 +441,7 @@ public sealed partial class CozmoRobot : IDisposable
     {
         var transport = ReliableTransport.CreateOffline(options, clock);
         Func<long>? nowNs = clock is null ? null : () => (long)(clock.NowMs * 1_000_000.0);
-        var robot = new CozmoRobot(options, transport, new CozmoEngineOptions(), null, nowNs);
+        var robot = CreateWithOfflineCache(options,transport,new CozmoEngineOptions(),null,nowNs);
         robot.Transport.OfflineConnect();
         robot.Engine.InitOfflineLink(transport.Peer!);
         robot.Engine.StartOffline(autoTick: true);
@@ -435,7 +456,7 @@ public sealed partial class CozmoRobot : IDisposable
     internal static CozmoRobot CreateForTest(IEngineTransport port, Func<long> engineClock, CozmoEngineOptions? engineOptions = null,
         Action<CozmoEngine>? engineCreated = null, Action<string>? beforeAnimationFileStat = null)
     {
-        var robot = new CozmoRobot(null, ReliableTransport.CreateOffline(), engineOptions ?? new CozmoEngineOptions(), port, engineClock,
+        var robot = CreateWithOfflineCache(null,ReliableTransport.CreateOffline(),engineOptions??new CozmoEngineOptions(),port,engineClock,
             engineCreated, beforeAnimationFileStat);
         robot.Engine.StartOffline(autoTick: false);
         robot.Engine.Das.WaitForPendingCallbacksForTest();
@@ -685,6 +706,8 @@ public sealed partial class CozmoRobot : IDisposable
     /// </summary>
     public void Dispose()
     {
+        try
+        {
         // fidelity: M5-022
         // M4-026 owns the complete AbortAll path, before the no-send M5 streamer destruction.
         try { Engine.StopTick(); } catch { }
@@ -702,6 +725,12 @@ public sealed partial class CozmoRobot : IDisposable
         try { Animations.Dispose(); } catch { } // host object also exists when no Robot was added.
         try { Engine.NvStorage?.Dispose(); } catch { }
         Transport.Dispose();
+        }
+        finally
+        {
+            string? owned=Interlocked.Exchange(ref _ownedOfflineAnimationCache,null);
+            if(owned is not null&&Directory.Exists(owned))Directory.Delete(owned,true);
+        }
     }
 
     /// <summary>The engine's idle face: two "skip 64 columns" commands, i.e. nothing lit.</summary>

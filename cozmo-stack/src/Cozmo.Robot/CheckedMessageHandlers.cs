@@ -188,9 +188,10 @@ internal sealed class CheckedLiftLoadTest
     internal CheckedLiftLoadTest(EngineRobot robot,int instance)
     {
         _robot=robot;LoggerDirectory=CozmoEngine.AnimationCacheFile(robot.Engine.Options.AnimationCachePath,"liftLoadTest");_ = EngineFileUtils.CreateDirectory(LoggerDirectory);
-        _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x35,true,_=>robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] 0x35 callback body remains unread")));
-        _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x95,false,_=>robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] 0x95 callback body remains unread")));
-        robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] IBehavior base constructor 0x005D3F18 and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown");
+        // No production hub producer delivers 0x35/0x95. Report the unbuilt bodies at construction, not inside unreachable callbacks.
+        _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x35,true,_=>{}));
+        _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x95,false,_=>{}));
+        robot.Engine.EmitStackLog($"MISSING: M7-028 LiftLoadTest[{instance}] IBehavior base constructor 0x005D3F18, 0x35/0x95 callback bodies and subscription destructor ordering remain unread; managed subscription storage retires after robot lifetime teardown");
     }
     internal void ReleaseSubscriptionStorage()=>_externalSubscriptions.Retire();
     internal void Handle(LiftLoad m)

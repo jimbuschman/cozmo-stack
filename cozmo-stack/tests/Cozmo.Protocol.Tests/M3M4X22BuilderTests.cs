@@ -3,6 +3,7 @@ using Cozmo.Robot;
 using Cozmo.Transport;
 using Xunit;
 namespace Cozmo.Protocol.Tests;
+[Collection("M5 process statics")]
 public sealed class M3M4X22BuilderTests:IDisposable
 {
     private readonly string _temp=Directory.CreateTempSubdirectory("b3422-").FullName;
@@ -17,6 +18,55 @@ public sealed class M3M4X22BuilderTests:IDisposable
         public void Start(){}public void Connect(IPAddress ip,bool simulated){}public void Disconnect(IPEndPoint address){}public void SendData(byte[] bytes){}
     }
     private CozmoRobot Robot(string cache)=>CozmoRobot.CreateForTest(new Port(),()=>0,new CozmoEngineOptions{AnimationCachePath=cache,DasDeviceIdPath=Path.Combine(_temp,Guid.NewGuid()+".id")});
+    [Fact] public void OfflineAndSharedRigUseDistinctOwnedCachesAndDeleteThemAfterDisposal()
+    {
+        string productionDefault=Path.Combine(Path.GetTempPath(),"cozmo-stack");
+        Assert.Equal(productionDefault,new CozmoEngineOptions().AnimationCachePath);
+        string first,second;
+        using(var offline=CozmoRobot.CreateOffline())
+        using(var rig=new M4ControlTests.Rig())
+        {
+            first=offline.Engine.Options.AnimationCachePath;second=rig.Engine.Options.AnimationCachePath;
+            Assert.NotEqual(productionDefault,first);Assert.NotEqual(productionDefault,second);Assert.NotEqual(first,second);
+            Assert.True(Directory.Exists(first));Assert.True(Directory.Exists(second));
+            rig.Engine.InitOfflineLink(new(IPAddress.Loopback,5551));
+            Assert.True(Directory.Exists(first+"/dockingTest"));Assert.True(Directory.Exists(second+"/liftLoadTest"));
+        }
+        Assert.False(Directory.Exists(first));Assert.False(Directory.Exists(second));
+    }
+    [Fact] public void IsolatingDefaultCacheKeepsAllOtherExplicitTestSettings()
+    {
+        var options=new CozmoEngineOptions{
+            FilesPath=_temp,ResourcesPath=_temp+"/resources",BlockPoolPath="",
+            DasDeviceIdPath=_temp+"/id",DataPlatformPersistentPath=_temp+"/persist",
+            DataCollectionEnabled=false,VerboseLogDisplay=true,RobotVolume=.25f,
+        };
+        string cache;
+        using(var robot=CozmoRobot.CreateForTest(new Port(),()=>0,options))
+        {
+            var actual=robot.Engine.Options;cache=actual.AnimationCachePath;
+            Assert.NotEqual(options.AnimationCachePath,cache);Assert.Equal(_temp,actual.FilesPath);
+            Assert.Equal(options.ResourcesPath,actual.ResourcesPath);Assert.Equal(options.BlockPoolPath,actual.BlockPoolPath);
+            Assert.Equal(options.DasDeviceIdPath,actual.DasDeviceIdPath);Assert.Equal(options.DataPlatformPersistentPath,actual.DataPlatformPersistentPath);
+            Assert.Equal(options.DataCollectionEnabled,actual.DataCollectionEnabled);Assert.Equal(options.VerboseLogDisplay,actual.VerboseLogDisplay);
+            Assert.Equal(options.RobotVolume,actual.RobotVolume);
+        }
+        Assert.False(Directory.Exists(cache));Assert.Equal(Path.Combine(Path.GetTempPath(),"cozmo-stack"),options.AnimationCachePath);
+    }
+    [Fact] public void ConstructorFailureRemovesItsOwnedCache()
+    {
+        string? cache=null;
+        Assert.Throws<InvalidOperationException>(()=>CozmoRobot.CreateForTest(new Port(),()=>0,engineCreated:engine=>
+        {cache=engine.Options.AnimationCachePath;throw new InvalidOperationException("test constructor failure");}));
+        Assert.NotNull(cache);Assert.False(Directory.Exists(cache));
+    }
+    [Fact] public void LiftCallbackBodyGapsAreReportedWhenTheConstructorRuns()
+    {
+        using var robot=Robot(_temp+"/cache");var gaps=new List<string>();robot.Engine.StackLogLine+=gaps.Add;
+        robot.Engine.InitOfflineLink(new(IPAddress.Loopback,5551));
+        Assert.Equal(2,gaps.Count(g=>g.Contains("M7-028 LiftLoadTest[")&&g.Contains("0x35/0x95 callback bodies")));
+        Assert.Equal(2,robot.Engine.AnimationMessages.Count(0x35,true));Assert.Equal(2,robot.Engine.AnimationMessages.Count(0x95,false));
+    }
     [Fact] public void TwoInstancesCreateOnlyTheirLeafDirectoriesAndFactoryJsonStateIsInMemory()
     {
         string cache=_temp+"/cache/";using var robot=Robot(cache);robot.Engine.InitOfflineLink(new(IPAddress.Loopback,5551));var sets=robot.Engine.Robot!.DevBehaviors;

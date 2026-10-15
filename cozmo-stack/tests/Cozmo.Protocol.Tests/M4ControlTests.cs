@@ -416,6 +416,7 @@ public class M4ControlTests
         private readonly VisionSystem? _fixtureWorld;
         public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null)
         {
+            // The test factory owns an isolated default animation cache until Robot.Dispose; explicit fixture paths are retained.
             Robot = CozmoRobot.CreateForTest(Port, () => NowNs, engineOptions ?? new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources });
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
             if (attachWorld && resources is not null) _fixtureWorld = new VisionSystem(Robot, CameraCalibration.Nominal()) { Enabled = false };
