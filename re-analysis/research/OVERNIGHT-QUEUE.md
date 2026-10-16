@@ -117,5 +117,13 @@ The first three are the requests already written:
 | OV83 | requests/overnight/20261015-ov83-m15-056.md (M15-056: Cube disconnect consumers: ActivityFeeding and BehaviorGuardDog handle) | research/overnight/20261015-ov83-m15-056.md |
 | OV84 | requests/overnight/20261015-ov84-m6-034.md (M6-034: Wwise Term recipients: the manager-list tail, head calls, allocator in) | research/overnight/20261015-ov84-m6-034.md |
 | OV85 | requests/overnight/20261015-ov85-setmarkerasobserved.md (M11-013: SetMarkerAsObserved, unblocks B-M11-3) | research/overnight/20261015-ov85-setmarkerasobserved.md |
+| OV86 | requests/overnight/20261016-ov86-m11-084.md (M11-084: Pose wrapper lifetimes in production: whether any flow leaves a child ) | research/overnight/20261016-ov86-m11-084.md |
+| OV87 | requests/overnight/20261016-ov87-m8-027.md (M8-027: ProtoHandle subscriber-callable census: which callables the 8 ProtoHan) | research/overnight/20261016-ov87-m8-027.md |
+| OV88 | requests/overnight/20261016-ov88-m9-034.md (M9-034: Wwise MIDI path boundary callees: A04384 prefix, owner vt+4, A70C84 (C) | research/overnight/20261016-ov88-m9-034.md |
+| OV89 | requests/overnight/20261016-ov89-m6-035.md (M6-035: Wwise bus state +0x1BC transitions (what moves a bus from 1 back to 4)) | research/overnight/20261016-ov89-m6-035.md |
+| OV90 | requests/overnight/20261016-ov90-m6-036.md (M6-036: Audio device storage cleanup at shutdown: 0x0096D624..0x0096FE6F, 0x00) | research/overnight/20261016-ov90-m6-036.md |
+| OV91 | requests/overnight/20261016-ov91-m12-046.md (M12-046: Unattach path still unread: BlockWorld::DeleteLocatedObjects body, Che) | research/overnight/20261016-ov91-m12-046.md |
+| OV92 | requests/overnight/20261016-ov92-m1-054.md (M1-054: CozmoEngine::Init before RobotManager::Init: the +0x10 Info, the three) | research/overnight/20261016-ov92-m1-054.md |
+| OV93 | requests/overnight/20261016-ov93-m15-045.md (M15-045: AIComponent teardown recursive recipients: BehaviorHelper IHelper type) | research/overnight/20261016-ov93-m15-045.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
