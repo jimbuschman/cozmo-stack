@@ -63,3 +63,9 @@ rules.
     "No live owner" and "the callee is unread" are never reasons to leave a checked row unbuilt. List each unbuilt
     checked item in a table, with the specific unchecked row it depends on (record and address). An item without such
     a row counts as under-built, and the job's check fails.
+14. **Label how each regression test reaches the behaviour** (manager, 2026-10-16; CHECKLIST.md section 5).
+    - **On each new or changed test,** a comment saying `reach: production` or `reach: unit (substitutes …; join
+      MISSING at …)`.
+    - **In `status/<job>.md`,** per record, the tests that reach it through production. Where there are none, say so,
+      with the MISSING join that prevents it.
+    - **A unit test with substituted inputs is never reported as covering the production path.**

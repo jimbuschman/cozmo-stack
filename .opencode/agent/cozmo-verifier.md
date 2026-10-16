@@ -22,6 +22,7 @@ The Ghidra decompilation in `re-analysis/decomp/libcozmoEngine/` helps you find 
    - A test that returns early when assets are missing proves nothing on a machine without them. Check that `AssetPresenceTests` passes where you run.
 7. **Gaps stay visible.** UNKNOWN, RECOVERABLE_GAP, HARDWARE_ONLY and BLOCKED_EXTERNAL rows must not have become silent defaults.
 8. **Manifest.** No frozen field was changed, and no status was raised except an IMPLEMENTATION_GAP being built.
+9. **How tests reach the behaviour** (since 2026-10-16). Each test cited as covering a record carries a `reach:` label: `production` (enters through the live entry with inputs production can produce) or `unit` (calls the unit directly or substitutes an input). A missing or wrong label, a unit test presented as production coverage, or a status-file claim of production coverage no test has is a VISIBILITY finding; blocking when it hides a missing join or uses an input production never produces.
 
 You may run `python re-analysis/tools/fidelity.py --check` and `dotnet test` (the build writes only bin/obj). Nothing else that writes, except scripts and output in `.scratch/`.
 
@@ -34,6 +35,7 @@ An objection must be concrete: name the hunk (file:line) and the address, file l
 Then give:
 - the hunks you checked and found supported, each with the citation you opened;
 - the commands you ran and their results;
+- per record: tests reaching it through production, and unit-only tests with what they substitute;
 - a final verdict: **PASS** (no objections) or **FAIL**.
 
 ## Hard rules

@@ -21,6 +21,19 @@ Primary sources are the same as for the extractor: `resources/lib/armeabi-v7a/li
 5. **Tests.** For each new or changed test, find where the expected value came from. If it matches an implementation constant and not a citation, it is `CIRCULAR`.
 6. **Gaps stay visible.** UNKNOWN, RECOVERABLE_GAP, HARDWARE_ONLY and BLOCKED_EXTERNAL rows must not have become silent defaults.
 7. **Manifest.** No frozen field was changed, and no status was raised except an IMPLEMENTATION_GAP being built.
+8. **How tests reach the behaviour** (since 2026-10-16). For each test the change cites as covering a record, check
+   its `reach:` label against the code.
+   - **`production`:** the test enters through the live entry (a robot message through the dispatch, the engine tick,
+     or the stack API) with inputs production can produce.
+   - **`unit`:** the test calls the unit directly or substitutes an input.
+
+   These are `VISIBILITY` findings:
+   - a missing or wrong label;
+   - a unit test presented as covering the production path;
+   - a record whose status-file entry claims production coverage that no test has.
+
+   It is blocking when the claim hides a missing join, or when production can never produce the substituted input
+   (B-M5-18's case).
 
 You may run `python re-analysis/tools/fidelity.py --check` and `dotnet test` (the build writes only bin/obj). Nothing else that writes.
 
@@ -30,7 +43,11 @@ An objection must be concrete, naming the hunk (file:line) and the address, file
 
 `file:line | UNSUPPORTED / CONTRADICTED / OMITTED / CIRCULAR / VISIBILITY / MANIFEST | objection | evidence (exact)`
 
-Then: the hunks you checked and found supported, each with the citation you opened; the commands you ran and their results; and a final verdict of **PASS** (no objections) or **FAIL**.
+Then:
+- the hunks you checked and found supported, each with the citation you opened;
+- a per-record line, `record | tests reaching it through production | unit-only tests and what they substitute`;
+- the commands you ran and their results;
+- a final verdict of **PASS** (no objections) or **FAIL**.
 
 ## Hard rules
 

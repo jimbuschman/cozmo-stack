@@ -55,6 +55,15 @@ provenance note or another record's `unresolved`, the record isn't settled. Give
 - **Test the failure and edge branches** the engine has: the first sample, zero, the boundary with its strict or
   inclusive compare, NaN.
 - **A test that asserts behaviour the audit contradicted is wrong.** Fix it from the source; don't keep it.
+- **Say how each regression test reaches the behaviour** (manager, 2026-10-16). B-M5-18's tests passed because they
+  supplied an animation triplet production never supplies, while real drives always timed out.
+  - **`reach: production`:** the test enters through the live entry (a robot message through the dispatch, the engine
+    tick, or the stack API) with only inputs production can produce.
+  - **`reach: unit`:** the test calls the unit directly or substitutes an input. Name what it substitutes, and the
+    MISSING join or owner that keeps it from being a production test.
+  - **Where to say it:** put the label in a comment on the test, and list it per record in the status file.
+  - **Why it matters:** a unit test is fine, but it never stands as proof that the production path works. Never add a
+    stand-in to production code to turn a unit test into a production one.
 
 ## 6. Settling (the rule since 2026-09-29)
 
