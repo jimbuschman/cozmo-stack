@@ -137,6 +137,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 61x | [B-M15-8](B-M15-8.md) | open, after B-M1-2 (expose approved spark/activity inputs) |
 | 61y | [B-M11-16](B-M11-16.md) | open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) |
 | 61z | [B-M15-9](B-M15-9.md) | open, after B-M11-16 (put-down kick-out M15-060; Feeding M15-061/M15-064; Lab residue M15-062) |
+| 61za | [B-M9-5](B-M9-5.md) | open, after B-M15-9 (modulator-state lifecycle M9-042; MIDI init/parser M9-039/M9-005; lookup M9-045) |
 | 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | open, after B-M9-2 (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
 | 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |

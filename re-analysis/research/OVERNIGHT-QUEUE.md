@@ -144,5 +144,8 @@ The first three are the requests already written:
 | OV110 | requests/overnight/20261016-ov110-m11-084.md (M11-084: Pose wrapper lifetimes in production: whether any flow leaves a child ) | research/overnight/20261016-ov110-m11-084.md |
 | OV111 | requests/overnight/20261016-ov111-m15-065.md (M15-065: BehaviorFeedingEat: the IFeedingListener callbacks (StartedEating, Eat) | research/overnight/20261016-ov111-m15-065.md |
 | OV112 | requests/overnight/20261016-ov112-m15-066.md (M15-066: Order of the RobotOffTreadsStateChanged (E2G tag 53) subscribers: AIWh) | research/overnight/20261016-ov112-m15-066.md |
+| OV113 | requests/overnight/20261016-ov113-m9-043.md (M9-043: Wwise modulator-state remainder: A1B3D8 bindings, 9DD950..9DE688 clean) | research/overnight/20261016-ov113-m9-043.md |
+| OV114 | requests/overnight/20261016-ov114-m9-044.md (M9-044: Wwise MIDI remainder: A3FC4C (CC chase reader), A40238 (seek skip per ) | research/overnight/20261016-ov114-m9-044.md |
+| OV115 | requests/overnight/20261016-ov115-m9-041.md (M9-041: Wwise parameter-collector residue: 9EF258 middle (SIS, factor, aux, bu) | research/overnight/20261016-ov115-m9-041.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-032 (M15-031 is in scope since 2026-10-16).

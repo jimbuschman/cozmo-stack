@@ -465,3 +465,14 @@ The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample 
 | Clip-start manager and CC chase: IMPLEMENTATION_GAP | M9-040 (new) |
 | Residue: RECOVERABLE_GAP | M9-039, M9-041, M9-042 (new) |
 | Notes | M9-024, M9-008 |
+
+
+## Opus answers OV94-96 (manager, 2026-10-16; research/overnight/20261016-ov94-96-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Modulator-state lifecycle; MIDI init and parser: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M9-042, M9-039 |
+| Narrowed | M9-041 |
+| New IMPLEMENTATION_GAP | M9-045 |
+| New RECOVERABLE_GAP | M9-043, M9-044 |
+| Contradiction / notes | M9-005, M9-024, M9-035 |
