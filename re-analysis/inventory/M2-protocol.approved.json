@@ -266,12 +266,13 @@
       "hardware_required": false
     },
     "M2-022": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Local E2G subscribers to AnimationEvent (tag 0x60) and FirmwareUpdateComplete (tag 0x81), and whether a robot-message dispatch can run nested inside ActionList::Clear",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-dispatch-residue-check.md (and re-analysis/research/20261013-dispatch-residue.md): \"Unread\" section: the handler bodies; the re-Init question; 0x004EE94A -> PLT 0x004A544C; ~Robot r5 at 0x0051120E; ProcessMessages with no robot 0x0069D8D8.",
-        "re-analysis/research/20261013-small-reads-2-check.md: \"Still unread\" section. Read parts split to M2-023. Remaining: the vtable+0x28 Subscribe sites, rodata tag arrays, StrategyGeneric::ConfigureRelevantEvents 0x006137B6/0x0061389A, ReactionTriggerStrategyGeneric 0x0060F5D8; ActionList::Clear 0x0053D916..0x0053D93A with action dtors 0x00541084, 0x00543DAC."
+        "re-analysis/research/20261013-small-reads-2-check.md: \"Still unread\" section. Read parts split to M2-023. Remaining: the vtable+0x28 Subscribe sites, rodata tag arrays, StrategyGeneric::ConfigureRelevantEvents 0x006137B6/0x0061389A, ReactionTriggerStrategyGeneric 0x0060F5D8; ActionList::Clear 0x0053D916..0x0053D93A with action dtors 0x00541084, 0x00543DAC.",
+        "re-analysis/research/20261016-m2-022-answer.md: E2G 0x60 AnimationEvent ctor 0x725F7C..0x725F86; Broadcast&& DeliverToGame then local emit 0x6625BA..0x6625FA; map writer only Subscribe 0x6626F2; census of 48 E2G callback types (no 0x60 subscriber); robot dispatch single entry ProcessMessages (slot 0x10310E4) <- UpdateRobotConnection 0x52F850; ActionList::Clear 0x53D91A..0x53D938 (guard +0xC), ActionQueue::Clear 0x53F970..0x53F9A0 (guard +0x1C); ~Robot via RCM::Update 0x62FAF8 before the PopData loop."
       ],
       "live_path": true,
       "hardware_required": false

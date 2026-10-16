@@ -102,6 +102,7 @@
 | 61w2 | B-M1-2 | open, after B-M15-7 | no status file | none found |
 | 61w3 | B-M2M15-2 | open, after B-M1-2 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilde... | no status file | none found |
 | 61w4 | B-M12-7 | open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C... | no status file | none found |
+| 61w5 | B-LOG-1 | open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) | no status file | none found |
 | 61x | B-M15-8 | open, after B-M1-2 (expose approved spark/activity inputs) | no status file | none found |
 | 61y | B-M11-16 | open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) | no status file | none found |
 | 61z | B-M15-9 | open, after B-M11-16 (put-down kick-out M15-060; Feeding M15-061/M15-064; Lab residue M... | no status file | none found |

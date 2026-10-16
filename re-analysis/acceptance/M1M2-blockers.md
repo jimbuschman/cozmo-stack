@@ -66,6 +66,9 @@ Most are named in AGENTS.md's approved departures or the app-boundary rule.
   - C5 not queueing its animation action;
   - no production producer for 0x4C.
 
+- **M2-022 is read** (`research/20261016-m2-022-answer.md`): no local 0x60 subscriber, and no nested dispatch.
+  It moves to IMPLEMENTATION_GAP; next comes the comparison with the stack, then the settling pass.
+
 ## Order of work
 
 1. B-M1-2: already next in the builder queue.
