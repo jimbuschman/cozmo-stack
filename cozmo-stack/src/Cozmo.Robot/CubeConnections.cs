@@ -169,6 +169,27 @@ public sealed class CubeConnections
         }
     }
 
+    // fidelity: M10-014 — BlockFilter-only inline storage; Robot slots/available objects belong to later owners.
+    internal void ConstructFilterStorage()
+    {
+        lock (_gate)
+        {
+            for(int i=0;i<SlotCount;i++){_persistentPool[i]=(0,ObjectType.InvalidObject);_runtimePool[i]=(0,ObjectType.InvalidObject);}
+            _discovering.Clear();_poolPath="";
+            _discoveryTime=_enableTime=_lastConnectTime=_lastPoolUpdate=0;_poolEnabled=false;
+        }
+    }
+    internal void RetireFilterStorage(Action<string>? observed)
+    {
+        lock (_gate)
+        {
+            _poolPath=""; // long-string allocation release precedes tree destruction.
+            _discovering.Clear(); // ObjectInfo has no value destructor or callback.
+        }
+        observed?.Invoke("filter string/tree retired");
+        // Inline state dies with the allocation. Replacement construction initializes it; no Save/Update/Disconnect.
+    }
+
     /// <summary>Raised with each SetPropSlot as it is sent.</summary>
     public event Action<SetPropSlot>? SlotRequested;
 

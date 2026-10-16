@@ -15,6 +15,8 @@ internal sealed class RobotLifetime
     {
         _owners[offset] = null;
         if (offset == 0x250) _robot.ClearActionListOwner();
+        if (offset == 0x44C) _robot.BlockFilterOwner = null;
+        if (offset == 0x27C) _robot.GyroDetector = null;
     }
     private void Release(int offset, uint address, bool clearBefore = true)
     {
@@ -46,8 +48,11 @@ internal sealed class RobotLifetime
         Release(0x450, 0x005111F8, false);
         Clear(0x450); // 0x00511220
         Release(0x44C, 0x0051122A, false);
+        // fidelity: M10-014 — 0x0051124C loads the next owner before +0x44C is cleared.
+        bool nextKnown = _owners.TryGetValue(0x26C, out var nextOwner);
         Clear(0x44C); // 0x00511250
-        Release(0x26C, 0x00511260);
+        Clear(0x26C);
+        if (!nextKnown) Missing(0x00511260, 0x26C); else nextOwner?.Invoke(0x00511260);
         Release(0x264, 0x00511276);
         Release(0x5C, 0x00511284);
         Release(0x3C, 0x00511298);
@@ -115,6 +120,7 @@ public sealed partial class EngineRobot
         if(Engine.NvStorage is {} nv)Lifetime.Bind(0x260,_=>nv.ReleaseForRobot()); // M3-038/M15-033, 0x005112E4 -> NV D0 -> backup destructor.
         Lifetime.Bind(0x294, _ => DestroyPoseOriginOwners()); // M11-077: the ordered origin owners, under AllowUnownedParents.
         InitSubscriptions();
+        InitCheckedDerivedOwners(); // M10-014: owned before constructor Delocalize; operational bodies stay separate.
         // fidelity: M4-026, M4-027
         // The host binds the Robot components it carries (AbortAll, the movement, light, CubeAccel and tap deletions).
         Engine.BindRobotLifetime?.Invoke(this);

@@ -2485,7 +2485,7 @@ public class M4ControlTests
             lock (missing)
             {
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M8-019 HandleRobotStopped "));
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M10-015 | "));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M10-015/M11-051/M11-053 ") && m.Contains("history-add result / GetLastStateWithFrameID admission"));
             }
             await Task.WhenAny(head, Task.Delay(1000));
         }

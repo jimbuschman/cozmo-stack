@@ -187,7 +187,12 @@ public sealed class OffTreadsClassifier
         var a = state.Accel;
         RawAccel = new Vector3(a.X, a.Y, a.Z);
         RawGyro = new Vector3(state.Gyro.X, state.Gyro.Y, state.Gyro.Z);
-        RawAccelMagnitude = MathF.Sqrt(a.X * a.X + a.Y * a.Y + a.Z * a.Z);
+        // fidelity: M10-017 — 0x005129C0..0x00512A1E: ordered f32 squares/adds, hardware sqrt, sqrtf on NaN.
+        float squared = a.X * a.X;
+        squared += a.Y * a.Y;
+        squared += a.Z * a.Z;
+        RawAccelMagnitude = MathF.Sqrt(squared);
+        if (float.IsNaN(RawAccelMagnitude)) RawAccelMagnitude = MathF.Sqrt(squared); // unshipped phone sqrtf boundary.
         // fidelity: M4-008
         // U2/U3 (0x005129C0..0x00512A6E): new * newFactor + old * oldFactor in f32, each factor the engine's literal bits (read at
         // 0x00512D04..0x00512D10), not the nearest-float decimals 0.05f / 0.1f: the new factors are 0x3D4CCCD0 and 0x3DCCCCD0.

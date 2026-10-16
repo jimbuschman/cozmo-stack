@@ -436,7 +436,7 @@ public sealed class CozmoSensors
     private void DetectGyroDriftAndBias(RobotState s)
     {
         if (GyroDriftDetect is { } hook) hook(s);
-        else Behavior.SteppedBehavior.ReportMissing("M10-015 | UpdateFullRobotState 0x00512FB4..0x00512FC4: RobotGyroDriftDetector::DetectGyroDrift and DetectBias are unread (M10-015) and not called here");
+        else Behavior.SteppedBehavior.ReportMissing("M10-015/M11-051/M11-053 UpdateFullRobotState 0x00512FB4..0x00512FC4: detector bodies are built but native history-add result / GetLastStateWithFrameID admission and current-pose input are not supplied at this sensor tail. Treads Delocalize still runs later in the host vision route. Skip detectors rather than invent successful admission or read stale yaw");
     }
 
     // fidelity: M4-019

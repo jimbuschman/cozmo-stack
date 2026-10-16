@@ -380,6 +380,7 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M4-011
         // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.
         Engine.BlockFilterInit = LoadBlockPool;
+        Engine.BlockFilterFactory = () => Cubes.Connections; // M10-014: the existing live filter state, not a parallel pool.
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
         Engine.LoadHostBehaviorMap();
