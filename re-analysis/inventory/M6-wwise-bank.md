@@ -3223,3 +3223,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New RECOVERABLE_GAP | M6-040, M6-041, M6-042, M6-043 |
 | New COMPATIBILITY_POLICY (JavaVM input) | M6-044 |
 | Note | M6-032 |
+
+
+## Opus answers OV116-119 (manager, 2026-10-16; research/overnight/20261016-ov116-119-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Term notifications: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (use-after-free contradicted; N12 indefinite block awaits the operator) | M6-042 |
+| Narrowed | M6-040, M6-041, M6-043 |
+| Corrections / notes | M6-032, M6-037, M6-038 |
+| ADP-1 ruling: fastpow10 send/voice gain values are control-rate, exact | M6-040 |

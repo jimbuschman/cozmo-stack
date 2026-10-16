@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "b72d0da5597de7be3a4b1f47d26dc096dd845dad6517f52eb479728723e4afd7",
+  "inventory_sha256": "9be0eeb268315af75a5cfa027ec3be10b1f646585a444a18e48589fde3becf23",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -551,7 +551,8 @@
       "title": "Wwise bus remainder: 0xA55750 send gating, 0xA4B5D8/0xA4B93C send paths, 0xA435FC reconnect, 0xA4F754/0xA52164/0xA4D994, callers of the 0x9F1EE8 slot, the bank mixer-plug-in field, 0xA0CA60, sink vtables",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA55750..0xA55890 (gating 0xA55768..0xA55808); 0xA4B5D8..0xA4B93C, 0xA4B93C..0xA4BAA0; 0xA435FC..0xA437D0; 0xA4F754, 0xA52164, 0xA4D994; callers of base node virtual 0x9F1EE8 (bus override 0x9C581C); bank mixer-plug-in field 0x9C0FC0 and its caller (does any shipped bus have one: B15); 0xA0CA60 (reaches the 0xA432B8 trap); the output sink vtables."
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA55750..0xA55890 (gating 0xA55768..0xA55808); 0xA4B5D8..0xA4B93C, 0xA4B93C..0xA4BAA0; 0xA435FC..0xA437D0; 0xA4F754, 0xA52164, 0xA4D994; callers of base node virtual 0x9F1EE8 (bus override 0x9C581C); bank mixer-plug-in field 0x9C0FC0 and its caller (does any shipped bus have one: B15); 0xA0CA60 (reaches the 0xA432B8 trap); the output sink vtables.",
+        "re-analysis/research/overnight/20261016-ov116-119-answer.md: gating 0xA55750..0xA558A8; 0xA4B93C..0xA4BC30; reconnect 0xA435FC..0xA437D0 (mask ignored); ParentBus 0x9F1EE8..0x9F1F78 and 0x9C581C..0x9C5854 (AddChild 0x9C181C, RemoveChild 0x9C15FC); mixer field 0x9C0D0C..0x9C0E14, 0x9C0FC0..0x9C1074 (all 15 Init.bnk buses mixerID 0); dead 0xA4B5D8 and message 14 (builder 0x99F66C no caller); 0xA4F754..0xA4F9AC first level."
       ],
       "live_path": true,
       "hardware_required": false
@@ -561,17 +562,19 @@
       "title": "Wwise music stop tree at Term: 0x9854E0 beyond 0x985700, child vt+0x20/+0x24/+0x38/+0x28, 0x97E774, 0xA36618",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov97-99-answer.md: frame read 0x9854E0..0x985700 (slot +8 of nine context vtables); 0x9863E8 0x9863E8..0x986554 calls 0xA36618; renderer detach 0x97E774."
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: frame read 0x9854E0..0x985700 (slot +8 of nine context vtables); 0x9863E8 0x9863E8..0x986554 calls 0xA36618; renderer detach 0x97E774.",
+        "re-analysis/research/overnight/20261016-ov116-119-answer.md: 0x9854E0..0x9855AC; destroy 0x9851A0..0x985254; Release 0x9857E8..0x985A14; vt+0x38 bodies 0x98233C, 0x984ED8, 0x990500, 0x990540, 0x998294, 0x999710, 0x99CDC8 (first level); 0x97E774..0x97E8A8 (0xA04DE8 notification); 0xA36618..0xA3669C."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M6-042": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise Term-time notifications and the engine destructor order: 0xA35998 user callbacks, PBI vt[0]/+0x10 and 0x9D3470 in 0xA387DC, the end-of-event callback 0x8D8D41 cookie lifetime, and whether ~RobotAudioClient runs before ~CozmoAudioController",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA35998 user vt[0] calls 0xA35A48..0xA35A74; 0xA387DC PBI drain; callback 0x8D8D41 reads cookie+0x38; ~AudioEngineController deletes +0xC at 0x8D1C78..0x8D1C88 and runs ClearGarbageCollector before Term (0x8D8048 -> 0x8D8068); ~RobotAudioClient 0x599A6C; ~CozmoAudioController 0x5946F0..0x594716."
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA35998 user vt[0] calls 0xA35A48..0xA35A74; 0xA387DC PBI drain; callback 0x8D8D41 reads cookie+0x38; ~AudioEngineController deletes +0xC at 0x8D1C78..0x8D1C88 and runs ClearGarbageCollector before Term (0x8D8048 -> 0x8D8068); ~RobotAudioClient 0x599A6C; ~CozmoAudioController 0x5946F0..0x594716.",
+        "re-analysis/research/overnight/20261016-ov116-119-answer.md: PostEvent wrapper 0x8D8CEC..0x8D8D32; context makers 0x599E6A..0x599E86, 0x8DED32..0x8DED4C; PostAudioEvent 0x8D1F46..0x8D216E; ~AudioEngineController 0x8D1C2C..0x8D1C98; Term order 0x99DCEC..0x99E010 (thread stop 0xA40B18 zeroes 0x108DF4C); PBI drain 0xA387DC..0xA38880; 0xA029DC -> 0xA04DE8..0xA04E64 -> CheckRemove 0xA03618..0xA037E4; callback 0x8D8D44..0x8D8F30 -> 0x9A206C -> CancelEventCallback 0xA03540..0xA03610 (pthread_cond_wait 0xA03604); transitions 0xA36044..0xA36110; destructor order 0x4EC6F8..0x4EC702, 0x4EAABE, 0x51155C..0x511568, 0x4EAC04..0x4EAC0E, 0x8DEB12..0x8DEB3A."
       ],
       "live_path": true,
       "hardware_required": false
@@ -581,7 +584,8 @@
       "title": "Wwise Term-path transitive callees and stream-device remainder",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA03618, 0xA63A74, 0x9E21FC, 0xA103B8 (UDF 0xA10644), 0xA159DC, 0xA71BF8, 0xA708D4, 0xA3EB4C, 0xA3E3C0, 0xA0B600, 0xA0B964, 0xA0E460, 0xA31C68, 0xA7B018, 0xA40C30 callees (0x9D32F8, 0x9CBEE0, 0xA59228, 0x9D4A18, 0x9D401C), 0x9A5E50, 0x9A5E64; stream 0x97CB9C, 0x97D0B4, 0x963890, scheduler 0x9633B8 / 0x962EA8."
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA03618, 0xA63A74, 0x9E21FC, 0xA103B8 (UDF 0xA10644), 0xA159DC, 0xA71BF8, 0xA708D4, 0xA3EB4C, 0xA3E3C0, 0xA0B600, 0xA0B964, 0xA0E460, 0xA31C68, 0xA7B018, 0xA40C30 callees (0x9D32F8, 0x9CBEE0, 0xA59228, 0x9D4A18, 0x9D401C), 0x9A5E50, 0x9A5E64; stream 0x97CB9C, 0x97D0B4, 0x963890, scheduler 0x9633B8 / 0x962EA8.",
+        "re-analysis/research/overnight/20261016-ov116-119-answer.md: 0xA63A74, 0x9A5E50, 0x9A5E64, 0xA40C30, 0xA05934 (memory only); 0x97CB9C; 0x97D0B4 (cond wait +0x28); 0x9633B8."
       ],
       "live_path": true,
       "hardware_required": false

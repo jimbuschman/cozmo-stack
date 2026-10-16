@@ -604,4 +604,5 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 
 ## Open decisions for the operator
 
+- **M6-042 N12, the Wwise Term block (2026-10-16).** At shutdown, if any audio event posted with a callback is still playing, the first end-of-event notification during Wwise Term calls CancelEventCallback from the shutdown thread and waits on a condition variable that nothing signals (0xA03604): the original shutdown hangs. It is defined behaviour, not a crash, so the M1-034 standing rule does not cover it. Reproduce the hang, or approve a departure (e.g. skip the wait, log it visibly, and carry on)? N12 is not built until decided.
 - **M6-002 Vorbis IMDCT (correction C8).** The engine's inverse MDCT is a float NEON transform whose per-lane arithmetic and table indexing are RECOVERABLE_GAP (ranges and the 615-float master table are named in `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`). **Decided (operator, 2026-09-27): exact.** Transliterate the lane-level arithmetic and vendor the 2460 table bytes. The RECOVERABLE_GAP rows go back to the extractor. The kernel stays fail-closed until then.
