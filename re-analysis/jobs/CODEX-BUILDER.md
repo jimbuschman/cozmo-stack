@@ -27,8 +27,8 @@ rules.
 6. **Commit and push to main yourself.** If the gate refuses because origin moved, `git pull --rebase` and push again.
    Never force-push. Never skip the hook.
 7. **Log each batch in `status/<job>.md`:** the commit, the records touched, and every MISSING.
-8. **Stop** when the job is DONE, or BLOCKED on a decision the source can't settle. Don't start another job without
-   the operator.
+8. **Finish the job as DONE or BLOCKED,** as defined in QUEUE.md rule 8, then continue with the queue. Don't stop the
+   lane.
 9. **No verification packets** (manager, 2026-10-11).
    - Don't write `*-verify-packet/` directories. The Opus pass checks the binary itself, and a packet only enlarges the
      diff it reads.
@@ -53,3 +53,13 @@ rules.
 12. **Threads follow the original.** Code the original runs on one thread (Robot::Update, the message handlers) must not
     move onto the vision worker or another thread in the stack, unless one gate is shared with every writer of the same
     state. B-M11-1 failed on a race this way.
+13. **An absent owner is not a reason to skip** (manager, 2026-10-16; B-M9-1 was under-built this way). Sometimes a
+    checked unit's live owner or caller doesn't exist in the stack yet. Then:
+    - build the unit exactly from its rows, as production code, not as a test helper;
+    - wire it to the nearest existing live entry the rows name;
+    - put a `ReportMissing` at the missing owner or join, naming its address;
+    - write the job's named tests against the unit.
+
+    "No live owner" and "the callee is unread" are never reasons to leave a checked row unbuilt. List each unbuilt
+    checked item in a table, with the specific unchecked row it depends on (record and address). An item without such
+    a row counts as under-built, and the job's check fails.

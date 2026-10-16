@@ -13,7 +13,7 @@ anything. BOARD.md is history; this file is the live queue.
    - Builder: write `status/<job>.md` with `CLAIMED Codex <date>`, then commit and push.
    - Research: no claim step.
 4. Run it under its own rules:
-   - builder jobs: `CODEX-BUILDER.md` rules 1–12 (11: MISSING never in the engine log; 12: threads follow the original);
+   - builder jobs: `CODEX-BUILDER.md` rules 1–13 (11: MISSING never in the engine log; 12: threads follow the original; 13: an absent owner is not a reason to skip);
    - research jobs: `research/README.md`, plus the push rule below.
 5. Finish it.
    - Builder: write the report into `status/<job>.md`, beginning `DONE` or `BLOCKED`, then commit and push.
@@ -21,8 +21,16 @@ anything. BOARD.md is history; this file is the live queue.
 6. **Repeat from 1.**
 7. **When your lane has no open job:** wait 10 minutes (`sleep 600`), pull, and check again. After 6 empty checks
    (an hour), stop and print `QUEUE EMPTY`.
-8. **When a job ends BLOCKED** (manager, 2026-10-15): push its BLOCKED report and any bounded work, then **continue**
-   with the next open job. The manager handles the blocker from the report.
+8. **DONE vs BLOCKED** (manager, 2026-10-16).
+   - **A job ends DONE** when every item whose rows are checked is built, even if MISSINGs remain. MISSINGs at unread
+     calls, at absent owners, or on records outside the job do **not** make a job BLOCKED.
+   - **BLOCKED is only for these cases:**
+     - (a) a checked row contradicts the binary, so the items that depend on it can't be built;
+     - (b) the push gate's tests fail;
+     - (c) an item needs an operator decision.
+   - **Either way,** push the report and the work, then **continue** with the next open job. The manager handles
+     blockers from the report.
+   - **The status header** is `DONE (n/m items; k MISSING)` or `BLOCKED (a|b|c: reason)`.
    - **When a push is refused** because main moved: `git pull --rebase` and push again.
    - **When a push is refused by the test gate:** stop and print the reason.
    - Never use `--no-verify`.
@@ -116,6 +124,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 59 | [B-M6-1](B-M6-1.md) | open, after B-M7-2 (audio multiplexer/controller teardown order M6-029) |
 | 60 | [B-M11-9](B-M11-9.md) | open, after B-M6-1 (memory-map producers M11-074; aging M11-075; stream unreachable) |
 | 61 | [B-M9-1](B-M9-1.md) | open, after B-M11-9 (Wwise MIDI note path M9-013; velocity/level M9-014; envelope stop M9-024) |
+| 61r | [B-M9-3](B-M9-3.md) | open, NEXT (re-do under-built B-M9-1 under rule 13) |
+| 61s | [B-M8-7](B-M8-7.md) | open, after B-M9-3 (StartActing runner ownership, B-M8-5 item 9) |
 | 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | open, after B-M9-2 (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
 | 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |
