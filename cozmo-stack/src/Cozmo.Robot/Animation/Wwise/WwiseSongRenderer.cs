@@ -99,6 +99,9 @@ public sealed class WwiseSongRenderer
     /// last" rule are rejected by the inventory.
     /// </summary>
     private readonly WwiseSelection _selection;
+    // fidelity: M9-013, M9-024
+    public WwiseMidiRuntime MidiRuntime { get; }
+    public WwiseEnvelopeRuntime EnvelopeRuntime { get; } = new();
     /// <summary>
     /// One render at a time, so two prewarms in flight at once (a song and a get-in, or two songs queued
     /// back to back) cannot tear this renderer's own <c>_selection</c> state. This gate does <b>not</b>
@@ -122,6 +125,7 @@ public sealed class WwiseSongRenderer
         _lib = lib;
         _decode = decode;
         _selection = new WwiseSelection(rng ?? new WwiseRng(), sharedAcrossGameObjects: true);
+        MidiRuntime = new WwiseMidiRuntime(_selection.Rng);
     }
 
     /// <summary>
@@ -223,6 +227,8 @@ public sealed class WwiseSongRenderer
 
                     if (clip.IsMidi)
                     {
+                        MidiRuntime.ReportAbsentOwner();
+                        EnvelopeRuntime.ReportAbsentOwner();
                         var bytes = _lib.ReadMedia(clip.SourceId, out _);
                         if (bytes is null) { problems.Add($"MIDI source {clip.SourceId} is missing"); continue; }
                         WwiseMidi midi;

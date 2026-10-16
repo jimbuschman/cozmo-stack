@@ -17,7 +17,7 @@ namespace Cozmo.Robot.Animation.Wwise;
 /// (residual); the <c>+0x15C</c>/<c>+0x15D</c> placeholder source bytes; the <c>+0x14</c> RTPC key,
 /// whose init <c>0x9BC90C</c> is a RECOVERABLE_GAP; and the 0x44-byte block's contents on the Sound path.</para>
 /// </summary>
-public sealed class WwisePlayingInstance
+public sealed partial class WwisePlayingInstance
 {
     private static long s_nextChainId;
 

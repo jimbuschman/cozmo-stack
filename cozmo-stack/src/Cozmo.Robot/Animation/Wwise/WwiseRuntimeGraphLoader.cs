@@ -239,7 +239,7 @@ public sealed class WwiseRuntimeGraph
             case 6: return HandleContainer(bank, o, _seams.CreateSwitch, _seams.InitSwitch, "Switch 0xA2D9A8/0xA2F1D0");
             case 7: return HandleActorMixer(bank, o);
             case 8: return HandleBus(bank, o);
-            case 9: return HandleContainer(bank, o, _seams.CreateLayer, _seams.InitLayer, "Layer 0x9D273C/0x9D24D4");
+            case 9: return HandleContainer(bank, o, _seams.CreateLayer ?? CreateMidiLayer, _seams.InitLayer, "Layer 0x9D273C/0x9D24D4");
             case 18: case 19: return HandleFx(bank, o);
             default:
                 return (_seams.UnreadType ?? throw Missing($"the handler of HIRC type {(byte)o.Type} (State 0xA26CC4, Attenuation 0xA67558, the music hook 0x984930, types 15..17 and 20..23)"))(o);
@@ -440,6 +440,16 @@ public sealed class WwiseRuntimeGraph
     }
 
     // ------------------------------------------------------------------ Layer, RanSeq, Switch (A3, A10: creators and inits are seams)
+
+    // fidelity: M9-013
+    /// <summary>R7, 0x009D273C..0x009D27C4. HandleContainer performs registration before init.</summary>
+    public WwiseRoutingNode CreateMidiLayer(uint id)
+    {
+        var node = CreateNodeShell(id, 5);
+        node.MidiLayer84 = 0;
+        // 9E8AB4's category/table bit is shared with CreateNodeShell; HandleContainer registers it.
+        return node;
+    }
 
     private int HandleContainer(WwiseLoadedBank bank, WwiseObject o, Func<uint, WwiseRoutingNode>? create, Func<WwiseRoutingNode, WwiseObject, int>? init, string what)
     {

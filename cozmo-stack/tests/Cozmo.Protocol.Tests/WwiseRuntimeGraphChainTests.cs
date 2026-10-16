@@ -370,7 +370,8 @@ public class WwiseRuntimeGraphChainTests
         Stops(s => s.UnreadType = null, Hb.Bank(1, (10, new byte[] { 1, 0, 0, 0 })), "handler of HIRC type 10");
         Stops(s => s.CreateRanSeq = null, Hb.Bank(1, (5, new byte[] { 1, 0, 0, 0 })), "RanSeq");
         Stops(s => s.CreateSwitch = null, Hb.Bank(1, (6, new byte[] { 1, 0, 0, 0 })), "Switch");
-        Stops(s => s.CreateLayer = null, Hb.Bank(1, (9, new byte[] { 1, 0, 0, 0 })), "Layer");
+        // M9-013 R7 now builds the Layer creator; its serialized loader 9D24D4 remains unread.
+        Stops(s => { s.CreateLayer = null; s.InitLayer = null; }, Hb.Bank(1, (9, new byte[] { 1, 0, 0, 0 })), "Layer");
         Stops(s => s.InitFx = null, Hb.Bank(1, (18, new byte[] { 1, 0, 0, 0 })), "0x9CE3B8");
         Stops(s => s.CreateFxCustom = null, Hb.Bank(1, (19, new byte[] { 1, 0, 0, 0 })), "0x9CF038");
         Stops(s => s.CreateAction = null, Hb.Bank(1, Hb.Action(5, 0x0102)), "0xA60C1C");
@@ -386,6 +387,18 @@ public class WwiseRuntimeGraphChainTests
         // the host states the global lists empty (0xA40E6C, 0xA4131C return at once, V3); when it does not, the seams are required
         var rig = GraphRig.NewRig(0, 48000, 0, true, null, listsEmpty: false);
         Assert.Throws<WwiseMissingBehaviourException>(() => rig.Graph.LoadBank("t", Hb.Bank(1, Hb.Bus(100), Hb.Bus(101, 100, fx: true))));
+    }
+
+    [Fact]
+    public void M9_013_R7_TheRealLayerFactorySetsCategoryFiveAndOrdinaryFanOut()
+    {
+        // 9D273C..9D27C4, 9D0454, 9E8AB4: Layer category5, byte84=0, tableA.
+        // This tests the creator/registration only; the unread serialized loader is explicitly stubbed.
+        var (graph, _) = Fresh(s => { s.CreateLayer = null; s.InitLayer = (_, _) => 1; });
+        Assert.Equal(1, graph.LoadBank("layer", Hb.Bank(1, (9, new byte[] { 1, 0, 0, 0 }))));
+        var layer = Assert.IsType<WwiseRoutingNode>(graph.Registry.Find(WwiseRegistryTable.A, 1));
+        Assert.Equal(5, layer.Category44); Assert.Equal((byte)0, layer.MidiLayer84);
+        Assert.Null(graph.Registry.Find(WwiseRegistryTable.B, 1));
     }
 
     [Fact]

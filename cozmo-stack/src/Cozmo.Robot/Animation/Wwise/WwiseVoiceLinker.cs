@@ -125,6 +125,9 @@ public sealed class WwiseOutputDeviceList
 /// </summary>
 public sealed class WwiseRoutingNode : WwiseRegistryObject
 {
+    // fidelity: M9-013
+    /// <summary>Layer +0x84, zero in 0x009D273C; authored continuous value is supplied by its loader.</summary>
+    public byte MidiLayer84 { get; set; }
     // fidelity: M6-025, M6-001
     // <c>[node+8]</c> (the object id; a bus's id is what <c>0xA68A2C</c> keys on) and <c>[node+0xC]</c> (the reference count, one field for every AddRef/Release) are the
     // base class's (WwiseRegistryObject, 0x9D0418): the graph loader and the PBI table (WwiseNodeRefTable) read and write the same count.

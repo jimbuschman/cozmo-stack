@@ -247,6 +247,19 @@ public class WwisePlayPathTests
         Assert.Empty(rig.Log);
     }
 
+    [Fact]
+    public void M9_014_RecomputeComposesBothFadesWithAllMuteFactorsWithoutVelocityGain()
+    {
+        // 9FF368/G3: ((factor2 * factor0.25) * fade0.5) * fade0.25 = 0.0625, raw3D800000.
+        var rig = new Rig(); Build(rig, out var leaf);
+        var pbi = rig.NewPbi(leaf, e8: 0x7D, e9: 1);
+        pbi.Transitions10C.Add(new WwiseTransitionRecord { Flags4 = 2, Value8 = 2f });
+        pbi.Transitions10C.Add(new WwiseTransitionRecord { Flags4 = 2, Value8 = 0.25f });
+        pbi.Fade168 = 0.5f; pbi.Fade16C = 0.25f;
+        rig.Path.InitContext9BEB30(pbi, 20f, 1, rig.Play, rig.Limiter);
+        Assert.Equal(0x3D800000, Bits(pbi.MuteFade40));
+    }
+
     [Theory]
     [InlineData((byte)0x01, 3.25f, 2.0f)]
     [InlineData((byte)0x00, 0f, 0f)]
