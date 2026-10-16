@@ -1914,6 +1914,7 @@ public sealed partial class CozmoEngine : IDisposable
         // in production. The event add/remove is atomic and the callback may run on any thread: Log invokes the LogLine subscribers as for any engine line.
         _missingSink = line => { if (!_disposed) Log(line); };
         Behavior.SteppedBehavior.MissingReported += _missingSink;
+        StackDiagnostics.Reported += _missingSink;
         _runStartNs = _nowNs();
         Rcm = new RobotConnectionManager(this, transport);
         Handler = new MessageHandler(this, Rcm);
@@ -2333,6 +2334,7 @@ public sealed partial class CozmoEngine : IDisposable
         Das.DisableNetwork(4); // fidelity: M3-055 — cozmo_shutdown0x006668E2.
         Das.Dispose(); // join the stand-in worker before releasing host callback recipients.
         Behavior.SteppedBehavior.MissingReported -= _missingSink;
+        StackDiagnostics.Reported -= _missingSink;
         _runner?.Stop();
         _t.Received -= Rcm.Rcd.ReceiveData;
         // fidelity: M5-059, M5-064 — quiet members before context; 0x004EC6C0..0x004EC6CC.

@@ -19,3 +19,10 @@ internal static class SourceLogDispatch
             (text.Length == 0 ? "" : ": " + text));
     }
 }
+
+/// <summary>Host diagnostics and approved policy skips: no DAS fields, MISSING prefix or deduplication.</summary>
+internal static class StackDiagnostics
+{
+    internal static event Action<string>? Reported;
+    internal static void Write(string text) => LogCallbackDeferral.Run(() => Reported?.Invoke(text));
+}

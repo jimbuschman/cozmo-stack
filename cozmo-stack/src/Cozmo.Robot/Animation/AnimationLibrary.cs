@@ -304,7 +304,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
             :cubeRoot is null?null:Path.Combine(cubeRoot,CubeLightAnimations.AnimationDirectory);
         if(cubeDirectory is not null&&!Directory.Exists(cubeDirectory))cubeDirectory=null; // Failed native opendir leaves this vector empty.
         var cubeFiles = CollectFiles(new[] { cubeDirectory }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
-        var backpackFiles = CollectFiles(new[] { FindConfigDirectory(assetsRoot, "lights/backpackLights") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
+        // B-M3M4-27 item 5: production counts the same ResourcesPath directory the constructor actually loads.
+        string? backpackDirectory=cubeResourceRoot is null?FindConfigDirectory(assetsRoot,"lights/backpackLights")
+            :cubeRoot is null?null:Path.Combine(cubeRoot,BackpackLightAnimations.ResourceDirectory);
+        if(backpackDirectory is not null&&!Directory.Exists(backpackDirectory))backpackDirectory=null;
+        var backpackFiles = CollectFiles(new[] { backpackDirectory }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
         var groupFiles = CollectFiles(new[] { groups }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
         EmitCollectResults(new[] { files.Count, groupFiles.Count, cubeFiles.Count, backpackFiles.Count },
             freshCollect, log, sourceLog);

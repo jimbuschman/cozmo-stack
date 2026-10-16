@@ -87,7 +87,7 @@ public sealed class M3M4X17BuilderTests
     [Fact]
     public void BadTriggerPairIsSkippedAndMissingPathsKeepVisibleWarnings()
     {
-        string root=M4ControlTests.CubeLightResources();var logs=new List<EngineLogEntry>();
+        string root=M4ControlTests.CubeLightResources();var logs=new List<EngineLogEntry>();var stack=new List<string>();
         SourceLogSink sink=(l,c,k,t)=>logs.Add(new(l,c,k,t,new Dictionary<string,string>()));
         try
         {
@@ -95,10 +95,9 @@ public sealed class M3M4X17BuilderTests
             File.WriteAllText(map,"{\"Pairs\":[{\"CladEvent\":\"Bad\"},{\"CladEvent\":\"Sleep\",\"AnimName\":\"sleep\"}]}");
             var library=CubeLightAnimations.Load(root,sourceLog:sink);Assert.NotNull(library.ForTrigger("Sleep"));Assert.Null(library.ForTrigger("Bad"));
             File.Delete(map);Directory.Delete(Path.Combine(root,CubeLightAnimations.AnimationDirectory),true);
-            logs.Clear();CubeLightAnimations.Load(root,sourceLog:sink);
-            Assert.Equal(new[]{"cube light trigger map not found at "+map,"cube light animations not found at "+Path.Combine(root,CubeLightAnimations.AnimationDirectory)},logs.Take(2).Select(e=>e.Text));
-            Assert.All(logs.Take(2),e=>Assert.Equal(EngineLogLevel.Warning,e.Level));
-            Assert.Equal(3,logs.Count);Assert.Equal("RobotDataLoader.LoadCubeLightAnimations.LoadTime",logs[2].Name);Assert.Equal(EngineLogLevel.Info,logs[2].Level);
+            logs.Clear();CubeLightAnimations.Load(root,log:stack.Add,sourceLog:sink);
+            Assert.Equal(new[]{"Stack.CubeLightLoader.TriggerMapNotFound: cube light trigger map not found at "+map,"Stack.CubeLightLoader.AnimationsNotFound: cube light animations not found at "+Path.Combine(root,CubeLightAnimations.AnimationDirectory)},stack);
+            var entry=Assert.Single(logs);Assert.Equal("RobotDataLoader.LoadCubeLightAnimations.LoadTime",entry.Name);Assert.Equal(EngineLogLevel.Info,entry.Level);
         }
         finally {Directory.Delete(root,true);}
     }

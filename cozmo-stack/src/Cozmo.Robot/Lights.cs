@@ -646,10 +646,10 @@ public sealed class CubeLightAnimations
                         if (pair.TryGetProperty("CladEvent", out var ev) && pair.TryGetProperty("AnimName", out var an))
                             c._triggerToAnim[ev.GetString() ?? ""] = an.GetString() ?? "";
         }
-        else Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.TriggerMapNotFound", $"cube light trigger map not found at {map}");
+        else Stack("Stack.CubeLightLoader.TriggerMapNotFound", $"cube light trigger map not found at {map}");
         var directory = Path.Combine(resourcesPath, AnimationDirectory);
         if (!Directory.Exists(directory))
-        { Emit(EngineLogLevel.Warning, null, "Stack.CubeLightLoader.AnimationsNotFound", $"cube light animations not found at {directory}"); }
+        { Stack("Stack.CubeLightLoader.AnimationsNotFound", $"cube light animations not found at {directory}"); }
         var files = collectedFiles?.ToList() ?? new List<string>();
         if (collectedFiles is null) Collect(directory);
         time.Restart();
@@ -678,6 +678,8 @@ public sealed class CubeLightAnimations
         EmitLoadTime();
 
         void Emit(EngineLogLevel level, string? channel, string key, string text) => SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(level, channel, key, text);
+        void Stack(string key, string text)
+        { string line=key+": "+text;if(log is {} sink)sink(line);else StackDiagnostics.Write(line); }
         void EmitLoadTime() => Emit(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadCubeLightAnimations.LoadTime",
             $"Time to load cube light animations = {time.Elapsed.TotalMilliseconds.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)} ms");
         void Skip(string file, Exception e) => SkipFatalFile(log,file,e);
@@ -706,7 +708,7 @@ public sealed class CubeLightAnimations
     private static void SkipFatalFile(Action<string>? log,string file,Exception error)
     {
         string text=$"Stack.CubeLightLoader.SkipFatalFile: M1-034 / M4-044: skipping cube light file {file}: {error.Message}; keeping any previous definition";
-        if(log is {} sink)sink(text);else Behavior.SteppedBehavior.ReportMissing(text);
+        if(log is {} sink)sink(text);else StackDiagnostics.Write(text);
     }
 
     internal void Define(JsonElement root, Action<string>? log, SourceLogSink? sourceLog = null)
