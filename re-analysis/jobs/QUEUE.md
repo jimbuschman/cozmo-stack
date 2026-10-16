@@ -104,7 +104,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 | 36c | [B-M5-22](B-M5-22.md) | DONE per status/B-M5-22.md (multi-file trigger container M5-034; JsonCpp missing/null members; M1-034 per-file skips) |
 | 38 | [B-M2M15-1](B-M2M15-1.md) | BLOCKED per status/B-M2M15-1.md (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
 | 39 | [B-M11-2](B-M11-2.md) | DONE per status/B-M11-2.md (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
-| 40 | [B-M12-3](B-M12-3.md) | DONE per status/B-M12-3.md (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018) |
+| 40 | [B-M12-3](B-M12-3.md) | DONE per status/B-M12-3.md (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018); Opus check FAIL (retirement race; research/20261016-b-m12-3-check.md), fixes in B-M12-7 |
 | 41 | [B-M13-4](B-M13-4.md) | BLOCKED (turn-eye destructor row; bounded part pushed 730ccc23); checked row added (research/20261015-turn-eye-dtor-check.md); finished by B-M13-7 |
 | 41a | [B-M13-7](B-M13-7.md) | DONE per status/B-M13-7.md (TurnInPlaceAction live eye layer and destructor cleanup) |
 | 42 | [B-M11-3](B-M11-3.md) | BLOCKED (SetMarkerAsObserved 0x00876DA8..0x008770CC has no checked row; bounded part pushed ba4c1211); request OV85; finish job after its check; OV85 checked (research/overnight/20261016-ov85-check.md); finished by B-M11-14 |
@@ -139,6 +139,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 | 61w1 | [B-M15-7](B-M15-7.md) | CLAIMED per status/B-M15-7.md |
 | 61w2 | [B-M1-2](B-M1-2.md) | open, after B-M15-7 |
 | 61w3 | [B-M2M15-2](B-M2M15-2.md) | open, after B-M1-2 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilderTests full-run failure) |
+| 61w4 | [B-M12-7](B-M12-7.md) | open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61x | [B-M15-8](B-M15-8.md) | open, after B-M1-2 (expose approved spark/activity inputs) |
 | 61y | [B-M11-16](B-M11-16.md) | open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) |
 | 61z | [B-M15-9](B-M15-9.md) | open, after B-M11-16 (put-down kick-out M15-060; Feeding M15-061/M15-064; Lab residue M15-062) |

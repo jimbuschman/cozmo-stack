@@ -66,7 +66,7 @@
 | 36c | B-M5-22 | DONE per status/B-M5-22.md (multi-file trigger container M5-034; JsonCpp missing/null m... | DONE B-M5-22 - bounded loader corrections built, awaiting strong verification. Implementation pushed: 30576f806dce9483cb84a95a65fa05b383b... | none found |
 | 38 | B-M2M15-1 | BLOCKED per status/B-M2M15-1.md (UnlockId table and InitConfig, M15-044; handler bodies... | BLOCKED B-M2M15-1 — implementation push refused by test gate. Unpublished implementation ed67f3adaa4f41cd8bd0d1ea2d295e2bb98d7fe1 is park... | none found |
 | 39 | B-M11-2 | DONE per status/B-M11-2.md (RobotDelocalized recipients M11-072; GetParent/FindRoot M11... | DONE B-M11-2 — built, awaiting strong verification, with ownership/producer MISSING boundaries below; pushed implementation commit 635026... | none found |
-| 40 | B-M12-3 | DONE per status/B-M12-3.md (lift pose M12-027; dock registration M12-034; cube-light ca... | DONE B-M12-3 â€” bounded checked rows built, awaiting strong verification; every unfinished unit below remains MISSING. Implementation pu... | none found |
+| 40 | B-M12-3 | DONE per status/B-M12-3.md (lift pose M12-027; dock registration M12-034; cube-light ca... | DONE B-M12-3 â€” bounded checked rows built, awaiting strong verification; every unfinished unit below remains MISSING. Implementation pu... | `research/20261016-b-m12-3-check.md` |
 | 41 | B-M13-4 | BLOCKED (turn-eye destructor row; bounded part pushed 730ccc23); checked row added (res... | BLOCKED B-M13-4 - live turn-eye lifetime prerequisite lacks an adopted checked body row. Bounded corrections below are reviewable; the jo... | none found |
 | 41a | B-M13-7 | DONE per status/B-M13-7.md (TurnInPlaceAction live eye layer and destructor cleanup) | DONE B-M13-7 - checked derived turn-eye lifetime built; pushed implementation 45e0db39de8f72b2e9a78063b525ad55b4260423. | none found |
 | 42 | B-M11-3 | BLOCKED (SetMarkerAsObserved 0x00876DA8..0x008770CC has no checked row; bounded part pu... | BLOCKED B-M11-3 - the live marker-time producer has no adopted checked body row. Bounded corrections below are built; this job is incompl... | none found |
@@ -101,6 +101,7 @@
 | 61w1 | B-M15-7 | CLAIMED per status/B-M15-7.md | CLAIMED Codex 2026-10-16 | none found |
 | 61w2 | B-M1-2 | open, after B-M15-7 | no status file | none found |
 | 61w3 | B-M2M15-2 | open, after B-M1-2 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilde... | no status file | none found |
+| 61w4 | B-M12-7 | open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C... | no status file | none found |
 | 61x | B-M15-8 | open, after B-M1-2 (expose approved spark/activity inputs) | no status file | none found |
 | 61y | B-M11-16 | open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) | no status file | none found |
 | 61z | B-M15-9 | open, after B-M11-16 (put-down kick-out M15-060; Feeding M15-061/M15-064; Lab residue M... | no status file | none found |

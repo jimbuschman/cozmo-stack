@@ -60,6 +60,12 @@ Most are named in AGENTS.md's approved departures or the app-boundary rule.
   - an Opus verifier is checking B-M12-3;
   - an Opus extractor is reading M2-022.
 
+- **B-M12-3's check FAILED** (`research/20261016-b-m12-3-check.md`). The fixes are queued as B-M12-7, after
+  B-M2M15-2:
+  - a retirement race in the dock handlers;
+  - C5 not queueing its animation action;
+  - no production producer for 0x4C.
+
 ## Order of work
 
 1. B-M1-2: already next in the builder queue.
