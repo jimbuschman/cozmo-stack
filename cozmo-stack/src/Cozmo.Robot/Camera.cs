@@ -559,7 +559,7 @@ public readonly record struct CurrentCameraParams(float Gain, ushort ExposureMs,
 /// gain limits and settings (M3-021), the colour flag (M3-023), and the connection-time steps (M3-019, M3-022) that
 /// read the robot's calibration and enable vision. The vision gates, the mailbox and auto-exposure are M11's (MD5).
 /// </summary>
-public sealed class CameraSettings
+public sealed partial class CameraSettings
 {
     // fidelity: M11-035
     /// <summary>VisionComponent+0xE8, read by 0x006527A2. Its result-commit exactness belongs to M11-035.</summary>
@@ -622,9 +622,20 @@ public sealed class CameraSettings
     public float CurrentGain { get; private set; } = ConstructorGain;
     /// <summary>
     /// VisionSystem +0xA0..+0xA8: the params SetNextCameraParams queued (1d). Applying them to the current exposure
-    /// and gain is VisionSystem::Update's (M11) and is not done here.
+    /// and gain is VisionSystem::Update's M11-060 consumer, before CLAHE and mode dispatch.
     /// </summary>
-    public (int ExposureMs, float Gain)? NextCameraParams { get; private set; }
+    private bool _nextCameraParamsPending;
+    private int _nextExposureMs;
+    private float _nextGain;
+    public (int ExposureMs, float Gain)? NextCameraParams
+    {
+        get => _nextCameraParamsPending ? (_nextExposureMs,_nextGain) : null;
+        private set
+        {
+            if(value is {} pair) { _nextGain=pair.Gain;_nextExposureMs=pair.ExposureMs;_nextCameraParamsPending=true; }
+            else _nextCameraParamsPending=false;
+        }
+    }
     /// <summary>The gamma table the last DefaultCameraParams gave SetGammaTable (17 bytes; its use is M11's ImagingPipeline).</summary>
     public byte[] GammaTable { get; private set; } = Array.Empty<byte>();
     /// <summary>VisionComponent +0x329: auto-exposure, 1 from the constructor (1n: <c>strh #0x100</c> at +0x328).</summary>
@@ -672,7 +683,9 @@ public sealed class CameraSettings
     /// broadcasts CurrentCameraParams {g, e, auto-exposure}. Returns whether it sent. VizManager::SendCameraInfo is
     /// the engine's visualiser and has no counterpart here.
     /// </summary>
-    public bool SetCameraSettings(ushort exposureMs, float gain)
+    public bool SetCameraSettings(ushort exposureMs, float gain) => SetCameraSettings((int)exposureMs,gain);
+
+    internal bool SetCameraSettings(int exposureMs, float gain)
     {
         int min, max; float minGain, maxGain;
         lock (_gate) { min = MinExposureMs; max = MaxExposureMs; minGain = MinGain; maxGain = MaxGain; }
@@ -687,31 +700,27 @@ public sealed class CameraSettings
             return false;
         }
         Emit(EngineLogLevel.Info, "VisionComponent", "VisionComponent.SetCameraSettings", $"Exp:{exposureMs}ms Gain:{F(gain, 6)}");
-        _send(new SetCameraParams { Gain = gain, ExposureMs = exposureMs, AutoExposureEnabled = false });
+        _send(new SetCameraParams { Gain = gain, ExposureMs = unchecked((ushort)exposureMs), AutoExposureEnabled = false });
         SetNextCameraParams(exposureMs, gain);
         CurrentCameraParams info;
-        lock (_gate) info = new CurrentCameraParams(gain, exposureMs, AutoExposureEnabled);
+        lock (_gate) info = new CurrentCameraParams(gain, unchecked((ushort)exposureMs), AutoExposureEnabled);
         CurrentCameraParamsChanged?.Invoke(info);
         return true;
     }
 
-    /// <summary>VisionSystem::SetNextCameraParams (1d): queues the params; the native overwrite warning is suppressed while M11-060 is unbuilt.</summary>
+    /// <summary>VisionSystem::SetNextCameraParams (1d): queues the params; warns for a still-pending request before overwriting its payload (M11-060).</summary>
     private static string F(double value, int digits) => double.IsNaN(value) ? "nan" : double.IsPositiveInfinity(value) ? "inf" : double.IsNegativeInfinity(value) ? "-inf" : value.ToString("F" + digits, System.Globalization.CultureInfo.InvariantCulture);
 
-    private bool _pendingClearMissingReported;
+    // fidelity: M11-060
     private void SetNextCameraParams(int exposureMs, float gain)
     {
-        bool reportMissing;
-        lock (_gate)
-        {
-            reportMissing = NextCameraParams is not null && !_pendingClearMissingReported;
-            if (reportMissing) _pendingClearMissingReported = true;
-            NextCameraParams = (exposureMs, gain);
-        }
-        if (reportMissing)
-        {
-            _robot.Engine.EmitStackLog("MISSING: M11-060 VisionSystem.Update camera pending-flag clear (0x006B50C8..0x006B50D8); OverwritingPreviousParams suppressed while this clear is unbuilt, params remain pending");
-        }
+        // OV15-17 manager decision: these native words have no lock/barrier between producer and consumer.
+        if(_nextCameraParamsPending)
+            Emit(EngineLogLevel.Warning,null,"VisionSystem.SetNextCameraParams.OverwritingPreviousParams",
+                $"Params already requested ({_nextExposureMs}ms,{F(_nextGain,2)}) but not sent. Replacing with ({exposureMs}ms,{F(gain,2)})");
+        _nextGain=gain;
+        _nextExposureMs=exposureMs;
+        _nextCameraParamsPending=true;
     }
 
     // fidelity: M3-021
@@ -728,7 +737,7 @@ public sealed class CameraSettings
     {
         // MISSING: M11-059 | VisionSystem::IsInitialized (0x006B2CD6) and the initial exposure (vision_config.json InitialExposureTime_ms, read by
         // VisionComponent::Init 0x00650DAE..0x00650DCA) are M11-059's; this stack holds the constants 16 and true.
-        Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (unread); this stack uses the constants true and 16");
+        Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); this stack uses the constants true and 16");
         if (!VisionSystemInitialized) { Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.NotInitialized", ""); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return; }
         ushort min = m.Field2, max = m.Field3;
         if (!(min <= InitialExposureTimeMs && InitialExposureTimeMs <= max))

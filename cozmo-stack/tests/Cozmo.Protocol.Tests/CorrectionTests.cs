@@ -289,6 +289,7 @@ public class CorrectionTests
     {
         if (MarkerLibrary.EmbeddedOrNull is null) return;
         using var rig = new Rig();
+        rig.Vision.ModeEnableMask &= ~(1<<7); // Isolate timestamp/age behavior from unfinished quality inputs (B-M11-6).
         rig.Cube = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22));
         rig.T = 50_000;
         rig.State();
@@ -316,6 +317,7 @@ public class CorrectionTests
     public void AFaceFromATimestamplessCaptureAgesFromTheStateClock()
     {
         using var rig = new Rig();
+        rig.Vision.ModeEnableMask &= ~(1<<7); // Isolate timestamp/age behavior from unfinished quality inputs (B-M11-6).
         rig.Vision.FaceDetector = rig.FaceDetector;
         rig.Head = 0.4f;                      // looking up enough to have the face in view
         rig.T = 90_000;

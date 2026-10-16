@@ -2040,6 +2040,7 @@ public class M11RVisBuildTests : IDisposable
     {
         if (!NeedsLibrary()) return;
         using var rig = new ImageRig();
+        rig.Vision.ModeEnableMask &= ~(1 << 7); // Isolate history/marker gate from unbuilt quality ROI/ImagingPipeline producers (B-M11-6).
         rig.Send(new ObjectConnectionState { ObjectID = 2, FactoryID = 0xBEEF, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
         rig.Send(Raw(3000));
         var pd = rig.Vision.History.At(3000)!.Value;

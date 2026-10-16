@@ -16,6 +16,7 @@ public sealed record VisionFrameResult(uint ImageId, uint Timestamp, VisionPoseD
     /// <c>VisionComponent::UpdateOverheadEdges</c> 0x006553FC hands it to the map component.
     /// </summary>
     public OverheadEdgeFrame? OverheadEdges { get; init; }
+    public ImageQualityProposal? ImageQuality { get; init; }
 
     public override string ToString() =>
         $"image {ImageId} t={Timestamp}: {Markers.Count} marker(s) [{string.Join(" ", Markers.Select(m => m.Code))}], " +
@@ -50,6 +51,8 @@ public sealed partial class VisionSystem : IDisposable
     {
         _robot = robot;
         LifetimeProfiler.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
+        QualityProcessor.SourceLog = (l,c,k,t) => robot.Engine.EmitSourceLog(l,c,k,t);
+        LoadQualityConfiguration();
         Calibration = calibration;
         _constructedCalibration = calibration;
         Detector = detector ?? new MarkerDetector();
@@ -313,8 +316,8 @@ public sealed partial class VisionSystem : IDisposable
     /// The shipped <c>vision_config.json</c> <c>InitialVisionModes</c> as the mode-enable bitmask
     /// (M11-034, C2.3): markers 1, faces 2, motion 3, overhead edges 4, quality 7, statistics 8, pets 9 and
     /// laser points 15 are enabled; 10..13 are disabled. The modes the config does not list - 0 (Idle),
-    /// 5 (ReadingToolCode), 6 (ComputingCalibration), 14 (LimitedExposure) - have an UNKNOWN default and
-    /// are left clear.
+    /// 5 (ReadingToolCode), 6 (ComputingCalibration), 14 (LimitedExposure) start clear: constructor memclr,
+    /// then Init enables only the listed modes (OV14).
     /// </summary>
     public const int ShippedModeEnableMask = 0x0002 | 0x0004 | 0x0008 | 0x0010 | 0x0080 | 0x0100 | 0x0200 | 0x8000;
 
@@ -329,13 +332,18 @@ public sealed partial class VisionSystem : IDisposable
     public int ModeEnableMask { get; set; } = ShippedModeEnableMask;
 
     // fidelity: M11-061
-    // E5: VisionSystem+0xB0. This bounded caller only queues mode 14; other mode recipients remain M11.
-    private sealed record LimitedExposureRequest(bool Enable);
-    private readonly Queue<LimitedExposureRequest> _limitedExposureRequests = new();
+    // E5: VisionSystem+0xB0. The existing FIFO carries mode 14 and the M3-021 auto-exposure mode-7 request.
+    private sealed record PendingVisionMode(int Mode, bool Enable);
+    private readonly Queue<PendingVisionMode> _limitedExposureRequests = new();
     private readonly object _modeGate = new();
     internal void QueueLimitedExposure(bool enable)
     {
-        lock (_modeGate) _limitedExposureRequests.Enqueue(new LimitedExposureRequest(enable));
+        QueueVisionMode(14,enable);
+    }
+
+    internal void QueueVisionMode(int mode, bool enable)
+    {
+        lock (_modeGate) _limitedExposureRequests.Enqueue(new(mode,enable));
     }
 
     private void ApplyQueuedLimitedExposure()
@@ -343,18 +351,23 @@ public sealed partial class VisionSystem : IDisposable
         // E6: EnableMode before pop_front; E7: log before writing +0xAC, and no log for an unchanged bit.
         while (true)
         {
-            LimitedExposureRequest request;
+            PendingVisionMode request;
             lock (_modeGate) if (!_limitedExposureRequests.TryPeek(out request!)) return;
             bool enable = request.Enable;
-            const int bit = 1 << 14;
+            int bit = 1 << request.Mode;
+            string modeName = ((VisionMode)request.Mode).ToString();
             if (((ModeEnableMask & bit) != 0) != enable)
             {
                 string current = string.Join("+", Enumerable.Range(0, 16)
                     .Where(i => (ModeEnableMask & (1 << i)) != 0).Select(i => ((VisionMode)i).ToString()));
-                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, null,
-                    enable ? "VisionSystem.EnablingMode" : "VisionSystem.DisablingMode",
-                    enable ? $"Adding mode LimitedExposure to current mode {current}."
-                    : $"Removing mode LimitedExposure from current mode {current}.");
+                string key=enable?"VisionSystem.EnablingMode":"VisionSystem.DisablingMode";
+                string text=enable?$"Adding mode {modeName} to current mode {current}.":$"Removing mode {modeName} from current mode {current}.";
+                if(SourceLog is {} sink)sink(EngineLogLevel.Info,"VisionSystem",key,text);
+                else
+                {
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"VisionSystem",key,text);
+                    SourceLogDispatch.Write(null,Log,EngineLogLevel.Info,null,key,text); // standalone display; never parsed into engine entries
+                }
                 if (enable) ModeEnableMask = (ModeEnableMask & ~1) | bit;
                 else
                 {
@@ -977,6 +990,8 @@ public sealed partial class VisionSystem : IDisposable
             Volatile.Write(ref _frameTimestamp, timestamp);
             // fidelity: M11-061 — E6, before ShouldProcessVisionMode dispatch in this image update.
             ApplyQueuedLimitedExposure();
+            // fidelity: M11-060
+            _robot.CameraSettings.ApplyPendingCameraParams(); // 0x006B50C8..0x006B50D8, before CLAHE/dispatch
             // fidelity: M11-021 — ApplyCLAHE(image, 4, out) 0x006B44EC runs unconditionally before the
             // marker-mode gate; DetectMarkersWithCLAHE picks the original or the CLAHE image from the
             // enum-4 dark-test flag (0x006B47A8..0x006B47B4). The marker-mode gate then decides whether
@@ -984,6 +999,33 @@ public sealed partial class VisionSystem : IDisposable
             var markerImage = SelectMarkerImage(gray);
             markers = ShouldProcessVisionMode(DetectingMarkers) ? Detector.Detect(markerImage, timestamp) : Array.Empty<ObservedMarker>();
             if (RemovedSince(removal)) return null;
+            // Separate producers from recipients: a mode-7 failure publishes none of this frame's modes.
+            var detectedFaces = ShouldProcessVisionMode((int)VisionMode.DetectingFaces) && FaceDetector.IsAvailable ? FaceDetector.Detect(gray,timestamp) : null;
+            var detectedPets = ShouldProcessVisionMode((int)VisionMode.DetectingPets) && PetDetector.IsAvailable ? PetDetector.Detect(gray,timestamp) : null;
+            if(ShouldProcessVisionMode((int)VisionMode.DetectingOverheadEdges) && OverheadEdges is {} edges) overheadEdges=edges.Detect(gray,camera,pd.RobotPose,timestamp,pd.LiftAngleRad);
+            if(RemovedSince(removal))return null;
+            // fidelity: M11-080, M11-057
+            ImageQualityProposal? quality=null;
+            if(ShouldProcessVisionMode((int)VisionMode.CheckingQuality))
+            {
+                if(!TryCheckFrameQuality(gray,out uint qualityStatus,out var proposed))
+                {
+                    // Offline ProcessImage is a host helper with explicit decoded pixels/pose, not the native Update entry.
+                    // A live frame with unknown quality input is stopped without forging a native failure/log.
+                    if(!offline)return null;
+                }
+                else if(qualityStatus!=0)
+                {
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionSystem.Update.CheckImageQualityFailed","");
+                    EngineErrorState.StoreAndMaybeBreak();
+                    return null;
+                }
+                else
+                {
+                    quality=proposed;
+                    SteppedBehavior.ReportMissing("M11-080/M11-035 mode-7 native processed-mask/result deque 0x006B566A..0x006B568C and UpdateImageQuality 0x0065558C..0x006556E8 are not replaced by the host FrameProcessed proposal; native result serialization/recipient remains unbuilt");
+                }
+            }
             // fidelity: M11-044 — UpdateVisionMarkers puts a computed state at the result's timestamp in the history before a result with markers reaches BlockWorld
             // (RobotStateHistory::ComputeAndInsertStateAt, 0x00654D92); GetComputedStateAt (Insert P5) finds only those.
             // A failure (no raw state at or after the timestamp) logs (0x00654DE2) and jumps to 0x0065507E: UpdateObservedMarkers is never reached and the function returns 0.
@@ -1063,10 +1105,9 @@ public sealed partial class VisionSystem : IDisposable
             // and the RobotProcessedImage layout are not built (see M11-035's unresolved).
             // VisionSystem::Update in DetectingFaces mode: FaceTracker::Update, TrackedFace::UpdateTranslation(camera), FaceWorld::AddOrUpdateFace
             // fidelity: M14-008
-            if (FaceDetector.IsAvailable)
+            if (detectedFaces is {} detected)
             {
                 var faces = new List<TrackedFace>();
-                var detected = FaceDetector.Detect(gray, timestamp);
                 if (RemovedSince(removal)) return null;
                 foreach (var d in detected)
                 {
@@ -1084,9 +1125,8 @@ public sealed partial class VisionSystem : IDisposable
                 // M14-010's unrecovered recognition scheduling, and inventing one would be a plausible
                 // substitution. The recognizer itself is built and its album/serialization endpoints are wired.
             }
-            if (PetDetector.IsAvailable)
+            if (detectedPets is {} pets)
             {
-                var pets = PetDetector.Detect(gray, timestamp);
                 if (RemovedSince(removal)) return null;
                 Pets.Update(pets, timestamp, pd.RotatingTooFast);
             }
@@ -1095,12 +1135,11 @@ public sealed partial class VisionSystem : IDisposable
             // VisionPoseData carries. The points come back in robot coordinates, so whoever puts them in
             // the map uses the same frame's robot pose - which is what the engine's map component looks
             // up by the frame's timestamp (RobotStateHistory::ComputeAndInsertStateAt at 0x0067F8A2).
-            if (OverheadEdges is { } edges)
-                overheadEdges = edges.Detect(gray, camera, pd.RobotPose, timestamp, pd.LiftAngleRad);
             if (RemovedSince(removal)) return null;
             result = new VisionFrameResult(imageId, timestamp, pd, markers, objects, forgotten, sw.Elapsed)
             {
                 OverheadEdges = overheadEdges,
+                ImageQuality = quality,
             };
             if (rawTimestamp is { } raw) LastRawFrameTimestamp = raw;
             FramesProcessed++;

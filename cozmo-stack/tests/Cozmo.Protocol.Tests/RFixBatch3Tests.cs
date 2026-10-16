@@ -209,6 +209,7 @@ public class RFixBatch3Tests : IDisposable
         {
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
             Vision = new VisionSystem(Robot, Cal) { Enabled = false };
+            Vision.ModeEnableMask &= ~(1<<7); // This fixture targets history/markers, not the unfinished quality producer (B-M11-6).
             Vision.Log += l => { lock (Log) Log.Add(l); };
             ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE1, 7);
             Send(new ObjectConnectionState { ObjectID = 1, FactoryID = 0xABCD, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });

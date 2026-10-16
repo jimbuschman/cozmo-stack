@@ -15,9 +15,13 @@ public sealed partial class EngineRobot
         {
             // fidelity: M11-055 — one gated body: event first, then flag/reset/restore/tree clear.
             Engine.EmitSourceLog(EngineLogLevel.Event,null,"poseoriginlist.destructor",_nativeOrigins.Count.ToString(System.Globalization.CultureInfo.InvariantCulture));
-            bool prior=Pose3d.UnownedParentsAllowed;Pose3d.UnownedParentsAllowed=true;
-            try{foreach(var entry in _nativeOrigins.OrderBy(e=>e.Key))entry.Value.Dispose();}
-            finally{Pose3d.UnownedParentsAllowed=prior;}
+            // Separate host robot instances must not interleave saves/restores of this process static.
+            lock(Pose3d.UnownedParentsGate)
+            {
+                bool prior=Pose3d.UnownedParentsAllowed;Pose3d.UnownedParentsAllowed=true;
+                try{foreach(var entry in _nativeOrigins.OrderBy(e=>e.Key))entry.Value.Dispose();}
+                finally{Pose3d.UnownedParentsAllowed=prior;}
+            }
             _nativeOrigins.Clear();
         });
     }

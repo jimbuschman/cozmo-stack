@@ -238,6 +238,8 @@ public sealed class Pose3d : IDisposable
     internal PoseTreeNode? Node;
     private bool _legacyFrameInput;
     internal bool HasLegacyFrameInput => _legacyFrameInput;
+    // Host instances share the native process flag; serialize every temporary writer.
+    internal static readonly object UnownedParentsGate=new();
     internal static bool UnownedParentsAllowed;
     public static Pose3d Identity=>new(Mat3.Identity,Vec3.Zero);
     public Pose3d Value=>this; // Existing nullable-value API unwrap; no new node is made.

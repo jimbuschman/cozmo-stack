@@ -63,7 +63,7 @@ public class M3DeviceTests
         Assert.False(rig.Robot.CameraSettings.SetCameraSettings(16, float.NaN));
         rig.Robot.CameraSettings.Handle(Defaults(3f, 1.5f, 0, 50));
         Assert.Contains("VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", keys);
-        Assert.DoesNotContain("VisionSystem.SetNextCameraParams.OverwritingPreviousParams", keys); // M11-060 clear unbuilt; warning suppressed.
+        Assert.Contains("VisionSystem.SetNextCameraParams.OverwritingPreviousParams", keys); // OV15-17/B-M11-6 restores the pending warning before overwrite.
         Assert.Contains("Robot.SendMessage", keys);
         Assert.Equal(17, gammaBytesAtZeroMinimum); // 0x006B938A SetGammaTable precedes 0x006B93DE.
         Assert.All(reached, Assert.True);
@@ -124,9 +124,10 @@ public class M3DeviceTests
         using var rig = new Rig();
         var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
         rig.Robot.CameraSettings.Handle(Defaults(3f, 1.5f, 0, 50));
-        Assert.Equal(new[] { "VisionComponent.SetCameraSettings", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "VisionSystem.SetCameraExposureParams.Success" }, entries.Select(e => e.Name));
+        Assert.Equal(new[] { "VisionComponent.SetCameraSettings", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "VisionSystem.SetNextCameraParams.OverwritingPreviousParams", "VisionSystem.SetCameraExposureParams.Success" }, entries.Select(e => e.Name));
         Assert.Equal(EngineLogLevel.Debug, entries[1].Level); Assert.Equal("Will use 1.", entries[1].Text);
-        Assert.Equal("Current Gain:16ms Limits:[0 50], Current Exposure:1.500 Limits:[0.100 3.000]", entries[2].Text);
+        Assert.Equal("(tc0000) : Params already requested (16ms,1.50) but not sent. Replacing with (16ms,1.50)",entries[2].Text);
+        Assert.Equal("Current Gain:16ms Limits:[0 50], Current Exposure:1.500 Limits:[0.100 3.000]", entries[3].Text);
         Assert.Equal(1, rig.Robot.CameraSettings.MinExposureMs);
     }
 

@@ -4,7 +4,7 @@ namespace Cozmo.Robot.Vision;
 /// The engine's vision-mode numbers, fixed by <c>Anki::Cozmo::VisionModeFromString</c> 0x796BD4 (M11-034,
 /// C2.3). The dispatcher calls <c>ShouldProcessVisionMode</c> with 8, 1, 2, 9, 3, 4, 5, 6, 0xF, 7 in that
 /// order (0x006B5122..0x006B55E4). The shipped <c>vision_config.json</c> enables 1, 2, 3, 4, 7, 8, 9, 15
-/// and disables 10..13; the default of the unlisted modes 0, 5, 6, 14 is UNKNOWN (not set).
+/// and disables 10..13; the unlisted modes 0, 5, 6, 14 remain off after constructor memclr and Init (OV14).
 /// </summary>
 // fidelity: M11-034
 public enum VisionMode

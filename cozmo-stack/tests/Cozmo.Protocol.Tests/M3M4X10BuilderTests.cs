@@ -113,14 +113,16 @@ public class M3M4X10BuilderTests : IDisposable
         camera.GetType().GetProperty("NextCameraParams")!.SetValue(camera,null);
         var warnings=new ConcurrentQueue<EngineLogEntry>();robot.Engine.LogEntry+=e=>{if(e.Name=="VisionSystem.SetNextCameraParams.OverwritingPreviousParams")warnings.Enqueue(e);};
         var gaps=new ConcurrentQueue<string>();robot.Engine.StackLogLine+=s=>{if(s.StartsWith("MISSING: M11-060"))gaps.Enqueue(s);};
-        using var start=new ManualResetEventSlim();
-        var first=Task.Run(()=>{start.Wait();method.Invoke(camera,new object[]{10,1f});});
-        var second=Task.Run(()=>{start.Wait();method.Invoke(camera,new object[]{20,2f});});
-        start.Set();await Task.WhenAll(first,second).WaitAsync(TimeSpan.FromSeconds(5));
-        // B-M3M4-12 suppression while the M11-060 clear is unbuilt; historical test name retained for frozen manifests.
-        Assert.Empty(warnings);Assert.Single(gaps);
-        var final=camera.NextCameraParams!.Value;
-        Assert.True(final == (10,1f) || final == (20,2f)); // complete atomic request, never mixed fields.
+        // Historical manifest test name retained. Native has one engine-thread producer; two simultaneous
+        // host writers and atomic tuples were an unsupported B-M3M4-10/12 expectation (OV15-17).
+        await Task.Run(()=>
+        {
+            method.Invoke(camera,new object[]{10,1f});
+            method.Invoke(camera,new object[]{20,2f});
+        }).WaitAsync(TimeSpan.FromSeconds(5));
+        var warning=Assert.Single(warnings);
+        Assert.Equal("(tc0000) : Params already requested (10ms,1.00) but not sent. Replacing with (20ms,2.00)",warning.Text);
+        Assert.Empty(gaps);Assert.Equal((20,2f),camera.NextCameraParams!.Value);
     }
 }
 

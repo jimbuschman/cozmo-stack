@@ -85,8 +85,9 @@ public class M3M4X12BuilderTests : IDisposable
         robot.Engine.StackLogLine += missing.Add; robot.Engine.LogEntry += e => keys.Add(e.Name);
         robot.CameraSettings.Handle(new DefaultCameraParams { Field0 = 3f, Field1 = 1.5f, Field2 = 1, Field3 = 50, Field4 = new byte[17] });
         Assert.True(robot.CameraSettings.SetCameraSettings(20, 1.5f));
-        Assert.DoesNotContain("VisionSystem.SetNextCameraParams.OverwritingPreviousParams", keys);
-        Assert.Contains(missing, s => s.StartsWith("MISSING: M11-060"));
+        // Historical manifest test name retained: OV15-17/B-M11-6 retires the old suppression.
+        Assert.Equal(2,keys.Count(k=>k=="VisionSystem.SetNextCameraParams.OverwritingPreviousParams"));
+        Assert.DoesNotContain(missing, s => s.StartsWith("MISSING: M11-060"));
         Assert.Equal((20, 1.5f), robot.CameraSettings.NextCameraParams);
     }
 

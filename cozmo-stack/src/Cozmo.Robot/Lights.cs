@@ -488,7 +488,7 @@ public sealed class CozmoLights
     }
 
     /// <summary>Mode-14 requests made while no VisionSystem was attached (see AttachVisionSystem).</summary>
-    private readonly Queue<bool> _pendingLimitedExposure = new();
+    private readonly Queue<(int Mode, bool Enable)> _pendingLimitedExposure = new();
 
     // fidelity: M4-017
     /// <summary>
@@ -508,7 +508,7 @@ public sealed class CozmoLights
         lock (_pendingLimitedExposure)
         {
             _robot.VisionModeRecipient = vision;
-            foreach (var pending in _pendingLimitedExposure) vision.QueueLimitedExposure(pending);
+            foreach (var pending in _pendingLimitedExposure) vision.QueueVisionMode(pending.Mode,pending.Enable);
             _pendingLimitedExposure.Clear();
         }
     }
@@ -524,21 +524,19 @@ public sealed class CozmoLights
         }
     }
 
-    public void SetHeadlight(bool on)
+    // M3-021 uses the same recipient/attach gate as the existing M4-017 requests.
+    internal void QueueVisionMode(int mode, bool enable)
     {
-        // The recipient test and the enqueue are atomic with AttachVisionSystem (same lock), so no request is lost.
         lock (_pendingLimitedExposure)
         {
-            if (_robot.VisionModeRecipient is { } vision) vision.QueueLimitedExposure(on);
-            else
-            {
-                // Manager decision (B-M3M4 fix round 1, item 3): the engine's NullVisionSystem branch (0x006527AC..
-                // 0x00652808) is unreachable (the VisionComponent ctor always allocates the VisionSystem, 0x00650184..
-                // 0x00650196), so no engine error and no _errG store. The requested mode is kept and handed to the
-                // VisionSystem that attaches (AttachVisionSystem).
-                _pendingLimitedExposure.Enqueue(on);
-            }
+            if (_robot.VisionModeRecipient is { } vision) vision.QueueVisionMode(mode,enable);
+            else _pendingLimitedExposure.Enqueue((mode,enable));
         }
+    }
+
+    public void SetHeadlight(bool on)
+    {
+        QueueVisionMode(14,on);
         _robot.SendMessage(new SetHeadlight(on));
         HeadlightOn = on;
     }
