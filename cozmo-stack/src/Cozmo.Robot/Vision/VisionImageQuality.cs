@@ -33,7 +33,11 @@ public sealed partial class VisionSystem
             if(!Json.TryParseFirst(File.ReadAllBytes(path),out var doc))
             {SteppedBehavior.ReportMissing("M11-080 quality config parse failure: DataPlatform reader failure path not built; prior statics retained");return;}
             bool loaded;
-            using(doc)loaded=QualityProcessor.Settings.Load(doc.RootElement,QualityProcessor.SourceLog!);
+            using(doc)
+            {
+                if(!ReadComponentQualityPrefix(doc.RootElement))return;
+                loaded=QualityProcessor.Settings.Load(doc.RootElement,QualityProcessor.SourceLog!);
+            }
             if(loaded)SteppedBehavior.ReportMissing("M11-081 quality Init SetAutoExposureParams 0x006B0A14 recipient is checked but not built (B-M11-11); six ImageQuality statics only loaded here");
         }
         catch(Exception e) when(e is JsonLogicError or JsonRuntimeError)

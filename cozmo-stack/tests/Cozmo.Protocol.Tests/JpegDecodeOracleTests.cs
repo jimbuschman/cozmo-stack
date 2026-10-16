@@ -237,7 +237,17 @@ public class JpegDecodeOracleTests
             if (jpeg.Length == 0) continue;                              // policy M3-020: the strip reads data[-1]
             Cozmo.Transport.EngineErrorState.ErrorFlagSet = false;
             var ours = new List<string>();
-            var r = gray ? EncodedImageDecode.DecodeGray(enc, payload, jpeg, 240, 320, ours.Add) : EncodedImageDecode.DecodeRgb(enc, payload, jpeg, 240, 320, ours.Add);
+            EncodedImageDecodeResult r;
+            try { r = gray ? EncodedImageDecode.DecodeGray(enc, payload, jpeg, 240, 320, ours.Add) : EncodedImageDecode.DecodeRgb(enc, payload, jpeg, 240, 320, ours.Add); }
+            catch(OpenCvException)
+            {
+                var expected=c.GetProperty("expected");
+                if(!expected.TryGetProperty("exception",out _))failures.Add($"{Id(c)}: unexpected decode throw");
+                if(!Logs(expected).SequenceEqual(ours))failures.Add($"{Id(c)}: throwing helper logs differ");
+                if(ours.Count>0)withLogs++;
+                continue;
+            }
+            if(c.GetProperty("expected").TryGetProperty("exception",out _))failures.Add($"{Id(c)}: expected throw, got Result");
             var why = CheckEngine(c, r, ours);
             if (ours.Count > 0) withLogs++;
             if (why != null) failures.Add($"{Id(c)}: {why}");
@@ -304,6 +314,8 @@ public class JpegDecodeOracleTests
             string? error;
             bool ok;
             var liveLogs = new List<string>();
+            try
+            {
             if (gray)
             {
                 ok = frame.TryDecodeGray(out var img, out error, liveLogs.Add);
@@ -314,6 +326,14 @@ public class JpegDecodeOracleTests
                 ok = frame.TryDecodeRgb(out var rgb, out error, liveLogs.Add);
                 if (ok) mat = new CvMat(240, 320, 3, rgb!);
             }
+            }
+            catch(OpenCvException)
+            {
+                if(!exp.TryGetProperty("exception",out _))failures.Add($"{Id(c)}: unexpected live helper throw");
+                if(!Logs(exp).SequenceEqual(liveLogs))failures.Add($"{Id(c)}: throwing live helper logs differ");
+                continue;
+            }
+            if(exp.TryGetProperty("exception",out _))failures.Add($"{Id(c)}: expected live throw, got Result");
             if (frame.Jpeg.Length == 0 && enc is 8 or 9)
             {
                 if (ok || !error!.Contains("M3-020")) failures.Add($"{Id(c)}: an empty reconstruction must fail with the M3-020 policy text");

@@ -20,12 +20,13 @@ public sealed partial class CameraSettings
     {
         get { lock(_gate)return new(CurrentExposureMs,CurrentGain,MinExposureMs,MaxExposureMs,MinGain,MaxGain); }
     }
-    // OV15-17 B1-B5: no lock/barrier, exposure then gain copy, then flag clear; payload stays.
+    // OV15-17 B1-B5: no lock/barrier, load both words, clear flag, then current-pair store; payload stays.
     internal void ApplyPendingCameraParams()
     {
         if(!_nextCameraParamsPending)return;
-        CurrentExposureMs=_nextExposureMs;
-        CurrentGain=_nextGain;
+        int exposure=_nextExposureMs;float gain=_nextGain;
         _nextCameraParamsPending=false;
+        CurrentExposureMs=exposure;
+        CurrentGain=gain;
     }
 }

@@ -576,7 +576,11 @@ public sealed partial class VisionSystem : IDisposable
     {
         EnrolledFacesErased?.Invoke();
         foreach (var f in Faces.Faces)
-            if (f.HasName) LoadedFaceName?.Invoke(f.Id, f.Name!);
+            if (f.HasName)
+            {
+                _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.BroadcastLoadedNamesAndIDs",FormattableString.Invariant($"broadcasting loaded face id: {f.Id}"));
+                LoadedFaceName?.Invoke(f.Id, f.Name!);
+            }
     }
 
     // fidelity: M14-012
@@ -592,12 +596,16 @@ public sealed partial class VisionSystem : IDisposable
         var nv = _robot.Engine.NvStorage;
         if (nv is null) return;
         var album = new List<byte>();
-        nv.Read(FaceAlbumNvTag, _ => { }, album);
-        nv.Read(FaceEnrollmentNvTag, r =>
+        if(nv.Read(FaceAlbumNvTag,null,album)==0)
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceAlbumDataFail","");
+        else if(nv.Read(FaceEnrollmentNvTag,r=>
         {
-            if (r.Result != NvStorageComponent.ResultOkay) return;
-            AdoptFaceAlbum(album.ToArray(), r.Data);
-        });
+            if(r.Result==-1)_robot.Engine.EmitSourceLog(EngineLogLevel.Info,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataNotFound","");
+            else if(r.Result!=0)_robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail",$"NVResult = {NvStorageComponent.NvResultName(r.Result)}");
+            if(r.Result==0)AdoptFaceAlbum(album.ToArray(),r.Data);
+        })==0)
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.LoadFaceAlbumFromRobot.ReadFaceEnrollDataFail","");
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","VisionComponent.LoadFaceAlbumToRobot.Initiated","Initiated load of album and enroll data from NVStorage");
     }
 
     // fidelity: M14-012
@@ -815,13 +823,15 @@ public sealed partial class VisionSystem : IDisposable
                 }
                 if (taken is { } frame)
                 {
-                    try { ProcessFrame(frame.Frame, frame.Removal); }
-                    catch (Exception e) { Log?.Invoke($"frame {frame.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
+                    bool completed=false;
+                    try { ProcessEncodedFrame(frame.Frame, frame.Removal);completed=true; }
+                    catch (Jpeg.OpenCvException e) { ReportDecodeThrow(frame.Frame,e); }
+                    catch (Exception e) { completed=true;Log?.Invoke($"frame {frame.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
                     finally
                     {
                         lock (_mailbox)
                         {
-                            _next = null; // clear the slot after UpdateVisionSystem; latest arrivals are discarded
+                            if(completed)_next = null; // native completion only follows a returned Update; a throw keeps later arrivals
                             _processorRunning = false;
                             Monitor.PulseAll(_mailbox);
                         }
@@ -869,36 +879,44 @@ public sealed partial class VisionSystem : IDisposable
     // (0x006B4C02), the ImageCache is reset with that result, then Update(PoseData, ImageCache) 0x006B4C78
     // runs. The shipped camera is grey, so only the grey member is populated and the colour branch is
     // inert (C2.2).
+    // fidelity: M11-058 — synchronous host entry. Native direct calibration/dot-test entry remains unbuilt.
     private VisionFrameResult? ProcessFrame(CameraFrame f, int removal)
     {
-        if (Calibration is null) { WarnNoCalibration(removal); return null; }
-        var cache = new ImageCache();
+        try{return ProcessEncodedFrame(f,removal);}
+        catch(Jpeg.OpenCvException e){ReportDecodeThrow(f,e);return null;}
+    }
+    private static void ReportDecodeThrow(CameraFrame f,Jpeg.OpenCvException e)
+        => SteppedBehavior.ReportMissing($"M1-034/M11-058 decode throw: skipped image {f.ImageId} ({e.Message}); native cleanup unwinds to terminate at 0x004E39F8; no Toc, cache Reset, rollback or Processor completion");
+    // Host diagnostic snapshot only; native persistent cache/tree ownership is still M11-033/M11-078.
+    internal ImageCache EncodedFrameCache {get;private set;}=new();
+    private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal)
+    {
+        var cache = new ImageCache(); // retain per-call host buffers so separate host entries cannot corrupt a frame
+        SteppedBehavior.ReportMissing("M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only");
+        SteppedBehavior.ReportMissing("M11-058/M11-055 DecodeJPEG Tic/Toc 0x006B4B76/0x006B4C6C native timing producer unbuilt; no host timer substituted");
         // fidelity: M3-018
         // VisionSystem::Update(PoseData, EncodedImage) 0x006B4B68 calls EncodedImage::IsColor at 0x006B4B7C
         // (the encoding byte). The engine's VERIFY(false) log for encoding 0 is emitted here, once per
         // VisionSystem::Update call, not when the frame was assembled.
         bool isColor = EncodedImageDecoder.IsColor(f.Encoding, Log);
-        if (isColor)
-        {
-            // colour -> DecodeImageRGB + ImageCache::Reset(ImageRGB const&) (0x0087459E, RGB at +0x54)
-            if (!f.TryDecodeRgb(out var rgb, out _, Log, SourceLog)) return null;      // the helper's own logs (D2..D7) went to Log
-            cache.Reset(rgb!, f.Width, f.Height);
-        }
-        else
-        {
-            // fidelity: M3-001
-            // A6: a frame that does not decode (A8..A11, policy M3-020) is not processed.
-            if (!f.TryDecodeGray(out var gray, out _, Log, SourceLog)) return null;    // the helper's own logs (D2..D7) went to Log
-            cache.Reset(gray!);
-        }
+        var decoded=EncodedImageDecoder.DecodeForCache(f,isColor,Log,SourceLog??((l,c,k,t)=>_robot.Engine.EmitSourceLog(l,c,k,t)));
+        cache.ResetDecoded(decoded.Image,isColor); // native Reset even for nonzero Result; throw bypasses this
+        EncodedFrameCache=cache; // publish after Reset; a throw leaves the previous diagnostic snapshot
+        if(!decoded.Ok)return DecodeReturnedFailure();
         return ProcessCapture(cache, f.ImageId, f.Timestamp, removal);
+        VisionFrameResult? DecodeReturnedFailure()
+        {
+            // Reset already ran; the unbuilt native Toc above belongs only to this normal-return tail.
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"VisionComponent.UpdateVisionSystem.UpdateFailed","");
+            return null;
+        }
     }
 
     /// <summary>
     /// The camera path with the image already decoded: pairs the capture with the robot state at its
     /// timestamp and processes it. Split out from <see cref="ProcessFrame(CameraFrame)"/> so the fw2457
     /// timestamp-zero path can be driven without a JPEG. This is <c>VisionSystem::Update(PoseData,
-    /// ImageCache)</c> 0x006B4D5C: it requires the pose and image, calls <c>UpdatePoseData</c> 0x006B4D88
+    /// ImageCache)</c> 0x006B4D5C: it requires initialization and calibration, calls <c>UpdatePoseData</c> 0x006B4D88
     /// and <c>GetGray</c> 0x006B4D94, then dispatches the enabled modes.
     /// </summary>
     // fidelity: M11-033

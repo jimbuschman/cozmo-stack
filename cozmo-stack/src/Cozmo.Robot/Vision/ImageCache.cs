@@ -48,6 +48,16 @@ public sealed class ImageCache
         Height = height;
     }
 
+    // fidelity: M11-058 — Reset receives the decoded local image even on a returned failure (including wrong-size images).
+    internal void ResetDecoded(Jpeg.CvMat? image,bool color)
+    {
+        bool empty=image is null||image.IsEmpty;
+        Gray=!color&&!empty?new GrayImage(image!.Cols,image.Rows,image.Data):null;
+        Rgb=color?(image?.Data??Array.Empty<byte>()):null;
+        GrayValid=!color;RgbValid=color;
+        Width=empty?0:image!.Cols;Height=empty?0:image!.Rows;
+    }
+
     /// <summary>
     /// <c>ImageCache::GetGray</c> 0x0087465C: the grey member when it is valid, otherwise the RGB member
     /// through <see cref="FillGray"/>.

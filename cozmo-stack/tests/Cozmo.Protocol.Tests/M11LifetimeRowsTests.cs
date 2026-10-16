@@ -71,7 +71,7 @@ public sealed class M11LifetimeRowsTests
         Assert.DoesNotContain(entries,e=>e.Text.Contains("Terminated Robot"));
         vision.SkipProcessorPass=false;
         vision.WaitForProcessorIdle();
-        Assert.Contains(messages,e=>e.Contains("Must be initialized"));
+        Assert.Contains(messages,e=>e.Contains("policy M3-020")); // encoded decode precedes ImageCache readiness/calibration guards
         Assert.DoesNotContain(entries,e=>e.Text.Contains("Terminated Robot"));
         vision.Dispose();
         Assert.Single(entries,e=>e.Text=="Terminated Robot VisionComponent::Processor thread");
@@ -84,11 +84,11 @@ public sealed class M11LifetimeRowsTests
         using var vision=new VisionSystem(robot) { Enabled=true };
         using var callback=new ManualResetEventSlim();
         using var secondFrame=new ManualResetEventSlim();
-        Exception? failure=null;
+        Exception? failure=null;int decoded=0;
         vision.Log+=text=>
         {
-            if (text.Contains("policy M3-020")) secondFrame.Set();
-            if (!text.Contains("Must be initialized")) return;
+            if (!text.Contains("policy M3-020")) return;
+            if(Interlocked.Increment(ref decoded)>1){secondFrame.Set();return;}
             failure=Record.Exception(vision.Dispose);
             callback.Set();
         };

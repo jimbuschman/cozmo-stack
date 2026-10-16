@@ -1715,9 +1715,9 @@ public class M11RVisBuildTests : IDisposable
         callback.Invoke(robot.CameraSettings, new object[] { new NvResult((sbyte)nvResult, data) });
         Assert.True(vision.Enabled);
         vision.HandOverFrame(BadFrame(2));
-        // the frame is taken now. With a calibration installed (the success outcome) it is decoded, and the empty reconstruction says so (the M3-020 policy line); without one (the two failure outcomes) the engine's
-        // VisionSystem::Update refuses with the NotReady warning (M11-012, 0x006B4D66..0x006B4FFC)
-        string expected = vision.Calibration is null ? "Must be initialized and have calibrated camera" : "policy M3-020";
+        // Encoded Update decodes before ImageCache Update checks readiness/calibration (OV15 R1).
+        // This empty reconstruction returns failure first, for all three calibration-read outcomes.
+        string expected = "policy M3-020";
         vision.WaitForProcessorIdle();
         lock (log) Assert.True(log.Any(l => l.Contains(expected)), string.Join(" | ", log));
         Assert.Null(typeof(VisionSystem).GetProperty("Paused"));

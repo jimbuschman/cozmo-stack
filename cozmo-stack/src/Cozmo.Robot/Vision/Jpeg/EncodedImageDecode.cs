@@ -53,7 +53,8 @@ internal static class EncodedImageDecode
         }
         catch (OpenCvException e)
         {
-            return OpenCvFailed(e, log, sourceLog);
+            WriteOpenCvError(e, log);
+            throw; // M11-058: cleanup-only native helpers never convert this to a Result.
         }
         return Check(m, rows, cols, log, sourceLog);
     }
@@ -89,21 +90,15 @@ internal static class EncodedImageDecode
         }
         catch (OpenCvException e)
         {
-            return OpenCvFailed(e, log, sourceLog);
+            WriteOpenCvError(e, log);
+            throw; // M11-058: cleanup-only native helpers never convert this to a Result.
         }
         return Check(m, rows, cols, log, sourceLog);
     }
 
-    // O8: cv::error prints "OpenCV Error: ..." to stderr and to logcat (tag cv::error(), priority ERROR) when it throws, before the exception
-    // unwinds. One line is emitted here, in the log-prefix form with the logcat tag as the key; the stderr copy is the same text.
-    // The exception itself leaves the engine's helper (O9, the catcher above it is M11-058's); this port reports a failed decode.
-    private static EncodedImageDecodeResult OpenCvFailed(OpenCvException e, Action<string>? log, SourceLogSink? sourceLog = null)
-    {
-        log?.Invoke("error: cv::error(): " + e.Message);
-        // MISSING: M11-058 | the engine's catcher of this cv::Exception (and the frame's fate after it) is unread; the port reports a failed decode.
-        Behavior.SteppedBehavior.ReportMissing("M11-058 | cv::Exception from the image decode (EncodedImage::DecodeImage*): where the engine catches it and what happens to the frame is unread; this stack reports a failed decode");
-        return new EncodedImageDecodeResult { Ok = false, Error = e.Message };
-    }
+    // O8 is OpenCV stderr/logcat output, not an engine/libDAS entry. The native helper then unwinds.
+    private static void WriteOpenCvError(OpenCvException e, Action<string>? log)
+        => log?.Invoke("error: cv::error(): " + e.Message);
 
     // the size check 0x004F2CDA..0x004F2D34 / 0x004F2658..0x004F2674 (J38, D7): rows against EncodedImage+0x18, cols against +0x14;
     // a mismatch is sWarningF("EncodedImage.DecodeImageRGB.BadDecode" in both helpers), expected width x height then got cols x rows,
@@ -115,7 +110,7 @@ internal static class EncodedImageDecode
             const string key = "EncodedImage.DecodeImageRGB.BadDecode";
             string text = $"Failed to decode {cols}x{rows} image from buffer. Got {m.Cols}x{m.Rows}";
             SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Warning, null, key, text);
-            return new EncodedImageDecodeResult { Ok = false, Error = $"{key}: {text}" };
+            return new EncodedImageDecodeResult { Ok = false, Image = m, Error = $"{key}: {text}" };
         }
         return new EncodedImageDecodeResult { Ok = true, Image = m };
     }

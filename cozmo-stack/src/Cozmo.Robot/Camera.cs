@@ -171,28 +171,25 @@ public static class EncodedImageDecoder
     /// </summary>
     public static bool TryDecodeGray(CameraFrame f, out GrayImage? image, out string? error, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        image = null;
-        if (EmptyMiniReconstruction(f)) return PolicyFail(log, out error);
-        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeGray(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log, sourceLog);
-        if (!r.Ok) return Fail(r.Error!, out error);
-        image = new GrayImage(r.Image!.Cols, r.Image.Rows, r.Image.Data);
-        error = null;
-        return true;
+        var r=DecodeForCache(f,false,log,sourceLog);
+        image=r.Image is {IsEmpty:false} m?new GrayImage(m.Cols,m.Rows,m.Data):null;
+        error=r.Error;return r.Ok;
     }
 
     // fidelity: M3-018
-    /// <summary>
-    /// <c>EncodedImage::DecodeImageRGB</c> = <c>DecodeImageHelper&lt;ImageRGB&gt;</c> (Z0..Z8). See the class summary.
-    /// </summary>
     public static bool TryDecodeRgb(CameraFrame f, out byte[]? rgb, out string? error, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
-        rgb = null;
-        if (EmptyMiniReconstruction(f)) return PolicyFail(log, out error);
-        var r = Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeRgb(f.Encoding, f.RawPayload, f.Jpeg, f.Height, f.Width, log, sourceLog);
-        if (!r.Ok) return Fail(r.Error!, out error);
-        rgb = r.Image!.Data;
-        error = null;
-        return true;
+        var r=DecodeForCache(f,true,log,sourceLog);
+        rgb=r.Image?.Data;error=r.Error;return r.Ok;
+    }
+
+    // One helper dispatch for public decode and the native ImageCache-reset caller, including nonzero Results.
+    internal static Cozmo.Robot.Vision.Jpeg.EncodedImageDecodeResult DecodeForCache(CameraFrame f,bool color,Action<string>? log,SourceLogSink? sourceLog)
+    {
+        if(EmptyMiniReconstruction(f))
+        {PolicyFail(log,out var error);return new(){Ok=false,Error=error};}
+        return color?Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeRgb(f.Encoding,f.RawPayload,f.Jpeg,f.Height,f.Width,log,sourceLog)
+            :Cozmo.Robot.Vision.Jpeg.EncodedImageDecode.DecodeGray(f.Encoding,f.RawPayload,f.Jpeg,f.Height,f.Width,log,sourceLog);
     }
 
     // fidelity: M3-020
@@ -582,9 +579,11 @@ public sealed partial class CameraSettings
     /// <summary>
     /// The initial exposure (.data 0x01051054, 1f): .data-initialised to 16, and overwritten by VisionComponent::Init
     /// from vision_config.json ImageQuality.InitialExposureTime_ms, which the shipped file sets to 16. This stack does
-    /// not load vision_config.json, so it is the constant 16 (the .data value and the shipped file's).
+    /// exposes this compiled constant for callers; the component config prefix writes ConfiguredInitialExposureTimeMs.
     /// </summary>
     public const ushort InitialExposureTimeMs = 16;
+    // fidelity: M11-059 — global0x01051054, compiled16 then component config read.
+    internal static ushort ConfiguredInitialExposureTimeMs=InitialExposureTimeMs;
 
     /// <summary>The NV calibration size check: MakeWordAligned(CameraCalibration::Size()) = 56 (A17, 1j).</summary>
     public const int CalibrationBytes = (Vision.CameraCalibration.WireSize + 3) & ~3;
@@ -736,17 +735,17 @@ public sealed partial class CameraSettings
     internal void Handle(DefaultCameraParams m)
     {
         // MISSING: M11-059 | VisionSystem::IsInitialized (0x006B2CD6) and the initial exposure (vision_config.json InitialExposureTime_ms, read by
-        // VisionComponent::Init 0x00650DAE..0x00650DCA) are M11-059's; this stack holds the constants 16 and true.
-        Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); this stack uses the constants true and 16");
+        // VisionComponent::Init 0x00650DAE..0x00650DCA) are M11-059's. The config prefix writes initial exposure; full readiness remains unbound.
+        Behavior.SteppedBehavior.ReportMissing("M11-059 | VisionComponent::HandleDefaultCameraParams: VisionSystem::IsInitialized and InitialExposureTime_ms come from VisionComponent::Init / VisionSystem::Init (checked, not yet built: B-M11-7); system readiness remains unbound; the initial-exposure config prefix is built");
         if (!VisionSystemInitialized) { Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.NotInitialized", ""); Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); return; }
         ushort min = m.Field2, max = m.Field3;
-        if (!(min <= InitialExposureTimeMs && InitialExposureTimeMs <= max))
+        if (!(min <= ConfiguredInitialExposureTimeMs && ConfiguredInitialExposureTimeMs <= max))
         {
-            Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.BadInitialExposureTime", $"Initial exp time {InitialExposureTimeMs}ms outside range [{min},{max}]");
+            Emit(EngineLogLevel.Error, null, "VisionComponent.HandleDefaultCameraParams.BadInitialExposureTime", $"Initial exp time {ConfiguredInitialExposureTimeMs}ms outside range [{min},{max}]");
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return;
         }
-        SetCameraSettings(InitialExposureTimeMs, m.Field1);
+        SetCameraSettings(ConfiguredInitialExposureTimeMs, m.Field1);
         // 0x006B938A..0x006B93A0: SetGammaTable precedes the zero-minimum diagnostic.
         lock (_gate) GammaTable = (byte[])m.Field4.Clone();
         if (min == 0) Emit(EngineLogLevel.Debug, "VisionSystem", "VisionSystem.SetCameraExposureParams.ZeroMinExposureTime", "Will use 1.");
@@ -758,8 +757,8 @@ public sealed partial class CameraSettings
             MinGain = DefaultParamsMinGain;
             MaxGain = m.Field0;
         }
-        SetNextCameraParams(InitialExposureTimeMs, m.Field1);
-        Emit(EngineLogLevel.Info, "VisionSystem", "VisionSystem.SetCameraExposureParams.Success", $"Current Gain:{InitialExposureTimeMs}ms Limits:[{min} {max}], Current Exposure:{F(m.Field1, 3)} Limits:[{F(DefaultParamsMinGain, 3)} {F(m.Field0, 3)}]");
+        SetNextCameraParams(ConfiguredInitialExposureTimeMs, m.Field1);
+        Emit(EngineLogLevel.Info, "VisionSystem", "VisionSystem.SetCameraExposureParams.Success", $"Current Gain:{ConfiguredInitialExposureTimeMs}ms Limits:[{min} {max}], Current Exposure:{F(m.Field1, 3)} Limits:[{F(DefaultParamsMinGain, 3)} {F(m.Field0, 3)}]");
     }
 
     // fidelity: M3-019, M3-022
