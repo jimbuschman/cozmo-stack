@@ -834,3 +834,10 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | Change | Records |
 | --- | --- |
 | Note (queue-clear rows) | M2-022 |
+
+
+## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
+
+| Change | Records |
+| --- | --- |
+| Narrowed to the M2 dispatch part; handler bodies and per-owner wiring moved to their owners | M2-020, M2-023 |

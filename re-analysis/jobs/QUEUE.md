@@ -138,6 +138,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 | 61w0 | [B-M11-15](B-M11-15.md) | DONE per status/B-M11-15.md |
 | 61w1 | [B-M15-7](B-M15-7.md) | CLAIMED per status/B-M15-7.md |
 | 61w2 | [B-M1-2](B-M1-2.md) | open, after B-M15-7 |
+| 61w3 | [B-M2M15-2](B-M2M15-2.md) | open, after B-M1-2 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilderTests full-run failure) |
 | 61x | [B-M15-8](B-M15-8.md) | open, after B-M1-2 (expose approved spark/activity inputs) |
 | 61y | [B-M11-16](B-M11-16.md) | open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) |
 | 61z | [B-M15-9](B-M15-9.md) | open, after B-M11-16 (put-down kick-out M15-060; Feeding M15-061/M15-064; Lab residue M15-062) |

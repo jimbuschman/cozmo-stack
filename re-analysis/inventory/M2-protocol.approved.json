@@ -1,8 +1,8 @@
 {
   "subsystem": "M2-protocol",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "5a80b1af2dfcee07a99711c94d9976cb3efed10207df79d066a02373264326d8",
+  "inventory_sha256": "41f23027971c7a71fe8677676f782861b4ec1b46173512974ff6614dc81a8a8e",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -246,7 +246,7 @@
     },
     "M2-020": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Robot-message dispatch residue: wildcard ID 0x101CF (all-signals branch unreachable), handle reset/unlink, the 35 owner releases, re-Init appends before release",
+      "title": "Robot-message dispatch residue: wildcard ID 0x101CF (all-signals branch unreachable), handle reset/unlink, re-Init appends before release, ~Messaging retirement order, TracePrinter B0/EC registrations; each owner's own handle wiring is owned by that owner's record",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-robot-message-subscribers-check.md: Emitter 0x0069DE18: robot ID == MessageHandler+0x1C (0x1CF, set 0x0069D004/0x0069D00E) emits every robot signal for the tag (0x0069DE32..0x0069DE4E); otherwise the robot signal, then the 0x1CF signal (0x0069DE50..0x0069DE74). LoadBehaviors is called from LoadNonConfigData 0x0051F452; its order against AddRobot is unread.",
@@ -278,7 +278,7 @@
     },
     "M2-023": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "Robot-message handler bodies read for mid-emit safety: C4 motor acks, DA, CA, CB, D5 and C5 direct bodies, EF direct body, IActionRunner re-Init, ConnectToRobot registration, ~Robot BlockTapFilter teardown, ProcessMessages with no robot",
+      "title": "Robot-message handler bodies and mid-emit safety: none of the read bodies destroys another subscriber mid-emit; ConnectToRobot registration; ProcessMessages with no robot; ~Robot r5 = BlockTapFilterComponent. The bodies themselves are owned by M4-016 (Head/Lift acks), M13-022 (Turn ack), M8-020 (CA/CB/D5), M8-015 (re-Init) and M12-017 (DA/C5); EF is unreachable",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-small-reads-2-check.md: M2-023 section. C4 0x0054D3F8..0x0054D7B2; DA 0x00557E82..0x00557E9C; CA 0x005452F0..0x0054534E; CB 0x0054541C..0x005454F4; D5 0x0054561C..0x0054569E, 0x00545750..0x00545792, Broadcast(&&) 0x006625B0; C5 -> QueueAction(5) -> AddConcurrentAction 0x0053DF2C..0x0053E004; EF 0x00678064..0x0067811C, 0x00676D80..0x00676FA6; re-Init 0x00540D1C..0x00540F9C; ConnectToRobot 0x004EB5CC, 0x004EBB6C..0x004EBBC2, 0x004ED018; ~Robot 0x005111EA..0x00511220; ProcessMessages 0x0069D8BC..0x0069D8D8."

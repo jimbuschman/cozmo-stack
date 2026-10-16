@@ -2,7 +2,7 @@
   "subsystem": "M13-navigation",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "50c0059128c59d711ac619ef4c489c18e70b9eb683d92006dac9670c225d0755",
+  "inventory_sha256": "d6db6930989f5b425fd49e35f0923e23ec073b4350f617504c43ba232d43ba9c",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",

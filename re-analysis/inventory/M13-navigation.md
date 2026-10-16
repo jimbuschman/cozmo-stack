@@ -2634,3 +2634,8 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Contradiction / incompleteness notes | M13-007, M13-025 |
+
+
+## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
+
+| Ownership notes (bodies/wiring moved from M2-020/M2-023) | M13-022 |

@@ -1051,3 +1051,8 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Change | Records |
 | --- | --- |
 | Narrowed to SetCarryingObject, IMPLEMENTATION_GAP | M12-046 |
+
+
+## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
+
+| Ownership notes (bodies/wiring moved from M2-020/M2-023) | M12-017 |

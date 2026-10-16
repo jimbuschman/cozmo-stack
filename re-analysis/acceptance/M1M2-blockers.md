@@ -46,6 +46,20 @@ Most are named in AGENTS.md's approved departures or the app-boundary rule.
 - **The layer's acceptance run:** a single M1+M2 hardware script, run by the operator after section 1 closes. It covers
   connect, the protocol exchange and disconnect on the current main.
 
+## Update 2026-10-16 (later)
+
+- **M2-020 and M2-023 are split.** Each owner record was already there, so no new records were needed:
+  - M2-023's handler bodies went to M4-016, M13-022, M8-020, M8-015 and M12-017;
+  - M2-020's per-owner wiring went to M8-020, M12-017, M7-027 and M4-027.
+- **M2 work that remains in M2-020:**
+  - the TracePrinter B0 (Trace) and EC (WifiFlashID) registrations and bodies, which are unbuilt;
+  - settling the dispatch mechanism.
+- **The ~Robot r5 identity is settled** by `research/20261013-small-reads-2-check.md` (BlockTapFilterComponent).
+- **In progress:**
+  - B-M2M15-2 is queued after B-M1-2;
+  - an Opus verifier is checking B-M12-3;
+  - an Opus extractor is reading M2-022.
+
 ## Order of work
 
 1. B-M1-2: already next in the builder queue.

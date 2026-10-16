@@ -808,3 +808,8 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | CD7 gains the factory-ID mismatch branch and both Info logs; LC8a gains the returned-ID != -1 gate (0x00533CA6..0x00533CA8) | M4-010 (note) |
+
+
+## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
+
+| Ownership notes (bodies/wiring moved from M2-020/M2-023) | M4-016, M4-027 |
