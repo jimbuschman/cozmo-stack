@@ -2,7 +2,7 @@
   "subsystem": "M9-wwise-music",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M9-wwise-music.md",
-  "inventory_sha256": "ef5f15a9852d810ab50ca64e6a1a276ef86b710b3ed2b0305940c727ea19b552",
+  "inventory_sha256": "8e5ddd37aa3c78baf6f00d628f9f5d4f16e00c076c9ac8eeb4a4ee6130212afb",
   "records": {
     "M9-001": {
       "status": "EXACT_SOURCE",
@@ -474,12 +474,13 @@
       "hardware_required": false
     },
     "M9-041": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise parameter-collector residue: 9EF258 middle (SIS, factor, aux, bus), 9FAEE8, 9FB17C, A6E848, A14E28 non-linear kinds, 9E6748 -> 9DA360, dynamic +0xAC/+0x84 recipients, A0F5D4",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM) and the shipped banks.",
       "evidence": [
         "re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md: 9EF258 middle 0x009EF2E0..0x009EFFD0 and the other named bodies (not re-disassembled by the check).",
-        "re-analysis/research/overnight/20261016-ov94-96-answer.md: state-value section 0x009EF2D8..0x009EF52C, SIS lookup 0x009EF52C..0x009EF57C, aux 0x009EF96C..0x009EFD64 and bus 0x009EFDC8..0x009EFFD0 mapped; dynamic recipient vtables 0x0103B050, 0x0103B860, 0x0103BAD0, 0x0103AA50, 0x0103AB98."
+        "re-analysis/research/overnight/20261016-ov94-96-answer.md: state-value section 0x009EF2D8..0x009EF52C, SIS lookup 0x009EF52C..0x009EF57C, aux 0x009EF96C..0x009EFD64 and bus 0x009EFDC8..0x009EFFD0 mapped; dynamic recipient vtables 0x0103B050, 0x0103B860, 0x0103BAD0, 0x0103AA50, 0x0103AB98.",
+        "re-analysis/research/overnight/20261016-ov113-115-answer.md: global bundle 0x009EF2D8..0x009EF528; SIS 0x009F011C..0x009F037C; aux 0x009EF96C..0x009EFD6C and loader 0x009ED84C..0x009ED990; bus 0x009EFDC8..0x009EFFD0; node+0x50 writers 0x009F0EDC/0x009F1038; 9FAEE8 0x009FAEE8..0x009FB170; A1DAB8 0x00A1DAB8..0x00A1DB4C with 9FAE18; A14E28 0x00A14F30..0x00A15244; HIRC dispatch 0x009B3388..0x009B33EC; shipped chain census."
       ],
       "live_path": true,
       "hardware_required": false
@@ -496,21 +497,23 @@
       "hardware_required": false
     },
     "M9-043": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise modulator-state remainder: A1B3D8 bindings, 9DD950..9DE688 cleanup bytes, A0E5E4, A36AC4, callers above A12178/9D781C, A4AF98..A4B3D0, A72F40/A74354 and the Vorbis class gate, A6B2E8 helpers, 9D2874 pending-action leaves",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov94-96-answer.md: unread ranges: 0x00A1B3D8.. (9F4C90 bindings for params 0 and 7); 0x009DD950..0x009DE688 (allocation-failure cleanup); A0E5E4 (not on the vibrato path); A36AC4; callers of 0x00A12178 and 0x009D781C; 0x00A4AF98..0x00A4B3D0; A72F40, A74354 and which Vorbis class (0x0103E0B8 / 0x0103E138) the singing WEMs use; A09C40, 9E8E24, 9F10EC, 9C4C9C and the continuous-PBI gate; 0x009D2874..0x009D2A8C and the vt+0x4C recipients."
+        "re-analysis/research/overnight/20261016-ov94-96-answer.md: unread ranges: 0x00A1B3D8.. (9F4C90 bindings for params 0 and 7); 0x009DD950..0x009DE688 (allocation-failure cleanup); A0E5E4 (not on the vibrato path); A36AC4; callers of 0x00A12178 and 0x009D781C; 0x00A4AF98..0x00A4B3D0; A72F40, A74354 and which Vorbis class (0x0103E0B8 / 0x0103E138) the singing WEMs use; A09C40, 9E8E24, 9F10EC, 9C4C9C and the continuous-PBI gate; 0x009D2874..0x009D2A8C and the vt+0x4C recipients.",
+        "re-analysis/research/overnight/20261016-ov113-115-answer.md: A1B3D8 0x00A1B3D8..0x00A1B524; 9F4C90 0x009F4C90..0x009F4D24; 9E6810 0x009E6810..0x009E6D28; 9E84C8 0x009E84C8..0x009E859C; A0E5E4 0x00A0E5E4..0x00A0E804; A36AC4/A3693C 0x00A3693C..0x00A36AE8; A120CC dead; 9D7738 0x009D7738..0x009D7824 via 9D8A2C/9E6D2C; A4AF50 0x00A4AF50..0x00A4B3C4; Vorbis registry 0x009CC3EC..0x009CC464, AB0274/AB023C; vt+0x38 0x00AB29F8, 0x00A74354..0x00A743B8, 0x00AB1014, 0x00A72F40; 9D2874 0x009D2874..0x009D2A88."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M9-044": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise MIDI remainder: A3FC4C (CC chase reader), A40238 (seek skip per event), and the music-node loader writers of +0x7C bits 0/2 and +0x68 (meter tempo override) with the shipped census",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov94-96-answer.md: A3FC4C 0x00A3FC4C..0x00A40234 (head 0x00A3FC4C..0x00A3FD20 only read); A40238 0x00A40238..0x00A40458 (gate, restart, counter only); A3C8F0 reads node+0x7C bit0/bit2 and +0x68 (0x00A3C8F0..0x00A3C9B4); loader unread."
+        "re-analysis/research/overnight/20261016-ov94-96-answer.md: A3FC4C 0x00A3FC4C..0x00A40234 (head 0x00A3FC4C..0x00A3FD20 only read); A40238 0x00A40238..0x00A40458 (gate, restart, counter only); A3C8F0 reads node+0x7C bit0/bit2 and +0x68 (0x00A3C8F0..0x00A3C9B4); loader unread.",
+        "re-analysis/research/overnight/20261016-ov113-115-answer.md: music node ctor 0x00987180..0x009871B8; loader 0x009877B4..0x00987AD0 (flags, meter 0x009879FC..0x00987AD0, stingers); track flags 0x00992BD0..0x00992C1C; A3FC4C 0x00A3FC4C..0x00A40108 (range corrected); A40238 0x00A40238..0x00A40640; A40644 loop 0x00A40760..0x00A407F0; chase drop 0x00A3C82C..0x00A3C850; shipped census of 46 tracks."
       ],
       "live_path": true,
       "hardware_required": false
@@ -521,6 +524,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.",
       "evidence": [
         "re-analysis/research/overnight/20261016-ov94-96-answer.md: 9E6748 0x009E6748..0x009E6808; A17280 gate 0x00A172EC..0x00A17328; 9DA360 0x009DA360..0x009DA778 (key write-back 0x009DA5A0..0x009DA5B0); A0F5D4 0x00A0F5D4..0x00A0F65C; ranges 0x009EF57C..0x009EF968."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M9-046": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise singing remainder: A35998 transition evaluation and A0DD78/A366F4/A36618, the continuous getin PBI path (A6B2E8), streamed-source readiness AB22D4, factor re-attach, out+0x58 consumer and game-object aux sends, A4AF50 consumers and 0x01052454 writers, cleanup bytes",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov113-115-answer.md: A36AC4 0x00A36AC4..0x00A36AE8 calls A35998 (reached by the 10 ms Global_Vo_Stop fade, action 722744461); A6B2E8 0x00A6B2E8..0x00A6B520 (continuous getin containers under 399004754, 201436547, 693270200); A535D8 gate 0x00A53658..0x00A5368C with A56650 0x00A56650..0x00A56684 (AB22D4); owner insert re-attach 0x009E7EC4..0x009E7F30; aux out+0x58 0x009EF96C..0x009EFD6C; A4AF50 outputs +0x6C bit1, +0x1D0, 0x01052454 (writers 0x009A07A4, 0x009A08D0); cleanup 0x009DDB2C..0x009DE688; 9ECC30 callers 0x009C0E8C, 0x009EC890."
       ],
       "live_path": true,
       "hardware_required": false

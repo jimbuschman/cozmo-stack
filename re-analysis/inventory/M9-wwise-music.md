@@ -476,3 +476,13 @@ The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample 
 | New IMPLEMENTATION_GAP | M9-045 |
 | New RECOVERABLE_GAP | M9-043, M9-044 |
 | Contradiction / notes | M9-005, M9-024, M9-035 |
+
+
+## Opus answers OV113-115 (manager, 2026-10-16; research/overnight/20261016-ov113-115-answer.md)
+
+| Change | Records |
+| --- | --- |
+| MIDI remainder and meter override; modulator remainder; collector residue: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M9-044, M9-043, M9-041 |
+| New RECOVERABLE_GAP | M9-046 |
+| ADP-1 ruling: modulator factors and A4AF50 levels are exact | M9-043 |
+| Notes | M9-005, M9-038, M9-042 |

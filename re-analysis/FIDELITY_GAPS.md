@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **688 records** over 16 subsystems.
+Manifest of **689 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 399 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 20 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 402 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 62 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -32,7 +32,7 @@ remains after both, and they do not go away by working harder on this repository
 | M6-wwise-bank — Wwise bank reading and codecs | 44 | 3 | 37 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 1 | 23 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 24 | 0 | 0 | no | no |
-| M9-wwise-music — Wwise music, the MIDI sampler and singing | 45 | 3 | 34 | 0 | 1 | no | no |
+| M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
 | M11-vision — Markers, camera geometry and BlockWorld | 95 | 5 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
@@ -156,32 +156,14 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 
 ### M9-wwise-music — Wwise music, the MIDI sampler and singing
 
-**M9-041 — Wwise parameter-collector residue: 9EF258 middle (SIS, factor, aux, bus), 9FAEE8, 9FB17C, A6E848, A14E28 non-linear kinds, 9E6748 -> 9DA360, dynamic +0xAC/+0x84 recipients, A0F5D4** (live path)
+**M9-046 — Wwise singing remainder: A35998 transition evaluation and A0DD78/A366F4/A36618, the continuous getin PBI path (A6B2E8), streamed-source readiness AB22D4, factor re-attach, out+0x58 consumer and game-object aux sends, A4AF50 consumers and 0x01052454 writers, cleanup bytes** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: Voice parameter values beyond the confirmed entry rows.
-* rests on: Opus check of OV70-73/88 (2026-10-16), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM) and the shipped banks.
-* evidence: re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md: 9EF258 middle 0x009EF2E0..0x009EFFD0 and the other named bodies (not re-disassembled by the check).; re-analysis/research/overnight/20261016-ov94-96-answer.md: state-value section 0x009EF2D8..0x009EF52C, SIS lookup 0x009EF52C..0x009EF57C, aux 0x009EF96C..0x009EFD64 and bus 0x009EFDC8..0x009EFFD0 mapped; dynamic recipient vtables 0x0103B050, 0x0103B860, 0x0103BAD0, 0x0103AA50, 0x0103AB98.
-* outstanding: RECOVERABLE_GAP: read the listed bodies. Narrowed 2026-10-16 (re-analysis/research/overnight/20261016-ov94-96-answer.md): 9E6748/9DA360, A0F5D4 and the ranges section moved to M9-045. Ranges, aux and output bus are inert with shipped singing data. Remaining: byte-level branches of the state, aux and bus sections; SIS at 0x009F011C; 9FAEE8/9FB17C re-read; A6E848 0x00A6E848..0x00A6F130; A14E28 non-linear kinds 0x00A14E28..0x00A15244; the full +0xAC/+0x84 census; a shipped census of state groups and SIS on the singing chain; the writers of node+0x50 and the layer list.
-
-**M9-043 — Wwise modulator-state remainder: A1B3D8 bindings, 9DD950..9DE688 cleanup bytes, A0E5E4, A36AC4, callers above A12178/9D781C, A4AF98..A4B3D0, A72F40/A74354 and the Vorbis class gate, A6B2E8 helpers, 9D2874 pending-action leaves** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: Residual Wwise modulator and voice behaviour around singing.
-* rests on: Opus answer OV94-96 (2026-10-16), manager record.
+* effect: Singing get-in, stop fades, voice stop timing with streamed sources, envelope factor multiplicity, and aux sends.
+* rests on: Opus answer OV113-115 (2026-10-16), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.
-* evidence: re-analysis/research/overnight/20261016-ov94-96-answer.md: unread ranges: 0x00A1B3D8.. (9F4C90 bindings for params 0 and 7); 0x009DD950..0x009DE688 (allocation-failure cleanup); A0E5E4 (not on the vibrato path); A36AC4; callers of 0x00A12178 and 0x009D781C; 0x00A4AF98..0x00A4B3D0; A72F40, A74354 and which Vorbis class (0x0103E0B8 / 0x0103E138) the singing WEMs use; A09C40, 9E8E24, 9F10EC, 9C4C9C and the continuous-PBI gate; 0x009D2874..0x009D2A8C and the vt+0x4C recipients.
-* outstanding: RECOVERABLE_GAP: read the listed bodies.
-
-**M9-044 — Wwise MIDI remainder: A3FC4C (CC chase reader), A40238 (seek skip per event), and the music-node loader writers of +0x7C bits 0/2 and +0x68 (meter tempo override) with the shipped census** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
-* effect: Whether the MIDI header tempo is replaced by a meter tempo for shipped songs; CC chase and seek event handling.
-* rests on: Opus answer OV94-96 (2026-10-16), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.
-* evidence: re-analysis/research/overnight/20261016-ov94-96-answer.md: A3FC4C 0x00A3FC4C..0x00A40234 (head 0x00A3FC4C..0x00A3FD20 only read); A40238 0x00A40238..0x00A40458 (gate, restart, counter only); A3C8F0 reads node+0x7C bit0/bit2 and +0x68 (0x00A3C8F0..0x00A3C9B4); loader unread.
-* outstanding: RECOVERABLE_GAP: read A3FC4C, A40238, and the music-node loader that sets +0x7C bits 0 and 2 and +0x68; census the shipped singing ancestors for the override (settles M9-005).
+* evidence: re-analysis/research/overnight/20261016-ov113-115-answer.md: A36AC4 0x00A36AC4..0x00A36AE8 calls A35998 (reached by the 10 ms Global_Vo_Stop fade, action 722744461); A6B2E8 0x00A6B2E8..0x00A6B520 (continuous getin containers under 399004754, 201436547, 693270200); A535D8 gate 0x00A53658..0x00A5368C with A56650 0x00A56650..0x00A56684 (AB22D4); owner insert re-attach 0x009E7EC4..0x009E7F30; aux out+0x58 0x009EF96C..0x009EFD6C; A4AF50 outputs +0x6C bit1, +0x1D0, 0x01052454 (writers 0x009A07A4, 0x009A08D0); cleanup 0x009DDB2C..0x009DE688; 9ECC30 callers 0x009C0E8C, 0x009EC890.
+* outstanding: RECOVERABLE_GAP: read A35998 and A0DD78/A366F4/A36618; H1 (A6B2E8 helpers, A09C40 callers, 9E8E24 vt+0x13C branch, +0x200/+0x244); when AB22D4 returns 1 (stream readiness; may be HARDWARE_ONLY IO timing); whether shipped singing re-attaches a state to the same owner (B1, duplicate factor entries; M9-042 Q15/Q16 fan-out); the consumer of out+0x58 and whether the engine sets game-object aux sends; the consumers of A4AF50 +0x6C bit1 and +0x1D0 and the 0x01052454 writers; the G1 cleanup bytes (allocation failure only); the 9ECC30 callers 0x009C0E8C and 0x009EC890.
 
 ### M11-vision — Markers, camera geometry and BlockWorld
 
@@ -1654,7 +1636,7 @@ B-M8-4 (2026-10-15), built, awaiting strong verification: RobotManager.InitCheck
 * rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
 * best authority: shipped Wwise banks
 * evidence: Cozmo.bnk MIDI source plugin 0x00100001 and division 0x2580; re-analysis/research/20260928-X4-M9-wwise-music-extraction.md
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the tick-to-time code (0x00A3F76C..0x00A3FBC0) and property 55 are unread; the header tempo float is dropped because the bank durations fit without it, a data fit rather than a runtime reading. OV95 answer (re-analysis/research/overnight/20261016-ov94-96-answer.md): CONTRADICTED: the MIDI header tempo is read at runtime (0x00A3EEF8..0x00A3EF6C) and replaced only when A3C8F0 returns nonzero (an ancestor with +0x7C bit2: M9-044); the container is a custom header, not SMF. Rebuild against M9-039 M4-M6.
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the tick-to-time code (0x00A3F76C..0x00A3FBC0) and property 55 are unread; the header tempo float is dropped because the bank durations fit without it, a data fit rather than a runtime reading. OV95 answer (re-analysis/research/overnight/20261016-ov94-96-answer.md): CONTRADICTED: the MIDI header tempo is read at runtime (0x00A3EEF8..0x00A3EF6C) and replaced only when A3C8F0 returns nonzero (an ancestor with +0x7C bit2: M9-044); the container is a custom header, not SMF. Rebuild against M9-039 M4-M6. OV114 answer (re-analysis/research/overnight/20261016-ov113-115-answer.md): the header tempo is read then replaced by the nearest ancestor meter tempo for all 46 shipped songs (L8; 11 differ from the header BPM); the meter-tempo outcome holds, the mechanism is A3C8F0 + the meter loader (M9-044 L4).
 
 **M9-006 — HIRC LFO and Envelope payloads and their runtime classes** (live path)
 
@@ -1888,7 +1870,7 @@ B-M8-4 (2026-10-15), built, awaiting strong verification: RobotManager.InitCheck
 * rests on: Opus M9 re-check 3 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime).
 * evidence: re-analysis/research/overnight/20261015-m9-recheck-3.md: LFO state setter 0x009E203C (table word 0x0103B270) has an index-0 depth path 0x009E2084..0x009E2090 (f32 /100 into S+0x74, no dirty flag); envelope setter 0x009E1D8C..0x009E1F4C; the caller on an RTPC change is unread.; re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md: immediate write 0x00A12CCC..0x00A12CE4; snapshot 0x00A114D8..0x00A11588; type 3 0x00A11348..0x00A11360; 9DBF78 0x009DBF78..0x009DBFF4; visitor 0x009D5058..0x009D506C; setter 0x009E203C..0x009E2138; per-tick capture 0x009E2ED0/0x009E2EF0.
-* outstanding: RECOVERABLE_GAP: find every caller of state vt+0x08 and the RTPC-change dispatch that reaches it; say whether a posted Cozmo_Singing_Vibrato change updates an already-running vibrato, and when (which tick). Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP: depth updates live (drain, then phase-8, then modulator tick). Remaining (state insertion, A0E5E4 ramps, indirect callers): M9-042. B-M9-4 built, awaiting strong verification: Existing immediate RTPC store write/snapshot now dispatches type3 through changed-source curve sum, scoped ordered modulator-tree visitor and existing-state setter. WwiseLiveLfoState builds indexes0..5 with exact /100, signed rounded attack conversion and unsigned waveform VCVT; per-tick input captures S+74 without reinitializing phase/age. Render gate, subscriber/state population, coefficient-refresh branch and intervening groups remain explicit inputs/Missing where absent; no state insertion is inferred from a bank. Ramped post A0E5E4 is Missing. Existing song entry names absent live state-tree/capture owner. Immediate update is tested on an explicitly populated existing state, not asserted for every normal singing instance.
+* outstanding: RECOVERABLE_GAP: find every caller of state vt+0x08 and the RTPC-change dispatch that reaches it; say whether a posted Cozmo_Singing_Vibrato change updates an already-running vibrato, and when (which tick). Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP: depth updates live (drain, then phase-8, then modulator tick). Remaining (state insertion, A0E5E4 ramps, indirect callers): M9-042. B-M9-4 built, awaiting strong verification: Existing immediate RTPC store write/snapshot now dispatches type3 through changed-source curve sum, scoped ordered modulator-tree visitor and existing-state setter. WwiseLiveLfoState builds indexes0..5 with exact /100, signed rounded attack conversion and unsigned waveform VCVT; per-tick input captures S+74 without reinitializing phase/age. Render gate, subscriber/state population, coefficient-refresh branch and intervening groups remain explicit inputs/Missing where absent; no state insertion is inferred from a bank. Ramped post A0E5E4 is Missing. Existing song entry names absent live state-tree/capture owner. Immediate update is tested on an explicitly populated existing state, not asserted for every normal singing instance. Lead from OV113 (re-analysis/research/overnight/20261016-ov113-115-answer.md): per-frame modulator pushes (9D7738, 0x009D7738..0x009D7824) skip params 0 and 7 unless the subscriber is type 1.
 
 **M9-039 — Wwise MIDI residue: the 97D14C vt+0x70 / 981DBC branch, R8 init helpers, and the MIDI parser helpers A3F1B0/A3F0A0/A3FC4C/A3F1CC** (live path)
 
@@ -1908,6 +1890,15 @@ B-M8-4 (2026-10-15), built, awaiting strong verification: RobotManager.InitCheck
 * evidence: re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md: A3CEB4 0x00A3CEB4..0x00A3D1D8 (vtable 0x0103C0A0 [1]; fires on the first queued event of each new clip context 0x00A3BFC0..0x00A3BFDC, 0x00A3C5C4..0x00A3C5F0): ends older same-target contexts (purge queue, CC64=0 on 16 channels, clear sustain mask, note-offs for sounding notes), then chase A3C760 0x00A3C760..0x00A3C8E8, then inserts chased CCs.
 * outstanding: IMPLEMENTATION_GAP; the parser helpers are M9-039 (MISSING at those calls). B-M9-4 built, awaiting strong verification: WwiseMidiBoundaries.cs implements A3CEB4 old-ended-context same-target queue purge, CC64 zero on16 channels, sustain-mask clear, context-only sounding-note releases, CC chase insertion and current-event duplicate suppression. A3C760 snapshots/resets/restores through explicit M9-039 parser recipients, bounds the loop, keeps CC only and replaces controller-number matches across channels. Default queue owner call uses the actual current drain queue, not an unrelated pending list. Parser helpers stop visibly when unbound; no source parser is fabricated.
 
+**M9-041 — Wwise parameter-collector residue: 9EF258 middle (SIS, factor, aux, bus), 9FAEE8, 9FB17C, A6E848, A14E28 non-linear kinds, 9E6748 -> 9DA360, dynamic +0xAC/+0x84 recipients, A0F5D4** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: Voice parameter values beyond the confirmed entry rows.
+* rests on: Opus check of OV70-73/88 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM) and the shipped banks.
+* evidence: re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md: 9EF258 middle 0x009EF2E0..0x009EFFD0 and the other named bodies (not re-disassembled by the check).; re-analysis/research/overnight/20261016-ov94-96-answer.md: state-value section 0x009EF2D8..0x009EF52C, SIS lookup 0x009EF52C..0x009EF57C, aux 0x009EF96C..0x009EFD64 and bus 0x009EFDC8..0x009EFFD0 mapped; dynamic recipient vtables 0x0103B050, 0x0103B860, 0x0103BAD0, 0x0103AA50, 0x0103AB98.; re-analysis/research/overnight/20261016-ov113-115-answer.md: global bundle 0x009EF2D8..0x009EF528; SIS 0x009F011C..0x009F037C; aux 0x009EF96C..0x009EFD6C and loader 0x009ED84C..0x009ED990; bus 0x009EFDC8..0x009EFFD0; node+0x50 writers 0x009F0EDC/0x009F1038; 9FAEE8 0x009FAEE8..0x009FB170; A1DAB8 0x00A1DAB8..0x00A1DB4C with 9FAE18; A14E28 0x00A14F30..0x00A15244; HIRC dispatch 0x009B3388..0x009B33EC; shipped chain census.
+* outstanding: RECOVERABLE_GAP: read the listed bodies. Narrowed 2026-10-16 (re-analysis/research/overnight/20261016-ov94-96-answer.md): 9E6748/9DA360, A0F5D4 and the ranges section moved to M9-045. Ranges, aux and output bus are inert with shipped singing data. Remaining: byte-level branches of the state, aux and bus sections; SIS at 0x009F011C; 9FAEE8/9FB17C re-read; A6E848 0x00A6E848..0x00A6F130; A14E28 non-linear kinds 0x00A14E28..0x00A15244; the full +0xAC/+0x84 census; a shipped census of state groups and SIS on the singing chain; the writers of node+0x50 and the layer list. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov113-115-answer.md): IMPLEMENTATION_GAP for S1-S13 (build S1, S2, S5, S6, S8, S11, S13; record S7, S9, S12 unreachable or inert). Every singing voice sets out+0x58 = 1 (use game aux sends) at 62050212; its consumer is M9-046. Correction: aux and output-bus sections do execute on the singing chain (values inert except out+0x58).
+
 **M9-042 — Wwise modulator-state residue: state insertion (V+0x34 store, 0x009DD120..0x009DE688), 9D9908 caller, LFO completion, A0E5E4/A36AC4 transitions, indirect-caller census, attack-2 ramp/early bridge/A4AF50/early release, A535D8, A6B2E8 helpers, pending-action leaves, parser offset bound** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
@@ -1915,7 +1906,25 @@ B-M8-4 (2026-10-15), built, awaiting strong verification: RobotManager.InitCheck
 * rests on: Opus check of OV70-73/88 (2026-10-16), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM) and the shipped banks.
 * evidence: re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md: insertion 0x009DCE44 / 0x009DD120..0x009DE688; 9D9908 0x009D9908..0x009D9BC8 (calls 9E21D0 at 0x009D9BBC; no caller found); LFO completion from 0x009E3310; attack-2 ramp from 0x009E5C14.; re-analysis/research/overnight/20261016-ov94-96-answer.md: insertion 9DCE44 0x009DCE44..0x009DE688 (V+0x34 store 0x009E887C in 9E8840); callers 9E61B4/9E62AC 0x009E61B4..0x009E639C; key 9E5E90; acquire 0x009D7FC0..0x009D8134; owner insert 9E7EA8 0x009E7EA8..0x009E8020; handoff 9E805C/9E21D0; register A1BE1C/9E2AA8; PBI trigger A01918 0x00A01918..0x00A019B0; LFO status 0x009E33A8..0x009E33B4; retire 9E2510; pump 0x00A3EA3C..0x00A3EB44; propagation 0x009F1BE8..0x009F1DD8; offset bound 0x00A3C4F8..0x00A3C658, 0x00A3F6E8..0x00A3FA34; A535D8 0x00A535D8..0x00A53690; A4AF50 entry and 9E84C8.
-* outstanding: RECOVERABLE_GAP: read the listed bodies; then settle Case A vs Case B for shipped singing. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov94-96-answer.md): IMPLEMENTATION_GAP for Q1-Q19, Q21, Q22 (Q20 attack-2/bridge emitters recorded, unreachable with shipped content). LFO never completes on a deadline. Case A/B is decided per note-off holder at its first pump (signed H+18 < T: release first, envelope never stops the voice; H+18 == T: propagation first, envelope completes and stops the voice). Dead: 9D9908, 9D81BC, 9D9780. Remainder: M9-043.
+* outstanding: RECOVERABLE_GAP: read the listed bodies; then settle Case A vs Case B for shipped singing. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov94-96-answer.md): IMPLEMENTATION_GAP for Q1-Q19, Q21, Q22 (Q20 attack-2/bridge emitters recorded, unreachable with shipped content). LFO never completes on a deadline. Case A/B is decided per note-off holder at its first pump (signed H+18 < T: release first, envelope never stops the voice; H+18 == T: propagation first, envelope completes and stops the voice). Dead: 9D9908, 9D81BC, 9D9780. Remainder: M9-043. OV113 correction (re-analysis/research/overnight/20261016-ov113-115-answer.md): Q16's envelope node 462443456 is reached by the +0x34 parent recursion (0x009F1D58..0x009F1DD0), not the +0x50 walk (always empty with shipped banks).
+
+**M9-043 — Wwise modulator-state remainder: A1B3D8 bindings, 9DD950..9DE688 cleanup bytes, A0E5E4, A36AC4, callers above A12178/9D781C, A4AF98..A4B3D0, A72F40/A74354 and the Vorbis class gate, A6B2E8 helpers, 9D2874 pending-action leaves** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: Residual Wwise modulator and voice behaviour around singing.
+* rests on: Opus answer OV94-96 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.
+* evidence: re-analysis/research/overnight/20261016-ov94-96-answer.md: unread ranges: 0x00A1B3D8.. (9F4C90 bindings for params 0 and 7); 0x009DD950..0x009DE688 (allocation-failure cleanup); A0E5E4 (not on the vibrato path); A36AC4; callers of 0x00A12178 and 0x009D781C; 0x00A4AF98..0x00A4B3D0; A72F40, A74354 and which Vorbis class (0x0103E0B8 / 0x0103E138) the singing WEMs use; A09C40, 9E8E24, 9F10EC, 9C4C9C and the continuous-PBI gate; 0x009D2874..0x009D2A8C and the vt+0x4C recipients.; re-analysis/research/overnight/20261016-ov113-115-answer.md: A1B3D8 0x00A1B3D8..0x00A1B524; 9F4C90 0x009F4C90..0x009F4D24; 9E6810 0x009E6810..0x009E6D28; 9E84C8 0x009E84C8..0x009E859C; A0E5E4 0x00A0E5E4..0x00A0E804; A36AC4/A3693C 0x00A3693C..0x00A36AE8; A120CC dead; 9D7738 0x009D7738..0x009D7824 via 9D8A2C/9E6D2C; A4AF50 0x00A4AF50..0x00A4B3C4; Vorbis registry 0x009CC3EC..0x009CC464, AB0274/AB023C; vt+0x38 0x00AB29F8, 0x00A74354..0x00A743B8, 0x00AB1014, 0x00A72F40; 9D2874 0x009D2874..0x009D2A88.
+* outstanding: RECOVERABLE_GAP: read the listed bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov113-115-answer.md): IMPLEMENTATION_GAP for B1-B6 (shipped factor entry {0x3F7FC105, 0xBF7FC105, 0}), C3, C4 (per-frame pushes skip params 0 and 7), D1, D2, E1 (singing uses the streamed Vorbis class 0x103E138), E2, C1/F1-F3 recorded (unreachable or off the vibrato path). Manager ruling (ADP-1): 9E6810/9E84C8 factors and A4AF50 levels are exact (fast log/pow10 bit-for-bit); only per-sample gain application is ADP-1. M1-034: 0x00A4B194..0x00A4B19C null/udf when a connection key is missing from the device list. Remainder: M9-046.
+
+**M9-044 — Wwise MIDI remainder: A3FC4C (CC chase reader), A40238 (seek skip per event), and the music-node loader writers of +0x7C bits 0/2 and +0x68 (meter tempo override) with the shipped census** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Animation/Wwise/WwiseSongRenderer.cs`
+* effect: Whether the MIDI header tempo is replaced by a meter tempo for shipped songs; CC chase and seek event handling.
+* rests on: Opus answer OV94-96 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime); shipped banks.
+* evidence: re-analysis/research/overnight/20261016-ov94-96-answer.md: A3FC4C 0x00A3FC4C..0x00A40234 (head 0x00A3FC4C..0x00A3FD20 only read); A40238 0x00A40238..0x00A40458 (gate, restart, counter only); A3C8F0 reads node+0x7C bit0/bit2 and +0x68 (0x00A3C8F0..0x00A3C9B4); loader unread.; re-analysis/research/overnight/20261016-ov113-115-answer.md: music node ctor 0x00987180..0x009871B8; loader 0x009877B4..0x00987AD0 (flags, meter 0x009879FC..0x00987AD0, stingers); track flags 0x00992BD0..0x00992C1C; A3FC4C 0x00A3FC4C..0x00A40108 (range corrected); A40238 0x00A40238..0x00A40640; A40644 loop 0x00A40760..0x00A407F0; chase drop 0x00A3C82C..0x00A3C850; shipped census of 46 tracks.
+* outstanding: RECOVERABLE_GAP: read A3FC4C, A40238, and the music-node loader that sets +0x7C bits 0 and 2 and +0x68; census the shipped singing ancestors for the override (settles M9-005). Read 2026-10-16 (re-analysis/research/overnight/20261016-ov113-115-answer.md): IMPLEMENTATION_GAP for L1-L5, L7, the L8 rule, R1-R6, R8 (L6 dead setters recorded). All 46 shipped songs take the ancestor meter tempo (11 differ from the header BPM). The chase drops queued B0 entries of the same controller regardless of channel. Settles M9-005's mechanism.
 
 **M9-045 — Wwise modulator value lookup 9E6748/9DA360 (with the reduced-key write-back), A0F5D4, and the collector ranges section** (live path)
 

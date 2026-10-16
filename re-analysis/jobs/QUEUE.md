@@ -142,6 +142,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 61zc | [B-M11-17](B-M11-17.md) | open, after B-M6-5 (GuardDog starting pose M11-093; footprint quad M11-094) |
 | 61zd | [B-M6-6](B-M6-6.md) | open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 awaits operator) |
 | 61ze | [B-M15-10](B-M15-10.md) | open, after B-M6-6 (FeedingEat M15-065; tag-53 order M15-066/M15-068) |
+| 61zf | [B-M9-6](B-M9-6.md) | open, after B-M15-10 (meter tempo/MIDI reader M9-044; modulator factors M9-043; collector M9-041) |
 | 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | open, after B-M9-2 (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
 | 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |
