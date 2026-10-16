@@ -1711,3 +1711,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Narrowed | M11-084 |
 | New RECOVERABLE_GAP | M11-093 |
 | Note | M11-037 |
+
+
+## Opus answers OV109/110 (manager, 2026-10-16; research/overnight/20261016-ov109-110-answer.md)
+
+| Change | Records |
+| --- | --- |
+| GuardDog starting pose: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (LookAround unreachable) | M11-093 |
+| New IMPLEMENTATION_GAP | M11-094 |
+| New HARDWARE_ONLY | M11-095 |
+| Corrected and narrowed | M11-084 |
+| Lead | M11-038 |

@@ -151,5 +151,7 @@ The first three are the requests already written:
 | OV117 | requests/overnight/20261016-ov117-m6-040.md (M6-040: Wwise bus remainder: 0xA55750 send gating, 0xA4B5D8/0xA4B93C send path) | research/overnight/20261016-ov117-m6-040.md |
 | OV118 | requests/overnight/20261016-ov118-m6-041.md (M6-041: Wwise music stop tree at Term: 0x9854E0 beyond 0x985700, child vt+0x20) | research/overnight/20261016-ov118-m6-041.md |
 | OV119 | requests/overnight/20261016-ov119-m6-043.md (M6-043: Wwise Term-path transitive callees and stream-device remainder) | research/overnight/20261016-ov119-m6-043.md |
+| OV120 | requests/overnight/20261016-ov120-m15-067.md (M15-067: BehaviorGuardDog lifecycle: IsRunnable, Init, UpdateInternal pre-dispa) | research/overnight/20261016-ov120-m15-067.md |
+| OV121 | requests/overnight/20261016-ov121-m11-084.md (M11-084: Pose wrapper lifetimes in production: whether any flow leaves a child ) | research/overnight/20261016-ov121-m11-084.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-032 (M15-031 is in scope since 2026-10-16).

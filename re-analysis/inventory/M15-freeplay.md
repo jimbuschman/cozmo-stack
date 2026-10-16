@@ -1013,3 +1013,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New IMPLEMENTATION_GAP | M15-064 |
 | New RECOVERABLE_GAP | M15-065, M15-066 |
 | Notes | M15-050, M15-052 |
+
+
+## Opus answers OV109/110 (manager, 2026-10-16; research/overnight/20261016-ov109-110-answer.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP | M15-067 |

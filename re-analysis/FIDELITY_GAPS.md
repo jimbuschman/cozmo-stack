@@ -3,16 +3,16 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **683 records** over 16 subsystems.
+Manifest of **686 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 24 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 394 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 396 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 62 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
-| HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
+| HARDWARE_ONLY | 13 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
 ## Where each subsystem stands
@@ -34,11 +34,11 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 24 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 45 | 3 | 34 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 93 | 6 | 72 | 0 | 0 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 95 | 5 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 39 | 0 | 33 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 66 | 3 | 58 | 1 | 0 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 67 | 4 | 58 | 1 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -237,16 +237,7 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 * rests on: Opus extraction (2026-10-14), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/20261014-pose-tree-verifies.md: "Still unread": parent-pose lifetimes (robot +0x298, origins, object poses, temporaries), PoseOriginList erase/rejigger paths, inline wrapper attaches writing PoseBase+4 without +0x48, cross-thread pose-tree mutation.
-* outstanding: RECOVERABLE_GAP: census the parent-pose lifetimes and the origin erase paths. Batch check 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): OV86 is not evidence. New rows: PoseBase.SetParent.UnownedParent VERIFY (0x00844A26..0x00844A7A, attaches anyway); PoseOriginList::Flatten re-parenting 0x00847F34..0x00847FBE (from LocalizeToObject 0x005159B2); Rejigger caller 0x0051590C. Node layout: quaternion +0, translation +0x20, parent +0x30/+0x34, name +0x38, ID +0x44, owner count +0x48. Copy and assignment allocate or deep-copy into own node; NotLastOwner = a child/shared_ptr outlives the last wrapper. Next: the 34 SetParent sites and local-parent lifetimes. Opus answer OV106 (re-analysis/research/overnight/20261016-ov100-101-106-answer.md): narrowed. Unreachable: RemoveOwner.ZeroOwners; ZeroOwnersWithID outside ~PoseOriginList; AssignmentOperator.NotLastOwner (no null-node wrapper is ever created: PoseBase() 0x00845724 has no callers); SetParent.UnownedParent for live wrappers; SanityCheckOwnership (no callers). Destructor.NotLastOwner and the Dev_Assert UnownedParent checks fire exactly when a node's last wrapper dies while a child or shared_ptr still refers to it. 35 SetParent sites classified (owned or safe, or unreachable). Open: (a) SetObjectAsAttachedToLift 0x00633010 parents the top object to the carried object's pose: the DeleteLocatedObjects erase order and UnSetCarryingObjects 0x00633C00 decide whether NotLastOwner fires; (b) GetWithRespectTo callers passing a temporary to; (c) copies sharing a parent that outlive it; (d) vision-thread non-atomic owner counts.
-
-**M11-093 — Unowned FindLocatedIntersectingObjects callers: BehaviorLookAround::TransitionToRoaming and BehaviorGuardDog::ComputeStartingPose (filter at this+0x12C)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
-* effect: Where LookAround roams and where GuardDog starts.
-* rests on: Opus answer OV100 (2026-10-16), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261016-ov100-101-106-answer.md: TransitionToRoaming 0x005C4844..0x005C48D8 (default filter, padding 10.0, call 0x005C48D4); ComputeStartingPose 0x005F4064..0x005F40F2 (filter from this+0x12C, padding 0, call 0x005F40E6); both reach the intersection predicate 0x0062752A.
-* outstanding: RECOVERABLE_GAP: read both behaviour bodies around the calls and GuardDog's filter at this+0x12C.
+* outstanding: RECOVERABLE_GAP: census the parent-pose lifetimes and the origin erase paths. Batch check 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): OV86 is not evidence. New rows: PoseBase.SetParent.UnownedParent VERIFY (0x00844A26..0x00844A7A, attaches anyway); PoseOriginList::Flatten re-parenting 0x00847F34..0x00847FBE (from LocalizeToObject 0x005159B2); Rejigger caller 0x0051590C. Node layout: quaternion +0, translation +0x20, parent +0x30/+0x34, name +0x38, ID +0x44, owner count +0x48. Copy and assignment allocate or deep-copy into own node; NotLastOwner = a child/shared_ptr outlives the last wrapper. Next: the 34 SetParent sites and local-parent lifetimes. Opus answer OV106 (re-analysis/research/overnight/20261016-ov100-101-106-answer.md): narrowed. Unreachable: RemoveOwner.ZeroOwners; ZeroOwnersWithID outside ~PoseOriginList; AssignmentOperator.NotLastOwner (no null-node wrapper is ever created: PoseBase() 0x00845724 has no callers); SetParent.UnownedParent for live wrappers; SanityCheckOwnership (no callers). Destructor.NotLastOwner and the Dev_Assert UnownedParent checks fire exactly when a node's last wrapper dies while a child or shared_ptr still refers to it. 35 SetParent sites classified (owned or safe, or unreachable). Open: (a) SetObjectAsAttachedToLift 0x00633010 parents the top object to the carried object's pose: the DeleteLocatedObjects erase order and UnSetCarryingObjects 0x00633C00 decide whether NotLastOwner fires; (b) GetWithRespectTo callers passing a temporary to; (c) copies sharing a parent that outlive it; (d) vision-thread non-atomic owner counts. Opus answer OV110 (re-analysis/research/overnight/20261016-ov109-110-answer.md): CORRECTIONS: ZeroOwners / ZeroOwnersWithID are not unreachable but HARDWARE_ONLY via the vision-thread race (M11-095); UnSetCarryingObjects never re-parents; the DeleteLocatedObjects erase order does not matter (each pose is copied into a local list first, 0x0061D2A6/0x0061D372); T's PoseConfirmation record (0x00506DD0) is a third holder of C.pose; copies carry the parent shared_ptr and operator= skips the UnownedParent VERIFY. Read rows M1-M3, A1-A7, B1, B2, D1 (ready to build once the remainder closes). Open: A8 (who deletes a carried C while T hangs: 13 DeleteLocatedObjects callers, AddRobotRelativeObservation 0x00506B70, MarkObjectUnobserved 0x00506FBC); B3 parameter/memory to sites; (c) census of outliving copies (ObservableObject dtor order; pre-action/goal copies before 0x0055A8C2/0x0055A8DC); (d) LatticePlannerImpl 0x004A6520 and FaceRecognizer 0x004CF164 thread wraps.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -307,6 +298,15 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261016-ov102-104-answer.md: ActivityFreeplay subscribes in its ctor (0x005AD3B4..0x005AD846); AIWhiteboard handler 0x0056CCE4; signal emit 0x00663C74 calls in registration order (M8-027).
 * outstanding: RECOVERABLE_GAP: settle when AIWhiteboard subscribes to tag 53 relative to ActivityFreeplay's construction, and list every tag-53 subscriber in registration order.
+
+**M15-067 — BehaviorGuardDog lifecycle: IsRunnable, Init, UpdateInternal pre-dispatch and states 0-11 with their callbacks** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: Guard Dog in freeplay: when it runs and its whole state machine.
+* rests on: Opus answer OV109-110 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261016-ov109-110-answer.md: IsRunnableInternal 0x005F2A9C..0x005F2C9C (FeatureGate 7 at 0x005F2AAC; byte [[[robot+0x264]+0x18]+0x74] at 0x005F2AB8..0x005F2AC4; 3 matches 0x005F2ADC; rotated axis Z == 3 0x005F2AFE..0x005F2B04; spread < 100.0f 0x005F2B90..0x005F2C50); InitInternal 0x005F2CFC..0x005F2E08; UpdateInternal pre-dispatch 0x005F2E80..0x005F3000; tbh 0x005F3016; state 0 0x005F304E..0x005F30A0 with callback 0x005F59D8..0x005F5A1E; state 2 per M11-093.
+* outstanding: RECOVERABLE_GAP: read IsRunnable (and what the +0x74 byte is), Init, the pre-dispatch flags [0x13C]/[0x140]/[0x144] and state-5 timers, and states 0-11 with callbacks; M11-093 owns state 2's ComputeStartingPose and drive. App input: the GuardDog unlock (requiredUnlockId), see M15-056.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -2284,7 +2284,7 @@ B-M3M4-23 (2026-10-15), built, awaiting strong verification: scanned both BlockW
 * best authority: libcozmoEngine.so 3.4.0-1204; R-VIS (verified in re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md and re-analysis/research/20260929-R-VIS-verify-M11-gap1.md): BroadcastLocatedObjectStates 0x0061E6C0 builds tag 0x53 (LocatedObjectStates: one count byte, entries of 0x34 bytes, isConnected = 1 ^ ([obj+0x40] >> 31), origin compare against [[robot+0x294]+0x10] at 0x0061EC22); BroadcastConnectedObjects 0x0061E91C builds tag 0x54 (12-byte entries via FindConnectedObjectHelper 0x0061F078); VisionSystem::CheckMailbox 0x006B2AD4 locks the mutex at this+0x35C, moves the 11 result lists (each twice, then 11 clears) out of a deque of 0x9C-byte elements and pops it; BroadcastObjectObservation 0x0061FED8 projects the object with the camera at VisionComponent+0x24, returns 1 with no message for a null ActiveCube cast, and sends RobotObservedObject (Size 69: timestamp [+0x1C], family, type, ID, rect, ToPoseStruct3d, top-face orientation, isActive)
 * evidence: BroadcastObjectObservation 0x0061FED8; BroadcastLocatedObjectStates 0x0061E6C0; BroadcastConnectedObjects 0x0061E91C; VisionSystem::CheckMailbox 0x006B2AD4; re-analysis/research/20260929-R-VIS-verify-pre-items4-5.md (items 5a-5c PASS); re-analysis/research/20260929-R-VIS-M11-gap1-extraction.md Q6; re-analysis/research/20260929-R-VIS-verify-M11-gap1.md (Q6 PASS)
 * outstanding: NOT BUILT: the stack has no EngineToGame message types or consumers for LocatedObjectStates (0x53), ConnectedObjectStates (0x54), RobotObservedObject (Size 69) or RobotMarkedObjectPoseUnknown, so BroadcastLocatedObjectStates and BroadcastConnectedObjects are counted stubs (UnbuiltBroadcastLocatedObjectStatesCalls) and CheckMailbox's result deque has no producer (M11-040). BroadcastObjectObservation is the ObjectObserved event (its rectangle is the marker corners', not Camera::ProjectObject's, and there is no top-face orientation). The wire order comes from CLAD only; the .so Pack bodies 0x00714A10, 0x00715370, 0x007153A4 are unread.
-built, awaiting strong verification: B-M11-1 (2026-10-14): D19 BroadcastLocatedObjectStates tail at 0x006249EC -> 0x0061E6C0 is now explicitly reached/counted and visibly MISSING. Payload/recipient not invented; no status change. See jobs/status/B-M11-1.md for files/lines, binary ranges, tests and every MISSING.
+built, awaiting strong verification: B-M11-1 (2026-10-14): D19 BroadcastLocatedObjectStates tail at 0x006249EC -> 0x0061E6C0 is now explicitly reached/counted and visibly MISSING. Payload/recipient not invented; no status change. See jobs/status/B-M11-1.md for files/lines, binary ranges, tests and every MISSING. Lead from OV110 (re-analysis/research/overnight/20261016-ov109-110-answer.md), to check: MarkObjectUnknown broadcasts RobotMarkedObjectPoseUnknown once per entry in its ID set, always with the original object's ID (0x005073AA..0x005073C0).
 
 **M11-039 — The calibration-install path into MarkerDetector::Init** (live path)
 
@@ -2831,6 +2831,24 @@ B-POSE-5 (2026-10-15), built, awaiting strong verification: name-only GetNamedPa
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261016-batch-check.md: lifecycle InitInternal 0x005E7018, S1 0x005E7044, StopInternal 0x005E729C, StopSquintLoop 0x005E7320, UpdateInternal 0x005E7418, GatheringAccurateEdge 0x005E7514, CreateLowLiftAndLowHeadActions 0x005E79FC, StartWaitingForEdges 0x005E7AF4, S2 0x005E7BFC, S3 0x005E7D78, Flag* 0x005E8038/0x005E815A; sort helpers 0x005E8714, 0x005E881C, 0x005E88E0, 0x005E89DC.; re-analysis/research/overnight/20261016-ov100-101-106-answer.md: config 0x005E5FE8..0x005E6342; InitInternal 0x005E7018..0x005E7040; S1 0x005E7044..0x005E71DE with callback 0x005E8E74..0x005E8F4A; CreateLowLiftAndLowHeadActions 0x005E79FC..0x005E7AD6; S2 0x005E7BFC..0x005E7CDA; StartWaitingForEdges 0x005E7AF4..0x005E7BC2; L2 0x005E8B72..0x005E8B8E; UpdateInternal 0x005E7418..0x005E7492; GatheringAccurateEdge 0x005E7514..0x005E78CC; S3 0x005E7D78..0x005E7F6C; FlagVisitedQuad 0x005E8038..0x005E8104; StopSquintLoop 0x005E7320..0x005E7378; StopInternal 0x005E729C..0x005E7302; sort helpers 0x005E8714..0x005E8B30.
 * outstanding: RECOVERABLE_GAP: read the listed bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov100-101-106-answer.md): IMPLEMENTATION_GAP for C1-C3, I1, S1, L1, A1, S2, W1, L2, U1, G1, S3, F1, K1, T1, H1-H4 (comparator (b.score - 1e-5f) > a.score, unordered false). FlagQuadAroundGoalAsNotInteresting 0x005E815A has no caller: unreachable. M1-034 candidate: S2 reads [action+0x60] at 0x005E7CCA after QueueAction may have deleted it (reachability depends on M8-015: action tags and ActionList+0xC). Cite M8-001, M7-021, M8-015, M11-074 for their semantics.
+
+**M11-093 — Unowned FindLocatedIntersectingObjects callers: BehaviorLookAround::TransitionToRoaming and BehaviorGuardDog::ComputeStartingPose (filter at this+0x12C)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: Where LookAround roams and where GuardDog starts.
+* rests on: Opus answer OV100 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261016-ov100-101-106-answer.md: TransitionToRoaming 0x005C4844..0x005C48D8 (default filter, padding 10.0, call 0x005C48D4); ComputeStartingPose 0x005F4064..0x005F40F2 (filter from this+0x12C, padding 0, call 0x005F40E6); both reach the intersection predicate 0x0062752A.; re-analysis/research/overnight/20261016-ov109-110-answer.md: GuardDog filter ctor 0x005F290E..0x005F299A (pointer at this+0x12C, families {2}, predicate 0x005F57C2..0x005F57D0); ComputeStartingPose 0x005F3E6C..0x005F42BC; caller state 2 0x005F326C..0x005F3330; drive callback 0x005F5A9C..0x005F5B2A. LookAround TransitionToRoaming 0x005C478C..0x005C4B4A and helpers read; ctor reachable only via BehaviorContainer::CreateBehavior 0x0059CD34 and no shipped LookAround class.
+* outstanding: RECOVERABLE_GAP: read both behaviour bodies around the calls and GuardDog's filter at this+0x12C. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov109-110-answer.md): IMPLEMENTATION_GAP for GuardDog rows G1-G15 (quad: M11-094). LookAround (TransitionToRoaming and helpers) is unreachable: no shipped behaviour of class LookAround; not built. GuardDog lifecycle beyond state 2: M15-067.
+
+**M11-094 — Robot::GetBoundingQuadXY(atPose, pad): static robot footprint quad, padding, 2D rotation by the Z angle, translation (no re-root)** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/MemoryMap.cs`
+* effect: The robot footprint used for intersection, collision, memory map and planning.
+* rests on: Opus answer OV109-110 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261016-ov109-110-answer.md: 0x00514D74..0x00514ECE (static quad guard 0x01059D48, data 0x01059D28: (22.0999985, -27.1), (22.0999985, 27.1), (-55.9, -27.1), (-55.9, 27.1); front 0x41B0CCCC; pad != 0 adds (pad,-pad),(pad,pad),(-pad,-pad),(-pad,pad); x' = x*m0 + y*m1, y' = x*m2 + y*m3; translate 0x004E68CC). Callers: 0x005F40xx (GuardDog), 0x005C48xx (LookAround), Robot::Update 0x00513E0E/0x005142DE, UpdateMarkerlessObjects 0x006257D6, CheckForCollisionWithRobot 0x00625A82, MapComponent 0x0067E41E/0x0067F60A, LatticePlannerImpl 0x004FE0A4.
+* outstanding: IMPLEMENTATION_GAP: build the quad exactly (f32, the 0x41B0CCCC front, no re-root) and use it at every caller the stack reaches; compare with any existing stack footprint code.
 
 ### M12-manipulation — Docking, carrying and pre-action poses
 
@@ -4280,6 +4298,7 @@ B-M12-1: all 28 moving hardware catalog checks append M12-041. Automated catalog
 | M13-035 | M13-navigation | HARDWARE_ONLY | Planner thread scheduling: which tick UpdatePlanning sees running (1), complete (2/3) or the transient 0 published by DoPlanning (0x005004DE) | HARDWARE_ONLY: depends on thread scheduling on the phone; no shipped artifact settles it. The stack runs a real worker thread with the same flags (job B-M13-1).
 B-M13-1: real background worker used. Tests explicitly name M13-035; fixture pumping waits for worker idle without advancing fixture time. No measured phone tick/latency/transient-status scheduling claim. |
 | M3-050 | M3-device | HARDWARE_ONLY | Whether the robot ever sends an ImageChunk in encodings 5/6/7 | HARDWARE_ONLY: the M3M4-HW run records the encoding of every frame it receives and flags any 5/6/7. Observed 2026-10-12 (re-analysis/acceptance/hardware/20261012-062328-M3M4-HW): All real ImageChunks were encoding 8 (20682 chunks) on firmware 2457; no 5/6/7. The 29 rows with other encodings in image-encodings.jsonl.gz have random 32-bit image ids, so they are other frames the script misparsed as ImageChunk (harness defect, queued), not images. |
+| M11-095 | M11-vision | HARDWARE_ONLY | Vision-thread pose owner-count race: DetectFaces wraps the shared origin node non-atomically outside the vision mutex while the main thread wraps origins | HARDWARE_ONLY: depends on thread interleaving on the phone. The stack does not invent a lost update; it keeps counts consistent and records this record at its pose-tree owner code. |
 | M15-047 | M15-freeplay | BLOCKED_EXTERNAL | The floating-point execution mode (FPSCR FZ/DN/rounding) of the engine threads | BLOCKED_EXTERNAL: the mode is the phone kernel/runtime initial state, which the APK does not ship. The M15-030 rows record results per mode; under the shipped instructions FZ changes flags and paths but none of the 19 measured result bits. Choosing a mode for the stack would be an operator decision. |
 
 ## Settled differences: equivalent implementations and kept policies

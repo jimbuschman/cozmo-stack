@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "ee795d02551f133f31d77887d751572323f0507e919697d516c2db865efc2045",
+  "inventory_sha256": "3d787b8fe2c92d020ab2445be64b89296ea38cc15128bd8f2b6df5a9e85bf369",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1082,14 +1082,35 @@
       "hardware_required": false
     },
     "M11-093": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Unowned FindLocatedIntersectingObjects callers: BehaviorLookAround::TransitionToRoaming and BehaviorGuardDog::ComputeStartingPose (filter at this+0x12C)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov100-101-106-answer.md: TransitionToRoaming 0x005C4844..0x005C48D8 (default filter, padding 10.0, call 0x005C48D4); ComputeStartingPose 0x005F4064..0x005F40F2 (filter from this+0x12C, padding 0, call 0x005F40E6); both reach the intersection predicate 0x0062752A."
+        "re-analysis/research/overnight/20261016-ov100-101-106-answer.md: TransitionToRoaming 0x005C4844..0x005C48D8 (default filter, padding 10.0, call 0x005C48D4); ComputeStartingPose 0x005F4064..0x005F40F2 (filter from this+0x12C, padding 0, call 0x005F40E6); both reach the intersection predicate 0x0062752A.",
+        "re-analysis/research/overnight/20261016-ov109-110-answer.md: GuardDog filter ctor 0x005F290E..0x005F299A (pointer at this+0x12C, families {2}, predicate 0x005F57C2..0x005F57D0); ComputeStartingPose 0x005F3E6C..0x005F42BC; caller state 2 0x005F326C..0x005F3330; drive callback 0x005F5A9C..0x005F5B2A. LookAround TransitionToRoaming 0x005C478C..0x005C4B4A and helpers read; ctor reachable only via BehaviorContainer::CreateBehavior 0x0059CD34 and no shipped LookAround class."
       ],
       "live_path": true,
       "hardware_required": false
+    },
+    "M11-094": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "Robot::GetBoundingQuadXY(atPose, pad): static robot footprint quad, padding, 2D rotation by the Z angle, translation (no re-root)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov109-110-answer.md: 0x00514D74..0x00514ECE (static quad guard 0x01059D48, data 0x01059D28: (22.0999985, -27.1), (22.0999985, 27.1), (-55.9, -27.1), (-55.9, 27.1); front 0x41B0CCCC; pad != 0 adds (pad,-pad),(pad,pad),(-pad,-pad),(-pad,pad); x' = x*m0 + y*m1, y' = x*m2 + y*m3; translate 0x004E68CC). Callers: 0x005F40xx (GuardDog), 0x005C48xx (LookAround), Robot::Update 0x00513E0E/0x005142DE, UpdateMarkerlessObjects 0x006257D6, CheckForCollisionWithRobot 0x00625A82, MapComponent 0x0067E41E/0x0067F60A, LatticePlannerImpl 0x004FE0A4."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-095": {
+      "status": "HARDWARE_ONLY",
+      "title": "Vision-thread pose owner-count race: DetectFaces wraps the shared origin node non-atomically outside the vision mutex while the main thread wraps origins",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov109-110-answer.md: Processor 0x00651F08..0x0065225E (UpdateVisionSystem 0x0065222E after unlock 0x00652212); DetectFaces 0x006B37D0 -> GetWithRespectToRoot 0x004DF628 -> WrapExistingNode ++[root+0x48] 0x008452BA..0x008452BE; RemoveOwner -- 0x008448B4..0x008448BA."
+      ],
+      "live_path": true,
+      "hardware_required": true
     }
   }
 }
