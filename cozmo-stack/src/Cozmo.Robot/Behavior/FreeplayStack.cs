@@ -181,6 +181,11 @@ public sealed class FreeplayStack : IDisposable
         var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
+        // fidelity: M8-019
+        // Bind the existing host manager. Its request entry is partial and visibly stops at the native switch gap.
+        Action<string> endRequest = manager.RequestCurrentBehaviorEndImmediately;
+        robot.Sensors.RequestCurrentBehaviorEndImmediately = endRequest;
+        stack._unsubscribe.Add(() => { if (ReferenceEquals(robot.Sensors.RequestCurrentBehaviorEndImmediately, endRequest)) robot.Sensors.RequestCurrentBehaviorEndImmediately = null; });
         robot.Engine.AIComponentUpdate = () => ai.Update(robot);
         if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
         stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);

@@ -943,6 +943,15 @@ public sealed class BehaviorManager : IDisposable
         return false;
     }
 
+    // fidelity: M8-019
+    /// <summary>Checked request entry 0x005A3930: the Info precedes every guard. The native switch/owner path is still unbuilt.</summary>
+    public void RequestCurrentBehaviorEndImmediately(string reason)
+    {
+        _context.Robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Behaviors",
+            "BehaviorManager.RequestCurrentBehaviorEndImmediately", $"Forcing current behavior to stop: {reason}");
+        SteppedBehavior.ReportMissing("M8-019 RequestCurrentBehaviorEndImmediately SwitchToBehaviorBase({null,null,0x16}) 0x005A397C..0x005A39A6 not called: existing helper stores fields before synchronous reaction reporting, omits empty-target DAS/BehaviorTransition and has no native shared controls/release order; no generic Stop substituted");
+    }
+
     /// <summary>The engine's FinishCurrentBehavior for a caller that stops what is running.</summary>
     public void Stop(BehaviorStopReason reason, double nowSec)
     {

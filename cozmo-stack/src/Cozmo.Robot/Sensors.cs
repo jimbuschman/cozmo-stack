@@ -93,9 +93,11 @@ public sealed class CozmoSensors
     /// <summary>
     /// H4: <c>HandleRobotStopped</c>'s game-side <c>RobotStopped</c> broadcast (MessageEngineToGame(RobotStopped&amp;&amp;) 0x00535478, Robot::Broadcast 0x00535480;
     /// the message has no fields, Size 0), raised with nothing when the cliff sensor is enabled. <c>ActionList::Cancel(-1)</c> (M8-015) runs before it; the
-    /// behaviour-end call before that (<c>BehaviorManager::RequestCurrentBehaviorEndImmediately</c>, M8-019) is reported MISSING and not made.
+    /// behaviour-end entry before that (<c>BehaviorManager::RequestCurrentBehaviorEndImmediately</c>, M8-019) logs then reports the unbuilt native switch path.
     /// </summary>
     public event Action? RobotStopped;
+    // fidelity: M8-019
+    internal Action<string>? RequestCurrentBehaviorEndImmediately { get; set; }
 
     /// <summary>
     /// Raised when the robot starts or stops reporting that it is falling, derived from
@@ -875,7 +877,7 @@ public sealed class CozmoSensors
                 // fidelity: M4-019, M8-015, M8-019
                 // H1..H4 HandleRobotStopped tag 0xD4 (0x0053539C..0x00535480): H3 Evaluate sets comp+0x1C := the
                 // Robot's last state timestamp (robot+0x2C); if the cliff sensor is enabled (+4 != 0, 0x00535436), in this order:
-                // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; MISSING: M8-019, reported below),
+                // BehaviorManager::RequestCurrentBehaviorEndImmediately (0x00535454; M8-019 switch path still MISSING),
                 // ActionList::Cancel(-1) (0x00535466..0x0053546E; M8-015's ActionList, the robot's own) and the RobotStopped broadcast (0x00535480).
                 // Nothing is sent to the robot by this handler.
                 float stoppedVariance;
@@ -888,7 +890,8 @@ public sealed class CozmoSensors
                 lock (_gate) stoppedEnabled = _cliffEnabled;
                 if (stoppedEnabled)
                 {
-                    Behavior.SteppedBehavior.ReportMissing("M8-019 | HandleRobotStopped 0x00535454: BehaviorManager::RequestCurrentBehaviorEndImmediately is unread and not called here");
+                    if (RequestCurrentBehaviorEndImmediately is {} request) request("HandleRobotStopped");
+                    else Behavior.SteppedBehavior.ReportMissing("M8-019 HandleRobotStopped 0x00535454: native robot+0x44 manager recipient is absent");
                     _robot.Engine.Robot?.ActionList.Cancel(-1);
                     RobotStopped?.Invoke();
                 }

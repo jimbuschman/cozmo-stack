@@ -1,6 +1,6 @@
 namespace Cozmo.Robot;
 
-// fidelity: M10-008, M13-028
+// fidelity: M10-008, M13-028, M8-017
 /// <summary>
 /// The engine's <c>ICompoundAction</c> base (20261004-actionlist-extraction.md rows P1-P8): an
 /// <see cref="ActionRunner"/> whose runner type is 0xFFFFFFFE with mask 0, holding a child list in insertion
@@ -23,6 +23,9 @@ public abstract class CompoundAction : ActionRunner
     private readonly Dictionary<ActionRunner, Func<uint, ActionRunner, bool>> _ignorePredicates = new();  // +0x88
     private readonly Dictionary<uint, (uint Union, uint Type)> _completionCache = new();                  // +0x7C
     private readonly Func<float>? _engineClock;
+    private string? _nativeName = "ICompoundAction";
+    protected override string ActionName => _nativeName ?? "ICompoundAction";
+    public override string? NativeName => _nativeName;
     private bool _proxy;                                                          // +0x98
     private uint _proxyTag;                                                       // +0x94
     private bool _deleteOnCompletion = true;                                      // +0x99
@@ -32,10 +35,11 @@ public abstract class CompoundAction : ActionRunner
     /// completion cache and predicate map start empty; the proxy flag is false and DeleteOnCompletion is true.
     /// The ctor installs no ignore predicate on any child (P1: "constructor bools install no ignore predicate").
     /// </summary>
-    protected CompoundAction(Func<float>? engineClock, IEnumerable<ActionRunner?>? children)
+    protected CompoundAction(Func<float>? engineClock, IEnumerable<ActionRunner?>? children, SourceLogSink? sourceLog = null)
         : base(CompoundRunnerType, 0)
     {
         _engineClock = engineClock;
+        SourceLog = sourceLog;
         if (children is null) return;
         foreach (var child in children) AppendChild(child);
     }
@@ -47,7 +51,7 @@ public abstract class CompoundAction : ActionRunner
     public bool DeleteOnCompletion => _deleteOnCompletion;
 
     // L7: the compound's engine clock (BaseStationTimer::GetCurrentTimeInSeconds).
-    protected override float EngineClockSeconds => _engineClock?.Invoke() ?? 0f;
+    protected override float EngineClockSeconds => _engineClock?.Invoke() ?? base.EngineClockSeconds;
 
     // fidelity: M7-020
     // W7/W8/W9: a compound reaches the watcher through the robot like every runner (ActionList.QueueAction sets it);
@@ -68,8 +72,16 @@ public abstract class CompoundAction : ActionRunner
     {
         _ = other;                                        // P3: forwarded, unused by the base body
         child.Log = Log;
-        child.SourceLog = SourceLog;                                  // +0x57
+        child.SourceLog = SourceLog;
+        child.TimeoutWarningEnabled = TimeoutWarningEnabled; // +0x57 copies the byte, not the sink
         child.Watcher = Watcher;
+        string? childName = child.NativeName;
+        if (_nativeName is null || childName is null)
+        {
+            _nativeName = null;
+            Behavior.SteppedBehavior.ReportMissing("M8-017 AddAction native child name+0x48 missing; compound name is not derived from a CLR type");
+        }
+        else _nativeName = _children.Count == 0 ? "[" + childName + "]" : _nativeName[..^1] + "+" + childName + "]";
         _children.Add(child);
     }
 
@@ -82,12 +94,11 @@ public abstract class CompoundAction : ActionRunner
     {
         if (child is null)
         {
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "ICompoundAction.AddAction.NullChild", "");
+            Behavior.SteppedBehavior.ReportMissing("M1-034/M8-017 raw AddAction null child at 0x0054EE14 would dereference null; skip this add and retain prior group");
             return;
         }
-        if (ignoreFailure) _ignorePredicates[child] = static (_, _) => true;
-        else _ignorePredicates.Remove(child);
         AddAction(child, other);
+        if (ignoreFailure) _ignorePredicates[child] = static (_, _) => true;
     }
 
     /// <summary>P1: append an initial child without an ignore predicate.</summary>
@@ -95,13 +106,16 @@ public abstract class CompoundAction : ActionRunner
     {
         if (child is null)
         {
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "ICompoundAction.Constructor.NullChild", "");
+            EmitSource(EngineLogLevel.Warning, null, "ICompoundAction.NullActionPointer", "Refusing to add a null action pointer to group");
             return;
         }
-        child.Log = Log;
-        child.SourceLog = SourceLog;
-        child.Watcher = Watcher;
-        _children.Add(child);
+        AddAction(child, false, false);
+    }
+
+    protected void ChildLog(ActionRunner child, EngineLogLevel level, string channel, string key, Func<string,string> format)
+    {
+        if (child.NativeName is {} name) EmitSource(level,channel,key,format(name));
+        else Behavior.SteppedBehavior.ReportMissing("M8-017 native child name missing for " + key);
     }
 
     /// <summary>P4: a missing predicate is false; otherwise invoke the predicate with (full result, child pointer).</summary>
@@ -146,7 +160,8 @@ public abstract class CompoundAction : ActionRunner
         if (_deleteOnCompletion)
         {
             _children.Remove(child);
-            child.WatcherEnding();                                     // destructor only on the last reference
+            Behavior.SteppedBehavior.ReportMissing("M8-017 StoreUnionAndDelete native shared-control external-owner retention is not bound; existing direct child cleanup remains incomplete for aliased or retained children (0x0054F0CC..0x0054F0EC)");
+            child.WatcherEnding();                                     // candidate sole-owner cleanup
             return true;
         }
         if (!child.SuppressTrackLocking && child.State != EngineActionResult.NotStarted)
@@ -181,13 +196,16 @@ public abstract class CompoundAction : ActionRunner
     /// </summary>
     protected void DeleteActions()
     {
-        foreach (var child in _children.ToArray())
+        while (_children.Count != 0)
         {
+            var child = _children[0];
             if (!_deleteOnCompletion && child.State != EngineActionResult.NotStarted && !child.SuppressTrackLocking)
             {
                 if (!child.OwnsTracksByUnsignedOwner()) child.RetakeTracks();
             }
             child.Prep();
+            _children.RemoveAt(0);
+            Behavior.SteppedBehavior.ReportMissing("M8-017 DeleteActions native temporary shared ownership and last-release recipient 0x0054EC0E..0x0054EC20 are not bound; existing direct child cleanup is a candidate sole-owner path");
             child.WatcherEnding();
         }
         _children.Clear();
@@ -276,9 +294,12 @@ public class CompoundActionSequential : CompoundAction
     /// </summary>
     protected override uint UpdateInternal()
     {
-        float now = EngineClockSeconds;
-
-        if (DerivedPreTick() != 0) return 0x0300001C;                              // S2
+        SourceStatus = NativeName;
+        if (DerivedPreTick() != 0)
+        {
+            EmitSource(EngineLogLevel.Info, "Unnamed", "CompoundActionSequential.UpdateInternal.UpdateDerivedFailed", "");
+            return 0x0300001C;
+        }                              // S2
 
         if (_firstTick)
         {
@@ -287,36 +308,48 @@ public class CompoundActionSequential : CompoundAction
             if (Children.Count == 0) return EngineActionResult.Success;           // S3: no RunCallbacks
         }
 
+        if (_iterator >= Children.Count) return EngineActionResult.Success;
         var child = Children[_iterator];
         child.SuppressTrackLocking = SuppressTrackLocking;                         // S3: copy +56 BEFORE the delay gate
-        if (_deadline >= 0f && now < _deadline) return EngineActionResult.Running; // S3
-        uint result = child.Update();                                              // S3
+        float now = EngineClockSeconds;
+        if (!(_deadline < 0f) && !(now >= _deadline)) return EngineActionResult.Running;
+        uint result = child.Update();
+        SourceStatus = child.SourceStatus;                                              // S3
 
         return (result >> 24) switch                                              // S4
         {
             0 => MoveToNext(now),
             1 => EngineActionResult.Running,
-            2 or 3 => Failure(result),
-            4 => TakeRetry() ? Retry() : Failure(result),
+            2 or 3 => Failure(result, now),
+            4 => TakeRetry() ? Retry(child) : Failure(result, now),
             _ => EngineActionResult.Success,                                      // S4: category > 4
         };
     }
 
     /// <summary>S5: parent RunCallbacks(full failure) BEFORE the ignore predicate; ignored -> MoveToNext, else store/delete and return the full failure.</summary>
-    private uint Failure(uint result)
+    private uint Failure(uint result, float now)
     {
         var child = Children[_iterator];
         RunCompletionCallbacks(result);                                            // S5 BEFORE predicate
-        if (ShouldIgnoreFailure(child, result)) return MoveToNext(EngineClockSeconds);
+        if (ShouldIgnoreFailure(child, result))
+        {
+            ChildLog(child, EngineLogLevel.Info, "Actions", "CompoundActionSequential.UpdateInternal", n => $"Ignoring failure for {n}[{unchecked((int)child.Tag)}] moving to next action");
+            return MoveToNext(now);
+        }
+        if (KnownResultName(result) is {} resultName)
+            ChildLog(child, EngineLogLevel.Debug, "Actions", "CompoundActionSequential.UpdateInternal", n => $"Current action {n}[{unchecked((int)child.Tag)}] failed with {resultName} deleting");
+        else Behavior.SteppedBehavior.ReportMissing("M8-017 sequential failure full EnumToString result at 0x0054F8C4 is not recovered for 0x" + result.ToString("X8"));
         StoreCompletionUnionAndDelete(child);
         return result;
     }
 
     /// <summary>S6: the parent retry was taken; reset the children, transient NOT_STARTED, deadline -1, iterator front, firstTick true; return RUNNING.</summary>
-    private uint Retry()
+    private uint Retry(ActionRunner failed)
     {
+        ChildLog(failed, EngineLogLevel.Info, "Unnamed", "CompoundActionSequential.Update.Retrying", n => $"{n} triggered retry");
+        State = EngineActionResult.NotStarted;
         foreach (var child in Children.ToArray()) child.Reset(true);
-        State = EngineActionResult.NotStarted;                                     // transient; the outer Update stores RUNNING
+        // The outer runner overwrites transient NOT_STARTED with RUNNING.
         _deadline = BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
         _iterator = 0;
         _firstTick = true;
@@ -326,7 +359,7 @@ public class CompoundActionSequential : CompoundAction
     /// <summary>S7: a positive delay stamps now+delay; store/delete the finished child and advance; at the end RunCallbacks(SUCCESS)/SUCCESS; a remaining live deadline is RUNNING; else S8.</summary>
     private uint MoveToNext(float now)
     {
-        if (_delay > 0f) _deadline = now + _delay;                                 // S7: f32 add
+        if (_delay > 0f) _deadline = _delay + now;                                 // S7: f32 add
         var finished = Children[_iterator];
         bool erased = StoreCompletionUnionAndDelete(finished);
         if (!erased) _iterator++;                                                  // P6 erase keeps the next at this index
@@ -335,7 +368,7 @@ public class CompoundActionSequential : CompoundAction
             RunCompletionCallbacks(EngineActionResult.Success);                    // S7
             return EngineActionResult.Success;
         }
-        if (_deadline > now) return EngineActionResult.Running;                    // S7
+        if (!(_deadline <= now)) return EngineActionResult.Running;                    // S7
         return ImmediateNextTick();
     }
 
@@ -347,6 +380,7 @@ public class CompoundActionSequential : CompoundAction
     private uint ImmediateNextTick()
     {
         var child = Children[_iterator];
+        ChildLog(child, EngineLogLevel.Info, "Unnamed", "CompoundActionSequential.Update.NextAction", n => $"Moving to action {n} [{unchecked((int)child.Tag)}]");
         child.SuppressTrackLocking = SuppressTrackLocking;                         // S8
         uint result = child.Update();
         if (result == EngineActionResult.Running) return EngineActionResult.Running;
@@ -381,6 +415,7 @@ public class CompoundActionParallel : CompoundAction
     /// </summary>
     protected override uint UpdateInternal()
     {
+        SourceStatus = NativeName;
         bool anyRunning = false;
         int i = 0;
         while (i < Children.Count)
@@ -388,6 +423,7 @@ public class CompoundActionParallel : CompoundAction
             var child = Children[i];
             child.SuppressTrackLocking = SuppressTrackLocking;                     // R1: copy +56
             uint result = child.Update();
+            SourceStatus = child.SourceStatus;
             uint category = result >> 24;
 
             if (category == 0)                                                     // R2
@@ -404,6 +440,7 @@ public class CompoundActionParallel : CompoundAction
             }
             if (category == 4 && TakeRetry())
             {
+                ChildLog(child, EngineLogLevel.Info, "Actions", "CompoundActionParallel.Update.Retrying", n => $"{n} triggered retry");
                 Reset(true);                                                       // R4: virtual Reset(true)
                 return EngineActionResult.Running;                                 // rest not updated this tick
             }
@@ -416,6 +453,7 @@ public class CompoundActionParallel : CompoundAction
             RunCompletionCallbacks(result);
             if (ShouldIgnoreFailure(child, result))
             {
+                child.Prep(); // checked extra Prep before Store; completed child logs AlreadyPrepped twice
                 bool erased = StoreCompletionUnionAndDelete(child);                // P6 Preps the child
                 if (!erased) i++;
                 continue;

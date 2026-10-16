@@ -158,7 +158,7 @@ public abstract class ActionRunner : IActionRunner
     public Action<string>? Log { get; set; }
     public SourceLogSink? SourceLog { get; set; }
 
-    private void EmitSource(EngineLogLevel level,string? channel,string key,string text)
+    protected void EmitSource(EngineLogLevel level,string? channel,string key,string text)
     {
         bool needsName=key is "IActionRunner.SetMotionProfile.Unused" or "IActionRunner.Update.TracksLocked" or "IActionRunner.Update.ActionCompleted"
             or "IAction.Update.TimedOut" or "IAction.Update.PreconditionsMet" or "IAction.Update.CurrentActionFailedRetrying"
@@ -219,8 +219,8 @@ public abstract class ActionRunner : IActionRunner
 
     // The "[%d]" of the action logs is the current tag (+0x60), printed as a signed int.
     private int TagForLog => unchecked((int)Tag);
-    public string? NativeName=>_hasSuppliedNativeName?ActionName:null;
-    internal string? SourceStatus {get;private set;}
+    public virtual string? NativeName=>_hasSuppliedNativeName?ActionName:null;
+    internal string? SourceStatus {get;private protected set;}
 
     /// <summary>The engine clock (<c>BaseStationTimer::GetCurrentTimeInSeconds</c>, 0x00540D4A..0x00540D4E).</summary>
     protected virtual float EngineClockSeconds
@@ -416,7 +416,7 @@ public abstract class ActionRunner : IActionRunner
     }
 
     // Checked names from M8 check1 §7 / OV18 full result constants; other names remain explicit gaps.
-    private static string? KnownResultName(uint result)=>result switch
+    protected static string? KnownResultName(uint result)=>result switch
     {
         0=>"SUCCESS",0x01000000=>"RUNNING",0x02000000=>"CANCELLED_WHILE_RUNNING",0x02000001=>"NOT_STARTED",
         0x03000018=>"TIMEOUT",0x03000019=>"TRACKS_LOCKED",0x04000000=>"RETRY",_=>null
