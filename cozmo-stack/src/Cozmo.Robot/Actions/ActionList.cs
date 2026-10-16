@@ -50,7 +50,8 @@ internal sealed class ActionList : IDisposable
     public int RegisterActionEndedCallback(Action<RobotCompletedAction> callback) => _watcher.RegisterCallback(callback);
 
     /// <summary>W12: erase the matching callback handle and return whether it was found.</summary>
-    public bool UnregisterActionEndedCallback(int handle) => _watcher.UnregisterCallback(handle);
+    internal Action<string>? LifetimeObservedForTest;
+    public bool UnregisterActionEndedCallback(int handle){LifetimeObservedForTest?.Invoke("unregister");return _watcher.UnregisterCallback(handle);}
 
     /// <summary>
     /// D6: the engine-to-game sink. Setting it turns the D2 game gate on (<see cref="ActionWatcher.HasExternalInterface"/>)
@@ -87,6 +88,7 @@ internal sealed class ActionList : IDisposable
         {
             if (_clearing) return;
             _clearing = true;
+            LifetimeObservedForTest?.Invoke("clear");
             // fidelity: M8-024
             Behavior.SteppedBehavior.ReportMissing("M8-024 pending-survivor shipped callback census at Robot teardown remains unread; Clear mechanics do not establish reachability");
             if (_queues.Count > 1)

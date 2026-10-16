@@ -227,12 +227,14 @@ internal sealed class EmotionHistory
     /// <summary>0x80 (<c>movs r1,#0x80</c> at 0x0067940A).</summary>
     public const int Capacity = 0x80;
 
-    private readonly (float Value, float Dt)[] _data = new (float, float)[Capacity];
+    private (float Value, float Dt)[] _data = new (float, float)[Capacity];
     private uint _head;      // +0x0C
     private uint _count;     // +0x10
 
     public EmotionHistory() => Push(0f, 0f);
 
+    internal void RetireStorage() { _data = Array.Empty<(float, float)>(); }
+    internal int StorageLength => _data.Length;
     public uint Head => _head;
     public uint Count => _count;
 
@@ -282,8 +284,8 @@ internal sealed class EmotionHistory
 /// <c>vdiv.f32</c> named below), so the values, the decay clocks and the event stamps are held as <c>float</c>; the public
 /// <c>double</c> surface is the exact widening of those floats.
 /// </summary>
-// fidelity: M7-012, M7-013, M7-020
-public sealed class MoodState
+// fidelity: M7-012, M7-013, M7-020, M7-023
+public sealed partial class MoodState
 {
     /// <summary>
     /// A change smaller than this does not restart the decay clock. <c>Emotion::Add</c> at 0x00679618
@@ -332,17 +334,26 @@ public sealed class MoodState
     public Action<string>? Log { get; set; }
     public SourceLogSink? SourceLog { get; set; }
 
-    public MoodState(MoodModel model) => _model = model;
+    public MoodState(MoodModel model)
+    {
+        _model = model;
+        _actionResultEvents = model.ActionResultEvents.ToDictionary(entry => entry.Key, entry => entry.Value);
+    }
 
     /// <summary>The current value of one axis (the engine's float, widened), after decay up to the last <see cref="Advance"/>.</summary>
-    public double this[EmotionType e] => _values[(int)e];
+    public double this[EmotionType e] { get { lock (_lifetimeGate) return _values[(int)e]; } }
 
     /// <summary>
     /// <c>Emotion::GetHistoryValueTicksAgo(ticks)</c> 0x006794F8 on one emotion: its value that many <see cref="Advance"/> updates
     /// ago (the ring holds the 0x80 most recent), or the current value for 0 ticks or an empty ring.
     /// </summary>
     // fidelity: M7-013
-    public float GetHistoryValueTicksAgo(EmotionType e, uint ticks) => _history[(int)e].GetValueTicksAgo(ticks, _values[(int)e]);
+    public float GetHistoryValueTicksAgo(EmotionType e, uint ticks)
+    {
+        float result = 0;
+        LogCallbackDeferral.RunGated(_lifetimeGate, () => { result = RejectRetiredUse() ? _values[(int)e] : _history[(int)e].GetValueTicksAgo(ticks, _values[(int)e]); });
+        return result;
+    }
 
     /// <summary>
     /// Applies a named event. Unknown names change nothing and report false.
@@ -372,12 +383,19 @@ public sealed class MoodState
     // fidelity: M7-013
     public bool Trigger(string eventName, double nowSec)
     {
-        var e = _model.Event(eventName);
-        if (e is null) return false;
-        float penalty = RepetitionPenalty(e, eventName, (float)nowSec);
-        foreach (var a in e.Affectors)
-            Add((int)a.Emotion, penalty * (float)a.Value);
-        return true;
+        bool Body()
+        {
+            if (RejectRetiredUse()) return false;
+            var e = _model.Event(eventName);
+            if (e is null) return false;
+            float penalty = RepetitionPenalty(e, eventName, (float)nowSec);
+            foreach (var a in e.Affectors)
+                Add((int)a.Emotion, penalty * (float)a.Value);
+            return true;
+        }
+        bool result = false;
+        LogCallbackDeferral.RunGated(_lifetimeGate, () => result = Body());
+        return result;
     }
 
     /// <summary>
@@ -422,8 +440,12 @@ public sealed class MoodState
     /// </summary>
     public void SetMoodEventOnCompletionEnabled(string actionId, bool enabled)
     {
-        if (enabled) _completionDisabled.Remove(actionId);
-        else _completionDisabled.Add(actionId);
+        LogCallbackDeferral.RunGated(_lifetimeGate, () =>
+        {
+            if (RejectRetiredUse()) return;
+            if (enabled) _completionDisabled.Remove(actionId);
+            else _completionDisabled.Add(actionId);
+        });
     }
 
     /// <summary>
@@ -432,8 +454,8 @@ public sealed class MoodState
     /// the 32-bit result at +8 (the <c>ActionResultCategory</c>, 0x0067b320..0x0067b354), looked up in the map at +0x134, and its event triggered.
     ///
     /// <b>Live caller (built).</b> The engine's <c>MoodManager::Init</c> registers this member function with the robot's <c>ActionList</c>
-    /// (robot +0x250) whenever the robot pointer is non-null (0x0067aee8..0067af38, handle stored at +0x158; the destructor unregisters it,
-    /// 0x0067ae18..0x0067ae30); <see cref="FreeplayStack.Create"/> performs that registration, and <c>ActionWatcher::Update</c> (called from
+    /// (robot +0x250) whenever the robot pointer is non-null (0x0067aee8..0067af38, handle stored at +0x158). Normal
+    /// Robot destruction already nulled ActionList and skips unregister (M7-023, 0x0067ae18..0x0067ae30); <see cref="FreeplayStack.Create"/> performs that registration, and <c>ActionWatcher::Update</c> (called from
     /// <c>ActionList::Update</c>, 0x0053f5dc..0x0053f5e4) invokes it with the whole 0x40-byte <see cref="RobotCompletedAction"/> for every
     /// completed action (0x0054187e..0x005418de). The stack's <c>ActionList</c>/<c>ActionWatcher</c> queue a RobotCompletedAction at every
     /// action's ending (<c>ActionWatcher::ActionEnding</c> 0x00541bd8..0x00541c00) and drain it after the queues. The string keys here stand
@@ -443,9 +465,16 @@ public sealed class MoodState
     // fidelity: M7-020
     public bool HandleActionEnded(string actionType, string resultCategory, string actionId, double nowSec)
     {
-        if (_completionDisabled.Remove(actionId)) return false;
-        if (!_model.ActionResultEvents.TryGetValue((actionType, resultCategory), out var name)) return false;
-        return Trigger(name, nowSec);
+        bool Body()
+        {
+            if (RejectRetiredUse()) return false;
+            if (_completionDisabled.Remove(actionId)) return false;
+            if (!_actionResultEvents.TryGetValue((actionType, resultCategory), out var name)) return false;
+            return Trigger(name, nowSec);
+        }
+        bool result = false;
+        LogCallbackDeferral.RunGated(_lifetimeGate, () => result = Body());
+        return result;
     }
 
     /// <summary>
@@ -456,8 +485,7 @@ public sealed class MoodState
     /// <c>MessageEngineToGame</c> and passed to <c>Robot::Broadcast</c> with the robot at +0x12c (0x0067b77e..0x0067b79c).
     /// </summary>
     // fidelity: M7-012
-    public IReadOnlyList<double> EmotionValues() =>
-        Enum.GetValues<EmotionType>().Select(e => (double)_values[(int)e]).ToArray();
+    public IReadOnlyList<double> EmotionValues() { lock (_lifetimeGate) return Enum.GetValues<EmotionType>().Select(e => (double)_values[(int)e]).ToArray(); }
 
     /// <summary>
     /// MoodManager +0x12c: the robot the manager reports to. Null (the constructed state) until <see cref="AttachRobot"/>; with no robot
@@ -468,7 +496,7 @@ public sealed class MoodState
 
     /// <summary>Sets the robot pointer at MoodManager +0x12c (<c>MoodManager::Init</c>'s argument).</summary>
     // fidelity: M7-012
-    public void AttachRobot(CozmoRobot? robot) => Robot = robot;
+    public void AttachRobot(CozmoRobot? robot) => LogCallbackDeferral.RunGated(_lifetimeGate, () => { if (RejectRetiredUse()) return; Robot = robot; _nativeRobot=robot?.Engine.Robot; });
 
     /// <summary>
     /// Raised with the <c>MoodState</c> message <see cref="SendEmotionsToGame"/> builds. This is the local stand-in for
@@ -486,12 +514,16 @@ public sealed class MoodState
     // fidelity: M7-012
     public void SendEmotionsToGame()
     {
-        if (Robot is null) return;                                           // 0x0067b736..0x0067b73c
-        var nine = new float[_values.Length];
-        for (int i = 0; i < nine.Length; i++) nine[i] = _values[i];          // 0x0067b73e..0x0067b77c: this+0x18, stepping 0x20
-        var message = new MoodStateMessage(nine);                            // 0x0067b77e..0x0067b79c: MoodState -> MessageEngineToGame
-        SteppedBehavior.ReportMissing("Robot::Broadcast(MessageEngineToGame(MoodState)) 0x0067b79c: this stack has no engine-to-game message sink (nothing consumes CozmoEngine.PostGameMessage and no app channel exists); the MoodState message is built and raised on MoodState.MoodStateBroadcast only");
-        MoodStateBroadcast?.Invoke(message);
+        LogCallbackDeferral.RunGated(_lifetimeGate, () =>
+        {
+            if (RejectRetiredUse()) return;
+            if (Robot is null) return;                                           // 0x0067b736..0x0067b73c
+            var nine = new float[_values.Length];
+            for (int i = 0; i < nine.Length; i++) nine[i] = _values[i];          // 0x0067b73e..0x0067b77c: this+0x18, stepping 0x20
+            var message = new MoodStateMessage(nine);                            // 0x0067b77e..0x0067b79c: MoodState -> MessageEngineToGame
+            SteppedBehavior.ReportMissing("Robot::Broadcast(MessageEngineToGame(MoodState)) 0x0067b79c: this stack has no engine-to-game message sink (nothing consumes CozmoEngine.PostGameMessage and no app channel exists); the MoodState message is built and raised on MoodState.MoodStateBroadcast only");
+            LogCallbackDeferral.Run(() => MoodStateBroadcast?.Invoke(message));
+        });
     }
 
     /// <summary>
@@ -508,29 +540,33 @@ public sealed class MoodState
     // fidelity: M7-013
     public void Advance(double nowSec)
     {
-        float t = (float)nowSec;
-        float last = _lastUpdateSec;
-        float dt = last != 0 ? t - last : MinUpdateStepSec;
-        if (dt < MinUpdateStepSec)
+        LogCallbackDeferral.RunGated(_lifetimeGate, () =>
         {
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "MoodManager.Update.TimeStepTooSmall", $"dt {dt}, last {last}, now {t}");
-            dt = MinUpdateStepSec;
-        }
-        _lastUpdateSec = t;
+            if (RejectRetiredUse()) return;
+            float t = (float)nowSec;
+            float last = _lastUpdateSec;
+            float dt = last != 0 ? t - last : MinUpdateStepSec;
+            if (dt < MinUpdateStepSec)
+            {
+                var text = $"dt {dt}, last {last}, now {t}";
+                LogCallbackDeferral.Run(() => SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "MoodManager.Update.TimeStepTooSmall", text));
+                dt = MinUpdateStepSec;
+            }
+            _lastUpdateSec = t;
 
-        for (int i = 0; i < _values.Length; i++)
-        {
-            var graph = _model.DecayFor((EmotionType)i);
-            float before = (float)graph.At(_decaySec[i]);
-            _decaySec[i] += dt;
-            float after = (float)graph.At(_decaySec[i]);
-            float f = before > OldReadingFloor ? after / before : after;
-            _values[i] = _values[i] * f;
-            _history[i].Push(_values[i], dt);
-        }
+            for (int i = 0; i < _values.Length; i++)
+            {
+                var graph = _model.DecayFor((EmotionType)i);
+                float before = (float)graph.At(_decaySec[i]);
+                _decaySec[i] += dt;
+                float after = (float)graph.At(_decaySec[i]);
+                float f = before > OldReadingFloor ? after / before : after;
+                _values[i] = _values[i] * f;
+                _history[i].Push(_values[i], dt);
+            }
+        });
     }
 
     /// <summary>Every axis and its current value, for diagnostics.</summary>
-    public IReadOnlyDictionary<EmotionType, double> Snapshot() =>
-        Enum.GetValues<EmotionType>().ToDictionary(e => e, e => (double)_values[(int)e]);
+    public IReadOnlyDictionary<EmotionType, double> Snapshot() { lock (_lifetimeGate) return Enum.GetValues<EmotionType>().ToDictionary(e => e, e => (double)_values[(int)e]); }
 }

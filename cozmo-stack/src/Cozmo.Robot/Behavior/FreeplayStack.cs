@@ -130,9 +130,10 @@ public sealed class FreeplayStack : IDisposable
         // MoodManager::Init 0x0067aebc: StaticMoodData::Init reads the shipped mood_config.json and the
         // emotion events; MoodState is the stack's runtime for it. Wired here so every Context.Mood?.Trigger
         // call and FreeplaySystem's per-tick Advance have a live model.
-        ctx.Mood ??= new MoodState(MoodModel.Load(obbRoot));
+        ctx.Mood ??= robot.Engine.Robot?.MoodOwner ?? new MoodState(MoodModel.Load(obbRoot));
         // The MoodManager's robot pointer (+0x12c): SendEmotionsToGame sends nothing without it (0x0067b736..0x0067b73c).
         if (ctx.Mood.Robot is null) ctx.Mood.AttachRobot(robot);
+        var moodOwner=ctx.Mood; // native closures capture the concrete MoodManager, not a mutable host context slot.
         // fidelity: M7-020
         // MoodManager::Init registers HandleActionEnded with the robot's ActionList whenever the robot is non-null (0x0067aee8..0x0067af38) and
         // ActionWatcher::Update invokes it for every completed action (0x0054187e..0x005418de). W13: the separate external-subscription gate
@@ -141,7 +142,7 @@ public sealed class FreeplayStack : IDisposable
         // documented stand-in), so the record is mapped through the shipped RobotActionType/ActionResultCategory tables. The int-keyed model and
         // the forward-map miss fallback are not built; M7-020 is not settled.
         var actionEndedList = robot.Engine.Robot?.ActionList;
-        int actionEndedHandle = -1;
+        int actionEndedHandle = 0;
         if (actionEndedList is not null)
         {
             actionEndedHandle = actionEndedList.RegisterActionEndedCallback(r =>
@@ -149,7 +150,7 @@ public sealed class FreeplayStack : IDisposable
                 string? type = RobotActionType.NameOf(r.ActionType);
                 string? category = ActionResultCategory.NameOf((int)(r.Result >> 24));
                 if (type is null || category is null) return;          // W15: an out-of-range name produces no event
-                ctx.Mood.HandleActionEnded(type, category, r.Tag.ToString(), clockSec());
+                moodOwner.HandleActionEnded(type, category, r.Tag.ToString(), clockSec());
             });
         }
         // BehaviorManager::FinishCurrentBehavior switches to the empty running info {none, none, NoneTrigger}
@@ -194,6 +195,7 @@ public sealed class FreeplayStack : IDisposable
             lifetimeRobot=native;
             native.Lifetime.Bind(-2,_=>tracker.ForceUpdate());
             native.Lifetime.Bind(0x264,_=>ai.DestroyDirect());
+            moodOwner.BindNativeLifetime(native,actionEndedHandle);
         }
         robot.Engine.BindRobotLifetime+=BindNativeLifetime;
         if(robot.Engine.Robot is {} lifetimeOwner)BindNativeLifetime(lifetimeOwner);
@@ -209,9 +211,7 @@ public sealed class FreeplayStack : IDisposable
         robot.Engine.AIComponentUpdate = () => ai.Update(robot);
         if (m is not null) stack._unsubscribe.Add(() => { if (ReferenceEquals(m.ReactionLocks, manager)) m.ReactionLocks = null; });
         stack._unsubscribe.Add(() => robot.Engine.AIComponentUpdate = null);
-        // fidelity: M7-020
-        // W17: the destructor unregisters the action-ended callback when the handle is non-zero and the robot/ActionList are present (0x0067ae18..0x0067ae30).
-        if (actionEndedList is not null) stack._unsubscribe.Add(() => actionEndedList.UnregisterActionEndedCallback(actionEndedHandle));
+        // fidelity: M7-023 — no captured old ActionList unregister on host Dispose; native +250 is already null at mood destruction.
 
         // fidelity: M1-024
         // CD6..CD11: CozmoEngine::Update state 3 calls NeedsManager::Update between UpdateRobotConnection ->

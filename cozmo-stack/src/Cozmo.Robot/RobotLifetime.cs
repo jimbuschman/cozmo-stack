@@ -7,13 +7,17 @@ internal sealed class RobotLifetime
 {
     private readonly EngineRobot _robot;
     private readonly Dictionary<int, Action<uint>?> _owners = new();
+    private readonly object _ownerGate=new();
+    private volatile bool _destroying;
+    internal bool Destroying=>_destroying;
     private readonly HashSet<string> _missingScope=new();
     internal RobotLifetime(EngineRobot robot) => _robot = robot;
-    internal void Bind(int offset, Action<uint>? release) => _owners[offset] = release;
-    internal bool IsKnownNull(int offset) => _owners.TryGetValue(offset, out var value) && value is null;
+    internal void Bind(int offset, Action<uint>? release){lock(_ownerGate)_owners[offset]=release;}
+    internal bool IsKnownNull(int offset){lock(_ownerGate)return _owners.TryGetValue(offset,out var value)&&value is null;}
     private void Missing(uint address, int offset)
     {
         string detail=offset switch {
+            0x440=>"M7-023 MoodManager: no host MoodState bound; native per-Robot constructor/Init producer remains missing outside FreeplayStack",
             0x448=>"M15-027 progression: scoped vector+1C, trees+10/+4 and allocation; concrete native owner not bound",
             0x444=>"M15-027 inventory: tree+120, scoped vector+114 and allocation; concrete native owner not bound",
             0x264=>"M15-027/M15-045 AI direct child null-before-delete sequence; concrete AI owner not bound",
@@ -28,8 +32,9 @@ internal sealed class RobotLifetime
     }
     private void Clear(int offset)
     {
-        _owners[offset] = null;
+        lock(_ownerGate)_owners[offset] = null;
         if (offset == 0x250) _robot.ClearActionListOwner();
+        if(offset==0x440)_robot.MoodOwner=null;
         if(offset==0x448)_robot.Progression=null;
         if(offset==0x444)_robot.Inventory=null;
         if (offset == 0x44C) _robot.BlockFilterOwner = null;
@@ -37,18 +42,19 @@ internal sealed class RobotLifetime
     }
     private void Release(int offset, uint address, bool clearBefore = true)
     {
-        bool known = _owners.TryGetValue(offset, out var callback);
-        if (clearBefore) Clear(offset);
+        bool known;Action<uint>? callback;
+        lock(_ownerGate){known=_owners.TryGetValue(offset,out callback);if(clearBefore)Clear(offset);}
         if (!known) Missing(address, offset);
         else callback?.Invoke(address);
     }
     private void Member(int offset, uint address)
     {
-        if (!_owners.TryGetValue(offset, out var callback) || callback is null) Missing(address, offset);
-        else callback(address);
+        Action<uint>? callback;lock(_ownerGate)_owners.TryGetValue(offset,out callback);
+        if(callback is null)Missing(address,offset);else callback(address);
     }
     internal void Destroy()
     {
+        _destroying=true;
         Member(-1, 0x005110EE); // destructor event
         Member(-2, 0x0051111A); // FreeplayDataTracker.ForceUpdate
         Member(-3, 0x00511120); // AbortAll, result ignored
@@ -58,15 +64,18 @@ internal sealed class RobotLifetime
         Release(0x250, 0x00511156);
         Release(0x258, 0x0051116C);
         Release(0x390, 0x00511180);
-        Release(0x440, 0x005111B6, false);
-        Clear(0x440); // 0x005111C4, before progression's release
+        LogCallbackDeferral.RunGated(_robot.MoodLifetimeGate,()=>
+        {
+            Release(0x440,0x005111B6,false);
+            Clear(0x440); // 0x005111C4, after mood allocation retirement.
+        });
         Release(0x448, 0x005111CE, false);
         Clear(0x448); // 0x005111EE
         Release(0x450, 0x005111F8, false);
         Clear(0x450); // 0x00511220
         Release(0x44C, 0x0051122A, false);
         // fidelity: M10-014 — 0x0051124C loads the next owner before +0x44C is cleared.
-        bool nextKnown = _owners.TryGetValue(0x26C, out var nextOwner);
+        bool nextKnown;Action<uint>? nextOwner;lock(_ownerGate)nextKnown=_owners.TryGetValue(0x26C,out nextOwner);
         Clear(0x44C); // 0x00511250
         Clear(0x26C);
         if (!nextKnown) Missing(0x00511260, 0x26C); else nextOwner?.Invoke(0x00511260);
@@ -123,6 +132,8 @@ internal sealed class RobotLifetime
 public sealed partial class EngineRobot
 {
     internal RobotLifetime Lifetime { get; private set; } = null!;
+    internal Behavior.MoodState? MoodOwner;
+    internal readonly object MoodLifetimeGate=new();
     private ActionList? _actionList;
     internal ActionList? ActionListOwner => _actionList;
     internal void ClearActionListOwner() => _actionList = null;

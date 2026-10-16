@@ -83,6 +83,8 @@ internal sealed class UiSubscriptionHub : IDisposable
         }
     }
 
+    internal int SubscriberCountForTest(ushort tag,bool engineToGame)
+    {lock(_gate){var map=engineToGame?_e2g:_g2e;return map.TryGetValue(tag,out var signal)?signal.Nodes.Count:0;}}
     public void Dispose()
     {
         lock (_gate)
