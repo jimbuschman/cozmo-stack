@@ -314,6 +314,9 @@ public sealed class BehaviorFactory
         var entry = Table[(int)cls];
         if (entry.Construct is null)
         {
+            // fidelity: M7-025, M7-029
+            if (cls == BehaviorClass.TrackLaser)
+                SteppedBehavior.ReportMissing("M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings");
             SteppedBehavior.ReportMissing($"BehaviorContainer::CreateBehavior case 0x{entry.CaseAddress:X} ({cls} -> {entry.EngineClass}, constructor 0x{entry.ConstructorAddress:X}, {entry.AllocationSize} bytes): class not implemented. This stack has no constructor that builds {entry.EngineClass} from its config (the class is another layer's, or is built by hand per behaviour id outside the factory); no stand-in is made");
             status = BehaviorCreateStatus.NotImplemented;
             return null;
