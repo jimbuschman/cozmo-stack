@@ -51,7 +51,17 @@ public sealed partial class EngineRobot
 
     // fidelity: M7-027 — two BehaviorContainers, manager's instances before system manager's.
     internal CheckedDevBehaviorSet[] DevBehaviors { get; private set; } = Array.Empty<CheckedDevBehaviorSet>();
-    internal void ReleaseCheckedDevStorage(){foreach(var set in DevBehaviors)set.Lift.ReleaseSubscriptionStorage();}
+    internal void ReleaseCheckedDevStorage()
+    {
+        foreach(var set in DevBehaviors)
+        {
+            // Host cleanup only: native shared-owner/tree destruction position is M8-016, not this loop.
+            set.Factory.Logger.Dispose();
+            set.Docking.Logger.Dispose();
+            set.Lift.Logger.Dispose();
+            set.Lift.ReleaseSubscriptionStorage();
+        }
+    }
     private void InitCheckedDevSubscribers()
     {
         DevBehaviors = new[] { new CheckedDevBehaviorSet(this, 0), new CheckedDevBehaviorSet(this, 1) };
@@ -101,7 +111,10 @@ internal sealed class CheckedFactoryTest
     internal uint QueueCount;
     // fidelity: M7-028 — FactoryTestLogger(true), JSON mode, memory only; no StartLog/CloseLog body claim.
     internal readonly CheckedFactoryLogger Logger=new(true);
-    internal CheckedFactoryTest(EngineRobot robot) => _robot=robot;
+    internal CheckedFactoryTest(EngineRobot robot)
+    {
+        _robot=robot;Logger.SourceLog=(l,c,k,t)=>robot.Engine.EmitSourceLog(l,c,k,t);
+    }
     private void Log(EngineLogLevel level,string key,string text,string? channel=null) => _robot.Engine.EmitSourceLog(level,channel,key,text);
     internal void Handle(RobotMessage message)
     {
@@ -163,9 +176,10 @@ internal sealed class CheckedDockingTest
 {
     // fidelity: M7-028 — pathToResource(scope 2), no normalization, ignored CreateDirectory result; no file opens.
     internal string LoggerDirectory {get;}
+    internal CheckedRollingLogger Logger {get;}
     internal string LoggerExtension=>".log";
     internal uint LoggerSize=>0x1400000;
-    internal CheckedDockingTest(EngineRobot robot){LoggerDirectory=CozmoEngine.AnimationCacheFile(robot.Engine.Options.AnimationCachePath,"dockingTest");_ = EngineFileUtils.CreateDirectory(LoggerDirectory);}
+    internal CheckedDockingTest(EngineRobot robot){LoggerDirectory=CozmoEngine.AnimationCacheFile(robot.Engine.Options.AnimationCachePath,"dockingTest");Logger=new(LoggerDirectory);}
     internal uint Field258, BackingUpCount, Field260, Field268;
     internal bool DidHanns;
     internal void Handle(DockingStatus m) { if(m.Field1==0)BackingUpCount=unchecked(BackingUpCount+1);else if(m.Field1==1)DidHanns=true; }
@@ -182,12 +196,13 @@ internal sealed class CheckedLiftLoadTest
     internal byte Field218,Field219=1;
     internal ushort Field224=>(ushort)((Received?1:0)|((HasLoad?1:0)<<8));
     internal string LoggerDirectory {get;}
+    internal CheckedRollingLogger Logger {get;}
     internal string LoggerExtension=>".log";
     internal uint LoggerSize=>0x1400000;
     private readonly SubscriptionOwners _externalSubscriptions=new();
     internal CheckedLiftLoadTest(EngineRobot robot,int instance)
     {
-        _robot=robot;LoggerDirectory=CozmoEngine.AnimationCacheFile(robot.Engine.Options.AnimationCachePath,"liftLoadTest");_ = EngineFileUtils.CreateDirectory(LoggerDirectory);
+        _robot=robot;LoggerDirectory=CozmoEngine.AnimationCacheFile(robot.Engine.Options.AnimationCachePath,"liftLoadTest");Logger=new(LoggerDirectory);
         // No production hub producer delivers 0x35/0x95. Report the unbuilt bodies at construction, not inside unreachable callbacks.
         _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x35,true,_=>{}));
         _externalSubscriptions.Add(robot.Engine.AnimationMessages.SubscribeMessage(0x95,false,_=>{}));
@@ -201,11 +216,64 @@ internal sealed class CheckedLiftLoadTest
         _robot.Engine.EmitSourceLog(EngineLogLevel.Debug,"Unnamed","BehaviorLiftLoadTest.HandleLiftLoad.HasLoad",$"{unchecked((int)Loads)} / {unchecked((int)All)}");
     }
 }
-// fidelity: M7-028 — checked L5 constructor mode. StartLog/CloseLog remain unread, no files are opened.
-internal sealed class CheckedFactoryLogger(bool jsonMode)
+// fidelity: M7-028 — checked L5 constructor mode; StartLog is unreachable in the shipped app.
+internal sealed class CheckedFactoryLogger(bool jsonMode):IDisposable
 {
     internal readonly bool JsonMode=jsonMode;
     internal readonly FirmwareJsonValue Root=new(); // Json::Value(nullValue), 0x006716D0..0x006716D6.
     internal string Extension=>JsonMode?".json":".log";
-    internal bool FileOpen=>false;
+    internal string Field0="",Field0C="";
+    internal uint StreamState;
+    internal SourceLogSink? SourceLog;
+    // Only a supplied native-input stream can exercise the open-log body. No production StartLog/file is fabricated.
+    internal IFactoryLogFileBuffer? FileBuffer;
+    internal bool FileOpen=>FileBuffer?.IsOpen==true;
+    internal void CloseLog()
+    {
+        if(FileBuffer is {IsOpen:true} file)
+        {
+            SourceLog?.Invoke(EngineLogLevel.Info,"Unnamed","FactoryTestLogger.CloseLog.Closing","");
+            if(JsonMode)
+            {
+                Behavior.SteppedBehavior.ReportMissing("M7-028 FactoryTestLogger JSON output 0x0067180C -> Json::operator<< 0x008EF6AC uses a supplied native-input writer; StreamWriterBuilder/newStreamWriter/write bytes are not ported here (open log unreachable in shipped app)");
+                file.WriteJson(Root);
+            }
+            if(!file.Close())StreamState|=4; // ios_base::clear(rdstate | failbit), 0x00671818..0x00671828
+        }
+        Field0="";Field0C=""; // both strings reset even when the file is already closed
+    }
+    public void Dispose()
+    {
+        CloseLog(); // native destructor always calls CloseLog, 0x00671740
+        Behavior.SteppedBehavior.ReportMissing("M7-028 FactoryTestLogger native Json/filebuf/ios/string storage destruction 0x00671744..0x00671786 remains unbuilt; managed logger cleanup does not bind M8-016 native shared-owner release position");
+    }
+}
+// Explicit input boundary, not a port of Json::operator<< or native filebuf ownership/serialization.
+internal interface IFactoryLogFileBuffer
+{
+    bool IsOpen {get;}
+    void WriteJson(FirmwareJsonValue root);
+    bool Close();
+}
+
+// fidelity: M7-028 — ctor queue+8 is null; never opened by the shipped app's dev behaviours.
+internal sealed class CheckedRollingLogger
+{
+    internal readonly string Directory;
+    internal IFactoryLogFileBuffer? FileBuffer;
+    // Supplied native-input call boundaries only; Dispatch's recursive queue implementation is not asserted here.
+    internal Action? StopDispatch,ReleaseDispatch;
+    internal uint StreamState;
+    internal CheckedRollingLogger(string directory){Directory=directory;_ = EngineFileUtils.CreateDirectory(directory);}
+    public void Dispose()
+    {
+        if(StopDispatch is {} stop)
+        {
+            stop();
+            if(ReleaseDispatch is {} release)release();
+            else Behavior.SteppedBehavior.ReportMissing("M7-028 RollingFileLogger Dispatch handle release 0x00801E7C..0x00801E82 has no supplied recipient");
+        }
+        if(!(FileBuffer?.Close()??false))StreamState|=4; // unconditional close, including the native never-opened filebuf
+        Behavior.SteppedBehavior.ReportMissing("M7-028 RollingFileLogger native filebuf/ios/string storage destruction 0x0080E0CC..0x0080E11E and M8-016 native shared-owner release position remain unbuilt; queue recipients are explicit native inputs, not a port of Dispatch internals");
+    }
 }
