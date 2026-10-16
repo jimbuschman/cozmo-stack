@@ -23,9 +23,9 @@ internal sealed class ActionList : IDisposable
 
     internal void WithGate(Action action) { lock(_gate) action(); }
 
-    public ActionList(Action<string>? log = null, SourceLogSink? sourceLog = null)
+    public ActionList(Action<string>? log = null, SourceLogSink? sourceLog = null,uint? robotId=null,Func<float>? clockSeconds=null)
     {
-        _log = log; _sourceLog = sourceLog;
+        _log = log; _sourceLog = sourceLog;_watcher.RobotId=robotId;_watcher.SourceLog=sourceLog;_watcher.LegacyLog=log;_watcher.ClockSeconds=clockSeconds;
         // The watcher's D6 broadcast is the local seam; forward it to the game sink when one is set.
         _watcher.RobotCompletedActionBroadcast += r => _gameSend?.Invoke(r);
     }
@@ -87,6 +87,10 @@ internal sealed class ActionList : IDisposable
         {
             if (_clearing) return;
             _clearing = true;
+            // fidelity: M8-024
+            Behavior.SteppedBehavior.ReportMissing("M8-024 pending-survivor shipped callback census at Robot teardown remains unread; Clear mechanics do not establish reachability");
+            if (_queues.Count > 1)
+                Behavior.SteppedBehavior.ReportMissing("M8-015 List.Clear native left/right/node post-order 0x0053FB5C..0x0053FB82 requires checked insertion/balancing tree shape; current managed ascending cleanup remains an implementation gap");
             foreach (var q in _queues.Values) q.Dispose();
             _queues.Clear();
             _clearing = false;
@@ -151,24 +155,27 @@ internal sealed class ActionList : IDisposable
         {
             if (incoming is null)
             {
-                SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.NullAction", "");
+                SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Error, null, "ActionList.QueueAction.NullAction", "Can't queue null action");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                 return 1;
             }
-            if ((int)position > (int)QueueActionPosition.InParallel)
-            {
-                SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.BadPosition", "");
-                return 1;
-            }
-            // Q2: the disabled gate (robot+0x2C7) tests the incoming +0x60 Tag against the external ranges. The
-            // BAD_TAG 0x03000006 is the action's STATE +0x18 and is checked outside the gate (the native cbz at
-            // 0x0053D972 runs the state compare with the byte zero).
+            // The owning robot/watcher exists even on the front-end discard paths.
+            if(incoming is ActionRunner owner)owner.Watcher=_watcher;
             if ((ExternalActionsDisabled && IsExternalTag(incoming.Tag)) || incoming.State == EngineActionResult.BadTag)
             {
-                Discard(incoming);
-return 0;
+                string? type=RobotActionType.NameOf(incoming.Type);
+                if(type is null)Behavior.SteppedBehavior.ReportMissing("M8-015 QueueAction diagnostic has no recovered RobotActionType name; system printf NULL spelling is not assumed");
+                if(ExternalActionsDisabled && type is not null)
+                    SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Info,"Unnamed","ActionQueue.QueueAction.ExternalActionsDisabled",$"Ignoring {type} action while external actions are disabled");
+                else if(!ExternalActionsDisabled)
+                {
+                    if(type is not null)SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Error,null,"ActionQueue.QueueAction.ActionHasBadTag",$"Failed to set tag, deleting action {type}");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                }
+                Discard(incoming);return 0;
             }
+            if((byte)position>5)return InvalidPosition();
             if (DuplicateOrClearingGuard(incoming)) return 1;
-            incoming.RetriesRemain = retries;
             // fidelity: M8-015
             // W7/W8/W9: the engine reaches the watcher for every runner through the robot (IActionRunner::
             // GetRobotCompletedActionMessage 0x540AC2 [r0,#4] -> robot+0x250 ActionList -> [r0,#0x10] watcher).
@@ -178,25 +185,30 @@ return 0;
             switch (position)
             {
                 case QueueActionPosition.Now:
-                    return QueueNowMain(incoming);
+                    return QueueNowMain(incoming,retries);
                 case QueueActionPosition.NowAndClearRemaining:
                     // Q9: A9 guard, then Cancel(type=-1) across ALL queues, then QueueNext on key 0.
                     Cancel(-1);
-                    return QueueNextMain(incoming);
+                    return QueueNextMain(incoming,retries);
                 case QueueActionPosition.NowAndResume:
                     // Q13: no current and no pending -> QueueAtEnd; no current but pending -> QueueNow; current -> Q14.
-                    return QueueAtFrontMain(incoming);
+                    return QueueAtFrontMain(incoming,retries);
                 case QueueActionPosition.Next:
-                    return QueueNextMain(incoming);
+                    return QueueNextMain(incoming,retries);
                 case QueueActionPosition.AtEnd:
-                    return QueueAtEndMain(incoming);
+                    return QueueAtEndMain(incoming,retries);
                 case QueueActionPosition.InParallel:
-                    return AddConcurrent(incoming);
+                    return AddConcurrent(incoming,retries);
                 default:
-                    SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.BadPosition", "");
-                    return 1;
+                    return InvalidPosition();
             }
         }
+    }
+
+    private static int InvalidPosition()
+    {
+        Behavior.SteppedBehavior.ReportMissing("M8-015 invalid-position Error 0x0053DB2C..0x0053DB70 exact key/format/EnumToString contract needs an expanded checked row; old fabricated BadPosition Warning removed");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return 1;
     }
 
     /// <summary>C6 ActionList::Cancel(type) 0x0053DE10..0x0053DE5E: clearing returns true; otherwise OR the queues' results; no erase/tick.</summary>
@@ -243,52 +255,52 @@ return 0;
     {
         if (!_queues.TryGetValue(0, out var q))
         {
-            q = new ActionQueue();
+            q = new ActionQueue(_log,_sourceLog);
             _queues[0] = q;
         }
         return q;
     }
 
-    private int QueueNowMain(IActionRunner incoming)
+    private int QueueNowMain(IActionRunner incoming,byte retries)
     {
-        MainQueue().QueueNow(incoming);
+        MainQueue().QueueNow(incoming,retries);
         return 0;
     }
 
-    private int QueueNextMain(IActionRunner incoming)
+    private int QueueNextMain(IActionRunner incoming,byte retries)
     {
-        MainQueue().QueueNext(incoming);
+        MainQueue().QueueNext(incoming,retries);
         return 0;
     }
 
-    private int QueueAtEndMain(IActionRunner incoming)
+    private int QueueAtEndMain(IActionRunner incoming,byte retries)
     {
-        MainQueue().QueueAtEnd(incoming);
+        MainQueue().QueueAtEnd(incoming,retries);
         return 0;
     }
 
     /// <summary>Q13/Q14/Q15 on the main queue.</summary>
-    private int QueueAtFrontMain(IActionRunner incoming)
+    private int QueueAtFrontMain(IActionRunner incoming,byte retries)
     {
         var q = MainQueue();
         if (q.Current is null)
         {
             // Q13: "no current + pending -> QueueNow; neither -> QueueAtEnd."
-            if (q.HasPending) q.QueueNow(incoming);
-            else q.QueueAtEnd(incoming);
+            if (q.HasPending) q.QueueNow(incoming,retries);
+            else q.QueueAtEnd(incoming,retries);
             return 0;
         }
-        if (!q.Interrupt(incoming))
+        if (!q.Interrupt(incoming,retries))
         {
             // Q15: an Interrupt refusal logs and falls back to QueueNow.
-            SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.InterruptRefused", "");
-            q.QueueNow(incoming);
+            Behavior.SteppedBehavior.ReportMissing("M8-015 QueueAtFront refusal diagnostic0x0053E51E..0x0053E578 exact key/format needs expanded checked row; old fabricated InterruptRefused Warning removed");
+            q.QueueNow(incoming,retries);
         }
         return 0;
     }
 
     /// <summary>Q12 IN_PARALLEL 0x0053DF2C..0x0053E076: the lowest free positive signed key from 1, a separate queue, append.</summary>
-    private int AddConcurrent(IActionRunner incoming)
+    private int AddConcurrent(IActionRunner incoming,byte retries)
     {
         int key = 1;
         while (_queues.ContainsKey(key))
@@ -296,9 +308,9 @@ return 0;
             if (key == int.MaxValue) return 1;      // no free slot: the AddConcurrent -1 -> API1
             key++;
         }
-        var q = new ActionQueue();
+        var q = new ActionQueue(_log,_sourceLog);
         _queues[key] = q;
-        q.QueueAtEnd(incoming);
+        q.QueueAtEnd(incoming,retries);
         return 0;
     }
 
@@ -319,7 +331,8 @@ return 0;
         {
             if (q.HasPendingReference(incoming))
             {
-                SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Warning, null, "ActionList.QueueAction.Duplicate", "");
+                if(incoming.NativeName is {} name)SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Warning,null,"ActionList.QueueAction.IsDuplicate",FormattableString.Invariant($"Attempting to queue duplicate action {name} [{unchecked((int)incoming.Tag)}]"));
+                else Behavior.SteppedBehavior.ReportMissing("M8-015 duplicate Warning0x0053DD62: incoming native action name not supplied; no invented log text");
                 return true;
             }
         }

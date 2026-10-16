@@ -35,6 +35,10 @@ internal sealed class ActionWatcher
 
     /// <summary>D2: the game gate. False in production (the stack has no engine-to-game sink); settable for tests.</summary>
     public bool HasExternalInterface { get; set; }
+    internal uint? RobotId {get;set;}
+    internal Func<float>? ClockSeconds;
+    internal SourceLogSink? SourceLog;
+    internal Action<string>? LegacyLog;
 
     /// <summary>
     /// D6: the local stand-in for <c>Robot::Broadcast(MessageEngineToGame(RobotCompletedAction))</c> (0x0053FAAA..0x0053FAB2).
@@ -121,7 +125,7 @@ internal sealed class ActionWatcher
             if (!root.Children.Contains(node)) root.Children.Add(node);
         }
 
-        uint union = runner.GetCompletionUnion();          // W3: virtual union BEFORE GetSubActionResults
+        uint union = runner is ActionRunner baseRunner?baseRunner.PreparedCompletionUnion:runner.GetCompletionUnion(); // base vptr/cache after destruction; W3: virtual union BEFORE GetSubActionResults
         var subs = new List<uint>();
         GetSubActionResults(tag, subs);                    // W3: then the descendants
         node.Record = new RobotCompletedAction(tag, type, result, subs, union);
@@ -150,7 +154,19 @@ internal sealed class ActionWatcher
         while (_deque.Count > 0)
         {
             var record = _deque.Peek();
-            foreach (var callback in _callbacks.Values) callback(record);
+            int? previous=null;
+            while(true)
+            {
+                KeyValuePair<int,Action<RobotCompletedAction>>? next=null;
+                foreach(var entry in _callbacks)if(previous is null||entry.Key>previous.Value){next=entry;break;}
+                if(next is not {} current)break;
+                previous=current.Key;current.Value(record);
+                if(!_callbacks.ContainsKey(current.Key))
+                {
+                    Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 ActionWatcher callback erased its own native iterator at native successor read0x005418B2; skip remaining callbacks of this record, retain later deque records");
+                    break;
+                }
+            }
             _deque.Dequeue();
         }
         Parent = null;

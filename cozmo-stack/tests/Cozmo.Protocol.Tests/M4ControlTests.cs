@@ -1293,6 +1293,8 @@ public class M4ControlTests
     {
         public float Now;
         public TimeoutProbe() : base(0, 0) { }
+        // Explicit test input for native +0x48; a CLR type-name fallback is not recovered engine data.
+        protected override string ActionName => "TimeoutProbe";
         protected override float EngineClockSeconds => Now;
         public override uint CheckIfDone() => EngineActionResult.Running;
         public override bool CanInterrupt() => false;

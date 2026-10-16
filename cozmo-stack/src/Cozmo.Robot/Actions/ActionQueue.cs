@@ -12,6 +12,9 @@ internal sealed class ActionQueue : IDisposable
     private readonly LinkedList<IActionRunner> _pending = new();
     private readonly HashSet<uint> _deletionTags = new();
     private bool _clearing;
+    private readonly Action<string>? _log;
+    private readonly SourceLogSink? _sourceLog;
+    internal ActionQueue(Action<string>? log=null,SourceLogSink? sourceLog=null){_log=log;_sourceLog=sourceLog;}
 
     /// <summary>current +0.</summary>
     public IActionRunner? Current => _current;
@@ -44,19 +47,17 @@ internal sealed class ActionQueue : IDisposable
         if (_current is { } c)
         {
             c.Cancel();
-            DeleteRunner(c);
-            _current = null;
+            DeleteCurrent(c);
         }
         while (_pending.First is { } node)
         {
-            DeleteRunner(node.Value);
-            _pending.RemoveFirst();
+            DeletePending(node,out _);
         }
         _clearing = false;
     }
 
     /// <summary>A5: the destructor is Clear, then the deletion set, then the pending list.</summary>
-    public void Dispose() => Clear();
+    public void Dispose(){Clear();_deletionTags.Clear();_pending.Clear();}
 
     /// <summary>
     /// A8 GetCurrentAction 0x0053F7E0..0x0053F7F4: the current if non-null, else the pending front if any, else
@@ -80,9 +81,13 @@ internal sealed class ActionQueue : IDisposable
         }
         watcher.ParentActionUpdating(_current);
         uint result = _current.Update();
-        if (result == EngineActionResult.Running) return 0;
-        DeleteRunner(_current);
-        _current = null;
+        if (result == EngineActionResult.Running)
+        {
+            Behavior.SteppedBehavior.ReportMissing("M8-015 Queue.Update RUNNING VizManager.SetText0x0053F65C and CozmoContext.SetSdkStatus(type1,name)0x0053F6F2 recipients are not bound; normal queue path is not classified SDK-only");
+            return 0;
+        }
+        Behavior.SteppedBehavior.ReportMissing("M8-015 Queue.Update terminal VizManager.SetText(empty)0x0053F696 / CozmoContext.SetSdkStatus(type1,empty)0x0053F6B4 recipients before Delete are not bound");
+        DeleteCurrent(_current);
         return result == EngineActionResult.Success || result == EngineActionResult.Cancelled ? 0 : 1;
     }
 
@@ -91,15 +96,18 @@ internal sealed class ActionQueue : IDisposable
     /// and prepend the incoming before the pending front. Pending empty: Cancel the current first (if non-null),
     /// then Delete it, then QueueAtEnd. No synchronous Init/Update.
     /// </summary>
-    public void QueueNow(IActionRunner incoming)
+    public void QueueNow(IActionRunner incoming,byte retries=0)
     {
         if (_pending.Count > 0)
         {
             if (_current is { } c)
             {
-                DeleteRunner(c);                 // Q6: WITHOUT Cancel; the old state can remain RUNNING
-                _current = null;
+                if(c.NativeName is {} oldName&&incoming.NativeName is {} newName)
+                    SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Debug,"Unnamed","ActionQueue.QueueNow.CancelingPrevious",FormattableString.Invariant($"Canceling {oldName} [{unchecked((int)c.Tag)}] in favor of action {newName} [{unchecked((int)incoming.Tag)}]"));
+                else Behavior.SteppedBehavior.ReportMissing("M8-015 QueueNow Debug0x0053E2A6: native action names not supplied");
+                DeleteCurrent(c);                // Q6: WITHOUT Cancel; the old state can remain RUNNING
             }
+            incoming.RetriesRemain=retries;
             _pending.AddFirst(incoming);
         }
         else
@@ -107,22 +115,22 @@ internal sealed class ActionQueue : IDisposable
             if (_current is { } c)
             {
                 c.Cancel();                      // Q7: Cancel (0x0053E350) BEFORE Delete (0x0053E35E)
-                DeleteRunner(c);
-                _current = null;
+                DeleteCurrent(c);
             }
-            _pending.AddLast(incoming);          // QueueAtEnd 0x0053E36E
+            QueueAtEnd(incoming,retries);          // QueueAtEnd 0x0053E36E
         }
     }
 
     /// <summary>Q11 AT_END 0x0053E16C..0x0053E248: append at the tail.</summary>
-    public void QueueAtEnd(IActionRunner incoming) => _pending.AddLast(incoming);
+    public void QueueAtEnd(IActionRunner incoming,byte retries=0){incoming.RetriesRemain=retries;_pending.AddLast(incoming);}
 
     /// <summary>
     /// Q10 NEXT 0x0053E078..0x0053E168: pending count 0 appends; otherwise insert BEFORE the SECOND pending node
     /// (current R, pending [A,B] -> R, [A,new,B]).
     /// </summary>
-    public void QueueNext(IActionRunner incoming)
+    public void QueueNext(IActionRunner incoming,byte retries=0)
     {
+        incoming.RetriesRemain=retries;
         if (_pending.Count == 0)
         {
             _pending.AddLast(incoming);
@@ -138,13 +146,15 @@ internal sealed class ActionQueue : IDisposable
     /// caller handles the Q15 fallback). If +0x56 is false and the state is RUNNING, unlock; Reset(false); state
     /// 0x03000009; pending becomes [new, old, residual] and the current is null. The old action is not destroyed.
     /// </summary>
-    public bool Interrupt(IActionRunner incoming)
+    public bool Interrupt(IActionRunner incoming,byte retries=0)
     {
         if (_current is null) return false;
         if (!_current.CanInterrupt()) return false;
         if (!_current.SuppressTrackLocking && _current.State == EngineActionResult.Running) _current.UnlockTracks();
         _current.Reset(false);
         _current.State = EngineActionResult.Interrupted;
+        Behavior.SteppedBehavior.ReportMissing("M8-015 QueueAtFront success Info0x0053E4E0 exact key/format needs expanded checked row; interrupt and byte-store/list order are built");
+        incoming.RetriesRemain=retries;
         _pending.AddFirst(_current);
         _pending.AddFirst(incoming);
         _current = null;
@@ -170,20 +180,18 @@ internal sealed class ActionQueue : IDisposable
         if (_current is { } c && (type == -1 || c.Type == type))
         {
             c.Cancel();
-            DeleteRunner(c);
-            _current = null;
+            DeleteCurrent(c);
             any = true;
         }
-        for (var node = _pending.First; node is not null; )
+        for(var node=_pending.First;node is not null;)
         {
-            var next = node.Next;
-            if (type == -1 || node.Value.Type == type)
+            if(type==-1||node.Value.Type==type)
             {
-                if (!DeleteRunner(node.Value)) break;
-                _pending.Remove(node);
-                any = true;
+                if(!DeletePending(node,out var next))break;
+                any=true;node=next;
+                if(node is not null&&node.List!=_pending){MissingFreedSuccessor();break;}
             }
-            node = next;
+            else node=node.Next;
         }
         return any;
     }
@@ -199,20 +207,19 @@ internal sealed class ActionQueue : IDisposable
         if (_current is { } c && c.Tag == idTag)
         {
             c.Cancel();
-            DeleteRunner(c);
-            _current = null;
+            DeleteCurrent(c);
             any = true;
         }
-        for (var node = _pending.First; node is not null; )
+        for(var node=_pending.First;node is not null;)
         {
-            var next = node.Next;
-            if (node.Value.Tag == idTag)
+            if(node.Value.Tag==idTag)
             {
-                if (!DeleteRunner(node.Value)) break;
-                _pending.Remove(node);
-                any = true;
+                if(any)SourceLogDispatch.GetSink(_sourceLog,_log)?.Invoke(EngineLogLevel.Warning,null,"ActionQueue.Cancel.DuplicateIdTags",FormattableString.Invariant($"Multiple actions with tag={unchecked((int)idTag)} found in queue"));
+                if(!DeletePending(node,out var next))break;
+                any=true;node=next;
+                if(node is not null&&node.List!=_pending){MissingFreedSuccessor();break;}
             }
-            node = next;
+            else node=node.Next;
         }
         return any;
     }
@@ -223,6 +230,15 @@ internal sealed class ActionQueue : IDisposable
     /// </summary>
     public bool Delete(IActionRunner runner) => DeleteRunner(runner);
 
+    private bool DeleteCurrent(IActionRunner runner)=>DeleteRunner(runner,()=>_current=null);
+    private bool DeletePending(LinkedListNode<IActionRunner> node,out LinkedListNode<IActionRunner>? next)
+    {
+        LinkedListNode<IActionRunner>? successor=node;
+        bool result=DeleteRunner(node.Value,()=>{successor=node.Next;_pending.Remove(node);});
+        next=successor;return result;
+    }
+    private static void MissingFreedSuccessor()=>Behavior.SteppedBehavior.ReportMissing("M1-034/M8-015 pending Cancel successor was removed by synchronous completion; native iterator at0x0053E6E8/0x0053E6EE would read freed list storage: skip this pending traversal tail");
+
     // fidelity: M8-015
     /// <summary>
     /// D1..D7: the queue deletion path. D1 inserts tag+60 into the queue deletion set (a duplicate returns false);
@@ -231,16 +247,18 @@ internal sealed class ActionQueue : IDisposable
     /// gate); D5/W10 the destructor queues the watcher destruction event; D6 sends the game record AFTER the
     /// destructor; D7 erases the guard tag AFTER the broadcast.
     /// </summary>
-    private bool DeleteRunner(IActionRunner runner)
+    private bool DeleteRunner(IActionRunner runner,Action? unlink=null)
     {
-        if (!_deletionTags.Add(runner.Tag)) return false;             // D1
+        uint tag=runner.Tag;
+        if (!_deletionTags.Add(tag)) return false;             // D1
         runner.Prep();                                                // D2
         // The queue's runner surface is IActionRunner; only an ActionRunner carries the watcher (design point 3).
         var watcher = (runner as ActionRunner)?.Watcher;
         var record = watcher?.BuildCompletedAction(runner);           // D3 before the destructor
         runner.WatcherEnding();                                       // D5: destructor -> ActionEnding enqueues
+        unlink?.Invoke();                                            // D3: clear caller ref/unlink+advance BEFORE broadcast
         if (record is { } r) watcher!.SendGameMessage(r);             // D6 after the destructor
-        _deletionTags.Remove(runner.Tag);                             // D7 after the broadcast
+        _deletionTags.Remove(tag);                             // D7 after the broadcast
         return true;
     }
 }

@@ -44,6 +44,7 @@ public enum QueueActionPosition : byte
 public interface IActionRunner
 {
     /// <summary>+0x18: the stored result; NOT_STARTED 0x02000001, RUNNING 0x01000000, CANCELLED 0x02000000, else a full terminal result.</summary>
+    string? NativeName => null;
     uint State { get; set; }
     /// <summary>+8: the remaining retries, assigned from the queue's byte argument (Q6/Q10/Q11/Q14).</summary>
     byte RetriesRemain { get; set; }
@@ -157,12 +158,25 @@ public abstract class ActionRunner : IActionRunner
     public Action<string>? Log { get; set; }
     public SourceLogSink? SourceLog { get; set; }
 
+    private void EmitSource(EngineLogLevel level,string? channel,string key,string text)
+    {
+        bool needsName=key is "IActionRunner.SetMotionProfile.Unused" or "IActionRunner.Update.TracksLocked" or "IActionRunner.Update.ActionCompleted"
+            or "IAction.Update.TimedOut" or "IAction.Update.PreconditionsMet" or "IAction.Update.CurrentActionFailedRetrying"
+            or "IActionRunner.SetTag" or "IActionRunner.PrepForCompletion.AlreadyPrepped" or "IActionRunner.Cancel" or "IActionRunner.Destroy.StopMovement";
+        if(needsName&&NativeName is null)
+        {Behavior.SteppedBehavior.ReportMissing("M8-015 native action name+0x48 not supplied for "+key+"; CLR type name is not an engine source name");return;}
+        SourceLogDispatch.GetSink(SourceLog??Watcher?.SourceLog,Log??Watcher?.LegacyLog)?.Invoke(level,channel,key,text);
+    }
+
+    private readonly bool _hasSuppliedNativeName;
     private bool _prepped;                       // L13: +0x55 guard
+    internal uint PreparedCompletionUnion=>_completionUnion;
     private uint _completionUnion;               // L13: +0x1C cache
     private readonly List<Action<uint>> _completionCallbacks = new();   // L1: callback list +0x64
 
     protected ActionRunner(int type, uint requiredTrackMask)
     {
+        _hasSuppliedNativeName=GetType().GetProperty(nameof(ActionName),System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic)?.GetMethod?.DeclaringType is {} owner&&owner!=typeof(ActionRunner);
         Type = type;
         RequiredTrackMask = requiredTrackMask;
         // C1: the ctor takes a new id from the global counter and collision-checks the in-use set; original +0x5C
@@ -191,10 +205,10 @@ public abstract class ActionRunner : IActionRunner
     // defaults are 0, 0 and 30.0 s (0x41F00000, 0x0052B0BA..0x0052B0C8).
     protected virtual float PreDelaySeconds => 0f;
     protected virtual float PostDelaySeconds => 0f;
-    public float TimeoutSeconds { get; set; } = BitConverter.Int32BitsToSingle(unchecked((int)0x41F00000));
+    public virtual float TimeoutSeconds { get; set; } = BitConverter.Int32BitsToSingle(unchecked((int)0x41F00000));
 
     // fidelity: M8-015
-    // +0x57: the timeout-warning flag; defaults to 1 from the ctor's +0x55 = 0x10000 store (0x0053FE18..0x0053FE1C).
+    // +0x57: the timeout/precondition/retry/completion logging flag; defaults to 1 from the ctor's +0x55 = 0x10000 store (0x0053FE18..0x0053FE1C).
     public bool TimeoutWarningEnabled { get; set; } = true;
     /// <summary>The runner's name string (+0x48, set from the ctor's name argument): the "%s" of the engine's action logs.
     /// A concrete action overrides it with its engine name; the default is only the C# type name (the engine name of
@@ -205,9 +219,18 @@ public abstract class ActionRunner : IActionRunner
 
     // The "[%d]" of the action logs is the current tag (+0x60), printed as a signed int.
     private int TagForLog => unchecked((int)Tag);
+    public string? NativeName=>_hasSuppliedNativeName?ActionName:null;
+    internal string? SourceStatus {get;private set;}
 
     /// <summary>The engine clock (<c>BaseStationTimer::GetCurrentTimeInSeconds</c>, 0x00540D4A..0x00540D4E).</summary>
-    protected virtual float EngineClockSeconds => 0f;
+    protected virtual float EngineClockSeconds
+    {
+        get
+        {
+            if(Watcher?.ClockSeconds is {} clock)return clock();
+            Behavior.SteppedBehavior.ReportMissing("M8-015 standalone runner has no native BaseStationTimer input; legacy zero-clock helper retained, not production source timing");return 0f;
+        }
+    }
 
     // fidelity: M8-015
     // W7/W8/W9: the watcher this runner reports its nesting and destruction to. The stack's seam for the engine's
@@ -231,8 +254,8 @@ public abstract class ActionRunner : IActionRunner
     protected virtual bool HasCustomMotionProfile => false;
 
     // L6: the lock/unlock owner is to_string(int) of the signed tag; the destructor stop-owner is to_string(unsigned).
-    private string LockOwner => ((int)Tag).ToString();
-    private string StopOwner => ((uint)Tag).ToString();
+    private string LockOwner => unchecked((int)Tag).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    private string StopOwner => Tag.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     // L9: the concrete Init (base Init at 0x005413CA returns 0) and CheckIfDone (pure virtual). L13: the base
     // completion-union getter copies +0x1C. L4: SetMotionProfile returns false when there is no custom profile.
@@ -245,7 +268,7 @@ public abstract class ActionRunner : IActionRunner
     public void AddCompletionCallback(Action<uint> callback) => _completionCallbacks.Add(callback);
     public virtual void RunCompletionCallbacks(uint result)
     {
-        foreach (var cb in _completionCallbacks) cb(result);
+        for(int i=0;i<_completionCallbacks.Count;i++)_completionCallbacks[i](result);
     }
 
     // L18: ForceComplete writes SUCCESS.
@@ -278,7 +301,7 @@ public abstract class ActionRunner : IActionRunner
             if (HasCustomMotionProfile && !SetMotionProfile())
                 // fidelity: M8-015
                 // Event "IActionRunner.SetMotionProfile.Unused", channel "Actions"; the level is kept as the stack had it (info).
-                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Actions", "IActionRunner.SetMotionProfile.Unused", FormattableString.Invariant($"Action {ActionName} [{TagForLog}] unable to set motion profile. Perhaps speeds already set manually?"));
+                EmitSource(EngineLogLevel.Info, "Actions", "IActionRunner.SetMotionProfile.Unused", FormattableString.Invariant($"Action {ActionName} [{TagForLog}] unable to set motion profile. Perhaps speeds already set manually?"));
             // L4: store RUNNING BEFORE the lock check.
             State = EngineActionResult.Running;
             // L5: +0x56 bypasses AreAnyTracksLocked and LockTracks; otherwise a locked required mask fails
@@ -289,7 +312,8 @@ public abstract class ActionRunner : IActionRunner
                 {
                     // "TracksLockedOnChargerInSDK" (gated on robot+0x338 on-charger AND SDK mode) is unreachable here:
                     // SDK mode is unsupported in this stack, so that separate path is not built.
-                    SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "IActionRunner.Update.TracksLocked", "");
+                    EmitSource(EngineLogLevel.Warning, null, "IActionRunner.Update.TracksLocked", FormattableString.Invariant($"Action {ActionName} [{TagForLog}] not running because required tracks are locked"));
+                    Behavior.SteppedBehavior.ReportMissing("M8-007/M8-015 TracksLockedBecause Warning0x00540530: MovementComponent.WhoIsLocking native string recipient0x00540506 is not bound; no invented owner-description text");
                     State = EngineActionResult.TracksLocked;
                     Watcher?.ActionEndUpdating();
                     return State;
@@ -300,19 +324,26 @@ public abstract class ActionRunner : IActionRunner
         }
         else
         {
-            // L3: a terminal stored state -> Prep/ActionEndUpdating without CheckIfDone.
-            Prep();
-            Watcher?.ActionEndUpdating();
-            return State;
+            // L1: stored terminal state joins ActionCompleted/Prep without UpdateInternal.
+            result=State;
         }
 
         // L13: store the virtual result over +0x18. The native always calls ActionEndUpdating after storing (a
         // RUNNING result branches at 0x005405A2 to 0x54062C); only PrepForCompletion (0x540626) is skipped for
         // RUNNING.
         State = result;
-        if (result != EngineActionResult.Running) Prep();
+        if(result!=EngineActionResult.Running)
+        {
+            if(TimeoutWarningEnabled)
+            {
+                string? name=KnownResultName(result);
+                if(name is null)Behavior.SteppedBehavior.ReportMissing("M8-015 ActionCompleted full ActionResult EnumToString recipient0x005405CA missing for0x"+result.ToString("X8"));
+                else EmitSource(EngineLogLevel.Info,"Actions","IActionRunner.Update.ActionCompleted",FormattableString.Invariant($"{ActionName} [{TagForLog}] {(result==0?"succeeded":result==0x02000000?"was cancelled":"failed")} with state {name}."));
+            }
+            Prep();
+        }
         Watcher?.ActionEndUpdating();
-        return result;
+        return State;
     }
 
     /// <summary>
@@ -326,6 +357,7 @@ public abstract class ActionRunner : IActionRunner
     /// </summary>
     protected virtual uint UpdateInternal()
     {
+        SourceStatus=NativeName;
         float now = EngineClockSeconds;
         if (StartTime < 0f) StartTime = now;                       // L7: stamp BEFORE Init
         float pre = PreDelaySeconds;                               // L8: +0x24
@@ -340,20 +372,26 @@ public abstract class ActionRunner : IActionRunner
             // (0x00540EB6): event "IAction.Update.TimedOut" (0x00540FE0), format "%s timed out after %.1f seconds."
             // (0x00540FF8), the timeout from slot 0x2C. sWarningF carries no channel.
             if (TimeoutWarningEnabled)
-                SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "IAction.Update.TimedOut", FormattableString.Invariant($"{ActionName} timed out after {timeout:F1} seconds."));
+                EmitSource(EngineLogLevel.Warning, null, "IAction.Update.TimedOut", FormattableString.Invariant($"{ActionName} timed out after {TimeoutSeconds:F1} seconds."));
             return Finish(EngineActionResult.Timeout);
         }
         // L8: else now < f32(f32(start + pre) + post) -> RUNNING wait.
-        if (now < (StartTime + pre) + post) return EngineActionResult.Running;
+        if (!(now >= (StartTime + pre) + post)) return EngineActionResult.Running; // ARM BLT includes unordered
 
         // L9: gates pass.
         if (!Initialized)
         {
+            SourceStatus=NativeName is {} n?n+": check preconditions":null;
             int r = Init();
-            if (r == 0) Initialized = true;
+            if(r==0)
+            {
+                if(TimeoutWarningEnabled)EmitSource(EngineLogLevel.Debug,"Actions","IAction.Update.PreconditionsMet",FormattableString.Invariant($"Preconditions for {ActionName} [{TagForLog}] successfully met."));
+                Initialized=true;
+            }
             if (Initialized) return Finish(CheckIfDone());
             return Finish(unchecked((uint)r));                     // a nonzero Init with init still false
         }
+        SourceStatus=NativeName is {} doneName?doneName+": check if done":null;
         return Finish(CheckIfDone());                              // already init
     }
 
@@ -363,14 +401,26 @@ public abstract class ActionRunner : IActionRunner
         if ((result >> 24) == 4 && RetriesRemain > 0)
         {
             RetriesRemain--;
+            if(TimeoutWarningEnabled)
+            {
+                if(Watcher?.RobotId is {} robotId)EmitSource(EngineLogLevel.Info,"Actions","IAction.Update.CurrentActionFailedRetrying",FormattableString.Invariant($"Robot {unchecked((int)robotId)} failed running action {ActionName}. Retrying."));
+                else Behavior.SteppedBehavior.ReportMissing("M8-015 retry Info0x00540E3E: runner has no supplied native robot ID");
+            }
             StartTime = BitConverter.Int32BitsToSingle(unchecked((int)0xBF800000));
             Initialized = false;
             State = EngineActionResult.NotStarted;                 // transient; outer stores RUNNING
             return EngineActionResult.Running;
         }
-        RunCompletionCallbacks(result);
+        if(result!=EngineActionResult.Running)RunCompletionCallbacks(result);
         return result;
     }
+
+    // Checked names from M8 check1 §7 / OV18 full result constants; other names remain explicit gaps.
+    private static string? KnownResultName(uint result)=>result switch
+    {
+        0=>"SUCCESS",0x01000000=>"RUNNING",0x02000000=>"CANCELLED_WHILE_RUNNING",0x02000001=>"NOT_STARTED",
+        0x03000018=>"TIMEOUT",0x03000019=>"TRACKS_LOCKED",0x04000000=>"RETRY",_=>null
+    };
 
     /// <summary>
     /// L13 PrepForCompletion 0x00540750..0x005407C2: the +0x55 guard; the first call copies the virtual
@@ -381,7 +431,7 @@ public abstract class ActionRunner : IActionRunner
         if (_prepped)
         {
             // fidelity: M8-015
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Actions", "IActionRunner.PrepForCompletion.AlreadyPrepped", FormattableString.Invariant($"{ActionName} [{TagForLog}]"));
+            EmitSource(EngineLogLevel.Debug, "Actions", "IActionRunner.PrepForCompletion.AlreadyPrepped", FormattableString.Invariant($"{ActionName} [{TagForLog}]"));
             return;
         }
         _completionUnion = GetCompletionUnion();
@@ -398,7 +448,7 @@ public abstract class ActionRunner : IActionRunner
         if (State == EngineActionResult.NotStarted) return;
         // fidelity: M8-015
         // Info channel "Actions", event "IActionRunner.Cancel", "Cancelling action %s[%d]" (name, tag; no space before "[").
-        SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Info, "Actions", "IActionRunner.Cancel", FormattableString.Invariant($"Cancelling action {ActionName}[{TagForLog}]"));
+        EmitSource(EngineLogLevel.Info, "Actions", "IActionRunner.Cancel", FormattableString.Invariant($"Cancelling action {ActionName}[{TagForLog}]"));
         State = EngineActionResult.Cancelled;
     }
 
@@ -412,7 +462,7 @@ public abstract class ActionRunner : IActionRunner
         {
             // fidelity: M8-015
             // sWarningF event "IActionRunner.SetTag": "Action %s [%d] is running unable to set tag to %d" (name, tag, requested).
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Warning, null, "IActionRunner.SetTag", FormattableString.Invariant($"Action {ActionName} [{TagForLog}] is running unable to set tag to {unchecked((int)requested)}"));
+            EmitSource(EngineLogLevel.Warning, null, "IActionRunner.SetTag", FormattableString.Invariant($"Action {ActionName} [{TagForLog}] is running unable to set tag to {unchecked((int)requested)}"));
             State = EngineActionResult.BadTag;
             return false;
         }
@@ -422,7 +472,7 @@ public abstract class ActionRunner : IActionRunner
             // fidelity: M8-015
             // sErrorF event "IActionRunner.SetTag.InvalidTag": "Tag [%d] is invalid", then the error-flag store and the
             // debug-break gate (the same helper as the other sErrorF sites).
-            SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "IActionRunner.SetTag.InvalidTag", FormattableString.Invariant($"Tag [{unchecked((int)requested)}] is invalid"));
+            EmitSource(EngineLogLevel.Error, null, "IActionRunner.SetTag.InvalidTag", FormattableString.Invariant($"Tag [{unchecked((int)requested)}] is invalid"));
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             State = EngineActionResult.BadTag;
             return false;
@@ -466,10 +516,24 @@ public abstract class ActionRunner : IActionRunner
     /// </summary>
     public virtual void WatcherEnding()
     {
-        // L15: the stop checks are NOT gated by +0x56.
-        if (HeadTrackMoving && AreAllTracksLockedBy(1, StopOwner)) StopHeadTrack();
-        if (LiftTrackMoving && AreAllTracksLockedBy(2, StopOwner)) StopLiftTrack();
-        if (BodyTrackMoving && AreAllTracksLockedBy(4, StopOwner)) StopBodyTrack();
+        if(!_prepped)
+        {
+            EmitSource(EngineLogLevel.Error,null,"IActionRunner.Destructor.NotPreppedForCompletion",FormattableString.Invariant($"[{TagForLog}]"));
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+        }
+        Behavior.SteppedBehavior.ReportMissing("M8-015 destructor owns-profile byte+0x58/ClearCustomMotionProfile0x005410F6 recipient is not bound; Path.HasCustomMotionProfile is a different input; no invented profile reset");
+        ActionRunnerTagCounter.Global.Release(Tag);ActionRunnerTagCounter.Global.Release(OriginalTag);
+        // L15: head/lift/body stop checks are NOT gated by +0x56.
+        uint stopped=0;
+        if (HeadTrackMoving && AreAllTracksLockedBy(1, StopOwner)){StopHeadTrack();stopped|=1;}
+        if (LiftTrackMoving && AreAllTracksLockedBy(2, StopOwner)){StopLiftTrack();stopped|=2;}
+        if (BodyTrackMoving && AreAllTracksLockedBy(4, StopOwner)){StopBodyTrack();stopped|=4;}
+        if(stopped!=0)
+        {
+            string text="";
+            for(int bit=0;bit<3;bit++)if((stopped&(1u<<bit))!=0)text+=CozmoMotion.AnimTrackFlagsToString((byte)(1<<bit))+", ";
+            EmitSource(EngineLogLevel.Info,"Actions","IActionRunner.Destroy.StopMovement",FormattableString.Invariant($"Stopping movement on the following tracks since they were locked and are still moving: {text}[{ActionName}][{unchecked((int)OriginalTag)}]"));
+        }
         // L16: the declared-mask release after the stops.
         if (!SuppressTrackLocking && State != EngineActionResult.NotStarted)
             UnlockTracksInternal(RequiredTrackMask, LockOwner);

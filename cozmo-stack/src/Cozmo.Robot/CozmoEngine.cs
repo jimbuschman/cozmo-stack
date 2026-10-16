@@ -750,7 +750,7 @@ public sealed partial class EngineRobot
         engine.NvStorage?.EnsureBackup(); // M15-038: the new Robot's NV owner precedes Messaging's first C9 subscription.
         NativeRobotId=robotId;
         Idle = new IdleTimeoutComponent(this);
-        _actionList = new ActionList(engine.Log, (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text));
+        _actionList = new ActionList(engine.Log, (level, channel, key, text) => engine.EmitSourceLog(level, channel, key, text),NativeRobotId,()=>engine.Timer.SecondsF);
         // D2: initially off until host lifetime binding wires GameSend to the E2G signal (M5-063).
         // The public completed-action payload/union boundary remains owned by M7-020.
         _actionList.Watcher.HasExternalInterface = false;
