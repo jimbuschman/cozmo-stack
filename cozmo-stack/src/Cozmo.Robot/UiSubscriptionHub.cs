@@ -9,6 +9,17 @@ internal sealed class UiSubscriptionHub : IDisposable
     private readonly object _gate = new();
     private readonly Dictionary<ushort, Signal> _g2e = new(), _e2g = new();
     private bool _disposed;
+    // fidelity: M8-023, M8-027 — checked unlink mechanics do not settle captured-owner finalization.
+    private readonly HashSet<string> _captureMissing=new();
+    private const string CaptureRetirementGap="M8-023/M8-027 ProtoHandle callable destruction0x0066350E and node+0x20 release0x0066352E..0x00663560: native captured-owner finalization/producer census is unbuilt; managed delegate retirement does not certify no side effects";
+    private void ReportCaptureRetirement()=>Behavior.SteppedBehavior.ReportMissing(CaptureRetirementGap,_captureMissing);
+    // Engine shutdown has already removed its global missing-report subscription. Preserve this
+    // already-reported gap on that engine's stack channel without holding signal/diagnostic locks.
+    internal void ReportRetirementAtShutdown(Action<string> stackLog)
+    {
+        bool present;lock(_captureMissing)present=_captureMissing.Count!=0;
+        if(present)stackLog("MISSING: "+CaptureRetirementGap);
+    }
     internal Action<string>? ReleaseObserved;
 
     private sealed class Token
@@ -21,10 +32,12 @@ internal sealed class UiSubscriptionHub : IDisposable
     {
         internal readonly Token Lifetime = new();
         internal readonly LinkedList<Action<object?>?> Nodes = new();
-        internal void Destroy()
+        internal bool Destroy()
         {
-            while (Nodes.First is { } node) { node.Value = null; Nodes.Remove(node); }
+            bool retired=false;
+            while (Nodes.First is { } node) { retired|=node.Value is not null;node.Value = null; Nodes.Remove(node); }
             Lifetime.Release(); // 0x006634B8..0x006634E4: nodes before token.
+            return retired;
         }
     }
 
@@ -44,6 +57,7 @@ internal sealed class UiSubscriptionHub : IDisposable
             // its native lifetime token alive: Destroy explicitly retires the signal's owner.
             return new RetainedSubscription(() =>
             {
+                bool retired=false;
                 lock (_gate)
                 {
                     if (!weak.TryGetTarget(out var token) || !token.Lock()) return;
@@ -52,12 +66,14 @@ internal sealed class UiSubscriptionHub : IDisposable
                     for (var cursor = signal.Nodes.First; cursor is not null; cursor = cursor.Next)
                     {
                         if (!ReferenceEquals(cursor, node)) continue;
+                        retired=cursor.Value is not null;
                         cursor.Value = null; // callback destruction precedes neighbor patching.
                         signal.Nodes.Remove(cursor); // 0x006634F4..0x0066352A, then node refcount/free.
                         ReleaseObserved?.Invoke($"unlink {(engineToGame ? "E2G" : "G2E")} {tag:X2}");
                         break;
                     }
                 }
+                if(retired)ReportCaptureRetirement(); // Stack callout outside topology lock.
             });
         }
     }
@@ -87,14 +103,16 @@ internal sealed class UiSubscriptionHub : IDisposable
     {lock(_gate){var map=engineToGame?_e2g:_g2e;return map.TryGetValue(tag,out var signal)?signal.Nodes.Count:0;}}
     public void Dispose()
     {
+        bool retired=false;
         lock (_gate)
         {
             if (_disposed) return;
             _disposed = true;
-            foreach (var signal in _g2e.Values) signal.Destroy();
+            foreach (var signal in _g2e.Values) retired|=signal.Destroy();
             _g2e.Clear();
-            foreach (var signal in _e2g.Values) signal.Destroy();
+            foreach (var signal in _e2g.Values) retired|=signal.Destroy();
             _e2g.Clear();
         }
+        if(retired)ReportCaptureRetirement();
     }
 }

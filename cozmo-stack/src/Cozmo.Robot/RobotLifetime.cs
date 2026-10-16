@@ -17,6 +17,8 @@ internal sealed class RobotLifetime
     private void Missing(uint address, int offset)
     {
         string detail=offset switch {
+            0x44=>"M8-016/M8-023 native BehaviorManager ownership tree/child finalization is unbound; host FreeplayStack cleanup is separate",
+            0x48=>"M8-016/M8-023 native BSM container/audio ownership is unbound; activity update path is unreachable, not the entire allocation",
             0x440=>"M7-023 MoodManager: no host MoodState bound; native per-Robot constructor/Init producer remains missing outside FreeplayStack",
             0x448=>"M15-027 progression: scoped vector+1C, trees+10/+4 and allocation; concrete native owner not bound",
             0x444=>"M15-027 inventory: tree+120, scoped vector+114 and allocation; concrete native owner not bound",

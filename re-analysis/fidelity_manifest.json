@@ -11756,10 +11756,10 @@
       ],
       "effect": "Logs, events or sends during behaviour teardown that the stack may not reproduce.",
       "provenance": "Opus check of OV19 (2026-10-14), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed destructor bodies for logs, events, sends and external state writes. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov53-55-check.md): IMPLEMENTATION_GAP for the destructor bodies/orders and closures 1-3 (closure 3 accepted on the offset scan: FactoryTest cannot run in the shipped app outside SDK, so nothing observable depends on it). CloseLog fires only if StartLog ran (never in the shipped app). EraseVisualization's VizManager traffic is dead (SendVizMessage bx lr 0x006C05EC). The IBehavior +0x88 capture census is M8-024's; the ProtoHandle callable census is M8-027. Pure-virtual traps 0x005B5298, 0x006134E4, 0x0060B72C unreachable.",
+      "unresolved": "RECOVERABLE_GAP: read the listed destructor bodies for logs, events, sends and external state writes. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov53-55-check.md): IMPLEMENTATION_GAP for the destructor bodies/orders and closures 1-3 (closure 3 accepted on the offset scan: FactoryTest cannot run in the shipped app outside SDK, so nothing observable depends on it). CloseLog fires only if StartLog ran (never in the shipped app). EraseVisualization's VizManager traffic is dead (SendVizMessage bx lr 0x006C05EC). The IBehavior +0x88 capture census is M8-024's; the ProtoHandle callable census is M8-027. Pure-virtual traps 0x005B5298, 0x006134E4, 0x0060B72C unreachable. B-M8-6 (2026-10-16), bounded diagnostics awaiting strong verification; BLOCKED: checked OV55 destructor orders compared with host graph. IActivity/chooser/seven strategy/WantsToRun/derived activity native shared-control owners and Robot+44/+48 bindings remain absent, as M8-016 already records. No orphan ordered-release adapter or Stop/OnDeselected substitution built. Actual missing RobotLifetime owner diagnostics now name M8-016/M8-023; host Manager.Dispose explicitly labels separate Stop/strategy cleanup. UI E2G/G2E unlink/owner retirement emits stack M8-027 missing captured-owner finalization after releasing topology lock; payload not invoked. Node+20 constructor/emitter reference producer not fabricated from managed GC. Checked closures1-3 no-op destroys and FactoryTest/Viz unreachable effects retained; no record settlement.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "; BehaviorTeardownBoundaryTests (diagnostic/handle mechanics only, not native destructor-graph acceptance)"
     },
     {
       "id": "M8-024",
@@ -11824,10 +11824,10 @@
       ],
       "effect": "Side effects of destroying subscriber callables at robot and engine teardown.",
       "provenance": "Opus check of OV53-OV55 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: enumerate the subscriber callables held by ProtoHandles at teardown and read each destroy body (expected mostly bx lr).",
+      "unresolved": "RECOVERABLE_GAP: enumerate the subscriber callables held by ProtoHandles at teardown and read each destroy body (expected mostly bx lr). B-M8-6 (2026-10-16): UiSubscriptionHub actual nonnull callback unlink and signal-owner destruction visibly report unbuilt native captured-owner finalization0x0066350E/node+20 release0x0066352E..0x00663560 on stack channel, deduplicated per hub after storage lock release. This is not subscriber operator() invocation, a native empty-capture proof, or a complete eight-kind callback census. M8-024 +88 remains separate. Engine shutdown detaches its global missing sink before destruction; CozmoEngine now forwards the already-reported hub gap to its own stack log after hub retirement, so the diagnostic remains visible without reordering destruction or adding a source log.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "; BehaviorTeardownBoundaryTests (diagnostic/handle mechanics only, not native destructor-graph acceptance)"
     },
     {
       "id": "M11-056",

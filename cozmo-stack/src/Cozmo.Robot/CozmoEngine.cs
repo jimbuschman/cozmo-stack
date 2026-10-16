@@ -2353,6 +2353,7 @@ public sealed partial class CozmoEngine : IDisposable
         DestroyDataLoader?.Invoke(); // context +0x1C, after RobotManager: abort then join.
         DestructionObserved?.Invoke("loader");
         AnimationMessages.Dispose(); // G2E map, then E2G map (0x0066016E..0x00660184).
+        AnimationMessages.ReportRetirementAtShutdown(EmitStackLog); // M8-027: missing sink was detached before teardown.
         _backupUnlockHandle?.Dispose(); // expired context signal; no callback.
         DestructionObserved?.Invoke("hub");
     }

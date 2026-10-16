@@ -1011,6 +1011,7 @@ public sealed class BehaviorManager : IDisposable
     /// <summary>Stops what is running and releases the registered strategies' subscriptions.</summary>
     public void Dispose()
     {
+        SteppedBehavior.ReportMissing("M8-016/M8-023 host BehaviorManager.Dispose still performs host Stop/strategy unsubscribe cleanup; native activity/chooser/strategy shared-control tree ownership and destructor position0x005A0D22..0x005A0DFA are unbuilt; host cleanup is not a native destructor");
         Stop(BehaviorStopReason.Cancelled, 0);
         List<IReactionTriggerStrategy> strategies;
         lock (_gate)
