@@ -85,7 +85,7 @@ public class FreeplayTests
     {
         var obb = ObbRoot();
         double clock = 0;
-        var needs = obb is null ? new NeedsManager(() => clock) : NeedsManager.FromObb(obb, () => clock, new Random(1));
+        var needs = obb is null ? new NeedsManager(() => clock) : NeedsManager.FromObb(obb, () => clock, new Random(1), contextRandom: new Cozmo.Robot.Animation.EngineRandom(1));
         Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Energy));
         Assert.Equal(NeedBracketId.Full, needs.State.GetNeedBracket(NeedId.Energy));
         // the shipped brackets: Energy warning at 0.21, Play at 0.14, Repair at 0.27
@@ -110,7 +110,8 @@ public class FreeplayTests
             Assert.Equal(0.9 - 0.014, needs.State.GetNeedLevel(NeedId.Play), 5);
             // a need at Full waits out its fullness cooldown before decaying
             needs.SetLevel(NeedId.Repair, 1.0);
-            Assert.True(needs.RegisterNeedsActionCompleted("RepairHead"));
+            // The ApplyDelta return consumer is unread; supply the cooldown as a fixture input.
+            needs.SupplyFullnessWindowForTest(NeedId.Repair, 60, 180);
             clock = 120; needs.Update();
             Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Repair), 6);
         }
@@ -174,7 +175,7 @@ public class FreeplayTests
 
         using var rig = new Rig();
         double clock = 0;
-        var needs = NeedsManager.FromObb(obb, () => clock, new Random(1));
+        var needs = NeedsManager.FromObb(obb, () => clock, new Random(1), contextRandom: new Cozmo.Robot.Animation.EngineRandom(1));
         var ctx = Ctx(rig);
         ctx.Needs = needs;
         ctx.NeedsActionIds = ids;
@@ -551,15 +552,17 @@ public class FreeplayTests
             using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
             Assert.Equal(new[] { FreeplayPauseFlag.OffTreads }, stack.DataTracker.PausedFlags);
         }
-        // neither: unpaused, and the resume time is the creation time (12.5 s) rather than zero
+        // neither: unpaused; use the cached native timer rather than the host activity clock
         using (var rig = new Rig())
         {
             LoadAssets(rig, obb!);
             double clock = 12.5;
+            rig.Robot.Engine.Timer.UpdateTime(12_500_000_000);
             using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
             Assert.Empty(stack.DataTracker.PausedFlags);
             Assert.Equal(12_500_000_000UL, stack.DataTracker.LastResumeNanos);
             clock = 20;
+            rig.Robot.Engine.Timer.UpdateTime(20_000_000_000);
             stack.DataTracker.ForceUpdate();
             Assert.Equal(0UL, stack.DataTracker.AccumulatedNanos);
             Assert.Equal(20_000_000_000UL, stack.DataTracker.LastResumeNanos);
@@ -760,8 +763,8 @@ public class FreeplayTests
             new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
         var actions = new Dictionary<string, NeedsActionDelta> { ["Fill"] = new("Fill", 0, 0, 0, 0, 1.0, 0, 0, 0) };
         var needs = new NeedsManager(() => clock, cfg, decay, actions);
-        needs.SetLevel(NeedId.Play, 0.9);
-        Assert.True(needs.RegisterNeedsActionCompleted("Fill"));   // Play to Full; the fill time is 0
+        needs.SetLevel(NeedId.Play, 1);
+        needs.SupplyFullnessWindowForTest(NeedId.Play, 0, 100); // explicit producer input; return consumer is unread
 
         clock = 10; needs.Update(); needs.SetPaused(true);
         clock = 30; needs.Update(); needs.SetPaused(false);                        // a 20 s pause; fill 0 -> 20, deadline 100 -> 120
@@ -824,8 +827,8 @@ public class FreeplayTests
             new Dictionary<NeedId, IReadOnlyList<(double, double)>>());
         var actions = new Dictionary<string, NeedsActionDelta> { ["Fill"] = new("Fill", 0, 0, 0, 0, 1.0, 0, 0, 0) };
         var needs = new NeedsManager(() => clock, cfg, decay, actions);
-        needs.SetLevel(NeedId.Play, 0.9);
-        Assert.True(needs.RegisterNeedsActionCompleted("Fill"));   // Play to Full at t=0; deadline 100
+        needs.SetLevel(NeedId.Play, 1);
+        needs.SupplyFullnessWindowForTest(NeedId.Play, 0, 100); // explicit producer input; return consumer is unread
 
         clock = 60; needs.ApplyDecayAllNeeds(true, (float)clock);
         Assert.Equal(1.0, needs.State.GetNeedLevel(NeedId.Play), 6);   // still inside the cooldown: skipped
@@ -1642,7 +1645,7 @@ public class FreeplayTests
     /// accumulator emits nothing, while the reset and the <c>+0x18 = now + 30.0</c> stamp still happen.
     /// </summary>
     [Fact]
-    public void TheFreeplayDataTrackerEmitsNothingWhenTheAccumulatorIsZero()
+    public void TheFreeplayDataTrackerEmitsOnlyTheAccumulateDebugWhenTheAccumulatorIsZero()
     {
         double clock = 0;
         var tracker = new FreeplayDataTracker(() => clock);
@@ -1653,7 +1656,7 @@ public class FreeplayTests
 
         tracker.ForceUpdate();                          // 0 s accumulated: nothing to report
         Assert.Empty(reports);
-        Assert.Empty(logs);
+        Assert.Contains("FreeplayDataTracker.SendData.Accumulate", Assert.Single(logs));
         Assert.Equal(30f, tracker.NextSendSec);        // the next-send stamp still ran
 
         clock = 30;

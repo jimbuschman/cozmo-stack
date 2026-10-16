@@ -19,6 +19,7 @@ public sealed class EngineRandom
 {
     private Mt19937 _mt;
     private readonly object _gate = new();
+    internal Func<uint>? WordSourceForTest;
 
     /// <summary>
     /// A generator seeded as <c>SetSeed(seed)</c> does: 0 takes an entropy seed (R1). <paramref name="entropy"/> stands for the
@@ -53,8 +54,8 @@ public sealed class EngineRandom
     {
         lock (_gate)
         {
-            double d0 = _mt.Next();
-            double d1 = _mt.Next();
+            double d0 = WordSourceForTest?.Invoke() ?? _mt.Next();
+            double d1 = WordSourceForTest?.Invoke() ?? _mt.Next();
             return (d0 + d1 * 4294967296.0) * (1.0 / 18446744073709551616.0);
         }
     }

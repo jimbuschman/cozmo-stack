@@ -234,6 +234,8 @@ public sealed class CozmoAnimations : IDisposable
         _scheduler.ReleaseSetupHandlers = streamer.Release;
         _scheduler.ReleaseParameterSubscription = parameter.Release;
         robot.Lifetime.Bind(0x60, _ => Dispose());
+        // fidelity: M6-030 — the scheduler's audio stand-in is not the native client/Dispatch/controller ownership graph.
+        robot.Lifetime.Bind(0x58,_=>Behavior.SteppedBehavior.ReportMissing("M6-030 RobotAudioClient teardown 0x00599A6C..0x00599ADA: native Dispatch Stop/Release and controller-presence/current-animation ownership are absent. Abort/Clear, unregister 7,8,9,10,6, deque/hash/base recipients remain unbound; no assumed registration or fabricated Unregister Error. Scheduler.Destroy already drops its audio stand-in and cannot substitute for this client sequence"));
     }
 
     // fidelity: M5-063 — same handler as the subscriptions, not a parallel implementation.

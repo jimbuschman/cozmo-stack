@@ -15,6 +15,20 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public sealed class AIComponent
 {
+    private readonly Dictionary<int,Action?> _destructionRecipients=new();
+    internal void BindDestructionRecipient(int offset,Action? recipient)=>_destructionRecipients[offset]=recipient;
+    internal bool IsChildRetired(int offset)=>_destructionRecipients.TryGetValue(offset,out var value)&&value is null;
+    // fidelity: M15-027 — checked direct slots only; recursive missing recipients remain M15-045.
+    internal void DestroyDirect()
+    {
+        foreach(int offset in new[]{0x30,0x2C,0x28,0x24,0x20,0x1C,0x18,0x14,0x10,0xC,0x8})
+        {
+            bool known=_destructionRecipients.TryGetValue(offset,out var recipient);
+            _destructionRecipients[offset]=null;
+            if(known)recipient?.Invoke();
+            else SteppedBehavior.ReportMissing($"M15-027/M15-045 AIComponent child +0x{offset:X} direct null-before-delete at 0x00569CB2..0x00569DAC: concrete owner/recursive destruction recipient is absent; no guessed callback or raw deletion");
+        }
+    }
     /// <param name="worldOriginId"><c>Robot::GetWorldOriginID</c>.</param>
     /// <param name="log">The engine log line sink.</param>
     public AIComponent(Func<int> worldOriginId, Action<string>? log = null, SourceLogSink? sourceLog = null)

@@ -45,11 +45,13 @@ public sealed class FreeplayStack : IDisposable
     {
         var problems = new List<string>();
         // J3: the needs device-file directory is the host's; FreeplayTool's --state-dir supplies it.
-        needs ??= NeedsManager.FromObb(obbRoot, clockSec, random, needsDirectory);
+        needs ??= NeedsManager.FromObb(obbRoot, clockSec, random, needsDirectory, robot.Animations.Scheduler.ContextRandom);
         // fidelity: M15-014
         // C2 row 10: StartReadFromRobot queues an NVStorage read of key 0x194000 on the connected robot's
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
         needs.NvStorage = robot.Engine.NvStorage;
+        needs.SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);
+        needs.State.PartDamageLog=(value,data)=>robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"needs.part_damaged",value,data);
         // fidelity: M7-017
         // D07/D08/D18: AnimationStreamer::Update (0x0057CE5C) calls TrackLayerComponent::Update (0x0064EDE8) when
         // the last-stream seconds +0x88 > 0; that reads context+0x34 (this NeedsManager) -> +0x3D4 ->
@@ -171,16 +173,32 @@ public sealed class FreeplayStack : IDisposable
         // featureGate (0x005B52A8).
         var inputs = new FreeplayInputs { Needs = needs, Mood = ctx.Mood, Features = FeatureGates.Load(obbRoot) };
         var system = new FreeplaySystem(manager, ctx, freeplayActivity, bound, inputs);
-        // M15-015: the AIComponent's FreeplayDataTracker. Created here, ticked in Tick, flushed in Dispose.
-        var tracker = new FreeplayDataTracker(clockSec);
+        // M15-015/M15-027: the native tracker reads the engine's cached nanosecond clock; ForceUpdate is at ~Robot's head.
+        var tracker = new FreeplayDataTracker(()=>unchecked((ulong)robot.Engine.Timer.Nanoseconds))
+        {SourceLog=(l,c,k,t)=>robot.Engine.EmitSourceLog(l,c,k,t)};
         system.SparkPauseChanged = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.Spark, p);
         // fidelity: M8-011
         // AIComponent::AIComponent 0x00569aa4..0x00569ab2 builds the BehaviorHelperComponent at +0x10; Robot::Update 0x00513eac runs AIComponent::Update from the engine tick
         // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
         // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
         var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
+        ai.BindDestructionRecipient(0x2C,tracker.DestroyStorage);
+        // The constructed host helper is real, but its captured IHelper destruction remains explicitly unread.
+        ai.BindDestructionRecipient(0x10,()=>SteppedBehavior.ReportMissing("M15-027/M15-045 BehaviorHelper callable/shared-IHelper destruction 0x00569D30..0x00569D7C is unread; no Update, Cancel or guessed Dispose substituted"));
+        EngineRobot? lifetimeRobot=null;
+        void BindNativeLifetime(EngineRobot native)
+        {
+            if(lifetimeRobot is not null&&!ReferenceEquals(native,lifetimeRobot))
+            {SteppedBehavior.ReportMissing("M15-027/M15-045 replacement AI/Freeplay owner construction is not built; do not bind a retired host AI/tracker as the new native owner");return;}
+            lifetimeRobot=native;
+            native.Lifetime.Bind(-2,_=>tracker.ForceUpdate());
+            native.Lifetime.Bind(0x264,_=>ai.DestroyDirect());
+        }
+        robot.Engine.BindRobotLifetime+=BindNativeLifetime;
+        if(robot.Engine.Robot is {} lifetimeOwner)BindNativeLifetime(lifetimeOwner);
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
+        stack._unsubscribe.Add(()=>robot.Engine.BindRobotLifetime-=BindNativeLifetime);
         // fidelity: M8-019
         // Bind the existing host manager. Its request entry is partial and visibly stops at the native switch gap.
         Action<string> endRequest = manager.RequestCurrentBehaviorEndImmediately;
@@ -348,7 +366,7 @@ public sealed class FreeplayStack : IDisposable
     {
         foreach (var off in _unsubscribe) { try { off(); } catch { } }
         _unsubscribe.Clear();
-        DataTracker.ForceUpdate();      // the BehaviorSystemManager destructor's ForceUpdate (0x005110D4)
+        // Native ForceUpdate belongs to ~Robot's head, not releasing this host stack handle.
         Manager.Dispose();
     }
 }

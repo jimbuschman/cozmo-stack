@@ -7,10 +7,21 @@ internal sealed class RobotLifetime
 {
     private readonly EngineRobot _robot;
     private readonly Dictionary<int, Action<uint>?> _owners = new();
+    private readonly HashSet<string> _missingScope=new();
     internal RobotLifetime(EngineRobot robot) => _robot = robot;
     internal void Bind(int offset, Action<uint>? release) => _owners[offset] = release;
     internal bool IsKnownNull(int offset) => _owners.TryGetValue(offset, out var value) && value is null;
-    private void Missing(uint address, int offset) => _robot.Engine.Log($"MISSING: Robot lifetime owner +0x{offset:X} at 0x{address:X8}");
+    private void Missing(uint address, int offset)
+    {
+        string detail=offset switch {
+            0x448=>"M15-027 progression: scoped vector+1C, trees+10/+4 and allocation; concrete native owner not bound",
+            0x444=>"M15-027 inventory: tree+120, scoped vector+114 and allocation; concrete native owner not bound",
+            0x264=>"M15-027/M15-045 AI direct child null-before-delete sequence; concrete AI owner not bound",
+            0x40=>"M15-028 PublicStateBroadcaster event hash/raw owner and captures not bound; engine-wide host API subscribers are not its native signal",
+            4=>"M15-028 final embedded Robot signal/capture ownership not bound; context is borrowed and not deleted",
+            _=>""};
+        Behavior.SteppedBehavior.ReportMissing($"Robot lifetime owner +0x{offset:X} at 0x{address:X8}"+(detail.Length==0?"":"; "+detail),_missingScope);
+    }
     private void Clear(int offset)
     {
         _owners[offset] = null;
@@ -112,6 +123,8 @@ public sealed partial class EngineRobot
     internal void InitLifetime()
     {
         Lifetime = new(this);
+        // fidelity: M15-027, M15-028 — native destructor head, before unconditional tracker ForceUpdate/AbortAll.
+        Lifetime.Bind(-1,_=>Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.destructor",unchecked((int)NativeRobotId).ToString(System.Globalization.CultureInfo.InvariantCulture)));
         var actions = ActionList;
         Lifetime.Bind(0x250, _ => actions.Dispose());
         // fidelity: M12-040 — raw releases 0x005113FA..0x00511418; no component reset/send/dtor.
@@ -156,7 +169,9 @@ public sealed partial class CozmoEngine
     internal void NotifyDisconnectServices()
     {
         Required(NeedsRobotDisconnected, "NeedsManager.OnRobotDisconnected 0x0052F2E0");
-        Required(PerfRobotDisconnected, "PerfMetric.OnRobotDisconnected 0x0052F2E8");
+        // fidelity: M15-028 — shipped Perf never records; empty DumpFiles is its only reachable disconnect effect.
+        EmitSourceLog(EngineLogLevel.Info,"PerfMetric","PerfMetric.DumpFiles","Nothing to dump; buffer is empty");
+        PerfRobotDisconnected?.Invoke(); // existing internal observer; no invented Perf commands/status/dump path.
         // fidelity: M3-055 — 0x0052F2D8 clears $session_id above; it is not a player digest site.
         Das.Pause(false);
         DasPauseUploading?.Invoke(false);

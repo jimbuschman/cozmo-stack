@@ -96,7 +96,97 @@ public enum NeedBracketId { Full = 0, Normal = 1, Warning = 2, Critical = 3 }
 /// <c>actionCausingTheUpdate</c> of a <c>NeedsState</c>. <c>SendNeedsStateToGame</c> 0x0069383C takes one;
 /// the decay tick passes <c>Decay</c> (C1 §2).
 /// </summary>
-public enum NeedsActionId { NoAction = 0, Decay = 1 }
+// Native EnumToString 0x00782DCC..0x00782DE4, table 0x01033D40 (OV27 T7).
+public enum NeedsActionId
+{
+    NoAction = 0,
+    Decay = 1,
+    RepairHead = 2,
+    RepairLift = 3,
+    RepairTreads = 4,
+    Feed = 5,
+    KeepAwayWin = 6,
+    KeepAwayLose = 7,
+    MemoryMatchWin = 8,
+    MemoryMatchLose = 9,
+    QuickTapWin = 10,
+    QuickTapLose = 11,
+    CozmoPerformsComplete = 12,
+    CozmoSings = 13,
+    DizzyHard = 14,
+    DizzyMedium = 15,
+    DizzySoft = 16,
+    Fall = 17,
+    FistBump = 18,
+    FistBump_Sparked = 19,
+    GatherCubes = 20,
+    GuardDogLose = 21,
+    GuardDogWin = 22,
+    GuardDogNoInteraction = 23,
+    HiccupsEndBad = 24,
+    HiccupsEndGood = 25,
+    IndividualHiccup = 26,
+    KnockDownCubes = 27,
+    KnockDownCubes_Sparked = 28,
+    PeekAboo = 29,
+    PeekAboo_Sparked = 30,
+    PickupCube = 31,
+    PickupCube_Sparked = 32,
+    PopAWheelie = 33,
+    PopAWheelie_Sparked = 34,
+    Pounce = 35,
+    Pounce_Sparked = 36,
+    PyramidCompleted = 37,
+    PyramidCompleted_Sparked = 38,
+    RollACube = 39,
+    RollACube_Sparked = 40,
+    SayName = 41,
+    StackCube = 42,
+    StackCube_Sparked = 43,
+    Workout = 44,
+    Workout_Sparked = 45,
+    SeeFace = 46,
+    PlacedOnSide = 47,
+    BoredOnSide = 48,
+    Laser_Sparked = 49,
+    CubeMixup = 50,
+    TreasureTrail = 51,
+    Roboshambo = 52,
+    TwistTapRoll = 53,
+    CubeTennis = 54,
+    TidalTap = 55,
+    StareOff = 56,
+    DadJokesBadJokes = 57,
+    CubeBlaster = 58,
+    NumberTap = 59,
+    JackpotBot = 60,
+    ColorShuffle = 61,
+    ForYouMom = 62,
+    ComposeWithCozmo = 63,
+    PoetryJam = 64,
+    CozmosGarden = 65,
+    Constellations = 66,
+    GuessTheNumber = 67,
+    WakeUpCozmo = 68,
+    PaddleBall = 69,
+    DrivingInCircles = 70,
+    PotOGoldDetector = 71,
+    ComplimentGenerator = 72,
+    RemoteControlRacer = 73,
+    ShakeIt = 74,
+    PuttPutt = 75,
+    ValentinesCozmogram = 76,
+    LaserSmile = 77,
+    MagicFortuneTeller = 78,
+    LightShow = 79,
+    CubeWhack = 80,
+    TinyOrchestra = 81,
+    HotPotato = 82,
+    BlasterTag = 83,
+    FireTruckAlarm = 84,
+    CozmoSingsCompleted_Sparked = 85,
+    Count = 86
+}
 
 /// <summary>
 /// ASSET <c>config/engine/needs_config.json</c>: the level range, initial levels, the bracket thresholds per
@@ -253,7 +343,7 @@ public sealed record NeedsActionDelta(string ActionId, double RepairDelta, doubl
 /// clamped to the configured range, and <c>ApplyDecay</c> ("Decaying need index %d with elapsed time of %f
 /// seconds", per-minute rates over the elapsed seconds / 60). The repair "damaged parts" bookkeeping is DEFERRED.
 /// </summary>
-public sealed class NeedsState
+public sealed partial class NeedsState
 {
     private readonly NeedsConfig _cfg;
     private readonly double[] _levels = new double[3];
@@ -343,7 +433,7 @@ public sealed class NeedsState
 
     public bool AreNeedsMet() => new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.All(n => GetNeedBracket(n) is NeedBracketId.Full or NeedBracketId.Normal);
 
-    public void ApplyDelta(NeedId n, double delta) => SetNeedLevel(n, _levels[(int)n] + delta);
+    public void ApplyDelta(NeedId n, double delta) => ApplyDelta(n,(float)delta,0,NeedsActionId.NoAction);
 
     public void ApplyDecay(DecayConfig decay, float elapsedSec, bool connected)
     {
@@ -354,14 +444,14 @@ public sealed class NeedsState
     }
 
     /// <summary>Checked D17 interface to PossiblyDamageParts(Decay), 0x0069C536.
-    /// Its repair mutation/random selection is MISSING; a collaborator must supply that higher-layer body.</summary>
+    /// Observer seam retained for existing callers; M15-029 runs the checked native body after it.</summary>
     public Action<NeedsActionId>? PossiblyDamageParts { get; set; }
 
     // fidelity: M1-024
     /// <summary>NeedsState::ApplyDecay 0x0069C3C0, checked D5–D18. All intermediates and the stored level are f32.</summary>
     public void ApplyDecay(NeedId need, DecayConfig decay, float elapsedSec, bool connected, float multiplier)
     {
-        Warn?.Invoke(FormattableString.Invariant($"NeedsState.ApplyDecay: Decaying need index {(int)need} with elapsed time of {elapsedSec:F6} seconds"));
+        SourceLogDispatch.GetSink(SourceLog,Warn)?.Invoke(EngineLogLevel.Info,"NeedsSystem","NeedsState.ApplyDecay",FormattableString.Invariant($"Decaying need index {(int)need} with elapsed time of {(double)elapsedSec:F6} seconds"));
         float level = (float)_levels[(int)need];
         var rates = (connected ? decay.Connected : decay.Unconnected).GetValueOrDefault(need);
         if (rates is null) return;
@@ -399,7 +489,7 @@ public sealed class NeedsState
         if (need == NeedId.Repair)
         {
             if (PossiblyDamageParts is { } damage) damage(NeedsActionId.Decay);
-            else Warn?.Invoke("MISSING: NeedsState.PossiblyDamageParts(Decay) 0x0069C536");
+            DamagePartsNative(NeedsActionId.Decay);
         }
     }
 
@@ -424,8 +514,8 @@ public sealed class NeedsState
         return count;
     }
 
-    /// <summary>How many parts are damaged now, from the Repair level.</summary>
-    public int NumDamagedParts() => NumDamagedPartsForRepairLevel((float)GetNeedLevel(NeedId.Repair));
+    /// <summary>The sum of the actual stored damage bytes (0x0069CAD8), independent of repair level.</summary>
+    public int NumDamagedParts() => _partDamage.Values.Aggregate(0,(sum,value)=>unchecked(sum+value));
 }
 
 // fidelity: M15-017
@@ -766,6 +856,7 @@ public sealed class NeedsManager
         set
         {
             _distortionRng = value;
+            State.ContextRandom = value; // M15-029: the same supplied context generator, never a damage-specific RNG.
             if (DesiredFaceDistortion is { } component) component.Rng = value;
         }
     }
@@ -791,7 +882,7 @@ public sealed class NeedsManager
     }
 
     // fidelity: M15-014
-    public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null)
+    public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null, EngineRandom? contextRandom = null)
     {
         var dir = Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine");
         string? Read(string name) { var p = Path.Combine(dir, name); return File.Exists(p) ? File.ReadAllText(p) : null; }
@@ -799,6 +890,7 @@ public sealed class NeedsManager
         var decay = Read("needs_decay_config.json") is { } d ? DecayConfig.Parse(d) : null;
         var actions = Read("needs_action_config.json") is { } a ? NeedsActionDelta.Parse(a) : null;
         var needs = new NeedsManager(clockSec, cfg, decay, actions, random);
+        needs.DistortionRng=contextRandom;
         // J3: the directory the engine's DataPlatform resolves ("nurture/") is the host's; the caller supplies it.
         needs.DeviceDirectory = deviceDirectory;
         // J7: InitInternal's forced WriteToDevice(true) (0x0069347E) must reach a real file when the host
@@ -861,6 +953,9 @@ public sealed class NeedsManager
     /// <summary><c>+0x3AC</c>: the tick clock the last <see cref="Update(float)"/> stored (M1-024).</summary>
     // fidelity: M1-024
     public float NowSec { get { lock (_gate) return _nowSec; } }
+    // Fixture input for the already-recovered cooldown consumer; it asserts no ApplyDelta return-consumer wiring.
+    internal void SupplyFullnessWindowForTest(NeedId need,float start,float deadline)
+    {lock(_gate){_fullnessStartSec[need]=start;_fullnessDeadlineSec[need]=deadline;}}
 
     /// <summary>
     /// <c>NeedsManager::ApplyDecayAllNeeds(connected)</c> 0x00695CFE: <c>GetDecayMultipliers</c> is asked once
@@ -1485,8 +1580,10 @@ public sealed class NeedsManager
             var needs = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play };
             var robot = new NeedsStateOnRobot { Version = 5, TimeLastWritten = (ulong)nowSec };
             for (int i = 0; i < needs.Length; i++) robot.CurNeedLevel[i] = (int)(State.GetNeedLevel(needs[i]) * 100000.0 + 0.5);
-            int damaged = State.NumDamagedParts();
-            for (int i = 0; i < damaged && i < NeedsStateOnRobot.PartCount; i++) robot.PartIsDamaged[i] = 1;
+            if(State.PartDamage.Values.Any(value=>value!=0))
+            {
+                SteppedBehavior.ReportMissing("M15-014/M15-029 StartWriteToRobot part-map to packed PartIsDamaged slots at 0x00695494..0x00695763 is not checked here; write skipped rather than synthesizing first-N damaged flags");return;
+            }
             // The engine copies its economy fields into the blob (0x00695540..0x00695640:
             // curNeedsUnlockLevel, numStarsAwarded, timeLastStarAwarded, timeCreated, onboardingStageCompleted,
             // forceNextSong). This stack does not model the stars/onboarding economy, so those fields stay at
@@ -1674,17 +1771,10 @@ public sealed class NeedsManager
         void Apply(NeedId n, double delta, double range)
         {
             if (delta == 0 && range == 0) return;
-            double v = delta + (range > 0 ? (Random.NextDouble() * 2 - 1) * range : 0);
-            State.ApplyDelta(n, v);
-            // +0x1FC = the fill time; +0x208 = now + the configured fullness cooldown
-            // (StartFullnessCooldownForNeed 0x006970AC).
-            if (v > 0 && State.GetNeedBracket(n) == NeedBracketId.Full)
-            {
-                float filledAt = (float)_clockSec();
-                _fullnessStartSec[n] = filledAt;
-                _fullnessDeadlineSec[n] = (float)(filledAt + Config.FullnessDecayCooldownSec.GetValueOrDefault(n, 0));
-            }
-            if (v > 0) _severeExpressed.Remove(n);
+            if(!Enum.TryParse<NeedsActionId>(actionId,false,out var action)||Enum.GetName(action)!=actionId)
+            {SteppedBehavior.ReportMissing("M15-046 host action has no supplied native NeedsActionId: "+actionId);return;}
+            State.ApplyDelta(n,(float)delta,(float)range,action);
+            SteppedBehavior.ReportMissing("M15-046 RegisterNeedsActionCompletedInternal return consumer 0x006968DE.. is unread; no inferred fullness-cooldown/severe-needs mutation. Existing outer action-loop gates remain M15-008, not claimed recovered here");
         }
         Apply(NeedId.Repair, d.RepairDelta, d.RepairRange);
         Apply(NeedId.Energy, d.EnergyDelta, d.EnergyRange);
@@ -1735,9 +1825,15 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public void Save(string path, long? unixTimeSec = null, uint serialNumber = 0)
     {
+        if(State.PartDamage.Keys.Any(key=>(uint)key>=3))
+        {
+            StackDiagnostics.Write("M1-034/M15-029/M15-014: skipping needs device-file write at Json::Value::operator[](nullptr), 0x00693E10..0x00693E18; invalid part map and prior file retained");return;
+        }
         long now = unixTimeSec ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var levels = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => State.GetNeedLevel(n)).ToArray();
-        var damaged = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => State.NumDamagedPartsForRepairLevel((float)State.GetNeedLevel(n)) > 0).ToArray();
+        // OV27 endpoint/J7: source map keys are part names, independent of all three need levels.
+        var damaged = State.PartDamage.ToDictionary(entry=>entry.Key switch{0=>"Head",1=>"Lift",_=>"Treads"},entry=>entry.Value!=0);
+        SteppedBehavior.ReportMissing("M15-014 persistence remains partial: legacy CurNeedLevel/economy serialization and read-copy/part-map restoration are not claimed recovered by M15-029");
         var doc = new Dictionary<string, object>
         {
             ["_StateFileVersion"] = CurrentStateFileVersion,

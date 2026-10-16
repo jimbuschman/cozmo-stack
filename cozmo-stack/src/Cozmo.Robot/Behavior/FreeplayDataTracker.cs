@@ -16,6 +16,8 @@ namespace Cozmo.Robot.Behavior;
 // fidelity: M15-015
 public sealed class FreeplayDataTracker
 {
+    // fidelity: M15-027 — AI +2C: only pause-tree/allocation destruction, no second ForceUpdate.
+    internal void DestroyStorage(){lock(_gate)_paused.Clear();}
     /// <summary>The report interval: the constructor sets next-send to now + 30.0f (vmov.f32 #30.0 / vadd.f32, 0x0056EBF6/0x0056EC00).</summary>
     public const float ReportIntervalSec = 30.0f;
 
@@ -80,6 +82,7 @@ public sealed class FreeplayDataTracker
 
     /// <summary>The engine's log lines, including the <c>DataTooHigh</c> error.</summary>
     public event Action<string>? Log;
+    public SourceLogSink? SourceLog {get;set;}
 
     /// <summary>
     /// <c>FreeplayDataTracker::SetFreeplayPauseFlag(flag, paused)</c> 0x0056EEBC: paused calls the setter 0x0056EECC, otherwise
@@ -124,7 +127,7 @@ public sealed class FreeplayDataTracker
 
     /// <summary>
     /// <c>FreeplayDataTracker::ForceUpdate</c> 0x0056EEB8 is <c>SendData</c>, called from the
-    /// <c>BehaviorSystemManager</c> destructor (0x005110D4): flush whatever has accumulated.
+    /// <c>Robot</c> destructor head (0x0051111A): flush whatever has accumulated.
     /// </summary>
     // fidelity: M15-015
     public void ForceUpdate() { lock (_gate) SendDataCore(); }
@@ -144,19 +147,23 @@ public sealed class FreeplayDataTracker
     {
         ulong now = _clockNanos();
         if (_paused.Count == 0)
+        {
             unchecked { _accumulatedNanos += now - _lastResumeNanos; }
+            SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Debug,"Behaviors","FreeplayDataTracker.SendData.Accumulate",$"Sending at time {now}, currently have {_accumulatedNanos} accumulated. State: active");
+        }
         if (_accumulatedNanos != 0)
         {
             double rounded = Math.Round((double)_accumulatedNanos / NanosPerSec, MidpointRounding.AwayFromZero);   // C round()
             int seconds = rounded >= int.MaxValue ? int.MaxValue : (int)rounded;                                  // vcvt.s32.f64 saturates
             if (seconds < MaxActiveSec)
             {
-                Log?.Invoke($"robot.active_freeplay_time {seconds}");
+                SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Event,null,"robot.active_freeplay_time",seconds.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 ActiveFreeplayTime?.Invoke(seconds);
             }
             else
             {
-                Log?.Invoke($"error: FreeplayDataTracker.SendData.DataTooHigh Trying to send a freeplay time of {seconds} sec ({_accumulatedNanos} nanos), but update period is {30.0:F6}");
+                SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Error,null,"FreeplayDataTracker.SendData.DataTooHigh",FormattableString.Invariant($"Trying to send a freeplay time of {seconds} sec ({_accumulatedNanos} nanos), but update period is {30.0:F6}"));
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             }
         }
         _accumulatedNanos = 0;
