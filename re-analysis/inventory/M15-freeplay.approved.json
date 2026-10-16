@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "e21ecc5d86f2ad2b09a76f479d1c21e4059f3bc0f84a887d29d74bf1e0f04d50",
+  "inventory_sha256": "80263b37243bfe4debfb3dc25dfd19f87b75bb1c7c2b35f5286e267a8f31996b",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -716,31 +716,34 @@
       "hardware_required": false
     },
     "M15-060": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) and its subscription",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-batch-check.md: body 0x005AD9F8..0x005ADA7E (Info Behaviors ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown \"Kicking out '%s' on put down so we pick up a new one\"; gates treads byte0 != 0, no sub-activity, id 7/8 or == this+0x91, sub+0x4C != 0x55; then OnDeselected and +0x80 = 0)."
+        "re-analysis/research/overnight/20261016-batch-check.md: body 0x005AD9F8..0x005ADA7E (Info Behaviors ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown \"Kicking out '%s' on put down so we pick up a new one\"; gates treads byte0 != 0, no sub-activity, id 7/8 or == this+0x91, sub+0x4C != 0x55; then OnDeselected and +0x80 = 0).",
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: ctor 0x005AD3B4..0x005AD3E0; subscribe helper 0x005AD7BC..0x005AD846 (tag 0x35); dtor 0x005AD87C..0x005AD8B0; dispatch 0x005120A0..0x005120AA, 0x00662508..0x006625AE, 0x005AEDFA..0x005AEE0E; handler 0x005AD9F8..0x005ADA7E; +0x91 ctor memclr 0x005AD390..0x005AD39E; +0x4C default 0x005B28F8/0x005B2904, requireSpark 0x005B2AAE..0x005B2B06."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-061": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ActivityFeeding lifecycle beyond the cube-connection subscription, SetCubeLights, and CubeAccel RemoveListener 0x006356AC",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-batch-check.md: OnSelectedInternal 0x005AADAC (rest), OnDeselected tail after 0x005ABC46 (UpdateBroadcastBehaviorStage(4,0), sEvent with need level), SetCubeLights, RemoveListener 0x006356AC."
+        "re-analysis/research/overnight/20261016-batch-check.md: OnSelectedInternal 0x005AADAC (rest), OnDeselected tail after 0x005ABC46 (UpdateBroadcastBehaviorStage(4,0), sEvent with need level), SetCubeLights, RemoveListener 0x006356AC.",
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: layout ctor 0x005AA51C..0x005AAA1C; dtor 0x005AACBC..0x005AADA8; OnSelectedInternal 0x005AADAC..0x005AB282; SetupSevereAnims/ClearSevereAnims 0x005AB450..0x005AB514; SetActivityStage 0x005AB530..0x005AB6C4; TransitionToBestActivityStage 0x005AB7AC..0x005ABA8E; OnDeselectedInternal tail 0x005ABB5C..0x005ABD48; GetDesiredActiveBehaviorInternal 0x005ABDD8..0x005ABF30; Update/UpdateCubeToEat/UpdateCurrentStage/HasFaceToTurnTo 0x005ABFDE..0x005AC8EC; listener 0x005AC8F0..0x005AC9C6; SetIdleForCurrentStage 0x005ACB70..0x005ACC96; FeedingCubeController 0x005A6038..0x005A6EF4; SetCubeLights 0x005A65AC..0x005A66BE; RemoveListener 0x006356AC..0x006357B0; AddListener tail 0x006355BE..0x006355CA."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-062": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Lab residue: NeedsState+8 at InitExperiments time, FindExperiment/FindAssignment/FindVariation bodies, AssignmentDef signal subscribers, sources of +0x4C/+0x58",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-batch-check.md: NeedsState ctor and GetCurNeedsState 0x006960BC; Find* PLT 0x004CA6F4/0x004CA700/0x004CA76C; AssignmentDef ProtoSignal vtable 0x0101E8C8; M1-034 point 0x007ECA9C (status > 5 report dereferences an unchecked FindVariation result)."
+        "re-analysis/research/overnight/20261016-batch-check.md: NeedsState ctor and GetCurNeedsState 0x006960BC; Find* PLT 0x004CA6F4/0x004CA700/0x004CA76C; AssignmentDef ProtoSignal vtable 0x0101E8C8; M1-034 point 0x007ECA9C (status > 5 report dereferences an unchecked FindVariation result).",
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: NeedsState+8 at InitExperiments 0x004EA80C..0x004EA81E, 0x0069BEFC..0x0069BF5C; predicate 0x006A531E..0x006A536A; GetQualifiedTags/Calculate 0x007EF370..0x007EF470; FindExperiment 0x007EDB18..0x007EDC10; FindAssignment 0x007EBF42..0x007EC014; FindVariation 0x007EDFA8..0x007EE0AA; AssignmentDef connect 0x004EB61E..0x004EB672, effect 0x004EF212..0x004EF218, 0x006A60C4..0x006A60D4; Override 0x007ED324..0x007ED4D8 and Force 0x007ED0FC..0x007ED298 unreachable; report 0x007EC7C4..0x007ECAAC."
       ],
       "live_path": true,
       "hardware_required": false
@@ -752,6 +755,36 @@
       "evidence": [
         "re-analysis/research/overnight/20261016-batch-check.md: writers of BehaviorHelperComponent +0x10/+0x28, ProcessInfo and cache-entry callables, filter predicates; BorderSegment element+0x28 pointee.",
         "re-analysis/research/overnight/20261016-ov105-107-108-answer.md: helper component 0x00569D38..0x00569D7C; IHelper base dtor 0x005B5F20..0x005B600C; subclasses (DriveTo PoseBase +0x114, SearchForBlock Camera +0x110 and E2G 0x44 handle); BorderSegment pointee MemoryMapData (dtors 0x0067E508, 0x0068072C, 0x00684A34, 0x00684C04, 0x00684B0C); AIBeacon 0x0056A2F4..0x0056A31A; PossibleObject 0x0056CAC4..0x0056CAFC; FailureInfo 0x0056CAFE..0x0056CB62; BehaviorEventAnimResponseDirector D0 0x0056D968..0x0056D986."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-064": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "FeedingSoundEffectManager::NotifyChargeStateChange and ResetChargeSound: E2G 149 FeedingSFXStageUpdate broadcasts",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: NotifyChargeStateChange 0x0056EA4C..0x0056EB20, 0x0056EB28..0x0056EB6A; ResetChargeSound 0x0056EB90..0x0056EBC0; Broadcast(&&) 0x006625B0; FeedingSFXStageUpdate.cs Pack."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-065": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BehaviorFeedingEat: the IFeedingListener callbacks (StartedEating, EatingComplete, EatingInterrupted) and the conditions under which they fire",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: callers 0x005D5C5A..0x005D5C70 (interrupted), 0x005D5E1C..0x005D5E6C (StopInternal: interrupted if state >= 2, complete if now > +0x124), 0x005D62B4 (StartedEating); listener push_back 0x005D6754 into +0x130; body range 0x005D5904..0x005D64C6."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-066": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Order of the RobotOffTreadsStateChanged (E2G tag 53) subscribers: AIWhiteboard (handler 0x0056CCE4) versus ActivityFreeplay (M15-060)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: ActivityFreeplay subscribes in its ctor (0x005AD3B4..0x005AD846); AIWhiteboard handler 0x0056CCE4; signal emit 0x00663C74 calls in registration order (M8-027)."
       ],
       "live_path": true,
       "hardware_required": false

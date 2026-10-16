@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **672 records** over 16 subsystems.
+Manifest of **675 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 24 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 384 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 388 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -38,7 +38,7 @@ remains after both, and they do not go away by working harder on this repository
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 39 | 0 | 33 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
-| M15-freeplay — Needs, activities and freeplay | 63 | 4 | 54 | 1 | 0 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 66 | 3 | 58 | 1 | 0 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -281,32 +281,23 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 * evidence: Enter 0x0065E104..0x0065E224; Exit 0x0065E2A4..0x0065E43E; UI exit 0x00661546..0x00661566; fields UNKNOWN (triage E8).
 * outstanding: Recover telemetry field construction, producer gates and ordering. M15-028 is only Robot lifetime telemetry/context.
 
-**M15-060 — ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) and its subscription** (live path)
+**M15-065 — BehaviorFeedingEat: the IFeedingListener callbacks (StartedEating, EatingComplete, EatingInterrupted) and the conditions under which they fire** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
-* effect: Freeplay re-picks its activity when Cozmo is put down.
-* rests on: Opus checks of 2026-10-16 (batch), manager record.
+* effect: When Feeding cubes drain and reset; whether the M15-061 L1 null dereference (0x005A610C) is reachable.
+* rests on: Opus answer OV102-104 (2026-10-16), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261016-batch-check.md: body 0x005AD9F8..0x005ADA7E (Info Behaviors ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown "Kicking out '%s' on put down so we pick up a new one"; gates treads byte0 != 0, no sub-activity, id 7/8 or == this+0x91, sub+0x4C != 0x55; then OnDeselected and +0x80 = 0).
-* outstanding: RECOVERABLE_GAP: read the subscription site; then build.
+* evidence: re-analysis/research/overnight/20261016-ov102-104-answer.md: callers 0x005D5C5A..0x005D5C70 (interrupted), 0x005D5E1C..0x005D5E6C (StopInternal: interrupted if state >= 2, complete if now > +0x124), 0x005D62B4 (StartedEating); listener push_back 0x005D6754 into +0x130; body range 0x005D5904..0x005D64C6.
+* outstanding: RECOVERABLE_GAP: read BehaviorFeedingEat 0x005D5904..0x005D64C6 (lifecycle, the listener calls and their conditions); settle whether StartedEating can run after the cube controller for ActivityFeeding+0x90 is gone (M15-061 L1, M1-034).
 
-**M15-061 — ActivityFeeding lifecycle beyond the cube-connection subscription, SetCubeLights, and CubeAccel RemoveListener 0x006356AC** (live path)
+**M15-066 — Order of the RobotOffTreadsStateChanged (E2G tag 53) subscribers: AIWhiteboard (handler 0x0056CCE4) versus ActivityFreeplay (M15-060)** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
-* effect: The Feeding activity's behaviour and lights.
-* rests on: Opus checks of 2026-10-16 (batch), manager record.
+* effect: Log and state order when the robot is put down during Freeplay.
+* rests on: Opus answer OV102-104 (2026-10-16), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261016-batch-check.md: OnSelectedInternal 0x005AADAC (rest), OnDeselected tail after 0x005ABC46 (UpdateBroadcastBehaviorStage(4,0), sEvent with need level), SetCubeLights, RemoveListener 0x006356AC.
-* outstanding: RECOVERABLE_GAP: read the listed bodies.
-
-**M15-062 — Lab residue: NeedsState+8 at InitExperiments time, FindExperiment/FindAssignment/FindVariation bodies, AssignmentDef signal subscribers, sources of +0x4C/+0x58** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
-* effect: Which experiment variations activate and what is reported.
-* rests on: Opus checks of 2026-10-16 (batch), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261016-batch-check.md: NeedsState ctor and GetCurNeedsState 0x006960BC; Find* PLT 0x004CA6F4/0x004CA700/0x004CA76C; AssignmentDef ProtoSignal vtable 0x0101E8C8; M1-034 point 0x007ECA9C (status > 5 report dereferences an unchecked FindVariation result).
-* outstanding: RECOVERABLE_GAP: read the listed bodies.
+* evidence: re-analysis/research/overnight/20261016-ov102-104-answer.md: ActivityFreeplay subscribes in its ctor (0x005AD3B4..0x005AD846); AIWhiteboard handler 0x0056CCE4; signal emit 0x00663C74 calls in registration order (M8-027).
+* outstanding: RECOVERABLE_GAP: settle when AIWhiteboard subscribes to tag 53 relative to ActivityFreeplay's construction, and list every tag-53 subscriber in registration order.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -1233,7 +1224,7 @@ B-M5-22 (2026-10-15), built, awaiting strong verification: Trigger-map host view
 * rests on: the cited X3 and I-M7 extraction rows, checked directly against the shipped binary or shipped asset
 * best authority: libcozmoEngine.so 3.4.0-1204
 * evidence: IBehavior::SmartDisableReactionsWithLock 0x005bce3c; BehaviorManager::DisableReactionsWithLock 0x005a27e8; BehaviorManager::RemoveDisableReactionsLock 0x005a3a48; 13 concrete 21-entry tables in M7 inventory Appendix F
-* outstanding: Opus verification of R-BEH2 batch 3 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-3.md): NOT YET. Nine classes with a recovered lock table still call Scope.DisableReactions() (CubeGameBehaviors.cs:74/272/405/474/611/740/1064, ManipulationBehaviors.cs:57/108/181/284, ObjectBehaviors.cs:238). New: Behaviors.cs:481-483 (ReactBehavior) falls back to scope.DisableReactions() for a class with no table; the engine only calls SmartDisableReactionsWithLock 0x005BCE3C with a class's own table. The Spark Init/Resume seams are unset; three non-static tables are RECOVERABLE_GAP. Before: built, awaiting strong verification: the six tables (0xC73D36, 0xC672F0, 0xC6F590, 0xC72BB2, 0xC74182 and SparkBehaviorDisables 0xC65F90, bytes read) are installed through SmartDisableReactionsWithLock at the engine's install points for ReactToImpact, DriveOffCharger, Singing, AcknowledgeCubeMoved, ReactToOnCharger and ReactToCliff; Init/Resume SparkBehaviorDisables (0x005bcd16..0x005bcd44, 0x005bcfac..0x005bcfde) behind two seams (UnlockIdentifier, ActiveSparkIdentifier) that are unset in production and report MISSING. Still open: the nine classes whose table is among the 13 recovered but whose code is in R-VIS/M12-M15 files (CubeLiftWorkout, PeekABoo, PutDownBlock, FistBump, Bouncer, GuardDog, Dance, EnrollFace, OnboardingShowCube) still use the arbiter-wide Scope.DisableReactions(); the sites the record omits (KnockOverCubes x2, PopAWheelie, DevTurnInPlaceTest, FeedingEat, BuildPyramid, RequestGameSimple x2, RamIntoBlock, the 4 IActivity::SmartDisable callers); three non-static tables are RECOVERABLE_GAP (IDockAction+0xC4, the severe-need map, a config-copied array).
+* outstanding: Opus verification of R-BEH2 batch 3 (2026-10-03, re-analysis/research/20261003-R-BEH2-verify-3.md): NOT YET. Nine classes with a recovered lock table still call Scope.DisableReactions() (CubeGameBehaviors.cs:74/272/405/474/611/740/1064, ManipulationBehaviors.cs:57/108/181/284, ObjectBehaviors.cs:238). New: Behaviors.cs:481-483 (ReactBehavior) falls back to scope.DisableReactions() for a class with no table; the engine only calls SmartDisableReactionsWithLock 0x005BCE3C with a class's own table. The Spark Init/Resume seams are unset; three non-static tables are RECOVERABLE_GAP. Before: built, awaiting strong verification: the six tables (0xC73D36, 0xC672F0, 0xC6F590, 0xC72BB2, 0xC74182 and SparkBehaviorDisables 0xC65F90, bytes read) are installed through SmartDisableReactionsWithLock at the engine's install points for ReactToImpact, DriveOffCharger, Singing, AcknowledgeCubeMoved, ReactToOnCharger and ReactToCliff; Init/Resume SparkBehaviorDisables (0x005bcd16..0x005bcd44, 0x005bcfac..0x005bcfde) behind two seams (UnlockIdentifier, ActiveSparkIdentifier) that are unset in production and report MISSING. Still open: the nine classes whose table is among the 13 recovered but whose code is in R-VIS/M12-M15 files (CubeLiftWorkout, PeekABoo, PutDownBlock, FistBump, Bouncer, GuardDog, Dance, EnrollFace, OnboardingShowCube) still use the arbiter-wide Scope.DisableReactions(); the sites the record omits (KnockOverCubes x2, PopAWheelie, DevTurnInPlaceTest, FeedingEat, BuildPyramid, RequestGameSimple x2, RamIntoBlock, the 4 IActivity::SmartDisable callers); three non-static tables are RECOVERABLE_GAP (IDockAction+0xC4, the severe-need map, a config-copied array). Lead from OV103 (re-analysis/research/overnight/20261016-ov102-104-answer.md), to check: the Feeding lock tables 0x00C61DA0 ("Feeding") and 0x00C61DD4 ("feeding_severe_disables") must be among the concrete tables.
 
 **M7-015 — Pick-up and off-treads reaction gating follows the engine state path** (live path)
 
@@ -1726,7 +1717,7 @@ B-M8-4 (2026-10-15), built, awaiting strong verification: RobotManager.InitCheck
 * rests on: built by job B-M9 from re-analysis/inventory/M9-wwise-music.md; the whole production path was compared with the inventory rows (and, where a MISSING was raised, Correction C1) and the source-backed behaviour was wired into the live path
 * best authority: libcozmoEngine.so
 * evidence: 0x005EECB0..0x005EED6F; 0x00635474..0x006355BF; 0x00636598..0x0063682F
-* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the first sample only initialises the HPF (prev = x, output 0, 0x00636578..0x0063658C) and is not tested; the stack filters from zero state and can fire on sample 1; the test expects 64 where the engine gives 25.
+* outstanding: Audit 2026-09-29 (re-analysis/research/20260929-audit-complete.md): the settlement did not hold. the first sample only initialises the HPF (prev = x, output 0, 0x00636578..0x0063658C) and is not tested; the stack filters from zero state and can fire on sample 1; the test expects 64 where the engine gives 25. Lead from OV103 (re-analysis/research/overnight/20261016-ov102-104-answer.md), to check: AddListener ends with node+0x18 = max(old, window) at 0x006355BE..0x006355CA, past this record's range; RemoveListener (0x006356AC..0x0063578C, M15-061 R1) resets the window to 50 and stops the stream when the last listener goes.
 
 **M9-020 — A music clip uses BeginTrim and length and releases a held note at clip end** (live path)
 
@@ -4079,7 +4070,7 @@ B-M15-1b (2026-10-15): Correction to earlier builder wording: only the temporary
 * rests on: Opus check of OV31-OV33 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov31-32-33-check.md: PossiblyWriteLabAssignmentsToRobot 0x006A5DE4..0x006A60C4 (head read: compares +0x94 stride 0x18 with +0xA0 stride 0x24); WriteLabAssignmentsToRobot 0x006A57F0..0x006A5A3C; callers NeedsManager::InitAfterReadFromRobotAttempt 0x00694622, SetGameBeingPaused handler 0x006990DA.; re-analysis/research/overnight/20261015-ov59-61-check.md: callers 0x0069BEB2..0x0069BED4, 0x006943F8..0x00694400, 0x0069461C..0x00694622, 0x00698FBA..0x00698FC2, 0x006990D6..0x006990DA; compare 0x006A5DEC..0x006A5F18; Info 0x006A5F1A..0x006A5F30; writer 0x006A5F56..0x006A5F5E; cache refresh 0x006A5F62..0x006A6014, 0x006A5A3C..0x006A5A88; Write 0x006A57F0..0x006A5962 (robot gate 0x006A5802..0x006A5810, pack 0x006A5814..0x006A58BE, NV 0x006A58BC..0x006A58D4, failure 0x006A58EE..0x006A5938); serializer 0x0078A926..0x0078A96E, 0x0078A5F0..0x0078A60E, 0x006C22DC..0x006C2326, 0x0078A9D0..0x0078AA14.
-* outstanding: RECOVERABLE_GAP: read both bodies, the comparison, the packed payload, the write callback and logs. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov59-61-check.md): IMPLEMENTATION_GAP. Effect correction: it writes at connection (after the Needs read) AND on every resume (SetGameBeingPaused(false)); pausing never writes. The cache refresh is unconditional. NV round4 overread: see M3-043. B-M15-5 built, awaiting strong verification: actual engine CozmoExperiments owns checked raw-byte pair comparison, no user comparison, mismatch Info, writer and unconditional deep cache refresh even on no-robot/immediate NV rejection. Pack uses low8 count but all entries, low8 string byte lengths, full-length u32 Size allocation and zero tail, no sort/filter/terminators; writer silently returns before pack on no robot, queues NV196000/empty callback/broadcastfalse, immediate0 logs exact Error then errG/debug-break. Native GetFirstRobot reads first stored ID (0052F478), not sorted map/primary guess; another first robot whose NV owner is not represented stops visibly rather than borrowing primary queue. Needs InitAfterReadFromRobotAttempt now calls same owned Lab before resolution, covering callback and direct queue-failure path; FreeplayStack binds owner. Active assignment and restored cache vector producers remain M15-052/M15-036, represented unknown/null until explicit test input; normal path reports MISSING rather than invented empty/selected assignments. Test vector seam is not evidence producers are built. Resume SetGameBeingPaused(false) app delivery is still M15-016, visibly missing at Lab Init; no synthetic periodic/resume call or partial pause implementation. All statuses unchanged.
+* outstanding: RECOVERABLE_GAP: read both bodies, the comparison, the packed payload, the write callback and logs. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov59-61-check.md): IMPLEMENTATION_GAP. Effect correction: it writes at connection (after the Needs read) AND on every resume (SetGameBeingPaused(false)); pausing never writes. The cache refresh is unconditional. NV round4 overread: see M3-043. B-M15-5 built, awaiting strong verification: actual engine CozmoExperiments owns checked raw-byte pair comparison, no user comparison, mismatch Info, writer and unconditional deep cache refresh even on no-robot/immediate NV rejection. Pack uses low8 count but all entries, low8 string byte lengths, full-length u32 Size allocation and zero tail, no sort/filter/terminators; writer silently returns before pack on no robot, queues NV196000/empty callback/broadcastfalse, immediate0 logs exact Error then errG/debug-break. Native GetFirstRobot reads first stored ID (0052F478), not sorted map/primary guess; another first robot whose NV owner is not represented stops visibly rather than borrowing primary queue. Needs InitAfterReadFromRobotAttempt now calls same owned Lab before resolution, covering callback and direct queue-failure path; FreeplayStack binds owner. Active assignment and restored cache vector producers remain M15-052/M15-036, represented unknown/null until explicit test input; normal path reports MISSING rather than invented empty/selected assignments. Test vector seam is not evidence producers are built. Resume SetGameBeingPaused(false) app delivery is still M15-016, visibly missing at Lab Init; no synthetic periodic/resume call or partial pause implementation. All statuses unchanged. OV104 answer (re-analysis/research/overnight/20261016-ov102-104-answer.md): CozmoExperiments+0xA0 is written by the single AssignmentDef subscriber (CozmoEngine$_0 0x004EF212 -> UpdateLabAssignments 0x006A60C4) on every assignment.
 
 **M15-051 — ActivityBuildPyramid producers: UpdateChooserPhase and the Get*BlockID calls, the Update caller, BehaviorManager +0x58..+0x65 writers, the UpdateMusic target, the +0xC0/+0xC8 behaviour lookups** (live path)
 
@@ -4097,7 +4088,7 @@ B-M15-1b (2026-10-15): Correction to earlier builder wording: only the temporary
 * rests on: Opus check of OV56-OV58 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov56-58-check.md: AutoActivate loop 0x007ECF58..0x007ED02C (mode==1 only; system_clock now/1e6); ActivateExperiment 0x007EC09C, ActivateExperimentInternal 0x007EC134..0x007EC330; VerifyTags 0x007EF274..0x007EF310; GetQualifiedTags/CalculateQualifiedTags 0x007EF370..0x007EF4E2; InitializeABInterface 0x007EE7EC..0x007EE808 (Codex claims, not re-checked). Shipped report_test_auto is automatic with audience tag "app_user_d0".; re-analysis/research/overnight/20261016-batch-check.md: A1 0x006A5614..0x006A56A4; init order 0x004EC9D6; AB-disable 0x007EE968..0x007EE986; auto loop 0x007ECF58..0x007ED02C; A3-A5 0x007EC09C..0x007EC332; dates 0x007EDD16..0x007EDD62; hash 0x007EE4FC..0x007EE58C, 0x007FAF2C..0x007FAFA0; ranges 0x007EE1DC..0x007EE294; store/notify 0x007ECEF8..0x007ECF48, 0x007ED0B6..0x007ED0FA; tag registration 0x006A517C..0x006A5256; app_user_d0 predicate 0x006A531E..0x006A536A; dynamic tags 0x006A53CC..0x006A551A; tag cache 0x007EF370..0x007EF37C; per-robot activation 0x0053705A..0x0053706C, 0x006A5744..0x006A575E; report 0x007EC4C0..0x007ECD80.
-* outstanding: RECOVERABLE_GAP: read the listed bodies; give the bucketing arithmetic for report_test_auto with a given user id. B-M15-4 (2026-10-16): actual Init emits stack MISSING at qualified-tags/AutoActivate0x006A5668 then VerifyTags/InitializeABInterface boundaries. No assignment outcomes, automatic-loop result logs, audience predicates or AB global callbacks fabricated. Definition loading/Enable does not claim full Init closure. Read 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): IMPLEMENTATION_GAP. Contradicted: report_test_auto has audience_tags [] in the shipped experiments.json ("app_user_d0" belongs to unconnected_decay_rates). Per-robot activation (robot body ID as user) is exact by default. The locale (language, country) is an app input supplied by the stack. Residue: M15-062.
+* outstanding: RECOVERABLE_GAP: read the listed bodies; give the bucketing arithmetic for report_test_auto with a given user id. B-M15-4 (2026-10-16): actual Init emits stack MISSING at qualified-tags/AutoActivate0x006A5668 then VerifyTags/InitializeABInterface boundaries. No assignment outcomes, automatic-loop result logs, audience predicates or AB global callbacks fabricated. Definition loading/Enable does not claim full Init closure. Read 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): IMPLEMENTATION_GAP. Contradicted: report_test_auto has audience_tags [] in the shipped experiments.json ("app_user_d0" belongs to unconnected_decay_rates). Per-robot activation (robot body ID as user) is exact by default. The locale (language, country) is an app input supplied by the stack. Residue: M15-062. OV104 answer (re-analysis/research/overnight/20261016-ov102-104-answer.md): the app_user_d0 predicate is evaluated exactly once (InitExperiments 0x006A5650; GetQualifiedTags caches), with NeedsState+8 = 0, so it is always false; a lazy or later evaluation would differ.
 
 **M15-053 — Lab user id input: the DAS device id (Java DAS.getDeviceID) used as the AutoActivate user id and the no-robot fallback of the ID supplier** (live path)
 
@@ -4162,6 +4153,33 @@ B-M15-1b (2026-10-15): Correction to earlier builder wording: only the temporary
 * evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: OnSelected 0x005B1518..0x005B16DC, 0x005B171C; OnDeselected 0x005B1780..0x005B179E; objective/observed 0x005B181E..0x005B1866; Update/check/end/interrupt 0x005B186C..0x005B1A16; get-in/out 0x005B1D18..0x005B1F2A, hard max 0x005B1F94..0x005B2066; Complete 0x005B1A90..0x005B1C2E, 0x005B2094.
 * outstanding: IMPLEMENTATION_GAP. Unread: ResetLightsAndAnimations 0x005B17A2..0x005B181D, the ReloadFromConfig exception tail 0x005B11AA..0x005B1255. B-M15-6 (2026-10-16): actual ActivityTreeLoader Sparked construction now visibly reports specialized owner/config/state/lifecycle absent; retained generic Activity is not native ActivitySparked. OnSelected/start reply131, OnDeselected/StopAllAnims, objective/observed set, Update/check/end/interrupt, get-in/out and Complete/events/end reply132 remain unbuilt. ResetLightsAndAnimations5B17A2 and ReloadFromConfig exception tail5B11AA..1255 remain unread, not silently skipped or rebuilt from generic fields. Actual app-input path also names missing owner/raw-ID selection join. No orphan state-machine/E2G acknowledgments added.
 
+**M15-060 — ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) and its subscription** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: Freeplay re-picks its activity when Cozmo is put down.
+* rests on: Opus checks of 2026-10-16 (batch), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261016-batch-check.md: body 0x005AD9F8..0x005ADA7E (Info Behaviors ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown "Kicking out '%s' on put down so we pick up a new one"; gates treads byte0 != 0, no sub-activity, id 7/8 or == this+0x91, sub+0x4C != 0x55; then OnDeselected and +0x80 = 0).; re-analysis/research/overnight/20261016-ov102-104-answer.md: ctor 0x005AD3B4..0x005AD3E0; subscribe helper 0x005AD7BC..0x005AD846 (tag 0x35); dtor 0x005AD87C..0x005AD8B0; dispatch 0x005120A0..0x005120AA, 0x00662508..0x006625AE, 0x005AEDFA..0x005AEE0E; handler 0x005AD9F8..0x005ADA7E; +0x91 ctor memclr 0x005AD390..0x005AD39E; +0x4C default 0x005B28F8/0x005B2904, requireSpark 0x005B2AAE..0x005B2B06.
+* outstanding: RECOVERABLE_GAP: read the subscription site; then build. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov102-104-answer.md): IMPLEMENTATION_GAP for S1-S4 and H1-H6 (no-EI warning named AIWhiteboard.Init; construction-scoped subscription; +0x91 is always 0; only non-spark activities kicked; OnDeselected without OnDeselectedInternal, +0x92 kept). Subscriber order: M15-066.
+
+**M15-061 — ActivityFeeding lifecycle beyond the cube-connection subscription, SetCubeLights, and CubeAccel RemoveListener 0x006356AC** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: The Feeding activity's behaviour and lights.
+* rests on: Opus checks of 2026-10-16 (batch), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261016-batch-check.md: OnSelectedInternal 0x005AADAC (rest), OnDeselected tail after 0x005ABC46 (UpdateBroadcastBehaviorStage(4,0), sEvent with need level), SetCubeLights, RemoveListener 0x006356AC.; re-analysis/research/overnight/20261016-ov102-104-answer.md: layout ctor 0x005AA51C..0x005AAA1C; dtor 0x005AACBC..0x005AADA8; OnSelectedInternal 0x005AADAC..0x005AB282; SetupSevereAnims/ClearSevereAnims 0x005AB450..0x005AB514; SetActivityStage 0x005AB530..0x005AB6C4; TransitionToBestActivityStage 0x005AB7AC..0x005ABA8E; OnDeselectedInternal tail 0x005ABB5C..0x005ABD48; GetDesiredActiveBehaviorInternal 0x005ABDD8..0x005ABF30; Update/UpdateCubeToEat/UpdateCurrentStage/HasFaceToTurnTo 0x005ABFDE..0x005AC8EC; listener 0x005AC8F0..0x005AC9C6; SetIdleForCurrentStage 0x005ACB70..0x005ACC96; FeedingCubeController 0x005A6038..0x005A6EF4; SetCubeLights 0x005A65AC..0x005A66BE; RemoveListener 0x006356AC..0x006357B0; AddListener tail 0x006355BE..0x006355CA.
+* outstanding: RECOVERABLE_GAP: read the listed bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov102-104-answer.md): IMPLEMENTATION_GAP for C1-C3, O1-O10, SV1-SV2, ST1-ST4, T1-T5, D1-D8, G1-G2, U1-U3, E1-E3, P1-P2, F1, L1-L2, I1-I2, K0-K12, R1-R2. Evidence correction: the deselect tail also sends meta.feeding_cubes_per_feeding. M1-034 point: L1 StartedEating with no controller inserts null and dereferences it at 0x005A610C; reachability UNKNOWN (M15-065); the stack makes it a visible skip. FeedingSFX output: M15-064. Interfaces owned elsewhere: CubeLightComponent (M4), ShakeListener and AddListener head (M9-017), BlockWorld lookups (M11), FaceWorld, NeedsState, reaction locks (M7-014).
+
+**M15-062 — Lab residue: NeedsState+8 at InitExperiments time, FindExperiment/FindAssignment/FindVariation bodies, AssignmentDef signal subscribers, sources of +0x4C/+0x58** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: Which experiment variations activate and what is reported.
+* rests on: Opus checks of 2026-10-16 (batch), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261016-batch-check.md: NeedsState ctor and GetCurNeedsState 0x006960BC; Find* PLT 0x004CA6F4/0x004CA700/0x004CA76C; AssignmentDef ProtoSignal vtable 0x0101E8C8; M1-034 point 0x007ECA9C (status > 5 report dereferences an unchecked FindVariation result).; re-analysis/research/overnight/20261016-ov102-104-answer.md: NeedsState+8 at InitExperiments 0x004EA80C..0x004EA81E, 0x0069BEFC..0x0069BF5C; predicate 0x006A531E..0x006A536A; GetQualifiedTags/Calculate 0x007EF370..0x007EF470; FindExperiment 0x007EDB18..0x007EDC10; FindAssignment 0x007EBF42..0x007EC014; FindVariation 0x007EDFA8..0x007EE0AA; AssignmentDef connect 0x004EB61E..0x004EB672, effect 0x004EF212..0x004EF218, 0x006A60C4..0x006A60D4; Override 0x007ED324..0x007ED4D8 and Force 0x007ED0FC..0x007ED298 unreachable; report 0x007EC7C4..0x007ECAAC.
+* outstanding: RECOVERABLE_GAP: read the listed bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov102-104-answer.md): IMPLEMENTATION_GAP for N1-N4, FE, FA, FV, SG1-SG2, V3 and S. app_user_d0 is evaluated once (cached), with NeedsState+8 = 0, so it is never qualified. Unreachable: statuses 7 and 8 (V1, V2) and the 0x007ECA9C / 0x007EE038 / FindExperiment null crash points. Residue (low risk): the LocalNotifications (0x00692158) and DesiredFaceDistortionComponent (0x00692212) ctors were not read for a write to NeedsState+8.
+
 **M15-063 — AIComponent teardown residue: concrete std::function and IHelper types, BorderSegment pointee, AIBeacon/PossibleObject/FailureInfo dtors, BehaviorEventAnimResponseDirector D0** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
@@ -4170,6 +4188,15 @@ B-M15-1b (2026-10-15): Correction to earlier builder wording: only the temporary
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261016-batch-check.md: writers of BehaviorHelperComponent +0x10/+0x28, ProcessInfo and cache-entry callables, filter predicates; BorderSegment element+0x28 pointee.; re-analysis/research/overnight/20261016-ov105-107-108-answer.md: helper component 0x00569D38..0x00569D7C; IHelper base dtor 0x005B5F20..0x005B600C; subclasses (DriveTo PoseBase +0x114, SearchForBlock Camera +0x110 and E2G 0x44 handle); BorderSegment pointee MemoryMapData (dtors 0x0067E508, 0x0068072C, 0x00684A34, 0x00684C04, 0x00684B0C); AIBeacon 0x0056A2F4..0x0056A31A; PossibleObject 0x0056CAC4..0x0056CAFC; FailureInfo 0x0056CAFE..0x0056CB62; BehaviorEventAnimResponseDirector D0 0x0056D968..0x0056D986.
 * outstanding: RECOVERABLE_GAP: census the callable types and read their destroy bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov105-107-108-answer.md): IMPLEMENTATION_GAP, all read: every destructor is memory-only; no IHelper::Stop or LogStopEvent at teardown. The only observable output is PoseBase VERIFY logs (M11-077; lifetimes M11-084).
+
+**M15-064 — FeedingSoundEffectManager::NotifyChargeStateChange and ResetChargeSound: E2G 149 FeedingSFXStageUpdate broadcasts** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Lights.cs`
+* effect: FeedingSFXStageUpdate messages to the game during Feeding cube charging.
+* rests on: Opus answer OV102-104 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261016-ov102-104-answer.md: NotifyChargeStateChange 0x0056EA4C..0x0056EB20, 0x0056EB28..0x0056EB6A; ResetChargeSound 0x0056EB90..0x0056EBC0; Broadcast(&&) 0x006625B0; FeedingSFXStageUpdate.cs Pack.
+* outstanding: IMPLEMENTATION_GAP: build row A1 of re-analysis/research/overnight/20261016-ov102-104-answer.md (fields +4 last ID -1, +8 count 0, +0xC last change 4; same-cube, different-cube and reset branches; {1, count/16} repeated count times). Open: the construction site at AIComponent+0x28 is unread (initial values are from the ctor as listed).
 
 ## What remains after both: blocked externally, or needing hardware
 

@@ -1003,3 +1003,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | ActivateHighLevelActivity (in scope); AI teardown residue: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-031, M15-063 |
 | Note | M15-058 |
+
+
+## Opus answers OV102-104 (manager, 2026-10-16; research/overnight/20261016-ov102-104-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Put-down kick-out; Feeding lifecycle; Lab residue: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-060, M15-061, M15-062 |
+| New IMPLEMENTATION_GAP | M15-064 |
+| New RECOVERABLE_GAP | M15-065, M15-066 |
+| Notes | M15-050, M15-052 |

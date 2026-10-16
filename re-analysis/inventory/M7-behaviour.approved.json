@@ -1,6 +1,6 @@
 {
   "subsystem": "M7-behaviour",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M7-behaviour.md",
   "inventory_sha256": "3585fc41fb24f84178770ee40a6d0f724a56f44d1ad26ebd7b5ac23c857426d0",
   "records": {
