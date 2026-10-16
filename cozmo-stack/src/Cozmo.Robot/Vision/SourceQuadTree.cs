@@ -9,7 +9,16 @@ internal class SourceMapData(MemoryMapContentType type, uint first, uint last)
     internal MemoryMapContentType Type = type;
     internal uint First = first, Last = last;
     internal virtual SourceMapData Clone() => new(Type, First, Last);
-    internal virtual bool Same(SourceMapData? other) => throw new NotSupportedException("MISSING: M11-048 non-cliff MemoryMapData subtype Equals has no checked port; NodeContent pointer-identity shortcut remains available");
+    // fidelity: M11-079 — base vt+0xC at 0x00680758..0x00680764; derived payload equality is separate.
+    internal virtual bool Same(SourceMapData? other)
+    {
+        if (other is null)
+        {
+            StackDiagnostics.Write("M1-034 / M11-079: skip base data equality null RHS read at 0x0068075C; prior data retained");
+            return false;
+        }
+        return Type == other.Type;
+    }
 }
 internal sealed class CliffMapData(Vec2 normal, uint timestamp) : SourceMapData(MemoryMapContentType.Cliff, timestamp, timestamp)
 {

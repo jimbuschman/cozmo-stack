@@ -215,20 +215,36 @@ public abstract class SteppedBehavior : IBehavior
     /// <c>+0x70</c> (0x55 bypasses) through <c>ProgressionUnlockComponent::IsUnlocked(robot+0x448, id,
     /// true)</c> (0x005bd810), the float timers <c>+0x78</c>/<c>+0x7c</c> (0x005bd81a..), the wants-to-run
     /// strategy <c>+0x38</c> (0x005bd8a4), and finally <c>now &gt;= +0x118</c> (0x005bd8b4..0x005bd8c8).
-    /// The robot/AI/progression inputs are cross-layer seams; a null seam means "no such requirement".
+    /// The required-process word is explicit; remaining robot/progression inputs have separate seams and gaps.
     /// </summary>
     // fidelity: M8-001
     public bool IsRunnableBase(BehaviorContext context)
     {
         if (_engineRunning) return true;                                          // +0xa1
-        if (RequiredProcessRunning is { } process && !process()) return false;    // +0x1c
+        // fidelity: M8-013 — +0x1C is an EProcess word, not the presence of a callback.
+        if (RequiredProcessId != 0)
+        {
+            if (RequiredProcessRunning is null && context.AI is null)
+            {
+                ReportMissing("M8-013 IBehavior::IsRunnableBase 0x005BD7D4: required process has no AIInformationAnalyzer owner");
+                return false;
+            }
+            bool running = RequiredProcessRunning?.Invoke() ?? context.AI!.Analyzer.IsProcessRunning(RequiredProcessId);
+            if (!running)
+            {
+                context.Robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "IBehavior.IsRunnable.RequiredProcessNotFound",
+                    $"Required process '{AIInformationAnalyzer.ProcessName(RequiredProcessId)}' is not enabled for '{Id}'");
+                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+                return false;
+            }
+        }
         if (RobotStateAllowsRun is { } state && !state()) return false;           // +0x74
         if (UnlockAllowsRun is { } unlock && !unlock()) return false;             // +0x70
         if (!RecentTimersAllow(context)) return false;                            // +0x78/+0x7c
         // The three robot-byte gates and their behaviour virtuals (decomp 0x005bd864..0x005bd89c):
         // robot+0x355 -> vtable+0x20, robot+0x34a -> vtable+0x24, robot+0x284->+8 != -1 -> vtable+0x28.
         // robot+0x355 is the off-treads state and [robot+0x284]+8 != -1 is "carrying" (CarryingComponent, wired through
-        // Motion.IsCarryingObject); the seams override them. robot+0x34a, the AI process, the +0x74 state, the +0x70 unlock, the
+        // Motion.IsCarryingObject); the seams override them. robot+0x34a, the +0x74 state, the +0x70 unlock, the
         // +0x78/+0x7c timers and the spark gate have no source in this stack: with no seam they are reported MISSING, not allowed.
         bool notOnTreads = RobotState355?.Invoke() ?? context.Robot.Sensors.OffTreadsState != OffTreadsState.OnTreads;
         if (notOnTreads && !RunnableGate20(context)) return false;
@@ -236,8 +252,8 @@ public abstract class SteppedBehavior : IBehavior
         else if (RobotState34a() && !RunnableGate24(context)) return false;
         bool carrying = RobotComponent284?.Invoke() ?? context.Robot.Motion.IsCarryingObject?.Invoke() == true;
         if (carrying && !RunnableGate28(context)) return false;
-        if (RequiredProcessRunning is null || RobotStateAllowsRun is null || UnlockAllowsRun is null)
-            ReportMissing("IBehavior::IsRunnableBase AI-process (0x005bd7de), +0x74 state (0x005bd7e6) and +0x70 unlock (0x005bd810) inputs: no source in this stack; not tested");
+        if (RobotStateAllowsRun is null || UnlockAllowsRun is null)
+            ReportMissing("IBehavior::IsRunnableBase +0x74 state (0x005bd7e6) and +0x70 unlock (0x005bd810) inputs: no source in this stack; not tested");
         if (!WantsToRun(context)) return false;                                   // +0x38
         double now = context.ClockSec?.Invoke() ?? Clock() / 1000.0;
         return (float)now >= _resumeSuppressionUntil;                             // +0x118
@@ -249,7 +265,9 @@ public abstract class SteppedBehavior : IBehavior
     /// <summary>The wants-to-run strategy's check (<c>+0x38</c>). A class that builds a strategy from its config overrides it.</summary>
     protected virtual bool WantsToRun(BehaviorContext context) => WantsToRunAllowsRun?.Invoke() ?? true;
 
-    /// <summary>The AI process seam (<c>+0x1c</c> against <c>robot+0x264+8</c>); null = no required process.</summary>
+    /// <summary>Native +0x1C, initialized to zero at 0x005BBC08. The unbuilt VisitInterestingEdge constructor writes one.</summary>
+    public int RequiredProcessId { get; protected internal set; }
+    /// <summary>Test override for a nonzero process ID; production reads the owned analyzer.</summary>
     public Func<bool>? RequiredProcessRunning { get; set; }
     /// <summary>The robot-state seam (<c>+0x74</c> against 3 or the AI state); null = allow.</summary>
     public Func<bool>? RobotStateAllowsRun { get; set; }

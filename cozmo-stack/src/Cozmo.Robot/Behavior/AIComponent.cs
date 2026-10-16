@@ -4,9 +4,8 @@ namespace Cozmo.Robot.Behavior;
 /// <summary>
 /// The host of the engine's <c>BehaviorHelperComponent</c>: this stack's minimal <c>AIComponent</c> (the engine's is at <c>[robot+0x264]</c>; its +0x10 is the
 /// helper component, constructed at 0x00569aa4..0x00569ab2). No other class in this stack stood for the <c>AIComponent</c> (the whiteboard lives in
-/// <c>ManipulationSystem</c> and the <c>FreeplayDataTracker</c> on <see cref="FreeplayStack"/>), so this one hosts only the helper component; the other members
-/// of <c>AIComponent::Update</c> (<c>AIInformationAnalyzer::Update</c>, <c>AIWhiteboard::Update</c> (a no-op), <c>SevereNeedsComponent::Update</c> and
-/// <c>FreeplayDataTracker::Update</c>) are not moved here.
+/// <c>ManipulationSystem</c> and the <c>FreeplayDataTracker</c> on <see cref="FreeplayStack"/>). This owner also hosts the analyzer at +8.
+/// Whiteboard (a no-op), severe needs and tracker ownership/update joins remain separate gaps or existing paths.
 ///
 /// <see cref="Update"/> is <c>AIComponent::Update</c>'s helper step: 0x00569f3c..0x00569f40 passes <c>[this]</c> (the robot) to
 /// <c>BehaviorHelperComponent::Update</c> (<c>[this+0x10]</c>) after <c>SevereNeedsComponent::Update</c>. Its only caller is <c>Robot::Update</c> 0x00513eac, before
@@ -34,6 +33,7 @@ public sealed class AIComponent
     public AIComponent(Func<int> worldOriginId, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
         Helpers = new BehaviorHelperComponent(worldOriginId, log, sourceLog);
+        Analyzer = new AIInformationAnalyzer(SourceLogDispatch.GetSink(sourceLog, log));
     }
 
     // fidelity: M10-009
@@ -50,6 +50,13 @@ public sealed class AIComponent
     /// <summary><c>AIComponent+0x10</c>.</summary>
     public BehaviorHelperComponent Helpers { get; }
 
-    /// <summary>The helper step of <c>AIComponent::Update</c> (0x00569f40 <c>blx 0x4aca3c</c> = <c>BehaviorHelperComponent::Update</c>).</summary>
-    public void Update(CozmoRobot robot) => Helpers.Update(robot);
+    // fidelity: M11-079 — native +8, constructor 0x005741A4..0x005741F6.
+    public AIInformationAnalyzer Analyzer { get; }
+
+    /// <summary>Analyzer first (0x00569F2C), then the built helper step (0x00569F40); other AI steps are not claimed here.</summary>
+    public void Update(CozmoRobot robot)
+    {
+        Analyzer.Update(); // 0x00569F2C, before the helper at 0x00569F40.
+        Helpers.Update(robot);
+    }
 }

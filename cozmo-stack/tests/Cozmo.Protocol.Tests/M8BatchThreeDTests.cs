@@ -933,6 +933,11 @@ public class M8BatchThreeDTests
         {
             Assert.Same(stack.AI, ctx.AI);
             Assert.NotNull(rig.Robot.Engine.AIComponentUpdate);
+            // B-M11-12 / OV51: shipped Hiking's real lifecycle reaches this same owned analyzer.
+            var hiking = stack.Tree.SelectMany(a => a.SubActivities.Prepend(a)).Single(a => a.Id == "Hiking");
+            Assert.Equal(1, hiking.InfoAnalyzerProcess);
+            hiking.OnSelected(1);
+            Assert.True(stack.AI.Analyzer.IsProcessRunning(1));
             var probe = new Probe("live");
             TestHelper? helper = null;
             probe.OnStartHook = p =>
@@ -946,6 +951,8 @@ public class M8BatchThreeDTests
             Assert.Equal(1, helper!.InternalCalls);
             rig.Robot.Engine.Tick();
             Assert.Equal(2, helper.InternalCalls);
+            hiking.OnDeselected(2);
+            Assert.False(stack.AI.Analyzer.IsProcessRunning(1));
         }
         Assert.Null(rig.Robot.Engine.AIComponentUpdate);
     }

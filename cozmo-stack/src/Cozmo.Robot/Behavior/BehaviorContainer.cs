@@ -314,6 +314,9 @@ public sealed class BehaviorFactory
         var entry = Table[(int)cls];
         if (entry.Construct is null)
         {
+            // fidelity: M8-013, M11-089
+            if (cls == BehaviorClass.VisitInterestingEdge)
+                SteppedBehavior.ReportMissing("M8-013/M11-089 VisitInterestingEdge constructor 0x005E5FB2..0x005E5FB4 sets required-process +0x1C to 1, but the concrete behavior owner and consumers remain unbuilt; no stand-in constructor or disable-request lifecycle is fabricated");
             // fidelity: M7-025, M7-029
             if (cls == BehaviorClass.TrackLaser)
                 SteppedBehavior.ReportMissing("M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings");

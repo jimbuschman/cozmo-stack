@@ -184,6 +184,21 @@ public sealed class FreeplayStack : IDisposable
         // (the hook below), and IBehavior reaches the component through the context. Robot::GetWorldOriginID is the robot's current pose origin id (Robot::GetPose's VERIFY,
         // 0x004ea3a6..0x004ea3b2, compares the pose root's id with it): EngineRobot.CurrentOriginId.
         var ai = new AIComponent(() => (int)(robot.Engine.Robot?.CurrentOriginId ?? 0), robot.Engine.Log, (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text));
+        // fidelity: M11-079, M8-013 — native activity/chooser requests reach this same analyzer.
+        void BindAnalyzer(Activity activity)
+        {
+            activity.Analyzer = ai.Analyzer;
+            foreach (var chooser in new[] { activity.Chooser, activity.InterludeChooser })
+                if (chooser is SelectionChooser selection)
+                    selection.SetAnalyzerEnabled = (behavior, key, enabled) =>
+                    {
+                        if (behavior is not SteppedBehavior stepped) { SteppedBehavior.ReportMissing("M8-013 Selection SetProcessEnabled 0x0060AE84: non-stepped native process field is unbuilt"); return; }
+                        if (enabled) ai.Analyzer.AddEnableRequest(stepped.RequiredProcessId, key);
+                        else ai.Analyzer.RemoveEnableRequest(stepped.RequiredProcessId, key);
+                    };
+            foreach (var child in activity.SubActivities) BindAnalyzer(child);
+        }
+        foreach (var activity in tree) BindAnalyzer(activity);
         ai.BindDestructionRecipient(0x2C,tracker.DestroyStorage);
         // The constructed host helper is real, but its captured IHelper destruction remains explicitly unread.
         ai.BindDestructionRecipient(0x10,()=>SteppedBehavior.ReportMissing("M15-027/M15-045 BehaviorHelper callable/shared-IHelper destruction 0x00569D30..0x00569D7C is unread; no Update, Cancel or guessed Dispose substituted"));

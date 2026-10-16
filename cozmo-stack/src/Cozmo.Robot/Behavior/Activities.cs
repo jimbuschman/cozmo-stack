@@ -439,19 +439,18 @@ public sealed class SelectionChooser : IBehaviorChooser
 
     /// <summary>
     /// The analyzer enable request <c>SetProcessEnabled</c> 0x0060AE84..0x0060AEEA makes under <see cref="ProcessKey"/>
-    /// (<c>AddEnableRequest</c> 0x4B1DA0 / <c>RemoveEnableRequest</c> 0x4B1DAC): (behaviour, key, enabled). The stack has no <c>AIInformationAnalyzer</c>;
+    /// (<c>AddEnableRequest</c> 0x4B1DA0 / <c>RemoveEnableRequest</c> 0x4B1DAC): (behaviour, key, enabled). FreeplayStack binds the owned analyzer;
     /// when unset, a handoff that reaches a behaviour with a process reports MISSING once and makes no request. MISSING: M8-013.
     /// </summary>
     public Action<IBehavior, string, bool>? SetAnalyzerEnabled { get; set; }
 
     /// <summary>
-    /// Whether the behaviour's process field (+0x1C, an <c>EProcess</c> id, 0x005BD7D4) is non-null. This stack has no such field; the default
-    /// treats <see cref="SteppedBehavior.RequiredProcessRunning"/> as it, which nothing in the stack sets, so the default handoff makes no
+    /// Whether the behaviour's process field (+0x1C, an EProcess id, 0x005BD7D4) is nonzero. The default reads RequiredProcessId and makes no
     /// request and reports MISSING once when a handoff is attempted for a non-stepped behaviour.
     /// </summary>
     public Func<IBehavior, bool> HasProcessField { get; set; } = DefaultHasProcessField;
 
-    private static readonly Func<IBehavior, bool> DefaultHasProcessField = b => b is SteppedBehavior { RequiredProcessRunning: not null };
+    private static readonly Func<IBehavior, bool> DefaultHasProcessField = b => b is SteppedBehavior { RequiredProcessId: not 0 };
 
     private bool _reportedTypeNameMissing, _reportedProcessMissing, _reportedSinkMissing, _reportedFinderMissing;
 
@@ -470,7 +469,7 @@ public sealed class SelectionChooser : IBehaviorChooser
         if (!HasProcessField(behavior)) return;
         if (SetAnalyzerEnabled is not { } sink)
         {
-            if (!_reportedSinkMissing) { _reportedSinkMissing = true; Log?.Invoke("MISSING: M8-013: SetProcessEnabled 0x0060AE84 needs AIInformationAnalyzer enable requests (0x4B1DA0/0x4B1DAC); the stack has none; no request made"); }
+            if (!_reportedSinkMissing) { _reportedSinkMissing = true; SteppedBehavior.ReportMissing("M8-013: SetProcessEnabled 0x0060AE84 needs the owned AIInformationAnalyzer request sink; standalone chooser has no owner; no request made"); }
             return;
         }
         sink(behavior, ProcessKey, enabled);
@@ -935,6 +934,9 @@ public sealed class Activity
     public AnimationTrigger? DriveEndAnim { get; init; }
     public AnimationTrigger? IdleAnim { get; init; }
     public string? RequireSpark { get; init; }
+    // fidelity: M11-079 — IActivity+0x48, read 0x005B2D26..0x005B2D7C.
+    public int InfoAnalyzerProcess { get; init; }
+    internal AIInformationAnalyzer? Analyzer { get; set; }
 
     /// <summary>
     /// The config's <c>needsActionID</c>, kept because the shipped activities carry it - but nothing reads
@@ -956,12 +958,21 @@ public sealed class Activity
         ReportActivityMissing("PublicStateBroadcaster::UpdateActivity 0x005B3154", missing);
         if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing);
         if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("SmartPushIdleAnimation 0x005B31BC", missing);
+        SetAnalyzerRequest(true);
     }
     public void OnDeselected(double nowSec, Action<string>? missing = null)
     {
         SelectedAtSec = null; Strategy.OnEnded(nowSec);
         if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("RemoveIdleAnimation 0x005B340C", missing);
         if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("RemoveDrivingAnimations 0x005B3450", missing);
+        SetAnalyzerRequest(false);
+    }
+    private void SetAnalyzerRequest(bool enable)
+    {
+        if (InfoAnalyzerProcess == 0) return;
+        if (Analyzer is null) { SteppedBehavior.ReportMissing("M11-079 IActivity analyzer request 0x005B31F6/0x005B349A has no AI owner"); return; }
+        if (enable) Analyzer.AddEnableRequest(InfoAnalyzerProcess, Id);
+        else Analyzer.RemoveEnableRequest(InfoAnalyzerProcess, Id);
     }
     private void ReportActivityMissing(string call, Action<string>? sink)
     {
@@ -1038,6 +1049,7 @@ public static class ActivityTreeLoader
             SteppedBehavior.ReportMissing("ActivityGatherCubes (Update 0x005AF27C) is not built: its Update reports NeedActionCompleted(GatherCubes 0x14) when every cube is in a beacon (0x005AF2EC..0x005AF2F8, 0x005AF2F0) and plays the cube lights; the activity (SparksGatherCubes, feature-gated off in the shipped features.json) has no body, and the behaviours PeekABoo, TrackLaser and GuardDog that report needs actions are unbuilt too (M15-008)");
         return new Activity
         {
+            InfoAnalyzerProcess = e.TryGetProperty("infoAnalyzerProcess", out var ip) && ip.GetString() == "CalculateInterestingRegions" ? 1 : 0,
             Id = id, Type = e.TryGetProperty("activityType", out var ty) ? ty.GetString() ?? "BehaviorsOnly" : "BehaviorsOnly", Priority = priority, Strategy = strategy,
             Chooser = e.TryGetProperty("behaviorChooser", out var bc) ? BuildChooser(bc, bound, penalty, random) : e.TryGetProperty("universalChooser", out var uc) ? BuildChooser(uc, bound, penalty, random) : null,
             InterludeChooser = e.TryGetProperty("interludeBehaviorChooser", out var ic) ? BuildChooser(ic, bound, penalty, random) : null,
