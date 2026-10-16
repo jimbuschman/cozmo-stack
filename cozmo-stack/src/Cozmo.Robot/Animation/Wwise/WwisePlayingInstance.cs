@@ -111,6 +111,11 @@ public sealed class WwisePlayingInstance
     /// <summary><c>+0x34</c>: tested by the type-1 join of <c>0xA0067C</c> (<c>0x9E808C</c> runs when non-zero, O5). Nothing built writes it.</summary>
     public uint Field34 { get; set; }
 
+    // fidelity: M9-031
+    /// <summary>PBI+0x38, pending modulator deadline. The embedded owner/deadline initializer
+    /// 0x009E8728..0x009E8734 stores {0, 0xFFFFFFFF}; it is distinct from stop offset +0x1F8.</summary>
+    public uint Field38 { get; set; } = 0xFFFFFFFF;
+
     /// <summary><c>+0xE9</c>: bit 0 is set by <c>0x9FF41C</c>; bit 2 gates the global voice list append (R1) and the re-registration
     /// <c>0xA00494</c> (8.7). Nothing built writes it.</summary>
     public byte Flags0E9 { get; set; }

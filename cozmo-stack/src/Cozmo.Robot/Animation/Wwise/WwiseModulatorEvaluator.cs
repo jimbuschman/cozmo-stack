@@ -126,7 +126,8 @@ public readonly record struct WwiseLfoCoefficients(float C1, float C2)
             return new WwiseLfoCoefficients(1f, 0f);                 // 0x9E35C4 -> 0x9E5004
 
         double f = frequencyHz;
-        double t = f <= MixRateHz ? HalfMixRateHz / f : 0.5;         // 0x9E35DC..0x9E35E8
+        // Native GT selects 0.5; LE includes unordered, so NaN remains in the divide.
+        double t = f > MixRateHz ? 0.5 : HalfMixRateHz / f;          // 0x9E35DC..0x9E35E8 / 0x9D73B4..0x9D73BC
         t = Math.Exp(-damping * Math.Log(t));                        // 0x9E35F0 log, 0x9E3600 vnmul, 0x9E3608 exp
         double w = t * HalfMixRateHz / MixRateHz * (2.0 * Math.PI);  // 0x9E3610..0x9E3618
         double a = 2.0 - Math.Cos(w);                                // 0x9E362C
@@ -143,8 +144,10 @@ public readonly record struct WwiseLfoCoefficients(float C1, float C2)
     /// </summary>
     public static float PhaseIncrement(float frequencyHz, bool radians)
     {
-        float inc = frequencyHz < MixRateHz ? (float)(frequencyHz / MixRateHz) : 1f;
-        return radians ? inc * (float)(2.0 * Math.PI) : inc;
+        // fidelity: M9-025, M9-033 — 0x009D7438..0x009D747C: MI divides in f32;
+        // PL (including unordered frequency) selects one, then mode0 multiplies twoPi32.
+        float inc = frequencyHz < 48000f ? frequencyHz / 48000f : 1f;
+        return radians ? inc * BitConverter.UInt32BitsToSingle(0x40C90FDB) : inc;
     }
 
     /// <summary>
