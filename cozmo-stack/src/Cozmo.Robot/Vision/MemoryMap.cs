@@ -98,6 +98,13 @@ public sealed class MemoryMap
         get { Missing?.Invoke("MISSING: M11-045 explored-area helper+0x38: tree does not yet contain all map content (B-M3M4-20)");return double.NaN; }
     }
     internal uint LastObservedTime => Tree.Root.Content.Data.Last;
+    // fidelity: M11-075, M11-046
+    internal void TransformAging(SourceMapAging aging)
+    {
+        // The checked callback is SourceMapAging.Apply. Its real whole-map recipient first constructs
+        // root geometry and runs Transform, not a linear walk over legacy Regions.
+        Behavior.SteppedBehavior.ReportMissing("M11-075/M11-046 aging at 0x0067DCF4 -> whole-map TransformContent 0x0068140C/0x0068A414: root geometry, node Transform and subtype comparisons are not integrated; checked aging callback is not applied to legacy polygon regions");
+    }
     // fidelity: M13-030 — native insertion; legacy region queries remain M11-046.
     internal Action<Vec2[],CliffMapData>? CliffInsertForTest;
     internal void InsertCliff(Vec2[] polygon, CliffMapData data)

@@ -828,6 +828,9 @@ public sealed partial class CozmoRobot : IDisposable
     {
         if (Engine.Robot?.StoredState is not { } stored) return;
         Route(Cubes.Update);
+        // fidelity: M11-075 — 0x0051423C, after ConnectToRequestedObjects, before light updates.
+        Route(() => LogCallbackDeferral.RunGated(LocalizationWorld.FrameGate,
+            () => LocalizationWorld.Maps.Update(stored.Timestamp, Engine.Timer.SecondsF)));
         Route(Lights.Cubes.Update);
         Route(() => Lights.Body.Update(stored, Engine.Log, (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text)));
     }

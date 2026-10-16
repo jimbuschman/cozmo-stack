@@ -233,13 +233,13 @@ internal sealed class SourceQuadTree
 }
 
 // fidelity: M13-032, M13-031
-internal sealed class SourceMapComponent
+internal sealed partial class SourceMapComponent
 {
     internal readonly SortedDictionary<uint,MemoryMap> Maps = new();
     internal uint CurrentOrigin; // Unknown=0; constructor +38=1,+3C=-1,+40=0
     internal byte Enabled = 1;
-    internal float LastUpdate = -1;
-    internal uint UpdateCount;
+    internal float BroadcastInterval = -1; // +0x3C, raw f32
+    internal float BroadcastDeadline; // +0x40, raw f32
     internal SourceLogSink? SourceLog;
     internal Action<string>? Missing;
     internal MemoryMap? Current => Maps.GetValueOrDefault(CurrentOrigin); // null only while the host defers reconstruction/teardown.

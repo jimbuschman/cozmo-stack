@@ -736,7 +736,12 @@ public sealed partial class BlockWorld
 
     // fidelity: M13-032, M13-031
     internal SourceMapComponent Maps { get; private set; } = new();
-    internal void ConstructMapComponent() => Maps = new SourceMapComponent();
+    internal void ConstructMapComponent()
+    {
+        Maps = new SourceMapComponent();
+        // fidelity: M11-075 — no phantom subscriptions with an unproved native lifetime.
+        Behavior.SteppedBehavior.ReportMissing("M11-075 MapComponent ctor 0x0067D9FE..0x0067DB48 G2E144/145 scoped subscription producer/retirement is not bound; raw handler bodies exist but no public map-frequency API or substitute callbacks are installed");
+    }
     internal Func<uint>? RobotTimestamp;
     internal Func<uint, PoseTreeNameNode?>? OriginNode;
     internal Func<bool>? RobotPoseTreeIsUnbuilt;
@@ -2291,6 +2296,12 @@ public sealed partial class BlockWorld
         if(missing is not null)Missing(missing);
         if (SetObjectPoseChanged is { } set) set(obj.ObjectId,obj.PoseState);
         else if(!_missingPoseChangedReported){_missingPoseChangedReported=true;Missing("M11-037 BlockConfigurationManager::SetObjectPoseChanged 0x00624892 has no stack counterpart (once per frame)");}
+        // fidelity: M11-074 — 0x00506FA8, after BlockWorld::OnObjectPoseChanged.
+        Maps.SourceLog=SourceLog;
+        Maps.UpdateObjectPose(obj,oldPose,oldState);
+        // 0x005062B4 repeats with the current state before the state-change recipients.
+        if(oldState!=obj.PoseState && obj.PoseState!=PoseState.Unknown)
+            Maps.UpdateObjectPose(obj,obj.Pose,oldState);
         // MapComponent::UpdateObjectPose immediately returns for family 6, on both calls. No game message for a cliff.
         if (oldState != obj.PoseState)
             Missing("M4-049 active-object vtable +0xC gate at 0x005062B8..0x005062DA is unread; no cube-light pose-state callback is inferred from an object family");
