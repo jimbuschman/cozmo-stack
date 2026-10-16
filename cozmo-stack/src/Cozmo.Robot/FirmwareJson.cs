@@ -53,6 +53,9 @@ internal static class Json
         return new Reader(bytes).Parse(document.RootElement);
     }
 
+    // fidelity: M11-082 — readAsJson passes its existing Value into the same checked Reader.
+    public static bool TryParseInto(byte[] bytes,FirmwareJsonValue destination)=>new Reader(bytes).Parse(destination);
+
     public static FirmwareJsonValue Member(FirmwareJsonValue root, string key)
     {
         if (root.Kind == FirmwareJsonKind.Null) root.Assign(FirmwareJsonKind.Object);

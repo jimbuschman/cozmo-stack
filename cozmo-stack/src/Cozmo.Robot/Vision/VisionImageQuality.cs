@@ -20,27 +20,45 @@ public sealed partial class VisionSystem
         SteppedBehavior.ReportMissing("M11-080 mode-7 Profiler.Tic/Toc CheckingImageQuality 0x006B55F6/0x006B560E remain unbuilt timing producers; no Stopwatch timer substituted");
         return QualityProcessor.TryCheck(image,QualityRectangleInput(),_robot.CameraSettings.QualityState,ModeEnableMask,out status,out proposal);
     }
+    private bool LoadExposureParameters(FirmwareJsonValue root)
+    {
+        var section=root.Members.GetValueOrDefault(Convert.ToHexString("ImageQuality"u8));
+        if(section is null)return false;
+        FirmwareJsonValue? Get(string key)=>section.Members.GetValueOrDefault(Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(key)));
+        foreach(string key in new[]{"MidValue","MaxChangeFraction","SubSample"})
+        {
+            if(Get(key) is {} v && v.Kind!=FirmwareJsonKind.Null)continue;
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionSystem.Init.MissingJsonParameter",key);EngineErrorState.StoreAndMaybeBreak();return false;
+        }
+        uint status=SetAutoExposureParams(Json.AsInt(Get("SubSample")!),unchecked((byte)Json.AsUInt(Get("MidValue")!)),QualityProcessor.Settings.Mid,Json.AsFloat(Get("MaxChangeFraction")!));
+        if(status!=0){_robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"VisionSystem.Init.SetExposureParametersFailed","");EngineErrorState.StoreAndMaybeBreak();return false;}
+        return true;
+    }
     private void LoadQualityConfiguration()
     {
-        string? resources=_robot.Engine.Options.ResourcesPath;
-        if(string.IsNullOrEmpty(resources))
-        {SteppedBehavior.ReportMissing("M11-080 quality Init config input absent; compiled static defaults retained, not labelled shipped vision_config values");return;}
-        string path=Path.Combine(resources,"config","engine","vision_config.json");
-        if(!File.Exists(path))
-        {SteppedBehavior.ReportMissing("M11-080 quality config file missing; DataPlatform/RobotDataLoader failure path remains M11-059/M11-082, not fabricated as an Init Error");return;}
+        var engine=_robot.Engine;
+        if(!engine.VisionConfigurationRead)
+        {SteppedBehavior.ReportMissing("M11-080/M11-082 quality Init has no supplied DataPlatform config input; no native complete Init is claimed");return;}
+        var root=engine.VisionConfiguration;
+        if(!engine.VisionConfigurationReadSucceeded && root.Kind!=FirmwareJsonKind.Null)
+        {SteppedBehavior.ReportMissing("M11-082 partial-object config contents are unreachable with shipped assets and are not built; loader value retained without interpretation");return;}
+        var settings=QualityProcessor.Settings;
+        var prior=(settings.TooBright,settings.TooDark,settings.MeterFromDetections,settings.Low,settings.Mid,settings.High,TimeBeforeQualityErrorMs,RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs,PendingDropStatsSeconds);
         try
         {
-            if(!Json.TryParseFirst(File.ReadAllBytes(path),out var doc))
-            {SteppedBehavior.ReportMissing("M11-080 quality config parse failure: DataPlatform reader failure path not built; prior statics retained");return;}
             bool loaded;
-            using(doc)
             {
-                if(!ReadComponentQualityPrefix(doc.RootElement))return;
-                loaded=QualityProcessor.Settings.Load(doc.RootElement,QualityProcessor.SourceLog!);
+                if(!ReadComponentQualityPrefix(root))return;
+                loaded=QualityProcessor.Settings.Load(root,QualityProcessor.SourceLog!);
+                if(loaded)loaded=LoadExposureParameters(root);
+                if(loaded)SteppedBehavior.ReportMissing("M11-059/M11-082 remaining VisionSystem Init prerequisites before InitialVisionModes loop0x006B114C are unbuilt; ordered mode helper is not a fabricated complete Init");
             }
-            if(loaded)SteppedBehavior.ReportMissing("M11-081 quality Init SetAutoExposureParams 0x006B0A14 recipient is checked but not built (B-M11-11); six ImageQuality statics only loaded here");
+
         }
         catch(Exception e) when(e is JsonLogicError or JsonRuntimeError)
-        {SteppedBehavior.ReportMissing("M1-034/M11-080 quality config JsonCpp terminating input at 0x006B07DE..0x006B0934: skip configuration; native complete Init is M11-059");}
+        {
+            (settings.TooBright,settings.TooDark,settings.MeterFromDetections,settings.Low,settings.Mid,settings.High,TimeBeforeQualityErrorMs,RepeatedQualityErrorIntervalMs,CameraSettings.ConfiguredInitialExposureTimeMs,PendingDropStatsSeconds)=prior;
+            StackDiagnostics.Write("M1-034/M11-080/M11-081 quality config JsonCpp terminating input at0x006B07DE..0x006B09F4: skip configuration, prior values retained; native complete Init remains M11-059");
+        }
     }
 }

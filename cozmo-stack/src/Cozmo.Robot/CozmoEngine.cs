@@ -1935,6 +1935,7 @@ public sealed partial class CozmoEngine : IDisposable
         // G5.16..G5.18, G5.25: RobotManager::Init starts the header load on its own thread; nothing waits for it.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
         else EmitStackLog("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
+        LoadVisionConfiguration(); // M11-082: vision failure continues through the later config/init tail.
         Experiments = new CozmoExperiments(this);
         Experiments.LoadRobotConfig(); // checked LoadRobotConfigs entry0x00522EFC, then InitExperiments.
         Experiments.Init();
