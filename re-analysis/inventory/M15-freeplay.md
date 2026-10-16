@@ -995,3 +995,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | To IMPLEMENTATION_GAP | M15-055, M15-056, M15-052, M15-045 |
 | New RECOVERABLE_GAP | M15-060, M15-061, M15-062, M15-063 |
+
+
+## Opus answers OV105/107/108 (manager, 2026-10-16; research/overnight/20261016-ov105-107-108-answer.md)
+
+| Change | Records |
+| --- | --- |
+| ActivateHighLevelActivity (in scope); AI teardown residue: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-031, M15-063 |
+| Note | M15-058 |

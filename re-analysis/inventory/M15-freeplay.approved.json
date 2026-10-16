@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "71d9897d725ab324af1c7e10081ceeb2ef868624917695f28dc11b2b44b670f0",
+  "inventory_sha256": "e21ecc5d86f2ad2b09a76f479d1c21e4059f3bc0f84a887d29d74bf1e0f04d50",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -410,11 +410,12 @@
       "hardware_required": false
     },
     "M15-031": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "SDK high-level activity activation recipient",
       "authority": "libcozmoEngine.so 3.4.0-1204 ResetRobot.",
       "evidence": [
-        "ActivateHighLevelActivity(1) at 0x0065DDBA; receiver body UNKNOWN (triage E2)."
+        "ActivateHighLevelActivity(1) at 0x0065DDBA; receiver body UNKNOWN (triage E2).",
+        "re-analysis/research/overnight/20261016-ov105-107-108-answer.md: wire G2E 0x92 Unpack 0x00738A94, Get 0x0074D90A; subscription 0x005A147E..0x005A14C8 (only with external interface 0x005A0F5A..0x005A0F64); adapter 0x005A4FA2..0x005A4FE0; SetCurrentActivity 0x005A106C..0x005A1230; init call 0x005A0F44..0x005A0F4C; EnumToString 0x007679D4..0x007679E6."
       ],
       "live_path": true,
       "hardware_required": false
@@ -745,11 +746,12 @@
       "hardware_required": false
     },
     "M15-063": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "AIComponent teardown residue: concrete std::function and IHelper types, BorderSegment pointee, AIBeacon/PossibleObject/FailureInfo dtors, BehaviorEventAnimResponseDirector D0",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-batch-check.md: writers of BehaviorHelperComponent +0x10/+0x28, ProcessInfo and cache-entry callables, filter predicates; BorderSegment element+0x28 pointee."
+        "re-analysis/research/overnight/20261016-batch-check.md: writers of BehaviorHelperComponent +0x10/+0x28, ProcessInfo and cache-entry callables, filter predicates; BorderSegment element+0x28 pointee.",
+        "re-analysis/research/overnight/20261016-ov105-107-108-answer.md: helper component 0x00569D38..0x00569D7C; IHelper base dtor 0x005B5F20..0x005B600C; subclasses (DriveTo PoseBase +0x114, SearchForBlock Camera +0x110 and E2G 0x44 handle); BorderSegment pointee MemoryMapData (dtors 0x0067E508, 0x0068072C, 0x00684A34, 0x00684C04, 0x00684B0C); AIBeacon 0x0056A2F4..0x0056A31A; PossibleObject 0x0056CAC4..0x0056CAFC; FailureInfo 0x0056CAFE..0x0056CB62; BehaviorEventAnimResponseDirector D0 0x0056D968..0x0056D986."
       ],
       "live_path": true,
       "hardware_required": false

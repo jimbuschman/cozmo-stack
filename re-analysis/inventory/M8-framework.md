@@ -797,3 +797,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Notes | M8-027, M8-012 |
+
+
+## Opus answers OV105/107/108 (manager, 2026-10-16; research/overnight/20261016-ov105-107-108-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Callable census settled (memory only): RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-027 |
+| Note | M8-012 |

@@ -2,7 +2,7 @@
   "subsystem": "M8-framework",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "403002649fcc09b214aed6b2874137c3c4be5fe3d45d7a147359ce98fb7a5ac6",
+  "inventory_sha256": "cff58dee6c0a6dc7966501734b4f82fbdd47efa4c69ca5e18b5c985bf90a7937",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -347,11 +347,12 @@
       "hardware_required": false
     },
     "M8-027": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ProtoHandle subscriber-callable census: which callables the 8 ProtoHandle kinds hold at teardown and what destroying them does",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov53-55-check.md: ProtoHandle vtables (8) confirmed; EngineToGame release 0x00664708, unlink 0x006634F4 (nulls the callable, decrements node refcount +0x20, frees at zero 0x0066352E..0x00663560)."
+        "re-analysis/research/overnight/20261015-ov53-55-check.md: ProtoHandle vtables (8) confirmed; EngineToGame release 0x00664708, unlink 0x006634F4 (nulls the callable, decrements node refcount +0x20, frees at zero 0x0066352E..0x00663560).",
+        "re-analysis/research/overnight/20261016-ov105-107-108-answer.md: void() signal 0x0105DF8C: one subscriber via RegisterTransport 0x0083B9A0..0x0083BE4C (bind vt 0x0103795C trivial); Dispatch signal TransferQueueMgr+0xC: two RegisterTask::$_0 (vt 0x01031418, destroy memory-only) from TransferTask::Init 0x006A4358..0x006A438E; release bodies 0x004EF138, 0x0051D8F8, 0x00591550, 0x0064E618, 0x00664708, 0x00664EB8, 0x006A3EFC, 0x0083BED0 identical; ~TransferQueueMgr 0x006A3860..0x006A3898."
       ],
       "live_path": true,
       "hardware_required": false
