@@ -19,6 +19,8 @@ internal sealed class BackupTestResources : IDisposable
         options ??= new CozmoEngineOptions { BlockPoolPath = "" };
         string resources = Path.Combine(Root,"resources"); Directory.CreateDirectory(Path.Combine(resources,"config/engine"));
         File.Copy(ShippedConfig(),Path.Combine(resources,"config/engine/backup_config.json"),true);
+        // The checked engine startup now reads this independent resource before manager init.
+        File.Copy(Path.Combine(Path.GetDirectoryName(ShippedConfig())!,"das_event_config.json"),Path.Combine(resources,"config/engine/das_event_config.json"),true);
         return new CozmoEngineOptions {
             ResourcesPath = options.ResourcesPath ?? resources, FilesPath = Root, BlockPoolPath = options.BlockPoolPath,
             DataCollectionEnabled = options.DataCollectionEnabled, DasDeviceIdPath = options.DasDeviceIdPath,

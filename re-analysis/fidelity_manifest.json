@@ -11738,10 +11738,10 @@
       ],
       "effect": "Which triggers skip the robot.play_animation event.",
       "provenance": "Codex research R-M8-PLAY (2026-10-12), Opus-checked (109/109 rows confirmed), manager-adopted.",
-      "unresolved": "RECOVERABLE_GAP: read the caller of 0x0052E9A0 and the config it reads. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov22-m8-022-check.md): IMPLEMENTATION_GAP, rows 1-7: a missing or empty das_event_config.json leaves the root null (three logs: DataPlatform error, Unnamed debug, DasEventConfigJsonNotFound) and the blacklist empty; an unknown name writes the cerr line and inserts enum 0; JsonCpp throws are M1-034 skips. The consumer gate and robot.play_animation stay M8-021's. New: M8-025 (robot.init.time_spent_ms), M1-054 (engine-init gates, RECOVERABLE).",
+      "unresolved": "RECOVERABLE_GAP: read the caller of 0x0052E9A0 and the config it reads. Read 2026-10-15 (re-analysis/research/overnight/20261014-ov22-m8-022-check.md): IMPLEMENTATION_GAP, rows 1-7: a missing or empty das_event_config.json leaves the root null (three logs: DataPlatform error, Unnamed debug, DasEventConfigJsonNotFound) and the blacklist empty; an unknown name writes the cerr line and inserts enum 0; JsonCpp throws are M1-034 skips. The consumer gate and robot.play_animation stay M8-021's. New: M8-025 (robot.init.time_spent_ms), M1-054 (engine-init gates, RECOVERABLE).\nB-M8-4 (2026-10-15), built, awaiting strong verification: live CozmoEngine startup reads scope-1 config/engine/das_event_config.json into an initially null FirmwareJson root before the checked RobotManager tail and existing header load. Existing checked Json parser retains partial output on false. Two exact Error/errG sites built; conditional Unnamed Debug diagnostic remains MISSING under M5-051 because getFormattedErrorMessages bytes have no checked body. No invented third log. Null/missing/scalar/empty-member size gate, unsigned index loop, case-sensitive generated enum-name mapping, unique insertion without clear, raw stderr unknown-name line/newline/flush and enum-zero insertion built. M1-034 skips terminating config units and preserves prior blacklist. Source key is the literal blacklisted_animation_triggers; the check row's DasBlacklistedAnimationTriggers differs from that literal; no alternate key is accepted (adopted OV22 report and reopened static initializer/asset agree). Existing generated full trigger-name table is M7-001; checked six native ordinal pairs are separately tested. M1-054 vslot+8 and BroadcastAvailableAnimations recipients remain visibly MISSING; existing Handler.Initialised flag is retained rather than claiming full engine Init. M8-021 consumer gate is untouched, so no complete playback/DAS claim. See jobs/status/B-M8-4.md.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M8DasBlacklistCheckedRowsTests"
     },
     {
       "id": "M8-023",
@@ -11790,10 +11790,10 @@
       ],
       "effect": "A DAS event at robot init.",
       "provenance": "Opus check of OV22 (2026-10-15), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP: port it in RobotManager::Init's order (job B-M8-4).",
+      "unresolved": "IMPLEMENTATION_GAP: port it in RobotManager::Init's order (job B-M8-4).\nB-M8-4 (2026-10-15), built, awaiting strong verification: RobotManager.InitCheckedDasTail takes integer steady-clock nanoseconds before its existing handler-init boundary, reports missing M1-054 broadcast, loads blacklist, subtracts later minus earlier as wrapping int64, divides by 1000000 truncating toward zero and emits Event/null-channel robot.init.time_spent_ms before the existing FirmwareUpdater.LoadHeader call. No f64 conversion or elapsed-from-engine-construction substitute. Complete measured native duration is not claimed while vslot+8/BroadcastAvailableAnimations remain absent. Regression asserts load and flag state at both clock boundaries, exact event fields/value, positive, negative and sub-ms differences. See jobs/status/B-M8-4.md.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "M8DasBlacklistCheckedRowsTests"
     },
     {
       "id": "M8-026",

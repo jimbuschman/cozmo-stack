@@ -1560,7 +1560,7 @@ internal sealed class RobotInitialConnection
 
 // fidelity: M1-025, M1-029, M1-015
 /// <summary>RobotManager: Robot 1, its RobotInitialConnection, and the expected firmware values (+0x84/+0x88).</summary>
-internal sealed class RobotManager
+internal sealed partial class RobotManager
 {
     private readonly CozmoEngine _engine;
     private uint _expectedVersion, _expectedTime;     // +0x84, +0x88: 0 from the ctor (G5.15)
@@ -1922,8 +1922,10 @@ public sealed partial class CozmoEngine : IDisposable
         // R40/B20: the transport's receiver is RobotConnectionData.
         _t.Received += Rcm.Rcd.ReceiveData;
         Rcm.Rcd.Queued = Kick;
-        Handler.Initialised = true;
         InitAnimationTransfer(); // fidelity: M5-059 — construction after DeviceDataManager, 0x004EB2CE.
+        // fidelity: M8-022, M8-025 — the checked config/manager tail precedes the existing firmware header load.
+        var dasConfig = RobotManager.ReadDasEventConfig(Options.ResourcesPath, this);
+        Robots.InitCheckedDasTail(dasConfig, _nowNs);
         // fidelity: M1-029
         // G5.16..G5.18, G5.25: RobotManager::Init starts the header load on its own thread; nothing waits for it.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
