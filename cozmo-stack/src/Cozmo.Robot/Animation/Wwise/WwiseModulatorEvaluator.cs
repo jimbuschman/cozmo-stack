@@ -528,47 +528,32 @@ public static class WwiseTransitionRamp
         if (t < l0)
         {
             int count = Math.Min(l0 - t, n);
-            output.Slice(written, count).Clear();
+            last = WwiseEnvelopeEmitters.Delay(output.Slice(written, count), ref runningMax);
             written += count;
             t += count;
             n -= count;
-            runningMax = Math.Max(runningMax, 0f);
+
         }
 
-        // Stage B (attack, 0x9E540C): slope B/L1 up to min(L2, L1+L0), accumulating from V0. RECOVERABLE_GAP
-        // residual: the first sample is V0 + slope (the per-sample order is not settled by the report).
+        // Stage B's emitter is checked: first lane is +0 + V0, then four-lane recurrence.
+        // The enclosing stage scheduler is still a candidate (M9-042), not recovered by the emitter rows.
         int attackEnd = Math.Min(l2, l1 + l0);
         if (t < attackEnd)
         {
             int count = Math.Min(attackEnd - t, n);
             float slope = b / l1;                                   // 0x9E544C vdiv
-            float value = v0;
-            for (int i = 0; i < count; i++)
-            {
-                value += slope;
-                output[written + i] = value;
-                runningMax = Math.Max(runningMax, value);
-            }
-            last = value;
+            last = WwiseEnvelopeEmitters.Ramp(output.Slice(written, count), v0, slope, ref runningMax);
             written += count;
             t += count;
             n -= count;
         }
 
-        // Stage C (decay, 0x9E5C00): slope (1-B)/L1 down to L3, accumulating from the attack end. Same
-        // RECOVERABLE_GAP first-sample convention as stage B (first sample = last + slope).
+        // The checked stage-C emitter uses the same four-lane body; scheduling remains M9-042.
         if (t < l3)
         {
             int count = Math.Min(l3 - t, n);
             float slope = (1f - b) / l1;
-            float value = last;
-            for (int i = 0; i < count; i++)
-            {
-                value += slope;
-                output[written + i] = value;
-                runningMax = Math.Max(runningMax, value);
-            }
-            last = value;
+            last = WwiseEnvelopeEmitters.Ramp(output.Slice(written, count), last, slope, ref runningMax);
             written += count;
             t += count;
             n -= count;
@@ -578,12 +563,7 @@ public static class WwiseTransitionRamp
         if (t < l4)
         {
             int count = Math.Min(l4 - t, n);
-            for (int i = 0; i < count; i++)
-            {
-                last = record.Sustain24;
-                output[written + i] = last;
-            }
-            runningMax = Math.Max(runningMax, record.Sustain24);
+            last = WwiseEnvelopeEmitters.Sustain(output.Slice(written, count), record.Sustain24, ref runningMax);
             written += count;
             t += count;
             n -= count;
@@ -597,6 +577,8 @@ public static class WwiseTransitionRamp
             output[written] = last;
             if (n > 0) n--;
         }
+
+        WwiseMidiRuntime.Missing("M9-042 envelope stage scheduling/early bridge and release 0x009E5C14 onwards; legacy scheduling is unverified");
 
         state.RunningMax = runningMax;
         state.Last = last;

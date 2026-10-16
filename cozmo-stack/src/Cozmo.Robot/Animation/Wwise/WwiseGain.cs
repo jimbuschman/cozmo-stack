@@ -83,10 +83,10 @@ public enum WwiseParamSelect
 
 /// <summary>
 /// The RTPC key a node's RTPC pull uses: <c>pbi+0x14</c> = {game object, playing id, …} (gapC 1.3). The
-/// remaining fields the native key carries (MIDI target, channel, note) are 0/0xFF in the shipped data and
-/// are not part of this record; <see cref="Empty"/> is the bus key (gapC 1.9, gapF 1.9).
+/// suffix carries node/channel/note/extra for the full native scope. Nullable byte suffixes represent
+/// the native wildcard 0xFF, keeping default(T) and Empty aligned. Empty is the bus key (gapC 1.9, gapF 1.9).
 /// </summary>
-public readonly record struct WwiseGainRtpcKey(uint GameObject, uint PlayingId)
+public readonly record struct WwiseGainRtpcKey(uint GameObject, uint PlayingId, uint Node = 0, byte? Channel = null, byte? Note = null, uint Extra = 0)
 {
     /// <summary>The bus / root key {0, 0} (gapC 1.9, gapF 1.9).</summary>
     public static WwiseGainRtpcKey Empty { get; } = new(0, 0);
@@ -319,9 +319,10 @@ public sealed class WwiseGainRanges
     private static float Draw(WwiseGainNode node, byte param, WwiseRng rng)
     {
         if (!node.RangedProps.TryGetValue(param, out var range)) return 0f;
-        if (range.Max == range.Min) return range.Min;                 // a zero range adds min with no draw
-        double fraction = rng.Next() / 2147483647.0;
-        return (float)(range.Min + fraction * ((double)range.Max - range.Min));
+        // fidelity: M9-035 -- 9EF5D8..9EF65C: f32 delta, f64 product, f32 conversion then f32 add.
+        float delta = range.Max - range.Min;
+        float random = delta == 0f ? 0f : (float)((double)rng.Next() / 2147483647.0 * (double)delta);
+        return range.Min + random;
     }
 }
 

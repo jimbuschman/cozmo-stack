@@ -81,6 +81,7 @@ public sealed class WwisePlaySeams
 
     /// <summary><c>0x9FB17C</c> (<c>0x9FBED4</c>): the part of <c>0x9FBE74</c> that runs when <c>[ctx+0xD0] != 0</c>. Unread.</summary>
     public Action<WwisePlayingInstance>? A9FB17C { get; set; }
+    public Func<WwiseNode, WwisePlayingInstance, uint>? A9FB17CResult { get; set; }
 
     /// <summary><c>0x9FD8C0</c> / <c>0x9FD8D0</c> (<c>0x9FF2BC</c>, <c>0x9FF2F8</c>), the bodies of <c>0x9BDA28</c> when <c>[ctx+0xA0] != 0</c>. Unread.</summary>
     public Action<WwisePlayingInstance, bool>? A9FD8C0 { get; set; }
@@ -303,6 +304,22 @@ public sealed class WwisePlayPath
     /// <summary>The RTPC manager <c>*0x108D908</c> that <c>0xA11590</c> reads (<see cref="WwiseRtpcStore.A11590"/>). Required when an RTPC bit is evaluated.</summary>
     public WwiseRtpcStore? Rtpc { get; set; }
 
+    // Native node / parameter-block ownership is not guessed from bank identity.
+    public Func<WwiseVtAcArgs, (WwiseParameterCollectorNode Node, WwiseCollectorCall Call, Action Publish)?>? NativeCollectorInput { get; set; }
+    private void InvokeCheckedCollector(WwiseVtAcArgs args)
+    {
+        var input = NativeCollectorInput?.Invoke(args);
+        if (input is null || Rtpc is null)
+        {
+            WwiseMidiRuntime.Missing("M9-035 checked collector owner/parameter-block join at 0x009FFD0C -> 0x009EF258; M9-041 middle remains unread");
+            throw new WwiseMissingBehaviourException("M9-035 native collector owner at 0x009FFD0C is unbound");
+        }
+        bool complete = new WwiseParameterCollector(Rtpc).Entry9EF258(input.Value.Node, input.Value.Call);
+        input.Value.Publish(); // retains the stores that precede a named unread call
+        if (!complete) throw new WwiseMissingBehaviourException("M9-041 checked collector stopped at an unread recipient");
+    }
+
+
     /// <summary>The modulator manager <c>*0x10400E8</c> that <c>0x9E62AC</c> / <c>0x9E61B4</c> take as <c>r0</c>. Required when a modulator out list is non-empty.</summary>
     public WwiseModulatorManager? Modulators { get; set; }
 
@@ -389,12 +406,28 @@ public sealed class WwisePlayPath
     /// <summary>
     /// <c>0x9FBE74(node, key, out, ctxD0)</c> (called at <c>0x9FFC68</c>; R3.1): the walk to the top node, then <c>0x9FAEE8(top, key, out)</c>; a non-zero <paramref name="ctxD0"/> (<c>[pbi+0xDC]</c>) continues into <c>0x9FB17C</c>.
     /// </summary>
+    // fidelity: M9-035 -- selection/tail only; nested triple/alternate bodies remain M9-041.
     public void A9FBE74(WwisePlayingInstance pbi, WwiseNode node)
     {
         var top = TopPositioningNode(node);                                           // 0x9FBE84..0x9FBEB0
+        WwiseMidiRuntime.Missing("M9-041 full primary collector 0x009FAEE8 called at 0x009FBEBC; existing candidate is not whole-body evidence");
         A9FAEE8(top, pbi);                                                            // 0x9FBEBC
         if (pbi.CtxD0 is not null)                                                    // 0x9FBEC0 cmp r5,#0
-            (Seams.A9FB17C ?? throw new WwiseMissingBehaviourException("M6-025 R3.1: 0x9FB17C (0x9FBED4) runs when [pbi+0xDC] != 0 and is unread"))(pbi);
+        {
+            if (Seams.A9FB17CResult is { } withResult && pbi.CtxD0 is WwisePositioningCollectorContext context)
+            {
+                uint result = withResult(top, pbi); // receives the selected ancestor and alternate+18
+                context.Flags3C = (byte)((context.Flags3C & ~4) | ((result & 1) << 2));
+                return;
+            }
+            if (Seams.A9FB17C is not { } alternate)
+            {
+                WwiseMidiRuntime.Missing("M9-041 alternate collector 0x009FB17C called at 0x009FBED4");
+                throw new WwiseMissingBehaviourException("M9-041 0x009FB17C recipient is unread");
+            }
+            alternate(pbi);
+            WwiseMidiRuntime.Missing("M9-041 alternate collector result/+0x3C bridge 0x009FBED8..0x009FBEE0");
+        }
     }
 
     /// <summary>
@@ -485,9 +518,9 @@ public sealed class WwisePlayPath
         pbi.Byte95 = 0;                                                                // 0x9FFCE0, 0x9FFCE8
         pbi.Byte96 = 0;
         var ranges = (pbi.Flags1BC & 1) == 0 ? pbi.Ranges118 : null;                   // 0x9FFCE4, 0x9FFCF0
-        (Seams.NodeVtAC ?? throw new WwiseMissingBehaviourException(
-            "M6-025 R3.1: node vt+0xAC (GetAudioParameters, 0x9FFD0C) is the M6-010 model and is not wired to the PBI's parameter block; supply WwisePlaySeams.NodeVtAC"))(
-            new WwiseVtAcArgs(pbi, node, mask, ranges, paramsArg, localArg));
+        var ac = new WwiseVtAcArgs(pbi, node, mask, ranges, paramsArg, localArg);
+        if (Seams.NodeVtAC is { } nativeAC) nativeAC(ac);
+        else InvokeCheckedCollector(ac);
 
         // 0x9FFD14..0x9FFD78: the compose.
         float s14 = pbi.Lpf48 + pbi.Ranges118.LowPass;                                 // [0x48] + [0x124]

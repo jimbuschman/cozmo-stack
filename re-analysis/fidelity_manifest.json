@@ -3393,10 +3393,10 @@
       ],
       "effect": "MIDI note lifetime, CC 120/123 (all notes off) handling and frame scheduling.",
       "provenance": "Opus M9 re-check 1 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read each body; scan the 46 shipped MIDI payloads through the reader (M9-005) for CC 0x78/0x7B. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP from the check's rows only (OV88 rejected). A70C84 recorded, not built (no shipped CC 120/123); A04384 callback branch unreachable. Correction: A717A4 is the controller handler, 0x00A71938 the pump. New: M9-039, M9-040.",
+      "unresolved": "RECOVERABLE_GAP: read each body; scan the 46 shipped MIDI payloads through the reader (M9-005) for CC 0x78/0x7B. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP from the check's rows only (OV88 rejected). A70C84 recorded, not built (no shipped CC 120/123); A04384 callback branch unreachable. Correction: A717A4 is the controller handler, 0x00A71938 the pump. New: M9-039, M9-040. B-M9-4 built, awaiting strong verification: MIDI runtime defaults now use checked A717A4 scoped controller/sustain/pitch/reset and A3EB4C sentinel-before-stop bodies; pump retains only zero-result holders. 97D14C reset clears renderer bytes40/41 then continues the main loop, preserving separate clip C+40 admission. R8 factor product and track context-chain insertion are built with explicit reader/collector inputs. Unread vt70/981DBC, parser init and native scoped RTPC recipients remain named Missing; A04384 callback and unshipped CC120/123 are not built.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "MidiBoundaryAndLiveModulationTests; MidiRuntimeCheckedRowsTests; EnvelopeStopCheckedRowsTests"
     },
     {
       "id": "M9-035",
@@ -3411,10 +3411,10 @@
       ],
       "effect": "Voice parameter values other than velocity.",
       "provenance": "Opus M9 re-check 1 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the three bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP for the confirmed rows. Vibrato depth at note-on: +0 if Cozmo_Singing_Vibrato was never posted; curve(g)/100 if posted. Residue: M9-041.",
+      "unresolved": "RECOVERABLE_GAP: read the three bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP for the confirmed rows. Vibrato depth at note-on: +0 if Cozmo_Singing_Vibrato was never posted; curve(g)/100 if posted. Residue: M9-041. B-M9-4 built, awaiting strong verification: WwiseParameterCollector.cs builds 9EF258 entry state/base/HDR/flag/mask20 ordering and tail parent-then-bus recursion/exclusion/forwarded mask with shared output bytes, using explicit dynamic recipients. CalcEffectiveParams names the missing native node/parameter-block join and can run the unit with bound input/publish owners; M9-041 middle stops visibly. 9FBE74 wrapper preserves selected ancestor and alternate low-result-bit to Z+3C bit2, with an explicit typed result seam; legacy primary/alternate bodies remain visible M9-041 candidates. Existing A11590 sum/product/default/skip paths retained, with explicit six-level current-tree input and Missing at fallback9E6748/9DA360. Range RNG now computes f32 delta, f64 draw/divide/product, f32 conversion then f32 min/add in native order, including zero-delta no draw.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "MidiBoundaryAndLiveModulationTests; MidiRuntimeCheckedRowsTests; EnvelopeStopCheckedRowsTests"
     },
     {
       "id": "M9-036",
@@ -3429,10 +3429,10 @@
       ],
       "effect": "Exact envelope modulation values in the buffered path and in the early-release case.",
       "provenance": "Opus M9 re-check 2 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: transcribe the emitter bodies (exact under ADP-1: modulation, not PCM) and the O+0xC consumer. The early-release case has no shipped trigger (only the unread case-5 producers of 0x00A01480 set such a deadline): read but do not build unless a shipped trigger is found. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP for the emitters and the maximum consumer. Remaining (attack-2 ramp, early bridge, A4AF50, early release): M9-042.",
+      "unresolved": "RECOVERABLE_GAP: transcribe the emitter bodies (exact under ADP-1: modulation, not PCM) and the O+0xC consumer. The early-release case has no shipped trigger (only the unread case-5 producers of 0x00A01480 set such a deadline): read but do not build unless a shipped trigger is found. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP for the emitters and the maximum consumer. Remaining (attack-2 ramp, early bridge, A4AF50, early release): M9-042. B-M9-4 built, awaiting strong verification: WwiseEnvelopeEmitters.cs implements checked release/decay/attack1 common four-lane emitter, +4h recurrence, carry-only clamp and start/carry maximum, plus sustain/delay fills. Existing transition evaluator calls the checked emitters for its known stage windows; its enclosing scheduler and legacy release/early-bridge path are explicitly unverified M9-042, not upgraded. Maximum reader uses output+C even without a sample buffer, else state+4C; mask uses ARM register-shift low-byte counts; affine/product order and A55C78 volume factor are built. Native maximum-owner source input is a visible Missing at song entry. No ADP-1 equivalent modulation arithmetic or full evaluator claim.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "MidiBoundaryAndLiveModulationTests; MidiRuntimeCheckedRowsTests; EnvelopeStopCheckedRowsTests"
     },
     {
       "id": "M9-037",
@@ -3447,10 +3447,10 @@
       ],
       "effect": "Whether the shipped note-off envelope 381606890 ever stops a sung voice, and what the loop break does.",
       "provenance": "Opus M9 re-check 2 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed bodies and orders; then state, for the shipped singing content, exactly when (if ever) 381606890 stops its voice. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP for the confirmed rows. Note-off answer is conditional (Case A: LFO owns the voice, envelope never completes; Case B: finite deadline, envelope stops the voice); settled by M9-042.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies and orders; then state, for the shipped singing content, exactly when (if ever) 381606890 stops its voice. Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP for the confirmed rows. Note-off answer is conditional (Case A: LFO owns the voice, envelope never completes; Case B: finite deadline, envelope stops the voice); settled by M9-042. B-M9-4 built, awaiting strong verification: Release deadline stores/handoffs precede kind/hard-stop dispatch and propagation; checked branch structure, sentinel writes, optional kind2 vt1C and pending-cancel calls use explicit leaf inputs, with M9-042 Missing at unread recipients. Existing every-play params128 bit2/PBI transfer and envelope-on-existing-state reinitialization retained; 9FF4E0 control0/1/2 helper added. Envelope acquisition and song entry name unread state insertion9DD120..9DE688. Existing EventRuntime frame owns phase8-before-transition/groups-before-modulator order only with explicit native render-gate input; missing global gate/owner never manufactures a music/render tick. Held-note outcome stays CaseA-or-CaseB, not a claim the note-off envelope always cuts a voice.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "MidiBoundaryAndLiveModulationTests; MidiRuntimeCheckedRowsTests; EnvelopeStopCheckedRowsTests"
     },
     {
       "id": "M9-038",
@@ -3465,10 +3465,10 @@
       ],
       "effect": "Whether the singing vibrato's depth follows Cozmo_Singing_Vibrato changes after note-on.",
       "provenance": "Opus M9 re-check 3 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: find every caller of state vt+0x08 and the RTPC-change dispatch that reaches it; say whether a posted Cozmo_Singing_Vibrato change updates an already-running vibrato, and when (which tick). Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP: depth updates live (drain, then phase-8, then modulator tick). Remaining (state insertion, A0E5E4 ramps, indirect callers): M9-042.",
+      "unresolved": "RECOVERABLE_GAP: find every caller of state vt+0x08 and the RTPC-change dispatch that reaches it; say whether a posted Cozmo_Singing_Vibrato change updates an already-running vibrato, and when (which tick). Read 2026-10-16 (re-analysis/research/overnight/20261016-m9-ov70-73-88-check.md): IMPLEMENTATION_GAP: depth updates live (drain, then phase-8, then modulator tick). Remaining (state insertion, A0E5E4 ramps, indirect callers): M9-042. B-M9-4 built, awaiting strong verification: Existing immediate RTPC store write/snapshot now dispatches type3 through changed-source curve sum, scoped ordered modulator-tree visitor and existing-state setter. WwiseLiveLfoState builds indexes0..5 with exact /100, signed rounded attack conversion and unsigned waveform VCVT; per-tick input captures S+74 without reinitializing phase/age. Render gate, subscriber/state population, coefficient-refresh branch and intervening groups remain explicit inputs/Missing where absent; no state insertion is inferred from a bank. Ramped post A0E5E4 is Missing. Existing song entry names absent live state-tree/capture owner. Immediate update is tested on an explicitly populated existing state, not asserted for every normal singing instance.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "MidiBoundaryAndLiveModulationTests; MidiRuntimeCheckedRowsTests; EnvelopeStopCheckedRowsTests"
     },
     {
       "id": "M9-039",
@@ -3499,10 +3499,10 @@
       ],
       "effect": "What happens to older sung clips when a new clip starts on the same target.",
       "provenance": "Opus check of OV70-73/88 (2026-10-16), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP; the parser helpers are M9-039 (MISSING at those calls).",
+      "unresolved": "IMPLEMENTATION_GAP; the parser helpers are M9-039 (MISSING at those calls). B-M9-4 built, awaiting strong verification: WwiseMidiBoundaries.cs implements A3CEB4 old-ended-context same-target queue purge, CC64 zero on16 channels, sustain-mask clear, context-only sounding-note releases, CC chase insertion and current-event duplicate suppression. A3C760 snapshots/resets/restores through explicit M9-039 parser recipients, bounds the loop, keeps CC only and replaces controller-number matches across channels. Default queue owner call uses the actual current drain queue, not an unrelated pending list. Parser helpers stop visibly when unbound; no source parser is fabricated.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "MidiBoundaryAndLiveModulationTests; MidiRuntimeCheckedRowsTests; EnvelopeStopCheckedRowsTests"
     },
     {
       "id": "M9-041",

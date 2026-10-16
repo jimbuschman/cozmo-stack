@@ -3,6 +3,19 @@ namespace Cozmo.Robot.Animation.Wwise;
 
 public sealed partial class WwisePlayingInstance
 {
+    // fidelity: M9-037
+    public void ApplyNoteOffDeadline(uint offset)
+    {
+        if (EnvelopeAttachments34 is null) Field38 = offset;
+        else for (int i = 0; i < EnvelopeAttachments34.Count; i++) EnvelopeAttachments34[i].SetDeadline(offset);
+    }
+
+    public void ReportStateInsertionMissing() => WwiseMidiRuntime.Missing(
+        "M9-042 state insertion 0x009DD120..0x009DE688, V+0x34 ownership; note-off completion remains conditional");
+
+    // fidelity: M9-037 -- 9FF4E0..9FF538. Other descriptor inputs retain their native owners.
+    public uint EnvelopeEventControl9FF4E0(bool initial) => (Flags1BF & 4) == 0 ? 0u : initial ? 1u : 2u;
+
     public uint Transition148 { get; set; }
     public Func<uint, uint>? ReadTransitionSelector { get; set; }
     public Action<uint, uint, float, int, int>? UpdateTransitionA366F4 { get; set; }
@@ -156,6 +169,7 @@ public sealed class WwiseEnvelopeRuntime
         var state = new WwiseEnvelopeState();
         Initialize(state, properties, input, recipient);
         created = true;
+        input.Pbi1C?.ReportStateInsertionMissing();
         return state;
     }
 
@@ -279,7 +293,12 @@ public sealed class WwiseEnvelopeRuntime
         }
     }
 
-    public void ReportAbsentOwner() => WwiseMidiRuntime.Missing("M9-024 modulator manager 0x009E6D2C -> 0x009E2BD0; M9-030 timing and M9-031 note-off joins absent");
+    public void ReportAbsentOwner()
+    {
+        WwiseMidiRuntime.Missing("M9-024 modulator manager 0x009E6D2C -> 0x009E2BD0; M9-030 timing and M9-031 note-off joins absent");
+        WwiseMidiRuntime.Missing("M9-036 native output/maximum-owner join 0x009E84C8 -> 0x00A55C78 absent at song entry");
+        WwiseMidiRuntime.Missing("M9-038 live state tree/tick-capture owner 0x009DBF78 -> 0x009E2ED0 absent at song entry; M9-042 insertion 0x009DD120..0x009DE688");
+    }
 
     /// <summary>The fatal growth branch, not a guessed .NET allocator-failure detector.</summary>
     public void SkipFatalPopulationGrowth(WwiseEnvelopeState state)

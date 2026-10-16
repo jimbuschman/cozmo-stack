@@ -9,6 +9,7 @@ public sealed class WwiseMidiPlayRequest
     public uint Offset74 { get; set; }
     public uint Context7C { get; set; }
     public byte Flags124 { get; set; }
+    // fidelity: M9-037 -- A3DC10 / A3DCE0 OR 4, after clearing 3/4; every MIDI play.
     public byte Flags128 { get; set; } = 6;
     public int Depth28 { get; set; }
     public ushort[] History2C { get; init; } = new ushort[32];

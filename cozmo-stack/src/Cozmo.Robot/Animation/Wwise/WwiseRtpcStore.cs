@@ -269,6 +269,7 @@ public sealed class WwiseRtpcStore
         // from the outcome. C2: <= 0 is immediate; a positive duration is a transition when the exact
         // written slot already held a value, otherwise the 0xA1B5FC gate applies and is unmodelled.
         bool interpolated = timeMs != 0 || bypass;
+        if (duration > 0) WwiseMidiRuntime.Missing("M9-042 ramped post 0x00A0E5E4 from 0x00A137D8; transition evolution unread");
         var kind = duration <= 0 ? WwiseRtpcSetKind.Immediate
             : slotValid ? WwiseRtpcSetKind.Transition
             : WwiseRtpcSetKind.GatedTransition;
@@ -518,11 +519,18 @@ public sealed class WwiseRtpcStore
     /// The per-curve input of <c>0xA17878</c> / <c>0xA17724</c> (R2, R3). <c>0xA17280</c> finds the id in the store: the stored value, or when none is valid the entry's default (<c>[entry+8]</c>) is <c>x</c>. Absent from the store: type 1
     /// (<c>[e+0x24]</c>) or a parameter (<c>[e+4]</c>) other than 0 and 7 returns <c>0x9E6748</c>'s result (unread: throws); type other than 1 with parameter 0 or 7 sets the skip flag (<c>0xA17410..0xA17424</c>: flag 1, value 1.0f), so the curve adds nothing.
     /// </summary>
+    // fidelity: M9-035 -- explicit native scope-tree input, whose population is not inferred from a note.
+    public Dictionary<uint, WwiseRtpcCurrentScope> NativeCurrentScopes { get; } = new();
+
     private bool CurveInput(WwiseRtpcSubscription e, WwiseRtpc curve, WwiseGainRtpcKey key, out float x)
     {
+        var fullKey = new WwiseRtpcScopeKey(key.GameObject, key.PlayingId, key.Node, key.Channel ?? 0xFF, key.Note ?? 0xFF, key.Extra);
+        if (NativeCurrentScopes.TryGetValue(curve.SourceId, out var tree) && tree.Lookup(fullKey) is { } scoped)
+        { x = scoped; return true; }
         var v = Lookup(curve.SourceId, key.GameObject, key.PlayingId);
         if (v.Kind != WwiseRtpcValueKind.NotInStore) { x = v.Value; return true; }
         if (e.Type != 1 && (e.Param == 0 || e.Param == 7)) { x = 1f; return false; }      // 0xA172EC..0xA172F8, 0xA17304 beq 0xA17410
+        WwiseMidiRuntime.Missing("M9-041 fallback 0x009E6748 -> 0x009DA360 called at 0x00A17314");
         throw new WwiseMissingBehaviourException(
             $"M6-009 R3: RTPC 0x{curve.SourceId:X8} is not in the store (type {e.Type}, parameter {e.Param}); 0xA17280 returns the result of 0x9E6748 (a locked hash lookup in the manager at *0x10400E8), whose body is not adopted");
     }
@@ -937,7 +945,18 @@ public sealed class WwiseRtpcStore
             case 1:
                 throw new WwiseMissingBehaviourException("M6-009 L7-04c: a type-1 (FX and plug-in parameter) subscription's value formulas (0xA10E80..0xA114D4) were only spot-checked, not adopted");
             case 3:
-                throw new WwiseMissingBehaviourException("M6-009 L7-04e: a type-3 (modulator-owned parameter) subscription calls 0x9DBF78, whose body (0x9DBF78..0x9DCDC8) is RECOVERABLE_GAP");
+                if (e.Key1 == 0) return; // null subscriber at A10C84
+                // fidelity: M9-038 -- A0E81C sums only bindings to the changed source.
+                if (e.TargetModulator is null)
+                {
+                    WwiseMidiRuntime.Missing("M9-042 type3 modulator owner/tree at 0x00A11360 -> 0x009DBF78");
+                    throw new WwiseMissingBehaviourException("M9-042 native modulator tree owner at 0x009DBF78 is unbound");
+                }
+                float sum = 0f;
+                foreach (var binding in e.Curves)
+                    if (binding.SourceId == rtpcId) sum += Curve(binding, newX);
+                e.TargetModulator.Dispatch(e.Param, sum, new WwiseRtpcScopeKey(key.GameObject, key.PlayingId, key.Node, key.Channel ?? 0xFF, key.Note ?? 0xFF, key.Extra));
+                return;
             case 5:
                 throw new WwiseMissingBehaviourException("M6-009 L7-04f: a type-5 subscription calls 0xA32D24, whose body (0xA32D24..0xA32DE8) is RECOVERABLE_GAP");
             default:
@@ -1124,6 +1143,7 @@ public sealed class WwiseRtpcStore
 /// </summary>
 public sealed class WwiseRtpcSubscription
 {
+    public WwiseModulatorStateTree? TargetModulator { get; init; }
     /// <summary><c>[e+0]</c>.</summary>
     public uint Key1 { get; init; }
 

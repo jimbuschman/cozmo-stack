@@ -32,6 +32,7 @@ public static class WwiseMidiTiming
 public sealed class WwiseMidiMusicNode
 {
     public bool Track { get; init; }
+    public WwiseMidiClipContext? FirstContext98 { get; set; }
     public byte Flags { get; set; } // track+94 / parent+7C; these are NOT NodeBase+47
     public WwiseParamBundle? Properties3C { get; set; }
     public WwiseMidiMusicNode? Parent34 { get; set; }
@@ -52,6 +53,13 @@ public sealed class WwiseMidiClipContext
     public uint TargetId30 { get; private set; }
     public bool Table38 { get; private set; }
     public int References3C { get; set; } = 1;
+    public void RetainReference() => References3C = unchecked(References3C + 1);
+    public void ReleaseReference()
+    {
+        References3C = unchecked(References3C - 1);
+        if (References3C == 0) WwiseMidiRuntime.Missing(
+            "M9-013 context vt0/pool destruction at 0x00A708EC..0x00A70914 after the checked decrement");
+    }
     public byte Disabled40 { get; set; }
     public uint Alternate20 { get; set; }
     public object? GameObject8 { get; set; }
@@ -65,6 +73,18 @@ public sealed class WwiseMidiClipContext
     public Action<uint, bool>? SubscribeA19ECC { get; set; }
     public Func<bool>? AcquireSourceA1EC54 { get; set; }
     public Action? AttachA70B3C { get; set; }
+    public Func<bool>? InitializeTailA3CD78 { get; set; }
+    public Func<IReadOnlyList<float>>? CollectFactorsVirtualAC { get; set; }
+    public WwiseMidiClipContext? Next100 { get; set; }
+
+    // R8 A3CC88..A3CD74: the factors are multiplied in order; NaN is not equal to zero.
+    public int CompleteInitTail(IReadOnlyList<float> factors)
+    {
+        float product = 1f;
+        foreach (float f in factors) product *= f;
+        Disabled40 = product == 0f ? (byte)1 : (byte)0;
+        return 1;
+    }
 
     public WwiseMidiClipContext(object owner, WwiseMidiMusicNode track, object source)
         => (Owner74, Track78, Source7C) = (owner, track, source);
@@ -112,15 +132,19 @@ public sealed class WwiseMidiClipContext
             if (AttachA70B3C is { } attach) attach();
             else WwiseMidiRuntime.Missing("M9-005 list attachment 0x00A70B3C at 0x00A3CC84");
         }
-        else WwiseMidiRuntime.Missing("M9-005 parser init tail 0x00A3CC88/0x00A3CD78");
-        // The unread tail has no invented success result.
-        return 2;
+        else if (InitializeTailA3CD78 is not { } tail)
+        { WwiseMidiRuntime.Missing("M9-039 reader helpers 0x00A3CD78..0x00A3CE14"); return 2; }
+        else if (!tail()) return 2;
+        Next100 = Track78.FirstContext98; Track78.FirstContext98 = this;
+        if (CollectFactorsVirtualAC is not { } collect)
+        { WwiseMidiRuntime.Missing("M9-041 track collector vt+0xAC at 0x00A3CCF8"); return 2; }
+        return CompleteInitTail(collect());
     }
 
     internal void Update(WwiseMidiRuntime runtime, int step, uint rate, List<WwiseMidiPending> queue)
     {
         if ((FlagsFC & 2) != 0) return;
-        References3C++;
+        RetainReference();
         uint offset = OffsetF4; OffsetF4 = 0;
         float elapsed = (float)unchecked(step - (int)offset) / ((float)rate / 1000f);
         uint end = EndF8; byte savedFlags = FlagsFC;
@@ -129,7 +153,7 @@ public sealed class WwiseMidiClipContext
             if (ParserA3F6E0 is not { } parser)
             {
                 WwiseMidiRuntime.Missing("M9-005 parser 0x00A3F6E0 at 0x00A3C59C");
-                References3C--; return;
+                ReleaseReference(); return;
             }
             foreach (var parsed in parser(elapsed))
             {
@@ -144,9 +168,9 @@ public sealed class WwiseMidiClipContext
         if (end != uint.MaxValue)
         {
             EndF8 = 0;
-            if ((FlagsFC & 4) == 0) { FlagsFC |= 4; References3C--; }
+            if ((FlagsFC & 4) == 0) { FlagsFC |= 4; ReleaseReference(); }
         }
-        References3C--;
+        ReleaseReference();
     }
 }
 
@@ -167,10 +191,15 @@ public sealed class WwiseMidiNoteState
     public object? HeldOwner0C { get; set; }
     public List<WwiseMidiRecordedNode> RecordedNodes10 { get; } = new();
     public List<WwiseMidiRecordedVoice> RecordedVoices2C { get; } = new();
+    public List<(object Action, int Kind)> Actions48 { get; } = new();
 }
 
 public sealed record WwiseMidiRecordedNode(int Kind, WwiseRoutingNode Node, byte Key, byte Channel);
-public sealed record WwiseMidiRecordedVoice(int Kind, WwisePlayingInstance Pbi);
+public sealed class WwiseMidiRecordedVoice(int kind, WwisePlayingInstance pbi)
+{
+    public int Kind { get; set; } = kind;
+    public WwisePlayingInstance Pbi { get; } = pbi;
+}
 
 public sealed class WwiseMidiHolder
 {
@@ -190,7 +219,7 @@ public sealed class WwiseMidiTargetRecord
 }
 
 /// <summary>Music callback/clip/queue/holders. Rows R1–R8/E1–E12; the renderer owner is a named missing join.</summary>
-public sealed class WwiseMidiRuntime
+public sealed partial class WwiseMidiRuntime
 {
     internal static void Missing(string message) => SteppedBehavior.ReportMissing(message);
     public WwiseMidiRouting Routing { get; }
@@ -207,9 +236,17 @@ public sealed class WwiseMidiRuntime
     public byte ContextFlags36 { get; set; }
     public ulong Clock { get; private set; }
     public int Step38 { get; private set; }
+    public byte Reset40 { get; set; }
+    public byte Reset41 { get; set; }
     public Action<int>? RendererVirtual44 { get; set; }
 
-    public WwiseMidiRuntime(WwiseRng rng) => Routing = new WwiseMidiRouting(rng);
+    public WwiseMidiRuntime(WwiseRng rng)
+    {
+        Routing = new WwiseMidiRouting(rng);
+        A717A4 = DispatchControllerA717A4;
+        A3EB4C = RetireA3EB4C;
+        NoteOffA3E920 = ReleaseA3E920;
+    }
 
     public void ReportAbsentOwner() => Missing("M9-013 music renderer/context owner 0x0099B8E8 -> 0x00A3D234; native event parser M9-005 0x00A3F6E0 absent at song entry");
 
@@ -223,7 +260,7 @@ public sealed class WwiseMidiRuntime
         if (!Allocate(0x104)) return 2;
         context = new WwiseMidiClipContext(owner, track, source);
         if (initialize(context) == 1) return 1;
-        context.References3C--; context = null; return 2;
+        context.ReleaseReference(); context = null; return 2;
     }
 
     public void Frame(uint frames, float scale, uint rate, ushort frameThreshold)
@@ -256,7 +293,7 @@ public sealed class WwiseMidiRuntime
         queue ??= Pending;
         var entry = new WwiseMidiPending { Context = context, Event = midi, Offset = offset,
             Argument = argument & 0x3FFFFFFF, Flags = (byte)((bit6 ? 0x40 : 0) | (bit7 ? 0x80 : 0)) };
-        context.References3C++;
+        context.RetainReference();
         int index = 0;
         while (index < queue.Count)
         {
@@ -277,17 +314,17 @@ public sealed class WwiseMidiRuntime
             if ((entry.Flags & 0xC0) == 0x80)
             {
                 if (OwnerVirtual4 is { } owner) owner(entry);
-                else Missing("M9-034 owner vt+4 at 0x00A71BA8");
+                else StartClipA3CEB4(entry, queue);
             }
             Admit(entry.Context, entry.Event, unchecked((int)entry.Offset));
-            entry.Context.References3C--;
+            entry.Context.ReleaseReference();
         }
         AdvanceHolders(step, frames);
     }
 
-    public WwiseMidiHolder? Admit(WwiseMidiClipContext context, WwiseMidiEvent midi, int offset)
+    public WwiseMidiHolder? Admit(WwiseMidiClipContext context, WwiseMidiEvent midi, int offset, bool contextOnly = false)
     {
-        if (context.Alternate20 != 0) Missing("M9-034 prefix 0x00A04384 at 0x00A70F80 (then normal admission)");
+        // A04384 is a lock/unlock no-op with the app's flags (no 0x10000).
         if (context.Target34 is not { } target) return null;
         var record = Targets.Find(x => ReferenceEquals(x.Target, target));
         if (record is null)
@@ -310,7 +347,7 @@ public sealed class WwiseMidiRuntime
         else holder.Flags1C = midi.NoteOff ? (byte)4 : (byte)7;
         if (midi.NoteOff)
         {
-            var match = record.Holders.Find(old => Match(holder, old));
+            var match = record.Holders.Find(old => (!contextOnly || ReferenceEquals(context, old.Context)) && Match(holder, old));
             if (match is null) { ReleaseHolder(holder); return null; }
         }
         if (midi.Status == 0xB0 && (midi.Key == 0x78 || midi.Key == 0x7B))
@@ -425,12 +462,19 @@ public sealed class WwiseMidiCallbackContext
 public sealed class WwiseMidiFrameCallback
 {
     public bool Suppressed { get; set; }
+    public byte ResetByte0C { get; set; }
     public WwiseMidiCallbackContext? NormalContexts { get; set; }
     public void Register(Action<uint, uint, Action> register9A5AFC, Func<(ushort Frames, uint Rate)> frameInput)
         => register9A5AFC(8, 0, () => { var input = frameInput(); Invoke(input.Frames, input.Rate); });
     public void Invoke(ushort frames, uint rate)
     {
-        if (Suppressed) return;
+        if (Suppressed)
+        {
+            for (var c = NormalContexts; c is not null; c = c.Next48)
+            { c.Renderer38.Reset40 = 0; c.Renderer38.Reset41 = ResetByte0C; }
+            Suppressed = false; ResetByte0C = 0;
+            // 97D230 branches into the ordinary main loop, not an early return.
+        }
         for (var context = NormalContexts; context is not null;)
         {
             var next = context.Next48;
@@ -441,7 +485,7 @@ public sealed class WwiseMidiFrameCallback
                 else if (query() == 1)
                 {
                     if (context.ByteSet981DBC is { } set) set();
-                    else WwiseMidiRuntime.Missing("M9-034 0x00981DBC / byte-set branch 0x0097D1EC");
+                    else WwiseMidiRuntime.Missing("M9-039 0x00981DBC called at 0x0097D1DC");
                 }
             }
             context.Renderer38.Frame(frames, context.Scale3C, rate, frames);

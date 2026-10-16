@@ -266,10 +266,36 @@ public sealed class WwiseEventRuntime
     /// One engine frame (Perform 0x9AF8A8, gapD D1.6): messages, then drain, then tick++. The render pass
     /// between drain and tick++ is the signal path (M6-017) and is not part of this control-path task.
     /// </summary>
+    // fidelity: M9-037, M9-038 -- 9AFA08 -> 9AFA48 -> 9AFA8C, on the Perform thread.
+    public bool? NativePerformRenderGate { get; set; }
+    public Action? MusicPhase8 { get; set; }
+    public Action? TransitionsA36AC4 { get; set; }
+    public Action? RenderGroup9FF308 { get; set; }
+    public Action? RenderGroup9D3C98 { get; set; }
+    public Action? ModulatorTick { get; set; }
     public void AdvanceFrame()
     {
         PumpMessages();
         DrainDueActions();
+        // Native Perform also gates this tail on initialized/render-frame globals (9AFA24..9AFA3C).
+        // The standalone control runtime has no producer for those inputs; it must not invent a render tick.
+        if (NativePerformRenderGate != true)
+        {
+            if (NativePerformRenderGate is null) WwiseMidiRuntime.Missing(
+                "M9-038 Perform render-gate/command-owner join 0x009AFA24..0x009AFA3C before phase8; explicit native input required");
+            _tick++;
+            return;
+        }
+        if (MusicPhase8 is { } music) music();
+        else WwiseMidiRuntime.Missing("M9-037 phase8 music owner 0x009AFA48 -> 0x0097D14C");
+        if (TransitionsA36AC4 is { } transitions) transitions();
+        else WwiseMidiRuntime.Missing("M9-042 transition group 0x00A36AC4 at 0x009AFA64");
+        if (RenderGroup9FF308 is { } group1) group1();
+        else WwiseMidiRuntime.Missing("M6-022 render group 0x009FF308 at 0x009AFA78");
+        if (RenderGroup9D3C98 is { } group2) group2();
+        else WwiseMidiRuntime.Missing("M6-022 render group 0x009D3C98 at 0x009AFA7C");
+        if (ModulatorTick is { } modulator) modulator();
+        else WwiseMidiRuntime.Missing("M9-038 modulator owner 0x009AFA8C -> 0x009E6D2C; native insertion M9-042");
         _tick++;
     }
 
