@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "3d787b8fe2c92d020ab2445be64b89296ea38cc15128bd8f2b6df5a9e85bf369",
+  "inventory_sha256": "e3c845bc810994b75e501c51f9c492f3a6a56a757a492d3be4f4411c3e6ec185",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -989,7 +989,8 @@
       "title": "Pose wrapper lifetimes in production: whether any flow leaves a child under an unowned parent or drops an origin's last wrapper outside ~PoseOriginList (UnownedParent, NotLastOwner, ZeroOwners, ZeroOwnersWithID VERIFYs on a running robot)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261014-pose-tree-verifies.md: \"Still unread\": parent-pose lifetimes (robot +0x298, origins, object poses, temporaries), PoseOriginList erase/rejigger paths, inline wrapper attaches writing PoseBase+4 without +0x48, cross-thread pose-tree mutation."
+        "re-analysis/research/20261014-pose-tree-verifies.md: \"Still unread\": parent-pose lifetimes (robot +0x298, origins, object poses, temporaries), PoseOriginList erase/rejigger paths, inline wrapper attaches writing PoseBase+4 without +0x48, cross-thread pose-tree mutation.",
+        "re-analysis/research/overnight/20261016-ov121-answer.md: AddRobotRelativeObservation 0x00506B70..0x00506C48; SetPoseHelper 0x0050609C..0x00506116; SetCarriedObjectAsUnattached 0x006333D4..0x00633930; MarkObjectUnobserved/Unknown 0x00506FBC..0x005073FC; CheckForUnobservedObjects filter 0x00621C6C..0x00621D88; LocalizeToObject rejigger 0x005158D8..0x005159B2; UpdateObjectOrigins 0x00620534..0x006206F0 and lambda1 0x00628E18..0x006292F6; CopyWithNewPose 0x00506EF8..0x00506F40; ~ObservableObject 0x004E0D78..0x004E0DA0; DriveToPoseAction::Init 0x0055A8A6..0x0055A91E."
       ],
       "live_path": true,
       "hardware_required": false

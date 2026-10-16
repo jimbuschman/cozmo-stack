@@ -1722,3 +1722,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New HARDWARE_ONLY | M11-095 |
 | Corrected and narrowed | M11-084 |
 | Lead | M11-038 |
+
+
+## Opus answer OV121 (manager, 2026-10-16; research/overnight/20261016-ov121-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Narrowed (A8 settled; new rejigger-while-carrying destroyer) | M11-084 |
+| Leads | M11-043, M11-010 |
