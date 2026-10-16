@@ -22,4 +22,7 @@ Codex works in this repo alongside the opencode manager. This file sets the lane
 
 - Mark anything EXACT_SOURCE, approve an inventory, or change `re-analysis/fidelity_manifest.json`.
 - Fill an unknown with a plausible answer.
+- Cite decompiler output, from Ghidra or `re-analysis/decomp/`, as evidence. It can help find code, but every claim
+  must come from the instructions themselves: the address, the instruction, and any literal or string resolved from the
+  binary. A row taken only from decompiler output is UNKNOWN. This applies to every research model, not just Codex.
 - Modify or flash robot firmware.
