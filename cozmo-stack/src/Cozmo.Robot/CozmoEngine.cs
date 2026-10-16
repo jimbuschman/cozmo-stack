@@ -76,6 +76,9 @@ public sealed class CozmoEngineOptions
     public bool DataCollectionEnabled { get; init; }
     // fidelity: M3-058 — persisted device-ID host setting, created once as a UUID.
     public string? DasDeviceIdPath { get; init; }
+    // fidelity: M15-053 — COMPATIBILITY_POLICY: explicit stable Java DAS.getDeviceID app input.
+    // Null leaves Lab input MISSING; no UUID is invented for Lab.
+    public string? DasDeviceId { get; init; }
     // fidelity: M5-060 — replaces app DataPlatformCachePath/temporaryCachePath.
     public string AnimationCachePath { get; init; } = Path.Combine(Path.GetTempPath(), "cozmo-stack");
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
@@ -1932,6 +1935,9 @@ public sealed partial class CozmoEngine : IDisposable
         // G5.16..G5.18, G5.25: RobotManager::Init starts the header load on its own thread; nothing waits for it.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
         else EmitStackLog("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
+        Experiments = new CozmoExperiments(this);
+        Experiments.LoadRobotConfig(); // checked LoadRobotConfigs entry0x00522EFC, then InitExperiments.
+        Experiments.Init();
     }
 
     // ------------------------------------------------------------------ running

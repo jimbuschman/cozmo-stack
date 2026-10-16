@@ -121,6 +121,7 @@ public sealed partial class CozmoEngine
     internal static string? DasDeviceIdPathForTest; // null in production; explicit test fixture input.
     private string LoadDasDeviceId()
     {
+        if (Options.DasDeviceId is {} supplied) return supplied; // M15-053: same explicit app input for DAS and Lab.
         string path = Options.DasDeviceIdPath ?? DasDeviceIdPathForTest ?? Path.Combine(
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "cozmo-stack"), "device-id");
         try
