@@ -21,7 +21,11 @@ anything. BOARD.md is history; this file is the live queue.
 6. **Repeat from 1.**
 7. **When your lane has no open job:** wait 10 minutes (`sleep 600`), pull, and check again. After 6 empty checks
    (an hour), stop and print `QUEUE EMPTY`.
-8. **When a job ends BLOCKED, or a push is refused by the gate:** stop and print the reason. Never use `--no-verify`.
+8. **When a job ends BLOCKED** (manager, 2026-10-15): push its BLOCKED report and any bounded work, then **continue**
+   with the next open job. The manager handles the blocker from the report.
+   - **When a push is refused** because main moved: `git pull --rebase` and push again.
+   - **When a push is refused by the test gate:** stop and print the reason.
+   - Never use `--no-verify`.
 
 **Research push rule:** research jobs commit and push their own files under `re-analysis/research/` (operator,
 2026-10-11). This replaces README.md's "no commits" for queued jobs only.
@@ -92,7 +96,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 41 | [B-M13-4](B-M13-4.md) | BLOCKED (turn-eye destructor row; bounded part pushed 730ccc23); checked row added (research/20261015-turn-eye-dtor-check.md); finished by B-M13-7 |
 | 41a | [B-M13-7](B-M13-7.md) | open, NEXT (TurnInPlaceAction live eye layer and destructor cleanup) |
 | 42 | [B-M11-3](B-M11-3.md) | BLOCKED (SetMarkerAsObserved 0x00876DA8..0x008770CC has no checked row; bounded part pushed ba4c1211); request OV85; finish job after its check |
-| 43 | [B-M11-4](B-M11-4.md) | open, after B-M11-3 (vision/history/world/pose/map teardown, M11-055) |
+| 43 | [B-M11-4](B-M11-4.md) | BLOCKED (FaceTracker/FaceRecognizer handle census, M11-077/M11-084 ownership, M11-090 residue; bounded part pushed 64f9d104); finish after those records are read |
 | 44 | [B-M11-5](B-M11-5.md) | open, after B-M11-4 (quad-tree border walk M11-047; seed order = insertion order, operator 2026-10-14) |
 | 45 | [B-M11-6](B-M11-6.md) | open, after B-M11-5 (CheckImageQuality M11-080; LimitedExposure M11-057; auto-exposure M3-021) |
 | 46 | [B-M11-7](B-M11-7.md) | open, after B-M11-6 (decode exception M11-058; vision Init M11-059; pending camera params M11-060) |
