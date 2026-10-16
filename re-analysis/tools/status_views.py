@@ -63,7 +63,7 @@ def research_files():
 def evidence_for(job, files):
     key = job.lower()
     pat = re.compile(r'(^|[^a-z0-9])' + re.escape(key) + r'([^a-z0-9]|$)')
-    return [f for f in files if pat.search(os.path.basename(f).lower()) and ('check' in f or 'verif' in f)]
+    return [f for f in files if pat.search(os.path.basename(f).lower()) and ('check' in f or 'verif' in f or 'pass' in f)]
 
 
 def progress(m):
