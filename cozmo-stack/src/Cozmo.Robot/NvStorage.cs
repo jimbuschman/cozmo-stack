@@ -244,6 +244,7 @@ public sealed class NvStorageComponent : IDisposable
     private readonly object _idleExecution = new();
     private readonly List<string> _log = new();
     private readonly Queue<Action> _pendingLogCalls = new();
+    private bool _reportedWritePadding;
     private sealed class LogEmission(NvStorageComponent owner) : IDisposable
     { public void Dispose() => owner.FlushLogCalls(); }
     private void FlushLogCalls()
@@ -533,8 +534,8 @@ public sealed class NvStorageComponent : IDisposable
     /// up to a multiple of 4, rejected when count - 1 is not below the limit as unsigned values: InvalidSize). Any failure broadcasts (-6, op 1) when
     /// asked, then calls the callback with -6, and returns 0. Success queues an ERASE of the tag (no callback, no broadcast) behind the debug log
     /// PrecedingWriteWithErase, then the WRITE with a copy of the padded data, logs DataQueued and returns 1. Nothing is sent here. The 0..3 padding
-    /// bytes are read past the caller's count in the engine (WA14, never defined); they are 0 here under policy M3-037.
-    /// // fidelity: M3-037
+    /// bytes past the actual caller buffer are 0 under manager's M3-043 ruling (OV59 check); logged once on stack channel.
+    /// // fidelity: M3-043
     /// </summary>
     public int Write(uint tag, byte[]? data, uint numBytes, Action<NvResult>? callback, bool broadcast = false)
     {
@@ -576,7 +577,13 @@ public sealed class NvStorageComponent : IDisposable
                     _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpErase });
                 }
                 var vector = new byte[n];
-                Array.Copy(data!, vector, (int)Math.Min(numBytes, (uint)data!.Length));
+                // Native copies round4(count), including available bytes beyond count. Only unavailable pad bytes are zero.
+                Array.Copy(data!, vector, (int)Math.Min(n, (uint)data!.Length));
+                if (pad < 4 && n > data.Length && !_reportedWritePadding)
+                {
+                    _reportedWritePadding = true;
+                    _pendingLogCalls.Enqueue(() => StackDiagnostics.Write("M3-043: NV Write round4 pad past caller buffer at0x0064472E..0x00644734 is zero under manager OV59 ruling; write retained"));
+                }
                 _queue.Enqueue(new PendingRequest { Tag = tag, Op = OpWrite, Data = vector, Callback = callback, Broadcast = broadcast });
                 LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.Write.DataQueued", $"{name} - numBytes: {n}");
             }

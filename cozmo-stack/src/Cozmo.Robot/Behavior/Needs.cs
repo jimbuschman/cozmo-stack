@@ -1445,8 +1445,12 @@ public sealed class NeedsManager
     /// the "storage version update" log.
     /// </summary>
     // fidelity: M15-014
+    // fidelity: M15-050 — called by both queued callback and the direct queue-failure path.
+    internal Action? PossiblyWriteLabAssignments;
     public void InitAfterReadFromRobotAttempt()
     {
+        if (PossiblyWriteLabAssignments is { } lab) lab(); // 0x00694622, before Needs copy resolution.
+        else SteppedBehavior.ReportMissing("M15-050 Needs InitAfterReadFromRobotAttempt0x00694622 has no CozmoExperiments writeback owner");
         // Phase 1: the per-serial alternate read (I/O and the host path seam) outside _gate.
         bool alternateTried;
         uint serialForAlternate;

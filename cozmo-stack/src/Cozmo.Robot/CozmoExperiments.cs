@@ -18,7 +18,7 @@ internal sealed record LabExperiment(uint? Version=null,byte[]? Key=null,byte? A
 internal sealed record LabDefinition(byte[]? ProjectId=null,uint? Version=null,uint? Revision=null,IReadOnlyList<LabExperiment>? Experiments=null);
 
 // fidelity: M15-049 — checked definition loader/setters, no assignment/bucketing implementation.
-internal sealed class CozmoExperiments
+internal sealed partial class CozmoExperiments
 {
     private readonly CozmoEngine _engine;
     private readonly object _gate=new();
@@ -125,5 +125,6 @@ internal sealed class CozmoExperiments
         if(DeviceIdInput is null)Missing("M15-053 Lab user-id DASGetPlatform()->GetDeviceId at0x006A5626: no explicit stable DasDeviceId setting; no generated UUID or robot mfg id substituted");
         Missing("M15-052 qualified audience tags0x007EF370 and AutoActivateExperimentsForUser call0x006A5668: predicate/assignment descendants unread; no assignments or automatic-result logs fabricated");
         Missing("M15-052 VerifyTags0x006A5682 and InitializeABInterface0x006A56CE: recipient/global-callback ownership unread; no guessed registrations");
+        Missing("M15-050/M15-016 SetGameBeingPaused(false) resume writeback at0x006990DA: host pause/resume delivery and Needs resume caller are unbuilt; no synthetic resume or periodic write substituted");
     }
 }

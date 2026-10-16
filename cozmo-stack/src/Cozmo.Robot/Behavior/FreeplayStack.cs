@@ -50,6 +50,7 @@ public sealed class FreeplayStack : IDisposable
         // C2 row 10: StartReadFromRobot queues an NVStorage read of key 0x194000 on the connected robot's
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
         needs.NvStorage = robot.Engine.NvStorage;
+        needs.PossiblyWriteLabAssignments = robot.Engine.Experiments.PossiblyWriteLabAssignmentsToRobot;
         needs.SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);
         var forceNeeds=robot.Engine.AnimationMessages.SubscribeMessage(0xC6,false,p=>needs.ForceSetNeedsLevels((IReadOnlyList<float>)p!));
         needs.State.PartDamageLog=(value,data)=>robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"needs.part_damaged",value,data);

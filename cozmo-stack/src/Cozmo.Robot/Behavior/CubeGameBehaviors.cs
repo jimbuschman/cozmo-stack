@@ -578,6 +578,14 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
     public uint? BaseBlockId { get; private set; }
     public uint? TopBlockId { get; private set; }
 
+    // fidelity: M15-051 — checked getters0x005DD5F4..0x005DD64C; preserve output on invalid ID.
+    public bool TryGetBaseBlockId(ref uint value)
+    { if (BaseBlockId is not { } id || id == uint.MaxValue) return false; value = id; return BaseBlockId is { } again && again != uint.MaxValue; }
+    public bool TryGetStaticBlockId(ref uint value)
+    { if (StaticBlockId is not { } id || id == uint.MaxValue) return false; value = id; return StaticBlockId is { } again && again != uint.MaxValue; }
+    public bool TryGetTopBlockId(ref uint value)
+    { if (TopBlockId is not { } id || id == uint.MaxValue) return false; value = id; return TopBlockId is { } again && again != uint.MaxValue; }
+
     /// <summary><c>UpdatePyramidTargets</c>: static, base and top candidates among the free upright cubes.</summary>
     protected (uint? Static, uint? Base, uint? Top) Targets()
     {

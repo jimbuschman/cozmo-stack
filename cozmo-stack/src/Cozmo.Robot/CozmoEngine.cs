@@ -1578,6 +1578,8 @@ internal sealed partial class RobotManager
     public uint ExpectedVersion => Volatile.Read(ref _expectedVersion);
     public uint ExpectedTime => Volatile.Read(ref _expectedTime);
     public EngineRobot? Get(uint id) { lock (_membershipGate) return RobotEntries.GetValueOrDefault(id); }
+    // fidelity: M15-050 — GetFirstRobot0x0052F478 reads the first stored ID, then the existing lookup.
+    internal EngineRobot? GetFirstRobot() { lock (_membershipGate) return RobotIds.Count == 0 ? null : RobotEntries.GetValueOrDefault(RobotIds[0]); }
     public bool RobotExists(uint id) { lock (_membershipGate) return RobotEntries.ContainsKey(id); }
     public RobotInitialConnection? Ric { get { lock (_membershipGate) return _rics.GetValueOrDefault(CozmoEngine.RobotId); } }
 

@@ -173,7 +173,11 @@ public sealed class FreeplaySystem : IManagedActivity
     /// running sub-activity's own <c>Update</c>, and the sub-activities that override it (BuildPyramid, Feeding,
     /// GatherCubes, Sparked) are M7/M15 bodies this stack has not built, so there is nothing for it to run.
     /// </summary>
-    void IManagedActivity.Update(double nowSec) { }
+    void IManagedActivity.Update(double nowSec)
+    {
+        if (Current is not null)
+            SteppedBehavior.ReportMissing("M15-055 ActivityFreeplay.Update forwarding0x005AD9D0..0x005AD9DE is unbuilt; later checked ActivitySparked.Update/spark state belongs to M15-059; M15-051/M15-054 specialized Pyramid producer/chooser ownership is absent for " + Current.Id);
+    }
 
     /// <summary>
     /// What the freeplay activity answers <c>ChooseNextScoredBehaviorAndSwitch</c> 0x005a2a20 with: the activity pick

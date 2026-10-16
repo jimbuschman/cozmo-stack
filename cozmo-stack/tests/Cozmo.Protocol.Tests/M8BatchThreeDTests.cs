@@ -932,6 +932,11 @@ public class M8BatchThreeDTests
         using (var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => 1.0, rig.Vision, rig.M, withReactions: false, random: new Random(1)))
         {
             Assert.Same(stack.AI, ctx.AI);
+            Assert.NotNull(stack.Needs.PossiblyWriteLabAssignments); // B-M15-5: same actual engine Lab owner.
+            var lab = rig.Robot.Engine.Experiments;
+            lab.SetAssignmentVectorsForTest(new[]{new LabAssignmentDef(new byte[]{97},Array.Empty<byte>(),new byte[]{98})},Array.Empty<LabAssignmentPair>());
+            stack.Needs.PossiblyWriteLabAssignments!();
+            Assert.Equal(new byte[]{97},Assert.Single(lab.CachedAssignments!).Key);
             Assert.NotNull(rig.Robot.Engine.AIComponentUpdate);
             // B-M11-12 / OV51: shipped Hiking's real lifecycle reaches this same owned analyzer.
             var hiking = stack.Tree.SelectMany(a => a.SubActivities.Prepend(a)).Single(a => a.Id == "Hiking");
