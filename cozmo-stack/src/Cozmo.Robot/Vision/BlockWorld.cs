@@ -1922,6 +1922,8 @@ public sealed partial class BlockWorld
                 else if (existing is not null)
                     UpdatePoseInInstance(existing, observed, existing, pose, wasCameraMoving, dist);                     // 0x00506A86
                 // MapComponent::ClearRobotToMarkers(obj) (0x00506A98) belongs to the map (M13) and is not built.
+                // fidelity: M8-026
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M8-026 / M11-074 ClearRobotToMarkers 0x00506A98 -> ProcessClearQuad 0x0067F708: native robot/marker-corner quad producer is unbuilt; checked whiteboard unit awaits that join");
             }
             else if (entry.Stored is { } pending)
                 UpdatePoseInInstance(pending, observed, existing, pose, wasCameraMoving, dist);                          // 0x00506A52

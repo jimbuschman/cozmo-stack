@@ -85,7 +85,7 @@ public interface IWhiteboardExternalInterface
 // fidelity: M13-006
 // fidelity: M8-014
 // fidelity: M15-020, M15-023, M15-024
-public sealed class AIWhiteboard
+public sealed partial class AIWhiteboard
 {
     private readonly BlockWorld _world;
     private readonly Func<double> _clockSec;

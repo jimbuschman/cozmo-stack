@@ -39,7 +39,8 @@ public sealed class AIWhiteboardHandlers
 
     private readonly AIWhiteboard _whiteboard;
     private readonly Func<double> _nowSec;
-    private readonly List<PossibleObject> _possible = new();
+    // fidelity: M8-026 — one list at AIWhiteboard+54, shared with ProcessClearQuad.
+    private PossibleObjectStorage _possible => _whiteboard.PossibleObjectStorage;
 
     public AIWhiteboardHandlers(AIWhiteboard whiteboard, Func<double> nowSec)
     {

@@ -56,6 +56,8 @@ internal sealed partial class SourceMapComponent
 
     internal void Update(uint timestamp,float timer)
     {
+        // fidelity: M8-026
+        SteppedBehavior.ReportMissing("M8-026 / M11-074 MapComponent::UpdateRobotPose ProcessClearQuad join 0x0067E47E: native robot-quad/map writer is unbuilt; no legacy region rectangle is substituted");
         if(CurrentOrigin!=0 && Current is {} map)
         {
             var aging=SourceMapAging.At(timestamp);LastAgingForTest=aging;

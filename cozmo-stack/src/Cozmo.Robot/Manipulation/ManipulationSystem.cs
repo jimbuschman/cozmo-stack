@@ -21,6 +21,8 @@ public sealed class ManipulationSystem : IDisposable
         Docking.Configurations = Configurations;      // SetObjectAsAttachedToLift step 9 sets its dirty flag (M12-008)
         // M11-072: the native R2 callback owns +0xC even before this host facade exists.
         Whiteboard = new AIWhiteboard(vision.World, () => ClockSec());
+        // fidelity: M8-026
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M8-026 Robot::GetWorldOrigin 0x004A4C54 to AIWhiteboard 0x0056AC92: native world-origin capture provider is not bound; ProcessClearQuad production unit is built");
         // AIWhiteboard::Init 0x0056a394 registers the three handlers through the robot's external interface
         // or warns "Initialized whiteboard with no external interface. Will miss events." (M8-014). This
         // stack has no external interface registered, so the warning path is the live one.
