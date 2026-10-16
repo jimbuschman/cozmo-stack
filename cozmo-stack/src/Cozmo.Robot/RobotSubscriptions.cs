@@ -177,7 +177,7 @@ public sealed partial class EngineRobot
         RobotMessage[] deviceMessages = { new ObjectMoved(), new ObjectStoppedMoving(), new ObjectTapped(),
             new ObjectConnectionState(), new ObjectPowerLevel(), new ObjectUpAxisChanged(), new ObjectAvailable(),
             new DefaultCameraParams(), new ImageChunk(), new ImageImuData(), new CliffEvent(), new PotentialCliff(),
-            new RobotStopped(), new FallingStarted(), new FallingStopped(), new MotorCalibration() };
+            new RobotStopped(), new FallingStarted(), new FallingStopped(), new MotorCalibration(), new MotorAutoEnabled() };
         foreach (var tag in deviceMessages.Select(m => m.Id))
             if ((byte)tag!=0xB6 && !_implTags.Contains(tag)) AddMessage(tag, _ => { },"Impl", routeDevice:true);
     }

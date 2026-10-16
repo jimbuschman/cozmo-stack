@@ -307,6 +307,16 @@ public sealed class ObservableObject
         PoseNameNode.Name = "Object_" + unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
+    // fidelity: M12-045 -- B4 native in-place pose assignment for carried release.
+    internal void SetCarryingObservationPose(Pose3d pose, PoseState state)
+    {
+        if(CubeGeometry.IsCube(Type))Cozmo.Robot.Manipulation.CubePreActionPoses.ClearForSetPose(this);
+        _pose.Assign(pose);
+        SetPose(_pose,-1.0,state);
+        _pose.Name="Object_"+unchecked((int)ObjectId).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if(CubeGeometry.IsCube(Type))PoseInitialized=1;
+    }
+
     // fidelity: M11-062 — InitPose 0x004EF562..0x004EF57E: virtual SetPose, then obj+0x50 = 1.
     internal byte PoseInitialized;
     internal void InitPose(Pose3d pose, PoseState state)
@@ -1988,13 +1998,15 @@ public sealed partial class BlockWorld
     /// <c>BroadcastObjectPoseChanged(obj, oldPose, oldState)</c> follows (0x005060E0..0x005060FA).
     /// </summary>
     // fidelity: M11-007
-    private void WritePoseHelper(ObservableObject obj, Pose3d pose, double dist, PoseState newState)
+    private void WritePoseHelper(ObservableObject obj, Pose3d pose, double dist, PoseState newState, bool carryingObservation=false)
     {
         if (newState == PoseState.Unknown) { MarkObjectUnknown(obj, true); return; }
         if (newState == PoseState.Dirty && LocalizedToObjectId == obj.ObjectId) SetLocalizedTo(null);
-        var oldPose = obj.Pose; var oldState = obj.PoseState;
-        obj.SetPose(pose, dist, newState);
-        BroadcastObjectPoseChanged(obj, oldPose, oldState);
+        var oldPose = carryingObservation?new Pose3d(obj.NativePose):obj.Pose; var oldState = obj.PoseState;
+        if(carryingObservation)obj.SetCarryingObservationPose(pose,newState);
+        else obj.SetPose(pose, dist, newState);
+        try{BroadcastObjectPoseChanged(obj, oldPose, oldState);}
+        finally{if(carryingObservation)oldPose.Dispose();}
     }
 
     /// <summary>
@@ -2916,10 +2928,7 @@ public sealed partial class BlockWorld
     }
 
     /// <summary>
-    /// B-M11-8 item 3 stand-in (M12-006, COMPATIBILITY until SetCarriedObjectAsUnattached 0x006333D4 is read): the released
-    /// object leaves the lift tree. Its pose becomes the given flat world pose (the pre-a9425dad legacy computation), and the
-    /// flag that made <see cref="ObservableObject.Pose"/> flatten the tree is cleared, in one step under the world's lock.
-    /// The old node, still parented to the lift, is no longer the object's pose.
+    /// Legacy flat-pose test adapter. Production put-down uses ApplyRobotRelativeObservation and preserves its native node.
     /// </summary>
     internal void DetachFromLift(ObservableObject o, Pose3d pose)
     {
@@ -2965,6 +2974,20 @@ public sealed partial class BlockWorld
             if (confirmationCount is { } count) entry.Count = count;
         });
         BroadcastObjectPoseChanged(obj, oldPose, prev);
+    }
+
+    // fidelity: M12-045 -- AddRobotRelativeObservation 0x00506B78..0x00506C48; caller guarantees located object.
+    internal void ApplyRobotRelativeObservation(ObservableObject obj, Pose3d pose, Pose3d robotPose)
+    {
+        using var frameMutation=EnterPoseMutation();
+        using var copy=new Pose3d(pose);copy.SetParent(robotPose);
+        using(var root=copy.GetWithRespectToRoot())copy.Assign(root);
+        WritePoseHelper(obj,copy,-1.0,PoseState.Dirty,carryingObservation:true);
+        LogCallbackDeferral.RunGated(_gate,()=>
+        {
+            var entry=EntryForOrCreate(obj.ObjectId);obj.Confirmation=entry;
+            entry.Count=1;entry.Pose=copy;entry.LastPoseUpdatedTime=obj.LastObservedTimestamp;
+        });
     }
 
     // fidelity: M12-027 — AddLiftRelativeObservation direct body only.

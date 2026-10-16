@@ -162,6 +162,9 @@ public class M12RFix2StreamATests
         var task = pick.RunAsync(default);
         Spin(() => VerifyLines(pick) >= 1 || task.IsCompleted, () => { rig.Frame(); rig.Pump(); });
         Assert.False(task.IsCompleted);                                              // Verify returned RUNNING: the old code fell through to Success
+        // This M12 timer fixture supplies the native observation's origin parent after the legacy flat image adapter.
+        // Production observation-parent binding remains a M12-006 input gap across the M11-007/M11-044 producer path; no hardware fidelity is asserted here.
+        obj.NativePose.SetParent(rig.Robot.Engine.Robot!.GetNativeOrigin(rig.Robot.Engine.Robot.CurrentOriginId));
         Assert.Equal("Verify -> Running", pick.Trace.Last(l => l.StartsWith("Verify -> ")));
         uint stamp = pick.VerifyStartedAt;                                            // the +0x10C stamp Verify took at its first call (0x00553BF8), not whatever state arrived since
 
@@ -191,7 +194,7 @@ public class M12RFix2StreamATests
         Assert.Equal(ActionResult.PickupObjectStillMoving, await task);          // r4 (0x03000004) + 0x10, 0x00553CEA: ABORT category, not Retry
         Assert.Contains(pick.Trace, l => l == "PickupObjectAction.Verify.ObjectStillMoving");
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);                       // SetCarriedObjectAsUnattached(true)
-        Assert.False(obj.IsLocated);                                                 // ... which deletes the located object
+        Assert.Null(rig.Vision.World.GetLocatedObjectByIdHelper(obj.ObjectId)); // native deletion frees storage; former object fields are not an oracle
 
         // the action is gone: its handlers are unregistered, so the same messages reach nobody
         rig.Send(new LiftLoad { Field0 = true });
@@ -317,10 +320,15 @@ public class M12RFix2StreamATests
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
+        // Native A2/A4 release input; this caller test does not synthesize it by clearing only an ID.
+        rig.Vision.World.AddLocatedObject(new ObservableObject(7,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        {Pose=new Pose3d(Rotation3d.Identity,Vec3.Zero,parent:rig.Robot.Engine.Robot!.LiftPose),PoseState=PoseState.Known,OriginId=rig.Vision.World.CurrentOriginId,NativeCarryingTree=true});
         var ctx = Ctx(rig);
         rig.Robot.Animations.ManualTicking = true;
         rig.Robot.Animations.ClockMs = () => rig.Clock.NowMs;
         var b = new PutDownBlockBehavior(rig.M) { ActionTaskRunner = SignalTestContext.Schedule };
+        int releasedTraceCount=-1;
+        rig.Robot.Engine.LogEntry+=e=>{if(e.Name=="BehaviorPutDownBlock.LookDownAtBlock.DidNotSeeBlock")releasedTraceCount=b.Trace.Count;};
         b.WorkPosted += signals_rig.Notify;
         b.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         RunBehavior(rig, b, ctx);
@@ -330,8 +338,7 @@ public class M12RFix2StreamATests
         var line = rig.Sent.OfType<AppendPathSegmentLine>().Last();
         Assert.Equal(0xC2A00000u, BitConverter.SingleToUInt32Bits(line.Speed.SpeedMmps));
         int keepAlive = b.Trace.ToList().FindIndex(l => l.Contains("PutDownBlockKeepAlive"));
-        int released = b.Trace.ToList().FindIndex(l => l.Contains("SetCarriedObjectAsUnattached(false)"));
-        Assert.True(keepAlive >= 0 && released > keepAlive);                         // the release is the end of the look-after-place action
+        Assert.True(keepAlive >= 0 && releasedTraceCount > keepAlive);                         // the release is the end of the look-after-place action
         Assert.False(rig.M.Docking.Carrying.IsCarryingObject);
     }
 
@@ -367,6 +374,9 @@ public class M12RFix2StreamATests
         using var signals_rig = SignalTestContext.Install();
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
+        // Native A2/A4 release input; this caller test does not synthesize it by clearing only an ID.
+        rig.Vision.World.AddLocatedObject(new ObservableObject(7,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        {Pose=new Pose3d(Rotation3d.Identity,Vec3.Zero,parent:rig.Robot.Engine.Robot!.LiftPose),PoseState=PoseState.Known,OriginId=rig.Vision.World.CurrentOriginId,NativeCarryingTree=true});
         rig.HoldPath = true;
         var ctx = Ctx(rig);
         rig.Robot.Animations.ManualTicking = true;

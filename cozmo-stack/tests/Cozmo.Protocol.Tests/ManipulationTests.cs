@@ -20,6 +20,14 @@ public class ManipulationTests
 
     internal static Pose3d CubeAt(double x, double y, double yaw = 0) => new(Mat3.AboutZ(yaw), new Vec3(x, y, CubeGeometry.CubeSizeMm / 2));
 
+    private static void SeedCarriedObjectOnLift(Rig rig)
+    {
+        // A2/A4 happy-path input: a carrying ID and its located pose in the robot's native tree.
+        rig.M.Docking.Carrying.SetCarrying(7);
+        rig.Vision.World.AddLocatedObject(new ObservableObject(7,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
+        {Pose=new Pose3d(Rotation3d.Identity,Vec3.Zero,parent:rig.Robot.Engine.Robot!.LiftPose),PoseState=PoseState.Known,OriginId=rig.Vision.World.CurrentOriginId,NativeCarryingTree=true});
+    }
+
     private static void SpinUntil(Func<bool> cond, Action? tick = null, int ms = 60000)
         => SignalTestContext.Until(cond, tick);
 
@@ -479,7 +487,8 @@ public class ManipulationTests
         Assert.Equal(ActionResult.NotCarryingObjectAbort, SignalTestContext.Result(place.RunAsync(default)));
         rig.Pump();
         Assert.Contains(rig.Sent, m => m is StopAllMotors);                                   // 0x00554894 runs in every case
-        rig.M.Docking.Carrying.SetCarrying(7);
+        SeedCarriedObjectOnLift(rig);
+
         var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedVerify() };
         var t = action.RunAsync(default);
         int raised = 0; bool cleared = false;
@@ -512,7 +521,7 @@ public class ManipulationTests
     {
         using var signals = SignalTestContext.Install();
         using var rig = new Rig();
-        rig.M.Docking.Carrying.SetCarrying(7);
+        SeedCarriedObjectOnLift(rig);
         rig.State(flags: (uint)RobotStatusFlag.IsPickingOrPlacing);       // the robot is picking/placing
         var place = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedVerify() };
         var t = place.RunAsync(default);
@@ -540,7 +549,7 @@ public class ManipulationTests
         using var rig = new Rig();
         int clockBits = 0;
         rig.M.ClockSec = () => BitConverter.Int32BitsToSingle(Volatile.Read(ref clockBits));
-        rig.M.Docking.Carrying.SetCarrying(7);
+        SeedCarriedObjectOnLift(rig);
         rig.State(flags: 0);
         var place = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedVerify() };
         var task = place.RunAsync(default);
@@ -606,7 +615,8 @@ public class ManipulationTests
     {
         using var signals = SignalTestContext.Install();
         using var rig = new Rig();
-        rig.M.Docking.Carrying.SetCarrying(7);
+        SeedCarriedObjectOnLift(rig);
+
         var ctx = Ctx(rig);
         var b = new PutDownBlockBehavior(rig.M);
         Assert.True(b.IsRunnable(ctx) || rig.Robot.Animations.Library is null);   // runnable gates on the animation library offline

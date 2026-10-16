@@ -74,7 +74,7 @@ public class PickupVerifyTests
         if (rig.NoLibrary) return;
         rig.Cube = ManipulationTests.CubeAt(150, 0);
         var obj = Assert.Single(rig.Frame().Objects).Object;
-        rig.M.Docking.Carrying.SetCarrying(obj.ObjectId, obj.Markers[0]);
+        Assert.Equal(0u,rig.M.Docking.SetObjectAsAttachedToLift(obj.ObjectId,obj.Markers[0].Code));
 
         rig.M.Docking.ReleaseCarriedObject();
         Assert.Equal(PoseState.Dirty, obj.PoseState);       // still located, just not trusted
@@ -84,7 +84,7 @@ public class PickupVerifyTests
         // and the failed-pick-up form, which the engine follows with DeleteLocatedObjects
         rig.M.Docking.Carrying.SetCarrying(obj.ObjectId, obj.Markers[0]);
         rig.M.Docking.ReleaseCarriedObject(forget: true);
-        Assert.False(obj.IsLocated);
+        Assert.Null(rig.Vision.World.GetLocatedObjectByIdHelper(obj.ObjectId)); // native deletion frees the object; do not assert its former state fields.
     }
 
     /// <summary>

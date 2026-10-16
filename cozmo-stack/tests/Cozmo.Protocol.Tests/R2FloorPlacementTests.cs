@@ -518,6 +518,8 @@ public class R2FloorPlacementTests
         Assert.DoesNotContain(rig.Sent, m => m is PlaceObjectOnGround);
         rig.Sent.Clear();
         var obj = Cube(rig, 7, At(100, 0, 22));
+        // M12-006 A4: the happy release input is a native pose in the robot tree, not a flat adapter root.
+        obj.NativePose.SetParent(rig.Robot.Engine.Robot!.GetNativeOrigin(rig.Robot.Engine.Robot.CurrentOriginId));
         rig.M.Docking.Carrying.SetCarrying(7);
         var action = new PlaceObjectOnGroundAction(rig.M) { SubActions = new FixedSubActions(ActionResult.Success) };
         var task = action.RunAsync(default);

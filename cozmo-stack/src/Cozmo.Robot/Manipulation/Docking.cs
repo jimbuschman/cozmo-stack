@@ -120,7 +120,19 @@ public sealed class CarryingComponent
     /// <summary>The on-top object's pose with respect to the carried object: the engine parents it to the carried object (<c>SetParent(obj.pose)</c>, 0x00633006..0x00633010), so it moves with it.</summary>
     public Pose3d? TopWrtCarried { get { lock (_gate) return _topWrtCarried; } }
 
-    public void UnsetCarrying() { lock (_gate) { _carried = null; _dockMarker = null; _objectWrtLift = null; _onTopId = null; _topWrtCarried = null; } Changed?.Invoke(null); }
+    // fidelity: M12-045
+    internal Action<bool>? NativeUnset;
+    public void UnsetCarrying(bool topOnly = false)
+    {
+        if (NativeUnset is {} unset) { unset(topOnly); return; }
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-045 UnSetCarryingObjects 0x00633C0C: world/robot recipient is not bound; preserve carrying state");
+    }
+    internal uint[] GetCarryingObjects() { lock(_gate) return new[]{_carried,_onTopId}.Where(x=>x.HasValue).Select(x=>x!.Value).Distinct().OrderBy(x=>unchecked((int)x)).ToArray(); }
+    internal void ClearNativeCarryingFields(bool topOnly)
+    {
+        lock(_gate){if(!topOnly){NativeMarkerCode=3;_carried=null;} _onTopId=null;}
+        Changed?.Invoke(CarriedObjectId);
+    }
 }
 
 /// <summary>
@@ -168,6 +180,8 @@ public sealed class DockingSystem : IDisposable
         _robot = robot; _vision = vision;
         _native = robot.Engine.Robot?.DockingOwner ?? new DockingComponentData();
         Carrying = robot.Engine.Robot?.CarryingOwner ?? new CarryingComponent();
+        _nativeUnset = UnsetCarryingObjects;
+        Carrying.NativeUnset = _nativeUnset;
         // fidelity: M1-053
         // Publication reads this active supplier. Its replacement/lifetime semantics remain M12's.
         robot.Carrying = Carrying;
@@ -190,6 +204,7 @@ public sealed class DockingSystem : IDisposable
         vision.FrameProcessed += _carriedPose;
     }
 
+    private readonly Action<bool> _nativeUnset;
     private readonly Func<uint, bool> _isCarrying;
     private readonly Func<IReadOnlySet<uint>> _carriedObjects;
     private readonly Action<VisionFrameResult> _carriedPose;
@@ -281,51 +296,89 @@ public sealed class DockingSystem : IDisposable
     /// passes true (<c>PickupObjectAction::Verify</c> 0x00553CAA and 0x00553D2A), because then nobody
     /// knows where the cube is.
     /// </summary>
-    public void ReleaseCarriedObject(bool forget = false)
+    public void ReleaseCarriedObject(bool forget = false) => SetCarriedObjectAsUnattached(forget);
+
+    // fidelity: M12-006
+    public uint SetCarriedObjectAsUnattached(bool deleteLocated)
     {
-        using var frameMutation=_vision.World.EnterPoseMutation();
-        // fidelity: M12-006
-        if (Carrying.CarriedObjectId is { } id)
+        using var frameMutation = _vision.World.EnterPoseMutation();
+        if (_robot.Engine.Robot is not {} robot)
+        { Behavior.SteppedBehavior.ReportMissing("M12-006 native Robot::GetPose recipient absent; preserve carrying state"); return 1; }
+        uint result=1;
+        using var diagnostics=Pose3d.UseSourceLog((l,c,k,t)=>_robot.Engine.EmitSourceLog(l,c,k,t),_robot.Engine.Das.ForceFlushNow);
+        LogCallbackDeferral.RunGated(robot.PoseTreeGate,()=>
         {
-            // B-M11-8 item 3, not built (MISSING): 0x00633442 is GetWithRespectTo(obj pose, Robot::GetPose() 0x004EA398,
-            // out), the pose with respect to the robot, then AddRobotRelativeObservation(obj, pose, 2) 0x00633458. That
-            // call's body (where the object's pose is parented afterwards), the failure branches (0x00633562, the sErrorF
-            // after 0x00633462) and the on-top object's handling are unread, so the object stays parented to the lift.
-            // Until it is read, the coordinator's B-M11-8 follow-up applies the check's "or keep the legacy flatten for release":
-            // DetachReleasedFromLift below, so a placed cube no longer follows the lift.
-            if (_vision.World.GetObjectById(id) is { NativeCarryingTree: true })
-                Behavior.SteppedBehavior.ReportMissing("M12-006 SetCarriedObjectAsUnattached 0x006333D4: GetWithRespectTo 0x00633442 targets Robot::GetPose 0x004EA398 and AddRobotRelativeObservation 0x00633458 is unread; the released object is detached from the lift with the legacy world-pose flatten instead");
-            if (forget) { DetachReleasedFromLift(id); _vision.World.MarkUnknown(id); }
-            else { UpdateCarriedObjectPose(); DetachReleasedFromLift(id); _vision.World.MarkReleased(id); }
+            if(Carrying.CarriedObjectId is not {} id)
+            {
+                CarrySource(EngineLogLevel.Warning,"CarryingObjectNotSpecified","Robot not carrying object, but told to place one. (Possibly actually rolling or balancing or popping a wheelie.");return;
+            }
+            if(!Place(id,false))return; // A2/A4: neither UnSet nor deletion on primary failure.
+            if(Carrying.CarriedOnTopId is {} topId)Place(topId,true); // A8: top failure still UnSets.
+            var ids=Carrying.GetCarryingObjects();
+            Carrying.UnsetCarrying(false);
+            if(deleteLocated)
+            {
+                var filter=new BlockWorldFilter();filter.AllowedIds.UnionWith(ids);
+                Behavior.SteppedBehavior.ReportMissing("M12-046/M12-006 DeleteLocatedObjects 0x00633930 body remains unread in the put-down rows; invoke existing world implementation with captured IDs/default origin-mode0 filter");
+                _vision.World.DeleteLocatedObjects(filter);
+            }
+            result=0;
+        });
+        return result;
+
+        bool Place(uint id,bool top)
+        {
+            string prefix=top?"Top":"";
+            var obj=_vision.World.GetLocatedObjectByIdHelper(id);
+            if(obj is null)
+            {
+                CarrySource(EngineLogLevel.Error,prefix+"CarryingObjectDoesNotExist",FormattableString.Invariant($"{(top?"Top carrying":"Carrying")} object with ID={unchecked((int)id)} no longer exists."));return false;
+            }
+            using var relative=new Pose3d("");
+            if(!Pose3d.GetWithRespectTo(obj.NativePose,robot.GetCheckedMainPose(),relative))
+            {
+                CarrySource(EngineLogLevel.Error,prefix+"OriginMisMatch",top?"Could not get top carrying object's pose relative to robot's origin.":"Could not get carrying object's pose relative to robot's origin.");return false;
+            }
+            _vision.World.ApplyRobotRelativeObservation(obj,relative,robot.GetCheckedMainPose()); // always returns0; A6 log is dead.
+            var position=obj.NativePose.Translation;
+            CarrySource(EngineLogLevel.Info,prefix+"ObjectPlaced",FormattableString.Invariant($"Robot {unchecked((int)robot.NativeRobotId)} successfully placed object {unchecked((int)id)} at ({position.X:F2}, {position.Y:F2}, {position.Z:F2})."));
+            return true;
         }
-        Carrying.UnsetCarrying();
     }
 
-    /// <summary>
-    /// B-M11-8 item 3 stand-in (see <see cref="ReleaseCarriedObject"/>): the pre-a9425dad flatten. The carried object's world
-    /// pose is computed as the legacy UpdateCarriedObjectPose did, from the newest history state's robot pose and lift angle
-    /// with the attach-time pose on the lift (or the dock marker). The object on top gets that pose composed with its offset.
-    /// Both leave the lift tree. With no history state the legacy code left the pose where it was; here that is the tree's
-    /// current flattened pose. Runs under PoseTreeGate, with the log callbacks deferred until the gate is released.
-    /// </summary>
-    private void DetachReleasedFromLift(uint id)
+    private void CarrySource(EngineLogLevel level,string suffix,string text)
+    {
+        _robot.Engine.EmitSourceLog(level,level==EngineLogLevel.Info?"Unnamed":null,"Robot.SetCarriedObjectAsUnattached."+suffix,text);
+        if(level==EngineLogLevel.Error)Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+    }
+
+    // fidelity: M12-045
+    private void UnsetCarryingObjects(bool topOnly)
     {
         using var frameMutation=_vision.World.EnterPoseMutation();
-        if (_vision.World.GetObjectById(id) is not { NativeCarryingTree: true } obj) return;
-        var top = Carrying.CarriedOnTopId is { } topId && _vision.World.GetObjectById(topId) is { NativeCarryingTree: true } t ? t : null;
-        var r = _robot.Engine.Robot;
-        LogCallbackDeferral.RunGated(r?.PoseTreeGate ?? obj, () =>
+        if(_robot.Engine.Robot is not {} robot)
+        {Behavior.SteppedBehavior.ReportMissing("M12-045 UnSetCarryingObjects Robot/LiftPose recipient absent; preserve state");return;}
+        LogCallbackDeferral.RunGated(robot.PoseTreeGate,()=>
         {
-            Pose3d carriedPose;
-            if (_vision.History.Latest is { } state && (Carrying.ObjectWrtLift is not null || Carrying.DockMarker is not null))
-                carriedPose = Carrying.ObjectWrtLift is { } wrtLift
-                    ? LiftGeometry.CarriedObjectWorldPose(state.RobotPose, state.LiftAngleRad, wrtLift)
-                    : LiftGeometry.CarriedObjectWorldPose(state.RobotPose, state.LiftAngleRad, Carrying.DockMarker!);
-            else carriedPose = obj.Pose;   // the flattened snapshot of the tree
-            Pose3d? topPose = top is null ? null
-                : Carrying.TopWrtCarried is { } topWrt ? carriedPose.Compose(topWrt) : top.Pose;
-            _vision.World.DetachFromLift(obj, carriedPose);
-            if (top is not null) _vision.World.DetachFromLift(top, topPose!);
+            foreach(uint id in Carrying.GetCarryingObjects())
+            {
+                if(topOnly&&Carrying.CarriedOnTopId!=id)continue;
+                var obj=_vision.World.GetLocatedObjectByIdHelper(id);
+                if(obj is null)
+                {
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"Robot.UnSetCarryingObjects.NullObject",FormattableString.Invariant($"Object {unchecked((int)id)} robot {unchecked((int)robot.NativeRobotId)} thought it was carrying no longer exists in the world."));
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();continue;
+                }
+                var parent=obj.NativePose.Node?.Parent;
+                if(ReferenceEquals(parent,robot.LiftPose.Node))
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"Robot.UnSetCarryingObjects.StillAttached",FormattableString.Invariant($"Setting carried object '{unchecked((int)id)}' as not being carried, but the pose is still attached to the lift"));
+                else if(parent is null && obj.NativePose.Node is not null)
+                    Behavior.SteppedBehavior.ReportMissing("M1-034/M12-045 UnSetCarryingObjects GetParent(root) at 0x00633CE4 reaches fatal owner read 0x008452BA; skip only parent-warning check, continue carry-state send/resets");
+                else if(parent is not null&&parent.Parent is not null)
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"Robot.UnSetCarryingObjects.StillAttachedToSomething",FormattableString.Invariant($"Setting carried object '{unchecked((int)id)}' as not being carried, but the pose is still attached to something (other cube?!)"));
+            }
+            if(!topOnly&&Carrying.CarriedObjectId is not null)Send(new CarryStateUpdate{State=CarryState.CARRY_NONE});
+            Carrying.ClearNativeCarryingFields(topOnly);
         });
     }
 
@@ -683,7 +736,7 @@ public sealed class DockingSystem : IDisposable
                     // recomposition is this stack's substitute for the pose tree (M12-027), so run it now rather than at the next frame.
                     UpdateCarriedObjectPose();
                 }
-                if (result.Succeeded && result.Status == BlockStatus.BlockPlaced) ReleaseCarriedObject();
+                if (result.Succeeded && result.Status == BlockStatus.BlockPlaced) { ReleaseCarriedObject(); _vision.EnableModeImmediately(1,true); }
                 TaskCompletionSource<DockResult>? tcs; lock (_gate) tcs = _pending;
                 tcs?.TrySetResult(result);
                 break;
@@ -713,6 +766,7 @@ public sealed class DockingSystem : IDisposable
     /// </summary>
     public void Dispose()
     {
+        if(ReferenceEquals(Carrying.NativeUnset,_nativeUnset))Carrying.NativeUnset=null;
         _robot.Message -= OnMessage;
         _robot.Engine.PickAndPlaceRoute -= OnNativePickAndPlace;
         _vision.DockingMarkersProcessed -= OnFrame;

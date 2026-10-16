@@ -919,12 +919,22 @@ public sealed class CozmoSensors
                 FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity) { Timestamp = f.Timestamp });
                 break;
 
+            // fidelity: M12-006 -- C6: detach before the game report; game recipient remains explicit.
+            case MotorAutoEnabled auto:
+                if(auto.MotorID==MotorID.MOTOR_LIFT&&!auto.Enabled)UnattachCarriedObjectIfCarrying?.Invoke();
+                Behavior.SteppedBehavior.ReportMissing("M12-006 C6 HandleMotorAutoEnabled 0x00536E0E: native game-message recipient after the detach is absent; raw host Robot.Message is not claimed as that broadcast");
+                break;
+
             case MotorCalibration mc:
                 MotorCalibrationReported?.Invoke(mc);
                 if (mc.CalibStarted && mc.AutoStarted) AutoCalibrationStarted?.Invoke(mc);
                 // fidelity: M4-012
                 // MA20: a lift that starts calibrating while carrying detaches the carried object.
-                if (mc.MotorID == MotorID.MOTOR_LIFT && mc.CalibStarted) UnattachCarriedObjectIfCarrying?.Invoke();
+                if (mc.MotorID == MotorID.MOTOR_LIFT && mc.CalibStarted)
+                {
+                    Behavior.SteppedBehavior.ReportMissing("M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event");
+                    UnattachCarriedObjectIfCarrying?.Invoke();
+                }
                 break;
 
             case RobotState s:

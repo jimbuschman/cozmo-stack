@@ -511,9 +511,8 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
         PlayTrigger(Workout!.PutDown, () =>
         {
             CurrentPhase = Phase.CheckPutDown;
-            // the put-down animation lowers the lift and releases the cube; the engine learns the carry state
-            // from the robot, this stack from the animation's completion (INFERRED, as in PutDownBlock)
-            M.Docking.ReleaseCarriedObject();
+            // C7: animation completion does not itself unattach; the native caller is EndIteration.
+
             if (M.Docking.Carrying.IsCarryingObject)
             {
                 CurrentPhase = Phase.ManualPutDown;
@@ -538,6 +537,9 @@ public sealed class CubeLiftWorkoutBehavior : ManipulationBehavior
             };
             M.Workouts.ClockSec = () => Clock() / 1000.0;
             M.Workouts!.CompleteCurrentWorkout();
+            // fidelity: M12-006 -- C7 EndIteration: release(false), ObjectiveAchieved(0x12,true), needs.
+            if(M.Docking.Carrying.IsCarryingObject)M.Docking.ReleaseCarriedObject(false);
+            ReportMissing("M12-006 C7 CubeLiftWorkout.EndIteration ObjectiveAchieved(0x12,true) recipient 0x005D8A0E is not bound; existing objective trace is not that call");
             // EndIteration reports the behaviour's own action here (0x005D8A18): Workout, or Workout_Sparked
             if (NeedActionCompleted() is { } action) Log($"needs action {action}");
             Log($"objectives achieved: PerformedWorkout, {Workout.AdditionalObjectiveOnComplete}");

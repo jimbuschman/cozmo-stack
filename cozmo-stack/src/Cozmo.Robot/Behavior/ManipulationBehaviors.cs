@@ -229,8 +229,9 @@ public sealed class PutDownBlockBehavior : ManipulationBehavior
     {
         if (M.Docking.Carrying.IsCarryingObject)
         {
+            // fidelity: M12-006 -- C2 warning precedes the call.
+            Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorPutDownBlock.LookDownAtBlock.DidNotSeeBlock","Forcibly setting carried objects as unattached (See COZMO-2192)");
             M.Docking.ReleaseCarriedObject();
-            Log("put down: SetCarriedObjectAsUnattached(false) after the look-after-place action (0x005C8480..0x005C84CE)");
         }
         CurrentPhase = Phase.Idle;
         Finish();

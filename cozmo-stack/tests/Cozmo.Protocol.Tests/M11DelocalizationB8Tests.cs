@@ -225,8 +225,7 @@ public sealed class M11DelocalizationB8Tests
     }
 
     /// <summary>
-    /// M12-006 / check item 3 (coordinator follow-up, legacy flatten for release while SetCarriedObjectAsUnattached 0x006333D4 is
-    /// unread): after a put-down the cube is off the lift tree, so moving the lift (ComputeLiftPose with a new angle) leaves it where
+    /// M12-006 / native A3-A5 put-down: after a put-down the cube is off the lift tree, so moving the lift (ComputeLiftPose with a new angle) leaves it where
     /// it was put down. The control step shows the same lift move does move a carried cube.
     /// </summary>
     [Fact]
@@ -243,7 +242,7 @@ public sealed class M11DelocalizationB8Tests
         r.ComputeLiftPose(0.5f);
         Assert.NotEqual(carriedBefore, cube.Pose.Translation);              // control: carried, it follows the lift
         rig.M.Docking.ReleaseCarriedObject();
-        Assert.False(cube.NativeCarryingTree);
+        Assert.Same(r.GetNativeOrigin(r.CurrentOriginId).Node,cube.NativePose.Node!.Parent);
         var placed = cube.Pose.Translation;
         r.ComputeLiftPose(0.0f);
         r.ComputeLiftPose(-0.2f);

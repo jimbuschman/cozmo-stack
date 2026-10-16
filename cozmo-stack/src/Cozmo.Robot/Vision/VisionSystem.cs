@@ -329,7 +329,8 @@ public sealed partial class VisionSystem : IDisposable
     public AllVisionModesSchedule Schedules { get; set; } = AllVisionModesSchedule.Default;
 
     /// <summary>The mode enable bitmask at <c>VisionSystem+0xac</c>, from the shipped config (C2.3).</summary>
-    public int ModeEnableMask { get; set; } = ShippedModeEnableMask;
+    private int _modeEnableMask = ShippedModeEnableMask;
+    public int ModeEnableMask { get { lock(_modeGate)return _modeEnableMask; } set { lock(_modeGate)_modeEnableMask=value; } }
 
     // fidelity: M11-061
     // E5: VisionSystem+0xB0. The existing FIFO carries mode 14 and the M3-021 auto-exposure mode-7 request.
@@ -346,27 +347,24 @@ public sealed partial class VisionSystem : IDisposable
         lock (_modeGate) _limitedExposureRequests.Enqueue(new(mode,enable));
     }
 
-    private void ApplyQueuedLimitedExposure()
+    // fidelity: M12-006 -- C1 reuses the checked EnableMode body synchronously after unattach.
+    internal void EnableModeImmediately(int mode,bool enable)
     {
-        // E6: EnableMode before pop_front; E7: log before writing +0xAC, and no log for an unchanged bit.
-        while (true)
+        LogCallbackDeferral.RunGated(_modeGate,()=>
         {
-            PendingVisionMode request;
-            lock (_modeGate) if (!_limitedExposureRequests.TryPeek(out request!)) return;
-            bool enable = request.Enable;
-            int bit = 1 << request.Mode;
-            string modeName = ((VisionMode)request.Mode).ToString();
+            int bit = 1 << mode;
+            string modeName = ((VisionMode)mode).ToString();
             if (((ModeEnableMask & bit) != 0) != enable)
             {
                 string current = string.Join("+", Enumerable.Range(0, 16)
                     .Where(i => (ModeEnableMask & (1 << i)) != 0).Select(i => ((VisionMode)i).ToString()));
                 string key=enable?"VisionSystem.EnablingMode":"VisionSystem.DisablingMode";
                 string text=enable?$"Adding mode {modeName} to current mode {current}.":$"Removing mode {modeName} from current mode {current}.";
-                if(SourceLog is {} sink)sink(EngineLogLevel.Info,"VisionSystem",key,text);
+                if(SourceLog is {} sink)LogCallbackDeferral.Run(()=>sink(EngineLogLevel.Info,"VisionSystem",key,text));
                 else
                 {
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"VisionSystem",key,text);
-                    SourceLogDispatch.Write(null,Log,EngineLogLevel.Info,null,key,text); // standalone display; never parsed into engine entries
+                    LogCallbackDeferral.Run(()=>SourceLogDispatch.Write(null,Log,EngineLogLevel.Info,null,key,text)); // standalone display; never parsed into engine entries
                 }
                 if (enable) ModeEnableMask = (ModeEnableMask & ~1) | bit;
                 else
@@ -375,6 +373,17 @@ public sealed partial class VisionSystem : IDisposable
                     if (ModeEnableMask == 0) ModeEnableMask = 1;
                 }
             }
+        });
+    }
+
+    private void ApplyQueuedLimitedExposure()
+    {
+        // E6: EnableMode before pop_front; E7: log before writing +0xAC, and no log for an unchanged bit.
+        while (true)
+        {
+            PendingVisionMode request;
+            lock (_modeGate) if (!_limitedExposureRequests.TryPeek(out request!)) return;
+            EnableModeImmediately(request.Mode,request.Enable);
             lock (_modeGate)
             {
                 // ResetToConstructed can invalidate this owner while its image update is in progress.
