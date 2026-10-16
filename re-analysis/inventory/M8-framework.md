@@ -790,3 +790,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | ProcessClearQuad: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-026 |
 | Notes | M8-011, M8-001 |
+
+
+## Batch check of 2026-10-16 (manager; research/overnight/20261016-batch-check.md)
+
+| Change | Records |
+| --- | --- |
+| Notes | M8-027, M8-012 |

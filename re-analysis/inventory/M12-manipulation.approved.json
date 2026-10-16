@@ -2,7 +2,7 @@
   "subsystem": "M12-manipulation",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "2e549d59391fd1e8df5c3e3b82d5406e97a3f1a3c2814d326fae6752044c81da",
+  "inventory_sha256": "e6e4a904afcd0eddb21922d608a3e2de77822a81a17832c0e7e30afe1182aeb2",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -617,11 +617,12 @@
       "hardware_required": false
     },
     "M12-046": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Unattach path still unread: BlockWorld::DeleteLocatedObjects body, CheckAndUpdateTreadsState order against Delocalize (past 0x00512188), the object-name helpers 0x004E80B8/0x004E8048, Robot::SetLocalizedTo body, SetCarryingObject 0x00633E78 (the attach-side CarryState send)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261014-m12-006-unattach.md: \"Still unread\" list: DeleteLocatedObjects PLT 0x004A715C; CheckAndUpdateTreadsState 0x00511E00..; 0x004E80B8, 0x004E8048; Robot::SetLocalizedTo; SetCarryingObject 0x00633E78."
+        "re-analysis/research/20261014-m12-006-unattach.md: \"Still unread\" list: DeleteLocatedObjects PLT 0x004A715C; CheckAndUpdateTreadsState 0x00511E00..; 0x004E80B8, 0x004E8048; Robot::SetLocalizedTo; SetCarryingObject 0x00633E78.",
+        "re-analysis/research/overnight/20261016-batch-check.md: SetCarryingObject 0x00633E78..0x00633F0E; SendSetCarryState 0x00632C44..0x00632C6E (tag 0x49); callers AttachObjectToLift 0x006331AE, G2E SetRobotCarryingObject 0x005295F2."
       ],
       "live_path": true,
       "hardware_required": false

@@ -1,8 +1,8 @@
 {
   "subsystem": "M15-freeplay",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "856a2e810981792e249d79a893cbf11bd59a5c469b699540c4613dc74d428bc1",
+  "inventory_sha256": "71d9897d725ab324af1c7e10081ceeb2ef868624917695f28dc11b2b44b670f0",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -558,11 +558,12 @@
       "hardware_required": false
     },
     "M15-045": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "AIComponent teardown recursive recipients: BehaviorHelper IHelper types and callables, ObjectInteraction entries and ProcessInfo callables, BorderSegment release, SevereNeeds/RequestGame/AIWhiteboard handle inventories, Workout/ObjectInteraction/Whiteboard/Analyzer inner bodies",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x00569D38..0x00569D66; 0x0056A0AE..; 0x00569FD2..; 0x00569F9A; the inner bodies named."
+        "re-analysis/research/overnight/20261014-ov25-26-27-check.md: 0x00569D38..0x00569D66; 0x0056A0AE..; 0x00569FD2..; 0x00569F9A; the inner bodies named.",
+        "re-analysis/research/overnight/20261016-batch-check.md: member map 0x00569A88..0x00569B3E; BehaviorHelperComponent 0x00569D30..0x00569D7E; ~vector<BorderSegment> 0x00569F86..0x00569FB8; ProcessInfo tree 0x00569FBA..0x0056A006; ObjectInteractionCacheEntry 0x0056A06E..0x0056A13E; SevereNeeds 0x00572A1C..0x00572A36; AIWhiteboard 0x0056A32C..0x0056A37C; RequestGame 0x0056A1DC..0x0056A1FA; Workout 0x0056A140..0x0056A1D8."
       ],
       "live_path": true,
       "hardware_required": false
@@ -631,11 +632,12 @@
       "hardware_required": false
     },
     "M15-052": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Lab AutoActivate descendants and audience-tag qualification: ActivateExperiment, ActivateExperimentInternal, VerifyTags, qualified tags, InitializeABInterface",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov56-58-check.md: AutoActivate loop 0x007ECF58..0x007ED02C (mode==1 only; system_clock now/1e6); ActivateExperiment 0x007EC09C, ActivateExperimentInternal 0x007EC134..0x007EC330; VerifyTags 0x007EF274..0x007EF310; GetQualifiedTags/CalculateQualifiedTags 0x007EF370..0x007EF4E2; InitializeABInterface 0x007EE7EC..0x007EE808 (Codex claims, not re-checked). Shipped report_test_auto is automatic with audience tag \"app_user_d0\"."
+        "re-analysis/research/overnight/20261015-ov56-58-check.md: AutoActivate loop 0x007ECF58..0x007ED02C (mode==1 only; system_clock now/1e6); ActivateExperiment 0x007EC09C, ActivateExperimentInternal 0x007EC134..0x007EC330; VerifyTags 0x007EF274..0x007EF310; GetQualifiedTags/CalculateQualifiedTags 0x007EF370..0x007EF4E2; InitializeABInterface 0x007EE7EC..0x007EE808 (Codex claims, not re-checked). Shipped report_test_auto is automatic with audience tag \"app_user_d0\".",
+        "re-analysis/research/overnight/20261016-batch-check.md: A1 0x006A5614..0x006A56A4; init order 0x004EC9D6; AB-disable 0x007EE968..0x007EE986; auto loop 0x007ECF58..0x007ED02C; A3-A5 0x007EC09C..0x007EC332; dates 0x007EDD16..0x007EDD62; hash 0x007EE4FC..0x007EE58C, 0x007FAF2C..0x007FAFA0; ranges 0x007EE1DC..0x007EE294; store/notify 0x007ECEF8..0x007ECF48, 0x007ED0B6..0x007ED0FA; tag registration 0x006A517C..0x006A5256; app_user_d0 predicate 0x006A531E..0x006A536A; dynamic tags 0x006A53CC..0x006A551A; tag cache 0x007EF370..0x007EF37C; per-robot activation 0x0053705A..0x0053706C, 0x006A5744..0x006A575E; report 0x007EC4C0..0x007ECD80."
       ],
       "live_path": true,
       "hardware_required": false
@@ -661,21 +663,23 @@
       "hardware_required": false
     },
     "M15-055": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Activity Update forwarding: ActivityFreeplay::Update to the current sub-activity, and ActivitySparked::Update spark-state logic (CheckIfSparkShouldEnd, CompleteSparkLogic, reset) before forwarding to its delegate",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFreeplay::Update 0x005AD9D0..0x005AD9DE (+0x80 vt+0x20, null returns 0); ActivitySparked::Update 0x005B186C..0x005B18D0 (spark state, then +0xC4 vt+0x20); CheckIfSparkShouldEnd 0x005B18D4..; two ActivityBuildPyramid instances (activities/freeplay/buildPyramid.json, activities/sparks/sparksBuildPyramid.json)."
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFreeplay::Update 0x005AD9D0..0x005AD9DE (+0x80 vt+0x20, null returns 0); ActivitySparked::Update 0x005B186C..0x005B18D0 (spark state, then +0xC4 vt+0x20); CheckIfSparkShouldEnd 0x005B18D4..; two ActivityBuildPyramid instances (activities/freeplay/buildPyramid.json, activities/sparks/sparksBuildPyramid.json).",
+        "re-analysis/research/overnight/20261016-batch-check.md: F1 0x005AD9D0..0x005AD9DE (slot +0x20 in vtables 0x010255E0, 0x01025738)."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-056": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Cube disconnect consumers: ActivityFeeding and BehaviorGuardDog handlers of E2G ObjectConnectionState (tag 0x0D) and their subscription lifetimes",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFeeding 0x005AD146 -> 0x008CBDEC -> 0x005AC9CC; BehaviorGuardDog::HandleWhileRunning 0x005F4D52 -> 0x008CC6FC -> 0x005F4E30 (acts on disconnect 0x005F4E36..0x005F4E38); CubeLightComponent 0x00639CD0 no-op on disconnect; CubeAccelComponent 0x00635D6A no-op."
+        "re-analysis/research/overnight/20261015-ov59-61-check.md: ActivityFeeding 0x005AD146 -> 0x008CBDEC -> 0x005AC9CC; BehaviorGuardDog::HandleWhileRunning 0x005F4D52 -> 0x008CC6FC -> 0x005F4E30 (acts on disconnect 0x005F4E36..0x005F4E38); CubeLightComponent 0x00639CD0 no-op on disconnect; CubeAccelComponent 0x00635D6A no-op.",
+        "re-analysis/research/overnight/20261016-batch-check.md: Feeding subscription 0x005AB030..0x005AB0A8, lambda 0x005AD12E..0x005AD146, connect/disconnect 0x005AC9CC..0x005ACAE2, state 2 0x005A6100..0x005A6206, deselect order 0x005ABB5C..0x005ABC46; GuardDog registration 0x005F2946..0x005F296A, idle handlers bx lr 0x0059EC40/0x0059EC4C, running handler 0x005F4E30..0x005F4EB8; CubeAccel 0x00635204..0x006352CE, 0x00635F1C..0x00635F40, 0x00635D6A..0x00635D82."
       ],
       "live_path": true,
       "hardware_required": false
@@ -706,6 +710,46 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261015-ov65-67-check.md: OnSelected 0x005B1518..0x005B16DC, 0x005B171C; OnDeselected 0x005B1780..0x005B179E; objective/observed 0x005B181E..0x005B1866; Update/check/end/interrupt 0x005B186C..0x005B1A16; get-in/out 0x005B1D18..0x005B1F2A, hard max 0x005B1F94..0x005B2066; Complete 0x005B1A90..0x005B1C2E, 0x005B2094."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-060": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) and its subscription",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-batch-check.md: body 0x005AD9F8..0x005ADA7E (Info Behaviors ActivityFreeplay.RobotOffTreadsStateChanged.KickingOutActivityOnPutDown \"Kicking out '%s' on put down so we pick up a new one\"; gates treads byte0 != 0, no sub-activity, id 7/8 or == this+0x91, sub+0x4C != 0x55; then OnDeselected and +0x80 = 0)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-061": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ActivityFeeding lifecycle beyond the cube-connection subscription, SetCubeLights, and CubeAccel RemoveListener 0x006356AC",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-batch-check.md: OnSelectedInternal 0x005AADAC (rest), OnDeselected tail after 0x005ABC46 (UpdateBroadcastBehaviorStage(4,0), sEvent with need level), SetCubeLights, RemoveListener 0x006356AC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-062": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Lab residue: NeedsState+8 at InitExperiments time, FindExperiment/FindAssignment/FindVariation bodies, AssignmentDef signal subscribers, sources of +0x4C/+0x58",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-batch-check.md: NeedsState ctor and GetCurNeedsState 0x006960BC; Find* PLT 0x004CA6F4/0x004CA700/0x004CA76C; AssignmentDef ProtoSignal vtable 0x0101E8C8; M1-034 point 0x007ECA9C (status > 5 report dereferences an unchecked FindVariation result)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-063": {
+      "status": "RECOVERABLE_GAP",
+      "title": "AIComponent teardown residue: concrete std::function and IHelper types, BorderSegment pointee, AIBeacon/PossibleObject/FailureInfo dtors, BehaviorEventAnimResponseDirector D0",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-batch-check.md: writers of BehaviorHelperComponent +0x10/+0x28, ProcessInfo and cache-entry callables, filter predicates; BorderSegment element+0x28 pointee."
       ],
       "live_path": true,
       "hardware_required": false

@@ -131,5 +131,13 @@ The first three are the requests already written:
 | OV97 | requests/overnight/20261016-ov97-m6-037.md (M6-037: Wwise bus residue: the other bus-destroy contexts (0xA41A3C, 0xA423D8,) | research/overnight/20261016-ov97-m6-037.md |
 | OV98 | requests/overnight/20261016-ov98-m6-038.md (M6-038: Wwise Term music-engine and variant: H3 music-engine Term (0x97D834 ->) | research/overnight/20261016-ov98-m6-038.md |
 | OV99 | requests/overnight/20261016-ov99-m6-039.md (M6-039: Audio stream class behind the package-node dtor (node+0x34 vt+8 at 0x8) | research/overnight/20261016-ov99-m6-039.md |
+| OV100 | requests/overnight/20261016-ov100-m11-091.md (M11-091: ObservableObject +0x50 (bounding quad) caller census, including the ma) | research/overnight/20261016-ov100-m11-091.md |
+| OV101 | requests/overnight/20261016-ov101-m11-092.md (M11-092: BehaviorVisitInterestingEdge lifecycle and the libc++ sort helpers use) | research/overnight/20261016-ov101-m11-092.md |
+| OV102 | requests/overnight/20261016-ov102-m15-060.md (M15-060: ActivityFreeplay put-down kick-out handler (RobotOffTreadsStateChanged) | research/overnight/20261016-ov102-m15-060.md |
+| OV103 | requests/overnight/20261016-ov103-m15-061.md (M15-061: ActivityFeeding lifecycle beyond the cube-connection subscription, Set) | research/overnight/20261016-ov103-m15-061.md |
+| OV104 | requests/overnight/20261016-ov104-m15-062.md (M15-062: Lab residue: NeedsState+8 at InitExperiments time, FindExperiment/Find) | research/overnight/20261016-ov104-m15-062.md |
+| OV105 | requests/overnight/20261016-ov105-m15-063.md (M15-063: AIComponent teardown residue: concrete std::function and IHelper types) | research/overnight/20261016-ov105-m15-063.md |
+| OV106 | requests/overnight/20261016-ov106-m11-084.md (M11-084: Pose wrapper lifetimes in production: whether any flow leaves a child ) | research/overnight/20261016-ov106-m11-084.md |
+| OV107 | requests/overnight/20261016-ov107-m8-027.md (M8-027: ProtoHandle subscriber-callable census: which callables the 8 ProtoHan) | research/overnight/20261016-ov107-m8-027.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

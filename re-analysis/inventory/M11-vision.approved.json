@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "f9f152764044bdc6161aa067d0ff20c61c4255fdc4d77cafac318ba32a9181ea",
+  "inventory_sha256": "d507bac02a8a392e1d15d1357907ef15c06d16d37dc2979c8430f128f30ca5fd",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1027,31 +1027,54 @@
       "hardware_required": false
     },
     "M11-088": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ObservableObject virtual +0x5C / +0x50 overrides per concrete class (map Add/Remove and quad)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov42-44-check.md: base slot 0x004E02AE returns 0; ActiveObject-family slot 0x004E3882 returns 1; CustomObject 0x004F04FA returns byte +0x9C; callers 0x0067EB38..0x0067EC2E (+0x5C), 0x0067ED06..0x0067F0BC (+0x50)."
+        "re-analysis/research/overnight/20261015-ov42-44-check.md: base slot 0x004E02AE returns 0; ActiveObject-family slot 0x004E3882 returns 1; CustomObject 0x004F04FA returns byte +0x9C; callers 0x0067EB38..0x0067EC2E (+0x5C), 0x0067ED06..0x0067F0BC (+0x50).",
+        "re-analysis/research/overnight/20261016-batch-check.md: slots by relocation: Block quad thunk 0x004E690D, base quad 0x0087713B, markerless 0x00502C33; +0x5C 0x004E3883 (1), 0x004E02AF (0), 0x004F04FB (+0x9C); Block quad body 0x004E62A2..0x004E6418; base quad 0x0087713A..0x008772D2; UpdateObjectPose 0x0067EA9A..0x0067EC2E (invalid->invalid error 0x0067EAF6, invalid->valid Add 0x0067EACA, valid->invalid Remove 0x0067EC3C..0x0067EC4C); AddObservableObject family table 0x0067F4CC, IsPoseTooHigh(1.0, 15.0, 0.0) on the robot-relative pose 0x0067EDA2..0x0067EDC0."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-089": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "InterestingEdge (type 9) map data class, MemoryMap::HasBorders callers, and BehaviorVisitInterestingEdge's consumers of the border output",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov50-52-check.md: border caller 0x00574FCC..0x00575054 (seed 9 then 6); equality targets read (base type-only 0x00680758..0x00680764); BehaviorVisitInterestingEdge IsRunnableInternal 0x005E6520, PickGoals 0x005E682C (BorderRegionScore); HasBorders vt+0x28 callers not found by a direct scan."
+        "re-analysis/research/overnight/20261015-ov50-52-check.md: border caller 0x00574FCC..0x00575054 (seed 9 then 6); equality targets read (base type-only 0x00680758..0x00680764); BehaviorVisitInterestingEdge IsRunnableInternal 0x005E6520, PickGoals 0x005E682C (BorderRegionScore); HasBorders vt+0x28 callers not found by a direct scan.",
+        "re-analysis/research/overnight/20261016-batch-check.md: E1 0x00680286..0x0068030A; E3 0x00680730..0x00680764; PickGoals 0x005E682C..0x005E6C0A; IsRunnable 0x005E6520..0x005E6824; CheckGoalReachable 0x005E6C20..0x005E6C7E; GenerateVantagePoints 0x005E6C94..0x005E7006; config 0x005E6236..0x005E62CC; sort main 0x005E8350..0x005E8712."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-090": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Vision/world teardown residue: std::function capture finalizers in the eight ProtoHandle remove routines, StdMatAllocator::deallocate, and whether Ramp/Bridge/FlatMat/Platform/HumanHead/Block_* are ever instantiated",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov50-52-check.md: remove routines vt+0x10/+0x14 (per OV50); core getDefaultAllocator 0x000815C0 -> 0x00081568; Ramp::Ramp only from Ramp::CloneType 0x0050F89A (direct-call scan; vtable/VTT references not scanned)."
+        "re-analysis/research/overnight/20261015-ov50-52-check.md: remove routines vt+0x10/+0x14 (per OV50); core getDefaultAllocator 0x000815C0 -> 0x00081568; Ramp::Ramp only from Ramp::CloneType 0x0050F89A (direct-call scan; vtable/VTT references not scanned).",
+        "re-analysis/research/overnight/20261016-batch-check.md: ProtoHandle removes 0x004EB090, 0x0051D338, 0x004EE634, 0x0051940E, 0x006634F4, 0x0066365C, 0x006A3BA4, 0x0083BC90; Mat route core 0x00024090 -> 0x000816B4 -> 0x0007F8E6 -> 0x00080CB4; Block_Cube1x1 ctors 0x005D725A, 0x0060301C; other six classes only from their own clones."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-091": {
+      "status": "RECOVERABLE_GAP",
+      "title": "ObservableObject +0x50 (bounding quad) caller census, including the markerless quad body 0x00502C32",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-batch-check.md: markerless quad 0x00502C33 (slot 0x0101F368); callers include FindObjectOnTopOrUnderneathHelper 0x0062604C..0x0062605C; markerless objects from AddCliff/AddProxObstacle/AddCollisionObstacle 0x006249FE/0x00624A0A/0x00624A16."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-092": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BehaviorVisitInterestingEdge lifecycle and the libc++ sort helpers used by its goal sort",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-batch-check.md: lifecycle InitInternal 0x005E7018, S1 0x005E7044, StopInternal 0x005E729C, StopSquintLoop 0x005E7320, UpdateInternal 0x005E7418, GatheringAccurateEdge 0x005E7514, CreateLowLiftAndLowHeadActions 0x005E79FC, StartWaitingForEdges 0x005E7AF4, S2 0x005E7BFC, S3 0x005E7D78, Flag* 0x005E8038/0x005E815A; sort helpers 0x005E8714, 0x005E881C, 0x005E88E0, 0x005E89DC."
       ],
       "live_path": true,
       "hardware_required": false

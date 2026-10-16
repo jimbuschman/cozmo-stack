@@ -1,8 +1,8 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "63a12c4419620358a534739e60cbe914032f5a1fcc07d89cc50137a38eda0328",
+  "inventory_sha256": "8bb37ebe2c4563af343b3601f94474d4610ccd319d54c721d51de01848bbfbbd",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -676,11 +676,22 @@
       "hardware_required": false
     },
     "M1-054": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "CozmoEngine::Init before RobotManager::Init: the +0x10 Info, the three advertising-key isMember errors (return 1), UiMessageHandler::Init, vslot+8; and RobotManager::BroadcastAvailableAnimations",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261014-ov22-m8-022-check.md: Info 0x004EC7B4..0x004EC7CC; isMember 0x004EC81C/0x004EC82C/0x004EC83E with bodies 0x004EC898..0x004EC962; UiMessageHandler::Init 0x004EC846..0x004EC896; vslot+8 0x004EC96A..0x004EC9C8; BroadcastAvailableAnimations call 0x0052E76E (body unread)."
+        "re-analysis/research/overnight/20261014-ov22-m8-022-check.md: Info 0x004EC7B4..0x004EC7CC; isMember 0x004EC81C/0x004EC82C/0x004EC83E with bodies 0x004EC898..0x004EC962; UiMessageHandler::Init 0x004EC846..0x004EC896; vslot+8 0x004EC96A..0x004EC9C8; BroadcastAvailableAnimations call 0x0052E76E (body unread).",
+        "re-analysis/research/overnight/20261016-batch-check.md: ReInit 0x004EC7B4..0x004EC80E; isMember gates 0x004EC812..0x004EC844, 0x004EC898..0x004EC968; UiMessageHandler::Init 0x004EC846..0x004EC896, 0x004EC9B6..0x004EC9C8; InitInternal (vtable 0x0101E488 +8 = 0x004EDC6C) 0x004EC96A..0x004ECA1A."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-055": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CozmoEngine::Update: BroadcastAvailableAnimations then SetEngineState(3) when DoNonConfigDataLoading returns 1",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-batch-check.md: 0x004ED5F0..0x004ED60E; BroadcastAvailableAnimations 0x0052E89C..0x0052E916 (names 0x00588190..0x0058826A unordered_map order skipping the procedural name; E2G AnimationAvailable per name 0x0052F878..0x0052F8E2; EndOfMessage 0x0052F918..0x0052F95C; Debug RobotManager.BroadcastAvailableAnimations \"Supposedly sent EndOfMessage\")."
       ],
       "live_path": true,
       "hardware_required": false

@@ -987,3 +987,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | ActivateSpark handler; spark fields; ActivitySparked lifecycle: IMPLEMENTATION_GAP | M15-057, M15-058, M15-059 (new) |
 | Notes | M15-006, M15-055, M15-031 |
+
+
+## Batch check of 2026-10-16 (manager; research/overnight/20261016-batch-check.md)
+
+| Change | Records |
+| --- | --- |
+| To IMPLEMENTATION_GAP | M15-055, M15-056, M15-052, M15-045 |
+| New RECOVERABLE_GAP | M15-060, M15-061, M15-062, M15-063 |

@@ -1692,3 +1692,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Cube disconnect tail: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-085 |
+
+
+## Batch check of 2026-10-16 (manager; research/overnight/20261016-batch-check.md)
+
+| Change | Records |
+| --- | --- |
+| To IMPLEMENTATION_GAP | M11-088, M11-089, M11-090 |
+| Notes | M11-073, M11-004, M11-084 |
+| New RECOVERABLE_GAP | M11-091, M11-092 |

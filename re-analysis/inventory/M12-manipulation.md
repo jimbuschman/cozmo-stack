@@ -1044,3 +1044,10 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | Helper stop and BuildPyramid loop: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-047 |
 | No reachable fault (live_path false) | M12-048 |
 | Callbacks and cache contents: RECOVERABLE_GAP | M12-049 (new) |
+
+
+## Batch check of 2026-10-16 (manager; research/overnight/20261016-batch-check.md)
+
+| Change | Records |
+| --- | --- |
+| Narrowed to SetCarryingObject, IMPLEMENTATION_GAP | M12-046 |

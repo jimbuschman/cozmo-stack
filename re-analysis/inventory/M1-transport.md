@@ -787,3 +787,11 @@ M1-048 Rule10 U5/U6 follow-up: exact short-send, non-IP and send-failure tags/fo
 | Change | Records |
 | --- | --- |
 | Note (wording) | M1-028 |
+
+
+## Batch check of 2026-10-16 (manager; research/overnight/20261016-batch-check.md)
+
+| Change | Records |
+| --- | --- |
+| To IMPLEMENTATION_GAP | M1-054 |
+| New IMPLEMENTATION_GAP | M1-055 |
