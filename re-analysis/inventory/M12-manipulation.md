@@ -1035,3 +1035,12 @@ M12-040 owns S8 carrying/docking teardown after AbortAll (0x005113FA..0x00511414
 | --- | --- |
 | Pyramid-base geometry, PreActionPose +0x14: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-043, M12-044 |
 | Helper stop, BuildPyramid top loop; candidate crash points: RECOVERABLE_GAP | M12-047, M12-048 (new) |
+
+
+## Check of OV69/74/75/77 (manager, 2026-10-16; research/overnight/20261016-ov69-74-75-77-check.md)
+
+| Change | Records |
+| --- | --- |
+| Helper stop and BuildPyramid loop: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M12-047 |
+| No reachable fault (live_path false) | M12-048 |
+| Callbacks and cache contents: RECOVERABLE_GAP | M12-049 (new) |

@@ -1,8 +1,8 @@
 {
   "subsystem": "M12-manipulation",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M12-manipulation.md",
-  "inventory_sha256": "5c6b69a1f8da8b5e98f44ac2d0f17b68e3ea07578004135c6ae03257c14f57e5",
+  "inventory_sha256": "2e549d59391fd1e8df5c3e3b82d5406e97a3f1a3c2814d326fae6752044c81da",
   "records": {
     "M12-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -627,11 +627,12 @@
       "hardware_required": false
     },
     "M12-047": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Behavior helper stop semantics (StopHelperWithoutCallback, ClearStackFromTopToIter, SmartStopHelper) with IHelper::Stop downstream, and BehaviorBuildPyramid's top-loop source list",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov45-47-check.md: StopHelperWithoutCallback 0x0056DCBC..0x0056DCDA (compares the first stack entry only; ClearStackFromTopToIter then returns 1); ClearStackFromTopToIter 0x0056DCE0..0x0056DD92 (Stop(top, isActive on first pass), pop, release; 1000-bound sErrorF line 0x106, _errG, break); IBehavior SmartStopHelper 0x005BD21C..0x005BD2CE (weak +0xC8, helper +0xC4, log <name>.SmartStopHelper, robot+0x264 -> +0x10); SmartDelegateToHelper ignores the result 0x005BEBE8."
+        "re-analysis/research/overnight/20261015-ov45-47-check.md: StopHelperWithoutCallback 0x0056DCBC..0x0056DCDA (compares the first stack entry only; ClearStackFromTopToIter then returns 1); ClearStackFromTopToIter 0x0056DCE0..0x0056DD92 (Stop(top, isActive on first pass), pop, release; 1000-bound sErrorF line 0x106, _errG, break); IBehavior SmartStopHelper 0x005BD21C..0x005BD2CE (weak +0xC8, helper +0xC4, log <name>.SmartStopHelper, robot+0x264 -> +0x10); SmartDelegateToHelper ignores the result 0x005BEBE8.",
+        "re-analysis/research/overnight/20261016-ov69-74-75-77-check.md: wrapper 0x005BD21C..0x005BD2CE; component match 0x0056DCC0..0x0056DCD6; clear loop 0x0056DCE0..0x0056DD92; IHelper::Stop 0x005B6768..0x005B67F6; vt+0x24 bx lr 0x005B5F1C in 7 helper vtables; LogStopEvent 0x005B6850..0x005B68EA; emitter 0x005B698C..0x005B6ACC; BuildPyramid list 0x005DC08C..0x005DC15E, loop 0x005DC182..0x005DC304."
       ],
       "live_path": true,
       "hardware_required": false
@@ -641,7 +642,18 @@
       "title": "Candidate crash points in pre-action pose consumers: CrossBridge GetDockMarker2 out-of-bounds read and DriveAndFlip index -1",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov45-47-check.md: CrossBridge GetDockMarker2 0x0055722C..0x0055723A reads begin+(1-idx)*28+4 unchecked (constructor caller TraverseObjectAction::UpdateInternal 0x0054B16A); DriveAndFlip::GetPossiblePoses indexes with the closest index initialised to -1 at 0x0055E4BC (0x0055E59C)."
+        "re-analysis/research/overnight/20261015-ov45-47-check.md: CrossBridge GetDockMarker2 0x0055722C..0x0055723A reads begin+(1-idx)*28+4 unchecked (constructor caller TraverseObjectAction::UpdateInternal 0x0054B16A); DriveAndFlip::GetPossiblePoses indexes with the closest index initialised to -1 at 0x0055E4BC (0x0055E59C).",
+        "re-analysis/research/overnight/20261016-ov69-74-75-77-check.md: selector 0x005508D8..0x00550ED0 (index overwritten with count 0x00550C4E); DriveAndFlip returns on nonzero status 0x0055E4DA; Bridge ctor callers 0x004E9740/0x004E977A only (Bridge Clone); CrossBridge gate 0x0054B142..0x0054B16A."
+      ],
+      "live_path": false,
+      "hardware_required": false
+    },
+    "M12-049": {
+      "status": "RECOVERABLE_GAP",
+      "title": "BehaviorBuildPyramid helper callbacks and the pyramid cache contents (Container::Update, CastNewEntryToBestSharedPointer, PruneFullPyramids, PyramidBase::operator==)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov69-74-75-77-check.md: callbacks vtables 0x01029068 / 0x010290A8 (built 0x005DC16C..0x005DC17C, passed at 0x005DC298); cache UpdateAllBlockConfigs 0x00616F00 -> Container::Update 0x0061682C -> AddAllConfigsWithObjectToCache 0x0062C56E -> CastNewEntryToBestSharedPointer 0x0062C68C; PruneFullPyramids 0x0062C72E."
       ],
       "live_path": true,
       "hardware_required": false

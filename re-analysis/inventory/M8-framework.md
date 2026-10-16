@@ -782,3 +782,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Required-process gate rows | M8-013 (note) |
+
+
+## Check of OV69/74/75/77 (manager, 2026-10-16; research/overnight/20261016-ov69-74-75-77-check.md)
+
+| Change | Records |
+| --- | --- |
+| ProcessClearQuad: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M8-026 |
+| Notes | M8-011, M8-001 |

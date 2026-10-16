@@ -1,8 +1,8 @@
 {
   "subsystem": "M13-navigation",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M13-navigation.md",
-  "inventory_sha256": "0a27a929b8bab4a612c0379ad79c5f5043d08172757aff98a20fba0bf64e90c2",
+  "inventory_sha256": "c56aef3e623b52b27979b754509f4ea1c77b39e2427103534ac28c7156c5338f",
   "records": {
     "M13-001": {
       "status": "EXACT_SOURCE",
@@ -486,11 +486,12 @@
       "hardware_required": false
     },
     "M13-038": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BehaviorAudioClient instances and lifetime: two clients (BehaviorManager, BehaviorSystemManager) subscribe to the public-state broadcaster; whether both stay subscribed; the re-entrant double ActivateSparkedMusic",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov48-49-check.md: Subscribe 0x00591F08 in the ctor; constructed by BehaviorManager 0x005A0914 and BehaviorSystemManager 0x005A5828, both built in Robot::Robot (0x0050FCAC, 0x0050FCBE); emitter 0x0064DE5E..0x0064DE7A -> 0x0064E656..0x0064E668 (synchronous, skips empty slots); re-entrance via the unlock 0x1D path and UpdateBroadcastBehaviorStage 0x0064DA44..0x0064DB86 (broadcaster state+0 copied at 0x0064DB44..0x0064DB58)."
+        "re-analysis/research/overnight/20261015-ov48-49-check.md: Subscribe 0x00591F08 in the ctor; constructed by BehaviorManager 0x005A0914 and BehaviorSystemManager 0x005A5828, both built in Robot::Robot (0x0050FCAC, 0x0050FCBE); emitter 0x0064DE5E..0x0064DE7A -> 0x0064E656..0x0064E668 (synchronous, skips empty slots); re-entrance via the unlock 0x1D path and UpdateBroadcastBehaviorStage 0x0064DA44..0x0064DB86 (broadcaster state+0 copied at 0x0064DB44..0x0064DB58).",
+        "re-analysis/research/overnight/20261016-ov69-74-75-77-check.md: construction 0x0050FC90..0x0050FCD0; clients 0x005A0908..0x005A091E, 0x005A581C..0x005A582C; ctor 0x00591E50..0x00591F08 (unconditional broadcaster subscribe); emit 0x0064E594..0x0064E69A; lifetime 0x00511120..0x0051113E, 0x005A0D8E..0x005A0DA2, 0x005A5886..0x005A589C; state+0 0x0064D5DC..0x0064D6B8; stage setter 0x0064DA4E..0x0064DB86; snapshots 0x0064D85C..0x0064D8A0; spark branch 0x005923D4..0x00592478; Activate 0x00592190..0x005921DE."
       ],
       "live_path": true,
       "hardware_required": false

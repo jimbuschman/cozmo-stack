@@ -2619,3 +2619,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | TrackObjectAction selection: unreachable in the shipped app (live_path false) | M13-037; note M13-036 |
 | BehaviorAudioClient lifetime: RECOVERABLE_GAP | M13-038 (new) |
 | BehaviorAudioClient handler: IMPLEMENTATION_GAP (waits on M13-038) | M13-039 (new) |
+
+
+## Check of OV69/74/75/77 (manager, 2026-10-16; research/overnight/20261016-ov69-74-75-77-check.md)
+
+| Change | Records |
+| --- | --- |
+| BehaviorAudioClient instances: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M13-038 |
+| Note | M13-039 |

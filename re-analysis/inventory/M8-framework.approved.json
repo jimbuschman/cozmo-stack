@@ -1,8 +1,8 @@
 {
   "subsystem": "M8-framework",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M8-framework.md",
-  "inventory_sha256": "760b19763c93f4753f33388079f66794a7d87be224590b42acb8c6b6278da770",
+  "inventory_sha256": "8c6ff7c25feec1a62cbe06d9d9e73c79aecf21664b818a3fbfac29b09d8c3699",
   "records": {
     "M8-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -336,11 +336,12 @@
       "hardware_required": false
     },
     "M8-026": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "AIWhiteboard::ProcessClearQuad: PossibleObjects erase predicate and UpdatePossibleObjectRender",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov42-44-check.md: 0x0056AC84..0x0056AD56 (predicate 0x0056CCFC called twice; UpdatePossibleObjectRender 0x0056A6D4 with VizManager calls); callers MapComponent UpdateRobotPose 0x0067E414..0x0067E486 and ClearRobotToMarkers 0x0067F5B8..0x0067F714."
+        "re-analysis/research/overnight/20261015-ov42-44-check.md: 0x0056AC84..0x0056AD56 (predicate 0x0056CCFC called twice; UpdatePossibleObjectRender 0x0056A6D4 with VizManager calls); callers MapComponent UpdateRobotPose 0x0067E414..0x0067E486 and ClearRobotToMarkers 0x0067F5B8..0x0067F714.",
+        "re-analysis/research/overnight/20261016-ov69-74-75-77-check.md: capture 0x0056AC8E..0x0056ACD4; predicate 0x0056CD36..0x0056CD50; Contains 0x004DF764..0x004DF7BC; triangle 0x004E03B8..0x004E047E; scan/erase 0x0056ACDE..0x0056AD1C; range erase 0x0056CD8C..0x0056CDCA; render trigger 0x0056AD24..0x0056AD2E; render 0x0056A6E2..0x0056A970; segments 0x0056C898..0x0056C978; sinks bx lr 0x006BE610, 0x006C05EC."
       ],
       "live_path": true,
       "hardware_required": false
