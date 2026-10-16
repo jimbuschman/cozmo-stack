@@ -148,6 +148,10 @@ public sealed class WwisePlayingInstance
     /// <summary><c>[pbi+0x1E6]</c> (<c>params+0x86</c>): byte@0x10 of the listener key when <see cref="Field1E4"/> is 0x80, 0x90 or 0xA0 (<c>0xA00390..0xA003EC</c>); null is unset.</summary>
     public byte? Field1E6 { get; }
 
+    // fidelity: M9-014
+    /// <summary>PBI+0x1E7, copied from request+0x87 without scaling or gain application.</summary>
+    public byte? Field1E7 { get; }
+
     /// <summary>Whether the key is the one derived from the PBI fields (no host override); the engine orders equal-key listeners by the PBI heap address, which the C# cannot reproduce (see the store's visible stop).</summary>
     public bool ListenerKeyIsDerived => _listenerKey is null;
 
@@ -483,6 +487,7 @@ public sealed class WwisePlayingInstance
         Field1E4 = p.SoundSpecial84;
         Field1E5 = p.SoundSpecial85;                                      // 0xA00304 str r3,[r4,#0x1e4] stores the whole word params+0x84
         Field1E6 = p.SoundSpecial86;
+        Field1E7 = p.SoundSpecial87; // fourth byte of the same native word copy, 0x00A00304
         Word15C = 0x00004101;                                             // C23.8: 0xA00338..0xA00374
         Block170 = (byte[])block28.Clone();
         StartOffset = p.InitialDelaySamples;
@@ -511,6 +516,14 @@ public sealed class WwisePlayingInstance
         {
             ChainId = p.ChainId;
             Flags1BE |= 8;
+        }
+        // fidelity: M9-014 — source81 publication follows the ctor's identity setup, 0x00A00420..0x00A00478.
+        if(Field1E4==0x90)
+        {
+            if(Field1E7 is null)
+                Behavior.SteppedBehavior.ReportMissing("M9-014 PBI ctor 0x00A00420: request+0x87 velocity input is absent; zero/nonzero publication gate cannot be inferred from an unspecified byte");
+            else if(Field1E7!=0)
+                Behavior.SteppedBehavior.ReportMissing("M9-014 PBI ctor source0x81 at 0x00A00420..0x00A00478: raw unsigned velocity-to-f32 and scoped A149C8 recipient are not integrated; packed velocity is preserved, no velocity/127 gain or fabricated RTPC binding");
         }
     }
 
