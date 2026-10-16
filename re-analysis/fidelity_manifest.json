@@ -8106,7 +8106,7 @@
         "C12 modulator evaluator (report 20260928-B-M6b-modulator-evaluator.md): 0x9E2BD0 (0x9E2BD0..0x9E52F3) per-voice LFO (five shapes 0..4) + transition evaluator and pool allocator; type-0 records 0x4C (list [arg+0x20]) and type-1 records 0x30 (list [arg+0x14]); 0x9E52F8 (0x9E52F8..0x9E5E8B) five-segment ramp"
       ],
       "status": "IMPLEMENTATION_GAP",
-      "unresolved": "not built and not wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler (the wiring is B-M6b-3). C12/C15 supply the callee bodies. Remaining gaps: the bus metering DSP identity and per-lane mapping 0xA50044..0xA50FD0 (scalar flow, offsets, loop bounds, gains and store targets are EXACT_SOURCE; the filter identity is RECOVERABLE_GAP); 0xA25FF8 (called by 0xA4D994) RECOVERABLE_GAP; the 0xA4B93C sub-callees 0x9BE28C/0x9BDA88/0x9BD368/0x9BF8E4/0xA5E694 and 0x9EEDA4 RECOVERABLE_GAP; whether the shipped media exercises the 0xA022E8/0xA0228C/0xA01768 states UNKNOWN; the bus insert-FX effect object class (registry-assigned via 0x9CC2AC) and the [node+0x70] device sub-object identity UNKNOWN; the callback registry 0x0108D95C owner RECOVERABLE_GAP; the source-class, voice/bus insert-FX and four group members' Wwise class names UNKNOWN. HARDWARE_ONLY: the native device frame count 0x9EBE6C's sink value, the OpenSL pacing, and the runtime value of the gate bytes (the bus-pass arg (gate2==0)?1:gate3 and the frames-per-Perform branch); the code paths and writers are settled. The downstream node of the voice+0x1C0 wrapper ([voice+0x1C4]) and the meaning of the V7 r2/E4/E0 values are UNKNOWN; whether the shipped media exercises the 0xA552F0 paths is UNKNOWN; the writer of [r6+0x164] is RECOVERABLE_GAP. Also UNKNOWN/RECOVERABLE_GAP: the [device+0x70] sub-object identity and its vt+0x24 body and the [device+0x80] object identity (C8/C17, modelled as the Route7C seam); the semantic names of E4/E0/P2F and the four ramp fields; whether the shipped media exercises the 0xA5532C P2F==0 path; the modulator transition-ramp per-sample order (0x9E52F8 stage-B/C first-sample convention; the settled segment boundaries/slopes are EXACT_SOURCE); the writer of [r6+0x164] (sample scale). Also UNKNOWN: the Wwise meaning of the [sp+0x2e] flag, the P2F byte and the connection bit [conn+0x6C]&2; whether the shipped media exercises the [sp+0x2e]==0 copy-skip path. The Play -> PBI -> voice -> source creation bridge that creates the voices this engine renders is a separate record, M6-025 (correction C21).",
+      "unresolved": "not built and not wired into WwisePlayback/WwiseAudioSource/WwiseSongRenderer/AnimationScheduler (the wiring is B-M6b-3). C12/C15 supply the callee bodies. Remaining gaps: the bus metering DSP identity and per-lane mapping 0xA50044..0xA50FD0 (scalar flow, offsets, loop bounds, gains and store targets are EXACT_SOURCE; the filter identity is RECOVERABLE_GAP); 0xA25FF8 (called by 0xA4D994) RECOVERABLE_GAP; the 0xA4B93C sub-callees 0x9BE28C/0x9BDA88/0x9BD368/0x9BF8E4/0xA5E694 and 0x9EEDA4 RECOVERABLE_GAP; whether the shipped media exercises the 0xA022E8/0xA0228C/0xA01768 states UNKNOWN; the bus insert-FX effect object class (registry-assigned via 0x9CC2AC) and the [node+0x70] device sub-object identity UNKNOWN; the callback registry 0x0108D95C owner RECOVERABLE_GAP; the source-class, voice/bus insert-FX and four group members' Wwise class names UNKNOWN. HARDWARE_ONLY: the native device frame count 0x9EBE6C's sink value, the OpenSL pacing, and the runtime value of the gate bytes (the bus-pass arg (gate2==0)?1:gate3 and the frames-per-Perform branch); the code paths and writers are settled. The downstream node of the voice+0x1C0 wrapper ([voice+0x1C4]) and the meaning of the V7 r2/E4/E0 values are UNKNOWN; whether the shipped media exercises the 0xA552F0 paths is UNKNOWN; the writer of [r6+0x164] is RECOVERABLE_GAP. Also UNKNOWN/RECOVERABLE_GAP: the [device+0x70] sub-object identity and its vt+0x24 body and the [device+0x80] object identity (C8/C17, modelled as the Route7C seam); the semantic names of E4/E0/P2F and the four ramp fields; whether the shipped media exercises the 0xA5532C P2F==0 path; the modulator transition-ramp per-sample order (0x9E52F8 stage-B/C first-sample convention; the settled segment boundaries/slopes are EXACT_SOURCE); the writer of [r6+0x164] (sample scale). Also UNKNOWN: the Wwise meaning of the [sp+0x2e] flag, the P2F byte and the connection bit [conn+0x6C]&2; whether the shipped media exercises the [sp+0x2e]==0 copy-skip path. The Play -> PBI -> voice -> source creation bridge that creates the voices this engine renders is a separate record, M6-025 (correction C21). OV97 answer (re-analysis/research/overnight/20261016-ov97-99-answer.md): the bus-pass argument (gate2 == 0) ? 1 : gate3 is constant 1 (0x108DB08 stays 0: its only setter path, message 0x35, is unreachable); gate1 (0x108DAF0) stays dynamic.",
       "hardware_required": false,
       "live_path": true,
       "test": "WwiseVoiceEngineTests, WwisePitchNodeTests.M6_022_The_voice_order_with_the_pitch_node_matches_the_engine_on_1600_random_scenarios, WwisePitchNodeTests.M6_022_The_voice_order_slot_walks_and_0xA548C0_match_the_engine_for_the_cases_that_stop_before_the_pitch_pass, WwisePitchNodeTests.M6_022_The_first_buffer_starts_with_the_silent_frames_of_the_play_delay, WwisePitchNodeTests.M6_022_The_start_offset_skips_the_first_frames_and_skip_everything_consumes_the_block, WwiseMixKernelTests.M6_022_The_voice_mix_0xA4FBEC_matches_the_engine_gate_pad_state_and_gain_composition, WwiseMixKernelTests.M6_012_The_matrix_mixer_0xA45E9C_matches_the_engine_for_1_and_2_channels_each_side, WwiseMixKernelTests.M6_012_The_ramped_accumulate_0xA46668_matches_the_engine_bit_for_bit_with_lane_gains, WwiseVorbisEngineTests.R4_8_TheStopOffsetGetterReturnsTheOffsetAndStoresMinusOne, WwiseRtpcDeliveryTests.C37_1_L7_10_ThePrePassStepMatchesTheEngine, WwiseRtpcDeliveryTests.C37_1_AnEventVolumeSetReachesTheVoiceGainThroughTheLiveEntries, WwiseCompressorTests (the voice insert-FX Compressor plug-in object: C40.6, T-F1, T-F4..T-F7; the wrapper bodies 0xA793D4, 0x9CF644, 0xA6C22C and the linked worker 0xA9FEEC are not built); WwiseAuxRouteTests.C40_4_TheAuxWalkSumsTheMatchingEntriesAsTheEngineDoes_0xA447D8, WwiseAuxRouteTests.C40_4_TheVoiceTailBuildsMergesAndDispatchesTheSends_0xA4B93C (against the engine under Unicorn: emu_aux.py)"
@@ -8318,7 +8318,7 @@
       ],
       "effect": "A shutdown log, and possibly a use-after-destroy.",
       "provenance": "Opus check of OV36-OV37 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov65-67-check.md): IMPLEMENTATION_GAP. Live map: exact Info, find, CloseAudioBuffer/UpdateBuffer or NotFound Info. After map death both lambdas fault at 0x00595E08 (bucket pointer 0, count non-zero once a Robot existed): M1-034 skips, logged visibly: destroy 0x00596030 (after its Info 0x00596002), process 0x0059615A. Whether it fires at shutdown depends on audio activity and thread timing (HARDWARE_ONLY). Bus state transitions: M6-035. OV89 check (re-analysis/research/overnight/20261016-ov84-89-90-check.md): stays reachable: the robot bus survives map death whenever an input is connected (+0x1C0 > 0), it was mixed into last frame (+0x1BC = 1), or +0x1CC bit0 is set; destruction then follows on the audio thread (sweep) or at Term (bus drain). Occurrence stays HARDWARE_ONLY.",
+      "unresolved": "RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov65-67-check.md): IMPLEMENTATION_GAP. Live map: exact Info, find, CloseAudioBuffer/UpdateBuffer or NotFound Info. After map death both lambdas fault at 0x00595E08 (bucket pointer 0, count non-zero once a Robot existed): M1-034 skips, logged visibly: destroy 0x00596030 (after its Info 0x00596002), process 0x0059615A. Whether it fires at shutdown depends on audio activity and thread timing (HARDWARE_ONLY). Bus state transitions: M6-035. OV89 check (re-analysis/research/overnight/20261016-ov84-89-90-check.md): stays reachable: the robot bus survives map death whenever an input is connected (+0x1C0 > 0), it was mixed into last frame (+0x1BC = 1), or +0x1CC bit0 is set; destruction then follows on the audio thread (sweep) or at Term (bus drain). Occurrence stays HARDWARE_ONLY. OV99 answer (re-analysis/research/overnight/20261016-ov97-99-answer.md): nothing before Term reliably stops robot-bus voices (~CozmoAudioController makes no Wwise call; ~RobotAudioClient posts StopAll asynchronously, which T1 discards if the thread stops first); A40D44 then destroys every voice and the bus loop 0xA40DEC..0xA40E38 every bus. Destructor order: M6-042.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -8400,14 +8400,15 @@
       "subsystem": "M6-wwise-bank",
       "title": "Wwise bus residue: the other bus-destroy contexts (0xA41A3C, 0xA423D8, 0xA44078), the +0x1CC bit0 setters, and the bodies of 0xA4FEF8, 0x9E9E78, 0x9E9F08 and the per-frame flag globals",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: destroy paths 0xA440CC..0xA4428C (callers 0xA44338/0xA44480), 0xA41A3C/0xA41A44, 0xA423D8/0xA423E0; +0x1CC bit0 setters 0xA41EA4, 0xA420B0, 0xA422E0, 0xA4350C, 0xA43A14; flag globals at 0xA44DD8/0xA44DEC; +0x1A8 object vt+0x20/+0x24."
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: destroy paths 0xA440CC..0xA4428C (callers 0xA44338/0xA44480), 0xA41A3C/0xA41A44, 0xA423D8/0xA423E0; +0x1CC bit0 setters 0xA41EA4, 0xA420B0, 0xA422E0, 0xA4350C, 0xA43A14; flag globals at 0xA44DD8/0xA44DEC; +0x1A8 object vt+0x20/+0x24.",
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: driver 0xA44D5C..0xA44DD4; flag 0xA44DD8..0xA44DF4 (0x108DB08 writers 0x9EAE18, 0x9EC418 via message 0x35 only, unreachable); bus pass 0xA44C78..0xA44D38; 0x9E9E78..0x9E9F84; setter 0xA43434..0xA435E8 via 0x9D4108; 0xA44078..0xA44290; 0xA442C8..0xA443D4; 0xA443E0..0xA444C8; 0xA423B4..0xA423F0; 0xA4FEF8 store scan; HDR gate 0x9C6528..0x9C6550 with Init.bnk."
       ],
       "effect": "When buses survive or are destroyed (feeds M6-032 likelihood).",
       "provenance": "Opus check of OV84/89/90 (2026-10-16), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed bodies and conditions.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies and conditions. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov97-99-answer.md): IMPLEMENTATION_GAP for B1-B8, B10, B11 (body), B12 (body), B13, B14 (lifetime; DSP under ADP-1), B15. Unreachable, not built: B5a capture, B9 HDR setters, dead 0xA419E8 (the 0xA41A3C context) and others. B11a triggers are HARDWARE_ONLY (device reset, stall timeout). The bus-pass flag is constant 1: the inventory V4/G10 gate2/gate3 HARDWARE_ONLY claim is contradicted (gate1 stays dynamic). Remainder: M6-040.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -8417,14 +8418,15 @@
       "subsystem": "M6-wwise-bank",
       "title": "Wwise Term music-engine and variant: H3 music-engine Term (0x97D834 -> 0x97D528), the receiver variant chosen by init settings byte +0x3C, and OV84's unread callees",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: registrar 0x9A5AFC; music init 0x97D72C registered at 0x8D8206 (fn 0x97D834, mask 0x40); 0x97D834 tail-calls 0x97D528 if [0x108D7D8+0x3C]; variant byte G+0xE0 (0x99EAF0), default 1 at 0x99DCD8; Anki settings writes 0x8D8188..0x8D8192 before Init 0x8D81FC."
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: registrar 0x9A5AFC; music init 0x97D72C registered at 0x8D8206 (fn 0x97D834, mask 0x40); 0x97D834 tail-calls 0x97D528 if [0x108D7D8+0x3C]; variant byte G+0xE0 (0x99EAF0), default 1 at 0x99DCD8; Anki settings writes 0x8D8188..0x8D8192 before Init 0x8D81FC.",
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: SetupConfig 0x592C88..0x592CC8, 0x5933A2..0x5933CC; Wwise copies 0x8D8158..0x8D81DE; variant 0x99E458, 0x99EAF0..0x99EB30 (vtable 0x103BF48); music Init 0x97D72C..0x97D808; 0x97D834 -> 0x97D528..0x97D6E4; 0x980454, 0x981BE8; 0x9863E8..0x986554; 0x9854E0..0x985700; OV84 first-level callees."
       ],
       "effect": "What the music engine does at shutdown and which Term variant runs.",
       "provenance": "Opus check of OV84/89/90 (2026-10-16), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read 0x97D528 and its callees (0x9863E8, 0x980454, 0x981BE8...), the settings path to Init, and OV84's unread callees.",
+      "unresolved": "RECOVERABLE_GAP: read 0x97D528 and its callees (0x9863E8, 0x980454, 0x981BE8...), the settings path to Init, and OV84's unread callees. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov97-99-answer.md): IMPLEMENTATION_GAP for S1-S3, M1-M6 and the first-level callee rows (T1 discards StopAll 0x19). Remainder: M6-041 (stop tree), M6-042 (notifications, candidate M1-034), M6-043 (transitive callees); the JNI step is M6-044.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -8434,14 +8436,100 @@
       "subsystem": "M6-wwise-bank",
       "title": "Audio stream class behind the package-node dtor (node+0x34 vt+8 at 0x8D9E54), the veneer 0x8D8000 -> 0xAE3020, and whether stream-cache mode applies",
       "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: package-node dtor 0x8D9E48..0x8D9E60 (node+0x34 zeroed by the ctor at 0x8D6B80); DestroyPool calls blx 0x8D8000 when +0x1C bit0 (0xA7AEC4..0xA7AF78); device settings before 0x8D6C02 unread."
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: package-node dtor 0x8D9E48..0x8D9E60 (node+0x34 zeroed by the ctor at 0x8D6B80); DestroyPool calls blx 0x8D8000 when +0x1C bit0 (0xA7AEC4..0xA7AF78); device settings before 0x8D6C02 unread.",
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: AudioDiskPackage node 0x8D9D60..0x8D9E36 (+0x34 written 0x8D9D2C); LoadFilePackage 0x8D9848 no caller; stream 0x95E6B4..0x95E840, 0x9661DC; Destroy 0x9663BC..0x966434; worker 0x97CA90..0x97CB78; Close 0x8D6F46..0x8D6F90; veneers 0x8D7FFC/0x8D8000 -> malloc/free PLT; device defaults 0x96060C..0x9606AC; cache mode 0x969F24..0x969F80."
       ],
       "effect": "File closes at audio shutdown.",
       "provenance": "Opus check of OV84/89/90 (2026-10-16), manager record.",
-      "unresolved": "RECOVERABLE_GAP: find the writer of node+0x34 and the concrete stream class slot +8; read the veneer target; read Anki's device settings. The buddy-coalesce arithmetic in cache mode has no observable output (manager decision) and is not built.",
+      "unresolved": "RECOVERABLE_GAP: find the writer of node+0x34 and the concrete stream class slot +8; read the veneer target; read Anki's device settings. The buddy-coalesce arithmetic in cache mode has no observable output (manager decision) and is not built. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov97-99-answer.md): IMPLEMENTATION_GAP for P3-P8. P1-P2: the package path is unreachable (no caller, no .pck): not built. Stream-cache mode applies (confirms M6-036's cache path). Evidence correction: 0x8D6B6C..0x8D6B9A is the I/O hook ctor, not the package node's. Remainder: M6-043.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-040",
+      "subsystem": "M6-wwise-bank",
+      "title": "Wwise bus remainder: 0xA55750 send gating, 0xA4B5D8/0xA4B93C send paths, 0xA435FC reconnect, 0xA4F754/0xA52164/0xA4D994, callers of the 0x9F1EE8 slot, the bank mixer-plug-in field, 0xA0CA60, sink vtables",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA55750..0xA55890 (gating 0xA55768..0xA55808); 0xA4B5D8..0xA4B93C, 0xA4B93C..0xA4BAA0; 0xA435FC..0xA437D0; 0xA4F754, 0xA52164, 0xA4D994; callers of base node virtual 0x9F1EE8 (bus override 0x9C581C); bank mixer-plug-in field 0x9C0FC0 and its caller (does any shipped bus have one: B15); 0xA0CA60 (reaches the 0xA432B8 trap); the output sink vtables."
+      ],
+      "effect": "When robot-bus sends are made and buses are rebuilt.",
+      "provenance": "Opus answer OV97-99 (2026-10-16), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-041",
+      "subsystem": "M6-wwise-bank",
+      "title": "Wwise music stop tree at Term: 0x9854E0 beyond 0x985700, child vt+0x20/+0x24/+0x38/+0x28, 0x97E774, 0xA36618",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: frame read 0x9854E0..0x985700 (slot +8 of nine context vtables); 0x9863E8 0x9863E8..0x986554 calls 0xA36618; renderer detach 0x97E774."
+      ],
+      "effect": "What stopping each music context at Term does.",
+      "provenance": "Opus answer OV97-99 (2026-10-16), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the rest of 0x9854E0, the child virtuals, 0x97E774 and 0xA36618.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-042",
+      "subsystem": "M6-wwise-bank",
+      "title": "Wwise Term-time notifications and the engine destructor order: 0xA35998 user callbacks, PBI vt[0]/+0x10 and 0x9D3470 in 0xA387DC, the end-of-event callback 0x8D8D41 cookie lifetime, and whether ~RobotAudioClient runs before ~CozmoAudioController",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA35998 user vt[0] calls 0xA35A48..0xA35A74; 0xA387DC PBI drain; callback 0x8D8D41 reads cookie+0x38; ~AudioEngineController deletes +0xC at 0x8D1C78..0x8D1C88 and runs ClearGarbageCollector before Term (0x8D8048 -> 0x8D8068); ~RobotAudioClient 0x599A6C; ~CozmoAudioController 0x5946F0..0x594716."
+      ],
+      "effect": "Whether shutdown emits end-of-event notifications into freed memory; whether robot-bus voices are stopped before Term.",
+      "provenance": "Opus answer OV97-99 (2026-10-16), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the notification targets and the CozmoEngine / CozmoContext destructor order. Candidate M1-034 point: a Term-time notification dereferencing a freed cookie.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-043",
+      "subsystem": "M6-wwise-bank",
+      "title": "Wwise Term-path transitive callees and stream-device remainder",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "RECOVERABLE_GAP",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA03618, 0xA63A74, 0x9E21FC, 0xA103B8 (UDF 0xA10644), 0xA159DC, 0xA71BF8, 0xA708D4, 0xA3EB4C, 0xA3E3C0, 0xA0B600, 0xA0B964, 0xA0E460, 0xA31C68, 0xA7B018, 0xA40C30 callees (0x9D32F8, 0x9CBEE0, 0xA59228, 0x9D4A18, 0x9D401C), 0x9A5E50, 0x9A5E64; stream 0x97CB9C, 0x97D0B4, 0x963890, scheduler 0x9633B8 / 0x962EA8."
+      ],
+      "effect": "Residual Term-time and stream-worker behaviour.",
+      "provenance": "Opus answer OV97-99 (2026-10-16), manager record.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": ""
+    },
+    {
+      "id": "M6-044",
+      "subsystem": "M6-wwise-bank",
+      "title": "Wwise Term JNI step 0xA57960: the JavaVM is an app input; the stack has none",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "status": "COMPATIBILITY_POLICY",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA57960: GetEnv(0x10006); DeleteGlobalRef([0x108DF9C]), or AttachCurrentThread \"NativeThread\" (0xFA7AE8), DeleteGlobalRef, DetachCurrentThread; then 0xA40C30. The JavaVM comes from cfg+0x50 (0x592DCE) -> platform +0x4C."
+      ],
+      "effect": "None outside the JVM: the stack has no Android JavaVM, so the JNI calls are not made; 0xA40C30 still runs.",
+      "provenance": "Opus answer OV97-99 (2026-10-16), manager record.",
+      "unresolved": "COMPATIBILITY_POLICY under the app-boundary rule (operator 2026-10-09): the input is the Android JavaVM and activity; the stack performs no JNI calls and continues with 0xA40C30 (M6-043).",
       "hardware_required": false,
       "live_path": true,
       "test": ""

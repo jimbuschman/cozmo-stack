@@ -2,7 +2,7 @@
   "subsystem": "M6-wwise-bank",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "0988d6be7746a5bbc1984d746ca3e5eb738f465d84f7dc7d4f7a7ae7083c63c8",
+  "inventory_sha256": "b72d0da5597de7be3a4b1f47d26dc096dd845dad6517f52eb479728723e4afd7",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -514,31 +514,84 @@
       "hardware_required": false
     },
     "M6-037": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise bus residue: the other bus-destroy contexts (0xA41A3C, 0xA423D8, 0xA44078), the +0x1CC bit0 setters, and the bodies of 0xA4FEF8, 0x9E9E78, 0x9E9F08 and the per-frame flag globals",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: destroy paths 0xA440CC..0xA4428C (callers 0xA44338/0xA44480), 0xA41A3C/0xA41A44, 0xA423D8/0xA423E0; +0x1CC bit0 setters 0xA41EA4, 0xA420B0, 0xA422E0, 0xA4350C, 0xA43A14; flag globals at 0xA44DD8/0xA44DEC; +0x1A8 object vt+0x20/+0x24."
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: destroy paths 0xA440CC..0xA4428C (callers 0xA44338/0xA44480), 0xA41A3C/0xA41A44, 0xA423D8/0xA423E0; +0x1CC bit0 setters 0xA41EA4, 0xA420B0, 0xA422E0, 0xA4350C, 0xA43A14; flag globals at 0xA44DD8/0xA44DEC; +0x1A8 object vt+0x20/+0x24.",
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: driver 0xA44D5C..0xA44DD4; flag 0xA44DD8..0xA44DF4 (0x108DB08 writers 0x9EAE18, 0x9EC418 via message 0x35 only, unreachable); bus pass 0xA44C78..0xA44D38; 0x9E9E78..0x9E9F84; setter 0xA43434..0xA435E8 via 0x9D4108; 0xA44078..0xA44290; 0xA442C8..0xA443D4; 0xA443E0..0xA444C8; 0xA423B4..0xA423F0; 0xA4FEF8 store scan; HDR gate 0x9C6528..0x9C6550 with Init.bnk."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M6-038": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise Term music-engine and variant: H3 music-engine Term (0x97D834 -> 0x97D528), the receiver variant chosen by init settings byte +0x3C, and OV84's unread callees",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: registrar 0x9A5AFC; music init 0x97D72C registered at 0x8D8206 (fn 0x97D834, mask 0x40); 0x97D834 tail-calls 0x97D528 if [0x108D7D8+0x3C]; variant byte G+0xE0 (0x99EAF0), default 1 at 0x99DCD8; Anki settings writes 0x8D8188..0x8D8192 before Init 0x8D81FC."
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: registrar 0x9A5AFC; music init 0x97D72C registered at 0x8D8206 (fn 0x97D834, mask 0x40); 0x97D834 tail-calls 0x97D528 if [0x108D7D8+0x3C]; variant byte G+0xE0 (0x99EAF0), default 1 at 0x99DCD8; Anki settings writes 0x8D8188..0x8D8192 before Init 0x8D81FC.",
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: SetupConfig 0x592C88..0x592CC8, 0x5933A2..0x5933CC; Wwise copies 0x8D8158..0x8D81DE; variant 0x99E458, 0x99EAF0..0x99EB30 (vtable 0x103BF48); music Init 0x97D72C..0x97D808; 0x97D834 -> 0x97D528..0x97D6E4; 0x980454, 0x981BE8; 0x9863E8..0x986554; 0x9854E0..0x985700; OV84 first-level callees."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M6-039": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Audio stream class behind the package-node dtor (node+0x34 vt+8 at 0x8D9E54), the veneer 0x8D8000 -> 0xAE3020, and whether stream-cache mode applies",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: package-node dtor 0x8D9E48..0x8D9E60 (node+0x34 zeroed by the ctor at 0x8D6B80); DestroyPool calls blx 0x8D8000 when +0x1C bit0 (0xA7AEC4..0xA7AF78); device settings before 0x8D6C02 unread."
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: package-node dtor 0x8D9E48..0x8D9E60 (node+0x34 zeroed by the ctor at 0x8D6B80); DestroyPool calls blx 0x8D8000 when +0x1C bit0 (0xA7AEC4..0xA7AF78); device settings before 0x8D6C02 unread.",
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: AudioDiskPackage node 0x8D9D60..0x8D9E36 (+0x34 written 0x8D9D2C); LoadFilePackage 0x8D9848 no caller; stream 0x95E6B4..0x95E840, 0x9661DC; Destroy 0x9663BC..0x966434; worker 0x97CA90..0x97CB78; Close 0x8D6F46..0x8D6F90; veneers 0x8D7FFC/0x8D8000 -> malloc/free PLT; device defaults 0x96060C..0x9606AC; cache mode 0x969F24..0x969F80."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-040": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise bus remainder: 0xA55750 send gating, 0xA4B5D8/0xA4B93C send paths, 0xA435FC reconnect, 0xA4F754/0xA52164/0xA4D994, callers of the 0x9F1EE8 slot, the bank mixer-plug-in field, 0xA0CA60, sink vtables",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA55750..0xA55890 (gating 0xA55768..0xA55808); 0xA4B5D8..0xA4B93C, 0xA4B93C..0xA4BAA0; 0xA435FC..0xA437D0; 0xA4F754, 0xA52164, 0xA4D994; callers of base node virtual 0x9F1EE8 (bus override 0x9C581C); bank mixer-plug-in field 0x9C0FC0 and its caller (does any shipped bus have one: B15); 0xA0CA60 (reaches the 0xA432B8 trap); the output sink vtables."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-041": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise music stop tree at Term: 0x9854E0 beyond 0x985700, child vt+0x20/+0x24/+0x38/+0x28, 0x97E774, 0xA36618",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: frame read 0x9854E0..0x985700 (slot +8 of nine context vtables); 0x9863E8 0x9863E8..0x986554 calls 0xA36618; renderer detach 0x97E774."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-042": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise Term-time notifications and the engine destructor order: 0xA35998 user callbacks, PBI vt[0]/+0x10 and 0x9D3470 in 0xA387DC, the end-of-event callback 0x8D8D41 cookie lifetime, and whether ~RobotAudioClient runs before ~CozmoAudioController",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA35998 user vt[0] calls 0xA35A48..0xA35A74; 0xA387DC PBI drain; callback 0x8D8D41 reads cookie+0x38; ~AudioEngineController deletes +0xC at 0x8D1C78..0x8D1C88 and runs ClearGarbageCollector before Term (0x8D8048 -> 0x8D8068); ~RobotAudioClient 0x599A6C; ~CozmoAudioController 0x5946F0..0x594716."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-043": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise Term-path transitive callees and stream-device remainder",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA03618, 0xA63A74, 0x9E21FC, 0xA103B8 (UDF 0xA10644), 0xA159DC, 0xA71BF8, 0xA708D4, 0xA3EB4C, 0xA3E3C0, 0xA0B600, 0xA0B964, 0xA0E460, 0xA31C68, 0xA7B018, 0xA40C30 callees (0x9D32F8, 0x9CBEE0, 0xA59228, 0x9D4A18, 0x9D401C), 0x9A5E50, 0x9A5E64; stream 0x97CB9C, 0x97D0B4, 0x963890, scheduler 0x9633B8 / 0x962EA8."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-044": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Wwise Term JNI step 0xA57960: the JavaVM is an app input; the stack has none",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA57960: GetEnv(0x10006); DeleteGlobalRef([0x108DF9C]), or AttachCurrentThread \"NativeThread\" (0xFA7AE8), DeleteGlobalRef, DetachCurrentThread; then 0xA40C30. The JavaVM comes from cfg+0x50 (0x592DCE) -> platform +0x4C."
       ],
       "live_path": true,
       "hardware_required": false

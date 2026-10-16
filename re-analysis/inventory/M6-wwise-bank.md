@@ -3212,3 +3212,14 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Bus state, Term recipients, device storage: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-034, M6-035, M6-036 |
 | Residue: RECOVERABLE_GAP | M6-037, M6-038, M6-039 (new) |
 | Notes | M6-031, M6-032 |
+
+
+## Opus answers OV97-99 (manager, 2026-10-16; research/overnight/20261016-ov97-99-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Bus residue; Term music engine and variant; stream class: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-037, M6-038, M6-039 |
+| V4/G10 and the line-2131 note: CONTRADICTED for gate2/gate3 (the bus-pass argument is always 1); gate1 stays dynamic | M6-022, M6-037 |
+| New RECOVERABLE_GAP | M6-040, M6-041, M6-042, M6-043 |
+| New COMPATIBILITY_POLICY (JavaVM input) | M6-044 |
+| Note | M6-032 |
