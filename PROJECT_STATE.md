@@ -59,6 +59,8 @@ stands. Nothing new starts outside the current layer.
 
 Small behaviour choices are noted here rather than put to the operator. Each keeps its current behaviour until a test settles it.
 
+- **M6-042 N12, decided (operator, 2026-10-16): skip and log.** "generally we don't want to reproduce errors". AGENTS.md's M1-034 standing rule now also covers hangs and deadlocks of the original; defined error handling stays exact.
+
 - **Process guard (manager, 2026-09-26, prompted by the NV correction).** AGENTS.md now carries two manager rules: a settled record owns its whole production path (an unrecorded part gets its own gap record before the claiming record is settled; no deferral to another record, a comment or prose), and a claim about an existing record is checked against the current manifest rather than recalled. Origin: M3-022 was EXACT_SOURCE while the NV wire had no records and the gap lived in `NvStorage.cs`'s summary, and the NV pass 4 report called M11-011 contradicted from an earlier revision of its text.
 
 - **Motor stop on shutdown.** CozmoRobot.Dispose sends StopAllMotors and DriveWheels(0) before disconnecting. The original only sends the DisconnectRequest (B33, CC29). Kept for now as a probable safety behaviour. Test later: does the robot stop on its own when the link drops?
@@ -159,5 +161,4 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 
 ## Open decisions for the operator
 
-- **M6-042 N12, the Wwise Term block (2026-10-16).** At shutdown, if any audio event posted with a callback is still playing, the first end-of-event notification during Wwise Term calls CancelEventCallback from the shutdown thread and waits on a condition variable that nothing signals (0xA03604): the original shutdown hangs. It is defined behaviour, not a crash, so the M1-034 standing rule does not cover it. Reproduce the hang, or approve a departure (e.g. skip the wait, log it visibly, and carry on)? N12 is not built until decided.
 - **M6-002 Vorbis IMDCT (correction C8).** The engine's inverse MDCT is a float NEON transform whose per-lane arithmetic and table indexing are RECOVERABLE_GAP (ranges and the 615-float master table are named in `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`). **Decided (operator, 2026-09-27): exact.** Transliterate the lane-level arithmetic and vendor the 2460 table bytes. The RECOVERABLE_GAP rows go back to the extractor. The kernel stays fail-closed until then.

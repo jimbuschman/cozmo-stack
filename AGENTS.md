@@ -99,6 +99,14 @@ stack implements that feature.
   Each case is still recorded: the owning record's `unresolved` names the crash point (address) and the skip.
 
   The rule covers only undefined or terminating behaviour. Where the original's behaviour is defined, it stays exact.
+
+  **Hangs are covered too** (operator, 2026-10-16: "skip and log. generally we don't want to reproduce errors"). A path
+  where the original blocks forever or deadlocks is treated the same way: the stack skips the wait, logs the skip
+  visibly (naming M1-034 and the owning record), and carries on. The first case is M6-042 N12, the Wwise Term
+  CancelEventCallback wait (0xA03604).
+
+  This is about faults of the original, not its error handling. Where the engine handles an error in a defined way
+  (an error log, a failure result, an error flag), that stays exact.
   The first case under the standing rule is the backup manager's malformed inputs (M15-039, M15-040, M15-042):
   - a non-numeric `.backup` name;
   - a statsForBackup.json whose ConnectionCount isn't an object or isn't numeric;
