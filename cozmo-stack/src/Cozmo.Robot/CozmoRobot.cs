@@ -765,15 +765,32 @@ public sealed partial class CozmoRobot : IDisposable
         // AddConnectedActiveObject (0x00533BD6) precedes the broadcast (0x00533D2C).
         if (m is ObjectConnectionState cs)
         {
-            // fidelity: M11-041
-            // 0x00533BA2 / 0x00533C72: event precedes Add/RemoveConnectedActiveObject.
-            if (cs.ObjectID <= CozmoCubes.MaxActiveObjectSlot)
-                Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.accessory_connection", $"0x{cs.FactoryID:x},{CubeConnections.ObjectTypeName(cs.ObjectType)}",
-                    new Dictionary<string, string> { ["$data"] = cs.Connected ? "connected" : "disconnected" });
-            Route(() => VisionModeRecipient?.HandleObjectConnectionState(cs));
+            // M2-001 Read<bool> normalizes the incoming wire byte. The handler itself
+            // keeps its native byte unchanged (including explicit noncanonical inputs).
+            Route(() => HandleActiveObjectConnectionState(cs.ObjectID, cs.FactoryID, cs.ObjectType, (byte)(cs.Connected ? 1 : 0)));
+            return;
         }
         Route(() => Cubes.Handle(m));
         // CubeAccel owns its early native F5 subscription; it is not an Impl continuation.
+    }
+
+    // fidelity: M11-041, M11-085, M4-010
+    internal void HandleActiveObjectConnectionState(uint activeId, uint factoryId, ObjectType type, byte connected)
+    {
+        // Retained host slot registry is separate from the native world-ID path.
+        var hostReport = new ObjectConnectionState { ObjectID=activeId, FactoryID=factoryId, ObjectType=type, Connected=connected!=0 };
+        if (activeId > CozmoCubes.MaxActiveObjectSlot) { Cubes.Handle(hostReport); return; } // source returns at 0x00533B58
+        Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.accessory_connection", $"0x{factoryId:x},{CubeConnections.ObjectTypeName(type)}",
+            new Dictionary<string, string> { ["$data"] = connected != 0 ? "connected" : "disconnected" });
+        // This is the Robot-owned world, also used by VisionSystem. Its returned ID
+        // is distinct from the incoming radio slot; -1 skips only the pool and E2G.
+        int id = LocalizationWorld.HandleActiveObjectConnectionState(activeId, factoryId, type, connected != 0);
+        if (id != -1) Cubes.Connections.OnConnectionState(activeId, factoryId, connected != 0, type);
+        Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectConnectionState.Recvd", $"FactoryID 0x{factoryId:x}, connected {connected}");
+        // 0x006C05EE..0x006C0608 constructs and clears the Viz message. No send,
+        // persistent state, log or callback; managed temporary storage is elided.
+        Cubes.Handle(hostReport); // host view is ready before synchronous game recipients read it
+        if (id != -1) Cubes.BroadcastConnectionState(new ObjectConnectionStateMessage(unchecked((uint)id), factoryId, type, connected));
     }
 
     // fidelity: M1-025, M1-015

@@ -2764,8 +2764,8 @@ public sealed partial class BlockWorld
     /// unsigned (<c>cmp r7,#4; bhi</c> 0x00533B58), so an activeID above 4 (and a negative one, which the message cannot carry) never reaches
     /// <see cref="AddConnectedActiveObject"/>; a connection calls it and, for an ID other than -1, logs Connected (0x00533BF4) and calls
     /// <c>Robot::HandleConnectedToObject(activeID, factoryID, type)</c> (0x00533C34); a disconnection calls <see cref="RemoveConnectedActiveObject"/>
-    /// (0x00533CA0). UNREAD (M11-042): the error branches at 0x00533B58 and 0x00533CB8 (logged here, nothing more), and
-    /// <c>HandleConnectedToObject</c>, which stays this stack's cube connection code (<c>CozmoCubes.Handle</c>, M4) and is not repeated here.
+    /// (0x00533CA0). The caller in CozmoRobot retains this returned ID through the checked pool gate,
+    /// common Recvd and ID-gated E2G tail (M11-085). CubeConnections owns the pool bodies; they are not repeated here.
     /// Returns the ObjectID, or -1.
     /// </summary>
     // fidelity: M11-041

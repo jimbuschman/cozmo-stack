@@ -545,7 +545,6 @@ public sealed class CozmoCubes
         ObjectPowerLevel? powerBroadcast = null;
         CubeTimestampEvent? movementBroadcast = null;
         CubeUpAxisEvent? upAxisBroadcast = null;
-        (ObjectType Type, bool Connected)? lights = null;
         var callouts = new List<Action>();
         void Log(string line) => callouts.Add(() => this.Log(line));
         void SourceLog(EngineLogLevel level, string? channel, string key, string text) => callouts.Add(() => this.Log(level, channel, key, text));
@@ -583,16 +582,11 @@ public sealed class CozmoCubes
                 case ObjectConnectionState s:
                 {
                     // fidelity: M4-009
-                    // LC8a (0x00533B56..0x00533CB2): the engine ignores a slot above 4. MISSING: M11-013 / M11-041 | NOT REPRODUCED (reported below): this stack uses
-                    // the slot as its BlockWorld ObjectID (an M11 interface; the engine's ObjectIDs come from
-                    // ObservableObject::SetID, LC8e), and its manipulation and vision fixtures connect cubes on slots
-                    // 7..9; the bound is recorded (MaxActiveObjectSlot), and CubeConnections applies it. A robot never
-                    // reports a slot above 4. Connected: AddConnectedActiveObject
-                    // (a slot holding a different factory or type is emptied first, LC8c), HandleConnectedToObject,
-                    // then the game-side broadcast, which the CubeLightComponent hears (S1, LC1). Disconnected:
-                    // RemoveConnectedActiveObject (the connected entry with that activeID is erased, LC8b), then
-                    // HandleDisconnectedFromObject.
-                    callouts.Add(() => Behavior.SteppedBehavior.ReportMissing("M11-013 / M11-041 | HandleActiveObjectConnectionState 0x00533B3C..0x00533C34: the engine's ObjectID comes from ObservableObject::SetID (AddConnectedActiveObject, 0x00623040) and the slot gate (> 4, 0x00533B56) is the engine's; this stack uses the reported slot as the BlockWorld ObjectID"));
+                    // Retained host view: ByObjectId/ConnectionChanged expose radio slots,
+                    // including synthetic slots7..9 used by older fixtures. They do not
+                    // supply the native ObjectID. CozmoRobot owns the source gate/world/
+                    // pool/Recvd/E2G path; ConnectionStateBroadcast exposes its world ID.
+                    callouts.Add(() => Behavior.SteppedBehavior.ReportMissing("M11-013 / M11-041 | CozmoCubes host ByObjectId/ConnectionChanged still expose reported radio slots, including synthetic slots above4; source HandleActiveObjectConnectionState 0x00533B3C uses the Robot-owned BlockWorld returned ID and its own slot gate. Host-view migration remains unbuilt."));
                     bool isNew = !_byFactoryId.ContainsKey(s.FactoryID);
                     var c = Track(s.FactoryID);
                     c.Type = s.ObjectType;
@@ -611,10 +605,8 @@ public sealed class CozmoCubes
                         connectionChanged = c;
                     }
                     if (isNew) discovered = c;
-                    callouts.Add(() => Connections.OnConnectionState(s.ObjectID, s.FactoryID, s.Connected, s.ObjectType));
-                    if (s.ObjectID <= MaxActiveObjectSlot)
-                        SourceLog(EngineLogLevel.Info, "Unnamed", "Robot.HandleActiveObjectConnectionState.Recvd", $"FactoryID 0x{s.FactoryID:x}, connected {(s.Connected ? 1 : 0)}");
-                    lights = (s.ObjectType, s.Connected);
+                    // Source pool/log/E2G ordering lives in CozmoRobot's handler.
+                    // This registry is the retained host slot adapter, not its returned ObjectID.
                     break;
                 }
                 case ObjectPowerLevel p:
@@ -778,9 +770,6 @@ public sealed class CozmoCubes
         // and never fires in this build; the advertisement is still tracked for the connection path.
         if (discovered is not null && BroadcastsAvailableObjects) CubeDiscovered?.Invoke(discovered);
         if (connectionChanged is not null) ConnectionChanged?.Invoke(connectionChanged);
-        // fidelity: M4-018
-        // LC7: the game-side ObjectConnectionState reaches the CubeLightComponent synchronously.
-        if (lights is { } l) _robot.Lights.Cubes.OnObjectConnectionState(l.Type, l.Connected);
         if (tapped is not null)
         {
             var notice = new CubeTimestampEvent(tapped, tapped.LastTap!.Timestamp);
@@ -790,6 +779,19 @@ public sealed class CozmoCubes
         if (movementBroadcast is not null) MovementBroadcast?.Invoke(movementBroadcast);
         if (upAxisBroadcast is not null) UpAxisBroadcast?.Invoke(upAxisBroadcast);
         if (powerBroadcast is not null) PowerLevelBroadcast?.Invoke(powerBroadcast);
+    }
+
+    /// <summary>The engine's ID-gated E2G tag 0x0D report, with its returned world ObjectID.</summary>
+    public event Action<ObjectConnectionStateMessage>? ConnectionStateBroadcast;
+
+    // fidelity: M11-085, M4-018
+    internal void BroadcastConnectionState(ObjectConnectionStateMessage report)
+    {
+        _robot.Engine.AnimationMessages.Deliver(ObjectConnectionStateMessage.UnionTag, true, report);
+        // Existing checked CubeLight recipient; CubeAccel's recipient is a no-op.
+        // Feeding/GuardDog native owners/subscriptions remain M15-056, not fabricated here.
+        _robot.Lights.Cubes.OnObjectConnectionState(report.ObjectType, report.ConnectedByte != 0);
+        ConnectionStateBroadcast?.Invoke(report);
     }
 
     // fidelity: M4-009

@@ -61,7 +61,9 @@ public class EngineAppLayerTests
         Assert.Null(rig.Engine.Robot.TouchSensor.Raw);
     }
 
-    // P2/P4/P5/P6: all five wire slots, ascending sends, and the reply lifecycle through production handlers.
+    // P2/P4/P5/P6: all five wire slots and ascending sends. Reply inputs below
+    // drive the pool boundary explicitly: five identical unique types cannot coexist
+    // in BlockWorld (M11-013), so this is not five world-object acceptance claims.
     [Fact]
     public void M4_010_AllFiveSlotsSendConnectAndRequestedDisconnectInOrder()
     {
@@ -78,7 +80,7 @@ public class EngineAppLayerTests
         Assert.Equal(new uint[] { 11, 12, 13, 14, 15 }, sends.Select(m => m.FactoryId));
         Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, sends.Select(m => m.Slot));
         for (uint i = 0; i < 5; ++i)
-            rig.Data(new ObjectConnectionState { ObjectID = i, FactoryID = 11 + i, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+            c.OnConnectionState(i, 11 + i, true, ObjectType.Block_LIGHTCUBE1);
         rig.Tick(0);
         Assert.All(c.Slots, s => Assert.Equal(ActiveObjectSlotState.Connected, s.State));
         c.ConnectToObjects(new uint[5]);
@@ -89,7 +91,7 @@ public class EngineAppLayerTests
         Assert.All(sends, m => Assert.Equal(0u, m.FactoryId));
         Assert.All(c.Slots, s => Assert.Equal(ActiveObjectSlotState.PendingDisconnection, s.State));
         for (uint i = 0; i < 5; ++i)
-            rig.Data(new ObjectConnectionState { ObjectID = i, FactoryID = 11 + i, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+            c.OnConnectionState(i, 11 + i, false, ObjectType.Block_LIGHTCUBE1);
         rig.Tick(0);
         Assert.All(c.Slots, s => { Assert.Equal(0u, s.FactoryId); Assert.Equal(ActiveObjectSlotState.Empty, s.State); });
     }
@@ -583,6 +585,14 @@ public class EngineAppLayerTests
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAD, ObjectType = ObjectType.Block_LIGHTCUBE3, Connected = false });
         rig.Tick();
         Assert.Contains("info: [BlockPool] Robot.HandleDisconnectedFromObject: Ignoring disconnection from object 0xad of type Block_LIGHTCUBE3 with active ID 0 because expecting connection to 0xab of type Block_LIGHTCUBE1", rig.Log);
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
+        rig.Tick();
+        // The mismatching disconnection already removed the world object. Its next
+        // removal returns -1 and must skip the pool, even with a matching factory.
+        Assert.DoesNotContain("info: [BlockPool] Robot.HandleDisconnectedFromObject: Disconnected from active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 2", rig.Log);
+        Assert.Equal(ActiveObjectSlotState.Connected, connections.Slots[0].State);
+        rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = true });
+        rig.Tick();
         rig.Data(new ObjectConnectionState { ObjectID = 0, FactoryID = 0xAB, ObjectType = ObjectType.Block_LIGHTCUBE1, Connected = false });
         rig.Tick();
         Assert.Contains("info: [BlockPool] Robot.HandleDisconnectedFromObject: Disconnected from active Id 0 with factory Id 0xab of type Block_LIGHTCUBE1. Connection State = 2", rig.Log);
