@@ -193,12 +193,12 @@ public class M13RVisBuildTests
     {
         var tilted = new ObservableObject(9, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(200, 0, 22)), PoseState = PoseState.Known };
-        Assert.Contains("M13-023", Assert.Throws<NotSupportedException>(() => Footprint.GetBoundingQuadXY(tilted, tilted.Pose, 0f)).Message);
+        Assert.NotNull(Footprint.GetBoundingQuadXY(tilted, tilted.Pose, 0f)); // M12-043: shared checked rectangle port
         var charger = new ObservableObject(20, ObjectType.Charger_Basic, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22)), PoseState = PoseState.Known };
         Assert.Contains("M13-023", Assert.Throws<NotSupportedException>(() => Footprint.GetBoundingQuadXY(charger, charger.Pose, 0f)).Message);
         var onItsSide = new Pose3d(Mat3.AboutX(Math.PI / 2), new Vec3(200, 0, 22));
         Assert.NotNull(Footprint.GetBoundingQuadXY(Cube(1, 200, 0, 22), onItsSide, 0f));
-        Assert.False(Footprint.TryGetBoundingQuadXY(tilted, tilted.Pose, 0f, out _));
+        Assert.True(Footprint.TryGetBoundingQuadXY(tilted, tilted.Pose, 0f, out _));
         Assert.False(Footprint.TryGetBoundingQuadXY(charger, charger.Pose, 0f, out _));
     }
 
@@ -215,12 +215,12 @@ public class M13RVisBuildTests
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(210, 0, 66)), PoseState = PoseState.Known };   // centre 10 mm off, exactly one cube height up
         var found = BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, tiltedOnTop }, true, 15.0, out bool used);
         Assert.Same(tiltedOnTop, found);
-        Assert.True(used);
-        // centre 30 mm off (more than 22): not found, still no exception, still the stand-in
+        Assert.False(used);
+        // Both quads have width44 along X, so centers30mm apart still overlap.
         var tiltedFar = new ObservableObject(10, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(230, 0, 66)), PoseState = PoseState.Known };
-        Assert.Null(BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, tiltedFar }, true, 15.0, out used));
-        Assert.True(used);
+        Assert.Same(tiltedFar,BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, tiltedFar }, true, 15.0, out used));
+        Assert.False(used);
         // height: 20 mm too high for 15, found for 30 (the tolerance is the caller's)
         var tiltedHigh = new ObservableObject(11, ObjectType.Block_LIGHTCUBE1, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE1))
         { Pose = new Pose3d(Mat3.AboutX(0.5), new Vec3(200, 0, 86)), PoseState = PoseState.Known };
@@ -233,7 +233,7 @@ public class M13RVisBuildTests
         { Pose = new Pose3d(Mat3.AboutY(0.5), new Vec3(200, 0, 22)), PoseState = PoseState.Known };
         var above = Cube(13, 200, 0, 66);
         Assert.Same(above, BlockConfigurationManager.FindObjectOnTopOrUnderneath(tiltedRef, new[] { tiltedRef, above }, true, 15.0, out used));
-        Assert.True(used);
+        Assert.False(used);
         // a non-cube candidate
         var charger = new ObservableObject(20, ObjectType.Charger_Basic, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(200, 0, 66)), PoseState = PoseState.Known };
         Assert.Same(charger, BlockConfigurationManager.FindObjectOnTopOrUnderneath(bottom, new[] { bottom, charger }, true, 15.0, out used));

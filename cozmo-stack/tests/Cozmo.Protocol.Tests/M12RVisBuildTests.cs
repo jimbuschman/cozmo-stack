@@ -1519,9 +1519,10 @@ public class M12RVisBuildTests
         var tilted = new ObservableObject(9, ObjectType.Block_LIGHTCUBE2, CubeGeometry.CubeMarkers(ObjectType.Block_LIGHTCUBE2))
         { Pose = new Pose3d(Mat3.AboutY(0.3), new Vec3(100, 0, 22)), PoseState = PoseState.Known };
         var o = Assert.Single(PreActionValidity.GetObstacles(new[] { tilted }, Array.Empty<uint>(), Pose3d.Identity, 100.0, 0f));
-        Assert.True(o.IsStandIn);
+        Assert.False(o.IsStandIn); // M12-043: eight-vertex projected cube quad
         Assert.True(o.Contains(new Point2f(100 + 21, 0)));
-        Assert.False(o.Contains(new Point2f(100 + 23, 0)));
+        Assert.True(o.Contains(new Point2f(100 + 23, 0)));
+        Assert.False(o.Contains(new Point2f(100 + 29, 0))); // projected half-width22*(cos(.3)+sin(.3))
         var cube = CubeWith(7, ObjectType.Block_LIGHTCUBE1, At(200, 0, 22));
         Assert.False(PreActionValidity.IsPreActionPoseValid(cube, FrontDockingPoseOfTheCubeAt200(cube), new[] { o }));      // the sample (84.389, 0) is within 22 of (100, 0)
     }
@@ -2062,8 +2063,10 @@ public class M12RVisBuildTests
         other.Pose = new Pose3d(Mat3.AboutY(0.2), new Vec3(200, -70, 22));
         var act = Make(0);
         Assert.False(act.IsPlacementGoalFree());
-        Assert.Contains(act.Trace, l => l.Contains("M13-023 planar stand-in"));
+        Assert.DoesNotContain(act.Trace, l => l.Contains("M13-023 planar stand-in"));
         other.Pose = new Pose3d(Mat3.AboutY(0.2), new Vec3(200, -100, 22));
+        Assert.False(Make(0).IsPlacementGoalFree()); // source quads overlap at40mm; both half-widths22
+        other.Pose = new Pose3d(Mat3.AboutY(0.2), new Vec3(200, -110, 22));
         Assert.True(Make(0).IsPlacementGoalFree());
     }
 

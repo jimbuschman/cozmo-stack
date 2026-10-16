@@ -688,11 +688,12 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
             M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject",FormattableString.Invariant($"Object {unchecked((int)a)} is NULL"));
             StaticBlockId=null;return;
         }
+        SteppedBehavior.ReportMissing("M12-047 BehaviorBuildPyramid top loop: native source-list owner and helper stop downstream are unread; host PyramidBases is not a recovered source list");
         foreach(var entry in M.Configurations.PyramidBases)
         {
             bool Contains(uint id)=>entry.LeftBlockId==id||entry.RightBlockId==id;
             if (!Contains(b) || !Contains(a)) continue;
-            SteppedBehavior.ReportMissing("M12-043/M12-028 GetBaseInteriorMidpoint at 0x005DC1DC -> 0x00617A8C..0x00617C32: GetBoundingQuad<float> corner order 0x004E6490..0x004E6598 is unread; top placement stops at this unit, with no nearest-block/sideways-offset guess");
+            SteppedBehavior.ReportMissing("M12-043/M12-028 GetBaseInteriorMidpoint at 0x005DC1DC -> 0x00617A8C..0x00617C32: quad ordering is checked and ported, but corner PoseDistanceSquared/world-origin and midpoint robot-root joins remain unbuilt; top placement stops at this unit");
             return;
         }
     }

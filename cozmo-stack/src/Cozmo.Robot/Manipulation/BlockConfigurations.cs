@@ -154,6 +154,7 @@ public sealed class BlockConfigurationManager
             var s = BuildTallestStackForObject(c, cubes);
             if (s.StackHeight >= 2 && seenBottoms.Add(s.BottomBlockId)) stacks.Add(s);
         }
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-043 pyramid container 0x006168EC..0x006169C4 / builder 0x0061830A..0x006183B4 / cache 0x0062C5A2..0x0062C616: native current-origin family query, predicate and pose-root/distance joins are unbuilt; existing all-pairs snapshot is a candidate, not the processed-ID/old-cache source path");
         var bases = new List<BlockConfiguration>();
         for (int i = 0; i < cubes.Count; i++)
             for (int j = i + 1; j < cubes.Count; j++)
@@ -412,11 +413,9 @@ public sealed class Quadrilateral
 /// [0]=s0, [1]=s3, [2]=s1, [3]=s2, then translated by the pose's x, y (0x004E68CC). Read for the Block (and the
 /// cube sub-vtables through thunk 0x004E690C) only.
 ///
-/// <c>cv::minAreaRect</c> is unread (M13-023). When one of the object's own axes is vertical (a yaw-only pose, which is
-/// what <c>ClampPoseToFlat</c> leaves a resting cube with) the 8 points are the 4 corners of a rectangle twice over, and
-/// the rectangle is the min-area rectangle by definition, so its corners are used; any other pose throws
-/// <see cref="NotSupportedException"/> (visible stub). CHOICE: "one axis is vertical" is |R[2,k]| &gt;= 1 - 1e-6 (float32-scale
-/// noise, not from the inventory). Corners are computed in double and rounded to float32.
+/// Cubes use all eight canonical vertices, padded and rotated in binary32, followed by the shared
+/// <see cref="MinAreaRectF"/> port, the checked corner sort and root-frame translation. Unported
+/// degenerate rectangle branches return false visibly; they are not replaced by a planar approximation.
 /// </summary>
 // fidelity: M13-007, M13-023
 public static class Footprint
@@ -426,31 +425,29 @@ public static class Footprint
         if (!CubeGeometry.IsCube(o.Type))
             throw new NotSupportedException($"M13-023: GetBoundingQuadXY of {o.Type} is unread (only Block::GetBoundingQuadXY 0x004E62A2 is)");
         if (!TryGetBoundingQuadXY(o, atPose, padding, out var q))
-            throw new NotSupportedException("M13-023: cv::minAreaRect (libopencv_imgproc.so) is unread; a footprint that is not a plain rectangle (a tilted pose) is not built");
+            throw new NotSupportedException("M13-024: the footprint reaches an unported minimum-area-rectangle branch");
         return q!;
     }
 
-    /// <summary>The same footprint without the throw: false when it cannot be computed (not a cube, or a pose that is not yaw-only; M13-023).</summary>
+    /// <summary>The cube footprint; false for a non-cube or an explicitly unported rectangle branch.</summary>
+    // fidelity: M12-043
     public static bool TryGetBoundingQuadXY(ObservableObject o, Pose3d atPose, float padding, out Quadrilateral? quad)
     {
         quad = null;
         if (!CubeGeometry.IsCube(o.Type)) return false;
         var size = CubeGeometry.SizeOf(o.Type);
-        var r = atPose.Rotation;
-        int k = -1;
-        for (int c = 0; c < 3; c++) if (Math.Abs(r[2, c]) >= 1 - 1e-6) k = c;
-        if (k < 0) return false;
-        int i = (k + 1) % 3, j = (k + 2) % 3;
-        double[] dim = { size.X + 2 * padding, size.Y + 2 * padding, size.Z + 2 * padding };
-        var corners = new List<Point2f>(4);
-        foreach (double si in new[] { -0.5, 0.5 })
-            foreach (double sj in new[] { -0.5, 0.5 })
-                corners.Add(new Point2f((float)(r[0, i] * si * dim[i] + r[0, j] * sj * dim[j]), (float)(r[1, i] * si * dim[i] + r[1, j] * sj * dim[j])));
-        // Reuse the same checked four-corner sort, even in this retained planar input adapter.
-        var s = ObjectFootprint.SortCornersClockwise(corners.ToArray());
-        float tx = (float)atPose.Translation.X, ty = (float)atPose.Translation.Y;
-        Point2f T(Point2f p) => new(p.X + tx, p.Y + ty);
-        quad = new Quadrilateral(T(s[0]), T(s[3]), T(s[1]), T(s[2]));                             // stored [0]=s0, [1]=s3, [2]=s1, [3]=s2
+        using var flat=atPose.GetWithRespectToRoot(); // checked Flatten helper, not a yaw projection
+        var points=ObjectFootprint.BlockProjectedCorners(size,flat.Quaternion,padding);
+        Point2f[] corners;
+        try{corners=MinAreaRectF.Points(MinAreaRectF.Compute(points));}
+        catch(NotSupportedException)
+        {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-043/M13-024 Block::GetBoundingQuadXY 0x004E6396: existing minAreaRect port has an unported hull branch; no axis-aligned substitute or fabricated native cv failure log");return false;
+        }
+        var sorted=ObjectFootprint.SortQuadrilateral(corners);
+        float tx=(float)flat.Translation.X,ty=(float)flat.Translation.Y;
+        Point2f T(Point2f p)=>new(tx+p.X,ty+p.Y);
+        quad=new Quadrilateral(T(sorted[0]),T(sorted[1]),T(sorted[2]),T(sorted[3]));
         return true;
     }
 }
@@ -688,6 +685,19 @@ public static class ObjectFootprint
 
     private static readonly (float X,float Y,float Z)[] MarkerlessCanonicalCorners = { (-.5f,-.5f,.5f),(.5f,-.5f,.5f),(-.5f,-.5f,-.5f),(.5f,-.5f,-.5f),
         (-.5f,.5f,.5f),(.5f,.5f,.5f),(-.5f,.5f,-.5f),(.5f,.5f,-.5f) };
+    // fidelity: M12-043 — Block::GetCanonicalCorners 0x004E60D8..0x004E6146 has this same order.
+    internal static List<Point2f> BlockProjectedCorners(Vec3 size,Rotation3d rotation,float padding)
+    {
+        float twice=padding+padding;
+        float sx=twice+(float)size.X,sy=twice+(float)size.Y,sz=twice+(float)size.Z;
+        var points=new List<Point2f>(8);
+        foreach(var v in MarkerlessCanonicalCorners)
+        {
+            var p=rotation.Rotate(new Vec3(sx*v.X,sy*v.Y,sz*v.Z));
+            points.Add(new Point2f((float)p.X,(float)p.Y));
+        }
+        return points;
+    }
     // fidelity: M11-062 — 0x005025F0 / 0x00502C32; reuse M13-024, never a second minAreaRect.
     internal static Quadrilateral MarkerlessBoundingQuadXY(Vec3 size, Pose3d pose, float padding, Action<string> missing)
     {

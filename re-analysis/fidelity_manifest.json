@@ -9740,10 +9740,10 @@
       ],
       "effect": "Where the top cube of a pyramid is placed.",
       "provenance": "Opus check of OV02 (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read GetBoundingQuad<float> (it fixes the corner order and so the tie order); also whether two PyramidBase entries can both contain A and B (T7 replace path reachability). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov45-47-check.md): IMPLEMENTATION_GAP for the pyramid-base geometry and container (duplicate AB not producible in a normal world). Helper stop semantics and BehaviorBuildPyramid's top-loop source are M12-047. Not re-verified: convexHull/minAreaRect internals (opencv), LSDA catch at 0x004E65C6.",
+      "unresolved": "RECOVERABLE_GAP: read GetBoundingQuad<float> (it fixes the corner order and so the tie order); also whether two PyramidBase entries can both contain A and B (T7 replace path reachability). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov45-47-check.md): IMPLEMENTATION_GAP for the pyramid-base geometry and container (duplicate AB not producible in a normal world). Helper stop semantics and BehaviorBuildPyramid's top-loop source are M12-047. Not re-verified: convexHull/minAreaRect internals (opencv), LSDA catch at 0x004E65C6. B-M12-5 (2026-10-16), built, awaiting strong verification: actual Footprint.TryGetBoundingQuadXY now feeds all eight canonical Block vertices through pad/scale/full f32 quaternion rotation, checked shared MinAreaRectF/points, centroid/sort physical layout and post-sort root translation. Removed yaw-only heuristic. Unported hull branches report stack MISSING. Native current-origin query/predicate, pose-distance/world-origin/robot-root joins, nearest-two/midpoint, processed-ID container and old-cache identity remain unbuilt; candidate all-pairs snapshot is visibly labelled. No claiming the candidate center average as native midpoint. M12-047 top-list boundary remains explicit.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "PyramidGeometryCheckedRowsTests (bounded producer/footprint/sort and no-tolerance-consumer checks; not midpoint/container acceptance)"
     },
     {
       "id": "M12-044",
@@ -9758,10 +9758,10 @@
       ],
       "effect": "Whether the height tolerance can change any decision through an untraced callee.",
       "provenance": "Split from M12-038 after the Opus check of OV04 (2026-10-13), manager record.",
-      "unresolved": "RECOVERABLE_GAP: trace the callee and argument flow of the listed consumers for element pointers escaping to callees outside the census. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov45-47-check.md): IMPLEMENTATION_GAP: no consumer decides on +0x14 (closed census); the build confirms the stack never does. Correction: the \"std::function targets 0x00551618, 0x00551654, 0x00551842\" are virtual slots +0x3C/+0x38/+0x34. Candidate crash points: M12-048.",
+      "unresolved": "RECOVERABLE_GAP: trace the callee and argument flow of the listed consumers for element pointers escaping to callees outside the census. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov45-47-check.md): IMPLEMENTATION_GAP: no consumer decides on +0x14 (closed census); the build confirms the stack never does. Correction: the \"std::function targets 0x00551618, 0x00551654, 0x00551842\" are virtual slots +0x3C/+0x38/+0x34. Candidate crash points: M12-048. B-M12-5 (2026-10-16), built, awaiting strong verification: reviewed explicit production HeightToleranceMm references: only two storage declarations, no semantic read. Poison-value tests through DockPreActionPoses.Finish leave closest selection/offset unchanged; source guard rejects new explicit reads outside declarations. Closed native consumer census remains authority; this guard does not prove implicit record equality/copy paths. Init dispatch is virtual +3C/+38/+34, not std::function. No status/evidence promotion.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": "PyramidGeometryCheckedRowsTests (bounded producer/footprint/sort and no-tolerance-consumer checks; not midpoint/container acceptance)"
     },
     {
       "id": "M12-045",
@@ -9809,7 +9809,7 @@
       ],
       "effect": "What stopping a behaviour helper does, and which pyramid bases BuildPyramid tries.",
       "provenance": "Opus check of OV45-OV47 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read IHelper::Stop downstream (concrete StopInternal, LogStopEvent, StopActing) and which list BehaviorBuildPyramid's top loop iterates. M1-034 candidate: empty stack at 0x0056DCC6 (reachability unread).",
+      "unresolved": "RECOVERABLE_GAP: read IHelper::Stop downstream (concrete StopInternal, LogStopEvent, StopActing) and which list BehaviorBuildPyramid's top loop iterates. M1-034 candidate: empty stack at 0x0056DCC6 (reachability unread). B-M12-5 (2026-10-16): actual BuildPyramid top-placement entry reports stack MISSING for unread native list/stop downstream before iterating the host candidate list. No fabricated helper-stop owner, callback suppression or complete behavior claim.",
       "hardware_required": false,
       "live_path": true,
       "test": ""
@@ -9826,7 +9826,7 @@
       ],
       "effect": "Whether a shipped path reads past a pre-action pose vector.",
       "provenance": "Opus check of OV45-OV47 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: is a Bridge object ever constructed in the shipped app; can IDockAction::GetPreActionPoses 0x005508C8 leave the index at -1 with a non-empty vector. If reachable, the M1-034 standing rule applies.",
+      "unresolved": "RECOVERABLE_GAP: is a Bridge object ever constructed in the shipped app; can IDockAction::GetPreActionPoses 0x005508C8 leave the index at -1 with a non-empty vector. If reachable, the M1-034 standing rule applies. B-M12-5 (2026-10-16): actual DriveAndFlip closest-only index consumer reports stack MISSING naming 0x0055E59C. Native non-empty/-1 reachability remains unread; CrossBridge has no constructed stack action (enum only). No fake Bridge or manufactured crash/M1-034 test is claimed.",
       "hardware_required": false,
       "live_path": true,
       "test": ""

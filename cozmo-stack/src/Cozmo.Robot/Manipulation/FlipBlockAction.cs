@@ -323,6 +323,7 @@ public sealed class DriveAndFlipBlockAction
         if (output.Poses.Count == 0) { trace?.Add("DriveAndFlipBlockAction.GetPossiblePoses: no pre-action poses"); return ActionResult.NoPreActionPoses; }
         if (closestOnly)
         {
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-048 DriveAndFlip GetPossiblePoses index -1 candidate 0x0055E59C: native reachability is unread; existing closest-index consumer is not certified by M12-044 no-tolerance-read census");
             posesOut = new[] { output.Poses[output.ClosestIndex] };
             return ActionResult.Success;
         }
