@@ -3,6 +3,10 @@
 The manager adds jobs here by committing them. The two Codex windows take them in order without the operator relaying
 anything. BOARD.md is history; this file is the live queue.
 
+A job's own state is in `status/<job>.md`. `tools/status_views.py` refreshes the status column: a builder note still
+reading `open` once a status file exists is rewritten to that file's state. It also renders `STATUS.md` (implemented
+vs verification evidence) and `../FIDELITY_PROGRESS.md`.
+
 ## Loop rules (both lanes)
 
 1. `git pull --rebase`.
@@ -97,42 +101,42 @@ anything. BOARD.md is history; this file is the live queue.
 | 37 | [B-M5-20](B-M5-20.md) | done 166a157e; Opus check PASS (research/20261015-b-m5-20-pass.md); queued items in B-M5-21 |
 | 36a | [B-M3M4-29](B-M3M4-29.md) | done 37dfcdfd; Opus check PASS (research/20261015-b-m3m4-29-pass.md); hardware tools construct again |
 | 36b | [B-M5-21](B-M5-21.md) | done 31e05384; Opus check FAIL (live trigger map single-file; missing members dropped; crash inputs escape; research/20261015-b-m5-21-check.md); fixes in B-M5-22 |
-| 36c | [B-M5-22](B-M5-22.md) | open, NEXT (multi-file trigger container M5-034; JsonCpp missing/null members; M1-034 per-file skips) |
-| 38 | [B-M2M15-1](B-M2M15-1.md) | open, after B-M5-20 (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
-| 39 | [B-M11-2](B-M11-2.md) | open, after B-M2M15-1 (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
-| 40 | [B-M12-3](B-M12-3.md) | open, after B-M11-2 (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018) |
+| 36c | [B-M5-22](B-M5-22.md) | DONE per status/B-M5-22.md (multi-file trigger container M5-034; JsonCpp missing/null members; M1-034 per-file skips) |
+| 38 | [B-M2M15-1](B-M2M15-1.md) | BLOCKED per status/B-M2M15-1.md (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
+| 39 | [B-M11-2](B-M11-2.md) | DONE per status/B-M11-2.md (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
+| 40 | [B-M12-3](B-M12-3.md) | DONE per status/B-M12-3.md (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018) |
 | 41 | [B-M13-4](B-M13-4.md) | BLOCKED (turn-eye destructor row; bounded part pushed 730ccc23); checked row added (research/20261015-turn-eye-dtor-check.md); finished by B-M13-7 |
-| 41a | [B-M13-7](B-M13-7.md) | open, NEXT (TurnInPlaceAction live eye layer and destructor cleanup) |
+| 41a | [B-M13-7](B-M13-7.md) | DONE per status/B-M13-7.md (TurnInPlaceAction live eye layer and destructor cleanup) |
 | 42 | [B-M11-3](B-M11-3.md) | BLOCKED (SetMarkerAsObserved 0x00876DA8..0x008770CC has no checked row; bounded part pushed ba4c1211); request OV85; finish job after its check; OV85 checked (research/overnight/20261016-ov85-check.md); finished by B-M11-14 |
-| 42a | [B-M11-14](B-M11-14.md) | open, NEXT (SetMarkerAsObserved, finishes B-M11-3) |
+| 42a | [B-M11-14](B-M11-14.md) | BLOCKED per status/B-M11-14.md (SetMarkerAsObserved, finishes B-M11-3) |
 | 43 | [B-M11-4](B-M11-4.md) | BLOCKED (FaceTracker/FaceRecognizer handle census, M11-077/M11-084 ownership, M11-090 residue; bounded part pushed 64f9d104); finish after those records are read |
-| 44 | [B-M11-5](B-M11-5.md) | open, after B-M11-4 (quad-tree border walk M11-047; seed order = insertion order, operator 2026-10-14) |
-| 45 | [B-M11-6](B-M11-6.md) | open, after B-M11-5 (CheckImageQuality M11-080; LimitedExposure M11-057; auto-exposure M3-021) |
-| 46 | [B-M11-7](B-M11-7.md) | open, after B-M11-6 (decode exception M11-058; vision Init M11-059; pending camera params M11-060) |
-| 47 | [B-M8-1](B-M8-1.md) | open, after B-M11-7 (behaviour teardown M8-016; Hiccup dtor M10-016; CloseLog M7-028) |
-| 48 | [B-M8-2](B-M8-2.md) | open, after B-M8-1 (action list/queue M8-015; TRACKS_LOCKED M8-007) |
-| 49 | [B-M8-3](B-M8-3.md) | open, after B-M8-2 (compound runtime M8-017; behaviour end request M8-019) |
-| 50 | [B-M12-4](B-M12-4.md) | open, after B-M8-3 (native put-down M12-006/M12-045) |
-| 51 | [B-M8-4](B-M8-4.md) | open, after B-M12-4 (DAS animation blacklist load M8-022; M8-025) |
-| 52 | [B-M10-1](B-M10-1.md) | open, after B-M8-4 (BlockFilter/gyro lifetime M10-014; drift/bias detectors M10-015; raw IMU magnitude M10-017) |
-| 53 | [B-M3M4-27](B-M3M4-27.md) | open, after B-M10-1 (cleanups from the B-M3M4-26 pass) |
-| 54 | [B-M15-2](B-M15-2.md) | open, after B-M3M4-27 (disconnect/teardown M15-027/028; repair decay M15-029; ApplyDelta M15-046; audio teardown M6-030) |
-| 55 | [B-M15-3](B-M15-3.md) | open, after B-M15-2 (needs exceptional values M15-030; unlock/inventory NV callbacks M15-034/035; ForceSet M15-048) |
-| 56 | [B-M14-1](B-M14-1.md) | open, after B-M15-3 (pet/face-world and speech lifetime M14-013) |
-| 57 | [B-M7-1](B-M7-1.md) | open, after B-M14-1 (mood destruction M7-023) |
-| 58 | [B-M7-2](B-M7-2.md) | open, after B-M7-1 (TrackLaser colour/exposure snapshot and restore M7-025) |
-| 59 | [B-M6-1](B-M6-1.md) | open, after B-M7-2 (audio multiplexer/controller teardown order M6-029) |
-| 60 | [B-M11-9](B-M11-9.md) | open, after B-M6-1 (memory-map producers M11-074; aging M11-075; stream unreachable) |
-| 61 | [B-M9-1](B-M9-1.md) | open, after B-M11-9 (Wwise MIDI note path M9-013; velocity/level M9-014; envelope stop M9-024) |
-| 61r | [B-M9-3](B-M9-3.md) | open, NEXT (re-do under-built B-M9-1 under rule 13) |
-| 61s | [B-M8-7](B-M8-7.md) | open, after B-M9-3 (StartActing runner ownership, B-M8-5 item 9) |
-| 61t0 | [B-M8-8](B-M8-8.md) | open, after B-M8-7 |
-| 61t1 | [B-M12-6](B-M12-6.md) | open, after B-M8-8 |
-| 61t2 | [B-M13-8](B-M13-8.md) | open, after B-M12-6 |
-| 61u | [B-M6-4](B-M6-4.md) | open, after B-M13-8 (bus state M6-035; Term recipients M6-034; device storage M6-036) |
-| 61v | [B-M9-4](B-M9-4.md) | open, after B-M6-4 (MIDI boundary M9-034; clip-start M9-040; collector M9-035; emitters M9-036; note-off M9-037; live RTPC M9-038) |
-| 61w0 | [B-M11-15](B-M11-15.md) | open, after B-M9-4 |
-| 61w1 | [B-M15-7](B-M15-7.md) | open, after B-M11-15 |
+| 44 | [B-M11-5](B-M11-5.md) | BLOCKED per status/B-M11-5.md (quad-tree border walk M11-047; seed order = insertion order, operator 2026-10-14) |
+| 45 | [B-M11-6](B-M11-6.md) | BLOCKED per status/B-M11-6.md (CheckImageQuality M11-080; LimitedExposure M11-057; auto-exposure M3-021) |
+| 46 | [B-M11-7](B-M11-7.md) | BLOCKED per status/B-M11-7.md (decode exception M11-058; vision Init M11-059; pending camera params M11-060) |
+| 47 | [B-M8-1](B-M8-1.md) | BLOCKED per status/B-M8-1.md (behaviour teardown M8-016; Hiccup dtor M10-016; CloseLog M7-028) |
+| 48 | [B-M8-2](B-M8-2.md) | BLOCKED per status/B-M8-2.md (action list/queue M8-015; TRACKS_LOCKED M8-007) |
+| 49 | [B-M8-3](B-M8-3.md) | BLOCKED per status/B-M8-3.md (compound runtime M8-017; behaviour end request M8-019) |
+| 50 | [B-M12-4](B-M12-4.md) | BLOCKED per status/B-M12-4.md (native put-down M12-006/M12-045) |
+| 51 | [B-M8-4](B-M8-4.md) | BLOCKED per status/B-M8-4.md (DAS animation blacklist load M8-022; M8-025) |
+| 52 | [B-M10-1](B-M10-1.md) | BLOCKED per status/B-M10-1.md (BlockFilter/gyro lifetime M10-014; drift/bias detectors M10-015; raw IMU magnitude M10-017) |
+| 53 | [B-M3M4-27](B-M3M4-27.md) | DONE per status/B-M3M4-27.md (cleanups from the B-M3M4-26 pass) |
+| 54 | [B-M15-2](B-M15-2.md) | BLOCKED per status/B-M15-2.md (disconnect/teardown M15-027/028; repair decay M15-029; ApplyDelta M15-046; audio teardown M6-030) |
+| 55 | [B-M15-3](B-M15-3.md) | BLOCKED per status/B-M15-3.md (needs exceptional values M15-030; unlock/inventory NV callbacks M15-034/035; ForceSet M15-048) |
+| 56 | [B-M14-1](B-M14-1.md) | BLOCKED per status/B-M14-1.md (pet/face-world and speech lifetime M14-013) |
+| 57 | [B-M7-1](B-M7-1.md) | BLOCKED per status/B-M7-1.md (mood destruction M7-023) |
+| 58 | [B-M7-2](B-M7-2.md) | BLOCKED per status/B-M7-2.md (TrackLaser colour/exposure snapshot and restore M7-025) |
+| 59 | [B-M6-1](B-M6-1.md) | BLOCKED per status/B-M6-1.md (audio multiplexer/controller teardown order M6-029) |
+| 60 | [B-M11-9](B-M11-9.md) | BLOCKED per status/B-M11-9.md (memory-map producers M11-074; aging M11-075; stream unreachable) |
+| 61 | [B-M9-1](B-M9-1.md) | BLOCKED per status/B-M9-1.md (Wwise MIDI note path M9-013; velocity/level M9-014; envelope stop M9-024) |
+| 61r | [B-M9-3](B-M9-3.md) | DONE per status/B-M9-3.md (re-do under-built B-M9-1 under rule 13) |
+| 61s | [B-M8-7](B-M8-7.md) | DONE per status/B-M8-7.md (StartActing runner ownership, B-M8-5 item 9) |
+| 61t0 | [B-M8-8](B-M8-8.md) | DONE per status/B-M8-8.md |
+| 61t1 | [B-M12-6](B-M12-6.md) | DONE per status/B-M12-6.md |
+| 61t2 | [B-M13-8](B-M13-8.md) | DONE per status/B-M13-8.md |
+| 61u | [B-M6-4](B-M6-4.md) | BLOCKED per status/B-M6-4.md (bus state M6-035; Term recipients M6-034; device storage M6-036) |
+| 61v | [B-M9-4](B-M9-4.md) | DONE per status/B-M9-4.md (MIDI boundary M9-034; clip-start M9-040; collector M9-035; emitters M9-036; note-off M9-037; live RTPC M9-038) |
+| 61w0 | [B-M11-15](B-M11-15.md) | DONE per status/B-M11-15.md |
+| 61w1 | [B-M15-7](B-M15-7.md) | CLAIMED per status/B-M15-7.md |
 | 61w2 | [B-M1-2](B-M1-2.md) | open, after B-M15-7 |
 | 61x | [B-M15-8](B-M15-8.md) | open, after B-M1-2 (expose approved spark/activity inputs) |
 | 61y | [B-M11-16](B-M11-16.md) | open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) |
@@ -143,20 +147,20 @@ anything. BOARD.md is history; this file is the live queue.
 | 61zd | [B-M6-6](B-M6-6.md) | open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 awaits operator) |
 | 61ze | [B-M15-10](B-M15-10.md) | open, after B-M6-6 (FeedingEat M15-065; tag-53 order M15-066/M15-068) |
 | 61zf | [B-M9-6](B-M9-6.md) | open, after B-M15-10 (meter tempo/MIDI reader M9-044; modulator factors M9-043; collector M9-041) |
-| 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
-| 63 | [B-M12-5](B-M12-5.md) | open, after B-M9-2 (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
-| 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |
-| 65 | [B-M11-10](B-M11-10.md) | open, after B-M8-5 |
-| 66 | [B-M15-4](B-M15-4.md) | open, after B-M11-10 |
-| 67 | [B-M11-11](B-M11-11.md) | open, after B-M15-4 |
-| 68 | [B-M8-6](B-M8-6.md) | open, after B-M11-11 |
-| 69 | [B-M11-12](B-M11-12.md) | open, after B-M8-6 (border consumer M11-079; teardown leaves M11-078; __next_prime tests M4-050; required-process gate M8-013) |
-| 70 | [B-M7-3](B-M7-3.md) | open, after B-M11-12 |
-| 71 | [B-M6-2](B-M6-2.md) | open, after B-M7-3 |
-| 72 | [B-M15-5](B-M15-5.md) | open, after B-M6-2 |
-| 73 | [B-M11-13](B-M11-13.md) | open, after B-M15-5 |
-| 74 | [B-M15-6](B-M15-6.md) | open, after B-M11-13 |
-| 75 | [B-M6-3](B-M6-3.md) | open, after B-M15-6 |
+| 62 | [B-M9-2](B-M9-2.md) | BLOCKED per status/B-M9-2.md (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
+| 63 | [B-M12-5](B-M12-5.md) | BLOCKED per status/B-M12-5.md (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
+| 64 | [B-M8-5](B-M8-5.md) | BLOCKED per status/B-M8-5.md |
+| 65 | [B-M11-10](B-M11-10.md) | BLOCKED per status/B-M11-10.md |
+| 66 | [B-M15-4](B-M15-4.md) | BLOCKED per status/B-M15-4.md |
+| 67 | [B-M11-11](B-M11-11.md) | BLOCKED per status/B-M11-11.md |
+| 68 | [B-M8-6](B-M8-6.md) | BLOCKED per status/B-M8-6.md |
+| 69 | [B-M11-12](B-M11-12.md) | BLOCKED per status/B-M11-12.md (border consumer M11-079; teardown leaves M11-078; __next_prime tests M4-050; required-process gate M8-013) |
+| 70 | [B-M7-3](B-M7-3.md) | BLOCKED per status/B-M7-3.md |
+| 71 | [B-M6-2](B-M6-2.md) | BLOCKED per status/B-M6-2.md |
+| 72 | [B-M15-5](B-M15-5.md) | BLOCKED per status/B-M15-5.md |
+| 73 | [B-M11-13](B-M11-13.md) | DONE per status/B-M11-13.md |
+| 74 | [B-M15-6](B-M15-6.md) | BLOCKED per status/B-M15-6.md |
+| 75 | [B-M6-3](B-M6-3.md) | BLOCKED per status/B-M6-3.md |
 | 19 | [B-M3M4-12](B-M3M4-12.md) | done 802717ae; Opus check PASS (research/20261012-b-m3m4-12-check.md) |
 
 ## Research lane (clone `cozmo-stack-codex`)
