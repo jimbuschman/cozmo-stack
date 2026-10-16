@@ -69,3 +69,7 @@ rules.
     - **In `status/<job>.md`,** per record, the tests that reach it through production. Where there are none, say so,
       with the MISSING join that prevents it.
     - **A unit test with substituted inputs is never reported as covering the production path.**
+15. **Run the log-key pre-check before DONE** (manager, 2026-10-16; `research/20261016-logkey-pilot.md`).
+    - Run `python -I re-analysis/tools/logkey_check.py cozmo-stack/src/<the files you touched>`.
+    - Every ABSENT key in your files is either fixed from a checked row or explained in the status file.
+    - EXACT proves only that the key exists. It says nothing about level, branch, order or text.

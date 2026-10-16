@@ -17,7 +17,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
    - Builder: write `status/<job>.md` with `CLAIMED Codex <date>`, then commit and push.
    - Research: no claim step.
 4. Run it under its own rules:
-   - builder jobs: `CODEX-BUILDER.md` rules 1–14 (11: MISSING never in the engine log; 12: threads follow the original; 13: an absent owner is not a reason to skip; 14: label how each test reaches the behaviour);
+   - builder jobs: `CODEX-BUILDER.md` rules 1–15 (11: MISSING never in the engine log; 12: threads follow the original; 13: an absent owner is not a reason to skip; 14: label how each test reaches the behaviour; 15: run the log-key pre-check);
    - research jobs: `research/README.md`, plus the push rule below.
 5. Finish it.
    - Builder: write the report into `status/<job>.md`, beginning `DONE` or `BLOCKED`, then commit and push.
