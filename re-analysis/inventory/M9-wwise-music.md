@@ -455,3 +455,13 @@ The audio DSP policy in AGENTS.md (ADP-1) applies to this subsystem. Per-sample 
 | LFO initializer read; mode-0 build proceeds | M9-025 (note) |
 | Live RTPC updates to modulator states: RECOVERABLE_GAP | M9-038 (new) |
 | Note | M9-008 |
+
+
+## Check of OV70-73/88 (manager, 2026-10-16; research/overnight/20261016-m9-ov70-73-88-check.md)
+
+| Change | Records |
+| --- | --- |
+| MIDI boundary, parameter collector, envelope emitters, note-off, live RTPC: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M9-034, M9-035, M9-036, M9-037, M9-038 |
+| Clip-start manager and CC chase: IMPLEMENTATION_GAP | M9-040 (new) |
+| Residue: RECOVERABLE_GAP | M9-039, M9-041, M9-042 (new) |
+| Notes | M9-024, M9-008 |

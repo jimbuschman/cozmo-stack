@@ -125,5 +125,11 @@ The first three are the requests already written:
 | OV91 | requests/overnight/20261016-ov91-m12-046.md (M12-046: Unattach path still unread: BlockWorld::DeleteLocatedObjects body, Che) | research/overnight/20261016-ov91-m12-046.md |
 | OV92 | requests/overnight/20261016-ov92-m1-054.md (M1-054: CozmoEngine::Init before RobotManager::Init: the +0x10 Info, the three) | research/overnight/20261016-ov92-m1-054.md |
 | OV93 | requests/overnight/20261016-ov93-m15-045.md (M15-045: AIComponent teardown recursive recipients: BehaviorHelper IHelper type) | research/overnight/20261016-ov93-m15-045.md |
+| OV94 | requests/overnight/20261016-ov94-m9-042.md (M9-042: Wwise modulator-state residue: state insertion (V+0x34 store, 0x009DD1) | research/overnight/20261016-ov94-m9-042.md |
+| OV95 | requests/overnight/20261016-ov95-m9-039.md (M9-039: Wwise MIDI residue: the 97D14C vt+0x70 / 981DBC branch, R8 init helper) | research/overnight/20261016-ov95-m9-039.md |
+| OV96 | requests/overnight/20261016-ov96-m9-041.md (M9-041: Wwise parameter-collector residue: 9EF258 middle (SIS, factor, aux, bu) | research/overnight/20261016-ov96-m9-041.md |
+| OV97 | requests/overnight/20261016-ov97-m6-037.md (M6-037: Wwise bus residue: the other bus-destroy contexts (0xA41A3C, 0xA423D8,) | research/overnight/20261016-ov97-m6-037.md |
+| OV98 | requests/overnight/20261016-ov98-m6-038.md (M6-038: Wwise Term music-engine and variant: H3 music-engine Term (0x97D834 ->) | research/overnight/20261016-ov98-m6-038.md |
+| OV99 | requests/overnight/20261016-ov99-m6-039.md (M6-039: Audio stream class behind the package-node dtor (node+0x34 vt+8 at 0x8) | research/overnight/20261016-ov99-m6-039.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.

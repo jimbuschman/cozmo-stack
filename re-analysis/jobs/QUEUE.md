@@ -130,6 +130,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 61t1 | [B-M12-6](B-M12-6.md) | open, after B-M8-8 |
 | 61t2 | [B-M13-8](B-M13-8.md) | open, after B-M12-6 |
 | 61u | [B-M6-4](B-M6-4.md) | open, after B-M13-8 (bus state M6-035; Term recipients M6-034; device storage M6-036) |
+| 61v | [B-M9-4](B-M9-4.md) | open, after B-M6-4 (MIDI boundary M9-034; clip-start M9-040; collector M9-035; emitters M9-036; note-off M9-037; live RTPC M9-038) |
 | 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | open, after B-M9-2 (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
 | 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |
