@@ -95,7 +95,8 @@ anything. BOARD.md is history; this file is the live queue.
 | 40 | [B-M12-3](B-M12-3.md) | open, after B-M11-2 (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018) |
 | 41 | [B-M13-4](B-M13-4.md) | BLOCKED (turn-eye destructor row; bounded part pushed 730ccc23); checked row added (research/20261015-turn-eye-dtor-check.md); finished by B-M13-7 |
 | 41a | [B-M13-7](B-M13-7.md) | open, NEXT (TurnInPlaceAction live eye layer and destructor cleanup) |
-| 42 | [B-M11-3](B-M11-3.md) | BLOCKED (SetMarkerAsObserved 0x00876DA8..0x008770CC has no checked row; bounded part pushed ba4c1211); request OV85; finish job after its check |
+| 42 | [B-M11-3](B-M11-3.md) | BLOCKED (SetMarkerAsObserved 0x00876DA8..0x008770CC has no checked row; bounded part pushed ba4c1211); request OV85; finish job after its check; OV85 checked (research/overnight/20261016-ov85-check.md); finished by B-M11-14 |
+| 42a | [B-M11-14](B-M11-14.md) | open, NEXT (SetMarkerAsObserved, finishes B-M11-3) |
 | 43 | [B-M11-4](B-M11-4.md) | BLOCKED (FaceTracker/FaceRecognizer handle census, M11-077/M11-084 ownership, M11-090 residue; bounded part pushed 64f9d104); finish after those records are read |
 | 44 | [B-M11-5](B-M11-5.md) | open, after B-M11-4 (quad-tree border walk M11-047; seed order = insertion order, operator 2026-10-14) |
 | 45 | [B-M11-6](B-M11-6.md) | open, after B-M11-5 (CheckImageQuality M11-080; LimitedExposure M11-057; auto-exposure M3-021) |

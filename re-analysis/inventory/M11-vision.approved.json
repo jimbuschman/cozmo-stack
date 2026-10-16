@@ -1,6 +1,6 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M11-vision.md",
   "inventory_sha256": "f9f152764044bdc6161aa067d0ff20c61c4255fdc4d77cafac318ba32a9181ea",
   "records": {
@@ -179,7 +179,8 @@
         "0x00620C5C..0x00620C9E the confirmation gate; 0x00620D86..0x00620DA4 NonConfirmingObservation; 0x00620DF0..0x00620EDE the unconnected path and the 10 s cooldown; 0x00622ADE..0x00622E4E AddLocatedObject",
         "re-analysis/research/20260929-R-VIS-pre-extraction.md Part 1 item 1 rows 1.0-1.21; re-analysis/research/20260929-R-VIS-verify-pre-items1-3.md (all PASS but the row-1.1 addresses, corrected there); re-analysis/research/20260929-R-VIS-verify-M11-gap1.md Q2 (the counter)",
         "0x00620E42..0x00620E5E, 0x006215C4, 0x006281DA..0x00628250, 0x0061FA68..0x0061FAA6, 0x00620FE0",
-        "re-analysis/research/20260929-R-VIS-verify-M11-batchA.md objections 4, 6, 7, 12"
+        "re-analysis/research/20260929-R-VIS-verify-M11-batchA.md objections 4, 6, 7, 12",
+        "re-analysis/research/overnight/20261016-ov85-check.md: SetMarkerAsObserved 0x00876DA8..0x00876FF8: lookup 0x00876E06..0x00876E18; per KnownMarker gates GetWithRespectTo 0x00876E56..0x00876E64, Project+Contains 0x00876E68..0x00876E94, d2 (projected minus observed centroid) < best 0x00876E96..0x00876EE0 (FLT_MAX 0x00877054), area ratio < tol 0x00876EE2..0x00876F74; store ts at bestNode+0x48 0x00876F86; Warning 1 0x00876F8A..0x00876FAC, Warning 2 0x00876FAE..0x00876FC4; cleanup 0x00876FC8..0x00876FF8."
       ],
       "live_path": true,
       "hardware_required": false
