@@ -153,5 +153,6 @@ The first three are the requests already written:
 | OV119 | requests/overnight/20261016-ov119-m6-043.md (M6-043: Wwise Term-path transitive callees and stream-device remainder) | research/overnight/20261016-ov119-m6-043.md |
 | OV120 | requests/overnight/20261016-ov120-m15-067.md (M15-067: BehaviorGuardDog lifecycle: IsRunnable, Init, UpdateInternal pre-dispa) | research/overnight/20261016-ov120-m15-067.md |
 | OV121 | requests/overnight/20261016-ov121-m11-084.md (M11-084: Pose wrapper lifetimes in production: whether any flow leaves a child ) | research/overnight/20261016-ov121-m11-084.md |
+| OV122 | requests/overnight/20261016-ov122-m15-069.md (M15-069: R2E-phase synchronous action completions (census beyond 0x00512038 and) | research/overnight/20261016-ov122-m15-069.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-032 (M15-031 is in scope since 2026-10-16).

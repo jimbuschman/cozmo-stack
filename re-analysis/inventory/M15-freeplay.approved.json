@@ -2,7 +2,7 @@
   "subsystem": "M15-freeplay",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M15-freeplay.md",
-  "inventory_sha256": "26e8d0265475a2ba1a5bf2056635448f67e665e73e99f61d1108dfe81ec0aaec",
+  "inventory_sha256": "04c42cbdf3a8edfa8c024912423c8df4df9576fa91e3238d0aa9113894e2c39c",
   "records": {
     "M15-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -770,21 +770,23 @@
       "hardware_required": false
     },
     "M15-065": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BehaviorFeedingEat: the IFeedingListener callbacks (StartedEating, EatingComplete, EatingInterrupted) and the conditions under which they fire",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov102-104-answer.md: callers 0x005D5C5A..0x005D5C70 (interrupted), 0x005D5E1C..0x005D5E6C (StopInternal: interrupted if state >= 2, complete if now > +0x124), 0x005D62B4 (StartedEating); listener push_back 0x005D6754 into +0x130; body range 0x005D5904..0x005D64C6."
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: callers 0x005D5C5A..0x005D5C70 (interrupted), 0x005D5E1C..0x005D5E6C (StopInternal: interrupted if state >= 2, complete if now > +0x124), 0x005D62B4 (StartedEating); listener push_back 0x005D6754 into +0x130; body range 0x005D5904..0x005D64C6.",
+        "re-analysis/research/overnight/20261016-ov111-112-answer.md: class 0x005D5794..0x005D6AD6 (vtable 0x010283B8): ctor 0x005D5794..0x005D5816; IsRunnable 0x005D5880..0x005D58CE; IsCubeBad 0x005D58D0..0x005D5900; Init 0x005D5904..0x005D5A02; DrivingToFood 0x005D5A58..0x005D5B36 and result 0x005D6A62..0x005D6AAA; PlacingLiftOnCube 0x005D5FA4..0x005D6030; Eating 0x005D60EC..0x005D6350 (StartedEating call 0x005D62E2); anim choice 0x005D64C8..0x005D65A4; Update 0x005D5B92..0x005D5BF8; ReactingToInterruption 0x005D5C3C..0x005D5D10; CubeMovementHandler 0x005D5D7C..0x005D5DE4; StopInternal 0x005D5DE8..0x005D5EF2; MarkCubeAsBad 0x005D662C..0x005D6688; member-callback wrapper 0x005BF8F4."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M15-066": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Order of the RobotOffTreadsStateChanged (E2G tag 53) subscribers: AIWhiteboard (handler 0x0056CCE4) versus ActivityFreeplay (M15-060)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-ov102-104-answer.md: ActivityFreeplay subscribes in its ctor (0x005AD3B4..0x005AD846); AIWhiteboard handler 0x0056CCE4; signal emit 0x00663C74 calls in registration order (M8-027)."
+        "re-analysis/research/overnight/20261016-ov102-104-answer.md: ActivityFreeplay subscribes in its ctor (0x005AD3B4..0x005AD846); AIWhiteboard handler 0x0056CCE4; signal emit 0x00663C74 calls in registration order (M8-027).",
+        "re-analysis/research/overnight/20261016-ov111-112-answer.md: subscribe tail-append 0x006646A6..0x006646B0; emit 0x00663C74..0x00663CB8; Robot ctor order 0x0050FCA0..0x005103DC; behaviour tag arrays 0x00C69694, 0x00C6A45C, 0x00C6AAE4, 0x00C6DBC0, 0x00C71100, 0x00C71B60, 0x00C68020; reaction strategies 0x0060FE10, 0x0060D8A4..0x0060D8C2; AIWhiteboard handler 0x0056CCDC..0x0056CCF8."
       ],
       "live_path": true,
       "hardware_required": false
@@ -795,6 +797,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/overnight/20261016-ov109-110-answer.md: IsRunnableInternal 0x005F2A9C..0x005F2C9C (FeatureGate 7 at 0x005F2AAC; byte [[[robot+0x264]+0x18]+0x74] at 0x005F2AB8..0x005F2AC4; 3 matches 0x005F2ADC; rotated axis Z == 3 0x005F2AFE..0x005F2B04; spread < 100.0f 0x005F2B90..0x005F2C50); InitInternal 0x005F2CFC..0x005F2E08; UpdateInternal pre-dispatch 0x005F2E80..0x005F3000; tbh 0x005F3016; state 0 0x005F304E..0x005F30A0 with callback 0x005F59D8..0x005F5A1E; state 2 per M11-093."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M15-068": {
+      "status": "HARDWARE_ONLY",
+      "title": "Order between behaviour instances subscribed to an E2G tag (e.g. tag 53): follows readdir order of the behaviour config files",
+      "authority": "libcozmoEngine.so 3.4.0-1204; shipped behavior configs.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov111-112-answer.md: FilesInDirectory opendir/readdir without sort (0x00802D70, 0x00802FF6; recursive 0x0052072E) feeds the unordered_map<BehaviorID, Json> both containers iterate (0x0059C324, 0x005A5812); subscription order = construction order (0x00664684, emit 0x00663C74). Precedent: M5-050 G2b."
+      ],
+      "live_path": true,
+      "hardware_required": true
+    },
+    "M15-069": {
+      "status": "RECOVERABLE_GAP",
+      "title": "R2E-phase synchronous action completions (census beyond 0x00512038 and 0x0053546E), and BehaviorFeedingEat null-animation path at 0x005D61D6 against shipped groups",
+      "authority": "libcozmoEngine.so 3.4.0-1204; shipped behavior configs.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov111-112-answer.md: ActionList::Cancel callers 0x00512038 (Falling, behaviour not stopped) and 0x0053546E (after RequestCurrentBehaviorEndImmediately); QueueAction position cancel 0x0053DAE0; FeedingEat GetAnimation unchecked 0x005D61D6 (InvalidName log 0x00588086..0x005880DE)."
       ],
       "live_path": true,
       "hardware_required": false
