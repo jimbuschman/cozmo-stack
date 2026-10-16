@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "e3dc392287142a658350ea18527bbab6f2c90a16006a0f7be1a13a2bf57be586",
+  "inventory_sha256": "0988d6be7746a5bbc1984d746ca3e5eb738f465d84f7dc7d4f7a7ae7083c63c8",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -481,31 +481,64 @@
       "hardware_required": false
     },
     "M6-034": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise Term recipients: the manager-list tail, head calls, allocator internals and virtual slots called by the Term dispatcher",
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov62-64-check.md: tail recipients 9AD064, 9A99DC, 9A7BFC, 9A7DB0, 9FEBCC, 9FEB80, A36044, A0D370, A0C200, A030CC, 9C7AF4, A05288, 9CC540, A322D8, A307C4, A274E8, A273A8, A109D0, A0E1A8, 9E5F6C, 9E5EF8, 9A7904; head calls 9E5FE4, A3D4E0, 99DA54, A38890; allocator A7A988, A7AAE8, A7B8FC, A7A588; virtual slots at 99DD2C, 99DE28, 99DE50; node call 9EB014."
+        "re-analysis/research/overnight/20261015-ov62-64-check.md: tail recipients 9AD064, 9A99DC, 9A7BFC, 9A7DB0, 9FEBCC, 9FEB80, A36044, A0D370, A0C200, A030CC, 9C7AF4, A05288, 9CC540, A322D8, A307C4, A274E8, A273A8, A109D0, A0E1A8, 9E5F6C, 9E5EF8, 9A7904; head calls 9E5FE4, A3D4E0, 99DA54, A38890; allocator A7A988, A7AAE8, A7B8FC, A7A588; virtual slots at 99DD2C, 99DE28, 99DE50; node call 9EB014.",
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: T1 0x9AD064..0x9AD298; T3 0x9A7BFC..0x9A7DB0; T4 0x9A7DB0..0x9A7EAC; T5 0x9FEBCC..0x9FEC58; T16 0xA274E8..0xA278C0; T18 seven descriptors 0xA10A50..0xA10A88; T22 0x9A7904..0x9A7BF4; H1 0x9E5FE4; H2 UnregisterGlobalCallback(0xA3D3D4, 0x48) 0xA3D4E0..0xA3D4F4, 0x9A5D48; A1 0xA7A988..0xA7A9F4; A2 0xA7AAE8..0xA7AB20; A4 0xA7A588..0xA7A5B4; variants 0x99EAF0..0x99EBBC; node 0x9EAF90..0x9EB0E4."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M6-035": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Wwise bus state +0x1BC transitions (what moves a bus from 1 back to 4): callers of the stage setters 0x00A4F36C, 0x00A4F544 and siblings",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov65-67-check.md: init writes 4 (0x00A4F220); processing 4 -> 1 (0x00A4FA00..0x00A4FA04, 0x00A4FC20..0x00A4FC24); stage setters write 4 if already 0x11 else 1 (0x00A4F36C..0x00A4F65C); sweep keeps state-1 buses (0x00A43F64..0x00A44064)."
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: init writes 4 (0x00A4F220); processing 4 -> 1 (0x00A4FA00..0x00A4FA04, 0x00A4FC20..0x00A4FC24); stage setters write 4 if already 0x11 else 1 (0x00A4F36C..0x00A4F65C); sweep keeps state-1 buses (0x00A43F64..0x00A44064).",
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: driver 0xA58004, 0xA44DD8..0xA44E08; bus pass 0xA44C18..0xA44D38 (0xA4F36C called at 0xA44CB8); setter 1 0xA4F36C..0xA4F4A0; setter 2 0xA4F544..0xA4F660 (no static caller); 4->1 0xA4F9E0..0xA4FA18, 0xA4FBF4..0xA4FC24 (+0x68 = 0x2D); line init 0xA4F218..0xA4F234; +0x1C0 inc/dec 0xA4F6C0..0xA4F700; sweep 0xA43F64..0xA44064."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M6-036": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Audio device storage cleanup at shutdown: 0x0096D624..0x0096FE6F, 0x00969DBC, 0x0097CC20, stream vt+8 at 0x008D9E54, allocator bodies",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261015-ov65-67-check.md: blocking Term 0x00961798..0x009617DC calls 0x0097CE74 then 0x0096D624; node dtor stream vt+8 at 0x008D9E54; allocator veneers 0x00A7AEC4, 0x00A7A988, 0x00A7AA48."
+        "re-analysis/research/overnight/20261015-ov65-67-check.md: blocking Term 0x00961798..0x009617DC calls 0x0097CE74 then 0x0096D624; node dtor stream vt+8 at 0x008D9E54; allocator veneers 0x00A7AEC4, 0x00A7A988, 0x00A7AA48.",
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: blocking Term 0x961798..0x9617DC; 0x96D624 non-cache 0x96D624..0x96D6A4, cache path 0x96D6A8..0x96FE6C (cond signal 0x97D020..0x97D044); 0xA7AA48..0xA7AA94; DestroyPool 0xA7AEC4..0xA7AF78; 0xA7A988..0xA7A9F4; device vt[0] 0x965DFC..0x965E2C."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-037": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise bus residue: the other bus-destroy contexts (0xA41A3C, 0xA423D8, 0xA44078), the +0x1CC bit0 setters, and the bodies of 0xA4FEF8, 0x9E9E78, 0x9E9F08 and the per-frame flag globals",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: destroy paths 0xA440CC..0xA4428C (callers 0xA44338/0xA44480), 0xA41A3C/0xA41A44, 0xA423D8/0xA423E0; +0x1CC bit0 setters 0xA41EA4, 0xA420B0, 0xA422E0, 0xA4350C, 0xA43A14; flag globals at 0xA44DD8/0xA44DEC; +0x1A8 object vt+0x20/+0x24."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-038": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Wwise Term music-engine and variant: H3 music-engine Term (0x97D834 -> 0x97D528), the receiver variant chosen by init settings byte +0x3C, and OV84's unread callees",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: registrar 0x9A5AFC; music init 0x97D72C registered at 0x8D8206 (fn 0x97D834, mask 0x40); 0x97D834 tail-calls 0x97D528 if [0x108D7D8+0x3C]; variant byte G+0xE0 (0x99EAF0), default 1 at 0x99DCD8; Anki settings writes 0x8D8188..0x8D8192 before Init 0x8D81FC."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-039": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Audio stream class behind the package-node dtor (node+0x34 vt+8 at 0x8D9E54), the veneer 0x8D8000 -> 0xAE3020, and whether stream-cache mode applies",
+      "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov84-89-90-check.md: package-node dtor 0x8D9E48..0x8D9E60 (node+0x34 zeroed by the ctor at 0x8D6B80); DestroyPool calls blx 0x8D8000 when +0x1C bit0 (0xA7AEC4..0xA7AF78); device settings before 0x8D6C02 unread."
       ],
       "live_path": true,
       "hardware_required": false

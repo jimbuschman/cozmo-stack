@@ -3203,3 +3203,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Hijack shutdown path; stream/device teardown: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-032, M6-033 |
 | Bus state transitions; device storage cleanup: RECOVERABLE_GAP | M6-035, M6-036 (new) |
 | Note (M1-034 point) | M6-031 |
+
+
+## Check of OV84/89/90 (manager, 2026-10-16; research/overnight/20261016-ov84-89-90-check.md)
+
+| Change | Records |
+| --- | --- |
+| Bus state, Term recipients, device storage: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M6-034, M6-035, M6-036 |
+| Residue: RECOVERABLE_GAP | M6-037, M6-038, M6-039 (new) |
+| Notes | M6-031, M6-032 |

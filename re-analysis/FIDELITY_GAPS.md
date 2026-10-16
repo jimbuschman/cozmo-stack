@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **657 records** over 16 subsystems.
+Manifest of **660 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
 | RECOVERABLE_GAP | 33 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 360 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| IMPLEMENTATION_GAP | 363 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 61 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 12 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -29,7 +29,7 @@ remains after both, and they do not go away by working harder on this repository
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 50 | 0 | 17 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 36 | 3 | 30 | 0 | 0 | no | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 39 | 3 | 33 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 1 | 23 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 3 | 23 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 38 | 5 | 25 | 0 | 1 | no | no |
@@ -97,32 +97,32 @@ Each of these is a question the original can answer and nobody has asked it yet.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
-**M6-034 — Wwise Term recipients: the manager-list tail, head calls, allocator internals and virtual slots called by the Term dispatcher** (live path)
+**M6-037 — Wwise bus residue: the other bus-destroy contexts (0xA41A3C, 0xA423D8, 0xA44078), the +0x1CC bit0 setters, and the bodies of 0xA4FEF8, 0x9E9E78, 0x9E9F08 and the per-frame flag globals** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: Any logs, file closes or thread effects inside Wwise shutdown.
-* rests on: Opus check of OV62-OV64 (2026-10-15), manager record.
+* effect: When buses survive or are destroyed (feeds M6-032 likelihood).
+* rests on: Opus check of OV84/89/90 (2026-10-16), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).
-* evidence: re-analysis/research/overnight/20261015-ov62-64-check.md: tail recipients 9AD064, 9A99DC, 9A7BFC, 9A7DB0, 9FEBCC, 9FEB80, A36044, A0D370, A0C200, A030CC, 9C7AF4, A05288, 9CC540, A322D8, A307C4, A274E8, A273A8, A109D0, A0E1A8, 9E5F6C, 9E5EF8, 9A7904; head calls 9E5FE4, A3D4E0, 99DA54, A38890; allocator A7A988, A7AAE8, A7B8FC, A7A588; virtual slots at 99DD2C, 99DE28, 99DE50; node call 9EB014.
-* outstanding: RECOVERABLE_GAP: read the listed bodies (ARM; literals are pc+8). A4F6F0/A4EED8 stay with M6-032; 9D40C4 with M6-025/M6-032.
+* evidence: re-analysis/research/overnight/20261016-ov84-89-90-check.md: destroy paths 0xA440CC..0xA4428C (callers 0xA44338/0xA44480), 0xA41A3C/0xA41A44, 0xA423D8/0xA423E0; +0x1CC bit0 setters 0xA41EA4, 0xA420B0, 0xA422E0, 0xA4350C, 0xA43A14; flag globals at 0xA44DD8/0xA44DEC; +0x1A8 object vt+0x20/+0x24.
+* outstanding: RECOVERABLE_GAP: read the listed bodies and conditions.
 
-**M6-035 — Wwise bus state +0x1BC transitions (what moves a bus from 1 back to 4): callers of the stage setters 0x00A4F36C, 0x00A4F544 and siblings** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: Whether the robot bus (with the Hijack FX) can still exist after the controller map dies at shutdown.
-* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: init writes 4 (0x00A4F220); processing 4 -> 1 (0x00A4FA00..0x00A4FA04, 0x00A4FC20..0x00A4FC24); stage setters write 4 if already 0x11 else 1 (0x00A4F36C..0x00A4F65C); sweep keeps state-1 buses (0x00A43F64..0x00A44064).
-* outstanding: RECOVERABLE_GAP: read the callers of the stage setters.
-
-**M6-036 — Audio device storage cleanup at shutdown: 0x0096D624..0x0096FE6F, 0x00969DBC, 0x0097CC20, stream vt+8 at 0x008D9E54, allocator bodies** (live path)
+**M6-038 — Wwise Term music-engine and variant: H3 music-engine Term (0x97D834 -> 0x97D528), the receiver variant chosen by init settings byte +0x3C, and OV84's unread callees** (live path)
 
 * where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: File closes and device effects at audio shutdown.
-* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: blocking Term 0x00961798..0x009617DC calls 0x0097CE74 then 0x0096D624; node dtor stream vt+8 at 0x008D9E54; allocator veneers 0x00A7AEC4, 0x00A7A988, 0x00A7AA48.
-* outstanding: RECOVERABLE_GAP: read the listed bodies.
+* effect: What the music engine does at shutdown and which Term variant runs.
+* rests on: Opus check of OV84/89/90 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).
+* evidence: re-analysis/research/overnight/20261016-ov84-89-90-check.md: registrar 0x9A5AFC; music init 0x97D72C registered at 0x8D8206 (fn 0x97D834, mask 0x40); 0x97D834 tail-calls 0x97D528 if [0x108D7D8+0x3C]; variant byte G+0xE0 (0x99EAF0), default 1 at 0x99DCD8; Anki settings writes 0x8D8188..0x8D8192 before Init 0x8D81FC.
+* outstanding: RECOVERABLE_GAP: read 0x97D528 and its callees (0x9863E8, 0x980454, 0x981BE8...), the settings path to Init, and OV84's unread callees.
+
+**M6-039 — Audio stream class behind the package-node dtor (node+0x34 vt+8 at 0x8D9E54), the veneer 0x8D8000 -> 0xAE3020, and whether stream-cache mode applies** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: File closes at audio shutdown.
+* rests on: Opus check of OV84/89/90 (2026-10-16), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).
+* evidence: re-analysis/research/overnight/20261016-ov84-89-90-check.md: package-node dtor 0x8D9E48..0x8D9E60 (node+0x34 zeroed by the ctor at 0x8D6B80); DestroyPool calls blx 0x8D8000 when +0x1C bit0 (0xA7AEC4..0xA7AF78); device settings before 0x8D6C02 unread.
+* outstanding: RECOVERABLE_GAP: find the writer of node+0x34 and the concrete stream class slot +8; read the veneer target; read Anki's device settings. The buddy-coalesce arithmetic in cache mode has no observable output (manager decision) and is not built.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -1155,7 +1155,7 @@ B-M5-16 built, awaiting strong verification: dedicated native GetGroupForSource 
 * rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: head 0x0099DCEC..0x0099DE00 re-read (init byte +0x6C, 0x009B0350 -> 0x009D4058 / 0x00A40B18, +0x70 vt+0x1C, 0x009E5FE4, 0x00A3D4E0, 0x00A40D44 with null bus skipped at 0x00A40DFC, 0x0099DA54(0x40), seven descriptors +0x10..+0x58, 0x00A38890); tail 0x0099DE00..0x0099E318 not re-read; OV37 rows 7, 19, 20, 22 and 0x009D3EC4..0x009D3F38 not re-checked.; re-analysis/research/overnight/20261015-ov62-64-check.md: G 0x0108D868, P 0x01052418; head 0x0099DCEC..0x0099DDB8; tail 0x0099DDC0..0x0099E318; 9B0350 (config +0x3D: 9D4058 -> 9EAF90, or A40B18); A40B18..A40BB0; 9EAF90..9EB0E4; active drain A40D44..A40DC8; bus loop (pool word 0x01052428 via GOT 0x010400A8, 0x00A40DEC..0x00A40DF4); pending drain 9D3EC4..9D3F38; memory Term A7A6F0..A7A784, A7AEC4..A7AF78.
-* outstanding: RECOVERABLE_GAP: read the tail and the unchecked rows. Not ADP-1 DSP: all exact. M1-034 points: 0x00A40D84/0x00A40D88 (write 0xD0, then udf). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov62-64-check.md): IMPLEMENTATION_GAP for the dispatcher's local rows. Corrections to OV64: 0x0108DF48 (not 109DF48), 0x0108DAA0 (not 109DAA0), the bus free uses pool word 0x01052428 (not P). Recipients: M6-034. M1-034 traps (reachability unknown): 0x00A40D84/88, 0x009D3F04/08, 0x009EAFD8/DC. No logs, sends or DSP. OV66 check (re-analysis/research/overnight/20261015-ov65-67-check.md): additional M1-034 list-invariant trap at 0x009EAFD4..0x009EAFDC (store to 4, udf).
+* outstanding: RECOVERABLE_GAP: read the tail and the unchecked rows. Not ADP-1 DSP: all exact. M1-034 points: 0x00A40D84/0x00A40D88 (write 0xD0, then udf). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov62-64-check.md): IMPLEMENTATION_GAP for the dispatcher's local rows. Corrections to OV64: 0x0108DF48 (not 109DF48), 0x0108DAA0 (not 109DAA0), the bus free uses pool word 0x01052428 (not P). Recipients: M6-034. M1-034 traps (reachability unknown): 0x00A40D84/88, 0x009D3F04/08, 0x009EAFD8/DC. No logs, sends or DSP. OV66 check (re-analysis/research/overnight/20261015-ov65-67-check.md): additional M1-034 list-invariant trap at 0x009EAFD4..0x009EAFDC (store to 4, udf). OV84 check (re-analysis/research/overnight/20261016-ov84-89-90-check.md): "no logs, sends or DSP" holds only for the direct bodies; H3 runs the music-engine Term (0x97D834 -> 0x97D528, M6-038).
 
 **M6-032 — Hijack FX Term at Wwise shutdown reaching CozmoAudioController's destroy lambda after the controller map is destroyed** (live path)
 
@@ -1164,7 +1164,7 @@ B-M5-16 built, awaiting strong verification: dedicated native GetGroupForSource 
 * rests on: Opus check of OV36-OV37 (2026-10-15), manager record.
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC per FX slot (vt+8, 0x00A4E7F0..0x00A4E810); Hijack vtable 0x010387F4 slot +8 = 0x008DBDF9 (fx+0xC0 when [fx+0xD0], 0x008DBDFE..0x008DBE0A); destroy lambda 0x00595FE0 (Info "CozmoAudioController.HijackAudioPlugin" "Destroy Plugin id: %d callback"; find on controller+0x78 at 0x00596028..0x00596030, destroyed at 0x0059470C; CloseAudioBuffer 0x0059878C).; re-analysis/research/overnight/20261015-ov65-67-check.md: setup 0x005942C6..0x00594354; fx capture 0x008DB4D6..0x008DB4EA, 0x008DBC36..0x008DBC4A; lambdas destroy 0x00595FE0..0x005960AC, process 0x00596148..0x005961B2; map death 0x005946F0..0x00594716, 0x00594E5E..0x00594E80; find fault 0x00595DDE..0x00595E38; bucket count kept after 5 registrations 0x0059963A..0x0059966A, unregister 0x00599A6C..0x00599AD6, 0x00594AFC..0x00594BF6; Term drain 0x00A40D44..0x00A40E50; bus teardown 0x00A4EED8 -> 0x00A4ECE4 -> 0x00A4E7CC; Hijack Term 0x008DBDF8..0x008DBE2C.
-* outstanding: RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov65-67-check.md): IMPLEMENTATION_GAP. Live map: exact Info, find, CloseAudioBuffer/UpdateBuffer or NotFound Info. After map death both lambdas fault at 0x00595E08 (bucket pointer 0, count non-zero once a Robot existed): M1-034 skips, logged visibly: destroy 0x00596030 (after its Info 0x00596002), process 0x0059615A. Whether it fires at shutdown depends on audio activity and thread timing (HARDWARE_ONLY). Bus state transitions: M6-035.
+* outstanding: RECOVERABLE_GAP: read whether a Hijack FX is still live in a bus slot at Term (bus lifetime; voice drain 0x009D40C4 first). If it is, the map read is an M1-034 crash point under the standing rule (skip the callback's map use, log visibly). Read 2026-10-15 (re-analysis/research/overnight/20261015-ov65-67-check.md): IMPLEMENTATION_GAP. Live map: exact Info, find, CloseAudioBuffer/UpdateBuffer or NotFound Info. After map death both lambdas fault at 0x00595E08 (bucket pointer 0, count non-zero once a Robot existed): M1-034 skips, logged visibly: destroy 0x00596030 (after its Info 0x00596002), process 0x0059615A. Whether it fires at shutdown depends on audio activity and thread timing (HARDWARE_ONLY). Bus state transitions: M6-035. OV89 check (re-analysis/research/overnight/20261016-ov84-89-90-check.md): stays reachable: the robot bus survives map death whenever an input is connected (+0x1C0 > 0), it was mixed into last frame (+0x1BC = 1), or +0x1CC bit0 is set; destruction then follows on the audio thread (sweep) or at Term (bus drain). Occurrence stays HARDWARE_ONLY.
 
 **M6-033 — Audio stream hook and device teardown at shutdown** (live path)
 
@@ -1174,6 +1174,33 @@ B-M5-16 built, awaiting strong verification: dedicated native GetGroupForSource 
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261015-ov36-37-check.md: wrappers 0x008D80AC..0x008D80D6, 0x008D98F2..0x008D9932, 0x008D6C38..0x008D6CC4 read; callees node vt+0 at 0x008D9928, 0x00AE2FF0, 0x009EAF90, 0x0096091C unread.; re-analysis/research/overnight/20261015-ov65-67-check.md: hook shutdown 0x008D80AC..0x008D80D6; package drain 0x008D98F2..0x008D9932; producer 0x008D9848..0x008D98A0; node dtor 0x008D9E48..0x008D9E7E, 0x008D66EA..0x008D674F; registration removal 0x0096091C..0x009609B0; owned files 0x008D6C38..0x008D6CC4; device dispatcher 0x009606E8..0x0096073C; hook init 0x008D6C02..0x008D6C36; blocking Term 0x00961798..0x009617DC; worker stop 0x0097CE74..0x0097CF28.
 * outstanding: RECOVERABLE_GAP: read the callees. M1-034: 0x008D9914 (write to address 4, broken list invariant), 0x008D8062 -> terminate. Read 2026-10-15 (re-analysis/research/overnight/20261015-ov65-67-check.md): IMPLEMENTATION_GAP for the hook, package, registration, device-dispatch and worker-stop rows (M1-034: 0x008D9914, 0x008D8062). Device storage cleanup: M6-036.
+
+**M6-034 — Wwise Term recipients: the manager-list tail, head calls, allocator internals and virtual slots called by the Term dispatcher** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: Any logs, file closes or thread effects inside Wwise shutdown.
+* rests on: Opus check of OV62-OV64 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime, ARM).
+* evidence: re-analysis/research/overnight/20261015-ov62-64-check.md: tail recipients 9AD064, 9A99DC, 9A7BFC, 9A7DB0, 9FEBCC, 9FEB80, A36044, A0D370, A0C200, A030CC, 9C7AF4, A05288, 9CC540, A322D8, A307C4, A274E8, A273A8, A109D0, A0E1A8, 9E5F6C, 9E5EF8, 9A7904; head calls 9E5FE4, A3D4E0, 99DA54, A38890; allocator A7A988, A7AAE8, A7B8FC, A7A588; virtual slots at 99DD2C, 99DE28, 99DE50; node call 9EB014.; re-analysis/research/overnight/20261016-ov84-89-90-check.md: T1 0x9AD064..0x9AD298; T3 0x9A7BFC..0x9A7DB0; T4 0x9A7DB0..0x9A7EAC; T5 0x9FEBCC..0x9FEC58; T16 0xA274E8..0xA278C0; T18 seven descriptors 0xA10A50..0xA10A88; T22 0x9A7904..0x9A7BF4; H1 0x9E5FE4; H2 UnregisterGlobalCallback(0xA3D3D4, 0x48) 0xA3D4E0..0xA3D4F4, 0x9A5D48; A1 0xA7A988..0xA7A9F4; A2 0xA7AAE8..0xA7AB20; A4 0xA7A588..0xA7A5B4; variants 0x99EAF0..0x99EBBC; node 0x9EAF90..0x9EB0E4.
+* outstanding: RECOVERABLE_GAP: read the listed bodies (ARM; literals are pc+8). A4F6F0/A4EED8 stay with M6-032; 9D40C4 with M6-025/M6-032. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov84-89-90-check.md): IMPLEMENTATION_GAP with corrections (T18 seven descriptors; H2 argument is code address 0xA3D3D4). New M1-034 point 0x9A7B80 (null when every bucket is empty). Thread effects only (sem/join/destroy; mutex destroys); no direct logs/files/messages. Residue: M6-038.
+
+**M6-035 — Wwise bus state +0x1BC transitions (what moves a bus from 1 back to 4): callers of the stage setters 0x00A4F36C, 0x00A4F544 and siblings** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: Whether the robot bus (with the Hijack FX) can still exist after the controller map dies at shutdown.
+* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: init writes 4 (0x00A4F220); processing 4 -> 1 (0x00A4FA00..0x00A4FA04, 0x00A4FC20..0x00A4FC24); stage setters write 4 if already 0x11 else 1 (0x00A4F36C..0x00A4F65C); sweep keeps state-1 buses (0x00A43F64..0x00A44064).; re-analysis/research/overnight/20261016-ov84-89-90-check.md: driver 0xA58004, 0xA44DD8..0xA44E08; bus pass 0xA44C18..0xA44D38 (0xA4F36C called at 0xA44CB8); setter 1 0xA4F36C..0xA4F4A0; setter 2 0xA4F544..0xA4F660 (no static caller); 4->1 0xA4F9E0..0xA4FA18, 0xA4FBF4..0xA4FC24 (+0x68 = 0x2D); line init 0xA4F218..0xA4F234; +0x1C0 inc/dec 0xA4F6C0..0xA4F700; sweep 0xA43F64..0xA44064.
+* outstanding: RECOVERABLE_GAP: read the callers of the stage setters. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov84-89-90-check.md): IMPLEMENTATION_GAP for the per-frame order, setter 1, the 4->1 writes, line init, the input count and the sweep (corrected: destroy only when +0x1C0 == 0, bit0 clear and +0x1BC != 1). OV89 (Nemotron) was wrong on its central claim. Setter 2 has no static caller: not built. Residue: M6-037.
+
+**M6-036 — Audio device storage cleanup at shutdown: 0x0096D624..0x0096FE6F, 0x00969DBC, 0x0097CC20, stream vt+8 at 0x008D9E54, allocator bodies** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: File closes and device effects at audio shutdown.
+* rests on: Opus check of OV65-OV67 (2026-10-15), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261015-ov65-67-check.md: blocking Term 0x00961798..0x009617DC calls 0x0097CE74 then 0x0096D624; node dtor stream vt+8 at 0x008D9E54; allocator veneers 0x00A7AEC4, 0x00A7A988, 0x00A7AA48.; re-analysis/research/overnight/20261016-ov84-89-90-check.md: blocking Term 0x961798..0x9617DC; 0x96D624 non-cache 0x96D624..0x96D6A4, cache path 0x96D6A8..0x96FE6C (cond signal 0x97D020..0x97D044); 0xA7AA48..0xA7AA94; DestroyPool 0xA7AEC4..0xA7AF78; 0xA7A988..0xA7A9F4; device vt[0] 0x965DFC..0x965E2C.
+* outstanding: RECOVERABLE_GAP: read the listed bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-ov84-89-90-check.md): IMPLEMENTATION_GAP for the blocking Term, both 0x96D624 paths' structure, frees and cond signal, the block free, DestroyPool, and the device dtor chain. OV90 (Nemotron) is replaced by the check's rows (its rows 6-8 were wrong). The buddy-coalesce arithmetic is not built (no observable output). Residue: M6-039.
 
 ### M7-behaviour — Idle, mood and reactions
 
