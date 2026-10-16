@@ -177,6 +177,18 @@ public class M4AbortSleepTests
         Assert.Equal(1, rig.Robot.Motion.AbortAll(robot));
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void M4_026_A1_EachSingleAbortFailureSetsTheOrResult(int failed)
+    {
+        using var rig = new Rig();rig.ToSynced();rig.State();
+        var robot=rig.Engine.Robot!;
+        robot.SendFault=m=>failed switch {0=>m is not ClearPath,1=>m is not AbortDocking,_=>m is not AbortAnimation};
+        Assert.Equal(1,rig.Robot.Motion.AbortAll(robot));
+    }
+
     /// <summary>
     /// M4-026 A1/A3/A4 with Robot::SendMessage's failure warning (0x00513558 channel "Robot.SendMessage", 0x0051356C "Robot %d failed to send a message type %s"):
     /// HandleDisconnectMessage clears the connection data before RemoveRobot (CC23), so every send of AbortAll fails and warns, in AbortAll's order:

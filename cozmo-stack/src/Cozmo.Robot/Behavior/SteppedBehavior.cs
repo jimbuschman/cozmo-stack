@@ -813,6 +813,7 @@ public abstract class SteppedBehavior : IBehavior
     // fidelity: M8-001
     internal int StartActing()
     {
+        ReportMissing("M8-015 IBehavior::StartActing 0x005BDAD4..0x005BDC04: host handle/async adapter has no owned IActionRunner input, native callback ownership or NOW rejection/delete join; Clear double-delete witness remains M8-024, no fabricated deletion");
         if (_engineActingFlag) { Log("IBehavior.StartActing: the action is dropped because the behaviour is stopping (+0xa0)"); return 0; }
         if (!_resuming && !_engineRunning) { Log("IBehavior.StartActing.Failure.NotRunning"); return 0; }
         if (HasCurrentAction) { Log("IBehavior.StartActing.Failure.AlreadyActing"); return 0; }
