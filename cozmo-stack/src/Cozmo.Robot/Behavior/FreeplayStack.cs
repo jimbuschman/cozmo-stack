@@ -161,6 +161,7 @@ public sealed class FreeplayStack : IDisposable
             && robot.Engine.Robot?.TallStackContainers.FirstOrDefault() is {} nativeTall)
             tallStack.BindDelocalizationData(nativeTall);
         var manager = new BehaviorManager(ctx);
+        manager.AttachSparkInput();
         if (m is not null) m.ReactionLocks = manager;       // M15-022: PlaceObjectOnGroundAction::Init takes its reaction lock on the robot's BehaviorManager for every caller; the newest stack's manager is the robot's
         if (withReactions)
             foreach (var reg in ShippedBehaviors.Reactions(robot, vision?.Locator, clockSec, vision,
@@ -379,6 +380,12 @@ public sealed class FreeplayStack : IDisposable
         DataTracker.Update();   // reads its own clock (0x0056EC1E..0x0056EC22)
         return Freeplay.Tick(nowSec, nowMs);
     }
+
+    /// <summary>Queues the app's ActivateSpark input. 0x55 cancels; IDs are not validated or charged here.
+    /// Native ActivitySparked selection/lifecycle remains unbuilt and is reported visibly.</summary>
+    // fidelity: M15-057
+    public void ActivateSpark(int unlockId) => Context.Robot.Engine.PostGameMessage(() =>
+        Context.Robot.Engine.AnimationMessages.Deliver(SparkManagerMessage.UnionTag, false, new SparkManagerMessage(0,unlockId)));
 
     public void Dispose()
     {

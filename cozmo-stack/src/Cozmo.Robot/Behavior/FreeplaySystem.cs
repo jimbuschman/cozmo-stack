@@ -108,12 +108,12 @@ public sealed class FreeplaySystem : IManagedActivity
     public void RequestNewActivity() => _requestPending = true;
 
     /// <summary>
-    /// The <c>ActivateSpark</c> message's setter for the requested spark (engine <c>BehaviorManager+0x60</c>)
-    /// and the invalid-spark latch at <c>BehaviorManager+0x65</c> (C1 §1): <c>HandleMessage</c> case tag 0
+    /// Legacy host string seam for the requested spark (the native <c>BehaviorManager+0x60</c> is a 32-bit ID).
+    /// It mirrors the invalid-spark latch at <c>BehaviorManager+0x65</c> (C1 §1): <c>HandleMessage</c> case tag 0
     /// sets <c>+0x65 = 1</c> only when <c>UnlockId == 0x55</c> (0x005A3C92..0x005A3C9A); the stack's
-    /// <c>null</c> is that invalid spark. A non-null request does not clear the latch, and
-    /// <c>SwitchToRequestedSpark</c> 0x005A4220 clears it. The <c>ActivateSpark</c> message itself is
-    /// unbuilt; this is the seam it will call.
+    /// <c>null</c> is that invalid spark. A non-null request does not clear the host latch.
+    /// The native ActivateSpark input now reaches BehaviorManager's separate checked fields;
+    /// its raw-ID picker/specialized activity join is still MISSING and does not call this string seam.
     /// </summary>
     // fidelity: M15-006
     public void SetRequestedSpark(string? spark)

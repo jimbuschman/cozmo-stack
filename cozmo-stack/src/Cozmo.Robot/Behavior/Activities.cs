@@ -1044,6 +1044,9 @@ public static class ActivityTreeLoader
             desired = (dn.GetProperty("faceAndCubeActivityName").GetString()!, dn.GetProperty("faceOnlyActivityName").GetString()!, dn.GetProperty("cubeOnlyActivityName").GetString()!, dn.GetProperty("noFaceNoCubeActivityName").GetString()!);
         var strategy = e.TryGetProperty("activityStrategy", out var st) ? ActivityStrategy.FromJson(st) : new ActivityStrategy();
         if (random is not null) strategy.Random = random;
+        // fidelity: M15-059
+        if (e.TryGetProperty("activityType",out var sparkedType) && sparkedType.GetString()=="Sparked")
+            SteppedBehavior.ReportMissing("M15-059 "+id+": specialized ActivitySparked owner/config/state/lifecycle is unbuilt; generic Activity is only the retained host model. OnSelected0x005B1518/HardSparkStarted, OnDeselected0x005B1780/StopAllAnims, objective/observed set, Update/end/interrupt, get-in/out and Complete/HardSparkEnded are not implemented. ResetLightsAndAnimations0x005B17A2 and ReloadFromConfig exception tail0x005B11AA..0x005B1255 remain unread.");
         // fidelity: M15-008
         if (id == "SparksGatherCubes" || (e.TryGetProperty("activityType", out var gty) && gty.GetString() == "GatherCubes"))
             SteppedBehavior.ReportMissing("ActivityGatherCubes (Update 0x005AF27C) is not built: its Update reports NeedActionCompleted(GatherCubes 0x14) when every cube is in a beacon (0x005AF2EC..0x005AF2F8, 0x005AF2F0) and plays the cube lights; the activity (SparksGatherCubes, feature-gated off in the shipped features.json) has no body, and the behaviours PeekABoo, TrackLaser and GuardDog that report needs actions are unbuilt too (M15-008)");

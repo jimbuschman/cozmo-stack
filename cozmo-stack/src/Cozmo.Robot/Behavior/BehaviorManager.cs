@@ -51,7 +51,7 @@ public interface IManagedActivity
 /// <see cref="ChooseAndSwitch"/> is this stack's own simple ranking, with no engine counterpart (M8-004); only tests
 /// and tools call it.
 /// </summary>
-public sealed class BehaviorManager : IDisposable
+public sealed partial class BehaviorManager : IDisposable
 {
     private readonly List<IBehavior> _behaviors = new();
     private readonly RepetitionPenalty _penalty;
@@ -1012,6 +1012,7 @@ public sealed class BehaviorManager : IDisposable
     public void Dispose()
     {
         SteppedBehavior.ReportMissing("M8-016/M8-023 host BehaviorManager.Dispose still performs host Stop/strategy unsubscribe cleanup; native activity/chooser/strategy shared-control tree ownership and destructor position0x005A0D22..0x005A0DFA are unbuilt; host cleanup is not a native destructor");
+        _sparkInput?.Dispose(); // host retained handle cleanup; native destructor position remains M8-023
         Stop(BehaviorStopReason.Cancelled, 0);
         List<IReactionTriggerStrategy> strategies;
         lock (_gate)
