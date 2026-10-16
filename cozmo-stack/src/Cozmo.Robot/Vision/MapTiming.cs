@@ -38,15 +38,41 @@ internal sealed partial class SourceMapComponent
         if(obj.PoseState==PoseState.Unknown)
         {
             ObjectRouteForTest?.Invoke("remove");
-            SteppedBehavior.ReportMissing("M11-074 RemoveObservableObject 0x0067EC3A/0x0067F2C4: old-pose root/map selection and whole-map transform recipient are not integrated; no polygon-list deletion substitute");return;
+            // fidelity: M11-088 -- r2 is the old pose; GetRootID precedes Remove's tailcall.
+            if(oldPose is null)
+            { StackDiagnostics.Write("M1-034 M11-088: skip Remove old-pose null read at 0x0067EC3C; map state retained");return; }
+            if(ReadOldPoseRootId is not {} rootId)
+            {SteppedBehavior.ReportMissing("M11-066 GetRootID 0x00844B0A -> 0x00844B18 called at 0x0067EC3C; no FindRoot substitute or current-origin fallback");return;}
+            uint oldRootId=rootId(oldPose);
+            if(RemoveObservableObject67F2C4 is {} remove)remove(obj,oldRootId);
+            else SteppedBehavior.ReportMissing($"M11-074 RemoveObservableObject 0x0067EC4C -> 0x0067F2C4, old root {oldRootId}; transform recipient is unbound");
+            return;
         }
         ObjectRouteForTest?.Invoke("cache");
-        SteppedBehavior.ReportMissing("M11-074 UpdateObjectPose cache path 0x0067EB38: per-ObjectID/origin native pose-cache producer and M11-088 virtual+0x5C remain unbuilt; no per-family moving-object assumption or re-add guessed");
+        SteppedBehavior.ReportMissing("M11-074 UpdateObjectPose cache path 0x0067EB38: per-ObjectID/origin native pose-cache producer and M11-088 virtual+0x5C is built but the valid/valid cache owner remains unbound; no per-family moving-object assumption or re-add guessed");
         void AddObject()
         {
             ObjectRouteForTest?.Invoke("add");
-            SteppedBehavior.ReportMissing("M11-074 AddObservableObject 0x0067ECFC: relative-pose height/cache path and M11-088 bounding-quad virtual+0x50 are not integrated; no yaw-only footprint or fabricated insertion/fill-border success");
+            if(AddObservableObject67ECFC is {} add)add(obj,obj.NativePose);
+            else AddObjectCheckedHeight(obj,obj.NativePose);
         }
+    }
+    // fidelity: M11-088 -- checked dispatch and height input; M11-074 owns the remaining cache/map recipients.
+    internal Action<ObservableObject,Pose3d>? AddObservableObject67ECFC;
+    internal Action<ObservableObject,uint>? RemoveObservableObject67F2C4;
+    internal Func<Pose3d,uint>? ReadOldPoseRootId;
+    internal Func<ObservableObject,Pose3d,Pose3d?>? ObjectPoseRelativeToRobot;
+    internal Action<ObservableObject,Pose3d,bool>? AddObjectAfterHeight;
+    internal void AddObjectCheckedHeight(ObservableObject obj,Pose3d newPose)
+    {
+        if(ObjectPoseRelativeToRobot is not {} relativeInput)
+        {SteppedBehavior.ReportMissing("M11-074/M11-088 native robot-relative pose input 0x0067EDA2 before IsPoseTooHigh 0x0067EDC0");return;}
+        using var relative=relativeInput(obj,newPose);
+        if(relative is null)
+        {SourceLog?.Invoke(EngineLogLevel.Warning,null,"MapComponent.AddObservableObject.InvalidPose","Could not get object's new pose wrt robot. Won't add to map");return;}
+        bool high=CubeGeometry.IsPoseTooHigh(obj,relative,1f,15f,0f);
+        if(AddObjectAfterHeight is {} continuation)continuation(obj,newPose,high);
+        else SteppedBehavior.ReportMissing("M11-074 native pose-cache/map insert continuation 0x0067EDC8 / 0x0067EEC4 after robot-relative height; no fabricated map insertion");
     }
     internal SourceMapAging? LastAgingForTest; // observation only
     internal Action? BroadcastDueForTest; // observation only; never supplies a stream

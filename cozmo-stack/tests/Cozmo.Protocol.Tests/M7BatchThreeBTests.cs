@@ -261,8 +261,8 @@ public class M7BatchThreeBTests
             Assert.Equal(r.Size, e.AllocationSize);
             Assert.Equal(r.Case, e.CaseAddress);
         }
-        // the three cases this stack builds from a config (and no others)
-        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.ReactToSparked },
+        // Config-built owners, including B-M11-15's checked goal unit with explicit unread lifecycle.
+        Assert.Equal(new[] { BehaviorClass.FistBump, BehaviorClass.PlayAnim, BehaviorClass.VisitInterestingEdge, BehaviorClass.ReactToSparked }.OrderBy(c=>c).ToArray(),
                      BehaviorFactory.Table.Where(e => e.Construct is not null).Select(e => e.Class).OrderBy(c => c).ToArray());
     }
 
@@ -481,9 +481,9 @@ public class M7BatchThreeBTests
         Assert.Equal((3.0f, true, true), (fist.MaxTimeToLookForFaceSec, fist.AbortIfNoFaceFound, fist.UpdateLastCompletionTime));
         var sparks = Assert.IsType<FistBumpBehavior>(container.Behaviors[BehaviorID.SparksFistBump]);
         Assert.Equal((5.0f, false, false), (sparks.MaxTimeToLookForFaceSec, sparks.AbortIfNoFaceFound, sparks.UpdateLastCompletionTime));
-        // 15 PlayAnim + 2 FistBump + 1 ReactToSparked are built; the other 160 configs name classes this stack cannot build from a config
-        Assert.Equal(18, container.Behaviors.Count);
-        Assert.Equal(160, container.NotCreated);
+        // 15 PlayAnim + 2 FistBump + ReactToSparked + the checked VisitInterestingEdge goal owner (lifecycle M11-092).
+        Assert.Equal(19, container.Behaviors.Count);
+        Assert.Equal(159, container.NotCreated);
     }
 
     // =============================================================== M7-018: FistBump

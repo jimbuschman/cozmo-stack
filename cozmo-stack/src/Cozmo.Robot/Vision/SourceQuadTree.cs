@@ -3,7 +3,7 @@ using System.Globalization;
 using Cozmo.Robot.Manipulation;
 namespace Cozmo.Robot.Vision;
 
-// fidelity: M13-030, M11-045
+// fidelity: M13-030, M11-045, M11-089
 internal class SourceMapData(MemoryMapContentType type, uint first, uint last)
 {
     internal MemoryMapContentType Type = type;

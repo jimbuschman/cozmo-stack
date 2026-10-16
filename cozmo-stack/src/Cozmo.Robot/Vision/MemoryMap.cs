@@ -88,7 +88,7 @@ public sealed record MemoryMapRegion(MemoryMapContentType Type, Vec2[] Polygon, 
 /// <c>MemoryMapData_ProxObstacle</c> (type 6, 0x00684B54) for a <c>ProxObstacle</c> one - and nothing at
 /// all for a <c>CollisionObstacle</c> (the type test at 0x0062259A falls through to 0x006226EA).
 /// </summary>
-public sealed class MemoryMap
+public sealed partial class MemoryMap
 {
     internal readonly SourceQuadTree Tree = new();
     internal SourceLogSink? SourceLog { get => Tree.SourceLog; set => Tree.SourceLog = value; }
@@ -353,6 +353,13 @@ public sealed class MemoryMap
             }
         }
 
+        // fidelity: M11-089 -- only a bound native prepared-segment producer may feed the checked tree insertion.
+        if(NativePreparedInterestingEdges is {} producer)
+        {
+            var prepared=producer(frame,robotPose);
+            if(prepared is not null)InsertPreparedInterestingEdges(prepared,frame.Timestamp);
+        }
+        else Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-089 AddVisionOverheadEdges prepared-segment producer 0x0067F814..0x00680286 is unbound; checked type9 insertion is not fed legacy runs");
         bool anyBorder = false;
         foreach (var run in runs)
         {

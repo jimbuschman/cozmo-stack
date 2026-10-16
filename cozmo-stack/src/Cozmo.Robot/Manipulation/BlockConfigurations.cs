@@ -716,6 +716,7 @@ public static class ObjectFootprint
     // fidelity: M11-062 — 0x005025F0 / 0x00502C32; reuse M13-024, never a second minAreaRect.
     internal static Quadrilateral MarkerlessBoundingQuadXY(Vec3 size, Pose3d pose, float padding, Action<string> missing)
     {
+        Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-091 markerless +0x50 body/caller census 0x00502C32; existing candidate is not a checked override closure");
         var signs = MarkerlessCanonicalCorners;
         float sx = (float)size.X + 2f*padding, sy = (float)size.Y + 2f*padding, sz = (float)size.Z + 2f*padding;
         var r = pose.Rotation; var pts = new List<Point2f>(8);

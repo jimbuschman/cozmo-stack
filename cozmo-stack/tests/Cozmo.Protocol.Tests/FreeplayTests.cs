@@ -1172,9 +1172,11 @@ public class FreeplayTests
         var named = stack.Tree.SelectMany(a => a.AllBehaviorIds()).Distinct().ToList();
         int boundCount = named.Count(id => stack.Bound.ContainsKey(id));
         Assert.True(boundCount >= 70, $"bound {boundCount} of {named.Count}: unbound {string.Join(",", stack.UnboundIds)}");
-        // known holes: the app's games, faces games, the explorer's memory-map behaviours
+        // Known absent classes; registered checked units may still report unread lifecycle/input joins.
         Assert.Contains("RequestSpeedTap", stack.UnboundIds);
-        Assert.Contains("Hiking_VisitInterestingEdge", stack.UnboundIds);
+        Assert.DoesNotContain("Hiking_VisitInterestingEdge", stack.UnboundIds);
+        var edge=Assert.IsType<VisitInterestingEdgeBehavior>(stack.Bound["Hiking_VisitInterestingEdge"]);
+        Assert.Null(edge.NativeInputs); // M11-089/M11-092: factory ownership is built; native inputs/lifecycle remain Missing.
         Assert.DoesNotContain("Hiking_ThinkAboutBeacons", stack.UnboundIds);
         Assert.DoesNotContain("Needs_SevereLowEnergyState", stack.UnboundIds);
         Assert.DoesNotContain("SparksLookInPlace", stack.UnboundIds);

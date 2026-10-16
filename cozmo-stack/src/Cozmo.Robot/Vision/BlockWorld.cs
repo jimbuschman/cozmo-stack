@@ -236,7 +236,7 @@ public sealed partial class ObservableObject
     // fidelity: M11-013
     public bool IsActive => CubeGeometry.IsCube(Type) || Type == ObjectType.Charger_Basic;
     /// <summary>vtable +0x5C, <c>IsUnique</c>: 1 for ActiveCube (0x004E3882) and Charger (0x004E3883), 0 in the base (0x004E02AE).</summary>
-    public bool IsUnique => CubeGeometry.IsCube(Type) || Type == ObjectType.Charger_Basic;
+    public bool IsUnique => ObservableMapSlot5C == 1;
     /// <summary>Pose in the robot's world origin; meaningful while <see cref="PoseState"/> is not Unknown.</summary>
     private Pose3d _pose=Pose3d.Identity;
     internal Pose3d NativePose=>_pose;
@@ -1214,11 +1214,14 @@ public sealed partial class BlockWorld
 
     private Quadrilateral MarkerlessQuad(ObservableObject obj, Pose3d pose)
     { var s = MarkerlessObject.SizeByType(obj.Type)!.Value; return ObjectFootprint.MarkerlessBoundingQuadXY(new Vec3(s.X,s.Y,s.Z), pose, 0, Missing); }
-    private Quadrilateral QuadFor(ObservableObject obj,float padding) => obj.Family == ObjectFamily.MarkerlessObject
-        ? ObjectFootprint.MarkerlessBoundingQuadXY(MarkerlessObject.SizeByType(obj.Type) is {} size ? new Vec3(size.X,size.Y,size.Z) : throw new NotSupportedException("M11-062 markerless size unavailable"),obj.Pose,padding,Missing)
-        : obj.Type == ObjectType.Charger_Basic ? ObjectFootprint.ChargerBoundingQuadXY(obj.Pose,padding) : Footprint.GetBoundingQuadXY(obj,obj.Pose,padding);
-    private Quadrilateral QuadFor(ObservableObject obj) => obj.Family == ObjectFamily.MarkerlessObject ? MarkerlessQuad(obj, obj.Pose)
-        : obj.Type == ObjectType.Charger_Basic ? ObjectFootprint.ChargerBoundingQuadXY(obj.Pose, 0) : Footprint.GetBoundingQuadXY(obj, obj.Pose, 0);
+    private Quadrilateral QuadFor(ObservableObject obj,float padding)
+    {
+        if(obj.Family==ObjectFamily.MarkerlessObject)
+            return ObjectFootprint.MarkerlessBoundingQuadXY(MarkerlessObject.SizeByType(obj.Type) is {} size ? new Vec3(size.X,size.Y,size.Z) : throw new NotSupportedException("M11-062 markerless size unavailable"),obj.Pose,padding,Missing);
+        if(obj.TryObservableBoundingQuad50(obj.NativePose,padding,out var quad))return quad!;
+        throw new NotSupportedException("M11-088 bounding quad reached an unbound shared recipient");
+    }
+    private Quadrilateral QuadFor(ObservableObject obj) => QuadFor(obj,0f);
 
     /// <summary>The collision obstacle an unexpected movement leaves where the robot was blocked.</summary>
     public ObservableObject AddCollisionObstacle(Pose3d pose) => AddMarkerlessObject(pose, ObjectType.CollisionObstacle);
@@ -1324,17 +1327,29 @@ public sealed partial class BlockWorld
         List<KeyValuePair<(uint Origin, int Family, int Type, int Id), ObservableObject>> snapshot;
         lock (_gate) snapshot = _located.ToList();
         ObservableObject? result = null;
+        uint? bucket = null; uint bucketCurrentOrigin = 0;
         foreach (var (key, obj) in snapshot)
         {
+            // 61EBF0..61EC00: capture once per origin bucket, including callback changes within it.
+            if (bucket != key.Origin) { bucket = key.Origin; bucketCurrentOrigin = CurrentOriginId; }
             switch (f.OriginMode)
             {
-                case OriginMode.InRobotFrame: if (key.Origin != CurrentOriginId) continue; break;
-                case OriginMode.NotInRobotFrame: if (key.Origin == CurrentOriginId) continue; break;
+                case OriginMode.InRobotFrame: if (key.Origin != bucketCurrentOrigin) continue; break;
+                case OriginMode.NotInRobotFrame: if (key.Origin == bucketCurrentOrigin) continue; break;
                 case OriginMode.InAnyFrame: break;
                 default:
                     if (f.IgnoreOrigins.Contains(key.Origin)) continue;
                     if (f.AllowedOrigins.Count != 0 && !f.AllowedOrigins.Contains(key.Origin)) continue;
                     break;
+            }
+            if (!PassesBucket(f, key.Family, key.Type)) continue;
+            if (obj is null)
+            {
+                var origin = OriginNode?.Invoke(key.Origin)?.Name;
+                if (origin is null) Behavior.SteppedBehavior.ReportMissing("M11-004/M11-066 null-slot warning origin-name input at 0x0061EDB4..0x0061EDE4 (GetOriginByID); no generated-name substitute");
+                else Source(EngineLogLevel.Warning, null, "BlockWorld.FindObjectHelper.NullExistingObject",
+                    $"Origin:{origin} Family:{(ObjectFamily)key.Family} Type:{CubeConnections.ObjectTypeName((ObjectType)key.Type)} ID:{key.Id} is NULL");
+                continue;
             }
             if (!Passes(f, obj, key.Family, key.Type, key.Id)) continue;
             modifyFn?.Invoke(obj);
@@ -1344,12 +1359,17 @@ public sealed partial class BlockWorld
         return result;
     }
 
-    private static bool Passes(BlockWorldFilter f, ObservableObject obj, int family, int type, int id)
+    private static bool PassesBucket(BlockWorldFilter f, int family, int type)
     {
         if (f.IgnoreFamilies.Contains((ObjectFamily)family)) return false;
         if (f.AllowedFamilies.Count != 0 && !f.AllowedFamilies.Contains((ObjectFamily)family)) return false;
         if (f.IgnoreTypes.Contains((ObjectType)type)) return false;
         if (f.AllowedTypes.Count != 0 && !f.AllowedTypes.Contains((ObjectType)type)) return false;
+        return true;
+    }
+    private static bool Passes(BlockWorldFilter f, ObservableObject obj, int family, int type, int id)
+    {
+        if (!PassesBucket(f, family, type)) return false;
         uint objId = obj.ObjectId;
         if (f.IgnoreIds.Contains(objId)) return false;
         if (f.AllowedIds.Count != 0 && !f.AllowedIds.Contains(objId)) return false;
@@ -1371,12 +1391,20 @@ public sealed partial class BlockWorld
     public ObservableObject? FindConnectedObjectHelper(BlockWorldFilter filter, Action<ObservableObject>? modifyFn, bool returnFirstOnly)
     {
         using var frameMutation=modifyFn is not null ? EnterPoseMutation() : (FrameMutationScope?)null;
+        var f = filter.Clone(); // 61F086: copy sets, predicates and flags; no onlyLatest append here.
         List<KeyValuePair<(int Family, int Type, int Id), ObservableObject>> snapshot;
         lock (_gate) snapshot = _connectedObjects.ToList();
         ObservableObject? result = null;
         foreach (var (key, obj) in snapshot)
         {
-            if (!Passes(filter, obj, key.Family, key.Type, key.Id)) continue;
+            if (!PassesBucket(f, key.Family, key.Type)) continue;
+            if (obj is null)
+            {
+                Source(EngineLogLevel.Warning, null, "BlockWorld.FindConnectedObjectHelper.NullObject",
+                    $"Family:{(ObjectFamily)key.Family} Type:{CubeConnections.ObjectTypeName((ObjectType)key.Type)} ID:{key.Id} is NULL");
+                continue;
+            }
+            if (!Passes(f, obj, key.Family, key.Type, key.Id)) continue;
             modifyFn?.Invoke(obj);
             result = obj;
             if (returnFirstOnly) break;
@@ -1805,11 +1833,11 @@ public sealed partial class BlockWorld
     /// <c>ObjectPoseConfirmer::FindObjectMatchForObservation</c> 0x005063CC (M11-004): the object an observation is the same as.
     /// A UNIQUE type: (a) the located objects of its family and type in the current origin, when there is exactly one, else (b) a
     /// pending instance a confirmer entry holds of that family and type, else (c) the first located object of that family and type in
-    /// any other origin, else (d) the last connected object of that family and type, else none. A NON-UNIQUE type:
-    /// <c>FindLocatedClosestMatchingObjectHelper</c> 0x0061FA68 (predicate 0x006281DA: the ObjectType and <c>Pose3d::IsSameAs</c> with the
-    /// tolerances (translation AND angle) narrowed to abs(delta) after each pass, so the closest wins; the observed object's own ID and carried objects excluded), else the confirmer's pending
-    /// instances through <c>ObservableObject::IsSameAs</c> 0x008769A8 with the same narrowing, the last accepted winning. IsSameAs
-    /// ignores its angle tolerance (<c>mov r3,r4</c> at 0x008769D8: it passes pi), so only the translation narrows there.
+    /// any other origin, else (d) the last connected object of that family and type, else none.
+    /// The legacy non-unique closest-match/fallback candidate below is UNREACHABLE IN SCOPE:
+    /// shipped non-unique observations here are SDK custom objects only (manager OV78 check).
+    /// Its predicate differs from the native callable 0x006280DA; native ignores angle on this route.
+    /// Retained for inspection, not as a recovered implementation or an in-scope fidelity claim.
     /// </summary>
     // fidelity: M11-004
     public ObservableObject? FindObjectMatchForObservation(ObservableObject observed)
@@ -1825,6 +1853,7 @@ public sealed partial class BlockWorld
             if (other is not null) return other;
             return FindConnectedObjectHelper(FamilyTypeFilter(observed), null, false);      // (d) 0x0050669C
         }
+        // UNREACHABLE IN SCOPE: SDK custom-object route. Do not use this legacy candidate as source evidence.
         var tol = ObjectMatchToleranceMm(observed.Type);
         var filter = new BlockWorldFilter();
         filter.AllowedTypes.Add(observed.Type);
@@ -1832,13 +1861,13 @@ public sealed partial class BlockWorld
         filter.Predicates.Add(o => !Carrying(o.ObjectId));                                  // 0x005064CC
         var capturedT = tol;
         double capturedA = ObjectMatchAngleRad;
-        filter.Predicates.Add(o =>                                                          // 0x006281DA
+        filter.Predicates.Add(o =>                                                          // legacy candidate; native callable 0x006280DA
         {
             var delta = o.Pose.Translation - observed.Pose.Translation;
             double ang = o.Pose.Rotation.AngularDistance(observed.Pose.Rotation);
             if (Math.Abs(delta.X) > capturedT.X || Math.Abs(delta.Y) > capturedT.Y || Math.Abs(delta.Z) > capturedT.Z || ang > capturedA) return false;
-            capturedT = new Vec3(Math.Abs(delta.X), Math.Abs(delta.Y), Math.Abs(delta.Z));  // abs(delta) goes back to the translation tolerance (0x00628248)
-            capturedA = ang;                                                                 // and to the angle tolerance (0x00628250)
+            capturedT = new Vec3(Math.Abs(delta.X), Math.Abs(delta.Y), Math.Abs(delta.Z));  // legacy candidate, unreachable in scope; not the native predicate
+            capturedA = ang;                                                                 // legacy candidate, unreachable in scope; native never tests angle here
             return true;
         });
         var closest = FindLocatedObjectHelper(filter, null, false);

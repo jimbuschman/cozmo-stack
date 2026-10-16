@@ -842,24 +842,10 @@ public class M11RVisBuildTests : IDisposable
         Assert.Null(w.GetObjectById(cliff.ObjectId));
     }
 
-    /// <summary>
-    /// M11-004 (0x00628248, 0x00628250, 0x0061FAA6): the non-unique closest-match predicate writes abs(delta) back to BOTH the translation tolerance and the angle tolerance, so a later
-    /// object that is closer in translation but turned further than the first accepted one is refused; and the search ignores the observed object's own ID.
-    /// </summary>
-    [Fact]
-    public void M11_004_TheNonUniquePredicateNarrowsTheAngleToo()
-    {
-        var w = new BlockWorld();
-        var first = w.AddMarkerlessObject(new Pose3d(Mat3.AboutZ(0.3), new Vec3(1100, 0, 0)), ObjectType.ProxObstacle);
-        var second = w.AddMarkerlessObject(new Pose3d(Mat3.AboutZ(0.5), new Vec3(2110, 0, 0)), ObjectType.ProxObstacle);
-        // Isolate FindObjectMatchForObservation: the native AddMarkerless intersection gate would drop touching candidates.
-        first.SetPose(new Pose3d(first.Pose.Rotation,new Vec3(100,0,25)),-1,PoseState.Known);
-        second.SetPose(new Pose3d(second.Pose.Rotation,new Vec3(110,0,25)),-1,PoseState.Known);
-        var observed = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(108, 0, 25)) };
-        Assert.Same(first, w.FindObjectMatchForObservation(observed));               // second is 2 mm off but turned 0.5 > 0.3
-        observed.ObjectId = first.ObjectId;                                           // its own ID is ignored
-        Assert.Same(second, w.FindObjectMatchForObservation(observed));
-    }
+    // B-M11-15: retired contradictory SDK-only non-unique matcher test.
+    // Native 0x006280DA -> 0x008769A8 passes pi, so this route never tests angle.
+
+
 
     /// <summary>
     /// M11-004 (0x00620FE0): for a non-unique type the located object is <c>GetLocatedObjectByIdHelper(id, -1)</c> with NO not-carried predicate, so a carried object is found. (No cube or
@@ -1020,32 +1006,10 @@ public class M11RVisBuildTests : IDisposable
         Assert.Equal(new uint[] { 1, 2 }, w.FindLocatedMatchingObjects(new BlockWorldFilter()).Select(o => o.ObjectId));
     }
 
-    /// <summary>
-    /// M11-004, <c>FindLocatedClosestMatchingObjectHelper</c> 0x0061FA68, predicate 0x006281DA: the ObjectType and <c>Pose3d::IsSameAs</c>, narrowing the captured
-    /// tolerance to abs(delta), so the closest passing object is the last one accepted and wins whichever order the walk meets them in; the tolerance is 0.8 * extent
-    /// (35.2 mm, thunk 0x004E025C) and the angle pi/4 (thunk 0x004E0290). This is the NON-unique branch of <c>FindObjectMatchForObservation</c> 0x005063CC.
-    /// </summary>
-    [Theory]
-    [InlineData(100.0, 110.0)]
-    [InlineData(110.0, 100.0)]
-    public void M11_004_ForANonUniqueTypeTheClosestLocatedObjectWins(double firstX, double secondX)
-    {
-        var w = new BlockWorld();
-        var first = w.AddMarkerlessObject(new Pose3d(Mat3.Identity, new Vec3(firstX+1000, 0, 0)), ObjectType.ProxObstacle);
-        var second = w.AddMarkerlessObject(new Pose3d(Mat3.Identity, new Vec3(secondX+2000, 0, 0)), ObjectType.ProxObstacle);
-        // Isolate FindObjectMatchForObservation: the native AddMarkerless intersection gate would drop touching candidates.
-        first.SetPose(new Pose3d(first.Pose.Rotation,new Vec3(firstX,0,25)),-1,PoseState.Known);
-        second.SetPose(new Pose3d(second.Pose.Rotation,new Vec3(secondX,0,25)),-1,PoseState.Known);
-        // the observation is 2 mm from the one at 110 and 8 from the one at 100; the markerless objects stand on the ground, half their height up
-        var observed = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(108, 0, 25)) };
-        var match = w.FindObjectMatchForObservation(observed);
-        Assert.Same(firstX == 110 ? first : second, match);
-        // beyond the tolerance (35.2 mm) or the rotation (pi/4): no match
-        var far = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.Identity, new Vec3(160, 0, 25)) };
-        Assert.Null(w.FindObjectMatchForObservation(far));
-        var turned = new ObservableObject(ObjectType.ProxObstacle, Array.Empty<KnownMarker>()) { Pose = new Pose3d(Mat3.AboutZ(1.0), new Vec3(108, 0, 25)) };
-        Assert.Null(w.FindObjectMatchForObservation(turned));
-    }
+    // B-M11-15: retired contradictory SDK-only non-unique matcher test.
+    // Native 0x006280DA -> 0x008769A8 passes pi, so this route never tests angle.
+
+
 
     /// <summary>
     /// M11-004, <c>ObservableObject::IsSameAs</c> 0x008769A8 ignores its Radians tolerance (<c>mov r3,r4</c> at 0x008769D8) and passes pi to
