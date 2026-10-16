@@ -55,7 +55,7 @@ public sealed class M15BackupBuilderTests
         BackupFiles.ClearDefaultsForTest();bool prior=EngineErrorState.ErrorFlagSet;
         try
         {
-            using var rig=new Rig();EngineErrorState.ErrorFlagSet=false;
+            using var rig=new Rig();rig.Logs.Clear();EngineErrorState.ErrorFlagSet=false;
             rig.Robot.RequestUnlockDataFromBackup();rig.Tick();
             var entry=Assert.Single(rig.Logs.Where(l=>l.Name=="ProgressionUnlockComponent.InitDefaults.UnlockConfigJsonNotFound"));
             Assert.Equal(EngineLogLevel.Error,entry.Level);Assert.Null(entry.Channel);
@@ -254,9 +254,9 @@ public sealed class M15BackupBuilderTests
     {
         BackupFiles.ClearDefaultsForTest(); Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
         using var files = new BackupTestResources(); using var robot = CozmoRobot.CreateForTest(new Port(),() => 0,new CozmoEngineOptions{FilesPath=files.Root,BlockPoolPath=""});
-        robot.Engine.Robots.AddRobot(CozmoEngine.RobotId); Assert.Empty(robot.Engine.Backup!.Tags);
         var stack = new List<string>(); var engine = new List<EngineLogEntry>(); var reports = new List<object>();
         robot.Engine.StackLogLine += stack.Add; robot.Engine.LogEntry += engine.Add; robot.Engine.BackupReport += reports.Add;
+        robot.Engine.Robots.AddRobot(CozmoEngine.RobotId); Assert.Empty(robot.Engine.Backup!.Tags);
         robot.RequestUnlockDataFromBackup(); robot.Engine.Tick();
         Assert.Empty(Assert.IsType<BackupUnlockStatus>(Assert.Single(reports)).UnlockIds);
         Assert.Contains(stack,l => l.Contains("M3-062/M15-043") && l.Contains("no host ResourcesPath"));

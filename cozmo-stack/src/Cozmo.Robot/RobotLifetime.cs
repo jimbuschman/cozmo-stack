@@ -26,6 +26,8 @@ internal sealed class RobotLifetime
     {
         _owners[offset] = null;
         if (offset == 0x250) _robot.ClearActionListOwner();
+        if(offset==0x448)_robot.Progression=null;
+        if(offset==0x444)_robot.Inventory=null;
         if (offset == 0x44C) _robot.BlockFilterOwner = null;
         if (offset == 0x27C) _robot.GyroDetector = null;
     }

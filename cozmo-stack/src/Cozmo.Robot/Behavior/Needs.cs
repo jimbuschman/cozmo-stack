@@ -341,29 +341,41 @@ public sealed record NeedsActionDelta(string ActionId, double RepairDelta, doubl
 /// The engine's <c>NeedsState</c>: the three levels, their brackets (<c>GetNeedBracket</c>: the highest bracket
 /// whose threshold the level reaches, <c>IsNeedAtBracket</c>, <c>GetLowestNeedAndBracket</c>), <c>ApplyDelta</c>
 /// clamped to the configured range, and <c>ApplyDecay</c> ("Decaying need index %d with elapsed time of %f
-/// seconds", per-minute rates over the elapsed seconds / 60). The repair "damaged parts" bookkeeping is DEFERRED.
+/// seconds", per-minute rates over the elapsed seconds / 60). The repair damage map is independent of the need levels.
 /// </summary>
 public sealed partial class NeedsState
 {
     private readonly NeedsConfig _cfg;
-    private readonly double[] _levels = new double[3];
+    private readonly SortedDictionary<int,float> _levels = new();
     /// <summary>
     /// <c>NeedsState</c> +0x70: the cached bracket per need, refreshed by <c>UpdateCurNeedsBrackets</c> while
     /// the dirty byte at +0x88 is set (0x0069C12C).
     /// </summary>
-    private readonly int[] _curBrackets = new int[3];
+    private readonly SortedDictionary<int,int> _curBrackets = new();
     private bool _bracketsDirty = true;
 
     public NeedsState(NeedsConfig cfg)
     {
         _cfg = cfg;
-        foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }) _levels[(int)n] = cfg.InitialLevels.GetValueOrDefault(n, 1);
+        foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }) _levels[(int)n] = (float)cfg.InitialLevels.GetValueOrDefault(n, 1);
     }
 
-    public double GetNeedLevel(NeedId n) => _levels[(int)n];
+    public double GetNeedLevel(NeedId n)
+    {
+        if(_levels.TryGetValue((int)n,out var value))return value;
+        SourceLogDispatch.GetSink(SourceLog,Warn)?.Invoke(EngineLogLevel.Error,null,"NeedsState.InvalidNeedLevel","Need level does not exist in curr levels!");
+        Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();return 0;
+    }
+    internal float LevelOrInsert(NeedId n)
+    {if(!_levels.TryGetValue((int)n,out var value))_levels[(int)n]=value=0;return value;}
+    internal void StoreLevel(NeedId n,float value){_levels[(int)n]=value;_bracketsDirty=true;}
+    internal uint LevelBits(NeedId n)=>unchecked((uint)BitConverter.SingleToInt32Bits(LevelOrInsert(n)));
+    internal void RemoveLevelForTest(NeedId n)=>_levels.Remove((int)n);
     public void SetNeedLevel(NeedId n, double level)
     {
-        _levels[(int)n] = Math.Clamp(level, _cfg.MinimumNeedLevel, _cfg.MaximumNeedLevel);
+        float value=(float)level,minimum=(float)_cfg.MinimumNeedLevel,maximum=(float)_cfg.MaximumNeedLevel;
+        if(value<=minimum)value=minimum;else if(value>=maximum)value=maximum;
+        StoreLevel(n,value);
         _bracketsDirty = true;                 // the engine dirties +0x88 whenever a level changes
     }
 
@@ -380,7 +392,9 @@ public sealed partial class NeedsState
     public void UpdateCurNeedsBrackets()
     {
         if (!_bracketsDirty) return;
-        for (int i = 0; i < 3; i++)
+        if(_levels.Keys.Any(key=>!_cfg.Brackets.ContainsKey((NeedId)key)))
+        {StackDiagnostics.Write("M1-034/M15-030: skipped bracket refresh missing config-map sentinel read at 0x0069C1A6; prior cache retained");return;}
+        foreach (int i in _levels.Keys)
         {
             var (full, normal, warning, critical) = Thresholds((NeedId)i);
             double level = _levels[i];
@@ -404,9 +418,10 @@ public sealed partial class NeedsState
     // fidelity: M15-001
     public NeedBracketId GetNeedBracket(int need)
     {
-        if (need is < 0 or > 2) { SourceLogDispatch.GetSink(SourceLog, Warn)?.Invoke(EngineLogLevel.Warning, null, "NeedsState.GetNeedBracket", $"invalid need {need}"); return (NeedBracketId)4; }
         UpdateCurNeedsBrackets();
-        return (NeedBracketId)_curBrackets[need];
+        if(!_curBrackets.TryGetValue(need,out var bracket))
+        {SourceLogDispatch.GetSink(SourceLog, Warn)?.Invoke(EngineLogLevel.Warning,null,"NeedsState.InvalidNeedLevel","Need level does not exist in brackets cache");return (NeedBracketId)4;}
+        return (NeedBracketId)bracket;
     }
 
     /// <summary>
@@ -451,8 +466,8 @@ public sealed partial class NeedsState
     /// <summary>NeedsState::ApplyDecay 0x0069C3C0, checked D5–D18. All intermediates and the stored level are f32.</summary>
     public void ApplyDecay(NeedId need, DecayConfig decay, float elapsedSec, bool connected, float multiplier)
     {
-        SourceLogDispatch.GetSink(SourceLog,Warn)?.Invoke(EngineLogLevel.Info,"NeedsSystem","NeedsState.ApplyDecay",FormattableString.Invariant($"Decaying need index {(int)need} with elapsed time of {(double)elapsedSec:F6} seconds"));
-        float level = (float)_levels[(int)need];
+        SourceLogDispatch.GetSink(SourceLog,Warn)?.Invoke(EngineLogLevel.Info,"NeedsSystem","NeedsState.ApplyDecay",$"Decaying need index {(int)need} with elapsed time of {NeedsManager.PrintfNeedsF6(elapsedSec)} seconds");
+        float level = LevelOrInsert(need);
         var rates = (connected ? decay.Connected : decay.Unconnected).GetValueOrDefault(need);
         if (rates is null) return;
         int index = 0;
@@ -484,7 +499,7 @@ public sealed partial class NeedsState
         }
         float minimum = (float)_cfg.MinimumNeedLevel;
         if (output < minimum) output = minimum;           // IT MI: strict ordered min only
-        _levels[(int)need] = output;
+        StoreLevel(need,output);
         _bracketsDirty = true;
         if (need == NeedId.Repair)
         {
@@ -942,7 +957,7 @@ public sealed class NeedsManager
             _nowSec = now;                                              // +0x3AC (0x00695CA8)
             if (_paused) return;                                        // +0x1d5 (0x00695CAC)
             LocalNotificationsUpdate?.Invoke();
-            if (_nextDecaySec > now) return;                            // 0x00695CBE
+            if (!(_nextDecaySec <= now)) return;                            // 0x00695CBE
             _nextDecaySec += (float)Config.DecayPeriodSeconds;          // +0x130 (0x00695CD6)
             ApplyDecayAllNeeds(_robotConnected);
             SendNeedsStateToGame(NeedsActionId.Decay);
@@ -1046,11 +1061,14 @@ public sealed class NeedsManager
     public void SendNeedsStateToGame(NeedsActionId action)
     {
         State.UpdateCurNeedsBrackets();   // 0x0069383C refreshes the brackets before building the vectors
+        NeedsLevelBitsCopied?.Invoke(Array.AsReadOnly(new[]{State.LevelBits(NeedId.Repair),State.LevelBits(NeedId.Energy),State.LevelBits(NeedId.Play)}),action);
         NeedsStateSent?.Invoke(action);
     }
 
     /// <summary>Raised by <see cref="SendNeedsStateToGame"/>; the action is <c>Decay</c> on a decay tick.</summary>
     public event Action<NeedsActionId>? NeedsStateSent;
+    /// <summary>Raw binary32 level words copied for the engine-to-app needs report; complete payload marshalling remains open.</summary>
+    public event Action<IReadOnlyList<uint>,NeedsActionId>? NeedsLevelBitsCopied;
 
     /// <summary>Raised at the top of <see cref="Update"/> (the engine's <c>LocalNotifications::Update</c>).</summary>
     public event Action? LocalNotificationsUpdate;
@@ -1406,7 +1424,7 @@ public sealed class NeedsManager
         }
 
         var levels = new double[3];
-        for (int i = 0; i < levels.Length; i++) levels[i] = robot.CurNeedLevel[i] / 100000.0;
+        for (int i = 0; i < levels.Length; i++) levels[i] = (float)robot.CurNeedLevel[i] / BitConverter.Int32BitsToSingle(0x47C35000);
         _robotCopy = new NeedsCopy(levels, 0, (long)robot.TimeLastWritten, 5);   // the robot blob has no serial
         if (version != 5) _robotRewriteNeeded = true;                // 0x00699E64: every version but 5 rewrites
         return true;
@@ -1579,7 +1597,7 @@ public sealed class NeedsManager
 
             var needs = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play };
             var robot = new NeedsStateOnRobot { Version = 5, TimeLastWritten = (ulong)nowSec };
-            for (int i = 0; i < needs.Length; i++) robot.CurNeedLevel[i] = (int)(State.GetNeedLevel(needs[i]) * 100000.0 + 0.5);
+            for (int i = 0; i < needs.Length; i++) robot.CurNeedLevel[i] = QuantizeLevel((float)State.GetNeedLevel(needs[i]));
             if(State.PartDamage.Values.Any(value=>value!=0))
             {
                 SteppedBehavior.ReportMissing("M15-014/M15-029 StartWriteToRobot part-map to packed PartIsDamaged slots at 0x00695494..0x00695763 is not checked here; write skipped rather than synthesizing first-N damaged flags");return;
@@ -1726,7 +1744,8 @@ public sealed class NeedsManager
     // fidelity: M15-014
     /// <summary>
     /// <c>NeedsManager::ApplyDecayForTimeSinceLastDeviceWrite(bool)</c> 0x00695304..0x00695374 (Appendix I4):
-    /// <c>elapsed = system_clock::now() - the current state's DateTime</c> (in f32, 0x0069532C); for each need,
+    /// <c>elapsed = f32((system_clock::now_us - DateTime_us) / 1000000)</c> with signed integer division
+    /// before conversion (0x0069532C..0x00695330); for each need,
     /// rewind <c>+0x1E4</c> to <c>+0x3AC - elapsed</c> (0x00695338/0x00695340, so <c>ApplyDecayAllNeeds</c>
     /// decays each need by this whole gap), and, only when that need's fullness deadline <c>+0x208</c> is
     /// non-zero, subtract <c>elapsed</c> from the deadline and the fullness start <c>+0x1FC</c>; then tail-call
@@ -1739,8 +1758,10 @@ public sealed class NeedsManager
     {
         lock (_gate)
         {
-            float now = (float)_clockSec();
-            float elapsed = now - (float)_stateDateTimeSec;              // 0x0069532C
+            SteppedBehavior.ReportMissing("M15-030 elapsed producer 0x00695304..0x00695330: signed microsecond arithmetic is built, but existing host seconds-clock/DateTime storage is not certified as the native system_clock producer");
+            long nowMicros=unchecked((long)(_clockSec()*1_000_000.0));
+            long lastMicros=unchecked((long)(_stateDateTimeSec*1_000_000.0));
+            float elapsed=(float)(unchecked(nowMicros-lastMicros)/1_000_000L);              // 0x0069532C
             foreach (var n in new[] { NeedId.Repair, NeedId.Energy, NeedId.Play })
             {
                 _lastDecaySec[n] = _nowSec - elapsed;                    // [+0x1E4] = [+0x3AC] - elapsed (0x00695338/0x00695340)
@@ -1760,6 +1781,34 @@ public sealed class NeedsManager
 
     /// <summary>C2 row 11: the version a non-rewriting robot/device copy carries (versions 1-4 rewrite, 5 does not).</summary>
     // fidelity: M15-014
+    // fidelity: M15-030, M15-048
+    internal static string PrintfNeedsF6(float value)=>float.IsFinite(value)?((double)value).ToString("F6",System.Globalization.CultureInfo.InvariantCulture):LibcxxPrintf.FormatG((double)value,6);
+    internal static int QuantizeLevel(float level)
+    {
+        float scaled=level*BitConverter.Int32BitsToSingle(0x47C35000);
+        if(float.IsNaN(scaled))return 0;
+        if(scaled>=BitConverter.Int32BitsToSingle(0x4F000000))return int.MaxValue;
+        if(scaled<=BitConverter.Int32BitsToSingle(unchecked((int)0xCF000000)))return int.MinValue;
+        return (int)scaled;
+    }
+    internal void ForceSetNeedsLevels(IReadOnlyList<float> levels)
+    {
+        if(levels.Count<3)
+        {StackDiagnostics.Write("M1-034/M15-048: skipped ForceSetNeedsLevels short vector; original null/read past block at 0x00697E78; prior levels retained");return;}
+        lock(_gate)
+        {
+            SourceLogDispatch.GetSink(SourceLog,Log)?.Invoke(EngineLogLevel.Info,"NeedsSystem","NeedsManager.ForceSetNeedsLevels",$"Game sent ForceSetNeedsLevels message with {PrintfNeedsF6(levels[0])}, {PrintfNeedsF6(levels[1])}, {PrintfNeedsF6(levels[2])}");
+            for(int i=0;i<3;i++)
+            {
+                float value=levels[i],minimum=(float)Config.MinimumNeedLevel,maximum=(float)Config.MaximumNeedLevel;
+                if(value<=minimum)value=minimum;else if(value>=maximum)value=maximum;
+                State.StoreLevel((NeedId)i,value);
+            }
+            SendNeedsStateToGame(NeedsActionId.NoAction);
+            SteppedBehavior.ReportMissing("M15-048 needs.force_set_needs_levels event 0x00697ECA..0x00698002: FormatStringOldAndNewLevels text (including NaN) is unread; no guessed event string");
+        }
+    }
+
     public const int CurrentStateFileVersion = 5;
 
     /// <summary><c>RegisterNeedsActionCompleted</c>: the action's deltas (± range) applied; unknown actions are ignored and logged.</summary>
@@ -1830,10 +1879,10 @@ public sealed class NeedsManager
             StackDiagnostics.Write("M1-034/M15-029/M15-014: skipping needs device-file write at Json::Value::operator[](nullptr), 0x00693E10..0x00693E18; invalid part map and prior file retained");return;
         }
         long now = unixTimeSec ?? DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var levels = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.Select(n => State.GetNeedLevel(n)).ToArray();
+        var levels = new[] { NeedId.Repair, NeedId.Energy, NeedId.Play }.ToDictionary(n=>n.ToString(),n=>QuantizeLevel((float)State.GetNeedLevel(n)));
         // OV27 endpoint/J7: source map keys are part names, independent of all three need levels.
         var damaged = State.PartDamage.ToDictionary(entry=>entry.Key switch{0=>"Head",1=>"Lift",_=>"Treads"},entry=>entry.Value!=0);
-        SteppedBehavior.ReportMissing("M15-014 persistence remains partial: legacy CurNeedLevel/economy serialization and read-copy/part-map restoration are not claimed recovered by M15-029");
+        SteppedBehavior.ReportMissing("M15-014 persistence remains partial: legacy economy serialization and read-copy/part-map restoration are not claimed recovered by M15-029");
         var doc = new Dictionary<string, object>
         {
             ["_StateFileVersion"] = CurrentStateFileVersion,
@@ -1906,6 +1955,9 @@ public sealed class NeedsManager
                 i++;
             }
         }
+        if(root.TryGetProperty("CurNeedLevel",out var nativeLevels)&&nativeLevels.ValueKind==System.Text.Json.JsonValueKind.Object)
+            foreach(var n in new[]{NeedId.Repair,NeedId.Energy,NeedId.Play})
+                if(nativeLevels.TryGetProperty(n.ToString(),out var value))State.StoreLevel(n,(float)value.GetInt32()/BitConverter.Int32BitsToSingle(0x47C35000));
         long dateTime = root.TryGetProperty("_DateTime", out var w) && w.ValueKind == System.Text.Json.JsonValueKind.Number ? w.GetInt64() : 0;
         _stateDateTimeSec = dateTime;
         _deviceTimestampSnapshotSec = _stateDateTimeSec;   // +0x1B8/+0x1BC = +8/+0xC (J4)

@@ -42,7 +42,7 @@ internal sealed class RobotDataBackupManager : IDisposable
             Tags.UnionWith(tags);
         }
         // fidelity: M1-034, M15-038
-        catch (JsonLogicError) { Files.Skip("M15-038","0x00519CB0 / 0x00519D0C (JsonCpp getMemberNames/asUInt)",config); }
+        catch (JsonLogicError) { Files.Skip("M15-038","0x00519CA8 / 0x00519D02 / 0x00519D08 (JsonCpp operator[]); 0x00519CB0 / 0x00519D0C (getMemberNames/asUInt)",config); }
     }
     internal void ReadAll()
     {

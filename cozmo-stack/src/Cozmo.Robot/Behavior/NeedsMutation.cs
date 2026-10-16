@@ -6,7 +6,6 @@ namespace Cozmo.Robot.Behavior;
 public sealed partial class NeedsState
 {
     private readonly SortedDictionary<int,byte> _partDamage=new(){{0,0},{1,0},{2,0}};
-    private readonly SortedDictionary<int,float> _extraNeedLevels=new();
     internal IReadOnlyDictionary<int,byte> PartDamage=>_partDamage;
     internal void SetPartDamageForTest(int part,byte value)=>_partDamage[part]=value;
     public EngineRandom? ContextRandom {get;set;}
@@ -47,9 +46,7 @@ public sealed partial class NeedsState
 
     public bool ApplyDelta(NeedId need,float center,float variation,NeedsActionId action)
     {
-        float old;
-        if((uint)need<3)old=(float)_levels[(int)need];
-        else if(!_extraNeedLevels.TryGetValue((int)need,out old))_extraNeedLevels[(int)need]=old=0;
+        float old=LevelOrInsert(need);
         if(ContextRandom is not {} rng){SteppedBehavior.ReportMissing("M15-046 ApplyDelta 0x0069C91A requires supplied context RNG even for zero variation; mutation skipped, no host Random draw");return false;}
         float width=variation+variation;
         double offset=rng.RandDbl((double)width)-(double)variation;
@@ -76,7 +73,7 @@ public sealed partial class NeedsState
                 if(floor>candidate)candidate=floor+RepairEpsilon;
             }
         }
-        if((uint)need<3)_levels[(int)need]=candidate;else _extraNeedLevels[(int)need]=candidate;
+        StoreLevel(need,candidate);
         _bracketsDirty=true;
         if(delta<0&&need==NeedId.Repair)DamagePartsNative(action);
         return full;

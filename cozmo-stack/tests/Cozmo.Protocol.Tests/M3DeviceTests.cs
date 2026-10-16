@@ -19,7 +19,7 @@ namespace Cozmo.Protocol.Tests;
 public class M3DeviceTests
 {
     // Frozen manifest names retained as executable aliases of their current source-oracle regressions.
-    // The callbacks alias checks the callback logs for named no-sink handoffs.
+    // The historical callbacks alias now checks built progression/inventory reports and remaining named gaps.
     [Fact]
     public void M3_032_TheNvDispatchIsGatedInTheEngineUpdate() => M3_032_G1_G2_RobotUpdateLogsItsTwoGates();
     [Fact]
@@ -2560,6 +2560,7 @@ public class M3DeviceTests
         try
         {
             using var rig = new Rig();
+            var reports=new List<ushort>();rig.Engine.EngineToGameMessage+=(tag,_)=>reports.Add(tag);
             rig.ToValidated();
             rig.Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
             rig.Tick();
@@ -2571,8 +2572,9 @@ public class M3DeviceTests
             lock (missing)
             {
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M11-059 | the FaceAlbum/Enrollment read pair"));
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-034 | "));
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M15-035 | "));
+                Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M15-034 | ")||m.StartsWith("MISSING: M15-035 | "));
+                Assert.Equal(new ushort[]{0x6D,0x6E,0x6F,0x70},reports.Where(tag=>tag is >=0x6D and <=0x70));
+                Assert.True(rig.Engine.Robot!.Inventory!.Ready);
                 Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M15-033 | "));
                 Assert.Equal(0u,rig.Engine.Backup!.PendingCount);
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M15-036 | "));
@@ -3429,8 +3431,8 @@ public class M3DeviceTests
     /// by ConnectToRobot (AddRobot) and queues #1..#12; <c>CozmoRobot.ConnectAsync</c> returns on the Success
     /// response and only then does the caller build the VisionSystem, so the FaceAlbum/Enrollment reads (#3/#4)
     /// complete after it exists and its handler adopts them. The Needs read (#15) reaches the NeedsManager.
-    /// ProgressionUnlock, Inventory, the RDBM backup reads and Lab have no component here: their reads complete with a sink that reports MISSING naming the
-    /// owning record (M15-034, M15-035, M15-033, M15-036), asserted in M3_034_TheUnbuiltConnectionReadsNameTheirOwningRecords; this test covers
+    /// ProgressionUnlock/Inventory now report through their bounded M15-034/M15-035 owners; backup reads are counted,
+    /// and Lab remains a named MISSING. The historical test name is retained for frozen references; this test covers
     /// only the two layers that exist (FaceAlbum/Enrollment, Needs).
     /// </summary>
     [Fact]
@@ -3439,6 +3441,7 @@ public class M3DeviceTests
         Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
         using var rig = new Rig();
         var missing = new List<string>();
+        var reports=new List<ushort>();rig.Engine.EngineToGameMessage+=(tag,_)=>reports.Add(tag);
         rig.Engine.CaptureSourceLogs(missing.Add);
         var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
         needs.AttachConnectionRead(rig.Robot.Engine);
@@ -3478,8 +3481,9 @@ public class M3DeviceTests
             Assert.Equal(enrollment, gotEnrollment);
             Assert.True(needs.RobotReadSucceeded);
             Assert.True(needs.HasRobotCopy);
-            Assert.Contains(missing, line => line.Contains("M15-034 | ProgressionUnlockComponent's NV read callback 0x0064CE34: this stack has no component for it, so the read completes and its result is dropped"));
-            Assert.Contains(missing, line => line.Contains("M15-035 | InventoryComponent's NV read callback 0x0063D7C4: this stack has no component for it, so the read completes and its result is dropped"));
+            Assert.Equal(new ushort[]{0x6D,0x6E,0x6F,0x70},reports.Where(tag=>tag is >=0x6D and <=0x70));
+            Assert.True(rig.Engine.Robot!.Inventory!.Ready);
+            Assert.DoesNotContain(missing,line=>line.Contains("M15-034 | ProgressionUnlockComponent's NV read callback")||line.Contains("M15-035 | InventoryComponent's NV read callback"));
             Assert.DoesNotContain(missing,line=>line.Contains("M15-033 | RobotDataBackupManager's backup read callback"));
             Assert.Equal(0u,rig.Engine.Backup!.PendingCount);
             Assert.Contains(missing, line => line.Contains("M15-036 | the Lab read's callback 0x006A6486 into CozmoExperiments::RestoreLoadedActiveExperiments 0x006A5C34: this stack has no component for it, so the read completes and its result is dropped"));

@@ -756,6 +756,7 @@ public sealed partial class EngineRobot
         _actionList.Watcher.HasExternalInterface = false;
         InitDockingCarryingOwners();
         InitLifetime();
+        InitNurtureOwners();
         Engine.ConstructorMapCreated?.Invoke(); // M13-032 new MapComponent owner, before first Delocalize
         InitDelocalizationRecipients();
         ConstructorDelocalize();
@@ -776,7 +777,7 @@ public sealed partial class EngineRobot
     /// M3-034: #3's empty callback fills the album bytes (the engine's VC+0x2F4); #4's terminal success raises
     /// <see cref="CozmoEngine.ConnectionFaceAlbumLoaded"/> with the album and the enrollment, and the result is
     /// kept for a VisionSystem built after ConnectAsync returns (the read completes after Gate A, which is after
-    /// the connection response). ProgressionUnlock and Inventory still report their missing sinks (M15-034/M15-035).
+    /// the connection response). ProgressionUnlock and Inventory use the actual bounded read owners (M15-034/M15-035); their command/default-producer gaps remain explicit.
     /// The backup sink is the counted RobotDataBackupManager path (M15-033).
     /// M11-059: the FaceAlbum/Enrollment pair is queued in the engine only past the branch at 0x00650E3C (VisionSystem::Init's
     /// outcome, then the album load-or-erase branch 0x00650FB4..0x0065108A), so it is gated on
@@ -786,8 +787,8 @@ public sealed partial class EngineRobot
     {
         var nv = Engine.NvStorage;
         if (nv is null) return;                                  // no NV component: the offline/test seam
-        nv.Read(0x182000, NoSink("M15-034", "ProgressionUnlockComponent's NV read callback 0x0064CE34"));   // #1 ProgressionUnlock
-        nv.Read(0x195000, NoSink("M15-035", "InventoryComponent's NV read callback 0x0063D7C4"));          // #2 Inventory
+        Progression!.Init();   // #1 ProgressionUnlock
+        Inventory!.Init();          // #2 Inventory
         // fidelity: M11-059
         // The pair is read by the engine only past VisionComponent::Init's branch at 0x00650E3C. The hook is M11-059's.
         if (Engine.FaceAlbumReadsGate is { } faceGate)

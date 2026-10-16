@@ -79,11 +79,11 @@ public class SourceLogMigrationTests
         Check(() => EncodedImageDecoder.TryDecodeGray(new CameraFrame { Encoding = 0 }, out _, out _, engine.Log, source),
             EngineLogLevel.Error, null, "EncodedImage.DecodeImageRGB.UnsupportedEncoding",
             "Encoding NoneImageEncoding not yet supported for decoding image chunks");
-        // M15: existing NeedsState warning, with typed forwarding through the manager.
+        // M15/OV28 S11: missing bracket-cache warning, with typed forwarding through the manager.
         var needs = new NeedsManager(() => 0) { SourceLog = source };
         needs.Log += engine.Log;
         Check(() => needs.State.GetNeedBracket((NeedId)(-1)), EngineLogLevel.Warning, null,
-            "NeedsState.GetNeedBracket", "invalid need -1");
+            "NeedsState.InvalidNeedLevel", "Need level does not exist in brackets cache");
     }
 
     [Fact]

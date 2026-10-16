@@ -27,8 +27,8 @@ internal sealed class BackupFiles(CozmoEngine engine)
     internal void Error(string key, string text) { Log(EngineLogLevel.Error, key, text); EngineErrorState.StoreAndMaybeBreak(); }
     internal static void Missing(string text) => Behavior.SteppedBehavior.ReportMissing(text);
     // fidelity: M1-034 — policy skips are stack diagnostics, never invented engine entries (builder rule 11).
-    internal void Skip(string record, string address, string unit) => engine.EmitStackLog(
-        $"Stack.RobotDataBackupManager.SkipMalformed: M1-034 / {record}: skipped {unit}; original undefined/terminating access at {address}; prior state kept; downstream absent-data path follows");
+    internal void Skip(string record, string address, string unit,string downstream="absent-data") => engine.EmitStackLog(
+        $"Stack.RobotDataBackupManager.SkipMalformed: M1-034 / {record}: skipped {unit}; original undefined/terminating access at {address}; prior state kept; downstream {downstream} path follows");
     internal bool JsonWasSkipped { get; private set; }
     internal bool ReadJson(string path, out FirmwareJsonValue root)
     {
@@ -175,15 +175,18 @@ internal sealed class BackupFiles(CozmoEngine engine)
         {
             // fidelity: M1-034 — the checked stale words occupy destination indices 0 and 1, unless Unpack overwrote them.
             if (words == 0) ids.Add(0x182000); if (words < 2) ids.Add(13);
-            Skip("M15-043","0x0051C6BC (stop before freed word 2 or the first later uninitialised word)",name+" unlock block");
+            Skip("M15-043","0x0051C6BC (stop before freed word 2 or the first later uninitialised word)",name+" unlock block","partial-data");
         }
         Info(key+"UnlockData",$"Found unlock data in backup file {name}"); SendUnlocks(ids);
     }
     private void SendUnlocks(IReadOnlyList<uint> ids) => engine.BroadcastBackup(0x6D,new BackupUnlockStatus(ids,true));
     internal static void ClearDefaultsForTest() => Defaults.Clear();
-    private IReadOnlyList<uint> GetDefaultUnlocks()
+    internal static uint[] CurrentDefaults()=>Defaults.ToArray();
+    internal bool ProgressionOverridesNeedRecovery;
+    internal void InitProgressionDefaults(){ProgressionOverridesNeedRecovery=false;GetDefaultUnlocks(true);}
+    private IReadOnlyList<uint> GetDefaultUnlocks(bool forceResourceRead=false)
     {
-        if (Defaults.Count != 0) return Defaults.ToArray();
+        if (Defaults.Count != 0&&!forceResourceRead) return Defaults.ToArray();
         string? path = Resource("config/engine/unlock_config_nurture.json");
         if(path is null)
         { Missing("M3-062/M15-043: GetDefaultUnlocks has no host ResourcesPath input; InitConfig resource read is unavailable, defaults retained"); return Defaults.ToArray(); }
@@ -192,6 +195,7 @@ internal sealed class BackupFiles(CozmoEngine engine)
             if (!JsonWasSkipped) { engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.UnlockConfigJsonNotFound","Unlock Json config file config/engine/unlock_config_nurture.json not found."); EngineErrorState.StoreAndMaybeBreak(); }
             Missing("M15-043 InitConfig 0x0064BBA6..0x0064BC06 continues after failed read but the resulting root is UNKNOWN; remaining config unit skipped and defaults retained"); return Defaults.ToArray();
         }
+        if(Defaults.Count!=0){if(forceResourceRead)ObserveProgressionOverrides(root);return Defaults.ToArray();}
         FirmwareJsonValue list;
         try { list = Json.Member(root,"defaultUnlocks"); }
         // fidelity: M1-034, M15-043
@@ -209,6 +213,17 @@ internal sealed class BackupFiles(CozmoEngine engine)
             Defaults.Add(id);
             engine.EmitSourceLog(EngineLogLevel.Info,"ProgressionUnlockComponent.InitDefaults","ProgressionUnlockComponent.DefaultValue",$"{Enum.GetName((UnityUnlockId)id) ?? "(null)"} defaults to true");
         }
+        if(forceResourceRead)ObserveProgressionOverrides(root);
         return Defaults.ToArray();
+    }
+    private void ObserveProgressionOverrides(FirmwareJsonValue root)
+    {
+        if(root.Kind==FirmwareJsonKind.Null)return;
+        try
+        {
+            var value=Json.Member(root,"freeplayOverrides");
+            ProgressionOverridesNeedRecovery=value.Kind!=FirmwareJsonKind.Array||value.Elements.Count>0;
+        }
+        catch(JsonLogicError){Skip("M15-034","0x0064B8D4 / JsonCpp operator[]","Progression Init overrides");ProgressionOverridesNeedRecovery=true;}
     }
 }

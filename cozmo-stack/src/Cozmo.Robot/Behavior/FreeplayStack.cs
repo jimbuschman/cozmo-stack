@@ -51,6 +51,7 @@ public sealed class FreeplayStack : IDisposable
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
         needs.NvStorage = robot.Engine.NvStorage;
         needs.SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);
+        var forceNeeds=robot.Engine.AnimationMessages.SubscribeMessage(0xC6,false,p=>needs.ForceSetNeedsLevels((IReadOnlyList<float>)p!));
         needs.State.PartDamageLog=(value,data)=>robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"needs.part_damaged",value,data);
         // fidelity: M7-017
         // D07/D08/D18: AnimationStreamer::Update (0x0057CE5C) calls TrackLayerComponent::Update (0x0064EDE8) when
@@ -198,6 +199,7 @@ public sealed class FreeplayStack : IDisposable
         if(robot.Engine.Robot is {} lifetimeOwner)BindNativeLifetime(lifetimeOwner);
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
+        stack._unsubscribe.Add(forceNeeds.Dispose);
         stack._unsubscribe.Add(()=>robot.Engine.BindRobotLifetime-=BindNativeLifetime);
         // fidelity: M8-019
         // Bind the existing host manager. Its request entry is partial and visibly stops at the native switch gap.
