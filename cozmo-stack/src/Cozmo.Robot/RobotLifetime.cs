@@ -17,6 +17,10 @@ internal sealed class RobotLifetime
             0x448=>"M15-027 progression: scoped vector+1C, trees+10/+4 and allocation; concrete native owner not bound",
             0x444=>"M15-027 inventory: tree+120, scoped vector+114 and allocation; concrete native owner not bound",
             0x264=>"M15-027/M15-045 AI direct child null-before-delete sequence; concrete AI owner not bound",
+            // fidelity: M14-013 — owner interfaces only; concrete world/speech recipients remain absent.
+            0x3C=>"M14-013 PetWorld: live detector map is retained by VisionSystem; native tree ownership/postorder recipient is unbound, no pet-lost notifications invented",
+            0x38=>"M14-013 FaceWorld: native scoped handles/owned pose wrappers/match lists/nine vectors/tree producer are unbound; late host reset does not substitute for this destruction",
+            0x268=>"M14-013 speech: native Dispatch/provider/mutex/bundle ownership is absent; existing transport executor drains its queue and cannot supply Stop cancellation/detached-batch join; no TTS/Wwise stop or completion invented",
             0x40=>"M15-028 PublicStateBroadcaster event hash/raw owner and captures not bound; engine-wide host API subscribers are not its native signal",
             4=>"M15-028 final embedded Robot signal/capture ownership not bound; context is borrowed and not deleted",
             _=>""};
