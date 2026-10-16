@@ -37,7 +37,7 @@ public readonly record struct ActionOutcome(bool Success, uint? Result)
 /// re-designed. Completion callbacks are queued and run inside <see cref="Update"/>, on the manager's
 /// thread and clock, which is where the engine's run too.
 /// </summary>
-public abstract class SteppedBehavior : IBehavior
+public abstract partial class SteppedBehavior : IBehavior
 {
     private readonly object _gate = new();
     private readonly ConcurrentQueue<Action> _pending = new();
@@ -415,6 +415,7 @@ public abstract class SteppedBehavior : IBehavior
         _engineRunning = true;                   //                             +0xa1 = 1
         _runningPenaltyClockSec = nowSec;        // +0x34 = now
         _sharedHandle = null;
+        _runnerCompletion88 = null;
         Interlocked.Increment(ref _callbackEpoch);   // +0x98 destroyed (0x005bccc6..0x005bcce6)
         InitFailed = false;
         OnStart();                               // vtable+0x48 InitInternal (0x005bccfe/0x005bcd00)
@@ -580,6 +581,7 @@ public abstract class SteppedBehavior : IBehavior
     {
         _engineActingFlag = true;   // +0xa0 = 1 (0x005bd698)
         _sharedHandle = null;
+        _runnerCompletion88 = null;
         // +0x98 (the completion callback of the current action) is destroyed (0x005bd694..0x005bd6b4): the action still ends and
         // clears +0x84, but nothing is called back; UpdateInternal then returns 2.
         Interlocked.Increment(ref _callbackEpoch);
@@ -819,19 +821,15 @@ public abstract class SteppedBehavior : IBehavior
     internal void StopActingFromHelper(bool keepAction) => StopActing(keepAction, viaCallback: true);
 
     /// <summary>
-    /// <c>IBehavior::StartActing</c> 0x005bdacc, in its order: with +0xa0 set the action is deleted and it returns 0
-    /// (0x005bdad4..0x005bdadc); with neither +0xa2 nor +0xa1 set it warns <c>IBehavior.StartActing.Failure.NotRunning</c> and returns 0
-    /// (0x005bdae2..0x005bdaee); with +0x84 already set it warns <c>IBehavior.StartActing.Failure.AlreadyActing</c> and returns 0
-    /// (0x005bdaf0..0x005bdb3e); only then the handle becomes +0x84 (<c>str.w r1,[r5,#0x84]</c> 0x005bdb50), the callback is stored
-    /// (+0x98) and <c>vtable+0x80(1)</c> - <c>ScoredActingStateChanged</c>, which clears +0x104 whatever its argument - is called
-    /// (<c>movs r1,#1</c> 0x005bdb54; <c>blx r2</c> 0x005bdb5c). <c>ActionList::QueueAction</c> follows, and its failure (warning
-    /// <c>...Failure.NotQueued</c>, 0x005bdb6c..0x005bdba8) is not modelled: the stack's actions cannot fail to queue. Returns 0 on a refusal,
-    /// else the new handle.
+    /// Host-handle entry for concrete producers that do not yet expose their IActionRunner.
+    /// The owned-runner overload in SteppedBehavior.Actions.cs implements 0x005BDACC's deletion,
+    /// callback-before-tag assignment and QueueAction failure paths. This entry retains the existing
+    /// host async/animation scheduling and reports its missing concrete runner producer.
     /// </summary>
     // fidelity: M8-001
     internal int StartActing()
     {
-        ReportMissing("M8-015 IBehavior::StartActing 0x005BDAD4..0x005BDC04: host handle/async adapter has no owned IActionRunner input, native callback ownership or NOW rejection/delete join; Clear double-delete witness remains M8-024, no fabricated deletion");
+        ReportMissing("M8-015 host action producer at IBehavior::StartActing 0x005BDACC supplies a handle/async closure instead of a concrete IActionRunner; owned-runner StartActing is built, concrete host-action construction remains unwired");
         if (_engineActingFlag) { Log("IBehavior.StartActing: the action is dropped because the behaviour is stopping (+0xa0)"); return 0; }
         if (!_resuming && !_engineRunning) { Log("IBehavior.StartActing.Failure.NotRunning"); return 0; }
         if (HasCurrentAction) { Log("IBehavior.StartActing.Failure.AlreadyActing"); return 0; }

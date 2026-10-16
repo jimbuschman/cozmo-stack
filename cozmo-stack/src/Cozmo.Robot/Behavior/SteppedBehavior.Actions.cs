@@ -1,0 +1,110 @@
+// fidelity: M8-015
+namespace Cozmo.Robot.Behavior;
+
+public abstract partial class SteppedBehavior
+{
+    private IActionRunner? _runner;
+    // The callable at +88, with presence at +98. Init and StopOnNextActionComplete clear it.
+    private Action<RobotCompletedAction>? _runnerCompletion88;
+    internal IActionRunner? OwnedRunner => _runner;
+    internal uint CurrentRunnerTag => unchecked((uint)Volatile.Read(ref _currentActionHandle));
+    // The default is the real robot+250 ActionList. The seam exposes defined QueueAction failure results.
+    internal Func<QueueActionPosition, IActionRunner, byte, int>? QueueOwnedAction;
+
+    /// <summary>5BDACC..5BDC12: ownership of incoming passes to this call, including every reject path.</summary>
+    internal bool StartActing(IActionRunner? incoming, Action<RobotCompletedAction>? completion)
+    {
+        if (incoming is null)
+        {
+            if (!_engineActingFlag)
+                ReportMissing("M1-034 M8-015: skip StartActing null action dereference at 0x005BDBC8/0x005BDB10/0x005BDB4E; preserve prior behavior state");
+            return false;
+        }
+        var list = Context?.Robot.Engine.Robot?.ActionList;
+        if (incoming is ActionRunner runner && list is not null) runner.Watcher = list.Watcher;
+        if (_engineActingFlag) { DeleteRejectedRunner(incoming); return false; }
+        if (!_resuming && !_engineRunning)
+        {
+            OwnedActionWarning("IBehavior.StartActing.Failure.NotRunning", incoming,
+                name => $"Behavior '{Id}' can't start {name} action because it is not running");
+            DeleteRejectedRunner(incoming); return false;
+        }
+        if (HasCurrentAction)
+        {
+            OwnedActionWarning("IBehavior.StartActing.Failure.AlreadyActing", incoming,
+                name => $"Behavior '{Id}' can't start {name} action because it is already running an action in state {_stateName}");
+            DeleteRejectedRunner(incoming); return false;
+        }
+
+        // Assignment to +88 destroys/replaces the old callable BEFORE publishing +84 or calling slot80.
+        _runnerCompletion88 = completion;
+        _sharedHandle = completion;
+        _runner = incoming;
+        Volatile.Write(ref _currentActionHandle, unchecked((int)incoming.Tag));
+        ScoredActingStateChanged(true);
+        ReportMissing("M8-015 IBehavior completion subscription/lifetime owner at constructor 0x005BBB74 -> receiver 0x005BE1E6 is not bound to this adapter; HandleActionComplete is built, no deferred-watcher substitute");
+        int result;
+        if (QueueOwnedAction is { } queue) result = queue(QueueActionPosition.Now, incoming, 0);
+        else if (list is not null) result = list.QueueAction(QueueActionPosition.Now, incoming, 0);
+        else
+        {
+            ReportMissing("M8-015 owned StartActing 0x005BDB68: robot+0x250 ActionList owner absent");
+            // The native path dereferences null. M1-034 skips the queue call with prior state preserved.
+            ReportMissing("M1-034 M8-015: skip null ActionList dereference at 0x005BDB6C; preserve assigned callback/tag");
+            return false;
+        }
+        if (result == 0) return true;
+        if (incoming is ActionRunner { DestructionObserved: true })
+        {
+            ReportMissing("M1-034 M8-015: skip freed action name at 0x005BDB8C and second delete at 0x005BDC04 after queue rejection deleted it at 0x0053DCFE; preserve callback/tag");
+            if (ReferenceEquals(_runner, incoming)) _runner = null;
+            return false;
+        }
+        OwnedActionWarning("IBehavior.StartActing.Failure.NotQueued", incoming,
+            name => FormattableString.Invariant($"Behavior '{Id}' can't queue action '{name}' (error {result})"));
+        DeleteRejectedRunner(incoming);
+        // 5BDC04 does not clear +84 or restore the prior callable on queue failure.
+        return false;
+    }
+
+    private void DeleteRejectedRunner(IActionRunner incoming)
+    {
+        if (incoming is ActionRunner { DestructionObserved: true })
+        {
+            ReportMissing("M1-034 M8-015: skip second IActionRunner delete at 0x005BDC04 after queue rejection already deleted it (0x0053DCFE)");
+            if (ReferenceEquals(_runner, incoming)) _runner = null;
+            return;
+        }
+        // The native deleting destructor is direct here. Prep/snapshot/broadcast are queue-deletion steps,
+        // and adding them to a rejected action would invent a completion event.
+        incoming.WatcherEnding();
+        if (ReferenceEquals(_runner, incoming)) _runner = null;
+    }
+
+    private void OwnedActionWarning(string key, IActionRunner action, Func<string, string> format)
+    {
+        if (action.NativeName is not { } name)
+        {
+            ReportMissing($"M8-015 {key}: IActionRunner native name+0x48 absent at 0x005BDB10/0x005BDB8C/0x005BDBC8");
+            return;
+        }
+        if (Context is null)
+        {
+            ReportMissing($"M8-015 {key}: IBehavior robot/log owner+0x2C absent");
+            return;
+        }
+        Context.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, key, format(name));
+    }
+
+    /// <summary>5BE1EC..5BE224: clear matching tag, slot80(false), then invoke the installed callable in place.</summary>
+    internal void HandleActionComplete(RobotCompletedAction completed)
+    {
+        uint tag = CurrentRunnerTag;
+        if (tag == 0 || completed.Tag != tag) return;
+        Volatile.Write(ref _currentActionHandle, 0);
+        _runner = null;
+        ScoredActingStateChanged(false);
+        if (_engineRunning) _runnerCompletion88?.Invoke(completed);
+        // Deliberately no clear/restore of +88 after invocation: a nested StartActing may have replaced it.
+    }
+}

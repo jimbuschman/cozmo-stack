@@ -154,6 +154,9 @@ internal sealed class ActionRunnerTagCounter
 /// </summary>
 public abstract class ActionRunner : IActionRunner
 {
+    // fidelity: M8-015
+    // Ownership observation for M1-034's double-delete skip; never changes a defined native path.
+    internal bool DestructionObserved { get; private set; }
     /// <summary>An optional log sink, wired by the owner (the engine log).</summary>
     public Action<string>? Log { get; set; }
     public SourceLogSink? SourceLog { get; set; }
@@ -516,6 +519,7 @@ public abstract class ActionRunner : IActionRunner
     /// </summary>
     public virtual void WatcherEnding()
     {
+        DestructionObserved = true;
         if(!_prepped)
         {
             EmitSource(EngineLogLevel.Error,null,"IActionRunner.Destructor.NotPreppedForCompletion",FormattableString.Invariant($"[{TagForLog}]"));
