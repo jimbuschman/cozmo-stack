@@ -42,7 +42,7 @@ internal static class PlacementProducerGeometry
         double Axis(int axis)=>Math.Abs(RotatedParentAxis.Get(matrix,axis)) switch {3=>size.Z,2=>size.Y,_=>size.X};
         return new Vec3(Axis(0),Axis(1),Axis(2));
     }
-    private static Pose3d Center(ObservableObject obj)
+    internal static Pose3d Center(ObservableObject obj)
     {
         using var flat=obj.NativePose.GetWithRespectToRoot();using var root=obj.NativePose.FindRoot();
         // M12-033 preserves local x/y and root-relative z/yaw; scalar argument is +0.

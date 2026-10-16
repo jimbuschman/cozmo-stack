@@ -115,8 +115,6 @@ public sealed class BehaviorHelperComponent
     private Action<CozmoRobot>? _success;      // +0x10 (manager +0x20)
     private Action<CozmoRobot>? _failure;      // +0x28 (manager +0x38)
     private int _storedWorldOriginId;          // +0x40
-    // The vector keeps its storage when it empties and a pop does not zero [begin] (0x0056dcc0..0x0056dcc8 read it with no check), so the bottom slot's last pointer survives.
-    private IHelper? _bottomSlot;
     private int _depth;                        // how many times the owning thread holds _gate (only read or written while it is held)
 
     // The engine has no locks (one thread). This stack reaches the component from the engine tick and from behaviour threads, so state is guarded by one monitor, but the
@@ -208,7 +206,6 @@ public sealed class BehaviorHelperComponent
         {
             Info("HelperComponent.StartNewHelper", helper.Pointer.Name);
             helper.Pointer.InitializeOnStack();
-            if (_stack.Count == 0) _bottomSlot = helper.Pointer;
             _stack.Add(helper.Copy());
             UpdateActiveHelper(robot);
         }
@@ -230,17 +227,19 @@ public sealed class BehaviorHelperComponent
     /// <c>StopHelperWithoutCallback(shared_ptr&lt;IHelper&gt; const&amp;)</c> 0x0056dcc0: compares the handle's pointer with the BOTTOM element's
     /// (<c>ldr r2,[r0,#4]</c>; <c>ldr r2,[r2]</c>; <c>cmp r1,r2</c>, 0x0056dcc0..0x0056dcc8); equal: <c>ClearStackFromTopToIter</c> at the bottom and true
     /// (0x0056dcd0..0x0056dcd6), otherwise false and nothing else. There is no empty-stack guard (the engine reads the first element unconditionally): on an
-    /// empty stack the compare is against the stale last-bottom pointer and the clear is a no-op. It does not call <c>ClearStackMaintenanceVars</c>: the stored callbacks stay and are not invoked.
+    /// empty stack the read is undefined; M1-034 skips that stop request visibly. It does not clear or invoke maintenance callbacks.
     /// </summary>
     public bool StopHelperWithoutCallback(HelperRef helper)
     {
         using (Enter())
         {
-            // 0x0056dcc0..0x0056dcc8: begin and [begin] are loaded with no emptiness check. An emptied vector keeps its storage and the pop does not zero [begin],
-            // so the compare is against the last bottom helper's pointer and, equal, ClearStackFromTopToIter returns at once on the empty stack (0x0056dcfa/0x0056dcfc).
-            // A vector never used would fault in the engine; no caller reaches that (only a successful delegation sets the weak reference), so it answers false here.
-            var bottom = _stack.Count > 0 ? _stack[0].Pointer : _bottomSlot;
-            if (bottom is null || !ReferenceEquals(helper.Pointer, bottom)) return false;
+            // fidelity: M12-047 — OV74: normal empty-stack witness is UNKNOWN, not proven unreachable.
+            if (_stack.Count == 0)
+            {
+                StackDiagnostics.Write("M1-034 M12-047 empty helper-stack read 0x0056DCC6: skip stop request; prior stack and callbacks retained");
+                return false;
+            }
+            if (!ReferenceEquals(helper.Pointer, _stack[0].Pointer)) return false;
             ClearStackFromTopToIter(0);
             return true;
         }
@@ -257,24 +256,34 @@ public sealed class BehaviorHelperComponent
         using (Enter())
         {
             if (iteratorIndex >= _stack.Count) return;   // an iterator past the vector: nothing to stop (the engine never builds one)
-            var target = _stack[iteratorIndex].Pointer;
             bool first = true;
             for (int pass = 0; ; pass++)
             {
                 if (pass >= 1000)
                 {
-                    // 0x0056dd3c: sErrorF line 0x106 of engine/aiComponent/behaviorHelperComponent.cpp, then sDebugBreakOnError when the debug byte is set.
-                    // The message text at 0x0056dd4c..0x0056dd50 was not printed and what follows the break is not in the inventory (MISSING).
-                    _log?.Invoke("error: [behaviorHelperComponent.cpp:262] ClearStackFromTopToIter exceeded 1000 passes");
-                    SteppedBehavior.ReportMissing("BehaviorHelperComponent::ClearStackFromTopToIter 0x0056dd3c..0x0056dd90: the error message text printed at 0x0056dd4c..0x0056dd50 and what follows sDebugBreakOnError are not in the inventory; this stack logs the line number and returns");
+                    // fidelity: M12-047 — 56DD3C..DD92; exact %s:%d plus global error/debug-break gate.
+                    SourceLogDispatch.GetSink(_sourceLog, _log)?.Invoke(EngineLogLevel.Error, null,
+                        "LoopBoundOverflow", "../../../../engine/aiComponent/behaviorHelperComponent.cpp:262");
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
                     return;
                 }
                 if (_stack.Count == 0) return;
+                if (iteratorIndex < 0 || iteratorIndex >= _stack.Count)
+                {
+                    StackDiagnostics.Write("M1-034 M12-047 invalidated helper target iterator at 0x0056DD08: skip clear tail; current stack retained");
+                    return;
+                }
+                var target = _stack[iteratorIndex].Pointer; // captured iterator's value is re-read on every pass
                 var top = _stack[^1];
                 bool firstPass = first;
                 OutsideLock(() => top.Pointer.Stop(firstPass));
-                _stack.Remove(top);
-                top.Release();
+                if (_stack.Count == 0)
+                {
+                    StackDiagnostics.Write("M1-034 M12-047 reentrant empty helper pop at 0x0056DD1E: skip pop tail; current stack retained");
+                    return;
+                }
+                // Reload end after Stop, then pop/release the element at that end, not a Remove(savedTop).
+                var removed = _stack[^1]; _stack.RemoveAt(_stack.Count-1); removed.Release();
                 first = false;
                 if (ReferenceEquals(top.Pointer, target)) return;
             }

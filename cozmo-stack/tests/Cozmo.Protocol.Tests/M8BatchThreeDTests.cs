@@ -410,11 +410,10 @@ public class M8BatchThreeDTests
     }
 
     /// <summary>
-    /// Row 2.6 (0x0056dcc0..0x0056dcc8): no empty-stack guard. An emptied vector keeps its storage, so the compare is against the stale last-bottom pointer: that helper's
-    /// handle returns true and ClearStackFromTopToIter returns at once (0x0056dcfa/0x0056dcfc), a different helper returns false, and nothing throws.
+    /// OV74 checked correction: empty begin read0056DCC6 is undefined; standing M1-034 skips the request, retaining state.
     /// </summary>
     [Fact]
-    public void M8_011_StopHelperWithoutCallbackOnAnEmptyStackComparesAgainstTheStaleBottomAndDoesNothing()
+    public void M12_047_EmptyStackStopSkipsTheUndefinedReadAndKeepsState()
     {
         using var fx = new Fx();
         var a = fx.H("A");
@@ -424,7 +423,7 @@ public class M8BatchThreeDTests
         Assert.True(fx.Component.StopHelperWithoutCallback(aRef));
         Assert.Equal(0, fx.Component.StackCount);
         fx.Events.Clear();
-        Assert.True(fx.Component.StopHelperWithoutCallback(aRef));          // stale bottom == A
+        Assert.False(fx.Component.StopHelperWithoutCallback(aRef));         // M1-034 skip, no stale pointer comparison
         Assert.False(fx.Component.StopHelperWithoutCallback(fx.Ref(fx.H("B"))));
         Assert.Empty(fx.Events);
     }

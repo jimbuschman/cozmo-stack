@@ -343,10 +343,13 @@ public sealed class M12CheckedRowsBuilderTests
         var snapshot=Activator.CreateInstance(snapshotType,new object[]{map,new Dictionary<string,double>()});
         typeof(BlockConfigurationManager).GetField("_snapshot",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(f.M.Configurations,snapshot);
         var behavior=new BuildPyramidBaseBehavior(f.M,"BuildPyramid",true);
-        typeof(SteppedBehavior).GetProperty("Context",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(behavior,new BehaviorContext{Robot=f.Rig.Robot,Triggers=new AnimationTriggerMap()});
+        typeof(SteppedBehavior).GetProperty("Context",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(behavior,new BehaviorContext{Robot=f.Rig.Robot,Triggers=new AnimationTriggerMap(),AI=new AIComponent(()=>1)});
         typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.StaticBlockId))!.SetValue(behavior,7u);
         typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.BaseBlockId))!.SetValue(behavior,8u);
-        int made=0;behavior.PlacementHelperCreatedForTest=_=>made++;
+        typeof(BuildPyramidBaseBehavior).GetProperty(nameof(BuildPyramidBaseBehavior.TopBlockId))!.SetValue(behavior,8u);
+        // OV74: reach the midpoint recipient via the explicit native strong-cache input, not the host snapshot above.
+        f.M.Configurations.NativePyramidBaseStrongCache=()=>new[]{new PyramidBase(7,8,new Vec3(12345,6789,42))};
+        int made=0;behavior.PlacementHelperCreatedForTest=h=>{made++;h.PrecheckForTest=()=>ActionResult.Running;};
         typeof(BuildPyramidBaseBehavior).GetMethod("TransitionToPlacingTopBlock",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(behavior,null);
         Assert.Equal(0,made);Assert.Equal(7u,behavior.StaticBlockId);Assert.Equal(BuildPyramidBaseBehavior.Phase.PlacingTopBlock,behavior.CurrentPhase);
     }

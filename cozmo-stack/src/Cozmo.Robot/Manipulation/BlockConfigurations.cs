@@ -92,6 +92,21 @@ public sealed class BlockConfigurationManager
     public event Action<BlockConfiguration, double>? ConfigurationSeen;
     public IReadOnlyList<StackOfCubes> Stacks => Cache(BlockConfigurationType.StackOfCubes).Cast<StackOfCubes>().ToList();
     public IReadOnlyList<PyramidBase> PyramidBases => Cache(BlockConfigurationType.PyramidBase).Cast<PyramidBase>().ToList();
+    // fidelity: M12-047 — manager+48 is PyramidBase container+4, a strong-pointer vector (5DC150..5DC168).
+    // M12-049 owns its producers; the host all-pairs snapshot is not this native cache.
+    internal Func<IReadOnlyList<PyramidBase>>? NativePyramidBaseStrongCache;
+    internal PyramidBase[]? CopyNativePyramidBaseCache()
+    {
+        lock (_updateGate)
+        {
+            if (NativePyramidBaseStrongCache is not { } get)
+            {
+                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M12-049 native PyramidBase strong cache manager+0x48 at 0x005DC15E: producer Container::Update0x0061682C/CastNewEntry0x0062C68C/PruneFullPyramids0x0062C72E is unread; M12-047 snapshot/loop is built, no host cache substituted");
+                return null;
+            }
+            return get().ToArray(); // retained object references, same order and duplicates; independent vector snapshot
+        }
+    }
     public IReadOnlyList<Pyramid> Pyramids => Cache(BlockConfigurationType.Pyramid).Cast<Pyramid>().ToList();
 
     /// <summary><c>GetCacheByType</c>.</summary>

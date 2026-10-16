@@ -225,7 +225,7 @@ public abstract class IHelper : BSRunnable
     /// <summary>
     /// <c>IHelper::LogStopEvent(bool)</c> 0x005b6850: the event by +0x1c, 0 "robot.behavior_helper.failure", 2 "robot.behavior_helper.success", 1 "...cancel" when
     /// the bool is 1 else "...inactive_stop" (0x005b68a0..0x005b68c2), with a duration from +0x98; a negative duration is the error "IHelper.Stop.InvalidTime". The
-    /// event argument layout and the duration's exact expression are not in the inventory: this stack logs <c>now - startTime</c> in float.
+    /// duration is f32 subtraction then VCVT.S32.F32; the event text is the name and $data is integer seconds (OV74).
     /// </summary>
     private void LogStopEvent(bool first)
     {
@@ -237,8 +237,17 @@ public abstract class IHelper : BSRunnable
             _ => null,
         };
         if (name is null) return;
-        float duration = _robot.Engine.Timer.SecondsF - _startTime;
-        if (duration < 0f) { Log(EngineLogLevel.Error, "BehaviorHelpers", "IHelper.Stop.InvalidTime", Name); return; }
-        Log(EngineLogLevel.Debug, "Events", name, $"{Name} {duration}");
+        // fidelity: M12-047 — 5B69A8..5B6A96. A fractional negative duration truncates to zero before the sign test.
+        float now = _robot.Engine.Timer.SecondsF;
+        int duration = Animation.AnimationScheduler.VcvtS32(now - _startTime);
+        if (duration < 0)
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "IHelper.Stop.InvalidTime",
+                FormattableString.Invariant($"{Name}: Negative duration {duration} secs (started {(double)_startTime:F6}, stopped {(double)now:F6})"));
+            Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
+            duration = 0;
+        }
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, name, Name,
+            new Dictionary<string,string> { ["$data"] = duration.ToString(System.Globalization.CultureInfo.InvariantCulture) });
     }
 }

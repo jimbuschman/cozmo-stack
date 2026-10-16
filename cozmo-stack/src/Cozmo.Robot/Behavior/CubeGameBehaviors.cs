@@ -684,25 +684,59 @@ public class BuildPyramidBaseBehavior : ManipulationBehavior
         });
     }
 
-    private void TransitionToPlacingTopBlock()
+    // fidelity: M12-047 — checked caller loop; M12-043 owns the missing midpoint recipient.
+    internal Func<ObservableObject,ObservableObject,Pose3d,bool>? TopBaseMidpoint;
+    internal Func<ObservableObject,Pose3d> TopBaseCenter = PlacementProducerGeometry.Center;
+    internal Action<PyramidBase,uint>? TopContainsForTest;
+    internal void TransitionToPlacingTopBlock()
     {
         CurrentPhase = Phase.PlacingTopBlock;
         SetStateName("PlacingTopBlock");
         SteppedBehavior.ReportMissing("M12-028 SmartDisableReactionsWithLock at 0x005DC0B4..0x005DC0D6: checked wrapper array/name, manager disable-body remains M7-014; no stand-in reaction lock is installed");
-        uint a=StaticBlockId??uint.MaxValue,b=BaseBlockId??uint.MaxValue;
-        var targetA=M.World.GetLocatedObjectById(a);var targetB=M.World.GetLocatedObjectById(b);
+        uint a=StaticBlockId??uint.MaxValue,top=TopBlockId??uint.MaxValue;
+        var targetA=M.World.GetLocatedObjectById(a);var targetB=M.World.GetLocatedObjectById(top);
         if (targetA is null || targetB is null)
         {
-            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject",FormattableString.Invariant($"Object {unchecked((int)a)} is NULL"));
-            StaticBlockId=null;return;
+            M.Robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"BehaviorBuildPyramid.TransitionToPlacingTopBlock.NullObject",FormattableString.Invariant($"Object {unchecked((int)(BaseBlockId??uint.MaxValue))} is NULL"));
+            BaseBlockId=null;return; // 5DC114/5DC148 read and clear +120, although lookups use +11C/+124
         }
-        SteppedBehavior.ReportMissing("M12-047 BehaviorBuildPyramid top loop: native source-list owner and helper stop downstream are unread; host PyramidBases is not a recovered source list");
-        foreach(var entry in M.Configurations.PyramidBases)
+        var entries=M.Configurations.CopyNativePyramidBaseCache();
+        if(entries is null)return;
+        using var logs=Pose3d.UseSourceLog((l,c,k,t)=>M.Robot.Engine.EmitSourceLog(l,c,k,t),M.Robot.Engine.Das.ForceFlushNow);
+        foreach(var entry in entries)
         {
-            bool Contains(uint id)=>entry.LeftBlockId==id||entry.RightBlockId==id;
-            if (!Contains(b) || !Contains(a)) continue;
-            SteppedBehavior.ReportMissing("M12-043/M12-028 GetBaseInteriorMidpoint at 0x005DC1DC -> 0x00617A8C..0x00617C32: quad ordering is checked and ported, but corner PoseDistanceSquared/world-origin and midpoint robot-root joins remain unbuilt; top placement stops at this unit");
-            return;
+            // Native keeps references to +124/+11C, not copies of their ID words across synchronous delegation.
+            uint currentTop=TopBlockId??uint.MaxValue;
+            TopContainsForTest?.Invoke(entry,currentTop); if(!entry.ContainsBlock(currentTop))continue;
+            uint currentStatic=StaticBlockId??uint.MaxValue;
+            TopContainsForTest?.Invoke(entry,currentStatic); if(!entry.ContainsBlock(currentStatic))continue;
+            if(TopBaseMidpoint is not {} getMidpoint)
+            {
+                SteppedBehavior.ReportMissing("M12-043 GetBaseInteriorMidpoint at 0x005DC1DC -> 0x00617A8C..0x00617C32: corner PoseDistanceSquared/world-origin and midpoint root joins remain unbuilt; checked M12-047 caller stops at this recipient");
+                break;
+            }
+            using var midpoint=new Pose3d();
+            Pose3d? center=null,relative=null;
+            try
+            {
+                Vec3 xy;
+                // All pose writers share this frame gate; release it before helper/behavior callbacks.
+                // Retain the three native pose temporaries across delegation (5DC2E8..2F4).
+                using(var mutation=M.World.EnterPoseMutation())
+                {
+                    if(!getMidpoint(targetA,targetB,midpoint))break;
+                    center=TopBaseCenter(targetA); // GetZRotatedPointAboveObjectCenter(+0), M12-033
+                    relative=new Pose3d();
+                    if(!Pose3d.GetWithRespectTo(midpoint,center,relative))break;
+                    xy=relative.Translation;
+                }
+                SteppedBehavior.ReportMissing("M12-049 BuildPyramid placement callback operators at vtables0x01029068/0x010290A8, passed0x005DC298 are unread; checked M12-047 creates/delegates but callback units only report their missing recipient");
+                DelegatePlacement(StaticBlockId??uint.MaxValue,false,(float)xy.X,(float)xy.Y,false,
+                    _=>SteppedBehavior.ReportMissing("M12-049 BuildPyramid success callback vtable0x01029068: skip unread callback unit"),
+                    _=>SteppedBehavior.ReportMissing("M12-049 BuildPyramid failure callback vtable0x010290A8: skip unread callback unit"));
+            }
+            finally { relative?.Dispose();center?.Dispose(); }
+            // 5DC2FE: continue after success or failed SmartDelegate; only geometry failure breaks.
         }
     }
 
