@@ -63,7 +63,7 @@ public sealed class NativePoseBuilderTests
         var logs=new List<(EngineLogLevel Level,string Key,string Text)>();using var scope=Pose3d.UseSourceLog((level,_,key,text)=>logs.Add((level,key,text)));
         var over=new Mat3(BitConverter.Int32BitsToSingle(0x3F800001),0,0,0,1,0,0,0,1).Orthonormalized();Assert.Equal(1,over[0,0]);Assert.DoesNotContain(logs,e=>e.Key=="RotationMatrixBase.Renormalize.BadRowNorm");
         var repaired=new Mat3(double.NaN,0,0,0,1,0,0,0,1).Orthonormalized();Assert.Equal(1,repaired[0,0]);Assert.Equal(1,repaired[1,1]);Assert.Equal(1,repaired[2,2]);
-        var warning=Assert.Single(logs.Where(e=>e.Key=="RotationMatrixBase.Renormalize.BadRowNorm"));Assert.Equal(EngineLogLevel.Warning,warning.Level);Assert.StartsWith("Norm of row 0 = nan!",warning.Text);Assert.Contains("Row = [MISSING: M11-083",warning.Text);
+        var warning=Assert.Single(logs.Where(e=>e.Key=="RotationMatrixBase.Renormalize.BadRowNorm"));Assert.Equal(EngineLogLevel.Warning,warning.Level);Assert.StartsWith("Norm of row 0 = nan!",warning.Text);Assert.EndsWith("Row = [nan 0.000000 0.000000 ]",warning.Text);
     }
     [Fact]
     public void RodriguesRoundTripsIdentityHalfTurnAndRejectsNonfiniteMatrix()

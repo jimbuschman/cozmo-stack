@@ -39,8 +39,10 @@ internal sealed class RobotGyroDriftDetector
         float data=displacement*Degrees;
         float mean=Sum/(float)DriftCount;mean*=Degrees;
         float minimum=Minimum*Degrees,maximum=Maximum*Degrees;
-        // M11-083: missing $data prevents construction of this exact warning, not permission for a placeholder KV.
-        SteppedBehavior.ReportMissing($"M10-015/M11-083 drift to_string(float) 0x0052C63A: Warning robot.detect_gyro_drift.drift_detected at 0x0052C6B6 withheld until $data bytes exist; data/mean/min/max f32 bits {Bits(data)}/{Bits(mean)}/{Bits(minimum)}/{Bits(maximum)}");
+        // M11-083 / M10-015:0x0052C63A; checked Warning0x0052C6B6, system DAS %f arguments.
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"robot.detect_gyro_drift.drift_detected",
+            FormattableString.Invariant($"mean: {(double)mean:F6}, min: {(double)minimum:F6}, max: {(double)maximum:F6}"),
+            new Dictionary<string,string>{{"$data",LibcxxPrintf.FormatFixedFloat(data)}});
         DriftReported=true;DriftStart=0;
     }
     private Radians ReadYaw()
@@ -69,7 +71,10 @@ internal sealed class RobotGyroDriftDetector
                     string name=axis==0?"x":axis==1?"y":"z";
                     float minDegrees=min*Degrees,maxDegrees=max*Degrees;
                     float roundedMin=MathF.Round(minDegrees*1000f,MidpointRounding.AwayFromZero),roundedMax=MathF.Round(maxDegrees*1000f,MidpointRounding.AwayFromZero);
-                    SteppedBehavior.ReportMissing($"M10-015/M11-083 bias to_string(float) 0x0052C90E/0x0052C926: Event robot.detect_gyro_bias.bias_detected at 0x0052C9BC withheld until min,max value bytes exist; axis={name}, rounded f32 bits {Bits(roundedMin)}/{Bits(roundedMax)}");
+                    // M11-083 / M10-015:0x0052C90E/0x0052C926, Event precedes Warning.
+                    _robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.detect_gyro_bias.bias_detected",
+                        LibcxxPrintf.FormatFixedFloat(roundedMin)+","+LibcxxPrintf.FormatFixedFloat(roundedMax),
+                        new Dictionary<string,string>{{"$data",name}});
                     _robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"RobotGyroDriftDetector.BiasDetected",FormattableString.Invariant($"Gyro bias detected on {name} axis (min={(double)minDegrees:F2} deg/sec, max={(double)maxDegrees:F2} deg/sec)"));
                     BiasReported=true; // no break; remaining axes still report.
                 }

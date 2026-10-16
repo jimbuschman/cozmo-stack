@@ -92,7 +92,8 @@ public readonly struct Mat3
             float error=norm-1;
             if(!(MathF.Abs(error)<BitConverter.Int32BitsToSingle(0x3C23D70A)))
             {
-                string row="MISSING: M11-083 shipped std::to_string(float) %f row elements (0x008495CE)";
+                // M11-083 / M11-065 R18:0x008495CE, each element followed by one space.
+                string row="";for(int c=0;c<3;c++)row+=LibcxxPrintf.FormatFixedFloat(_m[i*3+c])+" ";
                 PoseDiagnostics.Warning("RotationMatrixBase.Renormalize.BadRowNorm","Norm of row "+i+" = "+PoseDiagnostics.Fixed(norm)+"! (Expecting near 1.0) Row = ["+row+"]");
                 return NativeRodrigues.VectorToMatrix(NativeRodrigues.MatrixToVector(this));
             }

@@ -884,7 +884,7 @@ public sealed class CozmoSensors
                 lock (_gate) stoppedVariance = _cliffVariance;
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "RobotImplMessaging.HandleRobotStopped",
                     rs.Field0.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    new Dictionary<string, string> { ["$data"] = stoppedVariance.ToString("F6", System.Globalization.CultureInfo.InvariantCulture) });
+                    new Dictionary<string, string> { ["$data"] = LibcxxPrintf.FormatFixedFloat(stoppedVariance) /* M11-083 / M4-019:0x005353AC */ });
                 EvaluateCliffSuspiciousnessWhenStopped(_robot.Engine.Robot?.StoredState?.Timestamp ?? _cliffTimestamp);
                 bool stoppedEnabled;
                 lock (_gate) stoppedEnabled = _cliffEnabled;

@@ -1248,10 +1248,11 @@ bool requireCalibration = true)
         private string _name = "";
         internal void SetName(string name) => _name = name;
         protected override string ActionName => _name;
+        // M11-083 / M4-016: native to_string(float)0x00547E66 and0x005489C0.
         internal static string HeadName(float requestedRadians) =>
-            "MoveHeadTo" + ((double)(requestedRadians * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1)))).ToString("F6", System.Globalization.CultureInfo.InvariantCulture) + "Deg";
+            "MoveHeadTo" + LibcxxPrintf.FormatFixedFloat(requestedRadians * BitConverter.Int32BitsToSingle(unchecked((int)0x42652EE1))) + "Deg";
         internal static string LiftName(float requestedHeightMm) =>
-            "MoveLiftTo" + ((double)requestedHeightMm).ToString("F6", System.Globalization.CultureInfo.InvariantCulture) + "mm";
+            "MoveLiftTo" + LibcxxPrintf.FormatFixedFloat(requestedHeightMm) + "mm";
 
         // L7: the engine clock (BaseStationTimer::GetCurrentTimeInSeconds).
         protected override float EngineClockSeconds => Owner._robot.Engine.Timer.SecondsF;

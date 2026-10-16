@@ -19,9 +19,10 @@ namespace Cozmo.Robot;
 ///     digits are truncated rather than rounded;
 ///   - the trailing-zero limb strip stops at the leading limb (0x81CA0..0x81CB6) and is skipped when no rounding
 ///     block runs (0x81A98).
-/// Only what the logger reaches is ported: conversion g with no flag, width 0 and a precision (the stream default is 6;
+/// Logger conversion g has no flag, width 0 and a precision (the stream default is 6;
 /// a negative precision selects 6, 0x816F2..0x816FA); conversions e, f, a, o, x, c, s, p and field padding are never
-/// requested by a handler (the stream's flags stay 0x1002, width 0).
+/// requested by a handler (the stream's flags stay 0x1002, width 0). The separate float to_string entry
+/// uses the checked bundled %f path with precision6 (M11-083), preserving the stream entry.
 /// </summary>
 internal static class LibcxxPrintf
 {
@@ -83,7 +84,12 @@ internal static class LibcxxPrintf
     }
 
     /// <summary>"%.*g" with these arguments: the shipped printf core, decimal path (0x815AC..0x82060, 0x81CB8..0x81FD2).</summary>
-    internal static string FormatG(double y, int precision)
+    internal static string FormatG(double y, int precision) => FormatDecimal(y, precision, false);
+
+    // fidelity: M11-083 — float to_string entry0x66524..30, bundled %f F1-F7; double SDK overload excluded.
+    internal static string FormatFixedFloat(float value) => FormatDecimal((double)value, 6, true);
+
+    private static string FormatDecimal(double y, int precision, bool fixedFloat)
     {
         var sb = new StringBuilder();
         int p = precision;
@@ -147,7 +153,7 @@ internal static class LibcxxPrintf
             }
             if (big[a] == 0) a++;
             if (carry != 0) big[z++] = carry;
-            int b = a;                                  // conversion g: b = a (0x81A14..0x81A1A)
+            int b = fixedFloat ? r : a;                 // f retains from radix r; g from leading a,0x81A14
             if (z - b > need) z = b + need;
             e2 += sh;
         }
@@ -163,7 +169,7 @@ internal static class LibcxxPrintf
         else e = 0;
 
         // (g) rounding: j is the precision after the radix.
-        int j = p - e - (p != 0 ? 1 : 0);
+        int j = fixedFloat ? p : p - e - (p != 0 ? 1 : 0); // f:j=p,0x81A66
         if (j < 9 * (z - r - 1))
         {
             int d = r + 1 + ((j + 9216) / 9 - 1024);
@@ -223,8 +229,10 @@ internal static class LibcxxPrintf
         }
 
         // (h) the %g choice and trailing-zero removal (no '#' flag).
+        bool fStyle = true;
+        if (!fixedFloat)
+        {
         int P = p == 0 ? 1 : p;
-        bool fStyle;
         if (P > e && e >= -4) { fStyle = true; p = P - 1 - e; }
         else { fStyle = false; p = P - 1; }
         int jz;
@@ -242,6 +250,7 @@ internal static class LibcxxPrintf
         int count = 9 * (z - r - 1) + (fStyle ? 0 : e) - jz;
         if (count < 0) count = 0;
         if (p > count) p = count;
+        } // f bypasses g style/zero reduction, emitting exactly six fractional positions.
 
         if (pl) sb.Append('-');
         if (fStyle)

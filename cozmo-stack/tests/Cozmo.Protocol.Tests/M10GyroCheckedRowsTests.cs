@@ -62,7 +62,8 @@ public sealed class M10GyroCheckedRowsTests
         using var f=new Fixture();f.Yaw(0);f.Drift(100);f.Yaw(0.02f);f.Drift(5100);
         Assert.False(f.Detector.DriftReported);Assert.Equal(2u,f.Detector.DriftCount);Assert.Equal(0.02f,f.Detector.Sum);
         f.Drift(5101,z:0.011f);Assert.True(f.Detector.DriftReported);Assert.Equal(0u,f.Detector.DriftStart);Assert.Equal(2u,f.Detector.DriftCount);Assert.Equal(0.01f,f.Detector.Maximum);
-        Assert.DoesNotContain(f.Logs,l=>l.Name=="robot.detect_gyro_drift.drift_detected"); // withheld $data is a declared M11-083 gap, no fake KV.
+        var report=Assert.Single(f.Logs.Where(l=>l.Name=="robot.detect_gyro_drift.drift_detected"));
+        Assert.Equal(EngineLogLevel.Warning,report.Level);Assert.Equal("1.145916",report.Data["$data"]);
         f.Drift(6000,z:1);Assert.Equal(0u,f.Detector.DriftStart);Assert.Equal(2u,f.Detector.DriftCount);
     }
     [Theory]
@@ -105,7 +106,10 @@ public sealed class M10GyroCheckedRowsTests
         d.DetectBias(State(5002,x:0.01f,y:0.01f,z:0.01f),0);Assert.True(d.BiasReported);Assert.Equal(1u,d.BiasCount);Assert.Equal(0u,d.BiasStart);
         var reports=f.Logs.Where(l=>l.Name=="RobotGyroDriftDetector.BiasDetected").ToArray();Assert.Equal(3,reports.Length);
         for(int i=0;i<3;i++)Assert.EndsWith($"Gyro bias detected on {"xyz"[i]} axis (min=0.57 deg/sec, max=0.58 deg/sec)",reports[i].Text);
-        Assert.DoesNotContain(f.Logs,l=>l.Name=="robot.detect_gyro_bias.bias_detected"); // event formatter is explicitly unbuilt.
+        var events=f.Logs.Where(l=>l.Name=="robot.detect_gyro_bias.bias_detected").ToArray();Assert.Equal(3,events.Length);
+        Assert.All(events,e=>{Assert.Equal(EngineLogLevel.Event,e.Level);Assert.Equal("573.000000,579.000000",e.Text);});
+        Assert.Equal(new[]{"x","y","z"},events.Select(e=>e.Data["$data"]));
+        for(int i=0;i<3;i++)Assert.True(f.Logs.IndexOf(events[i])<f.Logs.IndexOf(reports[i]));
         float hp=d.HighPass;d.DetectBias(State(6000),100);Assert.Equal(hp,d.HighPass);Assert.Equal(1u,d.BiasCount);
     }
     [Theory]
