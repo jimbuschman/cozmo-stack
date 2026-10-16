@@ -191,7 +191,7 @@ public sealed class BlockWorldFilter
 /// The engine's <c>Cozmo::ObservableObject</c> for a light cube or the charger: identity, markers, pose and pose state, and the
 /// visibility test the behaviours ask.
 /// </summary>
-public sealed class ObservableObject
+public sealed partial class ObservableObject
 {
     /// <summary>ObjectID -1: what <c>Vision::ObservableObject</c>'s constructor stores at +0x18 (0x0087660E), so a fresh instance has no ID until <see cref="SetID"/> or a match's ID is copied.</summary>
     public const uint UnassignedId = uint.MaxValue;
@@ -199,6 +199,12 @@ public sealed class ObservableObject
     public ObservableObject(uint objectId, ObjectType type, IReadOnlyList<KnownMarker> markers)
     {
         ObjectId = objectId; Type = type; Markers = markers.Select(m => m with { LastObservedTimestamp = null }).ToArray();
+        foreach (var marker in Markers)
+        {
+            short code = unchecked((short)marker.Code);
+            if (!MarkerCodeIndex.TryGetValue(code, out var entries)) MarkerCodeIndex.Add(code, entries = new());
+            entries.Add(marker);
+        }
         Family = FamilyOf(type);
     }
 
@@ -731,6 +737,8 @@ public sealed partial class BlockWorld
     }
     // fidelity: M4-037
     internal SourceLogSink? SourceLog;
+    // M11-013: explicit lower recipient input; GetCodeName/GetNameForCode has no checked port in this clone.
+    internal Func<short,string?>? MarkerCodeNameInput;
     internal string RootName(ObservableObject obj) => obj.PoseNameNode?.FindRoot(SourceLog).Name ?? PoseOriginNames.NameOf(obj.OriginId);
 
 
@@ -1564,9 +1572,11 @@ public sealed partial class BlockWorld
                 double key = pose.Translation.Dot(pose.Translation);
                 var placed = instance.IsActive ? ClampPoseToFlat(pose, CreationFlatClampAngleRad) : pose;   // 0x00625578
                 instance.SetPose(placed, -1.0, PoseState.Dirty);                                            // InitPose 0x00625580
-                instance.LastObservedTimestamp = seenMarkers[0].Timestamp;                                   // 0x006255AC
+                foreach (var seen in seenMarkers)
+                    instance.SetMarkerAsObserved(seen, seenMarkers[0].Timestamp, BitConverter.UInt32BitsToSingle(0x3DCCCCCD), camera,
+                        SourceLogDispatch.GetSink(SourceLog, Log), MarkerCodeNameInput);                       // setup0x0062559C, call0x006255A0
+                instance.LastObservedTimestamp = seenMarkers[0].Timestamp;                                   // 0x006255AC, after marker stores
                 instance.LastObservedMarkers = seenMarkers.Select(s => s.Code).ToList();
-                Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-013/M11-006 SetMarkerAsObserved at 0x0062559C -> 0x00876DA8: the checked call passes the first prototype timestamp and 0x3DCCCCCD, but its node+0x50 writer/body is not supplied; no timestamp writer is inferred from the method name");
                 var xs = seenMarkers.SelectMany(s => s.Corners).Select(p => p.X).ToList();
                 var ys = seenMarkers.SelectMany(s => s.Corners).Select(p => p.Y).ToList();
                 instance.LastImageRect = (xs.Min(), ys.Min(), xs.Max() - xs.Min(), ys.Max() - ys.Min());
@@ -1666,7 +1676,7 @@ public sealed partial class BlockWorld
     {
         int count=Math.Min(located.Markers.Count,instance.Markers.Count);
         if(located.Markers.Take(count).Any(m=>!m.LastObservedTimestamp.HasValue) || instance.Markers.Take(count).Any(m=>!m.LastObservedTimestamp.HasValue))
-            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-013 UpdateMarkerObservationTimes 0x00876C9C..0x00876CCA: native marker timestamps lack a checked/bound producer; merge unit skipped instead of using invented default timestamps");
+            Cozmo.Robot.Behavior.SteppedBehavior.ReportMissing("M11-013 UpdateMarkerObservationTimes 0x00876CB4/0x00876CB6: unmatched-marker constructor defaults or native pose binding have not supplied all timestamp inputs; merge unit skipped, prior times retained");
         else for (int i=0;i<count;++i)
             located.Markers[i].LastObservedTimestamp=Math.Max(located.Markers[i].LastObservedTimestamp!.Value,instance.Markers[i].LastObservedTimestamp!.Value);
     }
