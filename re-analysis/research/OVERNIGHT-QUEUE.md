@@ -139,5 +139,6 @@ The first three are the requests already written:
 | OV105 | requests/overnight/20261016-ov105-m15-063.md (M15-063: AIComponent teardown residue: concrete std::function and IHelper types) | research/overnight/20261016-ov105-m15-063.md |
 | OV106 | requests/overnight/20261016-ov106-m11-084.md (M11-084: Pose wrapper lifetimes in production: whether any flow leaves a child ) | research/overnight/20261016-ov106-m11-084.md |
 | OV107 | requests/overnight/20261016-ov107-m8-027.md (M8-027: ProtoHandle subscriber-callable census: which callables the 8 ProtoHan) | research/overnight/20261016-ov107-m8-027.md |
+| OV108 | requests/overnight/20261016-ov108-m15-031.md (M15-031: ActivateHighLevelActivity, now in scope) | research/overnight/20261016-ov108-m15-031.md |
 
-**Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-031, M15-032.
+**Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-032 (M15-031 is in scope since 2026-10-16).

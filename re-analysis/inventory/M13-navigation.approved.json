@@ -472,7 +472,7 @@
       "evidence": [
         "re-analysis/research/overnight/20261014-ov07-m13-021-check.md: row 6. ctor +0x120 0x005678BE; MC+0x20/+0x24 0x0063DA86; Init 0x005679CC..0x00567A28, 0x00567A30..0x00567B8A (stores 0x005679E4, 0x00567A14); null selection 0x00567F6C..0x00567FC0; direct ctor callers 0x0052AD1E and 0x0054AE1C both pass 1."
       ],
-      "live_path": true,
+      "live_path": false,
       "hardware_required": false
     },
     "M13-037": {

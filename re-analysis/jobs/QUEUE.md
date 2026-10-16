@@ -134,6 +134,7 @@ anything. BOARD.md is history; this file is the live queue.
 | 61w0 | [B-M11-15](B-M11-15.md) | open, after B-M9-4 |
 | 61w1 | [B-M15-7](B-M15-7.md) | open, after B-M11-15 |
 | 61w2 | [B-M1-2](B-M1-2.md) | open, after B-M15-7 |
+| 61x | [B-M15-8](B-M15-8.md) | open, after B-M1-2 (expose approved spark/activity inputs) |
 | 62 | [B-M9-2](B-M9-2.md) | open, after B-M9-1 (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | open, after B-M9-2 (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
 | 64 | [B-M8-5](B-M8-5.md) | open, after B-M12-5 |
