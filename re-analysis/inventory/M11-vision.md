@@ -1701,3 +1701,13 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | To IMPLEMENTATION_GAP | M11-088, M11-089, M11-090 |
 | Notes | M11-073, M11-004, M11-084 |
 | New RECOVERABLE_GAP | M11-091, M11-092 |
+
+
+## Opus answers OV100/101/106 (manager, 2026-10-16; research/overnight/20261016-ov100-101-106-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Markerless quad and +0x50 census; VisitInterestingEdge lifecycle: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-091, M11-092 |
+| Narrowed | M11-084 |
+| New RECOVERABLE_GAP | M11-093 |
+| Note | M11-037 |

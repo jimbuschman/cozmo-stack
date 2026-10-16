@@ -2627,3 +2627,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | BehaviorAudioClient instances: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M13-038 |
 | Note | M13-039 |
+
+
+## Opus answers OV100/101/106 (manager, 2026-10-16; research/overnight/20261016-ov100-101-106-answer.md)
+
+| Change | Records |
+| --- | --- |
+| Contradiction / incompleteness notes | M13-007, M13-025 |

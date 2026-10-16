@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "d507bac02a8a392e1d15d1357907ef15c06d16d37dc2979c8430f128f30ca5fd",
+  "inventory_sha256": "ee795d02551f133f31d77887d751572323f0507e919697d516c2db865efc2045",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1060,21 +1060,33 @@
       "hardware_required": false
     },
     "M11-091": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "ObservableObject +0x50 (bounding quad) caller census, including the markerless quad body 0x00502C32",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-batch-check.md: markerless quad 0x00502C33 (slot 0x0101F368); callers include FindObjectOnTopOrUnderneathHelper 0x0062604C..0x0062605C; markerless objects from AddCliff/AddProxObstacle/AddCollisionObstacle 0x006249FE/0x00624A0A/0x00624A16."
+        "re-analysis/research/overnight/20261016-batch-check.md: markerless quad 0x00502C33 (slot 0x0101F368); callers include FindObjectOnTopOrUnderneathHelper 0x0062604C..0x0062605C; markerless objects from AddCliff/AddProxObstacle/AddCollisionObstacle 0x006249FE/0x00624A0A/0x00624A16.",
+        "re-analysis/research/overnight/20261016-ov100-101-106-answer.md: markerless quad 0x00502C32..0x00502D72 (corners vt+0x54 0x005025F0..0x005026A4, re-root via 0x004DF628, pad doubling 0x00502C5C..0x00502C86, rotate, GetBoundingQuad 0x00502D26, translate 0x004E68CC..0x004E690A); GetSizeByType 0x005026EC..0x0050286E (14: 10,10,50; 15: 20,40,50; 16: 20,54.2,67.7; else sErrorF UndefinedType and 10,10,10); ctor 0x00502958..0x00502A7C; vt+0x58 returns 1 (0x00502DD4), vt+0x5C 0; census of 20 quad sites."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M11-092": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "BehaviorVisitInterestingEdge lifecycle and the libc++ sort helpers used by its goal sort",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261016-batch-check.md: lifecycle InitInternal 0x005E7018, S1 0x005E7044, StopInternal 0x005E729C, StopSquintLoop 0x005E7320, UpdateInternal 0x005E7418, GatheringAccurateEdge 0x005E7514, CreateLowLiftAndLowHeadActions 0x005E79FC, StartWaitingForEdges 0x005E7AF4, S2 0x005E7BFC, S3 0x005E7D78, Flag* 0x005E8038/0x005E815A; sort helpers 0x005E8714, 0x005E881C, 0x005E88E0, 0x005E89DC."
+        "re-analysis/research/overnight/20261016-batch-check.md: lifecycle InitInternal 0x005E7018, S1 0x005E7044, StopInternal 0x005E729C, StopSquintLoop 0x005E7320, UpdateInternal 0x005E7418, GatheringAccurateEdge 0x005E7514, CreateLowLiftAndLowHeadActions 0x005E79FC, StartWaitingForEdges 0x005E7AF4, S2 0x005E7BFC, S3 0x005E7D78, Flag* 0x005E8038/0x005E815A; sort helpers 0x005E8714, 0x005E881C, 0x005E88E0, 0x005E89DC.",
+        "re-analysis/research/overnight/20261016-ov100-101-106-answer.md: config 0x005E5FE8..0x005E6342; InitInternal 0x005E7018..0x005E7040; S1 0x005E7044..0x005E71DE with callback 0x005E8E74..0x005E8F4A; CreateLowLiftAndLowHeadActions 0x005E79FC..0x005E7AD6; S2 0x005E7BFC..0x005E7CDA; StartWaitingForEdges 0x005E7AF4..0x005E7BC2; L2 0x005E8B72..0x005E8B8E; UpdateInternal 0x005E7418..0x005E7492; GatheringAccurateEdge 0x005E7514..0x005E78CC; S3 0x005E7D78..0x005E7F6C; FlagVisitedQuad 0x005E8038..0x005E8104; StopSquintLoop 0x005E7320..0x005E7378; StopInternal 0x005E729C..0x005E7302; sort helpers 0x005E8714..0x005E8B30."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-093": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Unowned FindLocatedIntersectingObjects callers: BehaviorLookAround::TransitionToRoaming and BehaviorGuardDog::ComputeStartingPose (filter at this+0x12C)",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261016-ov100-101-106-answer.md: TransitionToRoaming 0x005C4844..0x005C48D8 (default filter, padding 10.0, call 0x005C48D4); ComputeStartingPose 0x005F4064..0x005F40F2 (filter from this+0x12C, padding 0, call 0x005F40E6); both reach the intersection predicate 0x0062752A."
       ],
       "live_path": true,
       "hardware_required": false
