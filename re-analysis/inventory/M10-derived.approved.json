@@ -1,6 +1,6 @@
 {
   "subsystem": "M10-derived",
-  "approved": "2026-10-15",
+  "approved": "2026-10-16",
   "inventory": "re-analysis/inventory/M10-derived.md",
   "inventory_sha256": "d90ffbe2fbac14a1a57d0a904f02f896f2c01cda55195bb6e5096bfa36fb06a6",
   "records": {

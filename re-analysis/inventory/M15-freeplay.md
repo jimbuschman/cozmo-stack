@@ -1030,3 +1030,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | New HARDWARE_ONLY (readdir order, M5-050 precedent) | M15-068 |
 | New RECOVERABLE_GAP | M15-069 |
 | Note | M15-061 |
+
+
+## Opus answers OV120/122 (manager, 2026-10-16; research/overnight/20261016-ov120-122-answer.md)
+
+| Change | Records |
+| --- | --- |
+| GuardDog lifecycle: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-067 |
+| Narrowed | M15-069 |
+| New RECOVERABLE_GAP | M15-070 |
