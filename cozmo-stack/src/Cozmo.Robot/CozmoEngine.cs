@@ -1268,6 +1268,8 @@ public sealed partial class EngineRobot
         // 0x00513EA8..0x00513EAC: AIComponent::Update (its BehaviorHelperComponent step) runs here, ahead of ActionList::Update (0x005140BC), the animation streamer
         // (0x0051410C) and NVStorage::Update (0x0051416A).
         if (Engine.AIComponentUpdate is { } ai) Engine.RunIsolated(ai);
+        // fidelity: M13-038 — only a stack diagnostic at the absent public-state input/caller join.
+        ReportBehaviorPublicStateInputJoin();
         // fidelity: M4-016
         // CD12: Robot::Update runs the ActionList (IActionRunner::Update) after the first full state and before the
         // animation streamer; the M4 head/lift actions test their engine-clock timeout and run CheckIfDone there

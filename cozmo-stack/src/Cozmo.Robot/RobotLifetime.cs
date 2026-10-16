@@ -14,11 +14,11 @@ internal sealed class RobotLifetime
     internal RobotLifetime(EngineRobot robot) => _robot = robot;
     internal void Bind(int offset, Action<uint>? release){lock(_ownerGate)_owners[offset]=release;}
     internal bool IsKnownNull(int offset){lock(_ownerGate)return _owners.TryGetValue(offset,out var value)&&value is null;}
-    private void Missing(uint address, int offset)
+    internal void Missing(uint address, int offset)
     {
         string detail=offset switch {
-            0x44=>"M8-016/M8-023 native BehaviorManager ownership tree/child finalization is unbound; host FreeplayStack cleanup is separate",
-            0x48=>"M8-016/M8-023 native BSM container/audio ownership is unbound; activity update path is unreachable, not the entire allocation",
+            0x44=>"M8-016/M8-023 remaining native BehaviorManager tree/child finalization is unbound; M13-038 binds its audio client separately; host FreeplayStack cleanup is separate",
+            0x48=>"M8-016/M8-023 remaining native BSM container ownership is unbound; M13-038 binds its audio client separately; activity update path is unreachable, not the entire allocation",
             0x440=>"M7-023 MoodManager: no host MoodState bound; native per-Robot constructor/Init producer remains missing outside FreeplayStack",
             0x448=>"M15-027 progression: scoped vector+1C, trees+10/+4 and allocation; concrete native owner not bound",
             0x444=>"M15-027 inventory: tree+120, scoped vector+114 and allocation; concrete native owner not bound",
@@ -27,7 +27,7 @@ internal sealed class RobotLifetime
             0x3C=>"M14-013 PetWorld: live detector map is retained by VisionSystem; native tree ownership/postorder recipient is unbound, no pet-lost notifications invented",
             0x38=>"M14-013 FaceWorld: native scoped handles/owned pose wrappers/match lists/nine vectors/tree producer are unbound; late host reset does not substitute for this destruction",
             0x268=>"M14-013 speech: native Dispatch/provider/mutex/bundle ownership is absent; existing transport executor drains its queue and cannot supply Stop cancellation/detached-batch join; no TTS/Wwise stop or completion invented",
-            0x40=>"M15-028 PublicStateBroadcaster event hash/raw owner and captures not bound; engine-wide host API subscribers are not its native signal",
+            0x40=>"M15-028 remaining PublicStateBroadcaster event-hash/raw-state/capture teardown is unbound; M13-038 binds its semantic state and client signal",
             4=>"M15-028 final embedded Robot signal/capture ownership not bound; context is borrowed and not deleted",
             _=>""};
         Behavior.SteppedBehavior.ReportMissing($"Robot lifetime owner +0x{offset:X} at 0x{address:X8}"+(detail.Length==0?"":"; "+detail),_missingScope);
@@ -142,6 +142,7 @@ public sealed partial class EngineRobot
     internal void InitLifetime()
     {
         Lifetime = new(this);
+        InitBehaviorAudioOwners(); // M13-038: broadcaster and A-before-B clients, retained until Robot owner destruction.
         // fidelity: M15-027, M15-028 — native destructor head, before unconditional tracker ForceUpdate/AbortAll.
         Lifetime.Bind(-1,_=>Engine.EmitSourceLog(EngineLogLevel.Event,null,"robot.destructor",unchecked((int)NativeRobotId).ToString(System.Globalization.CultureInfo.InvariantCulture)));
         var actions = ActionList;
