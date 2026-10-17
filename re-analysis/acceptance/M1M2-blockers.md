@@ -8,9 +8,69 @@
 - **Sources:** the manifest, `jobs/STATUS.md`, the job and check files named below.
 - **Status:** 78 records. 54 are EXACT_SOURCE; the remaining 24 are listed here.
 
+# Revised plan under "What we reproduce" (operator, 2026-10-17)
+
+This section is current. The assessment below it (same date) is its evidence; where they disagree, this section wins.
+AGENTS.md "What we reproduce" now governs: observable behaviour (robot traffic, robot behaviour, C# API delivery and
+readiness, downstream state) from source; implementation free where the result is the same; logs best effort;
+exclusions are recorded decisions; narrow checks before full extractions. Acceptance depends on the resulting
+production path and its verification, not on the length of this list.
+
+## Decisions recorded (on the records' `unresolved`)
+
+- **M1-055:** not supported: the Init-time animation broadcast (operator). Its delivery is unresolved, not disproved.
+  Its engine body has no state effect besides the sends and the Debug log (OV124 rows 14-23). Not supported: the raw
+  CLAD serializer for AnimationAvailable (manager; the C# API is typed). **Required:** a reliable animation list after
+  loading, with a clear completion indication.
+- **M1-056:** the C# API reports loading, ready and failed, with meaningful progress where readily available
+  (operator). The original's percentage cadence is not required. **Required from source (narrow):** how the 1 → 2 gate
+  is met with no UI device; what SetEngineState changes (OV125, trimmed).
+- **M1-054:** the startup order is required where it changes 1–4, and production must run it. Host-config failures are
+  handled as stack config errors (manager). UiMessageHandler::Init, InitInternal and the manager MessageHandler Init
+  get narrow checks (OV126). Each stays required until answered.
+- **M2-020:** the robot's Trace (0xB0) is decoded and logged as diagnostics (manager). WifiFlashID (0xEC) gets a
+  narrow check (OV126).
+
+## What stays, what goes
+
+| Item | Supported function it serves | Now |
+| --- | --- | --- |
+| Verify B-M1-2 | Startup order, the animation list | Stays (Opus, new criteria) |
+| Verify B-M15-11 | Lab startup state before the hardware run | Stays |
+| M1-055 loading gate (OV124 rows 8, 12) and list after loading | API: animation list, readiness | Stays (build) |
+| M1-056 1 → 2 gate, SetEngineState | Readiness; loading starts at all | Stays (OV125 narrow, then build) |
+| Loading/ready/failed + progress | API readiness | Stays (build; stack design for "failed") |
+| UiMessageHandler::Init, InitInternal, the MessageHandler Init, SendSupportInfo, WifiFlashID | Unknown | Narrow check (OV126), not full extraction |
+| Trace (0xB0) | Diagnostics | Decode and log (build) |
+| B-M2M15-2 | Robot-message dispatch with no robot (B9) | Released; build, then verify |
+| M2 settling pass, policy confirmation | Dispatch order; confirmed policies | Stays (Opus) |
+| M1+M2 hardware script and run | Acceptance | Stays (script by the manager; run by the operator) |
+| Init-time broadcast; raw AnimationAvailable bytes | — | Gone (recorded exclusions) |
+| Full extraction of the five routines | — | Gone (narrow checks instead) |
+| OV125 old Q3 (no-UI-device delivery) | — | Withdrawn |
+| Malformed-config branches, the "CozomEngine.Init" typo as a requirement | — | Gone (sensible stack errors; logs best effort) |
+| B-LOG-1 | Logs | Cleanup, held off the path |
+
+The higher-layer leaves of M1-054 (LoadRobotConfigs pieces, NeedsManager::Init, the animation-container population)
+stay required with their owners; the new standard does not dismiss them.
+
+## Sequence
+
+1. Now: Opus verifiers on B-M1-2 and B-M15-11. The builder takes B-M2M15-2. Research takes OV125 (narrow), then OV126.
+2. The manager adopts OV125 and OV126, then writes one builder job: the startup order where it changes 1–4, the
+   1 → 2 gate, the loading gate, loading/ready/failed and progress, Trace logging, and whatever OV126 marks REQUIRED.
+3. An Opus check of that job and of B-M2M15-2.
+4. The M2 settling pass and the policy confirmation.
+5. The manager writes the M1+M2 hardware script. It covers connect, startup to ready (with the loading states), the
+   animation list, robot-message dispatch and disconnect. Then the operator runs it on the final main.
+6. Settle the records and set ACCEPTED, if the production path runs as recorded and verification passed.
+
+[U] Still unknown: what OV125 and OV126 find (each REQUIRED item adds build work); why B-M2M15-1's gate failed;
+whether LoadRobotConfigs loads anything no record owns.
+
 # Current assessment (manager, 2026-10-17)
 
-This section is current. Everything from "1. Records still open" down is the 2026-10-16 assessment and its updates,
+This section is the evidence for the revised plan above. Everything from "1. Records still open" down is the 2026-10-16 assessment and its updates,
 kept as history; where it disagrees with this section, this section wins.
 
 - **Examined:** `main` at 9457a424. Uncommitted: `relmap.pkl` (untracked, unrelated). No code, classification,
