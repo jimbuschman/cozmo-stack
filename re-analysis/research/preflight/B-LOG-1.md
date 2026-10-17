@@ -1,0 +1,21 @@
+| Item | Result | Checked citation |
+| --- | --- | --- |
+| L1 level/channel/key/text/timestamp/order | Supported | Adopted `20261016-logkey-sites-check.md` L1: Info 0x00534F6A, `Unnamed`, `Robot.HandleFallingStarted.FallingStarted`, `timestamp: %u`, first payload u32; before game construction 0x00534F96 and broadcast 0x00534F9E. Current owner M10-011. |
+| L2 proxy warning and predicate | Supported | Same check L2: Warning 0x0054F3BE; `ICompoundAction.GetCompletionUnion.InvalidProxyTag`, `CompletionData with proxy tag=%d not found`; signed +0x94, proxy enabled, no child match, completion-map miss. Gates 0x0054F27A..0x0054F350; fallback 0x0054F3E4..0x0054F3EA. Owner M8-017. |
+| L2 UsingProxy arguments | MISSING | Same checked row explicitly leaves arguments untraced at 0x0054F2F2 and 0x0054F37E. Level Debug, channel Actions, and formats are known; do not invent name/tag argument identities. |
+| L3 error text, flag and no-buffer return | Supported | Same check L3: Error 0x0057C282; `ProceduralFaceKeyFrame.GetStreamMessageHelper`, `Failed to get RLE frame from procedural face.`; no args; `_errG`/break 0x0057C2A8..0x0057C2BC. Owner M5-013. |
+| L3 null-payload versus native condition | MISSING | Same check and current M5-013: CompressRLE 0x0057C216 nonzero enters error (`cbz` 0x0057C272 skips on zero); equivalence to stack `payload is null` is unread. |
+| L4 predicate, argument order and clamp | Supported | Same check L4: Warning 0x0067B644; `MoodManager.BadTimeStep`, `TimeStep %f (%f-%f) is < %f - clamping!`; widened dt,t,last,1e-4f, constant bits 0x3F1A36E2E0000000. 0x0067B5EE..0x0067B610: last=0 supplies minimum; NaN does not log. Owner M7-013. |
+| L4 existing formatter | Existing implementation available, not newly verified here | `LibcxxPrintf.cs:90`, FormatFixedFloat(float) → FormatDecimal((double)value,6,true), tagged M11-083. Current Mood.Advance uses float t/last/dt, so this entry accepts those existing operands without narrowing a double clock anew. |
+| L5/L6 shared map-miss log, signed ID, timestamp first | Supported | Same check L5/L6: RobotReactedToId 0x00612A94..0x00612B24; timestamp 0x00612A9E, signed map comparison 0x00612AA2..0x00612AD4; Debug 0x00612AFC, channel ReactionTriggers, key ReactionTriggerStrategyPoseDifference.ReactionIdInvalid and full checked text. Owner M10-003. |
+| L5 FinishedReactingToFace order | Supported | Same row, 0x0060D082..0x0060D0A8: RobotReactedToId, set insert +0x64, +0x54=now; no independent log. |
+| L5 face strategy populating +0x44 | MISSING | Same check/current M10-003 explicitly leave fills unread. Map body is 0x00612A94..0x00612B24; exact fill-site addresses UNKNOWN in these checked rows. Preserve existing fills. |
+| Key pre-check on changed source files | Required builder check, limited meaning | `re-analysis/tools/logkey_check.py` documentation: detects ABSENT literal keys, not branch, level, order, arguments or native reach. No source file changed or check run by this report. |
+
+Pre-flight of `re-analysis/jobs/B-LOG-1.md`, authority 6, 2026-10-17. Read the full adopted six-site check and current M10-011/M8-017/M5-013/M7-013/M10-003, all IMPLEMENTATION_GAP. No production changes, tests or status changes.
+
+The native L5/L6 text is `robot reported that it finished reaction to id %d, but that doesn't exist, may have been deleted`. Move this known log to the shared miss branch; its existence does not prove the face map is always empty or authorize changing map construction. On a hit the checked row specifies pose copy node+0x20=node+0x14 and timestamp node+0x30; do not discard those effects while relocating diagnostics.
+
+The existing fixed formatter is a concrete candidate for the job's reuse instruction, unlike LibcxxPrintf.FormatFloat's general-format entry. The latter is not interchangeable with `%f`. This pre-flight confirms availability/signature and the current float operands, not a new oracle verification of the formatter. The job does not authorize completing the unknown L2 arguments or L3 condition by inference.
+
+Current record appended notes agree with each corrected owner, including moving L2's tag from unrelated M7-020 to M8-017. No job/check contradiction was found. Preserve the three explicit MISSING boundaries above; passing the key pre-check cannot settle them.
