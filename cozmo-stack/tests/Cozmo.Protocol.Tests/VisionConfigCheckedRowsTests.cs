@@ -62,7 +62,7 @@ public sealed class VisionConfigCheckedRowsTests:IDisposable
             Assert.False(engine.VisionConfigurationReadSucceeded);Assert.Same(prior,engine.VisionConfiguration);Assert.Equal(FirmwareJsonKind.Object,prior.Kind);
             Assert.Equal(new[]{"DataPlatform.readAsJson","RobotDataLoader.VisionConfigJsonNotFound"},logs.Select(l=>l.Name));Assert.All(logs,e=>Assert.Equal(EngineLogLevel.Error,e.Level));
             Assert.EndsWith($"Failed to read [{options.ResourcesPath}/{CozmoEngine.VisionConfigurationPath}]",logs[0].Text);Assert.EndsWith("Vision Json config file config/engine/vision_config.json not found or failed to parse",logs[1].Text);Assert.True(EngineErrorState.ErrorFlagSet);
-            Assert.Contains(missing,s=>s.Contains("LoadGameRequestAndTrickConfigs"));Assert.Contains(missing,s=>s.Contains("M5-051"));Assert.Null(engine.Experiments.AbDisableInputs);Assert.Equal(3,engine.Experiments.Definition.Experiments!.Count); // M15-052 native AB global input remains Missing; definition loading continued.
+            Assert.Contains(missing,s=>s.Contains("LoadGameRequestAndTrickConfigs"));Assert.Contains(missing,s=>s.Contains("M5-051"));Assert.True(engine.Experiments.Enabled);Assert.Equal(3,engine.Experiments.Definition.Experiments!.Count); // M15-049/052 Lab always enables; definition loading continued.
         }
         finally{engine?.Dispose();SteppedBehavior.MissingReported-=missing.Add;}
     }

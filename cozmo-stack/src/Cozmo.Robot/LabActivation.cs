@@ -14,7 +14,8 @@ internal sealed class LabActivationRuntime
 {
     internal required Func<LabDefinition> Definition;
     internal required LabSourceLog Log;
-    internal bool Enabled;
+    internal bool Enabled=true; // AnkiLab ctor7EBB60 stores1; disable path is unreachable (M15-049).
+    internal object AssignmentGate {get;init;}=new(); // actual CozmoExperiments._gate in production
     internal Func<byte[],LabExperiment?>? FindExperiment;
     internal Func<int,byte[],byte[],LabAssignmentDef?>? FindAssignment;
     internal Func<LabExperiment,byte[],LabVariation?>? FindVariation;
@@ -38,7 +39,7 @@ internal sealed class LabActivationRuntime
     private LabAssignmentDef? Assignment(int offset,byte[] key,byte[] user)
     {if(FindAssignment is null)Missing($"FindAssignment PLT0x004CA700, lab+0x{offset:X} owner; no empty vector inferred");return FindAssignment!(offset,key,user);}
     private byte[] Name(byte status)
-    {if(StatusName is null)Missing("AssignmentStatus EnumToString0x008FA1A4 input");return StatusName!(status);}
+    {if(StatusName is null)Missing("AssignmentStatus EnumToString PLT0x004BDC98 at0x007ECFC8/0x007EC4CE input");return StatusName!(status);}
     internal uint? AutoActivate(byte[] user,IReadOnlyList<byte[]> tags)
     {
         try
@@ -86,13 +87,16 @@ internal sealed class LabActivationRuntime
     {
         // Lookup is a required native recipient, distinct from app-side collection conventions.
         var old=Assignment(0x40,assignment.Key,assignment.User);
-        if(Assignments40 is null)Missing("lab+40 assignment vector storage owner0x007ECEF8..0x007ECF4A");
-        if(old is null)Assignments40!.Add(assignment);
-        else
+        lock(AssignmentGate)
         {
-            int index=Assignments40!.FindIndex(entry=>ReferenceEquals(entry,old));
-            if(index<0)Missing("FindAssignment returned an entry outside explicit lab+40 vector");
-            Assignments40[index]=old with{Variation=assignment.Variation.ToArray()};
+            if(Assignments40 is null)Missing("lab+40 assignment vector storage owner0x007ECEF8..0x007ECF4A");
+            if(old is null)Assignments40!.Add(assignment);
+            else
+            {
+                int index=Assignments40!.FindIndex(entry=>ReferenceEquals(entry,old));
+                if(index<0)Missing("FindAssignment returned an entry outside explicit lab+40 vector");
+                Assignments40[index]=old with{Variation=assignment.Variation.ToArray()};
+            }
         }
         if(AssignmentSignal64 is null)Missing("observer chain owner+64 at0x007ECF32; assignment retained");
         if(AssignmentSignal64!.Head is not null)AssignmentSignal64.Dispatch(Assignments40!);
@@ -158,10 +162,15 @@ internal sealed class LabActivationRuntime
         return (byte)Math.Min(bucket,255u);
     }
     internal Action? AssertCallstackAndFlush;
+    internal Action? AssertLogFlush;
     private void AssertEmpty(string name,string expression)
     {
         Log(EngineLogLevel.Error,null,$"CalculateExperimentHashBucket: {name} can not be empty",$"Assertion Failed: {expression}");EngineErrorState.StoreAndMaybeBreak();
-        if(AssertCallstackAndFlush is {} call)call();else Missing("AssertCallstack/flush after empty-string hash assertion0x007EE400/0x007EE490; defined hash continues after recipient");
+        // sDumpCallstack target0x0080B0A6 is bx lr. sLogFlush follows at7EE468/7EE4F8;
+        // both are defined, non-aborting calls. No synthetic host stack trace is emitted.
+        if(AssertCallstackAndFlush is {} call)call();
+        else if(AssertLogFlush is {} flush)flush();
+        else SteppedBehavior.ReportMissing("M15-052 sLogFlush recipient after empty-hash assertions0x007EE468/0x007EE4F8 ->0x0080DA7C is unbound; hash continues");
     }
     internal void Report(LabAssignmentDef assignment,byte status)
     {

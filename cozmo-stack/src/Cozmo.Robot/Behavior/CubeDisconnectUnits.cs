@@ -19,7 +19,7 @@ internal sealed class FeedingCubeControllerUnit
     internal Action? DeleteOuter;
     internal Func<int,string>? StateName;
     private bool Name(int state,out string text)
-    {text="";if(StateName is null){SteppedBehavior.ReportMissing("M15-056 controller state-name table01025228 input");return false;}text=StateName(state);return true;}
+    {text="";if(StateName is null){SteppedBehavior.ReportMissing("M15-056/M15-061 controller state-name table01025228 input at0x005A6126/0x005A61CA");return false;}text=StateName(state);return true;}
     internal bool SetState(int state,float time)
     {
         if(State4 is null){SteppedBehavior.ReportMissing("M15-061 FeedingCubeController constructor5A6038..5A60B0 state+4 owner");return false;}
@@ -126,13 +126,21 @@ internal sealed class FeedingDisconnectUnit
     }
     internal bool OnDeselected()
     {
+        bool complete=true;
         foreach(var controller in Controllers78.Values)
-            if(!controller.SetState(2,BitConverter.UInt32BitsToSingle(0xBF800000)))return false;
-        if(DestroyControllerTree is null){SteppedBehavior.ReportMissing("M15-061 Feeding controller-tree destroy0x005ABC0A -> PLT0x004B16D4; no guessed destructor traversal order");return false;}
-        if(!DestroyControllerTree(Controllers78))return false;
+            if(!controller.SetState(2,BitConverter.UInt32BitsToSingle(0xBF800000)))complete=false;
+        if(Controllers78.Count!=0)
+        {
+            if(DestroyControllerTree is {} destroy)
+            {if(!destroy(Controllers78))complete=false;}
+            else
+            {SteppedBehavior.ReportMissing("M15-061 Feeding nonempty controller-tree destroy0x005ABC0A -> PLT0x004B16D4; no guessed destructor traversal order; checked map reset and handle release still follow");complete=false;}
+        }
+        // destroy(null) at5ACD6A..94 is a no-op, not a missing recipient. Native reset
+        // and reverse release5ABC16..3C are unconditional after the destroy call.
         Controllers78.Clear();
         while(HandlesAC.Count!=0){int last=HandlesAC.Count-1;var handle=HandlesAC[last];HandlesAC.RemoveAt(last);handle.Dispose();}
-        SteppedBehavior.ReportMissing("M15-061 surrounding Feeding deselect lifecycle0x005ABB5C..5ABC46; checked state2/map/handle order only");return true;
+        SteppedBehavior.ReportMissing("M15-061 surrounding Feeding deselect lifecycle0x005ABB5C..5ABC46; checked state2/map/handle order only");return complete;
     }
 }
 

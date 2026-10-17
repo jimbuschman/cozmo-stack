@@ -25,14 +25,15 @@ internal sealed partial class CozmoExperiments
     private readonly HashSet<string> _missing=new();
     private void Missing(string text)=>SteppedBehavior.ReportMissing(text,_missing);
     private LabDefinition _definition=new();
-    internal bool Enabled { get; private set; }
+    internal bool Enabled => Lab.Enabled;
     internal string? DeviceIdInput { get; private set; }
     internal Stream? CerrOverride;
     internal const string RelativePath="config/experiments.json";
     internal CozmoExperiments(CozmoEngine engine)
     {
         _engine=engine;
-        Lab=new LabActivationRuntime{Definition=()=>Definition,Log=engine.EmitSourceLog};
+        Lab=new LabActivationRuntime{Definition=()=>Definition,Log=engine.EmitSourceLog,
+            AssignmentGate=_gate,AssertLogFlush=engine.Das.ForceFlushNow};
         Audience=new LabAudienceTags{Log=engine.EmitSourceLog};
         Audience.RegisterEngineTags(()=>NeedsState8Input?.Invoke(),()=>DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             ()=>engine.Options.LabLocaleLanguage,()=>engine.Options.LabLocaleCountry);
@@ -42,7 +43,6 @@ internal sealed partial class CozmoExperiments
     internal LabAudienceTags Audience {get;}
     internal LabAbInterface Ab => LabAbInterface.ProcessGlobals;
     internal Func<long?>? NeedsState8Input;
-    internal Func<(byte ForceFlag,bool Word105D980Nonzero)>? AbDisableInputs;
     internal Func<IReadOnlyList<byte[]>>? KnownAudienceTagsInput;
     internal Func<(Delegate First,Delegate Second)>? AbCallbacksInput;
     internal Action? InitBeforeNeedsObserved;
@@ -152,15 +152,16 @@ internal sealed partial class CozmoExperiments
         InitBeforeNeedsObserved?.Invoke();
         try
         {
-            if(AbDisableInputs is null)LabActivationRuntime.Missing("ShouldABTestingBeDisabled global input join105D940/105D980 at0x007EE968..0x007EE986");
-            var input=AbDisableInputs!();Enabled=!LabAbInterface.ShouldDisable(input.ForceFlag,input.Word105D980Nonzero);Lab.Enabled=Enabled;
-            _engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","AnkiLab.Enable",Enabled?"Enabling the lab":"Disabling the lab");
+            // M15-049: force-disable starts zero and its only writer chain ends at the
+            // unreachable HandleABTestingForceURL7EEB94. No app/host disable input exists.
+            Lab.Enabled=true;
+            _engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","AnkiLab.Enable","Enabling the lab");
             // fidelity: M15-053 — COMPATIBILITY_POLICY: explicit stable Java DAS.getDeviceID input.
             DeviceIdInput=_engine.Options.DasDeviceId;
             if(DeviceIdInput is null)LabActivationRuntime.Missing("M15-053 DAS platform user-id input0x006A5626: no explicit stable DasDeviceId setting; no generated UUID");
             var bytes=Encoding.UTF8.GetBytes(DeviceIdInput!);int nul=Array.IndexOf(bytes,(byte)0);if(nul>=0)bytes=bytes[..nul];
             if(Lab.AutoActivate(bytes,Audience.GetQualified()) is null)return;
-            if(KnownAudienceTagsInput is null)LabActivationRuntime.Missing("GetKnownAudienceTags input at0x006A5672; no invented tag union");
+            if(KnownAudienceTagsInput is null)LabActivationRuntime.Missing("GetKnownAudienceTags0x007ED0AC input at0x006A5672; no invented tag union");
             _=Audience.Verify(KnownAudienceTagsInput!()); // native ignores bool
             if(AbCallbacksInput is null)LabActivationRuntime.Missing("captured AB-interface callable owners01031738/01031778 at0x006A5686..0x006A56A4");
             var callbacks=AbCallbacksInput!();Ab.Initialize(callbacks.First,callbacks.Second);

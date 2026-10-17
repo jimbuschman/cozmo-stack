@@ -21,7 +21,10 @@ internal sealed class LabAudienceTags
     private static byte[] Locale(string prefix,string? value)
     {
         if(value is null)LabActivationRuntime.Missing("host locale language/country input0x006A53CC/0x006A54C4; COMPATIBILITY_POLICY input is absent");
-        return Encoding.UTF8.GetBytes(prefix+value!.ToLowerInvariant()); // host replaces app Locale; system lowercase boundary
+        var bytes=Encoding.UTF8.GetBytes(value!);
+        // StringToLower8307A4..8307E8 operates on bytes, only ASCII A..Z.
+        for(int i=0;i<bytes.Length;i++)if(bytes[i] is >=0x41 and <=0x5A)bytes[i]+=0x20;
+        return Encoding.ASCII.GetBytes(prefix).Concat(bytes).ToArray();
     }
     internal static bool AppUserD0(long needsMicros,long nowSeconds)
     {long delta=unchecked((long)(int)nowSeconds-needsMicros/1000000);return delta>=0&&delta<86400;}
@@ -53,7 +56,8 @@ internal sealed class LabAbInterface
     internal static readonly LabAbInterface ProcessGlobals=new();
     internal Delegate? First105D948,Second105D960;
     internal Action<string>? AssignmentObserved;
-    internal static bool ShouldDisable(byte forceFlag,bool callbackAt105D980Present)=>forceFlag!=0&&!callbackAt105D980Present;
+    // Defined native predicate; its force-URL writer chain is unreachable (M15-049).
+    internal static bool ShouldDisable(byte forceFlag,bool forcedAssignmentsNonempty)=>forceFlag!=0&&!forcedAssignmentsNonempty;
     internal void Initialize(Delegate first,Delegate second)
     {First105D948=first;AssignmentObserved?.Invoke("105D948");Second105D960=second;AssignmentObserved?.Invoke("105D960");}
 }

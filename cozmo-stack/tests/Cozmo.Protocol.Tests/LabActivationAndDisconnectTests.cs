@@ -52,7 +52,7 @@ public sealed class LabActivationAndDisconnectTests
     {
         var f=new LabFixture();bool signaled=false;
         var observer=new LabAssignmentSignalNode();observer.Next=observer;
-        observer.Callback=values=>{Assert.Equal(1u,observer.RefCount20);Assert.Single(f.Lab.Assignments40!);Assert.Same(f.Lab.Assignments40,values);signaled=true;};
+        observer.Callback=values=>{Assert.Equal(1u,observer.RefCount20);Assert.Single(f.Lab.Assignments40!);Assert.False(Monitor.IsEntered(f.Lab.AssignmentGate));Assert.Same(f.Lab.Assignments40,values);signaled=true;};
         f.Lab.AssignmentSignal64=new(){Head=observer,Release4EB0CA=node=>node.RefCount20--};
         var result=f.Lab.Activate(B("report_test_auto"),B("test-user"),Array.Empty<byte[]>(),1);
         Assert.True(signaled);Assert.Equal((byte)6,result!.Value.Status);Assert.Equal("treatment",Encoding.UTF8.GetString(result.Value.Variation));
@@ -138,7 +138,7 @@ public sealed class LabActivationAndDisconnectTests
         g.HandleEvent(13,new ObjectConnectionStateMessage(999,0,ObjectType.Charger_Basic,0));Assert.Equal(new[]{"pre"},trace);running=1;trace.Clear();g.HandleEvent(13,new ObjectConnectionStateMessage(999,0,ObjectType.Charger_Basic,1));Assert.Equal(new[]{"pre"},trace);
         trace.Clear();g.HandleEvent(13,new ObjectConnectionStateMessage(999,0,ObjectType.Charger_Basic,0));Assert.Equal(new[]{"pre","BehaviorGuardDog.HandleObjectConnectionState","stop","Behavior.TransitionToState"},trace);Assert.Equal(8,g.State11C);Assert.Equal("BlockDisconnected",g.StateLabel58);
     }
-    // reach: unit (uses the real E2G subscription; substitutes native history-root topology; join MISSING at M15-056635D6E).
+    // reach: unit (real E2G subscription; substitutes history topology. Producer MISSING at635D6E; discarded walk itself needs no missing side effect).
     [Fact] public void CubeAccelDisconnectPreservesHistoryAndSubscriptionRetiresBeforeHistoryClear()
     {
         using var r=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>1);r.Engine.Robots.AddRobot(1,false);int calls=0;r.CubeAccel.NativeHistoryRoot=()=>{calls++;return new NativeCubeAccelHistoryNode{Id14=-1,Left=new(){Id14=-2}};};var visited=new List<int>();r.CubeAccel.HistoryNodeVisited=visited.Add;
@@ -154,12 +154,12 @@ public sealed class LabActivationAndDisconnectTests
         finally{EngineErrorState.ErrorFlagSet=old;}
     }
     // reach: unit (substitutes native state/lookup/callback inputs; joins MISSING at M15-0624CA6F4 and M15-0615A6038; actual subscription/factory entry is exercised where named).
-    [Fact] public void InitUsesDisableBeforeDeviceBeforeTagsBeforeAutoBeforeVerifyBeforeAbAssignment()
+    [Fact] public void InitEnablesBeforeDeviceBeforeTagsBeforeAutoBeforeVerifyBeforeAbAssignment()
     {
         using var resources=new BackupTestResources();using var engine=new CozmoEngine(new M4ControlTests.FakePort(),resources.Options(new CozmoEngineOptions{DasDeviceId="u",LabLocaleLanguage="English",LabLocaleCountry="US"}),()=>1);
-        var lab=engine.Experiments;var trace=new List<string>();lab.InitBeforeNeedsObserved=()=>trace.Add("init-before-needs");lab.AbDisableInputs=()=>{trace.Add("disable");return(0,false);};lab.NeedsState8Input=()=>{Assert.Equal("u",lab.DeviceIdInput);trace.Add("tags");return 0;};
+        var lab=engine.Experiments;var trace=new List<string>();lab.InitBeforeNeedsObserved=()=>trace.Add("init-before-needs");engine.LogEntry+=entry=>{if(entry.Name=="AnkiLab.Enable")trace.Add("enable");};lab.NeedsState8Input=()=>{Assert.Equal("u",lab.DeviceIdInput);trace.Add("tags");return 0;};
         lab.Lab.FindExperiment=_=>{trace.Add("activate");return null;};lab.Lab.StatusName=_=>B("ExperimentNotFound");lab.Lab.Definition=()=>new(B("p"),1,1,new[]{Experiment()});lab.KnownAudienceTagsInput=()=>{trace.Add("verify");return Array.Empty<byte[]>();};Action callback=()=>throw new Exception();lab.AbCallbacksInput=()=>{trace.Add("ab");return(callback,callback);};
-        lab.InitBeforeNeeds(()=>trace.Add("needs"));Assert.Equal(new[]{"init-before-needs","disable","tags","activate","verify","ab","needs"},trace);
+        lab.InitBeforeNeeds(()=>trace.Add("needs"));Assert.Equal(new[]{"init-before-needs","enable","tags","activate","verify","ab","needs"},trace);
     }
     // reach: unit (substitutes native state/lookup/callback inputs; joins MISSING at M15-0624CA6F4 and M15-0615A6038; actual subscription/factory entry is exercised where named).
     [Fact] public void AudienceVerifyLogsEveryUnknownOccurrenceAndKeepsGoingWithoutInvokingPredicates()

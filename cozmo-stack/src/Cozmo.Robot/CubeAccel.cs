@@ -116,7 +116,9 @@ public sealed class CubeAccelStreams
     internal void OnObjectConnectionState(ObjectConnectionStateMessage message)
     {
         if(message.ConnectedByte==0)return; // no history/listener removal on disconnect
-        if(NativeHistoryRoot is not {} root){Behavior.SteppedBehavior.ReportMissing("M15-056 CubeAccel history root+0C producer before0x00635D6E; checked signed walk built, no invented tree");return;}
+        // 635D6A..635D82 /635F1C..635F40: side-effect-free lookup, result discarded.
+        // An unbound history root needs no diagnostic for this no-op consumer.
+        if(NativeHistoryRoot is not {} root)return;
         int id=unchecked((int)message.ObjectID);var node=root();
         while(node is not null){HistoryNodeVisited?.Invoke(node.Id14);node=node.Id14>=id?node.Left:node.Right;} // equal follows LEFT; no found-node action
     }

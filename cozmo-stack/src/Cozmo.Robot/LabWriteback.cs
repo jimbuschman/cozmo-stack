@@ -18,7 +18,7 @@ internal sealed partial class CozmoExperiments
     internal void PossiblyWriteLabAssignmentsToRobot()
     {
         IReadOnlyList<LabAssignmentDef>? active; IReadOnlyList<LabAssignmentPair>? cache;
-        lock (_gate) { active = Lab.Assignments40 ?? _activeAssignments; cache = _cachedAssignments; }
+        lock (_gate) { active = Lab.Assignments40?.ToArray() ?? _activeAssignments; cache = _cachedAssignments; }
         if (active is null || cache is null)
         {
             Missing("M15-050/M15-052/M15-036 PossiblyWriteLabAssignmentsToRobot0x006A5DE4: active assignment and restored cache vector producers are unbuilt; no empty vector or selected variation fabricated");
