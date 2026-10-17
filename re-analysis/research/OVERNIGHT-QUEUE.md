@@ -156,5 +156,6 @@ The first three are the requests already written:
 | OV122 | requests/overnight/20261016-ov122-m15-069.md (M15-069: R2E-phase synchronous action completions (census beyond 0x00512038 and) | research/overnight/20261016-ov122-m15-069.md |
 | OV123 | requests/overnight/20261016-ov123-m9-046.md (M9-046: Wwise singing remainder; answered by manager-adopted Opus summary under the alternate filename) | research/overnight/20261016-ov123-answer.md |
 | OV124 | requests/overnight/20261017-ov124-m1-055.md (M1-055: first broadcast population timing, procedural-name exclusion and EndOfMessage payload; current M1+M2 target) | research/overnight/20261017-ov124-m1-055.md |
+| OV125 | requests/overnight/20261017-ov125-m1-056.md (M1-056: engine states 1 and 2, EngineLoadingDataStatus, Init-time broadcast delivery with no UI device; current M1+M2 target) | research/overnight/20261017-ov125-m1-056.md |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-032 (M15-031 is in scope since 2026-10-16).

@@ -795,3 +795,12 @@ M1-048 Rule10 U5/U6 follow-up: exact short-send, non-IP and send-failure tags/fo
 | --- | --- |
 | To IMPLEMENTATION_GAP | M1-054 |
 | New IMPLEMENTATION_GAP | M1-055 |
+
+
+## Check of OV124 (manager, 2026-10-17; research/overnight/20261017-ov124-check.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP: engine states 1 and 2, EngineLoadingDataStatus, Init-time broadcast delivery | M1-056 (new) |
+| New COMPATIBILITY_POLICY: 0xB1/0xB2/0xB3 handlers unreachable (no app sender) | M1-057 (new) |
+| First-broadcast question answered; folded in after B-M1-2 publishes | M1-055 (pending) |

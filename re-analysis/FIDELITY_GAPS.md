@@ -3,15 +3,15 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **690 records** over 16 subsystems.
+Manifest of **692 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 19 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 20 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 404 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
-| COMPATIBILITY_POLICY | 62 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
+| COMPATIBILITY_POLICY | 63 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
 
@@ -24,7 +24,7 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 55 | 0 | 2 | 0 | 1 | yes | no |
+| M1-transport — UDP transport and reliability | 57 | 1 | 2 | 0 | 1 | no | no |
 | M2-protocol — CLAD messages and protocol helpers | 23 | 0 | 5 | 0 | 0 | yes | no |
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 50 | 0 | 17 | 0 | 3 | yes | no |
@@ -72,6 +72,17 @@ status.
 ## Still to read: every RECOVERABLE_GAP
 
 Each of these is a question the original can answer and nobody has asked it yet.
+
+### M1-transport — UDP transport and reliability
+
+**M1-056 — CozmoEngine::Update states 1 and 2: HasDesiredNumUiDevices, SendSupportInfo, SetEngineState(2); the per-tick loading poll and EngineLoadingDataStatus; delivery of the Init-time broadcast with no UI device** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
+* effect: When loading starts, the support info and engine-state messages the game receives, the loading-progress messages, and whether the Init-time animation broadcast reaches the game at all.
+* rests on: Opus check of OV124 (2026-10-17), manager record.
+* best authority: libcozmoEngine.so 3.4.0-1204.
+* evidence: re-analysis/research/overnight/20261017-ov124-check.md: switch 0x004ED5C4 (engine+0x62), tbb 0x004ED5CC; state 1: HasDesiredNumUiDevices == 1 at 0x004ED5D8, SendSupportInfo 0x004ED5E2, SetEngineState(2) 0x004ED5EA; state 2: loading case 0x004ED5F0, then always 0x004ED612..0x004ED618 -> 0x004ED7C0 (EngineLoadingDataStatus ctor 0x004ED7DE, E2G slot +0x1C 0x004ED7E6; context+4 dereferenced without a null check 0x004ED7D2); progress out-parameter written every call before the done test 0x00523576..0x0052357E; UiMessageHandler::Broadcast 0x006625B0 calls [vtbl+0x48] with r2 = -1 (0x006625CA..0x006625CE), then local dispatch 0x006625FA.
+* outstanding: RECOVERABLE_GAP: unread bodies: HasDesiredNumUiDevices (count source, desired number), SendSupportInfo (messages and payloads), SetEngineState (store, sends, logs), 0x004ED7C0's EngineLoadingDataStatus payload, the loader+0x270 progress writers during loading, and the concrete UiMessageHandler [vtbl+0x48] target's behaviour with no UI device (drop or queue), which decides whether the game receives M1-055's Init-time zero-name broadcast. Research request OV125 (re-analysis/research/requests/overnight/20261017-ov125-m1-056.md). M1-024 owns state 3; M2-021 owns the app's wait for ratio >= 1.
 
 ### M6-wwise-bank — Wwise bank reading and codecs
 
@@ -4369,6 +4380,7 @@ B-M13-1: real background worker used. Tests explicitly name M13-035; fixture pum
 | M1-049 | M1-transport | COMPATIBILITY_POLICY | Android bind/unbind trigger gates and native signal bridge | Unity/Java app and libcozmoEngine.so native network callback. |
 | M1-051 | M1-transport | COMPATIBILITY_POLICY | SDK mode entry and lifecycle state writers | libcozmoEngine.so 3.4.0-1204 SDK/UI lifecycle. |
 | M1-052 | M1-transport | COMPATIBILITY_POLICY | SDK connection callback virtual targets | libcozmoEngine.so 3.4.0-1204 communication-change callback. |
+| M1-057 | M1-transport | COMPATIBILITY_POLICY | G2E ReadAnimationFile (0xB1), RequestAvailableAnimations (0xB2) and RequestAvailableAnimationGroups (0xB3) handlers: unreachable in this stack (no app sender) | libcozmoEngine.so 3.4.0-1204; Unity C# (absence of a sender). |
 | M3-039 | M3-device | COMPATIBILITY_POLICY | SDK cube-sleep recipient | libcozmoEngine.so 3.4.0-1204 ResetRobot. |
 | M3-042 | M3-device | COMPATIBILITY_POLICY | Host persistent directory and stat mapping for the IMU diagnostic logger | libcozmoEngine.so 3.4.0-1204 IMU handlers (M3-041 rows L5/L6) and FileUtils (rows F8.1/F8.2). |
 | M3-044 | M3-device | COMPATIBILITY_POLICY | CozmoRobot.StartCamera's EnableColorImages and ImageRequest sends | libcozmoEngine.so 3.4.0-1204 camera start path. |

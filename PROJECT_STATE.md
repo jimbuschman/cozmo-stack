@@ -81,6 +81,11 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
+- **OV124 adopted (manager, 2026-10-17; research/overnight/20261017-ov124-check.md):** after B-M1-2 publishes, fold
+  the answer into M1-055's unresolved (engine side: the fresh Init-time broadcast sends zero AnimationAvailable, then
+  EndOfMessage(0), then Debug; whether the game receives it is M1-056). New M1-056 (RECOVERABLE_GAP, OV125 queued) and
+  M1-057 (0xB1/0xB2/0xB3 unreachable). M1-transport re-approved for the two new records.
+
 - **B-M3M4-27 Codex source check (2026-10-17):** add retrospective `reach:` labels to its changed/new
   M3M4X21/M3M4X17 regressions and per-record coverage to its status report, following
   `re-analysis/research/20261017-b-m3m4-27-check.md`. The label rule postdates the implementation. Source review

@@ -1,8 +1,8 @@
 {
   "subsystem": "M1-transport",
-  "approved": "2026-10-16",
+  "approved": "2026-10-17",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "8bb37ebe2c4563af343b3601f94474d4610ccd319d54c721d51de01848bbfbbd",
+  "inventory_sha256": "22c220c7015844a1a7f26fd89a7c23e66d4b148fa71b77bca28fde446b57162a",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -694,6 +694,26 @@
         "re-analysis/research/overnight/20261016-batch-check.md: 0x004ED5F0..0x004ED60E; BroadcastAvailableAnimations 0x0052E89C..0x0052E916 (names 0x00588190..0x0058826A unordered_map order skipping the procedural name; E2G AnimationAvailable per name 0x0052F878..0x0052F8E2; EndOfMessage 0x0052F918..0x0052F95C; Debug RobotManager.BroadcastAvailableAnimations \"Supposedly sent EndOfMessage\")."
       ],
       "live_path": true,
+      "hardware_required": false
+    },
+    "M1-056": {
+      "status": "RECOVERABLE_GAP",
+      "title": "CozmoEngine::Update states 1 and 2: HasDesiredNumUiDevices, SendSupportInfo, SetEngineState(2); the per-tick loading poll and EngineLoadingDataStatus; delivery of the Init-time broadcast with no UI device",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/overnight/20261017-ov124-check.md: switch 0x004ED5C4 (engine+0x62), tbb 0x004ED5CC; state 1: HasDesiredNumUiDevices == 1 at 0x004ED5D8, SendSupportInfo 0x004ED5E2, SetEngineState(2) 0x004ED5EA; state 2: loading case 0x004ED5F0, then always 0x004ED612..0x004ED618 -> 0x004ED7C0 (EngineLoadingDataStatus ctor 0x004ED7DE, E2G slot +0x1C 0x004ED7E6; context+4 dereferenced without a null check 0x004ED7D2); progress out-parameter written every call before the done test 0x00523576..0x0052357E; UiMessageHandler::Broadcast 0x006625B0 calls [vtbl+0x48] with r2 = -1 (0x006625CA..0x006625CE), then local dispatch 0x006625FA."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-057": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "G2E ReadAnimationFile (0xB1), RequestAvailableAnimations (0xB2) and RequestAvailableAnimationGroups (0xB3) handlers: unreachable in this stack (no app sender)",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity C# (absence of a sender).",
+      "evidence": [
+        "re-analysis/research/overnight/20261017-ov124-check.md: 0xB1 registration 0x004EBCF4..0x004EBD1E from 0x004EB5D8, invoker 0x004EEA32 -> ReadAnimationDir 0x0052F858 (LoadAnimations 0x0052F860 clears loader+0x44 only, then broadcast 0x0052F86A); 0xB2/0xB3 subscribed in the RobotManager ctor when context+4 is non-null 0x0052E51A..0x0052E5B2, 0x0052E54C; 0xB2 handler 0x0052FC02 -> BroadcastAvailableAnimations; 0xB3 handler 0x0052FBA0 -> BroadcastAvailableAnimationGroups; no loading gate on any. App: unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MessageGameToEngine.cs:190-192 and the generated message classes are the only references."
+      ],
+      "live_path": false,
       "hardware_required": false
     }
   }

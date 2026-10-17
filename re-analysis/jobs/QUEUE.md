@@ -137,7 +137,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 | 61v | [B-M9-4](B-M9-4.md) | DONE per status/B-M9-4.md (MIDI boundary M9-034; clip-start M9-040; collector M9-035; emitters M9-036; note-off M9-037; live RTPC M9-038) |
 | 61w0 | [B-M11-15](B-M11-15.md) | DONE per status/B-M11-15.md |
 | 61w1 | [B-M15-7](B-M15-7.md) | CLAIMED per status/B-M15-7.md |
-| 61w2 | [B-M1-2](B-M1-2.md) | open, after B-M15-7 |
+| 61w2 | [B-M1-2](B-M1-2.md) | CLAIMED per status/B-M1-2.md |
 | 61w3 | [B-M2M15-2](B-M2M15-2.md) | open, after B-M1-2 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilderTests full-run failure) |
 | 61w4 | [B-M12-7](B-M12-7.md) | open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
