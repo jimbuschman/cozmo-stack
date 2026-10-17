@@ -64,7 +64,7 @@ internal sealed partial class RobotManager
         long start = nowNs();
         SteppedBehavior.ReportMissing("M1-054/M8-022 RobotManager.Init vslot+8 at 0x0052E76A: native MessageHandler init/config recipient is unread; existing Initialised flag is retained, not a complete native Init");
         _engine.Handler.Initialised = true;
-        SteppedBehavior.ReportMissing("M1-054/M8-022 RobotManager.BroadcastAvailableAnimations at 0x0052E76E: body/payload recipient unread; no fabricated broadcast");
+        BroadcastAvailableAnimations(); // checked body; missing native population timing stays visible.
         LoadDasBlacklistedAnimationTriggers(config);
         long elapsedMs = unchecked(nowNs() - start) / 1_000_000L;
         _engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.init.time_spent_ms", elapsedMs.ToString(CultureInfo.InvariantCulture));

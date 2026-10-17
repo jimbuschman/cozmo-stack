@@ -71,7 +71,7 @@ public static class LiftPresets
 /// anyone recomputing it. This stack has no pose tree, so the same chain is composed on demand - see
 /// <see cref="LiftGeometry"/>, which holds every link of it with the address it came from.
 /// </summary>
-public sealed class CarryingComponent
+public sealed partial class CarryingComponent
 {
     private readonly object _gate = new();
     private uint? _carried;
@@ -108,6 +108,15 @@ public sealed class CarryingComponent
     {
         lock (_gate) { _carried = objectId; _dockMarker = dockMarker; _objectWrtLift = objectWrtLift; _onTopId = onTopId; _topWrtCarried = topWrtCarried; }
         Changed?.Invoke(objectId);
+    }
+
+    // fidelity: M12-008, M12-046
+    // The checked caller stores +14 before SetCarryingObject; that setter then chooses 1/2.
+    internal void AttachToLiftChecked(BlockWorld world, uint objectId, KnownMarker marker,
+        Pose3d objectWrtLift, uint? onTopId, Pose3d? topWrtCarried)
+    {
+        lock (_gate) { _dockMarker=marker; _objectWrtLift=objectWrtLift; _onTopId=onTopId; _topWrtCarried=topWrtCarried; }
+        SetCarryingObject(world, objectId, (ushort)marker.Code);
     }
 
     private Pose3d? _objectWrtLift;

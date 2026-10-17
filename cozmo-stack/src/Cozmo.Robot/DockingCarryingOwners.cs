@@ -21,6 +21,7 @@ public sealed partial class EngineRobot
         DockingOwner = new();
         Engine.DockingCarryingOwnerObservedForTest?.Invoke("new Docking");
         CarryingOwner = new();
+        CarryingOwner.NativeRobot = this;
         Engine.CarryingOwnerConstructed?.Invoke(CarryingOwner); // host facade names the newly constructed native storage before Delocalize.
         Engine.DockingCarryingOwnerObservedForTest?.Invoke("new Carrying");
     }

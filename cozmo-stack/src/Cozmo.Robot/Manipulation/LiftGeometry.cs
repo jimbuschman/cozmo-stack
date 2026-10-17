@@ -131,7 +131,7 @@ public static class LiftGeometry
             if (r != 0) { log?.Invoke($"SetObjectAsAttachedToLift: AddObjectRelativeObservation returned {r}"); return r; }
             topId = top.ObjectId; topWrtCarried = tmp;
         }
-        carrying.AttachToLift(id, marker, objWrtLift, topId, topWrtCarried);
+        carrying.AttachToLiftChecked(world, id, marker, objWrtLift, topId, topWrtCarried);
         if (configurations is not null) configurations.ForceUpdate = true;
         var argument = liftWorld.Compose(objWrtLift);
         if (liveLiftPose is not null)

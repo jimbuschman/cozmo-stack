@@ -25,7 +25,7 @@ internal sealed class BackupTestResources : IDisposable
         File.Copy(Path.Combine(Path.GetDirectoryName(ShippedConfig())!,"../experiments.json"),Path.Combine(resources,"config/experiments.json"),true);
         return new CozmoEngineOptions {
             ResourcesPath = options.ResourcesPath ?? resources, FilesPath = Root, BlockPoolPath = options.BlockPoolPath,
-            DataCollectionEnabled = options.DataCollectionEnabled, DasDeviceIdPath = options.DasDeviceIdPath, DasDeviceId = options.DasDeviceId, LabLocaleLanguage=options.LabLocaleLanguage, LabLocaleCountry=options.LabLocaleCountry,
+            DataCollectionEnabled = options.DataCollectionEnabled, DasDeviceIdPath = options.DasDeviceIdPath, DasDeviceId = options.DasDeviceId, LabLocaleLanguage=options.LabLocaleLanguage, LabLocaleCountry=options.LabLocaleCountry,EngineConfigJson=options.EngineConfigJson,
             AnimationCachePath = options.AnimationCachePath, VerboseLogDisplay = options.VerboseLogDisplay,
             DataPlatformPersistentPath = options.DataPlatformPersistentPath, RobotVolume = options.RobotVolume,
         };

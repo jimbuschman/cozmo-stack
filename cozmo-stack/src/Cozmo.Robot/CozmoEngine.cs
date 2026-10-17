@@ -83,6 +83,8 @@ public sealed class CozmoEngineOptions
     // Native LanguageToString/CountryISO2ToString spellings, before lowercase/prefix; null is Missing.
     public string? LabLocaleLanguage { get; init; }
     public string? LabLocaleCountry { get; init; }
+    // fidelity: M1-054 - COMPATIBILITY_POLICY: replaces the app engine-config JSON input.
+    public byte[]? EngineConfigJson { get; init; }
     // fidelity: M5-060 — replaces app DataPlatformCachePath/temporaryCachePath.
     public string AnimationCachePath { get; init; } = Path.Combine(Path.GetTempPath(), "cozmo-stack");
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
@@ -1931,11 +1933,23 @@ public sealed partial class CozmoEngine : IDisposable
         Rcm = new RobotConnectionManager(this, transport);
         Handler = new MessageHandler(this, Rcm);
         Robots = new RobotManager(this);
+        InitAnnouncementOutput();
         // fidelity: M1-024
         // R40/B20: the transport's receiver is RobotConnectionData.
         _t.Received += Rcm.Rcd.ReceiveData;
         Rcm.Rcd.Queued = Kick;
         InitAnimationTransfer(); // fidelity: M5-059 — construction after DeviceDataManager, 0x004EB2CE.
+        Experiments = new CozmoExperiments(this);
+        if (Options.EngineConfigJson is not null)
+        {
+            // M1-054: a supplied native config enters the checked gates before any
+            // manager/config init. Missing UI/InitInternal recipients stop this path.
+            InitCheckedHostConfig();
+            return;
+        }
+        InitCheckedHostConfig(); // absent input: diagnose, retain the existing partial host bootstrap below.
+        // This pre-existing host bootstrap is not the native Init order. Until the
+        // missing recipients above are built it cannot establish complete M1-054 fidelity.
         // fidelity: M8-022, M8-025 — the checked config/manager tail precedes the existing firmware header load.
         var dasConfig = RobotManager.ReadDasEventConfig(Options.ResourcesPath, this);
         Robots.InitCheckedDasTail(dasConfig, _nowNs);
@@ -1944,7 +1958,6 @@ public sealed partial class CozmoEngine : IDisposable
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
         else EmitStackLog("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
         LoadVisionConfiguration(); // M11-082: vision failure continues through the later config/init tail.
-        Experiments = new CozmoExperiments(this);
         Experiments.LoadRobotConfig(); // checked LoadRobotConfigs entry0x00522EFC, then InitExperiments.
         Experiments.InitBeforeNeeds(null); // checked engine Init order4EC9D6 before4ECA0A; native Needs recipient remains M1-054.
     }
@@ -2040,6 +2053,12 @@ public sealed partial class CozmoEngine : IDisposable
             try
             {
                 while (_gameMessages.TryDequeue(out var g)) Isolated(g);
+                // fidelity: M1-055
+                if (UpdateCheckedNonConfigLoading())
+                {
+                    Behavior.SteppedBehavior.ReportMissing("M1-055 CozmoEngine.Update loading continuation 0x004ED612 after checked broadcast/state call is unbuilt; do not substitute the running-state body in this tick");
+                    return 0;
+                }
                 Timer.UpdateTime(elapsedNs);
                 Handler.ProcessMessages();
                 // fidelity: M1-024

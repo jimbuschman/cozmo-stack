@@ -10089,10 +10089,10 @@
       ],
       "effect": "The rest of the put-down and attach paths.",
       "provenance": "Opus extraction of M12-006's path (2026-10-14), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the listed bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): IMPLEMENTATION_GAP narrowed to SetCarryingObject: null -> sErrorF Robot.SetCarryingObject.NullCarryObject, _errG, break, no state change; else state and ID, SetLocalizedTo(null) when it is the localization object, then SendSetCarryState(2 if carry+0x14 != -1 else 1). The other four items are owned by M11-062, M10-001, M11-053 and M11-044. OV91 is not evidence.",
+      "unresolved": "RECOVERABLE_GAP: read the listed bodies. Read 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): IMPLEMENTATION_GAP narrowed to SetCarryingObject: null -> sErrorF Robot.SetCarryingObject.NullCarryObject, _errG, break, no state change; else state and ID, SetLocalizedTo(null) when it is the localization object, then SendSetCarryState(2 if carry+0x14 != -1 else 1). The other four items are owned by M11-062, M10-001, M11-053 and M11-044. OV91 is not evidence. B-M1-2 built, awaiting strong verification: CarryingSetter.cs follows633E78..633F0E lookup first, signed-id NullCarryObject Error+flag/break/no stores on miss, marker then primary ID stores, matching localization cleared by existing SetLocalizedTo(null), top-ID reload then state2/1 and Robot.SendChecked CarryStateUpdate tag49 one-byte send632C44..632C6E. Actual EngineRobot owns the carry component/send recipient; public setter uses bound world. LiftGeometry attachment now calls the checked setter after storing top. Existing AttachToLift/SetCarrying remain explicitly host/test storage seams. G2E SetRobotCarryingObject caller5295F2 remains unbuilt; M12-008 attachment pose-root candidate and M11-044 remaining SetLocalizedTo side effects are not settled by this job. Null/missing native owner reports a gap; no invented wire send. No OV91 used.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": " B-M1-2 EngineInitAnnouncementCarryTests: PublicSetterEntryReachesOwnerAndSendsCarryOne uses production API/world/send; units check missing lookup, localization and top1/2. No G2E or whole-attachment coverage (5295F2 and M12-008 pose-root join)."
     },
     {
       "id": "M12-047",
@@ -10550,10 +10550,10 @@
       ],
       "effect": "Whether engine init stops before the robot manager loads, and the available-animations broadcast.",
       "provenance": "Opus check of OV22 (2026-10-15), manager record.",
-      "unresolved": "RECOVERABLE_GAP: read the log keys/formats and BroadcastAvailableAnimations; the engine config is an app input (COMPATIBILITY_POLICY input). Read 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): IMPLEMENTATION_GAP: ReInit Info + unconditional +0x10 = 0; gates AdvertisingHostIP, RobotAdvertisingPort, UiAdvertisingPort (miss -> sErrorF, return 1); UiMessageHandler::Init non-zero -> error, return it; InitInternal non-zero -> sErrorF \"CozomEngine.Init\" (binary typo). The engine config JSON is an app input. OV92 is not evidence. Update caller: M1-055.",
+      "unresolved": "RECOVERABLE_GAP: read the log keys/formats and BroadcastAvailableAnimations; the engine config is an app input (COMPATIBILITY_POLICY input). Read 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): IMPLEMENTATION_GAP: ReInit Info + unconditional +0x10 = 0; gates AdvertisingHostIP, RobotAdvertisingPort, UiAdvertisingPort (miss -> sErrorF, return 1); UiMessageHandler::Init non-zero -> error, return it; InitInternal non-zero -> sErrorF \"CozomEngine.Init\" (binary typo). The engine config JSON is an app input. OV92 is not evidence. Update caller: M1-055. B-M1-2 built, awaiting strong verification: EngineInitialization.cs implements the checked ReInit Info, unconditional +10 reset, config-copy/isMember order, all three error branches with flag/break, nonzero UI/internal returns (CozomEngine.Init typo), and LoadRobotConfigs -> built Experiments.Init -> timer/six-value Needs -> RobotManager call order through 4ECA1A. Host EngineConfigJson is the approved app-input replacement; its constructor entry runs gates before manager init and stops at missing UI/internal recipients. Existing no-config host bootstrap remains an unverified candidate, not native Init. MISSING: native UiMessageHandler.Init6601B0, InitInternal4EDC6C, full LoadRobotConfigs522280, Needs Init4ECA0A/config producers, loader+220/manager vslot52E76A, later Init result/initialized producer after4ECA1A. No complete Init/production-path claim; no OV92 used. A non-object/non-null config stops as MISSING at isMember4EC81C; its malformed-root callee behavior is not assumed to error, crash, or return false.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": " B-M1-2 EngineInitAnnouncementCarryTests: ConstructorUsesHostEngineConfigWithoutInventingMissingKeys reaches production prefix only; unit tests substitute UI/internal/loader/Needs inputs. No full Init production test (6601B0/4EDC6C/4ECA0A missing)."
     },
     {
       "id": "M1-055",
@@ -10567,10 +10567,10 @@
       ],
       "effect": "The animation list the app receives after loading.",
       "provenance": "Opus checks of 2026-10-16 (batch), manager record.",
-      "unresolved": "IMPLEMENTATION_GAP. Open: whether the first broadcast (RobotManager::Init 0x0052E76E) sends zero names (container population timing).",
+      "unresolved": "IMPLEMENTATION_GAP. Open: whether the first broadcast (RobotManager::Init 0x0052E76E) sends zero names (container population timing). B-M1-2 built, awaiting strong verification: AnimationAnnouncements.cs ports linked native-name traversal/exact procedural exclusion/vector copy, synchronous per-name typed AnimationAvailable, reloaded external-interface recipients, EndOfMessage byte0 and Debug, plus TickAt loading-branch call requiring result exactly1 then SetEngineState(3) recipient. RobotManager.InitCheckedDasTail directly calls built broadcast. Native hash population/order producer and first-Init timing remain MISSING at588190/52E76E; loading-state producer4ED5F0, loader523570 and SetEngineState4ECCBC body remain explicit missing leaf joins. Typed C# API/hub delivery is built; AnimationAvailable raw CLAD serializer71624E is unbuilt. No invented empty list, insertion-order policy, loader completion, or successful state transition. M1-034 skips only null recipient reload crash tails52F888/52F92A. No complete production-path claim. Loading entry suppresses state3 execution in the same tick; unchecked loading continuation4ED612 is reported MISSING rather than falling through into the running body.",
       "hardware_required": false,
       "live_path": true,
-      "test": ""
+      "test": " B-M1-2 EngineInitAnnouncementCarryTests: unit broadcast and real-tick tests substitute native container/loading inputs; no full production test (588190/4ED5F0/523570/4ECCBC missing)."
     },
     {
       "id": "M1-056",
