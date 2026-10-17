@@ -44,6 +44,10 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 
 ## Builder lane (clone `cozmo-stack-codex2`)
 
+**HOLD (manager, 2026-10-17):** after B-M15-11, start no builder job. Rows marked HELD are not `open` and must not be
+claimed, even if they look next. The manager releases them by restoring `open` after the M1+M2 acceptance assessment.
+The research lane is not held.
+
 | # | job | status |
 | --- | --- | --- |
 | 1 | [B-M3M4-6](B-M3M4-6.md) | done (5d62bbb1); re-verify FAIL, see B-M3M4-7 |
@@ -138,19 +142,19 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 | 61w0 | [B-M11-15](B-M11-15.md) | DONE per status/B-M11-15.md |
 | 61w1 | [B-M15-7](B-M15-7.md) | CLAIMED per status/B-M15-7.md (Lab activation M15-052; disconnect consumers M15-056; AI teardown M15-045; forwarding M15-055); Opus check FAIL (research/20261017-b-m15-7-check.md), fixes in B-M15-11 |
 | 61w2 | [B-M1-2](B-M1-2.md) | CLAIMED per status/B-M1-2.md |
-| 61w2a | [B-M15-11](B-M15-11.md) | open, after B-M1-2 (B-M15-7 check FAIL: Lab always enabled; Feeding deselect handle release; ASCII locale) |
-| 61w3 | [B-M2M15-2](B-M2M15-2.md) | open, after B-M15-11 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilderTests full-run failure) |
-| 61w4 | [B-M12-7](B-M12-7.md) | open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
-| 61w5 | [B-LOG-1](B-LOG-1.md) | open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
-| 61x | [B-M15-8](B-M15-8.md) | open, after B-M1-2 (expose approved spark/activity inputs) |
-| 61y | [B-M11-16](B-M11-16.md) | open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) |
-| 61z | [B-M15-9](B-M15-9.md) | open, after B-M11-16 (put-down kick-out M15-060; Feeding M15-061/M15-064; Lab residue M15-062) |
-| 61za | [B-M9-5](B-M9-5.md) | open, after B-M15-9 (modulator-state lifecycle M9-042; MIDI init/parser M9-039/M9-005; lookup M9-045) |
-| 61zb | [B-M6-5](B-M6-5.md) | open, after B-M9-5 (bus residue M6-037; Term music/variant M6-038; stream class M6-039; JNI policy M6-044) |
-| 61zc | [B-M11-17](B-M11-17.md) | open, after B-M6-5 (GuardDog starting pose M11-093; footprint quad M11-094) |
-| 61zd | [B-M6-6](B-M6-6.md) | open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 decided 2026-10-16: skip and log) |
-| 61ze | [B-M15-10](B-M15-10.md) | open, after B-M6-6 (FeedingEat M15-065; tag-53 order M15-066/M15-068) |
-| 61zf | [B-M9-6](B-M9-6.md) | open, after B-M15-10 (meter tempo/MIDI reader M9-044; modulator factors M9-043; collector M9-041) |
+| 61w2a | [B-M15-11](B-M15-11.md) | CLAIMED per status/B-M15-11.md (B-M15-7 check FAIL: Lab always enabled; Feeding deselect handle release; ASCII locale) |
+| 61w3 | [B-M2M15-2](B-M2M15-2.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M15-11 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilderTests full-run failure) |
+| 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
+| 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
+| 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
+| 61y | [B-M11-16](B-M11-16.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M15-8 (markerless quad M11-091; VisitInterestingEdge M11-092; re-root fixes) |
+| 61z | [B-M15-9](B-M15-9.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M11-16 (put-down kick-out M15-060; Feeding M15-061/M15-064; Lab residue M15-062) |
+| 61za | [B-M9-5](B-M9-5.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M15-9 (modulator-state lifecycle M9-042; MIDI init/parser M9-039/M9-005; lookup M9-045) |
+| 61zb | [B-M6-5](B-M6-5.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M9-5 (bus residue M6-037; Term music/variant M6-038; stream class M6-039; JNI policy M6-044) |
+| 61zc | [B-M11-17](B-M11-17.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M6-5 (GuardDog starting pose M11-093; footprint quad M11-094) |
+| 61zd | [B-M6-6](B-M6-6.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 decided 2026-10-16: skip and log) |
+| 61ze | [B-M15-10](B-M15-10.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M6-6 (FeedingEat M15-065; tag-53 order M15-066/M15-068) |
+| 61zf | [B-M9-6](B-M9-6.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M15-10 (meter tempo/MIDI reader M9-044; modulator factors M9-043; collector M9-041) |
 | 62 | [B-M9-2](B-M9-2.md) | BLOCKED per status/B-M9-2.md (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |
 | 63 | [B-M12-5](B-M12-5.md) | BLOCKED per status/B-M12-5.md (pyramid-base geometry M12-043; PreActionPose +0x14 M12-044) |
 | 64 | [B-M8-5](B-M8-5.md) | BLOCKED per status/B-M8-5.md |
