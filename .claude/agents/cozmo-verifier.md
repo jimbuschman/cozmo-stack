@@ -35,6 +35,13 @@ Primary sources are the same as for the extractor: `resources/lib/armeabi-v7a/li
    It is blocking when the claim hides a missing join, or when production can never produce the substituted input
    (B-M5-18's case).
 
+9. **What counts** (operator, 2026-10-17; AGENTS.md "What we reproduce"). Judge against observable behaviour: what
+   goes to the robot, what the robot does, what the C# API delivers (events, order, payload, readiness), and state that
+   feeds those. Blocking: such behaviour unsupported or contradicted by source; a "no effect" claim without evidence;
+   an exclusion with no recorded decision; a diagnostic that would hide a real failure. Not blocking by themselves (report
+   as `QUEUED` at most): log wording, levels and typos; fidelity of branches our system cannot reach; internal mechanism
+   differences with the same observable result.
+
 You may run `python re-analysis/tools/fidelity.py --check` and `dotnet test` (the build writes only bin/obj). Nothing else that writes.
 
 An objection must be concrete, naming the hunk (file:line) and the address, file line or capture that contradicts it or is missing. "Could be wrong" is not an objection.

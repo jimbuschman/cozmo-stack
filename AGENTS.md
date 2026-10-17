@@ -4,9 +4,53 @@ The goal is source-faithful app-side behavior, not merely behavior that appears 
 
 **Start every session by reading `PROJECT_STATE.md`.** It says which layer is in progress, what has been approved and what is open. Work follows the Process section at the end of this file.
 
-## Exact, always
+## What we reproduce (operator, 2026-10-17; replaces "Exact, always" of 2026-09-27)
 
-The goal is exact reproduction (operator, 2026-09-27). Whatever ships in the APK or the OBB is reproduced exactly, however much extraction it takes. EQUIVALENT_IMPLEMENTATION is only for behaviour whose code doesn't ship at all, such as the phone's system libraries. Never ask the operator whether "equivalent" would do.
+The stack is a standalone C# system that drives a real Cozmo. It reproduces the engine's **observable behaviour** for
+the features we support, using implementations suited to a standalone PC program.
+
+**Reproduced from source (the evidence rules below apply in full):**
+1. what the stack sends the robot: messages, payloads, order, timing;
+2. what the robot does as a result;
+3. what the stack's C# API delivers for supported features: which events, when, in what order, with what payload,
+   and the readiness it reports;
+4. engine state that later feeds 1–3 (config values, world state, needs, mood, timers, readiness).
+
+Within that scope there is no guessing: the behaviour comes from the engine, or it is a recorded gap.
+
+**Implementation is free where the observable result is the same.** Threads, containers, startup plumbing and error
+machinery may be written however suits this system, as long as 1–4 come out the same.
+
+**Not reproduced:**
+- the original's bugs, crashes, hangs and undefined behaviour (the M1-034 standing rule below);
+- phone and app machinery the stack replaces: the Unity UI and flows, the Android layer, the game-message socket
+  plumbing, SDK mode, firmware update, crash upload, the on-device log files;
+- failure branches for inputs our system never produces.
+
+**Failures that can happen here** (a missing file, a bad host config, a dropped connection, a robot error) are handled
+sensibly: fail clearly, keep running where safe, and log enough to diagnose. The original's exact error machinery is
+not copied.
+
+**Logging** is a debugging tool. Where a built step logs, use the engine's key and text if known; it costs little and
+helps comparison. Exact wording, levels and typos are best effort and never block acceptance by themselves. A missing
+or misleading diagnostic that prevents understanding a real failure is a defect.
+
+**Not supported is a decision; no effect is a claim.** They are recorded differently.
+- *Not supported:* recorded as "not supported: <reason>, decided by <who> <date>", in the record's `unresolved`
+  (COMPATIBILITY_POLICY with `live_path: false` when the whole record is excluded). Excluding a robot behaviour or a
+  C# API feature needs the operator. The manager may exclude phone-app machinery and failure branches our system
+  cannot reach, recording the reason. An exclusion keeps its evidence and is reversible.
+- *No effect:* needs evidence that the step touches none of 1–4. "Unknown" is not "unnecessary", and "nothing uses it
+  yet" never justifies dropping a feature we intend to provide.
+
+**Narrow checks.** When it is unclear whether a routine matters, ask the narrow question first: does it touch 1–4,
+including API delivery, readiness and downstream state? Do not fully extract a routine just because it is on the path.
+
+**Applied layer by layer, never in bulk.** A record changes status only when its layer is worked, with its own reason.
+Unresolved records elsewhere are not dismissed by this section.
+
+The audio policy ADP-1, the app-boundary scope and the approved departures below are unchanged; the departures are
+now instances of this section.
 
 ### Audio DSP policy ADP-1 (operator, 2026-10-05): the one exception
 
@@ -147,7 +191,7 @@ stack implements that feature.
       printed in insertion order, the order the timers were created, instead of `std::hash<const char*>` over
       string-literal addresses.
 
-Apply no other departure without the operator.
+Apply no other departure without the operator, except the manager's exclusions allowed in "What we reproduce".
 
 ## Primary rule
 
@@ -281,10 +325,14 @@ Layers go bottom-up, one at a time: M1 transport, M2 protocol, then device, cont
 2. **Checkpoint: the operator approves the inventory.** Then the manager runs `python re-analysis/tools/fidelity.py --approve <subsystem>`, which freezes the evidence. From then on the checker rejects any change to the inventory, to a record's title, authority, evidence, live_path or hardware_required, or to a status, except an IMPLEMENTATION_GAP being built. Anything new found during implementation goes back to the extractor and a new approval.
 3. **Implement** the discrepancies between the code and the inventory. Existing code is a candidate: whatever the inventory supports stays, and whatever it doesn't is repaired or rebuilt.
 4. **Verify.** Then the manager commits without further operator review. `PROJECT_STATE.md` records what each commit accepted, and the queue of cleanup items.
-   - **Findings that block a commit:**
-     - behavioural or source-fidelity defects: the code does something on the wire, or to what a handler or receiver sees, that the source does not support or contradicts;
+   - **Findings that block a commit** (operator, 2026-10-17):
+     - behaviour in "What we reproduce" 1–4 that the source does not support or contradicts;
+     - a "no effect" claim without evidence, or an exclusion with no recorded decision;
+     - a missing or misleading diagnostic that would hide a real failure;
      - circular tests;
      - races and deadlocks.
+   - **Never blocking by themselves:** log wording, levels and typos; the fidelity of branches our system cannot reach;
+     internal mechanism differences with the same observable result.
    - **Findings that are queued instead** (fixed in a later batch, with no extra verify round): non-behavioural cleanup such as comments, citations, labels and formatting. This is allowed only while `fidelity.py --check` passes and no fidelity status becomes misleading.
    - **After a behavioural correction,** re-verify only the affected diff and tests, not the whole batch.
    - **The full test suite runs once,** immediately before the commit.

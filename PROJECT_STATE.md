@@ -16,9 +16,11 @@ ACCEPTED yet.
    decoder. Even under ADP-1 its decision rows run to about 140 obligations (queue 5, Q14), so the robot's behaviour
    layers are finished first.
 
-**Done for a layer means:**
-- every record is EXACT_SOURCE, or a policy record that the manager has confirmed legitimate (COMPATIBILITY_POLICY,
-  EQUIVALENT_IMPLEMENTATION), or HARDWARE_ONLY settled by a robot run;
+**Done for a layer means** (revised 2026-10-17 under AGENTS.md "What we reproduce"):
+- every live-path record is reproduced (its observable behaviour verified against source, EXACT_SOURCE or a confirmed
+  EQUIVALENT_IMPLEMENTATION), not supported (a recorded decision naming who decided and why), or HARDWARE_ONLY settled
+  by a robot run; every other record is a confirmed policy;
+- the production path the layer serves actually runs that way (fewer listed blockers is not acceptance);
 - the layer's hardware script has been run by the operator;
 - the review state is ACCEPTED.
 
@@ -57,7 +59,11 @@ stands. Nothing new starts outside the current layer.
   - research requests are listed in `re-analysis/research/OVERNIGHT-QUEUE.md`. Codex answers them, or the manager runs
     read-only Opus extractors and adopts the answers as checked evidence;
   - the manager writes jobs, adopts checked research, and has each builder commit checked by a read-only Opus verifier.
-- **Direction (operator, 2026-10-16):** exact reproduction stays the goal; reduce repetition, not the standard. In order:
+- **Standard (operator, 2026-10-17):** AGENTS.md "What we reproduce" replaces "Exact, always". Observable behaviour
+  (robot wire, robot behaviour, C# API delivery and readiness, downstream state) comes from source; implementation is
+  free where the result is the same; logs are best effort; exclusions are recorded decisions; narrow checks before
+  full extractions; applied layer by layer, never in bulk.
+- **Direction (operator, 2026-10-16; standard superseded 2026-10-17):** reduce repetition. In order:
   1. reconciled, generated state views (this revision);
   2. the next acceptance target and its concrete blockers, wherever they live;
   3. regression tests that reach behaviour through the real production wiring, or say that they don't;

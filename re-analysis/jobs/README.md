@@ -26,7 +26,7 @@ Several opencode (DeepSeek) windows work at once, each in its own clone, each ru
    - never force-push; never create branches or worktrees;
    - never use `--no-verify`.
 5. **Finishing:** set your status file to `DONE <date time>`, with a one-line summary, or to `BLOCKED <reason>`. Push it.
-6. **Exact, always** (AGENTS.md). No guesses: an unknown is written as UNKNOWN.
+6. **What we reproduce** (AGENTS.md, 2026-10-17): observable behaviour from source, no guesses; an unknown is written as UNKNOWN. Logs are best effort.
 
 ## Sources
 
