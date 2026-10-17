@@ -69,8 +69,10 @@ public sealed class FreeplayStack : IDisposable
         // RobotDataLoader::LoadBehaviors 0x005206bc reads the config corpus and BehaviorContainer 0x0059c324 builds every behaviour whose class the
         // factory can build from its config (PlayAnim, FistBump, ReactToSparked); the rest is reported MISSING per class and built by hand below. The config-built objects come first: where the code-built set
         // below names the same id (Hiccup, the feeding PlayAnims) the first instance stands, so the config's is the one bound.
+        var guardDogDisconnects=new List<GuardDogDisconnectUnit>();
         var factoryContext = new BehaviorFactoryContext
         {
+            RegisterGuardDogDisconnect=guardDogDisconnects.Add,
             SourceLog = (level, channel, key, text) =>
             {
                 robot.Engine.EmitSourceLog(level, channel, key, text);
@@ -189,6 +191,7 @@ public sealed class FreeplayStack : IDisposable
         // fidelity: M11-079, M8-013 — native activity/chooser requests reach this same analyzer.
         void BindAnalyzer(Activity activity)
         {
+            if(activity.Type=="Feeding")activity.FeedingDisconnect=new FeedingDisconnectUnit{Engine=robot.Engine};
             activity.Analyzer = ai.Analyzer;
             foreach (var chooser in new[] { activity.Chooser, activity.InterludeChooser })
                 if (chooser is SelectionChooser selection)
@@ -203,13 +206,15 @@ public sealed class FreeplayStack : IDisposable
         foreach (var activity in tree) BindAnalyzer(activity);
         ai.BindDestructionRecipient(0x2C,tracker.DestroyStorage);
         // The constructed host helper is real, but its captured IHelper destruction remains explicitly unread.
-        ai.BindDestructionRecipient(0x10,()=>SteppedBehavior.ReportMissing("M15-027/M15-045 BehaviorHelper callable/shared-IHelper destruction 0x00569D30..0x00569D7C is unread; no Update, Cancel or guessed Dispose substituted"));
+        ai.BindDestructionRecipient(0x10,()=>ai.NativeTeardown.Destroy(0x10));
         EngineRobot? lifetimeRobot=null;
         void BindNativeLifetime(EngineRobot native)
         {
             if(lifetimeRobot is not null&&!ReferenceEquals(native,lifetimeRobot))
             {SteppedBehavior.ReportMissing("M15-027/M15-045 replacement AI/Freeplay owner construction is not built; do not bind a retired host AI/tracker as the new native owner");return;}
             lifetimeRobot=native;
+            foreach(var guard in guardDogDisconnects)guard.Subscribe(robot.Engine,native.HasExternalInterface);
+            if(guardDogDisconnects.Count!=0)SteppedBehavior.ReportMissing("M15-067 GuardDog checked subscriptions bound from factory; native pre-hook/running/action/state-label owner and base teardown join remain absent");
             native.Lifetime.Bind(-2,_=>tracker.ForceUpdate());
             native.Lifetime.Bind(0x264,_=>ai.DestroyDirect());
             moodOwner.BindNativeLifetime(native,actionEndedHandle);

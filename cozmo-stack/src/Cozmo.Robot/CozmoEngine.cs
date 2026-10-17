@@ -79,6 +79,10 @@ public sealed class CozmoEngineOptions
     // fidelity: M15-053 — COMPATIBILITY_POLICY: explicit stable Java DAS.getDeviceID app input.
     // Null leaves Lab input MISSING; no UUID is invented for Lab.
     public string? DasDeviceId { get; init; }
+    // fidelity: M15-052 — COMPATIBILITY_POLICY: app Locale input, supplied by host settings.
+    // Native LanguageToString/CountryISO2ToString spellings, before lowercase/prefix; null is Missing.
+    public string? LabLocaleLanguage { get; init; }
+    public string? LabLocaleCountry { get; init; }
     // fidelity: M5-060 — replaces app DataPlatformCachePath/temporaryCachePath.
     public string AnimationCachePath { get; init; } = Path.Combine(Path.GetTempPath(), "cozmo-stack");
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
@@ -1942,7 +1946,7 @@ public sealed partial class CozmoEngine : IDisposable
         LoadVisionConfiguration(); // M11-082: vision failure continues through the later config/init tail.
         Experiments = new CozmoExperiments(this);
         Experiments.LoadRobotConfig(); // checked LoadRobotConfigs entry0x00522EFC, then InitExperiments.
-        Experiments.Init();
+        Experiments.InitBeforeNeeds(null); // checked engine Init order4EC9D6 before4ECA0A; native Needs recipient remains M1-054.
     }
 
     // ------------------------------------------------------------------ running

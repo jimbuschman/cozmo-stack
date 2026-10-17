@@ -29,7 +29,29 @@ internal sealed partial class CozmoExperiments
     internal string? DeviceIdInput { get; private set; }
     internal Stream? CerrOverride;
     internal const string RelativePath="config/experiments.json";
-    internal CozmoExperiments(CozmoEngine engine)=>_engine=engine;
+    internal CozmoExperiments(CozmoEngine engine)
+    {
+        _engine=engine;
+        Lab=new LabActivationRuntime{Definition=()=>Definition,Log=engine.EmitSourceLog};
+        Audience=new LabAudienceTags{Log=engine.EmitSourceLog};
+        Audience.RegisterEngineTags(()=>NeedsState8Input?.Invoke(),()=>DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            ()=>engine.Options.LabLocaleLanguage,()=>engine.Options.LabLocaleCountry);
+    }
+    // fidelity: M15-052 — checked units live on the actual CozmoExperiments context owner.
+    internal LabActivationRuntime Lab {get;}
+    internal LabAudienceTags Audience {get;}
+    internal LabAbInterface Ab => LabAbInterface.ProcessGlobals;
+    internal Func<long?>? NeedsState8Input;
+    internal Func<(byte ForceFlag,bool Word105D980Nonzero)>? AbDisableInputs;
+    internal Func<IReadOnlyList<byte[]>>? KnownAudienceTagsInput;
+    internal Func<(Delegate First,Delegate Second)>? AbCallbacksInput;
+    internal Action? InitBeforeNeedsObserved;
+    internal void AutoActivateForBodyId(uint bodyId)
+    {
+        // 537064 to_string<unsigned> -> 6A5744. Always on, including supported non-SDK paths.
+        try{Lab.AutoActivate(Encoding.ASCII.GetBytes(bodyId.ToString(System.Globalization.CultureInfo.InvariantCulture)),Audience.GetQualified());}
+        catch(LabMissingSource){} // explicit unread input stops this activation, never fabricates an assignment
+    }
     // Immutable entry records and fresh byte arrays are retained internally, not exposed to production writers.
     internal LabDefinition Definition { get { lock(_gate)return _definition; } }
     internal void LoadRobotConfig()
@@ -116,15 +138,34 @@ internal sealed partial class CozmoExperiments
         if(text.AsSpan().SequenceEqual("automatic"u8))return 1;
         var stderr=CerrOverride??Console.OpenStandardError();stderr.Write("error: string '"u8);stderr.Write(text);stderr.Write("' is not a valid ActivationMode value\n"u8);stderr.Flush();return 0;
     }
+    // fidelity: M15-052 — CozmoEngine::Init4EC9D6 precedes NeedsManager::Init4ECA0A.
+    internal void InitBeforeNeeds(Action? initializeNeeds)
+    {
+        Init();
+        if(initializeNeeds is {} needs)needs();
+        else Missing("M15-052/M1-054 engine Init NeedsManager recipient4ECA0A (timer/config arguments) is unbound after InitExperiments4EC9D6; no later host state is substituted");
+    }
     internal void Init()
     {
-        Enabled=true; // 0x007EBC3C: Enable(true) is unconditional on reachable stack paths.
-        _engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","AnkiLab.Enable","Enabling the lab");
-        // fidelity: M15-053 — COMPATIBILITY_POLICY: explicit stable Java DAS.getDeviceID input.
-        DeviceIdInput=_engine.Options.DasDeviceId;
-        if(DeviceIdInput is null)Missing("M15-053 Lab user-id DASGetPlatform()->GetDeviceId at0x006A5626: no explicit stable DasDeviceId setting; no generated UUID or robot mfg id substituted");
-        Missing("M15-052 qualified audience tags0x007EF370 and AutoActivateExperimentsForUser call0x006A5668: predicate/assignment descendants unread; no assignments or automatic-result logs fabricated");
-        Missing("M15-052 VerifyTags0x006A5682 and InitializeABInterface0x006A56CE: recipient/global-callback ownership unread; no guessed registrations");
+        // 4EC9D6: InitExperiments precedes NeedsManager::Init. This is the existing context startup entry;
+        // pre-init NeedsState+8 and native engine Init recipient ownership are not manufactured from a later host needs state.
+        InitBeforeNeedsObserved?.Invoke();
+        try
+        {
+            if(AbDisableInputs is null)LabActivationRuntime.Missing("ShouldABTestingBeDisabled global input join105D940/105D980 at0x007EE968..0x007EE986");
+            var input=AbDisableInputs!();Enabled=!LabAbInterface.ShouldDisable(input.ForceFlag,input.Word105D980Nonzero);Lab.Enabled=Enabled;
+            _engine.EmitSourceLog(EngineLogLevel.Info,"Unnamed","AnkiLab.Enable",Enabled?"Enabling the lab":"Disabling the lab");
+            // fidelity: M15-053 — COMPATIBILITY_POLICY: explicit stable Java DAS.getDeviceID input.
+            DeviceIdInput=_engine.Options.DasDeviceId;
+            if(DeviceIdInput is null)LabActivationRuntime.Missing("M15-053 DAS platform user-id input0x006A5626: no explicit stable DasDeviceId setting; no generated UUID");
+            var bytes=Encoding.UTF8.GetBytes(DeviceIdInput!);int nul=Array.IndexOf(bytes,(byte)0);if(nul>=0)bytes=bytes[..nul];
+            if(Lab.AutoActivate(bytes,Audience.GetQualified()) is null)return;
+            if(KnownAudienceTagsInput is null)LabActivationRuntime.Missing("GetKnownAudienceTags input at0x006A5672; no invented tag union");
+            _=Audience.Verify(KnownAudienceTagsInput!()); // native ignores bool
+            if(AbCallbacksInput is null)LabActivationRuntime.Missing("captured AB-interface callable owners01031738/01031778 at0x006A5686..0x006A56A4");
+            var callbacks=AbCallbacksInput!();Ab.Initialize(callbacks.First,callbacks.Second);
+        }
+        catch(LabMissingSource){}
         Missing("M15-050/M15-016 SetGameBeingPaused(false) resume writeback at0x006990DA: host pause/resume delivery and Needs resume caller are unbuilt; no synthetic resume or periodic write substituted");
     }
 }

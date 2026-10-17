@@ -14,6 +14,7 @@ namespace Cozmo.Robot.Behavior;
 /// </summary>
 public sealed class AIComponent
 {
+    internal NativeAiTeardown NativeTeardown {get;}=new();
     private readonly Dictionary<int,Action?> _destructionRecipients=new();
     internal void BindDestructionRecipient(int offset,Action? recipient)=>_destructionRecipients[offset]=recipient;
     internal bool IsChildRetired(int offset)=>_destructionRecipients.TryGetValue(offset,out var value)&&value is null;
@@ -34,6 +35,8 @@ public sealed class AIComponent
     {
         Helpers = new BehaviorHelperComponent(worldOriginId, log, sourceLog);
         Analyzer = new AIInformationAnalyzer(SourceLogDispatch.GetSink(sourceLog, log));
+        foreach(int offset in new[]{0x30,0x20,0x1C,0x18,0x14,0x10,0x8})
+        {int child=offset;BindDestructionRecipient(child,()=>NativeTeardown.Destroy(child));}
     }
 
     // fidelity: M10-009

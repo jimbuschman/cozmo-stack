@@ -21,6 +21,7 @@ public sealed class BehaviorFactoryContext
     /// <summary>Stack diagnostics and standalone log observation; source calls use the separate typed seam.</summary>
     public Action<string>? Log { get; init; }
     public SourceLogSink? SourceLog { get; init; }
+    internal Action<GuardDogDisconnectUnit>? RegisterGuardDogDisconnect;
 }
 
 /// <summary>
@@ -315,6 +316,13 @@ public sealed class BehaviorFactory
         var entry = Table[(int)cls];
         if (entry.Construct is null)
         {
+            // fidelity: M15-056 — checked constructor subscription/handler unit, not a stand-in IBehavior.
+            if(cls==BehaviorClass.GuardDog)
+            {
+                var owner=new GuardDogDisconnectUnit{Id=BehaviorConfigLoader.ExtractIdFromConfig(config).ToString(),Log=SourceLogDispatch.GetSink(ctx.SourceLog,ctx.Log)??((_,_,_,_)=>{})};
+                if(ctx.RegisterGuardDogDisconnect is {} register)register(owner);
+                else SteppedBehavior.ReportMissing("M15-056 GuardDog checked disconnect unit constructor0x005F2946 has no native Robot subscription/input owner; full M15-067 lifecycle remains unbuilt");
+            }
             // fidelity: M7-025, M7-029
             if (cls == BehaviorClass.TrackLaser)
                 SteppedBehavior.ReportMissing("M7-025/M7-029 TrackLaser factory case 0x0059D026: native constructor 0x005FA250 and running behavior owner are not built (B-M7-3). InitHelper 0x005FAC4E and Cleanup 0x005FBD40 therefore have no live receiver for the color/exposure snapshot and restore; no stand-in camera lifecycle is started. M11-087 validation and the vision schedule-stack join must be accounted for before that path can send camera settings");

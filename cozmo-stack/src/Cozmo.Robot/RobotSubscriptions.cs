@@ -152,6 +152,8 @@ public sealed partial class EngineRobot
             // fidelity: M3-060 — sEvent follows sSetGlobal, 0x00537028.
             Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.handle_robot_set_body_id", buf,
                 new Dictionary<string, string> { ["$data"] = buf });
+            // fidelity: M15-052 — HandleRobotSetBodyID53705A..53706C; unsigned decimal serial user.
+            Engine.Experiments.AutoActivateForBodyId(a.SerialNumber);
         });
         AddMessage(RobotMessageId.FirmwareVersion, m => HandleFirmwareVersion((FirmwareVersion)m));
         AddMessage(RobotMessageId.FactoryFirmwareVersion, m => HandleFWVersionInfo((FWVersionInfo)m));

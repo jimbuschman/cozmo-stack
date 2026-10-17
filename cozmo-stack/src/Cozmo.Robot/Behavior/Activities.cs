@@ -923,6 +923,9 @@ public sealed class FeatureGates
 /// </summary>
 public sealed class Activity
 {
+    // fidelity: M15-055, M15-056 — explicit native delegate and checked Feeding owner; enclosing lifecycle remains M15-061.
+    internal Func<EngineRobot,uint>? NativeUpdate20;
+    internal FeedingDisconnectUnit? FeedingDisconnect;
     public required string Id { get; init; }
     public string Type { get; init; } = "BehaviorsOnly";
     public int Priority { get; init; }
@@ -959,6 +962,7 @@ public sealed class Activity
         if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("PushDrivingAnimations 0x005B319A", missing);
         if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("SmartPushIdleAnimation 0x005B31BC", missing);
         SetAnalyzerRequest(true);
+        FeedingDisconnect?.OnSelected();
     }
     public void OnDeselected(double nowSec, Action<string>? missing = null)
     {
@@ -966,6 +970,7 @@ public sealed class Activity
         if (IdleAnim is { } idle && (int)idle != 0x23F) ReportActivityMissing("RemoveIdleAnimation 0x005B340C", missing);
         if (DriveStartAnim is { } drive && (int)drive != 0x23F) ReportDrivingMissing("RemoveDrivingAnimations 0x005B3450", missing);
         SetAnalyzerRequest(false);
+        FeedingDisconnect?.OnDeselected();
     }
     private void SetAnalyzerRequest(bool enable)
     {

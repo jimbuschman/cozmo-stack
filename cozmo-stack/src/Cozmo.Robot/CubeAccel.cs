@@ -103,8 +103,23 @@ public sealed class CubeAccelStreams
     internal CubeAccelStreams(CozmoRobot robot) => _robot = robot;
     private readonly SubscriptionOwners _rawSubscriptions = new();
     // fidelity: M2-020 — F5 is released by CubeAccel's own destructor/list clear.
-    internal void AttachRobot(EngineRobot robot) => _rawSubscriptions.Add(robot.SubscribeMessage(
-        new ObjectAccel().Id,m=>Handle(m),"CubeAccel"));
+    // fidelity: M15-056 — raw F5 first, optional E2G13 next, global store last.
+    internal static CubeAccelStreams? LastConstructed105B450;
+    internal Func<NativeCubeAccelHistoryNode?>? NativeHistoryRoot;
+    internal Action<int>? HistoryNodeVisited; // observation only
+    internal void AttachRobot(EngineRobot robot)
+    {
+        _rawSubscriptions.Add(robot.SubscribeMessage(new ObjectAccel().Id,m=>Handle(m),"CubeAccel"));
+        if(robot.HasExternalInterface)_rawSubscriptions.Add(_robot.Engine.AnimationMessages.SubscribeMessage(13,true,p=>OnObjectConnectionState((ObjectConnectionStateMessage)p!)));
+        LastConstructed105B450=this;
+    }
+    internal void OnObjectConnectionState(ObjectConnectionStateMessage message)
+    {
+        if(message.ConnectedByte==0)return; // no history/listener removal on disconnect
+        if(NativeHistoryRoot is not {} root){Behavior.SteppedBehavior.ReportMissing("M15-056 CubeAccel history root+0C producer before0x00635D6E; checked signed walk built, no invented tree");return;}
+        int id=unchecked((int)message.ObjectID);var node=root();
+        while(node is not null){HistoryNodeVisited?.Invoke(node.Id14);node=node.Id14>=id?node.Left:node.Right;} // equal follows LEFT; no found-node action
+    }
 
     /// <summary>The object ids whose accelerometer stream is on because something is listening.</summary>
     public IReadOnlyCollection<uint> Streaming { get { lock (_gate) return _listeners.Keys.ToList(); } }
@@ -161,4 +176,11 @@ public sealed class CubeAccelStreams
         }
         foreach (var l in listeners) l.Update(a.Accel.X, a.Accel.Y, a.Accel.Z);
     }
+}
+
+// fidelity: M15-056
+internal sealed class NativeCubeAccelHistoryNode
+{
+    internal int Id14;
+    internal NativeCubeAccelHistoryNode? Left,Right;
 }

@@ -50,6 +50,7 @@ public sealed class VisionConfigCheckedRowsTests:IDisposable
         try{vision.ApplyInitialVisionModes(new(){Kind=FirmwareJsonKind.Array});Assert.Equal(4,vision.ModeEnableMask);Assert.Contains(diagnostics,s=>s.Contains("M1-034/M11-082")&&s.Contains("008E6D08"));}
         finally{StackDiagnostics.Reported-=diagnostics.Add;}
     }
+    // reach: unit (substitutes missing resource file and direct reload; full engine Init join MISSING at M1-0544EC7B4).
     [Fact] public void MissingVisionConfigLogsFailureAndContinuesToLaterStartupWithoutClearingValue()
     {
         using var resources=new BackupTestResources();var options=resources.Options();string path=Path.Combine(options.ResourcesPath!,CozmoEngine.VisionConfigurationPath);
@@ -61,7 +62,7 @@ public sealed class VisionConfigCheckedRowsTests:IDisposable
             Assert.False(engine.VisionConfigurationReadSucceeded);Assert.Same(prior,engine.VisionConfiguration);Assert.Equal(FirmwareJsonKind.Object,prior.Kind);
             Assert.Equal(new[]{"DataPlatform.readAsJson","RobotDataLoader.VisionConfigJsonNotFound"},logs.Select(l=>l.Name));Assert.All(logs,e=>Assert.Equal(EngineLogLevel.Error,e.Level));
             Assert.EndsWith($"Failed to read [{options.ResourcesPath}/{CozmoEngine.VisionConfigurationPath}]",logs[0].Text);Assert.EndsWith("Vision Json config file config/engine/vision_config.json not found or failed to parse",logs[1].Text);Assert.True(EngineErrorState.ErrorFlagSet);
-            Assert.Contains(missing,s=>s.Contains("LoadGameRequestAndTrickConfigs"));Assert.Contains(missing,s=>s.Contains("M5-051"));Assert.True(engine.Experiments.Enabled);Assert.Equal(3,engine.Experiments.Definition.Experiments!.Count);
+            Assert.Contains(missing,s=>s.Contains("LoadGameRequestAndTrickConfigs"));Assert.Contains(missing,s=>s.Contains("M5-051"));Assert.Null(engine.Experiments.AbDisableInputs);Assert.Equal(3,engine.Experiments.Definition.Experiments!.Count); // M15-052 native AB global input remains Missing; definition loading continued.
         }
         finally{engine?.Dispose();SteppedBehavior.MissingReported-=missing.Add;}
     }

@@ -175,8 +175,16 @@ public sealed class FreeplaySystem : IManagedActivity
     /// </summary>
     void IManagedActivity.Update(double nowSec)
     {
-        if (Current is not null)
-            SteppedBehavior.ReportMissing("M15-055 ActivityFreeplay.Update forwarding0x005AD9D0..0x005AD9DE is unbuilt; later checked ActivitySparked.Update/spark state belongs to M15-059; M15-051/M15-054 specialized Pyramid producer/chooser ownership is absent for " + Current.Id);
+        if(_ctx.Robot.Engine.Robot is {} robot)_=UpdateNativeFreeplay(robot); // manager discards native return
+        else if(Current is not null)SteppedBehavior.ReportMissing("M15-055 ActivityFreeplay.Update original Robot argument0x005AD9D0 is unbound");
+    }
+    // fidelity: M15-055
+    internal uint? UpdateNativeFreeplay(EngineRobot robot)
+    {
+        var current=Current; // reload +80 each call
+        if(current is null)return 0;
+        if(current.NativeUpdate20 is {} update)return update(robot);
+        SteppedBehavior.ReportMissing("M15-055 ActivityFreeplay delegate vt+20 at0x005AD9DE for "+current.Id+"; native owner unbound, forwarding unit built");return null;
     }
 
     /// <summary>
