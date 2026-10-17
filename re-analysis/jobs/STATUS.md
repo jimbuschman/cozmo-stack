@@ -81,7 +81,7 @@
 | 50 | B-M12-4 | BLOCKED per status/B-M12-4.md (native put-down M12-006/M12-045) | BLOCKED B-M12-4 - native unattach/Unset/Dirty observation path and caller corrections built; legacy vision-parent input binding, named ev... | none found |
 | 51 | B-M8-4 | BLOCKED per status/B-M8-4.md (DAS animation blacklist load M8-022; M8-025) | BLOCKED B-M8-4 - checked DAS config/blacklist loader and manager timing event built; exact parser diagnostic bytes and native manager-ini... | none found |
 | 52 | B-M10-1 | BLOCKED per status/B-M10-1.md (BlockFilter/gyro lifetime M10-014; drift/bias detectors ... | BLOCKED B-M10-1 - BlockFilter/gyro lifetime and raw magnitude built; checked detector bodies built but native UFRS history/pose admission... | none found |
-| 53 | B-M3M4-27 | DONE per status/B-M3M4-27.md (cleanups from the B-M3M4-26 pass) | DONE B-M3M4-27 - all five manager-queued lights/resource diagnostic and regression cleanups built; no fidelity status changes. | none found |
+| 53 | B-M3M4-27 | DONE; Codex source check PASS (research/20261017-b-m3m4-27-check.md); retrospective rea... | DONE B-M3M4-27 - all five manager-queued lights/resource diagnostic and regression cleanups built; no fidelity status changes. | `research/20261017-b-m3m4-27-check.md` |
 | 54 | B-M15-2 | BLOCKED per status/B-M15-2.md (disconnect/teardown M15-027/028; repair decay M15-029; A... | BLOCKED Codex 2026-10-16 | none found |
 | 55 | B-M15-3 | BLOCKED per status/B-M15-3.md (needs exceptional values M15-030; unlock/inventory NV ca... | BLOCKED Codex 2026-10-16 | none found |
 | 56 | B-M14-1 | BLOCKED per status/B-M14-1.md (pet/face-world and speech lifetime M14-013) | BLOCKED Codex 2026-10-16 | none found |
@@ -109,7 +109,7 @@
 | 61za | B-M9-5 | open, after B-M15-9 (modulator-state lifecycle M9-042; MIDI init/parser M9-039/M9-005; ... | no status file | none found |
 | 61zb | B-M6-5 | open, after B-M9-5 (bus residue M6-037; Term music/variant M6-038; stream class M6-039;... | no status file | none found |
 | 61zc | B-M11-17 | open, after B-M6-5 (GuardDog starting pose M11-093; footprint quad M11-094) | no status file | none found |
-| 61zd | B-M6-6 | open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 awaits opera... | no status file | none found |
+| 61zd | B-M6-6 | open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 decided 2026... | no status file | none found |
 | 61ze | B-M15-10 | open, after B-M6-6 (FeedingEat M15-065; tag-53 order M15-066/M15-068) | no status file | none found |
 | 61zf | B-M9-6 | open, after B-M15-10 (meter tempo/MIDI reader M9-044; modulator factors M9-043; collect... | no status file | none found |
 | 62 | B-M9-2 | BLOCKED per status/B-M9-2.md (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-03... | BLOCKED Codex 2026-10-16 | none found |

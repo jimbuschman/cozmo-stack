@@ -38,6 +38,13 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **Temporary manager handoff (operator, 2026-10-17):** Codex takes over Claude's manager and independent
+  verification duties while Claude is unavailable; the operator has restarted the separate builder and research
+  lanes. This supersedes the Claude/Opus-only role restrictions for this handoff, not the evidence standard,
+  inventory approval checkpoints, or separation of extraction, implementation and verification. Reviews identify
+  the actual verifier as Codex. First bounded review: B-M3M4-27 (788a04b3), the outstanding cleanup check on the
+  M1+M2 acceptance path. No subsystem is accepted by this handoff.
+
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
 - **Jobs:** `re-analysis/jobs/STATUS.md` (generated) shows, per builder job, the queue note, the status-file state and any
@@ -71,6 +78,12 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 - **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
+
+- **B-M3M4-27 Codex source check (2026-10-17):** add retrospective `reach:` labels to its changed/new
+  M3M4X21/M3M4X17 regressions and per-record coverage to its status report, following
+  `re-analysis/research/20261017-b-m3m4-27-check.md`. The label rule postdates the implementation. Source review
+  passed the five items; M4-044/M4-045 remain IMPLEMENTATION_GAP and no subsystem is accepted.
+  Manager adopted the bounded PASS after fidelity check (690 records) and full suite (5569/5569, zero skipped).
 
 - **From the B-M8-7/B-M8-8 verifier (2026-10-16, PASS):** (1) narrow the file-wide `// fidelity: M8-015` tag in `SteppedBehavior.Actions.cs` (M8-015 cites only 0x005BDC04), or extend the record; (2) B-M8-7 status MISSING group 1 needs addresses (concrete IActionRunner classes exist); (3) `AIWhiteboardHandlers.cs:105,166` raise `PossibleObjectsRedrawn` instead of calling the built render unit (native 0x0056C692; not live); (4) the latent StopActing cancel is recorded on M8-015 and must be built before the owned StartActing is wired.
 - **From the M6-003 batch (2026-09-26):** `WwiseAdpcm` clamps the header step index to 0..88, which the source does not (unreachable on all 227 shipped ADPCM media); `WwiseAdpcm.Decode` refuses channels outside 1–2 where the runtime decoder is channel-generic (no shipped file has ≥3); the `WwiseAudioSource` comment still lists "seven stereo ADPCM undecodable"; `fmt+0x14` byte-1 semantics are UNKNOWN (byte 0 == nChannels in all 227 files, so moot). **Flake:** one full-suite run after the M6-003 change reported 1 failure of 1465 that did not reproduce in two subsequent runs; if it recurs, capture the test name.

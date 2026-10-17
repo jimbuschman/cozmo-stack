@@ -119,7 +119,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 | 50 | [B-M12-4](B-M12-4.md) | BLOCKED per status/B-M12-4.md (native put-down M12-006/M12-045) |
 | 51 | [B-M8-4](B-M8-4.md) | BLOCKED per status/B-M8-4.md (DAS animation blacklist load M8-022; M8-025) |
 | 52 | [B-M10-1](B-M10-1.md) | BLOCKED per status/B-M10-1.md (BlockFilter/gyro lifetime M10-014; drift/bias detectors M10-015; raw IMU magnitude M10-017) |
-| 53 | [B-M3M4-27](B-M3M4-27.md) | DONE per status/B-M3M4-27.md (cleanups from the B-M3M4-26 pass) |
+| 53 | [B-M3M4-27](B-M3M4-27.md) | DONE; Codex source check PASS (research/20261017-b-m3m4-27-check.md); retrospective reach labels queued in PROJECT_STATE |
 | 54 | [B-M15-2](B-M15-2.md) | BLOCKED per status/B-M15-2.md (disconnect/teardown M15-027/028; repair decay M15-029; ApplyDelta M15-046; audio teardown M6-030) |
 | 55 | [B-M15-3](B-M15-3.md) | BLOCKED per status/B-M15-3.md (needs exceptional values M15-030; unlock/inventory NV callbacks M15-034/035; ForceSet M15-048) |
 | 56 | [B-M14-1](B-M14-1.md) | BLOCKED per status/B-M14-1.md (pet/face-world and speech lifetime M14-013) |
@@ -147,7 +147,7 @@ vs verification evidence) and `../FIDELITY_PROGRESS.md`.
 | 61za | [B-M9-5](B-M9-5.md) | open, after B-M15-9 (modulator-state lifecycle M9-042; MIDI init/parser M9-039/M9-005; lookup M9-045) |
 | 61zb | [B-M6-5](B-M6-5.md) | open, after B-M9-5 (bus residue M6-037; Term music/variant M6-038; stream class M6-039; JNI policy M6-044) |
 | 61zc | [B-M11-17](B-M11-17.md) | open, after B-M6-5 (GuardDog starting pose M11-093; footprint quad M11-094) |
-| 61zd | [B-M6-6](B-M6-6.md) | open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 awaits operator) |
+| 61zd | [B-M6-6](B-M6-6.md) | open, after B-M11-17 (Term callback contexts and notifications M6-042; N12 decided 2026-10-16: skip and log) |
 | 61ze | [B-M15-10](B-M15-10.md) | open, after B-M6-6 (FeedingEat M15-065; tag-53 order M15-066/M15-068) |
 | 61zf | [B-M9-6](B-M9-6.md) | open, after B-M15-10 (meter tempo/MIDI reader M9-044; modulator factors M9-043; collector M9-041) |
 | 62 | [B-M9-2](B-M9-2.md) | BLOCKED per status/B-M9-2.md (LFO mode 0 M9-025; envelope timing M9-030; note-off M9-031; +0x44 M9-032; rate globals M9-033) |

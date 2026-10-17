@@ -71,6 +71,16 @@ Most are named in AGENTS.md's approved departures or the app-boundary rule.
 
 ## Order of work
 
+### Manager handoff update (2026-10-17)
+
+- Codex temporarily performs the manager/independent verifier role by operator instruction.
+- B-M3M4-27's outstanding cleanup source review is PASS; see `../research/20261017-b-m3m4-27-check.md`
+  for the evidence, exact scope and runtime validation. Reach-label cleanup is queued; no records are reclassified.
+- The B-M2M15-2 preflight notes that PoseTreeVerifyBuilderTests already uses the serial collection. Its failed
+  gate still requires reproduction and a root cause; do not assume repeating that change fixes it.
+- Earlier table entries are historical where superseded by the later updates: B-M12-3 has failed verification,
+  its corrections are B-M12-7, M2-020/023 were split, and M2-022's source question was answered.
+
 1. B-M1-2: already next in the builder queue.
 2. Unblock B-M2M15-1, and verify B-M12-3.
 3. Splits for M2-020 and M2-023, and the decision on M2-022: manager work, using cited rows only.
