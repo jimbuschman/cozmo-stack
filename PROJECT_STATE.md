@@ -44,6 +44,8 @@ stands. Nothing new starts outside the current layer.
   inventory approval checkpoints, or separation of extraction, implementation and verification. Reviews identify
   the actual verifier as Codex. First bounded review: B-M3M4-27 (788a04b3), the outstanding cleanup check on the
   M1+M2 acceptance path. No subsystem is accepted by this handoff.
+  **Ended (operator, 2026-10-17):** Claude resumes manager and Opus verification; Codex returns to the research and
+  builder lanes. Builder commits published during the handoff (B-M15-7, 2fc72bc3) still get the Opus verifier.
 
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
