@@ -98,9 +98,10 @@
 | 61u | B-M6-4 | BLOCKED per status/B-M6-4.md (bus state M6-035; Term recipients M6-034; device storage ... | BLOCKED (a: checked T1 active-list reclamation order contradicts the binary) | none found |
 | 61v | B-M9-4 | DONE per status/B-M9-4.md (MIDI boundary M9-034; clip-start M9-040; collector M9-035; e... | DONE (6/6 items; 14 MISSING) | none found |
 | 61w0 | B-M11-15 | DONE per status/B-M11-15.md | DONE (3/3 items; 12 MISSING) | none found |
-| 61w1 | B-M15-7 | CLAIMED per status/B-M15-7.md | DONE (4/4 items; 14 MISSING) | none found |
+| 61w1 | B-M15-7 | CLAIMED per status/B-M15-7.md (Lab activation M15-052; disconnect consumers M15-056; AI... | DONE (4/4 items; 14 MISSING) | `research/20261017-b-m15-7-check.md` |
 | 61w2 | B-M1-2 | CLAIMED per status/B-M1-2.md | CLAIMED Codex 2026-10-17 | none found |
-| 61w3 | B-M2M15-2 | open, after B-M1-2 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilde... | no status file | none found |
+| 61w2a | B-M15-11 | open, after B-M1-2 (B-M15-7 check FAIL: Lab always enabled; Feeding deselect handle rel... | no status file | none found |
+| 61w3 | B-M2M15-2 | open, after B-M15-11 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuil... | no status file | none found |
 | 61w4 | B-M12-7 | open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C... | no status file | none found |
 | 61w5 | B-LOG-1 | open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) | no status file | none found |
 | 61x | B-M15-8 | open, after B-M1-2 (expose approved spark/activity inputs) | no status file | none found |

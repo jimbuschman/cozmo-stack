@@ -81,6 +81,11 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
+- **B-M15-7 Opus check FAIL (2026-10-17; research/20261017-b-m15-7-check.md):** three blocking (Lab Init aborts on an
+  AB-disable MISSING the adopted evidence settles as always-enabled; Feeding deselect keeps its E2G 0x0D subscription;
+  Unicode locale lowercasing). Fixes and queued items in B-M15-11, after B-M1-2. Manager to add: a COMPATIBILITY_POLICY
+  record for the locale app input (native Locale enum at context+0x18, 0x006A53D2..0x006A53DC; check Q6).
+
 - **OV124 adopted (manager, 2026-10-17; research/overnight/20261017-ov124-check.md):** after B-M1-2 publishes, fold
   the answer into M1-055's unresolved (engine side: the fresh Init-time broadcast sends zero AnimationAvailable, then
   EndOfMessage(0), then Debug; whether the game receives it is M1-056). New M1-056 (RECOVERABLE_GAP, OV125 queued) and
