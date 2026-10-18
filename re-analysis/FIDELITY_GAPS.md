@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **695 records** over 16 subsystems.
+Manifest of **697 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 20 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 405 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 65 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -34,11 +34,11 @@ remains after both, and they do not go away by working harder on this repository
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 24 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
 | M10-derived — Derived robot state and reaction strategies | 17 | 0 | 14 | 0 | 0 | yes | no |
-| M11-vision — Markers, camera geometry and BlockWorld | 95 | 5 | 74 | 0 | 1 | no | no |
+| M11-vision — Markers, camera geometry and BlockWorld | 96 | 6 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 39 | 0 | 33 | 0 | 1 | yes | no |
 | M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
-| M15-freeplay — Needs, activities and freeplay | 70 | 3 | 61 | 1 | 1 | no | no |
+| M15-freeplay — Needs, activities and freeplay | 71 | 4 | 61 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
 ## Evidence process
@@ -201,6 +201,15 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 * evidence: re-analysis/research/20261014-pose-tree-verifies.md: "Still unread": parent-pose lifetimes (robot +0x298, origins, object poses, temporaries), PoseOriginList erase/rejigger paths, inline wrapper attaches writing PoseBase+4 without +0x48, cross-thread pose-tree mutation.; re-analysis/research/overnight/20261016-ov121-answer.md: AddRobotRelativeObservation 0x00506B70..0x00506C48; SetPoseHelper 0x0050609C..0x00506116; SetCarriedObjectAsUnattached 0x006333D4..0x00633930; MarkObjectUnobserved/Unknown 0x00506FBC..0x005073FC; CheckForUnobservedObjects filter 0x00621C6C..0x00621D88; LocalizeToObject rejigger 0x005158D8..0x005159B2; UpdateObjectOrigins 0x00620534..0x006206F0 and lambda1 0x00628E18..0x006292F6; CopyWithNewPose 0x00506EF8..0x00506F40; ~ObservableObject 0x004E0D78..0x004E0DA0; DriveToPoseAction::Init 0x0055A8A6..0x0055A91E.
 * outstanding: RECOVERABLE_GAP: census the parent-pose lifetimes and the origin erase paths. Batch check 2026-10-16 (re-analysis/research/overnight/20261016-batch-check.md): OV86 is not evidence. New rows: PoseBase.SetParent.UnownedParent VERIFY (0x00844A26..0x00844A7A, attaches anyway); PoseOriginList::Flatten re-parenting 0x00847F34..0x00847FBE (from LocalizeToObject 0x005159B2); Rejigger caller 0x0051590C. Node layout: quaternion +0, translation +0x20, parent +0x30/+0x34, name +0x38, ID +0x44, owner count +0x48. Copy and assignment allocate or deep-copy into own node; NotLastOwner = a child/shared_ptr outlives the last wrapper. Next: the 34 SetParent sites and local-parent lifetimes. Opus answer OV106 (re-analysis/research/overnight/20261016-ov100-101-106-answer.md): narrowed. Unreachable: RemoveOwner.ZeroOwners; ZeroOwnersWithID outside ~PoseOriginList; AssignmentOperator.NotLastOwner (no null-node wrapper is ever created: PoseBase() 0x00845724 has no callers); SetParent.UnownedParent for live wrappers; SanityCheckOwnership (no callers). Destructor.NotLastOwner and the Dev_Assert UnownedParent checks fire exactly when a node's last wrapper dies while a child or shared_ptr still refers to it. 35 SetParent sites classified (owned or safe, or unreachable). Open: (a) SetObjectAsAttachedToLift 0x00633010 parents the top object to the carried object's pose: the DeleteLocatedObjects erase order and UnSetCarryingObjects 0x00633C00 decide whether NotLastOwner fires; (b) GetWithRespectTo callers passing a temporary to; (c) copies sharing a parent that outlive it; (d) vision-thread non-atomic owner counts. Opus answer OV110 (re-analysis/research/overnight/20261016-ov109-110-answer.md): CORRECTIONS: ZeroOwners / ZeroOwnersWithID are not unreachable but HARDWARE_ONLY via the vision-thread race (M11-095); UnSetCarryingObjects never re-parents; the DeleteLocatedObjects erase order does not matter (each pose is copied into a local list first, 0x0061D2A6/0x0061D372); T's PoseConfirmation record (0x00506DD0) is a third holder of C.pose; copies carry the parent shared_ptr and operator= skips the UnownedParent VERIFY. Read rows M1-M3, A1-A7, B1, B2, D1 (ready to build once the remainder closes). Open: A8 (who deletes a carried C while T hangs: 13 DeleteLocatedObjects callers, AddRobotRelativeObservation 0x00506B70, MarkObjectUnobserved 0x00506FBC); B3 parameter/memory to sites; (c) census of outliving copies (ObservableObject dtor order; pre-action/goal copies before 0x0055A8C2/0x0055A8DC); (d) LatticePlannerImpl 0x004A6520 and FaceRecognizer 0x004CF164 thread wraps. OV121 answer (re-analysis/research/overnight/20261016-ov121-answer.md): A8 settled for the listed callers (SetCarriedObjectAsUnattached re-roots C and T first; no DeleteLocatedObjects caller deletes a carried C with T parented, except unread AddConnectedActiveObject 0x006238D4). NEW reachable destroyer: re-jiggering origins while carrying a stack (A8-11..A8-15): lambda1 copies the carried T pose keeping old C as parent, then the old-origin erase destroys old C -> NotLastOwner (defined). Open: whether shipped pick-up docks to a C with a known T on top (IDockAction+0xC0 consumer, CanInteractWithObjectHelper); SeeingCarriedObject routing (0x00620AD4..0x006215CC, 0x0050684C..0x00506B70); lambda2 0x00629862; B3 per-site list; concrete ActiveCube/Block dtors; goal-copy window before DriveToPoseAction::Init (0x00558FB4); indirect calls on planner/face threads. (d) direct calls: only the vision thread wraps poses.
 
+**M11-096 — The ImageChunk game report: the robot-image forward and the compressed vision image** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Camera.cs`
+* effect: which camera images the C# API reports to the host, when, and in what form
+* rests on: producer call sites only; bodies and payload construction not read
+* best authority: RobotToEngineImplMessaging::HandleImageChunk Set_ImageChunk 0x00535AD4; VisionComponent::CompressAndSendImage<u8> 0x0064F9F2 and <RGB> 0x0064FEA6
+* evidence: Native E2G ImageChunk producers (whole-.text constructor scan, research/20261018-b-m1-7-check-delivery.md finding 2): HandleImageChunk's Set_ImageChunk at 0x00535AD4, and VisionComponent::CompressAndSendImage<u8> 0x0064F9F2 and <RGB> 0x0064FEA6. M3-002 covers HandleImageChunk's reassembly only; no record covered the host report.; The stack's public Camera.FrameReceived (Camera.cs:281) is a local frame observation, not that report. The host camera control path is M3-044 (COMPATIBILITY_POLICY).
+* outstanding: New (manager, 2026-10-18; B-M1-7 census). To read: when each producer sends (image send mode, compression, chunking), the payload, and the native local recipients. FrameReceived stays a local observation until this layer's turn. Not an exclusion.
+
 ### M12-manipulation — Docking, carrying and pre-action poses
 
 **M12-048 — Candidate crash points in pre-action pose consumers: CrossBridge GetDockMarker2 out-of-bounds read and DriveAndFlip index -1** (not on the live path)
@@ -271,6 +280,15 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261016-ov120-122-answer.md: LogDasEvents 0x005F47AC..0x005F4D26; result and cubes_moved events read; per-cube composition 0x005F4938..0x005F4BCC unread (roundf((+0x24/+0x28 - +0x130) * 1000) and appends via 0x004E8048).
 * outstanding: RECOVERABLE_GAP: read 0x005F4938..0x005F4BCC.
+
+**M15-071 — SparksRewardCommunicatedToUser: the FreeplaySparksAwarded game broadcast and its amount** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Behavior/Needs.cs`
+* effect: when the C# API reports a freeplay sparks award, whether it reports one with no pending reward, and the amount it carries
+* rests on: function body read by the B-M1-7 delivery check; callers' guards not read
+* best authority: NeedsManager::SparksRewardCommunicatedToUser 0x00696E64: store 0 at +0x3D8 (0x00696E78), MessageEngineToGame(FreeplaySparksAwarded&&) from +0x3DC (0x00696E82..0x00696E88), external interface vtable +0x1C Broadcast (0x00696E80, call 0x00696E90)
+* evidence: SparksRewardCommunicatedToUser 0x00696E64 clears the pending flag (+0x3D8, 0x00696E78) and builds FreeplaySparksAwarded from the amount at +0x3DC (0x00696E82..0x00696E88), then calls the E2G Broadcast(&&) through the external interface vtable +0x1C (0x00696E90). It has no pending-flag test (research/20261018-b-m1-7-check-delivery.md finding 1).; Callers named in Needs.cs: IActivity::OnDeselected 0x005B3548, BehaviorEarnedSparks::StopInternal 0x005DAF7C, and RegisterNeedsActionCompleted; whether they guard the call on the pending flag is unread.; The stack's public SparksRewardAwarded (Needs.cs:828) is queued with no payload and returns early when !SparksRewardPending (Needs.cs:841).
+* outstanding: New (manager, 2026-10-18; B-M1-7 census). To read: the three callers' guards (does any call without a pending reward, which the native body would still broadcast?) and the writers of +0x3DC (the amount). Open stack differences: the amount is not carried (the 'app's economy' comment is not a recorded decision), and the early return on !SparksRewardPending has no source. Not an exclusion.
 
 ## Still to build: every IMPLEMENTATION_GAP
 
@@ -2313,6 +2331,7 @@ B-M11-7 (2026-10-15), bounded build, awaiting strong verification: shared Camera
 * evidence: VisionComponent::UpdateAllResults 0x006542EC runs markers 0x006544A2, faces 0x00654510, pets 0x0065457E, motion 0x006545E8, overhead edges 0x00654652, tool code 0x006546BC, computed calibration 0x00654726, image quality 0x00654790, laser points 0x006547FA; then CheckMailbox 0x00654A74 and the RobotProcessedImage broadcast 0x00654A14/0x00654A1C
 * outstanding: build the M11-owned dispatch order and the VisionProcessingResult field mapping. Still unread and M11-owned: the loop head 0x006542EC..0x00654486 and the bodies of UpdateToolCode 0x00655421, UpdateComputedCalibration 0x006554C5, UpdateImageQuality 0x00655579, UpdateLaserPoints 0x00655795 and UpdateOverheadMap 0x00655909 (M11-048 lists them); the face/pet handlers are M14, motion M10, and the message layouts are M2/M10. M1-053 reads the owned +0xE8 last processed image timestamp (getter 0x006527A2); its result timestamp commit is a candidate in VisionSystem, and its exactness remains this record.
 B-M11-6 (2026-10-15), partial integration, awaiting strong verification: detection work is staged before existing world/face/pet recipients so a known mode7 quality failure drops all frame recipients/publication, rather than mutating them then dropping the final event. Host frame can expose a bounded ImageQualityProposal; this is explicitly NOT native processed-mask/header/deque serialization, UpdateImageQuality debounce/EngineErrorCode/event/broadcast, or RobotProcessedImage layout. Those native recipients remain visible MISSING and unbuilt; no whole dispatch or wire lifecycle claim.
+Manager correction (2026-10-18; research/20261018-b-m1-7-check-delivery.md finding 2): this record owns the RobotProcessedImage game report (producer 0x00654A14, Robot::Broadcast 0x00654A1C). The B-M1-6/B-M1-7 census row for VisionSystem.FrameProcessed named M13-020 and called 0x00654A14/0x00654A1C a consumer tail; both wrong (M13-020 only subscribes to tag 0x43). FrameProcessed is a local observation; the host report is MISSING here.
 
 **M11-036 — VisionComponent::UpdateVisionMarkers into BlockWorld** (live path)
 

@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-16",
+  "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "e3c845bc810994b75e501c51f9c492f3a6a56a757a492d3be4f4411c3e6ec185",
+  "inventory_sha256": "590e7d5fd5c6e7203be588f8d0c37fdee4192fad096d51dd034ad8ea4d75816c",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1112,6 +1112,17 @@
       ],
       "live_path": true,
       "hardware_required": true
+    },
+    "M11-096": {
+      "status": "RECOVERABLE_GAP",
+      "title": "The ImageChunk game report: the robot-image forward and the compressed vision image",
+      "authority": "RobotToEngineImplMessaging::HandleImageChunk Set_ImageChunk 0x00535AD4; VisionComponent::CompressAndSendImage<u8> 0x0064F9F2 and <RGB> 0x0064FEA6",
+      "evidence": [
+        "Native E2G ImageChunk producers (whole-.text constructor scan, research/20261018-b-m1-7-check-delivery.md finding 2): HandleImageChunk's Set_ImageChunk at 0x00535AD4, and VisionComponent::CompressAndSendImage<u8> 0x0064F9F2 and <RGB> 0x0064FEA6. M3-002 covers HandleImageChunk's reassembly only; no record covered the host report.",
+        "The stack's public Camera.FrameReceived (Camera.cs:281) is a local frame observation, not that report. The host camera control path is M3-044 (COMPATIBILITY_POLICY)."
+      ],
+      "live_path": true,
+      "hardware_required": false
     }
   }
 }

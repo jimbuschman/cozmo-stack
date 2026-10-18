@@ -1730,3 +1730,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | Narrowed (A8 settled; new rejigger-while-carrying destroyer) | M11-084 |
 | Leads | M11-043, M11-010 |
+
+
+## B-M1-7 census owners (manager, 2026-10-18; research/20261018-b-m1-7-check-delivery.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP: the ImageChunk game report (0x00535AD4; 0x0064F9F2; 0x0064FEA6) | M11-096 (new) |
+| Owner correction: RobotProcessedImage host report (0x00654A14/0x00654A1C) is M11-035, not M13-020 | M11-035 (note) |

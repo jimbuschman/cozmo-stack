@@ -1039,3 +1039,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | GuardDog lifecycle: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M15-067 |
 | Narrowed | M15-069 |
 | New RECOVERABLE_GAP | M15-070 |
+
+
+## B-M1-7 census owners (manager, 2026-10-18; research/20261018-b-m1-7-check-delivery.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP: SparksRewardCommunicatedToUser's FreeplaySparksAwarded game broadcast (0x00696E64; Broadcast 0x00696E90; amount +0x3DC), callers' guards unread | M15-071 (new) |
