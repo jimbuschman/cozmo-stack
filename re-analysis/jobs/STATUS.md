@@ -104,7 +104,7 @@
 | 61w3 | B-M2M15-2 | CLAIMED per status/B-M2M15-2.md (released 2026-10-17: M1+M2 path), after B-M15-11 (publ... | DONE (3/3 items; 3 MISSING groups) — B-M2M15-2, Codex builder, 2026-10-17. Implementation commit: ff31b1f0 (see publication update below). | `research/20261017-b-m2m15-2-check.md` |
 | 61w3a | B-M1-3 | DONE per status/B-M1-3.md (B-M1-2 check FAIL: dead engine on a supplied config; public ... | DONE (4/4 items; 2 MISSING groups) — B-M1-3, Codex builder, 2026-10-17. Commit: f86b0702 (published). | `research/20261017-b-m1-3-check.md` |
 | 61w3b | B-M1-4 | DONE per status/B-M1-4.md (engine readiness: StartEngine, loading, ready/failed, state-... | DONE (10/10 checked items built; 6 MISSING boundaries) | none found |
-| 61w3c | B-DELIV-1 | open, after B-M1-4 (app delivery outside engine locks; B-M2M15-2 finding 1) | no status file | none found |
+| 61w3c | B-DELIV-1 | DONE per status/B-DELIV-1.md (app delivery outside engine locks; B-M2M15-2 finding 1) | DONE (3/3 items; 0 new MISSING) | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

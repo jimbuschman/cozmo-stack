@@ -30,6 +30,7 @@ public sealed class M15RestorationCheckedRowsTests
             Engine.EngineToGameMessage+=(t,b)=>Reports.Add((t,b.ToArray()));Engine.LogEntry+=Logs.Add;Engine.StackLogLine+=Stack.Add;
             Engine.Robots.AddRobot(1,withRic:queue);
             if(!queue)Engine.BackupFiles.InitProgressionDefaults();
+            Engine.DrainAppDelivery();
             Reports.Clear(); // Constructor RobotDelocalized is independent of the restoration under test.
         }
         public void Dispose(){Robot.Dispose();Files.Dispose();BackupFiles.ClearDefaultsForTest();}
@@ -37,77 +38,85 @@ public sealed class M15RestorationCheckedRowsTests
     private static byte[] UnlockData(params uint[] ids)
     {var data=new byte[2048];for(int i=0;i<ids.Length;i++)BinaryPrimitives.WriteUInt32LittleEndian(data.AsSpan(i*4,4),ids[i]);return data;}
     private static uint[] Ids(byte[] payload)=>Enumerable.Range(0,payload[0]).Select(i=>BinaryPrimitives.ReadUInt32LittleEndian(payload.AsSpan(1+4*i,4))).ToArray();
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Fact]
     public void ConnectionQueueCallsTheRealProgressionThenInventorySinks()
     {
         using var f=new Fixture(true);Assert.Equal(new uint[]{0x182000,0x195000},f.Engine.NvStorage!.QueuedTags.Take(2));
-        f.Engine.NvStorage.Update();f.Native.DeliverMessage(new NVOpResult{Tag=0x182000,Op=NvStorageComponent.OpRead,Result=-1,Data=Array.Empty<byte>()});
+        f.Engine.NvStorage.Update();f.Native.DeliverMessage(new NVOpResult{Tag=0x182000,Op=NvStorageComponent.OpRead,Result=-1,Data=Array.Empty<byte>()});f.Engine.DrainAppDelivery();
         Assert.Equal(new ushort[]{0x6D,0x6E},f.Reports.Select(r=>r.Tag));
         f.Reports.Clear();f.Engine.NvStorage.Update();
-        f.Native.DeliverMessage(new NVOpResult{Tag=0x195000,Op=NvStorageComponent.OpRead,Result=-1,Data=Array.Empty<byte>()});
+        f.Native.DeliverMessage(new NVOpResult{Tag=0x195000,Op=NvStorageComponent.OpRead,Result=-1,Data=Array.Empty<byte>()});f.Engine.DrainAppDelivery();
         Assert.True(f.Native.Inventory!.Ready);Assert.Equal(new ushort[]{0x6F,0x70},f.Reports.Select(r=>r.Tag));
         Assert.Equal(256,f.Reports[0].Data.Length);Assert.All(f.Reports[0].Data,b=>Assert.Equal(0,b));Assert.Empty(f.Reports[1].Data);
         Assert.Contains(f.Stack,s=>s.Contains("M15-035 manager ruling"));
     }
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Fact]
     public void UnlockSuccessReplacesOldStateWithDefaultsAndUniqueSavedIdsOneThrough84()
     {
         using var f=new Fixture();var owner=f.Native.Progression!;owner.Unlocked.Add(85);
-        owner.ReadSink(new NvResult(1,UnlockData(84,1,84,0,85,uint.MaxValue,2)));
+        owner.ReadSink(new NvResult(1,UnlockData(84,1,84,0,85,uint.MaxValue,2)));f.Engine.DrainAppDelivery();
         var report=Assert.Single(f.Reports);Assert.Equal((ushort)0x6D,report.Tag);Assert.Equal(0,report.Data[^1]);
         var expected=BackupFiles.CurrentDefaults().Concat(new uint[]{1,2,84}).Distinct().OrderBy(i=>i).ToArray();
         Assert.Equal(expected,owner.Unlocked);Assert.Equal(expected,Ids(report.Data));Assert.DoesNotContain(85u,owner.Unlocked);
     }
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Theory]
     [InlineData(-2,2048)][InlineData(-9,0)][InlineData(0,2049)]
     public void UnlockErrorsKeepStateAndEmitNoReport(int result,int length)
     {
         bool prior=EngineErrorState.ErrorFlagSet;
         try{using var f=new Fixture();f.Native.Progression!.Unlocked.Add(84);EngineErrorState.ErrorFlagSet=false;
-        f.Native.Progression.ReadSink(new NvResult((sbyte)result,new byte[length]));Assert.Equal(new uint[]{84},f.Native.Progression.Unlocked);Assert.Empty(f.Reports);
+        f.Native.Progression.ReadSink(new NvResult((sbyte)result,new byte[length]));f.Engine.DrainAppDelivery();Assert.Equal(new uint[]{84},f.Native.Progression.Unlocked);Assert.Empty(f.Reports);
         Assert.True(EngineErrorState.ErrorFlagSet);var e=Assert.Single(f.Logs.Where(e=>e.Name=="UnlockComponent.ReadGameUnlocks"));Assert.Equal(EngineLogLevel.Error,e.Level);Assert.Null(e.Channel);}
         finally{EngineErrorState.ErrorFlagSet=prior;}
     }
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Theory]
     [InlineData(0)][InlineData(1)][InlineData(2047)]
     public void ShortUnlockInputLogsPaddingThenSkipsTheFreedBufferWithoutReplacingState(int length)
     {
-        using var f=new Fixture();f.Native.Progression!.Unlocked.Add(84);f.Native.Progression.ReadSink(new NvResult(0,new byte[length]));
+        using var f=new Fixture();f.Native.Progression!.Unlocked.Add(84);f.Native.Progression.ReadSink(new NvResult(0,new byte[length]));f.Engine.DrainAppDelivery();
         Assert.Equal(new uint[]{84},f.Native.Progression.Unlocked);Assert.Empty(f.Reports);
         var info=Assert.Single(f.Logs.Where(e=>e.Name=="ProgressionUnlockComponent.ReadFewerUnlocks"));Assert.Equal("Padding unlock data due to size mismatch",info.Text);
         Assert.Contains(f.Stack,s=>s.Contains("M1-034/M15-034")&&s.Contains("0x0064CEEA"));
     }
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Fact]
     public void MissingUnlocksInstallDefaultsBeforeTheNullInterfaceNotificationSkip()
     {
-        using var f=new Fixture();f.Native.HasExternalInterface=false;f.Native.Progression!.Unlocked.Add(84);f.Native.Progression.ReadSink(new NvResult(-1,Array.Empty<byte>()));
+        using var f=new Fixture();f.Native.HasExternalInterface=false;f.Native.Progression!.Unlocked.Add(84);f.Native.Progression.ReadSink(new NvResult(-1,Array.Empty<byte>()));f.Engine.DrainAppDelivery();
         Assert.Equal(BackupFiles.CurrentDefaults(),f.Native.Progression.Unlocked);Assert.Empty(f.Reports);Assert.Contains(f.Stack,s=>s.Contains("0x0064C114"));
     }
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Theory]
     [InlineData(0)][InlineData(1)][InlineData(3)][InlineData(4)][InlineData(7)][InlineData(8)][InlineData(252)][InlineData(255)][InlineData(256)][InlineData(257)]
     public void InventoryDecodeOverwritesOnlyCompleteWordsAndRetainsTheRest(int length)
     {
         using var f=new Fixture();var owner=f.Native.Inventory!;for(int i=0;i<64;i++)owner.Words[i]=-100-i;
         var data=new byte[length];for(int i=0;i<length/4;i++)BinaryPrimitives.WriteInt32LittleEndian(data.AsSpan(i*4,4),1000+i);
-        f.Engine.EngineToGameMessage+=(tag,_)=>{if(tag==0x6F)Assert.True(owner.Ready);};owner.ReadSink(new NvResult(1,data));
+        f.Engine.EngineToGameMessage+=(tag,_)=>{if(tag==0x6F)Assert.True(owner.Ready);};owner.ReadSink(new NvResult(1,data));f.Engine.DrainAppDelivery();
         var report=Assert.Single(f.Reports);Assert.Equal((ushort)0x6F,report.Tag);Assert.Equal(256,report.Data.Length);
         for(int i=0;i<64;i++)Assert.Equal(i<Math.Min(64,length/4)?1000+i:-100-i,BinaryPrimitives.ReadInt32LittleEndian(report.Data.AsSpan(i*4,4)));
     }
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Theory]
     [InlineData(-1)][InlineData(-2)]
     public void InventoryNegativeResultsStillSendRetainedWordsAndOnlyMissingRequestsDefaults(int result)
     {
         bool prior=EngineErrorState.ErrorFlagSet;try{using var f=new Fixture();var owner=f.Native.Inventory!;owner.Words[63]=-17;EngineErrorState.ErrorFlagSet=false;
-        owner.ReadSink(new NvResult((sbyte)result,Array.Empty<byte>()));Assert.True(owner.Ready);Assert.Equal(result==-1?2:1,f.Reports.Count);Assert.Equal((ushort)0x6F,f.Reports[0].Tag);
+        owner.ReadSink(new NvResult((sbyte)result,Array.Empty<byte>()));f.Engine.DrainAppDelivery();Assert.True(owner.Ready);Assert.Equal(result==-1?2:1,f.Reports.Count);Assert.Equal((ushort)0x6F,f.Reports[0].Tag);
         Assert.Equal(-17,BinaryPrimitives.ReadInt32LittleEndian(f.Reports[0].Data.AsSpan(252,4)));Assert.Equal(result==-2,EngineErrorState.ErrorFlagSet);
         if(result==-1)Assert.Equal((ushort)0x70,f.Reports[1].Tag);
         else{var error=Assert.Single(f.Logs.Where(e=>e.Name.EndsWith("ReadError")));Assert.Equal("(tc0000) : ",error.Text);Assert.Empty(error.Data);}}
         finally{EngineErrorState.ErrorFlagSet=prior;}
     }
+    // reach: unit (direct native NV sink/message and explicit safe app drain; live NV transport/tick join is not exercised).
     [Fact]
     public void InventoryWithoutInterfaceStillDecodesAndBecomesReadyButSendsNothing()
     {
-        using var f=new Fixture();f.Native.HasExternalInterface=false;f.Native.Inventory!.ReadSink(new NvResult(0,BitConverter.GetBytes(-4)));
+        using var f=new Fixture();f.Native.HasExternalInterface=false;f.Native.Inventory!.ReadSink(new NvResult(0,BitConverter.GetBytes(-4)));f.Engine.DrainAppDelivery();
         Assert.True(f.Native.Inventory.Ready);Assert.Equal(-4,f.Native.Inventory.Words[0]);Assert.Empty(f.Reports);
     }
     [Fact]

@@ -427,6 +427,8 @@ public interface IAnimationCatalog
 /// </summary>
 public sealed class AnimationScheduler
 {
+    internal bool MutationLockHeldByCurrentThread=>Monitor.IsEntered(_gate);
+    internal void WaitForMutationBoundary(){lock(_gate){}}
     /// <summary>The engine's animation tick: 30 frames per second.</summary>
     public const int FrameRateHz = 30;
     /// <summary>The wall-clock spacing of frames on the test seam's clock: one robot audio frame, 744 samples at 22320 Hz.</summary>

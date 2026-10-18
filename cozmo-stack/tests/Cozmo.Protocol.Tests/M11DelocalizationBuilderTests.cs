@@ -53,14 +53,15 @@ public sealed class M11DelocalizationBuilderTests
         Assert.Equal(0u,history.AddVisionOnlyState(5001,pose,14,1,2));Assert.Same(node,history.VisionOnly[5001].Pose.Node);Assert.True(history.VisionOnly.ContainsKey(1));
         Assert.Equal(0u,history.AddVisionOnlyState(5002,pose,15,1,2));Assert.False(history.VisionOnly.ContainsKey(1));
     }
+    // reach: unit (direct Delocalize and explicit safe app drain; normal production drain is the tick boundary).
     [Fact]
-    public void DelocalizationDeliversAppThenKnownSubscribersAndRecomputesTheForwardPose()
+    public void DelocalizationQueuesAppThenRunsKnownSubscribersBeforeHostDispatch()
     {
         using var rig=new Rig();var r=rig.Robot.Engine.Robot!;var order=new List<string>();
         rig.Robot.Engine.EngineToGameMessage+=(tag,body)=>{Assert.Equal((ushort)0x32,tag);Assert.Empty(body.ToArray());order.Add("app");};
         rig.Robot.Engine.DelocalizationConfigurationHook=()=>order.Add("configuration");rig.Robot.Engine.DelocalizationCubeHook=()=>order.Add("cubes");
-        uint before=r.CurrentOriginId,delivered=rig.Robot.Engine.NativeUiDeliveryCount;r.Delocalize(false);
-        Assert.Equal(before+1,r.CurrentOriginId);Assert.Equal(new[]{"app","configuration","cubes"},order);Assert.Equal(new Vec3(-20,0,0),r.ForwardPose.Translation);
+        uint before=r.CurrentOriginId,delivered=rig.Robot.Engine.NativeUiDeliveryCount;r.Delocalize(false);rig.Robot.Engine.DrainAppDelivery();
+        Assert.Equal(before+1,r.CurrentOriginId);Assert.Equal(new[]{"configuration","cubes","app"},order);Assert.Equal(new Vec3(-20,0,0),r.ForwardPose.Translation);
         Assert.Equal(1u,r.PoseFrameId);Assert.Equal((byte)1,r.VisionPoseUpdated);
         Assert.Equal(delivered+1,rig.Robot.Engine.NativeUiDeliveryCount); // E3 increments once before app delivery.
     }

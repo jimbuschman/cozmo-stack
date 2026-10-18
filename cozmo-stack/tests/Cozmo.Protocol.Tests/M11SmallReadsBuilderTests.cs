@@ -46,7 +46,8 @@ public sealed class M11SmallReadsBuilderTests
         }
         public void Dispose(){Rig.Dispose();Directory.Delete(Root,true);}
     }
-    private static readonly string[] ConstructorOrder={"game","BlockConfigurationManager","CantHandleTallStack[0]","CantHandleTallStack[1]","CubeLightComponent"};
+    private static readonly string[] ConstructorOrder={"BlockConfigurationManager","CantHandleTallStack[0]","CantHandleTallStack[1]","CubeLightComponent","game"};
+    // reach: unit (direct later Delocalize and explicit app drain; constructor part enters the real connect tick).
     [Fact]
     public void ConstructionHasOnlyR1ThroughR5AndLaterDelocalizationAddsStrategiesInShippedOrder()
     {
@@ -54,17 +55,18 @@ public sealed class M11SmallReadsBuilderTests
         Assert.All(f.Native.TallStackContainers,s=>{Assert.False(s.HasStoredPose);Assert.Null(s.Stack);});
         f.Order.Clear();f.Native.BlockConfigurationForceUpdate=false;
         foreach(var state in f.Native.TallStackContainers){state.HasStoredPose=true;state.Stack=new StackOfCubes(new uint[]{1,2,3});}
-        f.Native.Delocalize(false);
-        Assert.Equal(ConstructorOrder.Concat(new[]{"FacePositionUpdated","ObjectPositionUpdated","CubeMoved"}),f.Order);
+        f.Native.Delocalize(false);f.Rig.Engine.DrainAppDelivery();
+        Assert.Equal(ConstructorOrder.SkipLast(1).Concat(new[]{"FacePositionUpdated","ObjectPositionUpdated","CubeMoved","game"}),f.Order);
         Assert.True(f.Native.BlockConfigurationForceUpdate);Assert.All(f.Native.TallStackContainers,s=>{Assert.False(s.HasStoredPose);Assert.Null(s.Stack);});
     }
+    // reach: unit (direct later Delocalize and explicit app drain; constructor part enters the real connect tick).
     [Fact]
     public void MissingTargetDeletesTheCorrespondingStrategyAndNoInterfaceRegistersNothing()
     {
         using(var missing=new Fixture(missingFace:true))
         {
-            missing.Order.Clear();missing.Native.Delocalize(false);
-            Assert.Equal(ConstructorOrder.Concat(new[]{"ObjectPositionUpdated","CubeMoved"}),missing.Order);
+            missing.Order.Clear();missing.Native.Delocalize(false);missing.Rig.Engine.DrainAppDelivery();
+            Assert.Equal(ConstructorOrder.SkipLast(1).Concat(new[]{"ObjectPositionUpdated","CubeMoved","game"}),missing.Order);
         }
         using var noInterface=new Fixture(hasInterface:false);
         Assert.Empty(noInterface.Order);Assert.Equal(0,noInterface.Rig.Engine.AnimationMessages.Count(0x32,true));

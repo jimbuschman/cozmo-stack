@@ -46,6 +46,7 @@ public sealed class M3M4X18BuilderTests
         signal.Subscribe(2,_=>calls.Add("other-tag"));signal.Deliver(1,0);
         Assert.Equal(new[]{"first","self","appended"},calls);
     }
+    // reach: unit (direct dispatch with a prelinked Robot; explicit app drain replaces the transport/tick boundary).
     [Fact]
     public void ImplVersionWarningsUseSpacedHexAndStickyFlagsWithEmptyStringsOnCurrentMatches()
     {
@@ -53,15 +54,15 @@ public sealed class M3M4X18BuilderTests
         var logs=new List<EngineLogEntry>();var reports=new List<EngineRobotCLADVersionMismatch>();
         rig.Engine.LogEntry+=logs.Add;rig.Engine.CLADVersionMismatch+=reports.Add;
         var m=new FWVersionInfo{Field0=0x12345678,Field3=new byte[16],Field4=Convert.FromHexString("AB12BABA15729540B41D23167F2459A2")};
-        rig.Engine.Broadcast(m);
+        rig.Engine.Broadcast(m);rig.Engine.DrainAppDelivery();
         var warning=Assert.Single(logs.Where(e=>e.Name=="RobotFirmware.VersionMismatch"));
         Assert.EndsWith("Robot's EngineToRobot hash = "+string.Concat(Enumerable.Repeat(" 00",16))+". Engine's EngineToRobot hash =  D5 35 42 A1 7B B8 97 69 D8 09 4E CE 5A 96 4A 9E.",warning.Text);
         Assert.Equal(EngineLogLevel.Warning,warning.Level);Assert.Empty(warning.Data);
         var report=Assert.Single(reports);Assert.Equal(0x2A,report.Tag);Assert.True(report.EngineToRobotMismatch);Assert.False(report.RobotToEngineMismatch);Assert.Equal("",report.EngineRobotToEngine);
-        m.Field3=Convert.FromHexString("D53542A17BB89769D8094ECE5A964A9E");rig.Engine.Broadcast(m);
+        m.Field3=Convert.FromHexString("D53542A17BB89769D8094ECE5A964A9E");rig.Engine.Broadcast(m);rig.Engine.DrainAppDelivery();
         Assert.Equal(2,reports.Count);Assert.True(reports[1].EngineToRobotMismatch);
         Assert.Equal(new[]{"","","",""},new[]{reports[1].EngineEngineToRobot,reports[1].EngineRobotToEngine,reports[1].RobotEngineToRobot,reports[1].RobotRobotToEngine});
-        m.Field4=new byte[16];rig.Engine.Broadcast(m);Assert.True(reports[2].RobotToEngineMismatch);Assert.True(reports[2].EngineToRobotMismatch);
+        m.Field4=new byte[16];rig.Engine.Broadcast(m);rig.Engine.DrainAppDelivery();Assert.True(reports[2].RobotToEngineMismatch);Assert.True(reports[2].EngineToRobotMismatch);
         Assert.Equal(m.ToBytes()[1..],rig.Engine.Robot!.LastFWVersionPayload);
     }
     [Fact]

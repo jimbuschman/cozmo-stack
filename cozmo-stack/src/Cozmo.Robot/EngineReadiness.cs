@@ -63,9 +63,7 @@ public sealed partial class CozmoEngine
         if(old==state)return;
         Volatile.Write(ref _engineState,state); // native store precedes notification.
         var report=new EngineStateTransition(old,state);
-        DeliverAnimationReportToApp(0x7B,new[]{old,state});
-        if(EngineStateChanged is {} handlers)
-            foreach(Action<EngineStateTransition> h in handlers.GetInvocationList())RunIsolated(()=>h(report));
+        DeliverAnimationReportToApp(0x7B,new[]{old,state},CaptureAppEvent(EngineStateChanged,report));
         AnimationMessages.Deliver(0x7B,true,report);
         EmitSourceLog(EngineLogLevel.Event,null,"app.engine.state",$"{old}->{state}");
     }
@@ -130,8 +128,7 @@ public sealed partial class CozmoEngine
     {
         var report=new EngineLoadingProgress(_lastPolledProgress);
         // EngineLoadingDataStatus tag is kept at the typed API boundary until its serializer tag is checked here.
-        if(EngineLoading is {} handlers)
-            foreach(Action<EngineLoadingProgress> h in handlers.GetInvocationList())RunIsolated(()=>h(report));
+        QueueAppEvent(EngineLoading,report);
     }
     private void FailStartup(string reason)
     {
@@ -139,8 +136,7 @@ public sealed partial class CozmoEngine
         StartupFailureReason=reason;_startupFailed=true;
         EmitStackLog("Engine startup failed: "+reason);
         var report=new EngineStartupFailure(reason);
-        if(EngineStartupFailed is {} handlers)
-            foreach(Action<EngineStartupFailure> h in handlers.GetInvocationList())RunIsolated(()=>h(report));
+        QueueAppEvent(EngineStartupFailed,report);
     }
     private void StopStartupLoading()
     {

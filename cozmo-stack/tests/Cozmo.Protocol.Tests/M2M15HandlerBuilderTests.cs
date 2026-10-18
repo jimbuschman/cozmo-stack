@@ -72,7 +72,7 @@ public sealed class M2M15HandlerBuilderTests
 
     // reach: unit (substitutes direct action Init/registration; native scheduler join MISSING at M8-020 0x00543F20 / M12-017 0x005521AC).
     [Fact]
-    public void D5UsesPayloadOffsetFiveAndDeliversToGameBeforeLocalRecipients()
+    public void D5UsesPayloadOffsetFiveAndQueuesAppBeforeSynchronousLocalRecipients()
     {
         using var f=new Fixture();var action=f.Start();byte tag=f.Tag;var order=new List<string>();
         f.Robot.Engine.EngineToGameMessage+=(t,p)=>{if(t==0x60){Assert.Equal(new byte[]{255,255,255,255,2},p.ToArray());order.Add("payload");}};
@@ -80,7 +80,8 @@ public sealed class M2M15HandlerBuilderTests
         using var local=f.Robot.Engine.AnimationMessages.SubscribeMessage(0x60,true,p=>{Assert.Equal(new AnimationEventReport(uint.MaxValue,2),p);order.Add("local");});
         var message=new Cozmo.Protocol.AnimationEvent{Timestamp=uint.MaxValue,EventId=(AnimEvent)tag,Field2=2};
         f.Send(message);Assert.Empty(order);f.Send(new AnimationStarted{AnimId=tag});f.Send(message);f.Send(message);
-        Assert.Equal(new[]{"payload","game","local","payload","game","local"},order);
+        Assert.Equal(new[]{"local","local"},order);f.Robot.Engine.DrainAppDelivery();
+        Assert.Equal(new[]{"local","local","payload","game","payload","game"},order);
         Assert.EndsWith($"Event TAPPED_BLOCK received at time -1 while playing animation tag {tag}",f.Logs.Last(e=>e.Name=="PlayAnimation.AnimationEventHandler").Text);
         Assert.Equal(EngineActionResult.Running,action.CheckIfDone());action.WatcherEnding();
     }

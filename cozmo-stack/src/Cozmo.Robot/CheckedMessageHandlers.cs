@@ -10,7 +10,7 @@ public sealed record EngineRobotCLADVersionMismatch(bool EngineToRobotMismatch, 
 public sealed partial class CozmoEngine
 {
     public event Action<EngineRobotCLADVersionMismatch>? CLADVersionMismatch;
-    internal void BroadcastCLADVersionMismatch(EngineRobotCLADVersionMismatch message) => FanOut(CLADVersionMismatch, message);
+    internal void BroadcastCLADVersionMismatch(EngineRobotCLADVersionMismatch message) => QueueAppEvent(CLADVersionMismatch,message);
 }
 public sealed partial class EngineRobot
 {

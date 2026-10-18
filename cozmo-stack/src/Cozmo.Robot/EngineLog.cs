@@ -51,7 +51,7 @@ public sealed partial class CozmoEngine
     }
     // fidelity: M4-035
     public event Action<BlockPoolDataMessage>? BlockPoolData;
-    internal void DeliverBlockPoolData(BlockPoolDataMessage m) => FanOut(BlockPoolData, m);
+    internal void DeliverBlockPoolData(BlockPoolDataMessage m) => QueueAppEvent(BlockPoolData,new BlockPoolDataMessage(m.Enabled,m.Blocks.ToArray()));
     internal Func<bool>? HasCameraCalibration { get; set; }
 
     // fidelity: M3-048

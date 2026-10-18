@@ -164,6 +164,8 @@ public sealed class CozmoAnimations : IDisposable
         DrivingAnimations = new DrivingAnimationHandler(robot);
         // fidelity: M5-045
         _scheduler = new AnimationScheduler(_sink, contextRandom: robot.Engine.ContextRandom);
+        robot.Engine.AnimationMutationLockHeld=()=>_scheduler.MutationLockHeldByCurrentThread;
+        robot.Engine.WaitForAnimationMutation=_scheduler.WaitForMutationBoundary;
         _scheduler.Stream.Log = robot.Engine.Log;
         _scheduler.Stream.SourceLog = (level, channel, key, text) => robot.Engine.EmitSourceLog(level, channel, key, text);
         _scheduler.Log = robot.Engine.Log;
@@ -178,7 +180,7 @@ public sealed class CozmoAnimations : IDisposable
         // a robot with no firmware version yet has the client constructor's 0 (None).
         robot.Engine.CreateGoToSleepSequence = _ => GoToSleepAnimation.Create(robot, SleepTriggerFactory);
         _scheduler.OutputSource = () => robot.Engine.Robot?.AudioOutputSource;
-        _sink.AnimationEvent += e => Event?.Invoke(e);
+        _sink.AnimationEvent += e => robot.Engine.QueueAppEvent(Event,e); // Stack string observer, not a second native E2G publication.
         _sink.NotImplemented += w => NotImplemented?.Invoke(w);
         _scheduler.NotImplemented += w => NotImplemented?.Invoke(w);
         // fidelity: M5-023
@@ -187,7 +189,7 @@ public sealed class CozmoAnimations : IDisposable
         // (0x00517DE4..0x00517E0A), not through the stream buffer.
         _scheduler.AnimationAborted += tag =>
         {
-            // A22/A23: app delivery precedes the earlier RobotEventHandler and action's local E2G 5F callback.
+            // A22/A23: app enqueue precedes the earlier RobotEventHandler and action's local E2G 5F callback.
             byte[] payload = new byte[4];
             System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(payload, tag);
             robot.Engine.DeliverAnimationReportToApp(0x5F, payload);

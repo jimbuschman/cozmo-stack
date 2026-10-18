@@ -139,11 +139,9 @@ public sealed partial class EngineRobot
 }
 public sealed partial class CozmoEngine
 {
-    internal void DeliverNurture(ushort tag,byte[] data,object? report)
+    internal void DeliverNurture(ushort tag,byte[] data,object? report,Action? typed=null)
     {
-        NativeUiDeliveryCount=unchecked(NativeUiDeliveryCount+1);
-        if(EngineToGameMessage is {} handlers)
-            foreach(Action<ushort,ReadOnlyMemory<byte>> handler in handlers.GetInvocationList())RunIsolated(()=>handler(tag,data));
+        DeliverAnimationReportToApp(tag,data,typed,typedFirst:true);
         AnimationMessages.Deliver(tag,true,report);
     }
 }

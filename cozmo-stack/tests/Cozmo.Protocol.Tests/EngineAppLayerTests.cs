@@ -1534,9 +1534,10 @@ public class EngineAppLayerTests
 
     /// <summary>
     /// M15-014 (C2 rows 5-8): the mfgId tag-0xED callback raises the serial edge with mfgId word 0, after
-    /// <c>SendConnectionResponse(Success)</c> has delivered synchronously and before the (unbuilt, M3-033)
+    /// <c>SendConnectionResponse(Success)</c> has enqueued its app report and run local subscribers, before the (unbuilt, M3-033)
     /// lab-assignment read's counterpart. The engine records it for a stack that subscribes later.
     /// </summary>
+    // reach: production (packet/request through the real engine tick; app enqueue precedes local work, host dispatch follows it).
     [Fact]
     public void G_M15_014_TheMfgIdCallbackRaisesTheSerialEdgeAfterTheConnectionResponse()
     {
@@ -1550,7 +1551,7 @@ public class EngineAppLayerTests
         rig.Data(new ManufacturingID { SerialNumber = 0x41D04D9D, BodyHwVersion = 7, BodyColor = 2 });
         rig.Tick();
 
-        Assert.Equal(new[] { "response:1104170397", "serial:1104170397" }, order);
+        Assert.Equal(new[] { "serial:1104170397", "response:1104170397" }, order); // Enqueue precedes serial; host dispatch follows the tick.
         Assert.Equal(0x41D04D9Du, rig.Engine.AcquiredSerialNumber);
     }
 
@@ -2937,6 +2938,7 @@ public class EngineAppLayerTests
         Assert.DoesNotContain(rig.Log, line => line.Contains("MISSING: IExternalInterface.OnRobotDisconnected"));
     }
 
+    // reach: production (packet/request through the real engine tick; app enqueue precedes local work, host dispatch follows it).
     [Fact]
     public void CheckedRemoval_ReportsServicesLifetimeAndBookkeepingOrder()
     {
@@ -2991,13 +2993,14 @@ public class EngineAppLayerTests
         rig.Engine.RobotStorageFreed = id => { Assert.Same(robot, rig.Engine.Robot); calls.Add("free"); };
         rig.Engine.DisconnectCurrent();
         rig.Tick();
-        Assert.Equal(new[] { "external:1", "report", "$session_id", "needs", "perf", "das:0",
-            "dtor-event", "force-update", "abort-all", "behavior", "actions", "mood", "progression", "base", "free", "$phys", "$group" }, calls);
+        Assert.Equal(new[] { "external:1", "$session_id", "needs", "perf", "das:0",
+            "dtor-event", "force-update", "abort-all", "behavior", "actions", "mood", "progression", "base", "free", "$phys", "$group", "report" }, calls);
         Assert.Null(rig.Engine.Robot);
         Assert.DoesNotContain(rig.Log, line => line.Contains("MISSING: Robot operator delete", StringComparison.Ordinal));
         Assert.Contains(rig.Log, line => line.Contains("MISSING: Robot lifetime owner +0x258"));
     }
 
+    // reach: production (packet/request through the real engine tick; app enqueue precedes local work, host dispatch follows it).
     [Fact]
     public void CheckedRemoval_PendingHandshakeSkipsExternalReportAndSessionClear()
     {
@@ -3014,7 +3017,7 @@ public class EngineAppLayerTests
         rig.Engine.Robot!.Lifetime.Bind(-1, _ => calls.Add("dtor"));
         rig.Engine.DisconnectCurrent();
         rig.Tick();
-        Assert.Equal(new[] { "response:1", "needs", "perf", "das", "dtor", "$phys", "$group" }, calls);
+        Assert.Equal(new[] { "needs", "perf", "das", "dtor", "$phys", "$group", "response:1" }, calls);
     }
 
     [Fact]

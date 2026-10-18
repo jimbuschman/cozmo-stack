@@ -166,12 +166,6 @@ public sealed partial class CozmoEngine
     public event Action<ushort,ReadOnlyMemory<byte>>? EngineToGameMessage;
     internal void DeliverDelocalizationToApp()
     {
-        NativeUiDeliveryCount=unchecked(NativeUiDeliveryCount+1); // E3: UI+0xFC before delivery, including no connected app.
-        // Noted (B-M11-8 queued): the native DeliverToGame (0x00661594) hands the message to the app connection's buffer
-        // (E4/E5); the app reads it later. Under the app boundary (AGENTS.md) the stack calls its C# handlers here, inline,
-        // before the in-engine subscribers, so an app handler runs inside Delocalize where the native app would not.
-        if(EngineToGameMessage is not {} handlers)return;
-        foreach(Action<ushort,ReadOnlyMemory<byte>> handler in handlers.GetInvocationList())
-            RunIsolated(()=>handler(0x32,ReadOnlyMemory<byte>.Empty)); // M1-034 host handler isolation.
+        DeliverAnimationReportToApp(0x32,ReadOnlyMemory<byte>.Empty); // E3 count/enqueue precedes synchronous local delivery.
     }
 }

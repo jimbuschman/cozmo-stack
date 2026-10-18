@@ -75,19 +75,19 @@ public sealed partial class CozmoEngine
     {
         public void Available(byte[] name)
         {
-            var payload = new AnimationAvailableMessage(name);
-            engine.NativeUiDeliveryCount=unchecked(engine.NativeUiDeliveryCount+1);
-            if (engine.AnimationAvailable is { } handlers)
-                foreach (Action<AnimationAvailableMessage> handler in handlers.GetInvocationList()) engine.RunIsolated(()=>handler(payload));
+            var payload = new AnimationAvailableMessage(name.ToArray());
+            lock(engine._appDeliveryGate)
+            {
+                engine.NativeUiDeliveryCount=unchecked(engine.NativeUiDeliveryCount+1);
+                engine.QueueAppEvent(engine.AnimationAvailable,new AnimationAvailableMessage(name.ToArray()));
+            }
             engine.AnimationMessages.Deliver(0x5D, true, payload);
             // M1-055: raw CLAD serializer0x0071624E is excluded phone/game-message plumbing; typed C# API delivers the payload.
         }
         public void End(byte value)
         {
             var payload = new AnimationEndOfMessage(value);
-            if (engine.AnimationAnnouncementsEnded is { } handlers)
-                foreach (Action<AnimationEndOfMessage> handler in handlers.GetInvocationList()) engine.RunIsolated(()=>handler(payload));
-            engine.DeliverNurture(0x9A, new[] { value }, payload);
+            engine.DeliverNurture(0x9A,new[]{value},payload,engine.CaptureAppEvent(engine.AnimationAnnouncementsEnded,payload));
         }
     }
     private void InitAnnouncementOutput()
@@ -96,7 +96,7 @@ public sealed partial class CozmoEngine
         Robots.AnnouncementRecipient = () => output;
     }
 
-    // The native loading-state entry and loader result have no live producers yet.
+    // Production binds these to EngineReadiness; internal tests can substitute the checked joins.
     internal Func<bool>? NativeNonConfigLoadingActive;
     internal Func<(int Result, float Progress)>? NativeDoNonConfigDataLoading;
     internal Action<byte>? NativeSetEngineState;

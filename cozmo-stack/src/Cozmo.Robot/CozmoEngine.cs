@@ -1971,6 +1971,7 @@ public sealed partial class CozmoEngine : IDisposable
         _t.Start();
         _runner = new EngineTickRunner(_nowNs, EngineTickRunner.HostSleepNs, TickAt, Log);
         _runner.Start("cozmo-engine");
+        DrainAppDelivery();
     }
 
     /// <summary>
@@ -1984,6 +1985,7 @@ public sealed partial class CozmoEngine : IDisposable
         _autoTick = autoTick;
         if(startReady) _engineState=3; // Explicit pre-initialized offline fixture, not production readiness.
         else StartHostEngine();
+        DrainAppDelivery();
     }
 
     // fidelity: M5-045
@@ -2033,6 +2035,7 @@ public sealed partial class CozmoEngine : IDisposable
             do TickAt(_nowNs() - _runStartNs);
             while (!_disposed && (Rcm.Rcd.HasArrivals || !_gameMessages.IsEmpty));
         }
+        DrainAppDelivery(); // The outer offline tick lock has also been released.
     }
 
     // fidelity: M1-024
@@ -2044,9 +2047,14 @@ public sealed partial class CozmoEngine : IDisposable
     ///  4. NeedsManager::Update on this tick's BaseStationTimer seconds (CD10/CC10, 0x004ED632..0x004ED640);
     ///  5. UpdateAllRobots → Robot::Update (CD11).
     /// UpdateLatencyInfo and the audio controller are
-    /// outside this stack. Engine states 0, 1, 2 and 4 (data loading, firmware update) are not modelled.
+    /// outside this stack. Startup states 0/1/2 are handled before state3; firmware update is unsupported.
     /// </summary>
     private int TickAt(long elapsedNs)
+    {
+        try{return TickAtCore(elapsedNs);}
+        finally{DrainAppDelivery();}
+    }
+    private int TickAtCore(long elapsedNs)
     {
         using var poseLogs=Vision.Pose3d.UseSourceLog((level,channel,key,text)=>EmitSourceLog(level,channel,key,text),Das.ForceFlushNow);
         lock (_tickLock)
@@ -2248,7 +2256,7 @@ public sealed partial class CozmoEngine : IDisposable
 
     // fidelity: M1-041, M1-042, M1-028
     /// <summary>
-    /// The response's broadcast (CB21, CD17): the game first, then the engine subscribers synchronously in their
+    /// The response's broadcast (CB21, CD17): app enqueue first, then engine subscribers synchronously in their
     /// subscription order. On Success: RobotEventHandler (Robot::SyncTime, then the NV on-idle callback that sets
     /// ready to stream, CB22, CD18, CD20), VisionComponent (CD21, 1h: the NV CameraCalib read queued, then
     /// SetCameraParams; <see cref="CameraSettings.OnRobotConnected"/>), TracePrinter (CD22). Policy M1-042 then queues
@@ -2256,7 +2264,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     internal void BroadcastConnectionResponse(RobotConnectionResponse resp)
     {
-        FanOut(ConnectionResponse, resp);
+        QueueAppEvent(ConnectionResponse,resp);
         if (resp.Result != RobotConnectionResult.Success) return;
         if (Robots.Get(RobotId) is not { } robot) return;
         Isolated(() =>
@@ -2277,8 +2285,8 @@ public sealed partial class CozmoEngine : IDisposable
         if (AfterSuccessDefaults is { } defaults) Post(defaults);
     }
 
-    internal void RaiseRobotDisconnected(RobotDisconnectedMessage m) => FanOut(RobotDisconnected, m);
-    internal void RaiseRobotErrorPassThrough(RobotErrorPassThrough m) => FanOut(RobotErrorPassThrough, m);
+    internal void RaiseRobotDisconnected(RobotDisconnectedMessage m) => QueueAppEvent(RobotDisconnected,m);
+    internal void RaiseRobotErrorPassThrough(RobotErrorPassThrough m) => QueueAppEvent(RobotErrorPassThrough,m);
 
     // fidelity: M15-014
     /// <summary>
@@ -2327,7 +2335,8 @@ public sealed partial class CozmoEngine : IDisposable
         else EmitStackLog("warning: MISSING: CreateGoToSleepAnimSequence (CC8, M5 interface) is not implemented; GoToSleepRequested raised");
         var h = GoToSleepRequested;
         if (h is null) return;
-        foreach (var t in h.GetInvocationList()) Isolated((Action)t);
+        var subscribers=h.GetInvocationList();
+        QueueAppDelivery(()=>{foreach(Action subscriber in subscribers)RunIsolated(subscriber);});
     }
 
     private void DisplayLogLine(string line)
@@ -2394,6 +2403,7 @@ public sealed partial class CozmoEngine : IDisposable
         StopStartupLoading();
         DestructionObserved?.Invoke("loader");
         DisposeAppAudioInput();
+        ClearAppDelivery();
         AnimationMessages.Dispose(); // G2E map, then E2G map (0x0066016E..0x00660184).
         AnimationMessages.ReportRetirementAtShutdown(EmitStackLog); // M8-027: missing sink was detached before teardown.
         _backupUnlockHandle?.Dispose(); // expired context signal; no callback.

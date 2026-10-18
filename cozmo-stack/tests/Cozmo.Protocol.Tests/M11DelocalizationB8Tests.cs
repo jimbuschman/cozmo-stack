@@ -128,6 +128,7 @@ public sealed class M11DelocalizationB8Tests
     /// object of the current origin is kept; the argument goes only to CreateLocalizedMemoryMap (r5, 0x006249D6), so the map is created
     /// for the attempted ID.
     /// </summary>
+    // reach: unit (direct failing origin insertion/Delocalize; explicit safe app drain replaces the normal tick boundary).
     [Fact]
     public void M11_053_AFailedAddNewOriginVerifiesAndContinuesWithTheAttemptedId()
     {
@@ -143,7 +144,7 @@ public sealed class M11DelocalizationB8Tests
         Assert.True(r.OriginNames.AddOriginWithId(attempted, null)); // the list now holds the ID AddNewOrigin will try
         var log = Capture(rig.Robot.Engine);
         int app = 0; rig.Robot.Engine.EngineToGameMessage += (tag, _) => { if (tag == 0x32) app++; };
-        r.Delocalize(false);
+        r.Delocalize(false);rig.Robot.Engine.DrainAppDelivery();
         Assert.Equal(current, r.CurrentOriginId);
         Assert.Equal(current, rig.Vision.World.CurrentOriginId);                     // not the attempted ID
         Assert.NotNull(rig.Vision.World.GetLocatedObjectById(cube.ObjectId));        // the current origin's bucket is kept

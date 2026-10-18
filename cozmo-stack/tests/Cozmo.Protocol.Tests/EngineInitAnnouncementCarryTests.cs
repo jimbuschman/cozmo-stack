@@ -194,7 +194,7 @@ public sealed class EngineInitAnnouncementCarryTests
         e.NativeDoNonConfigDataLoading=()=>(result,1f);e.NativeSetEngineState=value=>calls.Add("state:"+value);
         e.AnimationAvailable+=msg=>calls.Add("name:"+Encoding.UTF8.GetString(msg.Name.Span));e.AnimationAnnouncementsEnded+=msg=>calls.Add("end:"+msg.Value);
         e.LogEntry+=log=>{if(log.Name=="RobotManager.BroadcastAvailableAnimations")calls.Add("debug");};
-        long ticks=e.Timer.TickCount;r.Tick();Assert.Equal(completes?new[]{"name:walk","end:0","debug","state:3"}:Array.Empty<string>(),calls);
+        long ticks=e.Timer.TickCount;r.Tick();Assert.Equal(completes?new[]{"debug","state:3","name:walk","end:0"}:Array.Empty<string>(),calls);
         Assert.Equal(ticks,e.Timer.TickCount); // loading branch cannot also execute state 3 in this tick.
     }
 
@@ -213,7 +213,7 @@ public sealed class EngineInitAnnouncementCarryTests
         Assert.Contains(diagnostics,d=>d.Contains("not supported (M1-055)"));
         Assert.DoesNotContain(diagnostics,d=>d.Contains("first Init broadcast") || d.Contains("raw CLAD byte serializer"));
         calls.Clear();e.NativeNonConfigLoadingActive=()=>true;e.NativeDoNonConfigDataLoading=()=>(1,1f);e.NativeSetEngineState=_=>calls.Add("state");
-        r.Tick();Assert.Equal(new[]{"available","local","end","state"},calls);
+        r.Tick();Assert.Equal(new[]{"local","state","available","end"},calls);
         Assert.DoesNotContain(diagnostics,d=>d.Contains("raw CLAD byte serializer"));
     }
 

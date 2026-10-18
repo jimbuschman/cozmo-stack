@@ -109,7 +109,7 @@ public sealed partial class CozmoEngine
             carry.Carried, carry.Carried == -1 ? -1 : carry.Top, PublicationHeadTracking!(),
             PublicationLocalizedTo!(), PublicationImageTimestamp!(), status,
             (byte)(game.Localized != 0 && game.OffTreads == 0 ? 1 : 0));
-        FanOut(RobotStatePublished, snapshot);
+        QueueAppEvent(RobotStatePublished,snapshot);
     }
 
     // fidelity: M1-053

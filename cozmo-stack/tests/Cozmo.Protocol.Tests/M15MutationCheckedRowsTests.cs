@@ -96,6 +96,7 @@ public sealed class M15MutationCheckedRowsTests
         double clock=0;var needs=new NeedsManager(()=>clock);var order=new List<string>();needs.NeedsStateSent+=_=>order.Add("game");needs.WriteToDevice=refresh=>{Assert.False(refresh);order.Add("device");};
         clock=100;needs.Update(100);Assert.Equal(new[]{"game","device"},order);
     }
+    // reach: unit (direct manager removal, injected lifecycle hooks and explicit safe app drain; normal boundary is the tick).
     [Fact]
     public void RemovalEmitsTheSinglePerfInfoBeforeTheSignedRobotDestructorEvent()
     {
@@ -107,7 +108,7 @@ public sealed class M15MutationCheckedRowsTests
             if(entry.Name=="PerfMetric.DumpFiles"){perf.Add(entry);order.Add("perf");}
             if(entry.Name=="robot.destructor"){Assert.Equal("1",entry.Text);Assert.Equal(EngineLogLevel.Event,entry.Level);Assert.Null(entry.Channel);Assert.Empty(entry.Data);order.Add("destructor");}
         };
-        engine.Robots.RemoveRobot(1,false);Assert.Equal(new[]{"app","global","needs","perf","das","destructor","abort"},order);
+        engine.Robots.RemoveRobot(1,false);engine.DrainAppDelivery();Assert.Equal(new[]{"global","needs","perf","das","destructor","abort","app"},order);
         var info=Assert.Single(perf);Assert.Equal(EngineLogLevel.Info,info.Level);Assert.Equal("PerfMetric",info.Channel);Assert.Equal("Nothing to dump; buffer is empty",info.Text);Assert.Empty(info.Data);
     }
     [Fact]
