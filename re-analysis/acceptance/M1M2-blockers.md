@@ -59,6 +59,11 @@ stay required with their owners; the new standard does not dismiss them.
 
 ## Sequence
 
+**Update (2026-10-18):** B-M1-5 (fd73bc88, 06b86940) fixed the B-M1-4/B-DELIV-1 blockers; both Opus fix reviews FAIL
+(`research/20261018-b-m1-5-check-readiness.md`, `-delivery.md`): ConnectAsync can miss its ready wake-up; three
+broadcasts still inline. The manager's B-M1-5 duplicate-name clarification was wrong (native keeps the first position
+but the last content, 0x00588338/0x00575734). Fixes in B-M1-6, with a full public-report census table.
+
 **Update (2026-10-17, night):** B-M1-4 (3c7b7969) and B-DELIV-1 (33b80553) both Opus FAIL
 (`research/20261017-b-m1-4-check.md`, `research/20261017-b-deliv-1-check.md`). B-M1-4: startup with the shipped
 assets never reaches ready (a >1-name MISSING), so no hardware tool can connect; the public API cannot observe 0→1.

@@ -49,8 +49,10 @@ stands. Nothing new starts outside the current layer.
   **Ended (operator, 2026-10-17):** Claude resumes manager and Opus verification; Codex returns to the research and
   builder lanes. Builder commits published during the handoff (B-M15-7, 2fc72bc3) still get the Opus verifier.
 
-- **Now (2026-10-17, night):** B-M1-4 and B-DELIV-1 Opus FAIL; fixes in B-M1-5 (open), including names in stack load
-  order (operator decision). Main cannot drive a robot until B-M1-5 lands (shipped startup never becomes ready).
+- **Now (2026-10-18):** B-M1-5 fixed the B-M1-4/B-DELIV-1 blockers (shipped startup reaches ready, 997 names; one
+  host order for the checked sites), but both Opus fix reviews FAIL: a ConnectAsync lost-ready race and three inline
+  broadcasts (charger platform, motor calibration, loaded faces). Fixes in B-M1-6 (open), which also corrects the
+  manager's duplicate-name clarification (first position, last content). Don't run the robot until B-M1-6 passes.
   Detail: `acceptance/M1M2-blockers.md` Sequence.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
