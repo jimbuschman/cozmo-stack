@@ -76,3 +76,5 @@ Validation: broad focused **454/454 passed**, then final affected AppDelivery/En
 Log-key precheck (all changed production files):119 keys,116 EXACT,2 PART,1 ABSENT. ABSENT `AnimationStreamer.BufferFaceToSend` in AnimationScheduler.cs:1656 is **pre-existing and unchanged** (this diff adds only two gate-access lines to that file); it is a best-effort log cleanup, outside this delivery repair. PART keys are existing version classification fragments. No new log keys added; no MISSING in the engine log.
 
 Full pre-commit suite: **5713/5713 passed** (3.7831 minutes). Append-only frozen-field comparison:19 records, only unresolved/test appended. fidelity.py --check passed; git diff --check clean. Normal push gate follows.
+
+Published **33b80553** to origin/main; normal pre-push fidelity/full-suite gate **5713/5713 passed** (3m58s). Continuing queue loop; the current remaining11 rows are HELD, with no open builder job.
