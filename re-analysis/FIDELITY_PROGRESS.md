@@ -14,8 +14,8 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
 | IMPLEMENTATION_GAP | 405 |
-| RECOVERABLE_GAP | 19 |
-| **total** | **694** |
+| RECOVERABLE_GAP | 20 |
+| **total** | **695** |
 
 ## Subsystems
 
@@ -34,7 +34,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M11-vision | INVENTORY_APPROVED | 2026-10-16 | 95 | 14 | 1 | 1 | 74 | 5 | 79 |
 | M12-manipulation | INVENTORY_APPROVED | 2026-10-16 | 49 | 8 | 1 | 1 | 37 | 2 | 38 |
 | M13-navigation | INVENTORY_APPROVED | 2026-10-16 | 39 | 3 | 0 | 1 | 34 | 1 | 33 |
-| M14-faces | INVENTORY_APPROVED | 2026-10-15 | 13 | 1 | 0 | 1 | 11 | 0 | 11 |
+| M14-faces | INVENTORY_APPROVED | 2026-10-18 | 14 | 1 | 0 | 1 | 11 | 1 | 12 |
 | M15-freeplay | INVENTORY_APPROVED | 2026-10-16 | 70 | 3 | 1 | 2 | 61 | 3 | 64 |
 | tools | UNREVIEWED |  | 5 | 1 | 4 | 0 | 0 | 0 | 0 |
 
@@ -45,4 +45,4 @@ ACCEPTED subsystems: none.
 | level | records |
 | --- | ---: |
 | HARDWARE_VERIFIED | 10 |
-| NONE | 684 |
+| NONE | 685 |

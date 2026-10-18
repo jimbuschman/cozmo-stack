@@ -233,12 +233,12 @@
       "id": "M14-faces",
       "name": "Face and pet pipeline",
       "milestone": "M14",
-      "source_investigation_exhausted": true,
+      "source_investigation_exhausted": false,
       "implementation_fidelity_complete": false,
       "review": {
         "state": "INVENTORY_APPROVED",
         "inventory": "re-analysis/inventory/M14-faces.md",
-        "approved": "2026-10-15",
+        "approved": "2026-10-18",
         "snapshot": "re-analysis/inventory/M14-faces.approved.json"
       }
     },
@@ -10359,6 +10359,25 @@
       "hardware_required": false,
       "live_path": true,
       "test": "M14LifetimeCheckedRowsTests"
+    },
+    {
+      "subsystem": "M14-faces",
+      "title": "PetWorld::Update output: the RobotObservedPet game broadcast",
+      "location": "cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs",
+      "effect": "which pet observations the C# API reports to the host, when, and with what payload",
+      "provenance": "call sites only; PetWorld::Update body and the RobotObservedPet payload not read",
+      "authority": "PetWorld::Update 0x0050B7F4 (F29 call site from VisionComponent::UpdatePets 0x00655360); MessageEngineToGame(RobotObservedPet&&) built at 0x0050BA60, Robot::Broadcast at 0x0050BA68",
+      "evidence": [
+        "VisionComponent::UpdatePets 0x00655360..0x00655366 forwards the tracked-pet list to PetWorld::Update 0x0050B7F4 (inventory F29).",
+        "Inside PetWorld::Update, MessageEngineToGame(RobotObservedPet&&) is constructed at 0x0050BA60 and passed to Robot::Broadcast at 0x0050BA68 (B-M1-7 census, research/20261018-b-m1-6-check-delivery.md finding 1; whole-.text constructor call-site scan).",
+        "The stack's public Faces.PetObserved (Faces.cs:501, raised :515) is an inline local observation, not that report: its host/local split, the conditions under which Update broadcasts, and the payload fields are unread."
+      ],
+      "status": "RECOVERABLE_GAP",
+      "unresolved": "New (manager, 2026-10-18; B-M1-7 census, owner previously unnamed, noted on M14-004). To read: PetWorld::Update 0x0050B7F4 around 0x0050BA60/0x0050BA68 (which pets are broadcast, when, payload fields and their sources), and the native local recipients of the broadcast. Whether pet tracking can produce input in this stack depends on M11-016 (OKAO boundary). Host view not built; PetObserved stays inline until this layer's turn (cross-layer rule). Not an exclusion.",
+      "hardware_required": false,
+      "live_path": true,
+      "test": "none: no host view built.",
+      "id": "M14-014"
     },
     {
       "id": "M15-027",

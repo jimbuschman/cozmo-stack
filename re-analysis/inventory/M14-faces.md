@@ -457,3 +457,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | Pet/face-world and speech lifetime: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M14-013 |
+
+
+## B-M1-7 census owner (manager, 2026-10-18; research/20261018-b-m1-6-check-delivery.md finding 1)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP: PetWorld::Update's RobotObservedPet game broadcast (0x0050B7F4; ctor 0x0050BA60, Broadcast 0x0050BA68), body and payload unread; PetObserved stays inline | M14-014 (new) |

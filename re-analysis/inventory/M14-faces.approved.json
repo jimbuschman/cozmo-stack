@@ -1,8 +1,8 @@
 {
   "subsystem": "M14-faces",
-  "approved": "2026-10-15",
+  "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M14-faces.md",
-  "inventory_sha256": "6703bb7882d325d0395bd1dad9c82c29c0744e678af3579013ef772d91fbd8a5",
+  "inventory_sha256": "c6ac9631d0edc425ebc69039c73e6b6c3acb0fe182a3e1ca48d5c183109f8f7c",
   "records": {
     "M14-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -166,6 +166,18 @@
         "0x0051128C..0x005112C6; 0x005114A6..0x005114B4; World ownership and speech destruction (existing M14-006 consumer); recursive virtual/shared effects UNKNOWN. Audio recipients need their own records if established, not guessed here.",
         "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1–T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
         "re-analysis/research/overnight/20261015-ov31-32-33-check.md: L1 0x0051128C..0x005112D2, 0x005114A6..0x005114B4; L2 0x0050BC4C..0x0050BC6E; L3 0x004F5E9E..0x004F5EE8, 0x004EAE94..0x004EAEC6, 0x004EF1B8..0x004EF1CE; L5-L7 0x0069E464..0x0069E49A, 0x007FB900..0x007FB918, 0x007FBB80, 0x007FC684..0x007FC770, 0x007FD0BE..0x007FD128, in-flight 0x0069F430..0x0069F518, CreateAudioData 0x0069EF10..0x0069F03E."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M14-014": {
+      "status": "RECOVERABLE_GAP",
+      "title": "PetWorld::Update output: the RobotObservedPet game broadcast",
+      "authority": "PetWorld::Update 0x0050B7F4 (F29 call site from VisionComponent::UpdatePets 0x00655360); MessageEngineToGame(RobotObservedPet&&) built at 0x0050BA60, Robot::Broadcast at 0x0050BA68",
+      "evidence": [
+        "VisionComponent::UpdatePets 0x00655360..0x00655366 forwards the tracked-pet list to PetWorld::Update 0x0050B7F4 (inventory F29).",
+        "Inside PetWorld::Update, MessageEngineToGame(RobotObservedPet&&) is constructed at 0x0050BA60 and passed to Robot::Broadcast at 0x0050BA68 (B-M1-7 census, research/20261018-b-m1-6-check-delivery.md finding 1; whole-.text constructor call-site scan).",
+        "The stack's public Faces.PetObserved (Faces.cs:501, raised :515) is an inline local observation, not that report: its host/local split, the conditions under which Update broadcasts, and the payload fields are unread."
       ],
       "live_path": true,
       "hardware_required": false

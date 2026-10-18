@@ -3,13 +3,13 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **694 records** over 16 subsystems.
+Manifest of **695 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
 | EXACT_SOURCE | 184 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 19 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| RECOVERABLE_GAP | 20 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
 | IMPLEMENTATION_GAP | 405 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 65 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
@@ -37,7 +37,7 @@ remains after both, and they do not go away by working harder on this repository
 | M11-vision — Markers, camera geometry and BlockWorld | 95 | 5 | 74 | 0 | 1 | no | no |
 | M12-manipulation — Docking, carrying and pre-action poses | 49 | 1 | 37 | 0 | 1 | no | no |
 | M13-navigation — Planning, charger and block configurations | 39 | 0 | 33 | 0 | 1 | yes | no |
-| M14-faces — Face and pet pipeline | 13 | 0 | 11 | 1 | 0 | yes | no |
+| M14-faces — Face and pet pipeline | 14 | 1 | 11 | 1 | 0 | no | no |
 | M15-freeplay — Needs, activities and freeplay | 70 | 3 | 61 | 1 | 1 | no | no |
 | tools — Conformance CLI and offline tools | 5 | 0 | 0 | 0 | 0 | yes | yes |
 
@@ -231,6 +231,17 @@ B-M8-2 (2026-10-15): retained RECOVERABLE_GAP; explicit deduplicated stack MISSI
 * best authority: libcozmoEngine.so 3.4.0-1204.
 * evidence: re-analysis/research/overnight/20261014-ov07-m13-021-check.md: "Still unread": FindLocatedClosestMatchingTypeHelper (called at 0x00567D1C); UpdateTracking from 0x00567DA4 (0x00567FC2, 0x00568088); TurnTowardsObjectAction +0x192.
 * outstanding: RECOVERABLE_GAP: read the listed bodies completely. OV48 check (re-analysis/research/overnight/20261015-ov48-49-check.md): all rows confirmed (selection 0x0061FBFC..0x0061FD8C, 0x006281DA..0x00628262, 0x0061EB78..0x0061F030, 0x00846EA4..0x008471A6; markers 0x00567DA4..0x00567EFC, 0x00876C50..0x00876C98; outputs 0x00567EFC..0x00567F68; fails 0x00567FC2..0x005680DA; +0x192 0x00549DC0..0x00549E28, 0x0052B0CC..0x0052B110, 0x0054ADF2..0x0054AF60 incl. the omitted TrackingNotsupported warning; Robot::GetPose VERIFYs 0x004EA398..0x004EA46E). UNREACHABLE in the shipped app: all 23 in-engine TurnTowardsObjectAction constructions pass headTrack=0, all six app calls pass headTrackWhenDone=false, the app sends TrackToObject only with -1 (rejected at 0x00567A3A..0x00567A44). live_path set false; not built. Operator question: expose TrackToObject with a real ID / headTrackWhenDone=true? Operator decision 2026-10-16 (app inputs the stack API exposes, COMPATIBILITY_POLICY under the app-boundary rule): EXPOSED: ActivateSpark, ActivateHighLevelActivity (Freeplay, Feeding, ...), DoATrickRequest (union 2), PlayAGameRequest (union 3), SetSparkedMusicState (G2E 0xA3). NOT EXPOSED: SparkUnlocked (union 1, no app sender), TrackToObject with a real ID / headTrackWhenDone, the memory-map broadcast frequency. So TrackObjectAction stays unreachable in the stack: not built.
+
+### M14-faces — Face and pet pipeline
+
+**M14-014 — PetWorld::Update output: the RobotObservedPet game broadcast** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/Vision/Faces.cs`
+* effect: which pet observations the C# API reports to the host, when, and with what payload
+* rests on: call sites only; PetWorld::Update body and the RobotObservedPet payload not read
+* best authority: PetWorld::Update 0x0050B7F4 (F29 call site from VisionComponent::UpdatePets 0x00655360); MessageEngineToGame(RobotObservedPet&&) built at 0x0050BA60, Robot::Broadcast at 0x0050BA68
+* evidence: VisionComponent::UpdatePets 0x00655360..0x00655366 forwards the tracked-pet list to PetWorld::Update 0x0050B7F4 (inventory F29).; Inside PetWorld::Update, MessageEngineToGame(RobotObservedPet&&) is constructed at 0x0050BA60 and passed to Robot::Broadcast at 0x0050BA68 (B-M1-7 census, research/20261018-b-m1-6-check-delivery.md finding 1; whole-.text constructor call-site scan).; The stack's public Faces.PetObserved (Faces.cs:501, raised :515) is an inline local observation, not that report: its host/local split, the conditions under which Update broadcasts, and the payload fields are unread.
+* outstanding: New (manager, 2026-10-18; B-M1-7 census, owner previously unnamed, noted on M14-004). To read: PetWorld::Update 0x0050B7F4 around 0x0050BA60/0x0050BA68 (which pets are broadcast, when, payload fields and their sources), and the native local recipients of the broadcast. Whether pet tracking can produce input in this stack depends on M11-016 (OKAO boundary). Host view not built; PetObserved stays inline until this layer's turn (cross-layer rule). Not an exclusion.
 
 ### M15-freeplay — Needs, activities and freeplay
 
