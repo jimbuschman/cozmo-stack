@@ -28,6 +28,7 @@ public sealed class M3M4X29BuilderTests
     }
 
     [Fact]
+    // reach: unit (substitutes synced link and direct RemoveRobot; native disconnect join M1-044 is not exercised).
     public void MessagingRetiresTraceThenClosesImuThenRetiresImpl()
     {
         string root=Directory.CreateTempSubdirectory("b29-imu-").FullName;
@@ -43,7 +44,7 @@ public sealed class M3M4X29BuilderTests
                 if(name=="Impl"){Assert.False(robot.ImuLog.IsOpen);order.Add("impl");}
             };
             rig.Engine.Robots.RemoveRobot(1,false);
-            Assert.Equal("trace",order[0]);Assert.Contains("impl",order);Assert.Single(order.Where(s=>s=="trace"));
+            Assert.Equal("trace",order[0]);Assert.Contains("impl",order);Assert.Equal(3,order.Count(s=>s=="trace")); // CF, B0 and EC belong to TracePrinter.
             Assert.False(robot.ImuLog.IsOpen);Assert.DoesNotContain(rig.Log,l=>l.Contains("ClosingLogFile"));
             rig.Engine.MessageSubscriptionReleasedForTest=null;
         }

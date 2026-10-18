@@ -284,9 +284,9 @@ public sealed class AnimationLibrary : IAnimationCatalog
         EngineRandom? contextRandom, Func<bool> beginCollect, Action? beforeCollect, Action? afterGroups,
         Action<string>? beforeStat = null, Action<AnimationLibrary>? loaderCreated = null,
         Action<IReadOnlyList<string>>? loadCubeFiles = null, Func<string?>? cubeResourceRoot = null,
-        AnimationTriggerResponses? triggerResponses = null)
+        AnimationTriggerResponses? triggerResponses = null, Action<float>? progressAdded = null)
     {
-        var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog };
+        var lib = new AnimationLibrary(contextRandom) { Log = log, SourceLog = sourceLog, _progressAdded = progressAdded };
         loaderCreated?.Invoke(lib);
         var animations = FindDir(assetsRoot, "animations");
         var groups = FindDir(assetsRoot, "animationGroups");
@@ -341,6 +341,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         // L0: LoadNonConfigData 0x0051F3BC..0x0051F3CE: groups, cube lights, backpack lights, faces.
         loadCubeFiles?.Invoke(cubeFiles);
         afterGroups?.Invoke();
+        progressAdded?.Invoke(BitConverter.Int32BitsToSingle(0x3E4CCCCD)); // M1-056: one atomic coarse addition after faces.
         lib.Triggers = triggerResponses ?? AnimationTriggerResponses.Load(Cozmo.Robot.Behavior.AnimationTriggerMap.ResourceDirectory(assetsRoot), log, sourceLog);
         lib.Triggers.Log = log; lib.Triggers.SourceLog = sourceLog;
         return lib;
@@ -534,6 +535,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
             : throw new KeyNotFoundException($"no animation called '{name}'. {_clipCache.Count} clips are loaded.");
     }
 
+    private Action<float>? _progressAdded;
     public float LoadingProgress { get; private set; }
     private void LoadAnimationFile(string path, float ratio)
     {
@@ -597,6 +599,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
             // L6.5/L6.6 / 0x00521470..0x005214A8: failed reads and empty values still add ratio.
         }
         lock (_gate) LoadingProgress += ratio;
+        _progressAdded?.Invoke(ratio); // Failed JSON still reaches this tail; failed binary returns above.
     }
     private void BinaryError(string key, string text)
     {

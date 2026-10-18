@@ -99,6 +99,6 @@ public sealed partial class CozmoEngine
                 : $"EngineConfigJson initialization failed with result {result}.", nameof(Options.EngineConfigJson));
         }
         if (result is null)
-            SteppedBehavior.ReportMissing("M1-054 host bootstrap continues; native UiMessageHandler.Init 0x006601B0 / call0x004EC84C and InitInternal 0x004EDC6C / call0x004EC970 remain unbuilt; no native result fabricated");
+            SteppedBehavior.ReportMissing("M1-054 host bootstrap continues; InitInternal 0x004EDC6C FactoryTestLogger archive effects remain UNKNOWN; M1 audio registration is built separately, M6-023 execution/callback gaps remain");
     }
 }

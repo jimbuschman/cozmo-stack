@@ -240,7 +240,7 @@ public sealed partial class CozmoRobot : IDisposable
             owned=Directory.CreateTempSubdirectory("cozmo-offline-cache-").FullName;
             settings=new CozmoEngineOptions {
                 FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,
-                DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,
+                DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,
                 AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
                 DataPlatformPersistentPath=settings.DataPlatformPersistentPath,RobotVolume=settings.RobotVolume,
             };
@@ -255,7 +255,9 @@ public sealed partial class CozmoRobot : IDisposable
     {
         Transport = transport ?? new ReliableTransport(options);
         var realPort = port is null ? new ReliableTransportPort(Transport) : null;
-        Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock);
+        // fidelity: M1-054 — B-M1-3 N1: this constructor owns the transport even when engine construction fails.
+        try { Engine = new CozmoEngine(port ?? realPort!, engineOptions, engineClock); }
+        catch { Transport.Dispose(); throw; }
         engineCreated?.Invoke(Engine); // Test-only observer, attached before any device constructor runs.
         BeforeAnimationFileStat = beforeAnimationFileStat;
         if (realPort is not null) realPort.Log = Engine.EmitStackLog;
@@ -384,6 +386,7 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
         Engine.LoadHostBehaviorMap();
+        Engine.ConfigureStartupLoaders(Animations);
     }
 
     private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _lightLoadingLogs = new();
@@ -458,11 +461,11 @@ public sealed partial class CozmoRobot : IDisposable
     /// <see cref="CozmoEngine.Tick"/>. <see cref="Transport"/> is an unused offline transport.
     /// </summary>
     internal static CozmoRobot CreateForTest(IEngineTransport port, Func<long> engineClock, CozmoEngineOptions? engineOptions = null,
-        Action<CozmoEngine>? engineCreated = null, Action<string>? beforeAnimationFileStat = null)
+        Action<CozmoEngine>? engineCreated = null, Action<string>? beforeAnimationFileStat = null, bool startReady = true)
     {
         var robot = CreateWithOfflineCache(null,ReliableTransport.CreateOffline(),engineOptions??new CozmoEngineOptions(),port,engineClock,
             engineCreated, beforeAnimationFileStat);
-        robot.Engine.StartOffline(autoTick: false);
+        robot.Engine.StartOffline(autoTick: false,startReady:startReady);
         robot.Engine.Das.WaitForPendingCallbacksForTest();
         return robot;
     }
@@ -504,22 +507,25 @@ public sealed partial class CozmoRobot : IDisposable
         address ??= RobotAddress.DefaultFor(isSimulated);
         var robot = Create(options, engineOptions);
         var response = new TaskCompletionSource<RobotConnectionResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
-        void on(RobotConnectionResponse r) => response.TrySetResult(r);
-        robot.Engine.ConnectionResponse += on;
+        var ready=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void on(RobotConnectionResponse r)=>response.TrySetResult(r);
+        void state(EngineStateTransition transition){if(transition.NewState==3)ready.TrySetResult(true);}
+        void failed(EngineStartupFailure failure)
+        {var error=new IOException(failure.Reason);ready.TrySetException(error);response.TrySetException(error);}
+        robot.Engine.ConnectionResponse+=on;robot.Engine.EngineStateChanged+=state;robot.Engine.EngineStartupFailed+=failed;
         RobotConnectionResponse resp;
         try
         {
-            using var reg = cancellationToken.Register(() => response.TrySetCanceled(cancellationToken));
-            robot.ConnectToRobot(address, isSimulated);
-            resp = await response.Task.ConfigureAwait(false);
+            using var reg=cancellationToken.Register(()=>{ready.TrySetCanceled(cancellationToken);response.TrySetCanceled(cancellationToken);});
+            if(robot.Engine.IsReady)ready.TrySetResult(true);
+            else if(robot.Engine.StartupFailed)failed(new(robot.Engine.StartupFailureReason!));
+            await ready.Task.ConfigureAwait(false); // M2-021: host app waits; direct ConnectToRobot itself retains no state gate.
+            robot.ConnectToRobot(address,isSimulated);
+            resp=await response.Task.ConfigureAwait(false);
         }
-        catch
-        {
-            robot.Engine.ConnectionResponse -= on;
-            robot.Dispose();
-            throw;
-        }
-        robot.Engine.ConnectionResponse -= on;
+        catch {robot.Dispose();throw;}
+        finally
+        {robot.Engine.ConnectionResponse-=on;robot.Engine.EngineStateChanged-=state;robot.Engine.EngineStartupFailed-=failed;}
         if (resp.Result != RobotConnectionResult.Success)
         {
             robot.Dispose();

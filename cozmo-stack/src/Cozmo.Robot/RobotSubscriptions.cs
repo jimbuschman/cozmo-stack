@@ -120,7 +120,7 @@ public sealed partial class EngineRobot
     private void InitSubscriptions()
     {
         _robotMessages.UndefinedTail=()=>Engine.EmitStackLog("M1-034 / M2-020: native freed successor 0x0069E294..0x0069E29A; skipped remaining emit tail");
-        Behavior.SteppedBehavior.ReportMissing("M2-020: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/+E4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points and TracePrinter B0 Trace / EC WifiFlashID callback bodies remain unbuilt (CF CrashReport is built)");
+        Behavior.SteppedBehavior.ReportMissing("M2-020: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/+E4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points remain unbuilt; TracePrinter B0/EC diagnostics and CF CrashReport are bound");
         // Idle is constructed before Messaging. The C# host API supplies the
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));
@@ -133,6 +133,8 @@ public sealed partial class EngineRobot
         AddMessage(RobotMessageId.SyncTimeAck, _ => HandleSyncTimeAck());
         AddMessage(RobotMessageId.State, m => _lastStateHandled = UpdateFullRobotState((RobotState)m));
         AddMessage(RobotMessageId.CrashReport, _ => TracePrinterOnCrashReport(), "TracePrinter", owners:_traceHandles);
+        AddMessage(RobotMessageId.Trace, m => HandleTraceDiagnostic((PrintTrace)m), "TracePrinter", owners:_traceHandles);
+        AddMessage(RobotMessageId.WifiFlashID, m => HandleWifiFlashDiagnostic((WiFiFlashID)m), "TracePrinter", owners:_traceHandles);
         AddMessage(RobotMessageId.AnimState, m => HandleAnimationState((AnimationState)m));
         // fidelity: M3-055 — HandleRobotSetHeadID 0x5367D8 and HandleRobotSetBodyID 0x536FF0.
         AddMessage(RobotMessageId.RobotAvailable, m =>

@@ -114,7 +114,8 @@ public sealed partial class CozmoEngine
             SteppedBehavior.ReportMissing("M1-055 DoNonConfigDataLoading 0x00523570, called at 0x004ED5FA: native loader status/progress recipient unbound");
             return true;
         }
-        if (load().Result != 1) return true;
+        var loading=load();_lastPolledProgress=loading.Progress;
+        if (loading.Result != 1) return true;
         if (!Robots.BroadcastAvailableAnimations()) return true;
         if (NativeSetEngineState is { } set) set(3);
         else SteppedBehavior.ReportMissing("M1-055 SetEngineState(3) at 0x004ED60E ->0x004ECCBC: native state-transition owner/report/log body unbuilt");

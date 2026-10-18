@@ -111,7 +111,7 @@ public sealed class EngineInitAnnouncementCarryTests
     [Fact]
     public void MissingUiRecipientDoesNotInventSuccessOrRunInternal()
     {
-        using var r=new M4ControlTests.Rig();r.Engine.NativeInitialized10=false;
+        using var r=new M4ControlTests.Rig();r.Engine.NativeInitialized10=false;r.Engine.NativeInitRecipients.UiInit=null;
         r.Engine.NativeInitRecipients.InitInternal=()=>throw new Exception("missing UI must stop");
         Assert.Null(r.Engine.InitChecked(ValidConfig()));Assert.False(r.Engine.NativeInitialized10);
     }

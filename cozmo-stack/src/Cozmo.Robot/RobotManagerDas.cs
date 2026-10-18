@@ -62,7 +62,7 @@ internal sealed partial class RobotManager
     internal void InitCheckedDasTail(FirmwareJsonValue config, Func<long> nowNs)
     {
         long start = nowNs();
-        SteppedBehavior.ReportMissing("M1-054/M8-022 RobotManager.Init vslot+8 at 0x0052E76A: native MessageHandler init/config recipient is unread; existing Initialised flag is retained, not a complete native Init");
+        // M1-054 OV126 routine3: RCM/transport already owned; configured port was checked before this ready store.
         _engine.Handler.Initialised = true;
         NotifyInitTimeAnimationAnnouncements(); // M1-055 excluded public startup notice; OV126 internal join.
         LoadDasBlacklistedAnimationTriggers(config);

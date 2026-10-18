@@ -357,7 +357,8 @@ public sealed class CozmoAnimations : IDisposable
     }
 
     /// <summary>Loads Cozmo's own animation assets from an unpacked resources tree.</summary>
-    public AnimationLibrary LoadFrom(string assetsRoot)
+    public AnimationLibrary LoadFrom(string assetsRoot) => LoadForEngine(assetsRoot,null);
+    internal AnimationLibrary LoadForEngine(string assetsRoot,Action<float>? progressAdded)
     {
         var mapDirectory = AnimationTriggerMap.ResourceDirectory(assetsRoot);
         DrivingTriggerMap = mapDirectory is null ? null : AnimationTriggerMap.LoadDirectory(mapDirectory,
@@ -365,7 +366,7 @@ public sealed class CozmoAnimations : IDisposable
         AnimationLibrary? loaded = null;
         System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
         // X9 G1: LoadNonConfigData owns a loader thread; the API waits for that load's result.
-        var loader = new Thread(() => { try { loaded = LoadOnLoaderThread(assetsRoot); } catch (Exception e) { failure = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e); } }) { IsBackground = true };
+        var loader = new Thread(() => { try { loaded = LoadOnLoaderThread(assetsRoot,progressAdded); } catch (Exception e) { failure = System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e); } }) { IsBackground = true };
         lock (_loaderGate)
         {
             ObjectDisposedException.ThrowIf(_loaderDestroyed, this);
@@ -374,7 +375,7 @@ public sealed class CozmoAnimations : IDisposable
         }
         loader.Join(); failure?.Throw(); return loaded!;
     }
-    private AnimationLibrary LoadOnLoaderThread(string assetsRoot)
+    private AnimationLibrary LoadOnLoaderThread(string assetsRoot,Action<float>? progressAdded)
     {
         Library = AnimationLibrary.OpenForLoad(assetsRoot, _robot.Engine.Log,
             (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text),
@@ -400,7 +401,7 @@ public sealed class CozmoAnimations : IDisposable
                 (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text)),
                 cubeResourceRoot:()=>_robot.Engine.Options.ResourcesPath,
                 // Reuse the full multi-file container; do not parse it again through a separate adapter.
-                triggerResponses:DrivingTriggerMap?.ToResponses() ?? new AnimationTriggerResponses());
+                triggerResponses:DrivingTriggerMap?.ToResponses() ?? new AnimationTriggerResponses(), progressAdded:progressAdded);
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
         // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)

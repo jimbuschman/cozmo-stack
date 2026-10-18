@@ -85,6 +85,8 @@ public sealed class CozmoEngineOptions
     public string? LabLocaleCountry { get; init; }
     // fidelity: M1-054 - COMPATIBILITY_POLICY: replaces the app engine-config JSON input.
     public byte[]? EngineConfigJson { get; init; }
+    /// <summary>Host audio controller; M1 connects its six app inputs, M6 owns their execution.</summary>
+    public Animation.Wwise.WwiseAudioInputDispatch? AudioInputDispatch { get; init; }
     // fidelity: M5-060 — replaces app DataPlatformCachePath/temporaryCachePath.
     public string AnimationCachePath { get; init; } = Path.Combine(Path.GetTempPath(), "cozmo-stack");
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
@@ -1941,22 +1943,22 @@ public sealed partial class CozmoEngine : IDisposable
         Rcm.Rcd.Queued = Kick;
         InitAnimationTransfer(); // fidelity: M5-059 — construction after DeviceDataManager, 0x004EB2CE.
         Experiments = new CozmoExperiments(this);
+        NativeInitRecipients.UiInit=InitializeHostUiProcessing;
+        InitAppAudioInput();
         // Checked native gates validate supplied host config; unread UI/core joins do not disable host startup.
         // Fail construction clearly and release constructor-owned subscriptions on a bad host input.
         try { InitCheckedHostConfig(); }
         catch { Dispose(); throw; }
-        // This pre-existing host bootstrap is not the native Init order. Until the
-        // missing recipients above are built it cannot establish complete M1-054 fidelity.
-        // fidelity: M8-022, M8-025 — the checked config/manager tail precedes the existing firmware header load.
+        if(!UiMessageProcessingEnabled)InitializeHostUiProcessing(null);
+        // M1-054: config owners -> experiments -> manager. Higher-layer leaves keep their records.
         var dasConfig = RobotManager.ReadDasEventConfig(Options.ResourcesPath, this);
+        LoadVisionConfiguration();
+        Experiments.LoadRobotConfig();
+        Experiments.InitBeforeNeeds(null);
         Robots.InitCheckedDasTail(dasConfig, _nowNs);
-        // fidelity: M1-029
-        // G5.16..G5.18, G5.25: RobotManager::Init starts the header load on its own thread; nothing waits for it.
+        // M1-029: header load follows the manager event; it does not gate engine loading.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
         else EmitStackLog("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
-        LoadVisionConfiguration(); // M11-082: vision failure continues through the later config/init tail.
-        Experiments.LoadRobotConfig(); // checked LoadRobotConfigs entry0x00522EFC, then InitExperiments.
-        Experiments.InitBeforeNeeds(null); // checked engine Init order4EC9D6 before4ECA0A; native Needs recipient remains M1-054.
     }
 
     // ------------------------------------------------------------------ running
@@ -1965,6 +1967,7 @@ public sealed partial class CozmoEngine : IDisposable
     internal void StartProduction(uint randomSeed = 0, Func<uint>? entropy = null)
     {
         StartEngineRandom(randomSeed, entropy);
+        StartHostEngine();
         _t.Start();
         _runner = new EngineTickRunner(_nowNs, EngineTickRunner.HostSleepNs, TickAt, Log);
         _runner.Start("cozmo-engine");
@@ -1975,10 +1978,12 @@ public sealed partial class CozmoEngine : IDisposable
     /// message runs engine ticks on the calling thread until nothing is pending, so a replayed datagram reaches the
     /// handlers before the call that fed it returns.
     /// </summary>
-    internal void StartOffline(bool autoTick, uint randomSeed = 0, Func<uint>? entropy = null)
+    internal void StartOffline(bool autoTick, uint randomSeed = 0, Func<uint>? entropy = null, bool startReady = true)
     {
         StartEngineRandom(randomSeed, entropy);
         _autoTick = autoTick;
+        if(startReady) _engineState=3; // Explicit pre-initialized offline fixture, not production readiness.
+        else StartHostEngine();
     }
 
     // fidelity: M5-045
@@ -2049,13 +2054,24 @@ public sealed partial class CozmoEngine : IDisposable
             _inTick = true;
             try
             {
-                while (_gameMessages.TryDequeue(out var g)) Isolated(g);
+                while (UiMessageProcessingEnabled && _gameMessages.TryDequeue(out var g)) Isolated(g);
                 // fidelity: M1-055
                 if (UpdateCheckedNonConfigLoading())
                 {
-                    Behavior.SteppedBehavior.ReportMissing("M1-055 CozmoEngine.Update loading continuation 0x004ED612 after checked broadcast/state call is unbuilt; do not substitute the running-state body in this tick");
+                    PublishLoadingProgress(); // 0x004ED612: every state2 tick, including the completion tick.
                     return 0;
                 }
+                if(_engineState==1)
+                {
+                    // M1-058: one connected C# host; desired count zero, but count must be nonzero.
+                    if(HasDesiredHostDevice())
+                    {
+                        // M1-056: SupportInfo is not supported, operator2026-10-17.
+                        SetEngineState(2);
+                    }
+                    return 0; // No loading or robot work on this transition tick.
+                }
+                if(_engineState!=3 || StartupFailed)return 0;
                 Timer.UpdateTime(elapsedNs);
                 Handler.ProcessMessages();
                 // fidelity: M1-024
@@ -2375,7 +2391,9 @@ public sealed partial class CozmoEngine : IDisposable
         Robots.RemoveRobots();
         DestructionObserved?.Invoke("robots");
         DestroyDataLoader?.Invoke(); // context +0x1C, after RobotManager: abort then join.
+        StopStartupLoading();
         DestructionObserved?.Invoke("loader");
+        DisposeAppAudioInput();
         AnimationMessages.Dispose(); // G2E map, then E2G map (0x0066016E..0x00660184).
         AnimationMessages.ReportRetirementAtShutdown(EmitStackLog); // M8-027: missing sink was detached before teardown.
         _backupUnlockHandle?.Dispose(); // expired context signal; no callback.
