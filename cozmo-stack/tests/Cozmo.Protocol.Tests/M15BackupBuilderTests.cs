@@ -217,6 +217,7 @@ public sealed class M15BackupBuilderTests
         Assert.Equal(512,result.UnlockIds.Count); Assert.All(result.UnlockIds,id => Assert.Equal(777u,id)); Assert.True(result.FromBackup);
         Assert.DoesNotContain(rig.Stack,l => l.Contains("Stack.RobotDataBackupManager.SkipMalformed"));
     }
+    // reach: production — public backup request -> engine tick -> checked defaults fallback.
     [Fact]
     public void DefaultsLogEveryEntryIncludingDuplicatesAndSkipNonstring()
     {
@@ -227,7 +228,7 @@ public sealed class M15BackupBuilderTests
             rig.Robot.RequestUnlockDataFromBackup(); rig.Tick(); Assert.Equal(new uint[]{6,10},Assert.IsType<BackupUnlockStatus>(Assert.Single(rig.Reports)).UnlockIds);
             Assert.Equal(new[]{"StackTwoCubes defaults to true","PickupCube defaults to true","StackTwoCubes defaults to true"},rig.Logs.Where(l => l.Name == "ProgressionUnlockComponent.DefaultValue").Select(l => l.Text));
             Assert.Contains(rig.Logs,l => l.Name == "ProgressionUnlockComponent.InitDefaults.InvalidDefaultData");
-            Assert.Contains(rig.Stack,l => l.Contains("M15-044 UnlockIdFromString"));
+            Assert.DoesNotContain(rig.Stack,l => l.Contains("M15-044 UnlockIdFromString")); // Native 81-pair table is now checked/built.
             File.Delete(Path.Combine(rig.Engine.Options.ResourcesPath!,"config/engine/unlock_config_nurture.json"));
             rig.Reports.Clear(); rig.Robot.RequestUnlockDataFromBackup(); rig.Tick();
             Assert.Equal(new uint[]{6,10},Assert.IsType<BackupUnlockStatus>(Assert.Single(rig.Reports)).UnlockIds);

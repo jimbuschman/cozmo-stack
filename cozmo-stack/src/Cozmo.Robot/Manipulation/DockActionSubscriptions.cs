@@ -48,7 +48,9 @@ internal sealed class DockActionSubscriptions : IDisposable
             return;
         }
         _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Actions", "IDockAction.MovingLiftPostDockHandler", "Playing animation " + name + " ");
-        SteppedBehavior.ReportMissing("M2-023/M12-034 C5 0x00557CA6..0x00557CFE: TriggerLiftSafeAnimationAction ctor/body 0x00544710 is not built; concurrent QueueAction(5,0) is not replaced by a direct animation play");
+        // fidelity: M12-017 — checked C5 0x00557CA6..0x00557CFE; QueueAction(5,a,0).
+        var animation=new TriggerLiftSafeAnimationAction(_robot,new((AnimationTrigger)trigger,1,false,0,BitConverter.Int32BitsToSingle(0x42700000),false));
+        _robot.Engine.Robot!.ActionListOwner!.QueueAction(QueueActionPosition.InParallel,animation,0);
     }
     public void Dispose() => LogCallbackDeferral.RunGated(_action.NativeDockGate, DisposeUnderGate);
     private void DisposeUnderGate()

@@ -12,10 +12,15 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
     private AnimationTicket? _ticket;
     private string _clip="";
     private bool _destroyed;
+    private bool _started, _ended, _failed;
+    private uint _loops;
+    private byte _animationTag;
+    private RetainedSubscription? _ca, _cb, _d5, _aborted;
     private readonly Action<string> _missing;
     internal TriggerLiftSafeAnimationAction(CozmoRobot robot, DrivingAnimationRequest request, Action<string>? missing = null) : base(0x1A, (uint)request.Argument4)
     {
         _robot=robot;Request=request;_missing=missing??Behavior.SteppedBehavior.ReportMissing;
+        _loops = unchecked((uint)request.Argument2);
         // 0x00543C96..0x00543CB2: only forever loops with the default 60.0f timeout.
         TimeoutSeconds=request.Argument2==0 && request.Argument5==BitConverter.Int32BitsToSingle(0x42700000)
             ? BitConverter.Int32BitsToSingle(0x7F7FFFFF) : request.Argument5;
@@ -28,7 +33,7 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
             robot.Engine.EmitSourceLog(EngineLogLevel.Info,"Animations","GetResponseForAnimationTrigger.Found",$"{request.Trigger} -> {_group}");
             if(_group.Length==0)robot.Engine.EmitSourceLog(EngineLogLevel.Warning,null,"TriggerAnimationAction.EmptyAnimGroupNameForTrigger",$"Event: {request.Trigger}");
         }
-        Missing("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction callback lifecycle is incomplete: CA/CB/D5/5F subscriptions, completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction semantics; existing playback ticket supplies completion so driving does not remain RUNNING forever");
+        Missing("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction callback lifecycle is incomplete: completion string union, trigger DAS blacklist/event and cached-pointer retry/destruction semantics remain unbuilt; checked CA/CB/D5/5F bodies use robot events rather than playback-ticket completion");
     }
     private void Missing(string text)=>_missing(text);
     protected override string ActionName=>"PlayAnimation"+(_group??"");
@@ -53,15 +58,58 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
         {
             return 0x0300000C;
         }
+        // fidelity: M8-015, M8-020 — PlayAnimation::Init 0x00543F20..0x00544180.
+        _started = _ended = _failed = false;
         _ticket=_robot.Animations.PlayTracked(_clip,Request.Argument3,numLoops:Request.Argument2);
-        return _ticket is null?0x03000001:0;
+        if (_ticket is null) return 0x03000001;
+        _animationTag = _ticket.Tag;
+        var owner = _robot.Engine.Robot!;
+        RetainedSubscription.Replace(ref _ca, owner.SubscribeMessage(RobotMessageId.AnimStarted, m => Started(((AnimationStarted)m).AnimId), "PlayAnimation"));
+        RetainedSubscription.Replace(ref _cb, owner.SubscribeMessage(RobotMessageId.AnimEnded, m => Ended(((AnimationEnded)m).AnimId), "PlayAnimation"));
+        RetainedSubscription.Replace(ref _d5, owner.SubscribeMessage(RobotMessageId.AnimEventFromRobot, m => AnimationEvent((Cozmo.Protocol.AnimationEvent)m), "PlayAnimation"));
+        RetainedSubscription.Replace(ref _aborted, _robot.Engine.AnimationMessages.SubscribeMessage(0x5F, true, p => Aborted((uint)p!)));
+        return 0;
     }
-    public override uint CheckIfDone()
+    // fidelity: M8-020 — 0x005452F0..0x0054534E.
+    private void Started(byte tag)
     {
-        if(_ticket is null)return 0x03000001;
-        if(!_ticket.Completion.IsCompleted)return EngineActionResult.Running;
-        return _ticket.Completion.IsCompletedSuccessfully && _ticket.Completion.Result==AnimationEndReason.Completed?0u:0x03000001;
+        if (tag != _animationTag) return;
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "PlayAnimation.StartAnimationHandler", $"Animation tag {tag} started");
+        _started = true;
     }
+    // 0x0054541C..0x005454F4: zero loops never sets ended; unsigned decrement.
+    private void Ended(byte tag)
+    {
+        if (!_started || tag != _animationTag) return;
+        if (_loops == 0)
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "PlayAnimation.EndAnimationHandler.LoopingForever", $"Animation tag {tag} finished a loop, continuing until timeout or cancel");
+        else if (--_loops != 0)
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Debug, "Unnamed", "PlayAnimation.FinishedLoop", $"Animation tag {tag} finished a loop, {unchecked((int)_loops)} left");
+        else
+        {
+            _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "PlayAnimation.EndAnimationHandler", $"Animation tag {tag} ended");
+            _ended = true;
+        }
+    }
+    // 0x0054561C..0x0054569E. Generated legacy field names do not describe native payload semantics:
+    // EventId is the animation tag (+4); Field2 is AnimEvent (+5), not the reverse.
+    private void AnimationEvent(Cozmo.Protocol.AnimationEvent message)
+    {
+        if (!_started || (byte)message.EventId != _animationTag) return;
+        byte eventId = message.Field2;
+        string name = eventId <= 3 ? ((AnimEvent)eventId).ToString() : "(null)";
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "PlayAnimation.AnimationEventHandler",
+            $"Event {name} received at time {unchecked((int)message.Timestamp)} while playing animation tag {_animationTag}");
+        _robot.Engine.BroadcastAnimationEvent(new(message.Timestamp, eventId));
+    }
+    // E2G 0x5F: 0x005457D8..0x00545862, no started gate and no byte truncation of the incoming tag.
+    private void Aborted(uint tag)
+    {
+        if (tag != _animationTag) return;
+        _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "PlayAnimation.AbortAnimationHandler", $"Animation tag {tag} was aborted from running");
+        _failed = true;
+    }
+    public override uint CheckIfDone() => _ended ? 0u : _failed ? 0x03000001u : EngineActionResult.Running;
     public override void WatcherEnding()
     {
         if(_destroyed)return;_destroyed=true;
@@ -71,6 +119,11 @@ internal sealed class TriggerLiftSafeAnimationAction : ActionRunner
             _robot.Animations.StopIfCurrent(ticket.Generation);
         }
         else if(_ticket is null)Missing("M8-020 null cached Animation pointer destructor/idle Abort path 0x00543DAC..0x00543E6A is not represented by a playback ticket");
+        // 0x00543E6A..0x00543E9E: UI 5F then D5, CB, CA before the base.
+        _aborted?.Dispose(); _aborted = null;
+        _d5?.Dispose(); _d5 = null;
+        _cb?.Dispose(); _cb = null;
+        _ca?.Dispose(); _ca = null;
         base.WatcherEnding();
     }
 }

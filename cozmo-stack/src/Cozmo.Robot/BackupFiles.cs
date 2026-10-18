@@ -32,16 +32,22 @@ internal sealed class BackupFiles(CozmoEngine engine)
     internal bool JsonWasSkipped { get; private set; }
     internal bool ReadJson(string path, out FirmwareJsonValue root)
     {
-        root = new(); JsonWasSkipped = false; bool ok = false;
-        try { ok = Json.TryParseFirst(File.ReadAllBytes(path), out var doc); root = doc.RootElement; }
+        root = new();return ReadJson(path,root);
+    }
+    // fidelity: M15-044 — failed open supplies an empty stream to Reader; a false parse keeps its root mutations.
+    internal bool ReadJson(string path,FirmwareJsonValue root,string owner="M15-038/M15-039/M15-040/M15-043")
+    {
+        JsonWasSkipped = false;bool ok;byte[] bytes=Array.Empty<byte>();
+        try { bytes=File.ReadAllBytes(path); }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+        try { ok=Json.TryParseInto(bytes,root); }
         // fidelity: M1-034, M15-038, M15-039, M15-040, M15-043
-        catch (JsonRuntimeError) { JsonWasSkipped = true; Skip("M15-038/M15-039/M15-040/M15-043", "0x008E0D92", path); return false; }
-        catch (JsonMissingSource e) { JsonWasSkipped = true; Missing("M15-038/M15-039/M15-040/M15-043 reader dependency: "+e.Message); return false; }
+        catch (JsonRuntimeError) { JsonWasSkipped = true; Skip(owner, "0x008E0D92", path); return false; }
+        catch (JsonMissingSource e) { JsonWasSkipped = true; Missing(owner+" reader dependency: "+e.Message); return false; }
         if (ok) return true;
         engine.EmitSourceLog(EngineLogLevel.Error, null, "DataPlatform.readAsJson", $"Failed to read [{path}]");
         EngineErrorState.StoreAndMaybeBreak();
-        Missing("M15-039/M15-043: DataPlatform.readAsJson 0x0084C0CC..0x0084C18C calls getFormattedErrorMessages; no checked reader-error formatting body, so its conditional Debug text is not built");
+        // Reader-specific Debug text is best effort (M5-051); the read failure above remains visible.
         return false;
     }
     internal static IEnumerable<KeyValuePair<string,FirmwareJsonValue>> Members(FirmwareJsonValue value)
@@ -186,35 +192,49 @@ internal sealed class BackupFiles(CozmoEngine engine)
     internal void InitProgressionDefaults(){ProgressionOverridesNeedRecovery=false;GetDefaultUnlocks(true);}
     private IReadOnlyList<uint> GetDefaultUnlocks(bool forceResourceRead=false)
     {
-        if (Defaults.Count != 0&&!forceResourceRead) return Defaults.ToArray();
-        string? path = Resource("config/engine/unlock_config_nurture.json");
-        if(path is null)
-        { Missing("M3-062/M15-043: GetDefaultUnlocks has no host ResourcesPath input; InitConfig resource read is unavailable, defaults retained"); return Defaults.ToArray(); }
-        if (!ReadJson(path,out var root))
+        if (Defaults.Count != 0 && !forceResourceRead) return Defaults.ToArray();
+        // fidelity: M15-044 — Init 0x0064B89E and GetDefaultUnlocks 0x0064C0A2:
+        // fresh null root, ignore the return; Init keeps this same root for overrides.
+        var root=new FirmwareJsonValue();
+        _=InitUnlockConfig(engine,engine.Options,root);
+        if(forceResourceRead)ObserveProgressionOverrides(root);
+        return Defaults.ToArray();
+    }
+    // fidelity: M15-044 — 0x0064BB68..0x0064BDB4; options are the host's DataPlatform path service.
+    internal static bool InitUnlockConfig(CozmoEngine? context,CozmoEngineOptions? dataPlatform,FirmwareJsonValue root)
+    {
+        if(context is null || dataPlatform is null)return false;
+        const string relative="config/engine/unlock_config_nurture.json";
+        if(dataPlatform.ResourcesPath is not {} resources)
+        { Missing("M3-062/M15-043/M15-044: InitConfig has no host ResourcesPath input; resource read is unavailable, defaults retained");return false; }
+        var files=new BackupFiles(context);string path=Join(resources,relative);
+        bool read=files.ReadJson(path,root,"M15-044");
+        if(files.JsonWasSkipped)return false;
+        if(!read)
         {
-            if (!JsonWasSkipped) { engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.UnlockConfigJsonNotFound","Unlock Json config file config/engine/unlock_config_nurture.json not found."); EngineErrorState.StoreAndMaybeBreak(); }
-            Missing("M15-043 InitConfig 0x0064BBA6..0x0064BC06 continues after failed read but the resulting root is UNKNOWN; remaining config unit skipped and defaults retained"); return Defaults.ToArray();
+            context.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.UnlockConfigJsonNotFound","Unlock Json config file config/engine/unlock_config_nurture.json not found.");EngineErrorState.StoreAndMaybeBreak();
         }
-        if(Defaults.Count!=0){if(forceResourceRead)ObserveProgressionOverrides(root);return Defaults.ToArray();}
+        if(Defaults.Count!=0)return read;
+        if(root.Kind==FirmwareJsonKind.Null)return MissingDefaults();
         FirmwareJsonValue list;
         try { list = Json.Member(root,"defaultUnlocks"); }
-        // fidelity: M1-034, M15-043
-        catch (JsonLogicError) { Skip("M15-043","0x0064BC2E / JsonCpp object lookup",path); return Defaults.ToArray(); }
+        // fidelity: M1-034, M15-044
+        catch (JsonLogicError) { files.Skip("M15-044","0x008EABA6 (non-object non-null operator[])",path);return false; }
         if (list.Kind != FirmwareJsonKind.Array)
-        { engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.MissingDefaults","missing key 'defaultUnlocks'"); EngineErrorState.StoreAndMaybeBreak(); return Defaults.ToArray(); }
-        Missing("M15-044 UnlockIdFromString/EnumToString 0x00794D84..0x007957AC not decoded; M15-043 temporarily uses authority-2 Unity UnlockId constants as directed by B-M15-1");
+            return MissingDefaults();
         foreach (var item in list.Elements)
         {
             if (item.Kind != FirmwareJsonKind.String)
-            { engine.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.InvalidDefaultData","invalid element in unlock id's list (not a string)"); EngineErrorState.StoreAndMaybeBreak(); continue; }
-            string name = Encoding.UTF8.GetString(item.Bytes); uint id = 0;
-            if (Enum.TryParse<UnityUnlockId>(name,out var parsed) && Enum.IsDefined(parsed) && Enum.GetName(parsed) == name) id = (uint)parsed;
-            else Console.Error.WriteLine($"error: string '{name}' is not a valid UnlockId value");
+            { context.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.InvalidDefaultData","invalid element in unlock id's list (not a string)"); EngineErrorState.StoreAndMaybeBreak(); continue; }
+            uint id=NativeUnlockNames.FromBytes(item.Bytes);
             Defaults.Add(id);
-            engine.EmitSourceLog(EngineLogLevel.Info,"ProgressionUnlockComponent.InitDefaults","ProgressionUnlockComponent.DefaultValue",$"{Enum.GetName((UnityUnlockId)id) ?? "(null)"} defaults to true");
+            context.EmitSourceLog(EngineLogLevel.Info,"ProgressionUnlockComponent.InitDefaults","ProgressionUnlockComponent.DefaultValue",$"{NativeUnlockNames.NameOf(id)} defaults to true");
         }
-        if(forceResourceRead)ObserveProgressionOverrides(root);
-        return Defaults.ToArray();
+        return read;
+        bool MissingDefaults()
+        {
+            context.EmitSourceLog(EngineLogLevel.Error,null,"ProgressionUnlockComponent.InitDefaults.MissingDefaults","missing key 'defaultUnlocks'");EngineErrorState.StoreAndMaybeBreak();return false;
+        }
     }
     private void ObserveProgressionOverrides(FirmwareJsonValue root)
     {

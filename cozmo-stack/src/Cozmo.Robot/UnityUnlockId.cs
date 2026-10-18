@@ -1,8 +1,8 @@
 namespace Cozmo.Robot;
 
 // fidelity: M15-043, M15-044
-// Authority 2: Anki.Cozmo.UnlockId constants in shipped Assembly-CSharp.dll.
-// Temporary checked-job cross-check; native name table remains MISSING M15-044.
+// Native 81 pairs confirmed by the manager-adopted 20261013-small-reads-2-check.md,
+// 0x00794D84..0x00795834; also match Anki.Cozmo.UnlockId in shipped Assembly-CSharp.dll.
 internal enum UnityUnlockId : uint
 {
     Invalid = 0,

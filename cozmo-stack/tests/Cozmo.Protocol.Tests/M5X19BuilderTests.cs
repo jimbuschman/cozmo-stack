@@ -16,11 +16,13 @@ public sealed class M5X19BuilderTests
     private sealed class Pending:ActionRunner
     { internal Pending():base(0,0){} public override uint CheckIfDone()=>EngineActionResult.Running; public override bool CanInterrupt()=>false; }
     [Fact]
+    // reach: production — behavior -> action list -> streamer; offline firmware acknowledges actual delivered Start/End.
     public void BehaviorDriveWithDefaultInputsPlaysItsEndAnimationThenReturnsSuccess()
     {
         using var signals=SignalTestContext.Install();using var rig=new Rig();
         rig.M.DrivingAnimationsForTest=null;rig.M.ErasePlannerObstaclesForTest=null;
         // Start the real engine runner against the offline firmware, including its normal streamer tick.
+        // Explicit CA/CB protocol inputs acknowledge delivered Start/End messages; no claim about firmware timing.
         // No manual animation advance, pushed triplet, animation factory, status or timeout input.
         rig.Robot.Engine.StartProduction();
         var root=Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,"../../../../../../re-analysis/obb/assets/cozmo_resources/assets"));
@@ -42,7 +44,13 @@ public sealed class M5X19BuilderTests
                 byte wireTag=(byte)message.Id;
                 if(wireTag is >=0x90 and <=0x9B || message is Cozmo.Protocol.AudioSilence)bytesPlayed+=message.ToBytes().Length;
                 if(message is Cozmo.Protocol.AudioSample or Cozmo.Protocol.AudioSilence or Cozmo.Protocol.EndOfAnimation)audioPlayed++;
-                if(message is Cozmo.Protocol.StartOfAnimation start)animTag=start.ToBytes()[1];
+                if(message is Cozmo.Protocol.StartOfAnimation start)
+                {
+                    animTag=start.ToBytes()[1];
+                    rig.Send(new Cozmo.Protocol.AnimationStarted{AnimId=animTag});
+                }
+                if(message is Cozmo.Protocol.EndOfAnimation)
+                    rig.Send(new Cozmo.Protocol.AnimationEnded{AnimId=animTag});
             }
             // Firmware input, derived from delivered wire messages, replenishes the native stream budget.
             rig.Send(new Cozmo.Protocol.AnimationState{Timestamp=rig.T,NumAnimBytesPlayed=bytesPlayed,NumAudioFramesPlayed=audioPlayed,EnabledAnimTracks=7,Tag=animTag});

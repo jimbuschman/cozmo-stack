@@ -185,10 +185,15 @@ public sealed class CozmoAnimations : IDisposable
         // A23: RobotEventHandler subscribes to the E2G AnimationAborted (tag 95); the broadcast is synchronous, and its
         // handler calls Robot::AbortAnimation → SendAbortAnimation: AbortAnimation 0x8D, reliable, sent directly
         // (0x00517DE4..0x00517E0A), not through the stream buffer.
-        _scheduler.AnimationAborted += _ =>
+        _scheduler.AnimationAborted += tag =>
         {
-            if (robot.Engine.Robot is null) robot.Engine.EmitEngineLog(EngineLogLevel.Warning, null, "RobotEventHandler.HandleAnimationAborted.InvalidRobotID", "Failed to find robot.");
-            else { robot.SendMessage(new AbortAnimation()); robot.Engine.EmitEngineLog(EngineLogLevel.Info, "Unnamed", "RobotEventHandler.HandleAnimationAborted.SendingRobotAbortAnimation", ""); }
+            // A22/A23: app delivery precedes the earlier RobotEventHandler and action's local E2G 5F callback.
+            byte[] payload = new byte[4];
+            System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(payload, tag);
+            robot.Engine.DeliverAnimationReportToApp(0x5F, payload);
+            if (robot.Engine.Robot is null) robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "RobotEventHandler.HandleAnimationAborted.InvalidRobotID", "Failed to find robot.");
+            else { robot.SendMessage(new AbortAnimation()); robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "RobotEventHandler.HandleAnimationAborted.SendingRobotAbortAnimation", ""); }
+            robot.Engine.AnimationMessages.Deliver(0x5F, true, (uint)tag);
         };
         // fidelity: M5-030
         // UpdateLiveAnimation's robot inputs (gap4 L2..L6, gap1 R2..R4), from the last RobotState the robot stored: status bit
@@ -608,7 +613,7 @@ public sealed class CozmoAnimations : IDisposable
             handle.OnEnd(_ => Release());
             if (!handle.IsRunning) Release();   // ended between Play returning and the callback being registered
         }
-        return new AnimationTicket(handle.Completion, handle.Generation);
+        return new AnimationTicket(handle.Completion, handle.Generation) { Tag = handle.Tag };
     }
 
     internal Func<SleepAnimationArguments, ActionRunner?>? SleepTriggerFactory { get; set; } // M8 recipient seam, named MISSING when absent.
@@ -774,4 +779,8 @@ public sealed class CozmoFace
 /// <summary>
 /// A started animation and the token identifying it, so a caller can stop that one and no other.
 /// </summary>
-public sealed record AnimationTicket(Task<AnimationEndReason> Completion, long Generation);
+public sealed record AnimationTicket(Task<AnimationEndReason> Completion, long Generation)
+{
+    /// <summary>The animation tag allocated by this same play operation.</summary>
+    public byte Tag { get; init; }
+}

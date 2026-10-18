@@ -475,7 +475,7 @@ internal sealed class MessageHandler
     private readonly CozmoEngine _engine;
     private readonly RobotConnectionManager _rcm;
     private int _sendCalls;       // MH+0x3C
-    private int _processCalls;    // MH+0x38
+    internal uint ReceivedPacketCount { get; private set; } // MH+0x38
 
     /// <summary>MH+0x28: set once the handler is initialised; ProcessMessages and SendMessage do nothing without it.</summary>
     public bool Initialised { get; set; }
@@ -496,9 +496,10 @@ internal sealed class MessageHandler
     {
         if (!Initialised) return;
         _rcm.Update();
-        _processCalls++;
         while (_rcm.PopData(out var data))
         {
+            // fidelity: M2-023 — 0x0069D8BC..0x0069D8D8, before GetFirstRobot.
+            ReceivedPacketCount = unchecked(ReceivedPacketCount + 1);
             var robot = _engine.Robots.Get(CozmoEngine.RobotId);
             if (robot is null) continue;
             if (data.Length == 0) { _engine.EmitStackLog("error: MessageHandler.ProcessMessages: message of size 0"); continue; }

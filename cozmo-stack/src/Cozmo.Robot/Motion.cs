@@ -1436,6 +1436,7 @@ bool requireCalibration = true)
     /// calibrated, a report below −28° stored as −25° and above 47.5° as 44.5°, with the HeadAngleOOB warning.
     /// Batch 2: the state/ack flags are stored here; CheckIfDone runs on the ActionList tick (L9), not in Handle.
     /// </summary>
+    // fidelity: M4-016 — C4 head/lift 0x0054D624..0x0054D7B2.
     private void HandleActionAck(MoveAction a, MotorActionAck ack)
     {
         lock (_gate)

@@ -120,7 +120,7 @@ public sealed partial class EngineRobot
     private void InitSubscriptions()
     {
         _robotMessages.UndefinedTail=()=>Engine.EmitStackLog("M1-034 / M2-020: native freed successor 0x0069E294..0x0069E29A; skipped remaining emit tail");
-        Behavior.SteppedBehavior.ReportMissing("M2-020 native PlayAnimationAction CA/CB/D5 and IDockAction +0xE4/DA/C5 owner/re-Init wiring is not built; current animation/dock host lifecycles do not supply those native owner slots. Dev-behavior container destruction points and TracePrinter B0 Trace / EC WifiFlashID callback bodies remain unbuilt (CF CrashReport is built); their native release rows do not establish those surrounding lifecycles");
+        Behavior.SteppedBehavior.ReportMissing("M2-020: concrete PlayAnimation CA/CB/D5/5F and dock C5/DA/+E4 slots are built; complete native dock scheduler/destruction remains M12-017/M12-034. Dev-behavior container destruction points and TracePrinter B0 Trace / EC WifiFlashID callback bodies remain unbuilt (CF CrashReport is built)");
         // Idle is constructed before Messaging. The C# host API supplies the
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));

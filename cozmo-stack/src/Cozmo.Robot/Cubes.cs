@@ -353,6 +353,7 @@ public sealed class CozmoCubes
     /// are destroyed, silently (no broadcast, no log), then its retained subscription vector is retired.
     /// Run by the Robot's Lifetime slot 0x450 (<see cref="CozmoMotion.BindRobotLifetime"/>).
     /// </summary>
+    // fidelity: M4-027 — Robot+0x450 identity confirmed by small-reads-2 check.
     internal void DestroyTapFilter()
     {
         lock (_gate)
@@ -360,6 +361,7 @@ public sealed class CozmoCubes
             _tapQueue.Clear();
             _doubleTaps.Clear();
         }
+        Behavior.SteppedBehavior.ReportMissing("M2-023/M4-027: BlockTapFilter +0x14 shared filter owner release at 0x00511206..0x0051120A is unbuilt; queue/tree and handle-vector retirement do not implement that object lifetime");
         _tapSubscriptions.Retire(); // M2-020: the component owns B6/B4/B5, not Impl.
     }
     private readonly SubscriptionOwners _tapSubscriptions = new();
