@@ -59,6 +59,10 @@ stay required with their owners; the new standard does not dismiss them.
 
 ## Sequence
 
+**Update (2026-10-18, evening):** B-M1-7 (add63a25) readiness PASS; delivery census closed as manager records (M14-014,
+M15-071, M11-096, M11-035 note). The startup/readiness/delivery chain B-M1-4..B-M1-7 is done. Remaining before the
+hardware run: the M2 settling pass and policy confirmation (Opus), then the M1+M2 hardware script (manager).
+
 **Update (2026-10-18, later):** B-M1-6 (86d287d6, after builder follow-up 84a6430b) both Opus fix reviews FAIL
 (`research/20261018-b-m1-6-check-readiness.md`, `-delivery.md`): flaky ready tests, a missing store-load fence in the
 ready/failure handoff, and four census rows to reclassify as MISSING (face id change, pet, located-object deletion,
