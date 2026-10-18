@@ -49,13 +49,13 @@ stands. Nothing new starts outside the current layer.
   **Ended (operator, 2026-10-17):** Claude resumes manager and Opus verification; Codex returns to the research and
   builder lanes. Builder commits published during the handoff (B-M15-7, 2fc72bc3) still get the Opus verifier.
 
-- **Now (2026-10-18, late):** **Don't connect a robot with main until B-M1-10 lands and passes** (needs persistence
-  could write a needs record with zeroed fields to the robot's flash; `research/20261018-b-m1-8-check.md` B1).
-  B-M1-9 PASS (`research/20261018-b-m1-9-check.md`). **M2-protocol has no implementation gap left** (M2-018, M2-024
-  settled today with M2-019/020/022/023). M1 settled today: M1-061 (LatencyMessage; per-engine countdown recorded as
-  equivalent). Open in M1: M1-054 (waits on B-M1-10), M1-055, M1-056 (their settling-pass items are closed; settle in
-  the final check after B-M1-10), M1-033 (hardware). New M6-045 owns AppIsInFocus. Next: B-M1-10 check, a final M1
-  settle check, then the M1+M2 hardware script.
+- **Now (2026-10-18, end of day):** **M1-transport and M2-protocol have no implementation gap left.** Every record
+  is EXACT_SOURCE, a confirmed policy or EQUIVALENT, except M1-033 (HARDWARE_ONLY). Settled today: M1-054, M1-055,
+  M1-056, M1-061, M2-018..M2-024. B-M1-10 gates connection-time needs persistence off the robot: the robot is safe to
+  connect again (no 0x194000 write on any production path; `research/20261018-b-m1-10-check.md`). B-M1-10's check
+  FAILed on two M15-side items (the needs device file with `--state-dir` uses the engine clock; a gutted Lab test):
+  B-M1-11 (open). Until it lands, hardware runs should not pass `--state-dir`. Next: the M1+M2 hardware script
+  (manager), which covers M1-033 and collects a real v5 needs blob; then ACCEPTED.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
 - **Jobs:** `re-analysis/jobs/STATUS.md` (generated) shows, per builder job, the queue note, the status-file state and any

@@ -8,12 +8,12 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 191 |
+| EXACT_SOURCE | 194 |
 | EQUIVALENT_IMPLEMENTATION | 5 |
 | COMPATIBILITY_POLICY | 67 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 400 |
+| IMPLEMENTATION_GAP | 397 |
 | RECOVERABLE_GAP | 23 |
 | **total** | **702** |
 
@@ -21,7 +21,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | subsystem | review | approved | records | EXACT | policy/equiv | HW_ONLY/BLOCKED | IMPL_GAP | RECOVERABLE | live-path open |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 2026-10-18 | 62 | 39 | 19 | 1 | 3 | 0 | 3 |
+| M1-transport | INVENTORY_APPROVED | 2026-10-18 | 62 | 42 | 19 | 1 | 0 | 0 | 0 |
 | M2-protocol | INVENTORY_APPROVED | 2026-10-18 | 24 | 22 | 2 | 0 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 2026-10-15 | 63 | 35 | 20 | 4 | 4 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 2026-10-16 | 50 | 22 | 8 | 3 | 17 | 0 | 17 |
