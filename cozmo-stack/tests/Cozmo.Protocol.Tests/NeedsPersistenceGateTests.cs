@@ -114,6 +114,8 @@ public sealed class NeedsPersistenceGateTests
             void Data(RobotMessage message)=>FrameIn(ReliableMessageType.SingleReliableMessage,message.ToBytes());
             robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
             Wait(()=>robot.Engine.ConnectionState==1,"connect state 1");
+            // The transport opens its connection asynchronously; a ConnectionResponse injected before that is dropped.
+            Wait(()=>robot.Transport.Connection is not null,"transport connection");
             FrameIn(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
             Wait(()=>robot.Engine.ConnectionState==2,"connect state 2");
             Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});

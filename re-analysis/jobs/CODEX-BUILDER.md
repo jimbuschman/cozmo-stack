@@ -8,6 +8,8 @@ rules.
 
 - `git config core.hooksPath scripts/hooks`: the push gate. It runs `fidelity.py --check` and the full suite before a
   push to main.
+- **Run the full suite with `sh scripts/test-full.sh` after committing** (operator, 2026-10-18), never a bare
+  `dotnet test` for the final run: it records the pass, so the push gate does not run the suite a second time.
 - `dotnet` must build `cozmo-stack/Cozmo.sln` and run its tests.
 
 ## Rules
@@ -22,7 +24,7 @@ rules.
 3. **One batch at a time**, each kept small enough to review.
 4. **Verify each batch before committing it.** Review your own diff against CHECKLIST.md (the live production path,
    gates, order, failure results, floats as the engine's bits at the engine's width, tests whose expected values come
-   from the binary; logs best effort), then run `fidelity.py --check` and the full suite.
+   from the binary; logs best effort), then commit and run `sh scripts/test-full.sh` (fidelity check + full suite, recorded for the push gate).
 5. **You never settle a record.** Records stay IMPLEMENTATION_GAP, with `unresolved` starting "built, awaiting strong
    verification:". A separate Opus pass settles the layer.
 6. **Commit and push to main yourself.** If the gate refuses because origin moved, `git pull --rebase` and push again.

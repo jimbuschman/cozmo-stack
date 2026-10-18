@@ -48,8 +48,8 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     # The suite's result depends only on the code and the fidelity records. If this clone has already passed it on
     # byte-identical content (the usual case after a push is refused because another window pushed a status file or
     # a report, and this one was rebased onto it), the result can't differ, so it isn't run again.
-    key=$(for p in cozmo-stack re-analysis/fidelity_manifest.json re-analysis/FIDELITY_GAPS.md re-analysis/inventory re-analysis/tools; do
-        git rev-parse -q --verify "$local_sha:$p" || echo "none:$p"; done | git hash-object --stdin)
+    . scripts/hooks/gate-key.sh
+    key=$(gate_key "$local_sha")   # scripts/test-full.sh records the same fingerprint
     passed=.scratch/pre-push-passed
     if [ -f "$passed" ] && grep -qx "$key" "$passed"; then
         echo "pre-push: this code and these records already passed the full suite in this clone; it is not run again."

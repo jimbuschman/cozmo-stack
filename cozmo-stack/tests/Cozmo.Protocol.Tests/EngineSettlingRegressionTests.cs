@@ -59,6 +59,8 @@ public sealed class EngineSettlingRegressionTests
             };
             robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
             Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==1,TimeSpan.FromSeconds(5)));
+            // The transport opens its connection asynchronously; a ConnectionResponse injected before that is dropped.
+            Assert.True(SpinWait.SpinUntil(()=>robot.Transport.Connection is not null,TimeSpan.FromSeconds(5)));
             void FrameIn(ReliableMessageType type,byte[] bytes,ushort seq)=>robot.Transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(type,bytes,seq),1)));
             FrameIn(ReliableMessageType.ConnectionResponse,Array.Empty<byte>(),1);
             Assert.True(SpinWait.SpinUntil(()=>robot.Engine.ConnectionState==2,TimeSpan.FromSeconds(5)));

@@ -180,6 +180,8 @@ public sealed class StartupDeliveryRegressionTests
             Assert.True(SpinWait.SpinUntil(()=>engine.ConnectionState==1,TimeSpan.FromSeconds(5)));
             var port=typeof(CozmoEngine).GetField("_t",flags)!.GetValue(engine)!;
             var transport=(ReliableTransport)port.GetType().GetField("_t",flags)!.GetValue(port)!;
+            // The transport opens its connection asynchronously; a ConnectionResponse injected before that is dropped.
+            Assert.True(SpinWait.SpinUntil(()=>transport.Connection is not null,TimeSpan.FromSeconds(5)));
             transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(ReliableMessageType.ConnectionResponse,Array.Empty<byte>(),1),1)));
             Assert.True(SpinWait.SpinUntil(()=>engine.ConnectionState==2,TimeSpan.FromSeconds(5)));
             void Data(RobotMessage message,ushort seq)=>transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(
