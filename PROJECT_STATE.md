@@ -54,7 +54,7 @@ stands. Nothing new starts outside the current layer.
   M1-056, M1-061, M2-018..M2-024. B-M1-10 gates connection-time needs persistence off the robot: the robot is safe to
   connect again (no 0x194000 write on any production path; `research/20261018-b-m1-10-check.md`). B-M1-10's check
   FAILed on two M15-side items (the needs device file with `--state-dir` uses the engine clock; a gutted Lab test):
-  B-M1-11 (open). Until it lands, hardware runs should not pass `--state-dir`. Next: the M1+M2 hardware script
+  B-M1-11 PASS (`research/20261018-b-m1-11-check.md`): the needs device file is gated too. Next: the M1+M2 hardware script
   (manager), which covers M1-033 and collects a real v5 needs blob; then ACCEPTED.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
@@ -98,6 +98,10 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 - **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
+
+- **B-M1-11 check (2026-10-18):** name the skipped AttemptReadFromDevice success tail (NeedsState Decay 0x006936C6, +0x30
+  0x006936CE, DAS 0x006936D2) in the device MISSING (`Needs.cs`:1386) and on M15-014/M15-030; relabel or rebase the
+  `{1,1,1}` expectation in `NeedsPersistenceGateTests.cs`:281,286; cite the restored Lab test method on M15-050.
 
 - **B-M1-9 check (2026-10-18; research/20261018-b-m1-9-check.md):** Q2 the new Impl handlers also reach
   `Engine.DeviceRoute` (`RobotSubscriptions.cs`:201-207; no matching device handler, comment or `routeDevice:false`); Q3

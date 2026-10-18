@@ -153,7 +153,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3g | [B-M1-8](B-M1-8.md) | CLAIMED per status/B-M1-8.md (M1+M2 settling fixes needing no research: NeedsManager::Init at Init, GetBlockPool on connect, tags, M2-022 regression, M2-020/023 cleanups); Opus check FAIL (B1: connection-time needs persistence writes an unsupported record to the robot), research/20261018-b-m1-8-check.md, fix in B-M1-10 |
 | 61w3h | [B-M1-9](B-M1-9.md) | CLAIMED per status/B-M1-9.md (OV127 adopted 2026-10-18: LatencyMessage, SetGameBeingPaused input, M2-024 handlers) |
 | 61w3i | [B-M1-10](B-M1-10.md) | DONE per status/B-M1-10.md; Opus check FAIL (A1 device-file clock, A2 gutted Lab test; robot gate correct), research/20261018-b-m1-10-check.md, fix in B-M1-11 |
-| 61w3j | [B-M1-11](B-M1-11.md) | open (gate the needs device file; restore the Lab test) |
+| 61w3j | [B-M1-11](B-M1-11.md) | DONE per status/B-M1-11.md; Opus fix review PASS with queued items (research/20261018-b-m1-11-check.md) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
