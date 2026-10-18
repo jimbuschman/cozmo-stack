@@ -73,10 +73,12 @@ public sealed class LabWritebackCheckedRowsTests:IDisposable
     {using var robot=Robot();var lab=robot.Engine.Experiments;lab.SetAssignmentVectorsForTest(new[]{A(key,variation:variation)},new[]{new LabAssignmentPair(B("a"),B("b"))});lab.PossiblyWriteLabAssignmentsToRobot();Assert.Equal(B(key),lab.CachedAssignments![0].Key);Assert.Equal(B(variation),lab.CachedAssignments[0].Variation);}
     [Fact] public void PairOrderIsSignificant()
     {using var robot=Robot();var lab=robot.Engine.Experiments;lab.SetAssignmentVectorsForTest(new[]{A("z"),A("a")},new[]{new LabAssignmentPair(B("a"),B("b")),new LabAssignmentPair(B("z"),B("b"))});lab.PossiblyWriteLabAssignmentsToRobot();Assert.Equal(B("z"),lab.CachedAssignments![0].Key);}
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact] public void NeedsQueueFailureReachesOwnedWritebackBeforeResolution()
     {
         using var robot=Robot();var lab=robot.Engine.Experiments;lab.SetAssignmentVectorsForTest(new[]{A()},Array.Empty<LabAssignmentPair>());
-        var needs=new NeedsManager(()=>0){PossiblyWriteLabAssignments=lab.PossiblyWriteLabAssignmentsToRobot};needs.InitAfterSerialNumberAcquired(5);Assert.Single(lab.CachedAssignments!);
+        var needs=new NeedsManager(()=>0){PossiblyWriteLabAssignments=lab.PossiblyWriteLabAssignmentsToRobot}; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.needs.InitAfterSerialNumberAcquired(5);Assert.Single(lab.CachedAssignments!);
     }
     [Theory][InlineData(1)][InlineData(2)][InlineData(3)]
     public void PaddingPastActualBufferIsZeroWithOneStackDiagnostic(int size)
@@ -90,10 +92,12 @@ public sealed class LabWritebackCheckedRowsTests:IDisposable
         }
         finally{StackDiagnostics.Reported-=diagnostics.Add;}
     }
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact] public void NeedsReadCallbackAlsoReachesWritebackBeforeResolution()
     {
         using var robot=Robot();var lab=robot.Engine.Experiments;lab.SetAssignmentVectorsForTest(new[]{A()},Array.Empty<LabAssignmentPair>());
-        var needs=new NeedsManager(()=>0){PossiblyWriteLabAssignments=lab.PossiblyWriteLabAssignmentsToRobot};
+        var needs=new NeedsManager(()=>0){PossiblyWriteLabAssignments=lab.PossiblyWriteLabAssignmentsToRobot}; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         typeof(NeedsManager).GetMethod("OnRobotRead",BindingFlags.NonPublic|BindingFlags.Instance)!.Invoke(needs,new object[]{new NvResult(-1,Array.Empty<byte>())});Assert.Single(lab.CachedAssignments!);
     }
     [Fact] public void EmptyActiveVectorWritesOneByteThenNvPadsRatherThanDroppingWrite()

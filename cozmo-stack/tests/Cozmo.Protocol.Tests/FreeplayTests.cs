@@ -1737,6 +1737,8 @@ public class FreeplayTests
     /// connects first) is replayed, and either way <c>StartReadFromRobot</c> queues key 0x194000 on the robot's
     /// NV component (C2 row 10).
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void TheFreeplayStackConnectsTheNeedsManagerOnTheMfgIdSerialEdge()
     {
@@ -1747,7 +1749,7 @@ public class FreeplayTests
         // the edge arrives after the stack exists
         using (var rig = new Rig())
         {
-            var needs = new NeedsManager(() => clock);
+            var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
             using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
             Assert.Null(rig.Robot.Engine.AcquiredSerialNumber);
             rig.Robot.Engine.RaiseSerialNumberAcquired(0x41D04D9D);
@@ -1765,7 +1767,7 @@ public class FreeplayTests
         // the serial is already known when the stack is created: it is replayed
         using (var rig = new Rig())
         {
-            var needs = new NeedsManager(() => clock);
+            var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
             rig.Robot.Engine.RaiseSerialNumberAcquired(0x1234);
             using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs, withReactions: false);
             Assert.Equal(0x1234u, needs.SerialNumber);
@@ -1777,11 +1779,13 @@ public class FreeplayTests
     /// one lands at +0x34, +0x1c8/+0x1ca are cleared, and StartReadFromRobot runs. With no NV component to
     /// queue on, the queue fails and the resolution runs at once.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void InitAfterSerialNumberAcquiredKeepsThePreviousSerialAndClearsTheReadFlags()
     {
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.NvStorage = null;                                       // the queue-failure path
         needs.FinishReadFromRobot(RobotBlobVersion(1, 10, 0.5), 0);   // leave a rewrite flag set, then clear it
         Assert.True(needs.RobotRewriteNeeded);
@@ -1803,12 +1807,14 @@ public class FreeplayTests
     /// resolution runs. Appendix G Q2: the engine's failure is an invalid tag only, so a bad tag logs, clears
     /// <c>+0x3d0</c> and returns 0 without sending.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void StartReadFromRobotQueuesKey194000AndStoresTheCallbackResult()
     {
         double clock = 0;
         using var rig = new Rig();
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.NvStorage = rig.Robot.Engine.NvStorage;
         needs.InitAfterSerialNumberAcquired(7);
         rig.Tick();                                                  // M3-026: Update sends the queued read
@@ -1935,11 +1941,13 @@ public class FreeplayTests
     /// without +0x1ca; versions 1-4 return true with +0x1ca; version 0 returns true with +0x1ca and a
     /// "not supported" log.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void FinishReadFromRobotFollowsTheCorrectedVersionContract()
     {
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         var logs = new List<string>();
         needs.Log += logs.Add;
 
@@ -1966,11 +1974,13 @@ public class FreeplayTests
     /// M15-018: a version-0 blob is read as all-zero fields, sets the rewrite flag and returns success
     /// (the engine's prefix is uninitialised; zeros are the forced SD2 policy).
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void AVersionZeroBlobIsReadAsZerosWithTheRewriteFlagSet()
     {
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.WriteToDevice = _ => { };
 
         Assert.True(needs.FinishReadFromRobot(new byte[] { 0 }, 0));
@@ -1988,12 +1998,14 @@ public class FreeplayTests
     /// <c>NeedsStateOnRobot</c> (116 bytes) is written to NV key 0x194000, with <c>timeLastWritten</c> the
     /// passed time and each level scaled by 100000.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void StartWriteToRobotWritesTheVersionFiveBlobToKey194000()
     {
         using var rig = new Rig();
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.NvStorage = rig.Robot.Engine.NvStorage;
         needs.SetLevel(NeedId.Repair, 0.9);
         needs.SetLevel(NeedId.Energy, 0.8);
@@ -2031,12 +2043,14 @@ public class FreeplayTests
     /// "Aborting writing needs state to robot, because we are reading needs state from robot" and queues
     /// nothing.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void StartWriteToRobotAbortsWhileAReadIsOutstanding()
     {
         using var rig = new Rig();
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.NvStorage = rig.Robot.Engine.NvStorage;
         var logs = new List<string>();
         needs.Log += logs.Add;
@@ -2070,13 +2084,15 @@ public class FreeplayTests
     /// data and clear the disconnect timing; the per-serial alternate file is attempted when the robot has no
     /// data and the stored serial differs.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void TheResolverComparesTheStoredAndIncomingSerialAndSelectsTheCopy()
     {
         double clock = 0;
 
         // neither copy: a device write and a robot write are scheduled; with no NV storage the robot write fails
-        var none = new NeedsManager(() => clock);
+        var none = new NeedsManager(() => clock); none.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         var noneWrites = new List<bool>();
         none.WriteToDevice = f => noneWrites.Add(f);
         none.InitAfterReadFromRobotAttempt();
@@ -2084,7 +2100,7 @@ public class FreeplayTests
         Assert.True(none.WriteToRobotError);
 
         // robot-only: the robot data is selected for a device write
-        var robotOnly = new NeedsManager(() => clock);
+        var robotOnly = new NeedsManager(() => clock); robotOnly.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         var writes = new List<bool>();
         robotOnly.WriteToDevice = f => writes.Add(f);
         robotOnly.FinishReadFromRobot(RobotBlobV5(2000, 0.9, 0.8, 0.5), 0);
@@ -2095,7 +2111,7 @@ public class FreeplayTests
         using var rig = new Rig();
 
         // matching +0x1CC/+0x34: the newer timestamp wins. Device 3000 > robot 2000 -> device.
-        var deviceNewer = new NeedsManager(() => clock);
+        var deviceNewer = new NeedsManager(() => clock); deviceNewer.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         deviceNewer.WriteToDevice = _ => { };
         deviceNewer.NvStorage = rig.Robot.Engine.NvStorage;
         deviceNewer.Load(DeviceNeedsFile(5, 7, 3000, 0.9), applyElapsedDecay: false);
@@ -2105,7 +2121,7 @@ public class FreeplayTests
         Assert.Equal(0.9, deviceNewer.State.GetNeedLevel(NeedId.Play), 6);
 
         // matching +0x1CC/+0x34: robot 2000 > device 1000 -> robot
-        var robotNewer = new NeedsManager(() => clock);
+        var robotNewer = new NeedsManager(() => clock); robotNewer.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         robotNewer.WriteToDevice = _ => { };
         robotNewer.NvStorage = rig.Robot.Engine.NvStorage;
         robotNewer.Load(DeviceNeedsFile(5, 7, 1000, 0.9), applyElapsedDecay: false);
@@ -2115,7 +2131,7 @@ public class FreeplayTests
         Assert.Equal(0.5, robotNewer.State.GetNeedLevel(NeedId.Play), 6);
 
         // mismatched +0x1CC (1) / +0x34 (7): the robot data wins and the old timing fields are cleared
-        var mismatch = new NeedsManager(() => clock);
+        var mismatch = new NeedsManager(() => clock); mismatch.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         mismatch.WriteToDevice = _ => { };
         mismatch.NvStorage = rig.Robot.Engine.NvStorage;
         mismatch.Load(DeviceNeedsFile(5, 1, 3000, 0.9), applyElapsedDecay: false);
@@ -2129,7 +2145,7 @@ public class FreeplayTests
         Assert.Equal(0, mismatch.LastDisconnectSec, 6);
 
         // robot has no data and +0x1CC != +0x34: the per-serial alternate is attempted
-        var alternate = new NeedsManager(() => clock);
+        var alternate = new NeedsManager(() => clock); alternate.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         alternate.WriteToDevice = _ => { };
         alternate.NvStorage = rig.Robot.Engine.NvStorage;
         alternate.Load(DeviceNeedsFile(5, 1, 1000, 0.1), applyElapsedDecay: false);
@@ -2144,6 +2160,8 @@ public class FreeplayTests
     /// <c>WriteToDevice</c> call), the robot-write flag (a queued NV WRITE), the selected copy, the
     /// <c>SendNeedsStateToGame</c> action and whether <c>RobotChangedFromLastSession</c> fires.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void TheResolverFollowsTheNineCaseWriteSchedulingTable()
     {
@@ -2155,7 +2173,7 @@ public class FreeplayTests
             uint incomingSerial, bool? alternateOk)
         {
             using var rig = new Rig();
-            var needs = new NeedsManager(() => clock);
+            var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
             needs.NvStorage = rig.Robot.Engine.NvStorage;
             int dw = 0;
             needs.WriteToDevice = _ => dw++;
@@ -2241,12 +2259,14 @@ public class FreeplayTests
     /// time since the last robot write is strictly greater than 600,999,999 clock units, or when forced; a
     /// null robot returns at once.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void PossiblyStartWriteToRobotThrottlesAndForces()
     {
         using var rig = new Rig();
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.NvStorage = rig.Robot.Engine.NvStorage;
         int WriteCount() => rig.Sent.OfType<NVCommand>().Count(c => c.Op == NvStorageComponent.OpErase);   // M3-043 WA12: a queued write sends its ERASE first
         void CompleteWrite()
@@ -2312,11 +2332,13 @@ public class FreeplayTests
     /// Appendix I1 case 5 (R=1 D=0): the disconnect timestamp <c>+0x18/+0x1C</c> is cleared before the robot
     /// copy is applied (0x00694A46..0x00694A4C).
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void CaseFiveClearsTheDisconnectTimestampBeforeApplyingTheRobotCopy()
     {
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.WriteToDevice = _ => { };
         clock = 5;
         needs.OnRobotDisconnected();                                  // +0x18/+0x1c = 5
@@ -2333,6 +2355,8 @@ public class FreeplayTests
     /// The reconnect edge (finding 6): a removal clears the engine's recorded serial, so a stack created
     /// after a reconnect does not replay the old one, and the next mfgId runs the edge again.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void TheSerialEdgeHandlesEachNewMfgIdAcrossAReconnect()
     {
@@ -2340,7 +2364,7 @@ public class FreeplayTests
         Assert.NotNull(obb);
         double clock = 0;
         using var rig = new Rig();
-        var needs1 = new NeedsManager(() => clock);
+        var needs1 = new NeedsManager(() => clock); needs1.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         using (var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs1, withReactions: false))
         {
             rig.Robot.Engine.RaiseSerialNumberAcquired(0x1111);
@@ -2352,7 +2376,7 @@ public class FreeplayTests
         Assert.Null(rig.Robot.Engine.AcquiredSerialNumber);
 
         // a stack created now does not replay the old serial, and handles the new mfgId
-        var needs2 = new NeedsManager(() => clock);
+        var needs2 = new NeedsManager(() => clock); needs2.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         using (var stack2 = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs: needs2, withReactions: false))
         {
             Assert.Equal(0u, needs2.SerialNumber);
@@ -2377,11 +2401,13 @@ public class FreeplayTests
     /// <c>app_start</c> DAS event (0x00693486) and runs <c>LocalNotifications::Generate</c> (0x00693492).
     /// It does not touch the robot-rewrite flag <c>+0x1CA</c>.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void InitInternalWithNoDeviceDirectorySendsNoActionAndRunsTheTail()
     {
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         var writes = new List<bool>();
         var actions = new List<NeedsActionId>();
         var das = new List<string>();
@@ -2412,6 +2438,8 @@ public class FreeplayTests
     /// <c>Load</c> does not read <c>TimeLastAppBackgrounded</c> (the named J6/J7 gap), so <c>+0x20/+0x24</c>
     /// stay 0 and the event does not fire - the guard is tested with the counter only.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void InitInternalReadsTheFixedDeviceFileAndSendsDecay()
     {
@@ -2421,7 +2449,7 @@ public class FreeplayTests
         {
             File.WriteAllText(Path.Combine(dir, NeedsManager.FixedFileName),
                 System.Text.Encoding.UTF8.GetString(NeedsJson(5, 7, 1000, 0.9)));
-            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir };
+            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir }; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
             var writes = new List<bool>();
             var actions = new List<NeedsActionId>();
             var das = new List<string>();
@@ -2462,6 +2490,8 @@ public class FreeplayTests
     /// is missing, logs and returns false when <c>Load</c> (the engine's <c>ReadFromDevice</c>) fails, and
     /// on success logs <c>"Successfully read file needsState.json from device"</c> and returns true.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void AttemptReadFromDeviceLogsMissingReadFailureAndSuccess()
     {
@@ -2469,7 +2499,7 @@ public class FreeplayTests
         var dir = TempDir();
         try
         {
-            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir };
+            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir }; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
             var logs = new List<string>();
             needs.Log += logs.Add;
 
@@ -2497,6 +2527,8 @@ public class FreeplayTests
     /// <c>&lt;DeviceDirectory&gt;/needsState_&lt;serial&gt;.json</c> when <c>AlternateDeviceFilePath</c> is
     /// null, so the resolver's per-serial alternate read (C2 row 12) is supplied by the host directory.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void TheDeviceDirectorySuppliesThePerSerialAlternateFile()
     {
@@ -2506,7 +2538,7 @@ public class FreeplayTests
         {
             File.WriteAllText(Path.Combine(dir, NeedsManager.FileNameForSerial(7)),
                 System.Text.Encoding.UTF8.GetString(NeedsJson(5, 7, 1000, 0.9)));
-            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir, NvStorage = null, WriteToDevice = _ => { } };
+            var needs = new NeedsManager(() => clock) { DeviceDirectory = dir, NvStorage = null, WriteToDevice = _ => { } }; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
             needs.Load(DeviceNeedsFile(5, 1, 1000, 0.1), applyElapsedDecay: false);   // +0x1CC = 1
             needs.InitAfterSerialNumberAcquired(7);                                   // +0x34 = 7, no robot data
             Assert.Equal(0.9, needs.State.GetNeedLevel(NeedId.Play), 6);              // the per-serial file won

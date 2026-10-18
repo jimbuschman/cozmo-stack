@@ -12,6 +12,7 @@ public sealed partial class CozmoEngine
     private void InitializeNeedsOwner()
     {
         // InitExperiments has just run; RobotManager.Init follows (0x004ECA0A before 0x004ECA1A).
+        EmitSourceLog(EngineLogLevel.Info,"Unnamed","NeedsManager.Init","Starting Init of NeedsManager"); // 0x00692598.
         Needs=NeedsManager.FromObb(Options.ResourcesPath,()=>Timer.SecondsF,
             deviceDirectory:Options.NeedsDeviceDirectory,contextRandom:ContextRandom,beforeInit:n=>
             {
@@ -39,6 +40,7 @@ public sealed partial class CozmoEngine
     internal void UseNeedsForOfflineTest(NeedsManager needs)
     {
         if(!IsOfflineEngine)throw new InvalidOperationException("Needs is owned by production engine initialization.");
+        needs.EnableUncertifiedPersistenceForTests(); // Explicit offline unit adapter, never a production capability.
         Needs.DetachConnectionRead();
         Needs=needs;
         Needs.HostEngine=this;

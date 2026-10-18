@@ -119,10 +119,10 @@ public sealed class StartupDeliveryRegressionTests
                 }});
             try
             {
-                Assert.False(seamFailure.Task.IsCompleted,"First-tick ordering wait failed on the test seam.");
                 Assert.True(sourceReadySeen);Assert.NotNull(engine);
                 Assert.True(SpinWait.SpinUntil(()=>engine!.ConnectionState>=1,TimeSpan.FromSeconds(5)));
                 Assert.True(engine!.IsReadyDelivered);
+                Assert.False(seamFailure.Task.IsCompleted,"First-tick ordering wait failed after exercising the engine.");
             }
             finally{cancel.Cancel();await Assert.ThrowsAnyAsync<OperationCanceledException>(()=>connecting);}
         }

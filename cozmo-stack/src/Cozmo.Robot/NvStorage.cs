@@ -221,6 +221,7 @@ public sealed class NvStorageComponent : IDisposable
     internal static readonly int[] HeaderNeverWrittenBytes = { 14, 15 };
 
     private readonly CozmoRobot _robot;
+    internal bool IsOfflineOwner=>_robot.Engine.IsOfflineEngine;
     private readonly object _gate = new();
     private static readonly object SizeTableGate = new();
     private static bool _sizeTableHasFactoryKeys;

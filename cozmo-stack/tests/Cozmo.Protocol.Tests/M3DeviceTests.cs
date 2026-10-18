@@ -3407,11 +3407,13 @@ public class M3DeviceTests
     /// in that order. The expected order is the extraction's list, not the implementation's. No VisionSystem is
     /// built: the engine still queues #3/#4 and the queue still drains to ready-to-stream.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void M3_033_TheConnectionQueuesTheEngineNvReadsBeforeReadyToStream()
     {
         using var rig = new Rig();
-        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage }; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try
@@ -3445,6 +3447,8 @@ public class M3DeviceTests
     /// and Lab remains a named MISSING. The historical test name is retained for frozen references; this test covers
     /// only the two layers that exist (FaceAlbum/Enrollment, Needs).
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void M3_034_TheConnectionReadCallbacksReportAllNoSinkHandoffs()
     {
@@ -3453,7 +3457,7 @@ public class M3DeviceTests
         var missing = new List<string>();
         var reports=new List<ushort>();rig.Engine.EngineToGameMessage+=(tag,_)=>reports.Add(tag);
         rig.Engine.CaptureSourceLogs(missing.Add);
-        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage }; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try
@@ -3646,6 +3650,8 @@ public class M3DeviceTests
     /// attached after the read completed adopts the buffered Needs result through its OnRobotRead path
     /// (FinishReadFromRobot then the resolver), and attaching does not queue a further read.
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void M3_033_TheEngineQueuesOneNeedsReadAndALateNeedsManagerAdoptsTheBufferedResult()
     {
@@ -3670,7 +3676,7 @@ public class M3DeviceTests
         Assert.Equal(2, needsReads);
         Assert.NotNull(rig.Engine.ConnectionNeedsResult);       // buffered with no NeedsManager attached
 
-        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage }; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try
@@ -3692,11 +3698,13 @@ public class M3DeviceTests
     /// when it is a failure. A missing item (-1) makes FinishReadFromRobot return false (RobotReadSucceeded false)
     /// and the resolver still runs (InitAfterReadFromRobotAttempt always does; the read is no longer outstanding).
     /// </summary>
+
+    // reach: unit (explicit uncertified persistence adapter; epoch/economy production join MISSING at M15-030/M15-014).
     [Fact]
     public void M3_033_ANegativeNeedsReadStillResolvesThroughTheEnginePath()
     {
         using var rig = new Rig();
-        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage };
+        var needs = new Cozmo.Robot.Behavior.NeedsManager(() => 0) { NvStorage = rig.Robot.Engine.NvStorage }; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
         needs.AttachConnectionRead(rig.Robot.Engine);
         rig.Robot.Engine.SerialNumberAcquired += needs.InitAfterSerialNumberAcquired;
         try

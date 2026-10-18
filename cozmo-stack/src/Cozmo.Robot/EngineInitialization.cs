@@ -75,6 +75,8 @@ public sealed partial class CozmoEngine
         if (Options.EngineConfigJson is not { } bytes)
         {
             SteppedBehavior.ReportMissing("M1-054 CozmoEngine.Init 0x004EC7B4: host engine-config JSON not supplied; no invented advertising defaults");
+            // Native PerfMetric.Init 0x0050947A is a no-op; +0x10 success store 0x004ECA9C
+            // is not mirrored by this partial no-config path. Standalone startup uses its existing state/loading gates.
             return;
         }
         // Host configuration errors fail construction; they are not unknown native results.

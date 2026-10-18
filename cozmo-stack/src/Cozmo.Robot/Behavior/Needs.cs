@@ -1158,7 +1158,7 @@ public sealed class NeedsManager
     /// (C2 row 6). The serial arrives by a separate edge (C2 row 9, <see cref="InitAfterSerialNumberAcquired"/>).
     /// </summary>
     // fidelity: M15-014, M15-016
-    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _awaitingRobotData = true; } }
+    public void InitAfterConnection() { lock (_gate) { _robotConnected = true; _awaitingRobotData = true; _robotPersistenceMissingScope=new HashSet<string>(); } }
 
     /// <summary>
     /// <c>NeedsManager::OnRobotDisconnected</c> 0x00695908 (C1 §6, J5): write the disconnect timestamp to
@@ -1339,6 +1339,7 @@ public sealed class NeedsManager
     /// </summary>
     private void OnConnectionNeedsRead(NvResult r)
     {
+        if(SkipUnbuiltRobotPersistence())return; // Observe completion only; do not decode or apply the robot copy.
         if (_connectionEngine is not { } engine) return;
         int generation = engine.ConnectionNeedsGeneration;
         if (generation == _adoptedConnectionGeneration) return;
@@ -1349,6 +1350,36 @@ public sealed class NeedsManager
     /// <summary>C2 row 10: the NV key <c>StartReadFromRobot</c> queues (the robot's needs item).</summary>
     // fidelity: M15-014
     public const uint NeedsNvKey = 0x194000;
+
+    // fidelity: M15-014, M15-030 — B-M1-10: no production clock/economy producer is certified yet.
+    // This opt-in is internal, explicitly for legacy unit models. A bound live engine/NV owner always denies it.
+    private bool _uncertifiedPersistenceTestAdapter;
+    private ISet<string> _robotPersistenceMissingScope=new HashSet<string>();
+    internal void EnableUncertifiedPersistenceForTests()
+    {
+        lock(_gate)
+        {
+            if(HostEngine is {IsOfflineEngine:false} || _connectionEngine is {IsOfflineEngine:false} || NvStorage is {IsOfflineOwner:false})
+                throw new InvalidOperationException("Uncertified needs persistence is available only to detached/offline unit fixtures.");
+            _uncertifiedPersistenceTestAdapter=true;
+        }
+    }
+    private bool UsesUncertifiedPersistenceTestAdapter=>_uncertifiedPersistenceTestAdapter
+        && HostEngine is not {IsOfflineEngine:false} && _connectionEngine is not {IsOfflineEngine:false}
+        && NvStorage is not {IsOfflineOwner:false};
+    private bool SkipUnbuiltRobotPersistence()
+    {
+        lock(_gate)if(UsesUncertifiedPersistenceTestAdapter)return false;
+        ReportUnbuiltRobotPersistence();return true;
+    }
+    private void ReportUnbuiltRobotPersistence()
+    {
+        ISet<string> scope;
+        lock(_gate){_awaitingRobotData=false;scope=_robotPersistenceMissingScope;}
+        // Separate from the process-wide deduper: visible again on the next connection. No callout holds _gate.
+        SteppedBehavior.ReportMissing("M15-030/M15-014 needs robot persistence skipped: system_clock epoch producer 0x00694D9C/0x006954F8/0x0069555C and economy fields 0x006955F2..0x0069560C are unbuilt; robot copy/resolver and NV erase/write 0x194000 are gated",scope);
+    }
+
 
     /// <summary>
     /// C2 row 10: the connected robot's NV component (<c>robot.Engine.NvStorage</c>, as the camera's
@@ -1367,6 +1398,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public int StartReadFromRobot(uint tag = NeedsNvKey)
     {
+        if(SkipUnbuiltRobotPersistence())return 0;
         NvStorageComponent? nv;
         lock (_gate) nv = NvStorage;
         if (nv is null)
@@ -1393,6 +1425,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     private void OnRobotRead(NvResult r)
     {
+        if(SkipUnbuiltRobotPersistence())return;
         bool ok;
         lock (_gate)
         {
@@ -1414,6 +1447,7 @@ public sealed class NeedsManager
     // fidelity: M15-014, M15-017, M15-018
     public bool FinishReadFromRobot(byte[] data, sbyte result)
     {
+        if(SkipUnbuiltRobotPersistence())return false;
         if (result <= -1) return false;                              // -1 missing, < -1 other failure
         if (data.Length == 0) return false;                          // no version byte to dispatch on
         int version = data[0];
@@ -1459,6 +1493,7 @@ public sealed class NeedsManager
     internal Action? PossiblyWriteLabAssignments;
     public void InitAfterReadFromRobotAttempt()
     {
+        if(SkipUnbuiltRobotPersistence())return; // Before Lab, alternate device read, copy apply, decay or either write.
         if (PossiblyWriteLabAssignments is { } lab) lab(); // 0x00694622, before Needs copy resolution.
         else SteppedBehavior.ReportMissing("M15-050 Needs InitAfterReadFromRobotAttempt0x00694622 has no CozmoExperiments writeback owner");
         // Phase 1: the per-serial alternate read (I/O and the host path seam) outside _gate.
@@ -1597,6 +1632,7 @@ public sealed class NeedsManager
     // fidelity: M15-014, M15-017
     public void StartWriteToRobot(double nowSec)
     {
+        if(SkipUnbuiltRobotPersistence())return; // Before timestamps, partial packing, erase or write.
         byte[] blob;
         NvStorageComponent? nv;
         lock (_gate)
@@ -1619,11 +1655,13 @@ public sealed class NeedsManager
             // The engine copies its economy fields into the blob (0x00695540..0x00695640:
             // curNeedsUnlockLevel, numStarsAwarded, timeLastStarAwarded, timeCreated, onboardingStageCompleted,
             // forceNextSong). This stack does not model the stars/onboarding economy, so those fields stay at
-            // their zero defaults; they are not invented here.
+            // their zero defaults in this legacy UNIT-ONLY fixture path. Production is gated above until those producers are built.
             blob = NeedsStateOnRobot.Pack(robot);
             nv = NvStorage;
         }
 
+        // The legacy partial payload above is unit-only. Recheck the captured owner before the NV handoff.
+        if(nv is {IsOfflineOwner:false}){ReportUnbuiltRobotPersistence();return;}
         // The NV write happens outside _gate (finding 5: do not hold _gate across NvStorageComponent.Write).
         if (nv is null)
         {
