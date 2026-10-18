@@ -1,16 +1,17 @@
 | Routine / question | Coverage | Verdict and remaining boundary |
 | --- | --- | --- |
 | UiMessageHandler::Init | Names the persistent UI fields, message gate, subscription storage and comms-init prerequisite, with readers. | REQUIRED: enables message dispatch and initializes the comms whose counts gate loading. UNKNOWN: full subscriber bodies and general socket internals; no claim they have no effects. |
-| CozmoEngine::InitInternal | Audio input publication and first-tick main-thread flag recovered. Factory-log calls identified separately. | REQUIRED: audio dispatch registration and state consumed by Update. UNKNOWN: full factory archive/file effects; no NO EFFECT assertion for unread callees. |
+| CozmoEngine::InitInternal | Audio input publication and first-tick main-thread flag recovered. Factory-log calls identified separately. | UNKNOWN under the revised endpoint requirement: audio registration and first-tick flag are proved, but the chain to a supported output is not closed here. Full factory archive/file effects remain unread. |
 | Manager's concrete MessageHandler Init | Resolves slot to 0x0069D088; publishes context, manager, connection manager and initialized flag; initializes transport and registers inputs. | REQUIRED: transport startup, connection/send/receive readiness. M1-001/-005/-024/-025/-026 already own substantial leaves; they do not cover this whole Init by implication. |
 | SendSupportInfo | Native conditional send, source getter, field and E2G order recovered. | REQUIRED: SupportInfo(deviceId) reaches E2G before SetEngineState(2). UNKNOWN: full Android identity initialization and arbitrary runtime input value; identified as an app/host input boundary. |
 | Robot WifiFlashID 0xEC | Native callback registration, payload getter, all handler operations read. | NO EFFECT on (a)–(d): only telemetry/log formatting and temporary allocation/cleanup. No persistent handler-state write, E2G call or robot send. |
+| Q6 added while this answer was awaiting checking: local Init-time animation-list consumers | UNKNOWN — local dispatch proved; exhaustive recipient census incomplete | Dynamic tag-set producers and remaining subscription families prevent an absence claim; see section 6. |
 
-# OV126 — five narrow M1/M2 startup checks
+# OV126 — six narrow M1/M2 startup checks
 
 Answers [20261017-ov126-m1-startup-narrow.md](../requests/overnight/20261017-ov126-m1-startup-narrow.md), 2026-10-17.
 Baseline e11caec3. Coverage table created first. This is an effect check under the 2026-10-17 scope, not a complete
-extraction of the five routines and their descendants, an implementation review, or a manifest settlement.
+extraction of the six routines and their descendants, an implementation review, or a manifest settlement.
 
 Primary evidence: `resources/lib/armeabi-v7a/libcozmoEngine.so`,
 SHA-256 `02263c07f6bb60f4d7f351a3667dca84fd3e6c0fc6f838e18b5de7cf4e2989e1`.
@@ -26,8 +27,8 @@ Current manifest re-read:
 - **M2-020, IMPLEMENTATION_GAP**, "Robot-message dispatch residue: wildcard ID 0x101CF (all-signals branch unreachable), handle reset/unlink, re-Init appends before release, ~Messaging retirement order, TracePrinter B0/EC registrations; each owner's own handle wiring is owned by that owner's record".
   Evidence is `20261013-robot-message-subscribers-check.md` and `20261013-dispatch-residue-check.md`. Its current unresolved corrects EC to WifiFlashID, treats B0 as useful diagnostics without extraction, and requests this EC check.
 
-Kind (a) = robot traffic, (b) = resulting robot behavior, (c) = game/API delivery or readiness, (d) = state a later path reads.
-A REQUIRED verdict proves at least the listed positive effects; UNKNOWN rows remain UNKNOWN rather than being excluded.
+Kind (a) = robot traffic, (b) = resulting robot behavior, (c) = game/API delivery or readiness, (d) = state that feeds one of those supported effects. An internal reader alone does not establish (d).
+A REQUIRED verdict proves at least the named supported endpoint; an internal reader by itself is recorded UNKNOWN. UNKNOWN rows remain UNKNOWN rather than being excluded.
 No research row is marked EXACT_SOURCE and no existing record's classification changes.
 
 ## 1. UiMessageHandler::Init — 0x006601B0
@@ -52,13 +53,15 @@ Symbol ownership here is CozmoEngine::InitInternal; "Impl" in the request is not
 
 | Effect | Kind | Citation | Reader for (d) |
 | --- | --- | --- | --- |
-| Construct an AudioUnityInput using context+4 external interface. If context+0xC audio mux exists, register that input. This creates audio message subscriptions and a usable mux input. | c, d; boundary to M6 | 0x004EDC7C..0x004EDC8A allocation/constructor; audio-mux null gate 0x004EDC8E..0x004EDC92; RegisterInput 0x004EDC96. Constructor PLT 0x004A52FC -> 0x00591590; first subscription at 0x005915D8..0x005915FA. RegisterInput PLT 0x004A51D0 -> 0x008DEB62: increments mux+0x1C 0x008DEB6C..0x008DEB76, stores mux at input+4 0x008DEB7A and input ID at +8 0x008DEB7E, inserts input pointer into mux map 0x008DEC04 and 0x008DEC8A..0x008DECD0. | AudioMuxInput::HandleMessage 0x008DFC52 reads input+4, 0x008DFC56 reads ID+8, tail forwards at 0x008DFC5E. Current M6-023 owns the app-audio dispatch path; M6-029 owns lifetime. These leaves are not newly settled here. |
-| Clear engine+0x61 so the first initialized Update installs the main thread in context, then sets the flag. | d | 0x004EDD0E movs r0,#0; 0x004EDD10 strb r0,[engine,#0x61]. | Update 0x004ED4E6 reads flag, 0x004ED4EA skips setup if set; SetMainThread 0x004ED4EE; flag=1 at 0x004ED4F2..0x004ED4F4. SetMainThread 0x004EAE60..0x004EAE6C stores current thread through context+0x40; IsMainThread 0x004EAE72..0x004EAE8A reads/compares it. For example loader uses IsMainThread 0x0051F398. This is thread bookkeeping with demonstrated readers, not a newly found robot command. |
+| Construct an AudioUnityInput using context+4 external interface. If context+0xC audio mux exists, register that input. This creates audio message subscriptions and a usable mux input. | Potential c/d; supported endpoint UNKNOWN | 0x004EDC7C..0x004EDC8A allocation/constructor; audio-mux null gate 0x004EDC8E..0x004EDC92; RegisterInput 0x004EDC96. Constructor PLT 0x004A52FC -> 0x00591590; first subscription at 0x005915D8..0x005915FA. RegisterInput PLT 0x004A51D0 -> 0x008DEB62: increments mux+0x1C 0x008DEB6C..0x008DEB76, stores mux at input+4 0x008DEB7A and input ID at +8 0x008DEB7E, inserts input pointer into mux map 0x008DEC04 and 0x008DEC8A..0x008DECD0. | AudioMuxInput::HandleMessage 0x008DFC52 reads input+4, 0x008DFC56 reads ID+8, tail forwards at 0x008DFC5E. Current M6-023 owns the app-audio dispatch path; M6-029 owns lifetime. These leaves are not newly settled here, and a supported robot/API endpoint is not established by this reader alone. |
+| Clear engine+0x61 so the first initialized Update installs the main thread in context, then sets the flag. | Internal bookkeeping; supported endpoint UNKNOWN | 0x004EDD0E movs r0,#0; 0x004EDD10 strb r0,[engine,#0x61]. | Update 0x004ED4E6 reads flag, 0x004ED4EA skips setup if set; SetMainThread 0x004ED4EE; flag=1 at 0x004ED4F2..0x004ED4F4. SetMainThread 0x004EAE60..0x004EAE6C stores current thread through context+0x40; IsMainThread 0x004EAE72..0x004EAE8A reads/compares it. For example loader uses IsMainThread 0x0051F398. This is thread bookkeeping with demonstrated readers, not a newly found robot command. |
 | Construct a temporary FactoryTestLogger(true), get log count, and if count >=100 call ArchiveLogs; only the returned archive result selects the diagnostic branch in this caller. Destroy temporary and return zero normally. | File/diagnostic boundary; downstream effects UNKNOWN | 0x004EDC9A..0x004EDCAA constructor/GetNumLogs; compare 100 and blo 0x004EDCAC..0x004EDCAE; archive call 0x004EDCB6; result comparison 0x004EDCBA; diagnostics 0x004EDCD2 / 0x004EDCE8; destructor 0x004EDD16; normal zero return 0x004EDD28. Resolved callees: FactoryTestLogger constructor 0x00671658, GetNumLogs 0x00675D14, ArchiveLogs 0x00675FF0, destructor 0x0067173C. | UNKNOWN: GetNumLogs/ArchiveLogs file bodies not extracted in this narrow check; do not assert that archive output has no engine reader. M7-028 covers other FactoryTestLogger construction/lifetime facts, not automatically this archive path. |
 | No direct robot-interface send or E2G send in this caller. Positive effect is registration, plus the state reset; callee audio effects remain real. | bounded caller finding | Executable caller instructions 0x004EDC6C..0x004EDD2E and cleanup pads 0x004EDD32..0x004EDD6E. All non-formatting functional calls are named above. | No whole-routine NO EFFECT conclusion is drawn. |
 
-**Verdict: REQUIRED** — audio-input registration and a later-read engine flag are established.
-UNKNOWN remains at full factory-log callees and the detailed audio descendants owned by M6; this does not authorize excluding them.
+**Verdict: UNKNOWN** under the updated supported-endpoint requirement. Audio registration and a later-read flag are proved,
+but this check does not close their chain to a supported robot/API output. The audio path reaches M6-023/M6-006 boundaries;
+the thread flag demonstrated here reaches thread-identity checks/diagnostics. Neither an internal reader alone nor the
+existing M6 record title makes this whole startup step REQUIRED. Factory-log callees are also unread; none is excluded.
 
 ## 3. RobotManager's MessageHandler virtual Init
 
@@ -104,13 +107,40 @@ UNKNOWN input identity initialization is retained; no claim of no effect, consta
 This is an evidence-based no-effect finding for the callback, not an exclusion of the robot message or a statement about the enclosing dispatch.
 M2-020's registration/lifetime obligations remain. Useful diagnostic handling is compatible with the operator's scope; no implementation is made here.
 
+## 6. Added question: local consumers of the Init-time animation broadcast
+
+This section answers the request revision in 7c5bfd3b, read at 76e8f206.
+M1-055 was re-read at that revision: title "CozmoEngine::Update: BroadcastAvailableAnimations then SetEngineState(3)
+when DoNonConfigDataLoading returns 1", status IMPLEMENTATION_GAP, evidence still the adopted batch check.
+Its current unresolved explicitly withdraws the claim that omitting the first public event loses no internal startup effect:
+UiMessageHandler::Broadcast locally dispatches, local consumers remain UNKNOWN, and OV126 is to check them.
+The public Init-time API event is intentionally unsupported; required internal effects, if any, are to be retained.
+No exclusion of an internal effect is inferred here.
+
+| Effect / consumer question | Kind | Citation | Reader and supported effect |
+| --- | --- | --- | --- |
+| The emitted tag for AnimationAvailable is 0x5D; EndOfMessage is 0x9A. These are E2G tags, not G2E or robot tags of the same numeric value. | c; event identification | Native AnimationAvailable union constructor 0x00725CF2..0x00725D0E: movs r1,#0x5D at 0x00725D0A, strh at 0x00725D0C. EndOfMessage constructor 0x007291CA..0x007291D2 sets 0x9A. | OV124's fresh first call produces no 0x5D and one 0x9A with messageType=0; later broadcast can produce names and the same terminator type. |
+| E2G +0x1C really reaches UiMessageHandler::Broadcast. It calls DeliverToGame first, then forms a local event and dispatches it even though the outer public delivery may have no device. | c, potential d | UI vtable relocation 0x0102FE38 -> 0x006625B1 (address point table+8, slot+0x1C). Complete executable Broadcast 0x006625B0..0x00662616: virtual +0x48 call at 0x006625CE, read union tag 0x006625D0, build event at 0x006625DE..0x006625F2, local dispatch 0x006625FA, cleanup 0x00662600. | Any actual registered local consumer is independent of whether the socket delivery reaches a phone. The public omission is not a proof of no internal effect. |
+| Local dispatch looks up the exact event tag in the E2G signal map at UI+0x20. Missing signal returns; existing signal invokes its live callables. No wildcard/all-signals branch is present in this dispatcher. | potential d | Complete 0x00662590..0x006625AE: map receiver UI+0x1C+4 at 0x00662596, event tag at +8 at 0x00662598, hash find 0x0066259E (PLT 0x004BB388 -> 0x00663CBA..0x00663D14, exact key comparison at 0x00663D06..0x00663D0A), cbz 0x006625A2, signal emit 0x006625A8. Selected emitter 0x00663C74..0x00663CB8: live callable test 0x00663C86..0x00663C88 and invocation 0x00663C90, node iteration 0x00663C94..0x00663CA8. | Whether that signal contains a particular callback at the first broadcast is a subscription/construction-order question; dispatch by itself establishes no supported downstream effect. |
+| E2G registrations use vslot +0x28, distinct from G2E +0x2C. Subscribe creates/gets the signal keyed by the supplied u16 tag and attaches the callable. | potential d | UI vtable entries 0x0102FE44 -> E2G Subscribe 0x006626CD, 0x0102FE48 -> G2E Subscribe 0x00662751. Complete executable E2G Subscribe 0x006626CC..0x00662744: ldrh tag 0x006626E4, map UI+0x20 0x006626EC, operator[] 0x006626F2 (PLT 0x004BB3B8), signal attachment 0x006626FE. | A census must follow the tag argument into this path, including dynamic callers. Finding only named getters is insufficient. |
+| No confirmed local subscriber to 0x5D or 0x9A was identified in the native constant-tag candidate scan. **The exhaustive list is UNKNOWN, not an empty list.** | UNKNOWN | Scan decoded native Thumb range 0x004D6860..0x006CA000 for virtual loads at +0x28 followed by a call through that register; 249 candidates before removing unrelated vtables/stale register uses. Reviewed candidate contexts with stack halfword tag stores and searched for literal 0x5D/0x9A setters. None supplied a proven match. This bounded scan does not cover arbitrary adjusted-vptr/direct/ARM registrations or all dynamic tag producers. | No callback can honestly be listed as a proven 0x5D/0x9A consumer from this scan, and no universal absence finding follows. |
+| Generic E2G tag-set registrations prevent a constant-only proof. IBehavior, IReactionTriggerStrategy and IWantsToRunStrategy load caller-supplied tag values from set nodes and call E2G Subscribe. IVisuallyVerifyAction also passes a caller-supplied tag. | UNKNOWN: exact tag producers and startup presence | IBehavior selected registration path 0x005BC93C..0x005BC99A: tag load node+0xE 0x005BC97C, slot+0x28 0x005BC98C, call 0x005BC99A. IReactionTriggerStrategy corresponding path 0x0060B49C..0x0060B4FA, tag load 0x0060B4DC, call 0x0060B4FA. IWantsToRunStrategy path 0x00613398..0x006133F6, tag load 0x006133D8, call 0x006133F6. IVisuallyVerifyAction selected path 0x00568890..0x00568910: argument copied to stack 0x005688A4, Subscribe 0x005688CA. These paths obtain Robot::GetExternalInterface via PLT 0x004A5704. | UNKNOWN whether any caller supplies 0x5D/0x9A, and whether such an owner exists before the first Init broadcast. Full caller tag-set provenance was not recovered; no specific owner is invented. |
+| A further local subscriber family is VizManager::SubscribeToEngineEvents. Its seven registration helpers have not all been followed to their supplied tag values. | UNKNOWN | 0x006C073E..0x006C0778 calls 0x006C077C, 0x006C083C, 0x006C08FC, 0x006C09BC, 0x006C0A7C, 0x006C0B3C and 0x006C0BFC with external interface/manager/handle-vector tuple. | UNKNOWN tag membership, local callback effects and first-broadcast construction order for this family. This is an addressed unread link, not a no-effect finding. |
+| Does the initial EndOfMessage cause a supported effect that the later broadcast cannot reproduce? | UNKNOWN | Sender/tag/dispatch paths above are established. A complete 0x9A subscription census and each matching callback's state/phase reads are still absent. | Cannot compare startup-only effects without the recipients. M1-055's required internal effect remains open; public event exclusion is unchanged. |
+
+**Verdict: UNKNOWN** — actual local dispatch is confirmed, but every subscriber and the early-versus-later effect comparison
+are not established. Follow-up must close dynamic tag-set producers, remaining subscription families and owner construction order,
+then inspect only matching callbacks to a supported endpoint. There is no claim that the first internal event is dispensable.
+
 ## Remaining boundaries and validation
+
+Revision 76e8f206 adds question 6 and tightens the endpoint criterion. The earlier InitInternal REQUIRED verdict is withdrawn under that criterion; its observed registration/flag stores remain evidence, with endpoint reachability UNKNOWN. The UI flag has a supported connection-input consequence: ProcessMessages calls ProcessMessageBytes at 0x00662878 (PLT 0x004BB3DC -> 0x00661720), enabling game commands such as ConnectToRobot, whose checked M1-025 path adds a robot connection at 0x004ED074. The existing M1-024 evidence expressly places synchronous game-message dispatch before robot processing. This ties its readiness/dispatch gate to a supported connection behavior rather than to a bare internal reader.
 
 No existing record is contradicted by the demonstrated effects. M1-054 and M1-056 remain incomplete by their own current text;
 the positive findings do not settle the whole startup path or upgrade a status.
 The vtable address-point clarification in section 2 is a citation precision issue, not a different function.
 
-Each requested routine has an addressed positive effect or a bounded NO EFFECT verdict. Unread callees are explicitly named
+Each requested routine has an addressed supported effect, a bounded NO EFFECT verdict or an explicit UNKNOWN with unread links. Unread callees are explicitly named
 where their completeness remains UNKNOWN: UI callback/comm machinery, full audio dispatch descendants,
 FactoryTestLogger GetNumLogs/ArchiveLogs, RCM construction/resource-path leaves and Android identity initialization.
 A manager can assign a follow-up only where a supported behavior needs those details, or record an authorized machinery exclusion;
