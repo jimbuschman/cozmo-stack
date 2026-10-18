@@ -105,7 +105,7 @@
 | 61w3a | B-M1-3 | DONE per status/B-M1-3.md (B-M1-2 check FAIL: dead engine on a supplied config; public ... | DONE (4/4 items; 2 MISSING groups) — B-M1-3, Codex builder, 2026-10-17. Commit: f86b0702 (published). | `research/20261017-b-m1-3-check.md` |
 | 61w3b | B-M1-4 | DONE per status/B-M1-4.md (engine readiness: StartEngine, loading, ready/failed, state-... | DONE (10/10 checked items built; 6 MISSING boundaries) | `research/20261017-b-m1-4-check.md` |
 | 61w3c | B-DELIV-1 | DONE per status/B-DELIV-1.md (app delivery outside engine locks; B-M2M15-2 finding 1); ... | DONE (3/3 items; 0 new MISSING) | `research/20261017-b-deliv-1-check.md` |
-| 61w3d | B-M1-5 | DONE per status/B-M1-5.md (fixes for B-M1-4 and B-DELIV-1; names in stack load order, o... | DONE (12/12 checked items; 6 MISSING) | none found |
+| 61w3d | B-M1-5 | DONE per status/B-M1-5.md (fixes for B-M1-4 and B-DELIV-1; names in stack load order, o... | DONE (12/12 checked items; 7 MISSING) | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

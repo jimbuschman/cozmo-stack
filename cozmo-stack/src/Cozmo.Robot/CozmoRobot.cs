@@ -514,15 +514,15 @@ public sealed partial class CozmoRobot : IDisposable
         var response = new TaskCompletionSource<RobotConnectionResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
         var ready=new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         void on(RobotConnectionResponse r)=>response.TrySetResult(r);
-        void state(EngineStateTransition transition){if(transition.NewState==3)ready.TrySetResult(true);}
+        void delivered()=>ready.TrySetResult(true);
         void failed(EngineStartupFailure failure)
         {var error=new IOException(failure.Reason);ready.TrySetException(error);response.TrySetException(error);}
-        robot.Engine.ConnectionResponse+=on;robot.Engine.EngineStateChanged+=state;robot.Engine.EngineStartupFailed+=failed;
+        robot.Engine.ConnectionResponse+=on;robot.Engine.ReadyDeliveredInternal+=delivered;robot.Engine.EngineStartupFailed+=failed;
         RobotConnectionResponse resp;
         try
         {
             using var reg=cancellationToken.Register(()=>{ready.TrySetCanceled(cancellationToken);response.TrySetCanceled(cancellationToken);});
-            if(robot.Engine.IsReady)ready.TrySetResult(true);
+            if(robot.Engine.IsReadyDelivered)ready.TrySetResult(true);
             else if(robot.Engine.StartupFailed)failed(new(robot.Engine.StartupFailureReason!));
             await ready.Task.ConfigureAwait(false); // M2-021: host app waits; direct ConnectToRobot itself retains no state gate.
             robot.ConnectToRobot(address,isSimulated);
@@ -530,7 +530,7 @@ public sealed partial class CozmoRobot : IDisposable
         }
         catch {robot.Dispose();throw;}
         finally
-        {robot.Engine.ConnectionResponse-=on;robot.Engine.EngineStateChanged-=state;robot.Engine.EngineStartupFailed-=failed;}
+        {robot.Engine.ConnectionResponse-=on;robot.Engine.ReadyDeliveredInternal-=delivered;robot.Engine.EngineStartupFailed-=failed;}
         if (resp.Result != RobotConnectionResult.Success)
         {
             robot.Dispose();

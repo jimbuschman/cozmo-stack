@@ -299,7 +299,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
         // R46-1..R46-4: collect all four vectors before Results; production retains the collect history.
         bool freshCollect = beginCollect();
         beforeCollect?.Invoke();
-        var files = CollectFiles(new[] { animations, FindConfigDirectory(assetsRoot, "animations") }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
+        string? configAnimations=FindConfigDirectory(assetsRoot,"animations");
+        var files = CollectFiles(new[] { animations, configAnimations }, SourceLogDispatch.GetSink(sourceLog, log), beforeStat);
         string? cubeRoot=cubeResourceRoot is null?assetsRoot:cubeResourceRoot();
         string? cubeDirectory=cubeResourceRoot is null?FindConfigDirectory(assetsRoot,"lights/cubeLights")
             :cubeRoot is null?null:Path.Combine(cubeRoot,CubeLightAnimations.AnimationDirectory);
@@ -317,8 +318,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
         Eye.ClippingWarningEnabled = false;
         float ratio = 0.7f / files.Count;
         // Operator M1-055: deterministic stack definition sequence, first definition wins.
-        // Parsing/definition is serialized in ordinal file-path order; phone worker interleaving is not reproduced.
-        files.Sort(StringComparer.Ordinal);
+        // One resource-relative sequence, independent of a resources-root versus nested-assets-root input.
+        // Clips retain their file order; phone worker interleaving is not reproduced.
+        string definitionRoot=configAnimations is null?Path.GetFullPath(assetsRoot)
+            :Path.GetFullPath(Path.Combine(configAnimations,"..","..",".."));
+        files=files.OrderBy(file=>Path.GetRelativePath(definitionRoot,file).Replace('\\','/'),StringComparer.Ordinal).ToList();
         foreach(string file in files)lib.LoadAnimationFile(file,ratio);
         Eye.ClippingWarningEnabled = true; // L10: only after Process returns normally.
         SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationsInternal.LoadTime", FormattableString.Invariant($"Time to load animations = {MonotonicMilliseconds() - started:F2} ms"));

@@ -19,8 +19,12 @@ public sealed partial class CozmoEngine
     private float _lastPolledProgress;
     public byte EngineState=>Volatile.Read(ref _engineState);
     private volatile bool _hostReady;
-    /// <summary>True once names, EndOfMessage and the ready notification have reached the host dispatcher.</summary>
-    public bool IsReady=>EngineState==3 && _hostReady && !StartupFailed;
+    /// <summary>The engine-side ready state; native state3 is stored before its host reports are dispatched.</summary>
+    public bool IsReady=>EngineState==3 && !StartupFailed;
+    /// <summary>True once preceding names/End and the ready notification reach the host dispatcher.</summary>
+    public bool IsReadyDelivered=>IsReady && _hostReady;
+    // Host-wait plumbing is read at dispatch, so a waiter installed after publication cannot miss readiness.
+    internal event Action? ReadyDeliveredInternal;
     private volatile bool _startupFailed;
     public bool StartupFailed=>_startupFailed;
     public string? StartupFailureReason {get;private set;}
@@ -67,7 +71,7 @@ public sealed partial class CozmoEngine
         Volatile.Write(ref _engineState,state); // native store precedes notification.
         var report=new EngineStateTransition(old,state);
         DeliverAnimationReportToApp(0x7B,new[]{old,state},CaptureAppEvent(EngineStateChanged,report),
-            beforeDispatch:()=>_hostReady=state==3);
+            beforeDispatch:()=>{_hostReady=state==3;if(state==3)ReadyDeliveredInternal?.Invoke();});
         AnimationMessages.Deliver(0x7B,true,report);
         EmitSourceLog(EngineLogLevel.Event,null,"app.engine.state",EngineStateName(old),
             new Dictionary<string,string>{{"$data",EngineStateName(state)}});

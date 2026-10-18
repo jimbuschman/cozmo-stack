@@ -28,7 +28,9 @@ public sealed class StartupDeliveryRegressionTests
     public async Task ShippedStartupPublishesTheWholeListBeforeReadyAndThenProcessesRobotTraffic()
     {
         var order=new ConcurrentQueue<string>();var names=new ConcurrentQueue<string>();var progress=new ConcurrentQueue<float>();
+        var publications=new ConcurrentQueue<string>();
         var stateLogs=new ConcurrentQueue<EngineLogEntry>();
+        bool readyEngineSeen=false,readyHostSeen=false;
         var ready=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions
         {
@@ -36,20 +38,27 @@ public sealed class StartupDeliveryRegressionTests
             BeforeStart=e=>
             {
                 e.LogEntry+=entry=>{if(entry.Name=="app.engine.state")stateLogs.Enqueue(entry);};
-                e.EngineStateChanged+=s=>{order.Enqueue($"{s.OldState}->{s.NewState}");if(s.NewState==3){Assert.True(e.IsReady);ready.TrySetResult();}};
+                e.EngineStateChanged+=s=>
+                {
+                    order.Enqueue($"{s.OldState}->{s.NewState}");publications.Enqueue($"{s.OldState}->{s.NewState}");
+                    if(s.NewState==3){readyEngineSeen=e.IsReady;readyHostSeen=e.IsReadyDelivered;}
+                };
                 e.EngineStartupFailed+=f=>ready.TrySetException(new IOException(f.Reason));
-                e.EngineLoading+=p=>progress.Enqueue(p.Ratio);
-                e.AnimationAvailable+=a=>{Assert.False(e.IsReady);names.Enqueue(Encoding.UTF8.GetString(a.Name.Span));order.Enqueue("name");};
-                e.AnimationAnnouncementsEnded+=_=>{Assert.False(e.IsReady);order.Enqueue("end");};
+                e.EngineLoading+=p=>{progress.Enqueue(p.Ratio);publications.Enqueue("progress");if(e.IsReadyDelivered)ready.TrySetResult();};
+                e.AnimationAvailable+=a=>{Assert.True(e.IsReady);Assert.False(e.IsReadyDelivered);names.Enqueue(Encoding.UTF8.GetString(a.Name.Span));order.Enqueue("name");publications.Enqueue("name");};
+                e.AnimationAnnouncementsEnded+=_=>{Assert.True(e.IsReady);Assert.False(e.IsReadyDelivered);order.Enqueue("end");publications.Enqueue("end");};
             }
         });
         await ready.Task.WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.True(readyEngineSeen);Assert.True(readyHostSeen);
         // Independent flatbuffer root-vector/name-field and JSON-file census: 289 .bin + 4 .json files, 997 distinct names.
         // Expected values are not obtained from AnimationLibrary, ClipNames or another production loader.
         Assert.Equal(997,names.Count);Assert.Equal(997,names.Distinct().Count());Assert.DoesNotContain("_PROCEDURAL_",names);
         Assert.Equal(new[]{"anim_bored_01","anim_bored_02","anim_bored_event_01","anim_bored_event_02","anim_bored_event_03"},names.Take(5));
         Assert.Equal(new[]{"anim_qa_firmwaremessaging_01","anim_triple_backup","soundTestAnim"},names.TakeLast(3));
         Assert.Equal(new[]{"0->1","1->2"}.Concat(Enumerable.Repeat("name",997)).Concat(new[]{"end","2->3"}),order);
+        Assert.Equal(new[]{"end","2->3","progress"},publications.TakeLast(3));
+        Assert.Contains("progress",publications.TakeWhile(p=>p!="name"));
         Assert.Equal(new[]{"Stopped","WaitingForUIDevices","LoadingData"},stateLogs.Select(l=>l.Text));
         Assert.Equal(new[]{"WaitingForUIDevices","LoadingData","Running"},stateLogs.Select(l=>l.Data["$data"]));
         // Poll copies progress before joining the worker; the completion tick need not broadcast ratio 1.
@@ -86,6 +95,34 @@ public sealed class StartupDeliveryRegressionTests
         finally{Directory.Delete(root,true);}
     }
 
+    // reach: production — public ConnectAsync and BeforeStart; a slow startup observer lets native ready publish before ConnectAsync installs its waiter.
+    [Fact]
+    public async Task ConnectAsyncDoesNotMissReadyPublishedWhileCreateIsDeliveringAnEarlierReport()
+    {
+        string root=Directory.CreateTempSubdirectory("late-ready-waiter-").FullName;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root,"animations"));File.WriteAllText(Path.Combine(root,"animations","a.json"),"{\"a\":[]}");
+            CozmoEngine? engine=null;bool sourceReadySeen=false;using var cancel=new CancellationTokenSource(TimeSpan.FromSeconds(15));
+            var connecting=CozmoRobot.ConnectAsync(IPAddress.Loopback,isSimulated:true,cancellationToken:cancel.Token,
+                engineOptions:new CozmoEngineOptions{ResourcesPath=root,BlockPoolPath="",BeforeStart=e=>
+                {
+                    engine=e;e.EngineStateChanged+=s=>
+                    {
+                        if(s.OldState==0&&s.NewState==1)sourceReadySeen=SpinWait.SpinUntil(()=>e.IsReady,TimeSpan.FromSeconds(5));
+                    };
+                }});
+            try
+            {
+                Assert.True(sourceReadySeen);Assert.NotNull(engine);
+                Assert.True(SpinWait.SpinUntil(()=>engine!.ConnectionState>=1,TimeSpan.FromSeconds(5)));
+                Assert.True(engine!.IsReadyDelivered);
+            }
+            finally{cancel.Cancel();await Assert.ThrowsAnyAsync<OperationCanceledException>(()=>connecting);}
+        }
+        finally{Directory.Delete(root,true);}
+    }
+
     // reach: unit (direct loader input substitutes startup; exercises duplicate definition ownership, not host startup).
     [Fact]
     public void DuplicateNameKeepsItsFirstDefinitionAndItsSingleListPosition()
@@ -98,6 +135,23 @@ public sealed class StartupDeliveryRegressionTests
             File.WriteAllText(Path.Combine(dir,"z.json"),"{\"same\":[{\"Name\":\"EventKeyFrame\",\"triggerTime_ms\":99,\"event_id\":\"TAPPED_BLOCK\"}]}");
             var library=AnimationLibrary.Open(root);Assert.Equal(new[]{"same"},library.ClipNames);
             Assert.Equal(1u,library.GetClip("same")!.Keyframes.Single().TriggerTimeMs);
+        }
+        finally{Directory.Delete(root,true);}
+    }
+
+    // reach: unit (direct library loads substitute startup; checks the manager's resource-relative ordering for both accepted root shapes).
+    [Fact]
+    public void RelativeDefinitionOrderIsTheSameForResourcesAndAssetsRoots()
+    {
+        string root=Directory.CreateTempSubdirectory("relative-definition-order-").FullName;
+        try
+        {
+            string assets=Directory.CreateDirectory(Path.Combine(root,"assets","animations")).FullName;
+            string config=Directory.CreateDirectory(Path.Combine(root,"config","engine","animations")).FullName;
+            File.WriteAllText(Path.Combine(assets,"z.json"),"{\"asset_clip\":[]}");
+            File.WriteAllText(Path.Combine(config,"a.json"),"{\"config_clip\":[]}");
+            Assert.Equal(new[]{"asset_clip","config_clip"},AnimationLibrary.Open(root).ClipNames);
+            Assert.Equal(new[]{"asset_clip","config_clip"},AnimationLibrary.Open(Path.Combine(root,"assets")).ClipNames);
         }
         finally{Directory.Delete(root,true);}
     }

@@ -80,7 +80,7 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// </summary>
     public Func<float, float, CancellationToken, Task>? DriveStraight { get; set; }
 
-    /// <summary><c>Robot::Broadcast(MessageEngineToGame(RobotCliffEventFinished))</c> (0x006052D2, 0x006052DA): host view through the engine FIFO.</summary>
+    /// <summary>The existing local seam at RobotCliffEventFinished (0x006052D2/0x006052DA); its native host/payload split remains MISSING.</summary>
     public event Action? RobotCliffEventFinished;
 
     /// <summary>Subscribes the constructor's tags: CliffEvent (0x22) and RobotStopped (0x34). ChargerEvent (0x39) has no broadcaster in this stack.</summary>
@@ -306,12 +306,12 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
         ReportMissing("IBehavior::BehaviorObjectiveAchieved(BehaviorObjective, bool) body (veneer 0x008CC10C to PLT 0x4B2C64) is not in the inventory; ReactToCliff only logs the call");
     }
 
-    /// <summary><c>SendFinishedReactToCliffMessage</c> 0x006052BC: an empty <c>RobotCliffEventFinished</c> wrapped in <c>MessageEngineToGame</c> and broadcast. It does not use <c>this</c>.</summary>
+    /// <summary>The existing local notification at SendFinishedReactToCliffMessage0x006052BC; native host/payload recovery is outside B-M1-5.</summary>
     private void SendFinishedReactToCliffMessage()
     {
         Log("broadcast RobotCliffEventFinished");
-        if((_robot??Context?.Robot) is {} robot)robot.Engine.QueueAppBroadcast(RobotCliffEventFinished);
-        else RobotCliffEventFinished?.Invoke(); // Standalone behavior unit, no engine owner.
+        RobotCliffEventFinished?.Invoke();
+        ReportMissing("M7-019 RobotCliffEventFinished 0x006052D2..0x006052DA: native host/local report split and payload are outside the checked B-M1-5 rows; existing local seam remains synchronous");
     }
 
     /// <summary><c>UpdateInternal</c> 0x00605408: +0x125 set: cleared and the behaviour ends (returns 2); else the base <c>IBehavior::UpdateInternal</c> (tail call 0x00605418).</summary>
