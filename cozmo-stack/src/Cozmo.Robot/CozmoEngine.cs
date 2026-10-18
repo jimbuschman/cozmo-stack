@@ -279,7 +279,9 @@ internal sealed class RobotConnectionData
 {
     /// <summary>B20: the arrived-message kinds. 1 (connect request) is never pushed: RCD::ReceiveData drops that marker.</summary>
     internal enum ArrivedKind : byte { Data = 0, ConnectRequest = 1, Connected = 2, Disconnected = 3 }
-    internal readonly record struct Arrived(ArrivedKind Kind, IPEndPoint? Address, byte[]? Data);
+    internal readonly record struct Arrived(ArrivedKind Kind, IPEndPoint? Address, byte[]? Data, double QueuedAtMs);
+    private readonly Func<double> _netTime;
+    internal RobotConnectionData(Func<double> netTime)=>_netTime=netTime;
 
     private readonly object _mutex = new();
     private readonly Queue<Arrived> _queue = new();
@@ -308,8 +310,12 @@ internal sealed class RobotConnectionData
             case ReceiverMarker.OnDisconnected: kind = ArrivedKind.Disconnected; break;
             default: kind = ArrivedKind.Data; break;
         }
-        byte[]? data = e.Data is null ? null : (byte[])e.Data.Clone();
-        lock (_mutex) _queue.Enqueue(new Arrived(kind, e.Address, data));
+        lock (_mutex)
+        {
+            double stamp=_netTime(); // native takes the timestamp after lock, before vector copy.
+            byte[]? data = e.Data is null ? null : (byte[])e.Data.Clone();
+            _queue.Enqueue(new Arrived(kind,e.Address,data,stamp));
+        }
         Queued?.Invoke();
     }
 
@@ -317,7 +323,7 @@ internal sealed class RobotConnectionData
     /// <summary>QueueConnectionDisconnect (CC29): one OnDisconnected marker onto the queue, on the engine thread.</summary>
     public void QueueConnectionDisconnect()
     {
-        lock (_mutex) _queue.Enqueue(new Arrived(ArrivedKind.Disconnected, _address, null));
+        lock (_mutex) _queue.Enqueue(new Arrived(ArrivedKind.Disconnected, _address, null,_netTime()));
         Queued?.Invoke();
     }
 
@@ -357,12 +363,13 @@ internal sealed class RobotConnectionManager
     private readonly CozmoEngine _engine;
     private readonly IEngineTransport _t;
     private readonly Queue<byte[]> _data = new();       // RCM+0x20, touched only on the engine thread
-    public RobotConnectionData Rcd { get; } = new();
+    public RobotConnectionData Rcd { get; }
+    internal RecentStatsAccumulator ReceiveQueueStats { get; }=new(100);
 
     /// <summary>The disconnect reason byte, RCM+0x38 (CC19). Its only reader is a DAS event (CC20).</summary>
     public RobotDisconnectReason Reason { get; set; }
 
-    public RobotConnectionManager(CozmoEngine engine, IEngineTransport t) { _engine = engine; _t = t; }
+    public RobotConnectionManager(CozmoEngine engine, IEngineTransport t) { _engine = engine; _t = t; Rcd=new(()=>engine.NetTimeStampMs()); }
 
     // fidelity: M1-025
     /// <summary>RCM::Connect (CB4, B21): RCD Clear; address to RCD+0x30; RT Disconnect(addr); RT Connect(addr); state 1. It does not reset the reason (CC19).</summary>
@@ -422,6 +429,8 @@ internal sealed class RobotConnectionManager
     {
         while (Rcd.TryPop(out var a))
         {
+            // fidelity: M1-061 — sample every arrival kind at pop, ignoring only the zero timestamp.
+            if(a.QueuedAtMs!=0)ReceiveQueueStats.Add(_engine.NetTimeStampMs()-a.QueuedAtMs);
             switch (a.Kind)
             {
                 case RobotConnectionData.ArrivedKind.Data: HandleDataMessage(a); break;
@@ -1161,8 +1170,9 @@ public sealed partial class EngineRobot
     /// origin check. Then the part before the origin check: the stored fields (RS1..RS11; the robot clock the cube path
     /// reads, RS1; the head angle, lift angle, cliff data, IMU, treads, status bits, SetOnCharger, the body-radio-mode
     /// count (<see cref="CountBodyRadioMode"/>) and MovementComponent::Update, which the devices apply in that order, see
-    /// CozmoRobot.RouteToDevices and CozmoSensors). SetOnRamp (+0x316) has native BA/BB writers
-    /// (0x005380D2/0x005381E6), whose later build belongs to M2-024; so every state takes the off-ramp branch: ContainsOriginID(state+8)
+    /// CozmoRobot.RouteToDevices and CozmoSensors). BA/BB call SetOnRamp
+    /// (0x005380D2/0x005381E6), but no Ramp instance is reachable (M2-024): entering warns without setting +0x316,
+    /// leaving is an equality return. Every supported state takes the off-ramp branch: ContainsOriginID(state+8)
     /// (0x00512C3E..0x00512C4A) must pass, otherwise the warning "Received RobotState with originID" and the rest (the
     /// pose, the history and the later steps) is skipped (0x00512EC4..0x00512F12). Returns whether the state passed the
     /// time-sync gate; <see cref="AcceptedState"/> says whether it also passed the origin check.
@@ -1324,6 +1334,7 @@ public sealed partial class EngineRobot
         // CD2/CD12: after that, BlockTapFilter (0x00513EA4), BlockFilter, CheckDisconnected, ConnectToRequested
         // (0x0051422A..0x00514236), CubeLight::Update(true) (0x00514468) and BodyLight (0x00514470).
         if (Engine.RobotComponentsUpdate is { } components) Engine.RunIsolated(components);
+        UpdateCurrentImageLatency(now); // M1-061: full Robot.Update path only, 0x00514386.
     }
 }
 
@@ -1719,6 +1730,7 @@ internal sealed partial class RobotManager
 /// MessageHandler, RobotManager and the firmware header load. Game messages are the calls on this class; they are
 /// queued and dispatched synchronously at the start of the next tick (CD7).
 /// </summary>
+// fidelity: M1-061, M1-062
 public sealed partial class CozmoEngine : IDisposable
 {
     /// <summary>The only robot id the engine uses (B2: robot 1).</summary>
@@ -2066,8 +2078,7 @@ public sealed partial class CozmoEngine : IDisposable
     ///  3. UpdateRobotConnection → MessageHandler::ProcessMessages: every robot-message handler runs here (CD10);
     ///  4. NeedsManager::Update on this tick's BaseStationTimer seconds (CD10/CC10, 0x004ED632..0x004ED640);
     ///  5. UpdateAllRobots → Robot::Update (CD11).
-    /// UpdateLatencyInfo and the audio controller are
-    /// outside this stack. Startup states 0/1/2 are handled before state3; firmware update is unsupported.
+    ///  6. UpdateLatencyInfo (M1-061); the audio-controller tail remains M6's. Startup states 0/1/2 are handled before state3; firmware update is unsupported.
     /// </summary>
     private int TickAt(long elapsedNs)
     {
@@ -2113,6 +2124,7 @@ public sealed partial class CozmoEngine : IDisposable
                     // fidelity: M1-053
                     PublishRobotState(r); // UpdateAllRobots, 0x0052F6E4..0x0052F716.
                 }
+                UpdateLatencyInfo(); // M1-061, once per eligible state-3 tick after all robots.
             }
             finally { _inTick = false; }
         }

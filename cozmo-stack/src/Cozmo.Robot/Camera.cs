@@ -276,6 +276,8 @@ public sealed class CozmoCamera
     // A3: the per-event-time counter (+0x128) and the time it is keyed to (+0x130)
     private int _imagesThisTick;
     private double _tickTime = double.NaN;
+    // fidelity: M1-061 — synchronous Impl event-time store, separate from this camera's NaN cap key.
+    internal Action<double>? CompletedImageEventTime;
 
     /// <summary>Raised once per complete frame.</summary>
     public event Action<CameraFrame>? FrameReceived;
@@ -424,6 +426,7 @@ public sealed class CozmoCamera
         warning = null;
         if (EventTime is not { } time) return true;
         double t = time();
+        CompletedImageEventTime?.Invoke(t);
         if (t != _tickTime)
         {
             _tickTime = t;

@@ -308,6 +308,7 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M3-002, M3-005
         Camera.TimeSynced = () => Engine.Robot?.TimeSynced ?? false;
         Camera.EventTime = () => Engine.Timer.Seconds;
+        Camera.CompletedImageEventTime=t=>Engine.Robot?.ObserveCompletedImageEvent(t);
         Camera.Log += l => Engine.Log(l);
         CameraSettings.SourceLog += (level, channel, key, text) => Engine.EmitSourceLog(level, channel, key, text);
         // fidelity: M3-022

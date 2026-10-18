@@ -112,6 +112,7 @@ public sealed partial class EngineRobot
     private readonly SubscriptionSignal<byte> _idleMessages = new();
     private readonly SubscriptionOwners _messagingHandles = new(), _idleHandles = new(), _traceHandles = new();
     private bool _lastStateHandled;
+    private List<(RobotMessageId Tag,Action<RobotMessage> Call)>? _pendingImpl;
     private readonly HashSet<RobotMessageId> _implTags = new();
 
     // Existing RobotToEngine handlers retain their original order and isolation.
@@ -125,6 +126,7 @@ public sealed partial class EngineRobot
         // external interface, so HasExternalInterface is true on this path.
         _idleHandles.Add(_idleMessages.Subscribe(0x54, _ => Idle.Cancel()));
         InitCheckedDevSubscribers();
+        _pendingImpl=new(); // Collect constructor registrations before materializing the native Impl order.
         Engine.PathComponentConstructed?.Invoke(this); // M12-032: the component owns its one first C6 subscription.
         // Backup is the first C9 subscriber, constructed with NVStorage before Impl.
         Engine.Backup?.AttachRobot(this);
@@ -178,23 +180,33 @@ public sealed partial class EngineRobot
         // Filebuf destruction syncs/closes with no ClosingLogFile diagnostic.
         Lifetime.Bind(0x518, _ => { _traceHandles.Retire(); _imuLog.Destroy(); _messagingHandles.Retire(); });
         // Only the existing live device handlers are bridged here. No subscriber is invented for an unported tag.
+        // fidelity: M2-024
+        InitSettlingMessageHandlers();
         RobotMessage[] deviceMessages = { new ObjectMoved(), new ObjectStoppedMoving(), new ObjectTapped(),
             new ObjectConnectionState(), new ObjectPowerLevel(), new ObjectUpAxisChanged(), new ObjectAvailable(),
             new DefaultCameraParams(), new ImageChunk(), new ImageImuData(), new CliffEvent(), new PotentialCliff(),
             new RobotStopped(), new FallingStarted(), new FallingStopped(), new MotorCalibration(), new MotorAutoEnabled() };
         foreach (var tag in deviceMessages.Select(m => m.Id))
             if ((byte)tag!=0xB6 && !_implTags.Contains(tag)) AddMessage(tag, _ => { },"Impl", routeDevice:true);
+        // 37 native positions at 0x00532A7C..0x00533234; omitted entries stay omitted.
+        byte[] order={0xB1,0xD2,0xB8,0xF3,0xD0,0xB4,0xB5,0xD7,0xDD,0xDE,0xB3,0xD4,0xC0,0xC1,0xF2,0xF4,0xBF,0xC7,0xC2,0xC3,0xC9,0xEE,0xD1,0xD8,0xD3,0xED,0xC8,0xCE,0xF0,0xF1,0xBA,0xBB,0xBC,0xBD,0xB2,0xB7,0xDC};
+        var pending=_pendingImpl;_pendingImpl=null;
+        foreach(byte tag in order)
+            foreach(var item in pending.Where(p=>(byte)p.Tag==tag))
+                _messagingHandles.Add(SubscribeMessage(item.Tag,item.Call,"Impl"));
     }
     private ImuDiagnosticLog _imuLog = null!;
     internal ImuDiagnosticLog ImuLog => _imuLog;
     private void AddMessage(RobotMessageId tag, Action<RobotMessage> callback, string name = "Impl", bool routeDevice = false, SubscriptionOwners? owners = null)
     {
         if (name == "Impl") _implTags.Add(tag);
-        (owners ?? _messagingHandles).Add(SubscribeMessage(tag, m =>
+        void Deliver(RobotMessage m)
         {
             callback(m);
             if (name == "Impl" || routeDevice) Engine.DeviceRoute?.Invoke(m, _lastStateHandled);
-        }, name));
+        }
+        if(name=="Impl" && _pendingImpl is {} pending)pending.Add((tag,Deliver));
+        else (owners ?? _messagingHandles).Add(SubscribeMessage(tag,Deliver,name));
     }
     internal RetainedSubscription SubscribeMessage(RobotMessageId tag, Action<RobotMessage> callback, string name)
     {
