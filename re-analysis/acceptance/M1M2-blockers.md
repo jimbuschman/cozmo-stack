@@ -59,6 +59,11 @@ stay required with their owners; the new standard does not dismiss them.
 
 ## Sequence
 
+**Update (2026-10-18, later):** B-M1-6 (86d287d6, after builder follow-up 84a6430b) both Opus fix reviews FAIL
+(`research/20261018-b-m1-6-check-readiness.md`, `-delivery.md`): flaky ready tests, a missing store-load fence in the
+ready/failure handoff, and four census rows to reclassify as MISSING (face id change, pet, located-object deletion,
+pose state). Production startup and delivery otherwise verified. Fixes in B-M1-7.
+
 **Update (2026-10-18):** B-M1-5 (fd73bc88, 06b86940) fixed the B-M1-4/B-DELIV-1 blockers; both Opus fix reviews FAIL
 (`research/20261018-b-m1-5-check-readiness.md`, `-delivery.md`): ConnectAsync can miss its ready wake-up; three
 broadcasts still inline. The manager's B-M1-5 duplicate-name clarification was wrong (native keeps the first position
