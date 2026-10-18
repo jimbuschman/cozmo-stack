@@ -49,15 +49,13 @@ stands. Nothing new starts outside the current layer.
   **Ended (operator, 2026-10-17):** Claude resumes manager and Opus verification; Codex returns to the research and
   builder lanes. Builder commits published during the handoff (B-M15-7, 2fc72bc3) still get the Opus verifier.
 
-- **Now (2026-10-18, end of day):** **M1-transport and M2-protocol have no implementation gap left.** Every record
-  is EXACT_SOURCE, a confirmed policy or EQUIVALENT, except M1-033 (HARDWARE_ONLY). Settled today: M1-054, M1-055,
-  M1-056, M1-061, M2-018..M2-024. B-M1-10 gates connection-time needs persistence off the robot: the robot is safe to
-  connect again (no 0x194000 write on any production path; `research/20261018-b-m1-10-check.md`). B-M1-10's check
-  FAILed on two M15-side items (the needs device file with `--state-dir` uses the engine clock; a gutted Lab test):
-  B-M1-11 PASS (`research/20261018-b-m1-11-check.md`): the needs device file is gated too. Next: the operator runs the M1+M2 hardware script
-  (`m1m2-hw`, `acceptance/hardware/scripts/m1m2-hw-draft.md`); the manager judges the bundle; then ACCEPTED.
+- **Now (2026-10-18, evening): M1-transport and M2-protocol are ACCEPTED**, the first layers of the project to get
+  there (accepted commit 4f184775; bundle `acceptance/hardware/20261018-170546-M1M2-HW`, manager judgement in its
+  README). Every check was as source once two tool comparison bugs were set aside (fixed in the tool). The robot has no
+  needs record (case 1): the stack writes nothing where the original would write one (B-M1-10 gate, M15-014/M15-030).
+  **Next layer: M3 + M4** (devices and motor control), per "The plan".
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
-  `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
+  `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **M1-transport and M2-protocol are ACCEPTED** (2026-10-18).
 - **Jobs:** `re-analysis/jobs/STATUS.md` (generated) shows, per builder job, the queue note, the status-file state and any
   verification evidence file. Implemented (status file DONE), verified (a check file exists; read it for the verdict) and
   accepted (subsystem review state) are separate and are never inferred from one another.
@@ -230,6 +228,7 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 | (this commit) | M1-transport | device reset on RemoveRobot; M1-025, M1-015 settled EXACT_SOURCE |
 | ce859bf | M1-transport | M1-024 decay bracket snapshot; M1-044/M1-015 warning log level; regression coverage |
 | c8af57e | M1/M2 and transferred recipients | Cited manager/policy disposition; four new M1 gap records; re-approved 13 affected inventories |
+| 4f184775 | M1-transport, M2-protocol | **ACCEPTED** (2026-10-18): all records settled, policy or equivalent; M1-033 by robot runs; M1M2-HW bundle 20261018-170546 judged as source |
 
 ## Open decisions for the operator
 

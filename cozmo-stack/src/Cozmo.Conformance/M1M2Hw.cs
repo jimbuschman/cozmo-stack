@@ -39,7 +39,7 @@ public static class M1M2Hw
     {
         new("STARTUP", "Public startup through BeforeStart: UpdateEngineState 0->1, 1->2, loading progress, the animation list, EndOfMessage, 2->3, delivered readiness", new[] { "M1-054", "M1-055", "M1-056", "M1-058" }, false),
         new("CONNECT", "ConnectToRobot after delivered readiness: ConnectionResponse, firmware, time sync, first full state, ready to stream, then BlockPoolData after the response", new[] { "M1-040", "M1-042", "M2-021" }, false),
-        new("NEEDS_READ", "The connection-time needs read of NV 0x194000: exactly one READ, no ERASE or WRITE of 0x194000 for the whole run, the robot's blob saved", new[] { "M3-033", "M1-054" }, false),
+        new("NEEDS_READ", "The connection-time reads of NV 0x194000: the backup sweep and the needs read (two READs), no ERASE or WRITE of 0x194000 for the whole run, the robot's blob saved", new[] { "M3-033", "M1-054" }, false),
         new("LATENCY", "LatencyMessage on the C# API: cadence, constant and empty fields, receive-queue and image values; nothing while the game is paused", new[] { "M1-061", "M1-062" }, false),
         new("WIRE", "The link over the whole run: frame sizes and types, packing, sequence range, resends, and any 0xBA/0xBB/0xC3/0xB0/0xEC/0xB1/0xB2/0xB7/0xBC/0xBD arrivals; the operator taps the robot once", new[] { "M1-033", "M2-024" }, true),
         new("DISCONNECT", "Dispose: the DisconnectRequest frame, the end of inbound traffic, a bounded return", new[] { "M1-019", "M1-044" }, false),
@@ -403,15 +403,17 @@ internal sealed class M1M2Run
         if (!double.IsNaN(median) && Math.Abs(median - M1M2Hw.ExpectedLatencyPeriodMs) > 120) problems.Add($"median period {median:F0} ms, expected about {M1M2Hw.ExpectedLatencyPeriodMs} ms");
         if (paused.Count > 0) problems.Add($"{paused.Count} LatencyMessages while paused");
         if (after.Count == 0) problems.Add("none after resuming");
+        // Compare values, not serialized JSON (System.Text.Json escapes the '+' of "+inf").
+        static string V(JsonNode? n) => n is JsonValue v && v.TryGetValue(out string? str) ? str! : double.Parse(n!.ToJsonString(), CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
+        static bool Empty(JsonArray a) => V(a[0]) == "0" && V(a[1]) == "+inf" && V(a[2]) == "-inf";
         foreach (var h in running)
         {
             var f = h.Data["fields"]!.AsObject();
             foreach (var k in new[] { "wifi", "extSend", "send" })
-                if (f[k]!.AsArray().Any(v => v!.ToJsonString() != "0")) { problems.Add($"{k} not all 0"); break; }
+                if (f[k]!.AsArray().Any(v => V(v) != "0")) problems.Add($"{k} not all 0");
             foreach (var k in new[] { "unity", "sdk" })
-                if (f[k]!.ToJsonString() != "[0,\"+inf\",\"-inf\"]") { problems.Add($"{k} is {f[k]!.ToJsonString()}, expected [0,+inf,-inf]"); break; }
-            var img = f["image"]!.AsArray();
-            if (new JsonArray(img[0]!.DeepClone(), img[1]!.DeepClone(), img[2]!.DeepClone()).ToJsonString() != "[0,\"+inf\",\"-inf\"]") problems.Add("image avg/min/max not empty");
+                if (!Empty(f[k]!.AsArray())) problems.Add($"{k} is not (0,+inf,-inf)");
+            if (!Empty(f["image"]!.AsArray())) problems.Add("image avg/min/max not empty");
         }
         problems = problems.Distinct().ToList();
         return new JsonObject
@@ -494,13 +496,15 @@ internal sealed class M1M2Run
         }
         bool missingSeen = _log.ToArray().Any(l => l.Line.Contains("M15-030", StringComparison.Ordinal));
         var problems = new List<string>();
-        if (reads != 1) problems.Add($"{reads} READs of 0x194000, expected 1 (M3-033)");
+        // M3-033: 0x194000 is read twice per connection: once in the RobotDataBackupManager sweep (reads #5..#12, 0x51AD0A)
+        // and once by the needs manager in the mfgId lambda (0x6944CC). (Corrected after the first run, 20261018-170546.)
+        if (reads % 2 != 0 || reads == 0) problems.Add($"{reads} READs of 0x194000, expected 2 per connection (M3-033: backup sweep, then the needs read)");
         if (writes != 0) problems.Add($"{writes} WRITE/ERASE/WIPE commands touching 0x194000: the B-M1-10 gate failed");
         if (!missingSeen) problems.Add("the needs-persistence MISSING (naming M15-030) was not seen in the log");
         return new JsonObject
         {
             ["verdict"] = cmds.Count == 0 ? "INCONCLUSIVE" : problems.Count == 0 ? "OBSERVED_ONE_READ_NO_WRITE" : "OBSERVED_NEEDS_DIFFERS",
-            ["verdictRule"] = "exactly one outbound READ of NV 0x194000 and no WRITE/ERASE/WIPE of it over the whole run; the gate's MISSING logged",
+            ["verdictRule"] = "two outbound READs of NV 0x194000 per connection (backup sweep and needs read, M3-033) and no WRITE/ERASE/WIPE of it over the whole run; the gate's MISSING logged",
             ["missing"] = cmds.Count == 0 ? new JsonArray("no NVCommand for 0x194000 was sent (did the connection get past the mfgId handler?)") : new JsonArray(),
             ["problems"] = new JsonArray(problems.Select(p => (JsonNode)p).ToArray()),
             ["commands"] = new JsonArray(cmds.Select(c => (JsonNode)new JsonObject { ["t"] = Num(c.m.T), ["op"] = c.n.Op, ["length"] = c.n.Length, ["dataBytes"] = c.n.Data.Length }).ToArray()),

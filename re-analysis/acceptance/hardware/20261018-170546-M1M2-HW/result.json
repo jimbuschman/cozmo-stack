@@ -1,0 +1,793 @@
+﻿{
+  "test": "M1M2-HW",
+  "overall": "REVIEW_REQUIRED_SOME_NOT_AS_SOURCE",
+  "overallRule": "never PASS: every check is OBSERVED_* or INCONCLUSIVE and the manager judges the bundle",
+  "operatorLabel": null,
+  "records": [
+    {
+      "id": "M1-033",
+      "status": "HARDWARE_ONLY",
+      "title": "Robot-side transport behaviour"
+    },
+    {
+      "id": "M1-054",
+      "status": "EXACT_SOURCE",
+      "title": "CozmoEngine::Init before RobotManager::Init: the \u002B0x10 Info, the three advertising-key isMember errors (return 1), UiMessageHandler::Init, vslot\u002B8; and RobotManager::BroadcastAvailableAnimations"
+    },
+    {
+      "id": "M1-055",
+      "status": "EXACT_SOURCE",
+      "title": "CozmoEngine::Update: BroadcastAvailableAnimations then SetEngineState(3) when DoNonConfigDataLoading returns 1"
+    },
+    {
+      "id": "M1-056",
+      "status": "EXACT_SOURCE",
+      "title": "CozmoEngine::Update states 1 and 2: HasDesiredNumUiDevices, SendSupportInfo, SetEngineState(2); the per-tick loading poll and EngineLoadingDataStatus; delivery of the Init-time broadcast with no UI device"
+    },
+    {
+      "id": "M1-058",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Host inputs that start the engine in place of the app: the StartEngine equivalent (seed, locale), the connected-UI condition, and the data platform"
+    },
+    {
+      "id": "M1-040",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Accept every robot firmware, and log it"
+    },
+    {
+      "id": "M1-042",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Unity post-connect volume and block-pool producers and gates"
+    },
+    {
+      "id": "M2-021",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "App input: when ConnectToRobot is sent (the app waits for EngineLoadingDataStatus ratio \u003E= 1); the engine has no load-before-connect gate"
+    },
+    {
+      "id": "M3-033",
+      "status": "EXACT_SOURCE",
+      "title": "The connection-time NV read order and ready-to-stream after the queue drains"
+    },
+    {
+      "id": "M1-061",
+      "status": "EXACT_SOURCE",
+      "title": "CozmoEngine::Update state-3 residue: UpdateLatencyInfo\u0027s LatencyMessage, the UiMessageHandler vtbl\u002B0x44 call and the ctx\u002B0x24 \u002B0x10 zeroing"
+    },
+    {
+      "id": "M1-062",
+      "status": "COMPATIBILITY_POLICY",
+      "title": "App input: SetGameBeingPaused (G2E tag 85), supplied by a C# API call, default not paused"
+    },
+    {
+      "id": "M2-024",
+      "status": "EXACT_SOURCE",
+      "title": "RobotToEngineImplMessaging Init subscriptions the stack lacks: B1, B2, B3, B7, BA, BB, BC, BD, C3"
+    },
+    {
+      "id": "M1-019",
+      "status": "EXACT_SOURCE",
+      "title": "Transport entry points: SendData, Connect, FinishConnection, Disconnect, Start, Stop"
+    },
+    {
+      "id": "M1-044",
+      "status": "EXACT_SOURCE",
+      "title": "RemoveRobot ordered lifetime interfaces, owner nulling and post-destruction membership cleanup"
+    }
+  ],
+  "robot": {
+    "connectResult": "Success",
+    "fwVersion": 2457,
+    "serial": "0x0240e889",
+    "bodyHwVersion": 4,
+    "firmwareJson": "{\u0022version\u0022: 2457, \u0022git-rev\u0022: \u00221f716924703f5a8167e4812ebe0fb16991f23484\u0022, \u0022date\u0022: \u0022Tue Feb 11 22:06:25 2025\u0022, \u0022time\u0022: 1739333185, \u0022messageEngineToRobotHash\u0022: \u0022fedb4b12f1b5b45456aec1629cd0b8cc\u0022, \u0022messageRobotToEngineHash\u0022: \u00225a7211095fc4961407e96b9126658317\u0022, \u0022build\u0022: \u0022DEVELOPMENT\u0022, \u0022wifiSig\u0022: \u0022ee53ce9bb618a29420dcc1c0be14f3707aa562d2\u0022, \u0022rtipSig\u0022: \u0022fbd455486f438f959b229ffe95bf5f326646dab3\u0022, \u0022bodySig\u0022: \u0022fbb9ffb8e3d2cab28ff1df21529c11a80a7c5269\u0022}"
+  },
+  "checks": [
+    {
+      "verdict": "OBSERVED_STARTUP_AS_SOURCE",
+      "verdictRule": "0-\u003E1,1-\u003E2,2-\u003E3 in that order; 997 distinct names without _PROCEDURAL_; names, then EndOfMessage, then 2-\u003E3; progress non-decreasing ending at 1.0; delivered readiness",
+      "missing": [],
+      "problems": [],
+      "states": [
+        "0-\u003E1",
+        "1-\u003E2",
+        "2-\u003E3"
+      ],
+      "startupMs": 1169.193,
+      "progressCount": 15,
+      "progressFirst": 0,
+      "progressLast": 1,
+      "progressValues": [
+        0,
+        0.072,
+        0.148,
+        0.251,
+        0.349,
+        0.44,
+        0.538,
+        0.69,
+        0.7,
+        1
+      ],
+      "animationNames": 997,
+      "firstNames": [
+        "anim_bored_01",
+        "anim_bored_02",
+        "anim_bored_event_01",
+        "anim_bored_event_02",
+        "anim_bored_event_03"
+      ],
+      "lastNames": [
+        "anim_qa_firmwaremessaging_01",
+        "anim_triple_backup",
+        "soundTestAnim"
+      ],
+      "endOfMessageValue": 0,
+      "id": "STARTUP",
+      "title": "Public startup through BeforeStart: UpdateEngineState 0-\u003E1, 1-\u003E2, loading progress, the animation list, EndOfMessage, 2-\u003E3, delivered readiness",
+      "records": [
+        "M1-054",
+        "M1-055",
+        "M1-056",
+        "M1-058"
+      ],
+      "startMs": 5007.194,
+      "endMs": 6180.351,
+      "settlesNoRecord": "an observation, not a verdict on a record: nothing here changes the manifest or raises provenance"
+    },
+    {
+      "verdict": "OBSERVED_CONNECT_AS_SOURCE",
+      "verdictRule": "Success, time synced, first full state, ready to stream; exactly one BlockPoolData, after the ConnectionResponse (M1-042)",
+      "missing": [],
+      "problems": [],
+      "connectedAfterMs": 5619.898,
+      "firstOutboundMessages": [
+        "getMfgInfo",
+        "syncTime",
+        "initAnimController",
+        "imageRequest",
+        "absLocalizationUpdate",
+        "setCameraParams",
+        "appRunID",
+        "requestCrashReports",
+        "setAudioVolume",
+        "requestCrashReports",
+        "setCameraParams",
+        "requestCrashReports",
+        "requestCrashReports",
+        "setCliffDetectThreshold",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals",
+        "commandNV",
+        "setBackpackLightsMiddle",
+        "setBackpackLightsTurnSignals"
+      ],
+      "blockPool": {
+        "engine": "main",
+        "enabled": false,
+        "blocks": 1
+      },
+      "id": "CONNECT",
+      "title": "ConnectToRobot after delivered readiness: ConnectionResponse, firmware, time sync, first full state, ready to stream, then BlockPoolData after the response",
+      "records": [
+        "M1-040",
+        "M1-042",
+        "M2-021"
+      ],
+      "startMs": 6180.499,
+      "endMs": 11802.392,
+      "settlesNoRecord": "an observation, not a verdict on a record: nothing here changes the manifest or raises provenance"
+    },
+    {
+      "verdict": "OBSERVED_LATENCY_DIFFERS",
+      "verdictRule": "median period within 120 ms of 660 ms; wifi/extSend/send all 0; unity/sdk and image avg/min/max = (0,\u002Binf,-inf); none from 200 ms after SetGameBeingPaused(true) until resume; some after resume",
+      "missing": [],
+      "problems": [
+        "unity is [0,\u0022\\u002Binf\u0022,\u0022-inf\u0022], expected [0,\u002Binf,-inf]",
+        "image avg/min/max not empty"
+      ],
+      "countRunning": 18,
+      "countPaused": 0,
+      "countAfterResume": 9,
+      "medianPeriodMs": 660.004,
+      "minPeriodMs": 659.158,
+      "maxPeriodMs": 660.685,
+      "samples": [
+        {
+          "wifi": [
+            0,
+            0,
+            0
+          ],
+          "extSend": [
+            0,
+            0,
+            0
+          ],
+          "send": [
+            0,
+            0,
+            0
+          ],
+          "recvQueue": [
+            27.794033,
+            1.501,
+            57.185
+          ],
+          "unity": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "sdk": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "image": [
+            0,
+            "\u002Binf",
+            "-inf",
+            0
+          ]
+        },
+        {
+          "wifi": [
+            0,
+            0,
+            0
+          ],
+          "extSend": [
+            0,
+            0,
+            0
+          ],
+          "send": [
+            0,
+            0,
+            0
+          ],
+          "recvQueue": [
+            28.402544,
+            0.141,
+            57.948
+          ],
+          "unity": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "sdk": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "image": [
+            0,
+            "\u002Binf",
+            "-inf",
+            0
+          ]
+        },
+        {
+          "wifi": [
+            0,
+            0,
+            0
+          ],
+          "extSend": [
+            0,
+            0,
+            0
+          ],
+          "send": [
+            0,
+            0,
+            0
+          ],
+          "recvQueue": [
+            32.979115,
+            4.513,
+            58.108
+          ],
+          "unity": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "sdk": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "image": [
+            0,
+            "\u002Binf",
+            "-inf",
+            0
+          ]
+        },
+        {
+          "wifi": [
+            0,
+            0,
+            0
+          ],
+          "extSend": [
+            0,
+            0,
+            0
+          ],
+          "send": [
+            0,
+            0,
+            0
+          ],
+          "recvQueue": [
+            28.429419,
+            3.193,
+            59.715
+          ],
+          "unity": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "sdk": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "image": [
+            0,
+            "\u002Binf",
+            "-inf",
+            59.977547
+          ]
+        },
+        {
+          "wifi": [
+            0,
+            0,
+            0
+          ],
+          "extSend": [
+            0,
+            0,
+            0
+          ],
+          "send": [
+            0,
+            0,
+            0
+          ],
+          "recvQueue": [
+            31.918798,
+            2.444,
+            58.595
+          ],
+          "unity": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "sdk": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "image": [
+            0,
+            "\u002Binf",
+            "-inf",
+            0
+          ]
+        },
+        {
+          "wifi": [
+            0,
+            0,
+            0
+          ],
+          "extSend": [
+            0,
+            0,
+            0
+          ],
+          "send": [
+            0,
+            0,
+            0
+          ],
+          "recvQueue": [
+            28.8135,
+            1.691,
+            59.899
+          ],
+          "unity": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "sdk": [
+            0,
+            "\u002Binf",
+            "-inf"
+          ],
+          "image": [
+            0,
+            "\u002Binf",
+            "-inf",
+            0
+          ]
+        }
+      ],
+      "pauseAtMs": 23794.998,
+      "resumeAtMs": 27793.511,
+      "id": "LATENCY",
+      "title": "LatencyMessage on the C# API: cadence, constant and empty fields, receive-queue and image values; nothing while the game is paused",
+      "records": [
+        "M1-061",
+        "M1-062"
+      ],
+      "startMs": 11802.542,
+      "endMs": 33806.185,
+      "settlesNoRecord": "an observation, not a verdict on a record: nothing here changes the manifest or raises provenance"
+    },
+    {
+      "verdict": "OBSERVED_DISCONNECT_REQUEST_SENT",
+      "verdictRule": "an outbound DisconnectRequest frame after Dispose; Dispose returns within 5 s",
+      "problems": [],
+      "disposeMs": 76.603,
+      "disconnectRequestAfterMs": 73.791,
+      "lastInboundAfterDisposeMs": 32.658,
+      "messagesSentDuringDispose": [
+        "setBackpackLightsTurnSignals",
+        "clearPath",
+        "abortDocking",
+        "abortAnimation",
+        "stop",
+        "clearPath"
+      ],
+      "note": "the stack sends StopAllMotors and DriveWheels(0) before the DisconnectRequest (PROJECT_STATE decision note \u0027Motor stop on shutdown\u0027); the original sends only the DisconnectRequest",
+      "id": "DISCONNECT",
+      "title": "Dispose: the DisconnectRequest frame, the end of inbound traffic, a bounded return",
+      "records": [
+        "M1-019",
+        "M1-044"
+      ],
+      "startMs": 47078.679,
+      "endMs": 49161.279,
+      "settlesNoRecord": "an observation, not a verdict on a record: nothing here changes the manifest or raises provenance"
+    },
+    {
+      "verdict": "OBSERVED_NEEDS_DIFFERS",
+      "verdictRule": "exactly one outbound READ of NV 0x194000 and no WRITE/ERASE/WIPE of it over the whole run; the gate\u0027s MISSING logged",
+      "missing": [],
+      "problems": [
+        "2 READs of 0x194000, expected 1 (M3-033)"
+      ],
+      "commands": [
+        {
+          "t": 8454.533,
+          "op": 0,
+          "length": 1024,
+          "dataBytes": 0
+        },
+        {
+          "t": 8762.046,
+          "op": 0,
+          "length": 1024,
+          "dataBytes": 0
+        }
+      ],
+      "results": [
+        {
+          "t": 8470.589,
+          "op": 0,
+          "result": 0,
+          "indexField": 0,
+          "dataBytes": 1024
+        },
+        {
+          "t": 8771.987,
+          "op": 0,
+          "result": 0,
+          "indexField": 0,
+          "dataBytes": 1024
+        }
+      ],
+      "blobBytes": 2048,
+      "blobFile": "needs/nv-0x194000.bin",
+      "blobSha256": "d0ff1b294b5288d1ae1421eadf5b2d38a8752b76d472ff30bed9028e25b1c5b8",
+      "blobHeadHex": "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+      "note": "read-only: the blob is the robot\u0027s own needs record (expected from the official app), kept to check the hand-encoded v5 fixture (B-M1-10 check A4)",
+      "id": "NEEDS_READ",
+      "title": "The connection-time needs read of NV 0x194000: exactly one READ, no ERASE or WRITE of 0x194000 for the whole run, the robot\u0027s blob saved",
+      "records": [
+        "M3-033",
+        "M1-054"
+      ],
+      "startMs": 49161.387,
+      "endMs": 49211.81,
+      "settlesNoRecord": "an observation, not a verdict on a record: nothing here changes the manifest or raises provenance"
+    },
+    {
+      "verdict": "OBSERVED_LINK",
+      "verdictRule": "an observation for M1-033: frame sizes, types, packing, sequence range and resends in each direction; watched robot-message tags and RobotPoked deliveries",
+      "missing": [],
+      "outbound": {
+        "frames": 1208,
+        "byType": {
+          "ConnectionRequest": 1,
+          "MultipleReliableMessages": 672,
+          "Ping": 468,
+          "SingleReliableMessage": 67
+        },
+        "maxFrameBytes": 134,
+        "p99FrameBytes": 134,
+        "framesOver1000Bytes": 0,
+        "biggestFrame": {
+          "t": 14382.834,
+          "bytes": 134,
+          "type": "MultipleReliableMessages",
+          "subs": 4
+        },
+        "packedFrames": 672,
+        "maxSubsInAFrame": 7,
+        "packedSubTypeMix": {
+          "DisconnectRequest": 1,
+          "SingleReliableMessage": 1403
+        },
+        "reliableSeqMin": 1,
+        "reliableSeqMax": 1347,
+        "reliableMessages": 1472,
+        "resentReliableMessages": 125,
+        "frameErrors": 0
+      },
+      "inbound": {
+        "frames": 1829,
+        "byType": {
+          "MultipleMixedMessages": 1829
+        },
+        "maxFrameBytes": 1397,
+        "p99FrameBytes": 1376,
+        "framesOver1000Bytes": 626,
+        "biggestFrame": {
+          "t": 35856.3,
+          "bytes": 1397,
+          "type": "MultipleMixedMessages",
+          "subs": 7
+        },
+        "packedFrames": 1312,
+        "maxSubsInAFrame": 11,
+        "packedSubTypeMix": {
+          "ConnectionResponse": 1,
+          "Ping": 465,
+          "SingleReliableMessage": 66,
+          "SingleUnreliableMessage": 4962
+        },
+        "reliableSeqMin": 1,
+        "reliableSeqMax": 52,
+        "reliableMessages": 75,
+        "resentReliableMessages": 23,
+        "frameErrors": 0
+      },
+      "watchedArrivals": {
+        "0xB0 trace": 13,
+        "0xEC wifiFlashID": 1
+      },
+      "watchedFirst": [
+        {
+          "t": 6263.764,
+          "tag": "0xB0",
+          "hex": "B0010000000100020102000000"
+        },
+        {
+          "t": 6263.764,
+          "tag": "0xB0",
+          "hex": "B0720200009B010201E4000000"
+        },
+        {
+          "t": 6263.764,
+          "tag": "0xB0",
+          "hex": "B05B0100009D01020101000000"
+        },
+        {
+          "t": 6263.764,
+          "tag": "0xB0",
+          "hex": "B078020000B304030100000000"
+        },
+        {
+          "t": 6263.764,
+          "tag": "0xEC",
+          "hex": "ECEF601500"
+        },
+        {
+          "t": 6263.764,
+          "tag": "0xB0",
+          "hex": "B031010000E4000200"
+        },
+        {
+          "t": 6459.012,
+          "tag": "0xB0",
+          "hex": "B03101000064000100"
+        },
+        {
+          "t": 6459.012,
+          "tag": "0xB0",
+          "hex": "B05B0100009E01020100000000"
+        },
+        {
+          "t": 6459.012,
+          "tag": "0xB0",
+          "hex": "B0660100006E0001020100000004000000"
+        },
+        {
+          "t": 6459.012,
+          "tag": "0xB0",
+          "hex": "B02E01000039000103000000000000000000000000"
+        },
+        {
+          "t": 6459.012,
+          "tag": "0xB0",
+          "hex": "B0430200008A010203A4D0493EF52145BE23CAE4BE"
+        },
+        {
+          "t": 7260.179,
+          "tag": "0xB0",
+          "hex": "B0310100001A010100"
+        },
+        {
+          "t": 7899.386,
+          "tag": "0xB0",
+          "hex": "B05B010000A101020132000000"
+        },
+        {
+          "t": 44187.253,
+          "tag": "0xB0",
+          "hex": "B0430200008701FF03164B4E3E346446BEC89AE6BE"
+        }
+      ],
+      "robotPokedDelivered": 0,
+      "tapAnswer": "",
+      "tapAtMs": 33806.7,
+      "unknownInboundTags": {},
+      "notExercised": [
+        "sequence wraparound not exercised (it needs about 65534 reliable messages)",
+        "maximum-size frames are exercised only as far as maxFrameBytes shows (bound 1406, M1-006/M1-012)"
+      ],
+      "id": "WIRE",
+      "title": "The link over the whole run: frame sizes and types, packing, sequence range, resends, and any 0xBA/0xBB/0xC3/0xB0/0xEC/0xB1/0xB2/0xB7/0xBC/0xBD arrivals; the operator taps the robot once",
+      "records": [
+        "M1-033",
+        "M2-024"
+      ],
+      "startMs": 49211.984,
+      "endMs": 49235.632,
+      "settlesNoRecord": "an observation, not a verdict on a record: nothing here changes the manifest or raises provenance"
+    },
+    {
+      "verdict": "OBSERVED_CONNECT_ASYNC_AS_SOURCE",
+      "verdictRule": "ConnectAsync returns Success; readiness was delivered before the connection response; the BeforeStart observers saw the full startup; BlockPoolData delivered; Dispose within 5 s",
+      "problems": [],
+      "error": null,
+      "connectAsyncMs": 829.913,
+      "disposeMs": 3.7,
+      "startup": {
+        "verdict": "OBSERVED_STARTUP_AS_SOURCE",
+        "verdictRule": "0-\u003E1,1-\u003E2,2-\u003E3 in that order; 997 distinct names without _PROCEDURAL_; names, then EndOfMessage, then 2-\u003E3; progress non-decreasing ending at 1.0; delivered readiness",
+        "missing": [],
+        "problems": [],
+        "states": [
+          "0-\u003E1",
+          "1-\u003E2",
+          "2-\u003E3"
+        ],
+        "startupMs": 3827.377,
+        "progressCount": 10,
+        "progressFirst": 0,
+        "progressLast": 1,
+        "progressValues": [
+          0,
+          0.057,
+          0.177,
+          0.344,
+          0.48,
+          0.631,
+          0.7,
+          1
+        ],
+        "animationNames": 997,
+        "firstNames": [
+          "anim_bored_01",
+          "anim_bored_02",
+          "anim_bored_event_01",
+          "anim_bored_event_02",
+          "anim_bored_event_03"
+        ],
+        "lastNames": [
+          "anim_qa_firmwaremessaging_01",
+          "anim_triple_backup",
+          "soundTestAnim"
+        ],
+        "endOfMessageValue": 0
+      },
+      "note": "frames of this second connection are not traced (the engine does not expose its transport to BeforeStart); wire evidence comes from the first connection",
+      "id": "CONNECT_ASYNC",
+      "title": "A second engine through the real CozmoRobot.ConnectAsync with BeforeStart observers: success, readiness before the connect, then Dispose",
+      "records": [
+        "M2-021",
+        "M1-056"
+      ],
+      "startMs": 49235.75,
+      "endMs": 53068.508,
+      "settlesNoRecord": "an observation, not a verdict on a record: nothing here changes the manifest or raises provenance"
+    }
+  ],
+  "warnings": [],
+  "exceptions": [],
+  "windowsMs": [
+    {
+      "name": "STARTUP",
+      "fromMs": 5007.194,
+      "toMs": 6179.615
+    },
+    {
+      "name": "CONNECT",
+      "fromMs": 6180.499,
+      "toMs": 11802.384
+    },
+    {
+      "name": "LATENCY",
+      "fromMs": 11802.542,
+      "toMs": 33806.18
+    },
+    {
+      "name": "WIRE_TAP",
+      "fromMs": 33806.314,
+      "toMs": 47078.678
+    },
+    {
+      "name": "DISCONNECT",
+      "fromMs": 47078.679,
+      "toMs": 49161.272
+    },
+    {
+      "name": "NEEDS_READ",
+      "fromMs": 49161.387,
+      "toMs": 49211.801
+    },
+    {
+      "name": "WIRE",
+      "fromMs": 49211.984,
+      "toMs": 49235.626
+    },
+    {
+      "name": "CONNECT_ASYNC",
+      "fromMs": 49235.75,
+      "toMs": 53068.49
+    }
+  ]
+}

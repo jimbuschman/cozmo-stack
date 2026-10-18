@@ -59,6 +59,9 @@ stay required with their owners; the new standard does not dismiss them.
 
 ## Sequence
 
+**Update (2026-10-18, evening): ACCEPTED.** M1-transport and M2-protocol accepted at 4f184775 on the operator's run
+`hardware/20261018-170546-M1M2-HW` (see its README). This document is now history.
+
 **Update (2026-10-18, evening):** B-M1-7 (add63a25) readiness PASS; delivery census closed as manager records (M14-014,
 M15-071, M11-096, M11-035 note). The startup/readiness/delivery chain B-M1-4..B-M1-7 is done. Remaining before the
 hardware run: the M2 settling pass and policy confirmation (Opus), then the M1+M2 hardware script (manager).

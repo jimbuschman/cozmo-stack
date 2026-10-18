@@ -85,7 +85,7 @@ public sealed class CozmoEngineOptions
     // Native LanguageToString/CountryISO2ToString spellings, before lowercase/prefix; null is Missing.
     public string? LabLocaleLanguage { get; init; }
     public string? LabLocaleCountry { get; init; }
-    // fidelity: M1-054 - COMPATIBILITY_POLICY: replaces the app engine-config JSON input.
+    // fidelity: M1-054, M1-060 - COMPATIBILITY_POLICY: replaces the app engine-config JSON input.
     public byte[]? EngineConfigJson { get; init; }
     /// <summary>Host audio controller; M1 connects its six app inputs, M6 owns their execution.</summary>
     public Animation.Wwise.WwiseAudioInputDispatch? AudioInputDispatch { get; init; }
@@ -2150,6 +2150,8 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     public void ConnectToRobot(IPAddress ip, bool isSimulated = false)
     {
+        // fidelity: M1-057 - G2E ReadAnimationFile (0xB1) and RequestAvailableAnimations/Groups (0xB2/0xB3) have no handler
+        // here: the app never sends them and SDK mode is not supported (COMPATIBILITY_POLICY, unreachable).
         // fidelity: M2-021 — app load timing does not gate this native ConnectToRobot handler.
         // 0x004ED020..0x004ED07C and AddRobot 0x004ED1E0..0x004ED1F2 have no load check.
         Post(() =>

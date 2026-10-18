@@ -63,7 +63,7 @@ and this document. Copy the whole folder back.
 | LATENCY | M1-061, M1-062 | 12 s of LatencyMessage, then 4 s with `SetGameBeingPaused(true)`, then 6 s resumed | median period within 120 ms of 660 ms (11 × 60 ms); wifi/extSend/send all 0; unity, sdk and image avg/min/max = (0, +inf, −inf); none from 200 ms after the pause until resume; some after |
 | WIRE (tap phase) | M1-033, M2-024 | the operator taps Cozmo's head once | — (data for WIRE) |
 | DISCONNECT | M1-019, M1-044 | Dispose: frames sent, the DisconnectRequest, the end of inbound traffic | a DisconnectRequest after Dispose; Dispose within 5 s |
-| NEEDS_READ | M3-033, M1-054 | NV commands and results for 0x194000 over the whole run; the gate's MISSING | exactly one READ, no WRITE/ERASE/WIPE of 0x194000; the MISSING naming M15-030 logged |
+| NEEDS_READ | M3-033, M1-054 | NV commands and results for 0x194000 over the whole run; the gate's MISSING | two READs per connection (the backup sweep, then the needs read: M3-033), no WRITE/ERASE/WIPE of 0x194000; the MISSING naming M15-030 logged |
 | WIRE | M1-033, M2-024 | frame sizes and types each way, packing, reliable sequence range, resends, frame errors; arrivals of 0xBA, 0xBB, 0xC3, 0xB0, 0xEC, 0xB1, 0xB2, 0xB7, 0xBC, 0xBD; RobotPoked deliveries; unknown tags | observation only (`OBSERVED_LINK`) |
 | CONNECT_ASYNC | M2-021, M1-056 | a second engine through the real `CozmoRobot.ConnectAsync` | Success; readiness delivered before the response; the full startup seen; BlockPoolData; Dispose within 5 s |
 
@@ -79,6 +79,12 @@ Known differences the bundle will show (recorded decisions, not failures):
 - **Firmware:** any version is accepted and logged (M1-040).
 - **Not exercised:** sequence wraparound (about 65534 reliable messages); maximum-size frames only as far as
   `maxFrameBytes` shows (bound 1406).
+
+## Corrections after the first run (manager, 2026-10-18)
+
+Bundle `20261018-170546-M1M2-HW` showed two tool bugs, fixed in the tool: LATENCY compared serialized JSON, where
+`+inf` is written `+inf` (the values were right); NEEDS_READ expected one READ of 0x194000, but M3-033 has two
+per connection (the backup sweep and the needs read). Neither changed what the run sent the robot.
 
 ## What the manager does with the bundle
 

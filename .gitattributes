@@ -2,3 +2,5 @@
 *.sln text eol=crlf
 *.png binary
 *.json text
+# Hardware acceptance bundles are stored byte-exact so their hashes.json stays verifiable (manager, 2026-10-18).
+re-analysis/acceptance/hardware/*-M1M2-HW/** -text
