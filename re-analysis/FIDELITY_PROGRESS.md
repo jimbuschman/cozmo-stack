@@ -8,25 +8,25 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 188 |
+| EXACT_SOURCE | 191 |
 | EQUIVALENT_IMPLEMENTATION | 5 |
 | COMPATIBILITY_POLICY | 67 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 403 |
-| RECOVERABLE_GAP | 22 |
-| **total** | **701** |
+| IMPLEMENTATION_GAP | 400 |
+| RECOVERABLE_GAP | 23 |
+| **total** | **702** |
 
 ## Subsystems
 
 | subsystem | review | approved | records | EXACT | policy/equiv | HW_ONLY/BLOCKED | IMPL_GAP | RECOVERABLE | live-path open |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 2026-10-18 | 62 | 38 | 19 | 1 | 4 | 0 | 4 |
-| M2-protocol | INVENTORY_APPROVED | 2026-10-18 | 24 | 20 | 2 | 0 | 2 | 0 | 2 |
+| M1-transport | INVENTORY_APPROVED | 2026-10-18 | 62 | 39 | 19 | 1 | 3 | 0 | 3 |
+| M2-protocol | INVENTORY_APPROVED | 2026-10-18 | 24 | 22 | 2 | 0 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 2026-10-15 | 63 | 35 | 20 | 4 | 4 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 2026-10-16 | 50 | 22 | 8 | 3 | 17 | 0 | 17 |
 | M5-animation | INVENTORY_APPROVED | 2026-10-16 | 65 | 30 | 11 | 1 | 23 | 0 | 23 |
-| M6-wwise-bank | INVENTORY_APPROVED | 2026-10-16 | 44 | 1 | 2 | 0 | 38 | 3 | 40 |
+| M6-wwise-bank | INVENTORY_APPROVED | 2026-10-18 | 45 | 1 | 2 | 0 | 38 | 4 | 41 |
 | M7-behaviour | INVENTORY_APPROVED | 2026-10-16 | 29 | 4 | 0 | 0 | 23 | 2 | 24 |
 | M8-framework | INVENTORY_APPROVED | 2026-10-16 | 27 | 0 | 1 | 0 | 24 | 2 | 26 |
 | M9-wwise-music | INVENTORY_APPROVED | 2026-10-16 | 46 | 5 | 2 | 1 | 37 | 1 | 38 |
@@ -45,4 +45,4 @@ ACCEPTED subsystems: none.
 | level | records |
 | --- | ---: |
 | HARDWARE_VERIFIED | 10 |
-| NONE | 691 |
+| NONE | 692 |

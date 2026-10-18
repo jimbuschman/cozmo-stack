@@ -1,8 +1,8 @@
 {
   "subsystem": "M6-wwise-bank",
-  "approved": "2026-10-16",
+  "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M6-wwise-bank.md",
-  "inventory_sha256": "9be0eeb268315af75a5cfa027ec3be10b1f646585a444a18e48589fde3becf23",
+  "inventory_sha256": "ed4d602c9b2714a09746f02e5f2dab41dad4b9c25c5179857ff38621ed632c39",
   "records": {
     "M6-001": {
       "status": "IMPLEMENTATION_GAP",
@@ -596,6 +596,16 @@
       "authority": "libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).",
       "evidence": [
         "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA57960: GetEnv(0x10006); DeleteGlobalRef([0x108DF9C]), or AttachCurrentThread \"NativeThread\" (0xFA7AE8), DeleteGlobalRef, DetachCurrentThread; then 0xA40C30. The JavaVM comes from cfg+0x50 (0x592DCE) -> platform +0x4C."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M6-045": {
+      "status": "RECOVERABLE_GAP",
+      "title": "CozmoAudioController::AppIsInFocus, called by the SetGameBeingPaused handler",
+      "authority": "CozmoEngine::HandleMessage<SetGameBeingPaused> tail call 0x004EDF8C..0x004EDF9A, veneer 0x008CAA5C -> PLT 0x004A5380 CozmoAudioController::AppIsInFocus(!paused)",
+      "evidence": [
+        "research/20261018-b-m1-9-check.md Q6 and research/overnight/20261018-ov127-check.md correction 1: the pause handler stores engine+0x60 and then tail-calls AppIsInFocus(!paused). The stack reports this as a MISSING (EngineLatency.cs:25)."
       ],
       "live_path": true,
       "hardware_required": false

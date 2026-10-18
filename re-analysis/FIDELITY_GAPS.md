@@ -3,14 +3,14 @@
 Generated from `re-analysis/fidelity_manifest.json` by `re-analysis/tools/fidelity.py`.
 Do not edit by hand: edit the manifest and regenerate, or the two will disagree.
 
-Manifest of **701 records** over 16 subsystems.
+Manifest of **702 records** over 16 subsystems.
 
 | status | records | meaning |
 | --- | ---: | --- |
-| EXACT_SOURCE | 188 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
+| EXACT_SOURCE | 191 | Read from primary source and reproduced. The record names the address, asset or schema it was read from. |
 | EQUIVALENT_IMPLEMENTATION | 5 | The native behaviour is known from primary source and this stack reaches the same observable effect by a different mechanism. The record names the difference, and the difference has to be one a listener, a viewer or the robot cannot tell apart. |
-| RECOVERABLE_GAP | 22 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
-| IMPLEMENTATION_GAP | 403 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
+| RECOVERABLE_GAP | 23 | A behaviour-affecting decision whose answer plausibly exists in primary source that has not been read, or has been read too shallowly to settle it. The work outstanding is reverse engineering. |
+| IMPLEMENTATION_GAP | 400 | The native behaviour is established from primary evidence, and the production implementation knowingly does something else. The work outstanding is building it. This is unfinished fidelity work, not a policy. |
 | COMPATIBILITY_POLICY | 67 | A deliberate product or platform decision this stack intends to keep: offline tools, the test harness, PC-side plumbing, or a stand-in the operator has to ask for. Not a place to put fidelity work that is hard. |
 | HARDWARE_ONLY | 14 | No shipped artifact can settle it; only a robot, or a recording of the stock app, can. |
 | BLOCKED_EXTERNAL | 2 | The answer lies in third-party code or data that is not in the package (Omron OKAO, the Wwise runtime DSP, the Acapela text-to-speech engine). |
@@ -24,12 +24,12 @@ remains after both, and they do not go away by working harder on this repository
 
 | subsystem | records | to read | to build | blocked externally | needs hardware | source read | built |
 | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
-| M1-transport — UDP transport and reliability | 62 | 0 | 4 | 0 | 1 | yes | no |
-| M2-protocol — CLAD messages and protocol helpers | 24 | 0 | 2 | 0 | 0 | yes | no |
+| M1-transport — UDP transport and reliability | 62 | 0 | 3 | 0 | 1 | yes | no |
+| M2-protocol — CLAD messages and protocol helpers | 24 | 0 | 0 | 0 | 0 | yes | yes |
 | M3-device — Camera, display and audio device layer | 63 | 0 | 4 | 0 | 4 | yes | no |
 | M4-control — Motion, sensors, lights and cubes | 50 | 0 | 17 | 0 | 3 | yes | no |
 | M5-animation — Animation clips, scheduler and face | 65 | 0 | 23 | 0 | 1 | yes | no |
-| M6-wwise-bank — Wwise bank reading and codecs | 44 | 3 | 37 | 0 | 0 | no | no |
+| M6-wwise-bank — Wwise bank reading and codecs | 45 | 4 | 37 | 0 | 0 | no | no |
 | M7-behaviour — Idle, mood and reactions | 29 | 1 | 23 | 0 | 0 | no | no |
 | M8-framework — Behaviour framework and scoring | 27 | 2 | 24 | 0 | 0 | no | no |
 | M9-wwise-music — Wwise music, the MIDI sampler and singing | 46 | 1 | 37 | 0 | 1 | no | no |
@@ -52,8 +52,8 @@ status.
 
 | subsystem | review | settled | uncited | capture verified | hardware verified |
 | --- | --- | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 39 | 0 | 0 | 3 |
-| M2-protocol | INVENTORY_APPROVED | 20 | 0 | 0 | 0 |
+| M1-transport | INVENTORY_APPROVED | 40 | 0 | 0 | 3 |
+| M2-protocol | INVENTORY_APPROVED | 22 | 0 | 0 | 0 |
 | M3-device | INVENTORY_APPROVED | 35 | 0 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 23 | 0 | 0 | 3 |
 | M5-animation | INVENTORY_APPROVED | 33 | 0 | 0 | 0 |
@@ -101,6 +101,15 @@ Each of these is a question the original can answer and nobody has asked it yet.
 * best authority: libcozmoEngine.so 3.4.0-1204 (Wwise runtime and Anki audio).
 * evidence: re-analysis/research/overnight/20261016-ov97-99-answer.md: unread: 0xA03618, 0xA63A74, 0x9E21FC, 0xA103B8 (UDF 0xA10644), 0xA159DC, 0xA71BF8, 0xA708D4, 0xA3EB4C, 0xA3E3C0, 0xA0B600, 0xA0B964, 0xA0E460, 0xA31C68, 0xA7B018, 0xA40C30 callees (0x9D32F8, 0x9CBEE0, 0xA59228, 0x9D4A18, 0x9D401C), 0x9A5E50, 0x9A5E64; stream 0x97CB9C, 0x97D0B4, 0x963890, scheduler 0x9633B8 / 0x962EA8.; re-analysis/research/overnight/20261016-ov116-119-answer.md: 0xA63A74, 0x9A5E50, 0x9A5E64, 0xA40C30, 0xA05934 (memory only); 0x97CB9C; 0x97D0B4 (cond wait +0x28); 0x9633B8.
 * outstanding: RECOVERABLE_GAP: read the listed bodies. Narrowed 2026-10-16 (re-analysis/research/overnight/20261016-ov116-119-answer.md): small bodies read (memory only). Open: whether the I/O worker is still running when stream Destroy waits in 0x97D0B4 at Term (a possible second block); the listed unread callees; plus the M6-042 remainder (transition users of 0x9F53E8/0x9F566C/0xA0DD78/0xA28AEC, 0xA01684 node vt+0x94, PBI dtor 0x9FF54C and derived vt[0], ~CozmoEngine members +0x64/+0x3C/+0x38 and ~CozmoAPI, binary-wide +0x38 writer scan).
+
+**M6-045 — CozmoAudioController::AppIsInFocus, called by the SetGameBeingPaused handler** (live path)
+
+* where: `cozmo-stack/src/Cozmo.Robot/EngineLatency.cs`
+* effect: what the audio engine does when the game is paused or resumed (focus change)
+* rests on: call site read by the B-M1-9 check; body unread
+* best authority: CozmoEngine::HandleMessage<SetGameBeingPaused> tail call 0x004EDF8C..0x004EDF9A, veneer 0x008CAA5C -> PLT 0x004A5380 CozmoAudioController::AppIsInFocus(!paused)
+* evidence: research/20261018-b-m1-9-check.md Q6 and research/overnight/20261018-ov127-check.md correction 1: the pause handler stores engine+0x60 and then tail-calls AppIsInFocus(!paused). The stack reports this as a MISSING (EngineLatency.cs:25).
+* outstanding: New (manager, 2026-10-18). To read when M6 is worked: AppIsInFocus's body and its effect on Wwise (suspend/resume, RTPC or state changes). The M1 side (the pause input, M1-062) is built and stops at this call.
 
 ### M7-behaviour — Idle, mood and reactions
 
@@ -346,47 +355,6 @@ B-M1-7 (2026-10-18), built, awaiting strong verification: Publishing-side Thread
 Manager (2026-10-18; research/20261018-m1m2-settling-pass.md): StartEngine, SetEngineState, state 1/2 and EngineLoadingDataStatus (0x004ED7C0) match. Open before settling: local subscribers of 0x7B and the loading-status message (OV127 Q4); the `// fidelity: M1-056` tag in the location file (B-M1-8).
 Manager (2026-10-18; research/overnight/20261018-ov127-check.md): Local E2G consumers: bounded result accepted under the narrow standard: no local subscriber to 0x5D, 0x9A, 0x7B, 0x2E, 0x2A, 0x77 or 0x33 (no direct UiMessageHandler::Subscribe(E2G) call; all 42 immediate-tag vtbl+0x28 sites, the fixed and factory sets and IVisuallyVerify name other tags; the seven appear only at G2E +0x2C sites). Residual limits (ARM-state code, distant slot loads, runtime tags) recorded, not an absence proof; nothing to build.
 B-M1-8 (2026-10-18), built, awaiting strong verification: Location corrected to EngineReadiness.cs, which already has its fidelity tag. Readiness ordering seams catch cancellation/timeout and report through a test-thread completion source instead of throwing on the engine runner.
-
-**M1-061 — CozmoEngine::Update state-3 residue: UpdateLatencyInfo's LatencyMessage, the UiMessageHandler vtbl+0x44 call and the ctx+0x24 +0x10 zeroing** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs`
-* effect: the LatencyMessage the C# API delivers every 11th connected tick, and whatever the two unread calls change
-* rests on: call sites read by the settling pass; bodies unread
-* best authority: UpdateLatencyInfo called at 0x004ED64C; countdown reset to 10 at 0x004ED88C/0x004ED8AC; LatencyMessage ctor 0x004EDA68, ext-interface +0x1C send 0x004EDA76; gates kNetConnStatsUpdate (const 1, 0x00C95F41) and engine+0x60 == 0; vtbl+0x44 call 0x004ED4FC; ctx+0x24 +0x10 zeroing 0x004ED510
-* evidence: Split from M1-024 (research/20261018-m1m2-settling-pass.md, 'Other records stronger than their evidence'): M1-024's range 0x004ED4DE..0x004ED6C4 includes these steps, which the stack does not run; CozmoEngine.cs:2057 drops LatencyMessage in a comment.; Operator decision 2026-10-18: LatencyMessage is supported; build it once its payload is read (OV127 Q1).
-* outstanding: To read (OV127 Q1, Q5): the countdown's first send tick, every LatencyMessage field and its source, and the two unread calls. Then build (B-M1-9).
-Manager (2026-10-18; research/overnight/20261018-ov127-check.md): OV127 adopted. LatencyMessage (tag 0x77, 22 f32) is built from the check's rows in B-M1-9. Gates: kNetConnStatsUpdate (const 1, 0x00C95F41) and engine+0x60 (game paused; writer SetGameBeingPaused 0x004EDF88, app input M1-062). Shared static countdown 0x01051004 = 10; first send on eligible call 11. The nine net globals are always 0.0f (UpdateNetStats 0x00837D54 is bx lr); image avg/min/max always empty (Robot+0x3C8 has no producer); unity/sdk empty because the stack has no game socket connections (M1-059) and Ping is excluded. recvQueueTime needs the RCM arrival-time accumulator (N=100) and AddStat; image current needs Impl+0x130 (initial -1.0) and Robot+0x3B8 from Robot::Update's full path. The two preamble calls (0x004ED4FC zeroing UI +0xF8/+0xFC; 0x004ED510 zeroing VizManager +0x10) have no effect on what we reproduce: nothing to build.
-Status RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-18): rows read and checked (research/overnight/20261018-ov127-check.md); to build in B-M1-9.
-B-M1-9 (2026-10-18), built, awaiting strong verification: Built CozmoEngine.UpdateLatencyInfo (EngineLatency.cs) after UpdateAllRobots in state 3, once per eligible tick; constant kNetConnStatsUpdate=1, pause gate and engine-lifetime 10 countdown (first send call11, then every11; paused calls freeze it). E2G0x77 raw 88-byte LE body plus typed Latency event use existing app FIFO then local emit. Nine net floats zero; unity/sdk/image avg/min/max empty 0/+inf/-inf. RCD stamps every queued arrival under its mutex before copying bytes with the existing M1-005 NetTimeStamp.NowMs (shared static epoch, whole microseconds then f64 ms); RCM samples at pop unless timestamp is zero. ReceiveQueueStats is exact N100 two-window f64 sum/count/max/min/mean/priorMean/M2 with post-add strict reset and larger-count selection, not ping. Impl counterpart LastCompletedImageEventTime starts -1.0 and updates synchronously from camera completion event time; separate from Camera NaN cap key. Robot full Update computes max(0,(double)tick_f32-event_f64); early exits retain prior value; report multiplies in f64 by1000 before f32. Preamble UI/Viz zeroing remains no-effect per adopted check. Production tests: EngineLatencyBuilderTests.LatencyUsesElevenEligibleTicksAndFreezesItsCountdownWhilePaused and RecoveredHandlersRunThroughRealDispatchAndRobotPokedUsesTheAppFifo. Unit controlled-clock, two-window boundaries and IEEE-word regressions identify their substituted inputs. Existing M3-032/M11-035 VisionUpdateAllResults result join is unchanged; the controlled early-exit regression is unit-labelled, and no unbound Vision status is asserted recovered.
-
-### M2-protocol — CLAD messages and protocol helpers
-
-**M2-018 — Robot-message subscriber dispatch: per-robot signal before wildcard, registration order, synchronous; which subscribers take each tag (0xC0 first)** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs`
-* effect: The order in which handlers of the same robot message run (for example HandleCliffEvent against other 0xC0 subscribers).
-* rests on: Opus check of R-PLAY-AREA (2026-10-13), manager record.
-* best authority: libcozmoEngine.so 3.4.0-1204.
-* evidence: re-analysis/research/20261013-play-area-check.md section D: ProcessMessages 0x0069D85C..0x0069DAEA, Broadcast 0x0069DC82..0x0069DCB4, emitter 0x0069DE24..0x0069DE74 (robot signal then wildcard), connect 0x0051D874..0x0051D8A2 and emit 0x0069E274..0x0069E2B2 (registration order, re-reading the sentinel), HandleCliffEvent registration 0x00532B80..0x00532B8A via 0x00519F8C.; re-analysis/research/20261013-robot-message-subscribers-check.md: 35 callers of 0x00519F8C (no other route); registration order at connection (test behaviours twice in the Robot ctor, then Path C6, NVStorage/Backup C9, CubeAccel F5, BlockTapFilter B6/B4/B5, Impl/TracePrinter B0/CF/EC, Impl Init 37 subscriptions 0x00510348, then the RIC D2/EE/C9, ED on OnNotified 0x0052DE34); the per-tag order table; append 0x0051D874..0x0051D8A2, emit 0x0069E274..0x0069E2B2 (an appended subscriber is reached), unlink 0x0051D338..0x0051D3A4, scoped disconnect 0x0051D8F8..0x0051D932.
-* outstanding: Read 2026-10-13 (re-analysis/research/20261013-robot-message-subscribers-check.md): build per-tag, registration-ordered dispatch (job B-M3M4-18), replacing the stack's fixed class order. Absent subscribers keep their place as visible MISSINGs: M2-019 (D2, D3 Impl handlers), M7-027 (test behaviours), M15-033 (Backup C9). Residue: M2-020. Previous notes: RECOVERABLE_GAP: the dispatch mechanism is read; which of the ~35 callers of 0x00519F8C (IBehavior::SubscribeToTags 0x005BCA4C, BlockTapFilterComponent, CubeAccelComponent, the actions) subscribe to which tags, and when, is unread. Then compare the stack's subscription order.
-B-M3M4-18 built, awaiting strong verification: robot-message subscriptions now share a per-tag native-order signal: two dev behavior sets, Path C6 (visible MISSING M12-023), Backup C9 (visible MISSING M15-033), CubeAccel F5, BlockTapFilter B4/B5, then Impl; RIC subscribes after Robot and ED lambdas append on success. Tail append / next-after-call / retained removed-node links (0x0051D874..0x0051D8A2, 0x0069E274..0x0069E2B2, 0x0051D338..0x0051D3A4) replace snapshot iteration; RIC releases back-to-front. Public host raw message adapters run after native delivery. No subscribers are fabricated for unported tags. Global 0x1CF callers/owner destruction/other early unsubscribe paths remain M2-020, not read or claimed built.
-B-M3M4-22 built, awaiting strong verification: B6 subscriber label corrected to BlockTapFilter; Backup C9 placeholder now names M15-039 (B-M15-1); Path C6 is already owned by the real M12-032 component and has no obsolete placeholder. LoadNonConfigData-before-AddRobot remains unverified M2-020; the ordering around that call is not claimed recovered. Correction (re-analysis/research/20261013-dispatch-residue-check.md): the wildcard robot ID is 0x101CF (movt r3,#1 at 0x0069D008), not 0x1CF; the all-signals branch is unreachable; the wildcard lookup after the robot's own signal always misses.
-B-M3M4-24 (2026-10-15), built, awaiting strong verification: added B6 -> BlockTapFilter to the existing ordered registration-label test, delivering ObjectTapped through the existing production broadcast entry. No dispatch implementation change. Existing duplicate or misattributed test references were retained under append-only instructions; this new specific method reference is the actual B6 coverage.
-B-M3M4-25 (2026-10-15), built, awaiting strong verification: component raw subscriptions retain existing registration positions/labels, but C9 Backup, F5 CubeAccel and B6/B4/B5 tap handles no longer live in the Impl vector. NV CD is now the owned native subscriber instead of a host Message observer; host delivery remains after raw dispatch. Correct wildcard is 0x101CF; no wildcard registration or reachable all-signals branch. M2-020 retains explicit remaining ownership gaps.
-Manager (2026-10-18; research/20261018-m1m2-settling-pass.md): Dispatch and the checked per-tag order hold. The nine Impl Init subscriptions the stack lacks (B1, B2, B3, B7, BA, BB, BC, BD, C3) are split to M2-024. CheckedPerTagRegistrationOrder is unit (direct Engine.Broadcast) and omits the ED, C4, C0 rows (B-M1-8). The comment at CozmoEngine.cs:1154-1155 ('SetOnRamp has no writer') is contradicted by BA/BB (0x005380D2, 0x005381E6).
-B-M1-8 (2026-10-18), built, awaiting strong verification: CheckedPerTagRegistrationOrder explicitly labelled unit; ED Impl/RIC, C4 Turn/Head/Lift and C0 Impl rows added using actual handler registrations. Ramp-writer comment corrected to native BA/BB 0x005380D2/0x005381E6; M2-024 build remains outside this job.
-
-**M2-024 — RobotToEngineImplMessaging Init subscriptions the stack lacks: B1, B2, B3, B7, BA, BB, BC, BD, C3** (live path)
-
-* where: `cozmo-stack/src/Cozmo.Robot/RobotSubscriptions.cs`
-* effect: C3 delivers RobotPoked on the C# API; BA/BB set the robot's on-ramp state; the others log or draw only
-* rests on: subscriptions and handler entry points read by the settling pass; bodies partly read
-* best authority: InitRobotMessageComponent 0x00532A7C; B1 HandlePrint (GOT 0x0103EA60); B3 HandleGoalPose 0x005352C8; C3 HandleRobotPoked 0x005366FC (Robot::Broadcast 0x00536754); BA lambda 0x00538088 (SetOnRamp 0x005380D2); BB 0x0053819C (SetOnRamp 0x005381E6); BC 0x005382B4; BD 0x005383C0; B2 0x005384CC; B7 0x0053866A
-* evidence: Split from M2-018 (research/20261018-m1m2-settling-pass.md): these nine native subscriptions have no stack subscriber, no record and no MISSING (RobotSubscriptions.cs:133-186).; C3: Info, then E2G RobotPoked via Robot::Broadcast at 0x00536754. BA/BB: Info, then Robot::SetOnRamp. BC/BD: Info only. B2: two sWarningF. B7: hex Info. B1: log. B3: VizManager DrawPreDockPose only.
-* outstanding: To read (OV127 Q2): the RobotPoked payload, what SetOnRamp writes and who reads it, and confirmation that the rest are log/draw only. Then build the subscriptions (B-M1-9): C3 through the app FIFO, BA/BB as engine state, the log-only ones as best-effort diagnostics; B3 recorded as no effect (VizManager). Whether firmware 2457 sends 0xBA/0xBB/0xC3 is unknown; the M1+M2 hardware script logs any arrivals.
-Manager (2026-10-18; research/overnight/20261018-ov127-check.md): OV127 adopted. C3: Info, then empty E2G RobotPoked (0x33) through the app FIFO. BA: Info, then the Robot.SetOnRamp.NoRampWithID warning; BB: Info only. The +0x316 on-ramp state is unreachable: Ramp's only constructor call is in Ramp::CloneType (0x0050F89A; M12-034), so SetOnRamp(1) always takes the warning branch and SetOnRamp(0) the equality return. BC/BD/B2/B7/B1 log or print only; B3 is Viz-only (no effect). Build in B-M1-9. Firmware emission of these tags is unknown; the M1+M2 hardware script logs arrivals.
-Status RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-18): rows read and checked (research/overnight/20261018-ov127-check.md); to build in B-M1-9.
-B-M1-9 (2026-10-18), built, awaiting strong verification: Built B1/B2/B7/BA/BB/BC/BD/C3 through actual Impl subscriptions; constructor materializes existing/new Impl callbacks in the checked 37-tag InitRobotMessageComponent positions. C3 logs then publishes empty E2G0x33 through app FIFO/raw+typed RobotPoked views, then local emit. BA logs and warns with constructor diagnostic ramp ID -1; no supported Ramp action/instance changes it; BB only logs, no on-ramp state invented. BC/BD log; B2 logs args (id,word0,word3) and (id,word2,word1) behind count gates; B7 logs data size/hex; B1 uses stack print diagnostics with native ROBOT-PRINT text. B3 subscribes nothing: checked Viz terminals have no output. Production real-startup framed-peer test covers every tag and C3 raw/typed FIFO order. Firmware2457 emission remains UNKNOWN; no hardware run.
 
 ### M3-device — Camera, display and audio device layer
 

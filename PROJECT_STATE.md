@@ -49,12 +49,13 @@ stands. Nothing new starts outside the current layer.
   **Ended (operator, 2026-10-17):** Claude resumes manager and Opus verification; Codex returns to the research and
   builder lanes. Builder commits published during the handoff (B-M15-7, 2fc72bc3) still get the Opus verifier.
 
-- **Now (2026-10-18, late):** **Don't connect a robot with main until B-M1-10 lands:** since B-M1-8 the engine-owned
-  NeedsManager runs connection-time needs persistence with the wrong clock and can write a needs record with zeroed
-  fields to the robot's flash (`research/20261018-b-m1-8-check.md` B1). B-M1-10 (first priority) gates it off.
-  Settled EXACT_SOURCE: M2-019, M2-020, M2-022, M2-023. OV127 adopted (M1-062 pause input; M1-061/M2-024 to build).
-  Builder: B-M1-9 (in progress), then B-M1-10. Remaining for M1+M2: M2-018 (after M2-024), M1-054/055/056, M1-061,
-  M1-062, M2-024, then a settling re-check and the hardware script.
+- **Now (2026-10-18, late):** **Don't connect a robot with main until B-M1-10 lands and passes** (needs persistence
+  could write a needs record with zeroed fields to the robot's flash; `research/20261018-b-m1-8-check.md` B1).
+  B-M1-9 PASS (`research/20261018-b-m1-9-check.md`). **M2-protocol has no implementation gap left** (M2-018, M2-024
+  settled today with M2-019/020/022/023). M1 settled today: M1-061 (LatencyMessage; per-engine countdown recorded as
+  equivalent). Open in M1: M1-054 (waits on B-M1-10), M1-055, M1-056 (their settling-pass items are closed; settle in
+  the final check after B-M1-10), M1-033 (hardware). New M6-045 owns AppIsInFocus. Next: B-M1-10 check, a final M1
+  settle check, then the M1+M2 hardware script.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
 - **Jobs:** `re-analysis/jobs/STATUS.md` (generated) shows, per builder job, the queue note, the status-file state and any
@@ -97,6 +98,12 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 - **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
+
+- **B-M1-9 check (2026-10-18; research/20261018-b-m1-9-check.md):** Q2 the new Impl handlers also reach
+  `Engine.DeviceRoute` (`RobotSubscriptions.cs`:201-207; no matching device handler, comment or `routeDevice:false`); Q3
+  image-latency update position comment (`CozmoEngine.cs`:1337 vs native 0x00514386); Q4 cite the robot+0x31C writer in
+  the BA warning comment (`SettlingMessageHandlers.cs`:21-22). From the B-M1-8 check: Q1 raw-tap re-parse cost and
+  drain-time timestamps in Conformance tools (the hardware script takes timestamps accordingly); Q2 GetBlockPool position.
 
 - **B-M2M15-2 Opus check (2026-10-17; research/20261017-b-m2m15-2-check.md):** PASS with queued items; finding 1
   (inline app delivery under the streamer lock) raised to blocking, fixed in B-DELIV-1. Queued: relabel

@@ -3233,3 +3233,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Narrowed | M6-040, M6-041, M6-043 |
 | Corrections / notes | M6-032, M6-037, M6-038 |
 | ADP-1 ruling: fastpow10 send/voice gain values are control-rate, exact | M6-040 |
+
+
+## From the M1+M2 work (manager, 2026-10-18; research/20261018-b-m1-9-check.md Q6)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP: CozmoAudioController::AppIsInFocus, called by the SetGameBeingPaused handler (0x004EDF8C..0x004EDF9A) | M6-045 (new) |
