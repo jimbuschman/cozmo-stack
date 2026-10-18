@@ -97,7 +97,7 @@ public sealed class EngineSettlingRegressionTests
                 ResourcesPath=Path.Combine(obb,"assets","cozmo_resources"),BlockPoolPath="",NeedsDeviceDirectory=state,
                 BeforeStart=e=>
                 {
-                    initialized=File.Exists(Path.Combine(state,"needsState.json"));
+                    initialized=e.Needs is not null;
                     var actual=e.NeedsUpdate!;
                     e.NeedsUpdate=now=>{actual(now);Interlocked.Increment(ref ticks);};
                     e.AnimationMessages.SubscribeMessage(0x7B,true,p=>{if(p is EngineStateTransition{NewState:3})ticksAtReady=Volatile.Read(ref ticks);});
@@ -105,6 +105,7 @@ public sealed class EngineSettlingRegressionTests
                 }
             });
             Assert.True(initialized);
+            Assert.False(File.Exists(Path.Combine(state,"needsState.json"))); // M15-030 device persistence is gated.
             await ready.Task.WaitAsync(TimeSpan.FromSeconds(60));
             Assert.Equal(0,ticksAtReady);
             var owner=robot.Engine.Needs;

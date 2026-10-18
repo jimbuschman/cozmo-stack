@@ -57,11 +57,13 @@ public sealed class M15MutationCheckedRowsTests
         state.ApplyDecay(NeedId.Repair,new DecayConfig(rates,rates),60,true,1);
         Assert.Equal(new[]{"info","part"},order);
     }
+
+    // reach: unit (explicit legacy persistence fixture; M15-030 production clock remains gated).
     [Fact]
     public void EndpointInsertsKeyThreeAndNullKeyDeviceWriteSkipsWithoutChangingTheFile()
     {
         var cfg=NeedsConfig.Default with{BrokenPartThresholdList=new[]{.98}};
-        var needs=new NeedsManager(()=>100,cfg);var words=new Queue<uint>(new[]{uint.MaxValue,uint.MaxValue});
+        var needs=new NeedsManager(()=>100,cfg); needs.EnableUncertifiedPersistenceForTests();var words=new Queue<uint>(new[]{uint.MaxValue,uint.MaxValue});
         needs.DistortionRng=new EngineRandom(1){WordSourceForTest=()=>words.Dequeue()};needs.State.SetNeedLevel(NeedId.Repair,.5);
         needs.State.DamagePartsNative(NeedsActionId.Decay);Assert.Equal(4,needs.State.PartDamage.Count);Assert.Equal((byte)1,needs.State.PartDamage[3]);Assert.Empty(words);
         string root=Directory.CreateTempSubdirectory("m15-endpoint-").FullName,path=Path.Combine(root,"needs.json");
@@ -137,10 +139,12 @@ public sealed class M15MutationCheckedRowsTests
         Assert.True(stack.AI.IsChildRetired(0x2C));
         stack.Dispose();Assert.Equal(4,order.Count);
     }
+
+    // reach: unit (explicit legacy persistence fixture; M15-030 production clock remains gated).
     [Fact]
     public void DevicePartFlagsUseTheActualSelectedMapNotNeedThresholdCounts()
     {
-        var needs=new NeedsManager(()=>0);needs.State.SetPartDamageForTest(2,1);
+        var needs=new NeedsManager(()=>0); needs.EnableUncertifiedPersistenceForTests();needs.State.SetPartDamageForTest(2,1);
         string root=Directory.CreateTempSubdirectory("m15-flags-").FullName,path=Path.Combine(root,"needs.json");
         try
         {

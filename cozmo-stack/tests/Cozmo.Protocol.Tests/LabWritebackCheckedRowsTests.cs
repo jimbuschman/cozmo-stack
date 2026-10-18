@@ -78,7 +78,10 @@ public sealed class LabWritebackCheckedRowsTests:IDisposable
     [Fact] public void NeedsQueueFailureReachesOwnedWritebackBeforeResolution()
     {
         using var robot=Robot();var lab=robot.Engine.Experiments;lab.SetAssignmentVectorsForTest(new[]{A()},Array.Empty<LabAssignmentPair>());
-        var needs=new NeedsManager(()=>0){PossiblyWriteLabAssignments=lab.PossiblyWriteLabAssignmentsToRobot}; needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.needs.InitAfterSerialNumberAcquired(5);Assert.Single(lab.CachedAssignments!);
+        var needs=new NeedsManager(()=>0){PossiblyWriteLabAssignments=lab.PossiblyWriteLabAssignmentsToRobot};
+        needs.EnableUncertifiedPersistenceForTests(); // Legacy unit persistence model only.
+        needs.InitAfterSerialNumberAcquired(5);
+        Assert.Single(lab.CachedAssignments!);
     }
     [Theory][InlineData(1)][InlineData(2)][InlineData(3)]
     public void PaddingPastActualBufferIsZeroWithOneStackDiagnostic(int size)

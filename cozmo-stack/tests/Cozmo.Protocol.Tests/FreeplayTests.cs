@@ -377,6 +377,8 @@ public class FreeplayTests
     /// writes the levels with a timestamp and ApplyDecayForTimeSinceLastDeviceWrite 0x00695304 decays for
     /// the gap on the way back in.
     /// </summary>
+
+    // reach: unit (explicit legacy persistence fixture; M15-030 production clock remains gated).
     [Fact]
     public void TheNeedsDecayModifiersAndDamagedPartsFollowTheConfig()
     {
@@ -425,13 +427,13 @@ public class FreeplayTests
         // and the file round-trips, decaying for the time between the write and the read through the engine's
         // unconnected path (ApplyDecayForTimeSinceLastDeviceWrite(false), Appendix I4)
         double now = 0;
-        var needs = new NeedsManager(() => now, cfg, decay);
+        var needs = new NeedsManager(() => now, cfg, decay); needs.EnableUncertifiedPersistenceForTests();
         needs.SetLevel(NeedId.Play, 1.0);
         var path = Path.Combine(Path.GetTempPath(), NeedsManager.FileNameForSerial(0x41d04d9d));
         try
         {
             needs.Save(path, unixTimeSec: 1000);
-            var back = new NeedsManager(() => now, cfg, decay);
+            var back = new NeedsManager(() => now, cfg, decay); back.EnableUncertifiedPersistenceForTests();
             now = 1060;                                              // a minute later on the stack clock
             Assert.True(back.Load(path));
             Assert.Equal(0.7, back.State.GetNeedLevel(NeedId.Play), 3);   // 0.3/min unconnected, not the 0.6 connected rate
@@ -846,11 +848,13 @@ public class FreeplayTests
     /// snapshots the device timestamp into <c>+0x1B8</c> (J4), runs the DAS bracket check and sends the
     /// "disconnect" DAS event - with <b>no</b> SendNeedsStateToGame.
     /// </summary>
+
+    // reach: unit (explicit legacy persistence fixture; M15-030 production clock remains gated).
     [Fact]
     public void TheNeedsManagerDisconnectWritesAndSendsDasWithoutAStateBroadcast()
     {
         double clock = 0;
-        var needs = new NeedsManager(() => clock);
+        var needs = new NeedsManager(() => clock); needs.EnableUncertifiedPersistenceForTests();
         var writes = new List<bool>();
         var connectedAtWrite = new List<bool>();
         var actions = new List<NeedsActionId>();
@@ -2552,6 +2556,7 @@ public class FreeplayTests
     /// same seam serves <c>PossiblyWriteToDevice</c> (0x00695DFA).
     /// </summary>
     [Fact]
+    // reach: unit (explicit legacy persistence opt-in before Init; production M15-030 file path stays gated).
     public void FromObbWithADeviceDirectoryWiresTheWriteSeam()
     {
         var obb = ObbRoot();
@@ -2560,7 +2565,7 @@ public class FreeplayTests
         try
         {
             double clock = 0;
-            var needs = NeedsManager.FromObb(obb, () => clock, new Random(1), deviceDirectory: dir);
+            var needs = NeedsManager.FromObb(obb, () => clock, new Random(1), deviceDirectory: dir, beforeInit: n=>n.EnableUncertifiedPersistenceForTests());
             var path = Path.Combine(dir, NeedsManager.FixedFileName);
 
             // InitInternal's forced WriteToDevice(true) wrote the file

@@ -129,10 +129,12 @@ public sealed class M15RestorationCheckedRowsTests
     [InlineData(0x7FC12345u,0)][InlineData(0x7F800000u,int.MaxValue)][InlineData(0xFF800000u,int.MinValue)][InlineData(0x3F666666u,90000)]
     public void PersistenceQuantizesBinary32TowardZeroWithSaturation(uint bits,int expected)
     {Assert.Equal(expected,NeedsManager.QuantizeLevel(BitConverter.Int32BitsToSingle(unchecked((int)bits))));}
+
+    // reach: unit (explicit legacy persistence fixture; M15-030 production clock remains gated).
     [Fact]
     public void ForceSetClampsFiniteValuesButKeepsAndCopiesRawNaNPayload()
     {
-        var needs=new NeedsManager(()=>0);uint nan=0x7F812345;var order=new List<string>();needs.SourceLog=(l,c,k,t)=>{Assert.Equal(EngineLogLevel.Info,l);Assert.Equal("NeedsSystem",c);Assert.Equal("NeedsManager.ForceSetNeedsLevels",k);order.Add("info");};
+        var needs=new NeedsManager(()=>0); needs.EnableUncertifiedPersistenceForTests();uint nan=0x7F812345;var order=new List<string>();needs.SourceLog=(l,c,k,t)=>{Assert.Equal(EngineLogLevel.Info,l);Assert.Equal("NeedsSystem",c);Assert.Equal("NeedsManager.ForceSetNeedsLevels",k);order.Add("info");};
         needs.NeedsLevelBitsCopied+=(bits,action)=>{Assert.Equal(nan,bits[2]);Assert.Equal(NeedsActionId.NoAction,action);order.Add("copy");};
         needs.ForceSetNeedsLevels(new[]{-1f,2f,BitConverter.Int32BitsToSingle(unchecked((int)nan))});
         Assert.Equal(new[]{"info","copy"},order);Assert.Equal(0x3CF5C28Fu,needs.State.LevelBits(NeedId.Repair));Assert.Equal(0x3F800000u,needs.State.LevelBits(NeedId.Energy));Assert.Equal(nan,needs.State.LevelBits(NeedId.Play));
@@ -158,10 +160,12 @@ public sealed class M15RestorationCheckedRowsTests
         state.ApplyDecay(NeedId.Energy,new DecayConfig(new Dictionary<NeedId,IReadOnlyList<(double,double)>>(),new Dictionary<NeedId,IReadOnlyList<(double,double)>>()),60,true,1);
         Assert.Equal(0,state.GetNeedLevel(NeedId.Energy));Assert.Equal(new[]{"NeedsState.ApplyDecay"},logs);
     }
+
+    // reach: unit (explicit legacy persistence fixture; M15-030 production clock remains gated).
     [Fact]
     public void ElapsedProducerTruncatesMicrosecondDifferenceBeforeConvertingToFloat()
     {
-        double clock=10;var needs=new NeedsManager(()=>clock);var elapsed=new List<string>();needs.State.SourceLog=(l,c,k,t)=>{if(k=="NeedsState.ApplyDecay")elapsed.Add(t);};
+        double clock=10;var needs=new NeedsManager(()=>clock); needs.EnableUncertifiedPersistenceForTests();var elapsed=new List<string>();needs.State.SourceLog=(l,c,k,t)=>{if(k=="NeedsState.ApplyDecay")elapsed.Add(t);};
         string root=Directory.CreateTempSubdirectory("m15-elapsed-").FullName,path=Path.Combine(root,"state.json");
         try{needs.Save(path,unixTimeSec:10);clock=11.9;needs.Update((float)clock);elapsed.Clear();needs.Load(path);Assert.All(elapsed,t=>Assert.Contains("elapsed time of 1.000000 seconds",t));Assert.Equal(3,elapsed.Count);}
         finally{Directory.Delete(root,true);}

@@ -13,6 +13,59 @@ namespace Cozmo.Protocol.Tests;
 
 public sealed class NeedsPersistenceGateTests
 {
+    // reach: production — public startup with a host state directory, real ticker, and public persistence entries.
+    // Literal file input substitutes host disk contents only; no persistence/clock adapter is enabled.
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HostStateDirectoryNeverAppliesReadsRestorationDecayOrWrites(bool existing)
+    {
+        string root=Directory.CreateTempSubdirectory("needs-device-gate-").FullName;
+        string file=Path.Combine(root,"needsState.json"),copy=Path.Combine(root,"other.json");
+        const string saved="{\"_StateFileVersion\":5,\"_DateTime\":1700000000,\"_SerialNumber\":1234,\"CurNeedLevel\":{\"Repair\":25000,\"Energy\":50000,\"Play\":75000}}";
+        var messages=new ConcurrentQueue<string>();
+        void Diagnostic(string s){if(s.Contains("M15-030 needs device persistence skipped"))messages.Enqueue(s);}
+        SteppedBehavior.MissingReported+=Diagnostic;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root,"animations"));
+            File.WriteAllText(Path.Combine(root,"animations","a.json"),"{\"a\":[]}");
+            if(existing)File.WriteAllText(file,saved);
+            float[]? initial=null;
+            using var robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions
+            {
+                ResourcesPath=root,BlockPoolPath="",NeedsDeviceDirectory=root,
+                BeforeStart=e=>initial=new[]{NeedId.Repair,NeedId.Energy,NeedId.Play}.Select(n=>(float)e.Needs.State.GetNeedLevel(n)).ToArray()
+            });
+            Wait(()=>robot.Engine.IsReadyDelivered,"device startup");
+            Assert.Equal(new[]{1f,1f,1f},initial); // Native default config; seeded disk levels must not be consumed.
+            var needs=robot.Engine.Needs;
+            Assert.Equal(0u,needs.SerialNumber);Assert.False(needs.DeviceDataPresent);
+            Assert.False(needs.Load(file));Assert.False(needs.AttemptReadFromDevice(file));
+            needs.ApplyDecayForTimeSinceLastDeviceWrite(false);
+            Assert.Equal(new[]{1f,1f,1f},new[]{NeedId.Repair,NeedId.Energy,NeedId.Play}.Select(n=>(float)needs.State.GetNeedLevel(n)));
+            needs.WriteDeviceFile(true);needs.WriteToDevice!(false);needs.Save(copy);
+            long tick=robot.Engine.Timer.TickCount;Wait(()=>robot.Engine.Timer.TickCount>=tick+4,"device normal ticks");
+            if(existing)Assert.Equal(saved,File.ReadAllText(file));else Assert.False(File.Exists(file));
+            Assert.False(File.Exists(copy));Assert.Single(messages);
+        }
+        finally{SteppedBehavior.MissingReported-=Diagnostic;Directory.Delete(root,true);}
+    }
+
+    // reach: unit (controlled engine Update time substitutes waiting 61 seconds; default owner keeps production gate).
+    [Fact]
+    public void PeriodicNeedsWriteStillReachesTheGatedDeviceEntry()
+    {
+        string root=Directory.CreateTempSubdirectory("needs-periodic-gate-").FullName;
+        try
+        {
+            using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{NeedsDeviceDirectory=root});
+            robot.Engine.Needs.Update(61); // Actual rate limiter and bound writer; no legacy persistence opt-in.
+            Assert.False(File.Exists(Path.Combine(root,"needsState.json")));
+        }
+        finally{Directory.Delete(root,true);}
+    }
+
     // reach: production — public startup/connect, real ticker, transport frames, actual NV FIFO and default owner.
     // The v5 input follows the checked M15-017 layout; it is NOT an official-app capture (fixture MISSING).
     [Theory]

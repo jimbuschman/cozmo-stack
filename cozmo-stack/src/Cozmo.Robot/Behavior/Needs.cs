@@ -910,8 +910,7 @@ public sealed class NeedsManager
         needs.DistortionRng=contextRandom;
         // J3: the directory the engine's DataPlatform resolves ("nurture/") is the host's; the caller supplies it.
         needs.DeviceDirectory = deviceDirectory;
-        // J7: InitInternal's forced WriteToDevice(true) (0x0069347E) must reach a real file when the host
-        // supplied a device directory, so the seam is wired before InitInternal runs.
+        // J7: bind before InitInternal; WriteDeviceFile now gates the unbuilt persistence clock (M15-030).
         if (deviceDirectory is not null) needs.WriteToDevice = needs.WriteDeviceFile;
         // fidelity: M7-017
         // D01..D06: NeedsManager::Init 0x00692574 constructs the DesiredFaceDistortionComponent (owned at +0x3D4),
@@ -1355,6 +1354,7 @@ public sealed class NeedsManager
     // This opt-in is internal, explicitly for legacy unit models. A bound live engine/NV owner always denies it.
     private bool _uncertifiedPersistenceTestAdapter;
     private ISet<string> _robotPersistenceMissingScope=new HashSet<string>();
+    private readonly ISet<string> _devicePersistenceMissingScope=new HashSet<string>();
     internal void EnableUncertifiedPersistenceForTests()
     {
         lock(_gate)
@@ -1377,7 +1377,14 @@ public sealed class NeedsManager
         ISet<string> scope;
         lock(_gate){_awaitingRobotData=false;scope=_robotPersistenceMissingScope;}
         // Separate from the process-wide deduper: visible again on the next connection. No callout holds _gate.
-        SteppedBehavior.ReportMissing("M15-030/M15-014 needs robot persistence skipped: system_clock epoch producer 0x00694D9C/0x006954F8/0x0069555C and economy fields 0x006955F2..0x0069560C are unbuilt; robot copy/resolver and NV erase/write 0x194000 are gated",scope);
+        SteppedBehavior.ReportMissing("M15-030/M15-014 needs robot persistence skipped: system_clock epoch producer 0x00694D9C/0x006954F8/0x0069555C and economy fields 0x006955F2..0x0069560C are unbuilt; robot copy/resolver and NV erase/write 0x194000 are gated; also skipped: M15-050 Lab writeback join 0x00694622, SendNeedsStateToGame (case 1 NoAction, cases 5-7 Decay), RobotChangedFromLastSession (cases 3, 5-7)",scope);
+    }
+
+    private bool SkipUnbuiltDevicePersistence()
+    {
+        lock(_gate)if(UsesUncertifiedPersistenceTestAdapter)return false;
+        SteppedBehavior.ReportMissing("M15-030 needs device persistence skipped: system_clock epoch producer at 0x00693BC0/0x00693BC4 and elapsed decay 0x00695304..0x00695330 are unbuilt; needsState.json read/apply, persistence restoration decay and forced/periodic writes (writeAsJson 0x00693EE6) are gated",_devicePersistenceMissingScope);
+        return true;
     }
 
 
@@ -1808,6 +1815,7 @@ public sealed class NeedsManager
     /// </summary>
     public void ApplyDecayForTimeSinceLastDeviceWrite(bool connected)
     {
+        if(SkipUnbuiltDevicePersistence())return;
         lock (_gate)
         {
             SteppedBehavior.ReportMissing("M15-030 elapsed producer 0x00695304..0x00695330: signed microsecond arithmetic is built, but existing host seconds-clock/DateTime storage is not certified as the native system_clock producer");
@@ -1926,6 +1934,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public void Save(string path, long? unixTimeSec = null, uint serialNumber = 0)
     {
+        if(SkipUnbuiltDevicePersistence())return; // Legacy serializer below is an explicitly opted-in unit model.
         if(State.PartDamage.Keys.Any(key=>(uint)key>=3))
         {
             StackDiagnostics.Write("M1-034/M15-029/M15-014: skipping needs device-file write at Json::Value::operator[](nullptr), 0x00693E10..0x00693E18; invalid part map and prior file retained");return;
@@ -1967,6 +1976,7 @@ public sealed class NeedsManager
     public void WriteDeviceFile(bool refreshDateTime)
     {
         if (FixedDeviceFilePath is not { } path) return;
+        if(SkipUnbuiltDevicePersistence())return;
         if (refreshDateTime) _stateDateTimeSec = _clockSec();    // 0x00693BC4
         Save(path, unixTimeSec: (long)_stateDateTimeSec, serialNumber: _serial);   // 0x00693BB0 (+0x34)
     }
@@ -1983,6 +1993,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public bool Load(string path, long? unixTimeSec = null, bool applyElapsedDecay = true)
     {
+        if(SkipUnbuiltDevicePersistence())return false;
         if (!File.Exists(path)) return false;
         string text = File.ReadAllText(path);            // the file I/O is outside _gate
         lock (_gate)
@@ -2039,6 +2050,7 @@ public sealed class NeedsManager
     // fidelity: M15-014
     public bool AttemptReadFromDevice(string? path)
     {
+        if(path is not null&&SkipUnbuiltDevicePersistence())return false;
         string name = path is null ? FixedFileName : Path.GetFileName(path);
         if (path is null || !File.Exists(path))
         {
