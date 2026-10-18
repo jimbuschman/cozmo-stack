@@ -95,11 +95,13 @@ public sealed class StartupDeliveryRegressionTests
         finally{Directory.Delete(root,true);}
     }
 
-    // reach: production — public ConnectAsync and BeforeStart; a slow startup observer lets native ready publish before ConnectAsync installs its waiter.
+    // reach: production — public ConnectAsync and BeforeStart; a thread-ordering seam holds only the
+    // first runner tick until the creating thread owns initial delivery; no engine result is substituted.
     [Fact]
     public async Task ConnectAsyncDoesNotMissReadyPublishedWhileCreateIsDeliveringAnEarlierReport()
     {
         string root=Directory.CreateTempSubdirectory("late-ready-waiter-").FullName;
+        using var initialHostEntered=new ManualResetEventSlim();
         try
         {
             Directory.CreateDirectory(Path.Combine(root,"animations"));File.WriteAllText(Path.Combine(root,"animations","a.json"),"{\"a\":[]}");
@@ -107,9 +109,11 @@ public sealed class StartupDeliveryRegressionTests
             var connecting=CozmoRobot.ConnectAsync(IPAddress.Loopback,isSimulated:true,cancellationToken:cancel.Token,
                 engineOptions:new CozmoEngineOptions{ResourcesPath=root,BlockPoolPath="",BeforeStart=e=>
                 {
-                    engine=e;e.EngineStateChanged+=s=>
+                    engine=e;e.BeforeFirstProductionTickForTest=()=>initialHostEntered.Wait(cancel.Token);
+                    e.EngineStateChanged+=s=>
                     {
-                        if(s.OldState==0&&s.NewState==1)sourceReadySeen=SpinWait.SpinUntil(()=>e.IsReady,TimeSpan.FromSeconds(5));
+                        if(s.OldState==0&&s.NewState==1)
+                        {initialHostEntered.Set();sourceReadySeen=SpinWait.SpinUntil(()=>e.IsReady,TimeSpan.FromSeconds(5));}
                     };
                 }});
             try
@@ -125,12 +129,14 @@ public sealed class StartupDeliveryRegressionTests
 
     // reach: production — public ConnectAsync/BeforeStart, real ticker and transport packets; barriers force
     // ready publication before waiter subscription, and subscription before delivery. Reflection only observes
-    // the waiter and retrieves the real transport for the scripted peer; it substitutes no engine result.
+    // the waiter and retrieves the real transport for the scripted peer; the first-tick seam orders threads
+    // so the blocking initial host callback cannot run on the ticker. It substitutes no engine result.
     [Fact]
     public async Task ConnectAsyncCompletesWhenSubscriptionFallsBetweenReadyCaptureAndDelivery()
     {
         string root=Directory.CreateTempSubdirectory("forced-ready-interleave-").FullName;
         using var releaseNames=new ManualResetEventSlim();
+        using var initialHostEntered=new ManualResetEventSlim();
         using var sourceReadyPublished=new ManualResetEventSlim();
         using var cancel=new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var namesEntered=new TaskCompletionSource<CozmoEngine>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -144,6 +150,7 @@ public sealed class StartupDeliveryRegressionTests
             connecting=Task.Run(()=>CozmoRobot.ConnectAsync(IPAddress.Loopback,isSimulated:true,cancellationToken:cancel.Token,
                 engineOptions:new CozmoEngineOptions{ResourcesPath=root,BlockPoolPath="",BeforeStart=e=>
                 {
+                    e.BeforeFirstProductionTickForTest=()=>initialHostEntered.Wait(cancel.Token);
                     // This synchronous local publication follows CaptureAppEvent, so it proves capture
                     // finished, unlike observing the earlier engine-state byte store alone.
                     sourceReadyObserver=e.AnimationMessages.SubscribeMessage(0x7B,true,p=>
@@ -151,6 +158,7 @@ public sealed class StartupDeliveryRegressionTests
                     e.EngineStateChanged+=s=>
                     {
                         if(s.OldState!=0||s.NewState!=1)return;
+                        initialHostEntered.Set();
                         if(!sourceReadyPublished.Wait(TimeSpan.FromSeconds(10)))
                         {initialReleased.TrySetException(new TimeoutException("native ready not published"));return;}
                         initialReleased.TrySetResult();
@@ -211,10 +219,14 @@ public sealed class StartupDeliveryRegressionTests
         {
             string assets=Directory.CreateDirectory(Path.Combine(root,"assets","animations")).FullName;
             string config=Directory.CreateDirectory(Path.Combine(root,"config","engine","animations")).FullName;
+            string nested=Directory.CreateDirectory(Path.Combine(assets,"a")).FullName;
+            // '/' (47) sorts before '0' (48), but Windows '\\' (92) sorts after it.
+            File.WriteAllText(Path.Combine(nested,"clip.json"),"{\"nested_clip\":[]}");
+            File.WriteAllText(Path.Combine(assets,"a0.json"),"{\"flat_clip\":[]}");
             File.WriteAllText(Path.Combine(assets,"z.json"),"{\"asset_clip\":[]}");
             File.WriteAllText(Path.Combine(config,"a.json"),"{\"config_clip\":[]}");
-            Assert.Equal(new[]{"asset_clip","config_clip"},AnimationLibrary.Open(root).ClipNames);
-            Assert.Equal(new[]{"asset_clip","config_clip"},AnimationLibrary.Open(Path.Combine(root,"assets")).ClipNames);
+            Assert.Equal(new[]{"nested_clip","flat_clip","asset_clip","config_clip"},AnimationLibrary.Open(root).ClipNames);
+            Assert.Equal(new[]{"nested_clip","flat_clip","asset_clip","config_clip"},AnimationLibrary.Open(Path.Combine(root,"assets")).ClipNames);
         }
         finally{Directory.Delete(root,true);}
     }

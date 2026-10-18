@@ -1965,13 +1965,19 @@ public sealed partial class CozmoEngine : IDisposable
 
     // ------------------------------------------------------------------ running
 
+    // Test-only ordering hook: pauses the real runner before its first tick; supplies no engine result.
+    internal Action? BeforeFirstProductionTickForTest;
     /// <summary>B24/B12: production. The transport is started (RCM::Init's StartClient) and the 60 ms engine thread runs.</summary>
     internal void StartProduction(uint randomSeed = 0, Func<uint>? entropy = null)
     {
         StartEngineRandom(randomSeed, entropy);
         StartHostEngine();
         _t.Start();
-        _runner = new EngineTickRunner(_nowNs, EngineTickRunner.HostSleepNs, TickAt, Log);
+        _runner = new EngineTickRunner(_nowNs, EngineTickRunner.HostSleepNs, now=>
+        {
+            Interlocked.Exchange(ref BeforeFirstProductionTickForTest,null)?.Invoke();
+            return TickAt(now);
+        }, Log);
         _runner.Start("cozmo-engine");
         DrainAppDelivery();
     }

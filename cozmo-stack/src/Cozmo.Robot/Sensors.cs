@@ -953,7 +953,9 @@ public sealed class CozmoSensors
                     Behavior.SteppedBehavior.ReportMissing("M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event");
                     UnattachCarriedObjectIfCarrying?.Invoke();
                 }
-                // State already adopted by RobotState.Update; detach precedes Broadcast 0x00536C0E.
+                // Flags already adopted by RobotStateTracker's MotorCalibration handler
+                // (CozmoRobot.cs), before this detach; native sets them after detach (0x00536BC4
+                // before 0x00536BDA/0x00536BF0). Detach does not read those flags. Broadcast follows.
                 _robot.Engine.QueueAppBroadcast(MotorCalibrationReported,new MotorCalibration
                     {MotorID=mc.MotorID,CalibStarted=mc.CalibStarted,AutoStarted=mc.AutoStarted});
                 if(mc.CalibStarted&&mc.AutoStarted)_robot.Engine.QueueAppEvent(AutoCalibrationStarted,new MotorCalibration

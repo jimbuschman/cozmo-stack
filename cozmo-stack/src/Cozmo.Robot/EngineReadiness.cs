@@ -71,7 +71,14 @@ public sealed partial class CozmoEngine
         Volatile.Write(ref _engineState,state); // native store precedes notification.
         var report=new EngineStateTransition(old,state);
         DeliverAnimationReportToApp(0x7B,new[]{old,state},CaptureAppEvent(EngineStateChanged,report),
-            beforeDispatch:()=>{_hostReady=state==3;if(state==3)ReadyDeliveredInternal?.Invoke();});
+            beforeDispatch:()=>
+            {
+                _hostReady=state==3;
+                // Pair the subscriber's Interlocked event add/then flag check with a publishing
+                // store-load fence: reading the waiter cannot precede visibility of the ready flag.
+                Thread.MemoryBarrier();
+                if(state==3)ReadyDeliveredInternal?.Invoke();
+            });
         AnimationMessages.Deliver(0x7B,true,report);
         EmitSourceLog(EngineLogLevel.Event,null,"app.engine.state",EngineStateName(old),
             new Dictionary<string,string>{{"$data",EngineStateName(state)}});
@@ -142,6 +149,8 @@ public sealed partial class CozmoEngine
     {
         if(StartupFailed)return;
         StartupFailureReason=reason;_startupFailed=true;
+        // Same handoff as ready: publish the flag before capturing the failure subscribers.
+        Thread.MemoryBarrier();
         EmitStackLog("Engine startup failed: "+reason);
         var report=new EngineStartupFailure(reason);
         QueueAppEvent(EngineStartupFailed,report);
