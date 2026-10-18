@@ -11,6 +11,8 @@ using Xunit;
 
 namespace Cozmo.Protocol.Tests;
 
+// The MISSING assertions read the process-static SteppedBehavior.MissingReported; parallel engines contaminate them.
+[Collection("SteppedBehavior missing-report statics")]
 public sealed class NeedsPersistenceGateTests
 {
     // reach: production — public startup with a host state directory, real ticker, and public persistence entries.

@@ -100,7 +100,7 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 - **Flake (2026-10-18):** `NeedsPersistenceGateTests.RealConnectNeverRestoresOrWritesUnbuiltNeedsPersistence(hasV5: False)`
   failed once in the push gate ("connect state 2": no ConnectionState 2 within 10 s after the injected ConnectionResponse,
   `NeedsPersistenceGateTests.cs`:116/177) on a memory-starved machine; passed 3/3 alone and in the next full run
-  (5751/5751). Builder to check whether the injected response can race the transport's connect state, or only load.
+  (5751/5751). Builder to check whether the injected response can race the transport's connect state, or only load. A second gate run (2026-10-18) failed the hasV5 case with the MISSING counted twice: the class read the process-static `SteppedBehavior.MissingReported` outside its serial collection. The manager put it in the "SteppedBehavior missing-report statics" collection (test-only); recheck whether that also explains the timeout.
 
 - **B-M1-11 check (2026-10-18):** name the skipped AttemptReadFromDevice success tail (NeedsState Decay 0x006936C6, +0x30
   0x006936CE, DAS 0x006936D2) in the device MISSING (`Needs.cs`:1386) and on M15-014/M15-030; relabel or rebase the
