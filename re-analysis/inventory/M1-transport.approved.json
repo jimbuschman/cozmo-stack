@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-17",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "22c220c7015844a1a7f26fd89a7c23e66d4b148fa71b77bca28fde446b57162a",
+  "inventory_sha256": "c36b5420d39e867f5f39fd5391a31f018be1082f5022bbc2e7484eda12e1a82f",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -697,11 +697,12 @@
       "hardware_required": false
     },
     "M1-056": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "CozmoEngine::Update states 1 and 2: HasDesiredNumUiDevices, SendSupportInfo, SetEngineState(2); the per-tick loading poll and EngineLoadingDataStatus; delivery of the Init-time broadcast with no UI device",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/overnight/20261017-ov124-check.md: switch 0x004ED5C4 (engine+0x62), tbb 0x004ED5CC; state 1: HasDesiredNumUiDevices == 1 at 0x004ED5D8, SendSupportInfo 0x004ED5E2, SetEngineState(2) 0x004ED5EA; state 2: loading case 0x004ED5F0, then always 0x004ED612..0x004ED618 -> 0x004ED7C0 (EngineLoadingDataStatus ctor 0x004ED7DE, E2G slot +0x1C 0x004ED7E6; context+4 dereferenced without a null check 0x004ED7D2); progress out-parameter written every call before the done test 0x00523576..0x0052357E; UiMessageHandler::Broadcast 0x006625B0 calls [vtbl+0x48] with r2 = -1 (0x006625CA..0x006625CE), then local dispatch 0x006625FA."
+        "re-analysis/research/overnight/20261017-ov124-check.md: switch 0x004ED5C4 (engine+0x62), tbb 0x004ED5CC; state 1: HasDesiredNumUiDevices == 1 at 0x004ED5D8, SendSupportInfo 0x004ED5E2, SetEngineState(2) 0x004ED5EA; state 2: loading case 0x004ED5F0, then always 0x004ED612..0x004ED618 -> 0x004ED7C0 (EngineLoadingDataStatus ctor 0x004ED7DE, E2G slot +0x1C 0x004ED7E6; context+4 dereferenced without a null check 0x004ED7D2); progress out-parameter written every call before the done test 0x00523576..0x0052357E; UiMessageHandler::Broadcast 0x006625B0 calls [vtbl+0x48] with r2 = -1 (0x006625CA..0x006625CE), then local dispatch 0x006625FA.",
+        "re-analysis/research/overnight/20261017-ov125-ov126-check.md: StartEngine handler 0x004ECBDA (seed, SetLocale 0x004ECBE2, SetEngineState(1) 0x004ECC40..0x004ECC4A); gate 0x006632F4..0x0066330E (desired 0, 0x0065DC50); Direct auto-connect 0x00662ACE/0x00662AEE, 0x0065C4C4..0x0065C4D0, first receive 0x0065C44C..0x0065C458 via ProcessMessages 0x00662860 (UI+0xF1); transition 0x004ED5D8..0x004ED5EE; SetEngineState 0x004ECCBC: store +0x62 0x004ECCD2, E2G UpdateEngineState tag 0x7B {old,new} (0x004EDC12..0x004EDC2E, 0x007276F8, 0x00719F7E..0x00719F9E), telemetry 0x004ECD2A; progress writers 0x0051EF3E/46, 0x0051F9B0..C0, 0x00521684/0x005216A6/0x005216D8, 0x0051F3F2/0x0051F424, 0x0051F480..8C, 0x005203E8; poll 0x00523576..0x005235E2; null DataPlatform 0x0051F394 (no 1.0: hang)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -712,6 +713,26 @@
       "authority": "libcozmoEngine.so 3.4.0-1204; Unity C# (absence of a sender).",
       "evidence": [
         "re-analysis/research/overnight/20261017-ov124-check.md: 0xB1 registration 0x004EBCF4..0x004EBD1E from 0x004EB5D8, invoker 0x004EEA32 -> ReadAnimationDir 0x0052F858 (LoadAnimations 0x0052F860 clears loader+0x44 only, then broadcast 0x0052F86A); 0xB2/0xB3 subscribed in the RobotManager ctor when context+4 is non-null 0x0052E51A..0x0052E5B2, 0x0052E54C; 0xB2 handler 0x0052FC02 -> BroadcastAvailableAnimations; 0xB3 handler 0x0052FBA0 -> BroadcastAvailableAnimationGroups; no loading gate on any. App: unity/scripts/csharp/Anki.Cozmo.ExternalInterface/MessageGameToEngine.cs:190-192 and the generated message classes are the only references."
+      ],
+      "live_path": false,
+      "hardware_required": false
+    },
+    "M1-058": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Host inputs that start the engine in place of the app: the StartEngine equivalent (seed, locale), the connected-UI condition, and the data platform",
+      "authority": "libcozmoEngine.so 3.4.0-1204; AGENTS.md \"Scope: the app boundary\".",
+      "evidence": [
+        "re-analysis/research/overnight/20261017-ov125-ov126-check.md: StartEngine handler 0x004ECBDA..0x004ECC4A is the only path to state 1; Direct comms slot 0 auto-connects (0x00662ACE, 0x00662AEE) and counts 2 once the first game message is received (0x0065C44C..0x0065C458); LoadNonConfigData needs a non-null DataPlatform (0x0051F394)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-059": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "Game-socket plumbing not supported: E2G UiDeviceAvailable, UiDeviceConnected and Ping to the game",
+      "authority": "libcozmoEngine.so 3.4.0-1204; AGENTS.md \"What we reproduce\".",
+      "evidence": [
+        "re-analysis/research/overnight/20261017-ov125-ov126-check.md: UiDeviceAvailable 0x00662B2A..0x00662B32; UiDeviceConnected (two 16-byte CLAD hashes) 0x00662DE0..0x00662E3E; Ping every 20 UI updates per connected slot, game only, 0x00662A0E..0x00662A76."
       ],
       "live_path": false,
       "hardware_required": false

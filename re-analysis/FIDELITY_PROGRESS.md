@@ -10,18 +10,18 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | --- | ---: |
 | EXACT_SOURCE | 184 |
 | EQUIVALENT_IMPLEMENTATION | 5 |
-| COMPATIBILITY_POLICY | 63 |
+| COMPATIBILITY_POLICY | 65 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 404 |
-| RECOVERABLE_GAP | 20 |
-| **total** | **692** |
+| IMPLEMENTATION_GAP | 405 |
+| RECOVERABLE_GAP | 19 |
+| **total** | **694** |
 
 ## Subsystems
 
 | subsystem | review | approved | records | EXACT | policy/equiv | HW_ONLY/BLOCKED | IMPL_GAP | RECOVERABLE | live-path open |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 2026-10-17 | 57 | 38 | 15 | 1 | 2 | 1 | 3 |
+| M1-transport | INVENTORY_APPROVED | 2026-10-17 | 59 | 38 | 17 | 1 | 3 | 0 | 3 |
 | M2-protocol | INVENTORY_APPROVED | 2026-10-16 | 23 | 16 | 2 | 0 | 5 | 0 | 5 |
 | M3-device | INVENTORY_APPROVED | 2026-10-15 | 63 | 35 | 20 | 4 | 4 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 2026-10-16 | 50 | 22 | 8 | 3 | 17 | 0 | 17 |
@@ -45,4 +45,4 @@ ACCEPTED subsystems: none.
 | level | records |
 | --- | ---: |
 | HARDWARE_VERIFIED | 10 |
-| NONE | 682 |
+| NONE | 684 |

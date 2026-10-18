@@ -92,6 +92,11 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
+- **B-M2M15-2 Opus check (2026-10-17; research/20261017-b-m2m15-2-check.md):** PASS with queued items; finding 1
+  (inline app delivery under the streamer lock) raised to blocking, fixed in B-DELIV-1. Queued: relabel
+  `NoRobotDrops…` as unit; the TriggerLiftSafe loop-count re-Init (unreachable); C5's widened B-M12-7 race (B-M12-7);
+  the Turn C4 log.
+
 - **B-M1-3 Opus fix review PASS with queued items (2026-10-17; research/20261017-b-m1-3-check.md):** dispose the
   `ReliableTransport` in `CozmoRobot`'s constructor when `new CozmoEngine` throws for a bad config (N1; background
   threads leak, nothing sent). B-M1-2 Q4/Q5 go to the next M1 job.

@@ -804,3 +804,13 @@ M1-048 Rule10 U5/U6 follow-up: exact short-send, non-IP and send-failure tags/fo
 | New RECOVERABLE_GAP: engine states 1 and 2, EngineLoadingDataStatus, Init-time broadcast delivery | M1-056 (new) |
 | New COMPATIBILITY_POLICY: 0xB1/0xB2/0xB3 handlers unreachable (no app sender) | M1-057 (new) |
 | First-broadcast question answered; folded in after B-M1-2 publishes | M1-055 (pending) |
+
+
+## Check of OV125 and OV126 (manager, 2026-10-17; research/overnight/20261017-ov125-ov126-check.md)
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP to IMPLEMENTATION_GAP (bodies read) | M1-056 |
+| New COMPATIBILITY_POLICY: host start inputs | M1-058 (new) |
+| New COMPATIBILITY_POLICY, not supported: game-socket plumbing | M1-059 (new) |
+| Notes: OV126 routines 1-3, 6 | M1-054, M1-055 |

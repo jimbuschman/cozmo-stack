@@ -59,6 +59,13 @@ stay required with their owners; the new standard does not dismiss them.
 
 ## Sequence
 
+**Update (2026-10-17, evening):** B-M1-3 PASS (fix review), B-M2M15-2 PASS with one finding raised to blocking
+(B-DELIV-1). OV125 and OV126 adopted (`research/overnight/20261017-ov125-ov126-check.md`): readiness needs StartEngine
+and the engine's own UI connection, which the stack supplies as host inputs (M1-058); game-socket plumbing not supported
+(M1-059). M1 has no live research gap left. Next build: B-M1-4 (readiness through the real startup), then B-DELIV-1.
+Open for the operator: SupportInfo, game-posted audio. Then the M2 settling pass, policy confirmation and the hardware
+script.
+
 **Update (2026-10-17, later):** B-M15-11 PASS with queued items (`research/20261017-b-m15-11-check.md`). B-M1-2 FAIL
 (`research/20261017-b-m1-2-check.md`): a supplied engine config left the engine silently dead; an unsupported public
 carry setter; the Init-time broadcast still wired to public delivery. Fixes in B-M1-3, after B-M2M15-2. The verifier
