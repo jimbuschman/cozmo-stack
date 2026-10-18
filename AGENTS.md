@@ -194,6 +194,10 @@ stack implements that feature.
     - **The profiler's teardown print order (M11-078 / M11-055):** ~Profiler's timer lines (0x0087CFD4..0x0087CFE8) are
       printed in insertion order, the order the timers were created, instead of `std::hash<const char*>` over
       string-literal addresses.
+  - **Extended to the animation-name list (M1-055)** (operator, 2026-10-17; `research/20261017-b-m1-4-check.md`).
+    GetAnimationNames (0x00588190) walks an `unordered_map<string, Animation>` filled in readdir order by up to four
+    loader threads, so its order differs between phones. The stack delivers the names in its loader's deterministic
+    definition order. The `_PROCEDURAL_` skip, first-definition-wins and the broadcast tail stay exact.
 
 Apply no other departure without the operator, except the manager's exclusions allowed in "What we reproduce".
 

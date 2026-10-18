@@ -59,6 +59,13 @@ stay required with their owners; the new standard does not dismiss them.
 
 ## Sequence
 
+**Update (2026-10-17, night):** B-M1-4 (3c7b7969) and B-DELIV-1 (33b80553) both Opus FAIL
+(`research/20261017-b-m1-4-check.md`, `research/20261017-b-deliv-1-check.md`). B-M1-4: startup with the shipped
+assets never reaches ready (a >1-name MISSING), so no hardware tool can connect; the public API cannot observe 0→1.
+B-DELIV-1: other game broadcasts (RobotStopped, cube reports, NV results) still run inline, so host order changed; one
+production label rests on a second-thread Tick. Operator decision: animation names in stack load order (AGENTS.md,
+M11-047 extension). All fixes in B-M1-5 (open). Until it lands, main cannot drive a robot.
+
 **Update (2026-10-17, evening):** B-M1-3 PASS (fix review), B-M2M15-2 PASS with one finding raised to blocking
 (B-DELIV-1). OV125 and OV126 adopted (`research/overnight/20261017-ov125-ov126-check.md`): readiness needs StartEngine
 and the engine's own UI connection, which the stack supplies as host inputs (M1-058); game-socket plumbing not supported
