@@ -92,6 +92,10 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
+- **B-M1-3 Opus fix review PASS with queued items (2026-10-17; research/20261017-b-m1-3-check.md):** dispose the
+  `ReliableTransport` in `CozmoRobot`'s constructor when `new CozmoEngine` throws for a bad config (N1; background
+  threads leak, nothing sent). B-M1-2 Q4/Q5 go to the next M1 job.
+
 - **B-M15-11 Opus check PASS with queued items (2026-10-17; research/20261017-b-m15-11-check.md):** relabel
   `LabDefinitionsCheckedRowsTests` (its enable-log part is unit: replayed Init) and correct M15-049's "no replay" note;
   make `VisionConfigCheckedRowsTests.cs`:65 assert something startup-dependent (e.g. the single "Enabling the lab"

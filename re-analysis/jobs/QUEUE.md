@@ -144,7 +144,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w2 | [B-M1-2](B-M1-2.md) | CLAIMED per status/B-M1-2.md; Opus check FAIL (research/20261017-b-m1-2-check.md), fixes in B-M1-3 |
 | 61w2a | [B-M15-11](B-M15-11.md) | CLAIMED per status/B-M15-11.md (B-M15-7 check FAIL: Lab always enabled; Feeding deselect handle release; ASCII locale); Opus check PASS with queued items (research/20261017-b-m15-11-check.md) |
 | 61w3 | [B-M2M15-2](B-M2M15-2.md) | CLAIMED per status/B-M2M15-2.md (released 2026-10-17: M1+M2 path), after B-M15-11 (publish parked B-M2M15-1: M15-044, M2-023; fix PoseTreeVerifyBuilderTests full-run failure) |
-| 61w3a | [B-M1-3](B-M1-3.md) | open, after B-M2M15-2 (B-M1-2 check FAIL: dead engine on a supplied config; public carry setter; Init-time broadcast delivered publicly) |
+| 61w3a | [B-M1-3](B-M1-3.md) | DONE per status/B-M1-3.md (B-M1-2 check FAIL: dead engine on a supplied config; public carry setter; Init-time broadcast delivered publicly); Opus fix review PASS with queued items (research/20261017-b-m1-3-check.md) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |

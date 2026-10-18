@@ -101,8 +101,8 @@
 | 61w1 | B-M15-7 | CLAIMED per status/B-M15-7.md (Lab activation M15-052; disconnect consumers M15-056; AI... | DONE (4/4 items; 14 MISSING) | `research/20261017-b-m15-7-check.md` |
 | 61w2 | B-M1-2 | CLAIMED per status/B-M1-2.md; Opus check FAIL (research/20261017-b-m1-2-check.md), fixe... | DONE (3/3 items; 12 MISSING) | `research/20261017-b-m1-2-check.md` |
 | 61w2a | B-M15-11 | CLAIMED per status/B-M15-11.md (B-M15-7 check FAIL: Lab always enabled; Feeding deselec... | DONE (4/4 items; 8 MISSING) | `research/20261017-b-m15-11-check.md` |
-| 61w3 | B-M2M15-2 | CLAIMED per status/B-M2M15-2.md (released 2026-10-17: M1+M2 path), after B-M15-11 (publ... | CLAIMED Codex 2026-10-17 | none found |
-| 61w3a | B-M1-3 | open, after B-M2M15-2 (B-M1-2 check FAIL: dead engine on a supplied config; public carr... | no status file | none found |
+| 61w3 | B-M2M15-2 | CLAIMED per status/B-M2M15-2.md (released 2026-10-17: M1+M2 path), after B-M15-11 (publ... | DONE (3/3 items; 3 MISSING groups) — B-M2M15-2, Codex builder, 2026-10-17. Implementation commit: ff31b1f0 (see publication update below). | none found |
+| 61w3a | B-M1-3 | DONE per status/B-M1-3.md (B-M1-2 check FAIL: dead engine on a supplied config; public ... | DONE (4/4 items; 2 MISSING groups) — B-M1-3, Codex builder, 2026-10-17. Commit: f86b0702 (published). | `research/20261017-b-m1-3-check.md` |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
