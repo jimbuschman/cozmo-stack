@@ -2,7 +2,7 @@
   "subsystem": "M2-protocol",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "058959c948bc63b36358a233802e712dc7ae45986a94c0093f50c5bd26888754",
+  "inventory_sha256": "5c702c5efb68515640c86b387d4d3e1b0ab8fd49e1e67827871eacbb1b2f18f4",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -288,7 +288,7 @@
       "hardware_required": false
     },
     "M2-024": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotToEngineImplMessaging Init subscriptions the stack lacks: B1, B2, B3, B7, BA, BB, BC, BD, C3",
       "authority": "InitRobotMessageComponent 0x00532A7C; B1 HandlePrint (GOT 0x0103EA60); B3 HandleGoalPose 0x005352C8; C3 HandleRobotPoked 0x005366FC (Robot::Broadcast 0x00536754); BA lambda 0x00538088 (SetOnRamp 0x005380D2); BB 0x0053819C (SetOnRamp 0x005381E6); BC 0x005382B4; BD 0x005383C0; B2 0x005384CC; B7 0x0053866A",
       "evidence": [

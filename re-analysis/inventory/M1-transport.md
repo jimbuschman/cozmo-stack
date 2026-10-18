@@ -824,3 +824,17 @@ M1-048 Rule10 U5/U6 follow-up: exact short-send, non-IP and send-failure tags/fo
 | New RECOVERABLE_GAP, split from M1-024: UpdateLatencyInfo LatencyMessage (supported, operator 2026-10-18), vtbl+0x44 call 0x004ED4FC, ctx+0x24 +0x10 zeroing 0x004ED510 | M1-061 (new) |
 | Not supported (manager): the FactoryTestLogger archive (on-device log files) | M1-054 (note) |
 | Policy text confirmed / corrected | M1-013, -014, -022, -034, -036, -037, -038, -039, -040, -042, -043, -049, -051, -052, -057, -058, -059 (notes) |
+
+
+## OV127 check (manager, 2026-10-18; research/overnight/20261018-ov127-check.md)
+
+| Change | Records |
+| --- | --- |
+| New COMPATIBILITY_POLICY: SetGameBeingPaused app input (G2E 85; engine+0x60 at 0x004EDF88), via a C# API call, default not paused | M1-062 (new) |
+| LatencyMessage rows adopted (build in B-M1-9) | M1-061 (note) |
+| LoadRobotConfigs census: every destination owned | M1-054 (note) |
+| Local E2G consumers: bounded no-subscriber result accepted | M1-055, M1-056 (notes) |
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows read (OV127 check) | M1-061 |

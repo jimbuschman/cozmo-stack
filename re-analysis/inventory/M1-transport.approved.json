@@ -2,7 +2,7 @@
   "subsystem": "M1-transport",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M1-transport.md",
-  "inventory_sha256": "66149f29f582fac618fc6337afa083ef7c15fed963236772aae71937ed420e5d",
+  "inventory_sha256": "c92d7702e6d245524e40bf6658f95b1715bc6c605c9c8c52f9f66c27895b3b33",
   "records": {
     "M1-001": {
       "status": "EXACT_SOURCE",
@@ -749,12 +749,23 @@
       "hardware_required": false
     },
     "M1-061": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "CozmoEngine::Update state-3 residue: UpdateLatencyInfo's LatencyMessage, the UiMessageHandler vtbl+0x44 call and the ctx+0x24 +0x10 zeroing",
       "authority": "UpdateLatencyInfo called at 0x004ED64C; countdown reset to 10 at 0x004ED88C/0x004ED8AC; LatencyMessage ctor 0x004EDA68, ext-interface +0x1C send 0x004EDA76; gates kNetConnStatsUpdate (const 1, 0x00C95F41) and engine+0x60 == 0; vtbl+0x44 call 0x004ED4FC; ctx+0x24 +0x10 zeroing 0x004ED510",
       "evidence": [
         "Split from M1-024 (research/20261018-m1m2-settling-pass.md, 'Other records stronger than their evidence'): M1-024's range 0x004ED4DE..0x004ED6C4 includes these steps, which the stack does not run; CozmoEngine.cs:2057 drops LatencyMessage in a comment.",
         "Operator decision 2026-10-18: LatencyMessage is supported; build it once its payload is read (OV127 Q1)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M1-062": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "App input: SetGameBeingPaused (G2E tag 85), supplied by a C# API call, default not paused",
+      "authority": "CozmoEngine::HandleMessage<SetGameBeingPaused> 0x004EDF84..0x004EDF9E: ldrb 0x004EDF86, strb engine+0x60 0x004EDF88, tail-call AppIsInFocus(!paused) via veneer 0x008CAA5C",
+      "evidence": [
+        "research/overnight/20261018-ov127-check.md correction 1: the app pauses the game with G2E SetGameBeingPaused; the handler stores the byte at engine+0x60, which UpdateLatencyInfo tests (0x004ED84E/0x004ED854).",
+        "The stack has no game app; under AGENTS 'Scope: the app boundary' it supplies this input itself."
       ],
       "live_path": true,
       "hardware_required": false

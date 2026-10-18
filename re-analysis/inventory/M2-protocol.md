@@ -849,3 +849,7 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | --- | --- |
 | New RECOVERABLE_GAP, split from M2-018: Impl Init subscriptions the stack lacks (B1, B2, B3, B7, BA, BB, BC, BD, C3) | M2-024 (new) |
 | Policy text confirmed / corrected | M2-017, M2-021 (notes) |
+
+| Change | Records |
+| --- | --- |
+| RECOVERABLE_GAP -> IMPLEMENTATION_GAP: rows read (OV127 check) | M2-024 |
