@@ -899,10 +899,10 @@ public sealed class NeedsManager
     }
 
     // fidelity: M15-014
-    public static NeedsManager FromObb(string obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null, EngineRandom? contextRandom = null)
+    public static NeedsManager FromObb(string? obbRoot, Func<double> clockSec, Random? random = null, string? deviceDirectory = null, EngineRandom? contextRandom = null, Action<NeedsManager>? beforeInit = null)
     {
-        var dir = Path.Combine(obbRoot, "assets", "cozmo_resources", "config", "engine");
-        string? Read(string name) { var p = Path.Combine(dir, name); return File.Exists(p) ? File.ReadAllText(p) : null; }
+        string? dir = obbRoot is null ? null : new[]{Path.Combine(obbRoot,"config","engine"),Path.Combine(obbRoot,"..","config","engine"),Path.Combine(obbRoot,"assets","cozmo_resources","config","engine")}.FirstOrDefault(Directory.Exists);
+        string? Read(string name) { if(dir is null)return null;var p = Path.Combine(dir, name); return File.Exists(p) ? File.ReadAllText(p) : null; }
         var cfg = Read("needs_config.json") is { } c ? NeedsConfig.Parse(c) : null;
         var decay = Read("needs_decay_config.json") is { } d ? DecayConfig.Parse(d) : null;
         var actions = Read("needs_action_config.json") is { } a ? NeedsActionDelta.Parse(a) : null;
@@ -930,6 +930,7 @@ public sealed class NeedsManager
         needs.DesiredFaceDistortion = distortion;
         // NeedsManager::Init 0x00692574 ends by calling InitInternal 0x006926CE (J1/J14): the construction
         // analogue here, so a manager built from the OBB has run the startup device read and its tail.
+        beforeInit?.Invoke(needs);
         needs.InitInternal(clockSec());
         return needs;
     }
@@ -1284,7 +1285,7 @@ public sealed class NeedsManager
         }
         // The NV read (and the immediate fallback) run outside _gate.
         // M15-014/M3-033: on the live path the engine owns the 0x194000 read (queued from its mfgId handler,
-        // because this stack builds the NeedsManager after the handshake); adopt its buffered/streamed result
+        // because RobotEventHandler queues the connection read before the serial-number edge); adopt its buffered/streamed result
         // rather than queueing a second read. When the engine has no such read (the offline seam, or a
         // NeedsManager used directly), StartReadFromRobot still queues one.
         if (_connectionEngine is { ConnectionNeedsReadQueued: true } engine)

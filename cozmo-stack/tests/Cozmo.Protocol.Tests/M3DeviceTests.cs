@@ -2626,11 +2626,16 @@ public class M3DeviceTests
         rig.Tick();
     }
 
-    /// <summary>Answers the in-flight read with <paramref name="result"/> and ticks, which sends the next one.</summary>
+    // reach: unit peer fixture: fail reads as requested, acknowledge actual recovery erase/write operations.
+    /// <summary>Answers the in-flight operation and ticks, which sends the next one.</summary>
     private static void AnswerInFlight(Rig rig, sbyte result = -1)
     {
         var cmd = NvCommands(rig)[^1];
-        rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = result, Length = 0, Data = Array.Empty<byte>() });
+        // These NV unit fixtures require a pristine saved write buffer. Supply a valid needs copy so
+        // connection recovery does not write first; failed-needs recovery is covered by engine tests.
+        if(cmd.Op==NvStorageComponent.OpRead && cmd.Tag==Cozmo.Robot.Behavior.NeedsManager.NeedsNvKey)
+        {AnswerInFlight(rig,0,NeedsV5());return;}
+        rig.Data(new NVOpResult { Tag = cmd.Tag, Op = cmd.Op, Result = cmd.Op == NvStorageComponent.OpRead ? result : (sbyte)0, Length = 0, Data = Array.Empty<byte>() });
         rig.Tick();
     }
 
@@ -2638,7 +2643,7 @@ public class M3DeviceTests
     private static void AnswerInFlight(Rig rig, sbyte result, byte[] data)
     {
         var cmd = NvCommands(rig)[^1];
-        rig.Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = result, Length = 0, Data = data });
+        rig.Data(new NVOpResult { Tag = cmd.Tag, Op = cmd.Op, Result = cmd.Op == NvStorageComponent.OpRead ? result : (sbyte)0, Length = 0, Data = data });
         rig.Tick();
     }
 
@@ -3968,6 +3973,7 @@ public class M3DeviceTests
     /// within the budget the robot's AnimationState reports, completes, and ends with EndOfAnimation, with nothing
     /// after it.
     /// </summary>
+    // reach: unit (CreateForTest substitutes startup; real ticker/dispatch/stream, actual NV operations).
     [Fact]
     public void M3_013_CD12_OnAProductionEngineTheEngineTickStreamsAClipToItsEnd()
     {
@@ -3994,8 +4000,7 @@ public class M3DeviceTests
         Assert.True(Sent(m => m is SyncTime), "no SyncTime");
         // M3-026/M3-032: the connection reads are queued at Success but only go out after Gate A, so establish the
         // first synced full state and answer each read, in the engine's order, until the queue drains and ready to
-        // stream opens (CD20). M3-033: 12 constructor reads, then CameraCalib, Lab and (with no NeedsManager here) no
-        // Needs read.
+        // stream opens (CD20). M3-033: constructor/CameraCalib/Lab/Needs reads plus needs recovery erase/write.
         Data(new SyncTimeAck());
         Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });
         int answered = 0;
@@ -4008,7 +4013,7 @@ public class M3DeviceTests
             bool calibration = cmd.Tag == 0x80000001;
             Data(new NVOpResult
             {
-                Tag = cmd.Tag, Op = 0, Result = calibration ? (sbyte)0 : (sbyte)-1, Length = 0,
+                Tag = cmd.Tag, Op = cmd.Op, Result = cmd.Op != NvStorageComponent.OpRead || calibration ? (sbyte)0 : (sbyte)-1, Length = 0,
                 Data = calibration ? Calibration56() : Array.Empty<byte>(),
             });
         }

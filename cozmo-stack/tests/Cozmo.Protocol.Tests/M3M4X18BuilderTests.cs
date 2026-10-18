@@ -11,7 +11,9 @@ namespace Cozmo.Protocol.Tests;
 public sealed class M3M4X18BuilderTests
 {
     private static void Offline(M4ControlTests.Rig rig) => rig.Engine.InitOfflineLink(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback,5551));
+    // reach: unit (direct Engine.Broadcast substitutes production ProcessMessages; tests actual constructor subscriber order).
     [Theory]
+    [InlineData(0xED,"Impl,RIC")] [InlineData(0xC4,"TurnAction,HeadAction,LiftAction")] [InlineData(0xC0,"Impl")]
     [InlineData(0xB4,"BlockTapFilter,Impl")] [InlineData(0xB5,"BlockTapFilter,Impl")]
     [InlineData(0xB6,"BlockTapFilter")]
     [InlineData(0xC9,"Backup,Impl,RIC")]
@@ -27,10 +29,13 @@ public sealed class M3M4X18BuilderTests
         using var rig=new M4ControlTests.Rig();rig.Engine.ConnectToRobot(M4ControlTests.Rig.RobotIp);
         // Fresh constructor-only handshake retains the RIC for D2/EE/C9 order checks.
         rig.Tick();rig.Port.Raise(ReceiverMarker.OnConnected,M4ControlTests.Rig.RobotEp);rig.Tick();
+        if(tag==0xED){rig.Engine.Broadcast(new RobotAvailable());rig.Engine.Broadcast(new FirmwareVersion{Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});}
+        using var turn=tag==0xC4?new TurnInPlaceAction(new MotorSource(rig.Engine.Robot!),0,false):null;
+        if(tag==0xC4)rig.Robot.Motion.QueueHeadAndLiftCompound(0,32);
         var calls=new List<string>();rig.Engine.MessageDispatchObservedForTest=(t,n)=>{if((int)t==tag)calls.Add(n);};
         RobotMessage m=tag switch
         {
-            0xB4=>new ObjectMoved{ObjectID=99},0xB5=>new ObjectStoppedMoving{ObjectID=99},0xB6=>new ObjectTapped{ObjectID=99},0xC9=>new RobotAvailable(),
+            0xED=>new ManufacturingID(),0xC4=>new MotorActionAck(),0xC0=>new CliffEvent(),0xB4=>new ObjectMoved{ObjectID=99},0xB5=>new ObjectStoppedMoving{ObjectID=99},0xB6=>new ObjectTapped{ObjectID=99},0xC9=>new RobotAvailable(),
             0xD2=>new FWVersionInfo(),0xEE=>new FirmwareVersion{Signature=Encoding.UTF8.GetBytes("{}")},
             0xB8=>new PickAndPlaceResult(),0xF3=>new ObjectAvailable(),0xD3=>new DockingStatus(),0xDA=>new LiftLoad(),_=>new FactoryTestParameter()
         };

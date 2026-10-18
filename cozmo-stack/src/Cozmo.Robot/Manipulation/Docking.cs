@@ -194,7 +194,7 @@ public sealed class DockingSystem : IDisposable
         // fidelity: M1-053
         // Publication reads this active supplier. Its replacement/lifetime semantics remain M12's.
         robot.Carrying = Carrying;
-        robot.Message += OnMessage;
+        robot.MessageInternal += OnMessage;
         robot.Engine.PickAndPlaceRoute += OnNativePickAndPlace;
         vision.DockingMarkersProcessed += OnFrame; // M11-064: signal before UpdateAllResults error
         // Everything this instance installs on the vision system is remembered, so Dispose can take back
@@ -776,7 +776,7 @@ public sealed class DockingSystem : IDisposable
     public void Dispose()
     {
         if(ReferenceEquals(Carrying.NativeUnset,_nativeUnset))Carrying.NativeUnset=null;
-        _robot.Message -= OnMessage;
+        _robot.MessageInternal -= OnMessage;
         _robot.Engine.PickAndPlaceRoute -= OnNativePickAndPlace;
         _vision.DockingMarkersProcessed -= OnFrame;
         _vision.FrameProcessed -= _carriedPose;

@@ -176,7 +176,7 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
         // Host adapter after the complete native per-tag signal (CozmoEngine.PublicRoute).
         // Feeds M10-003 CubeMotionTracker; M11-041 owns the radio-slot to world-ID translation.
         // It never registers a native raw B4/B5/D7 subscriber or mutates the inbound message.
-        robot.Message += OnMessage;
+        robot.MessageInternal += OnMessage;
         if (_world is not null) _world.ObjectObserved += OnWorldObserved;
     }
 
@@ -268,7 +268,7 @@ public sealed class CubeMovedReactionStrategy : ReactionTriggerStrategy, IDispos
 
     public void Dispose()
     {
-        _robot.Message -= OnMessage;
+        _robot.MessageInternal -= OnMessage;
         if (_world is not null) _world.ObjectObserved -= OnWorldObserved;
     }
 }

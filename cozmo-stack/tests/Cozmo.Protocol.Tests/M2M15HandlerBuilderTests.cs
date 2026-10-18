@@ -161,7 +161,7 @@ public sealed class M2M15HandlerBuilderTests
         Assert.Equal(EngineActionResult.Running,action.Update());Assert.Empty(results);Assert.Equal(0,action.Checks);
         action.SetInitialized=true;action.Result=0x03000004;Assert.Equal(0x03000004u,action.Update());Assert.Equal(new uint[]{0x03000004},results);Assert.Equal(1,action.Checks);
     }
-    // reach: production — received packet queue -> MessageHandler.ProcessMessages, before unpack.
+    // reach: unit (directly substitutes RCM data queue without a robot; production receiver/startup join is not exercised).
     [Fact]
     public void NoRobotDropsEvenMalformedFatalPacketsAndCountsPoppedPacketsRatherThanTicks()
     {

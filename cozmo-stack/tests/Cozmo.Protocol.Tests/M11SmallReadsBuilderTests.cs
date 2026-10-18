@@ -81,13 +81,14 @@ public sealed class M11SmallReadsBuilderTests
         f.Order.Clear();f.Native.Delocalize(false);Assert.True(m.Configurations.ForceUpdate);
         f.Rig.Engine.Robots.RemoveRobot(1,false);Assert.Equal(0,f.Rig.Engine.AnimationMessages.Count(0x32,true));
     }
+    // reach: unit (fixture creates native container; Freeplay reuses the engine Needs owner).
     [Fact]
     public void FreeplayManagerTallStackFacadeUsesTheClearedNativeContainerFields()
     {
         using var f=new Fixture();using var vision=new VisionSystem(f.Rig.Robot,CameraCalibration.Nominal()){Enabled=false};using var m=new ManipulationSystem(f.Rig.Robot,vision);
         string obb=Path.GetFullPath(Path.Combine(Resources(),"../.."));
         var context=new BehaviorContext{Robot=f.Rig.Robot,Triggers=AnimationTriggerMap.Load(Resources())};
-        using var stack=FreeplayStack.Create(obb,f.Rig.Robot,context,()=>0,vision,m,withReactions:false,needsDirectory:f.Root);
+        using var stack=FreeplayStack.Create(obb,f.Rig.Robot,context,()=>0,vision,m,withReactions:false);
         var behavior=Assert.IsType<CantHandleTallStackBehavior>(stack.Bound["CantHandleTallStack"]);
         var target=new StackOfCubes(new uint[]{1,2,3});f.Native.TallStackContainers[0].Stack=target;f.Native.TallStackContainers[0].HasStoredPose=true;
         Assert.Same(target,behavior.TargetStack);

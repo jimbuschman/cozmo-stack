@@ -102,6 +102,7 @@ public sealed class StartupDeliveryRegressionTests
     {
         string root=Directory.CreateTempSubdirectory("late-ready-waiter-").FullName;
         using var initialHostEntered=new ManualResetEventSlim();
+        var seamFailure=new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
         try
         {
             Directory.CreateDirectory(Path.Combine(root,"animations"));File.WriteAllText(Path.Combine(root,"animations","a.json"),"{\"a\":[]}");
@@ -109,7 +110,7 @@ public sealed class StartupDeliveryRegressionTests
             var connecting=CozmoRobot.ConnectAsync(IPAddress.Loopback,isSimulated:true,cancellationToken:cancel.Token,
                 engineOptions:new CozmoEngineOptions{ResourcesPath=root,BlockPoolPath="",BeforeStart=e=>
                 {
-                    engine=e;e.BeforeFirstProductionTickForTest=()=>initialHostEntered.Wait(cancel.Token);
+                    engine=e;e.BeforeFirstProductionTickForTest=()=>{try{initialHostEntered.Wait(cancel.Token);}catch(Exception error){seamFailure.TrySetResult(error);}};
                     e.EngineStateChanged+=s=>
                     {
                         if(s.OldState==0&&s.NewState==1)
@@ -118,6 +119,7 @@ public sealed class StartupDeliveryRegressionTests
                 }});
             try
             {
+                Assert.False(seamFailure.Task.IsCompleted,"First-tick ordering wait failed on the test seam.");
                 Assert.True(sourceReadySeen);Assert.NotNull(engine);
                 Assert.True(SpinWait.SpinUntil(()=>engine!.ConnectionState>=1,TimeSpan.FromSeconds(5)));
                 Assert.True(engine!.IsReadyDelivered);
@@ -137,6 +139,7 @@ public sealed class StartupDeliveryRegressionTests
         string root=Directory.CreateTempSubdirectory("forced-ready-interleave-").FullName;
         using var releaseNames=new ManualResetEventSlim();
         using var initialHostEntered=new ManualResetEventSlim();
+        var seamFailure=new TaskCompletionSource<Exception>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var sourceReadyPublished=new ManualResetEventSlim();
         using var cancel=new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var namesEntered=new TaskCompletionSource<CozmoEngine>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -150,7 +153,7 @@ public sealed class StartupDeliveryRegressionTests
             connecting=Task.Run(()=>CozmoRobot.ConnectAsync(IPAddress.Loopback,isSimulated:true,cancellationToken:cancel.Token,
                 engineOptions:new CozmoEngineOptions{ResourcesPath=root,BlockPoolPath="",BeforeStart=e=>
                 {
-                    e.BeforeFirstProductionTickForTest=()=>initialHostEntered.Wait(cancel.Token);
+                    e.BeforeFirstProductionTickForTest=()=>{try{initialHostEntered.Wait(cancel.Token);}catch(Exception error){seamFailure.TrySetResult(error);}};
                     // This synchronous local publication follows CaptureAppEvent, so it proves capture
                     // finished, unlike observing the earlier engine-state byte store alone.
                     sourceReadyObserver=e.AnimationMessages.SubscribeMessage(0x7B,true,p=>
@@ -165,6 +168,8 @@ public sealed class StartupDeliveryRegressionTests
                     };
                     e.AnimationAvailable+=_=>{namesEntered.TrySetResult(e);releaseNames.Wait(cancel.Token);};
                 }}));
+            await Task.WhenAny(initialReleased.Task,seamFailure.Task).WaitAsync(cancel.Token);
+            Assert.False(seamFailure.Task.IsCompleted,"First-tick ordering wait failed on the test seam.");
             await initialReleased.Task.WaitAsync(cancel.Token);
             var engine=await namesEntered.Task.WaitAsync(cancel.Token);
             var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;

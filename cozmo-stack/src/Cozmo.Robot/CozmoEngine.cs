@@ -57,6 +57,8 @@ public sealed class RobotConnectionException : IOException
 /// <summary>Where the engine finds its inputs, and the app defaults policy M1-042 sends.</summary>
 public sealed class CozmoEngineOptions
 {
+    /// <summary>Host nurture directory, supplied before NeedsManager::Init; null leaves device persistence unbound.</summary>
+    public string? NeedsDeviceDirectory { get; init; }
     // fidelity: M3-061 — host replacement for app DataPlatformFilesPath/persistentDataPath; scope 0 appends /output.
     public string FilesPath { get; init; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"cozmo-stack");
     // fidelity: M1-029
@@ -480,9 +482,11 @@ internal sealed class MessageHandler
     private readonly RobotConnectionManager _rcm;
     private int _sendCalls;       // MH+0x3C
     internal uint ReceivedPacketCount { get; private set; } // MH+0x38
+    internal void ResetReceivedPacketCount(){ReceivedPacketCount=0;Interlocked.Exchange(ref _sendCalls,0);} // 0x004ED508, tick start.
 
     /// <summary>MH+0x28: set once the handler is initialised; ProcessMessages and SendMessage do nothing without it.</summary>
     public bool Initialised { get; set; }
+    internal bool IsDispatchingDataForTest { get; private set; }
 
     public MessageHandler(CozmoEngine engine, RobotConnectionManager rcm) { _engine = engine; _rcm = rcm; }
 
@@ -496,45 +500,51 @@ internal sealed class MessageHandler
     /// DisconnectCurrent and the loop exits (CC15); non-fatal → event, RobotErrorPassThrough to the game, then
     /// Broadcast (CC16); otherwise Broadcast.
     /// </summary>
+    // fidelity: M2-022
     public void ProcessMessages()
     {
         if (!Initialised) return;
         _rcm.Update();
-        while (_rcm.PopData(out var data))
+        IsDispatchingDataForTest=true;
+        try
         {
-            // fidelity: M2-023 — 0x0069D8BC..0x0069D8D8, before GetFirstRobot.
-            ReceivedPacketCount = unchecked(ReceivedPacketCount + 1);
-            var robot = _engine.Robots.Get(CozmoEngine.RobotId);
-            if (robot is null) continue;
-            if (data.Length == 0) { _engine.EmitStackLog("error: MessageHandler.ProcessMessages: message of size 0"); continue; }
-            if (_engine.Robots.ShouldFilterMessage(CozmoEngine.RobotId, data[0], robotToEngine: true)) continue;
-            if (!TryUnpack(data, out var msg, out int consumed))
+            while (_rcm.PopData(out var data))
             {
-                // sErrorF 0x0069D9FC: r3=tag name, stack={tag, Unpack return, received size}.
-                _engine.EmitSourceLog(EngineLogLevel.Error, null, "RobotMessageHandler.MessageUnpack",
-                    FormattableString.Invariant($"Message unpack error, tag {RobotToEngineTagName(data[0])} (0x{data[0]:x2}) expecting {consumed} but have {data.Length}"));
-                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0069DA22..0x0069DA2E, after the log.
-                continue;
-            }
-            if (msg is RobotErrorReport err)
-            {
-                // fidelity: M1-027
-                // CC12/CC13: {u32 code, bool fatal}; fatal is decided by the byte only.
-                if (err.Field1)
+                // fidelity: M2-023 — 0x0069D8BC..0x0069D8D8, before GetFirstRobot.
+                ReceivedPacketCount = unchecked(ReceivedPacketCount + 1);
+                var robot = _engine.Robots.Get(CozmoEngine.RobotId);
+                if (robot is null) continue;
+                if (data.Length == 0) { _engine.EmitStackLog("error: MessageHandler.ProcessMessages: message of size 0"); continue; }
+                if (_engine.Robots.ShouldFilterMessage(CozmoEngine.RobotId, data[0], robotToEngine: true)) continue;
+                if (!TryUnpack(data, out var msg, out int consumed))
                 {
-                    _engine.EmitStackLog($"error: robot.error.fatal code {err.Field0}");
-                    _engine.Broadcast(msg);
-                    _rcm.ClearData();
-                    _rcm.DisconnectCurrent();
-                    return;
+                    // sErrorF 0x0069D9FC: r3=tag name, stack={tag, Unpack return, received size}.
+                    _engine.EmitSourceLog(EngineLogLevel.Error, null, "RobotMessageHandler.MessageUnpack",
+                        FormattableString.Invariant($"Message unpack error, tag {RobotToEngineTagName(data[0])} (0x{data[0]:x2}) expecting {consumed} but have {data.Length}"));
+                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 0x0069DA22..0x0069DA2E, after the log.
+                    continue;
                 }
-                _engine.EmitStackLog($"warning: robot.error.nonfatal code {err.Field0}");
-                _engine.RaiseRobotErrorPassThrough(new RobotErrorPassThrough(err.Field0));
+                if (msg is RobotErrorReport err)
+                {
+                    // fidelity: M1-027
+                    // CC12/CC13: {u32 code, bool fatal}; fatal is decided by the byte only.
+                    if (err.Field1)
+                    {
+                        _engine.EmitStackLog($"error: robot.error.fatal code {err.Field0}");
+                        _engine.Broadcast(msg);
+                        _rcm.ClearData();
+                        _rcm.DisconnectCurrent();
+                        return;
+                    }
+                    _engine.EmitStackLog($"warning: robot.error.nonfatal code {err.Field0}");
+                    _engine.RaiseRobotErrorPassThrough(new RobotErrorPassThrough(err.Field0));
+                    _engine.Broadcast(msg);
+                    continue;
+                }
                 _engine.Broadcast(msg);
-                continue;
             }
-            _engine.Broadcast(msg);
         }
+        finally{IsDispatchingDataForTest=false;}
     }
 
     // fidelity: M1-027, M2-010, M2-011
@@ -1151,8 +1161,8 @@ public sealed partial class EngineRobot
     /// origin check. Then the part before the origin check: the stored fields (RS1..RS11; the robot clock the cube path
     /// reads, RS1; the head angle, lift angle, cliff data, IMU, treads, status bits, SetOnCharger, the body-radio-mode
     /// count (<see cref="CountBodyRadioMode"/>) and MovementComponent::Update, which the devices apply in that order, see
-    /// CozmoRobot.RouteToDevices and CozmoSensors). This stack has no ramp (+0x316
-    /// SetOnRamp has no writer here), so every state takes the off-ramp branch: ContainsOriginID(state+8)
+    /// CozmoRobot.RouteToDevices and CozmoSensors). SetOnRamp (+0x316) has native BA/BB writers
+    /// (0x005380D2/0x005381E6), whose later build belongs to M2-024; so every state takes the off-ramp branch: ContainsOriginID(state+8)
     /// (0x00512C3E..0x00512C4A) must pass, otherwise the warning "Received RobotState with originID" and the rest (the
     /// pose, the history and the later steps) is skipped (0x00512EC4..0x00512F12). Returns whether the state passed the
     /// time-sync gate; <see cref="AcceptedState"/> says whether it also passed the origin check.
@@ -1425,8 +1435,7 @@ internal sealed class RobotInitialConnection
     /// Policy M1-040 logs the version on every connection and warns when it is not 2381.
     /// The accessor sequence is row 11l: json["build"].asString(), then json["version"].asUInt() and
     /// json["time"].asUInt(), and json["sim"].isNull(). A non-object root, or an asUInt/asString of a type the
-    /// engine refuses, throws <see cref="JsonLogicError"/> (11m/11n/11p); <c>CozmoEngine.Isolated</c> catches it,
-    /// as where the engine catches it is not established (11o, RECOVERABLE_GAP).
+    /// engine refuses, terminates natively (0x0052DA44); the M1-034 standing rule isolates this handler in the stack.
     /// </summary>
     private void HandleFirmwareVersion(FirmwareVersion f)
     {
@@ -1887,7 +1896,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// CD6..CD11: in engine state 3, after <c>UpdateRobotConnection</c> → <c>MessageHandler::ProcessMessages</c>
     /// and before <c>UpdateAllRobots</c> → <c>Robot::Update</c>, <c>CozmoEngine::Update</c> takes
     /// <c>BaseStationTimer::GetCurrentTimeInSeconds</c> and calls <c>NeedsManager::Update</c> with it
-    /// (0x004ED632/0x004ED636 → r1, 0x004ED640 <c>blx</c>). The NeedsManager is owned by FreeplayStack, which
+    /// (0x004ED632/0x004ED636 → r1, 0x004ED640 <c>blx</c>). The engine owns and initializes the NeedsManager and
     /// sets this hook; the argument is that same tick clock. The clock is the f32 at +0x10
     /// (<c>GetCurrentTimeInSeconds</c> 0x0084BCA8), so the hook takes a float (M1-024).
     /// </summary>
@@ -1956,8 +1965,10 @@ public sealed partial class CozmoEngine : IDisposable
         var dasConfig = RobotManager.ReadDasEventConfig(Options.ResourcesPath, this);
         LoadVisionConfiguration();
         Experiments.LoadRobotConfig();
-        Experiments.InitBeforeNeeds(null);
+        Experiments.InitBeforeNeeds(InitializeNeedsOwner);
         Robots.InitCheckedDasTail(dasConfig, _nowNs);
+        EmitSourceLog(EngineLogLevel.Info,null,"CozmoEngine.Init.Version","1");
+        EmitSourceLog(EngineLogLevel.Event,null,"cozmo_engine.init.build_configuration","SHIPPING");
         // M1-029: header load follows the manager event; it does not gate engine loading.
         if (Options.ResourcesPath is { } res) FirmwareHeaderLoader = FirmwareHeader.LoadAsync(FirmwareHeader.PathUnder(res), Robots.ParseFirmwareHeader, Log);
         else EmitStackLog("warning: MISSING: no resources path, so the firmware header is not loaded; expected version and time stay 0/0 (G5.31)");
@@ -1989,6 +2000,7 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     internal void StartOffline(bool autoTick, uint randomSeed = 0, Func<uint>? entropy = null, bool startReady = true)
     {
+        IsOfflineEngine=true;
         StartEngineRandom(randomSeed, entropy);
         _autoTick = autoTick;
         if(startReady) { _engineState=3;_hostReady=true; } // Explicit pre-initialized offline fixture, not production readiness.
@@ -2070,6 +2082,7 @@ public sealed partial class CozmoEngine : IDisposable
             _inTick = true;
             try
             {
+                Handler.ResetReceivedPacketCount();
                 while (UiMessageProcessingEnabled && _gameMessages.TryDequeue(out var g)) Isolated(g);
                 // fidelity: M1-055
                 if (UpdateCheckedNonConfigLoading())
@@ -2272,7 +2285,17 @@ public sealed partial class CozmoEngine : IDisposable
     /// </summary>
     internal void BroadcastConnectionResponse(RobotConnectionResponse resp)
     {
-        QueueAppEvent(ConnectionResponse,resp);
+        var host=CaptureAppEvent(ConnectionResponse,resp);
+        QueueAppDelivery(()=>
+        {
+            if(resp.Result==RobotConnectionResult.Success&&!_requestedInitialBlockPool)
+            {
+                _requestedInitialBlockPool=true;
+                if(RequestInitialBlockPool is {} request)RunIsolated(request);
+                else Behavior.SteppedBehavior.ReportMissing("M1-042 GetBlockPool 0x00619F00: app input has no bound BlockFilter owner");
+            }
+            host?.Invoke();
+        });
         if (resp.Result != RobotConnectionResult.Success) return;
         if (Robots.Get(RobotId) is not { } robot) return;
         Isolated(() =>

@@ -98,7 +98,6 @@ public sealed partial class CozmoEngine
                 ? $"EngineConfigJson is missing required key '{missing}'."
                 : $"EngineConfigJson initialization failed with result {result}.", nameof(Options.EngineConfigJson));
         }
-        if (result is null)
-            SteppedBehavior.ReportMissing("M1-054 host bootstrap continues; InitInternal 0x004EDC6C FactoryTestLogger archive effects remain UNKNOWN; M1 audio registration is built separately, M6-023 execution/callback gaps remain");
+        // M1-054 manager exclusion2026-10-18: FactoryTestLogger archive0x004EDC9E..0x004EDD0A is on-device log machinery (M3-051).
     }
 }

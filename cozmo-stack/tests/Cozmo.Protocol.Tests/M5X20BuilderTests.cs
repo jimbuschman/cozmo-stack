@@ -83,13 +83,14 @@ public sealed class M5X20BuilderTests
         Assert.Equal(2,log.Count(s=>s.Contains("M8-021/M8-005 concrete TriggerLiftSafeAnimationAction")));
     }
 
+    // reach: unit (offline robot and trigger map inputs; persistence is supplied at engine initialization).
     [Fact]
     public void FreeplayDisposeRestoresThePreviousDrivingTriggerInput()
     {
         var root=Assets();
         try
         {
-            using var robot=CozmoRobot.CreateOffline();var previous=AnimationTriggerMap.Load(root);robot.Animations.DrivingTriggerMap=previous;
+            using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{NeedsDeviceDirectory=root});var previous=AnimationTriggerMap.Load(root);robot.Animations.DrivingTriggerMap=previous;
             Func<bool> previousNeeds=()=>false;robot.Animations.DrivingAnimations.AreNeedsMet=previousNeeds;
             File.WriteAllText(Path.Combine(root,"animationGroupMaps","AnimationTriggerMap.json"),"{\"Pairs\":[]}");var replacement=AnimationTriggerMap.Load(root);
             var context=new BehaviorContext{Robot=robot,Triggers=replacement};

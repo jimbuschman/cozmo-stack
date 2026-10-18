@@ -570,7 +570,7 @@ public abstract class DockActionBase
         var tcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         uint? before = M.Robot.State.Latest?.Timestamp;
         void OnMessage(RobotMessage m) { if (m is RobotState st && st.Timestamp != before) tcs.TrySetResult(); }
-        M.Robot.Message += OnMessage;
+        M.Robot.MessageInternal += OnMessage;
         try
         {
             using var reg = cancel.Register(() => tcs.TrySetCanceled());
@@ -578,7 +578,7 @@ public abstract class DockActionBase
             return true;
         }
         catch (OperationCanceledException) { return false; }
-        finally { M.Robot.Message -= OnMessage; }
+        finally { M.Robot.MessageInternal -= OnMessage; }
     }
 
     /// <summary>

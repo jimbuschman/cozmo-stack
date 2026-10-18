@@ -1323,7 +1323,7 @@ public sealed class ReliableTransport : IDisposable
     /// just set to 47817 (B38); the flag is cleared either way (0x0083AD04). Then the read loop, only if fd &gt;= 0
     /// (0x0083AD08), for as long as TryToReadMessage returns 1 (0x0083AD10..0x0083AD18; B16):
     ///  - a read that returns ≤ 0 stops the loop for this update (0x0083AA98), a 0-byte datagram included (CA35);
-    ///    whether a 0-byte read also warns is HARDWARE_ONLY (M1-043, see the loop);
+    ///    M1-043 EQUIVALENT_IMPLEMENTATION selects the silent EAGAIN branch (no host errno read);
     ///  - EAGAIN is silent (0x0083AAC4); any other error warns "ReadFailed" (0x0083AAF6);
     ///  - ENOTCONN (0x0083AB22 cmp r0,#0x6b), after that warning, closes the socket (0x0083AB28) and, only if the
     ///    close succeeded (0x0083AB2C cbz r0), reopens it on the stored port (0x0083AB2E, 0x0083AB34), 47817;
@@ -1384,9 +1384,8 @@ public sealed class ReliableTransport : IDisposable
 
             // fidelity: M1-022, M1-043, M1-048
             // B16 / CA35: a read of ≤ 0 ends the drain for this update, a 0-byte datagram too (0x0083AA98). The
-            // source then takes the errno path with a stale errno (0x0083AABE..0x0083AB24): whether that warns, or
-            // reopens on errno 107, is HARDWARE_ONLY (M1-043) and not reproduced; this stack only stops the loop,
-            // and makes no claim about the warning.
+            // source then tests stale errno (0x0083AABE..0x0083AB24). M1-043 EQUIVALENT_IMPLEMENTATION
+            // selects silent EAGAIN; no host errno read, ReadFailed log or stale-107 reopen is reproduced.
             if (n <= 0) return;
             ProcessDatagramLocked(buf.AsSpan(0, n).ToArray(), from as IPEndPoint, effects);
         }

@@ -289,7 +289,7 @@ public sealed class M15BackupBuilderTests
         using var files = new BackupTestResources(); var options = files.Options();
         File.WriteAllText(Path.Combine(options.ResourcesPath!,"config/engine/backup_config.json"),"{\"tagsToBackup\":{\"unlocks\":1581056}}");
         using var rig = new M4ControlTests.Rig(options.ResourcesPath,attachWorld:false,engineOptions:options); rig.ToSynced(); rig.State(); var nv = rig.Engine.NvStorage!;
-        for (int i = 0; !nv.IsIdle && i < 30; ++i) { var cmd = rig.SentSince(0).OfType<NVCommand>().Last(); rig.Data(new NVOpResult{Tag=cmd.Tag,Op=0,Result=-1}); rig.Tick(); }
+        for (int i = 0; !nv.IsIdle && i < 30; ++i) { var cmd = rig.SentSince(0).OfType<NVCommand>().Last(); rig.Data(new NVOpResult{Tag=cmd.Tag,Op=cmd.Op,Result=cmd.Op==NvStorageComponent.OpRead?(sbyte)-1:(sbyte)0}); rig.Tick(); }
         Assert.True(nv.IsIdle); Assert.Equal(0u,rig.Engine.Backup!.PendingCount);
         string path = rig.Engine.Backup.Files.DirectoryPath + "1.backup"; File.WriteAllBytes(path,Block(0x182000,7,8));
         var order = new List<string>(); var reports = new List<object>(); rig.Engine.LogEntry += e => { if (e.Name == "RobotDataBackupManager.WriteBackupFile") order.Add(e.Text); };

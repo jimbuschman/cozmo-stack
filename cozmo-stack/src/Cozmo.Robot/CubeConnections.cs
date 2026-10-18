@@ -555,7 +555,14 @@ public sealed class CubeConnections
             .Select(p => new BlockPoolBlockData(p.FactoryId, (int)p.Type)).ToArray();
         var message = new BlockPoolDataMessage(_poolEnabled, slots);
         _pendingLogs.Add(() => BlockPoolData?.Invoke(message));
-        // Game tags E6/E7/EA/EB have no corresponding stack game-message handlers: named handoffs under M4-035 section 9.
+        // E7 is supplied by the connect-time host input; the other game-message joins remain M4-035 section 9.
+    }
+
+    // fidelity: M1-042, M4-035 — engine side of GetBlockPool (G2E E7), 0x00619F00.
+    internal void GetBlockPool()
+    {
+        lock(_gate)SendBlockPoolData();
+        FlushLogs();
     }
 
     private void UpdateConnecting()

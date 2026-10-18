@@ -190,7 +190,7 @@ public sealed class PathFollower : IDisposable
     private readonly Dictionary<ushort, PathEventType> _finished = new();
     private readonly Queue<ushort> _finishedOrder = new();
 
-    public PathFollower(CozmoRobot robot) { _robot = robot; robot.Message += OnMessage; }
+    public PathFollower(CozmoRobot robot) { _robot = robot; robot.MessageInternal += OnMessage; }
 
     public event Action<ushort, PathEventType>? Event;
 
@@ -276,5 +276,5 @@ public sealed class PathFollower : IDisposable
         return await reservation.WaitAsync(timeout, cancel);
     }
 
-    public void Dispose() => _robot.Message -= OnMessage;
+    public void Dispose() => _robot.MessageInternal -= OnMessage;
 }

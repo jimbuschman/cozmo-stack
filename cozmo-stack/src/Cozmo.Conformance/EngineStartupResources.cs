@@ -4,8 +4,8 @@ namespace Cozmo.Conformance;
 public static class EngineStartupResources
 {
     public static CozmoEngineOptions Options(string[] args,string? existingRoot=null)=>
-        OptionsForRoot(Arg(args,"--resources")??existingRoot??Arg(args,"--obb")??Arg(args,"--assets"));
-    public static CozmoEngineOptions OptionsForRoot(string? root)
+        OptionsForRoot(Arg(args,"--resources")??existingRoot??Arg(args,"--obb")??Arg(args,"--assets"),Arg(args,"--state-dir"));
+    public static CozmoEngineOptions OptionsForRoot(string? root,string? needsDeviceDirectory=null)
     {
         if(string.IsNullOrWhiteSpace(root))throw new ArgumentException("Engine startup needs the extracted resources. Supply --resources <cozmo_resources>, or this tool's --obb/--assets option.");
         string full=Path.GetFullPath(root);
@@ -13,7 +13,7 @@ public static class EngineStartupResources
             && Directory.Exists(Path.Combine(full,"animations")))full=Directory.GetParent(full)!.FullName;
         foreach(string candidate in new[]{full,Path.Combine(full,"cozmo_resources"),Path.Combine(full,"assets","cozmo_resources")})
             if(Directory.Exists(Path.Combine(candidate,"assets","animations"))||Directory.Exists(Path.Combine(candidate,"animations")))
-                return new CozmoEngineOptions{ResourcesPath=candidate};
+                return new CozmoEngineOptions{ResourcesPath=candidate,NeedsDeviceDirectory=needsDeviceDirectory};
         throw new ArgumentException($"No animation resources under '{full}'. Supply --resources <cozmo_resources>.");
     }
     private static string? Arg(string[] args,string flag)

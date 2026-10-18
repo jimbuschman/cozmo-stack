@@ -1623,6 +1623,7 @@ public class M5AnimationTests
     /// C9, C14, A18 on the production wiring (the engine's own tick): with the robot reporting nothing played, the stream
     /// stops at 14 audio frames; when it reports 14 played, the next ticks refill to 28.
     /// </summary>
+    // reach: unit (CreateForTest substitutes startup; real ticker/dispatch/stream and scripted NV peer).
     [Fact]
     public void M3_013_C9_A18_TheProductionStreamStopsAtTheBudgetAndRefills()
     {
@@ -1655,7 +1656,7 @@ public class M5AnimationTests
             if (robot.AnimationStreamingOpen) break;
             var cmd = port.Messages().OfType<NVCommand>().ElementAt(answered);
             answered++;
-            Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = -1, Length = 0, Data = Array.Empty<byte>() });
+            Data(new NVOpResult { Tag = cmd.Tag, Op = cmd.Op, Result = cmd.Op == NvStorageComponent.OpRead ? (sbyte)-1 : (sbyte)0, Length = 0, Data = Array.Empty<byte>() });
         }
         Assert.True(robot.AnimationStreamingOpen);
 

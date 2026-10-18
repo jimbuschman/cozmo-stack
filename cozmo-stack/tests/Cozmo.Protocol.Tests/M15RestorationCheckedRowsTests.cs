@@ -168,17 +168,20 @@ public sealed class M15RestorationCheckedRowsTests
     }
 
     [Fact]
-    // reach: unit (direct G2E hub delivery substitutes host input; drain explicitly checks deferred host observation).
+    // reach: unit (direct G2E hub delivery substitutes host input; needs host lifetime is the engine, not Freeplay).
     public void LiveForceSetSubscriptionMutatesThenSendsAndRetiresWithItsNeedsHost()
     {
         using var robot=CozmoRobot.CreateOffline();var needs=new NeedsManager(()=>0);
         string obb=Path.GetFullPath(Path.Combine(Path.GetDirectoryName(BackupTestResources.ShippedConfig())!,"../../../.."));
         var stack=FreeplayStack.Create(obb,robot,new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()},()=>0,needs:needs,withReactions:false);
-        var order=new List<string>();robot.Engine.LogEntry+=e=>{if(e.Name=="NeedsManager.ForceSetNeedsLevels"){Assert.Equal(1,needs.State.GetNeedLevel(NeedId.Play));Assert.Equal("Game sent ForceSetNeedsLevels message with 0.500000, 0.600000, 0.700000",e.Text);order.Add("info");}};
-        needs.NeedsStateSent+=action=>{Assert.Equal(NeedsActionId.NoAction,action);Assert.Equal(.7f,(float)needs.State.GetNeedLevel(NeedId.Play));order.Add("send");};
+        var order=new List<string>();Action<EngineLogEntry> info=e=>{if(e.Name=="NeedsManager.ForceSetNeedsLevels"){Assert.Equal(1,needs.State.GetNeedLevel(NeedId.Play));Assert.Equal("Game sent ForceSetNeedsLevels message with 0.500000, 0.600000, 0.700000",e.Text);order.Add("info");}};robot.Engine.LogEntry+=info;
+        Action<NeedsActionId> sent=action=>{Assert.Equal(NeedsActionId.NoAction,action);Assert.Equal(.7f,(float)needs.State.GetNeedLevel(NeedId.Play));order.Add("send");};needs.NeedsStateSent+=sent;
         robot.Engine.AnimationMessages.Deliver(0xC6,false,new[]{.5f,.6f,.7f});Assert.Equal(new[]{"info"},order);
         robot.Engine.DrainAppDelivery();Assert.Equal(new[]{"info","send"},order);
-        stack.Dispose();robot.Engine.AnimationMessages.Deliver(0xC6,false,new[]{1f,1f,1f});Assert.Equal(.7f,(float)needs.State.GetNeedLevel(NeedId.Play));
+        robot.Engine.LogEntry-=info;needs.NeedsStateSent-=sent;
+        stack.Dispose();robot.Engine.AnimationMessages.Deliver(0xC6,false,new[]{1f,1f,1f});Assert.Equal(1f,(float)needs.State.GetNeedLevel(NeedId.Play));
+        Assert.Equal(1,robot.Engine.AnimationMessages.Count(0xC6,false));
+        robot.Dispose();Assert.Equal(0,robot.Engine.AnimationMessages.Count(0xC6,false));
     }
     [Fact]
     public void InventoryZeroRulingIsLoggedOnceAcrossTwoActualRobotOwners()

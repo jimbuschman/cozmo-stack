@@ -45,7 +45,10 @@ public sealed class FreeplayStack : IDisposable
     {
         var problems = new List<string>();
         // J3: the needs device-file directory is the host's; FreeplayTool's --state-dir supplies it.
-        needs ??= NeedsManager.FromObb(obbRoot, clockSec, random, needsDirectory, robot.Animations.Scheduler.ContextRandom);
+        needs ??= robot.Engine.Needs;
+        if(!ReferenceEquals(needs,robot.Engine.Needs))robot.Engine.UseNeedsForOfflineTest(needs);
+        if(needsDirectory is not null && needs.DeviceDirectory!=needsDirectory)
+            throw new ArgumentException("Supply NeedsDeviceDirectory in engine options before initialization.",nameof(needsDirectory));
         // fidelity: M15-014
         // C2 row 10: StartReadFromRobot queues an NVStorage read of key 0x194000 on the connected robot's
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
@@ -53,7 +56,6 @@ public sealed class FreeplayStack : IDisposable
         needs.HostEngine=robot.Engine;
         needs.PossiblyWriteLabAssignments = robot.Engine.Experiments.PossiblyWriteLabAssignmentsToRobot;
         needs.SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);
-        var forceNeeds=robot.Engine.AnimationMessages.SubscribeMessage(0xC6,false,p=>needs.ForceSetNeedsLevels((IReadOnlyList<float>)p!));
         needs.State.PartDamageLog=(value,data)=>robot.Engine.EmitSourceLog(EngineLogLevel.Event,null,"needs.part_damaged",value,data);
         // fidelity: M7-017
         // D07/D08/D18: AnimationStreamer::Update (0x0057CE5C) calls TrackLayerComponent::Update (0x0064EDE8) when
@@ -126,7 +128,7 @@ public sealed class FreeplayStack : IDisposable
         ctx.ClockSec ??= clockSec;
         // the behaviours report needs actions themselves (IBehavior::NeedActionCompleted 0x005BE40C), so the
         // context carries both the manager and every shipped behaviour's own needsActionID
-        ctx.Needs ??= needs;
+        ctx.Needs = needs;
         // the memory map the face behaviour asks before driving in (MapComponent::GetCurrentMemoryMapHelper)
         if (vision is not null && robot.Engine.Robot is not null) ctx.Map ??= vision.World.Maps.Current; // M13-031: one current-origin map owner
         ctx.NeedsActionIds ??= BehaviorNeedsActions.Load(obbRoot);
@@ -224,7 +226,6 @@ public sealed class FreeplayStack : IDisposable
         if(robot.Engine.Robot is {} lifetimeOwner)BindNativeLifetime(lifetimeOwner);
         ctx.AI = ai;
         var stack = new FreeplayStack(manager, system, tree, bound, needs, ctx, tracker, ai) { Problems = problems };
-        stack._unsubscribe.Add(forceNeeds.Dispose);
         stack._unsubscribe.Add(()=>robot.Engine.BindRobotLifetime-=BindNativeLifetime);
         // fidelity: M8-019
         // Bind the existing host manager. Its request entry is partial and visibly stops at the native switch gap.
@@ -239,41 +240,9 @@ public sealed class FreeplayStack : IDisposable
         // fidelity: M1-024
         // CD6..CD11: CozmoEngine::Update state 3 calls NeedsManager::Update between UpdateRobotConnection ->
         // MessageHandler::ProcessMessages and UpdateAllRobots -> Robot::Update, with BaseStationTimer::
-        // GetCurrentTimeInSeconds (0x004ED632..0x004ED640). The engine owns the tick and this stack owns the
-        // NeedsManager, so the manager is handed over through the engine hook; FreeplaySystem.Tick no longer
-        // calls it.
-        robot.Engine.NeedsUpdate = needs.Update;
-        robot.Engine.NeedsSetPaused = needs.SetPaused;
-        stack._unsubscribe.Add(() => robot.Engine.NeedsSetPaused = null);
-        stack._unsubscribe.Add(() => robot.Engine.NeedsUpdate = null);
-
-        // fidelity: M15-016
-        // J13: CozmoEngine::HandleMessage<ConnectToRobot> 0x004ED018..0x004ED11C calls
-        // NeedsManager::InitAfterConnection 0x004ED10E unconditionally after AddRobot (the AddRobot-failed
-        // and the success path both reach 0x004ED10A), then DASPauseUploadingToServer(1). The engine owns the
-        // ConnectToRobot handling, so it exposes the edge; this stack, which owns the NeedsManager,
-        // subscribes. It comes before the serial edge because the engine's order is ConnectToRobot then the
-        // mfgId tag-0xED callback. A stack created after the handshake (Robot 1 already exists) replays the
-        // edge once, as the serial edge does below.
-        void onConnect() => needs.InitAfterConnection();
-        robot.Engine.ConnectToRobotHandled += onConnect;
-        stack._unsubscribe.Add(() => robot.Engine.ConnectToRobotHandled -= onConnect);
-        if (robot.Engine.Robot is not null) onConnect();
-
-        // fidelity: M15-014, M3-033
-        // C2 rows 5-9: the mfgId tag-0xED callback calls ConnectRobotToNeedsManager(mfgId word 0), whose
-        // wrapper chain ends at NeedsManager::InitAfterSerialNumberAcquired. The engine owns the handshake and
-        // queues the Needs read 0x194000 from that handler; this stack, which owns the NeedsManager, attaches to
-        // that read so InitAfterSerialNumberAcquired adopts it instead of queueing a second one. FreeplayTool.OnRobot
-        // connects before it creates the stack, so a serial that is already known is replayed here at creation.
-        // The RIC's tag-0xED subscription is persistent and the engine clears its recorded serial on removal, so
-        // every mfgId (including a reconnect) runs the edge again.
-        needs.AttachConnectionRead(robot.Engine);
-        stack._unsubscribe.Add(needs.DetachConnectionRead);
-        void onSerial(uint serial) => needs.InitAfterSerialNumberAcquired(serial);
-        robot.Engine.SerialNumberAcquired += onSerial;
-        stack._unsubscribe.Add(() => robot.Engine.SerialNumberAcquired -= onSerial);
-        if (robot.Engine.AcquiredSerialNumber is { } already) onSerial(already);
+        // GetCurrentTimeInSeconds (0x004ED632..0x004ED640). The engine owns the manager and its tick;
+        // FreeplaySystem.Tick does not call it.
+        // Needs ticking and connection hooks belong to the engine, not this host handle.
 
         // The four pause sources. OffTreads (flag 2) is Robot::CheckAndUpdateTreadsState's seam
         // (0x005121F4); OnCharger (flag 3) is Robot::SetOnChargerPlatform (0x00511DB0). GameControl (flag 0)
@@ -314,11 +283,8 @@ public sealed class FreeplayStack : IDisposable
         // fidelity: M15-016
         // T4: Needs disconnect precedes Perf/DAS and the Robot destructor, including
         // when RIC::HandleDisconnect already answered. Recipient effects stay M15.
-        robot.Engine.NeedsRobotDisconnected = needs.OnRobotDisconnected;
-        stack._unsubscribe.Add(() => robot.Engine.NeedsRobotDisconnected = null);
-        // M15-016: the ConnectToRobot -> InitAfterConnection edge is now wired above (J13): CozmoEngine
-        // exposes ConnectToRobotHandled and this stack subscribes, with a replay when Robot 1 already exists
-        // at creation. What remains unbuilt, so the record stays IMPLEMENTATION_GAP: the SetPaused
+        // M15-016: engine initialization owns the connection/serial/disconnect hooks.
+        // Freeplay reuses that lifetime; disposing this handle does not detach Needs. What remains unbuilt, so the record stays IMPLEMENTATION_GAP: the SetPaused
         // game-message callers (SetGameBeingPaused tag 85, SetNeedsPauseState tag 201, RegisterOnboardingComplete
         // tag 200, EnterSdkMode/ExitSdkMode tags 241/242) - this stack has no game-message channel for them;
         // the +0x1F0 per-need pause-start consumer (HandleMessage<SetNeedsPauseStates> 0x00698918) and the

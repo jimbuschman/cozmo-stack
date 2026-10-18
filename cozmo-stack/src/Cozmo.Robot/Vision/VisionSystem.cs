@@ -110,7 +110,7 @@ public sealed partial class VisionSystem : IDisposable
         _platformStep = () => robot.Sensors.UpdateOnChargerPlatformFromWorld(World, World.CurrentRobotPose?.Invoke());
         robot.Engine.ChargerPlatformUpdate = _platformStep;
         Locator = new CubeLocator(this);
-        robot.Message += OnMessage;
+        robot.MessageInternal += OnMessage;
         // fidelity: M3-005, M3-022
         // Vision gets what HandleImageChunk hands to SetNextImage (the per-tick cap, A3), and the calibration and the
         // enable the connection-time NV read gives (1j).
@@ -1239,7 +1239,7 @@ public sealed partial class VisionSystem : IDisposable
         {
             _robot.Lights.Cubes.IsLocalized = () => _robot.Sensors.OffTreads.Robot2C4 != 0;
         }
-        _robot.Message -= OnMessage;
+        _robot.MessageInternal -= OnMessage;
         _robot.Camera.FrameForVision -= OnFrame;
         _robot.CameraSettings.CalibrationInstalled -= OnCalibrationInstalled;
         _robot.CameraSettings.VisionEnabledSet -= OnVisionEnabledSet;

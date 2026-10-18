@@ -633,6 +633,7 @@ public class FreeplayTests
     /// (needs_action_config.json: repair -0.15, energy -0.001, play -0.1 +- 0.03). Driven through the live robot message path with the stack's manager.
     /// </summary>
     [Fact]
+    // reach: unit (offline behavior fixture supplies OBB needs inputs; real engine startup ownership is tested separately).
     public void M10_011_AHardFallRegistersTheFallNeedsActionBeforeTheBroadcast()
     {
         var obb = ObbRoot();
@@ -640,7 +641,7 @@ public class FreeplayTests
         using var rig = new Rig();
         LoadAssets(rig, obb!);
         double clock = 0;
-        using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, withReactions: false);
+        using var stack = FreeplayStack.Create(obb!, rig.Robot, Ctx(rig), () => clock, rig.Vision, rig.M, needs:NeedsManager.FromObb(obb,()=>clock), withReactions: false);
         var needs = stack.Needs;
         needs.SetLevel(NeedId.Repair, 1.0); needs.SetLevel(NeedId.Energy, 1.0); needs.SetLevel(NeedId.Play, 1.0);
         double repairAtBroadcast = double.NaN;
@@ -1414,6 +1415,7 @@ public class FreeplayTests
     }
 
     [Fact]
+    // reach: unit (offline behavior fixture supplies OBB needs inputs; real engine startup ownership is tested separately).
     public void ASevereNeedTakesPriorityOverFreeplayAndTheGetInPlaysOnce()
     {
         using var signals = SignalTestContext.Install();
@@ -1423,7 +1425,7 @@ public class FreeplayTests
         LoadAssets(rig, obb);
         double clock = 0;
         var ctx = Ctx(rig);
-        using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M, withReactions: false, random: new Random(2));
+        using var stack = FreeplayStack.Create(obb, rig.Robot, ctx, () => clock, rig.Vision, rig.M, needs:NeedsManager.FromObb(obb,()=>clock), withReactions: false, random: new Random(2));
         foreach (var behavior in stack.Bound.Values.OfType<SteppedBehavior>()) behavior.ActionTaskRunner = SignalTestContext.Schedule;
         var log = new List<string>(); stack.Freeplay.Log += log.Add;
         var needs = stack.Needs;

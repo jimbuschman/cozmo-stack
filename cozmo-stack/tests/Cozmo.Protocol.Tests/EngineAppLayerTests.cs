@@ -846,11 +846,12 @@ public class EngineAppLayerTests
             Tick();
         }
 
+        // reach: unit peer replies to the actual read/erase/write operation; production NV processing is retained.
         /// <summary>Answers the in-flight NV read with <paramref name="result"/> and ticks, which sends the next one.</summary>
         public void AnswerInFlight(sbyte result = -1)
         {
             var cmd = NvCommands()[^1];
-            Data(new NVOpResult { Tag = cmd.Tag, Op = 0, Result = result, Length = 0, Data = Array.Empty<byte>() });
+            Data(new NVOpResult { Tag = cmd.Tag, Op = cmd.Op, Result = cmd.Op == NvStorageComponent.OpRead ? result : (sbyte)0, Length = 0, Data = Array.Empty<byte>() });
             Tick();
         }
 
@@ -1101,6 +1102,7 @@ public class EngineAppLayerTests
     /// the f32 at +0x10 (<c>GetCurrentTimeInSeconds</c> 0x0084BCA8; <c>vcvt.f32.f64</c> 0x0084BC80), so the
     /// argument is a float.
     /// </summary>
+    // reach: unit (observes synchronous internal routing and substitutes the needs tick hook).
     [Fact]
     public void M1_024_CD10_TheNeedsManagerRunsBetweenProcessMessagesAndRobotUpdate()
     {
@@ -1112,7 +1114,7 @@ public class EngineAppLayerTests
         rig.Engine.NeedsUpdate = now => { order.Add("needs"); needsNow = now; };
         var components = rig.Engine.RobotComponentsUpdate;
         rig.Engine.RobotComponentsUpdate = () => { components?.Invoke(); order.Add("robot"); };
-        rig.Robot.Message += m => order.Add($"message:{m.Id}");
+        rig.Robot.MessageInternal += m => order.Add($"message:{m.Id}");
         rig.Data(new RobotAvailable { SerialNumberHead = 9 });
         rig.Tick(60);
         // the robot message is dispatched in ProcessMessages, then NeedsManager::Update, then Robot::Update
@@ -1121,6 +1123,19 @@ public class EngineAppLayerTests
         // 60 ms ticks before the hook runs, so the f32 the engine passes is 0.36 (0x0084BCA8/0x0084BC80),
         // not a value read back from the implementation
         Assert.Equal(0.36f, needsNow);
+    }
+
+    // reach: production — actual engine tick/dispatch consumes framed peer input and resets the count next tick.
+    [Fact]
+    public void M2_023_TickStartResetsThePacketCounter()
+    {
+        using var rig=new Rig();
+        rig.ToSuccess();
+        rig.Data(new RobotAvailable{SerialNumberHead=9});
+        rig.Tick();
+        Assert.Equal(1u,rig.Engine.Handler.ReceivedPacketCount);
+        rig.Tick();
+        Assert.Equal(0u,rig.Engine.Handler.ReceivedPacketCount);
     }
 
     [Fact]
@@ -1661,6 +1676,7 @@ public class EngineAppLayerTests
 
     /// <summary>M1-041 Opus checked info logs: 0x005289EC after SyncTime (call 0x005289D2), 0x00528A34 before
     /// registering the idle callback, 0x0052C3B6 inside that callback, and SyncTimeAck at 0x0053667E.</summary>
+    // reach: unit (scripted robot connection and NV responses substitute hardware).
     [Fact]
     public void M1_041_ConnectionLogsFollowTheSyncAndNvIdleEntries()
     {
@@ -2161,6 +2177,7 @@ public class EngineAppLayerTests
     /// on the next Robot::Update: the streamer gate is computed before NVStorage::Update
     /// (0x0051410C..0x0051411E before 0x0051416A).
     /// </summary>
+    // reach: unit (scripted robot NV failures substitute hardware; real initialization and handler queue).
     [Fact]
     public void M1_041_CD12_CD20_ReadyWaitsForNvIdleAndStreamingOpensWithTheFirstSyncedState()
     {
@@ -2192,6 +2209,9 @@ public class EngineAppLayerTests
         // on-idle callback (0x006456EC). The streamer gate was already computed this tick, so streaming is still
         // closed (0x0051410C..0x0051411E before 0x0051416A).
         rig.AnswerInFlight();
+        // Needs recovery may append erase/write after the failed needs read. Complete the real queue.
+        for(int remaining=0; !nv.IsIdle && remaining<100; remaining++)rig.AnswerInFlight();
+        Assert.True(nv.IsIdle);
         Assert.True(rig.Engine.Robot!.ReadyToStream);
         Assert.False(rig.Robot.AnimationStreamingOpen);
         rig.Tick();

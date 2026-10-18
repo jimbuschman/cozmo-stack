@@ -219,6 +219,7 @@ public sealed partial class CozmoRobot : IDisposable
 
     /// <summary>Every decoded robot message, after the devices have seen it.</summary>
     public event Action<RobotMessage>? Message;
+    internal event Action<RobotMessage>? MessageInternal;
 
     // fidelity: M1-024, M1-025, M1-026, M1-027, M1-028, M1-029, M1-030, M1-031, M1-041, M1-040, M1-042
     /// <summary>
@@ -239,7 +240,7 @@ public sealed partial class CozmoRobot : IDisposable
         {
             owned=Directory.CreateTempSubdirectory("cozmo-offline-cache-").FullName;
             settings=new CozmoEngineOptions {
-                FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,
+                FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,NeedsDeviceDirectory=settings.NeedsDeviceDirectory,
                 DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,BeforeStart=settings.BeforeStart,
                 AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
                 DataPlatformPersistentPath=settings.DataPlatformPersistentPath,RobotVolume=settings.RobotVolume,
@@ -361,7 +362,14 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.TapFilterRoute = m => Cubes.HandleTapFilterMovement(m);
         Engine.CubeAccelRoute = m => CubeAccel.Handle(m);
         Engine.MovementExitSdkMode = Motion.OnExitSdkMode;
-        Engine.PublicRoute = m => EventFan.Raise(Message, m, e => Fault(e));
+        Engine.PublicRoute = m =>
+        {
+            // Freeze the raw host view at publication; internal engine consumers remain synchronous.
+            Engine.QueueAppEvent(Message,m is RawRobotMessage raw
+                ? new RawRobotMessage(raw.Id,(byte[])raw.Body.Clone(),raw.ParseNote)
+                : RobotMessage.Parse(m.ToBytes()));
+            EventFan.Raise(MessageInternal,m,e=>Fault(e));
+        };
         Engine.Faulted = Fault;
         // fidelity: M1-025, M1-015
         // CB33, CC26: RemoveRobot deletes the Robot, and with it every Robot component; CC27: a later ConnectToRobot
@@ -383,6 +391,10 @@ public sealed partial class CozmoRobot : IDisposable
         // Robot::SetPhysicalRobot(true), reached only from HandleFirmwareVersion, loads the block pool.
         Engine.BlockFilterInit = LoadBlockPool;
         Engine.BlockFilterFactory = () => Cubes.Connections; // M10-014: the existing live filter state, not a parallel pool.
+        Engine.RequestInitialBlockPool=Cubes.Connections.GetBlockPool;
+        Engine.BindNeedsRobotServices();
+        // fidelity: M7-017 — the streamer reads the engine-owned component even without a Freeplay handle.
+        Animations.Scheduler.DesiredFaceDistortion=()=>Engine.Needs.GetCurrentDesiredDistortion();
         // fidelity: M1-042
         Engine.AfterSuccessDefaults = SendAppDefaults;
         Engine.LoadHostBehaviorMap();
@@ -444,11 +456,11 @@ public sealed partial class CozmoRobot : IDisposable
     /// RobotInitialConnection (so nothing is filtered, CB27), and it is time synced, ready to stream and has had
     /// its first full state (CD12, CD19, CD20, CD23). No handshake, post-connect or app-default message is sent.
     /// </summary>
-    public static CozmoRobot CreateOffline(TransportOptions? options = null, INetClock? clock = null)
+    public static CozmoRobot CreateOffline(TransportOptions? options = null, INetClock? clock = null, CozmoEngineOptions? engineOptions = null)
     {
         var transport = ReliableTransport.CreateOffline(options, clock);
         Func<long>? nowNs = clock is null ? null : () => (long)(clock.NowMs * 1_000_000.0);
-        var robot = CreateWithOfflineCache(options,transport,new CozmoEngineOptions(),null,nowNs);
+        var robot = CreateWithOfflineCache(options,transport,engineOptions??new CozmoEngineOptions(),null,nowNs);
         robot.Transport.OfflineConnect();
         robot.Engine.InitOfflineLink(transport.Peer!);
         robot.Engine.StartOffline(autoTick: true);
