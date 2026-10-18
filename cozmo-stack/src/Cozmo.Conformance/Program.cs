@@ -20,6 +20,7 @@ return args.Length == 0 ? Usage() : args[0] switch
     "m1-link-check" => LinkCheck.Run(args),
     "control-check" => ControlCheck.Run(args),
     "m3m4-hw" => M3M4Hw.Run(args),
+    "m1m2-hw" => M1M2Hw.Run(args),
     "fakerobot" => FakeRobot(args),
     "probe" => Probe.Run(args).GetAwaiter().GetResult(),
     "camera" => Devices.Camera(args).GetAwaiter().GetResult(),
@@ -174,6 +175,8 @@ static int Usage()
                                              4 interrupted (Ctrl+C)
           m3m4-hw [robot-ip] [--only <checks>] [--origin-probe] [--include-lift] [--cube-wait <s>] [--photo KEY=path] [--out <dir>] [--yes]
                                              DRAFT hardware run M3M4-HW (M3-008, M3-016, M3-036, M4-013, M4-021, M4-024): observations only, no PASS
+          m1m2-hw [robot-ip] --resources <cozmo_resources> [--skip-connect-async] [--operator <label>] [--out <dir>] [--yes]
+                                             M1+M2 acceptance run M1M2-HW: startup, connect, needs read, latency, link, disconnect, ConnectAsync; observations only, no PASS
           fakerobot [--port 5551] [--seconds 60]  loopback stand-in for the robot transport (127.0.0.1) for testing the socket path without hardware
           probe <robot-ip> [--include-motion] [--include-state] [--only <step>] [--out results.json]
                                              subsystem-by-subsystem protocol verification on a real robot: sends only

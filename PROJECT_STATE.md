@@ -54,8 +54,8 @@ stands. Nothing new starts outside the current layer.
   M1-056, M1-061, M2-018..M2-024. B-M1-10 gates connection-time needs persistence off the robot: the robot is safe to
   connect again (no 0x194000 write on any production path; `research/20261018-b-m1-10-check.md`). B-M1-10's check
   FAILed on two M15-side items (the needs device file with `--state-dir` uses the engine clock; a gutted Lab test):
-  B-M1-11 PASS (`research/20261018-b-m1-11-check.md`): the needs device file is gated too. Next: the M1+M2 hardware script
-  (manager), which covers M1-033 and collects a real v5 needs blob; then ACCEPTED.
+  B-M1-11 PASS (`research/20261018-b-m1-11-check.md`): the needs device file is gated too. Next: the operator runs the M1+M2 hardware script
+  (`m1m2-hw`, `acceptance/hardware/scripts/m1m2-hw-draft.md`); the manager judges the bundle; then ACCEPTED.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
 - **Jobs:** `re-analysis/jobs/STATUS.md` (generated) shows, per builder job, the queue note, the status-file state and any
