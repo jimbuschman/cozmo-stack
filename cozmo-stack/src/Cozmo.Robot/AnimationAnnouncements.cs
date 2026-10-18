@@ -22,6 +22,15 @@ internal sealed partial class RobotManager
     internal NativeAnimationNames? NativeCannedAnimationNames;
     internal Func<IAnimationAnnouncementRecipient?>? AnnouncementRecipient;
 
+    // M1-055: Init-time public announcement excluded (operator2026-10-17).
+    // OV126 routine6 checks its local consumers; retain this internal join without inventing a recipient.
+    internal Action? InitTimeAnimationAnnouncementsInternal;
+    internal void NotifyInitTimeAnimationAnnouncements()
+    {
+        StackDiagnostics.Write("not supported (M1-055): Init-time public animation announcements; internal consumer join retained for OV126 routine6");
+        InitTimeAnimationAnnouncementsInternal?.Invoke();
+    }
+
     internal bool BroadcastAvailableAnimations()
     {
         if (AnnouncementRecipient is not { } recipient)
@@ -32,7 +41,7 @@ internal sealed partial class RobotManager
         if (recipient() is null) return true; // before GetAnimationNames, End, or Debug.
         if (NativeCannedAnimationNames is not { } container)
         {
-            SteppedBehavior.ReportMissing("M1-055 CannedAnimationContainer.GetAnimationNames 0x00588190: native hash traversal/population producer is unbuilt, including first Init broadcast timing at 0x0052E76E; no fabricated empty list");
+            SteppedBehavior.ReportMissing("M1-055 CannedAnimationContainer.GetAnimationNames 0x00588190: native hash traversal/population producer is unbuilt; no fabricated empty list");
             return false;
         }
         var names = new List<byte[]>(); // full vector copy precedes the first send.
@@ -71,7 +80,7 @@ public sealed partial class CozmoEngine
             if (engine.AnimationAvailable is { } handlers)
                 foreach (Action<AnimationAvailableMessage> handler in handlers.GetInvocationList()) engine.RunIsolated(()=>handler(payload));
             engine.AnimationMessages.Deliver(0x5D, true, payload);
-            SteppedBehavior.ReportMissing("M1-055 AnimationAvailable raw CLAD byte serializer 0x0071624E: typed C# payload delivered; byte-stream serializer not claimed");
+            // M1-055: raw CLAD serializer0x0071624E is excluded phone/game-message plumbing; typed C# API delivers the payload.
         }
         public void End(byte value)
         {

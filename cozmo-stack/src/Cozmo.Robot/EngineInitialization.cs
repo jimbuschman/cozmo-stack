@@ -35,7 +35,7 @@ public sealed partial class CozmoEngine
         NativeInitialized10 = false; // unconditional 0x004EC7F6, before config assignment/gates.
         NativeEngineConfig18 = Copy(config);
         if (NativeEngineConfig18.Kind is not (FirmwareJsonKind.Object or FirmwareJsonKind.Null))
-            return Missing("Json.isMember non-object input at 0x004EC81C: malformed-root callee behavior is not checked; no error/result/crash invented");
+            throw new ArgumentException("EngineConfigJson must be a JSON object.", nameof(config));
         foreach (string member in new[] { "AdvertisingHostIP", "RobotAdvertisingPort", "UiAdvertisingPort" })
         {
             if (NativeEngineConfig18.Kind == FirmwareJsonKind.Object && NativeEngineConfig18.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(member)))) continue;
@@ -77,13 +77,28 @@ public sealed partial class CozmoEngine
             SteppedBehavior.ReportMissing("M1-054 CozmoEngine.Init 0x004EC7B4: host engine-config JSON not supplied; no invented advertising defaults");
             return;
         }
-        // Host supplies the already selected engine config; parsing is the existing checked reader.
+        // Host configuration errors fail construction; they are not unknown native results.
+        FirmwareJsonValue config;
         try
         {
-            if (Json.TryParseFirst(bytes, out var document)) InitChecked(document.RootElement);
-            else SteppedBehavior.ReportMissing("M1-054 host engine-config JSON could not be parsed; no native Init result invented");
+            if (!Json.TryParseFirst(bytes, out var document))
+                throw new ArgumentException("EngineConfigJson could not be parsed as JSON.", nameof(Options.EngineConfigJson));
+            config=document.RootElement;
         }
         catch (Exception e) when (e is JsonLogicError or JsonRuntimeError or JsonMissingSource)
-        { SteppedBehavior.ReportMissing("M1-054 host engine-config reader: " + e.Message); }
+        { throw new ArgumentException("EngineConfigJson could not be parsed: " + e.Message, nameof(Options.EngineConfigJson), e); }
+        if (config.Kind != FirmwareJsonKind.Object)
+            throw new ArgumentException("EngineConfigJson must be a JSON object.", nameof(Options.EngineConfigJson));
+        int? result=InitChecked(config);
+        if (result is not null && result != 0)
+        {
+            string? missing=new[]{"AdvertisingHostIP","RobotAdvertisingPort","UiAdvertisingPort"}
+                .FirstOrDefault(key=>!config.Members.ContainsKey(Convert.ToHexString(Encoding.UTF8.GetBytes(key))));
+            throw new ArgumentException(missing is not null
+                ? $"EngineConfigJson is missing required key '{missing}'."
+                : $"EngineConfigJson initialization failed with result {result}.", nameof(Options.EngineConfigJson));
+        }
+        if (result is null)
+            SteppedBehavior.ReportMissing("M1-054 host bootstrap continues; native UiMessageHandler.Init 0x006601B0 / call0x004EC84C and InitInternal 0x004EDC6C / call0x004EC970 remain unbuilt; no native result fabricated");
     }
 }

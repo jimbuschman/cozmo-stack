@@ -1941,14 +1941,10 @@ public sealed partial class CozmoEngine : IDisposable
         Rcm.Rcd.Queued = Kick;
         InitAnimationTransfer(); // fidelity: M5-059 — construction after DeviceDataManager, 0x004EB2CE.
         Experiments = new CozmoExperiments(this);
-        if (Options.EngineConfigJson is not null)
-        {
-            // M1-054: a supplied native config enters the checked gates before any
-            // manager/config init. Missing UI/InitInternal recipients stop this path.
-            InitCheckedHostConfig();
-            return;
-        }
-        InitCheckedHostConfig(); // absent input: diagnose, retain the existing partial host bootstrap below.
+        // Checked native gates validate supplied host config; unread UI/core joins do not disable host startup.
+        // Fail construction clearly and release constructor-owned subscriptions on a bad host input.
+        try { InitCheckedHostConfig(); }
+        catch { Dispose(); throw; }
         // This pre-existing host bootstrap is not the native Init order. Until the
         // missing recipients above are built it cannot establish complete M1-054 fidelity.
         // fidelity: M8-022, M8-025 — the checked config/manager tail precedes the existing firmware header load.

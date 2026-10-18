@@ -11,7 +11,7 @@ public sealed partial class CarryingComponent
     internal SourceLogSink? SourceLog;
 
     /// <summary>Set the carried ID and marker using the engine's located-object lookup and carry-state send.</summary>
-    public void SetCarryingObject(uint objectId, ushort markerCode)
+    internal void SetCarryingObject(uint objectId, ushort markerCode)
     {
         if (NativeRobot?.Engine.DelocalizationWorld is { } world) SetCarryingObject(world, objectId, markerCode);
         else SteppedBehavior.ReportMissing("M12-046 SetCarryingObject 0x00633E88: native Robot/BlockWorld owner is unbound; preserve carrying state");

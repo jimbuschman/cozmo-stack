@@ -18,17 +18,36 @@ public sealed class EngineInitAnnouncementCarryTests
     }
     private static FirmwareJsonValue ValidConfig()=>Config("AdvertisingHostIP","RobotAdvertisingPort","UiAdvertisingPort");
 
-    // reach: production (host engine-config input enters the actual engine constructor; prefix only).
+    // reach: production — actual constructor, connection messages and outbound robot transport.
     [Fact]
-    public void ConstructorUsesHostEngineConfigWithoutInventingMissingKeys()
+    public void ValidHostConfigContinuesBootstrapAndRobotTrafficFlows()
+    {
+        using var r=new M4ControlTests.Rig(engineOptions:new CozmoEngineOptions{BlockPoolPath="",EngineConfigJson=B("{\"AdvertisingHostIP\":\"127.0.0.1\",\"RobotAdvertisingPort\":5551,\"UiAdvertisingPort\":5552}")});
+        Assert.True(r.Engine.Handler.Initialised);Assert.Equal(3,r.Engine.NativeEngineConfig18!.Members.Count);
+        Assert.False(r.Engine.NativeInitialized10); // no invented native tail completion.
+        r.ToSynced();int mark=r.Mark();
+        Assert.True(r.Engine.SendMessage(new CarryStateUpdate{State=CarryState.CARRY_1_BLOCK}));
+        Assert.Contains(r.RawSince(mark),bytes=>bytes.SequenceEqual(new byte[]{0x49,1}));
+    }
+
+    // reach: production — invalid public EngineConfigJson fails actual engine construction clearly.
+    [Theory]
+    [InlineData("?","parsed",false)]
+    [InlineData("[]","JSON object",false)]
+    [InlineData("null","JSON object",false)]
+    [InlineData("3","JSON object",false)]
+    [InlineData("{}","AdvertisingHostIP",true)]
+    [InlineData("{\"AdvertisingHostIP\":null}","RobotAdvertisingPort",true)]
+    [InlineData("{\"AdvertisingHostIP\":null,\"RobotAdvertisingPort\":null}","UiAdvertisingPort",true)]
+    public void InvalidHostConfigThrowsClearProblemAndKeepsCheckedMissingKeyError(string json,string problem,bool sourceError)
     {
         bool flag=EngineErrorState.ErrorFlagSet;
         try
         {
             EngineErrorState.ErrorFlagSet=false;
-            using var r=new M4ControlTests.Rig(engineOptions:new CozmoEngineOptions{BlockPoolPath="",EngineConfigJson=B("{}")});
-            Assert.NotNull(r.Engine.NativeEngineConfig18);Assert.Empty(r.Engine.NativeEngineConfig18!.Members);
-            Assert.False(r.Engine.NativeInitialized10);Assert.True(EngineErrorState.ErrorFlagSet);
+            var error=Assert.Throws<ArgumentException>(()=>new M4ControlTests.Rig(engineOptions:new CozmoEngineOptions{BlockPoolPath="",EngineConfigJson=B(json)}));
+            Assert.Contains("EngineConfigJson",error.Message);Assert.Contains(problem,error.Message);
+            Assert.Equal(sourceError,EngineErrorState.ErrorFlagSet);
         }
         finally{EngineErrorState.ErrorFlagSet=flag;}
     }
@@ -97,13 +116,13 @@ public sealed class EngineInitAnnouncementCarryTests
         Assert.Null(r.Engine.InitChecked(ValidConfig()));Assert.False(r.Engine.NativeInitialized10);
     }
 
-    // reach: unit (substitutes malformed host config; isMember(non-object) source MISSING at 0x004EC81C).
+    // reach: unit (substitutes malformed config at checked prefix; public constructor validation tested separately).
     [Fact]
-    public void UncheckedNonObjectGateDoesNotInventAnErrorOrSuccessfulResult()
+    public void NonObjectConfigGateFailsClearlyWithoutAnInventedNativeError()
     {
         using var r=new M4ControlTests.Rig();var logs=new List<EngineLogEntry>();r.Engine.LogEntry+=logs.Add;
         r.Engine.NativeInitRecipients.UiInit=_=>throw new Exception("unchecked gate must stop");
-        Assert.Null(r.Engine.InitChecked(FirmwareJsonValue.FromReal(3)));Assert.Empty(logs);
+        Assert.Contains("JSON object",Assert.Throws<ArgumentException>(()=>r.Engine.InitChecked(FirmwareJsonValue.FromReal(3))).Message);Assert.Empty(logs);
         Assert.Equal(FirmwareJsonKind.Real,r.Engine.NativeEngineConfig18!.Kind);Assert.False(r.Engine.NativeInitialized10);
     }
 
@@ -179,6 +198,25 @@ public sealed class EngineInitAnnouncementCarryTests
         Assert.Equal(ticks,e.Timer.TickCount); // loading branch cannot also execute state 3 in this tick.
     }
 
+    // reach: unit (substitutes prebound name producer and direct RobotManager Init; native startup order remains M1-054).
+    [Fact]
+    public void InitTimeAnnouncementStaysInternalEvenWithANameProducerAndPostLoadingStillDelivers()
+    {
+        using var r=new M4ControlTests.Rig();var e=r.Engine;var calls=new List<string>();var diagnostics=new List<string>();
+        e.StackLogLine+=diagnostics.Add;
+        e.Robots.NativeCannedAnimationNames=Names(B("walk"));
+        e.AnimationAvailable+=_=>calls.Add("available");e.AnimationAnnouncementsEnded+=_=>calls.Add("end");
+        using var local=e.AnimationMessages.Subscribe(0x5D,true,()=>calls.Add("local"));
+        e.Robots.InitTimeAnimationAnnouncementsInternal=()=>calls.Add("internal");
+        e.Robots.InitCheckedDasTail(new(),()=>0);
+        Assert.Equal(new[]{"internal"},calls);
+        Assert.Contains(diagnostics,d=>d.Contains("not supported (M1-055)"));
+        Assert.DoesNotContain(diagnostics,d=>d.Contains("first Init broadcast") || d.Contains("raw CLAD byte serializer"));
+        calls.Clear();e.NativeNonConfigLoadingActive=()=>true;e.NativeDoNonConfigDataLoading=()=>(1,1f);e.NativeSetEngineState=_=>calls.Add("state");
+        r.Tick();Assert.Equal(new[]{"available","local","end","state"},calls);
+        Assert.DoesNotContain(diagnostics,d=>d.Contains("raw CLAD byte serializer"));
+    }
+
     private sealed class CarryFixture:IDisposable
     {
         internal readonly M4ControlTests.Rig Rig=new();
@@ -194,12 +232,13 @@ public sealed class EngineInitAnnouncementCarryTests
         public void Dispose(){Vision.Dispose();Rig.Dispose();}
     }
 
-    // reach: production (public setter API, shared native carry owner, actual world lookup and robot send).
+    // reach: unit (substitutes direct internal carry entry and located world; AttachObjectToLift join0x006331AE is not entered).
     [Fact]
-    public void PublicSetterEntryReachesOwnerAndSendsCarryOne()
+    public void InternalSetterEntryReachesOwnerAndSendsCarryOne()
     {
         using var f=new CarryFixture();var obj=f.Add(7);int mark=f.Rig.Mark();
         f.Carry.SetCarryingObject(7,(ushort)obj.Markers[0].Code);
+        Assert.Null(typeof(CarryingComponent).GetMethod("SetCarryingObject",new[]{typeof(uint),typeof(ushort)}));
         Assert.Same(f.Carry,f.Rig.Robot.Carrying);Assert.Equal(7u,f.Carry.CarriedObjectId);
         Assert.Equal((ushort)obj.Markers[0].Code,f.Carry.NativeMarkerCode);
         Assert.Contains(f.Rig.RawSince(mark),bytes=>bytes.SequenceEqual(new byte[]{0x49,1}));
