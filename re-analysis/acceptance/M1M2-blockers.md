@@ -19,7 +19,9 @@ production path and its verification, not on the length of this list.
 ## Decisions recorded (on the records' `unresolved`)
 
 - **M1-055:** not supported: the Init-time animation broadcast (operator). Its delivery is unresolved, not disproved.
-  Its engine body has no state effect besides the sends and the Debug log (OV124 rows 14-23). Not supported: the raw
+  Correction (same day): it is not established that no internal effect is lost. The sends pass through
+  UiMessageHandler::Broadcast, which also runs a local dispatch (0x006625FA). OV126 routine 6 checks for a required
+  internal consumer of this early EndOfMessage; any required effect is kept without the public event. Not supported: the raw
   CLAD serializer for AnimationAvailable (manager; the C# API is typed). **Required:** a reliable animation list after
   loading, with a clear completion indication.
 - **M1-056:** the C# API reports loading, ready and failed, with meaningful progress where readily available
@@ -41,6 +43,7 @@ production path and its verification, not on the length of this list.
 | M1-056 1 → 2 gate, SetEngineState | Readiness; loading starts at all | Stays (OV125 narrow, then build) |
 | Loading/ready/failed + progress | API readiness | Stays (build; stack design for "failed") |
 | UiMessageHandler::Init, InitInternal, the MessageHandler Init, SendSupportInfo, WifiFlashID | Unknown | Narrow check (OV126), not full extraction |
+| Internal consumers of the Init-time EndOfMessage | Possibly readiness or downstream state | Narrow check (OV126 routine 6); a required effect is kept without the public event |
 | Trace (0xB0) | Diagnostics | Decode and log (build) |
 | B-M2M15-2 | Robot-message dispatch with no robot (B9) | Released; build, then verify |
 | M2 settling pass, policy confirmation | Dispatch order; confirmed policies | Stays (Opus) |

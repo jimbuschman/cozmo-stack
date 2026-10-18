@@ -142,7 +142,8 @@ stack implements that feature.
 
   Each case is still recorded: the owning record's `unresolved` names the crash point (address) and the skip.
 
-  The rule covers only undefined or terminating behaviour. Where the original's behaviour is defined, it stays exact.
+  The rule covers only undefined or terminating behaviour. Where the original's behaviour is defined, "What we
+  reproduce" governs it.
 
   **Hangs are covered too** (operator, 2026-10-16: "skip and log. generally we don't want to reproduce errors"). A path
   where the original blocks forever or deadlocks is treated the same way: the stack skips the wait, logs the skip
@@ -150,7 +151,10 @@ stack implements that feature.
   CancelEventCallback wait (0xA03604).
 
   This is about faults of the original, not its error handling. Where the engine handles an error in a defined way
-  (an error log, a failure result, an error flag), that stays exact.
+  (an error log, a failure result, an error flag), "What we reproduce" governs it (2026-10-17): an effect on robot
+  traffic, robot behaviour, API delivery or readiness, or the state that feeds them (a failure result, a flag something
+  later acts on) is reproduced when the error can occur in our system; the log text is best effort; branches for inputs
+  our system never produces are not built.
   The first case under the standing rule is the backup manager's malformed inputs (M15-039, M15-040, M15-042):
   - a non-numeric `.backup` name;
   - a statsForBackup.json whose ConnectionCount isn't an object or isn't numeric;

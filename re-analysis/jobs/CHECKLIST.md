@@ -4,6 +4,11 @@ Written after the complete audit of 2026-09-29 (`re-analysis/research/20260929-a
 settled records didn't hold, and every failure was one of the patterns below. The implementer works through this list
 before writing code. The verifier checks every item on every batch, and a failed item blocks the commit.
 
+**Scope (2026-10-17):** AGENTS.md "What we reproduce" decides what is checked. Every item below applies to behaviour
+that reaches robot traffic, robot behaviour, C# API delivery or readiness, or the state that feeds them. Logs are best
+effort and never block by themselves. Steps inside machinery a record marks "not supported" are not built and not
+checked, but the exclusion must be recorded.
+
 ## 1. The production path
 
 - **Name the entry.** Which engine function does this behaviour live in, and which C# method is its counterpart on the
@@ -26,8 +31,10 @@ For every behaviour you build, answer these from the disassembly, not from the C
   `NVStorageComponent::Update` after Gate A, not from `Read`.
 - **What goes on the wire:** every message the path sends, including the ones around the main one. For example, a
   head move also sends DisableAnimTracks and EnableAnimTracks for its track lock.
-- **Failure results:** what the engine does on failure. A locked track fails the action with 0x03000019; it doesn't
-  retry.
+- **Failure results:** what the engine does on failure, when that failure can occur in our system. A locked track fails
+  the action with 0x03000019; it doesn't retry. A branch for an input our system never produces is not built.
+- **Logs:** use the engine's event name and text where the row gives them. Best effort; a wrong or missing log blocks
+  only when it would hide a real failure.
 - **Slot identity:** for a virtual call, resolve the slot from the vtable relocation. The object's vtable pointer
   points 8 bytes into the vtable, so slot = (relocation address - vtable start - 8) / 4. Don't guess from a name.
 
@@ -52,7 +59,7 @@ provenance note or another record's `unresolved`, the record isn't settled. Give
 
 - **Expected values come from the binary or the shipped assets,** never from running the implementation. A test whose
   expected value is the code's own constant is circular.
-- **Test the failure and edge branches** the engine has: the first sample, zero, the boundary with its strict or
+- **Test the failure and edge branches** the engine has, where our system can reach them: the first sample, zero, the boundary with its strict or
   inclusive compare, NaN.
 - **A test that asserts behaviour the audit contradicted is wrong.** Fix it from the source; don't keep it.
 - **Say how each regression test reaches the behaviour** (manager, 2026-10-16). B-M5-18's tests passed because they

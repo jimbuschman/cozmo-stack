@@ -12,7 +12,8 @@ rules.
 
 ## Rules
 
-1. **Read first:** `AGENTS.md`, `PROJECT_STATE.md` ("The plan"), `re-analysis/jobs/CHECKLIST.md` and the job file.
+1. **Read first:** `AGENTS.md` (especially "What we reproduce", 2026-10-17, which governs where these rules differ),
+   `PROJECT_STATE.md` ("The plan"), `re-analysis/jobs/CHECKLIST.md` and the job file.
 2. **Build only from checked rows.** A checked row is one an Opus verification or the manager confirmed in the binary.
    This means the `unresolved` text that starts "Opus verification", or a research file the manager adopted.
    - **Never build from your own unchecked extraction.** One role does not extract and build in the same work. That
@@ -20,8 +21,8 @@ rules.
    - **When a needed step has no checked row,** stop it as `MISSING:` in the status file and go on with the rest.
 3. **One batch at a time**, each kept small enough to review.
 4. **Verify each batch before committing it.** Review your own diff against CHECKLIST.md (the live production path,
-   gates, order, failure results, floats as the engine's bits at the engine's width, log texts, tests whose expected
-   values come from the binary), then run `fidelity.py --check` and the full suite.
+   gates, order, failure results, floats as the engine's bits at the engine's width, tests whose expected values come
+   from the binary; logs best effort), then run `fidelity.py --check` and the full suite.
 5. **You never settle a record.** Records stay IMPLEMENTATION_GAP, with `unresolved` starting "built, awaiting strong
    verification:". A separate Opus pass settles the layer.
 6. **Commit and push to main yourself.** If the gate refuses because origin moved, `git pull --rebase` and push again.
@@ -36,15 +37,16 @@ rules.
      they follow.
    - **When the manager runs you on its machine,** `.git` is read-only in your sandbox. The manager pulls, commits and
      pushes. Skip rule 6 and the claim step, and run no git command.
-10. **Port every engine log and side effect inside the cited ranges.** The Opus passes found the same misses more
-    than once. Before committing, list every call inside each cited instruction range and account for each one in the
-    C#:
-    - the log calls (`sChanneledInfoF`, `sWarningF`, `sErrorF`, and the error-flag store and debug-break gate that follow
-      `sErrorF`), with their exact event name, format string and level;
-    - file and stream opens and closes;
-    - counters and static state.
-
-    A call with no C# counterpart is either built, or listed as MISSING with its address. Also **reopen the call target
+10. **Account for every side effect inside the cited ranges** (revised 2026-10-17). The Opus passes found the same
+    misses more than once. Before committing, list every call inside each cited instruction range and account for each
+    one in the C#:
+    - sends, state stores, counters and static state, file and stream opens and closes, failure results and flags that
+      something later acts on: built, or MISSING with the address;
+    - log calls (`sChanneledInfoF`, `sWarningF`, `sErrorF`): port them with the engine's event name and text where the
+      row gives them. This is best effort: a missing or differently worded log is not a MISSING and never fails a job,
+      unless the diagnostic is needed to understand a real failure;
+    - steps inside machinery the record marks "not supported": not built and not reported as MISSING; name the record's
+      exclusion in the status file. Also **reopen the call target
     of every row you build on.** A row can misname a function: M1-024's D1 did.
 11. **A MISSING never goes into the engine log stream** (manager, 2026-10-14; B-POSE-1 and B-M11-1 both failed on it).
     Report a MISSING with `SteppedBehavior.ReportMissing` (the stack's own channel, deduplicated). Never call
@@ -53,7 +55,8 @@ rules.
 12. **Threads follow the original.** Code the original runs on one thread (Robot::Update, the message handlers) must not
     move onto the vision worker or another thread in the stack, unless one gate is shared with every writer of the same
     state. B-M11-1 failed on a race this way.
-13. **An absent owner is not a reason to skip** (manager, 2026-10-16; B-M9-1 was under-built this way). Sometimes a
+13. **An absent owner is not a reason to skip** (manager, 2026-10-16; B-M9-1 was under-built this way). A recorded
+    "not supported" exclusion is the only exception. Sometimes a
     checked unit's live owner or caller doesn't exist in the stack yet. Then:
     - build the unit exactly from its rows, as production code, not as a test helper;
     - wire it to the nearest existing live entry the rows name;
@@ -73,3 +76,5 @@ rules.
     - Run `python -I re-analysis/tools/logkey_check.py cozmo-stack/src/<the files you touched>`.
     - Every ABSENT key in your files is either fixed from a checked row or explained in the status file.
     - EXACT proves only that the key exists. It says nothing about level, branch, order or text.
+    - Since 2026-10-17 this is a cheap habit, not a gate: an unexplained ABSENT key is a cleanup note, never a reason
+      for BLOCKED.
