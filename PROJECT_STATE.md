@@ -68,6 +68,11 @@ stands. Nothing new starts outside the current layer.
   2. the next acceptance target and its concrete blockers, wherever they live;
   3. regression tests that reach behaviour through the real production wiring, or say that they don't;
   4. a narrow pilot of a mechanical log check, kept only if it catches real defects cheaply.
+- **Manager (operator, 2026-10-17):** Opus stays technical manager; no separate lighter coordinator for now
+  (revisit if routine management becomes a substantial share). Fresh manager sessions at natural checkpoints, once
+  findings are adopted and this file and `acceptance/M1M2-blockers.md` carry the handoff; the saving is unmeasured.
+  Fix reviews resume the original verifier where practical, scoped to the changed code and affected behaviour, with
+  all gates kept. Routine bookkeeping uses `status_views.py` and `fidelity.py`.
 - **History** up to this revision: `re-analysis/archive/PROJECT_STATE-history-to-20261016.md`.
 
 ## Decision notes (operator, 2026-09-24: "just make notes of stuff like this; test later and pick the best choice")
