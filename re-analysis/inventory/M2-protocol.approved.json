@@ -1,8 +1,8 @@
 {
   "subsystem": "M2-protocol",
-  "approved": "2026-10-16",
+  "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M2-protocol.md",
-  "inventory_sha256": "41f23027971c7a71fe8677676f782861b4ec1b46173512974ff6614dc81a8a8e",
+  "inventory_sha256": "058959c948bc63b36358a233802e712dc7ae45986a94c0093f50c5bd26888754",
   "records": {
     "M2-001": {
       "status": "EXACT_SOURCE",
@@ -283,6 +283,17 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-small-reads-2-check.md: M2-023 section. C4 0x0054D3F8..0x0054D7B2; DA 0x00557E82..0x00557E9C; CA 0x005452F0..0x0054534E; CB 0x0054541C..0x005454F4; D5 0x0054561C..0x0054569E, 0x00545750..0x00545792, Broadcast(&&) 0x006625B0; C5 -> QueueAction(5) -> AddConcurrentAction 0x0053DF2C..0x0053E004; EF 0x00678064..0x0067811C, 0x00676D80..0x00676FA6; re-Init 0x00540D1C..0x00540F9C; ConnectToRobot 0x004EB5CC, 0x004EBB6C..0x004EBBC2, 0x004ED018; ~Robot 0x005111EA..0x00511220; ProcessMessages 0x0069D8BC..0x0069D8D8."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M2-024": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotToEngineImplMessaging Init subscriptions the stack lacks: B1, B2, B3, B7, BA, BB, BC, BD, C3",
+      "authority": "InitRobotMessageComponent 0x00532A7C; B1 HandlePrint (GOT 0x0103EA60); B3 HandleGoalPose 0x005352C8; C3 HandleRobotPoked 0x005366FC (Robot::Broadcast 0x00536754); BA lambda 0x00538088 (SetOnRamp 0x005380D2); BB 0x0053819C (SetOnRamp 0x005381E6); BC 0x005382B4; BD 0x005383C0; B2 0x005384CC; B7 0x0053866A",
+      "evidence": [
+        "Split from M2-018 (research/20261018-m1m2-settling-pass.md): these nine native subscriptions have no stack subscriber, no record and no MISSING (RobotSubscriptions.cs:133-186).",
+        "C3: Info, then E2G RobotPoked via Robot::Broadcast at 0x00536754. BA/BB: Info, then Robot::SetOnRamp. BC/BD: Info only. B2: two sWarningF. B7: hex Info. B1: log. B3: VizManager DrawPreDockPose only."
       ],
       "live_path": true,
       "hardware_required": false

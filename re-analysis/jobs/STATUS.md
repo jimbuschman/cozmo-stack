@@ -108,6 +108,8 @@
 | 61w3d | B-M1-5 | DONE per status/B-M1-5.md (fixes for B-M1-4 and B-DELIV-1; names in stack load order, o... | DONE (12/12 checked items; 7 MISSING) | `research/20261018-b-m1-5-check-delivery.md`, `research/20261018-b-m1-5-check-readiness.md` |
 | 61w3e | B-M1-6 | DONE per status/B-M1-6.md (fixes for B-M1-5: ConnectAsync ready race, last inline broad... | DONE (9/9 items; 9 MISSING) | `research/20261018-b-m1-6-check-delivery.md`, `research/20261018-b-m1-6-check-readiness.md` |
 | 61w3f | B-M1-7 | DONE per status/B-M1-7.md (fixes for B-M1-6: deterministic ready tests, handoff fence, ... | DONE (7/7 items; 14 MISSING) | `research/20261018-b-m1-7-check-delivery.md`, `research/20261018-b-m1-7-check-readiness.md` |
+| 61w3g | B-M1-8 | open (M1+M2 settling fixes needing no research: NeedsManager::Init at Init, GetBlockPoo... | no status file | none found |
+| 61w3h | B-M1-9 | HELD (manager, 2026-10-18: until OV127 is adopted; LatencyMessage, M2-024 handlers) | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

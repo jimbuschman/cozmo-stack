@@ -10,19 +10,19 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | --- | ---: |
 | EXACT_SOURCE | 184 |
 | EQUIVALENT_IMPLEMENTATION | 5 |
-| COMPATIBILITY_POLICY | 65 |
+| COMPATIBILITY_POLICY | 66 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
 | IMPLEMENTATION_GAP | 405 |
-| RECOVERABLE_GAP | 22 |
-| **total** | **697** |
+| RECOVERABLE_GAP | 24 |
+| **total** | **700** |
 
 ## Subsystems
 
 | subsystem | review | approved | records | EXACT | policy/equiv | HW_ONLY/BLOCKED | IMPL_GAP | RECOVERABLE | live-path open |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| M1-transport | INVENTORY_APPROVED | 2026-10-17 | 59 | 38 | 17 | 1 | 3 | 0 | 3 |
-| M2-protocol | INVENTORY_APPROVED | 2026-10-16 | 23 | 16 | 2 | 0 | 5 | 0 | 5 |
+| M1-transport | INVENTORY_APPROVED | 2026-10-18 | 61 | 38 | 18 | 1 | 3 | 1 | 4 |
+| M2-protocol | INVENTORY_APPROVED | 2026-10-18 | 24 | 16 | 2 | 0 | 5 | 1 | 6 |
 | M3-device | INVENTORY_APPROVED | 2026-10-15 | 63 | 35 | 20 | 4 | 4 | 0 | 4 |
 | M4-control | INVENTORY_APPROVED | 2026-10-16 | 50 | 22 | 8 | 3 | 17 | 0 | 17 |
 | M5-animation | INVENTORY_APPROVED | 2026-10-16 | 65 | 30 | 11 | 1 | 23 | 0 | 23 |
@@ -45,4 +45,4 @@ ACCEPTED subsystems: none.
 | level | records |
 | --- | ---: |
 | HARDWARE_VERIFIED | 10 |
-| NONE | 687 |
+| NONE | 690 |

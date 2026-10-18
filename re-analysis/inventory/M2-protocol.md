@@ -841,3 +841,11 @@ M2-002 retains RobotStatusFlag names/values and native bit storage. P1 Delocaliz
 | Change | Records |
 | --- | --- |
 | Narrowed to the M2 dispatch part; handler bodies and per-owner wiring moved to their owners | M2-020, M2-023 |
+
+
+## M1+M2 settling pass and policy confirmation (manager, 2026-10-18; research/20261018-m1m2-settling-pass.md, research/20261018-m1m2-policy-confirmation.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP, split from M2-018: Impl Init subscriptions the stack lacks (B1, B2, B3, B7, BA, BB, BC, BD, C3) | M2-024 (new) |
+| Policy text confirmed / corrected | M2-017, M2-021 (notes) |
