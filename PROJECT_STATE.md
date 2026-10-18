@@ -49,13 +49,12 @@ stands. Nothing new starts outside the current layer.
   **Ended (operator, 2026-10-17):** Claude resumes manager and Opus verification; Codex returns to the research and
   builder lanes. Builder commits published during the handoff (B-M15-7, 2fc72bc3) still get the Opus verifier.
 
-- **Now (2026-10-18, night):** M1+M2 settling pass and policy confirmation done
-  (`research/20261018-m1m2-settling-pass.md`, `-policy-confirmation.md`). No record settled yet: M2-019/020/022/023 need
-  tags and small cleanups; M1-054 needs NeedsManager::Init at its Init position; M2-018's nine missing Impl handlers
-  split to M2-024; M1-024's latency/residue split to M1-061 (operator: LatencyMessage supported). All 19 policies
-  confirmed (10 with text appended); M1-042's GetBlockPool supplied as an app input (manager); M1-060 records the
-  engine-config app input; FactoryTestLogger archive not supported (on-device logs). Builder: B-M1-8 (open), B-M1-9
-  (held for OV127). Research: OV127. Then a settling re-check and the hardware script.
+- **Now (2026-10-18, late):** **Don't connect a robot with main until B-M1-10 lands:** since B-M1-8 the engine-owned
+  NeedsManager runs connection-time needs persistence with the wrong clock and can write a needs record with zeroed
+  fields to the robot's flash (`research/20261018-b-m1-8-check.md` B1). B-M1-10 (first priority) gates it off.
+  Settled EXACT_SOURCE: M2-019, M2-020, M2-022, M2-023. OV127 adopted (M1-062 pause input; M1-061/M2-024 to build).
+  Builder: B-M1-9 (in progress), then B-M1-10. Remaining for M1+M2: M2-018 (after M2-024), M1-054/055/056, M1-061,
+  M1-062, M2-024, then a settling re-check and the hardware script.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **none is ACCEPTED**.
 - **Jobs:** `re-analysis/jobs/STATUS.md` (generated) shows, per builder job, the queue note, the status-file state and any

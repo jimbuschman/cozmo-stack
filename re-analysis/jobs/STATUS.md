@@ -108,8 +108,9 @@
 | 61w3d | B-M1-5 | DONE per status/B-M1-5.md (fixes for B-M1-4 and B-DELIV-1; names in stack load order, o... | DONE (12/12 checked items; 7 MISSING) | `research/20261018-b-m1-5-check-delivery.md`, `research/20261018-b-m1-5-check-readiness.md` |
 | 61w3e | B-M1-6 | DONE per status/B-M1-6.md (fixes for B-M1-5: ConnectAsync ready race, last inline broad... | DONE (9/9 items; 9 MISSING) | `research/20261018-b-m1-6-check-delivery.md`, `research/20261018-b-m1-6-check-readiness.md` |
 | 61w3f | B-M1-7 | DONE per status/B-M1-7.md (fixes for B-M1-6: deterministic ready tests, handoff fence, ... | DONE (7/7 items; 14 MISSING) | `research/20261018-b-m1-7-check-delivery.md`, `research/20261018-b-m1-7-check-readiness.md` |
-| 61w3g | B-M1-8 | CLAIMED per status/B-M1-8.md (M1+M2 settling fixes needing no research: NeedsManager::I... | CLAIMED Codex 2026-10-18 | none found |
-| 61w3h | B-M1-9 | open, after B-M1-8 (OV127 adopted 2026-10-18: LatencyMessage, SetGameBeingPaused input,... | no status file | none found |
+| 61w3g | B-M1-8 | CLAIMED per status/B-M1-8.md (M1+M2 settling fixes needing no research: NeedsManager::I... | DONE (10/10 items; 6 MISSING) | `research/20261018-b-m1-8-check.md` |
+| 61w3h | B-M1-9 | CLAIMED per status/B-M1-9.md (OV127 adopted 2026-10-18: LatencyMessage, SetGameBeingPau... | CLAIMED Codex 2026-10-18 | none found |
+| 61w3i | B-M1-10 | open, FIRST PRIORITY (gate connection-time needs persistence off the robot; B-M1-8 chec... | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
