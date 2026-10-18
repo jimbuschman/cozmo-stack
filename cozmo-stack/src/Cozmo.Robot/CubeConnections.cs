@@ -546,7 +546,8 @@ public sealed class CubeConnections
     }
 
     // fidelity: M4-035
-    public event Action<BlockPoolDataMessage>? BlockPoolData;
+    // Synchronous component-to-engine seam; hosts subscribe to CozmoEngine.BlockPoolData (FIFO).
+    internal event Action<BlockPoolDataMessage>? BlockPoolData;
     private void SendBlockPoolData()
     {
         Queue(EngineLogLevel.Info, "BlockPool", "BlockFilter.HandleGameEvents", "Sending blockpool data", includeChannelInText: true);

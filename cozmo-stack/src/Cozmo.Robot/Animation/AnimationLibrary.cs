@@ -317,7 +317,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         double started = MonotonicMilliseconds();
         Eye.ClippingWarningEnabled = false;
         float ratio = 0.7f / files.Count;
-        // Operator M1-055: deterministic stack definition sequence, first definition wins.
+        // Operator M1-055: deterministic stack definition sequence; first list position, last definition content.
         // One resource-relative sequence, independent of a resources-root versus nested-assets-root input.
         // Clips retain their file order; phone worker interleaving is not reproduced.
         string definitionRoot=configAnimations is null?Path.GetFullPath(assetsRoot)
@@ -608,8 +608,11 @@ public sealed class AnimationLibrary : IAnimationCatalog
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return;
         }
-        if(_clipCache.ContainsKey(clip.Name))return; // AddAnimation587E56 ->58802A: existing definition wins.
-        _clipCache.Add(clip.Name,clip);_clipFiles.Add(clip.Name,path);_definitionOrder.Add(clip.Name);
+        // AddAnimation preserves the node; DefineFromFlatBuf/Json clears and redefines its content
+        // (0x00588338 -> 0x00575734; JSON 0x0057687A). Only first insertion sets list position.
+        if(!_clipCache.ContainsKey(clip.Name))_definitionOrder.Add(clip.Name);
+        _clipCache[clip.Name]=clip;_clipFiles[clip.Name]=path;
+        _jsonClipFiles.Remove(clip.Name);
         if (json) _jsonClipFiles[clip.Name] = path;
         if (clip.LoadTruncated)
         {

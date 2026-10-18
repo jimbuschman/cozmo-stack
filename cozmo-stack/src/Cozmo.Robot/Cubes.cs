@@ -213,13 +213,16 @@ public sealed class CozmoCubes
     public event Action<Cube>? CubeDiscovered;
     /// <summary>Raised when a cube connects or disconnects.</summary>
     public event Action<Cube>? ConnectionChanged;
-    /// <summary>Raised when a cube is tapped.</summary>
+    /// <summary>Queued when a cube is tapped; carries a publication-time snapshot, not the live Cube.</summary>
     public event Action<Cube>? CubeTapped;
-    /// <summary>Raised when a cube starts or stops moving.</summary>
+    /// <summary>Queued when a cube starts or stops moving; carries a publication-time snapshot, not the live Cube.</summary>
     public event Action<Cube>? CubeMoved;
     // fidelity: M4-009 — immutable message timestamps beside the existing cube notices.
+    /// <summary>Queued movement report with a publication-time Cube snapshot.</summary>
     public event Action<CubeTimestampEvent>? MovementBroadcast;
+    /// <summary>Queued tap report with a publication-time Cube snapshot.</summary>
     public event Action<CubeTimestampEvent>? TapBroadcast;
+    /// <summary>Queued up-axis report with a publication-time Cube snapshot.</summary>
     public event Action<CubeUpAxisEvent>? UpAxisBroadcast;
 
     /// <summary>True once discovery has been turned on and not turned off again.</summary>

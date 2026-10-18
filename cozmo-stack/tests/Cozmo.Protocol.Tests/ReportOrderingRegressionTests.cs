@@ -42,10 +42,10 @@ public sealed class ReportOrderingRegressionTests
     {
         using var f=new Fixture();var order=new List<string>();var completed=new List<ActionCompletionReport>();
         f.Rig.Engine.EngineToGameMessage+=(tag,_)=>{if(tag==0x5F)order.Add("5F");};
-        f.Robot.Sensors.RobotStopped+=()=>order.Add("stopped");f.Rig.Engine.ActionCompleted+=completed.Add;
+        f.Robot.Sensors.RobotStopped+=()=>order.Add("stopped");f.Rig.Engine.ActionCompleted+=r=>{completed.Add(r);order.Add("completed");};
         var action=f.Start();int mark=f.Rig.Mark();
         f.Rig.Data(new RobotStopped{Field0=1});f.Rig.Tick();
-        Assert.Equal(new[]{"5F","stopped"},order);
+        Assert.Equal(new[]{"5F","completed","stopped"},order);
         Assert.Contains(f.Rig.RawSince(mark),p=>p[0]==0x8D);
         f.Rig.Tick();Assert.Contains(completed,r=>r.Tag==action.Tag);
     }
@@ -61,5 +61,47 @@ public sealed class ReportOrderingRegressionTests
         f.Rig.Data(new Cozmo.Protocol.AnimationEvent{Timestamp=123,EventId=(AnimEvent)tag,Field2=2});
         f.Rig.Data(new ObjectTapped{ObjectID=0,Timestamp=124,TapPos=100,TapNeg=0});
         f.Rig.Tick();Assert.Equal(new[]{"60","tap"},order);
+    }
+
+    // reach: production — received animation/calibration/RobotState packets in one real engine tick.
+    [Fact]
+    public void CalibrationAndChargerPlatformFollowEarlierReportsWhileInternalHooksStaySynchronous()
+    {
+        using var f=new Fixture();f.Start();var host=new List<string>();var local=new List<string>();
+        f.Rig.Engine.AnimationEvent+=_=>host.Add("60");
+        f.Robot.Sensors.MotorCalibrationReported+=m=>host.Add("motor"+m.CalibStarted);
+        f.Robot.Sensors.OnChargerPlatformChanged+=b=>host.Add("platform"+b);
+        f.Robot.Sensors.MotorCalibrationReportedInternal+=_=>{Assert.Empty(host);local.Add("motor");};
+        f.Robot.Sensors.OnChargerPlatformChangedInternal+=_=>{Assert.Empty(host);local.Add("platform");};
+        f.Rig.Data(new AnimationStarted{AnimId=f.Robot.Animations.CurrentTag});
+        f.Rig.Data(new Cozmo.Protocol.AnimationEvent{Timestamp=123,EventId=(AnimEvent)f.Robot.Animations.CurrentTag,Field2=2});
+        f.Rig.Data(new MotorCalibration{MotorID=MotorID.MOTOR_HEAD,CalibStarted=false,AutoStarted=true});
+        f.Rig.Data(new RobotState{Timestamp=124,Status=(uint)(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsOnCharger),
+            Accel=new AccelData{Z=9800}});
+        f.Rig.Tick();
+        Assert.Equal(new[]{"motor","platform"},local);
+        Assert.Equal(new[]{"60","motorFalse","platformTrue"},host);
+    }
+
+    // reach: unit (direct album adoption with seeded names substitutes OKAO restore, M11-016;
+    // uses the actual FIFO and verifies its join to earlier received animation reports).
+    [Fact]
+    public void LoadedFaceReportsQueueAfterEarlierReportsAndSnapshotNames()
+    {
+        using var f=new Fixture();f.Start();var host=new List<string>();var local=new List<string>();
+        f.Rig.Engine.AnimationEvent+=_=>host.Add("60");
+        f.Vision.EnrolledFacesErased+=()=>host.Add("erase");
+        f.Vision.LoadedFaceName+=(id,name)=>host.Add(id+":"+name);
+        f.Vision.EnrolledFacesErasedInternal+=()=>{Assert.Empty(host);local.Add("erase");};
+        f.Vision.LoadedFaceNameInternal+=(id,name)=>{Assert.Empty(host);local.Add(id+":"+name);};
+        f.Vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(5,new FaceRect(0,0,10,10),Name:"Jim"),1),Pose3d.Identity,false);
+        // Dispatch the real packet without draining so album adoption joins the same pending batch.
+        f.Rig.Data(new AnimationStarted{AnimId=f.Robot.Animations.CurrentTag});
+        f.Rig.Data(new Cozmo.Protocol.AnimationEvent{Timestamp=123,EventId=(AnimEvent)f.Robot.Animations.CurrentTag,Field2=2});
+        // The real packet runs during Tick; adopt at its synchronous local E2G publication.
+        using var subscription=f.Rig.Engine.AnimationMessages.SubscribeMessage(0x60,true,_=>f.Vision.AdoptFaceAlbum(Array.Empty<byte>(),Array.Empty<byte>()));
+        f.Rig.Tick();
+        Assert.Equal(new[]{"erase","5:Jim"},local);
+        Assert.Equal(new[]{"60","erase","5:Jim"},host);
     }
 }

@@ -195,6 +195,7 @@ public sealed class CozmoSensors
 
     /// <summary>Raised for every MotorCalibration report, started or finished.</summary>
     public event Action<MotorCalibration>? MotorCalibrationReported;
+    internal event Action<MotorCalibration>? MotorCalibrationReportedInternal;
 
     // fidelity: M4-012
     /// <summary>
@@ -352,6 +353,7 @@ public sealed class CozmoSensors
     public bool OnChargerContacts { get { lock (_gate) return _onChargerContacts; } }
     /// <summary>RobotOnChargerPlatformEvent (C8 P1): raised with the new value when it changes.</summary>
     public event Action<bool>? OnChargerPlatformChanged;
+    internal event Action<bool>? OnChargerPlatformChangedInternal;
 
     // ------------------------------------------------ CliffSensorComponent running stats (M4-019)
     //
@@ -660,8 +662,9 @@ public sealed class CozmoSensors
             _onChargerPlatform = now;
         }
         if (!changed) return;
-        OnChargerPlatformChanged?.Invoke(now);
+        _robot.Engine.QueueAppBroadcast(OnChargerPlatformChanged,now); // external send 0x00511D8A
         SendCliffDetectThresholdToRobot(now ? StartCliffThreshold : DefaultCliffThreshold);
+        OnChargerPlatformChangedInternal?.Invoke(now); // FreeplayDataTracker 0x00511DB0
     }
 
     // fidelity: M4-019, M13-025
@@ -943,8 +946,6 @@ public sealed class CozmoSensors
                 break;
 
             case MotorCalibration mc:
-                MotorCalibrationReported?.Invoke(mc);
-                if (mc.CalibStarted && mc.AutoStarted) AutoCalibrationStarted?.Invoke(mc);
                 // fidelity: M4-012
                 // MA20: a lift that starts calibrating while carrying detaches the carried object.
                 if (mc.MotorID == MotorID.MOTOR_LIFT && mc.CalibStarted)
@@ -952,6 +953,12 @@ public sealed class CozmoSensors
                     Behavior.SteppedBehavior.ReportMissing("M12-006 C5 HandleMotorCalibration: checked sEventF before SetCarriedObjectAsUnattached 0x00536BAE..0x00536BC4 has no bound exact event payload in this handler; no fabricated native event");
                     UnattachCarriedObjectIfCarrying?.Invoke();
                 }
+                // State already adopted by RobotState.Update; detach precedes Broadcast 0x00536C0E.
+                _robot.Engine.QueueAppBroadcast(MotorCalibrationReported,new MotorCalibration
+                    {MotorID=mc.MotorID,CalibStarted=mc.CalibStarted,AutoStarted=mc.AutoStarted});
+                if(mc.CalibStarted&&mc.AutoStarted)_robot.Engine.QueueAppEvent(AutoCalibrationStarted,new MotorCalibration
+                    {MotorID=mc.MotorID,CalibStarted=mc.CalibStarted,AutoStarted=mc.AutoStarted});
+                MotorCalibrationReportedInternal?.Invoke(mc);
                 break;
 
             case RobotState s:

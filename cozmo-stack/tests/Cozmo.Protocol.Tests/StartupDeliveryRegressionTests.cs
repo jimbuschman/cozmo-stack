@@ -123,9 +123,72 @@ public sealed class StartupDeliveryRegressionTests
         finally{Directory.Delete(root,true);}
     }
 
+    // reach: production — public ConnectAsync/BeforeStart, real ticker and transport packets; barriers force
+    // ready publication before waiter subscription, and subscription before delivery. Reflection only observes
+    // the waiter and retrieves the real transport for the scripted peer; it substitutes no engine result.
+    [Fact]
+    public async Task ConnectAsyncCompletesWhenSubscriptionFallsBetweenReadyCaptureAndDelivery()
+    {
+        string root=Directory.CreateTempSubdirectory("forced-ready-interleave-").FullName;
+        using var releaseNames=new ManualResetEventSlim();
+        using var sourceReadyPublished=new ManualResetEventSlim();
+        using var cancel=new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var namesEntered=new TaskCompletionSource<CozmoEngine>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var initialReleased=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<CozmoRobot>? connecting=null;
+        IDisposable? sourceReadyObserver=null;
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(root,"animations"));
+            File.WriteAllText(Path.Combine(root,"animations","a.json"),"{\"a\":[]}");
+            connecting=Task.Run(()=>CozmoRobot.ConnectAsync(IPAddress.Loopback,isSimulated:true,cancellationToken:cancel.Token,
+                engineOptions:new CozmoEngineOptions{ResourcesPath=root,BlockPoolPath="",BeforeStart=e=>
+                {
+                    // This synchronous local publication follows CaptureAppEvent, so it proves capture
+                    // finished, unlike observing the earlier engine-state byte store alone.
+                    sourceReadyObserver=e.AnimationMessages.SubscribeMessage(0x7B,true,p=>
+                        {if(p is EngineStateTransition{NewState:3})sourceReadyPublished.Set();});
+                    e.EngineStateChanged+=s=>
+                    {
+                        if(s.OldState!=0||s.NewState!=1)return;
+                        if(!sourceReadyPublished.Wait(TimeSpan.FromSeconds(10)))
+                        {initialReleased.TrySetException(new TimeoutException("native ready not published"));return;}
+                        initialReleased.TrySetResult();
+                    };
+                    e.AnimationAvailable+=_=>{namesEntered.TrySetResult(e);releaseNames.Wait(cancel.Token);};
+                }}));
+            await initialReleased.Task.WaitAsync(cancel.Token);
+            var engine=await namesEntered.Task.WaitAsync(cancel.Token);
+            var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+            var waiter=typeof(CozmoEngine).GetField("ReadyDeliveredInternal",flags)!;
+            Assert.True(SpinWait.SpinUntil(()=>waiter.GetValue(engine) is Delegate,TimeSpan.FromSeconds(5)));
+            Assert.True(engine.IsReady);Assert.False(engine.IsReadyDelivered);
+            releaseNames.Set();
+            Assert.True(SpinWait.SpinUntil(()=>engine.ConnectionState==1,TimeSpan.FromSeconds(5)));
+            var port=typeof(CozmoEngine).GetField("_t",flags)!.GetValue(engine)!;
+            var transport=(ReliableTransport)port.GetType().GetField("_t",flags)!.GetValue(port)!;
+            transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(ReliableMessageType.ConnectionResponse,Array.Empty<byte>(),1),1)));
+            Assert.True(SpinWait.SpinUntil(()=>engine.ConnectionState==2,TimeSpan.FromSeconds(5)));
+            void Data(RobotMessage message,ushort seq)=>transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(
+                new SubMessage(ReliableMessageType.SingleReliableMessage,message.ToBytes(),seq),1)));
+            Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")},2);
+            Assert.True(SpinWait.SpinUntil(()=>engine.RobotValidated==true,TimeSpan.FromSeconds(5)));
+            Data(new ManufacturingID{SerialNumber=0x1234,BodyHwVersion=5,BodyColor=0},3);
+            using var robot=await connecting.WaitAsync(cancel.Token);
+            Assert.True(robot.Engine.IsReadyDelivered);
+        }
+        finally
+        {
+            releaseNames.Set();cancel.Cancel();
+            if(connecting is not null)try{(await connecting).Dispose();}catch(OperationCanceledException){}
+            sourceReadyObserver?.Dispose();
+            Directory.Delete(root,true);
+        }
+    }
+
     // reach: unit (direct loader input substitutes startup; exercises duplicate definition ownership, not host startup).
     [Fact]
-    public void DuplicateNameKeepsItsFirstDefinitionAndItsSingleListPosition()
+    public void DuplicateNameKeepsItsFirstListPositionAndLastDefinition()
     {
         string root=Directory.CreateTempSubdirectory("first-definition-").FullName;
         try
@@ -134,7 +197,7 @@ public sealed class StartupDeliveryRegressionTests
             File.WriteAllText(Path.Combine(dir,"a.json"),"{\"same\":[{\"Name\":\"EventKeyFrame\",\"triggerTime_ms\":1,\"event_id\":\"TAPPED_BLOCK\"}]}");
             File.WriteAllText(Path.Combine(dir,"z.json"),"{\"same\":[{\"Name\":\"EventKeyFrame\",\"triggerTime_ms\":99,\"event_id\":\"TAPPED_BLOCK\"}]}");
             var library=AnimationLibrary.Open(root);Assert.Equal(new[]{"same"},library.ClipNames);
-            Assert.Equal(1u,library.GetClip("same")!.Keyframes.Single().TriggerTimeMs);
+            Assert.Equal(99u,library.GetClip("same")!.Keyframes.Single().TriggerTimeMs);
         }
         finally{Directory.Delete(root,true);}
     }

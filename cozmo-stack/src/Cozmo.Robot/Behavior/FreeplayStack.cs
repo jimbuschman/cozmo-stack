@@ -284,8 +284,8 @@ public sealed class FreeplayStack : IDisposable
         robot.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads = p => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OffTreads, p);
         stack._unsubscribe.Add(() => robot.Sensors.OffTreads.SetFreeplayPauseFlagOffTreads = null);
         void onCharger(bool on) => tracker.SetFreeplayPauseFlag(FreeplayPauseFlag.OnCharger, on);
-        robot.Sensors.OnChargerPlatformChanged += onCharger;
-        stack._unsubscribe.Add(() => robot.Sensors.OnChargerPlatformChanged -= onCharger);
+        robot.Sensors.OnChargerPlatformChangedInternal += onCharger;
+        stack._unsubscribe.Add(() => robot.Sensors.OnChargerPlatformChangedInternal -= onCharger);
         // fidelity: M15-015
         // The engine's tracker exists from AIComponent construction, so its pause set already reflects the robot when the freeplay activity starts:
         // BehaviorManager::InitConfiguration pauses GameControl (0x005A0E48..0x005A0E56, inventory M15 row 37), the robot's own OffTreads and OnCharger

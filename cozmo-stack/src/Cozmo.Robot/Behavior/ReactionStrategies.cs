@@ -426,8 +426,8 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(Protocol.MotorCalibration mc) => handle(TagMotorCalibration, mc);
-                robot.Sensors.MotorCalibrationReported += on;
-                return () => robot.Sensors.MotorCalibrationReported -= on;
+                robot.Sensors.MotorCalibrationReportedInternal += on;
+                return () => robot.Sensors.MotorCalibrationReportedInternal -= on;
             });
 
     /// <summary>RobotFalling: {FallingStarted 58} WithTimeout 3000, filter IsReactionTriggerEnabled(11) (0x60DD6E).</summary>

@@ -224,7 +224,7 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     {
         robot.Sensors.FallingStartedInternal += _ => HandleFallingStarted();
         robot.Sensors.FallingStoppedInternal += r => HandleFallingStopped(r.ImpactIntensity);
-        robot.Sensors.MotorCalibrationReported += _ => HandleMotorCalibration(robot.State.HeadCalibrated, robot.State.LiftCalibrated);
+        robot.Sensors.MotorCalibrationReportedInternal += _ => HandleMotorCalibration(robot.State.HeadCalibrated, robot.State.LiftCalibrated);
     }
 
     private volatile bool _impact;             // +0x11e

@@ -70,19 +70,22 @@ public sealed class M11DecodeBoundaryTests
         }
         finally{SteppedBehavior.MissingReported-=Missing;robot.Engine.LogEntry-=Source;EngineErrorState.ErrorFlagSet=old;}
     }
+    // reach: unit (direct replay and seeded face world substitute album restore; OKAO album parsing MISSING M11-016).
     [Theory]
     [InlineData(0)] [InlineData(2)]
     public void ReplayErasesOnceThenLogsEachNamedEntryBeforeBroadcast(int count)
     {
         using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,Cal());
         for(int id=1;id<=count;id++)vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),Name:"name"+id),1),Pose3d.Identity,false);
-        var order=new List<string>();vision.EnrolledFacesErased+=()=>order.Add("erase");
-        robot.Engine.LogEntry+=e=>{if(e.Name=="VisionComponent.BroadcastLoadedNamesAndIDs"){Assert.Equal("VisionComponent",e.Channel);Assert.Equal(EngineLogLevel.Info,e.Level);order.Add(e.Text);}};
-        vision.LoadedFaceName+=(id,name)=>order.Add("name"+id);
-        vision.BroadcastLoadedNamesAndIDs();
-        Assert.Equal(1,order.Count(s=>s=="erase"));Assert.Equal("erase",order[0]);
-        Assert.Equal(1+2*count,order.Count);
-        for(int n=0;n<count;n++)Assert.Equal("broadcasting loaded face id: "+(n+1),order[1+2*n]);
+        var host=new List<string>();var local=new List<string>();var logs=new List<string>();
+        vision.EnrolledFacesErased+=()=>host.Add("erase");vision.EnrolledFacesErasedInternal+=()=>local.Add("erase");
+        robot.Engine.LogEntry+=e=>{if(e.Name=="VisionComponent.BroadcastLoadedNamesAndIDs"){Assert.Equal("VisionComponent",e.Channel);Assert.Equal(EngineLogLevel.Info,e.Level);logs.Add(e.Text);}};
+        vision.LoadedFaceName+=(id,name)=>host.Add("name"+id);
+        vision.LoadedFaceNameInternal+=(id,name)=>local.Add("name"+id);
+        vision.BroadcastLoadedNamesAndIDs();Assert.Empty(host);
+        Assert.Equal(new[]{"erase"}.Concat(Enumerable.Range(1,count).Select(id=>"name"+id)),local);
+        Assert.Equal(Enumerable.Range(1,count).Select(id=>"broadcasting loaded face id: "+id),logs);
+        robot.Engine.DrainAppDelivery();Assert.Equal(local,host);
     }
     [Theory]
     [InlineData("TimeBeforeErrorMessage_ms")]

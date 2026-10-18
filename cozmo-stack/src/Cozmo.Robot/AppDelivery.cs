@@ -52,6 +52,14 @@ public sealed partial class CozmoEngine
             QueueAppEvent(handlers);
         }
     }
+    internal void QueueAppBroadcast<T1,T2>(Action<T1,T2>? handlers,T1 first,T2 second)
+    {
+        lock(_appDeliveryGate)
+        {
+            NativeUiDeliveryCount=unchecked(NativeUiDeliveryCount+1);
+            QueueAppDelivery(CaptureAppEvent(handlers,first,second));
+        }
+    }
 
     // The batch is fixed before dispatch. A handler's new publications wait for the next boundary,
     // even when it calls an API that synchronously kicks the offline engine again.

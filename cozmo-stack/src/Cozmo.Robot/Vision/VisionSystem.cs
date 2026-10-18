@@ -517,13 +517,14 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M14-012
     /// <summary>
     /// The observable replacement for <c>BroadcastLoadedNamesAndIDs</c>'s EngineToGame broadcasts (F27):
-    /// <c>RobotErasedAllEnrolledFaces</c> first, then one <c>LoadedKnownFace</c> per entry. This stack has
-    /// no EngineToGame channel (the M11-038 precedent), so the events carry the same observable ordering;
-    /// the wire broadcasts are the M2/M10 gap.
+    /// <c>RobotErasedAllEnrolledFaces</c> first, then one <c>LoadedKnownFace</c> per entry. The
+    /// host FIFO captures each report at its native Broadcast point; local engine hooks remain synchronous.
     /// </summary>
     public event Action? EnrolledFacesErased;
+    internal event Action? EnrolledFacesErasedInternal;
     // fidelity: M14-012
     public event Action<int, string>? LoadedFaceName;
+    internal event Action<int, string>? LoadedFaceNameInternal;
 
     // fidelity: M14-011, M14-012
     /// <summary>
@@ -579,16 +580,18 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M14-012
     /// <summary>
     /// <c>VisionComponent::BroadcastLoadedNamesAndIDs</c> (F27): <c>RobotErasedAllEnrolledFaces</c> first,
-    /// then one <c>LoadedKnownFace</c> per named entry. The wire broadcasts are M2/M10's.
+    /// then one <c>LoadedKnownFace</c> per named entry, queued to the host FIFO.
     /// </summary>
     public void BroadcastLoadedNamesAndIDs()
     {
-        EnrolledFacesErased?.Invoke();
+        _robot.Engine.QueueAppBroadcast(EnrolledFacesErased); // 0x0065159C
+        EnrolledFacesErasedInternal?.Invoke();
         foreach (var f in Faces.Faces)
             if (f.HasName)
             {
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Info,"VisionComponent","VisionComponent.BroadcastLoadedNamesAndIDs",FormattableString.Invariant($"broadcasting loaded face id: {f.Id}"));
-                LoadedFaceName?.Invoke(f.Id, f.Name!);
+                _robot.Engine.QueueAppBroadcast(LoadedFaceName,f.Id,f.Name!); // 0x00651612
+                LoadedFaceNameInternal?.Invoke(f.Id,f.Name!);
             }
     }
 

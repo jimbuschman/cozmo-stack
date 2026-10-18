@@ -553,10 +553,10 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>
-    /// The E2G AnimationAborted{tag} broadcast Abort makes when its tag is non-zero (A22). It is delivered synchronously:
+    /// Synchronous local E2G seam, not a host subscription: AnimationAborted{tag} from Abort when its tag is non-zero (A22).
     /// the robot layer's RobotEventHandler subscribes and sends AbortAnimation 0x8D, reliable, directly (A23).
     /// </summary>
-    public event Action<byte>? AnimationAborted;
+    internal event Action<byte>? AnimationAborted;
 
     /// <summary>Audio frames streamed since the current animation started (successful sends only).</summary>
     public int AudioFramesSent { get; private set; }

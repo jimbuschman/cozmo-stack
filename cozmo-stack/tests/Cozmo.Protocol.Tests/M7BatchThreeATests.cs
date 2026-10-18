@@ -556,14 +556,14 @@ public class M7BatchThreeATests
     /// threshold has changed quits (+0x124 = 1): the stop reaction then only sends RobotCliffEventFinished (0x00604FA2) and no animation plays.
     /// </summary>
     [Fact]
-    // reach: unit (direct behavior Start/Update substitutes manager clock; checks the local cliff-finished seam, native host join MISSING at 0x006052DA).
+    // reach: unit (direct behavior Start/Update substitutes manager clock; checks the local cliff-finished seam, native local E2G recipient MISSING at 0x00662590).
     public void ASuspiciousCliffQuitsTheStopReactionWithoutAnAnimation()
     {
         using var rig = new Rig();
         var b = new ReactToCliffBehavior(rig.Robot);
         var ctx = Ctx(rig, () => null);
         int finished = 0;
-        b.RobotCliffEventFinished += () => finished++;
+        b.RobotCliffEventFinishedInternal += () => finished++;
         var scope = new BehaviorScope();
         b.StartAsync(ctx, scope, default).GetAwaiter().GetResult();
         Assert.Equal(rig.Robot.Sensors.CliffDetectThreshold, b.SavedThreshold);   // this+0x122 = [[robot+0x288]+0xC]
@@ -637,19 +637,21 @@ public class M7BatchThreeATests
     /// (lambda $_2), no objective; with it clear, the finished message and BehaviorObjectiveAchieved(0x1C). A CliffEvent while running sets +0x120.
     /// </summary>
     [Fact]
-    // reach: unit (manual behavior updates/substituted DriveStraight; checks local cliff-finished seam, host join MISSING at 0x006052DA).
+    // reach: unit (manual behavior updates/substituted DriveStraight; checks local cliff-finished seam, native local E2G recipient MISSING at 0x00662590).
     public void BackingUpDrivesWhenTheCliffByEventByteIsSetAndOtherwiseAchievesTheObjective()
     {
         using var rig = new Rig();
         // byte clear
         var plain = new ReactToCliffBehavior(rig.Robot) { AlwaysStreamline = true };
         var ctx = Ctx(rig, () => null);
+        int hostFinished=0;plain.RobotCliffEventFinished+=()=>hostFinished++;
         int finished = 0;
-        plain.RobotCliffEventFinished += () => finished++;
+        plain.RobotCliffEventFinishedInternal += () => finished++;
         plain.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         Assert.False(rig.Robot.Sensors.CliffDetectedByEvent);
         for (int t = 0; t < 4; t++) plain.Update(ctx, t * 100);
-        Assert.Equal(1, finished);
+        Assert.Equal(1, finished);Assert.Equal(0,hostFinished);
+        rig.Robot.Engine.DrainAppDelivery();Assert.Equal(1,hostFinished);
         Assert.Contains(plain.Trace, l => l.Contains("BehaviorObjectiveAchieved(0x1C, true)"));
         Assert.True(plain.Trace.ToList().FindIndex(l => l.Contains("broadcast RobotCliffEventFinished")) < plain.Trace.ToList().FindIndex(l => l.Contains("BehaviorObjectiveAchieved")));
 
@@ -660,7 +662,7 @@ public class M7BatchThreeATests
         using var started = new ManualResetEventSlim();
         drive.DriveStraight = (d, v, ct) => { seen.Add((d, v)); started.Set(); return release.Task; };
         int driveFinished = 0;
-        drive.RobotCliffEventFinished += () => driveFinished++;
+        drive.RobotCliffEventFinishedInternal += () => driveFinished++;
         drive.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         rig.Send(new CliffEvent { Timestamp = rig.T, DetectedFlags = 1 });       // while running: +0x120 = 1, and [[robot+0x288]+5] = 1
         Assert.True(rig.Robot.Sensors.CliffDetectedByEvent);

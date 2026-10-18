@@ -80,8 +80,9 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// </summary>
     public Func<float, float, CancellationToken, Task>? DriveStraight { get; set; }
 
-    /// <summary>The existing local seam at RobotCliffEventFinished (0x006052D2/0x006052DA); its native host/payload split remains MISSING.</summary>
+    /// <summary>The empty host report queued at Broadcast 0x006052DA (Size 0x00711F76).</summary>
     public event Action? RobotCliffEventFinished;
+    internal event Action? RobotCliffEventFinishedInternal;
 
     /// <summary>Subscribes the constructor's tags: CliffEvent (0x22) and RobotStopped (0x34). ChargerEvent (0x39) has no broadcaster in this stack.</summary>
     public void Attach(CozmoRobot robot)
@@ -306,12 +307,15 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
         ReportMissing("IBehavior::BehaviorObjectiveAchieved(BehaviorObjective, bool) body (veneer 0x008CC10C to PLT 0x4B2C64) is not in the inventory; ReactToCliff only logs the call");
     }
 
-    /// <summary>The existing local notification at SendFinishedReactToCliffMessage0x006052BC; native host/payload recovery is outside B-M1-5.</summary>
+    /// <summary>SendFinishedReactToCliffMessage 0x006052BC: queue the empty host report before the local seam.</summary>
     private void SendFinishedReactToCliffMessage()
     {
         Log("broadcast RobotCliffEventFinished");
-        RobotCliffEventFinished?.Invoke();
-        ReportMissing("M7-019 RobotCliffEventFinished 0x006052D2..0x006052DA: native host/local report split and payload are outside the checked B-M1-5 rows; existing local seam remains synchronous");
+        var engine=(_robot??Context?.Robot)?.Engine;
+        if(engine is not null)engine.QueueAppBroadcast(RobotCliffEventFinished);
+        else ReportMissing("M7-019 RobotCliffEventFinished 0x006052DA: no attached engine host FIFO");
+        RobotCliffEventFinishedInternal?.Invoke();
+        ReportMissing("M7-019 RobotCliffEventFinished native local E2G emit 0x00662590 has no stack recipient; existing local seam remains synchronous");
     }
 
     /// <summary><c>UpdateInternal</c> 0x00605408: +0x125 set: cleared and the behaviour ends (returns 2); else the base <c>IBehavior::UpdateInternal</c> (tail call 0x00605418).</summary>
