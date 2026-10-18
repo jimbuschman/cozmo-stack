@@ -59,6 +59,12 @@ stay required with their owners; the new standard does not dismiss them.
 
 ## Sequence
 
+**Update (2026-10-17, later):** B-M15-11 PASS with queued items (`research/20261017-b-m15-11-check.md`). B-M1-2 FAIL
+(`research/20261017-b-m1-2-check.md`): a supplied engine config left the engine silently dead; an unsupported public
+carry setter; the Init-time broadcast still wired to public delivery. Fixes in B-M1-3, after B-M2M15-2. The verifier
+also confirmed that production today runs the old startup and delivers no animation list after loading; that is the
+next M1 job's work (after OV125/OV126).
+
 1. Now: Opus verifiers on B-M1-2 and B-M15-11. The builder takes B-M2M15-2. Research takes OV125 (narrow), then OV126.
 2. The manager adopts OV125 and OV126, then writes one builder job: the startup order where it changes 1–4, the
    1 → 2 gate, the loading gate, loading/ready/failed and progress, Trace logging, and whatever OV126 marks REQUIRED.
