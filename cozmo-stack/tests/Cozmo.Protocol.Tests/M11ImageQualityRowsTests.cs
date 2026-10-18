@@ -153,12 +153,14 @@ public sealed class M11ImageQualityRowsTests
         Assert.Equal(17,robot.CameraSettings.CurrentExposureMs);Assert.Equal(1.5f,robot.CameraSettings.CurrentGain);Assert.Null(robot.CameraSettings.NextCameraParams);
     }
     [Fact]
+    // reach: unit (public camera command with explicit drain substitutes ticker; checks old-byte snapshot after engine mutation).
     public void SetAndDisableBroadcastsOldLiveByteThenQueuesModeSevenInSharedFifo()
     {
         using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,Cal()){ModeEnableMask=1<<7};
         var reports=new List<CurrentCameraParams>();robot.CameraSettings.CurrentCameraParamsChanged+=p=>
-        {Assert.True(robot.CameraSettings.AutoExposureEnabled);Assert.Equal(1<<7,vision.ModeEnableMask);reports.Add(p);};
+        {Assert.False(robot.CameraSettings.AutoExposureEnabled);Assert.Equal(1<<7,vision.ModeEnableMask);reports.Add(p);};
         robot.CameraSettings.SetAndDisableAutoExposure(16,1);
+        Assert.Empty(reports);robot.Engine.DrainAppDelivery();
         Assert.True(Assert.Single(reports).AutoExposureEnabled);Assert.False(robot.CameraSettings.AutoExposureEnabled);
         Assert.Equal(1<<7,vision.ModeEnableMask);
         robot.Lights.SetHeadlight(true);Frame(vision);

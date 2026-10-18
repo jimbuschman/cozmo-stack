@@ -25,7 +25,7 @@ public static class ManipTool
         int seconds = int.TryParse(Arg(a, "--seconds"), out var s) ? s : 120;
         string? acceptance = AcceptancePath(a);
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         using var vision = new VisionSystem(robot);
         using var m = new ManipulationSystem(robot, vision);
         var log = new List<string>();

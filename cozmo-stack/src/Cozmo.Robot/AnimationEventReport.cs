@@ -18,16 +18,17 @@ public sealed partial class CozmoEngine
         AnimationMessages.Deliver(0x60, true, report);
     }
     // One native publication, with adjacent raw/typed host views; local emit remains at the caller.
-    internal void DeliverAnimationReportToApp(ushort tag,ReadOnlyMemory<byte> payload,Action? typed=null,bool typedFirst=false)
+    internal void DeliverAnimationReportToApp(ushort tag,ReadOnlyMemory<byte> payload,Action? typed=null,bool typedFirst=false,Action? beforeDispatch=null)
     {
         byte[] copy=payload.ToArray();
         var handlers=EngineToGameMessage?.GetInvocationList();
         lock(_appDeliveryGate)
         {
             NativeUiDeliveryCount=unchecked(NativeUiDeliveryCount+1);
-            if(_disposed || (handlers is null && typed is null))return;
+            if(_disposed || (handlers is null && typed is null && beforeDispatch is null))return;
             _appDeliveries.Enqueue(()=>
             {
+                beforeDispatch?.Invoke();
                 if(typedFirst)typed?.Invoke();
                 if(handlers is not null)
                     foreach(Action<ushort,ReadOnlyMemory<byte>> handler in handlers)RunIsolated(()=>handler(tag,copy));

@@ -499,10 +499,8 @@ public sealed partial class MoodState
     public void AttachRobot(CozmoRobot? robot) => LogCallbackDeferral.RunGated(_lifetimeGate, () => { if (RejectRetiredUse()) return; Robot = robot; _nativeRobot=robot?.Engine.Robot; });
 
     /// <summary>
-    /// Raised with the <c>MoodState</c> message <see cref="SendEmotionsToGame"/> builds. This is the local stand-in for
-    /// <c>Robot::Broadcast(MessageEngineToGame)</c> (0x0067b79c): this stack has no engine-to-game message sink, so nothing delivers it to an
-    /// app; a host that wants it subscribes here and packs it with <see cref="MoodStateMessage.ToUnionBytes"/>. The gap is reported
-    /// (MISSING) on every send path, once per process.
+    /// Raised with the <c>MoodState</c> message <see cref="SendEmotionsToGame"/> builds, through the engine's host FIFO
+    /// at <c>Robot::Broadcast(MessageEngineToGame)</c> (0x0067b79c).
     /// </summary>
     // fidelity: M7-012
     public event Action<MoodStateMessage>? MoodStateBroadcast;
@@ -521,8 +519,7 @@ public sealed partial class MoodState
             var nine = new float[_values.Length];
             for (int i = 0; i < nine.Length; i++) nine[i] = _values[i];          // 0x0067b73e..0x0067b77c: this+0x18, stepping 0x20
             var message = new MoodStateMessage(nine);                            // 0x0067b77e..0x0067b79c: MoodState -> MessageEngineToGame
-            SteppedBehavior.ReportMissing("Robot::Broadcast(MessageEngineToGame(MoodState)) 0x0067b79c: this stack has no engine-to-game message sink (nothing consumes CozmoEngine.PostGameMessage and no app channel exists); the MoodState message is built and raised on MoodState.MoodStateBroadcast only");
-            LogCallbackDeferral.Run(() => MoodStateBroadcast?.Invoke(message));
+            Robot.Engine.QueueAppBroadcast(MoodStateBroadcast,message);
         });
     }
 

@@ -126,7 +126,7 @@ public static class VisionTool
         bool nominal = a.Contains("--nominal"), unconnected = a.Contains("--unconnected");
         string? acceptance = AcceptancePath(a), outDir = Arg(a, "--out");
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         using var vision = new VisionSystem(robot);
         var log = new List<string>();
         void Say(string line) { Console.WriteLine(line); log.Add(line); }
@@ -196,7 +196,7 @@ public static class VisionTool
         double deg = double.TryParse(Arg(a, "--deg"), out var d) ? d : 45;
         string? acceptance = AcceptancePath(a);
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         await robot.WaitForMotorCalibrationAsync(TimeSpan.FromSeconds(10));
         var start = robot.State.Latest!.Pose.Angle;
         double target = start + deg * Math.PI / 180;

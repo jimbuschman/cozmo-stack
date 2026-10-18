@@ -34,7 +34,7 @@ public static class ReactionsTool
         string? acceptance = AcceptancePath(a);
 
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         var transitions = new List<object>();
         var movements = new List<object>();
         var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -144,7 +144,7 @@ public static class ReactionsTool
         if (assets is null) { Console.WriteLine($"no animation assets under '{obb}'"); return 1; }
 
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         var lib = robot.Animations.LoadFrom(assets);
         Console.WriteLine($"assets: {lib.ClipNames.Count} clips, {lib.GroupNames.Count} groups");
         var sound = Path.Combine(obb, "assets", "cozmo_resources", "sound");

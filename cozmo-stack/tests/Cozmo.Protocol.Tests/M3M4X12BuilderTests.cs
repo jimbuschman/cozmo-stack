@@ -92,6 +92,7 @@ public class M3M4X12BuilderTests : IDisposable
     }
 
     [Fact]
+    // reach: unit (direct Broadcast and substituted connected-world lookup; explicit drain checks copied host reports).
     public void CubeReportsCarryTheirMessageTimestampsAndUpAxisHasWorldId()
     {
         using var robot = CozmoRobot.CreateOffline(); var cubes = robot.Cubes;
@@ -104,10 +105,13 @@ public class M3M4X12BuilderTests : IDisposable
         robot.Engine.Broadcast(new ObjectStoppedMoving { ObjectID = 0, Timestamp = 222 });
         robot.Engine.Broadcast(new ObjectUpAxisChanged { ObjectID = 0, Timestamp = 333, UpAxis = (UpAxis)2 });
         robot.Engine.Broadcast(new ObjectTapped { ObjectID = 0, Timestamp = 444, TapPos = 100, TapNeg = 0 });
+        Assert.Empty(moved);Assert.Empty(taps);Assert.Empty(axes);robot.Engine.DrainAppDelivery();
         Assert.Equal(new uint[] { 111, 222 }, moved.Select(m => m.Timestamp));
         Assert.Equal(new CubeUpAxisEvent(333, 41, (UpAxis)2), Assert.Single(axes));
         Assert.Equal(444u, Assert.Single(taps).Timestamp);
         Assert.Equal(444u, cubes.ByObjectId(0)!.LastBroadcastTimestamp);
+        Assert.True(moved[0].Cube.Moving);Assert.False(moved[1].Cube.Moving);
+        taps[0].Cube.LastTap!.Timestamp=999;Assert.Equal(444u,cubes.ByObjectId(0)!.LastTap!.Timestamp);
     }
 
     [Theory]

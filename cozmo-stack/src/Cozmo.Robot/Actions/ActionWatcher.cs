@@ -35,6 +35,7 @@ internal sealed class ActionWatcher
 
     /// <summary>D2: the game gate. False in production (the stack has no engine-to-game sink); settable for tests.</summary>
     public bool HasExternalInterface { get; set; }
+    internal bool AppSinkBound;
     internal uint? RobotId {get;set;}
     internal Func<float>? ClockSeconds;
     internal SourceLogSink? SourceLog;
@@ -235,13 +236,13 @@ internal sealed class ActionWatcher
 
     /// <summary>
     /// D6 0x0053FAAA..0x0053FAB2: the engine's <c>MessageEngineToGame(RobotCompletedAction&amp;&amp;)</c> then the
-    /// external virtual +0x1C Broadcast. No send-result check or retry. This stack has no engine-to-game sink, so
-    /// the record is raised on <see cref="RobotCompletedActionBroadcast"/> and the gap is reported once.
+    /// external virtual +0x1C Broadcast. No send-result check or retry. The production ActionList forwards this
+    /// event to the engine's queued host view and synchronous local hub; an unbound watcher reports the missing owner.
     /// </summary>
     public void SendGameMessage(RobotCompletedAction record)
     {
         if (!HasExternalInterface) return;                  // D2: the external broadcast only runs with the interface
-        SteppedBehavior.ReportMissing("Robot::Broadcast(MessageEngineToGame(RobotCompletedAction)) 0x0053FAAA..0x0053FAB2: this stack has no engine-to-game message sink (nothing consumes CozmoEngine.PostGameMessage and no app channel exists); the RobotCompletedAction is built and raised on ActionWatcher.RobotCompletedActionBroadcast only");
+        if(!AppSinkBound)SteppedBehavior.ReportMissing("Robot::Broadcast(MessageEngineToGame(RobotCompletedAction)) 0x0053FAAA..0x0053FAB2: this stack has no engine-to-game message sink (nothing consumes CozmoEngine.PostGameMessage and no app channel exists); the RobotCompletedAction is built and raised on ActionWatcher.RobotCompletedActionBroadcast only");
         RobotCompletedActionBroadcast?.Invoke(record);
     }
 

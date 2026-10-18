@@ -20,6 +20,8 @@ public sealed partial class CozmoEngine
                 {
                     var result=dispatch.HandleGameEvents(id,bytes);
                     AppAudioDispatchObservedForTest?.Invoke(id,bytes,result);
+                    if(result.Outcome==WwiseAudioInputOutcome.Posted)
+                        SteppedBehavior.ReportMissing("M6-023 app audio Posted: no robot audio-output owner is wired after this host dispatch; event submission is not audible playback");
                     if(result.Outcome==WwiseAudioInputOutcome.SubscribedNotHandled)
                         SteppedBehavior.ReportMissing($"M6-023 app audio tag{id}: M1 registration/dispatch is connected, but this M6 command body remains unbuilt");
                 }

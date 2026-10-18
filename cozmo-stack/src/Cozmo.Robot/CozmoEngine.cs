@@ -87,6 +87,8 @@ public sealed class CozmoEngineOptions
     public byte[]? EngineConfigJson { get; init; }
     /// <summary>Host audio controller; M1 connects its six app inputs, M6 owns their execution.</summary>
     public Animation.Wwise.WwiseAudioInputDispatch? AudioInputDispatch { get; init; }
+    /// <summary>Attach public API handlers after construction and before StartEngine or any startup publication.</summary>
+    public Action<CozmoEngine>? BeforeStart { get; init; }
     // fidelity: M5-060 — replaces app DataPlatformCachePath/temporaryCachePath.
     public string AnimationCachePath { get; init; } = Path.Combine(Path.GetTempPath(), "cozmo-stack");
     public bool VerboseLogDisplay { get; init; } // off by default; presentation only
@@ -1944,12 +1946,12 @@ public sealed partial class CozmoEngine : IDisposable
         InitAnimationTransfer(); // fidelity: M5-059 — construction after DeviceDataManager, 0x004EB2CE.
         Experiments = new CozmoExperiments(this);
         NativeInitRecipients.UiInit=InitializeHostUiProcessing;
-        InitAppAudioInput();
         // Checked native gates validate supplied host config; unread UI/core joins do not disable host startup.
         // Fail construction clearly and release constructor-owned subscriptions on a bad host input.
         try { InitCheckedHostConfig(); }
         catch { Dispose(); throw; }
         if(!UiMessageProcessingEnabled)InitializeHostUiProcessing(null);
+        InitAppAudioInput(); // UI Init precedes InitInternal's audio registration (4EC84C before4EC970).
         // M1-054: config owners -> experiments -> manager. Higher-layer leaves keep their records.
         var dasConfig = RobotManager.ReadDasEventConfig(Options.ResourcesPath, this);
         LoadVisionConfiguration();
@@ -1983,7 +1985,7 @@ public sealed partial class CozmoEngine : IDisposable
     {
         StartEngineRandom(randomSeed, entropy);
         _autoTick = autoTick;
-        if(startReady) _engineState=3; // Explicit pre-initialized offline fixture, not production readiness.
+        if(startReady) { _engineState=3;_hostReady=true; } // Explicit pre-initialized offline fixture, not production readiness.
         else StartHostEngine();
         DrainAppDelivery();
     }

@@ -127,6 +127,7 @@ public class ActionCompletionTests
     /// with it true the watcher raises the record and reports the missing engine-to-game sink once.
     /// </summary>
     [Fact]
+    // reach: unit (substitutes GameSend sink to check the external-interface gate; production host view is covered by ReportOrderingRegressionTests).
     public async Task M7_020_TheGameSendIsGatedByHasExternalInterface()
     {
         using var rig = new Rig();
@@ -152,13 +153,14 @@ public class ActionCompletionTests
         SteppedBehavior.MissingReported += On;
         try
         {
-            list.GameSend = _ => { };                                       // D6 sink: turns the gate on
+            int sinkCalls=0;list.GameSend = _ => sinkCalls++;                // D6 sink: turns the gate on
             Assert.True(list.Watcher.HasExternalInterface);
             var second = rig.Robot.Motion.SetHeadAngleAsync(0.3f + 0.034f);
             rig.Tick();
             await second.WaitAsync(TimeSpan.FromSeconds(2));
             Assert.Single(broadcasts);
-            Assert.Contains(reported, r => r.Contains("RobotCompletedAction") && r.Contains("engine-to-game"));
+            Assert.Equal(1,sinkCalls);
+            Assert.DoesNotContain(reported, r => r.Contains("RobotCompletedAction") && r.Contains("engine-to-game"));
         }
         finally { SteppedBehavior.MissingReported -= On; }
     }

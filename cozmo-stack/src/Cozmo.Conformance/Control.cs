@@ -33,14 +33,14 @@ public static class Control
 
     /// <summary>Connects, waits until the robot is ready to be driven, and reports why if it is not.</summary>
     private static async Task<(CozmoRobot robot, StreamWriter log, string logPath)?> ReadyRobot(
-        IPAddress ip, bool simulated, string prefix)
+        IPAddress ip, bool simulated, string prefix,string[] argv)
     {
         var logPath = Path.GetFullPath($"cozmo-{prefix}-{DateTime.Now:yyyyMMdd-HHmmss}.log");
         var log = new StreamWriter(logPath, false, Encoding.UTF8);
         Console.WriteLine($"frame log: {logPath}");
 
         CozmoRobot robot;
-        try { robot = await CozmoRobot.ConnectAsync(ip, simulated); }
+        try { robot = await CozmoRobot.ConnectAsync(ip, simulated,engineOptions:EngineStartupResources.Options(argv)); }
         catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); log.Dispose(); return null; }
 
         robot.Transport.FrameTrace += e =>
@@ -114,7 +114,7 @@ public static class Control
     public static async Task<int> Calibrate(string[] a)
     {
         if (Target(a) is not var (ip, simulated)) return 1;
-        var got = await ReadyRobot(ip, simulated, "calibrate");
+        var got = await ReadyRobot(ip, simulated, "calibrate",a);
         if (got is not var (robot, log, _)) return 10;
         using var _r = robot;
 
@@ -235,7 +235,7 @@ public static class Control
         if (!allowDrive)
             Console.WriteLine("Wheels will NOT be driven. Pass --allow-drive once the robot has clear space around it.");
 
-        var got = await ReadyRobot(ip, simulated, "drive");
+        var got = await ReadyRobot(ip, simulated, "drive",a);
         if (got is not var (robot, log, _)) return 10;
         using var _r = robot;
 
@@ -316,7 +316,7 @@ public static class Control
         if (Target(a) is not var (ip, simulated)) return 1;
         double hold = Seconds(a, "--seconds", 1.5);
 
-        var got = await ReadyRobot(ip, simulated, "lights");
+        var got = await ReadyRobot(ip, simulated, "lights",a);
         if (got is not var (robot, log, _)) return 10;
         using var _r = robot;
 
@@ -371,7 +371,7 @@ public static class Control
         if (Target(a) is not var (ip, simulated)) return 1;
         double watch = Seconds(a, "--seconds", 8);
 
-        var got = await ReadyRobot(ip, simulated, "sensors");
+        var got = await ReadyRobot(ip, simulated, "sensors",a);
         if (got is not var (robot, log, _)) return 10;
         using var _r = robot;
 
@@ -442,7 +442,7 @@ public static class Control
         if (Target(a) is not var (ip, simulated)) return 1;
         double watch = Seconds(a, "--seconds", 15);
 
-        var got = await ReadyRobot(ip, simulated, "cubes");
+        var got = await ReadyRobot(ip, simulated, "cubes",a);
         if (got is not var (robot, log, _)) return 10;
         using var _r = robot;
 

@@ -85,9 +85,9 @@ public static class Devices
         return (path, new StreamWriter(path, false, Encoding.UTF8));
     }
 
-    private static async Task<CozmoRobot> ConnectAsync(IPAddress ip, bool simulated, StreamWriter log)
+    private static async Task<CozmoRobot> ConnectAsync(IPAddress ip, bool simulated, StreamWriter log,string[] argv)
     {
-        var robot = await CozmoRobot.ConnectAsync(ip, simulated);
+        var robot = await CozmoRobot.ConnectAsync(ip, simulated,engineOptions:EngineStartupResources.Options(argv));
         robot.Transport.FrameTrace += e =>
         {
             lock (log) log.WriteLine($"{e.Utc:O} {(e.Outbound ? "TX" : "RX")} {Hex.Dump(e.Raw)}{(e.Error is null ? "" : "  !! " + e.Error)}");
@@ -140,7 +140,7 @@ public static class Devices
         var (logPath, log) = OpenLog(c.Value.log, "camera");
         Console.WriteLine($"frame log: {logPath}");
         Console.WriteLine($"images to: {outDir}");
-        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log);
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log,a);
 
         var saved = new List<string>();
         bool savedNominalColor = false;
@@ -235,7 +235,7 @@ public static class Devices
 
         var (logPath, log) = OpenLog(c.Value.log, "face");
         Console.WriteLine($"frame log: {logPath}");
-        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log);
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log,a);
 
         Console.WriteLine($"holding the image on the face for {seconds:F1}s ...");
         robot.Display.Hold(image, TimeSpan.FromSeconds(seconds));
@@ -342,7 +342,7 @@ public static class Devices
 
         var (logPath, log) = OpenLog(c.Value.log, "tone");
         Console.WriteLine($"frame log: {logPath}");
-        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log);
+        using var robot = await ConnectAsync(c.Value.ip, c.Value.simulated, log,a);
         if (volume is { } v) { Console.WriteLine($"SetAudioVolume {v}"); robot.Audio.SetVolume((ushort)v); }
         robot.Audio.Codec = codec;
         if (inFlight >= 0)

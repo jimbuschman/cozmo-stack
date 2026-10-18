@@ -229,6 +229,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     private readonly Dictionary<string, string> _clipFiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _jsonClipFiles = new(StringComparer.Ordinal);
     private readonly Dictionary<string, AnimationClip> _clipCache = new(StringComparer.Ordinal);
+    private readonly List<string> _definitionOrder=new(); // M1-055 operator2026-10-17: stack load order.
     private readonly Dictionary<string, AnimationGroup> _groups = new(StringComparer.OrdinalIgnoreCase);
     private readonly GroupContainer _cooldowns = new();
     private readonly object _gate = new();
@@ -245,7 +246,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     internal AnimationLibrary(EngineRandom? contextRandom) => ContextRandom = contextRandom ?? new EngineRandom();
 
     /// <summary>The clip names available (FlatBuffer and JSON), whether or not they have been parsed yet.</summary>
-    public IReadOnlyCollection<string> ClipNames { get { lock (_gate) return _clipFiles.Keys.ToArray(); } }
+    public IReadOnlyCollection<string> ClipNames { get { lock (_gate) return _definitionOrder.ToArray(); } }
 
     /// <summary>The JSON clips found (gap2 J1..J5: the four in config/engine/animations), also in <see cref="ClipNames"/>.</summary>
     public IReadOnlyCollection<string> JsonClipNames { get { lock (_gate) return _jsonClipFiles.Keys.ToArray(); } }
@@ -315,23 +316,10 @@ public sealed class AnimationLibrary : IAnimationCatalog
         double started = MonotonicMilliseconds();
         Eye.ClippingWarningEnabled = false;
         float ratio = 0.7f / files.Count;
-        System.Runtime.ExceptionServices.ExceptionDispatchInfo? failure = null;
-        void Load(int begin, int end)
-        {
-            try { for (int i = begin; i < end; i++) lib.LoadAnimationFile(files[i], ratio); }
-            catch (Exception e) { Interlocked.CompareExchange(ref failure, System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(e), null); }
-        }
-        var workers = new Thread[3];
-        int offset = 0;
-        for (int i = 0; i < 4; i++)
-        {
-            int begin = offset, end = offset + files.Count / 4 + (i < files.Count % 4 ? 1 : 0);
-            offset = end;
-            if (i == 3) Load(begin, end);
-            else { workers[i] = new Thread(() => Load(begin, end)) { IsBackground = true }; workers[i].Start(); }
-        }
-        foreach (var worker in workers) worker.Join();
-        failure?.Throw();
+        // Operator M1-055: deterministic stack definition sequence, first definition wins.
+        // Parsing/definition is serialized in ordinal file-path order; phone worker interleaving is not reproduced.
+        files.Sort(StringComparer.Ordinal);
+        foreach(string file in files)lib.LoadAnimationFile(file,ratio);
         Eye.ClippingWarningEnabled = true; // L10: only after Process returns normally.
         SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimationsInternal.LoadTime", FormattableString.Invariant($"Time to load animations = {MonotonicMilliseconds() - started:F2} ms"));
         SourceLogDispatch.GetSink(sourceLog, log)?.Invoke(EngineLogLevel.Info, "Animations", "RobotDataLoader.LoadAnimations.CannedAnimationsCount", $"Total number of canned animations available = {lib._clipCache.Count}");
@@ -557,6 +545,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
                 if (tables.Count == 0) { BinaryError("AnimClipsEmpty", $"Found no animations in {path}"); return; }
                 lock (_gate)
                 {
+                    int priorOrderCount=_definitionOrder.Count;
                     var prior = new Dictionary<string, (AnimationClip? Clip, string? File, string? JsonFile)>(StringComparer.Ordinal);
                     try
                     {
@@ -573,6 +562,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
                     {
                         // M1-034 isolates the whole malformed file, including earlier tables. Holding the gate keeps
                         // another loader's registration from being overwritten by this rollback.
+                        _definitionOrder.RemoveRange(priorOrderCount,_definitionOrder.Count-priorOrderCount);
                         foreach (var (name, old) in prior)
                         {
                             if (old.Clip is null) _clipCache.Remove(name); else _clipCache[name] = old.Clip;
@@ -614,7 +604,8 @@ public sealed class AnimationLibrary : IAnimationCatalog
             Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
             return;
         }
-        _clipCache[clip.Name] = clip; _clipFiles[clip.Name] = path;
+        if(_clipCache.ContainsKey(clip.Name))return; // AddAnimation587E56 ->58802A: existing definition wins.
+        _clipCache.Add(clip.Name,clip);_clipFiles.Add(clip.Name,path);_definitionOrder.Add(clip.Name);
         if (json) _jsonClipFiles[clip.Name] = path;
         if (clip.LoadTruncated)
         {

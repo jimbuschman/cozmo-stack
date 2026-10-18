@@ -80,16 +80,16 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     /// </summary>
     public Func<float, float, CancellationToken, Task>? DriveStraight { get; set; }
 
-    /// <summary><c>Robot::Broadcast(MessageEngineToGame(RobotCliffEventFinished))</c> (0x006052D2, 0x006052DA): the local seam; the app-facing message is not built.</summary>
+    /// <summary><c>Robot::Broadcast(MessageEngineToGame(RobotCliffEventFinished))</c> (0x006052D2, 0x006052DA): host view through the engine FIFO.</summary>
     public event Action? RobotCliffEventFinished;
 
     /// <summary>Subscribes the constructor's tags: CliffEvent (0x22) and RobotStopped (0x34). ChargerEvent (0x39) has no broadcaster in this stack.</summary>
     public void Attach(CozmoRobot robot)
     {
         _robot = robot;
-        robot.Sensors.CliffDetected += r => HandleCliffEvent((byte)r.Sensors);
-        robot.Sensors.RobotStopped += () => HandleRobotStopped();
-        robot.Sensors.ChargerEvent += HandleChargerEvent;       // tag 0x39
+        robot.Sensors.CliffDetectedInternal += r => HandleCliffEvent((byte)r.Sensors);
+        robot.Sensors.RobotStoppedInternal += () => HandleRobotStopped();
+        robot.Sensors.ChargerEventInternal += HandleChargerEvent;       // tag 0x39
     }
 
     /// <summary><c>IsRunnableInternal</c> 0x00604D4C: <c>movs r0,#1</c>.</summary>
@@ -310,8 +310,8 @@ public sealed class ReactToCliffBehavior : SteppedBehavior
     private void SendFinishedReactToCliffMessage()
     {
         Log("broadcast RobotCliffEventFinished");
-        RobotCliffEventFinished?.Invoke();
-        ReportMissing("Robot::Broadcast(MessageEngineToGame(RobotCliffEventFinished)) 0x006052D2..0x006052DA: no engine-to-game message sink in this stack; only the local RobotCliffEventFinished event is raised");
+        if((_robot??Context?.Robot) is {} robot)robot.Engine.QueueAppBroadcast(RobotCliffEventFinished);
+        else RobotCliffEventFinished?.Invoke(); // Standalone behavior unit, no engine owner.
     }
 
     /// <summary><c>UpdateInternal</c> 0x00605408: +0x125 set: cleared and the behaviour ends (returns 2); else the base <c>IBehavior::UpdateInternal</c> (tail call 0x00605418).</summary>

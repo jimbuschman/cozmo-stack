@@ -98,7 +98,7 @@ public static class FreeplayTool
         var assets = TriggersTool.FindAssetsRoot(obb);
         if (assets is null) { Console.WriteLine($"no animation assets under '{obb}'"); return 1; }
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         robot.Animations.LoadFrom(assets);
         var sound = Path.Combine(obb, "assets", "cozmo_resources", "sound");
         if (Directory.Exists(sound)) robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound });

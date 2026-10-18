@@ -89,7 +89,7 @@ public static class Anim
         Console.WriteLine($"frame log: {logPath}");
 
         CozmoRobot robot;
-        try { robot = await CozmoRobot.ConnectAsync(ip, simulated); }
+        try { robot = await CozmoRobot.ConnectAsync(ip, simulated,engineOptions:EngineStartupResources.Options(a)); }
         catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); return 10; }
         using var _r = robot;
         robot.Transport.FrameTrace += e => { lock (log) log.WriteLine($"{e.Utc:O} {(e.Outbound ? "TX" : "RX")} {Hex.Dump(e.Raw)}"); };
@@ -312,7 +312,7 @@ public static class Anim
         var assets = Arg(a, "--assets");
 
         CozmoRobot robot;
-        try { robot = await CozmoRobot.ConnectAsync(ip, simulated); }
+        try { robot = await CozmoRobot.ConnectAsync(ip, simulated,engineOptions:EngineStartupResources.Options(a)); }
         catch (Exception e) { Console.WriteLine($"FAIL connect: {e.Message}"); return 10; }
         using var _r = robot;
 

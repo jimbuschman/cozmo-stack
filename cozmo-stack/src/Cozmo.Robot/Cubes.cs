@@ -11,6 +11,13 @@ public sealed class Cube
 {
     /// <summary>The cube's permanent identifier, reported when it advertises and when it connects.</summary>
     public uint FactoryId { get; internal set; }
+    internal Cube SnapshotForApp()
+    {
+        var copy=(Cube)MemberwiseClone();
+        if(LastTap is {} tap)copy.LastTap=new ObjectTapped{Timestamp=tap.Timestamp,ObjectID=tap.ObjectID,
+            NumTaps=tap.NumTaps,TapTime=tap.TapTime,TapNeg=tap.TapNeg,TapPos=tap.TapPos};
+        return copy;
+    }
     /// <summary>The id the robot uses for this cube once connected. Null until a connection is reported.</summary>
     public uint? ObjectId { get; internal set; }
     /// <summary>Which of the three cubes this is, as the robot classifies it.</summary>
@@ -470,7 +477,8 @@ public sealed class CozmoCubes
         if (tapped is not null)
         {
             var notice = new CubeTimestampEvent(tapped, tapped.LastTap!.Timestamp);
-            CubeTapped?.Invoke(tapped); TapBroadcast?.Invoke(notice);
+            _robot.Engine.QueueAppEvent(CubeTapped,tapped.SnapshotForApp());
+            _robot.Engine.QueueAppBroadcast(TapBroadcast,new CubeTimestampEvent(tapped.SnapshotForApp(),notice.Timestamp));
         }
         // CD10g (0x006311A2..0x006313D8): MarkObjectDirty on every located copy whose pose state is Known (+0x24 == 1);
         // BlockWorld.MarkDirty changes only a Known pose.
@@ -775,12 +783,13 @@ public sealed class CozmoCubes
         if (tapped is not null)
         {
             var notice = new CubeTimestampEvent(tapped, tapped.LastTap!.Timestamp);
-            CubeTapped?.Invoke(tapped); TapBroadcast?.Invoke(notice);
+            _robot.Engine.QueueAppEvent(CubeTapped,tapped.SnapshotForApp());
+            _robot.Engine.QueueAppBroadcast(TapBroadcast,new CubeTimestampEvent(tapped.SnapshotForApp(),notice.Timestamp));
         }
-        if (moved is not null) CubeMoved?.Invoke(moved);
-        if (movementBroadcast is not null) MovementBroadcast?.Invoke(movementBroadcast);
-        if (upAxisBroadcast is not null) UpAxisBroadcast?.Invoke(upAxisBroadcast);
-        if (powerBroadcast is not null) PowerLevelBroadcast?.Invoke(powerBroadcast);
+        if(moved is not null)_robot.Engine.QueueAppEvent(CubeMoved,moved.SnapshotForApp());
+        if(movementBroadcast is not null)_robot.Engine.QueueAppBroadcast(MovementBroadcast,new CubeTimestampEvent(movementBroadcast.Cube.SnapshotForApp(),movementBroadcast.Timestamp));
+        if(upAxisBroadcast is not null)_robot.Engine.QueueAppBroadcast(UpAxisBroadcast,upAxisBroadcast);
+        if(powerBroadcast is not null)_robot.Engine.QueueAppBroadcast(PowerLevelBroadcast,new ObjectPowerLevel{ObjectID=powerBroadcast.ObjectID,MissedPackets=powerBroadcast.MissedPackets,BatteryLevel=powerBroadcast.BatteryLevel});
     }
 
     /// <summary>The engine's ID-gated E2G tag 0x0D report, with its returned world ObjectID.</summary>
@@ -789,11 +798,12 @@ public sealed class CozmoCubes
     // fidelity: M11-085, M4-018
     internal void BroadcastConnectionState(ObjectConnectionStateMessage report)
     {
+        _robot.Engine.QueueAppBroadcast(ConnectionStateBroadcast,report);
         _robot.Engine.AnimationMessages.Deliver(ObjectConnectionStateMessage.UnionTag, true, report);
         // Existing checked CubeLight recipient; CubeAccel's recipient is a no-op.
         // Feeding/GuardDog native owners/subscriptions remain M15-056, not fabricated here.
         _robot.Lights.Cubes.OnObjectConnectionState(report.ObjectType, report.ConnectedByte != 0);
-        ConnectionStateBroadcast?.Invoke(report);
+
     }
 
     // fidelity: M4-009

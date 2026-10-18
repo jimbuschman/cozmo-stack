@@ -613,6 +613,7 @@ public class M3DeviceTests
     [Theory]
     [InlineData((sbyte)0)]
     [InlineData((sbyte)-6)]
+    // reach: production — public NV erase and received terminal response in the real engine tick; host delivery follows local completion.
     public void M3_031_W2_AWriteCompletionBroadcastsThenRunsTheCallbackThenTheBackup(sbyte result)
     {
         using var rig = new Rig();
@@ -626,12 +627,14 @@ public class M3DeviceTests
             if (e.Name == "NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback") order.Add("executing");
         };
         nv.NVStorageOpResultBroadcast += b => { order.Add("broadcast"); broadcasts.Add(b); };
-        nv.Erase(0x182000, r => { order.Add("callback"); Assert.True(rig.Engine.Backup!.HasPendingData(0x182000)); }, broadcast: true);
+        uint publications=rig.Engine.NativeUiDeliveryCount;
+        nv.Erase(0x182000, r => { Assert.Equal(publications+1,rig.Engine.NativeUiDeliveryCount);order.Add("callback"); Assert.True(rig.Engine.Backup!.HasPendingData(0x182000)); }, broadcast: true);
         rig.Tick();
         rig.Data(new NVOpResult { Tag = 0x182000, Op = NvStorageComponent.OpErase, Result = result });
         rig.Tick();
         // 0x00642FFE -> 0x0064339E -> ExecutingWriteCallback -> 0x006433F6.
-        Assert.Equal(new[] { "recvd", "broadcast", "executing", "callback" }, order);
+        // Broadcast is enqueued before the callback (counter checked above); host code runs after the tick.
+        Assert.Equal(new[] { "recvd", "executing", "callback", "broadcast" }, order);
         var b0 = Assert.Single(broadcasts);
         Assert.Equal((0x182000u, NvStorageComponent.OpErase, result, 0), (b0.Tag, b0.Op, b0.Result, b0.Index));
         Assert.Empty(b0.Data);
@@ -763,6 +766,7 @@ public class M3DeviceTests
     /// callback with -6, and returns false. Nothing is queued or sent.
     /// </summary>
     [Fact]
+    // reach: production — public Write invalid input; no robot send, synchronous local callback and queued host report.
     public void M3_043_WA6_WA11_AnInvalidTagFailsEveryCheckThenBroadcastsThenCallsBack()
     {
         using var rig = new Rig();
@@ -774,7 +778,8 @@ public class M3DeviceTests
         int start = nv.Log.Count;
         int sent = NvCommands(rig).Count;
         Assert.Equal(0, nv.Write(1, new byte[] { 1, 2, 3, 4 }, r => order.Add("callback:" + r.Result), broadcast: true));
-        Assert.Equal(new[] { "broadcast:1:1:-6:0:0", "callback:-6" }, order);
+        Assert.Equal(new[] { "callback:-6" }, order);
+        rig.Tick();Assert.Equal(new[] { "callback:-6", "broadcast:1:1:-6:0:0" }, order);
         var log = LogSince(nv, start);
         Assert.Contains(log, l => l.StartsWith("warning: NVStorageComponent.Write.InvalidTag: Tag: "));
         Assert.Contains(log, l => l.EndsWith("(0x1)"));
@@ -3859,6 +3864,7 @@ public class M3DeviceTests
 
     /// <summary>1a, 1l, A20 (M3-021): exposure valid when min &lt;= e &lt;= max (1..66), gain when 0.1 &lt;= g &lt;= 4.0, NaN invalid.</summary>
     [Fact]
+    // reach: production — public camera settings command; host CurrentCameraParams is delivered at the tick boundary.
     public void M3_021_1l_SetCameraSettingsRangeChecks()
     {
         using var rig = new Rig();
@@ -3875,6 +3881,7 @@ public class M3DeviceTests
         Assert.True(s.SetCameraSettings(66, 4.0f));
         Assert.True(s.SetCameraSettings(1, 0.1f));
         Assert.Equal(2, CameraParamsAfter(rig, before).Count);
+        Assert.Null(info);rig.Tick();
         Assert.Equal(new CurrentCameraParams(0.1f, 1, true), info);      // auto-exposure +0x329 starts 1 (1n)
     }
 

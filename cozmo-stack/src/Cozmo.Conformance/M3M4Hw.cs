@@ -112,6 +112,9 @@ public static class M3M4Hw
         {
             switch (args[i])
             {
+                case "--resources": case "--obb": case "--assets":
+                    if (++i >= args.Length) return Usage("resource option needs a directory");
+                    break; // Retained in argv for EngineStartupResources.
                 case "--yes": yes = true; break;
                 case "--include-lift": lift = true; break;
                 case "--only":
@@ -238,7 +241,7 @@ internal sealed class M3M4Run
         bool connected = false;
         try
         {
-            _robot = CozmoRobot.Create();
+            _robot = CozmoRobot.Create(engineOptions:EngineStartupResources.Options(_argv));
             Subscribe(_robot);
             connected = Connect(_robot);
             foreach (var def in M3M4Hw.Checks)

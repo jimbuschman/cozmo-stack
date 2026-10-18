@@ -18,7 +18,9 @@ public sealed partial class CozmoEngine
     private CozmoAnimations? _startupAnimations;
     private float _lastPolledProgress;
     public byte EngineState=>Volatile.Read(ref _engineState);
-    public bool IsReady=>EngineState==3 && !StartupFailed;
+    private volatile bool _hostReady;
+    /// <summary>True once names, EndOfMessage and the ready notification have reached the host dispatcher.</summary>
+    public bool IsReady=>EngineState==3 && _hostReady && !StartupFailed;
     private volatile bool _startupFailed;
     public bool StartupFailed=>_startupFailed;
     public string? StartupFailureReason {get;private set;}
@@ -61,12 +63,17 @@ public sealed partial class CozmoEngine
     {
         byte old=_engineState;
         if(old==state)return;
+        _hostReady=false;
         Volatile.Write(ref _engineState,state); // native store precedes notification.
         var report=new EngineStateTransition(old,state);
-        DeliverAnimationReportToApp(0x7B,new[]{old,state},CaptureAppEvent(EngineStateChanged,report));
+        DeliverAnimationReportToApp(0x7B,new[]{old,state},CaptureAppEvent(EngineStateChanged,report),
+            beforeDispatch:()=>_hostReady=state==3);
         AnimationMessages.Deliver(0x7B,true,report);
-        EmitSourceLog(EngineLogLevel.Event,null,"app.engine.state",$"{old}->{state}");
+        EmitSourceLog(EngineLogLevel.Event,null,"app.engine.state",EngineStateName(old),
+            new Dictionary<string,string>{{"$data",EngineStateName(state)}});
     }
+    private static string EngineStateName(byte value)=>value switch
+    {0=>"Stopped",1=>"WaitingForUIDevices",2=>"LoadingData",3=>"Running",4=>"UpdatingFirmware",_=>"UNKNOWN"};
     private bool HasDesiredHostDevice()
     {
         uint connected=UiMessageProcessingEnabled?1u:0u,desired=0;
@@ -109,14 +116,11 @@ public sealed partial class CozmoEngine
             try
             {
                 var library=animations.LoadForEngine(root,AddLoadingProgress);
-                // Order is not invented from the managed dictionary. With zero/one name the checked walk is unambiguous.
-                var names=library.ClipNames;
-                if(names.Count>1)
-                {
-                    SteppedBehavior.ReportMissing("M1-055 CannedAnimationContainer.GetAnimationNames0x00588190: checked population/hash traversal order producer is absent for multiple loaded names");
-                    throw new InvalidOperationException("Cannot finish engine loading: M1-055 native animation-name order producer is unbuilt for multiple names.");
-                }
-                Robots.NativeCannedAnimationNames=new(names.Count==0?null:new NativeAnimationNameNode(Encoding.UTF8.GetBytes(names.Single())));
+                // M1-055 operator2026-10-17: stack definition order, exact procedural exclusion and first-wins.
+                NativeAnimationNameNode? head=null;
+                foreach(string name in library.ClipNames.Reverse())
+                    if(name!="_PROCEDURAL_")head=new NativeAnimationNameNode(Encoding.UTF8.GetBytes(name),head);
+                Robots.NativeCannedAnimationNames=new(head);
                 if(!_disposed)Volatile.Write(ref _loadingProgressBits,BitConverter.SingleToInt32Bits(1f));
             }
             catch(Exception error){Volatile.Write(ref _startupLoaderFailure,error);}

@@ -703,7 +703,7 @@ public sealed partial class CameraSettings
         SetNextCameraParams(exposureMs, gain);
         CurrentCameraParams info;
         lock (_gate) info = new CurrentCameraParams(gain, unchecked((ushort)exposureMs), AutoExposureEnabled);
-        CurrentCameraParamsChanged?.Invoke(info);
+        _robot.Engine.QueueAppBroadcast(CurrentCameraParamsChanged,info);
         return true;
     }
 

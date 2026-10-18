@@ -488,7 +488,7 @@ public sealed class NvStorageComponent : IDisposable
             lock (_gate) LogCall(EngineLogLevel.Warning, null, "NVStorageComponent.Read.InvalidTag", $"Tag: 0x{tag:x}");
             FlushLogCalls();
             if (broadcast)
-                NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpRead, -6, 0, Array.Empty<byte>()));
+                QueueNvAppReport(new NVStorageOpResult(tag, OpRead, -6, 0, Array.Empty<byte>()));
             callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
             return 0;
         }
@@ -590,7 +590,7 @@ public sealed class NvStorageComponent : IDisposable
         }
         FlushLogCalls();
         if (valid) return 1;
-        if (broadcast) NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpWrite, -6, 0, Array.Empty<byte>()));
+        if (broadcast) QueueNvAppReport(new NVStorageOpResult(tag, OpWrite, -6, 0, Array.Empty<byte>()));
         callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
         return 0;
     }
@@ -626,7 +626,7 @@ public sealed class NvStorageComponent : IDisposable
         }
         FlushLogCalls();
         if (valid) return 1;
-        if (broadcast) NVStorageOpResultBroadcast?.Invoke(new NVStorageOpResult(tag, OpErase, -6, 0, Array.Empty<byte>()));
+        if (broadcast) QueueNvAppReport(new NVStorageOpResult(tag, OpErase, -6, 0, Array.Empty<byte>()));
         callback?.Invoke(new NvResult(-6, Array.Empty<byte>()));
         return 0;
     }
@@ -1328,7 +1328,7 @@ public sealed class NvStorageComponent : IDisposable
             // +0x38) behind its debug log (0x006433C6, via 0x004A5B84, "%s" with the normalised tag's name), then the
             // backup call (WipeAll for op 3, else WriteDataForTag(tag, result, op == 1)), then SetState(0).
             if (c.Broadcasts is not null)
-                foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
+                foreach (var b in c.Broadcasts) QueueNvAppReport(b);
             if (c.Callback is not null)
             {
                 lock (_gate) LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.ExecutingWriteCallback", $"{TagNameOrUnreachable(c.NameTag)}");
@@ -1349,7 +1349,7 @@ public sealed class NvStorageComponent : IDisposable
             FlushLogCalls();
             c.Callback?.Invoke(c.Result);
             if (c.Broadcasts is not null)
-                foreach (var b in c.Broadcasts) NVStorageOpResultBroadcast?.Invoke(b);
+                foreach (var b in c.Broadcasts) QueueNvAppReport(b);
         }
         // SetState(0) is after callback/broadcast, not before: 006437EA..006437EE.
         lock (_gate)
@@ -1406,6 +1406,9 @@ public sealed class NvStorageComponent : IDisposable
     /// set. The stack models game broadcasts as events, as the other M3 broadcasts do.
     /// </summary>
     public event Action<NVStorageOpResult>? NVStorageOpResultBroadcast;
+    private void QueueNvAppReport(NVStorageOpResult report)=>
+        _robot.Engine.QueueAppBroadcast(NVStorageOpResultBroadcast,report with{Data=report.Data.ToArray()});
+
 
     // fidelity: M3-038
     public void Dispose()

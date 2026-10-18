@@ -66,7 +66,7 @@ public static class CoreChecks
         void Say(string line) { Console.WriteLine(line); log.Add(line); }
 
         Say($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(ip);
+        using var robot = await CozmoRobot.ConnectAsync(ip,engineOptions:EngineStartupResources.Options(a));
         await robot.WaitForMotorCalibrationAsync(TimeSpan.FromSeconds(10));
         Say($"connected: firmware {robot.State.FirmwareVersionNumber}, telemetry {robot.State.StateRateHz:F1} Hz, "
           + $"calibration {(robot.State.CalibrationComplete ? "complete" : "NOT complete")}");

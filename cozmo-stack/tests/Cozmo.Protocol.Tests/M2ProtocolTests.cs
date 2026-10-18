@@ -360,6 +360,7 @@ public class M2ProtocolTests
     /// carries the duration and the intensity from those fields.
     /// </summary>
     [Fact]
+    // reach: unit (direct Sensors.Handle substitutes the engine dispatch; serializer/report fields only, with explicit host drain).
     public void M2_013_FallingStoppedBytesAreTimestampDurationIntensity()
     {
         var data = Msg(0xDE, Cat(U32(123456), U32(250), F32(1500.5f)));
@@ -372,6 +373,7 @@ public class M2ProtocolTests
         FallingStoppedReport? report = null;
         robot.Sensors.FallingStopped += r => report = r;
         robot.Sensors.Handle(f);
+        Assert.Null(report);robot.Engine.DrainAppDelivery();
         Assert.NotNull(report);
         Assert.Equal(250u, report!.DurationMs);
         Assert.Equal(1500.5f, report.ImpactIntensity);

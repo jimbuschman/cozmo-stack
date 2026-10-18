@@ -71,6 +71,7 @@ public sealed class CubeDisconnectTailCheckedRowsTests
 
     [Theory]
     [InlineData(2)] [InlineData(255)]
+    // reach: unit (direct native-field handler input, bypassing wire bool normalization and receive queue; explicit app drain).
     public void NativeHandlerKeepsItsByteInRecvdAndGame(int raw)
     {
         using var robot=CozmoRobot.CreateOffline();ConnectedInput(robot);
@@ -79,11 +80,13 @@ public sealed class CubeDisconnectTailCheckedRowsTests
         robot.Cubes.ConnectionStateBroadcast+=m=>report=m;
         // Explicit native field input, not a claim that Read<bool> preserves wire bytes.
         robot.HandleActiveObjectConnectionState(2,0xAB,ObjectType.Block_LIGHTCUBE1,(byte)raw);
+        Assert.Null(report);robot.Engine.DrainAppDelivery();
         Assert.Equal($"FactoryID 0xab, connected {raw}",Assert.Single(logs));
         Assert.Equal(new ObjectConnectionStateMessage(0x11223344,0xAB,ObjectType.Block_LIGHTCUBE1,(byte)raw),report);
     }
 
     [Fact]
+    // reach: unit (serializer followed by direct Broadcast, bypassing receive queue; explicit app drain).
     public void WireBoolReadStillNormalizesBeforeTheHandler()
     {
         using var robot=CozmoRobot.CreateOffline();ConnectedInput(robot);
@@ -91,6 +94,7 @@ public sealed class CubeDisconnectTailCheckedRowsTests
         // M2-001 Read<bool>, independently checked 0x0083C108..0x0083C10E.
         byte[] wire={0xD0,2,0,0,0,0xAB,0,0,0,1,0,0,0,0xFE};
         robot.Engine.Broadcast(RobotMessage.Parse(wire));
+        Assert.Null(report);robot.Engine.DrainAppDelivery();
         Assert.NotNull(report);Assert.Equal((byte)1,report.ConnectedByte);
     }
 

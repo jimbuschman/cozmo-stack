@@ -41,7 +41,7 @@ public sealed class AppDeliveryTests
         Assert.Equal(1,maxDepth); // New publications wait for a later drain, including unconditionally replacing hosts.
     }
 
-    // reach: production — real abort and tick dispatch; host waits for another thread needing scheduler and engine locks.
+    // reach: unit (substitutes a second-thread Engine.Tick that the production ticker cannot produce; checks lock release only).
     [Fact]
     public void AWaitingHostDoesNotHoldTheSchedulerOrTickLock()
     {

@@ -240,7 +240,7 @@ public sealed partial class CozmoRobot : IDisposable
             owned=Directory.CreateTempSubdirectory("cozmo-offline-cache-").FullName;
             settings=new CozmoEngineOptions {
                 FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,
-                DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,
+                DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,BeforeStart=settings.BeforeStart,
                 AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
                 DataPlatformPersistentPath=settings.DataPlatformPersistentPath,RobotVolume=settings.RobotVolume,
             };
@@ -478,8 +478,13 @@ public sealed partial class CozmoRobot : IDisposable
     public static CozmoRobot Create(TransportOptions? options = null, CozmoEngineOptions? engineOptions = null)
     {
         var robot = new CozmoRobot(options, null, engineOptions);
-        robot.Engine.StartProduction();
-        return robot;
+        try
+        {
+            engineOptions?.BeforeStart?.Invoke(robot.Engine);
+            robot.Engine.StartProduction();
+            return robot;
+        }
+        catch { robot.Dispose(); throw; }
     }
 
     // fidelity: M1-001, M1-025

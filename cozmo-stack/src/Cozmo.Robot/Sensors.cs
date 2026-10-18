@@ -75,15 +75,22 @@ public sealed class CozmoSensors
         // fidelity: M10-001, M4-019
         // CheckAndUpdateTreadsState's commit consequences in the engine's order (A10, A13): the broadcast, then
         // SetOnChargerPlatform(false) for any state but OnTreads (C8 P6, with the contacts flag from the previous state).
-        OffTreads.StateChanged += (from, to) => OffTreadsStateChanged?.Invoke(from, to);
+        OffTreads.HostEngine=robot.Engine;
+        OffTreads.StateChangedInternal += (from,to)=>
+        {
+            robot.Engine.QueueAppEvent(robot.Engine.CaptureAppEvent(OffTreadsStateChanged,from,to));
+            OffTreadsStateChangedInternal?.Invoke(from,to);
+        };
         OffTreads.ClearOnChargerPlatform = () => SetOnChargerPlatform(false);
         OffTreads.Log += l => _robot.Engine.Log(l);
+        UnexpectedMovement.HostEngine=robot.Engine;
         UnexpectedMovement.Log += l => _robot.Engine.Log(l);
         UnexpectedMovement.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
     }
 
     /// <summary>Raised when the robot reports a cliff.</summary>
     public event Action<CliffReport>? CliffDetected;
+    internal event Action<CliffReport>? CliffDetectedInternal;
     /// <summary>Raised when the robot reports it has been picked up, or put back down.</summary>
     public event Action<bool>? PickedUpChanged;
     /// <summary>Raised when the robot arrives on, or leaves, the charger contacts.</summary>
@@ -96,6 +103,7 @@ public sealed class CozmoSensors
     /// behaviour-end entry before that (<c>BehaviorManager::RequestCurrentBehaviorEndImmediately</c>, M8-019) logs then reports the unbuilt native switch path.
     /// </summary>
     public event Action? RobotStopped;
+    internal event Action? RobotStoppedInternal;
     // fidelity: M8-019
     internal Action<string>? RequestCurrentBehaviorEndImmediately { get; set; }
 
@@ -112,10 +120,12 @@ public sealed class CozmoSensors
     /// FallingStopped (0xDE) the robot sends, after <see cref="NeedsActionCompleted"/> and the DAS event.
     /// </summary>
     public event Action<FallingStoppedReport>? FallingStopped;
+    internal event Action<FallingStoppedReport>? FallingStoppedInternal;
 
     // fidelity: M10-011
     /// <summary>C1: HandleFallingStarted's game broadcast FallingStarted{msg.timestamp}; no time-sync gate, no state change.</summary>
     public event Action<uint>? FallingStarted;
+    internal event Action<uint>? FallingStartedInternal;
 
     // fidelity: M10-011
     /// <summary>
@@ -159,6 +169,7 @@ public sealed class CozmoSensors
 
     /// <summary>Raised when the classified off-treads state changes: the engine's <c>RobotOffTreadsStateChanged</c>.</summary>
     public event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChanged;
+    internal event Action<OffTreadsState, OffTreadsState>? OffTreadsStateChangedInternal;
 
     /// <summary>|accelerometer| after the engine's 0.95/0.05 filter, the value its shaken strategies compare.</summary>
     public float FilteredAccelMagnitude => OffTreads.FilteredAccelMagnitude;
@@ -173,6 +184,7 @@ public sealed class CozmoSensors
 
     /// <summary>Raised when the detector decides the body moved against its wheels: the engine's <c>UnexpectedMovement</c>.</summary>
     public event Action<UnexpectedMovementReport>? UnexpectedMovementDetected;
+    internal event Action<UnexpectedMovementReport>? UnexpectedMovementDetectedInternal;
 
     /// <summary>
     /// Raised for a <see cref="MotorCalibration"/> report that says a calibration <b>started</b> and was
@@ -707,6 +719,7 @@ public sealed class CozmoSensors
     /// <summary>The engine's <c>ChargerEvent{onCharger}</c> broadcast (tag 0x39) from <c>SetOnCharger</c>'s edges.</summary>
     // fidelity: M7-021
     public event Action<bool>? ChargerEvent;
+    internal event Action<bool>? ChargerEventInternal;
 
     private void SetOnCharger(bool onContacts)
     {
@@ -714,8 +727,8 @@ public sealed class CozmoSensors
         lock (_gate) { rising = onContacts && !_onChargerContacts; falling = !onContacts && _onChargerContacts; }
         if (rising) SetOnChargerPlatform(true);
         // ChargerEvent{1} on the rising edge (0x00511BF4..0x00511C0A), {0} on the falling edge (0x00511AAE..0x00511AC4)
-        if (rising) ChargerEvent?.Invoke(true);
-        else if (falling) ChargerEvent?.Invoke(false);
+        if(rising||falling)
+        { _robot.Engine.QueueAppBroadcast(ChargerEvent,rising);ChargerEventInternal?.Invoke(rising); }
         lock (_gate) _onChargerContacts = onContacts;
     }
 
@@ -865,7 +878,8 @@ public sealed class CozmoSensors
                     _cliffs.Add(report);
                     if (_cliffs.Count > 256) _cliffs.RemoveAt(0);
                 }
-                CliffDetected?.Invoke(report);
+                _robot.Engine.QueueAppBroadcast(CliffDetected,report);
+                CliffDetectedInternal?.Invoke(report);
                 break;
             }
 
@@ -893,7 +907,8 @@ public sealed class CozmoSensors
                     if (RequestCurrentBehaviorEndImmediately is {} request) request("HandleRobotStopped");
                     else Behavior.SteppedBehavior.ReportMissing("M8-019 HandleRobotStopped 0x00535454: native robot+0x44 manager recipient is absent");
                     _robot.Engine.Robot?.ActionList.Cancel(-1);
-                    RobotStopped?.Invoke();
+                    _robot.Engine.QueueAppBroadcast(RobotStopped);
+                    RobotStoppedInternal?.Invoke();
                 }
                 break;
 
@@ -901,7 +916,8 @@ public sealed class CozmoSensors
                 // fidelity: M10-011
                 // C1 (0x534F4C..0x534F9E): log, then the game FallingStarted{timestamp}.
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Info, null, "RobotImplMessaging.HandleFallingStarted", $"timestamp {fs.Unknown}");
-                FallingStarted?.Invoke(fs.Unknown);
+                _robot.Engine.QueueAppBroadcast(FallingStarted,fs.Unknown);
+                FallingStartedInternal?.Invoke(fs.Unknown);
                 break;
 
             case Protocol.FallingStopped f:
@@ -916,7 +932,8 @@ public sealed class CozmoSensors
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Event, null, "robot.falling_event",
                     intensity.ToString(System.Globalization.CultureInfo.InvariantCulture),
                     new Dictionary<string, string> { ["$data"] = f.DurationMs.ToString(System.Globalization.CultureInfo.InvariantCulture) });
-                FallingStopped?.Invoke(new FallingStoppedReport(f.DurationMs, f.ImpactIntensity) { Timestamp = f.Timestamp });
+                var fallReport=new FallingStoppedReport(f.DurationMs,f.ImpactIntensity){Timestamp=f.Timestamp};
+                _robot.Engine.QueueAppBroadcast(FallingStopped,fallReport);FallingStoppedInternal?.Invoke(fallReport);
                 break;
 
             // fidelity: M12-006 -- C6: detach before the game report; game recipient remains explicit.
@@ -999,7 +1016,8 @@ public sealed class CozmoSensors
                 UnexpectedMovement.AnimationStateTag = er?.AnimationStateTag ?? 0;
                 UnexpectedMovement.BodyTrackLocked = (_robot.Motion.LockedTracks & CozmoMotion.BodyTrack) != 0;
                 var movement = UnexpectedMovement.Update(s);
-                if (movement is not null) UnexpectedMovementDetected?.Invoke(movement);
+                if(movement is not null)
+                {_robot.Engine.QueueAppEvent(UnexpectedMovementDetected,movement);UnexpectedMovementDetectedInternal?.Invoke(movement);}
                 // fidelity: M4-019
                 // C13.2: the treads-change branch (0x00512BAA) jumps straight to the stats/threshold body at
                 // 0x512FB4, so the stats run for a treads-change state whether or not its origin is accepted, and

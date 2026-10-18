@@ -221,7 +221,7 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-010 — streamer constructor, once per native Robot, never on load completion.
         _scheduler.LoadNeutralFace();
         DrivingAnimations.Bind(robot);
-        robot.ActionList.GameSend = completion => _robot.Engine.AnimationMessages.Deliver(RobotCompletedAction.UnionTag, true, completion);
+        robot.ActionList.GameSend = _robot.Engine.BroadcastActionCompletion;
         var driving = new AnimationSubscriptionOwners(_robot.Engine, new byte[] { 0x5A, 0xB5, 0xB6 }, true, (tag, payload) =>
         {
             if (tag == 0x5A && payload is RobotCompletedAction done) DrivingAnimations.HandleActionCompleted(done.Tag, done.Result);

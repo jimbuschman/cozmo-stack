@@ -134,6 +134,8 @@ public sealed class OffTreadsClassifier
     // ---------------------------------------------------------------- consequences (A8..A14)
     /// <summary>A10: the RobotOffTreadsStateChanged broadcast, with the old and the new state.</summary>
     public event Action<OffTreadsState, OffTreadsState>? StateChanged;
+    internal event Action<OffTreadsState, OffTreadsState>? StateChangedInternal;
+    internal CozmoEngine? HostEngine;
     /// <summary>A8: the DAS event "Robot.CheckAndUpdateTreadsState.FallingStarted" "t=%dms" (DAS only; the game FallingStarted comes from the robot, C1).</summary>
     public event Action? FallingStarted;
     /// <summary>A9: the DAS event "…FallingStopped" with duration = ts − +0x35C (DAS only).</summary>
@@ -286,7 +288,9 @@ public sealed class OffTreadsClassifier
         Current = cand;                                                        // A7: +0x355 := +0x356
 
         // A10
-        StateChanged?.Invoke(old, cand);
+        if(HostEngine is {} engine)engine.QueueAppBroadcast(engine.CaptureAppEvent(StateChanged,old,cand));
+        else StateChanged?.Invoke(old,cand); // Standalone classifier unit.
+        StateChangedInternal?.Invoke(old,cand);
         Log?.Invoke($"Robot.OfftreadsState.TreadStateChanged: {old} -> {cand}");
         Log?.Invoke("MISSING: Robot.OfftreadsState.TreadStateChanged info at 0x005120D0; M10 log port deferred");
         // A12

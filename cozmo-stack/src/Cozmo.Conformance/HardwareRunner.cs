@@ -90,7 +90,7 @@ public static class HardwareRunner
         if (from is not null) session.From = from;
         if (only is { Length: > 0 }) session.Only = only;
 
-        var options = new HardwareRunOptions { Ip = ip, Obb = obb, EvidenceDirectory = evidence, AllowNominalCalibration = nominal };
+        var options = new HardwareRunOptions { Ip = ip, Obb = obb, ResourcesPath=Arg(a,"--resources"), EvidenceDirectory = evidence, AllowNominalCalibration = nominal };
         Directory.CreateDirectory(evidence);
 
         if (statusOnly) { Status(session, options, sessionFile); return 0; }
@@ -126,7 +126,7 @@ public static class HardwareRunner
         {
             e.Cancel = true;                                // stop this check, not the process: the session must be saved
             Console.WriteLine("\n*** EMERGENCY STOP: stopping the robot and ending this check. ***");
-            EmergencyStop(ip);
+            EmergencyStop(ip,options.ResourcesPath??options.Obb);
             if (!stopping.IsCancellationRequested) stopping.Cancel();
             if (!quit.IsCancellationRequested) quit.Cancel();
         };
@@ -204,7 +204,7 @@ public static class HardwareRunner
                     ShowEvidence(check, run);
                     Console.WriteLine($"    evidence:  {options.TestDirectory(check.Id)}");
 
-                    if (check.MovesRobot) EmergencyStop(options.Ip);
+                    if (check.MovesRobot) EmergencyStop(options.Ip,options.ResourcesPath??options.Obb);
 
                     // A check that did not finish is not a check that failed, unless the disconnect was the
                     // thing being tested. Nothing was observed, so nothing is recorded but the interruption.
@@ -297,7 +297,7 @@ public static class HardwareRunner
         {
             // The harness's own bound on waiting; the stack has no connect timer (M1-025, CB31).
             using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(6));
-            using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(o.Ip), cancellationToken: bound.Token);
+            using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(o.Ip), cancellationToken: bound.Token,engineOptions:EngineStartupResources.OptionsForRoot(o.ResourcesPath??o.Obb));
             Console.WriteLine($"    connection:  ok ({robot.State.FirmwareVersionNumber})");
 
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -328,13 +328,13 @@ public static class HardwareRunner
     /// Stops the motors, on a connection of its own. Used after anything that moved him and by the
     /// emergency stop, so a cancelled or failed check never leaves him driving.
     /// </summary>
-    private static void EmergencyStop(string ip)
+    private static void EmergencyStop(string ip,string? resources)
     {
         try
         {
             // The harness's own bound on waiting; the stack has no connect timer (M1-025, CB31).
             using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(3));
-            using var robot = CozmoRobot.ConnectAsync(IPAddress.Parse(ip), cancellationToken: bound.Token).GetAwaiter().GetResult();
+            using var robot = CozmoRobot.ConnectAsync(IPAddress.Parse(ip), cancellationToken: bound.Token,engineOptions:EngineStartupResources.OptionsForRoot(resources)).GetAwaiter().GetResult();
             robot.EmergencyStop();
             robot.Disconnect();
         }
@@ -813,7 +813,7 @@ public static class HardwareRunner
     }
 
     public const string Usage =
-        "hardware-test <robot-ip> [--obb <dir>] [--resume] [--from <ID>] [--only <ID[,ID]>] [--rerun <ID[,ID]>]\n" +
+        "hardware-test <robot-ip> [--obb <dir>] [--resources <cozmo_resources>] [--resume] [--from <ID>] [--only <ID[,ID]>] [--rerun <ID[,ID]>]\n" +
         "              [--rerun-failed] [--status] [--export] [--nominal] [--session <file>] [--out <dir>]\n" +
         "hardware-test --list";
 

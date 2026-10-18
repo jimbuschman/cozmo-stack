@@ -169,6 +169,7 @@ public sealed record HardwareRunOptions
 {
     public required string Ip { get; init; }
     public string? Obb { get; init; }
+    public string? ResourcesPath { get; init; }
     /// <summary>The run's directory: one subdirectory per check, plus the results file and the summary.</summary>
     public required string EvidenceDirectory { get; init; }
     /// <summary>Allows the nominal camera calibration stand-in where a tool offers it.</summary>
@@ -183,8 +184,11 @@ public sealed record HardwareRunOptions
     /// <summary>Where a tool writes a raw protocol frame log for this check.</summary>
     public string FrameLog(string id) => Path.Combine(TestDirectory(id), "frames.log");
 
-    public string[] WithObb(params string[] head) =>
-        Obb is null ? head : head.Concat(new[] { "--obb", Obb }).ToArray();
+    public string[] WithObb(params string[] head)
+    {
+        var args=Obb is null?head:head.Concat(new[]{"--obb",Obb}).ToArray();
+        return ResourcesPath is null?args:args.Concat(new[]{"--resources",ResourcesPath}).ToArray();
+    }
 }
 
 /// <summary>One check's result, as persisted.</summary>

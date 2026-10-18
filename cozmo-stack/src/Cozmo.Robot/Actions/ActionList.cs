@@ -55,8 +55,8 @@ internal sealed class ActionList : IDisposable
 
     /// <summary>
     /// D6: the engine-to-game sink. Setting it turns the D2 game gate on (<see cref="ActionWatcher.HasExternalInterface"/>)
-    /// and wires the watcher's broadcast seam; clearing it turns the gate off. The stack has no engine-to-game sink, so
-    /// production leaves it unset (the watcher reports the missing sink when the gate is on).
+    /// and wires the watcher's broadcast seam; clearing it turns the gate off. Production binds the engine's
+    /// queued host view and synchronous local animation hub.
     /// </summary>
     internal Action<RobotCompletedAction>? GameSend
     {
@@ -64,6 +64,7 @@ internal sealed class ActionList : IDisposable
         {
             _gameSend = value;
             _watcher.HasExternalInterface = value is not null;
+            _watcher.AppSinkBound=value is not null;
         }
     }
 

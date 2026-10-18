@@ -134,6 +134,8 @@ static int Usage()
     Console.WriteLine("""
         cozmo-conformance <command> [args]
 
+        Live engine tools require --resources <cozmo_resources>, or their existing --obb/--assets input.
+
           decode <hex|python-bytes>...      parse one or more raw UDP frames (14-byte header + body) and print header, sub-messages, CLAD messages
           diff <hexA> <hexB>                 byte-by-byte comparison of two frames with field hints
           fixtures                           decode + re-encode PyCozmo's captured test frames (round-trip must be byte-identical)

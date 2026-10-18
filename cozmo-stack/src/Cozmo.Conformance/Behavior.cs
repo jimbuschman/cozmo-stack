@@ -29,7 +29,7 @@ public static class BehaviorTool
         if (assets is null) { Console.WriteLine($"no animation assets under '{obb}'"); return 1; }
 
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         var lib = robot.Animations.LoadFrom(assets);
         Console.WriteLine($"assets: {lib.ClipNames.Count} clips, {lib.GroupNames.Count} groups");
 

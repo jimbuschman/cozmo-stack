@@ -45,12 +45,14 @@ public sealed class M3M4X19BuilderTests
         finally {Monitor.Exit(configGate);}
         Assert.NotNull(frame);Assert.True(frame!.Wait(Bound));Assert.True(queried,"The old whole-frame object lock creates an inverse configuration/object lock cycle.");
     }
+    // reach: unit (substitutes historical-pose lookup and direct Broadcast; explicit host drain, no full map-insertion claim).
     [Fact] public void TiltedCubeCandidateUsesCheckedFootprintAndCliffReportContinues()
     {
         using var robot=CozmoRobot.CreateOffline();var w=robot.LocalizationWorld;w.CurrentRobotPose=()=>Pose3d.Identity;
         var cube=new ObservableObject(99,ObjectType.Block_LIGHTCUBE1,Array.Empty<KnownMarker>()){OriginId=1,PoseState=PoseState.Known,Pose=new(Mat3.AboutX(.3),new Vec3(0,0,22))};w.AddLocatedObject(cube);
         var missing=new List<string>();var keys=new List<string>();int reports=0;robot.Engine.StackLogLine+=missing.Add;robot.Engine.LogEntry+=e=>keys.Add(e.Name);robot.Sensors.CliffDetected+=_=>reports++;
         robot.Sensors.CliffHistoricalPoseForTest=_=>(0,Pose3d.Identity);robot.Engine.Broadcast(new CliffEvent{Timestamp=10,DetectedFlags=1});
+        Assert.Equal(0,reports);robot.Engine.DrainAppDelivery();
         Assert.DoesNotContain(missing,s=>s.Contains("M13-025") && s.Contains("candidate"));Assert.Contains("RobotImplMessaging.HandleCliffEvent.Detected",keys);Assert.Equal(1,reports);
         // M12-043 now supplies the projected tilted-cube quad. This check covers caller delivery;
         // no full map-insertion result is inferred from the footprint alone.

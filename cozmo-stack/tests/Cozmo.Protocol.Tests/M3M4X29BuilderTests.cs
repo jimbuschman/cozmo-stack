@@ -19,12 +19,13 @@ public sealed class M3M4X29BuilderTests
     }
 
     [Fact]
-    public async Task ConnectAsyncWithoutEngineOptionsReachesCancellationInsteadOfConstructionFailure()
+    // reach: production — public ConnectAsync, no pre-cancellation, actual missing-resources startup failure.
+    public async Task ConnectAsyncWithoutResourcesFailsStartupBeforeCancellation()
     {
-        // Exercise the real Create -> ConnectAsync path using only localhost and a pre-cancelled wait.
-        using var cancel=new CancellationTokenSource();cancel.Cancel();
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(()=>CozmoRobot.ConnectAsync(
+        using var cancel=new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var error=await Assert.ThrowsAsync<IOException>(()=>CozmoRobot.ConnectAsync(
             IPAddress.Loopback,isSimulated:true,cancellationToken:cancel.Token));
+        Assert.Contains("ResourcesPath",error.Message);Assert.False(cancel.IsCancellationRequested);
     }
 
     [Fact]

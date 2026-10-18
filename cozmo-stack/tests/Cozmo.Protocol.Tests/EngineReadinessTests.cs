@@ -50,7 +50,7 @@ public sealed class EngineReadinessTests
         public void Dispose(){Robot.Dispose();Directory.Delete(Root,true);EngineErrorState.ErrorFlagSet=_flag;}
     }
 
-    // reach: production — real constructor/start/poll/worker/file loader and actual name producer (one definition, no ordering ambiguity).
+    // reach: unit (substitutes offline start and internal engineCreated observation; public startup is covered by StartupDeliveryRegressionTests).
     [Fact]
     public void StartupPublishesStatesProgressNamesAndEndBeforeReadyThenRunsRobotWork()
     {
@@ -62,12 +62,12 @@ public sealed class EngineReadinessTests
         f.Engine.ConnectToRobot(IPAddress.Loopback);f.Tick();Assert.NotNull(f.Engine.Robot);Assert.Equal(1L,f.Engine.Timer.TickCount);
     }
 
-    // reach: production — real startup with two definitions; unknown native hash-order producer is never replaced by managed enumeration.
+    // reach: unit (offline startup and internal observation; tests the operator-approved stack definition order).
     [Fact]
-    public void UncheckedMultiNameOrderFailsClearlyWithoutPublishingReadiness()
+    public void MultipleNamesUseStackDefinitionOrderAndReachReady()
     {
-        using var f=new Fixture(2);f.Finish();Assert.True(f.Engine.StartupFailed);Assert.False(f.Engine.IsReady);
-        Assert.Contains("animation-name order",f.Engine.StartupFailureReason);Assert.DoesNotContain("2->3",f.Order);Assert.DoesNotContain("end:0",f.Order);
+        using var f=new Fixture(2);f.Finish();Assert.False(f.Engine.StartupFailed);Assert.True(f.Engine.IsReady);
+        Assert.Equal(new[]{"0->1","1->2","clip0","clip1","end:0","2->3"},f.Order);
     }
 
     // reach: production — public Create, actual engine thread, missing resources policy M1-058/M1-034.
@@ -132,5 +132,21 @@ public sealed class EngineReadinessTests
         Assert.Equal(new ushort[]{1,2,3,4,5,6},seen.Select(s=>s.Tag));Assert.Equal(request.ToBytes(),seen[0].Body);
         Assert.Equal(0u,seen[0].Result.PlayingId); // Empty bank: no event is played, no success fabricated.
         Assert.All(seen.Skip(1),s=>{Assert.Equal(new byte[]{1,2,3,4},s.Body);Assert.Equal(WwiseAudioInputOutcome.SubscribedNotHandled,s.Result.Outcome);});
+    }
+
+    // reach: unit (empty-bank runtime substitutes M6 playback; public engine command/tick dispatch and missing-owner diagnostic are real).
+    [Fact]
+    public void PostedAudioDispatchReportsItsAbsentOutputOwnerOnce()
+    {
+        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();var missing=new List<string>();
+        void OnMissing(string line){if(line.Contains("M6-023 app audio Posted"))missing.Add(line);}
+        Cozmo.Robot.Behavior.SteppedBehavior.MissingReported+=OnMissing;
+        try
+        {
+            using var f=new Fixture(audio:new WwiseAudioInputDispatch(new WwiseEventRuntime(Array.Empty<WwiseBank>())));
+            f.Engine.PostAudioEvent(new(1,7,0));f.Tick();f.Engine.PostAudioEvent(new(1,7,0));f.Tick();
+            Assert.Single(missing);Assert.Contains("not audible playback",missing[0]);
+        }
+        finally{Cozmo.Robot.Behavior.SteppedBehavior.MissingReported-=OnMissing;}
     }
 }

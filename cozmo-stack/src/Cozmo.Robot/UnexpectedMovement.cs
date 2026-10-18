@@ -184,6 +184,7 @@ public sealed class UnexpectedMovementDetector
 
     /// <summary>B17: the UnexpectedMovement broadcast, raised on every fire.</summary>
     public event Action<UnexpectedMovementReport>? Detected;
+    internal CozmoEngine? HostEngine;
     /// <summary>The engine's log lines (B11, B13, B14, B15, B16).</summary>
     public event Action<string>? Log;
     public SourceLogSink? SourceLog { get; set; }
@@ -251,7 +252,8 @@ public sealed class UnexpectedMovementDetector
         var report = new UnexpectedMovementReport(s.Timestamp, type, side, SumLeft / Count, SumRight / Count, Count)
         { StartTimestamp = StartTimestamp };
         Last = report;
-        Detected?.Invoke(report);
+        if(HostEngine is {} host)host.QueueAppBroadcast(Detected,report);
+        else Detected?.Invoke(report); // Standalone unit has no engine dispatcher; live Sensors binds it.
         Reset();
         return report;
     }

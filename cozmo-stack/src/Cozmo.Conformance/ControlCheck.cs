@@ -141,6 +141,9 @@ public static class ControlCheck
         {
             switch (args[i])
             {
+                case "--resources":
+                    if (++i >= args.Length) return UsageError("--resources needs a directory");
+                    break; // Startup-only root; --obb still selects the optional animation checks.
                 case "--allow-drive": allowDrive = true; break;
                 case "--yes": yes = true; break;
                 case "--no-obb": noObb = true; break;
@@ -519,7 +522,7 @@ internal sealed class ControlRun
             Phase("create");
             string? resources = _obb is null ? null : ControlCheck.Resources(_obb);
             if (resources is not null && !Directory.Exists(resources)) resources = null;
-            var engineOptions = new CozmoEngineOptions { ResourcesPath = resources };
+            var engineOptions = EngineStartupResources.Options(_argv,resources);
             _robot = CozmoRobot.Create(engineOptions: engineOptions);
             lock (_gate)
             {

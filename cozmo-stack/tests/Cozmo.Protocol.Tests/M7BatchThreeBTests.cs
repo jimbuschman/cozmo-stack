@@ -108,6 +108,7 @@ public class M7BatchThreeBTests
 
     /// <summary>M7-012 (0x0067B736..0x0067B73C): with the MoodManager's robot pointer (+0x12C) null, SendEmotionsToGame sends nothing.</summary>
     [Fact]
+    // reach: unit (direct MoodState send substitutes its periodic engine caller; explicit FIFO drain observes the host report).
     public void NothingIsSentWithoutARobot()
     {
         using var rig = new Rig();
@@ -118,6 +119,7 @@ public class M7BatchThreeBTests
         Assert.Empty(sent);
         mood.AttachRobot(rig.Robot);
         mood.SendEmotionsToGame();
+        Assert.Empty(sent);rig.Robot.Engine.DrainAppDelivery();
         Assert.Single(sent);
         Assert.Equal(9, sent[0].Emotions.Count);
     }
@@ -130,6 +132,7 @@ public class M7BatchThreeBTests
     /// flat at 1 from 0 to 15 s, so the decay ratio is 1 and the value is unchanged.
     /// </summary>
     [Fact]
+    // reach: unit (manual FreeplayStack.Tick substitutes the engine clock; drain explicitly observes the queued host view).
     public void TheFreeplayTickBroadcastsTheNineEmotionsInEmotionTypeOrder()
     {
         var obb = ObbRoot();
@@ -143,6 +146,7 @@ public class M7BatchThreeBTests
         ctx.Mood.MoodStateBroadcast += sent.Add;
         Assert.True(ctx.Mood.Trigger("SparkPending", 0.0));
         stack.Tick(1.0, 1000, rig.Robot, rig.Vision, rig.M);
+        Assert.Empty(sent);rig.Robot.Engine.DrainAppDelivery();
         Assert.NotEmpty(sent);
         var nine = sent[0].Emotions;
         Assert.Equal(new[] { 0f, 0f, 0f, 0.5f, 0f, 0f, 0f, 0f, 0f }, nine);

@@ -47,7 +47,7 @@ public static class SingTool
         if (!Directory.Exists(sound)) { Console.WriteLine($"no sound directory at '{sound}'"); return 1; }
 
         Console.WriteLine($"connecting to {a[1]}...");
-        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]));
+        using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
         var lib = robot.Animations.LoadFrom(assets);
         var meta = Path.Combine(obb, "sound_meta");
         var source = WwiseAudioSource.Load(Directory.Exists(meta) ? new[] { sound, meta } : new[] { sound });

@@ -168,6 +168,7 @@ public sealed class M15RestorationCheckedRowsTests
     }
 
     [Fact]
+    // reach: unit (direct G2E hub delivery substitutes host input; drain explicitly checks deferred host observation).
     public void LiveForceSetSubscriptionMutatesThenSendsAndRetiresWithItsNeedsHost()
     {
         using var robot=CozmoRobot.CreateOffline();var needs=new NeedsManager(()=>0);
@@ -175,7 +176,8 @@ public sealed class M15RestorationCheckedRowsTests
         var stack=FreeplayStack.Create(obb,robot,new BehaviorContext{Robot=robot,Triggers=new AnimationTriggerMap()},()=>0,needs:needs,withReactions:false);
         var order=new List<string>();robot.Engine.LogEntry+=e=>{if(e.Name=="NeedsManager.ForceSetNeedsLevels"){Assert.Equal(1,needs.State.GetNeedLevel(NeedId.Play));Assert.Equal("Game sent ForceSetNeedsLevels message with 0.500000, 0.600000, 0.700000",e.Text);order.Add("info");}};
         needs.NeedsStateSent+=action=>{Assert.Equal(NeedsActionId.NoAction,action);Assert.Equal(.7f,(float)needs.State.GetNeedLevel(NeedId.Play));order.Add("send");};
-        robot.Engine.AnimationMessages.Deliver(0xC6,false,new[]{.5f,.6f,.7f});Assert.Equal(new[]{"info","send"},order);
+        robot.Engine.AnimationMessages.Deliver(0xC6,false,new[]{.5f,.6f,.7f});Assert.Equal(new[]{"info"},order);
+        robot.Engine.DrainAppDelivery();Assert.Equal(new[]{"info","send"},order);
         stack.Dispose();robot.Engine.AnimationMessages.Deliver(0xC6,false,new[]{1f,1f,1f});Assert.Equal(.7f,(float)needs.State.GetNeedLevel(NeedId.Play));
     }
     [Fact]

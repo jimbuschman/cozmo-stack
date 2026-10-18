@@ -84,12 +84,12 @@ public sealed class ReactiveBehavior : IDisposable
             _worker = new Thread(WorkLoop) { IsBackground = true, Name = "cozmo-reactions" };
             _worker.Start();
         }
-        _robot.Sensors.CliffDetected += OnCliff;
+        _robot.Sensors.CliffDetectedInternal += OnCliff;
         _robot.Sensors.PickedUpChanged += OnPickedUp;
-        _robot.Sensors.OffTreadsStateChanged += OnOffTreads;
+        _robot.Sensors.OffTreadsStateChangedInternal += OnOffTreads;
         _robot.Sensors.OnChargerChanged += OnCharger;
         _robot.Sensors.FallingChanged += OnFalling;
-        _robot.Sensors.FallingStopped += OnFallingStopped;
+        _robot.Sensors.FallingStoppedInternal += OnFallingStopped;
     }
 
     /// <summary>
@@ -130,12 +130,12 @@ public sealed class ReactiveBehavior : IDisposable
     {
         if (!_subscribed) return;
         _subscribed = false;
-        _robot.Sensors.CliffDetected -= OnCliff;
+        _robot.Sensors.CliffDetectedInternal -= OnCliff;
         _robot.Sensors.PickedUpChanged -= OnPickedUp;
-        _robot.Sensors.OffTreadsStateChanged -= OnOffTreads;
+        _robot.Sensors.OffTreadsStateChangedInternal -= OnOffTreads;
         _robot.Sensors.OnChargerChanged -= OnCharger;
         _robot.Sensors.FallingChanged -= OnFalling;
-        _robot.Sensors.FallingStopped -= OnFallingStopped;
+        _robot.Sensors.FallingStoppedInternal -= OnFallingStopped;
     }
 
     private void OnCliff(CliffReport report) => Post(() => Fire(ReactionTrigger.CliffDetected));

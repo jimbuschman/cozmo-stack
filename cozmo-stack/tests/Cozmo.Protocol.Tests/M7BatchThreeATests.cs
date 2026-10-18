@@ -556,6 +556,7 @@ public class M7BatchThreeATests
     /// threshold has changed quits (+0x124 = 1): the stop reaction then only sends RobotCliffEventFinished (0x00604FA2) and no animation plays.
     /// </summary>
     [Fact]
+    // reach: unit (direct behavior Start/Update substitutes the manager clock; engine FIFO is explicitly drained for its host report).
     public void ASuspiciousCliffQuitsTheStopReactionWithoutAnAnimation()
     {
         using var rig = new Rig();
@@ -582,6 +583,7 @@ public class M7BatchThreeATests
         Assert.True(b.QuitDueToSuspiciousCliff);
         Assert.Contains(b.Trace, l => l.Contains("BehaviorReactToCliff.QuittingDueToSuspiciousCliff"));
         Assert.Contains(b.Trace, l => l.Contains("ToState:PlayingStopReaction"));
+        Assert.Equal(0,finished);rig.Robot.Engine.DrainAppDelivery();
         Assert.Equal(1, finished);                                // SendFinishedReactToCliffMessage
         Assert.DoesNotContain(b.Trace, l => l.StartsWith("ReactToCliffDetectorStop:") || l.StartsWith("play ReactToCliffDetectorStop"));
         Assert.DoesNotContain(b.Trace, l => l.Contains("ToState:PlayingCliffReaction"));
@@ -636,6 +638,7 @@ public class M7BatchThreeATests
     /// (lambda $_2), no objective; with it clear, the finished message and BehaviorObjectiveAchieved(0x1C). A CliffEvent while running sets +0x120.
     /// </summary>
     [Fact]
+    // reach: unit (manual behavior updates and substituted DriveStraight callback; host reports need the engine's app drain).
     public void BackingUpDrivesWhenTheCliffByEventByteIsSetAndOtherwiseAchievesTheObjective()
     {
         using var rig = new Rig();
@@ -647,6 +650,7 @@ public class M7BatchThreeATests
         plain.StartAsync(ctx, new BehaviorScope(), default).GetAwaiter().GetResult();
         Assert.False(rig.Robot.Sensors.CliffDetectedByEvent);
         for (int t = 0; t < 4; t++) plain.Update(ctx, t * 100);
+        rig.Robot.Engine.DrainAppDelivery();
         Assert.Equal(1, finished);
         Assert.Contains(plain.Trace, l => l.Contains("BehaviorObjectiveAchieved(0x1C, true)"));
         Assert.True(plain.Trace.ToList().FindIndex(l => l.Contains("broadcast RobotCliffEventFinished")) < plain.Trace.ToList().FindIndex(l => l.Contains("BehaviorObjectiveAchieved")));
@@ -672,6 +676,7 @@ public class M7BatchThreeATests
         release.SetResult();
         BehaviorTestSignals.WaitForPostedWork(drive);
         drive.Update(ctx, 300);
+        rig.Robot.Engine.DrainAppDelivery();
         Assert.Equal(1, driveFinished);
         Assert.DoesNotContain(drive.Trace, l => l.Contains("BehaviorObjectiveAchieved"));
     }

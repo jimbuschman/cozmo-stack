@@ -222,8 +222,8 @@ public sealed class ReactToImpactBehavior : SteppedBehavior
     /// </summary>
     public ReactToImpactBehavior(CozmoRobot robot, string id = "ReactToImpact") : this(id)
     {
-        robot.Sensors.FallingStarted += _ => HandleFallingStarted();
-        robot.Sensors.FallingStopped += r => HandleFallingStopped(r.ImpactIntensity);
+        robot.Sensors.FallingStartedInternal += _ => HandleFallingStarted();
+        robot.Sensors.FallingStoppedInternal += r => HandleFallingStopped(r.ImpactIntensity);
         robot.Sensors.MotorCalibrationReported += _ => HandleMotorCalibration(robot.State.HeadCalibrated, robot.State.LiftCalibrated);
     }
 

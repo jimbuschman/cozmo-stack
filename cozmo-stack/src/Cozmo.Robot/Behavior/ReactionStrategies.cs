@@ -409,8 +409,8 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(CliffReport c) => handle(TagCliffEvent, c);
-                robot.Sensors.CliffDetected += on;
-                return () => robot.Sensors.CliffDetected -= on;
+                robot.Sensors.CliffDetectedInternal += on;
+                return () => robot.Sensors.CliffDetectedInternal -= on;
             });
         self = s;
         return s;
@@ -442,8 +442,8 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(uint ts) => handle(TagFallingStarted, ts);
-                robot.Sensors.FallingStarted += on;
-                return () => robot.Sensors.FallingStarted -= on;
+                robot.Sensors.FallingStartedInternal += on;
+                return () => robot.Sensors.FallingStartedInternal -= on;
             });
         self = s;
         return s;
@@ -461,8 +461,8 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(OffTreadsState from, OffTreadsState to) => handle(TagRobotOffTreadsStateChanged, to);
-                robot.Sensors.OffTreadsStateChanged += on;
-                return () => robot.Sensors.OffTreadsStateChanged -= on;
+                robot.Sensors.OffTreadsStateChangedInternal += on;
+                return () => robot.Sensors.OffTreadsStateChangedInternal -= on;
             });
         self = s;
         return s;
@@ -477,8 +477,8 @@ public static class ShippedReactionStrategies
             subscribe: handle =>
             {
                 void on(UnexpectedMovementReport r) => handle(TagUnexpectedMovement, r);
-                robot.Sensors.UnexpectedMovementDetected += on;
-                return () => robot.Sensors.UnexpectedMovementDetected -= on;
+                robot.Sensors.UnexpectedMovementDetectedInternal += on;
+                return () => robot.Sensors.UnexpectedMovementDetectedInternal -= on;
             });
 
     /// <summary>A state callback (SetShouldTriggerCallback): no events, so WantsToRun is the callback.</summary>

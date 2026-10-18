@@ -826,6 +826,7 @@ public sealed class NeedsManager
 
     /// <summary>Raised when a pending freeplay sparks reward is handed to the app.</summary>
     public event Action? SparksRewardAwarded;
+    internal CozmoEngine? HostEngine;
 
     /// <summary>
     /// <c>NeedsManager::SparksRewardCommunicatedToUser</c> 0x00696E64: clears the pending flag (+0x3d8) and
@@ -840,7 +841,8 @@ public sealed class NeedsManager
         if (!SparksRewardPending) return;
         SparksRewardPending = false;
         Log?.Invoke("needs.freeplay_sparks_awarded");
-        SparksRewardAwarded?.Invoke();
+        if(HostEngine is {} engine)engine.QueueAppEvent(SparksRewardAwarded);
+        else SparksRewardAwarded?.Invoke(); // Standalone unit, no live engine owner.
     }
     /// <summary>
     /// Raised by <see cref="DetectBracketChangeForDas"/>; the fourth argument is the DAS elapsed
@@ -1061,8 +1063,15 @@ public sealed class NeedsManager
     public void SendNeedsStateToGame(NeedsActionId action)
     {
         State.UpdateCurNeedsBrackets();   // 0x0069383C refreshes the brackets before building the vectors
-        NeedsLevelBitsCopied?.Invoke(Array.AsReadOnly(new[]{State.LevelBits(NeedId.Repair),State.LevelBits(NeedId.Energy),State.LevelBits(NeedId.Play)}),action);
-        NeedsStateSent?.Invoke(action);
+        var words=Array.AsReadOnly(new[]{State.LevelBits(NeedId.Repair),State.LevelBits(NeedId.Energy),State.LevelBits(NeedId.Play)});
+        if(HostEngine is {} engine)
+        {
+            var copied=engine.CaptureAppEvent(NeedsLevelBitsCopied,(IReadOnlyList<uint>)words,action);
+            var sent=engine.CaptureAppEvent(NeedsStateSent,action);
+            engine.QueueAppBroadcast(()=>{copied?.Invoke();sent?.Invoke();});
+        }
+        else {NeedsLevelBitsCopied?.Invoke(words,action);NeedsStateSent?.Invoke(action);}
+
     }
 
     /// <summary>Raised by <see cref="SendNeedsStateToGame"/>; the action is <c>Decay</c> on a decay tick.</summary>

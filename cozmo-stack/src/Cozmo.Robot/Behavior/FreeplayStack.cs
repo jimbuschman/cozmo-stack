@@ -50,6 +50,7 @@ public sealed class FreeplayStack : IDisposable
         // C2 row 10: StartReadFromRobot queues an NVStorage read of key 0x194000 on the connected robot's
         // NV component (robot.Engine.NvStorage, the same owner the camera's calibration read uses).
         needs.NvStorage = robot.Engine.NvStorage;
+        needs.HostEngine=robot.Engine;
         needs.PossiblyWriteLabAssignments = robot.Engine.Experiments.PossiblyWriteLabAssignmentsToRobot;
         needs.SourceLog=(level,channel,key,text)=>robot.Engine.EmitSourceLog(level,channel,key,text);
         var forceNeeds=robot.Engine.AnimationMessages.SubscribeMessage(0xC6,false,p=>needs.ForceSetNeedsLevels((IReadOnlyList<float>)p!));
@@ -330,8 +331,8 @@ public sealed class FreeplayStack : IDisposable
         {
             if (to == OffTreadsState.OnTreads && from != OffTreadsState.OnTreads) system.OnRobotPutDown(clockSec());
         }
-        robot.Sensors.OffTreadsStateChanged += onTreads;
-        stack._unsubscribe.Add(() => robot.Sensors.OffTreadsStateChanged -= onTreads);
+        robot.Sensors.OffTreadsStateChangedInternal += onTreads;
+        stack._unsubscribe.Add(() => robot.Sensors.OffTreadsStateChangedInternal -= onTreads);
 
         // The ground in front of the robot reaches the map here, which is the join the engine makes in
         // VisionComponent::UpdateOverheadEdges 0x006553FC -> MapComponent::ProcessVisionOverheadEdges

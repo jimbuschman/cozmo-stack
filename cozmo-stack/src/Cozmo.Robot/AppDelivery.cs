@@ -11,7 +11,7 @@ public sealed partial class CozmoEngine
     internal Func<bool>? AnimationMutationLockHeld;
     internal Action? WaitForAnimationMutation;
 
-    private Action? CaptureAppEvent<T>(Action<T>? handlers,T report)
+    internal Action? CaptureAppEvent<T>(Action<T>? handlers,T report)
     {
         if(handlers is null)return null;
         var subscribers=handlers.GetInvocationList();
@@ -23,6 +23,35 @@ public sealed partial class CozmoEngine
         lock(_appDeliveryGate){if(!_disposed)_appDeliveries.Enqueue(delivery);}
     }
     internal void QueueAppEvent<T>(Action<T>? handlers,T report)=>QueueAppDelivery(CaptureAppEvent(handlers,report));
+
+    internal Action? CaptureAppEvent<T1,T2>(Action<T1,T2>? handlers,T1 first,T2 second)
+    {
+        if(handlers is null)return null;
+        var subscribers=handlers.GetInvocationList();
+        return ()=>{foreach(Action<T1,T2> subscriber in subscribers)RunIsolated(()=>subscriber(first,second));};
+    }
+    internal void QueueAppEvent(Action? handlers)
+    {
+        if(handlers is null)return;
+        var subscribers=handlers.GetInvocationList();
+        QueueAppDelivery(()=>{foreach(Action subscriber in subscribers)RunIsolated(subscriber);});
+    }
+    internal void QueueAppBroadcast<T>(Action<T>? handlers,T report)
+    {
+        lock(_appDeliveryGate)
+        {
+            NativeUiDeliveryCount=unchecked(NativeUiDeliveryCount+1);
+            QueueAppEvent(handlers,report);
+        }
+    }
+    internal void QueueAppBroadcast(Action? handlers)
+    {
+        lock(_appDeliveryGate)
+        {
+            NativeUiDeliveryCount=unchecked(NativeUiDeliveryCount+1);
+            QueueAppEvent(handlers);
+        }
+    }
 
     // The batch is fixed before dispatch. A handler's new publications wait for the next boundary,
     // even when it calls an API that synchronously kicks the offline engine again.
