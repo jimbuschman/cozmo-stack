@@ -87,6 +87,11 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
+- **B-M15-11 Opus check PASS with queued items (2026-10-17; research/20261017-b-m15-11-check.md):** relabel
+  `LabDefinitionsCheckedRowsTests` (its enable-log part is unit: replayed Init) and correct M15-049's "no replay" note;
+  make `VisionConfigCheckedRowsTests.cs`:65 assert something startup-dependent (e.g. the single "Enabling the lab"
+  entry). The EngineConfigJson startup stop is M1-054's (OV126).
+
 - **B-M15-7 Opus check FAIL (2026-10-17; research/20261017-b-m15-7-check.md):** three blocking (Lab Init aborts on an
   AB-disable MISSING the adopted evidence settles as always-enabled; Feeding deselect keeps its E2G 0x0D subscription;
   Unicode locale lowercasing). Fixes and queued items in B-M15-11, after B-M1-2. Manager to add: a COMPATIBILITY_POLICY
