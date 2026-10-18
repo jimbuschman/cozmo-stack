@@ -13,6 +13,25 @@ public sealed class AppDeliveryTests
     private static AnimationClip Clip(string name)=>new(){Name=name,Keyframes=new List<Keyframe>{new EventKeyframe(5000,"TAPPED_BLOCK")},
         DurationMs=5000,Tracks=AnimationTrack.Event};
 
+    // reach: production — public abort/play and backup request, actual engine tick and checked defaults fallback.
+    [Fact]
+    public void AnEarlierAbortStaysAheadOfTheBackupHostReport()
+    {
+        using var files=new BackupTestResources();var options=files.Options();BackupFiles.ClearDefaultsForTest();
+        File.WriteAllText(Path.Combine(options.ResourcesPath!,"config/engine/unlock_config_nurture.json"),"{\"defaultUnlocks\":[\"PickupCube\"]}");
+        try
+        {
+            using var f=new M4ControlTests.Rig(engineOptions:options);f.ToSynced();f.Robot.Animations.ManualTicking=true;
+            var order=new List<string>();f.Engine.EngineToGameMessage+=(tag,_)=>{if(tag==0x5F)order.Add("5F");};
+            f.Engine.BackupReport+=report=>{Assert.Equal(new uint[]{6},Assert.IsType<BackupUnlockStatus>(report).UnlockIds);order.Add("backup");};
+            using var local=f.Engine.AnimationMessages.SubscribeMessage(0x6D,true,_=>{Assert.Empty(order);order.Add("local");});
+            f.Robot.Animations.Play(Clip("a"));f.Robot.Animations.Play(Clip("b"));
+            f.Robot.RequestUnlockDataFromBackup();Assert.Empty(order);f.Tick();
+            Assert.Equal(new[]{"local","5F","backup"},order);
+        }
+        finally{BackupFiles.ClearDefaultsForTest();}
+    }
+
     // reach: production — public Play -> actual scheduler AbortLocked -> real robot8D/local5F -> engine tick app boundary.
     [Fact]
     public void AnAbortHostCanReplaceTheAnimationWithoutRecursiveDeliveryOrAnIncompleteMutation()

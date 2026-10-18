@@ -137,7 +137,7 @@ public sealed partial class CozmoEngine
         BackupFiles = new(this);
         _backupUnlockHandle = AnimationMessages.Subscribe(0x6E,false,BackupFiles.RequestUnlocks); // 0x005270E8, independent of Robot lifetime.
     }
-    /// <summary>Native backup reports at the app boundary, delivered before local engine subscribers.</summary>
+    /// <summary>Native backup reports queued at the app boundary before synchronous local engine subscribers.</summary>
     public event Action<object>? BackupReport;
     internal void BroadcastBackup(ushort tag, object report)
     {
@@ -147,8 +147,7 @@ public sealed partial class CozmoEngine
             RestoreRobotOptions options => options with { RobotKeys = Array.AsReadOnly(options.RobotKeys.ToArray()) },
             _ => report,
         };
-        NativeUiDeliveryCount = unchecked(NativeUiDeliveryCount + 1);
-        if (BackupReport is {} handlers) foreach (Action<object> handler in handlers.GetInvocationList()) RunIsolated(() => handler(report));
+        QueueAppBroadcast(BackupReport,report);
         AnimationMessages.Deliver(tag,true,report);
     }
 }

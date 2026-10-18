@@ -201,11 +201,14 @@ public sealed class M15BackupBuilderTests
         Assert.True(result.FromBackup); Assert.Contains(rig.Stack,l => l.Contains("M1-034 / M15-043") && l.Contains("0x0051C6BC"));
     }
     [Fact]
-    public void UnlockPreservesDuplicatesStopsAtZeroAndDeliversAppBeforeLocal()
+    // reach: production — public backup request and engine tick; native enqueue/counter before local hub, host after mutation.
+    public void UnlockPreservesDuplicatesStopsAtZeroAndQueuesAppBeforeLocal()
     {
         using var rig = new Rig(); rig.Stats("{\"ConnectionCount\":{\"5\":1}}"); rig.FileBytes("5.backup",Block(0x182000,Words(10,10,0,99)));
-        var order = new List<string>(); rig.Engine.BackupReport += _ => order.Add("app"); using var handle = rig.Engine.AnimationMessages.Subscribe(0x6D,true,() => order.Add("local"));
-        rig.Robot.RequestUnlockDataFromBackup(); rig.Tick(); Assert.Equal(new[]{"app","local"},order);
+        uint before=rig.Engine.NativeUiDeliveryCount;
+        var order = new List<string>(); rig.Engine.BackupReport += _ => order.Add("app");
+        using var handle = rig.Engine.AnimationMessages.Subscribe(0x6D,true,() => {Assert.Equal(before+1,rig.Engine.NativeUiDeliveryCount);order.Add("local");});
+        rig.Robot.RequestUnlockDataFromBackup(); rig.Tick(); Assert.Equal(new[]{"local","app"},order);
         Assert.Equal(new uint[]{10,10},Assert.IsType<BackupUnlockStatus>(Assert.Single(rig.Reports)).UnlockIds);
         Assert.DoesNotContain(rig.Stack,l => l.Contains("Stack.RobotDataBackupManager.SkipMalformed"));
     }
@@ -280,6 +283,7 @@ public sealed class M15BackupBuilderTests
         rig.Robot.RequestUnlockDataFromBackup(); rig.Tick(); Assert.Equal(new uint[]{6},Assert.IsType<BackupUnlockStatus>(Assert.Single(rig.Reports)).UnlockIds);
     }
     [Fact]
+    // reach: production — restore request, NV result packets and engine tick; host report follows synchronous backup writes.
     public void LastRestoreWriteCallsBackupTwiceThenWipeUsesEraseAndKeepsTheFile()
     {
         using var files = new BackupTestResources(); var options = files.Options();
@@ -293,7 +297,7 @@ public sealed class M15BackupBuilderTests
         rig.Robot.RestoreRobotFromBackup(1); rig.Tick(); Assert.Equal((byte)2,rig.SentSince(0).OfType<NVCommand>().Last().Op);
         rig.Data(new NVOpResult{Tag=0x182000,Op=2,Result=0}); rig.Tick(); rig.Tick(); Assert.Equal((byte)1,rig.SentSince(0).OfType<NVCommand>().Last().Op);
         rig.Data(new NVOpResult{Tag=0x182000,Op=1,Result=0}); rig.Tick();
-        Assert.Equal(new[]{"report","Writing backup file","Writing backup file"},order); Assert.Equal(new RestoreRobotStatus(false,true),Assert.Single(reports));
+        Assert.Equal(new[]{"Writing backup file","Writing backup file","report"},order); Assert.Equal(new RestoreRobotStatus(false,true),Assert.Single(reports));
         Assert.Equal(Block(0x182000,7,8,0,0),File.ReadAllBytes(path)); // NV pads to four bytes before the mirror promotion.
         reports.Clear(); order.Clear(); rig.Robot.WipeRobotGameData(); rig.Tick(); Assert.Equal((byte)2,rig.SentSince(0).OfType<NVCommand>().Last().Op);
         rig.Data(new NVOpResult{Tag=0x182000,Op=2,Result=0}); rig.Tick(); Assert.Equal(new RestoreRobotStatus(true,true),Assert.Single(reports));
