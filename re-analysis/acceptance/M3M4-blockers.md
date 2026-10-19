@@ -27,6 +27,8 @@ builder job is open. What has never run is a settling pass over the records them
 
 ## Sequence
 
+**Update (2026-10-19, settle readiness):** `research/20261019-m3m4-settle.md`. Seven records settled EXACT_SOURCE (M3-012, M3-055, M3-060, M4-043, M4-044, M4-047, M4-050). The VisionSystem/BlockWorld exists only when a host builds one, so the cube, light, cliff and camera-limit paths of the other 16 skip with MISSINGs in a vision-less host. **Operator decision: always build it.** B-M3M4-36 (open), its check, settle the 16, then the hardware script (pass B's 14 coverage items).
+
 **Update (2026-10-19, later): B-M3M4-34 fix review PASS** (inline, `research/20261019-b-m3m4-34-check.md`): production
 camera frames reach vision again through the SetNextImage join; the freed-node callback is skipped; the world-event deadlock
 is gone. **OV129 adopted** (manager-checked): the marker normal; built in B-M3M4-35, the last M3+M4 build. Then settling and
