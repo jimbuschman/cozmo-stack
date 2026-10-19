@@ -2239,6 +2239,10 @@ public sealed partial class CozmoEngine : IDisposable
     // M3-021: public camera requests join the same engine-thread queue as native game inputs.
     // Keep the synchronous host result, without waiting on the engine thread itself.
     internal T InvokeCameraRequest<T>(Func<T> request)
+        => InvokeEngineRequest(request);
+
+    // fidelity: M4-018, M4-051 — game-facing light commands share the same native engine-thread ingress.
+    internal T InvokeEngineRequest<T>(Func<T> request)
     {
         ObjectDisposedException.ThrowIf(_disposed,this);
         if(_runner is null || _runner.IsCurrentThread || Monitor.IsEntered(_tickLock))

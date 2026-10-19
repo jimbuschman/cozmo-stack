@@ -2065,7 +2065,7 @@ public sealed partial class BlockWorld
     /// the world origin, <c>BroadcastObjectPoseStateChanged(obj, oldState)</c> follows (0x0050614E..0x00506176). A Dirty state first clears
     /// <c>SetLocalizedTo(nullptr)</c> when [[Robot]+0x2B8] equals the object's ID (0x0050613C..0x0050614A).
     /// </summary>
-    // fidelity: M11-007
+    // fidelity: M11-007, M4-049
     internal bool SetPoseStateHelper(ObservableObject obj, PoseState state)
     {
         using var frameMutation=EnterPoseMutation();
@@ -2075,8 +2075,24 @@ public sealed partial class BlockWorld
             return false;
         }
         var old = StorePoseState(obj, state);
-        if (old is { } previous) PoseStateChanged?.Invoke(obj, previous, state);
+        if (old is { } previous)
+        {
+            if(obj.OriginId==CurrentOriginId)BroadcastObjectPoseStateChanged(obj,previous); // 0x00506162..0x00506176
+            PoseStateChanged?.Invoke(obj, previous, state);
+        }
         return true;
+    }
+
+    // fidelity: M4-049, M11-074 — shared native state tail 0x00506288..0x005062DA.
+    private void BroadcastObjectPoseStateChanged(ObservableObject obj,PoseState oldState)
+    {
+        if(oldState==obj.PoseState)return;
+        if(obj.PoseState!=PoseState.Unknown)
+        {
+            Maps.SourceLog=SourceLog;
+            Maps.UpdateObjectPose(obj,obj.Pose,oldState); // 0x005062B4, before the IsActive virtual gate
+        }
+        if(obj.IsActive)ActiveObjectPoseStateChanged?.Invoke(obj.ObjectId,oldState,obj.PoseState);
     }
 
     // Shared state mutation; callers deliver PoseStateChanged after releasing any world lock.
@@ -2344,12 +2360,7 @@ public sealed partial class BlockWorld
         // fidelity: M11-074 — 0x00506FA8, after BlockWorld::OnObjectPoseChanged.
         Maps.SourceLog=SourceLog;
         Maps.UpdateObjectPose(obj,oldPose,oldState);
-        // 0x005062B4 repeats with the current state before the state-change recipients.
-        if(oldState!=obj.PoseState && obj.PoseState!=PoseState.Unknown)
-            Maps.UpdateObjectPose(obj,obj.Pose,oldState);
-        // MapComponent::UpdateObjectPose immediately returns for family 6, on both calls. No game message for a cliff.
-        if(oldState!=obj.PoseState && obj.IsActive)
-            ActiveObjectPoseStateChanged?.Invoke(obj.ObjectId,oldState,obj.PoseState); // 0x004E385D; other families0x004E0241.
+        BroadcastObjectPoseStateChanged(obj,oldState);
         if (obj.Family != ObjectFamily.MarkerlessObject && oldState != obj.PoseState)
             PoseStateChanged?.Invoke(obj,oldState,obj.PoseState);
     }
@@ -2951,17 +2962,12 @@ public sealed partial class BlockWorld
     internal void ApplyMovedOrStopped(ObservableObject matched, bool moving)
     {
         using var frameMutation=EnterPoseMutation();
-        PoseState? previous = null;
         bool carried=IsCarryingObject?.Invoke(matched.ObjectId)==true;
+        if(!carried && matched.PoseState==PoseState.Known)MarkObjectDirty(matched,false); // 0x0053413C -> SetPoseStateHelper
         lock (_gate)
         {
-            if (!carried && matched.PoseState == PoseState.Known)
-            {
-                previous = StorePoseState(matched, PoseState.Dirty);
-            }
             matched.IsMoving = moving;
         }
-        if (previous is { } old) PoseStateChanged?.Invoke(matched, old, PoseState.Dirty);
     }
 
     public void MarkDirty(uint objectId)

@@ -361,7 +361,7 @@ public class M4ControlTests
             int id = world.AddConnectedActiveObject(0, 0x1000, ObjectType.Block_LIGHTCUBE1);
             var lights = rig.Robot.Lights.Cubes;
             var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public;
-            bool pendingSeen = false, updateFinished = false; object? observedIndex = null;
+            bool pendingSeen = false;Task? deferredUpdate=null;object? observedIndex = null;
             object Top()
             {
                 var infos = (System.Collections.IDictionary)typeof(CubeLightComponent).GetField("_infos", flags)!.GetValue(lights)!;
@@ -377,12 +377,14 @@ public class M4ControlTests
                 if(e.Name=="CubeLightComponent.PlayLightAnim.SettingLights"){world.RemoveConnectedActiveObject(0);return;}
                 if (e.Name != "CubeLightController.SetObjectLights.NullActiveObject") return;
                 var top = Top(); pendingSeen = (bool)top.GetType().GetField("PendingSend", flags)!.GetValue(top)!;
-                updateFinished = Task.Run(() => lights.Update()).Wait(TimeSpan.FromSeconds(2));
+                // Direct unit Update now shares the whole-world gate; do not wait inside that gate.
+                // Host-facing entries are exercised through the real engine queue in B32's worker test.
+                deferredUpdate=Task.Run(() => lights.Update());
                 observedIndex = top.GetType().GetField("Index", flags)!.GetValue(top);
             };
             lights.OnObjectConnectionState(ObjectType.Block_LIGHTCUBE1, true);
             Assert.True(pendingSeen);
-            Assert.True(updateFinished); Assert.Equal(0, observedIndex);
+            Assert.NotNull(deferredUpdate);Assert.True(deferredUpdate!.Wait(TimeSpan.FromSeconds(2)));Assert.Equal(0, observedIndex);
             var final = Top(); Assert.Equal(0u, final.GetType().GetField("TimerMs", flags)!.GetValue(final));
             Assert.False((bool)final.GetType().GetField("PendingSend", flags)!.GetValue(final)!);
             Assert.Contains($"info: [CubeLightComponent] CubeLightComponent.PlayLightAnim.SettingLights: Playing trigger WakeUp on layer State for object {id}", rig.Log);

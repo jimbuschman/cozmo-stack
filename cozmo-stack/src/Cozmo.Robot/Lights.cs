@@ -1011,7 +1011,7 @@ public sealed class CubeLightComponent
         KeyValuePair<ObjectType,ObjectInfo>[] objects;
         lock(_gate){_refreshRequested=true;objects=_infos.OrderBy(kv=>unchecked((int)kv.Value.ObjectId)).ToArray();}
         foreach(var pair in objects)
-            if(!_robot.Carrying.IsCarryingObjectId(pair.Value.ObjectId))PlayLightAnim(pair.Key,"Connected",2);
+            if(!_robot.Carrying.IsCarryingObjectId(pair.Value.ObjectId))PlayLightAnimCore(pair.Key,"Connected",2,0,false,null,0,null);
     }
 
     // fidelity: M4-018
@@ -1025,7 +1025,7 @@ public sealed class CubeLightComponent
         if (!connected || !CozmoCubes.IsLightCube(type)) return;
         lock (_gate)
             if (!_infos.ContainsKey(type)) _infos[type] = new ObjectInfo { GameLayerOnly = _gameLayerOnlyDefault, ObjectId = TryObjectId(type) ?? uint.MaxValue };
-        PlayLightAnim(type, "WakeUp", StateLayer);
+        PlayLightAnimCore(type,"WakeUp",StateLayer,0,false,null,0,null);
     }
 
     // fidelity: M4-018
@@ -1069,10 +1069,10 @@ public sealed class CubeLightComponent
     /// stored as the single native signed int at CurrentAnimInfo+0x44. Both initial and subsequent
     /// patterns use that same offset; durationMs does not replace a pattern's duration.</summary>
     public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0, Action? completed = null)
-        => PlayLightAnimCore(type,trigger,layer,durationMs,modifier,lights,timerOffsetMs,null,completed);
+        => _robot.Engine.InvokeEngineRequest(()=>PlayLightAnimCore(type,trigger,layer,durationMs,modifier,lights,timerOffsetMs,null,completed));
     // fidelity: M4-051 — 0x00638220..0x00638290: tag is assigned only after generic play succeeds.
     public bool PlayLightAnimFromAction(ObjectType type,string trigger,uint tag,Action? completed=null,int timerOffsetMs=0)
-        => PlayLightAnimCore(type,trigger,UserLayer,0,false,null,timerOffsetMs,null,completed,tag);
+        => _robot.Engine.InvokeEngineRequest(()=>PlayLightAnimCore(type,trigger,UserLayer,0,false,null,timerOffsetMs,null,completed,tag));
     private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId,Action? completed=null,uint actionTag=0)
     {
         Animations.EnsureLoaded(); // Standalone host initialization precedes the component state lock.
@@ -1182,6 +1182,13 @@ public sealed class CubeLightComponent
 
     internal void Update(bool pickDefaultLayer)
     {
+        // The vision worker uses World.FrameGate before delivering pose-state callbacks. Preserve that
+        // order before taking the light gate, including during reentrant completion sends.
+        using var poseRead=_robot.LocalizationWorld.EnterPoseMutation();
+        lock(_gate)UpdateLocked(pickDefaultLayer);
+    }
+    private void UpdateLocked(bool pickDefaultLayer)
+    {
         var calls = new List<Action>();
         var defaults = new HashSet<ObjectType>();
         // fidelity: M4-051 — copy callback, pop, invoke, then inspect the remaining stack (including reentrant changes).
@@ -1192,13 +1199,8 @@ public sealed class CubeLightComponent
             stack.RemoveAt(stack.Count-1);
             if(callback is null||!invoke)return;
             var pending=calls.ToArray();calls.Clear();
-            Monitor.Exit(_gate);
-            try
-            {
-                foreach(var call in pending)call();
-                if(tag==0 || ActionRunnerTagCounter.Global.IsInUse(tag))_robot.Engine.RunIsolated(callback);
-            }
-            finally{Monitor.Enter(_gate);}
+            foreach(var call in pending)call();
+            if(tag==0 || ActionRunnerTagCounter.Global.IsInUse(tag))_robot.Engine.RunIsolated(callback);
         }
         void Send(ObjectType type, CubeLightPattern pattern, bool transition)
         {
@@ -1250,7 +1252,13 @@ public sealed class CubeLightComponent
                     }
                     // W4: +0x41 set, or the last pattern was reached. Pop, then P2: pop consecutive stopped entries.
                     Pop(stack,invoke:!top.Dangling); // M1-034/M4-045: a fault-retired entry cannot claim normal completion.
-                    while (stack.Count > 0 && stack[^1].Stop) Pop(stack);
+                    // 0x00637A0A / 0x00637A4A: callback may change CurrentLayer; never retain the old list.
+                    stack=info.Layers[info.CurrentLayer];
+                    while (stack.Count > 0 && stack[^1].Stop)
+                    {
+                        Pop(stack);
+                        stack=info.Layers[info.CurrentLayer];
+                    }
                     if (stack.Count > 0)
                     {
                         // P3: resend the lower animation's current pattern, with no timer or iterator reset.
@@ -1370,6 +1378,8 @@ public sealed class CubeLightComponent
     /// game-message id is invented.
     /// </summary>
     public void EnableCubeSleep(bool enable, bool skipAnimation = false)
+        => _robot.Engine.InvokeEngineRequest(()=>{EnableCubeSleepCore(enable,skipAnimation);return true;});
+    private void EnableCubeSleepCore(bool enable,bool skipAnimation)
     {
         SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.EnableCubeSleep", $"{(enable ? "Enabling" : "Disabling")} cube sleep");
         lock (_gate)
@@ -1393,6 +1403,8 @@ public sealed class CubeLightComponent
     /// comp+0x22 := 0, while the single-object path stops layers 0 and 2 and does not write comp+0x22.
     /// </summary>
     internal void EnableGameLayerOnly(bool enable, ObjectType? type = null, int objectId = -1)
+        => _robot.Engine.InvokeEngineRequest(()=>{EnableGameLayerOnlyCore(enable,type,objectId);return true;});
+    private void EnableGameLayerOnlyCore(bool enable,ObjectType? type,int objectId)
     {
         // fidelity: M4-018
         // Entry log (0x0063997A sChanneledInfoF, before the C13.4 gates): channel "CubeLightComponent" (printed as
@@ -1479,6 +1491,8 @@ public sealed class CubeLightComponent
     /// and then does nothing (the engine's ObjectID find fails).
     /// </summary>
     public void SetEnableFreeplayLightStates(bool enable, int objectID = -1)
+        => _robot.Engine.InvokeEngineRequest(()=>{SetEnableFreeplayLightStatesCore(enable,objectID);return true;});
+    private void SetEnableFreeplayLightStatesCore(bool enable,int objectID)
     {
         // Only -1 means all objects; any other id (negative too) is logged and looked up like any id, and an unknown
         // one is a no-op after the entry log (EnableGameLayerOnly).
@@ -1497,7 +1511,7 @@ public sealed class CubeLightComponent
     {
         if (_sleepEnabled)
         {
-            PlayLightAnim(type, _sleepSkipFade ? "SleepNoFade" : "Sleep", StateLayer);
+            PlayLightAnimCore(type,_sleepSkipFade?"SleepNoFade":"Sleep",StateLayer,0,false,null,0,null);
             return;
         }
         // MISSING: M11-004 | the located object's +0x24 == 1 (IsVisible) and the located object itself are M11-004's (BlockWorld's ById helpers); with no hook the
@@ -1507,7 +1521,7 @@ public sealed class CubeLightComponent
         string trigger = IsCarried?.Invoke(type) == true ? "Carrying"
                        : IsVisible?.Invoke(type) == true ? "Visible"
                        : "Connected";
-        PlayLightAnim(type, trigger, StateLayer);
+        PlayLightAnimCore(type,trigger,StateLayer,0,false,null,0,null);
     }
 
     // fidelity: M4-018

@@ -41,7 +41,7 @@ public sealed class M3M4SettlingBuilderTests
         Assert.True(rig.Robot.Lights.Cubes.PlayingForTest(ObjectType.Block_LIGHTCUBE1,1)!.Value.Blended);
     }
 
-    // reach: production — real connected/located world owner, existing observation writer -> pose broadcast -> actual light recipient.
+    // reach: unit (substitutes internal ApplyRelativeObservation/located state; the production ObjectMoved join is covered in B32).
     [Fact]
     public void ActivePoseChangeReachesCubeLightsBeforeTheHostPoseNotification()
     {
@@ -67,14 +67,14 @@ public sealed class M3M4SettlingBuilderTests
     public void CompletionPopsBeforeCallbackAndAllowsReentrantPlayback(bool stop)
     {
         using var rig=new M4ControlTests.Rig(Shipped());rig.ToSynced();rig.State();M4ControlTests.ConnectCube(rig);
-        var lights=rig.Robot.Lights.Cubes;int count=0;
+        var lights=rig.Robot.Lights.Cubes;int count=0;bool popped=false,played=false;
         Assert.True(lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Flash",completed:()=>
         {
-            count++;Assert.Null(lights.PlayingForTest(ObjectType.Block_LIGHTCUBE1,1));
-            Assert.True(Task.Run(()=>lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Dance_01")).Wait(TimeSpan.FromSeconds(2)));
+            count++;popped=lights.PlayingForTest(ObjectType.Block_LIGHTCUBE1,1) is null;
+            played=lights.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Dance_01"); // native callback reentry is on this engine thread
         }));
         if(stop)lights.StopLightAnim("Flash",1,ObjectType.Block_LIGHTCUBE1);else rig.Tick(600);
-        Assert.Equal(1,count);Assert.Equal("dance_green",lights.TopPatternName(ObjectType.Block_LIGHTCUBE1));
+        Assert.Equal(1,count);Assert.True(popped);Assert.True(played);Assert.Equal("dance_green",lights.TopPatternName(ObjectType.Block_LIGHTCUBE1));
         rig.Tick(10);Assert.Equal(1,count);
     }
 
@@ -93,22 +93,26 @@ public sealed class M3M4SettlingBuilderTests
         Assert.Contains(rig.Log,s=>s.Contains("SkipDanglingBlendedAdvance"));
     }
 
-    // reach: production — full engine Delocalize, real cube-light recipient, connected non-carried objects; no substituted hook.
+    // reach: unit (internal Robot.Delocalize and seeded negative/positive ObjectIDs; native hardware producer is not asserted).
     [Fact]
     public void RealDelocalizePlaysConnectedOnNonCarriedCubesInSignedIdOrder()
     {
         string root=M4ControlTests.CubeLightResources();
+        var ids=(Dictionary<ObjectType,uint>)typeof(ObjectIdSpace).GetField("s_uniqueIds",BindingFlags.Static|BindingFlags.NonPublic)!.GetValue(null)!;
+        var saved=ids.ToArray();
         try
         {
+            ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE1,0xFFFFFFFE);
+            ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE2,1);
             using var rig=new M4ControlTests.Rig(root);rig.ToSynced();rig.State();
             M4ControlTests.ConnectCube(rig,1,ObjectType.Block_LIGHTCUBE2);M4ControlTests.ConnectCube(rig,0);
-            var expected=rig.Robot.LocalizationWorld.ConnectedObjects.OrderBy(o=>unchecked((int)o.ObjectId)).Select(o=>unchecked((int)o.ObjectId)).ToArray();
+            int[] expected={-2,1}; // signed order differs from u32: native ObjectInfo map walks -2 before +1
             var actual=new List<int>();
-            rig.Engine.LogEntry+=e=>{if(e.Name=="CubeLightComponent.PlayLightAnim.SettingLights"&&e.Text.Contains("trigger Connected"))actual.Add(int.Parse(e.Text.Split("object ")[1]));};
+            rig.Engine.LogEntry+=e=>{if(e.Name=="CubeLightComponent.PlayLightAnim.SettingLights"&&e.Text.Contains("trigger Connected"))actual.Add(unchecked((int)uint.Parse(e.Text.Split("object ")[1])));};
             rig.Engine.Robot!.Delocalize(false);
             Assert.Equal(expected,actual);
         }
-        finally{Directory.Delete(root,true);}
+        finally{ids.Clear();foreach(var pair in saved)ids.Add(pair.Key,pair.Value);Directory.Delete(root,true);}
     }
 
     // reach: unit (explicit native add/query outcomes; M11-097 producer remains MISSING in production).
