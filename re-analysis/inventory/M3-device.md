@@ -607,3 +607,11 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Stack features kept (operator): warm-up flag, test tones | M3-004, M3-017 (notes) |
 | Host-thread producer race, ruled: engine thread | M3-021 (note) |
 | NEEDS EXTRACTION still open | M3-037 (note) |
+
+
+## OV128 adopted (manager, 2026-10-18; research/overnight/20261018-ov128-check.md)
+
+| Change | Records |
+| --- | --- |
+| Title and evidence re-based: short raw payloads fall under the M1-034 standing rule (skip and log) | M3-037 |
+| Firmware raw-emission boundary | M3-050 (note) |

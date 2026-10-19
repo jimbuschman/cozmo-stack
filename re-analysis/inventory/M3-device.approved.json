@@ -2,7 +2,7 @@
   "subsystem": "M3-device",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "32b9e43b9a302a8d9f4e54ee832a7dc95a51f493e5e062c0e9e41ff9c4e5c2e3",
+  "inventory_sha256": "5b58f1427dd6f0420b8372dd8a7dc81fb36e92f18d8cd27c698ff26c59739d4a",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -432,11 +432,12 @@
     },
     "M3-037": {
       "status": "COMPATIBILITY_POLICY",
-      "title": "A raw gray/RGB payload shorter than rows*cols (or *3) reads bytes past its end in the engine (undefined); this stack zero-fills the missing bytes",
+      "title": "A raw gray/RGB payload shorter than rows*cols (or *3): the engine decodes bytes past the vector's size from a recycled allocation (undefined); M1-034 standing rule: this stack skips that frame's decode and logs it",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
         "G2 AddChunk does not compare the payload with the geometry: reserve(0x38400) at 0x004F1DA6, no per-chunk total check",
-        "Y2/Z6 the raw cases wrap rows*cols (or *3) bytes of the vector with no length check (0x004F2BC0, 0x004F245A)"
+        "Y2/Z6 the raw cases wrap rows*cols (or *3) bytes of the vector with no length check (0x004F2BC0, 0x004F245A)",
+        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md I1-I9 and re-analysis/research/overnight/20261018-ov128-check.md O2-O4: AddChunk/SetNextImage exchange three recycled buffers (0x00653056..0x0065314E, 0x0065200E..0x00652252), no payload copy; raw wrappers pass geometry, not length (0x004F2BC0, 0x004F245A); radio loss cannot complete a short image (0x004F1CEA..0x004F1EC6); only a firmware frame with too few bytes can."
       ],
       "live_path": true,
       "hardware_required": false

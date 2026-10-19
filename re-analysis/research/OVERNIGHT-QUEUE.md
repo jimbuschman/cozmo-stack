@@ -159,6 +159,6 @@ The first three are the requests already written:
 | OV125 | requests/overnight/20261017-ov125-m1-056.md (M1-056: narrow: the state 1 -> 2 gate, SetEngineState effects, progress writers; trimmed 2026-10-17; current M1+M2 target) | research/overnight/20261017-ov125-m1-056.md |
 | OV126 | requests/overnight/20261017-ov126-m1-startup-narrow.md (M1-054/M1-056/M2-020: narrow checks on UiMessageHandler::Init, InitInternal, the manager MessageHandler Init, SendSupportInfo, WifiFlashID; current M1+M2 target) | research/overnight/20261017-ov126-m1-startup-narrow.md |
 | OV127 | requests/overnight/20261018-ov127-m1m2-settling-narrow.md (M1-061/M2-024/M1-054/M1-055/M1-056: LatencyMessage payload, missing Impl handlers, LoadRobotConfigs census, local E2G consumers; current M1+M2 target) | research/overnight/20261018-ov127-m1m2-settling-narrow.md |
-| OV128 | requests/overnight/20261018-ov128-m3m4-settling-narrow.md (M11-097/M4-052/M4-051/M3-037: history query results, relative cube lights, callback guard, short raw images; current M3+M4 target) | research/overnight/20261018-ov128-m3m4-settling-narrow.md |
+| OV128 | requests/overnight/20261018-ov128-m3m4-settling-narrow.md (M11-097/M4-052/M4-051/M3-037: history query results, relative cube lights, callback guard, short raw images; current M3+M4 target) | research/overnight/20261018-ov128-m3m4-settling-narrow.md (checked, adopted with corrections: research/overnight/20261018-ov128-check.md) |
 
 **Skipped (SDK-only, out of scope):** M7-024, M8-018, M11-056, M15-032 (M15-031 is in scope since 2026-10-16).

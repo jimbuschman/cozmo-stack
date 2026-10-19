@@ -55,7 +55,8 @@ stands. Nothing new starts outside the current layer.
   needs record (case 1): the stack writes nothing where the original would write one (B-M1-10 gate, M15-014/M15-030).
   **Next layer: M3 + M4** (devices and motor control), per "The plan". Plan and blockers:
   `re-analysis/acceptance/M3M4-blockers.md` (2026-10-18): both Opus settling passes adopted (FAIL; 10 records settle
-  after cleanup); builder job B-M3M4-30 and research OV128 queued; operator decisions recorded on M3-004/017,
+  after cleanup); builder B-M3M4-30 claimed, B-M3M4-31 queued after it; OV128 adopted with corrections
+  (`research/overnight/20261018-ov128-check.md`); operator decisions recorded on M3-004/017,
   M4-006/039/040/042.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **M1-transport and M2-protocol are ACCEPTED** (2026-10-18).

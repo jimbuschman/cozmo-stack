@@ -2,7 +2,7 @@
   "subsystem": "M4-control",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "728802e5e7739cef2e3dae4b7f249ff8cddca894b55e6708838e73947201891f",
+  "inventory_sha256": "636e485eadad341512bc353df363b96cd358b6d4f94a653fe8489ea67d4373e7",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -629,17 +629,19 @@
       "title": "CubeLightComponent::PlayLightAnim's completion callback: stored with the entry, invoked by Update when the entry ends",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261018-m3m4-settling-a.md: the std::function argument is stored in CurrentAnimInfo at 0x0063858C; Update copies it, pops the entry and calls it when non-empty and the guard at 0x564A64 == 1 passes (0x006379C6..0x006379F4, 0x00637A02..0x00637A2E)."
+        "re-analysis/research/20261018-m3m4-settling-a.md: the std::function argument is stored in CurrentAnimInfo at 0x0063858C; Update copies it, pops the entry and calls it when non-empty and the guard at 0x564A64 == 1 passes (0x006379C6..0x006379F4, 0x00637A02..0x00637A2E).",
+        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md C1-C6, confirmed by re-analysis/research/overnight/20261018-ov128-check.md: the guard 0x00564A64 is a function returning 1 iff the tag is in IActionRunner::sInUseTagSet (GOT 0x103EB1C); generic PlayLightAnim stores tag 0 (0x0063857C); PlayLightAnimFromAction stores the caller's tag at node+0x48 only after a true result (0x0063828E..0x00638290); Update copies callback and tag, pops the entry, then skips empty, calls tag 0, else calls only if the tag is live."
       ],
       "live_path": true,
       "hardware_required": false
     },
     "M4-052": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261018-m3m4-settling-a.md: GetLocatedObjectByIdHelper(id, -1) 0x00637E82, dynamic_cast to ActiveCube, SetLEDs 0x00637EDA, then MakeStateRelativeToXY 0x004E0DEC called at 0x00637EE8. Producer: BuildPyramid (M15-037)."
+        "re-analysis/research/20261018-m3m4-settling-a.md: GetLocatedObjectByIdHelper(id, -1) 0x00637E82, dynamic_cast to ActiveCube, SetLEDs 0x00637EDA, then MakeStateRelativeToXY 0x004E0DEC called at 0x00637EE8. Producer: BuildPyramid (M15-037).",
+        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md L1-L8, confirmed with corrections by re-analysis/research/overnight/20261018-ov128-check.md: lookup and ActiveCube cast for both modes (mode 0 via ActiveObject, 0x00637E96..0x00637EAA); SetLEDs zero-duration normalization 0x004E4902..0x004E49A2; MakeStateRelativeToXY 0x004E0DF4..0x004E100E with WhichCubeLEDs TBH 0x004E0E1C; GetTopMarker 0x004E69B8..0x004E6A7C; corner/face choice through Radians rescale/Near/GT/GE/LT (0x0084C87C..0x0084CD18, epsilon 0x3727C5AC); RotatePatternAroundTopFace 0x004E30A0: false -> [1,2,3,0] (0x00C45B94), true -> [3,0,1,2] (0x00C45B90), dest[table[i]] = src[i], 7 words, stride 0x1C; SetLights 0x0063A604 with CubeID's second byte from ObjectLights+0x70 (0xFF or floor((v+29)/30), 0x0063A7A2..0x0063A7BC)."
       ],
       "live_path": true,
       "hardware_required": false

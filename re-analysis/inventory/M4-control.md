@@ -827,3 +827,12 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Stack feature kept (operator): DriveWheels completion tolerance | M4-006 (note) |
 | Findings to build | M4-019, M4-027, M4-041, M4-045, M4-049 (notes) |
 | Handoffs corrected | M4-018 (note) |
+
+
+## OV128 adopted (manager, 2026-10-18; research/overnight/20261018-ov128-check.md)
+
+| Change | Records |
+| --- | --- |
+| Read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (rotation tables corrected by the check) | M4-052 |
+| Guard read (evidence added) | M4-051 |
+| CubeID second byte; A8 tail gating | M4-018, M4-019 (notes) |

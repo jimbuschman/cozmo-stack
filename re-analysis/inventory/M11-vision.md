@@ -1745,3 +1745,12 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Change | Records |
 | --- | --- |
 | New RECOVERABLE_GAP: RobotStateHistory query and admission results (ComputeStateAt, GetLastStateWithFrameID, AddRobotStateToHistory's result), previously unowned | M11-097 (new) |
+
+
+## OV128 adopted (manager, 2026-10-18; research/overnight/20261018-ov128-check.md)
+
+| Change | Records |
+| --- | --- |
+| Read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-097 |
+| H3-H8 evidence added | M11-052 |
+| A6/A7, A1/A8 notes | M11-051, M11-053 |

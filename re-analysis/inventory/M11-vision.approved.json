@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "487ff192e3f973a064a89818a286a0b56d94f43ee47fe2c111ee499f95750a95",
+  "inventory_sha256": "5724a8980a43a168990e08ef3929d364fb60fef3f54f793fa2cf3a05a08d8bce",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -641,7 +641,8 @@
         "0x0053068C..0x00530848 Interpolate",
         "re-analysis/research/20260929-R-VIS-verify-M11-batchA4.md",
         "re-analysis/research/overnight/20261014-ov10-m11-042-check.md: H2 Interpolate 0x0053068C..0x00530848 (ctor memcpy 0x5B at 0x005304F4): only cliff channel 0 is blended; channels 1-3 stay 0xFFFF.",
-        "re-analysis/research/overnight/20261014-ov12-m11-052-check.md: B1-B11, GetRawStateAt 0x00531430..0x00531648 (including L2 0x005315AC..0x00531632 and the nearest tail 0x00531634..0x00531648), Interpolate 0x0053068C..0x0053085A, HistRobotState ctor 0x005304B0..0x005304FE; caller census with each flag."
+        "re-analysis/research/overnight/20261014-ov12-m11-052-check.md: B1-B11, GetRawStateAt 0x00531430..0x00531648 (including L2 0x005315AC..0x00531632 and the nearest tail 0x00531634..0x00531648), Interpolate 0x0053068C..0x0053085A, HistRobotState ctor 0x005304B0..0x005304FE; caller census with each flag.",
+        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md H3-H8, confirmed by re-analysis/research/overnight/20261018-ov128-check.md: GetRawStateAt 0x0053143A..0x00531648 (bracket failures return 1, frame-ID mismatch 0x06000000 before the flag test, flag=false nearest with tie to the earlier key, flag=true f32 fraction); Interpolate 0x0053068C..0x0053085A (threshold 0x3EFFFEB0 at 0x00530884, f32 order, cliff words 0xFFFFFFFF then cliff[0] only; pose translation and Z angle)."
       ],
       "live_path": true,
       "hardware_required": false
@@ -1125,11 +1126,12 @@
       "hardware_required": false
     },
     "M11-097": {
-      "status": "RECOVERABLE_GAP",
+      "status": "IMPLEMENTATION_GAP",
       "title": "RobotStateHistory query and admission results: ComputeStateAt, GetLastStateWithFrameID and AddRobotStateToHistory's result",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
-        "re-analysis/research/20261018-m3m4-settling-b.md: no record owned these; consumers M4-019, M4-038, M10-007, M10-015, M11-044, M13-030, M14-005. Prior reads: ComputeStateAt 0x00531784..0x00531808 (research/20260929-R-VIS-pre-extraction.md); AddRobotStateToHistory 0x00512B9C..0x00512F0C (on-ramp 0x00512BE2, ContainsOriginID 0x00512C44, failure 0x00512C38); the C12.4 gate 0x00513088..0x00513110."
+        "re-analysis/research/20261018-m3m4-settling-b.md: no record owned these; consumers M4-019, M4-038, M10-007, M10-015, M11-044, M13-030, M14-005. Prior reads: ComputeStateAt 0x00531784..0x00531808 (research/20260929-R-VIS-pre-extraction.md); AddRobotStateToHistory 0x00512B9C..0x00512F0C (on-ramp 0x00512BE2, ContainsOriginID 0x00512C44, failure 0x00512C38); the C12.4 gate 0x00513088..0x00513110.",
+        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md, confirmed with corrections by re-analysis/research/overnight/20261018-ov128-check.md: ComputeStateAt vision-only exact key first (H1, 0x00531792..0x005317E6), raw query (H2), vision correction chain (H9, 0x00531808..0x00531AC6; the frame-increase delta accumulates before the stop test 0x00531A7A..0x00531A7E); GetLastStateWithFrameID raw then vision-only, newest first (H10, H11, 0x00531E34..0x00532090); UpdateFullRobotState admission and result paths (A2-A5, A8; 0x00512BAC..0x0051313C, AddRobotStateToHistory 0x00513598..0x005135C0; x, y from the flattened incoming pose; tail returns UpdateCurrPoseFromHistory ^ 1)."
       ],
       "live_path": true,
       "hardware_required": false

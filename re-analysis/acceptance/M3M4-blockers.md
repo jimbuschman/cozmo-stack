@@ -27,6 +27,11 @@ builder job is open. What has never run is a settling pass over the records them
 
 ## Sequence
 
+**Update (2026-10-18, later): OV128 adopted** with corrections (`research/overnight/20261018-ov128-check.md`; the answer's
+cube-light rotation tables were reversed). M4-052 and M11-097 are now IMPLEMENTATION_GAP; M4-051's guard is read; M3-037
+re-based on the M1-034 standing rule. Builder: B-M3M4-30 (claimed), then B-M3M4-31 (M4-052, M4-051 guard, M3-037). The
+RobotStateHistory rebuild (M11-051/052/053/097) waits for M11's turn; M4-019/M4-038 keep their handoffs to it.
+
 **Update (2026-10-18, night): settling passes adopted.** Both FAIL (`research/20261018-m3m4-settling-a.md`, `-b.md`).
 - Settle once tags/cleanup land: M3-012, M3-060, M4-009, M4-010, M4-037, M4-043, M4-044, M4-046, M4-047, M4-050.
 - Build (B-M3M4-30, open): M4-041 (contradicted: the ctor zeroes LED state), M4-049 (callback never called), M4-051 (new:
