@@ -30,7 +30,8 @@ builder job is open. What has never run is a settling pass over the records them
 **Update (2026-10-18, latest): B-M3M4-30 Opus check FAIL** (`research/20261018-b-m3m4-30-check.md`): after a light
 callback Update keeps the old layer; host light entries can interleave with Update; moved cubes never reach the
 pose-state light reaction. Fixes in B-M3M4-32, after B-M3M4-31 (claimed). Consequence noted: with the cliff history gated
-on M11-097, production never runs the cliff running-stats tail, so its threshold sends cannot happen until M11-097 is built.
+on M11-097, production never runs the cliff running-stats tail, so its threshold sends cannot happen until M11-097 is built. **Decided (operator, 2026-10-18): build the robot-state
+history now** (M11-051/052/053/097 stay M11's records; B-M3M4-33, after B-M3M4-32).
 
 **Update (2026-10-18, later): OV128 adopted** with corrections (`research/overnight/20261018-ov128-check.md`; the answer's
 cube-light rotation tables were reversed). M4-052 and M11-097 are now IMPLEMENTATION_GAP; M4-051's guard is read; M3-037
