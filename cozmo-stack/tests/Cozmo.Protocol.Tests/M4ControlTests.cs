@@ -320,7 +320,11 @@ public class M4ControlTests
             rig.Data(new ObjectMoved { ObjectID = 0 });
             rig.Tick();
             Assert.False(rig.Robot.Cubes.ByObjectId(0)!.Moving);
-            Assert.False(rig.Robot.Lights.Cubes.PlayLightAnim(ObjectType.Block_LIGHTCUBE1, "WakeUp", CubeLightComponent.StateLayer));
+            // Historical name retained for manifest references: no attached vision recipient is not no world.
+            // Lights resolve the lifetime-owned BlockWorld; movement's separate M11 join remains missing.
+            int mark=rig.Mark();
+            Assert.True(rig.Robot.Lights.Cubes.PlayLightAnim(ObjectType.Block_LIGHTCUBE1, "WakeUp", CubeLightComponent.StateLayer));
+            Assert.Single(rig.SentSince(mark).OfType<CubeLights>());
             Assert.Contains(rig.Log, l => l.Contains("MISSING: M4-009 / M11-004"));
         } finally { Directory.Delete(res, true); }
     }
@@ -368,6 +372,9 @@ public class M4ControlTests
             }
             rig.Engine.LogEntry += e =>
             {
+                // Use the actual BlockWorld owner: a world-only connection is now correctly found by SetObjectLights.
+                // Remove it after the play gate copied its ID, before the selected-object lookup.
+                if(e.Name=="CubeLightComponent.PlayLightAnim.SettingLights"){world.RemoveConnectedActiveObject(0);return;}
                 if (e.Name != "CubeLightController.SetObjectLights.NullActiveObject") return;
                 var top = Top(); pendingSeen = (bool)top.GetType().GetField("PendingSend", flags)!.GetValue(top)!;
                 updateFinished = Task.Run(() => lights.Update()).Wait(TimeSpan.FromSeconds(2));

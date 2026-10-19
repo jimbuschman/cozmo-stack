@@ -10,6 +10,7 @@ internal sealed class EncodedImageDecodeResult
     public CvMat? Image;
     /// <summary>The engine's warning/error text, or the shipped OpenCV exception text.</summary>
     public string? Error;
+    public bool PolicySkipped;
 }
 
 internal static class EncodedImageDecode
@@ -24,6 +25,7 @@ internal static class EncodedImageDecode
     /// </summary>
     public static EncodedImageDecodeResult DecodeGray(byte encoding, byte[] payload, byte[] jpeg, int rows, int cols, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
+        if(SkipShortRaw(encoding,payload,rows,cols) is {} skipped)return skipped;
         CvMat m;
         try
         {
@@ -61,6 +63,7 @@ internal static class EncodedImageDecode
 
     public static EncodedImageDecodeResult DecodeRgb(byte encoding, byte[] payload, byte[] jpeg, int rows, int cols, Action<string>? log = null, SourceLogSink? sourceLog = null)
     {
+        if(SkipShortRaw(encoding,payload,rows,cols) is {} skipped)return skipped;
         CvMat m;
         try
         {
@@ -149,15 +152,22 @@ internal static class EncodedImageDecode
 
     // fidelity: M3-037
     /// <summary>
-    /// SD2 policy M3-037: the engine reads <paramref name="need"/> bytes from the vector start with no length check
-    /// (Y2, Y3, Z6, Z7). A short payload's missing bytes are stale or uninitialised heap, which no shipped artifact
-    /// can derive, so they read as 0 here; a long payload's extra bytes are ignored.
+    /// Y2/Y3/Z6/Z7: truncate long payloads exactly. Short frames are skipped before this copy under M1-034/M3-037.
     /// </summary>
     private static byte[] CopyRaw(byte[] payload, int need)
     {
         var dst = new byte[need];
-        Array.Copy(payload, dst, Math.Min(payload.Length, need));
+        Array.Copy(payload, dst, need);
         return dst;
+    }
+    private static EncodedImageDecodeResult? SkipShortRaw(byte encoding,byte[] payload,int rows,int cols)
+    {
+        if(encoding is not (1 or 2))return null;
+        long need=(long)rows*cols*(encoding==2?3:1);
+        if(payload.LongLength>=need)return null;
+        string error=$"M1-034/M3-037: skipped short raw image ({payload.Length} bytes, expected {need}); native geometry copy reads past size at 0x004F2BC0/0x004F245A; prior decoded image retained";
+        StackDiagnostics.Write(error);
+        return new(){PolicySkipped=true,Error=error};
     }
 
     /// <summary>

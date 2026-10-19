@@ -2216,8 +2216,9 @@ public class M3DeviceTests
 
     /// <summary>
     /// Y2, M3-037 (SD2): case 1 reads <c>rows*cols</c> bytes from the vector start with no length check. A full
-    /// payload copies through; a short payload's missing bytes read as 0; a long payload's extra bytes are ignored.
+    /// payload copies through; M1-034/M3-037 skips a short payload's undefined read; long extra bytes are ignored.
     /// </summary>
+    // reach: unit (raw payload fixture; short-frame firmware producer remains UNKNOWN, M3-050).
     [Fact]
     public void M3_001_Y2_RawGrayCopiesShortFillsAndLongTruncates()
     {
@@ -2230,12 +2231,9 @@ public class M3DeviceTests
         var shortPayload = new byte[100];
         Array.Fill(shortPayload, (byte)0xAB);
         var sf = new CameraFrame { Encoding = 1, Width = 320, Height = 240, RawPayload = shortPayload };
-        Assert.True(sf.TryDecodeGray(out var simg, out _));
-        Assert.Equal(320 * 240, simg!.Pixels.Length);
-        Assert.Equal(0xAB, simg.Pixels[0]);
-        Assert.Equal(0xAB, simg.Pixels[99]);
-        Assert.Equal(0, simg.Pixels[100]);
-        Assert.Equal(0, simg.Pixels[^1]);
+        // Historical test name retained for manifest references; short-fill assertion was replaced under OV128.
+        Assert.False(sf.TryDecodeGray(out var simg, out var error));
+        Assert.Null(simg);Assert.Contains("M1-034/M3-037",error);
 
         var longPayload = new byte[320 * 240 + 50];
         for (int i = 0; i < longPayload.Length; i++) longPayload[i] = (byte)(i & 0xFF);
@@ -2246,6 +2244,7 @@ public class M3DeviceTests
     }
 
     /// <summary>Z6: case 2 is a straight copy with no channel swap (0x004F245A..0x004F246A).</summary>
+    // reach: unit (raw payload fixture; short-frame firmware producer remains UNKNOWN, M3-050).
     [Fact]
     public void M3_018_Z6_RawRgbIsACopyWithNoChannelSwap()
     {
@@ -2257,13 +2256,12 @@ public class M3DeviceTests
         Assert.Equal(320 * 240 * 3, rgb!.Length);
         Assert.Equal(new byte[] { 1, 2, 3, 250, 100, 10 }, rgb[0..6]);
 
-        // M3-037: a short RGB payload zero-fills, a long one is truncated to rows*cols*3.
+        // M1-034/M3-037: short RGB skips decode; long is truncated to rows*cols*3.
         var shortPayload = new byte[6];
         shortPayload[0] = 9; shortPayload[3] = 8;
         var sf = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = shortPayload };
-        Assert.True(sf.TryDecodeRgb(out var srgb, out _));
-        Assert.Equal(320 * 240 * 3, srgb!.Length);
-        Assert.Equal(new byte[] { 9, 0, 0, 8, 0, 0, 0, 0, 0 }, srgb[0..9]);
+        Assert.False(sf.TryDecodeRgb(out var srgb, out var error));
+        Assert.Null(srgb);Assert.Contains("M1-034/M3-037",error);
         var longPayload = new byte[320 * 240 * 3 + 30];
         var lf = new CameraFrame { Encoding = 2, Width = 320, Height = 240, RawPayload = longPayload };
         Assert.True(lf.TryDecodeRgb(out var lrgb, out _));

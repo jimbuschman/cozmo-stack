@@ -912,6 +912,7 @@ public sealed partial class VisionSystem : IDisposable
         // VisionSystem::Update call, not when the frame was assembled.
         bool isColor = EncodedImageDecoder.IsColor(f.Encoding, Log);
         var decoded=EncodedImageDecoder.DecodeForCache(f,isColor,Log,SourceLog??((l,c,k,t)=>_robot.Engine.EmitSourceLog(l,c,k,t)));
+        if(decoded.PolicySkipped)return null; // M1-034/M3-037: skip the whole decode, including cache Reset/publication.
         cache.ResetDecoded(decoded.Image,isColor); // native Reset even for nonzero Result; throw bypasses this
         EncodedFrameCache=cache; // publish after Reset; a throw leaves the previous diagnostic snapshot
         if(!decoded.Ok)return DecodeReturnedFailure();

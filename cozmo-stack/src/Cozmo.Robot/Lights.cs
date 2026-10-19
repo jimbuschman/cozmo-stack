@@ -862,6 +862,7 @@ public sealed class CubeLightComponent
         // committed its timer. The synchronous send/callouts remain outside the state lock.
         public bool PendingSend;
         public Action? Completed; // fidelity: M4-051 — std::function copy at 0x0063858C.
+        public uint CompletionTag; // Generic play starts at 0; FromAction writes the successful layer-0 back entry.
     }
 
     private sealed class ObjectInfo
@@ -1069,7 +1070,10 @@ public sealed class CubeLightComponent
     /// patterns use that same offset; durationMs does not replace a pattern's duration.</summary>
     public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0, Action? completed = null)
         => PlayLightAnimCore(type,trigger,layer,durationMs,modifier,lights,timerOffsetMs,null,completed);
-    private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId,Action? completed=null)
+    // fidelity: M4-051 — 0x00638220..0x00638290: tag is assigned only after generic play succeeds.
+    public bool PlayLightAnimFromAction(ObjectType type,string trigger,uint tag,Action? completed=null,int timerOffsetMs=0)
+        => PlayLightAnimCore(type,trigger,UserLayer,0,false,null,timerOffsetMs,null,completed,tag);
+    private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId,Action? completed=null,uint actionTag=0)
     {
         Animations.EnsureLoaded(); // Standalone host initialization precedes the component state lock.
         Playing pushed;
@@ -1082,7 +1086,7 @@ public sealed class CubeLightComponent
         {
             lock (_gate)
             {
-                var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type);
+                var connected = _robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o => o.Type == type);
                 if (nativeObjectId is null && connected is null && (!_infos.TryGetValue(type, out var retained) || retained.ObjectId == uint.MaxValue))
                 { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real BlockWorld ObjectID; active-slot fallback is not used"); return false; }
                 uint id = nativeObjectId ?? connected?.ObjectId ?? _infos[type].ObjectId;
@@ -1135,6 +1139,10 @@ public sealed class CubeLightComponent
                     TimerMs = (first.DurationMs | offset) == 0 ? 0 : unchecked(NowMs + duration), TimerOffset = unchecked((int)offset),
                     CanBeOverridden = anim[^1].CanBeOverridden, Completed=completed };
                 stack.Add(playing);
+                // FromAction's post-success back-entry store, committed with the successful push under the host lock.
+                // All rejection paths precede this point; both remaining returns are true (even when SetLights fails).
+                // Keeping the store here prevents a concurrent host Update from invoking it with the temporary tag 0.
+                playing.CompletionTag=actionTag;
                 pushed = playing;
                 if (layer > info.CurrentLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.LightsNotSet", $"Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
                 SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.SettingLights", $"Playing trigger {trigger} on layer {layerName} for object {id}");
@@ -1180,6 +1188,7 @@ public sealed class CubeLightComponent
         void Pop(List<Playing> stack,bool invoke=true)
         {
             var callback=stack[^1].Completed;
+            uint tag=stack[^1].CompletionTag;
             stack.RemoveAt(stack.Count-1);
             if(callback is null||!invoke)return;
             var pending=calls.ToArray();calls.Clear();
@@ -1187,8 +1196,7 @@ public sealed class CubeLightComponent
             try
             {
                 foreach(var call in pending)call();
-                Behavior.SteppedBehavior.ReportMissing("M4-051 completion callback guard 0x00564A64 reads a key in the global tree at 0x0103EB1C (entry+0x48); key producer/eligibility is not in the checked rows; invoking the stored host callback without guessing that guard");
-                _robot.Engine.RunIsolated(callback);
+                if(tag==0 || ActionRunnerTagCounter.Global.IsInUse(tag))_robot.Engine.RunIsolated(callback);
             }
             finally{Monitor.Enter(_gate);}
         }
@@ -1504,13 +1512,13 @@ public sealed class CubeLightComponent
 
     // fidelity: M4-018
     /// <summary>
-    /// SetObjectLights (LC4, 0x00637E6C..0x00637EFC): the connected object (the located one only with makeRelative,
-    /// which is an M11 interface and not built); none sends nothing. ActiveObject::SetLEDs (0x004E48B0..0x004E49A2):
+    /// SetObjectLights (LC4, 0x00637E6C..0x00637EFC): connected with mode 0, otherwise located in current origin;
+    /// both require ActiveCube, else send nothing. ActiveObject::SetLEDs (0x004E48B0..0x004E49A2):
     /// both periods 0 gives colours 0 and periods 0x7FFFFFFF; on = 0 gives onColor := offColor, on := 0x7FFFFFFF;
     /// off = 0 gives offColor := onColor, off := 0x7FFFFFFF; gamma 0x80. MakeStateRelativeToXY with mode 0 returns.
     /// Then SetLights with the pattern's rotation.
     /// </summary>
-    private uint? TryObjectId(ObjectType type) => _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.Type == type)?.ObjectId;
+    private uint? TryObjectId(ObjectType type) => _robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o => o.Type == type)?.ObjectId;
     private static string LayerName(int layer) => layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
     private void SendTransitionMessage(uint? objectId)
     {
@@ -1538,10 +1546,22 @@ public sealed class CubeLightComponent
 
     private uint SetObjectLights(ObjectType type, CubeLightPattern p)
     {
-        if (p.MakeRelative)
-        { Log("MISSING: M4-052 | relative ObjectLights requires located object / MakeStateRelativeToXY 0x00637E76; no guessed send"); return 0x04000000; }
-        var cube = _robot.Cubes.ConnectedCubes.FirstOrDefault(c => c.Type == type && c.ObjectId is not null);
-        if (cube is null) { SourceLog(EngineLogLevel.Info, "CubeLightController", "CubeLightController.SetObjectLights.NullActiveObject", "Null active object pointer"); return 0x04000000; }
+        uint? id;
+        lock(_gate)id=_infos.TryGetValue(type,out var info)?info.ObjectId:null;
+        // Static-off has no animation ObjectInfo when no resources loaded. Its native caller still supplies
+        // the real connected ObjectID; obtain that identity here, never the radio slot as a stand-in.
+        id??=_robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o=>o.Type==type)?.ObjectId;
+        return SetObjectLightsById(id??uint.MaxValue,p);
+    }
+
+    // fidelity: M4-052, M4-018 — native ObjectID entry; relative sends the selected located object's own ActiveId.
+    internal uint SetObjectLightsById(uint id,CubeLightPattern p,Func<KnownMarker,Pose3d,Vec3>? checkedNormalInput=null)
+    {
+        var world=_robot.LocalizationWorld;
+        using var poseRead=world.EnterPoseMutation(); // same gate as every world pose writer and the vision worker
+        var cube=p.RelativeMode==0?world.GetConnectedActiveObjectByIdHelper(id):world.GetLocatedObjectByIdHelper(id);
+        if (cube is null || !CubeGeometry.IsCube(cube.Type))
+        { SourceLog(EngineLogLevel.Info, "CubeLightController", "CubeLightController.SetObjectLights.NullActiveObject", "Null active object pointer"); return 0x04000000; }
         var leds = new LedPattern[4];
         for (int i = 0; i < 4; i++)
         {
@@ -1555,9 +1575,10 @@ public sealed class CubeLightComponent
         // Host atomicity: the retained state and its grouped wire send describe the same final writer.
         lock (_sendGate)
         {
-            var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.ActiveId == unchecked((int)cube.ObjectId!.Value));
-            if (connected is not null) lock (_gate) connected.ActiveLedState=leds;
-            return SetLights(cube.ObjectId!.Value, leds, gamma: 0x80, p.RotationPeriodMs);
+            var relative=RelativeCubeLights.Apply(cube,leds,p.RelativeMode,p.RelativePoint,SourceLog,Log,checkedNormalInput);
+            if(relative is null)return 0x04000000; // no partial replacement after a missing callee or native marker fault
+            lock (_gate) cube.ActiveLedState=relative;
+            return SetLights(unchecked((uint)cube.ActiveId),relative,gamma:0x80,p.RotationPeriodMs);
         }
     }
 
