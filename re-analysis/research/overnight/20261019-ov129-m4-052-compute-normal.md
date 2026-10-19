@@ -93,3 +93,12 @@ Multiply setup is 0x00849C24..0x00849C54 and 0x00849C60/0x00849C68; diagonal/dou
 All requested bodies and all result-changing direct/transitive callees above were read through return. No unresolved algorithmic step remains in the requested valid-input normal path. UNKNOWN is limited to floating-point environment/exceptional NaN payload behavior not established by these bodies; no libm is called in this path. The separate relative-angle bionic atan2f last-ulp unknown in M4-052 remains outside this request.
 
 Verification here is instruction-by-instruction extraction and current C# dependency comparison, not an emulator, hardware or production regression run. Suggested manager regression cases after adoption: rectangular marker to expose area/sign; nontrivial quaternion and translation to compare all corner bits; large translation that collapses differences; zero dimensions; and a top-marker selection where a rotated-axis substitute would disagree. Tests should compare a native reference, not only a duplicate formula. No status promotion or code change is claimed.
+
+## Manager check and adoption (2026-10-19)
+
+Checked inline by the manager (no agent; operator, 2026-10-19). Re-read 0x0087E2E8..0x0087E342 (Get3dCorners: copy of
+`_canonicalCorners3d`, x = f(width * x) at 0x0087E31A, z = f(height * z) at 0x0087E326, GetTransform 0x004A4048, ApplyTo
+0x004A6C58) and 0x0087E3FA..0x0087E4A6 (ComputeNormal: A = C2 − C0 at 0x0087E428, B = C1 − C0 at 0x0087E452; the six
+products and three differences in the order given; stores Nx, Ny, Nz at 0x0087E498..0x0087E4A0; no normalization). N1–N4,
+C2–C4 and the cross-product order CONFIRMED. C1, C5 and R1–R2 not re-read; they rest on M11-003 and M11-065's existing
+evidence. **Adopted** onto M4-052; built in B-M3M4-35.

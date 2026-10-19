@@ -843,3 +843,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Change | Records |
 | --- | --- |
 | Evidence corrected: the stopped-entry loop reads the callback and tag from the freed first node (0x00637A06/0x00637A0C); M1-034 skip of that iteration's callback | M4-051 |
+
+
+## OV129 adopted (manager, 2026-10-19; research/overnight/20261019-ov129-m4-052-compute-normal.md)
+
+| Change | Records |
+| --- | --- |
+| Evidence added: KnownMarker::ComputeNormal and Get3dCorners, the marker normal behind relative cube lights | M4-052 |

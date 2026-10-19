@@ -27,6 +27,11 @@ builder job is open. What has never run is a settling pass over the records them
 
 ## Sequence
 
+**Update (2026-10-19, later): B-M3M4-34 fix review PASS** (inline, `research/20261019-b-m3m4-34-check.md`): production
+camera frames reach vision again through the SetNextImage join; the freed-node callback is skipped; the world-event deadlock
+is gone. **OV129 adopted** (manager-checked): the marker normal; built in B-M3M4-35, the last M3+M4 build. Then settling and
+the hardware script.
+
 **Update (2026-10-19): Opus checks of B-M3M4-31/32/33.** 31 PASS with queued items
 (`research/20261019-b-m3m4-31-check.md`); relative cube lights stop at a visible MISSING on KnownMarker::ComputeNormal
 0x0087E3FA, requested as OV129. 32 FAIL (`research/20261019-b-m3m4-32-check.md`): the stopped-entry loop calls callbacks native
