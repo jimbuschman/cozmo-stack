@@ -55,8 +55,9 @@ stands. Nothing new starts outside the current layer.
   needs record (case 1): the stack writes nothing where the original would write one (B-M1-10 gate, M15-014/M15-030).
   **Next layer: M3 + M4** (devices and motor control), per "The plan". Plan and blockers:
   `re-analysis/acceptance/M3M4-blockers.md` (2026-10-18): both Opus settling passes adopted (FAIL; 10 records settle
-  after cleanup); builder B-M3M4-30 done (check FAIL), B-M3M4-31 claimed, then
-  B-M3M4-32 (fixes) and B-M3M4-33 (robot-state history, pulled forward by the operator 2026-10-18); OV128 adopted with corrections
+  after cleanup); builders B-M3M4-30..33 done; checks: 31 PASS (relative cube lights wait on
+  research OV129), 32 and 33 FAIL (2026-10-19), fixes queued as B-M3M4-34 (33 had stopped production camera frames reaching
+  vision; 32 left a deadlock and a freed-node callback); B-M3M4-33 built the robot-state history (pulled forward by the operator 2026-10-18); OV128 adopted with corrections
   (`research/overnight/20261018-ov128-check.md`); operator decisions recorded on M3-004/017,
   M4-006/039/040/042.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by

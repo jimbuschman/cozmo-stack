@@ -836,3 +836,10 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 | Read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP (rotation tables corrected by the check) | M4-052 |
 | Guard read (evidence added) | M4-051 |
 | CubeID second byte; A8 tail gating | M4-018, M4-019 (notes) |
+
+
+## Checks of B-M3M4-31/32/33 (manager, 2026-10-19; research/20261019-b-m3m4-32-check.md)
+
+| Change | Records |
+| --- | --- |
+| Evidence corrected: the stopped-entry loop reads the callback and tag from the freed first node (0x00637A06/0x00637A0C); M1-034 skip of that iteration's callback | M4-051 |

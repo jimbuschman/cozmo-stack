@@ -1,8 +1,8 @@
 {
   "subsystem": "M11-vision",
-  "approved": "2026-10-18",
+  "approved": "2026-10-19",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "5724a8980a43a168990e08ef3929d364fb60fef3f54f793fa2cf3a05a08d8bce",
+  "inventory_sha256": "e975ca1dcb9f03f74f21943e2c2ae86002e73e4aa22045d4d2545e97c927d260",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1131,7 +1131,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261018-m3m4-settling-b.md: no record owned these; consumers M4-019, M4-038, M10-007, M10-015, M11-044, M13-030, M14-005. Prior reads: ComputeStateAt 0x00531784..0x00531808 (research/20260929-R-VIS-pre-extraction.md); AddRobotStateToHistory 0x00512B9C..0x00512F0C (on-ramp 0x00512BE2, ContainsOriginID 0x00512C44, failure 0x00512C38); the C12.4 gate 0x00513088..0x00513110.",
-        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md, confirmed with corrections by re-analysis/research/overnight/20261018-ov128-check.md: ComputeStateAt vision-only exact key first (H1, 0x00531792..0x005317E6), raw query (H2), vision correction chain (H9, 0x00531808..0x00531AC6; the frame-increase delta accumulates before the stop test 0x00531A7A..0x00531A7E); GetLastStateWithFrameID raw then vision-only, newest first (H10, H11, 0x00531E34..0x00532090); UpdateFullRobotState admission and result paths (A2-A5, A8; 0x00512BAC..0x0051313C, AddRobotStateToHistory 0x00513598..0x005135C0; x, y from the flattened incoming pose; tail returns UpdateCurrPoseFromHistory ^ 1)."
+        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md, confirmed with corrections by re-analysis/research/overnight/20261018-ov128-check.md: ComputeStateAt vision-only exact key first (H1, 0x00531792..0x005317E6), raw query (H2), vision correction chain (H9, 0x00531808..0x00531AC6; the frame-increase delta accumulates before the stop test 0x00531A7A..0x00531A7E); GetLastStateWithFrameID raw then vision-only, newest first (H10, H11, 0x00531E34..0x00532090); UpdateFullRobotState admission and result paths (A2-A5, A8; 0x00512BAC..0x0051313C, AddRobotStateToHistory 0x00513598..0x005135C0; x, y from the flattened incoming pose; tail returns UpdateCurrPoseFromHistory ^ 1).",
+        "re-analysis/research/20261019-b-m3m4-33-check.md, SetNextImage caller re-read by the manager 2026-10-19: r6 = image timestamp [sl,#0xC] (0x00652C22); GetNewestTimeStamp(robot+0x390) (0x00652C2A); `cmp r0,r6; it lo; movlo r6,r0` (0x00652C34..0x00652C3A): the query time is min(imageTs, newest raw key); ComputeStateAt(t, &state sp+0x11C, &time sp+0x120, flag 1) (0x00652C44). Result 0 -> 0x00652CFC (pose data built, frame handed on). Result 0x06000000 -> a log (0x00652C58..0x00652C78), return 0 (0x00653158). Any other result -> a log with the history's sizes and newest/oldest times (0x00652DD6..0x00652E32), return the result (0x0065315A). Neither failure hands the frame on."
       ],
       "live_path": true,
       "hardware_required": false

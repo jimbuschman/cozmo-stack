@@ -27,6 +27,14 @@ builder job is open. What has never run is a settling pass over the records them
 
 ## Sequence
 
+**Update (2026-10-19): Opus checks of B-M3M4-31/32/33.** 31 PASS with queued items
+(`research/20261019-b-m3m4-31-check.md`); relative cube lights stop at a visible MISSING on KnownMarker::ComputeNormal
+0x0087E3FA, requested as OV129. 32 FAIL (`research/20261019-b-m3m4-32-check.md`): the stopped-entry loop calls callbacks native
+reads from a freed node (M1-034; M4-051's evidence corrected); a new 10 s deadlock when a host world-event handler calls a
+light API. 33 FAIL (`research/20261019-b-m3m4-33-check.md`): the history core is faithful, but production camera frames no
+longer reach vision (no recorded decision) and two M11-050 tests were bent; the SetNextImage join was re-read by the manager
+(M11-097). All fixes in B-M3M4-34. Then: OV129 build, settling, the hardware script.
+
 **Update (2026-10-18, latest): B-M3M4-30 Opus check FAIL** (`research/20261018-b-m3m4-30-check.md`): after a light
 callback Update keeps the old layer; host light entries can interleave with Update; moved cubes never reach the
 pose-state light reaction. Fixes in B-M3M4-32, after B-M3M4-31 (claimed). Consequence noted: with the cliff history gated

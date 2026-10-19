@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-18",
+  "approved": "2026-10-19",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "636e485eadad341512bc353df363b96cd358b6d4f94a653fe8489ea67d4373e7",
+  "inventory_sha256": "54cd79d026ad21aefcf4c3c1d079ca923c7336ce8be7aadfe68b587f7fb362b0",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -630,7 +630,8 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261018-m3m4-settling-a.md: the std::function argument is stored in CurrentAnimInfo at 0x0063858C; Update copies it, pops the entry and calls it when non-empty and the guard at 0x564A64 == 1 passes (0x006379C6..0x006379F4, 0x00637A02..0x00637A2E).",
-        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md C1-C6, confirmed by re-analysis/research/overnight/20261018-ov128-check.md: the guard 0x00564A64 is a function returning 1 iff the tag is in IActionRunner::sInUseTagSet (GOT 0x103EB1C); generic PlayLightAnim stores tag 0 (0x0063857C); PlayLightAnimFromAction stores the caller's tag at node+0x48 only after a true result (0x0063828E..0x00638290); Update copies callback and tag, pops the entry, then skips empty, calls tag 0, else calls only if the tag is live."
+        "re-analysis/research/overnight/20261018-ov128-m3m4-settling-narrow.md C1-C6, confirmed by re-analysis/research/overnight/20261018-ov128-check.md: the guard 0x00564A64 is a function returning 1 iff the tag is in IActionRunner::sInUseTagSet (GOT 0x103EB1C); generic PlayLightAnim stores tag 0 (0x0063857C); PlayLightAnimFromAction stores the caller's tag at node+0x48 only after a true result (0x0063828E..0x00638290); Update copies callback and tag, pops the entry, then skips empty, calls tag 0, else calls only if the tag is live.",
+        "re-analysis/research/20261019-b-m3m4-32-check.md objection 1, re-read by the manager 2026-10-19 (0x006379B0..0x00637A70): CORRECTS the first evidence line for the stopped-entry loop. sl = r7+0x28 and r7 are set once from the first top node (0x006379BC); pop_back (0x006379DA) frees that node. Each loop iteration (0x00637A02..0x00637A2E) copies the std::function from sl (0x00637A06) and loads the tag [r7,#0x48] (0x00637A0C), both from the freed first node, then pops the real back (0x00637A18), tests the guard (0x00637A24) and calls the copy (0x00637A2E). r7 is reassigned only at 0x00637A6C. The first entry's copy, pop, guard and call (0x006379C6..0x006379F4) stand."
       ],
       "live_path": true,
       "hardware_required": false

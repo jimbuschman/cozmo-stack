@@ -1754,3 +1754,11 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | Read: RECOVERABLE_GAP -> IMPLEMENTATION_GAP | M11-097 |
 | H3-H8 evidence added | M11-052 |
 | A6/A7, A1/A8 notes | M11-051, M11-053 |
+
+
+## Checks of B-M3M4-31/32/33 (manager, 2026-10-19; research/20261019-b-m3m4-33-check.md)
+
+| Change | Records |
+| --- | --- |
+| Evidence added: SetNextImage's query time min(imageTs, newest raw key), flag 1, and both failure exits (0x00652C22..0x00652C44, 0x00653158, 0x0065315A) | M11-097 |
+| Production frame handoff stopped by B-M3M4-33 without a decision; restored in B-M3M4-34 | M11-049 (note) |
