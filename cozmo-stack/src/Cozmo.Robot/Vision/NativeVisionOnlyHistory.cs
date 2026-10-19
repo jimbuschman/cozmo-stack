@@ -15,6 +15,8 @@ public sealed partial class RobotStateHistory
     internal readonly SortedDictionary<uint,VisionOnlyStamp> VisionOnly=new();
     internal bool RejectEmplaceForTest;
     internal uint AddVisionOnlyState(uint timestamp,Pose3d pose,uint frame,float head,float lift)
+        => WithGate(()=>AddVisionOnlyStateCore(timestamp,pose,frame,head,lift));
+    private uint AddVisionOnlyStateCore(uint timestamp,Pose3d pose,uint frame,float head,float lift)
     {
         lock(_gate)
         {
@@ -28,7 +30,7 @@ public sealed partial class RobotStateHistory
                 // fidelity: M11-086 — 0x005311CA, name-only path is the %s argument at 0x005311E6.
                 {Error("RobotStateHistory.AddVisionOnlyState.NonFlattenedPose",FormattableString.Invariant($"Pose object inside pose stamp should be flattened ({PoseDiagnostics.CString(pose.GetNamedPathToRoot(false))})"));return 1;}
             }
-            uint newest=_entries.Count==0?0:_entries.Max(e=>e.Timestamp);
+            uint newest=_entries.Count==0?0:_entries.Last().Key;
             if(_entries.Count!=0&&newest>WindowMs&&timestamp<newest-WindowMs)
             {Error("RobotStateHistory.AddVisionOnlyState.TooOld",FormattableString.Invariant($"Pose at t={unchecked((int)timestamp)} too old to add. Newest time={unchecked((int)newest)}, windowSize={unchecked((int)WindowMs)}"));return 1;}
             var state=new byte[0x5B];
@@ -41,10 +43,7 @@ public sealed partial class RobotStateHistory
             if(RejectEmplaceForTest)
             {Error("RobotStateHistory.AddVisionOnlyState.EmplaceFailed",FormattableString.Invariant($"Emplace of pose with t={unchecked((int)timestamp)}, frameID={unchecked((int)frame)} failed"));return 1;}
             var entry=new VisionOnlyStamp();entry.Pose.Assign(pose);entry.State=state;VisionOnly.Add(timestamp,entry);
-            // Existing checked CullToWindowSize guards; full other-map/raw-history behavior remains M11-051/052.
-            if(_entries.Count>=2&&newest>=WindowMs)
-            {uint cutoff=newest-WindowMs;foreach(uint key in VisionOnly.Keys.Where(k=>k<cutoff).ToArray())VisionOnly.Remove(key);
-                foreach(uint key in _computed.Keys.Where(k=>k<cutoff).ToArray())_computed.Remove(key);}
+            CullToWindowSize();
             return 0;
         }
     }

@@ -167,7 +167,13 @@ public class M11RVisBuildTests : IDisposable
         now = 109.9;
         rig.Frame((ObjectType.Block_LIGHTCUBE1, At(150, 0)));                        // inside the 10 s cooldown
         Assert.Equal(warnings, rig.Log.Count(l => l.Contains("not connected")));
-        rig.T += 11_000;                                                             // the robot's clock moving changes nothing
+        // Advance the robot clock through valid admitted states; no >5000ms admission gap.
+        for(int i=0;i<11;i++)
+        {
+            rig.T+=1000;var state=Raw(rig.T);
+            state.PoseOriginId=rig.Robot.Engine.Robot!.CurrentOriginId;state.PoseFrameId=rig.Robot.Engine.Robot.PoseFrameId;
+            rig.Send(state);
+        }
         rig.Frame((ObjectType.Block_LIGHTCUBE1, At(150, 0)));
         Assert.Equal(warnings, rig.Log.Count(l => l.Contains("not connected")));
         now = 110.1;                                                                 // now + 10.0 has passed on the wall clock
@@ -520,9 +526,9 @@ public class M11RVisBuildTests : IDisposable
         Assert.NotNull(h.GetComputedStateAt(1030));                                   // key out = t
         Assert.Null(h.GetComputedStateAt(1000));
         Assert.Null(h.GetComputedStateAt(1100));
-        Assert.Equal(1, h.InterpolationStandIns);                                     // the blend is not built: visible
+        Assert.Equal(0, h.InterpolationStandIns);                                     // native interpolation is built
         Assert.True(h.ComputeAndInsertStateAt(1100));                                 // a raw key needs no blend
-        Assert.Equal(1, h.InterpolationStandIns);
+        Assert.Equal(0, h.InterpolationStandIns);
     }
 
     /// <summary>
@@ -2090,11 +2096,10 @@ public class M11RVisBuildTests : IDisposable
         MarkerRenderer.DrawObject(frame, Lib!, new CameraModel(Cal, pd.CameraPose), ObjectType.Block_LIGHTCUBE1, At(150, 0));
         var log = new List<string>(); rig.Vision.Log += log.Add;
         var late = rig.Vision.ProcessCapture(frame, 1, 3033);                          // nothing at or after 3033
-        Assert.NotNull(late);
-        Assert.Empty(late!.Objects);
+        Assert.Null(late); // native SetNextImage's pose query rejects before marker processing
         Assert.Empty(rig.Vision.World.LocatedObjects);
         Assert.Null(rig.Vision.History.GetComputedStateAt(3033));
-        Assert.Contains(log, l => l == "VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: 3033, hist: 3000 to 3000");   // 0x00654DE2: the timestamp, GetOldestTimeStamp, GetNewestTimeStamp (R-FIX batch 3, M11-050)
+        Assert.Contains(log, l => l == "frame 1: no robot state to pair with");
         Assert.Equal(0, rig.Vision.World.UnbuiltLocalizeRobotCalls);                   // AddAndUpdateObjects never ran
         var onTime = rig.Vision.ProcessCapture(frame, 2, 3000);                        // a raw state exactly at the timestamp
         Assert.NotNull(onTime);
@@ -2133,7 +2138,7 @@ public class M11RVisBuildTests : IDisposable
 
         public VisionFrameResult Frame(params (ObjectType Type, Pose3d Pose)[] cubes)
         {
-            Send(new RobotState { Timestamp = T, Pose = new RobotPose { X = 0, Y = 0, Angle = 0 }, HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos,
+            Send(new RobotState { Timestamp = T, PoseOriginId=Robot.Engine.Robot!.CurrentOriginId,PoseFrameId=Robot.Engine.Robot.PoseFrameId, Pose = new RobotPose { X = 0, Y = 0, Angle = 0 }, HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos,
                                   Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
             Send(new ImageImuData { ImageId = T, RateX = 0, RateY = 0, RateZ = 0, Line2Number = 0 });
             var pd = Vision.History.At(T)!.Value;

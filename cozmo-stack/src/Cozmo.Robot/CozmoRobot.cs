@@ -288,8 +288,7 @@ public sealed partial class CozmoRobot : IDisposable
         // fidelity: M13-032 — bind the constructor's first delocalization to this robot's live map owner.
         Engine.ConstructorMapCreated = () => LocalizationWorld.ConstructMapComponent();
         LocalizationWorld.RobotTimestamp = () => State.Latest?.Timestamp ?? 0;
-        LocalizationWorld.CurrentRobotPose = () => State.Latest is { } s
-            ? new Vision.Pose3d(Vision.Mat3.AboutZ(s.PoseAngleRad), new Vision.Vec3(s.PoseX,s.PoseY,0)) : Vision.Pose3d.Identity;
+        LocalizationWorld.CurrentRobotPose = () => Engine.Robot?.MainPose; // borrowed native Robot::GetPose; admission updates it
         LocalizationWorld.OriginNode = id => Engine.Robot?.OriginNames.Get(id);
         LocalizationWorld.BaseStationSeconds = () => Engine.Timer.Seconds;
 

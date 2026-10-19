@@ -115,37 +115,33 @@ public sealed class M3M4SettlingBuilderTests
         finally{ids.Clear();foreach(var pair in saved)ids.Add(pair.Key,pair.Value);Directory.Delete(root,true);}
     }
 
-    // reach: unit (explicit native add/query outcomes; M11-097 producer remains MISSING in production).
+    // reach: production — real dispatch and native admission; legacy test name retained for manifest references.
     [Fact]
     public void CliffHistoryExcludesRejectedFailedAndDuplicateStates()
     {
         using var rig=new M4ControlTests.Rig();rig.ToSynced();
         rig.Engine.Robot!.OfflineSeamAcceptsAnyOrigin=false;
-        var sensors=rig.Robot.Sensors;bool admit=true;
-        sensors.HistoryAdmissionForTest=_=>admit;sensors.HistoryStatsGateForTest=_=>true;
-        var history=(System.Collections.IList)typeof(CozmoSensors).GetField("_cliffHistory",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(sensors)!;
+        var history=rig.Engine.Robot.PoseHistory;
         var good=rig.MakeState(origin:rig.Engine.Robot.CurrentOriginId);rig.Data(good);rig.Tick();
-        Assert.Single(history.Cast<object>());
-        rig.Data(good);rig.Tick();Assert.Single(history.Cast<object>());
-        rig.Data(rig.MakeState(origin:999));rig.Tick();Assert.Single(history.Cast<object>());
-        admit=false;rig.Data(rig.MakeState(origin:rig.Engine.Robot.CurrentOriginId));rig.Tick();Assert.Single(history.Cast<object>());
+        Assert.Equal(1,history.Count);
+        rig.Data(good);rig.Tick();Assert.Equal(1,history.Count);
+        rig.Data(rig.MakeState(origin:999));rig.Tick();Assert.Equal(1,history.Count);
+        var gap=rig.MakeState(origin:rig.Engine.Robot.CurrentOriginId);gap.Timestamp=good.Timestamp+6000;
+        rig.Data(gap);rig.Tick();Assert.Equal(1,history.Count);
     }
 
-    // reach: production — accepted RobotState through real dispatch; no invented admission/query result is supplied.
+    // reach: production — real dispatch now admits history; legacy name retained for manifest references.
     [Fact]
     public void UnknownHistoryAdmissionIsVisibleAndDoesNotAdmitCliffSamples()
     {
         Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
-        var missing=new List<string>();
-        void Capture(string text)=>missing.Add(text);
+        var missing=new List<string>();void Capture(string text)=>missing.Add(text);
         Cozmo.Robot.Behavior.SteppedBehavior.MissingReported+=Capture;
         try
         {
             using var rig=new M4ControlTests.Rig();rig.ToSynced();rig.State();
-            var history=(System.Collections.IList)typeof(CozmoSensors).GetField("_cliffHistory",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(rig.Robot.Sensors)!;
-            Assert.Empty(history.Cast<object>());
-            Assert.Contains(missing,s=>s.Contains("M11-097 AddRobotStateToHistory result"));
-            Assert.Contains(missing,s=>s.Contains("M11-097 C12.4"));
+            Assert.Equal(1,rig.Engine.Robot!.PoseHistory.Count);
+            Assert.DoesNotContain(missing,s=>s.Contains("M11-097 AddRobotStateToHistory result")||s.Contains("M11-097 C12.4"));
         }
         finally{Cozmo.Robot.Behavior.SteppedBehavior.MissingReported-=Capture;}
     }

@@ -1186,14 +1186,8 @@ public sealed partial class EngineRobot
         StoredState = s;
         ComputeLiftPose(s.LiftAngle); // OV01: after time-sync gate, before cliff/touch/path/treads and origin gate; no epsilon.
         if (Engine.StateStored is { } stored) Engine.RunIsolated(() => stored(s));
-        if (!OfflineSeamAcceptsAnyOrigin && !ContainsOriginId(s.PoseOriginId))
-        {
-            // 0x00512EC4..0x00512EE2: key 0x005132C8, format 0xBE686C, args state+8 (%u) and PoseOriginList+0xC (%zu, the list's count).
-            Engine.EmitSourceLog(EngineLogLevel.Warning, null, "Robot.UpdateFullRobotState.BadOriginID", $"Received RobotState with originID={s.PoseOriginId}, only {_origins.Count} pose origins available");
-            AcceptedState = null;
-            return true;
-        }
-        AcceptedState = s;
+        // The origin gate follows the treads/charger/movement steps, inside Sensors' admission continuation.
+        AcceptedState = null;
         return true;
     }
 

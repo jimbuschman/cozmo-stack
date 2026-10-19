@@ -86,6 +86,16 @@ public sealed class CozmoSensors
         UnexpectedMovement.HostEngine=robot.Engine;
         UnexpectedMovement.Log += l => _robot.Engine.Log(l);
         UnexpectedMovement.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
+        // fidelity: M10-007, M11-097 — ComputeStateAt(true), native result codes preserved.
+        UnexpectedMovement.ComputeStateAt=timestamp=>
+        {
+            if(_robot.Engine.Robot is not {} er)return(HistoryLookupResult.Failure,Vision.Pose3d.Identity);
+            using var value=new Vision.HistRobotState();uint time=0;
+            uint result=er.PoseHistory.ComputeStateAt(timestamp,ref time,value,true);
+            return(result==0?HistoryLookupResult.Ok:result==0x06000000?HistoryLookupResult.OriginMismatch:HistoryLookupResult.Failure,new Vision.Pose3d(value.Pose));
+        };
+        UnexpectedMovement.CurrentRobotPose=()=>_robot.Engine.Robot is {} er?new Vision.Pose3d(er.MainPose):null;
+
     }
 
     /// <summary>Raised when the robot reports a cliff.</summary>
@@ -326,9 +336,16 @@ public sealed class CozmoSensors
     private float _poseX, _poseY, _poseAngle;
     private float _poseZ;
     // fidelity: M11-055
-    // Current flat localization supplier. Pose-tree/vision-only updates remain M11's gaps.
+    // Native current-pose supplier; the query/tree helper dependencies remain with M11.
     internal EngineLocalizationPose PublicationPose()
     {
+        if(_robot.Engine.Robot is {} er)
+        {
+            EngineLocalizationPose? result=null;
+            LogCallbackDeferral.RunGated(er.PoseTreeGate,()=>
+            {using var flat=er.MainPose.GetWithRespectToRoot();result=EngineLocalizationPose.FromPlanar((float)flat.Translation.X,(float)flat.Translation.Y,(float)flat.Translation.Z,(float)flat.AngleAroundZ,er.CurrentOriginId);});
+            return result!.Value;
+        }
         lock (_gate) return EngineLocalizationPose.FromPlanar(_poseX, _poseY, _poseZ, _poseAngle,
             _robot.Engine.Robot?.CurrentOriginId ?? 1u);
     }
@@ -369,10 +386,8 @@ public sealed class CozmoSensors
     private int _cliffSuspiciousCount;                      // +0x18
     private uint _cliffSuspiciousAt;                        // +0x1C
     /// <summary>The raw-state history the lower_bound walk reads (RobotStateHistory's raw map): timestamp and cliff[0].</summary>
-    private readonly List<(uint Timestamp, ushort Cliff0)> _cliffHistory = new();
+    // Raw cliff history is the actual EngineRobot.PoseHistory raw map (M11-051).
     // M11-097 owns the native AddRobotStateToHistory / GetLastStateWithFrameID results; no success is invented.
-    internal Func<RobotState,bool?>? HistoryAdmissionForTest;
-    internal Func<RobotState,bool?>? HistoryStatsGateForTest;
 
     // fidelity: M4-019
     /// <summary>SC4c W4: the constant divisor of the removal step, 100.0f (0x00634728), not the deque size.</summary>
@@ -446,14 +461,18 @@ public sealed class CozmoSensors
     // fidelity: M10-015
     /// <summary>
     /// M10-015's hook for the two calls UpdateFullRobotState makes just before UpdateCliffRunningStats (0x00512FB4..0x00512FBA
-    /// <c>RobotGyroDriftDetector::DetectGyroDrift</c> and 0x00512FC4 <c>DetectBias</c> on robot+0x27C). Null reports MISSING (once) and does nothing.
+    /// <c>RobotGyroDriftDetector::DetectGyroDrift</c> and 0x00512FC4 <c>DetectBias</c> on robot+0x27C). Optional unit override.
     /// </summary>
     internal Action<RobotState>? GyroDriftDetect;
 
     private void DetectGyroDriftAndBias(RobotState s)
     {
-        if (GyroDriftDetect is { } hook) hook(s);
-        else Behavior.SteppedBehavior.ReportMissing("M10-015/M11-051/M11-053 UpdateFullRobotState 0x00512FB4..0x00512FC4: detector bodies are built but native history-add result / GetLastStateWithFrameID admission and current-pose input are not supplied at this sensor tail. Treads Delocalize still runs later in the host vision route. Skip detectors rather than invent successful admission or read stale yaw");
+        if (GyroDriftDetect is { } hook){hook(s);return;} // explicit unit override only
+        if(_robot.Engine.Robot is not {} robot || robot.GyroDetector is not {} detector)return;
+        bool cliff;lock(_gate)cliff=_cliffDetectedByEvent; // CliffSensor+5, not the packet flag at+6
+        detector.DetectGyroDrift(s,s.Has(RobotStatusFlag.IsMoving),cliff,(byte)(_state.HeadCalibrated?1:0),robot.PoseFrameId);
+        detector.DetectBias(s,OffTreads.RawAccelMagnitude);
+
     }
 
     // fidelity: M4-019
@@ -464,16 +483,9 @@ public sealed class CozmoSensors
     /// </summary>
     private void UpdateCliffDetectThreshold()
     {
-        List<(uint Timestamp, ushort Cliff0)> cliffs;
-        lock (_gate)
-        {
-            if (_cliffSuspiciousAt == 0 || _robot.Motion.BodyMoving) return;
-            // S3: lower_bound(_cliffSuspiciousAt) - the first sample with timestamp >= the target.
-            int i = _cliffHistory.FindIndex(e => e.Timestamp >= _cliffSuspiciousAt);
-            if (i < 0) { _cliffSuspiciousAt = 0; return; }
-            cliffs = new();
-            for (; i < _cliffHistory.Count; i++) cliffs.Add((_cliffHistory[i].Timestamp, _cliffHistory[i].Cliff0));
-        }
+        uint start;
+        lock(_gate){if(_cliffSuspiciousAt==0 || _robot.Motion.BodyMoving)return;start=_cliffSuspiciousAt;}
+        var cliffs=_robot.Engine.Robot?.PoseHistory.RawCliffsFrom(start)??Array.Empty<(uint Timestamp,ushort Cliff0)>();
         // S5: min is a local (0xFFFF), the variance is the component's +0x3C.
         ushort min = 0xFFFF;
         foreach (var (timestamp, cliff) in cliffs)
@@ -619,33 +631,34 @@ public sealed class CozmoSensors
     /// <see cref="UpdateCliffRunningStats"/>/<see cref="UpdateCliffDetectThreshold"/>/<see cref="IncrementSuspiciousCliffCount"/>;
     /// ClearCliffRunningStats is wired to the Delocalize path (<see cref="CozmoEngine.RobotDelocalized"/>).
     /// </summary>
-    private void CliffThresholdSchedule(RobotState s)
+    private bool CliffThresholdSchedule(RobotState s)
     {
-        if (_robot.Engine.Robot is null) return;
-        var sends = new List<ushort>();
-        lock (_gate)
+        if(_robot.Engine.Robot is not {} er)return false;
+        // Pose helpers are M11-065/066/067. Source MoveRobotPoseForward uses the same carry offset for both snapshots.
+        float d=_robot.Motion.IsCarryingObject?.Invoke()==true?0f:DriveCenterOffsetMm;
+        (float X,float Y) before=default,after=default;bool updated=false;
+        using var worldMutation=_robot.Engine.DelocalizationWorld?.EnterPoseMutation();
+        LogCallbackDeferral.RunGated(er.PoseTreeGate,()=>
         {
-            // C7 D2: d = 0.0 while carrying, −20.0 otherwise; read once, the same value for both poses.
-            float d = _robot.Motion.IsCarryingObject?.Invoke() == true ? 0f : DriveCenterOffsetMm;
-            var before = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, d);
-            _poseX = s.Pose.X; _poseY = s.Pose.Y; _poseAngle = s.Pose.Angle;
-            _poseZ = s.Pose.Z;
-            var after = MoveRobotPoseForward(_poseX, _poseY, _poseAngle, d);
-            if (!FrameMatches(s)) return;
-            if (_cliffDistanceMm < 0f)
-            {
-                _cliffDistanceMm = 0f;
-                sends.Add(StartCliffThreshold);
-            }
-            float dx = after.X - before.X, dy = after.Y - before.Y;
-            _cliffDistanceMm += MathF.Sqrt(dx * dx + dy * dy);
-            if (_cliffDistanceMm > 50f && !_cliffDistanceDone)
-            {
-                _cliffDistanceDone = true;
-                sends.Add(DefaultCliffThreshold);
-            }
+            var p=er.GetCheckedMainPose();before=MoveRobotPoseForward((float)p.Translation.X,(float)p.Translation.Y,(float)p.AngleAroundZ,d);
+            updated=er.UpdateCurrPoseFromHistory();
+            p=er.GetCheckedMainPose();after=MoveRobotPoseForward((float)p.Translation.X,(float)p.Translation.Y,(float)p.AngleAroundZ,d);
+            lock(_gate){_poseX=(float)p.Translation.X;_poseY=(float)p.Translation.Y;_poseZ=(float)p.Translation.Z;_poseAngle=(float)p.AngleAroundZ;}
+        });
+        if(!FrameMatches(s))return updated;
+        bool start,finish;
+        lock(_gate){start=_cliffDistanceMm<0;if(start)_cliffDistanceMm=0;}
+        if(start)SendCliffDetectThresholdToRobot(StartCliffThreshold);
+        lock(_gate)
+        {
+            float dx=after.X-before.X,dy=after.Y-before.Y;
+            float sum=dx*dx;sum+=dy*dy;sum+=0f;
+            _cliffDistanceMm+=MathF.Sqrt(sum);
+            finish=_cliffDistanceMm>50f&&!_cliffDistanceDone;
+            if(finish)_cliffDistanceDone=true;
         }
-        foreach (var t in sends) SendCliffDetectThresholdToRobot(t);
+        if(finish)SendCliffDetectThresholdToRobot(DefaultCliffThreshold);
+        return updated;
     }
 
     // fidelity: M4-019
@@ -811,7 +824,7 @@ public sealed class CozmoSensors
             _cliffSuspiciousCount = 0;
             _cliffSuspiciousAt = 0;
             _frameMismatchCount = 0;
-            _cliffHistory.Clear();
+
         }
         _lastFalling = false;
         _lastPickedUp = false;
@@ -824,7 +837,7 @@ public sealed class CozmoSensors
     }
 
     // fidelity: M4-038
-    // Test-only oracle input. Production ComputeStateAt(true) is unbuilt under M11-051/053.
+    // Optional unit oracle; production uses the native ComputeStateAt(true) path below.
     internal Func<uint, (int Status, Vision.Pose3d Pose)>? CliffHistoricalPoseForTest;
     internal int? ComputeCliffPose(CliffEvent cliff, out Vision.Pose3d pose)
     {
@@ -834,13 +847,16 @@ public sealed class CozmoSensors
             _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, "CliffSensorComponent.ComputeCliffPose.NoCliff", "CliffEvent::detectedFlags == 0! Can't compute a cliff pose if there was no cliff detected.");
             return 0;
         }
-        if (CliffHistoricalPoseForTest is null)
+        if(CliffHistoricalPoseForTest is {} fixture)
         {
-            _robot.Engine.EmitStackLog("MISSING: M11-097 ComputeStateAt(timestamp, true) 0x006349A6; cliff pose/result unknown, skipping AddCliff and its conditional Detected/failure logs");
-            return null;
+            var oracle=fixture(cliff.Timestamp);if(oracle.Status==0){pose=oracle.Pose;return 1;}
         }
-        var state = CliffHistoricalPoseForTest(cliff.Timestamp);
-        if (state.Status == 0) { pose = state.Pose; return 1; }
+        else if(_robot.Engine.Robot is {} robot)
+        {
+            using var history=new Vision.HistRobotState();uint time=0;
+            if(robot.PoseHistory.ComputeStateAt(cliff.Timestamp,ref time,history,true)==0)
+            {pose=new Vision.Pose3d(history.Pose);return 1;}
+        }
         _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "CliffSensorComponent.ComputeCliffPose.NoHistoricalPose", FormattableString.Invariant($"Could not retrieve historical pose for timestamp {cliff.Timestamp}"));
         Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();
         return 0;
@@ -979,7 +995,7 @@ public sealed class CozmoSensors
                     // The raw-state history the S3 lower_bound walk reads (RobotStateHistory's raw map, history+0):
                     // key = timestamp, value carries cliff[0]. C13.3: the engine's state-history retention is 3000 ms
                     // (RobotStateHistory::RobotStateHistory sets the window at history+0x3c, 0x0053088D..0x005308C6);
-                    // the stack's parallel history uses the same window, which only bounds memory.
+                    // the real raw map owns that retention and admission.
                     // Admission follows the origin/treads/history-result gates below, not this raw sensor copy.
                 }
                 // fidelity: M4-033
@@ -1006,7 +1022,7 @@ public sealed class CozmoSensors
                 bool treadsChanged = (OffTreads.Current == OffTreadsState.OnTreads) != onTreadsBefore;
                 if (treadsChanged) _frameMismatchCount = 0;
                 // fidelity: M11-044
-                // r7 != 0 at 0x00512A94/0x00512A86 (a committed change to or from OnTreads) is what makes UpdateFullRobotState Delocalize at 0x00512B88..0x00512BA6 (VisionSystem does it, for this state, right after the +0x2BC OR).
+                // r7 != 0 at 0x00512A94/0x00512A86 (a committed change to or from OnTreads) is what makes UpdateFullRobotState Delocalize at 0x00512B88..0x00512BA6 (performed below after the +0x2BC OR).
                 if (treadsChanged) DelocalizeTrigger = s;
                 // fidelity: M4-019
                 // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
@@ -1025,81 +1041,45 @@ public sealed class CozmoSensors
                 var movement = UnexpectedMovement.Update(s);
                 if(movement is not null)
                 {_robot.Engine.QueueAppEvent(UnexpectedMovementDetected,movement);UnexpectedMovementDetectedInternal?.Invoke(movement);}
-                // fidelity: M4-019
-                // C13.2: the treads-change branch (0x00512BAA) jumps straight to the stats/threshold body at
-                // 0x512FB4, so the stats run for a treads-change state whether or not its origin is accepted, and
-                // the threshold schedule and the frame logic are skipped.
-                if (treadsChanged)
+                // M11-044's moved-since-localized OR is before the treads/origin/history branches.
+                _robot.LocalizationWorld.NoteRobotState((s.Status&(uint)RobotStatusFlag.HeadInPos)==0 || s.Has(RobotStatusFlag.AreWheelsMoving),
+                    OffTreads.Current!=OffTreadsState.OnTreads);
+                // fidelity: M11-097, M11-053, M4-019 — OV128 A1-A8, in native order.
+                bool runTail=false;
+                if(treadsChanged && er is not null)
                 {
-                    DetectGyroDriftAndBias(s);
-                    if (s.CliffDataRaw is { Length: 4 } traw) UpdateCliffRunningStats(traw[0]);
-                    UpdateCliffDetectThreshold();
+                    _robot.LocalizationWorld.ResetPoseFrameMismatch();
+                    er.Delocalize((s.Status&2)!=0); // BEFORE detectors/stats; this state is not added
+                    er.LastFullStateResult=0;runTail=true;
                 }
-                else
+                else if(er is not null)
                 {
-                    // fidelity: M4-019, M4-020
-                    // The schedule is after the origin check (0x00512D7A..0x00512EA6, C3), so after the treads check
-                    // (0x00512A72), SetOnCharger (0x00512AB4) and MovementComponent::Update (0x00512B5C): when both send a
-                    // threshold in one state the engine's order is platform first, schedule last. An origin-rejected state
-                    // skips it.
-                    if (_robot.Engine.Robot?.OriginAccepted(s) == true) CliffThresholdSchedule(s);
-                    // fidelity: M4-019
-                    // S1 (0x00512FB0..0x00512F22): UpdateCliffRunningStats (0x00512FCE) then UpdateCliffDetectThreshold
-                    // (0x00512FD6) run when r6 == 0 - the frame-match path and the frame-mismatch path while robot+0x2C0
-                    // < 0x65. C12.3: the counter is per-mismatch-run: 0 on a frame match, old+1 on a mismatch, 0 once the
-                    // count reaches 0x65 (so the 101st mismatch still skips the stats). C12.4: r6 = 1 also on an
-                    // AddRobotStateToHistory failure (0x00512C38) and a GetLastStateWithFrameID failure (0x00513110); the
-                    // origin miss is the OriginAccepted gate below. M11-097 owns the missing result signals.
-                    if (_robot.Engine.Robot?.OriginAccepted(s) == true)
+                    uint admission=er.AddIncomingStateToHistory(s);
+                    er.LastFullStateResult=admission;
+                    if(admission==0)
                     {
-                        bool? admitted=ReferenceEquals(DelocalizeTrigger,s)?false:HistoryAdmissionForTest?.Invoke(s);
-                        if(admitted is null)
-                            Behavior.SteppedBehavior.ReportMissing("M11-097 AddRobotStateToHistory result 0x00512C38 is unbuilt; cliff-history admission is skipped after the supported off-ramp origin gate 0x00512C44 (on-ramp entry 0x00512BE2..0x00512BEE is unreachable: M2-024)");
-                        if(admitted==true && s.CliffDataRaw is {Length:4} hraw)
-                            lock(_gate)
-                            {
-                                if(!_cliffHistory.Any(e=>e.Timestamp==s.Timestamp))
-                                {
-                                    int at=_cliffHistory.FindIndex(e=>e.Timestamp>s.Timestamp);
-                                    if(at<0)_cliffHistory.Add((s.Timestamp,hraw[0]));else _cliffHistory.Insert(at,(s.Timestamp,hraw[0]));
-                                }
-                                uint newest=_cliffHistory[^1].Timestamp;
-                                _cliffHistory.RemoveAll(e=>newest>=3000 && e.Timestamp<newest-3000);
-                            }
-                        bool mismatch = !FrameMatches(s);
-                        bool statsAllowed;
-                        if (mismatch)
-                        {
-                            _frameMismatchCount++;
-                            statsAllowed = _frameMismatchCount < 0x65;
-                            if (_frameMismatchCount >= 0x65)
-                            {
-                                // fidelity: M11-019
-                                // 0x00512F24..0x00512F96: sErrorF "Robot.UpdateFullRobotState.MismatchedFrameIDs" (state frame id, then robot+0x2B0), +0x2C0 = 0, Robot::Delocalize.
-                                _robot.Engine.EmitSourceLog(EngineLogLevel.Error, null, "Robot.UpdateFullRobotState.MismatchedFrameIDs", FormattableString.Invariant($"Robot[{s.PoseFrameId}] and engine[{_robot.Engine.Robot?.PoseFrameId}] frameIDs are mismatched, delocalizing"));
-                                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak(); // 00512F7A, 00512F7C..7E
-                                _frameMismatchCount = 0; // 00512F88: after log/error flag, before Delocalize.
-                                FrameMismatchDelocalizeTrigger = s;
-                            }
-                        }
+                        bool updated=CliffThresholdSchedule(s); // before-pose, UpdateCurrPoseFromHistory, after-pose
+                        er.LastFullStateResult=updated?0u:1u;
+                        if(FrameMatches(s)){_frameMismatchCount=0;runTail=true;}
                         else
                         {
-                            _frameMismatchCount = 0;
-                            statsAllowed = true;
-                        }
-                        if (statsAllowed)
-                        {
-                            bool? historyGate=HistoryStatsGateForTest?.Invoke(s);
-                            if(historyGate is null)
-                                Behavior.SteppedBehavior.ReportMissing("M11-097 C12.4 AddRobotStateToHistory / GetLastStateWithFrameID failure gate 0x00513088..0x00513110 is unbuilt; gyro/cliff running-stat tail skipped rather than assuming success");
-                            if(admitted==true&&historyGate==true)
+                            _frameMismatchCount++;runTail=_frameMismatchCount<0x65;
+                            if(!runTail)
                             {
-                                DetectGyroDriftAndBias(s);
-                                if (s.CliffDataRaw is { Length: 4 } sraw) UpdateCliffRunningStats(sraw[0]);
-                                UpdateCliffDetectThreshold();
+                                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"Robot.UpdateFullRobotState.MismatchedFrameIDs",
+                                    $"Robot[{s.PoseFrameId}] and engine[{er.PoseFrameId}] frameIDs are mismatched, delocalizing");
+                                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();_frameMismatchCount=0;
+                                FrameMismatchDelocalizeTrigger=s;_robot.LocalizationWorld.ResetPoseFrameMismatch();
+                                er.Delocalize(_robot.Carrying.IsCarryingObject);er.LastFullStateResult=1;
                             }
                         }
                     }
+                }
+                if(runTail)
+                {
+                    DetectGyroDriftAndBias(s);
+                    if(s.CliffDataRaw is {Length:4} rawTail)UpdateCliffRunningStats(rawTail[0]);
+                    UpdateCliffDetectThreshold();
                 }
 
                 bool picked = s.Has(RobotStatusFlag.IsPickedUp);

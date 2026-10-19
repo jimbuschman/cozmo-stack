@@ -735,7 +735,7 @@ public class NavigationTests
 
     /// <summary>
     /// M15-011, SelectNewBeacon 0x005E5F0C..0x005E5F30: Robot::GetPose is copied (Pose3d::Pose3d 0x005E5F1A) and handed to AddBeacon with the radius at [this+0x128]: the beacon sits at the
-    /// whole robot pose, z included. A robot state whose pose has z = 25 and yaw 0.5 gives a beacon at (100, 50, 25) with that yaw (a planar rebuild would give z = 0).
+    /// whole robot pose, z included. Admission preserves the current pose's z rather than taking the packet's z.
     /// </summary>
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
@@ -744,6 +744,10 @@ public class NavigationTests
         using var signals = SignalTestContext.Install();
         if (Lib is null) return;
         using var rig = new Rig();
+        // Unit fixture supplies the native current height (its world/kinematic producer is outside this beacon test).
+        var native=rig.Robot.Engine.Robot!;
+        using(var pose=new Pose3d(native.MainPose))
+        {pose.Node!.Transform=new Transform3d(pose.Quaternion,new Vec3(0,0,25));native.SetPose(pose);}
         rig.Send(new RobotState
         {
             Timestamp = rig.T += 33, PoseOriginId = rig.OriginId, Pose = new RobotPose { X = 100, Y = 50, Z = 25, Angle = 0.5f }, HeadAngle = rig.Head,

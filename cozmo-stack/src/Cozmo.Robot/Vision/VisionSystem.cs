@@ -85,10 +85,10 @@ public sealed partial class VisionSystem : IDisposable
         // fidelity: M11-044
         // What the localization candidates and the frame sequence read from the robot: its current pose (Robot::GetPose), the robot states behind
         // RobotStateHistory::GetComputedStateAt, the MovementComponent bytes +0xA/+0xC, Robot::GetLastImageTimeStamp and BaseStationTimer::GetCurrentTimeInSeconds.
-        World.CurrentRobotPose = () => History.Latest?.RobotPose;
+        World.CurrentRobotPose = () => robot.Engine.Robot?.MainPose;
         // fidelity: M1-053
         // Supplied by localization/vision (M11-053/055/035), not the incoming packet or camera receipt time.
-        robot.Engine.PublicationPose = () => History.PublicationPose ?? robot.Sensors.PublicationPose();
+        robot.Engine.PublicationPose = robot.Sensors.PublicationPose;
         robot.Engine.PublicationLocalizedTo = () => unchecked((int)(World.LocalizedToObjectId ?? uint.MaxValue));
         robot.Engine.PublicationGameStatus = () => (World.Robot2C4, (sbyte)robot.Sensors.OffTreadsState);
         World.ComputedRobotPoseAt = ts => History.GetComputedStateAt(ts);
@@ -689,36 +689,9 @@ public sealed partial class VisionSystem : IDisposable
     {
         switch (m)
         {
-            case RobotState s:
-            {
-                // fidelity: M4-020
-                // The history and the pose are after UpdateFullRobotState's origin check (SC4f, M4 correction C3): a
-                // state the Robot drops before time sync, or whose origin it rejects, does not reach them.
-                // fidelity: M11-044
-                // UpdateFullRobotState ORs into Robot+0x2BC (0x00512B56..0x00512B8E) BEFORE the origin lookup (0x00512C54): a state whose origin is rejected still ORs in.
-                // Only a state that passed the time-sync gate gets that far (StoredState, CozmoEngine.UpdateFullRobotState).
-                if (ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
-                    World.NoteRobotState((s.Status & (uint)RobotStatusFlag.HeadInPos) == 0 || (s.Status & (uint)RobotStatusFlag.AreWheelsMoving) != 0,
-                                         _robot.Sensors.OffTreadsState != OffTreadsState.OnTreads);
-                // fidelity: M11-044, M11-019
-                // The engine's Delocalize trigger (0x00512A62..0x00512A94, 0x00512B88..0x00512BA6): a treads commit that involves OnTreads (CozmoSensors.DelocalizeTrigger). +0x2C0 = 0, Robot::Delocalize
-                // with (status & 2) != 0 (0x00512B98; it only gates a warning, 0x00510C6A..0x00510C98), then a jump to 0x00512FB4 that skips the history and pose steps of UpdateFullRobotState: the
-                // history below does not take this state. NOT built: the pose steps outside the history (the cliff schedule and the rest of the sensor route still see the state).
-                if (ReferenceEquals(_robot.Sensors.DelocalizeTrigger, s) && ReferenceEquals(_robot.Engine.Robot?.StoredState, s))
-                {
-                    DelocalizeRobot((s.Status&2)!=0);
-                    break;
-                }
-                if (_robot.Engine.Robot?.OriginAccepted(s) != true) break;
-                // fidelity: M11-019
-                // Robot::Delocalize(bool) 0x00510A24 (PLT 0x4A7804) has three call sites: the Robot constructor (0x00510324, CozmoEngine.ConstructorDelocalize), the tread-boundary path above
-                // (0x00512BA6) and the 101st consecutive pose-frame-id mismatch (0x00512F96, after the state went into the history). A state that merely reports a different pose origin id is filed
-                // in the history and delocalizes nothing: the engine has no origin-change trigger (the stand-in that forgot objects on one is removed).
-                History.Add(s);
-                // B-M11-8 item 2: this caller passes the actual carrying state, [[+0x284]+8] != -1 (0x00512F82..0x00512F96), not status & 2.
-                if (ReferenceEquals(_robot.Sensors.FrameMismatchDelocalizeTrigger, s)) DelocalizeRobot(_robot.Carrying.IsCarryingObject);
+            case RobotState:
+                // Robot-owned admission/current-pose/treads processing runs in Sensors, before this subscriber.
                 break;
-            }
             // HandleActiveObjectMoved 0x00533E30 dirties the pose only when the robot is not carrying
             // the object (the guard at 0x00534116); a cube on the lift reporting motion is ignored.
             // fidelity: M11-009
@@ -778,7 +751,20 @@ public sealed partial class VisionSystem : IDisposable
     // fidelity: M11-040
     internal static readonly TimeSpan ProcessorPollInterval = TimeSpan.FromMilliseconds(2);
 
-    private void OnFrame(CameraFrame f) => HandOverFrame(f);
+    private void OnFrame(CameraFrame f)
+    {
+        if(!Enabled)return;
+        // OV12 adopts the ComputeStateAt flag, but explicitly leaves each caller's surrounding result/timestamp
+        // handling unread. Reopening SetNextImage exposes a newest-time selection before the call. Do not guess it.
+        Behavior.SteppedBehavior.ReportMissing("M11-097/M11-049 SetNextImage pose capture: timestamp selection at0x00652C22..0x00652C3A and result handling after0x00652C48 are outside the adopted query rows; frame handoff skipped pending checked caller rows");
+    }
+    // fidelity: M11-097 — checked SetNextImage caller flag1 (OV12,0x00652C32).
+    // Direct host ProcessCapture uses its supplied timestamp; the native camera join above remains explicit.
+    private VisionPoseData? QueryFramePose(uint timestamp)
+    {
+        using var value=new HistRobotState();uint time=0;
+        return History.ComputeStateAt(timestamp,ref time,value,true)==0?RobotStateHistory.PoseData(time,value):null;
+    }
 
     /// <summary>
     /// <c>VisionComponent::SetNextImage</c> 0x00652B04 in its asynchronous mode. An image is discarded, with only an info log, while
@@ -953,14 +939,10 @@ public sealed partial class VisionSystem : IDisposable
     {
         var calibration = Calibration;
         if (calibration is null) { WarnNoCalibration(removal); return null; }
-        // the fw2457 captures carry FrameTimestamp 0 on every chunk; a frame with no timestamp is paired with the
-        // latest state (LOCAL fallback; the engine's EncodedImage rejects a bad timestamp instead)
-        var pd = cameraTimestamp == 0 ? History.Latest : History.At(cameraTimestamp);
+        var pd=QueryFramePose(cameraTimestamp);
         if (pd is null) { Log?.Invoke($"frame {imageId}: no robot state to pair with"); return null; }
-        // Once the fallback has chosen a state, that state's timestamp is the observation time for the whole
-        // frame. Passing the camera's zero through would date every marker, object and face at 0, which makes
-        // observation age, face expiry and object-position age meaningless on real fw2457 hardware.
-        uint effective = cameraTimestamp == 0 ? pd.Value.Timestamp : cameraTimestamp;
+        // Direct host captures use their supplied timestamp; native camera timestamp selection is the MISSING above.
+        uint effective=cameraTimestamp;
         // fidelity: M11-004 — VisionComponent::WasRotatingTooFast(timestamp, 0.174533, 0.174533, 0)
         // 0x00621C9A..0x00621CAE over the ImuDataHistory at VisionComponent+0xb0 (C3.3). The history is
         // fed from ImageImuData by its first field (the image id/timestamp), the same field the engine's

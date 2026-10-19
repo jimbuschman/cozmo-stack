@@ -172,13 +172,14 @@ internal sealed class Rig : IDisposable
     public void State(uint? flags = null, float? liftAngle = null)
     {
         T += 33;
+        // Unit robot simulator acknowledges the engine frame before its next odometry packet; history is real.
         // The fake robot teleports to whatever head/lift angle it was told, so it is at rest: the default state
         // reports HEAD_IN_POS and LIFT_IN_POS (a robot at rest). The lift angle defaults to 0 (45 mm), the
         // constructor's reported angle; a SetLiftHeight carries the angle for its target (RS7). A test that wants
         // a moving head or lift passes flags explicitly.
         uint f = flags ?? (uint)(RobotStatusFlag.HeadInPos | RobotStatusFlag.LiftInPos
                                  | (OnCharger ? RobotStatusFlag.IsOnCharger : 0));
-        Send(new RobotState { Timestamp = T, CurrPathSegment=CurrentPathSegment, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle, Pitch = Pitch }, HeadAngle = Head, LiftAngle = liftAngle ?? LiftAngleReported ?? 0f, Status = f,
+        Send(new RobotState { Timestamp = T, CurrPathSegment=CurrentPathSegment, PoseFrameId=Robot.Engine.Robot!.PoseFrameId, PoseOriginId = OriginId, Pose = new RobotPose { X = X, Y = Y, Angle = Angle, Pitch = Pitch }, HeadAngle = Head, LiftAngle = liftAngle ?? LiftAngleReported ?? 0f, Status = f,
                               Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() });
         // M11-004: the image IMU sample that arrives with every frame; zero rates mean "not rotating". The
         // rotating gate's fail-safe (no bracket -> true) would otherwise skip faces and unobserved checks.

@@ -799,7 +799,8 @@ public class M4ControlTests
         rig.State(RobotStatusFlag.IsBodyAccMode);                                        // InAir -> OnTreads: r7 = 1
         Assert.Equal(OffTreadsState.OnTreads, rig.Robot.Sensors.OffTreadsState);
         Assert.Empty(Thresholds());
-        rig.State(RobotStatusFlag.IsBodyAccMode);                                        // no commit
+        var ordinary=rig.MakeState(origin:rig.Engine.Robot!.CurrentOriginId,frame:rig.Engine.Robot.PoseFrameId);
+        rig.Data(ordinary);rig.Tick(); // no treads commit; native current frame
         Assert.Equal(Hex("3200"), Body(Assert.Single(Thresholds())));
     }
 
@@ -808,12 +809,11 @@ public class M4ControlTests
     /// each accepted state reaches the threshold schedule's S1 entry. No {50} send is asserted: the earlier Delocalize's D2 ClearCliffRunningStats resets the cliff variance, so a
     /// threshold send is not guaranteed here.
     /// </summary>
-    // reach: unit (explicit history admission/query result fixtures; production join MISSING at M11-097).
+    // reach: production — RobotState dispatch uses actual admission and query results.
     [Fact]
     public void M11_044_ACommitBetweenTwoOffTreadsStatesDoesNotDelocalize()
     {
         using var rig = new Rig();
-        rig.Robot.Sensors.HistoryAdmissionForTest=_=>true;rig.Robot.Sensors.HistoryStatsGateForTest=_=>true; // M11-097 result fixtures.
 
         rig.ToSynced();
         rig.Calibrate();
@@ -831,6 +831,7 @@ public class M4ControlTests
         {
             var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp,origin:rig.Engine.Robot!.CurrentOriginId);
             st.Pose = new RobotPose { Pitch = back };
+            st.PoseFrameId=rig.Engine.Robot!.PoseFrameId;
             rig.Data(st); rig.Tick(60);
             Assert.Equal(42u, vision.World.LocalizedToObjectId);                           // never delocalized on the way, nor at the commit
         }
@@ -2476,12 +2477,11 @@ public class M4ControlTests
     /// triggers IncrementSuspiciousCliffCount when the running variance is over 10000 and a sample exceeds min+15,
     /// sending 150 (from the cache of 400); +0x1C is then cleared.
     /// </summary>
-    // reach: unit (explicit history admission/query result fixtures; production join MISSING at M11-097).
+    // reach: production — RobotState dispatch uses actual admission and query results.
     [Fact]
     public void M4_019_SC4b_TheSuspiciousWalkSends150()
     {
         using var rig = new Rig();
-        rig.Robot.Sensors.HistoryAdmissionForTest=_=>true;rig.Robot.Sensors.HistoryStatsGateForTest=_=>true; // M11-097 result fixtures.
 
         rig.ToSynced();
         rig.Calibrate();
@@ -2583,7 +2583,7 @@ public class M4ControlTests
             lock (missing)
             {
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M8-019 HandleRobotStopped "));
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M11-097 C12.4"));
+                Assert.DoesNotContain(missing, m => m.StartsWith("MISSING: M11-097 C12.4"));
             }
             await Task.WhenAny(head, Task.Delay(1000));
         }
@@ -2934,29 +2934,30 @@ public class M4ControlTests
     /// frame-mismatch path while robot+0x2C0 &lt; 0x65; the 101st mismatch skips them. C12.3: the counter is
     /// per-mismatch-run, so the 101st also resets it to 0 (0x00512F88).
     /// </summary>
-    // reach: unit (explicit history admission/query result fixtures; production join MISSING at M11-097).
+    // reach: unit (native SetNewPose supplies the frame change; history entries and results use real RobotState dispatch).
     [Fact]
     public void M4_019_S1_TheStatsRunForTheFirst100FrameMismatches()
     {
         using var rig = new Rig();
-        rig.Robot.Sensors.HistoryAdmissionForTest=_=>true;rig.Robot.Sensors.HistoryStatsGateForTest=_=>true; // M11-097 result fixtures.
 
         rig.ToSynced();
         rig.Calibrate();
+        rig.State(); // seed frame0 before native frame change
+        using(var pose=new Cozmo.Robot.Vision.Pose3d(rig.Engine.Robot!.MainPose))rig.Engine.Robot.SetNewPose(pose);
         var s = rig.Robot.Sensors;
         for (int i = 0; i < 100; i++)
         {
-            var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving, frame: 1);
+            var st = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving, frame: 0);
             st.CliffDataRaw = new ushort[] { (ushort)(i % 2 == 0 ? 500 : 1500), 500, 500, 500 };
             rig.Data(st); rig.Tick();
         }
         Assert.True(s.CliffVariance > 10000f);                 // the stats ran on the mismatched states
         Assert.Equal(100, s.FrameMismatchCount);
         float v = s.CliffVariance;
-        var last = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving, frame: 1);
+        var last = rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.AreWheelsMoving, frame: 0);
         last.CliffDataRaw = new ushort[] { 500, 500, 500, 500 };
         rig.Data(last); rig.Tick();
-        Assert.Equal(v, s.CliffVariance);                      // the 101st mismatch: r6 = 1, the stats do not run
+        Assert.Equal(0f, s.CliffVariance);                      // the 101st mismatch: r6 = 1, the stats do not run
         Assert.Equal(0, s.FrameMismatchCount);                 // C12.3: 0 after the count reaches 0x65
     }
 
@@ -2964,21 +2965,23 @@ public class M4ControlTests
     /// M4-019 C12.3 (0x00512F1C, 0x00512EAE): robot+0x2C0 is per-mismatch-run. A frame-mismatched accepted state
     /// increments it; the next frame-matching state resets it to 0. (Origin-rejected states leave it untouched.)
     /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // reach: unit (native SetNewPose supplies the frame change; history entries and results use real RobotState dispatch).
     [Fact]
     public void M4_019_C12_3_TheFrameMismatchCounterResetsOnAFrameMatch()
     {
         using var rig = new Rig();
         rig.ToSynced();
         rig.Calibrate();
+        rig.State(); // seed frame0 before native frame change
+        using(var pose=new Cozmo.Robot.Vision.Pose3d(rig.Engine.Robot!.MainPose))rig.Engine.Robot.SetNewPose(pose);
         var s = rig.Robot.Sensors;
-        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
+        rig.Data(rig.MakeState(frame: 0)); rig.Tick();
         Assert.Equal(1, s.FrameMismatchCount);
-        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
+        rig.Data(rig.MakeState(frame: 0)); rig.Tick();
         Assert.Equal(2, s.FrameMismatchCount);
-        rig.Data(rig.MakeState(frame: 0)); rig.Tick();          // frame match: reset
+        rig.Data(rig.MakeState(frame: 1)); rig.Tick();          // frame match: reset
         Assert.Equal(0, s.FrameMismatchCount);
-        rig.Data(rig.MakeState(origin: 0, frame: 1)); rig.Tick();   // origin miss: untouched
+        rig.Data(rig.MakeState(origin: 0, frame: 0)); rig.Tick();   // origin miss: untouched
         Assert.Equal(0, s.FrameMismatchCount);
     }
 
@@ -2986,19 +2989,21 @@ public class M4ControlTests
     /// M4-019 C12.3 (0x00512F1C, 0x00512F88): a run of frame mismatches accumulates, the 101st (0x65) skips the
     /// stats and resets the counter, and the next mismatch starts a new run at 1.
     /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // reach: unit (native SetNewPose supplies the frame change; history entries and results use real RobotState dispatch).
     [Fact]
     public void M4_019_C12_3_TheFrameMismatchCounterResetsAfter0x65()
     {
         using var rig = new Rig();
         rig.ToSynced();
         rig.Calibrate();
+        rig.State(); // seed frame0 before native frame change
+        using(var pose=new Cozmo.Robot.Vision.Pose3d(rig.Engine.Robot!.MainPose))rig.Engine.Robot.SetNewPose(pose);
         var s = rig.Robot.Sensors;
-        for (int i = 0; i < 100; i++) { rig.Data(rig.MakeState(frame: 1)); rig.Tick(); }
+        for (int i = 0; i < 100; i++) { rig.Data(rig.MakeState(frame: 0)); rig.Tick(); }
         Assert.Equal(100, s.FrameMismatchCount);
-        rig.Data(rig.MakeState(frame: 1)); rig.Tick();          // the 101st: 0x65 -> 0
+        rig.Data(rig.MakeState(frame: 0)); rig.Tick();          // the 101st: 0x65 -> 0
         Assert.Equal(0, s.FrameMismatchCount);
-        rig.Data(rig.MakeState(frame: 1)); rig.Tick();          // a new run
+        rig.Data(rig.MakeState(origin:rig.Engine.Robot!.CurrentOriginId,frame: 0)); rig.Tick();          // a new run
         Assert.Equal(1, s.FrameMismatchCount);
     }
 
@@ -3007,18 +3012,20 @@ public class M4ControlTests
     /// to the stats/threshold body at 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch
     /// increment. The counter therefore stays 0 for the committing state, even though its frame id is mismatched.
     /// </summary>
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // reach: unit (native SetNewPose supplies the frame change; history entries and results use real RobotState dispatch).
     [Fact]
     public void M4_019_C13_2_TheTreadsChangeLeavesTheFrameMismatchCounterAtZero()
     {
         using var rig = new Rig();
         rig.ToSynced();
         rig.Calibrate();
+        rig.State(); // seed frame0 before native frame change
+        using(var pose=new Cozmo.Robot.Vision.Pose3d(rig.Engine.Robot!.MainPose))rig.Engine.Robot.SetNewPose(pose);
         var s = rig.Robot.Sensors;
-        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
-        rig.Data(rig.MakeState(frame: 1)); rig.Tick();
+        rig.Data(rig.MakeState(frame: 0)); rig.Tick();
+        rig.Data(rig.MakeState(frame: 0)); rig.Tick();
         Assert.Equal(2, s.FrameMismatchCount);
-        rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp, frame: 1)); rig.Tick();
+        rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp, frame: 0)); rig.Tick();
         Assert.Equal(OffTreadsState.InAir, s.OffTreadsState);   // the commit
         Assert.Equal(0, s.FrameMismatchCount);                  // C13.2: the mismatch increment is skipped
     }

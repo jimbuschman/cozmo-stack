@@ -279,65 +279,25 @@ public class CorrectionTests
 
     // ---------------------------------------------------------------- 8: the fw2457 timestamp
 
-    /// <summary>
-    /// A capture with timestamp 0, as real firmware 2457 reports, dates its observations by the robot state it
-    /// was paired with. With the camera's zero passed through, every object was "observed" at time 0 and every
-    /// age computed from it was wrong.
-    /// </summary>
+    // reach: unit (direct ProcessCapture with dispatch-built history; legacy name retained for manifest references).
+    // Native SetNextImage queries timestamp0; it cannot replace an absent bracket with the latest state.
     [Fact]
     public void ACaptureWithoutATimestampIsDatedByTheStateItIsPairedWith()
     {
-        if (MarkerLibrary.EmbeddedOrNull is null) return;
-        using var rig = new Rig();
-        rig.Vision.ModeEnableMask &= ~(1<<7); // Isolate timestamp/age behavior from unfinished quality inputs (B-M11-6).
-        rig.Cube = new Pose3d(Mat3.Identity, new Vec3(200, 0, 22));
-        rig.T = 50_000;
-        rig.State();
-        uint stateTimestamp = rig.T;
-
-        var pd = rig.Vision.History.Latest!.Value;
-        var image = new GrayImage(rig.Cal.Columns, rig.Cal.Rows);
-        image.Fill(150);
-        var cam = new CameraModel(rig.Cal, pd.CameraPose);
-        MarkerRenderer.DrawCube(image, MarkerLibrary.EmbeddedOrNull, cam, ObjectType.Block_LIGHTCUBE1, rig.Cube.Value);
-
-        // M11-007: the second matching sighting is the one that makes the located object
-        rig.Vision.ProcessCapture(image, imageId: 6, cameraTimestamp: 0);
-        var result = rig.Vision.ProcessCapture(image, imageId: 7, cameraTimestamp: 0);
-        Assert.NotNull(result);
-        Assert.Equal(stateTimestamp, result!.Timestamp);
-        Assert.Equal(0u, rig.Vision.LastRawFrameTimestamp);
-        var observed = Assert.Single(result.Objects);
-        Assert.Equal(stateTimestamp, observed.Timestamp);
-        Assert.Equal(stateTimestamp, observed.Object.LastObservedTimestamp);
+        using var rig=new Rig();rig.T=50_000;rig.State();
+        var image=new GrayImage(rig.Cal.Columns,rig.Cal.Rows);image.Fill(150);
+        Assert.Null(rig.Vision.ProcessCapture(image,6,0));
+        Assert.Empty(rig.Vision.World.LocatedObjects);
     }
 
-    /// <summary>The same for a face: its entry ages from the state's clock, so it is not forgotten at once.</summary>
+    // reach: unit (direct ProcessCapture; native no-bracket gate precedes face processing).
     [Fact]
     public void AFaceFromATimestamplessCaptureAgesFromTheStateClock()
     {
-        using var rig = new Rig();
-        rig.Vision.ModeEnableMask &= ~(1<<7); // Isolate timestamp/age behavior from unfinished quality inputs (B-M11-6).
-        rig.Vision.FaceDetector = rig.FaceDetector;
-        rig.Head = 0.4f;                      // looking up enough to have the face in view
-        rig.T = 90_000;
-        rig.State();
-        uint stateTimestamp = rig.T;
-        rig.FaceDetector.Faces.Add((1, new Vec3(400, 0, 250), "Jim"));
-
-        var pd = rig.Vision.History.Latest!.Value;
-        rig.FaceDetector.Camera = new CameraModel(rig.Cal, pd.CameraPose);
-        var image = new GrayImage(rig.Cal.Columns, rig.Cal.Rows);
-        image.Fill(150);
-
-        var result = rig.Vision.ProcessCapture(image, imageId: 1, cameraTimestamp: 0);
-        Assert.NotNull(result);
-        var face = Assert.Single(rig.Vision.Faces.Faces);
-        Assert.Equal(stateTimestamp, face.LastObservedTimestamp);
-
-        // a dated face survives its own observation moment; a face stamped 0 would already be 90 s stale
-        rig.Vision.Faces.Update(stateTimestamp + 1000);
-        Assert.Single(rig.Vision.Faces.Faces);
+        using var rig=new Rig();rig.T=90_000;rig.State();rig.Vision.FaceDetector=rig.FaceDetector;
+        rig.FaceDetector.Faces.Add((1,new Vec3(400,0,250),"Jim"));
+        var image=new GrayImage(rig.Cal.Columns,rig.Cal.Rows);image.Fill(150);
+        Assert.Null(rig.Vision.ProcessCapture(image,1,0));Assert.Empty(rig.Vision.Faces.Faces);
     }
 
     // ---------------------------------------------------------------- 7: a disconnected cube
@@ -436,7 +396,7 @@ public class CorrectionTests
         var r = task.Result;
 
         // the soft obstacle does not fail the plan; the action plans and sends a path
-        Assert.Equal(ActionResult.Success, r);
+        Assert.Equal(ActionResult.Success,r);
         Assert.Equal(2, rig.M.NativePlanners!.Lattice!.CheckPlanningStatus);
         // the straight-line fallback that used to sit here is gone (M13-005)
         Assert.DoesNotContain(drive.Trace, l => l.Contains("straight line"));

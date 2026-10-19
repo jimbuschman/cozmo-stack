@@ -124,12 +124,14 @@ public static class TurnTowardsImagePoint
     public static async Task<bool> RunAsync(VisionSystem v, double u, double v_, uint imageTimestamp, CancellationToken cancel)
     {
         if (v.Calibration is not { } cal) return false;
-        if (v.History.At(imageTimestamp) is not { } state)
+        using var historical=new HistRobotState();uint outTime=0;
+        // fidelity: M11-097 — OV12 ComputeTurnTowardsImagePointAngles caller flag0 at0x005187F6.
+        if (v.History.ComputeStateAt(imageTimestamp,ref outTime,historical,false)!=0)
         {
             v.LogLine("TurnTowardsImagePointAction.Init.ComputeTurnTowardsImagePointAnglesFailed");
             return false;
         }
-        var (body, head) = Angles(cal, u, v_, state.RobotPose.AngleAroundZ, state.HeadAngleRad);
+        var (body, head) = Angles(cal, u, v_, historical.Pose.AngleAroundZ, historical.State.HeadAngle);
         head = Math.Clamp(head, HeadGeometry.MinHeadAngleRad, HeadGeometry.MaxHeadAngleRad);
         return await PanAndTilt.RunAsync(v, body, head, TurnTowardsPose.MaxSpeedRadPerSec, cancel);
     }
