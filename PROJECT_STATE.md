@@ -57,7 +57,7 @@ stands. Nothing new starts outside the current layer.
   `re-analysis/acceptance/M3M4-blockers.md` (2026-10-18): both Opus settling passes adopted (FAIL; 10 records settle
   after cleanup); builders B-M3M4-30..33 done; checks: 31 PASS (relative cube lights wait on
   research OV129), 32 and 33 FAIL (2026-10-19), fixes in B-M3M4-34 (review PASS 2026-10-19); OV129 adopted, B-M3M4-35 (marker normal,
-  completes relative cube lights) is the last build before settling and the hardware script; B-M3M4-33 built the robot-state history (pulled forward by the operator 2026-10-18); OV128 adopted with corrections
+  completes relative cube lights) done, check PASS 2026-10-19. All M3+M4 builds are in; next: settling (tags, cleanup, statuses) and the hardware script; B-M3M4-33 built the robot-state history (pulled forward by the operator 2026-10-18); OV128 adopted with corrections
   (`research/overnight/20261018-ov128-check.md`); operator decisions recorded on M3-004/017,
   M4-006/039/040/042.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by

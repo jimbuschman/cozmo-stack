@@ -117,7 +117,7 @@
 | 61w3m | B-M3M4-32 | DONE per status/B-M3M4-32.md (B-M3M4-30 check fixes: layer re-read after callback, no i... | DONE (4/4 items; 0 MISSING) | `research/20261019-b-m3m4-32-check.md` |
 | 61w3n | B-M3M4-33 | DONE per status/B-M3M4-33.md (robot-state history pulled into M3+M4, operator 2026-10-1... | DONE (5/5 checked items; 2 MISSING) | `research/20261019-b-m3m4-33-check.md` |
 | 61w3o | B-M3M4-34 | DONE per status/B-M3M4-34.md; manager fix review PASS (research/20261019-b-m3m4-34-chec... | DONE (5/5 items; 3 MISSING) | `research/20261019-b-m3m4-34-check.md` |
-| 61w3p | B-M3M4-35 | open, after B-M3M4-34 (OV129 adopted: KnownMarker::ComputeNormal/Get3dCorners, complete... | no status file | none found |
+| 61w3p | B-M3M4-35 | DONE per status/B-M3M4-35.md; manager check PASS (research/20261019-b-m3m4-35-check.md) | DONE (2/2 items; 0 MISSING) | `research/20261019-b-m3m4-35-check.md` |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

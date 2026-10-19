@@ -159,7 +159,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3m | [B-M3M4-32](B-M3M4-32.md) | DONE per status/B-M3M4-32.md (B-M3M4-30 check fixes: layer re-read after callback, no interleaved Updates, SetPoseStateHelper pose-state callback, labels); Opus check FAIL (research/20261019-b-m3m4-32-check.md), fixes in B-M3M4-34 |
 | 61w3n | [B-M3M4-33](B-M3M4-33.md) | DONE per status/B-M3M4-33.md (robot-state history pulled into M3+M4, operator 2026-10-18: admission, queries, interpolation; wires cliff stats/pose, unexpected movement, vision frame pose); Opus check FAIL (research/20261019-b-m3m4-33-check.md), fixes in B-M3M4-34 |
 | 61w3o | [B-M3M4-34](B-M3M4-34.md) | DONE per status/B-M3M4-34.md; manager fix review PASS (research/20261019-b-m3m4-34-check.md) |
-| 61w3p | [B-M3M4-35](B-M3M4-35.md) | open, after B-M3M4-34 (OV129 adopted: KnownMarker::ComputeNormal/Get3dCorners, completes M4-052 relative cube lights) |
+| 61w3p | [B-M3M4-35](B-M3M4-35.md) | DONE per status/B-M3M4-35.md; manager check PASS (research/20261019-b-m3m4-35-check.md) |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
