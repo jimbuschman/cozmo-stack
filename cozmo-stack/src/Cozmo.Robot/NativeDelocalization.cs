@@ -96,7 +96,7 @@ public sealed partial class EngineRobot
             Engine.DelocalizationComponentHook?.Invoke(stage); // FaceWorld gets newId too (0x00510D68); its body has no observable output.
         if(HasExternalInterface)
         {
-            Engine.DeliverDelocalizationToApp(); // E1–E4: app first, synchronous subscribers afterwards.
+            Engine.DeliverDelocalizationToApp(CurrentOriginId); // E1–E4: app first, synchronous subscribers afterwards.
             // fidelity: M11-072 — R2..R8 are insertion-ordered UI subscriptions, not separate pre-emit hooks.
             Engine.AnimationMessages.Deliver(0x32,true);
         }
@@ -164,8 +164,10 @@ public sealed partial class CozmoEngine
     internal uint NativeUiDeliveryCount;
     /// <summary>Engine-to-app union tag and body; RobotDelocalized is tag 0x32 with an empty body.</summary>
     public event Action<ushort,ReadOnlyMemory<byte>>? EngineToGameMessage;
-    internal void DeliverDelocalizationToApp()
+    internal event Action<uint>? DelocalizationReported;
+    internal void DeliverDelocalizationToApp(uint origin=0)
     {
-        DeliverAnimationReportToApp(0x32,ReadOnlyMemory<byte>.Empty); // E3 count/enqueue precedes synchronous local delivery.
+        var typed=CaptureAppEvent(DelocalizationReported,origin);
+        DeliverAnimationReportToApp(0x32,ReadOnlyMemory<byte>.Empty,typed); // E3 count/enqueue precedes synchronous local delivery.
     }
 }

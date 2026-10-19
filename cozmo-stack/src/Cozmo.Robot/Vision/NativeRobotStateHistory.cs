@@ -22,6 +22,7 @@ internal sealed class HistRobotState : IDisposable
 public sealed partial class RobotStateHistory
 {
     private readonly object _gate=new();
+    internal object? NativePoseTreeGate; // robot-owned histories share every native pose writer's gate
     private readonly SortedDictionary<uint,HistRobotState> _entries=new();
     private readonly SortedDictionary<uint,Pose3d> _computed=new();
     // Native auxiliary indices (+0x24/+0x30). Their insertion owner is still M11-044, named at that join below.
@@ -39,7 +40,12 @@ public sealed partial class RobotStateHistory
     public int InterpolationStandIns=>0; // compatibility counter: there are no nearest-endpoint stand-ins
 
     private T WithGate<T>(Func<T> body)
-    {T result=default!;LogCallbackDeferral.RunGated(_gate,()=>result=body());return result;}
+    {
+        T result=default!;
+        void Run()=>LogCallbackDeferral.RunGated(_gate,()=>result=body());
+        if(NativePoseTreeGate is {} tree)LogCallbackDeferral.RunGated(tree,Run);else Run();
+        return result;
+    }
 
     /// <summary>Standalone host adapter. Production supplies its real origin-owned pose to AddRawOdomState.</summary>
     public void Add(RobotState state)
@@ -102,6 +108,8 @@ public sealed partial class RobotStateHistory
     private void ClearRaw(){foreach(var entry in _entries.Values)entry.Dispose();_entries.Clear();}
     // fidelity: M11-044, M1-041, M1-025, M1-015
     internal void Clear()
+        => WithGate(()=>{ClearCore();return 0;});
+    private void ClearCore()
     {
         lock(_gate)
         {
@@ -299,7 +307,7 @@ public sealed partial class RobotStateHistory
         }
     }
     internal void InsertComputedStateAt(uint timestamp,Pose3d pose)
-    {lock(_gate){if(_computed.Remove(timestamp,out var prior))prior.Dispose();_computed[timestamp]=new Pose3d(pose);}}
+    {WithGate(()=>{if(_computed.Remove(timestamp,out var prior))prior.Dispose();_computed[timestamp]=new Pose3d(pose);return 0;});}
     public Pose3d? GetComputedStateAt(uint timestamp){lock(_gate)return _computed.GetValueOrDefault(timestamp);}
     // fidelity: M11-055
     internal EngineLocalizationPose? PublicationPose

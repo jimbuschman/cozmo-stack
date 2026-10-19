@@ -911,6 +911,7 @@ public class CoreReviewTests
     /// IS_PICKED_UP status bit) runs <c>Robot::Delocalize</c>, and <c>BlockWorld::OnRobotDelocalized</c> 0x006249C4 forgets what is located; a drive to the forgotten object then refuses.
     /// </summary>
     [Fact]
+    // reach: production — actual treads message dispatch, native delocalization and queued API report.
     public void CORE008_ATreadsBoundaryDelocalizesAndTakesTheOldFramesCoordinatesOutOfPlay()
     {
         using var rig = new Rig();
@@ -963,9 +964,9 @@ public class CoreReviewTests
     /// <summary>
     /// CORE-008, the history: a frame is never paired with a pose measured in another origin. The
     /// engine files each state against the origin it was reported in and resolves that origin when it
-    /// uses it; here the entries of a previous origin are dropped as soon as a new one arrives, so a
-    /// frame that arrives late cannot be given a pose from the frame that has gone.
+    /// uses it. Native admission does not purge an old origin; an in-between query across different roots fails.
     /// </summary>
+    // reach: unit (standalone host adapter supplies stable distinct origins; native raw query enforces root identity).
     [Fact]
     public void CORE008_TheHistoryDoesNotMixOrigins()
     {
@@ -977,9 +978,9 @@ public class CoreReviewTests
 
         history.Add(new RobotState { Timestamp = 1066, PoseOriginId = 2, Pose = new RobotPose { X = 0 } });
         Assert.Equal(2u, history.OriginId);
-        // the old origin's poses are gone: the nearest state to their timestamps is the new origin's
-        Assert.Equal(0, history.At(1000)!.Value.RobotPose.Translation.X, 3);
-        Assert.Equal(0, history.At(1033)!.Value.RobotPose.Translation.X, 3);
+        Assert.Equal(100, history.At(1000)!.Value.RobotPose.Translation.X, 3);
+        Assert.Equal(110, history.At(1033)!.Value.RobotPose.Translation.X, 3);
+        Assert.Null(history.At(1050));
     }
 
     // ================================================================ CORE-009

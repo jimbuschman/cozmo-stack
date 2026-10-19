@@ -54,12 +54,15 @@ public sealed class M11DelocalizationB8Tests
     /// status bit 1 clear therefore passes Y = IsCarryingObject() Y, and D13 (0x00510C5A..0x00510C98) logs no IsCarryingObjectMismatch.
     /// </summary>
     [Fact]
+    // reach: unit (native frame/query inputs supplied explicitly; actual history/results, no admission substitution).
     public void M11_053_TheFrameMismatchDelocalizePassesTheCarryingState()
     {
         using var rig = new Rig();
         rig.M.Docking.Carrying.SetCarrying(7);
         var log = Capture(rig.Robot.Engine);
-        void Mismatch() { rig.T += 33; rig.Send(new RobotState { Timestamp = rig.T, PoseFrameId = 5, Pose = new RobotPose(), HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos, Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() }); }
+        // Unit fixture advances the native frame after real frame0 samples already exist.
+        using(var pose=new Pose3d(rig.Robot.Engine.Robot!.MainPose))rig.Robot.Engine.Robot.SetNewPose(pose);
+        void Mismatch() { rig.T += 33; rig.Send(new RobotState { Timestamp = rig.T, PoseOriginId=rig.Robot.Engine.Robot!.CurrentOriginId, PoseFrameId = 0, Pose = new RobotPose(), HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos, Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() }); }
         for (int i = 0; i < 101; i++) Mismatch();
         lock (log)
         {

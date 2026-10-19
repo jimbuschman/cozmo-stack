@@ -140,10 +140,11 @@ public sealed class M10GyroCheckedRowsTests
         d.DetectBias(State(5002),0);Assert.False(d.BiasReported);Assert.Empty(f.Logs);
     }
     [Fact]
+    // reach: production — native admission now reaches the actual bias detector; legacy name retained.
     public void LiveSensorTailComputesMagnitudeButDoesNotInventHistoryAdmission()
     {
         using var rig=new M4ControlTests.Rig();rig.ToSynced();var state=rig.MakeState();state.Accel=new AccelData{X=3,Y=4,Z=12};rig.Data(state);rig.Tick();
-        Assert.Equal(13f,rig.Robot.Sensors.OffTreads.RawAccelMagnitude);Assert.Equal(0u,rig.Engine.Robot!.GyroDetector!.DriftStart);Assert.Equal(0u,rig.Engine.Robot.GyroDetector.BiasCount);
+        Assert.Equal(13f,rig.Robot.Sensors.OffTreads.RawAccelMagnitude);Assert.Equal(0u,rig.Engine.Robot!.GyroDetector!.DriftStart);Assert.Equal(1u,rig.Engine.Robot.GyroDetector.BiasCount);Assert.Equal(1,rig.Engine.Robot.PoseHistory.Count);
     }
     [Theory]
     [InlineData(float.NaN)][InlineData(float.PositiveInfinity)]

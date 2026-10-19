@@ -128,6 +128,7 @@ public sealed class M13CheckedRowsBuilderTests
     }
 
     [Fact]
+    // reach: unit (supplies frame5 directly; actual dispatch/admission, eye layer and motor ack).
     public async Task LiveEyeLayerAndMotorAckUseTheSameGate()
     {
         using var rig=new M4ControlTests.Rig();rig.ToSynced();
@@ -136,8 +137,8 @@ public sealed class M13CheckedRowsBuilderTests
         typeof(EngineRobot).GetProperty(nameof(EngineRobot.PoseFrameId))!.SetValue(rig.Engine.Robot,5u);
         Assert.Equal(5u,service.OriginId);Assert.NotEqual(service.OriginId,rig.Engine.Robot!.CurrentOriginId);
         var state=rig.MakeState(frame:5);state.Pose.Angle=0.25f;rig.Data(state);rig.Tick();
-        Assert.InRange(service.PoseAngleAroundZ,0.249999f,0.250001f); // Explicit retained history adapter, not proof of native MainPose binding.
-        Assert.Equal(0f,(float)rig.Engine.Robot.MainPose.AngleAroundZ);
+        Assert.InRange(service.PoseAngleAroundZ,0.249999f,0.250001f); // Actual history admission now updates the native MainPose.
+        Assert.InRange((float)rig.Engine.Robot.MainPose.AngleAroundZ,0.249999f,0.250001f);
         using var turn=new TurnInPlaceAction(service,1,false);
         Assert.Equal(0u,turn.Init());Assert.NotEqual((byte)0,turn.Byte0xD9);
         rig.Robot.Animations.WithTrackLayers(layers=>

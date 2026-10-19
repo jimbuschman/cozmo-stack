@@ -1077,6 +1077,7 @@ public sealed partial class EngineRobot
         Behavior.SteppedBehavior.ReportMissing("M11-066 Robot ctor main (+0x298) and forward (+0x2A4) pose names have no checked row; empty names retained");
         LiftPivot.SetParent(MainPose);LiftPose.SetParent(LiftPivot);
         PoseHistory.SourceLog=(l,c,k,t)=>Engine.EmitSourceLog(l,c,k,t);
+        PoseHistory.NativePoseTreeGate=PoseTreeGate;
         PoseHistory.ForceFlush=()=>Engine.Das.ForceFlushNow();
         Delocalize(false);
         PoseFrameId=0; // Constructor post-Delocalize write 0x0051032C.

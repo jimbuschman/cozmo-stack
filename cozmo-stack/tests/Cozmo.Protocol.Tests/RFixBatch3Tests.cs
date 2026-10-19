@@ -286,6 +286,7 @@ public class RFixBatch3Tests : IDisposable
     /// clears the counter and calls Robot::Delocalize, after the state went into the history. The first 100 mismatches delocalize nothing. Driven through the live state path (RobotState messages).
     /// </summary>
     [Fact]
+    // reach: unit (native frame/query inputs supplied explicitly; actual history/results, no admission substitution).
     public void M11_019_The101stMismatchedFrameIdDelocalizes()
     {
         if (!NeedsLibrary()) return;
@@ -296,7 +297,9 @@ public class RFixBatch3Tests : IDisposable
         var engineLog = new List<string>();
         rig.Robot.Engine.CaptureSourceLogs(l => { lock (engineLog) engineLog.Add(l); });
         rig.Vision.RobotDelocalized += _ => delocalized++;
-        void Mismatch() { rig.T += 33; rig.Send(new RobotState { Timestamp = rig.T, PoseFrameId = 5, Pose = new RobotPose(), HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos, Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() }); }
+        // Unit fixture advances the native frame after real frame0 samples already exist.
+        using(var pose=new Pose3d(rig.Robot.Engine.Robot!.MainPose))rig.Robot.Engine.Robot.SetNewPose(pose);
+        void Mismatch() { rig.T += 33; rig.Send(new RobotState { Timestamp = rig.T, PoseOriginId=rig.Robot.Engine.Robot!.CurrentOriginId, PoseFrameId = 0, Pose = new RobotPose(), HeadAngle = -0.15f, Status = (uint)RobotStatusFlag.HeadInPos, Accel = new AccelData { Z = 9800 }, Gyro = new GyroData() }); }
         for (int i = 0; i < 100; i++) Mismatch();
         Assert.Equal(0, delocalized);
         Assert.Single(rig.Vision.World.LocatedObjects);
@@ -305,7 +308,7 @@ public class RFixBatch3Tests : IDisposable
         Assert.Single(rig.Vision.World.LocatedObjects); // D19 keeps the localizable old bucket, without a PoseState write.
         Assert.DoesNotContain(rig.Vision.World.LocatedObjects,o=>o.OriginId==rig.Vision.World.CurrentOriginId);
         // 00512F40 calls sErrorF (not an unlevelled log); native format at00BE697E.
-        Assert.Contains(engineLog, l => l == "error: Robot.UpdateFullRobotState.MismatchedFrameIDs: Robot[5] and engine[0] frameIDs are mismatched, delocalizing");
+        Assert.Contains(engineLog, l => l == "error: Robot.UpdateFullRobotState.MismatchedFrameIDs: Robot[0] and engine[1] frameIDs are mismatched, delocalizing");
         for (int i = 0; i < 100; i++) Mismatch();                    // the counter was cleared: another 100 do nothing
         Assert.Equal(1, delocalized);
     }
@@ -341,6 +344,7 @@ public class RFixBatch3Tests : IDisposable
     /// with the frame timestamp and GetOldestTimeStamp/GetNewestTimeStamp (0x00532188, 0x00532196: 0 when the raw map is empty), then returns without calling UpdateObservedMarkers.
     /// </summary>
     [Fact]
+    // reach: unit (native frame/query inputs supplied explicitly; actual history/results, no admission substitution).
     public void M11_050_AFailedComputedStateLogsTheHistoryRangeAndDropsTheFrame()
     {
         if (!NeedsLibrary()) return;
@@ -356,9 +360,8 @@ public class RFixBatch3Tests : IDisposable
         Assert.Equal(1000u, rig.Vision.History.NewestTimeStamp);
         var r = rig.Vision.ProcessCapture(frame, 5000, 5000);
         // the pose pairing itself fails (no state near 5000 is not the engine's failure; History.At is the nearest), so the history range is what the failure logs
-        Assert.NotNull(r);
-        Assert.Contains(rig.Log, l => l == "VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: 5000, hist: 1000 to 1000");
-        Assert.Empty(r!.Objects);
+        Assert.Null(r); // native query has no bracket; reject before marker processing
+        Assert.Contains(rig.Log,l=>l=="frame 5000: no robot state to pair with");
     }
 
     // ------------------------------------------------------------------ M11-039: the calibration install result

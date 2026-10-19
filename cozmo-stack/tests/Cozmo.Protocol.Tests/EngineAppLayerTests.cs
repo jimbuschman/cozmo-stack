@@ -2719,6 +2719,7 @@ public class EngineAppLayerTests
     /// for it, the frame is discarded, and afterwards no face, object, FrameProcessed or frame count is left or raised.
     /// </summary>
     [Fact]
+    // reach: unit (native frame/query inputs supplied explicitly; actual history/results, no admission substitution).
     public void M1_025_M1_015_CB33_AFrameInFlightAtTheRemovalLeavesNothingBehind()
     {
         using var rig = new Rig();
@@ -2737,7 +2738,7 @@ public class EngineAppLayerTests
         vision.Faces.FaceObserved += _ => Interlocked.Increment(ref faceEvents);
         vision.World.ObjectObserved += _ => Interlocked.Increment(ref objectEvents);
 
-        var frame = Task.Run(() => vision.ProcessCapture(new Cozmo.Robot.Vision.GrayImage(320, 240), 1, 0));
+        var frame = Task.Run(() => vision.ProcessCapture(new Cozmo.Robot.Vision.GrayImage(320, 240), 1, 10));
         Assert.True(detector.Entered.Wait(TimeSpan.FromMinutes(2)), "the frame never reached face detection");
         using var removalEntered = new ManualResetEventSlim();
         vision.RemovalInvalidated += removalEntered.Set;

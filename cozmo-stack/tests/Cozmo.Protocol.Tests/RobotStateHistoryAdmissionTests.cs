@@ -35,6 +35,21 @@ public sealed class RobotStateHistoryAdmissionTests
         state.Pose.Node!.Transform=new Transform3d(Rotation3d.Identity,new Vec3(77,88,99));return state;
     }
 
+    // reach: unit (holds the real pose writer gate to verify the dispatch-built history query shares it; no history substitution).
+    [Fact]
+    public async Task HistoryQueriesShareTheNativePoseWritersGate()
+    {
+        using var f=new Fixture();f.Send(f.State(100));
+        using var entered=new ManualResetEventSlim();using var release=new ManualResetEventSlim();
+        var writer=Task.Run(()=>LogCallbackDeferral.RunGated(f.Robot.PoseTreeGate,()=>{entered.Set();release.Wait(TimeSpan.FromSeconds(10));}));
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+        var query=Task.Run(()=>{using var output=new HistRobotState();uint time=0;return f.History.GetRawStateAt(100,ref time,output,true);});
+        bool completed;
+        try{completed=query.Wait(TimeSpan.FromMilliseconds(100));}finally{release.Set();}
+        await writer.WaitAsync(TimeSpan.FromSeconds(5));Assert.Equal(0u,await query.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.False(completed);
+    }
+
     // reach: unit (calls the real bound movement query; detector trigger gates remain its separate M10-007 tests).
     [Fact]
     public void MovementQueryIsBoundToRealHistoryWithInterpolation()

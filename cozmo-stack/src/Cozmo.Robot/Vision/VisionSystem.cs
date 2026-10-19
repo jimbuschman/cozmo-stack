@@ -111,6 +111,7 @@ public sealed partial class VisionSystem : IDisposable
         robot.Engine.ChargerPlatformUpdate = _platformStep;
         Locator = new CubeLocator(this);
         robot.MessageInternal += OnMessage;
+        robot.Engine.DelocalizationReported += OnDelocalizationReported;
         // fidelity: M3-005, M3-022
         // Vision gets what HandleImageChunk hands to SetNextImage (the per-tick cap, A3), and the calibration and the
         // enable the connection-time NV read gives (1j).
@@ -710,15 +711,9 @@ public sealed partial class VisionSystem : IDisposable
         }
     }
 
-    /// <summary>The delocalization both runtime call sites share (M11-019): carried objects move across, the world forgets the rest, <see cref="RobotDelocalized"/> is raised.</summary>
+    /// <summary>Relay the native delocalization report to this facade after its queued app delivery (M11-072).</summary>
     // fidelity: M11-019
-    private void DelocalizeRobot(bool suppliedCarrying)
-    {
-        using var frameMutation = World.EnterPoseMutation();
-        World.ResetPoseFrameMismatch(); // +0x2C0 = 0 on both paths: 0x00512B9C (tread boundary), 0x00512F88 (frame mismatch).
-        _robot.Engine.Robot?.Delocalize(suppliedCarrying);
-        RobotDelocalized?.Invoke(World.CurrentOriginId);
-    }
+    private void OnDelocalizationReported(uint origin)=>RobotDelocalized?.Invoke(origin);
 
     // fidelity: M11-041, M11-042
     /// <summary>
@@ -1223,6 +1218,7 @@ public sealed partial class VisionSystem : IDisposable
             _robot.Lights.Cubes.IsLocalized = () => _robot.Sensors.OffTreads.Robot2C4 != 0;
         }
         _robot.MessageInternal -= OnMessage;
+        _robot.Engine.DelocalizationReported -= OnDelocalizationReported;
         _robot.Camera.FrameForVision -= OnFrame;
         _robot.CameraSettings.CalibrationInstalled -= OnCalibrationInstalled;
         _robot.CameraSettings.VisionEnabledSet -= OnVisionEnabledSet;
