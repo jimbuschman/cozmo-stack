@@ -57,7 +57,7 @@ stands. Nothing new starts outside the current layer.
   `re-analysis/acceptance/M3M4-blockers.md` (2026-10-18): both Opus settling passes adopted (FAIL; 10 records settle
   after cleanup); builders B-M3M4-30..33 done; checks: 31 PASS (relative cube lights wait on
   research OV129), 32 and 33 FAIL (2026-10-19), fixes in B-M3M4-34 (review PASS 2026-10-19); OV129 adopted, B-M3M4-35 (marker normal,
-  completes relative cube lights) done, check PASS 2026-10-19. **Settle readiness (manager, 2026-10-19; `research/20261019-m3m4-settle.md`):** M3-012, M3-055, M3-060, M4-043, M4-044, M4-047, M4-050 settled EXACT_SOURCE; the other 16 are source-supported but run only with the world model built. **Operator decision (2026-10-19): CozmoRobot always builds its world model (VisionSystem/BlockWorld)**, as the engine does: job B-M3M4-36 done, check PASS (`research/20261019-b-m3m4-36-check.md`); the 16 settled (M4-052 as EQUIVALENT_IMPLEMENTATION: bionic atan2f). **Every M3/M4 record is now settled, policy, equivalent or hardware-only.** **Hardware script ready (2026-10-19):** `acceptance/hardware/scripts/m3m4-hw-2.md` (`m3m4-hw`, 13 checks over 17 records); waiting on the operator's robot run, then the manager's judgement and ACCEPTED; B-M3M4-33 built the robot-state history (pulled forward by the operator 2026-10-18); OV128 adopted with corrections
+  completes relative cube lights) done, check PASS 2026-10-19. **Settle readiness (manager, 2026-10-19; `research/20261019-m3m4-settle.md`):** M3-012, M3-055, M3-060, M4-043, M4-044, M4-047, M4-050 settled EXACT_SOURCE; the other 16 are source-supported but run only with the world model built. **Operator decision (2026-10-19): CozmoRobot always builds its world model (VisionSystem/BlockWorld)**, as the engine does: job B-M3M4-36 done, check PASS (`research/20261019-b-m3m4-36-check.md`); the 16 settled (M4-052 as EQUIVALENT_IMPLEMENTATION: bionic atan2f). **Every M3/M4 record is now settled, policy, equivalent or hardware-only.** **M3-device and M4-control are ACCEPTED (2026-10-19)** on the operator's run `acceptance/hardware/20261019-182707-M3M4-HW` (manager judgement in its README; script `scripts/m3m4-hw-2.md`, tool at e95d4acd). **Next layer: M5** (animation and the face), per "The plan"; B-M3M4-33 built the robot-state history (pulled forward by the operator 2026-10-18); OV128 adopted with corrections
   (`research/overnight/20261018-ov128-check.md`); operator decisions recorded on M3-004/017,
   M4-006/039/040/042.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
@@ -102,6 +102,8 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 - **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
+
+- **M3M4-HW harness (2026-10-19; bundle README):** answers typed with spaces don't map to hyphenated choices and the PARITY_STEP grader's expected answer is reversed; DAS_EVENTS should attach through `BeforeStart`; DISCONNECT_QUIET should judge "no data after the teardown batch" rather than key on a DisconnectRequest frame (M1-006 pacing can hold it back). Conformance tools set the nominal calibration after construction instead of through `VisionCalibration` (B-M3M4-36 check).
 
 - **Flake (2026-10-18):** `NeedsPersistenceGateTests.RealConnectNeverRestoresOrWritesUnbuiltNeedsPersistence(hasV5: False)`
   failed once in the push gate ("connect state 2": no ConnectionState 2 within 10 s after the injected ConnectionResponse,
@@ -235,6 +237,7 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 | ce859bf | M1-transport | M1-024 decay bracket snapshot; M1-044/M1-015 warning log level; regression coverage |
 | c8af57e | M1/M2 and transferred recipients | Cited manager/policy disposition; four new M1 gap records; re-approved 13 affected inventories |
 | 4f184775 | M1-transport, M2-protocol | **ACCEPTED** (2026-10-18): all records settled, policy or equivalent; M1-033 by robot runs; M1M2-HW bundle 20261018-170546 judged as source |
+| e95d4acd | M3-device, M4-control | **ACCEPTED** (2026-10-19): all 113 records settled, policy, equivalent or hardware-only; M3M4-HW bundle 20261019-182707 judged as source; the seven HARDWARE_ONLY records re-observed |
 
 ## Open decisions for the operator
 

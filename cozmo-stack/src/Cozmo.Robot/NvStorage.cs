@@ -1162,6 +1162,7 @@ public sealed class NvStorageComponent : IDisposable
                             if (total > (uint)(r.Data.Length - NvHeaderSize))
                             {
                                 // M3-028: the rest is on the robot; re-request it, reliable and not hot, with no re-arm.
+                                // fidelity: M3-036 — the robot's replies to Length = 1 and to this size+16 re-request are HARDWARE_ONLY.
                                 LogCall(EngineLogLevel.Debug, "NVStorage", "NVStorageComponent.HandleNVOpResult.ReadingRestOfData", $"Tag: 0x{r.Tag:x}, TotalSize: {total}");
                                 // fidelity: M3-027
                                 // N10 (0x00643888..0x006438BC): the saved tag (+0xDC) becomes the response tag, the op (+0xE4)

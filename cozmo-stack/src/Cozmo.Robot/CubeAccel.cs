@@ -137,6 +137,7 @@ public sealed class CubeAccelStreams
             first = list.Count == 0;
             list.Add(listener);
         }
+        // fidelity: M4-024 — the robot forwarding ObjectAccel only while streaming is HARDWARE_ONLY.
         if (first) _robot.SendMessage(new StreamObjectAccel { ObjectID = objectId, Enable = true }, flush: true);
     }
 

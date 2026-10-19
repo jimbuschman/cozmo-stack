@@ -69,6 +69,7 @@ public sealed class CozmoEngineOptions
     public string? NeedsDeviceDirectory { get; init; }
     // fidelity: M3-061 — host replacement for app DataPlatformFilesPath/persistentDataPath; scope 0 appends /output.
     public string FilesPath { get; init; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"cozmo-stack");
+    // fidelity: M3-062 — host supplies DataPlatformResourcesPath (scope 1; app input GetResourcesFolder).
     // fidelity: M1-029
     /// <summary>
     /// DataPlatformResourcesPath: the extracted <c>cozmo_resources</c> directory (G5.34, G5.35). The firmware
@@ -1043,6 +1044,7 @@ public sealed partial class EngineRobot
     }
 
     // fidelity: M4-020
+    // fidelity: M4-021 — the robot reporting these origin/frame values in RobotState is HARDWARE_ONLY.
     /// <summary>
     /// SendAbsLocalizationUpdate as SendSyncTime calls it (CD18, 0x00512734..0x005127B6): timestamp 0, the pose frame id
     /// (robot+0x2B0), the pose parent's id (the current origin) and the identity pose (0, 0, 0).

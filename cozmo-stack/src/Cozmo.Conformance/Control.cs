@@ -103,6 +103,7 @@ public static class Control
         return pass ? 0 : 2;
     }
 
+    // fidelity: M4-013 — whether the robot honours a later StartMotorCalibration is HARDWARE_ONLY.
     /// <summary>
     /// <c>calibrate &lt;robot-ip&gt; [--acceptance [file]]</c>: does the robot honour StartMotorCalibration?
     ///

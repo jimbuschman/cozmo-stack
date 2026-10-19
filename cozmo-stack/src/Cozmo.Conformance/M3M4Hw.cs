@@ -1048,6 +1048,7 @@ internal sealed partial class M3M4Run
 
     // ------------------------------------------------------------------ bundle
 
+    // fidelity: M3-050 — every received ImageChunk's encoding is recorded per run (5/6/7 flagged).
     internal static JsonObject ImageEncodingObservation(ImageChunk chunk) => new()
     {
         ["record"] = "M3-050", ["imageId"] = chunk.ImageId, ["chunkId"] = chunk.ChunkId,

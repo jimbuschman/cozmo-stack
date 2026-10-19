@@ -54,8 +54,8 @@ status.
 | --- | --- | ---: | ---: | ---: | ---: |
 | M1-transport | ACCEPTED | 43 | 0 | 0 | 3 |
 | M2-protocol | ACCEPTED | 22 | 0 | 0 | 0 |
-| M3-device | INVENTORY_APPROVED | 39 | 0 | 0 | 4 |
-| M4-control | INVENTORY_APPROVED | 42 | 0 | 0 | 3 |
+| M3-device | ACCEPTED | 39 | 0 | 0 | 4 |
+| M4-control | ACCEPTED | 42 | 0 | 0 | 3 |
 | M5-animation | INVENTORY_APPROVED | 33 | 0 | 0 | 0 |
 | M6-wwise-bank | INVENTORY_APPROVED | 1 | 0 | 0 | 0 |
 | M7-behaviour | INVENTORY_APPROVED | 4 | 0 | 0 | 0 |

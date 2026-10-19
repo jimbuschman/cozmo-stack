@@ -23,8 +23,8 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | M1-transport | ACCEPTED | 2026-10-18 | 62 | 42 | 19 | 1 | 0 | 0 | 0 |
 | M2-protocol | ACCEPTED | 2026-10-18 | 24 | 22 | 2 | 0 | 0 | 0 | 0 |
-| M3-device | INVENTORY_APPROVED | 2026-10-18 | 64 | 39 | 21 | 4 | 0 | 0 | 0 |
-| M4-control | INVENTORY_APPROVED | 2026-10-19 | 52 | 40 | 9 | 3 | 0 | 0 | 0 |
+| M3-device | ACCEPTED | 2026-10-18 | 64 | 39 | 21 | 4 | 0 | 0 | 0 |
+| M4-control | ACCEPTED | 2026-10-19 | 52 | 40 | 9 | 3 | 0 | 0 | 0 |
 | M5-animation | INVENTORY_APPROVED | 2026-10-16 | 65 | 30 | 11 | 1 | 23 | 0 | 23 |
 | M6-wwise-bank | INVENTORY_APPROVED | 2026-10-18 | 45 | 1 | 2 | 0 | 38 | 4 | 41 |
 | M7-behaviour | INVENTORY_APPROVED | 2026-10-16 | 29 | 4 | 0 | 0 | 23 | 2 | 24 |
@@ -38,7 +38,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M15-freeplay | INVENTORY_APPROVED | 2026-10-18 | 71 | 3 | 1 | 2 | 61 | 4 | 65 |
 | tools | UNREVIEWED |  | 5 | 1 | 4 | 0 | 0 | 0 | 0 |
 
-ACCEPTED subsystems: M1-transport, M2-protocol.
+ACCEPTED subsystems: M1-transport, M2-protocol, M3-device, M4-control.
 
 ## Verification (independent of status)
 

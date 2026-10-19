@@ -409,6 +409,7 @@ public sealed class CozmoMotion
 
     // fidelity: M1-025
     // E11–E14: the message fields do not gate this per-Robot subscriber.
+    // fidelity: M4-029, M4-030 — SDK ResetRobot recipients (EnableLightStates, EnableLiftPower, StopRobotForSdk): SDK mode is not supported (app boundary).
     private readonly string _sdkChargerOwner = "OnChargerInSDK"; // ctor 0x0063DADC
     private readonly byte _sdkChargerMask = 0x07; // ctor 0x0063DB10
     internal void OnExitSdkMode()

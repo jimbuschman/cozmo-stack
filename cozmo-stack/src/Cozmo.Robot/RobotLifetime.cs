@@ -164,6 +164,7 @@ public sealed partial class CozmoEngine
 {
     // The M1 interface calls are ordered; recipient semantics belong to the split
     // higher-layer records. Missing recipients are visible instead of silent no-ops.
+    // fidelity: M3-039 — the SDK ResetRobot cube-sleep recipient (0x0065DEA2): SDK mode is not supported (app boundary).
     // fidelity: M1-050
     // The live slot +0x30 is UiMessageHandler::OnRobotDisconnected (ARM_ABS32
     // 0x0102FE4C). It only exits active SDK mode, which this stack does not support.

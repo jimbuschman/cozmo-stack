@@ -215,6 +215,7 @@ public static class FaceBitmapCodec
         return EncodeCanvas(canvas, CanvasRows, CanvasColumns)!;
     }
 
+    // fidelity: M3-008 — the firmware's own row mapping and playback period are HARDWARE_ONLY; this is the engine model.
     /// <summary>
     /// The engine's reference decoder, into a 64 x 128 canvas given row-major (B14). A payload of exactly 1024
     /// bytes is the raw masks. Otherwise, per column, a skip or repeat byte covers its columns as B8/B9 say, and

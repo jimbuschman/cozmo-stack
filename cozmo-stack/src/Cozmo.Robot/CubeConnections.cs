@@ -223,6 +223,7 @@ public sealed class CubeConnections
     /// flag and the discovery time, and restarts both the discovery and the reconnect clocks. It leaves the
     /// pool and the last update time alone.
     /// </summary>
+    // fidelity: M4-042 — BlockFilter game messages are app inputs not supported; the host enable is M1-042.
     // fidelity: M1-042 — this enable is the host input; M4-042 app pool editing/removal messages have no ingress.
     public void EnableAutoBlockPool(bool enabled, float discoveryTimeSeconds = 0f)
     {

@@ -27,6 +27,8 @@ builder job is open. What has never run is a settling pass over the records them
 
 ## Sequence
 
+**Update (2026-10-19, ACCEPTED):** the operator's run `hardware/20261019-182707-M3M4-HW` is judged as source (README in the bundle). M3-device and M4-control are ACCEPTED at e95d4acd. Missing tags on 16 policy/hardware-only records added at acceptance (comments only).
+
 **Update (2026-10-19, hardware script):** `hardware/scripts/m3m4-hw-2.md` approved for the operator's run. The tool `m3m4-hw` now has 13 checks (the seven HARDWARE_ONLY records, pass B's coverage list, cube lights), with the four harness defects of the 2026-10-12 run fixed. Waiting on the operator.
 
 **Update (2026-10-19, B-M3M4-36 check PASS):** `research/20261019-b-m3m4-36-check.md`. The 16 held records settled (M4-052 EQUIVALENT_IMPLEMENTATION). M3 and M4 hold no gap records; implementation complete. Left: the hardware script and run, then ACCEPTED.

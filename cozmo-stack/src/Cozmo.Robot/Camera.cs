@@ -306,6 +306,7 @@ public sealed class CozmoCamera
     /// </summary>
     public Func<double>? EventTime { get; set; }
 
+    // fidelity: M3-004 — warm-up frames flagged and delivered (no engine discard).
     /// <summary>
     /// Frames to flag as warm-up after the camera is started (policy M3-004). The sensor takes about eleven frames
     /// to lock: until then every picture is torn. The engine has no such idea - it hands every image it reassembles
@@ -665,6 +666,7 @@ public sealed partial class CameraSettings
     /// <summary>The engine log lines of these steps.</summary>
     public event Action<string>? Log;
 
+    // fidelity: M3-016 — the robot's colour frames after EnableColorImages are HARDWARE_ONLY (M3M4-HW bundles).
     // fidelity: M3-023
     /// <summary>
     /// VisionComponent::EnableColorImages (A24, 3a; 0x006582CC..0x00658314): stores the flag at +0x32A and sends

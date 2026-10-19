@@ -97,10 +97,13 @@
       "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true,
       "review": {
-        "state": "INVENTORY_APPROVED",
+        "state": "ACCEPTED",
         "inventory": "re-analysis/inventory/M3-device.md",
         "approved": "2026-10-18",
-        "snapshot": "re-analysis/inventory/M3-device.approved.json"
+        "snapshot": "re-analysis/inventory/M3-device.approved.json",
+        "accepted": "2026-10-19",
+        "accepted_commit": "e95d4acd",
+        "acceptance_bundle": "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
       }
     },
     {
@@ -110,10 +113,13 @@
       "source_investigation_exhausted": true,
       "implementation_fidelity_complete": true,
       "review": {
-        "state": "INVENTORY_APPROVED",
+        "state": "ACCEPTED",
         "inventory": "re-analysis/inventory/M4-control.md",
         "approved": "2026-10-19",
-        "snapshot": "re-analysis/inventory/M4-control.approved.json"
+        "snapshot": "re-analysis/inventory/M4-control.approved.json",
+        "accepted": "2026-10-19",
+        "accepted_commit": "e95d4acd",
+        "acceptance_bundle": "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
       }
     },
     {
@@ -1468,7 +1474,8 @@
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
-          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW"
+          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW",
+          "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
         ]
       }
     },
@@ -1625,7 +1632,8 @@
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
-          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW"
+          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW",
+          "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
         ]
       }
     },
@@ -6344,7 +6352,8 @@
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
-          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW"
+          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW",
+          "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
         ]
       }
     },
@@ -7459,7 +7468,8 @@
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
-          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW"
+          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW",
+          "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
         ]
       }
     },
@@ -7522,7 +7532,8 @@
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
-          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW"
+          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW",
+          "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
         ]
       }
     },
@@ -8044,7 +8055,8 @@
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
-          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW"
+          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW",
+          "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
         ]
       }
     },
@@ -10975,7 +10987,8 @@
       "verification": {
         "level": "HARDWARE_VERIFIED",
         "bundles": [
-          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW"
+          "re-analysis/acceptance/hardware/20261012-062328-M3M4-HW",
+          "re-analysis/acceptance/hardware/20261019-182707-M3M4-HW"
         ]
       }
     },
@@ -10983,7 +10996,7 @@
       "id": "M3-051",
       "subsystem": "M3-device",
       "title": "libDAS sink (b): on-device log files and their upload (not built; operator departure)",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/DasControl.cs",
       "status": "COMPATIBILITY_POLICY",
       "effect": "Which engine log entries libDAS keeps and where they go (a local sink, the remote queue, the game sink); the stack keeps every entry today.",
       "provenance": "Split from M3-048 by the manager (2026-10-11).",
@@ -11189,7 +11202,7 @@
       "id": "M3-063",
       "subsystem": "M3-device",
       "title": "App input: the backup game-to-engine messages 0x6B RestoreRobotFromBackup (and its key), 0x6C RequestRobotRestoreData, 0x6D WipeRobotGameData, 0x6E RequestUnlockDataFromBackup; and the backup directory listing order",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/RobotDataBackupManager.cs",
       "status": "COMPATIBILITY_POLICY",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -13843,7 +13856,7 @@
       "id": "M3-064",
       "subsystem": "M3-device",
       "title": "The DataPlatform external path (DataPlatformExternalPath, scope 4; app input: temporaryCachePath)",
-      "location": "cozmo-stack/src/Cozmo.Robot/CozmoRobot.cs",
+      "location": "cozmo-stack/src/Cozmo.Robot/CozmoEngine.cs",
       "status": "COMPATIBILITY_POLICY",
       "authority": "libcozmoEngine.so 3.4.0-1204; Unity C#.",
       "evidence": [
