@@ -72,7 +72,7 @@ internal static class RelativeCubeLights
             var expected=cube.Markers.FirstOrDefault(m=>m.Face==BlockFace.Top);
             if(selected is null || expected is null || top is null)
             {
-                policyLog("M1-034/M4-052: skipped relative lights with missing marker at native marker-code read 0x004E11CA/0x004E2108 (GetMarker null: 0x004E11D4/0x004E2124); prior LED state retained");
+                policyLog("M1-034/M4-052: skipped relative lights at sentinel marker-code read 0x004E11CA/0x004E2108 or GetMarker uncaught throw 0x004E5EDC; prior LED state retained");
                 return null;
             }
             int mask;

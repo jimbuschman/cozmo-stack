@@ -7,8 +7,22 @@ public sealed partial class BlockWorld
     internal FrameMutationScope EnterPoseMutation() => new(FrameGate);
     internal readonly struct FrameMutationScope : IDisposable
     {
-        private readonly object _frameGate;
-        internal FrameMutationScope(object frameGate) { _frameGate=frameGate;Monitor.Enter(frameGate); }
-        public void Dispose() => Monitor.Exit(_frameGate);
+        private readonly IDisposable _scope;
+        internal FrameMutationScope(object frameGate) { _scope=LogCallbackDeferral.EnterGated(frameGate); }
+        public void Dispose() => _scope.Dispose();
     }
+
+    private static void DeliverPublic<T>(Action<T>? handlers,T value)
+    {
+        if(handlers is null)return;
+        foreach(Action<T> handler in handlers.GetInvocationList())
+            LogCallbackDeferral.Run(()=>handler(value),ex=>StackDiagnostics.Write($"M1-034 BlockWorld public event handler skipped: {ex.GetType().Name}: {ex.Message}"));
+    }
+    private static void DeliverPublic<T1,T2,T3>(Action<T1,T2,T3>? handlers,T1 first,T2 second,T3 third)
+    {
+        if(handlers is null)return;
+        foreach(Action<T1,T2,T3> handler in handlers.GetInvocationList())
+            LogCallbackDeferral.Run(()=>handler(first,second,third),ex=>StackDiagnostics.Write($"M1-034 BlockWorld public event handler skipped: {ex.GetType().Name}: {ex.Message}"));
+    }
+    private void EmitPublicLog(string text)=>DeliverPublic(Log,text);
 }

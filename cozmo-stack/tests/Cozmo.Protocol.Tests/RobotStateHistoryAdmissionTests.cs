@@ -59,7 +59,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(HistoryLookupResult.Ok,result.Result);Assert.Equal(5f,(float)result.Pose.Translation.X);
     }
 
-    // reach: unit (direct host ProcessCapture; native camera timestamp selection/result join MISSING at0x00652C22/0x00652C48).
+    // reach: unit (direct host ProcessCapture; native post-query PoseData fields after0x00652CFC remain unread).
     [Fact]
     public void HostFramePoseUsesTheCheckedInterpolationQuery()
     {
@@ -127,7 +127,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(new uint[]{20,40},f.History.ComputedKeyToTime.Keys);
     }
 
-    // reach: production â€” all raw entries come from RobotState packets/dispatch; failure outputs are native query contracts.
+    // reach: unit (dispatch-built history queried directly; no substituted history; this does not prove the native caller join).
     [Theory][InlineData(false)][InlineData(true)]
     public void BracketFailurePreservesStateAndOutputTime(bool interpolate)
     {
@@ -139,7 +139,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(99u,time);Assert.Equal(prior,value.State.ToBytes());Assert.Equal(new Vec3(77,88,99),value.Pose.Translation);
     }
 
-    // reach: production â€” actual RobotState dispatch to raw map, then flag0 native query; tie selects the earlier key.
+    // reach: unit (dispatch-built history queried directly; no substituted history; this does not prove the native caller join).
     [Fact]
     public void NearestTieUsesEarlierKeyAndCopiesEveryStateField()
     {
@@ -161,7 +161,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(88u,time);Assert.Equal(prior,value.State.ToBytes());
     }
 
-    // reach: production â€” actual raw dispatch; independent exact f32 values and native endpoint timestamp/serialized pose.
+    // reach: unit (dispatch-built history queried directly; no substituted history; this does not prove the native caller join).
     [Fact]
     public void InterpolationUsesNativeWidthsAndOnlyCliffChannelZero()
     {
@@ -189,7 +189,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(100u,time);Assert.Equal(0xFFFF,value.State.CliffDataRaw[1]); // native default state, not packet
     }
 
-    // reach: production â€” real calibrated treads transitions produce a vision-only state at the incoming timestamp.
+    // reach: unit (dispatch-built history queried directly; no substituted history; this does not prove the native caller join).
     [Fact]
     public void TreadsStateDelocalizesBeforeTailAndIsNotAdmittedAsRaw()
     {
@@ -204,7 +204,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(0u,f.Robot.LastFullStateResult);
     }
 
-    // reach: production â€” raw admission errors from actual packet dispatch, process counter/reset and u32 subtraction wrap.
+    // reach: production - raw admission errors from actual packet dispatch, process counter/reset and u32 subtraction wrap.
     [Fact]
     public void SixthLargeGapClearsOnlyRawAndAnOlderKeyWrapsTheDelta()
     {
@@ -218,7 +218,7 @@ public sealed class RobotStateHistoryAdmissionTests
         f.Send(f.State(10000));Assert.Equal((byte)0,RobotStateHistory.ConsecutiveGaps);Assert.Equal(1,f.History.Count); // duplicate rejected after reset
     }
 
-    // reach: production â€” a new robot's empty raw map does not reset the native process-global counter.
+    // reach: production - a new robot's empty raw map does not reset the native process-global counter.
     [Fact]
     public void EmptyRawMapDoesNotResetTheGapRun()
     {
@@ -229,7 +229,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(1,second.Engine.Robot!.PoseHistory.Count);
     }
 
-    // reach: production â€” duplicate and rejected origin use the actual dispatch path and leave admitted data intact.
+    // reach: production - duplicate and rejected origin use the actual dispatch path and leave admitted data intact.
     [Fact]
     public void DuplicateAndBadOriginDoNotAdmitOrRunTheTail()
     {
@@ -239,7 +239,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.Equal(variance,f.Rig.Robot.Sensors.CliffVariance);Assert.DoesNotContain(f.Rig.SentSince(mark),m=>m is SetCliffDetectThreshold);
     }
 
-    // reach: production â€” actual admission, running statistics, stopped message and raw-history walk, no result fixtures.
+    // reach: production - actual admission, running statistics, stopped message and raw-history walk, no result fixtures.
     [Fact]
     public void ProductionHistoryEnablesFiftyFourHundredAndSuspiciousThresholdSends()
     {
@@ -251,7 +251,7 @@ public sealed class RobotStateHistoryAdmissionTests
         Assert.True(f.Rig.Robot.Sensors.CliffVariance>10000);
     }
 
-    // reach: production â€” incoming CliffEvent -> real ComputeStateAt(true) -> live AddCliff/BlockWorld/map owner.
+    // reach: production - incoming CliffEvent -> real ComputeStateAt(true) -> live AddCliff/BlockWorld/map owner.
     [Fact]
     public void DetectedCliffUsesInterpolatedRobotHistoryAndIsPlacedInTheWorld()
     {

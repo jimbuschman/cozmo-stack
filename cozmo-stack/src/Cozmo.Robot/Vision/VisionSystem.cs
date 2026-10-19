@@ -734,7 +734,7 @@ public sealed partial class VisionSystem : IDisposable
 
     private readonly object _mailbox = new();
     /// <summary>The one pending image (VisionComponent's "next" slot, +0x74) and the removal epoch it arrived in.</summary>
-    private (CameraFrame Frame, int Removal)? _next;
+    private (CameraFrame Frame, int Removal, VisionPoseData? Pose)? _next;
     private bool _processorRunning;
     private Thread? _processorThread;
     private volatile bool _processorRun = true;
@@ -748,17 +748,39 @@ public sealed partial class VisionSystem : IDisposable
 
     private void OnFrame(CameraFrame f)
     {
-        if(!Enabled)return;
-        // OV12 adopts the ComputeStateAt flag, but explicitly leaves each caller's surrounding result/timestamp
-        // handling unread. Reopening SetNextImage exposes a newest-time selection before the call. Do not guess it.
-        Behavior.SteppedBehavior.ReportMissing("M11-097/M11-049 SetNextImage pose capture: timestamp selection at0x00652C22..0x00652C3A and result handling after0x00652C48 are outside the adopted query rows; frame handoff skipped pending checked caller rows");
+        if(!Enabled||!_processorRun||_disposed)return;
+        if(Calibration is null){WarnNoCalibration(Volatile.Read(ref _removals));return;}
+        var pose=QueryFramePose(f.Timestamp);
+        if(pose is {} captured)HandOverFrame(f,captured);
     }
     // fidelity: M11-097 — checked SetNextImage caller flag1 (OV12,0x00652C32).
-    // Direct host ProcessCapture uses its supplied timestamp; the native camera join above remains explicit.
+    // Manager-adopted SetNextImage join0x00652C22..0x00652E40: clamp to newest raw time before flag1 query.
     private VisionPoseData? QueryFramePose(uint timestamp)
     {
-        using var value=new HistRobotState();uint time=0;
-        return History.ComputeStateAt(timestamp,ref time,value,true)==0?RobotStateHistory.PoseData(time,value):null;
+        var history=History;
+        VisionPoseData? Query()
+        {
+            using var value=new HistRobotState();uint time=0;
+            uint result=history.ComputeStateAt(Math.Min(timestamp,history.NewestTimeStamp),ref time,value,true);
+            if(result==0)
+            {
+                // M11-049: PoseData construction after0x00652CFC is unread. Retain the existing host pairing's
+                // camera/motion fields beyond this checked robot state; no new PoseData construction is inferred.
+                return RobotStateHistory.PoseData(time,value);
+            }
+            var sink=SourceLog??((SourceLogSink)((l,c,k,t)=>_robot.Engine.EmitSourceLog(l,c,k,t)));
+            if(result==0x06000000)
+                sink(EngineLogLevel.Info,"Unnamed","VisionComponent.SetNextImage.OriginMismatch",$"Could not get pose data for t={timestamp} due to origin mismatch. Returning OK");
+            else
+            {
+                var sizes=history.FrameQueryHistorySummary();
+                sink(EngineLogLevel.Warning,null,"VisionComponent.SetNextImage.StateHistoryFail",$"Unable to get computed pose at image timestamp of {timestamp}. (rawStates: have {sizes.RawCount} from {sizes.RawOldest}:{sizes.RawNewest}) (visionStates: have {sizes.VisionCount} from {sizes.VisionOldest}:{sizes.VisionNewest})");
+            }
+            return null;
+        }
+        // Snapshot selection, native query and the retained host pose conversion share every native tree writer's gate.
+        if(history.NativePoseTreeGate is not {} tree)return Query();
+        VisionPoseData? pose=null;LogCallbackDeferral.RunGated(tree,()=>pose=Query());return pose;
     }
 
     /// <summary>
@@ -769,11 +791,13 @@ public sealed partial class VisionSystem : IDisposable
     /// slot: a slot still occupied is a dropped frame (DropStats, "SetNextImage.DroppedFrame", 0x00653070..0x006530C8) and the newest image
     /// replaces it (latest wins, 0x006530CC..0x00653140). The Processor takes the pending image, processes it, and on completion discards the
     /// current image and any image that arrived meanwhile without counting it (0x00652234..0x0065224C), then sleeps 2 ms and polls again.
-    /// NOT BUILT (M11-040): the synchronous mode (<c>SetIsSynchronous</c>, <c>Start</c>/<c>Stop</c>), the timestamp monotonicity test, the pose capture
-    /// at hand-in (this stack pairs the pose when it processes) and the drop-statistics events.
+    /// NOT BUILT (M11-040): the synchronous mode (<c>SetIsSynchronous</c>, <c>Start</c>/<c>Stop</c>), the timestamp monotonicity test
+    /// and the drop-statistics events. Production captures the checked robot state at hand-in; remaining PoseData fields after0x00652CFC stay unread.
     /// </summary>
     // fidelity: M11-040, M11-049
     internal void HandOverFrame(CameraFrame f)
+        => HandOverFrame(f,null); // direct unit hand-in; production supplies its checked captured state
+    private void HandOverFrame(CameraFrame f,VisionPoseData? pose)
     {
         if (!Enabled) return;
         lock (_mailbox)
@@ -784,7 +808,7 @@ public sealed partial class VisionSystem : IDisposable
                 FramesDropped++;
                 Log?.Invoke($"VisionComponent.SetNextImage.DroppedFrame: Setting next image with t={f.Timestamp}, but existing next image from t={pending.Frame.Timestamp} not yet processed");
             }
-            _next = (f, Volatile.Read(ref _removals));
+            _next = (f, Volatile.Read(ref _removals),pose);
             if (_processorThread is not null) return;
             _processorThread = new Thread(Processor) { IsBackground = true };
             _processorThread.Start();
@@ -804,7 +828,7 @@ public sealed partial class VisionSystem : IDisposable
             SteppedBehavior.ReportMissing("M11-055 Processor VisionPoseData/IMU/Mat/pose temporary copy/swap/release 0x0065204A..0x00652200 remains M11-040/M11-077/M11-078; the mailbox carries a host CameraFrame, not native shared-control ownership");
             while (_processorRun)
             {
-                (CameraFrame Frame, int Removal)? taken = null;
+                (CameraFrame Frame, int Removal, VisionPoseData? Pose)? taken = null;
                 lock (_mailbox)
                 {
                     if (!SkipProcessorPass && _next is { } n)
@@ -817,7 +841,7 @@ public sealed partial class VisionSystem : IDisposable
                 if (taken is { } frame)
                 {
                     bool completed=false;
-                    try { ProcessEncodedFrame(frame.Frame, frame.Removal);completed=true; }
+                    try { ProcessEncodedFrame(frame.Frame, frame.Removal,frame.Pose);completed=true; }
                     catch (Jpeg.OpenCvException e) { ReportDecodeThrow(frame.Frame,e); }
                     catch (Exception e) { completed=true;Log?.Invoke($"frame {frame.Frame.ImageId}: {e.GetType().Name}: {e.Message}"); }
                     finally
@@ -882,7 +906,7 @@ public sealed partial class VisionSystem : IDisposable
         => SteppedBehavior.ReportMissing($"M1-034/M11-058 decode throw: skipped image {f.ImageId} ({e.Message}); native cleanup unwinds to terminate at 0x004E39F8; no Toc, cache Reset, rollback or Processor completion");
     // Host diagnostic snapshot only; native persistent cache/tree ownership is still M11-033/M11-078.
     internal ImageCache EncodedFrameCache {get;private set;}=new();
-    private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal)
+    private VisionFrameResult? ProcessEncodedFrame(CameraFrame f,int removal,VisionPoseData? capturedPose=null)
     {
         var cache = new ImageCache(); // retain per-call host buffers so separate host entries cannot corrupt a frame
         SteppedBehavior.ReportMissing("M11-033/M11-078 native ImageCache ResetHelper size-tree and image shared-control ownership 0x008744E6..0x0087465C are not replaced by host buffer assignment; bounded decoded image/valid flags only");
@@ -897,7 +921,7 @@ public sealed partial class VisionSystem : IDisposable
         cache.ResetDecoded(decoded.Image,isColor); // native Reset even for nonzero Result; throw bypasses this
         EncodedFrameCache=cache; // publish after Reset; a throw leaves the previous diagnostic snapshot
         if(!decoded.Ok)return DecodeReturnedFailure();
-        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal);
+        return ProcessCapture(cache, f.ImageId, f.Timestamp, removal,capturedPose);
         VisionFrameResult? DecodeReturnedFailure()
         {
             // Reset already ran; the unbuilt native Toc above belongs only to this normal-return tail.
@@ -922,21 +946,21 @@ public sealed partial class VisionSystem : IDisposable
     public VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp)
         => ProcessCapture(cache, imageId, cameraTimestamp, Volatile.Read(ref _removals));
 
-    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal)
+    private VisionFrameResult? ProcessCapture(ImageCache cache, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null)
     {
         GrayImage gray;
         try { gray = cache.GetGray(); }
         catch (InvalidOperationException e) { Log?.Invoke($"frame {imageId}: {e.Message}"); return null; }
-        return ProcessCapture(gray, imageId, cameraTimestamp, removal);
+        return ProcessCapture(gray, imageId, cameraTimestamp, removal,capturedPose);
     }
 
-    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal)
+    private VisionFrameResult? ProcessCapture(GrayImage gray, uint imageId, uint cameraTimestamp, int removal,VisionPoseData? capturedPose=null)
     {
         var calibration = Calibration;
         if (calibration is null) { WarnNoCalibration(removal); return null; }
-        var pd=QueryFramePose(cameraTimestamp);
-        if (pd is null) { Log?.Invoke($"frame {imageId}: no robot state to pair with"); return null; }
-        // Direct host captures use their supplied timestamp; native camera timestamp selection is the MISSING above.
+        var pd=capturedPose??QueryFramePose(cameraTimestamp);
+        if (pd is null)return null;
+        // Query selection affects the captured state; processing/observations retain the image timestamp.
         uint effective=cameraTimestamp;
         // fidelity: M11-004 — VisionComponent::WasRotatingTooFast(timestamp, 0.174533, 0.174533, 0)
         // 0x00621C9A..0x00621CAE over the ImuDataHistory at VisionComponent+0xb0 (C3.3). The history is

@@ -358,10 +358,22 @@ public class RFixBatch3Tests : IDisposable
         MarkerRenderer.DrawCube(frame, Lib!, new CameraModel(Cal, pd.CameraPose), ObjectType.Block_LIGHTCUBE1, CubeAhead());
         Assert.Equal(1000u, rig.Vision.History.OldestTimeStamp);
         Assert.Equal(1000u, rig.Vision.History.NewestTimeStamp);
+        var faces=new HistoryDropFaceDetector();rig.Vision.FaceDetector=faces;
+        rig.Vision.ModeEnableMask|=1<<(int)VisionMode.DetectingFaces;
         var r = rig.Vision.ProcessCapture(frame, 5000, 5000);
         // the pose pairing itself fails (no state near 5000 is not the engine's failure; History.At is the nearest), so the history range is what the failure logs
-        Assert.Null(r); // native query has no bracket; reject before marker processing
-        Assert.Contains(rig.Log,l=>l=="frame 5000: no robot state to pair with");
+        Assert.NotNull(r); // SetNextImage clamps; the marker mode still queries actual image time and drops its objects.
+        Assert.Empty(r!.Objects);
+        Assert.Contains(rig.Log,l=>l=="VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: 5000, hist: 1000 to 1000");
+        Assert.Equal(1,faces.Calls); // marker history failure does not stop the frame's other modes
+    }
+
+    private sealed class HistoryDropFaceDetector:IFaceDetector
+    {
+        internal int Calls;
+        public bool IsAvailable=>true;
+        public string Description=>"unit backend observes face-mode dispatch";
+        public IReadOnlyList<DetectedFace> Detect(GrayImage image,uint timestamp){Calls++;return Array.Empty<DetectedFace>();}
     }
 
     // ------------------------------------------------------------------ M11-039: the calibration install result

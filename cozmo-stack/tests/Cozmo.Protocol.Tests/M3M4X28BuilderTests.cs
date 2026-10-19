@@ -11,7 +11,7 @@ public sealed class M3M4X28BuilderTests
     private static readonly TimeSpan Bound=TimeSpan.FromSeconds(10);
     // Checked single-engine-thread order: 0x004ED62E before 0x004ED648. Pause a real message
     // handler between its world accesses, then try an actual frame on another thread.
-    private static void FrameCannotSplitHandler(BlockWorld world,Action<Action> subscribe,Action message)
+    private static void FrameCannotSplitHandler(BlockWorld world,Action<Action> subscribe,Action message,bool publicCallback=false)
     {
         using var inside=new ManualResetEventSlim();using var release=new ManualResetEventSlim();
         using var started=new ManualResetEventSlim();using var frameEntered=new ManualResetEventSlim();
@@ -21,12 +21,13 @@ public sealed class M3M4X28BuilderTests
         var handler=Task.Run(message);Task? frame=null;
         try
         {
-            Assert.True(inside.Wait(Bound));Assert.True(held,"The handler released FrameGate between world accesses.");
+            Assert.True(inside.Wait(Bound));Assert.Equal(!publicCallback,held);
             var pose=new VisionPoseData(0,Pose3d.Identity,0,0,false,false);
             var camera=new CameraModel(CameraCalibration.Nominal(),pose.CameraPose);
             frame=Task.Run(()=>{started.Set();world.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),camera,1,pose);});
-            Assert.True(started.Wait(Bound));Assert.False(frame.Wait(TimeSpan.FromMilliseconds(100)));
-            Assert.False(frameEntered.IsSet);
+            Assert.True(started.Wait(Bound));
+            if(publicCallback){Assert.True(frame.Wait(Bound));Assert.True(frameEntered.IsSet);}
+            else{Assert.False(frame.Wait(TimeSpan.FromMilliseconds(100)));Assert.False(frameEntered.IsSet);}
         }
         finally{release.Set();Assert.True(handler.Wait(Bound));if(frame is not null)Assert.True(frame.Wait(Bound));}
         Assert.True(released);Assert.True(frameEntered.IsSet);
@@ -42,15 +43,17 @@ public sealed class M3M4X28BuilderTests
         var located=new ObservableObject(99,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
             {ActiveId=0,OriginId=world.CurrentOriginId,Pose=Pose3d.Identity,PoseState=PoseState.Known};
         world.AddLocatedObject(located);
-        // Unknown connected ID (-1) differs from located ID 99: the checked warning is after
-        // FindLocatedMatchingObjects returned and before ApplyMovedOrStopped.
-        FrameCannotSplitHandler(world,pause=>rig.Engine.LogEntry+=e=>{
-            if(e.Name==(moving?"Robot.ActiveObjectMoved.":"Robot.ActiveObjectStopped.")+"ActiveObjectInDifferentFramesWithDifferentIDs")pause();
+        // Transparent native recipient observer pauses between MarkObjectDirty and the motion-state store.
+        // Public log callbacks now run after frame release and cannot serve as an in-frame pause point.
+        var prior=world.ActiveObjectPoseStateChanged;
+        FrameCannotSplitHandler(world,pause=>world.ActiveObjectPoseStateChanged=(id,old,state)=>{
+            prior?.Invoke(id,old,state);pause();
         },()=>{rig.Data(moving?new ObjectMoved{ObjectID=0}:new ObjectStoppedMoving{ObjectID=0});rig.Tick();});
         Assert.Equal(moving,located.IsMoving);Assert.Equal(PoseState.Dirty,located.PoseState);
     }
 
     [Fact]
+    // reach: unit (located non-active fixture object; native disconnect writes complete before the deferred public diagnostic).
     public void DisconnectLocatedUpdateRemainsInsideOneFrameWindow()
     {
         using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
@@ -60,10 +63,10 @@ public sealed class M3M4X28BuilderTests
         var located=new ObservableObject(id,ObjectType.ProxObstacle,Array.Empty<KnownMarker>())
             {ActiveId=0,OriginId=world.CurrentOriginId,Pose=Pose3d.Identity,PoseState=PoseState.Known};
         world.AddLocatedObject(located);
-        // Pause the checked C2 NotActive branch between the two independent virtual guards.
-        // Disconnect retains this located instance; it does not invoke the old local MarkUnknown path.
+        // The checked C2 NotActive diagnostic is delivered after both guarded writes and frame release.
+        // A paused public diagnostic subscriber must allow another frame to finish. Located state is retained.
         FrameCannotSplitHandler(world,pause=>rig.Engine.LogEntry+=entry=>{if(entry.Name=="ObservableObject.SetActiveID.NotActive")pause();},
-            ()=>{rig.Data(new ObjectConnectionState{ObjectID=0,FactoryID=123,ObjectType=ObjectType.Block_LIGHTCUBE1,Connected=false});rig.Tick();});
+            ()=>{rig.Data(new ObjectConnectionState{ObjectID=0,FactoryID=123,ObjectType=ObjectType.Block_LIGHTCUBE1,Connected=false});rig.Tick();},publicCallback:true);
         Assert.Equal(PoseState.Known,located.PoseState);Assert.Contains(located,world.LocatedObjects);
     }
 

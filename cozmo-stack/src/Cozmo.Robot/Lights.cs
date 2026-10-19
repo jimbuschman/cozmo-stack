@@ -1071,8 +1071,8 @@ public sealed class CubeLightComponent
     public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0, Action? completed = null)
         => _robot.Engine.InvokeEngineRequest(()=>PlayLightAnimCore(type,trigger,layer,durationMs,modifier,lights,timerOffsetMs,null,completed));
     // fidelity: M4-051 — 0x00638220..0x00638290: tag is assigned only after generic play succeeds.
-    public bool PlayLightAnimFromAction(ObjectType type,string trigger,uint tag,Action? completed=null,int timerOffsetMs=0)
-        => _robot.Engine.InvokeEngineRequest(()=>PlayLightAnimCore(type,trigger,UserLayer,0,false,null,timerOffsetMs,null,completed,tag));
+    public bool PlayLightAnimFromAction(ObjectType type,string trigger,uint tag,Action? completed=null)
+        => _robot.Engine.InvokeEngineRequest(()=>PlayLightAnimCore(type,trigger,UserLayer,0,false,null,0,null,completed,tag));
     private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId,Action? completed=null,uint actionTag=0)
     {
         Animations.EnsureLoaded(); // Standalone host initialization precedes the component state lock.
@@ -1152,7 +1152,7 @@ public sealed class CubeLightComponent
             }
         }
         finally { foreach (var call in logs) call(); }
-        // Do not hold _gate while taking _sendGate: SetLights takes those in the opposite order.
+        // Every state/send path takes FrameGate before the light gate and _sendGate; internal reentry preserves that order.
         uint result;
         try { SendTransitionMessage(objectId); result = SetObjectLights(type, first); }
         catch { lock (_gate) pushed.PendingSend = false; throw; }
@@ -1194,6 +1194,7 @@ public sealed class CubeLightComponent
         // fidelity: M4-051 — copy callback, pop, invoke, then inspect the remaining stack (including reentrant changes).
         void Pop(List<Playing> stack,bool invoke=true)
         {
+            if(!invoke){stack.RemoveAt(stack.Count-1);return;}
             var callback=stack[^1].Completed;
             uint tag=stack[^1].CompletionTag;
             stack.RemoveAt(stack.Count-1);
@@ -1207,8 +1208,11 @@ public sealed class CubeLightComponent
             uint? id = TryObjectId(type);
             calls.Add(() => {
                 if (transition) SendTransitionMessage(id);
-                if (SetObjectLights(type, pattern) != 0)
-                    SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.Update.SetLightsFailed", "");
+                if (SetObjectLights(type, pattern,out bool skipped) != 0)
+                {
+                    if(skipped)Log("Stack.CubeLightComponent.Update.RelativeSendSkipped: MISSING M4-052 relative-light callee/policy stop before wire send; prior light state retained");
+                    else SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.Update.SetLightsFailed", "");
+                }
             });
         }
         lock (_gate)
@@ -1256,7 +1260,9 @@ public sealed class CubeLightComponent
                     stack=info.Layers[info.CurrentLayer];
                     while (stack.Count > 0 && stack[^1].Stop)
                     {
-                        Pop(stack);
+                        // Native copies callback/tag from the freed first node here, not this stopped entry.
+                        Pop(stack,invoke:false);
+                        Log("Stack.CubeLightComponent.SkipStoppedCallback: M1-034/M4-051 skipped stopped-loop callback; freed first-node reads 0x00637A06/0x00637A0C; entry popped");
                         stack=info.Layers[info.CurrentLayer];
                     }
                     if (stack.Count > 0)
@@ -1559,18 +1565,23 @@ public sealed class CubeLightComponent
     }
 
     private uint SetObjectLights(ObjectType type, CubeLightPattern p)
+        =>SetObjectLights(type,p,out _);
+    private uint SetObjectLights(ObjectType type,CubeLightPattern p,out bool skipped)
     {
         uint? id;
         lock(_gate)id=_infos.TryGetValue(type,out var info)?info.ObjectId:null;
         // Static-off has no animation ObjectInfo when no resources loaded. Its native caller still supplies
         // the real connected ObjectID; obtain that identity here, never the radio slot as a stand-in.
         id??=_robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o=>o.Type==type)?.ObjectId;
-        return SetObjectLightsById(id??uint.MaxValue,p);
+        return SetObjectLightsByIdCore(id??uint.MaxValue,p,out skipped);
     }
 
     // fidelity: M4-052, M4-018 — native ObjectID entry; relative sends the selected located object's own ActiveId.
     internal uint SetObjectLightsById(uint id,CubeLightPattern p,Func<KnownMarker,Pose3d,Vec3>? checkedNormalInput=null)
+        =>SetObjectLightsByIdCore(id,p,out _,checkedNormalInput);
+    private uint SetObjectLightsByIdCore(uint id,CubeLightPattern p,out bool skipped,Func<KnownMarker,Pose3d,Vec3>? checkedNormalInput=null)
     {
+        skipped=false;
         var world=_robot.LocalizationWorld;
         using var poseRead=world.EnterPoseMutation(); // same gate as every world pose writer and the vision worker
         var cube=p.RelativeMode==0?world.GetConnectedActiveObjectByIdHelper(id):world.GetLocatedObjectByIdHelper(id);
@@ -1590,7 +1601,7 @@ public sealed class CubeLightComponent
         lock (_sendGate)
         {
             var relative=RelativeCubeLights.Apply(cube,leds,p.RelativeMode,p.RelativePoint,SourceLog,Log,checkedNormalInput);
-            if(relative is null)return 0x04000000; // no partial replacement after a missing callee or native marker fault
+            if(relative is null){skipped=true;return 0x04000000;} // missing callee/native marker fault, before any wire send
             lock (_gate) cube.ActiveLedState=relative;
             return SetLights(unchecked((uint)cube.ActiveId),relative,gamma:0x80,p.RotationPeriodMs);
         }

@@ -37,6 +37,8 @@ public sealed partial class RobotStateHistory
     public uint OriginId {get{lock(_gate)return _entries.Count==0?0:_entries.Last().Value.State.PoseOriginId;}}
     internal uint OldestTimeStamp {get{lock(_gate)return _entries.Count==0?0:_entries.First().Key;}}
     internal uint NewestTimeStamp {get{lock(_gate)return _entries.Count==0?0:_entries.Last().Key;}}
+    internal (int RawCount,uint RawOldest,uint RawNewest,int VisionCount,uint VisionOldest,uint VisionNewest) FrameQueryHistorySummary()
+    {lock(_gate)return(_entries.Count,_entries.Count==0?0:_entries.First().Key,_entries.Count==0?0:_entries.Last().Key,VisionOnly.Count,VisionOnly.Count==0?0:VisionOnly.First().Key,VisionOnly.Count==0?0:VisionOnly.Last().Key);}
     public int InterpolationStandIns=>0; // compatibility counter: there are no nearest-endpoint stand-ins
 
     private T WithGate<T>(Func<T> body)
@@ -186,7 +188,7 @@ public sealed partial class RobotStateHistory
     internal bool Interpolate(HistRobotState before,HistRobotState after,Pose3d relative,float f,HistRobotState output)
     {
         if(!before.Pose.HasParent)
-        {StackDiagnostics.Write("M1-034/M11-052: skipped interpolation with root before pose; native GetParent null-wrapper increment 0x008453D4/0x008452B0; outputs retained");return false;}
+        {StackDiagnostics.Write("M1-034/M11-052: skipped interpolation with root before pose; native GetParent null read 0x008452BA; outputs retained");return false;}
         Pose3d parent=null!;if(!before.Pose.TryGetParent(ref parent))return false;
         using(parent)
         {
@@ -223,8 +225,6 @@ public sealed partial class RobotStateHistory
             uint rawTime=outTime;var vision=VisionOnly.LastOrDefault(e=>e.Key<=rawTime);
             if(vision.Value is null || ReadFrame(vision.Value.State)<=raw.State.PoseFrameId){output.Assign(raw);return 0;}
             var states=_entries.ToArray();int at=Array.FindIndex(states,e=>e.Key>=vision.Key);
-            if(at<0 || !states[at].Value.Pose.HasParent || !vision.Value.Pose.HasParent)
-            {StackDiagnostics.Write("M1-034/M11-097: skipped history correction with absent anchor/parent at0x00531904/0x0053193E/0x00531AA0; prior caller state retained");return 1;}
             using var d=new Pose3d("");
             static void Delta(Pose3d from,Pose3d anchor,Pose3d destination)
             {
@@ -233,7 +233,12 @@ public sealed partial class RobotStateHistory
                 using(parent)Pose3d.GetWithRespectTo(from,parent,destination); // return deliberately ignored
                 using var inverse=anchor.Inverse();destination.MultiplyBy(inverse);
             }
-            if(states[at].Value.State.PoseFrameId==raw.State.PoseFrameId)Delta(raw.Pose,states[at].Value.Pose,d);
+            if(states[at].Value.State.PoseFrameId==raw.State.PoseFrameId)
+            {
+                if(!states[at].Value.Pose.HasParent)
+                {StackDiagnostics.Write("M1-034/M11-097: skipped correction GetParent(A) null wrapper at0x0053193E; prior caller state retained");return 1;}
+                Delta(raw.Pose,states[at].Value.Pose,d);
+            }
             else
             {
                 int boundary=at;
@@ -251,6 +256,8 @@ public sealed partial class RobotStateHistory
                 }
             }
             d.MultiplyBy(vision.Value.Pose);
+            if(!vision.Value.Pose.HasParent)
+            {StackDiagnostics.Write("M1-034/M11-097: skipped correction GetParent(V) null wrapper at0x00531AA0; prior caller state retained");return 1;}
             Pose3d vp=null!;if(!vision.Value.Pose.TryGetParent(ref vp))return 1;
             using(vp)d.SetParent(vp);
             output.Pose.Assign(d);output.State.PoseFrameId=raw.State.PoseFrameId;

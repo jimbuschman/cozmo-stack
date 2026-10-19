@@ -377,10 +377,10 @@ public class M4ControlTests
                 if(e.Name=="CubeLightComponent.PlayLightAnim.SettingLights"){world.RemoveConnectedActiveObject(0);return;}
                 if (e.Name != "CubeLightController.SetObjectLights.NullActiveObject") return;
                 var top = Top(); pendingSeen = (bool)top.GetType().GetField("PendingSend", flags)!.GetValue(top)!;
-                // Direct unit Update now shares the whole-world gate; do not wait inside that gate.
-                // Host-facing entries are exercised through the real engine queue in B32's worker test.
-                deferredUpdate=Task.Run(() => lights.Update());
-                observedIndex = top.GetType().GetField("Index", flags)!.GetValue(top);
+                // Source-log delivery now follows frame release. A real concurrent Update can finish here
+                // while the initial push is still PendingSend; read its index after that Update completes.
+                deferredUpdate=Task.Run(() => {lights.Update();observedIndex=top.GetType().GetField("Index",flags)!.GetValue(top);});
+                Assert.True(deferredUpdate.Wait(TimeSpan.FromSeconds(2)));
             };
             lights.OnObjectConnectionState(ObjectType.Block_LIGHTCUBE1, true);
             Assert.True(pendingSeen);
@@ -2497,14 +2497,14 @@ public class M4ControlTests
         Assert.True(s.CliffVariance > 10000f);
         s.EvaluateCliffSuspiciousnessWhenStopped(1);           // start the walk from the beginning
         int mark = rig.Mark();
-        var duringWalk = new List<uint>();
-        rig.Engine.LogEntry += e => { if (e.Name == "CliffSensorComponent.UpdateCliffDetectThreshold.CliffValueWhileStopping") duringWalk.Add(s.CliffSuspiciousAt); };
+        var duringWalk = new List<string>();
+        rig.Engine.LogEntry += e => { if (e.Name == "CliffSensorComponent.UpdateCliffDetectThreshold.CliffValueWhileStopping") duringWalk.Add(e.Text); };
         var trig = rig.MakeState(RobotStatusFlag.IsBodyAccMode, x: 100);   // body stopped
         trig.CliffDataRaw = new ushort[] { 1500, 500, 500, 500 };
         rig.Data(trig); rig.Tick();
         var thresholds = rig.RawSince(mark).Where(b => b[0] == (byte)RobotMessageId.SetCliffDetectThreshold).ToList();
         Assert.Contains(thresholds, b => Convert.ToHexString(Body(b)) == "9600");
-        Assert.NotEmpty(duringWalk); Assert.All(duringWalk, at => Assert.Equal(1u, at));
+        Assert.NotEmpty(duringWalk); Assert.All(duringWalk,text=>Assert.Contains(" - ",text)); // emitted payload survives deferred delivery; live state already completed S6
         Assert.Equal(0u, s.CliffSuspiciousAt);                 // S6: cleared after the walk
     }
 

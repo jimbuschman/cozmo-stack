@@ -19,6 +19,31 @@ internal static class LogCallbackDeferral
     [ThreadStatic] private static List<Pending>? t_pending;
     [ThreadStatic] private static int t_depth;
 
+    // A scope is needed for native handler windows spanning several helpers. It shares the same ordered queue
+    // as RunGated, so nested pose/light/history gates cannot flush public callbacks while a frame gate is held.
+    internal static IDisposable EnterGated(object gate)
+    {
+        if(t_depth++==0)t_pending=new List<Pending>();
+        Monitor.Enter(gate);
+        return new HeldGate(gate);
+    }
+    private sealed class HeldGate(object gate):IDisposable
+    {
+        private object? _gate=gate;
+        public void Dispose()
+        {
+            var held=Interlocked.Exchange(ref _gate,null);if(held is null)return;
+            Monitor.Exit(held);
+            if(--t_depth==0)
+            {
+                var pending=t_pending;t_pending=null;
+                // A using scope can unwind an exception. Dispatch every queued callback, isolating faults,
+                // without masking the exception that caused the native handler to unwind.
+                if(pending is not null)Drain(pending,rethrow:false);
+            }
+        }
+    }
+
     /// <summary>Runs <paramref name="body"/> under <paramref name="gate"/>; its log callbacks run after the gate is released.</summary>
     internal static void RunGated(object gate, Action body)
     {

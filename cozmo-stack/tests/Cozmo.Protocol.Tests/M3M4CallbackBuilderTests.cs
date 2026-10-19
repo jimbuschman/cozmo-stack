@@ -81,9 +81,10 @@ public sealed class M3M4CallbackBuilderTests
         Assert.True(world.SetPoseStateHelper(cube,PoseState.Known));Assert.Equal(1,calls); // equal state has no broadcast
     }
 
-    // reach: production — actual worker, framed simulated robot messages, public commands arriving during a real callback.
+    // reach: unit (substitutes synthetic100ms Connected assets; actual worker, framed messages and public commands during a real callback).
     // SendFault is a transparent observer returning null, so normal transport sends still run.
     [Fact]
+    // Fixture substitutes synthetic 100ms Connected assets; queued host/native callback timing is live, not shipped animation coverage.
     public async Task HostCommandsQueueUntilCompletionCallbackAndUpdateFinish()
     {
         string root=M4ControlTests.CubeLightResources();

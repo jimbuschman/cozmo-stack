@@ -2096,10 +2096,11 @@ public class M11RVisBuildTests : IDisposable
         MarkerRenderer.DrawObject(frame, Lib!, new CameraModel(Cal, pd.CameraPose), ObjectType.Block_LIGHTCUBE1, At(150, 0));
         var log = new List<string>(); rig.Vision.Log += log.Add;
         var late = rig.Vision.ProcessCapture(frame, 1, 3033);                          // nothing at or after 3033
-        Assert.Null(late); // native SetNextImage's pose query rejects before marker processing
+        Assert.NotNull(late); // SetNextImage selects newest raw time; UpdateVisionMarkers queries the actual image time.
+        Assert.Empty(late!.Objects);
         Assert.Empty(rig.Vision.World.LocatedObjects);
         Assert.Null(rig.Vision.History.GetComputedStateAt(3033));
-        Assert.Contains(log, l => l == "frame 1: no robot state to pair with");
+        Assert.Contains(log, l => l == "VisionComponent.UpdateVisionMarkers.HistoricalPoseNotFound: Time: 3033, hist: 3000 to 3000");
         Assert.Equal(0, rig.Vision.World.UnbuiltLocalizeRobotCalls);                   // AddAndUpdateObjects never ran
         var onTime = rig.Vision.ProcessCapture(frame, 2, 3000);                        // a raw state exactly at the timestamp
         Assert.NotNull(onTime);

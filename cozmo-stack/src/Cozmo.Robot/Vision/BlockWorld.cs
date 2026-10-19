@@ -765,19 +765,21 @@ public sealed partial class BlockWorld
     internal bool PoseChangeWindow => _appendPoseChanges;
     internal int PoseChangeCount => _poseChanges.Count;
     private float _lastPlayAreaTime;
-    private void Source(EngineLogLevel level, string? channel, string key, string text) => SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(level, channel, key, text);
-    private void Missing(string text) => Log?.Invoke("MISSING: " + text);
+    private SourceLogSink? PublicSafeSourceSink=>SourceLogDispatch.GetSink(SourceLog,Log is null?null:EmitPublicLog);
+    private void Source(EngineLogLevel level, string? channel, string key, string text) => PublicSafeSourceSink?.Invoke(level, channel, key, text);
+    private void Missing(string text) => EmitPublicLog("MISSING: " + text);
     internal void CreateLocalizedMemoryMap(uint origin)
     {
         using var frameMutation=EnterPoseMutation();
-        Maps.SourceLog = SourceLog; Maps.Missing = text => Log?.Invoke(text);
+        Maps.SourceLog = SourceLog; Maps.Missing = text => EmitPublicLog(text);
         Maps.CreateLocalizedMemoryMap(origin, id => id != CurrentOriginId && !_located.Values.Any(o => o.OriginId == id && CanBeUsedForLocalization(o)));
     }
     private readonly object _gate = new();
     // Native pose writers and vision run on one engine thread. Every host pose mutation takes this gate first,
     // before _gate or the robot's PoseTreeGate. World callbacks run without _gate.
     // A subscriber running inside a frame MUST NOT synchronously post a game message: Post -> Kick -> _tickLock
-    // would invert the engine tick's _tickLock -> FrameGate order. Post after returning from the frame callback.
+    // would invert the engine tick's _tickLock -> FrameGate order. Public events are deferred after frame release;
+    // synchronous native recipients must not post a blocking engine request while holding the frame gate.
     internal readonly object FrameGate = new();
     private bool _missingMapTimeReported, _missingPoseChangedReported;
     private double MapLastObservedTime
@@ -1024,13 +1026,13 @@ public sealed partial class BlockWorld
     internal uint LocalizeToObject(ObservableObject? observed, ObservableObject? existing)
     {
         using var frameMutation=EnterPoseMutation();
-        if (existing is null) { Log?.Invoke("Robot.LocalizeToObject.ExistingObjectPieceNullPointer"); return 1; }
+        if (existing is null) { EmitPublicLog("Robot.LocalizeToObject.ExistingObjectPieceNullPointer"); return 1; }
         if (!CanBeUsedForLocalization(existing) || (ShouldIgnoreMovementDueToDoubleTap?.Invoke(existing.ObjectId) ?? false))
         {
-            Log?.Invoke($"Robot.LocalizeToObject.UnlocalizedObject: Refusing to localize to object {existing.ObjectId}, which claims not to be localizable.");
+            EmitPublicLog($"Robot.LocalizeToObject.UnlocalizedObject: Refusing to localize to object {existing.ObjectId}, which claims not to be localizable.");
             return 1;
         }
-        Log?.Invoke("MISSING: M4-037 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt");
+        EmitPublicLog("MISSING: M4-037 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt");
         UnbuiltLocalizeToObjectCalls++;
         return SetLocalizedTo(existing) ? 0u : 1u;
     }
@@ -1060,7 +1062,7 @@ public sealed partial class BlockWorld
     public const bool PaddingIsBuilt = true;
 
     private bool Carrying(uint id) => IsCarryingObject?.Invoke(id) ?? false;
-    internal void LogLine(string line) => Log?.Invoke(line);
+    internal void LogLine(string line) => EmitPublicLog(line);
 
     /// <summary>
     /// <c>PotentialObjectsForLocalizingTo::CouldUseObjectForLocalization(obj)</c> 0x0050D170..0x0050D1C6: <c>(obj.ID != [DockingComponent+0xC]) &amp;&amp; CanBeUsedForLocalization
@@ -1122,7 +1124,7 @@ public sealed partial class BlockWorld
 
     private ObservableObject AddMarkerless(Pose3d input, ObjectType type, uint timestamp)
     {
-        lock(FrameGate) return AddMarkerlessInFrame(input,type,timestamp);
+        using var frameMutation=EnterPoseMutation();return AddMarkerlessInFrame(input,type,timestamp);
     }
     private ObservableObject AddMarkerlessInFrame(Pose3d input, ObjectType type, uint timestamp)
     {
@@ -1467,7 +1469,7 @@ public sealed partial class BlockWorld
     // fidelity: M11-036, M11-037, M11-006, M11-010
     public BlockWorldFrameResult UpdateObservedMarkers(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
     {
-        lock(FrameGate) return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd);
+        using var frameMutation=EnterPoseMutation();return UpdateObservedMarkersInFrame(markers,camera,timestamp,pd);
     }
     private BlockWorldFrameResult UpdateObservedMarkersInFrame(IReadOnlyList<ObservedMarker> markers, CameraModel camera, uint timestamp, VisionPoseData pd)
     {
@@ -1575,8 +1577,8 @@ public sealed partial class BlockWorld
             if (CubeGeometry.LookupMarker(seen.Code) is not { } lk) continue;
             var (type, known) = lk;
             var res = PoseEstimation.Solve(camera, known.CornersOnObject(), seen.Corners);
-            if (res is null) { Log?.Invoke($"marker {seen.Code}: pose solve failed"); continue; }
-            if (res.RmsReprojectionPx > MaxReprojectionRmsPx) { Log?.Invoke($"marker {seen.Code}: reprojection {res.RmsReprojectionPx:F1} px too large"); continue; }
+            if (res is null) { EmitPublicLog($"marker {seen.Code}: pose solve failed"); continue; }
+            if (res.RmsReprojectionPx > MaxReprojectionRmsPx) { EmitPublicLog($"marker {seen.Code}: reprojection {res.RmsReprojectionPx:F1} px too large"); continue; }
             var world = camera.Pose.Compose(res.ObjectInCamera);
             candidates.Add((type, known, seen, world, res.RmsReprojectionPx));
         }
@@ -1606,7 +1608,7 @@ public sealed partial class BlockWorld
                 instance.SetPose(placed, -1.0, PoseState.Dirty);                                            // InitPose 0x00625580
                 foreach (var seen in seenMarkers)
                     instance.SetMarkerAsObserved(seen, seenMarkers[0].Timestamp, BitConverter.UInt32BitsToSingle(0x3DCCCCCD), camera,
-                        SourceLogDispatch.GetSink(SourceLog, Log), MarkerCodeNameInput);                       // setup0x0062559C, call0x006255A0
+                        PublicSafeSourceSink, MarkerCodeNameInput);                       // setup0x0062559C, call0x006255A0
                 instance.LastObservedTimestamp = seenMarkers[0].Timestamp;                                   // 0x006255AC, after marker stores
                 instance.LastObservedMarkers = seenMarkers.Select(s => s.Code).ToList();
                 var xs = seenMarkers.SelectMany(s => s.Corners).Select(p => p.X).ToList();
@@ -1675,7 +1677,7 @@ public sealed partial class BlockWorld
                 var existing = before;                                             // GetLocatedObjectByIdHelper(id, -1)
                 if (!AddVisualObservation(instance, existing, pd.CameraMoving, dist))
                 {
-                    Log?.Invoke($"BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for {(int)instance.ObjectId}");
+                    EmitPublicLog($"BlockWorld.AddAndUpdateObjects.NonConfirmingObservation: Added non-confirming visual observation for {(int)instance.ObjectId}");
                     continue;
                 }
                 flag = true;
@@ -1693,9 +1695,9 @@ public sealed partial class BlockWorld
                     if (!ReferenceEquals(kv.Value, located)) potentials.Insert(instance, kv.Value, dist, true, pd.CameraMoving);   // 0x00621182
             AddObservedMarkerOccluders(camera, located, instance.LastObservedMarkers);   // 0x006211CC
             var observation = new ObjectObservation(located, timestamp, located.LastObservedMarkers, prevPose, prevState, before is null, located.LastReprojectionRmsPx);
-            Log?.Invoke($"{(before is null ? "new" : "seen")} {located} via {string.Join(",", located.LastObservedMarkers)} rms={located.LastReprojectionRmsPx:F2}px");
+            EmitPublicLog($"{(before is null ? "new" : "seen")} {located} via {string.Join(",", located.LastObservedMarkers)} rms={located.LastReprojectionRmsPx:F2}px");
             observations.Add(observation);
-            ObjectObserved?.Invoke(observation);                                   // BroadcastObjectObservation 0x0061FED8 (0x006211DC)
+            DeliverPublic(ObjectObserved,observation);                                   // BroadcastObjectObservation 0x0061FED8 (0x006211DC)
             _didObjectsChange = true;                                              // 0x006211E6
             _timeOfLastChange = unchecked((uint)Math.Max((double)timestamp, MapLastObservedTime));   // 0x00621214: AddAndUpdateObjects's own ts argument (0x00620B9C)
         }
@@ -1759,7 +1761,7 @@ public sealed partial class BlockWorld
         if (now < until) return;                                                   // 0x00620E66..0x00620E6E
         if (GetConnectedActiveObjectByIdHelper(instance.ObjectId) is not null) return;   // 0x00620E78
         lock (s_unconnectedWarnGate) s_unconnectedWarnUntil[key] = (float)(now + UnconnectedWarnCooldownSec);   // 0x00620ED6..0x00620EDA
-        Log?.Invoke($"Observed active object of type {instance.Type} but it's not connected. Is the battery plugged in?");
+        EmitPublicLog($"Observed active object of type {instance.Type} but it's not connected. Is the battery plugged in?");
     }
 
     /// <summary>
@@ -1784,27 +1786,27 @@ public sealed partial class BlockWorld
             {
                 if (o.OriginId == CurrentOriginId && Carrying(o.ObjectId))
                 {
-                    Log?.Invoke($"Blockworld.AddAndUpdateObjects.SeeingCarriedObject: object {o.ObjectId} of type {o.Type} is being carried; the observation is dropped");
+                    EmitPublicLog($"Blockworld.AddAndUpdateObjects.SeeingCarriedObject: object {o.ObjectId} of type {o.Type} is being carried; the observation is dropped");
                     drop = true;
                     return null;
                 }
                 if (byOrigin.ContainsKey(o.OriginId))
                 {
-                    Log?.Invoke($"BlockWorld.AddAndUpdateObjects.MultipleMatchesForUniqueObjectInSameFrame: {o.Type} {o.ObjectId}; keeping the first");
+                    EmitPublicLog($"BlockWorld.AddAndUpdateObjects.MultipleMatchesForUniqueObjectInSameFrame: {o.Type} {o.ObjectId}; keeping the first");
                     continue;
                 }
                 byOrigin[o.OriginId] = o;
             }
             if (!byOrigin.TryGetValue(CurrentOriginId, out var located))
             {
-                Log?.Invoke($"BlockWorld.UpdateObjectPoses.AddAndUpdateNoCurrentOriginMatch: Must find match in current origin, since object is confirmed ({instance.Type} {instance.ObjectId}).");
+                EmitPublicLog($"BlockWorld.UpdateObjectPoses.AddAndUpdateNoCurrentOriginMatch: Must find match in current origin, since object is confirmed ({instance.Type} {instance.ObjectId}).");
                 return null;
             }
             return located;
         }
         var found = GetLocatedObjectByIdHelper(instance.ObjectId);
         if (found is null)
-            Log?.Invoke($"BlockWorld.UpdateObjectPoses.AddAndUpdateNoCurrentOriginMatchNonUnique: Must find match in current origin, since object is confirmed ({instance.Type} {instance.ObjectId}).");
+            EmitPublicLog($"BlockWorld.UpdateObjectPoses.AddAndUpdateNoCurrentOriginMatchNonUnique: Must find match in current origin, since object is confirmed ({instance.Type} {instance.ObjectId}).");
         else byOrigin[found.OriginId] = found;
         return found;
     }
@@ -1935,7 +1937,7 @@ public sealed partial class BlockWorld
         if (existing is not null) existing.Confirmation = entry;
         if (remade)
         {
-            Log?.Invoke($"ObjectPoseConfirmer.AddVisualObservation.NewEntry: ObjectID:{(int)observed.ObjectId} at {observed.Pose.Translation}, currently {observed.PoseState}");
+            EmitPublicLog($"ObjectPoseConfirmer.AddVisualObservation.NewEntry: ObjectID:{(int)observed.ObjectId} at {observed.Pose.Translation}, currently {observed.PoseState}");
             return false;
         }
 
@@ -2013,7 +2015,7 @@ public sealed partial class BlockWorld
             else WritePoseHelper(instance, pose, dist, newState);                                                         // "UpdatePoseInInstance"
             if (isCarried)
             {
-                Log?.Invoke($"ObjectPoseConfirmer.SeeingCarriedObject: We changed the pose of {existing!.ObjectId}, we must not be carrying it anymore. Unsetting as carried object.");
+                EmitPublicLog($"ObjectPoseConfirmer.SeeingCarriedObject: We changed the pose of {existing!.ObjectId}, we must not be carrying it anymore. Unsetting as carried object.");
                 if (UnSetCarryObject is { } unset) unset(existing!.ObjectId); else UnwiredCarryUnsetCalls++;
             }
         }
@@ -2036,7 +2038,7 @@ public sealed partial class BlockWorld
         if (o.PoseState != PoseState.Known) return false;
         if (o.IsMoving)
         {
-            Log?.Invoke($"ActiveObject.CanBeUsedForLocalization: object {o.ObjectId} is moving");
+            EmitPublicLog($"ActiveObject.CanBeUsedForLocalization: object {o.ObjectId} is moving");
             return false;
         }
         return o.ActiveId >= 0 && o.FromDistance >= 0 && o.IsRestingFlat(5.0 * DegToRadDecimal);
@@ -2071,14 +2073,14 @@ public sealed partial class BlockWorld
         using var frameMutation=EnterPoseMutation();
         if (state == PoseState.Unknown)
         {
-            Log?.Invoke("ObjectPoseConfirmer.SetPoseStateHelper.CantSetInvalidPoseState: cannot set PoseState to Invalid");
+            EmitPublicLog("ObjectPoseConfirmer.SetPoseStateHelper.CantSetInvalidPoseState: cannot set PoseState to Invalid");
             return false;
         }
         var old = StorePoseState(obj, state);
         if (old is { } previous)
         {
             if(obj.OriginId==CurrentOriginId)BroadcastObjectPoseStateChanged(obj,previous); // 0x00506162..0x00506176
-            PoseStateChanged?.Invoke(obj, previous, state);
+            DeliverPublic(PoseStateChanged,obj,previous,state);
         }
         return true;
     }
@@ -2118,7 +2120,7 @@ public sealed partial class BlockWorld
         if (!propagate) return;
         if (FindObjectOnTopOrUnderneathHelper(obj, StackToleranceMm, true) is { } other)
         {
-            if (Carrying(other.ObjectId)) Log?.Invoke($"ObjectPoseConfirmer.MarkObjectDirty: object {other.ObjectId} is carried; not marked dirty");
+            if (Carrying(other.ObjectId)) EmitPublicLog($"ObjectPoseConfirmer.MarkObjectDirty: object {other.ObjectId} is carried; not marked dirty");
             else MarkObjectDirty(other, true);
         }
     }
@@ -2136,7 +2138,7 @@ public sealed partial class BlockWorld
         var entry = EntryFor(obj.ObjectId);
         if (entry is null)
         {
-            Log?.Invoke($"ObjectPoseConfirmer.MarkObjectUnobserved.ObjectNotFound: object {obj.ObjectId}");
+            EmitPublicLog($"ObjectPoseConfirmer.MarkObjectUnobserved.ObjectNotFound: object {obj.ObjectId}");
             return 1;
         }
         int oldMisses = entry.Misses;
@@ -2144,7 +2146,7 @@ public sealed partial class BlockWorld
         entry.Misses = oldMisses + 1;
         if (oldMisses + 1 >= UnobservedMissesToUnknown)
         {
-            Log?.Invoke($"ObjectPoseConfirmer.MarkObjectUnobserved.MakingUnknown: object {obj.ObjectId}");
+            EmitPublicLog($"ObjectPoseConfirmer.MarkObjectUnobserved.MakingUnknown: object {obj.ObjectId}");
             var gone = MarkObjectUnknown(obj, true);
             forgotten?.AddRange(gone);
         }
@@ -2177,7 +2179,7 @@ public sealed partial class BlockWorld
                 if (above is null) break;
                 if (!visited.Add(above)) break;                      // stand-in: the engine has no revisit guard (a cycle of poses would spin); geometry does not allow one, so this never fires
                 if (Carrying(above.ObjectId))
-                    Log?.Invoke($"ObjectPoseConfirmer.MarkObjectUnknown: object {above.ObjectId} is carried; it is not marked unknown");
+                    EmitPublicLog($"ObjectPoseConfirmer.MarkObjectUnknown: object {above.ObjectId} is carried; it is not marked unknown");
                 else victims.Add(above);
                 current = above;                                      // the carried object is the next current object too (0x0050728E)
             }
@@ -2226,7 +2228,7 @@ public sealed partial class BlockWorld
         {
             lock (_gate) { _confirmations.Remove(unchecked((int)n.Clone.ObjectId)); n.Original.Confirmation = null; } // DeletedObjectInCurrentOrigin, before broadcast
             BroadcastObjectPoseChanged(n.Clone,n.Pose,n.State);
-            LocatedObjectDeleted?.Invoke(n.Clone.ObjectId); // RobotDeletedLocatedObject, uint32/Size 4 API view
+            DeliverPublic(LocatedObjectDeleted,n.Clone.ObjectId); // RobotDeletedLocatedObject, uint32/Size 4 API view
         }
         return deleted;
     }
@@ -2362,7 +2364,7 @@ public sealed partial class BlockWorld
         Maps.UpdateObjectPose(obj,oldPose,oldState);
         BroadcastObjectPoseStateChanged(obj,oldState);
         if (obj.Family != ObjectFamily.MarkerlessObject && oldState != obj.PoseState)
-            PoseStateChanged?.Invoke(obj,oldState,obj.PoseState);
+            DeliverPublic(PoseStateChanged,obj,oldState,obj.PoseState);
     }
 
     // ------------------------------------------------------------------------- CheckForUnobservedObjects
@@ -2414,8 +2416,8 @@ public sealed partial class BlockWorld
                                            out var reason, out bool hasNothingBehind);
             bool dirtyWithNothingBehind = !visible && hasNothingBehind && o.PoseState == PoseState.Dirty;
             if (!visible && !dirtyWithNothingBehind) continue;
-            Log?.Invoke($"object {o.ObjectId} unobserved (shouldBeVisible:{visible} hasNothingBehind:{hasNothingBehind} reason:{reason})");
-            if (MarkObjectUnobserved(o, forgotten) != 0) Log?.Invoke("BlockWorld.CheckForUnobservedObjects.MarkObjectUnobservedFailed");
+            EmitPublicLog($"object {o.ObjectId} unobserved (shouldBeVisible:{visible} hasNothingBehind:{hasNothingBehind} reason:{reason})");
+            if (MarkObjectUnobserved(o, forgotten) != 0) EmitPublicLog("BlockWorld.CheckForUnobservedObjects.MarkObjectUnobservedFailed");
         }
         return forgotten;
     }
@@ -2542,7 +2544,7 @@ public sealed partial class BlockWorld
     {
         bool inWorld;
         lock (_gate) inWorld = _located.ContainsKey(KeyOf(obj));
-        if (!inWorld) Log?.Invoke($"ObjectPoseConfirmer.AddObjectRelativeObservation.NotABlockWorldObject: {obj.ObjectId}");
+        if (!inWorld) EmitPublicLog($"ObjectPoseConfirmer.AddObjectRelativeObservation.NotABlockWorldObject: {obj.ObjectId}");
         var oldPose = obj.Pose; var oldState = obj.PoseState;
         if (inWorld) { obj.SetPose(pose, -1.0, PoseState.Dirty); BroadcastObjectPoseChanged(obj, oldPose, oldState); }
         var entry = EntryForOrCreate(obj.ObjectId);
@@ -2592,7 +2594,7 @@ public sealed partial class BlockWorld
         {
             if (unchecked(o.LastObservedTimestamp + 30000) < timestamp)
             {
-                Log?.Invoke($"BlockWorld.UpdateMarkerlessObjects.RemovingExpired: object {o.ObjectId}");
+                EmitPublicLog($"BlockWorld.UpdateMarkerlessObjects.RemovingExpired: object {o.ObjectId}");
                 return true;
             }
             if (o.LastObservedTimestamp >= timestamp) return false;
@@ -2663,7 +2665,7 @@ public sealed partial class BlockWorld
         using var frameMutation=EnterPoseMutation();
         if (activeId >= 5)
         {
-            Log?.Invoke($"BlockWorld.AddConnectedActiveObject.InvalidActiveID: activeID {activeId}");
+            EmitPublicLog($"BlockWorld.AddConnectedActiveObject.InvalidActiveID: activeID {activeId}");
             return -1;
         }
         var occupant = GetConnectedActiveObjectByActiveIdHelper(activeId);
@@ -2671,16 +2673,16 @@ public sealed partial class BlockWorld
         {
             if (occupant.FactoryId == factoryId && occupant.Type == type)
             {
-                Log?.Invoke($"BlockWorld.AddConnectedActiveObject.FoundMatchingObjectAtSameSlot: {occupant.Type} {occupant.ObjectId}");
+                EmitPublicLog($"BlockWorld.AddConnectedActiveObject.FoundMatchingObjectAtSameSlot: {occupant.Type} {occupant.ObjectId}");
                 return (int)occupant.ObjectId;
             }
-            Log?.Invoke($"BlockWorld.AddConnectedActiveObject.ConflictingActiveID: ActiveID:{activeId} found with factory 0x{occupant.FactoryId:x} {occupant.Type}. Disconnecting previous.");
+            EmitPublicLog($"BlockWorld.AddConnectedActiveObject.ConflictingActiveID: ActiveID:{activeId} found with factory 0x{occupant.FactoryId:x} {occupant.Type}. Disconnecting previous.");
             RemoveConnectedActiveObject(activeId);
         }
         var sameFactory = new BlockWorldFilter();
         sameFactory.Predicates.Add(o => o.FactoryId == factoryId);
         if (FindConnectedObjectHelper(sameFactory, null, true) is not null)
-            Log?.Invoke($"BlockWorld.AddConnectedActiveObject.FactoryIDAlreadyUsed: 0x{factoryId:x}");
+            EmitPublicLog($"BlockWorld.AddConnectedActiveObject.FactoryIDAlreadyUsed: 0x{factoryId:x}");
         var created = CreateActiveObjectByType(type, activeId, factoryId);
         if (created is null) return -1;
 
@@ -2690,30 +2692,30 @@ public sealed partial class BlockWorld
         var v1 = FindLocatedMatchingObjects(withActiveId);
         if (v1.Count > 0)
         {
-            Log?.Invoke($"BlockWorld.AddConnectedActiveObject.ConflictingActiveID: Objects with ActiveID:{activeId} were found");
+            EmitPublicLog($"BlockWorld.AddConnectedActiveObject.ConflictingActiveID: Objects with ActiveID:{activeId} were found");
             var first = v1[0];
             if (first.FactoryId == factoryId)
             {
-                Log?.Invoke($"BlockWorld.AddConnectedActiveObject.FoundMatchingActiveObject: {first.Type} {first.ObjectId}");
+                EmitPublicLog($"BlockWorld.AddConnectedActiveObject.FoundMatchingActiveObject: {first.Type} {first.ObjectId}");
                 created.ObjectId = first.ObjectId;
             }
             else if (first.FactoryId == 0)
             {
-                Log?.Invoke($"BlockWorld.AddConnectedActiveObject.FoundMatchingActiveObjectThatWasNeverConnected: {first.Type} {first.ObjectId}");
+                EmitPublicLog($"BlockWorld.AddConnectedActiveObject.FoundMatchingActiveObjectThatWasNeverConnected: {first.Type} {first.ObjectId}");
                 if (factoryId != 0)
                 {
                     foreach (var o in v1)
                     {
                         if (o.IsActive) { o.FactoryId = factoryId; o.ActiveId = activeId; }
-                        else Log?.Invoke("ObservableObject.SetFactoryID.NotActive: the object is not active");
+                        else EmitPublicLog("ObservableObject.SetFactoryID.NotActive: the object is not active");
                     }
-                    Log?.Invoke($"BlockWorld.AddConnectedActiveObject.UpdateExistingObjectsFactoryID: 0x{factoryId:x}");
+                    EmitPublicLog($"BlockWorld.AddConnectedActiveObject.UpdateExistingObjectsFactoryID: 0x{factoryId:x}");
                 }
                 created.ObjectId = first.ObjectId;
             }
             else
             {
-                Log?.Invoke($"BlockWorld.AddConnectedActiveObject.MismatchedFactoryID: object {first.ObjectId} has factory 0x{first.FactoryId:x}, connecting 0x{factoryId:x}");
+                EmitPublicLog($"BlockWorld.AddConnectedActiveObject.MismatchedFactoryID: object {first.ObjectId} has factory 0x{first.FactoryId:x}, connecting 0x{factoryId:x}");
                 var del = new BlockWorldFilter();
                 del.AllowedIds.Add(first.ObjectId);
                 DeleteLocatedObjects(del);
@@ -2734,17 +2736,17 @@ public sealed partial class BlockWorld
                     if (o.ActiveId == -1)
                     {
                         if (o.IsActive) { o.ActiveId = activeId; o.FactoryId = factoryId; }
-                        else Log?.Invoke("ObservableObject.SetActiveID.NotActive: the object is not active");
-                        Log?.Invoke($"BlockWorld.AddConnectedActiveObject.FoundMatchingObjectWithNoActiveID: {o.Type} {o.ObjectId}");
+                        else EmitPublicLog("ObservableObject.SetActiveID.NotActive: the object is not active");
+                        EmitPublicLog($"BlockWorld.AddConnectedActiveObject.FoundMatchingObjectWithNoActiveID: {o.Type} {o.ObjectId}");
                     }
                     else if (o.FactoryId == factoryId)
                     {
-                        Log?.Invoke($"BlockWorld.AddConnectedActiveObject.FoundIdenticalObjectOnDifferentSlot: {o.Type} {o.ObjectId}");
+                        EmitPublicLog($"BlockWorld.AddConnectedActiveObject.FoundIdenticalObjectOnDifferentSlot: {o.Type} {o.ObjectId}");
                         o.ActiveId = activeId;
                     }
                     else
                     {
-                        Log?.Invoke($"BlockWorld.AddConnectedActiveObject.FoundOtherActiveObjectOfSameType: {o.Type} {o.ObjectId}");
+                        EmitPublicLog($"BlockWorld.AddConnectedActiveObject.FoundOtherActiveObjectOfSameType: {o.Type} {o.ObjectId}");
                         if (factoryId != 0) { o.ActiveId = activeId; o.FactoryId = factoryId; }
                     }
                 }
@@ -2879,7 +2881,7 @@ public sealed partial class BlockWorld
         var counterpart = FindLocatedObjectHelper(f, null, true);
         if (counterpart is not null)
         {
-            Log?.Invoke($"BlockWorld.UpdateObjectOrigins.ObjectOriginChanged: object {o.ObjectId} {o.Type}");
+            EmitPublicLog($"BlockWorld.UpdateObjectOrigins.ObjectOriginChanged: object {o.ObjectId} {o.Type}");
             if (counterpart.ObjectId != o.ObjectId)
             {
                 lock (_gate)
@@ -2888,14 +2890,14 @@ public sealed partial class BlockWorld
                     counterpart.ObjectId = o.ObjectId;
                     _located[KeyOf(counterpart)] = counterpart;
                 }
-                Log?.Invoke("BlockWorld.UpdateObjectOrigins.MovedSharedPointerDueToIDChange");
+                EmitPublicLog("BlockWorld.UpdateObjectOrigins.MovedSharedPointerDueToIDChange");
             }
             // SetObservationTimes(o) 0x006292DC: unread, not built
             CopyWithNewPose(counterpart, pose, o);
         }
         else
         {
-            Log?.Invoke($"BlockWorld.UpdateObjectOrigins.NoMatchFound: object {o.ObjectId} {o.Type}");
+            EmitPublicLog($"BlockWorld.UpdateObjectOrigins.NoMatchFound: object {o.ObjectId} {o.Type}");
             var clone = o.Clone();
             clone.ObjectId = o.ObjectId;
             clone.OriginId = newOriginId;
@@ -3011,7 +3013,7 @@ public sealed partial class BlockWorld
         PoseState prev;
         lock (_gate) { prev = o.PoseState; o.PoseState = PoseState.Dirty; }
         if (prev == PoseState.Dirty) return;
-        PoseStateChanged?.Invoke(o, prev, PoseState.Dirty);
+        DeliverPublic(PoseStateChanged,o,prev,PoseState.Dirty);
     }
 
     /// <summary>
@@ -3136,7 +3138,7 @@ public sealed partial class BlockWorld
             _located.Remove(KeyOf(o));
             _forgotten[o.ObjectId] = o;
         }
-        PoseStateChanged?.Invoke(o, prev, PoseState.Unknown);
+        DeliverPublic(PoseStateChanged,o,prev,PoseState.Unknown);
     }
 
     /// <summary>Distance between a located object and a robot pose, millimetres, or null.</summary>

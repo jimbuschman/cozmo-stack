@@ -2244,6 +2244,8 @@ public sealed partial class CozmoEngine : IDisposable
         {
             lock(_tickLock)return request(); // Before startup / manually ticked units have no competing engine worker.
         }
+        if(DelocalizationWorld is {} world&&Monitor.IsEntered(world.FrameGate))
+            throw new InvalidOperationException("A synchronous engine request cannot be posted while the caller holds BlockWorld.FrameGate. Deliver public callbacks after leaving the frame window.");
         var done=new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
         Post(()=>{try{done.TrySetResult(request());}catch(Exception ex){done.TrySetException(ex);}});
         return done.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
