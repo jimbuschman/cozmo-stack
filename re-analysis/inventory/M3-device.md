@@ -596,3 +596,14 @@ M3-045 evidence corrected (manager, 2026-10-10; rows research/20261010-m3045-m40
 | Change | Records |
 | --- | --- |
 | NV round4 pad bytes sent as 0 (manager ruling) | M3-043 (note) |
+
+
+## M3+M4 settling passes (manager, 2026-10-18; research/20261018-m3m4-settling-a.md, -b.md)
+
+| Change | Records |
+| --- | --- |
+| New COMPATIBILITY_POLICY: DataPlatformExternalPath (scope 4, app input temporaryCachePath), the block pool root | M3-064 (new) |
+| Not supported (manager): Android/Unity platform init and DASConfigure's absolute roots | M3-055 (note) |
+| Stack features kept (operator): warm-up flag, test tones | M3-004, M3-017 (notes) |
+| Host-thread producer race, ruled: engine thread | M3-021 (note) |
+| NEEDS EXTRACTION still open | M3-037 (note) |

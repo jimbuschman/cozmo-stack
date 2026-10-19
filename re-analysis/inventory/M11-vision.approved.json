@@ -2,7 +2,7 @@
   "subsystem": "M11-vision",
   "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M11-vision.md",
-  "inventory_sha256": "590e7d5fd5c6e7203be588f8d0c37fdee4192fad096d51dd034ad8ea4d75816c",
+  "inventory_sha256": "487ff192e3f973a064a89818a286a0b56d94f43ee47fe2c111ee499f95750a95",
   "records": {
     "M11-001": {
       "status": "EXACT_SOURCE",
@@ -1120,6 +1120,16 @@
       "evidence": [
         "Native E2G ImageChunk producers (whole-.text constructor scan, research/20261018-b-m1-7-check-delivery.md finding 2): HandleImageChunk's Set_ImageChunk at 0x00535AD4, and VisionComponent::CompressAndSendImage<u8> 0x0064F9F2 and <RGB> 0x0064FEA6. M3-002 covers HandleImageChunk's reassembly only; no record covered the host report.",
         "The stack's public Camera.FrameReceived (Camera.cs:281) is a local frame observation, not that report. The host camera control path is M3-044 (COMPATIBILITY_POLICY)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M11-097": {
+      "status": "RECOVERABLE_GAP",
+      "title": "RobotStateHistory query and admission results: ComputeStateAt, GetLastStateWithFrameID and AddRobotStateToHistory's result",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261018-m3m4-settling-b.md: no record owned these; consumers M4-019, M4-038, M10-007, M10-015, M11-044, M13-030, M14-005. Prior reads: ComputeStateAt 0x00531784..0x00531808 (research/20260929-R-VIS-pre-extraction.md); AddRobotStateToHistory 0x00512B9C..0x00512F0C (on-ramp 0x00512BE2, ContainsOriginID 0x00512C44, failure 0x00512C38); the C12.4 gate 0x00513088..0x00513110."
       ],
       "live_path": true,
       "hardware_required": false

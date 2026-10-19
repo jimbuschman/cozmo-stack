@@ -53,7 +53,10 @@ stands. Nothing new starts outside the current layer.
   there (accepted commit 4f184775; bundle `acceptance/hardware/20261018-170546-M1M2-HW`, manager judgement in its
   README). Every check was as source once two tool comparison bugs were set aside (fixed in the tool). The robot has no
   needs record (case 1): the stack writes nothing where the original would write one (B-M1-10 gate, M15-014/M15-030).
-  **Next layer: M3 + M4** (devices and motor control), per "The plan".
+  **Next layer: M3 + M4** (devices and motor control), per "The plan". Plan and blockers:
+  `re-analysis/acceptance/M3M4-blockers.md` (2026-10-18): both Opus settling passes adopted (FAIL; 10 records settle
+  after cleanup); builder job B-M3M4-30 and research OV128 queued; operator decisions recorded on M3-004/017,
+  M4-006/039/040/042.
 - **Numbers:** `re-analysis/FIDELITY_PROGRESS.md`, generated from the manifest by
   `python -I re-analysis/tools/status_views.py`. All 15 engine subsystems are INVENTORY_APPROVED; **M1-transport and M2-protocol are ACCEPTED** (2026-10-18).
 - **Jobs:** `re-analysis/jobs/STATUS.md` (generated) shows, per builder job, the queue note, the status-file state and any

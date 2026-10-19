@@ -1,8 +1,8 @@
 {
   "subsystem": "M3-device",
-  "approved": "2026-10-15",
+  "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M3-device.md",
-  "inventory_sha256": "5ea3222d14a5fbd4b1ff6df3d7270d0c7923e6544010e9c58db05117a2693be5",
+  "inventory_sha256": "32b9e43b9a302a8d9f4e54ee832a7dc95a51f493e5e062c0e9e41ff9c4e5c2e3",
   "records": {
     "M3-001": {
       "status": "EXACT_SOURCE",
@@ -715,6 +715,17 @@
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261013-backup-manager-rest-check.md (and re-analysis/research/20261013-backup-manager-rest.md): A1: sent only by the app (Robot.cs:2053-2063, 2078-2082; SettingsVersionsPanel.cs:82/171/241; RobotRestorePane.cs:36/97/105; DataPersistencePane.cs:131; UnlockablesManager.cs:121); Q4: FilesInDirectory readdir order (0x00802FF6) is filesystem order."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M3-064": {
+      "status": "COMPATIBILITY_POLICY",
+      "title": "The DataPlatform external path (DataPlatformExternalPath, scope 4; app input: temporaryCachePath)",
+      "authority": "libcozmoEngine.so 3.4.0-1204; Unity C#.",
+      "evidence": [
+        "re-analysis/research/20261013-test-loggers-and-backup-check.md (lines 17, 101-102): scope 4 = DataPlatform+0x18, DataPlatformExternalPath, set by the app to temporaryCachePath; BlockFilter::Init gets pathToResource(scope 4, \"blockPool.txt\") (0x0051394C, string 0x005139B0).",
+        "re-analysis/research/20261018-m3m4-settling-a.md: the stack writes blockPool.txt to Options.BlockPoolPath or LocalApplicationData/cozmo-stack (CozmoRobot.cs:431, 570-571)."
       ],
       "live_path": true,
       "hardware_required": false

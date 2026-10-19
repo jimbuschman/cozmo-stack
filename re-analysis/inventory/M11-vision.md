@@ -1738,3 +1738,10 @@ Source: `re-analysis/research/20261010-m3m4-cross-layer-splits.md` (Opus extract
 | --- | --- |
 | New RECOVERABLE_GAP: the ImageChunk game report (0x00535AD4; 0x0064F9F2; 0x0064FEA6) | M11-096 (new) |
 | Owner correction: RobotProcessedImage host report (0x00654A14/0x00654A1C) is M11-035, not M13-020 | M11-035 (note) |
+
+
+## M3+M4 settling pass B (manager, 2026-10-18; research/20261018-m3m4-settling-b.md)
+
+| Change | Records |
+| --- | --- |
+| New RECOVERABLE_GAP: RobotStateHistory query and admission results (ComputeStateAt, GetLastStateWithFrameID, AddRobotStateToHistory's result), previously unowned | M11-097 (new) |

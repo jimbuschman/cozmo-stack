@@ -10,12 +10,12 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | --- | ---: |
 | EXACT_SOURCE | 194 |
 | EQUIVALENT_IMPLEMENTATION | 5 |
-| COMPATIBILITY_POLICY | 67 |
+| COMPATIBILITY_POLICY | 68 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 397 |
-| RECOVERABLE_GAP | 23 |
-| **total** | **702** |
+| IMPLEMENTATION_GAP | 398 |
+| RECOVERABLE_GAP | 25 |
+| **total** | **706** |
 
 ## Subsystems
 
@@ -23,15 +23,15 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | M1-transport | ACCEPTED | 2026-10-18 | 62 | 42 | 19 | 1 | 0 | 0 | 0 |
 | M2-protocol | ACCEPTED | 2026-10-18 | 24 | 22 | 2 | 0 | 0 | 0 | 0 |
-| M3-device | INVENTORY_APPROVED | 2026-10-15 | 63 | 35 | 20 | 4 | 4 | 0 | 4 |
-| M4-control | INVENTORY_APPROVED | 2026-10-16 | 50 | 22 | 8 | 3 | 17 | 0 | 17 |
+| M3-device | INVENTORY_APPROVED | 2026-10-18 | 64 | 35 | 21 | 4 | 4 | 0 | 4 |
+| M4-control | INVENTORY_APPROVED | 2026-10-18 | 52 | 22 | 8 | 3 | 18 | 1 | 19 |
 | M5-animation | INVENTORY_APPROVED | 2026-10-16 | 65 | 30 | 11 | 1 | 23 | 0 | 23 |
 | M6-wwise-bank | INVENTORY_APPROVED | 2026-10-18 | 45 | 1 | 2 | 0 | 38 | 4 | 41 |
 | M7-behaviour | INVENTORY_APPROVED | 2026-10-16 | 29 | 4 | 0 | 0 | 23 | 2 | 24 |
 | M8-framework | INVENTORY_APPROVED | 2026-10-16 | 27 | 0 | 1 | 0 | 24 | 2 | 26 |
 | M9-wwise-music | INVENTORY_APPROVED | 2026-10-16 | 46 | 5 | 2 | 1 | 37 | 1 | 38 |
 | M10-derived | INVENTORY_APPROVED | 2026-10-16 | 17 | 3 | 0 | 0 | 14 | 0 | 14 |
-| M11-vision | INVENTORY_APPROVED | 2026-10-18 | 96 | 14 | 1 | 1 | 74 | 6 | 80 |
+| M11-vision | INVENTORY_APPROVED | 2026-10-18 | 97 | 14 | 1 | 1 | 74 | 7 | 81 |
 | M12-manipulation | INVENTORY_APPROVED | 2026-10-16 | 49 | 8 | 1 | 1 | 37 | 2 | 38 |
 | M13-navigation | INVENTORY_APPROVED | 2026-10-16 | 39 | 3 | 0 | 1 | 34 | 1 | 33 |
 | M14-faces | INVENTORY_APPROVED | 2026-10-18 | 14 | 1 | 0 | 1 | 11 | 1 | 12 |
@@ -45,4 +45,4 @@ ACCEPTED subsystems: M1-transport, M2-protocol.
 | level | records |
 | --- | ---: |
 | HARDWARE_VERIFIED | 10 |
-| NONE | 692 |
+| NONE | 696 |

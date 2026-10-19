@@ -813,3 +813,17 @@ M3-045 and M4-033 moved RECOVERABLE_GAP -> IMPLEMENTATION_GAP (manager, 2026-10-
 ## Cross-layer split of M2-020 / M2-023 (manager, 2026-10-16; acceptance/M1M2-blockers.md)
 
 | Ownership notes (bodies/wiring moved from M2-020/M2-023) | M4-016, M4-027 |
+
+
+## M3+M4 settling passes (manager, 2026-10-18; research/20261018-m3m4-settling-a.md, -b.md)
+
+| Change | Records |
+| --- | --- |
+| New IMPLEMENTATION_GAP: PlayLightAnim completion callback (0x0063858C; 0x006379C6..0x00637A48) | M4-051 (new) |
+| New RECOVERABLE_GAP: relative-mode SetObjectLights, MakeStateRelativeToXY 0x004E0DEC | M4-052 (new) |
+| Title split: the history query moves to M11-097 | M4-038 |
+| Evidence corrected: scope 4 is DataPlatformExternalPath (M3-064), not local application data | M4-011 |
+| Not supported (operator): drone mode, cube-light game inputs, pool editing | M4-039, M4-040, M4-042 (notes) |
+| Stack feature kept (operator): DriveWheels completion tolerance | M4-006 (note) |
+| Findings to build | M4-019, M4-027, M4-041, M4-045, M4-049 (notes) |
+| Handoffs corrected | M4-018 (note) |

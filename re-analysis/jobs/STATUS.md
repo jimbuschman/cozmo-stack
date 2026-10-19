@@ -112,6 +112,7 @@
 | 61w3h | B-M1-9 | CLAIMED per status/B-M1-9.md (OV127 adopted 2026-10-18: LatencyMessage, SetGameBeingPau... | DONE (4/4 items; 2 MISSING) | `research/20261018-b-m1-9-check.md` |
 | 61w3i | B-M1-10 | DONE per status/B-M1-10.md; Opus check FAIL (A1 device-file clock, A2 gutted Lab test; ... | DONE (4/4 checked items; 3 MISSING) | `research/20261018-b-m1-10-check.md` |
 | 61w3j | B-M1-11 | DONE per status/B-M1-11.md; Opus fix review PASS with queued items (research/20261018-b... | DONE (3/3 checked items; 1 MISSING) | `research/20261018-b-m1-11-check.md` |
+| 61w3k | B-M3M4-30 | open (M3+M4 settling fixes: M4-041 zero LED state, M4-049 wiring, M4-051 callback, M4-0... | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

@@ -1,8 +1,8 @@
 {
   "subsystem": "M4-control",
-  "approved": "2026-10-16",
+  "approved": "2026-10-18",
   "inventory": "re-analysis/inventory/M4-control.md",
-  "inventory_sha256": "40a6aef036e06c889ddf8be58219ea2fbeb0c245aa10aeb0ff4f9e87fcbd034c",
+  "inventory_sha256": "728802e5e7739cef2e3dae4b7f249ff8cddca894b55e6708838e73947201891f",
   "records": {
     "M4-001": {
       "status": "EXACT_SOURCE",
@@ -138,7 +138,7 @@
       "title": "The block pool is kept in blockPool.txt between sessions, and an RSSI tie is broken in the engine container order",
       "authority": "libcozmoEngine.so",
       "evidence": [
-        "Robot::SetPhysicalRobot(true) 0x00513914 calls BlockFilter::Init 0x0061A1EC with DataPlatform::pathToResource(scope 4, \"blockPool.txt\") (0x0051394C, the string at 0x005139B0); Robot::Robot only constructs the filter (0x00510184). Init stores the path at +0x60, calls Load, copies the persistent pool (+0x04) to the runtime pool (+0x2C) and calls Robot::ConnectToObjects with its five factory ids (0x0061A278) - before any BlockPoolEnabledMessage. This stack calls Init from CozmoRobot.ConnectAsync with a file under the local application data folder, the platform's equivalent of that data scope; an empty path turns persistence off",
+        "Robot::SetPhysicalRobot(true) 0x00513914 calls BlockFilter::Init 0x0061A1EC with DataPlatform::pathToResource(scope 4, \"blockPool.txt\") (0x0051394C, the string at 0x005139B0); Robot::Robot only constructs the filter (0x00510184). Init stores the path at +0x60, calls Load, copies the persistent pool (+0x04) to the runtime pool (+0x2C) and calls Robot::ConnectToObjects with its five factory ids (0x0061A278) - before any BlockPoolEnabledMessage. This stack calls Init from CozmoRobot.ConnectAsync with a file under the host's configured path (scope 4 is DataPlatformExternalPath, the app's temporaryCachePath; the host input is M3-064); an empty path turns persistence off",
         "Load 0x0061A2DC: ifstream(path, in); a file that will not open leaves the pool as it is. getline on '\\n'; an empty line is skipped; a sixth non-empty line is an error that ends the reading (0x0061A41E, sErrorF at 0x0061A5A0); a line whose first two characters are not \"0x\" is skipped (compare at 0x0061A430); id = stoul(line, &pos, 16) (0x0061A442), skipped when pos reaches the end of the line, stored in the next entry, then type = stoul(line.substr(pos + 1), 0, 10) (0x0061A480) stored beside it and the entry counted. A throwing stoul is caught, logged and the line skipped (0x0061A52C..0x0061A58E) - after the id has been stored when it is the type that fails",
         "Save 0x0061B014: nothing without a path; when all five ids are zero an existing file is removed (stat, remove at 0x0061B058..0x0061B068); then ofstream(path, out) and, for each entry with a non-zero id, \"0x\" (0x0061B344), the id in hex (basefield cleared to hex at 0x0061B0FE..0x0061B102, lower case), \",\" (0x0061B348), to_string(type) and \"\\n\" (0x0061B34C). Save is called by AddObjectToPersistentPool on success (0x0061ACE2), RemoveObjectFromPersistentPool (0x0061B410) and the game's block-pool messages in HandleGameEvents (0x00619FC0, 0x0061A0A6, 0x0061A10E); only the first path exists in this stack",
         "The table at Robot+0x47C is std::__ndk1::unordered_map<unsigned, Robot::ActiveObjectInfo> with std::hash<unsigned>, the key its own hash. operator[] 0x00537ABC: bucket = h & (n-1) for a power-of-two count, h % n otherwise; a new key first grows the table when it is empty or n * max_load_factor < size + 1 to max((2n) | (n < 3 || n not a power of two), ceil((size + 1) / mlf)) (0x00537B2C..0x00537B90); rehash 0x00537C80 turns 1 into 2 and a non-power-of-two into __next_prime, so the counts run 2, 5, 11, 23; the node goes after its bucket's head when the bucket is in use, else at the front of the list with the bucket pointing at the list head and the displaced node's bucket at the new node (0x00537BAE..0x00537BF8); __rehash 0x00537D10 rebuilds by walking the list and splicing each node into an in-use bucket after its head; erase (remove 0x00518FDA) unlinks and repairs the bucket pointers",
@@ -490,7 +490,7 @@
     },
     "M4-038": {
       "status": "IMPLEMENTATION_GAP",
-      "title": "CliffSensorComponent::ComputeCliffPose and BlockWorld::AddCliff (the detected-cliff path)",
+      "title": "CliffSensorComponent::ComputeCliffPose's flag gate and result branch, and HandleCliffEvent's AddCliff call and logs (history query M11-097; BlockWorld helpers M11-062; map insert M13-030)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
         "re-analysis/research/20261012-m3m4-settling-2.md: HandleCliffEvent calls ComputeCliffPose (0x00634980; call 0x005355B4) and BlockWorld::AddCliff (0x005355C0); the \"Detected at\" info (0x00535602) and ComputeCliffPoseFailed with errG (0x00535682..0x005356BC) depend on it.",
@@ -620,6 +620,26 @@
       "evidence": [
         "re-analysis/research/overnight/20261014-ov11-m11-047-check.md: libc++_shared.so 0x0003B038 (Thumb, 1640 bytes); used by every unordered_map/unordered_set rehash in the engine (e.g. 0x0068B68A); M4-011's \"2, 5, 11, 23\" relies on it.",
         "re-analysis/research/overnight/20261015-ov50-52-check.md: libc++ 0x0003B038..0x0003B656 (small table 0x0009B480, residues 0x0009B540, trial division, wheel, overflow_error); engine rehash wrapper 0x00537C80..0x00537D0C = 0x0068B68A..0x0068B716, length_error 0x00537D1C / 0x0068B724; independent re-implementation matches for n in 1..199999."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-051": {
+      "status": "IMPLEMENTATION_GAP",
+      "title": "CubeLightComponent::PlayLightAnim's completion callback: stored with the entry, invoked by Update when the entry ends",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261018-m3m4-settling-a.md: the std::function argument is stored in CurrentAnimInfo at 0x0063858C; Update copies it, pops the entry and calls it when non-empty and the guard at 0x564A64 == 1 passes (0x006379C6..0x006379F4, 0x00637A02..0x00637A2E)."
+      ],
+      "live_path": true,
+      "hardware_required": false
+    },
+    "M4-052": {
+      "status": "RECOVERABLE_GAP",
+      "title": "Relative-mode SetObjectLights: located lookup, ActiveCube cast, SetLEDs and MakeStateRelativeToXY",
+      "authority": "libcozmoEngine.so 3.4.0-1204.",
+      "evidence": [
+        "re-analysis/research/20261018-m3m4-settling-a.md: GetLocatedObjectByIdHelper(id, -1) 0x00637E82, dynamic_cast to ActiveCube, SetLEDs 0x00637EDA, then MakeStateRelativeToXY 0x004E0DEC called at 0x00637EE8. Producer: BuildPyramid (M15-037)."
       ],
       "live_path": true,
       "hardware_required": false
