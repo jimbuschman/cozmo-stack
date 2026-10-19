@@ -54,6 +54,7 @@ public class R2FloorPlacementTests
     /// 0x41F00000 (0x0052B0C4: <c>movt r0,#0x41f0</c>), the double literal 0x3E56A09E19D672B6 of UnitQuaternion_&lt;double&gt;::Normalize (0x00849E58), the caps {1,1,10,1} (0x0056B8A4) and the
     /// PlaceObjectOnGround message words (0x00632B88: 0, 0, 0, 0x42C80000, 0x43480000, 0x43FA0000 from 0x00C7CD90).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_Constants_AreTheEnginesBitPatterns()
     {
@@ -82,6 +83,7 @@ public class R2FloorPlacementTests
     /// M15-019, 0x005E03D0..0x005E0512 (the frame from the robot) and 0x005E09E0..0x005E0A66 (the candidate): the translation of six candidates in three frames, bit for bit against the binary32 emulation
     /// of the disassembly (emulate_candidates.py: Rotation3d(Radians, Z) 0x0084A506, Normalize 0x00849DB8, operator* 0x00849C1C, S = 44.0f + 10.0f, off = (S*i, S*j, 0), t = p + B).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0, 50, 0, 0x42C80000u, 0x42480000u, 0x42C80000u, 0xC0800000u, 0x42C80000u, 0x42D00000u, 0x431A0000u, 0x42480000u, 0x42380000u, 0x42D00000u, 0x43500000u, 0xC0800000u)]   // beacon +x of the robot: angle 0
     [InlineData(100, -50, 0, 0x42C80000u, 0x42480000u, 0x431A0000u, 0x42480000u, 0x42380001u, 0x42480000u, 0x42C80000u, 0x42D00000u, 0x42380001u, 0xC07FFFF0u, 0x431A0000u, 0x431E0000u)]   // +y: acosf(0) = pi/2
@@ -101,6 +103,7 @@ public class R2FloorPlacementTests
     }
 
     /// <summary>The spacing is size.x + 10.0f where size.x is 44.0f for LIGHTCUBE1..3 (Block::LookupBlockInfo 0x004E4C8C: four entries, keys 1..4, each size 0x42300000 at 0x004E4CD6, 0x004E4D90, 0x004E4E46, 0x004E4EFA).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_019_TheCubeSizeTheSpacingUsesIs44ForEveryLightCube()
     {
@@ -109,6 +112,7 @@ public class R2FloorPlacementTests
     }
 
     /// <summary>vcvt.s32.f32: toward zero, saturating, NaN to 0 (0x005E0574): N = trunc(radius / S).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_019_TruncationOfTheGridHalfWidth()
     {
@@ -129,6 +133,7 @@ public class R2FloorPlacementTests
     /// one is rejected, by the failure memory or by the radius, so the whole order shows) and the out pose is the LAST tested candidate (row 1.7: it is written before any test).
     /// N = trunc(radius / 54): 54 -> 1, 107.99999 -> 1, 108 -> 2, 53.99999 -> 0, a negative radius tests nothing (0x005E0580 blt 0x005E0628).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_019_TheGridOrderAndTheOutPoseHoldingTheLastTestedCandidate()
     {
@@ -171,6 +176,7 @@ public class R2FloorPlacementTests
     /// Row 1.9: the recent-failure skip is <c>DidFailToUse(-1, 2, cooldown, *out, 100.0f, pi)</c>: ANY object's PlaceObjectAt failure younger than the cooldown within 100 mm (SPHERICAL, inclusive) of the candidate.
     /// A failure at the beacon centre blocks (0,0), (0,-54) and (0,54) (54 mm away); (0,-108) is 108 mm away and is accepted, at d2 = 108^2 = radius^2.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_019_TheRadiusTestIsStrictAndTheFailureSkipIsASphereOf100Millimetres()
     {
@@ -217,6 +223,7 @@ public class R2FloorPlacementTests
     /// not the carried cube's 0. The candidates (0,0) and (0,-1) overlap cube 8 (the other cube's quad is padded by 10.0f, no Z test) and (0,1), at (46, 50), is the first free one:
     /// emulate_candidates.py gives its translation as (0x42380001, 0x42480000).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_019_M15_020_TheFrameFollowsTheNearestNonCarriedCubeAndTheObstacleTestUsesTheCarriedFootprint()
     {
@@ -242,6 +249,7 @@ public class R2FloorPlacementTests
     /// M15-020 row 1.2b, IsLocWithinBeacon (0x0059C24C..0x0059C2E8) as FindCubesInBeacon calls it with extra 0.0f: x*x + y*y + z*z in f32 against radius^2 + 1e-5f, inclusive; z counts.
     /// FindCubesInBeacon also takes families Block (1) and LightCube (2) only, so a charger is not a cube here.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_020_FindCubesInBeaconIsThreeDimensionalAndSkipsTheCarriedCube()
     {
@@ -261,6 +269,7 @@ public class R2FloorPlacementTests
     /// M15-024 (4.3.3): SetFailedToUse keeps, per object id, the last cap entries (the word table 0x0056B8A4 = {1, 1, 10, 1}: PickUp 1, StackOn 1, PlaceObjectAt 10, RollOrPopAWheelie 1), dropping the oldest
     /// first (0x0056B7BE); each table is separate (GetObjectFailureTable 0x0056B8F4, tbb {2,38,41,44}); FailureInfo carries the pose and the f32 time.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_024_TheCapsKeepTheLastEntriesPerObjectAndPerFailureKind()
     {
@@ -290,6 +299,7 @@ public class R2FloorPlacementTests
     /// for a 45.0 cooldown, one 44.0 s old is not; the engine's NEGATIVE time skips the expiry test. (2) dist &lt; -1e-5f matches without the pose (the shorter overloads' -1.0f). id -1 walks every object's
     /// list; a given id only its own. (3) IsSameAs: spherical distance (<= inclusive) then the angle: radians >= pi accepts any rotation, otherwise the rotation angle difference must be &lt;= radians.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_024_EntryMatchesExpiryDistanceAndAngle()
     {
@@ -325,6 +335,7 @@ public class R2FloorPlacementTests
     /// M15-024 (4.4): the stack-on candidate filter (the lambda 0x005E1CC6, its DidFailToUse at 0x005E1D24) asks for failure 1 with the cooldown, the CANDIDATE'S pose, 20.0f and pi/8: a failure at the
     /// same spot of another yaw outside pi/8 does not block it, one inside does. The floor path's own call is (-1, 2, ..., 100.0f, pi) (0x005E0B78).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_024_TheStackOnFilterUsesThePoseAwareMemory()
     {
@@ -354,6 +365,7 @@ public class R2FloorPlacementTests
     /// M15-023 (4.1.5, 4.1.6): AIBeacon::FailedToFindLocation stamps [beacon+0x10] with the f32 time (0x0059C314..0x0059C322; AddBeacon stores 0 there, 0x0056C3BC); AIWhiteboard::FailedToFindLocationInBeacon
     /// (0x0056C3F0) then UpdateBeaconRender. IsRunnableInternal (0x005DF0FC): with |t| >= 1e-5f it is not runnable while <c>(t + cooldown) + (-1e-5f) &gt; now</c> (f32). Hiking 45.0f, sparks 5.0f.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_023_TheFailureStampBlocksTheBehaviourForTheCooldown()
     {
@@ -388,6 +400,7 @@ public class R2FloorPlacementTests
     /// overlaps another cube there), so, in order: the beacon is stamped (f32 time), "...TransitionToObjectPickedUp.NoFreePoses" is logged, the "HikingNoLocationAtBeacon" (24 characters) event is
     /// triggered; NO action is started (no PlaceObjectOnGround, no further path), and the carried cube stays carried. NeedActionCompleted(PickupCube) was reported BEFORE the pose search (M15-025 row 4.1.3).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_023_M15_025_NoFreePosesStampsLogsTriggersTheEventAndStartsNothing()
     {
@@ -442,6 +455,7 @@ public class R2FloorPlacementTests
     /// equal to the target and attempt &lt;= 2: the SAME pose again with attempt + 1 (CanRetry). 4 with attempt 3, or not carrying the target: CannotRetry "(attempt=%d/3) (carrying=yes|no)" and the failure tail.
     /// 1, 2 and 3: NoRetryAllowed and the failure tail. The tail records SetFailedToUse(obj, 2 = PlaceObjectAt, the CANDIDATE pose) (0x005E1B56) when the target is still located.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_021_TheCallbackActsPerResultCategory()
     {
@@ -504,6 +518,7 @@ public class R2FloorPlacementTests
     /// CheckIfDone never reads DockingComponent+5 or the carry state: with the IS_PICKING_OR_PLACING bit never raised the action stays RUNNING until the IAction timeout (30.0f, 0x41F00000) and fails with
     /// 0x03000018, even though the robot's BLOCK_PLACED result arrived (and released the carried object: HandlePickAndPlaceResult 0x00533780 is the only release).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M15_022_InitSendsTheMessageThenStopsMotorsAndTheActionWaitsForTheStatusGate()
     {
@@ -564,6 +579,7 @@ public class R2FloorPlacementTests
     /// logs "PlaceObjectOnGroundAction.CheckIfDone.FaceAndVerifyFailed" and is returned (the object clear, ClearLocatedObjectByIDInCurOrigin, is MISSING). The result never depends on whether the cube was
     /// released.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M15_022_TheActionsResultIsTheVerifyActionsAfterTheStatusGate()
     {
@@ -611,6 +627,7 @@ public class R2FloorPlacementTests
     /// M15-022 (2.6 step 6, 0x005548C6; destructor 0x005546D0 -> 0x00554708): with result 0 Init takes DisableReactionsWithLock("placeOnGroundAction", table 0x00C55A21, true): of the 21 triggers
     /// only index 8 (ObjectPositionUpdated) is set; the destructor removes it. With a failed Init (not carrying) the lock is never taken.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M15_022_InitTakesTheReactionLockOnObjectPositionUpdatedAndTheEndRemovesIt()
     {
@@ -657,6 +674,7 @@ public class R2FloorPlacementTests
     /// that is not free (another cube on the candidate, +0x179 set) fails with RETRY 0x04000008, and the compound ends with that sub-action's result (a RETRY category only retries when the compound's own
     /// RetriesRemain is 1; the default byte is 0, 0x0053FDD8, so it never does): the PlaceObjectOnGround message is never sent.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_022_ABlockedPlacementGoalFailsWithRetry()
     {
@@ -681,6 +699,7 @@ public class R2FloorPlacementTests
     /// The same behaviour through the live entry: the BringCubeToBeacon the shipped binding builds (FreeplayStack.Bound, "Hiking_BringCubeToBeacon", cooldown 45), started and ticked by the
     /// BehaviorManager (SwitchToBehaviorBase, Update): pick up, place on the floor, FireEmotionEvents.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheShippedBindingPlacesTheCubeThroughTheBehaviorManager()
     {
@@ -743,6 +762,7 @@ public class R2FloorPlacementTests
     /// <c>DidFailToUse(id, set, [this+0x130], its pose, 20.0f, Radians pi/8)</c>: a failed floor placement (PlaceObjectAt) or stack-on does NOT exclude it; a pick-up failure recorded for that cube within 20 mm and pi/8 of its
     /// pose does (the call passes the cube's id, so another object's failures are not consulted); farther than 20 mm, or turned more than pi/8, does not; the cooldown (strict) ends it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_020_TheCandidateFilterIsPickUpAndRollFailuresMatchedByPose()
     {
@@ -795,6 +815,7 @@ public class R2FloorPlacementTests
     /// all-in-beacons answer false (0x0056B476); otherwise a cube is usable when CanPickUpObject accepts it and it is in no beacon by the 3-D IsLocWithinBeacon (z counts).
     /// CarryingComponent::IsCarryingObject(id) 0x00633F88 is also true for the id resting on the carried one ([+0x14]).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_020_FindUsableAndAreAllFollowTheEngine()
     {
@@ -830,6 +851,7 @@ public class R2FloorPlacementTests
     /// CanPickUpObject 0x0063C7F0: CanInteractWithObjectHelper and then NOT IsPoseTooHigh(pose wrt robot, 2.0f, 15.0f, 0.5f) (<c>D*2 + 15 + 1e-5 &lt; D*0.5 + z</c>, D = 44): a cube on the ground is
     /// pickable, one 100 mm up is too high (103 &lt; 122), one 70 mm up is not (103 &gt;= 92).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_020_CanPickUpObjectRejectsACubeThatIsTooHigh()
     {
@@ -850,6 +872,7 @@ public class R2FloorPlacementTests
     /// PlaceObjectOnGroundAction::Init 0x005548C6 takes the lock for EVERY action: a bare action built by any caller (PutDown, FistBump, Motion's lift-height-32 path, ManipTool) takes it through the
     /// ManipulationSystem's manager (FreeplayStack.Create wires it); with none attached the lock is reported MISSING once and not taken.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M15_022_ABareActionTakesTheLockThroughTheManipulationSystemsManager()
     {
@@ -893,6 +916,7 @@ public class R2FloorPlacementTests
     /// marker's (GetClosestMarkerPose, 0x0054A27C); a code the object has is chosen by the nearest such marker; a code it lacks is 0x03000002 (the base value, 0x0054A2F6 / 0x0054A582). The action's
     /// maxTurn is Radians(0) and its visual-verify byte +0x192 is clear, so it ends with the TurnTowardsPoseAction's result (CheckIfDone 0x0054ADF2..0x0054AF60): Success here.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M15_022_TheVerifyChildIsTheEnginesTurnTowardsObjectAction()
     {
@@ -918,6 +942,7 @@ public class R2FloorPlacementTests
     /// literal 0x3727C5AC at 0x008779C8). For D = 44, f = (1, 15, 0.5) and z = 37 + 3*2^-18 the f32 sum on the left is 59.0000114 and the right 22 + z = 59.0000114: NOT less, so not too high; a double
     /// evaluation (59.00001 &lt; 59.0000114) says too high. The width is pinned by that case, for both CanStackOnTopOfObject's (1, 15, 0.5) and CanPickUpObject's (2, 15, 0.5) shapes.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_012_IsPoseTooHighIsBinary32()
     {
@@ -936,6 +961,7 @@ public class R2FloorPlacementTests
     /// TurnTowardsPoseAction::GetAbsoluteHeadAngleToLookAtPose 0x0054B428..0x0054B564, binary32 bits from the emulation of the disassembly (emulate_head_angle.py; the same reading of the same function, with
     /// atan2f from Python's libm).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(100, 0, 22, 0xBD9EA3DFu)]
     [InlineData(200, 30, 80, 0x3EC94056u)]
@@ -955,6 +981,7 @@ public class R2FloorPlacementTests
     /// (0x005DF37C) picks the candidate nearest the robot by f32 (x*x + y*y) + z*z (0x005DFB3A..0x005DFB5E; no sqrt) and picks it up. With no candidate the "NoCandidates" error and InitInternal's non-zero
     /// result (no action started and the beacon not stamped now, 0x005DF382..0x005DF3DA); a NoFreePoses stamp made in the call itself is zero.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_020_InitInternalResumesAtThePlacementPhaseWhileCarryingAndPicksTheNearestOtherwise()
     {
@@ -1034,6 +1061,7 @@ public class R2FloorPlacementTests
     /// "Trying to pick up '%d' again" (0x005DF8E6) and starts the action again; 4 with three attempts spent is ".Fail"; 3 is ".NoRetry"; both failures end in SetFailedToUse(obj, PickUpObject = 0) with the
     /// cube's own pose; categories 1 and 2 do nothing.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_020_ThePickUpCompletionLambdaActsPerResultCategory()
     {
@@ -1095,6 +1123,7 @@ public class R2FloorPlacementTests
     /// (the counter compared at 0x005185C6 is then 26): a negative tolerance never converges. TurnTowardsPoseAction::Init falls back to GetAbsoluteHeadAngleToLookAtPose only on a non-zero result, with the
     /// warning "TurnTowardsPoseAction.Init.FailedToComputedHeadAngle: PoseWrtRobot translation=(%f,%f,%f)" (0x0054AB66).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_021_ComputeHeadAngleToSeePoseHasTheEnginesResults()
     {

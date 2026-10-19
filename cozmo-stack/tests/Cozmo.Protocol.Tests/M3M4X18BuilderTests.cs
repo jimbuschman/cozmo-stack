@@ -41,6 +41,7 @@ public sealed class M3M4X18BuilderTests
         };
         rig.Engine.Broadcast(m);Assert.Equal(expected.Split(','),calls);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NativeSignalSeesAppendedNodesAndSkipsUnlinkedNodesIncludingSelfRemoval()
     {
@@ -70,6 +71,7 @@ public sealed class M3M4X18BuilderTests
         m.Field4=new byte[16];rig.Engine.Broadcast(m);rig.Engine.DrainAppDelivery();Assert.True(reports[2].RobotToEngineMismatch);Assert.True(reports[2].EngineToRobotMismatch);
         Assert.Equal(m.ToBytes()[1..],rig.Engine.Robot!.LastFWVersionPayload);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void FactoryHandlersRunTwiceAndMalformedHeaderLatchesCancelQueueStateAndWarnings()
     {
@@ -95,6 +97,7 @@ public sealed class M3M4X18BuilderTests
         rig.Engine.Broadcast(new FirmwareVersion{Signature=Encoding.UTF8.GetBytes("{")});Assert.Equal(2,logs.Count(e=>e.Name=="BehaviorFactoryTest.EndTest.TestAlreadyComplete"));
         rig.Engine.Broadcast(new FirmwareVersion{Signature=Encoding.UTF8.GetBytes("[]")});Assert.Equal(2,stack.Count(e=>e.Contains("skipping FactoryTest firmware handler fatal JSON")));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DockingCountersResetAndLiftVirtualDispatchActsOnlyWhenRunning()
     {
@@ -110,6 +113,7 @@ public sealed class M3M4X18BuilderTests
         Assert.All(rig.Engine.Robot.DevBehaviors,s=>{Assert.Equal(2u,s.Lift.All);Assert.Equal(1u,s.Lift.Loads);Assert.False(s.Lift.HasLoad);Assert.True(s.Lift.Received);});
         Assert.Equal(4,logs.Count(e=>e.Name=="BehaviorLiftLoadTest.HandleLiftLoad.HasLoad"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TapFilterWarningsPrecedeImplAndBackupMissingPrecedesHeadId()
     {
@@ -120,6 +124,7 @@ public sealed class M3M4X18BuilderTests
         order.Clear();rig.Engine.Broadcast(new ObjectStoppedMoving{ObjectID=99});Assert.Equal("BlockTapFilterComponent.HandleActiveObjectStopped.ObjectIDNull",order[0]);
         order.Clear();rig.Engine.Broadcast(new RobotAvailable());Assert.Equal(new[]{"DataPlatform.writeAsJson","robot.handle_robot_set_head_id"},order);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DeviceIdUtf8BomIsKeptAndSharedOfflineFixtureUsesATemporaryPath()
     {
@@ -135,6 +140,7 @@ public sealed class M3M4X18BuilderTests
         }
         finally {Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void EDImplPrecedesRICAndRICSelfRemovalSkipsTheSecondLambda()
     {
@@ -146,6 +152,7 @@ public sealed class M3M4X18BuilderTests
         var calls=new List<string>();rig.Engine.MessageDispatchObservedForTest=(t,n)=>{if(t==RobotMessageId.MfgId)calls.Add(n);};
         rig.Engine.Broadcast(new ManufacturingID());Assert.Equal(new[]{"Impl","RIC"},calls);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ActionC4SubscribersFollowConstructionAndDAFollowsDockInit()
     {
@@ -163,6 +170,7 @@ public sealed class M3M4X18BuilderTests
         rig.Engine.Broadcast(new LiftLoad{Field0=true});Assert.Equal(new[]{"LiftLoadTest[0]","LiftLoadTest[1]","IDockAction","IDockAction"},calls);
         a.Dispose();calls.Clear();rig.Engine.Broadcast(new LiftLoad());Assert.Equal(new[]{"LiftLoadTest[0]","LiftLoadTest[1]","IDockAction"},calls);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void EachConstructorBuildsItsLoggerAndEmptyHeaderStopsAtUnreadRow()
     {
@@ -173,6 +181,7 @@ public sealed class M3M4X18BuilderTests
         Assert.All(rig.Engine.Robot!.DevBehaviors,s=>Assert.Equal(0,s.Factory.Result));
         Assert.Equal(2,logs.Count(e=>e.Contains("FactoryTest Json::Reader::parse on an empty")));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NativeInitialFactoryStateZeroSetsTheFirstDeadlineToFloatTwenty()
     {

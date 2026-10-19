@@ -514,6 +514,7 @@ public class M4AbortSleepTests
     /// the messages are AbortAll's four followed by Path destructor's ClearPath (the direct-drive flags are clear, so A7's gate keeps its helper calls away), no
     /// EnableAnimTracks follows, and afterwards nothing is locked.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_027_T4_TheMovementDestructorSendsNothing()
     {
@@ -532,6 +533,7 @@ public class M4AbortSleepTests
     /// list and destroys the per-object histories and listener sets; it sends no StreamObjectAccel. The stack's component is
     /// emptied and nothing goes out for it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_027_T7_TheCubeAccelDestructorDropsListenersWithoutAMessage()
     {
@@ -551,6 +553,7 @@ public class M4AbortSleepTests
     /// send ("Weak release is not an explicit unsubscribe or a light-off send", the CurrentAnimInfo function objects are destroyed,
     /// not invoked). A backpack pattern is playing when the Robot is removed: only AbortAll's four messages plus the Path destructor's ClearPath go out.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_027_T15_TheLightDestructorsSendNoLightOff()
     {
@@ -567,6 +570,7 @@ public class M4AbortSleepTests
     /// M4-027/M4-033: bound components, including Touch (+0x28C), log no MISSING. Cliff (+0x288)
     /// has a native-null logger and a managed deque, so its deletion is quiet too.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_027_BoundSlotsAreQuietAndUnbuiltOnesAreReported()
     {
@@ -768,6 +772,7 @@ public class M4AbortSleepTests
     /// M4-031 D2/D3: a mask of several tracks puts an entry in each track's tree, and the unlock of a missing key prints the state
     /// after the INFO (0x0063FF76): BODY then HEAD.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_031_A10_TheMissingKeyDiagnosticPrintsTheLockState()
     {
@@ -782,7 +787,6 @@ public class M4AbortSleepTests
         Assert.Equal(new[]
         {
             "info: [Unnamed] MovementComponent.UnlockTracks: Tracks 0x1 are not currently locked by nope",
-            "MISSING: M4-047 | PrintLockState 0x006410D8 handoff outside these checked rows; existing M4-031 body retained",
             "debug: [Unnamed] MovementComponent.LockState: HEAD_TRACK:1 dw[w] \nBODY_TRACK:1 dw[w] \n",
         }, lines);
     }

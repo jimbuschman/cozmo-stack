@@ -343,7 +343,6 @@ public sealed class CozmoMotion
                 // sChanneledInfoF channel Unnamed (0x00BE3FEC via the literal at 0x0063FF44), row 2.
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Info, "Unnamed", "MovementComponent.UnlockTracks", $"Tracks 0x{mask:x} are not currently locked by {who}");
                 // fidelity: M4-047 — this job checks the call boundary, not the separately settled M4-031 body.
-                _robot.Engine.EmitStackLog("MISSING: M4-047 | PrintLockState 0x006410D8 handoff outside these checked rows; existing M4-031 body retained");
                 PrintLockStateLocked();
             }
             if (tree.Count == 0) enable |= (byte)(1 << b);

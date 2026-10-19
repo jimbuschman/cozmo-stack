@@ -18,6 +18,7 @@ public sealed class M3M4X17BuilderTests
     private static void Define(CubeLightAnimations library,string name,params string[] patterns)
     { Assert.True(Json.TryParseFirst(Encoding.UTF8.GetBytes("{\""+name+"\":["+string.Join(",",patterns)+"]}"),out var doc));using(doc)library.Define(doc.RootElement,null); }
     private static CubeLightModifier Modifier => new(Enumerable.Repeat(LedPattern.Solid(new LedColor(0,0,0,0)),4).ToArray(),0,0,default);
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData("WakeUp","wakeUp")] [InlineData("Sleep","sleep")]
     public void ShippedLastPatternRejectsLayerTwoOverride(string trigger,string name)
@@ -39,6 +40,7 @@ public sealed class M3M4X17BuilderTests
         }
         finally {Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void BuriedBlendedEntryResumesWithTheLastAssignmentToItsLayerSlot()
     {
@@ -63,6 +65,7 @@ public sealed class M3M4X17BuilderTests
         }
         finally {Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0)] [InlineData(7)] [InlineData(-9)]
     public void AdvancingUsesStoredOffsetAndHoldsOnlyOnZeroTimer(int offset)
@@ -84,6 +87,7 @@ public sealed class M3M4X17BuilderTests
         }
         finally {Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void BadTriggerPairIsSkippedAndMissingPathsKeepVisibleWarnings()
     {

@@ -18,6 +18,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
         robot.Engine.InitOfflineLink(new System.Net.IPEndPoint(System.Net.IPAddress.Loopback, 5551));
         return robot;
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void OriginNamesWalkParentsBoundTheLoopAndDuplicateDoesNotAdvance()
     {
@@ -37,6 +38,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
         Assert.Equal("(tc0000) : ../../../../coretech/common/include/anki/common/basestation/math/poseTreeNode.h:325", entry.Text);
         Assert.True(EngineErrorState.ErrorFlagSet);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void GlobalClearGameSpecialCaseAndLiveNativeFieldsReachDas()
     {
@@ -50,6 +52,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
         Assert.Equal("0xbeefabcd12345678", globals["$group"]);
         Assert.Equal("0xbeef4321567887654321", globals["$phys"]);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void StartupDeviceIdIsPersistedAndFailedFlushRunsOnWorkerWithEmptyKv()
     {
@@ -75,13 +78,14 @@ public sealed class M3M4X13BuilderTests : IDisposable
         }
         finally { Directory.Delete(root, true); }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CliffUnknownHistoryStaysVisibleAndKnownBranchesLogBeforeErrorFlag()
     {
         using var robot = TestRobot(); var missing = new List<string>(); var entries = new List<EngineLogEntry>();
         robot.Engine.StackLogLine += missing.Add; robot.Engine.LogEntry += entries.Add;
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 111, DetectedFlags = 1 });
-        Assert.Contains(missing, s => s.Contains("M11-051/M11-053")); Assert.Empty(entries);
+        Assert.Contains(missing, s => s.Contains("M11-097")); Assert.Empty(entries);
         robot.Sensors.CliffHistoricalPoseForTest = _ => (0, new Pose3d(Mat3.Identity, new Vec3(12.5, -3.25, 0)));
         robot.Engine.Broadcast(new CliffEvent { Timestamp = 222, DetectedFlags = 0x0a });
         Assert.Equal("at 12.500,-3.250. DetectedFlags = 0x0A", Assert.Single(entries.Where(e => e.Name == "RobotImplMessaging.HandleCliffEvent.Detected")).Text);
@@ -96,6 +100,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
         entries.Clear(); Assert.Equal(0, robot.Sensors.ComputeCliffPose(new CliffEvent(), out _));
         Assert.Equal("CliffSensorComponent.ComputeCliffPose.NoCliff", Assert.Single(entries).Name);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void SaveFailureUsesNonVirtualExceptionTextBeforeFlag()
     {
@@ -112,6 +117,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
         }
         finally { Directory.Delete(directory, true); }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DifferentIdsWarningUsesFirstLocatedIdThenThisIdAndRootNames()
     {

@@ -26,6 +26,7 @@ public class M3DeviceTests
     public void M3_034_TheConnectionReadCallbacksReachTheirLayers() => M3_034_TheConnectionReadCallbacksReportAllNoSinkHandoffs();
 
     // B-M3M4-9: failure warning calls are Robot::SendMessage 0x005134F4; FIFO/count decisions 0x0057BF72..0x0057C00A.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void B9_StreamFailedSendSubscriberCanReadTheStreamLock(bool direct)
@@ -48,6 +49,7 @@ public class M3DeviceTests
     }
 
     // A19/A20 plus the adopted lock correction: logs keep validation/send/pending/success order.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B9_CameraLogAndSendFailureSubscribersCanReadTheSettingsLock()
     {
@@ -118,6 +120,7 @@ public class M3DeviceTests
         Assert.Equal(1023, e.TextUtf8.Length); Assert.Equal((byte)0xc3, e.TextUtf8.Span[^1]);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B5_CameraZeroMinimumAndSuccessUseTheCheckedTexts()
     {
@@ -1423,6 +1426,7 @@ public class M3DeviceTests
     // ================================================================== budgets and drain: M3-012..M3-015
 
     /// <summary>C9: bytes = min(8192 - (streamed - played), 30000), a negative value warning and becoming 0.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M3_012_C9_TheByteBudget()
     {
@@ -1446,6 +1450,7 @@ public class M3DeviceTests
     }
 
     /// <summary>C9: audio = max(14 - (framesStreamed - framesPlayed), 0).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M3_012_C9_TheAudioBudget()
     {
@@ -1462,6 +1467,7 @@ public class M3DeviceTests
     /// C11, C12: every send adds EngineToRobot::Size() (1 for the tag plus the member) to bytes streamed; AudioSample
     /// (0x8E, 744 bytes, C4), AudioSilence (0x8F) and EndOfAnimation add one frame each; other messages none.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M3_012_C11_C12_WhatEachSendCounts()
     {
@@ -1602,6 +1608,7 @@ public class M3DeviceTests
     /// C9 with C11: an AudioSample costs 745 bytes. With nothing played the byte budget is 8192, so one Update sends 10
     /// sample frames (7450 bytes) and the 11th (8195 &gt; 8192) waits: the byte budget binds before the audio budget.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M3_012_C9_C11_TheByteBudgetBindsSampleFramesAt10()
     {
@@ -1797,6 +1804,7 @@ public class M3DeviceTests
     }
 
     /// <summary>C14, 0x0057BFAE: a send that fails stops the drain and is not counted; the message stays at the front.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M3_012_C14_AFailedSendIsNotCounted()
     {
@@ -3828,6 +3836,7 @@ public class M3DeviceTests
     /// 1k, A19, A22 (M3-021): DefaultCameraParams, with no time-sync gate, and 16 in [min, max]: SetCameraSettings(16,
     /// gain) first, sending {gain, 16, false}; then the limits max, min, 0.1, maxGain and the gamma table installed.
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M3_021_1k_DefaultCameraParamsSetsTheInitialExposureThenInstallsTheLimits()
     {
@@ -3845,6 +3854,7 @@ public class M3DeviceTests
     }
 
     /// <summary>A19/1k: 16 outside [msg+8, msg+0xA] is BadInitialExposureTime: nothing sent and nothing installed.</summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M3_021_1k_AnInitialExposureOutsideTheRangeDoesNothing()
     {
@@ -3862,6 +3872,7 @@ public class M3DeviceTests
     /// 1e, 1k, 1l (M3-021): the first SetCameraSettings is checked against the constructor's limits (gain 0.1..4.0), so a
     /// gain of 5.0 sends nothing, but the robot's limits (maxGain 8.0) are still installed. A min of 0 is stored as 1 (1c).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M3_021_1l_TheFirstSettingsAreCheckedAgainstTheConstructorLimits()
     {
@@ -3924,6 +3935,7 @@ public class M3DeviceTests
     }
 
     /// <summary>C10 (M3-012): the played counters are written only by the AnimationState handler, and only once time synced.</summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M3_012_C10_ThePlayedCountersComeOnlyFromATimeSyncedAnimationState()
     {

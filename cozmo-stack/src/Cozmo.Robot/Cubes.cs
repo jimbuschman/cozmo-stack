@@ -371,7 +371,8 @@ public sealed class CozmoCubes
             _tapQueue.Clear();
             _doubleTaps.Clear();
         }
-        Behavior.SteppedBehavior.ReportMissing("M2-023/M4-027: BlockTapFilter +0x14 shared filter owner release at 0x00511206..0x0051120A is unbuilt; queue/tree and handle-vector retirement do not implement that object lifetime");
+        // M4-027: +0x14 owns G2E EnableBlockTapFilter (tag 0x62); the no-Robot host entry is dropped below.
+        // Final subscription release: 0x00511206..0x0051120A. New component enabled at 0x00630874.
         _tapSubscriptions.Retire(); // M2-020: the component owns B6/B4/B5, not Impl.
     }
     private readonly SubscriptionOwners _tapSubscriptions = new();
@@ -389,7 +390,8 @@ public sealed class CozmoCubes
 
     // fidelity: M4-023
     /// <summary>The game EnableBlockTapFilter (tag 0x62, CD10d): sets +0x18.</summary>
-    public void SetBlockTapFilterEnabled(bool enable) { lock (_gate) _tapFilterEnabled = enable; }
+    public void SetBlockTapFilterEnabled(bool enable)
+        => _robot.Engine.PostGameMessage(()=>{if(_robot.Engine.Robot is not null)lock(_gate)_tapFilterEnabled=enable;});
 
     private uint NowMs => _robot.Engine.Timer.TimeStampMs;
     private void Log(string l) => _robot.Engine.Log(l);
@@ -824,6 +826,7 @@ public sealed class CozmoCubes
         var objects = world.FindLocatedMatchingObjects(filter);
         foreach (var o in objects)
         {
+            // fidelity: M4-037
             if (unchecked((int)o.ObjectId) != objectId)
                 _robot.Engine.EmitSourceLog(EngineLogLevel.Warning, null, prefix + "ActiveObjectInDifferentFramesWithDifferentIDs",
                     FormattableString.Invariant($"First object={unchecked((int)objects[0].ObjectId)} in '{world.RootName(objects[0])}'. This object={unchecked((int)o.ObjectId)} in '{world.RootName(o)}'."));

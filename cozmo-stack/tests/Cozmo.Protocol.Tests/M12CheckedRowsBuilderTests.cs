@@ -33,6 +33,7 @@ public sealed class M12CheckedRowsBuilderTests
         }
         public void Dispose(){M.Dispose();Vision.Dispose();Rig.Dispose();}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task NativeDockCallbacksAndRetirementShareTheActionGate()
     {
@@ -65,6 +66,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Equal(0, f.Rig.Engine.AnimationMessages.Count(0x4C, true));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task UiDeliveryReleasesItsTopologyGateBeforeCallingAnAction()
     {
@@ -88,6 +90,7 @@ public sealed class M12CheckedRowsBuilderTests
         await delivery.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DeletedTargetLogCallbacksDrainAfterReleasingTheActionGate()
     {
@@ -109,6 +112,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Equal(uint.MaxValue, observed);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AcceptedStateMutatesTheSameLiftNodeAndItsCarriedChildWithoutAPoseBroadcast()
     {
@@ -123,6 +127,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Same(node,f.Native.LiftPose.Node);Assert.NotEqual(original,f.Native.LiftPose.Transform);
         Assert.InRange(obj.Pose.Translation.Z,110.999,111.001);Assert.Equal(0,broadcasts);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiftObservationBroadcastPrecedesConfirmerAndKeepsTheArgumentPose()
     {
@@ -146,6 +151,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Same(confirmerNode,obj.Confirmation.Pose.Node);
         Assert.Equal(new Vec3(2,3,4),obj.Confirmation.Pose.Translation);Assert.Same(f.Native.LiftPose.Node,obj.Confirmation.Pose.Node!.Parent);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiveAttachmentAlreadyHasItsLiftParentAtTheBroadcast()
     {
@@ -163,6 +169,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Equal(0u,rig.M.Docking.SetObjectAsAttachedToLift(obj.ObjectId,obj.Markers[0].Code));
         Assert.True(seen);Assert.Same(rig.Robot.Engine.Robot!.LiftPose.Node,obj.Confirmation!.Pose.Node!.Parent);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void InitRechecksBeforeStartingAndAnUnreadDriveDoesNotCreateAStandInAction()
     {
@@ -174,6 +181,7 @@ public sealed class M12CheckedRowsBuilderTests
         needsDrive.UpdateWhileActive(f.Rig.Robot,out sub);
         Assert.Null(sub);Assert.Equal(0u,needsDrive.Attempts);Assert.Equal(BehaviorStatus.Running,needsDrive.Status);Assert.Equal(1,actions);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ReinitReplacesRobotHandlesAppendsExternalHandlesAndRetiresInSourceOrder()
     {
@@ -191,6 +199,7 @@ public sealed class M12CheckedRowsBuilderTests
         f.Rig.Engine.MessageSubscriptionReleasedForTest=(tag,name)=>{if(name=="IDockAction")order.Add(tag.ToString());};
         subscriptions.Dispose();Assert.Equal(new[]{"unlink E2G 4C","unlink E2G 4C","LiftLoad","MovingLiftPostDock"},order);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AlignC5SentinelReturnsBeforePayloadAndWithoutAnAnimationLookup()
     {
@@ -201,6 +210,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.DoesNotContain(logs,l=>l.Name.StartsWith("IDockAction.MovingLiftPostDockHandler"));
         Assert.Equal(0x23F,action.LiftAnimationTrigger);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ApproachCalculationPreservesItsOutputAtEachFailureAndComposesTargetOnTheLeft()
     {
@@ -220,6 +230,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.InRange(output,(float)Math.Atan2(Math.Sin(0.4)*Math.Sin(0.2),Math.Cos(0.2))-0.000001f,
                                     (float)Math.Atan2(Math.Sin(0.4)*Math.Sin(0.2),Math.Cos(0.2))+0.000001f);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task PlacementInitPortsBothPreconditionDiagnosticsAndTheErrorFlag()
     {
@@ -238,6 +249,7 @@ public sealed class M12CheckedRowsBuilderTests
         }
         finally{EngineErrorState.ErrorFlagSet=prior;}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void UpAxisTiesUnorderedAndNegativePiUseTheCheckedBranches()
     {
@@ -247,6 +259,7 @@ public sealed class M12CheckedRowsBuilderTests
         var down=new Mat3(1,0,0,0,-1,0,0,0,-1);
         Assert.Equal(0x40490FDBu,BitConverter.SingleToUInt32Bits((float)PlacementApproachAngle.Helper(down)));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void HeightToleranceUsesMaxTimesTheNativeWordAndCopyKeepsIt()
     {
@@ -261,6 +274,7 @@ public sealed class M12CheckedRowsBuilderTests
         var zero=Vec3.Zero;Assert.Equal(0,PreActionPose.MakeUnitLength(ref zero));Assert.Equal(Vec3.Zero,zero);
         var nan=new Vec3(double.NaN,2,3);Assert.Equal(0,PreActionPose.MakeUnitLength(ref nan));Assert.True(double.IsNaN(nan.X));Assert.Equal(2,nan.Y);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CubePoseCallbackPassesTheNativeIdStateTriggerLayerAndZeroModifier()
     {
@@ -279,6 +293,7 @@ public sealed class M12CheckedRowsBuilderTests
             {PrecheckForTest=()=>ActionResult.Success,StartActionForTest=_=>{}};
         helper.InitializeOnStack();return helper;
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0u,2)]
     [InlineData(0x02000000u,1)]
@@ -291,6 +306,7 @@ public sealed class M12CheckedRowsBuilderTests
         helper.RespondToPlaceRelResult((ActionResult)result);Assert.Equal(status,(int)helper.Status);Assert.Equal(0u,helper.Attempts);
         Assert.Equal(result==0x03000010u?7u:(uint?)null,f.M.Whiteboard.NoPreDockPosesObjectId);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void PlaceHelperAllowsThreeAttemptsThenMarksTheTargetAndFails()
     {
@@ -309,6 +325,7 @@ public sealed class M12CheckedRowsBuilderTests
         Assert.Equal(Vec3.Zero,Assert.Single(tables[1][7]).Pose.Translation);
         f.M.Docking.Carrying.SetCarrying(999);low.MarkFailedToStackOrPlace();Assert.Single(tables[2]);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(7u,true)]
     [InlineData(9u,false)]
@@ -333,6 +350,7 @@ public sealed class M12CheckedRowsBuilderTests
             Assert.Contains(logs,e=>e.Level==EngineLogLevel.Debug&&e.Name=="BehaviorStackBlocks.FailBackToPickup"&&e.Text.EndsWith("wanted to stack, but we aren't carrying a block",StringComparison.Ordinal));
         }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TopProducerDoesNotSubstituteTheCachedMidpointForTheUnreadCornerOrder()
     {
@@ -353,6 +371,7 @@ public sealed class M12CheckedRowsBuilderTests
         typeof(BuildPyramidBaseBehavior).GetMethod("TransitionToPlacingTopBlock",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(behavior,null);
         Assert.Equal(0,made);Assert.Equal(7u,behavior.StaticBlockId);Assert.Equal(BuildPyramidBaseBehavior.Phase.PlacingTopBlock,behavior.CurrentPhase);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void BaseOffsetsUseAllFourCandidatesAndAllOccupiedKeepsTheFirst()
     {
@@ -362,6 +381,7 @@ public sealed class M12CheckedRowsBuilderTests
         PlacementProducerGeometry.UpdateOffsets(f.M,7,8,ref a,ref b);Assert.Equal(56,a);Assert.Equal(0,b);
         a=3;b=4;PlacementProducerGeometry.UpdateOffsets(f.M,99,8,ref a,ref b);Assert.Equal(3,a);Assert.Equal(4,b);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void VectorFailureReturnsZeroButTheOutDistanceKeepsTheAliasedCandidateWord()
     {
@@ -379,6 +399,7 @@ public sealed class M12CheckedRowsBuilderTests
         }
         finally{EngineErrorState.ErrorFlagSet=previous;}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void OwnersAreConstructedDockingThenCarryingAndRawDropSendsNothing()
     {
@@ -394,6 +415,7 @@ public sealed class M12CheckedRowsBuilderTests
         rig.Engine.Robots.RemoveRobot(1,false);Assert.Equal(new[]{"new Docking","new Carrying","drop Carrying","drop Docking"},order);
         Assert.Null(oldCarry.CarriedObjectId);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task AbortReturnsSendResultAndKeepsHostPendingAndActiveState()
     {

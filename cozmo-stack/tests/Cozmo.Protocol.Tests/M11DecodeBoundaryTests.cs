@@ -11,6 +11,7 @@ public sealed class M11DecodeBoundaryTests
 {
     private static CameraCalibration Cal()=>new(){Rows=16,Columns=16,FocalLengthX=20,FocalLengthY=20,CenterX=8,CenterY=8};
     private static CameraFrame Frame(byte encoding,uint id=101)=>new(){ImageId=id,Timestamp=id,Width=16,Height=16,Encoding=encoding,RawPayload=encoding==1?new byte[256]:Array.Empty<byte>()};
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void HelpersUnwindRatherThanInventAFailureResult(bool rgb)
@@ -20,6 +21,7 @@ public sealed class M11DecodeBoundaryTests
         else Assert.Throws<OpenCvException>(()=>frame.TryDecodeGray(out _,out _,logs.Add));
         Assert.StartsWith("error: cv::error(): OpenCV Error:",Assert.Single(logs));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData((byte)5)] [InlineData((byte)6)]
     public void SynchronousEntrySkipsThrowKeepsCacheAndEmitsOnlyStackPolicy(byte encoding)
@@ -35,6 +37,7 @@ public sealed class M11DecodeBoundaryTests
         Assert.DoesNotContain(source,e=>e.Name=="VisionComponent.UpdateVisionSystem.UpdateFailed");
         Assert.Null(vision.LastResult);Assert.Equal(0,vision.FramesProcessed);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ReturnedFailureResetsEmptyCacheAndReachesTheNativeWarning()
     {
@@ -50,6 +53,7 @@ public sealed class M11DecodeBoundaryTests
         }
         finally{EngineErrorState.ErrorFlagSet=old;}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void WorkerSkipsCompletionAfterThrowButDiscardsPendingAfterReturnedFailure(bool throws)
@@ -87,6 +91,7 @@ public sealed class M11DecodeBoundaryTests
         Assert.Equal(Enumerable.Range(1,count).Select(id=>"broadcasting loaded face id: "+id),logs);
         robot.Engine.DrainAppDelivery();Assert.Equal(local,host);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData("TimeBeforeErrorMessage_ms")]
     [InlineData("RepeatedErrorMessageInverval_ms")]
@@ -104,6 +109,7 @@ public sealed class M11DecodeBoundaryTests
             Assert.Equal((ushort)(absent=="DropStatsWindowLength_sec"?17:16),CameraSettings.ConfiguredInitialExposureTimeMs);
         });
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ComponentConfigNarrowsAsUIntToU16AndReadsDropSecondsBeforeSystemQuality()
     {
@@ -142,6 +148,7 @@ public sealed class M11DecodeBoundaryTests
         }
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData((byte)5)] [InlineData((byte)6)]
     public void WrongSizeReturnedFailureResetsWithTheActualDecodedImage(byte encoding)

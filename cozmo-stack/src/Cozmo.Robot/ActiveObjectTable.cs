@@ -213,6 +213,7 @@ internal sealed class ActiveObjectTable<T>
     /// prime at or above <paramref name="n"/> - a lower bound in <see cref="SmallPrimes"/> up to 211, then the first prime
     /// among the numbers coprime to 210 (every prime above 211 is). An input of 0xFFFFFFFC or more raises (0x0003B074).
     /// </summary>
+    // fidelity: M4-050
     internal static uint NextPrime(uint n)
     {
         if (n <= 211) return SmallPrimes[Array.FindIndex(SmallPrimes, p => p >= n)];

@@ -69,6 +69,7 @@ public class M11RVisBuildTests : IDisposable
     /// 0x004EF468 (a non-unique type takes the next value, 0x004EF4EA; a unique type looks its type up in a static map and copies the stored value on a
     /// hit, 0x004EF524, else takes the next value and stores it, 0x004EF50A..0x004EF522) and <c>ResetObjectIDCounter</c> 0x008412C8 (stores 0; no caller).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_013_TheCounterStartsAtZeroAndAUniqueTypeKeepsItsFirstID()
     {
@@ -102,6 +103,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-013: the record's removal list. The engine has no AllowUnconnectedObjects switch (the string occurs 0 times in the .so, verified in
     /// 20260929-R-VIS-verify-pre-items1-3.md), and the type-derived LIGHTCUBE1..3 => 1..3 mapping has no source.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_013_ThereIsNoAllowUnconnectedObjectsSwitch()
     {
@@ -110,6 +112,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-013 (row 1.6): the creation clamp is <c>Radians(vtable[+0x1C]() * 0.0174533)</c> and that virtual returns 5.0 (0x004E024E..0x004E0250).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_013_TheCreationClampIsFiveDegrees()
     {
@@ -121,6 +124,7 @@ public class M11RVisBuildTests : IDisposable
     /// 0x004EF468..0x004EF526): the first is 0, not the cube number; a second sighting of the type, a deletion and a new sighting, and a new BlockWorld
     /// (the counter and map are process statics) all give the same value.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_013_AnObservedUnconnectedCubeGetsTheCountersIdOncePerType()
     {
@@ -144,6 +148,7 @@ public class M11RVisBuildTests : IDisposable
     /// the static <c>unordered_map&lt;int,float&gt;</c> at 0x0105B388: the entry is set to now + 10.0 (0x00620ED6..0x00620EDA, literal 0x00620B1E), where now is
     /// <c>BaseStationTimer::GetCurrentTimeInSeconds()</c> (0x00620E42..0x00620E5E), not the frame's timestamp: the test moves the wall clock and not the robot's.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_013_AnUnconnectedCubeIsKeptAndWarnsOncePerTenSeconds()
     {
@@ -176,6 +181,7 @@ public class M11RVisBuildTests : IDisposable
     /// ActiveID and FactoryID (<c>AddLocatedObject</c> 0x00622AE4..0x00622B9C) and the ObjectID the connected object was given at connection (the same per-type
     /// SetID value).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_013_AConnectedCubeIsObservedWithItsConnectedObjectsId()
     {
@@ -199,6 +205,7 @@ public class M11RVisBuildTests : IDisposable
     /// <c>UseDiscardedObservation(pair, WasCameraMoving)</c> (0x0050CFE2); the flag is 0 because the confirmed shortcut skipped <c>AddVisualObservation</c> (0x00620C5C). One
     /// sighting 25 mm and 10 mm away, inside the 35.2 mm tolerance, therefore moves the located pose.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_AConfirmedUnconnectedObjectIsRefreshedByTheDiscardPath()
     {
@@ -218,6 +225,7 @@ public class M11RVisBuildTests : IDisposable
     /// hands it to <c>LocalizeToObject</c>, whose only effect here is the two <c>SetLocalizedTo</c> writes (ID to Robot+0x2B8, 0 to +0x2BC). From the next frame the gate is 0, so every
     /// sighting is discarded into <c>UseDiscardedObservation</c> and refreshes the pose (X1), and <c>LocalizeToObject</c> is not run again.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_AStationaryRobotLocalizesToAUsableCubeOnceAndThenRefreshesItEveryFrame()
     {
@@ -239,6 +247,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 P0 / 0x00512B56..0x00512B8E, 0x00512458, 0x00512468, 0x005124F6: the localization fields. <c>SetLocalizedTo(obj)</c> stores the ID and 0; null stores -1 and leaves +0x2BC;
     /// each robot state ORs 1 in when <c>MovementComponent</c> +0xA or +0xC is set, and otherwise whether the robot is not on its treads; the gate follows them.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheLocalizationFieldsAreWrittenBySetLocalizedToAndEachRobotState()
     {
@@ -276,6 +285,7 @@ public class M11RVisBuildTests : IDisposable
     /// (0x00506A9C), so the candidate test (<c>GetLastVisuallyMatchedTime &lt; ts</c>) excludes it. FINDING: on the frame where P6 stores the pair (gate still 1, before the first
     /// localization) the confirmer's +0x30 is written by the promoting <c>AddVisualObservation</c> in the same frame, so it is not stale then either.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_ACubeSeenEveryFrameByAStationaryRobotIsNeverMarkedUnobservedOrDropped()
     {
@@ -309,6 +319,7 @@ public class M11RVisBuildTests : IDisposable
     /// robot 350 mm from the cube by its current pose gives dist 350 (> 250.00001), and the confirming sighting leaves the object Dirty (<c>closeAndSteady</c> false), while the same
     /// scene with the current pose beside the cube gives Known.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheDistanceIsFromTheRobotsCurrentPose()
     {
@@ -325,6 +336,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 P0 (0x00512B56..0x00512B8E): the gate <c>this+0x10</c> is <c>([Robot+0x2B8] != -1) ? byte [Robot+0x2BC] : 1</c>. Not localized: 1. Localized and not moved since: 0 (the
     /// Robot constructor and <c>SetLocalizedTo</c> store 0 in +0x2BC). Localized and moved: 1.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheGateIsOneUnlessTheRobotIsLocalizedAndHasNotMoved()
     {
@@ -355,6 +367,7 @@ public class M11RVisBuildTests : IDisposable
     /// object cannot be used; a discarded pair whose matched object is in the world origin goes to <c>UseDiscardedObservation(pair, wasCameraMoving)</c>, which calls
     /// <c>AddVisualObservation</c> unless the pair's flag is set; Insert returns 0 in every one of these paths. A matched object in another origin gets nothing.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(250.0f, false, true, true, false)]          // at the limit: not discarded (250.0f + 1e-5f is 250.0000153f)
     [InlineData(250.0000153f, false, true, true, false)]
@@ -372,6 +385,7 @@ public class M11RVisBuildTests : IDisposable
         else Assert.Equal(1, r);                                                                // stored
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_InsertDiscardsWhenTheGateIsClearOrTheObjectIsNotUsableAndFlagAndOriginDecideTheAction()
     {
@@ -409,6 +423,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 P8 (0x0050D170..0x0050D1C6): <c>CouldUseObjectForLocalization</c> is <c>(id != [DockingComponent+0xC]) &amp;&amp; CanBeUsedForLocalization &amp;&amp; (id != [MovementComponent+0x20])
     /// &amp;&amp; !WasObjectTappedRecently(id)</c>; <c>ActiveObject::CanBeUsedForLocalization</c> 0x004E49AC needs Known, activeID >= 0, fromDistance >= 0 and <c>IsRestingFlat(5 degrees)</c>.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_CouldUseObjectForLocalizationAndCanBeUsedForLocalization()
     {
@@ -444,6 +459,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 / M11-009 (0x004E49C2..0x004E49DE, 0x0050CE88..0x0050CFE2, 0x00505E36): a Known cube the radio reports as moving is not usable for localization, so <c>Insert</c> discards its
     /// pair even with the gate open and the observation is refreshed through <c>UseDiscardedObservation</c>; once the cube has stopped it is usable again and the same sighting is stored.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_AMovingKnownCubeIsDiscardedAndRefreshed()
     {
@@ -473,6 +489,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (0x00531CCC, 0x00531CDC..0x00531D06): <c>GetComputedStateAt</c> is a <c>lower_bound</c> over the computed-state map and fails unless a computed state exists with EXACTLY the
     /// requested timestamp; raw states and nearby timestamps do not count. <c>ComputeAndInsertStateAt</c> (0x00654D92, key out = t at 0x00531558) is what puts one in, from the raw state at t.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_GetComputedStateAtNeedsAStateAtExactlyThatTimestamp()
     {
@@ -492,6 +509,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (0x00531431, 0x0053146A..0x00531472, 0x005314D0..0x00531558): <c>GetRawStateAt(t, ..., true)</c> returns 1 when no raw state at or after t exists, so nothing is inserted;
     /// with a raw state on each side of t the state is interpolated and inserted at the key t (not at either raw key). The blend itself is MISSING; the stand-in is counted.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_ComputeAndInsertFailsWithoutARawStateAtOrAfterTAndInsertsAtKeyTBetweenTwo()
     {
@@ -512,6 +530,7 @@ public class M11RVisBuildTests : IDisposable
     /// a computed state 2 to 3 s older than the newest raw state survives, keys below the cutoff go and the cutoff key itself stays; inserting a later computed state prunes nothing (no
     /// prune in ComputeAndInsertStateAt); a change of origin does not clear the computed map (AddRawOdomState 0x00530CF8).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheComputedMapIsCulledToThreeSecondsOfTheNewestRawKeyAndNothingElseClearsIt()
     {
@@ -536,6 +555,7 @@ public class M11RVisBuildTests : IDisposable
     /// even though the observed pose moved; with both present (and the same robot pose) the moved observation is refreshed and Insert returns 0. A last pose update 2.5 s before ts is still
     /// found, the computed map keeping 3000 ms (0x005308BE), so P5 (not P6) decides.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheStationaryTestNeedsComputedStatesAtBothTimes()
     {
@@ -574,6 +594,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 P4 (0x0050CE92..0x0050CEB0): with the pair past the discard gate, Insert returns 0 without storing or discarding when MovementComponent +0xA (head not in position) or +0xC
     /// (wheels moving) is set or the camera was moving.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(true, false, false)]
     [InlineData(false, true, false)]
@@ -593,6 +614,7 @@ public class M11RVisBuildTests : IDisposable
     /// (by more than the same tolerances) is refreshed through <c>UseDiscardedObservation(pair, false)</c> and Insert returns 0; identical observed and matched poses fall through to the
     /// per-root store; a robot pose that changed, or a failing <c>GetComputedStateAt</c>, does too. <c>GetLastPoseUpdatedTime</c> is the entry's +0x2C (0 without an entry).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheStationaryRobotTestRefreshesAMovedObservation()
     {
@@ -627,6 +649,7 @@ public class M11RVisBuildTests : IDisposable
     /// goes to <c>UseDiscardedObservation(new, false)</c> (return 1); a nearer one replaces it and, the root being the current origin, the OLD pair goes to
     /// <c>UseDiscardedObservation(old, false)</c> (return 1). Each discard reaches <c>AddVisualObservation</c> only when the pair's flag is clear.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_OnePairPerRootNearestWinsAndTheLosersAreDiscarded()
     {
@@ -663,6 +686,7 @@ public class M11RVisBuildTests : IDisposable
     /// <c>SetLocalizedTo</c> field writes (counted as NOT BUILT beyond them); an unusable matched object is the UnlocalizedObject failure and its result is returned; with several pairs the
     /// farthest goes first and every one is attempted.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_LocalizeRobotDoesOnlyTheSetLocalizedToFieldWrites()
     {
@@ -701,6 +725,7 @@ public class M11RVisBuildTests : IDisposable
     /// <summary>
     /// M11-044 A6..A7 (0x0062115E..0x00621214): <c>AddAndUpdateObjects</c> stores <c>BlockWorld+0x54 = 1</c> and <c>BlockWorld+0x58 = (u32)fmax((double)ts, MemoryMap.vt+0x38())</c>.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheTimeOfLastChangeIsTheLargerOfTheTimestampAndTheMapsTime()
     {
@@ -720,6 +745,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-007, <c>MarkObjectUnknown</c> 0x00507128: the walk is UPWARD only. Two consecutive misses of the middle cube of a stack of three delete it and the cube above it (0x0050724C..0x0050731E)
     /// and the cube UNDER it survives: nothing underneath is ever looked at. Nothing is written to any PoseState. The later DeleteLocatedObjects notification erases the confirmer entry (0x0061D5A6).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_MarkObjectUnknownWalksUpwardOnlyAndTheLowerObjectSurvives()
     {
@@ -752,6 +778,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-007 (0x0050728E <c>mov r7,fp</c>, 0x0050731C <c>cmp r7,#0</c>, 0x0050731E <c>bne 0x005071D2</c>): a carried cube found on top is warned about and NOT added to the set, but it
     /// becomes the current object, so the walk CONTINUES and the cube above it (the filter ignores only the current ID) is found and deleted.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_ACarriedCubeIsSkippedButTheWalkContinuesAboveIt()
     {
@@ -770,6 +797,7 @@ public class M11RVisBuildTests : IDisposable
     /// >= 0 and rests flat, seen beyond 250 mm by a steady camera (so not closeAndSteady), is left alone; the same object with activeID -1, or tilted 10 degrees, is written (Dirty,
     /// dist > 250).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_TheSecondSkipClauseSkipsAUsableKnownObjectOutOfRange()
     {
@@ -797,6 +825,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-037 (row 3C.2, 0x00621D64..0x00621D68, GetLastVisuallyMatchedTime 0x00507824..0x0050783A): the candidate test is only <c>GetLastVisuallyMatchedTime(ID) &lt; ts</c>, the getter
     /// reading the confirmer entry's +0x30 (0 when there is no entry). The object's own timestamp plays no part.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_TheCandidateTestIsTheConfirmersLastVisuallyMatchedTimeOnly()
     {
@@ -824,6 +853,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-037 (0x00625020..0x00625052, 0x0062521A): the empty-list branch and UpdateMarkerlessObjects use <c>Robot::GetLastImageTimeStamp()</c>, not the frame's timestamp: with the last
     /// image timestamp 0 the branch skips the occluders and the unobserved check whatever the frame's timestamp is, and the markerless expiry is measured against it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_TheEmptyListBranchAndMarkerlessObjectsUseTheLastImageTimestamp()
     {
@@ -851,6 +881,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-004 (0x00620FE0): for a non-unique type the located object is <c>GetLocatedObjectByIdHelper(id, -1)</c> with NO not-carried predicate, so a carried object is found. (No cube or
     /// charger is non-unique; the private method is called directly.)
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_004_TheNonUniqueLocatedLookupHasNoCarriedPredicate()
     {
@@ -868,6 +899,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-037 (0x00536980, 0x0051397C, 0x0053698E): the engine calls <c>Robot::SetPhysicalRobot</c> (which reaches <c>VisionComponent::SetPhysicalRobot</c>) BEFORE
     /// <c>RobotAudioClient::SetOutputSource</c>: when the event is raised the physical flag is already set and the output source is not yet; afterwards the source is set.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_SetPhysicalRobotComesBeforeSetOutputSource()
     {
@@ -890,6 +922,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-037 (0x0051397C): a vision system built after the firmware version was handled catches up from the recorded SetPhysicalRobot, not from the audio output source: with the
     /// output source still unset (the handler stopped between the two calls) the catch-up still finds the physical flag.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_TheCatchUpDoesNotDependOnTheAudioOutputSource()
     {
@@ -907,6 +940,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-037 (Q8, 0x00536980, 0x0051397C): the firmware version arrives once. A vision system built AFTER it was handled (the tools build it after connecting) catches up from what the
     /// engine robot recorded, so the lift occluder points are not left empty: no "sim" key is a physical robot (-36.5), a "sim" key the other (-28.5).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData("{\"version\":1}", -36.5)]
     [InlineData("{\"version\":1,\"sim\":1}", -28.5)]
@@ -930,6 +964,7 @@ public class M11RVisBuildTests : IDisposable
     /// the running result and the result is the LAST passing object, or the FIRST with returnFirstOnly (0x0061ED82..0x0061ED8E, 0x0061EE12..0x0061EE36); the modify
     /// function runs for each passing object (0x0061ED72..0x0061ED7C); there is no distance or recency comparison.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_004_TheWalkIsAscendingAndTheResultIsTheLastPassingObjectOrTheFirst()
     {
@@ -953,6 +988,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-004: the ignore and allowed sets of ID, family and type, and the predicate list, all must pass (0x0061EC60..0x0061ED66); an empty allowed set passes everything.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_004_TheFilterFieldsNarrowTheWalk()
     {
@@ -976,6 +1012,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-004, origin test 0x0061EBF2..0x0061EC4C: mode 0 keeps the robot's origin, mode 1 everything but it, mode 2 everything, any other value requires the
     /// origin to be absent from ignoreOrigins and, when allowedOrigins is not empty, present in it. The walk is ascending origin first.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_004_TheOriginModesSelectByTheRobotsOrigin()
     {
@@ -994,6 +1031,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-004, onlyLatest (byte +0x6C): the predicate <c>obj[+0x1C] == BlockWorld[+0x90]</c> (0x0061EB98..0x0061EBCE, 0x00627EAA); [+0x90] is the first marker's timestamp, 0 for an empty list (0x00625024).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_004_OnlyLatestKeepsTheObjectsObservedInTheCurrentFrame()
     {
@@ -1016,6 +1054,7 @@ public class M11RVisBuildTests : IDisposable
     /// <c>Pose3d::IsSameAs_WithAmbiguity</c>: in the fallback scan of the confirmer's pending instances only the translation tolerance narrows, and the last accepted
     /// wins (0x005065C4..0x005066B4).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_004_TheFallbackMatchIgnoresTheAngleAndNarrowsOnlyTheTranslation()
     {
@@ -1039,6 +1078,7 @@ public class M11RVisBuildTests : IDisposable
     /// in the current origin is the match; (b) else a pending instance of the confirmer; (c) else the first located object in another origin; (d) else the LAST
     /// connected object of that family and type; (e) else none.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_004_TheUniqueMatchTriesLocatedThenPendingThenOtherOriginsThenConnected()
     {
@@ -1076,6 +1116,7 @@ public class M11RVisBuildTests : IDisposable
     /// object exists; a matching second sighting makes the count 2, runs <c>UpdatePoseInInstance(stored, ...)</c> then <c>AddLocatedObject(stored)</c> and returns true
     /// (0x00506A04..0x00506A32, 0x00506AC2); the located object IS the first instance, in the state the second sighting decided.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_TheFirstSightingOnlyRecordsAndTheSecondLocatesTheFirstInstance()
     {
@@ -1098,6 +1139,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-007, <c>UpdatePoseInInstance</c> 0x00505E5E..0x00505EBA: <c>closeAndSteady = OnTreads &amp;&amp; (250.0 + 1e-5 &gt;= dist) &amp;&amp; !wasCameraMoving &amp;&amp; notMoving</c>; Known when
     /// true, else Dirty. <c>GetMaxLocalizationDistance_mm</c> 0x004EF461 is 250.0; the comparison is float32 and, being a vcmpe followed by pl, true for NaN.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(250.0, false, true, true, true)]          // exactly 250: close
     [InlineData(250.00001, false, true, true, true)]      // inside the 1e-5 slack (250.0 + 1e-5 in float32 is 250.000015)
@@ -1123,6 +1165,7 @@ public class M11RVisBuildTests : IDisposable
     /// camera was moving. The docking object (DockingComponent+0xC == ID) is updated through the write helper with the pose clamped flat by 20 degrees
     /// (0x00505F10..0x00505F56); a carried object is updated too and is then unset as carried, with the SeeingCarriedObject log (0x00505F5A..0x00505FBC).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_TheSkipGateAndTheDockingAndCarriedExceptions()
     {
@@ -1164,6 +1207,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-007, a mismatching sighting (0x00506A46..0x00506A4E) sets the count to 1 and the entry pose to the observed one; an old count of 0 (after a miss) does not run the
     /// located update (0x00506A52); both zero the miss count and set +0x30 (0x00506A9C..0x00506AA4).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_AMismatchResetsTheCountAndAMissThenASightingCountsFromOne()
     {
@@ -1187,6 +1231,7 @@ public class M11RVisBuildTests : IDisposable
     /// so two consecutive misses forget and a sighting in between does not. <c>MarkObjectUnknown</c> 0x00507128 walks the stack (<c>FindObjectOnTopOrUnderneathHelper</c> 15.0, carried
     /// objects skipped 0x00507270..0x00507288), broadcasts per object and deletes the object and its stack (0x005073F4); it writes no PoseState.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_TwoConsecutiveMissesDeleteTheObjectAndItsStack()
     {
@@ -1218,6 +1263,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-007: a carried object in the stack is warned about and skipped (0x00507270..0x00507288), the rest still goes.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_ACarriedObjectInTheStackSurvivesMarkObjectUnknown()
     {
@@ -1233,6 +1279,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-007, <c>SetPoseStateHelper</c> 0x0050612C refuses Invalid (0x0050617A: the CantSetInvalidPoseState error, no write); <c>MarkObjectDirty</c> 0x005075A4 sets Dirty
     /// (0x005075B2) and with propagate the object on top within 15 mm, unless carried (0x005076C2).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_007_SetPoseStateRefusesInvalidAndDirtyPropagatesUp()
     {
@@ -1253,6 +1300,7 @@ public class M11RVisBuildTests : IDisposable
     // ------------------------------------------------------------------------------------------- M11-041
 
     /// <summary>M11-041, <c>AddConnectedActiveObject</c> 0x0062302C: a signed activeID of 5 or more warns and returns -1 (0x00623040); 4 passes; a negative one passes the signed test.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_041_TheActiveIdRangeIsATestForFiveOrMore()
     {
@@ -1273,6 +1321,7 @@ public class M11RVisBuildTests : IDisposable
     /// ConflictingActiveID error and <c>RemoveConnectedActiveObject(activeID)</c>, then the new object is registered; a connected object with the same factoryID only logs
     /// (0x006231A2..0x0062328C). The new object is registered with no pose and no PoseState (0x006239D0..0x00623A8C).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_041_AnOccupiedSlotIsReusedOrReplaced()
     {
@@ -1301,6 +1350,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-041, CreateActiveObjectByType (0x00623296) is unread (M11-042): a type other than a light cube throws instead of guessing whether the engine returns null.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_041_CreateActiveObjectByTypeAcceptsCharger()
     {
@@ -1314,6 +1364,7 @@ public class M11RVisBuildTests : IDisposable
     /// adopts it (the given factoryID written to every such object) and takes its ID; any other factoryID is the MismatchedFactoryID error, DeleteLocatedObjects of that ID in the
     /// current origin and a fresh SetID.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_041_ALocatedObjectWithTheSlotIsAdoptedOrReplaced()
     {
@@ -1341,6 +1392,7 @@ public class M11RVisBuildTests : IDisposable
     /// (<c>MarkObjectDirty(o,false)</c> 0x00623550) and updated (activeID -1: both set; the same factoryID: the activeID set; otherwise both set when the given factoryID is not 0), and the new
     /// object takes the first one's ID.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_041_LocatedObjectsOfTheTypeAreMarkedDirtyAndUpdated()
     {
@@ -1367,6 +1419,7 @@ public class M11RVisBuildTests : IDisposable
     /// (0x00628E2E..0x00628FB0); the old origin's entries are erased when the last result was 0 (0x00620642..0x0062064C); the second pass gives every object of the current origin an
     /// entry with count 0 (<c>AddInExistingPose</c> 0x00506F48); then BroadcastLocatedObjectStates (0x006206E6) and the BlockConfigurationManager flag (0x006206EA).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_043_ObjectsAreClonedIntoTheNewOriginWithTheirStateAndTheOldOriginIsErased()
     {
@@ -1396,6 +1449,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-043: a counterpart of the unique type in the new origin takes the moved object's pose and state (<c>CopyWithNewPose</c> 0x00506EF8) and no clone is made (0x00629066..0x00629256).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_043_ACounterpartInTheNewOriginTakesThePoseAndTheSourcesState()
     {
@@ -1410,6 +1464,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-043: the non-unique counterpart search (<c>FindLocatedObjectClosestToHelper</c>) is not built and says so.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_043_TheNonUniqueCounterpartSearchIsAVisibleStub()
     {
@@ -1426,6 +1481,7 @@ public class M11RVisBuildTests : IDisposable
     /// CheckForUnobservedObjects (0x00625020..0x00625052); either way it falls into the tail: BlockConfigurationManager::Update (0x0062520C) and UpdateMarkerlessObjects
     /// (0x0062521A). It never updates stacked poses.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_TheEmptyListBranchSkipsEverythingButTheTailWhenTheTimestampIsZero()
     {
@@ -1449,6 +1505,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-037 (3C.1): CheckForUnobservedObjects has no effect when the robot is not on its treads (Robot+0x355), was moving, or was rotating too fast (0x00621C7C..0x00621CFA);
     /// candidates exclude carried objects, the docking object and family 4 (0x00621D54..0x00621E80); an object with no markers is skipped silently.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_CheckForUnobservedObjectsHasItsEarlyReturnsAndCandidateExclusions()
     {
@@ -1487,6 +1544,7 @@ public class M11RVisBuildTests : IDisposable
     /// observed in the last 100 ms (0x00629BAE), is not carried and is not itself in the list; its new pose is its pose with respect to the old pose pre-composed with the object's new pose,
     /// written by <c>AddObjectRelativeObservation</c> as Dirty with fromDistance -1.0 (0x006219C0, 0x00506D3C..0x00506D3E). PoseChanges are appended only while this+0x74 is set (0x00624814).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_AnObjectOnTopFollowsTheObjectItRestsOn()
     {
@@ -1556,6 +1614,7 @@ public class M11RVisBuildTests : IDisposable
     /// "RemovingExpired"; else false when the timestamp is not before ts; else true when z is within [robotZ, robotZ + 67.7] and the footprint intersects the robot's quad
     /// (the footprint is unread, M13-023: the stack throws).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_ExpiredCliffObjectsAreDeletedAndTheFootprintTestIsAVisibleStub()
     {
@@ -1590,6 +1649,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-037 (Q8, C-R9): the occluder points are written only by <c>VisionComponent::SetPhysicalRobot</c> 0x00657F3C: (4,-15,-20), (4,15,-20), (-1,-15,-20), (-1,15,-20) and the same four at
     /// z = s, s = -36.5 for a non-zero argument (0xC2120000) and -28.5 for zero (0xC1E40000). They start empty (0x006500CA/0x006500D0).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_TheLiftOccluderPointsComeFromSetPhysicalRobot()
     {
@@ -1610,6 +1670,7 @@ public class M11RVisBuildTests : IDisposable
     /// sqrt of the sum of squares of the three floats at Transform3d+0x20..0x28 (0x00656554..0x00656598), not a z scale. Here the lift frame is 200 mm ahead of the camera on its axis, so the
     /// depth is 200.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_TheLiftOccluderDepthIsTheLengthOfTheLiftTransformsTranslation()
     {
@@ -1627,6 +1688,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-037: <c>Robot::SetPhysicalRobot</c> passes its argument to <c>VisionComponent::SetPhysicalRobot</c> (0x0051397C); the vision system hears it from the engine.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_037_TheEngineRaisesSetPhysicalRobotToTheWorld()
     {
@@ -1640,6 +1702,7 @@ public class M11RVisBuildTests : IDisposable
     }
 
     /// <summary>M11-004 (H2, 0x00642802): <c>WasCameraMoving</c> is <c>(status &amp; 0x8200) != 0x200</c> on the state nearest the timestamp.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0x0000u, true)]
     [InlineData(0x0200u, false)]
@@ -1661,6 +1724,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-049: <c>VisionComponent+0x48</c> (enabled) has one writer, the NV calibration-read callback, on every path of it (0x0065AE80): a failed read, a size mismatch and a success. Images are
     /// dropped until it has run (<c>SetNextImage</c> 0x00652B20..0x00652BEA). The pause byte +0x4B has no writer: there is no paused state.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(1, 0)]                                          // NVResult != 0
     [InlineData(0, 3)]                                          // a size that is not the calibration's
@@ -1693,6 +1757,7 @@ public class M11RVisBuildTests : IDisposable
     /// arrive; 3 replaces 2 and 4 replaces 3 (each replacement is a counted dropped frame); when 1 finishes the pending slot is discarded without processing 4 and without counting it; a later
     /// frame is processed. The poll interval is 2 ms (0x001E8480).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_040_TheMailboxHasOnePendingSlotLatestWinsAndDiscardsOnCompletion()
     {
@@ -1730,6 +1795,7 @@ public class M11RVisBuildTests : IDisposable
     /// pointer (+0x64) and returns 1 with the warning "Must be initialized and have calibrated camera to Update" (0x006B4D66, 0x006B4D70, 0x006B4FFC, 0x006B5022); nothing is processed and
     /// no result is pushed. So a system without a calibration returns null, warns (once) and stays without one.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_012_WithoutACalibrationTheVisionSystemRefusesAndDoesNotSubstituteOne()
     {
@@ -1767,6 +1833,7 @@ public class M11RVisBuildTests : IDisposable
     /// <summary>
     /// M11-044 (b) Robot::Delocalize 0x00510A24: Robot+0x2B8 = -1 (0x00510A46), +0x2C4 = 0, +0x2C8 = -1.0f, +0x2C5 = 0; +0x2BC is not touched and the state history is not cleared.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_DelocalizeWritesTheRobotFields()
     {
@@ -1787,6 +1854,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (g) (AddRawOdomState 0x00530CF8 does not clear the computed map; Delocalize does not call the history's Clear): a state that reports a new origin id does not clear the computed
     /// states. (A new origin id is NOT the engine's Delocalize trigger; the tread-boundary test below is.)
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_ANewOriginInTheStateStreamKeepsTheComputedStates()
     {
@@ -1802,6 +1870,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (b) (0x00512A62..0x00512A94, 0x00512B88..0x00512BA6, 0x00512FB4): a treads commit that involves OnTreads (old state OnTreads gives r7 = 1; otherwise r7 = the new state is
     /// OnTreads; r7 = 0 without a commit) sets [+0x2C0] = 0, calls Delocalize (Robot+0x2B8 = -1, +0x2C4 = 0) and skips the history step. A state without a commit does none of it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_ATreadsCommitInvolvingOnTreadsDelocalizesAndSkipsTheHistory()
     {
@@ -1837,6 +1906,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (a) (0x00626FAC mode byte 3, 0x00626FB0 no origin added, 0x00626FD2, 0x0062704C): AnyRemainingLocalizableObjects looks in EVERY origin, so a usable cube located in another
     /// origin keeps the OnTreads commit from writing Robot+0x2C4 and Robot+0x2B8; with no usable cube in any origin the writes run.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_AUsableCubeInAnotherOriginStopsTheOnTreadsWrites()
     {
@@ -1861,6 +1931,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (a), CheckAndUpdateTreadsState 0x005120F6..0x00512188: on the commit to OnTreads BlockWorld::AnyRemainingLocalizableObjects (0x00626EF4) is called; non-zero SKIPS the log
     /// and both stores (0x00512112..0x0051211A cbnz); zero runs the log, Robot+0x2C4 = 1 (0x0051217C) and Robot+0x2B8 = -1 (0x00512184).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -1882,6 +1953,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (a) through the vision system: the world's own copy of Robot+0x2B8 survives the commit to OnTreads while a cube that can be used for localization is still located
     /// (0x00512188 skips the writes) and is cleared, with Robot+0x2C4 = 1, when none is left. The predicate is CanBeUsedForLocalization over every origin (0x00626FAC..0x0062704C); here the cube is usable, then Dirty.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheWorldsLocalizationSurvivesOnTreadsOnlyWhileAUsableCubeRemains()
     {
@@ -1902,6 +1974,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (c), WritePoseHelper 0x0050609C with newState 2 (0x005060AC..0x005060C4): when [[Robot]+0x2B8] is the object's ID the write calls SetLocalizedTo(nullptr) first. A cube the
     /// robot is localized to that is refreshed as Dirty (here a moving cube's discarded sighting, 0x00505E36) drops the localization; another cube's write does not.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_AWriteThatMakesTheLocalizedCubeDirtyClearsTheLocalization()
     {
@@ -1923,6 +1996,7 @@ public class M11RVisBuildTests : IDisposable
     /// <summary>
     /// M11-044 (c), SetPoseStateHelper 0x0050612C (0x0050613C..0x0050614A): the same clearing when a Dirty state is set directly (a Moved report gives MarkObjectDirty).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_MarkingTheLocalizedCubeDirtyClearsTheLocalizationAndMarkingAnotherDoesNot()
     {
@@ -1941,6 +2015,7 @@ public class M11RVisBuildTests : IDisposable
     /// 0x0051254E) is an error, return 1, NO writes (+0x2B8, +0x2BC, +0x2C4 unchanged); LocalizeToObject and LocalizeRobot propagate the failure. Success writes +0x2B8 = ID, +0x2BC = 0 and
     /// +0x2C4 = 1; null writes +0x2B8 = -1 and +0x2C4 = 1 and leaves +0x2BC. An unwired marker loop counts (visible stand-in).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_SetLocalizedToCanFailWithoutWritingAndThePropagatesTheFailure()
     {
@@ -1974,6 +2049,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (e), UpdateFullRobotState 0x00512B8E (the OR into Robot+0x2BC) runs BEFORE the origin lookup at 0x00512C54: a state whose origin the robot rejects still ORs 1 in, while the
     /// history does not take it. A state dropped before time sync never gets that far.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_TheMovementOrRunsForAStateWhoseOriginIsRejected()
     {
@@ -1999,6 +2075,7 @@ public class M11RVisBuildTests : IDisposable
     /// M11-044 (f), UpdateVisionMarkers 0x00654D96..0x00654DE6: a non-zero result of ComputeAndInsertStateAt (no raw state at or after the frame's timestamp, 0x0053146A..0x00531472) jumps to
     /// 0x0065507E: UpdateObservedMarkers is never reached (no object is created or updated) and no computed state is inserted. With a raw state at the timestamp the same frame is processed.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_AFrameWithoutARawStateAtOrAfterItsTimestampNeverReachesUpdateObservedMarkers()
     {

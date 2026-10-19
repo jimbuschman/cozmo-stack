@@ -861,6 +861,7 @@ public sealed class CubeLightComponent
         // Host atomicity: Update cannot advance this push until SetObjectLights' result has
         // committed its timer. The synchronous send/callouts remain outside the state lock.
         public bool PendingSend;
+        public Action? Completed; // fidelity: M4-051 — std::function copy at 0x0063858C.
     }
 
     private sealed class ObjectInfo
@@ -942,7 +943,7 @@ public sealed class CubeLightComponent
     }
 
     // fidelity: M4-041 — ActiveObject identity owns the state, discarded with that object.
-    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Vision.ObservableObject, LedPattern[]> _ledStates = new();
+    // The connected ActiveObject owns ActiveLedState, including its all-zero constructor value.
     internal static uint ColorWord(LedColor color) => ((uint)color.R << 24) | ((uint)color.G << 16) | ((uint)color.B << 8) | color.A;
     private static LedColor FromWord(uint word) => new((byte)(word >> 24), (byte)(word >> 16), (byte)(word >> 8), (byte)word);
     internal static LedPattern GetLEDState(LedPattern[] current, int index, SourceLogSink? sourceLog = null)
@@ -1038,7 +1039,7 @@ public sealed class CubeLightComponent
     /// (b) is the requested layer's stack (0x006382FC..0x0063831C).
     /// </summary>
     // fidelity: M4-041, M4-045, M4-046
-    // fidelity: M4-049 — OV01 S3, direct callback only. The active-object virtual gate remains MISSING in BlockWorld.
+    // fidelity: M4-049 — OV01 S3; BlockWorld applies the ActiveCube/Charger virtual gate.
     internal Action<uint,string,int,bool,CubeLightModifier,int>? PoseStatePlayObservedForTest;
     internal void OnActiveObjectPoseStateChanged(uint objectId, PoseState oldState, PoseState state)
     {
@@ -1060,15 +1061,15 @@ public sealed class CubeLightComponent
         return PlayLightAnimCore(found,trigger,layer,0,modifier,lights,offset,id);
     }
 
-    public bool PlayLightAnim(ObjectType type, string trigger, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
-        => PlayLightAnim(type, trigger, EngineLayer, 0, modifier, lights, timerOffsetMs);
+    public bool PlayLightAnim(ObjectType type, string trigger, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0, Action? completed = null)
+        => PlayLightAnim(type, trigger, EngineLayer, 0, modifier, lights, timerOffsetMs,completed);
 
     /// <summary>Host API compatibility: durationMs and timerOffsetMs are added with u32 wrap and
     /// stored as the single native signed int at CurrentAnimInfo+0x44. Both initial and subsequent
     /// patterns use that same offset; durationMs does not replace a pattern's duration.</summary>
-    public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0)
-        => PlayLightAnimCore(type,trigger,layer,durationMs,modifier,lights,timerOffsetMs,null);
-    private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId)
+    public bool PlayLightAnim(ObjectType type, string trigger, int layer, uint durationMs = 0, bool modifier = false, CubeLightModifier? lights = null, int timerOffsetMs = 0, Action? completed = null)
+        => PlayLightAnimCore(type,trigger,layer,durationMs,modifier,lights,timerOffsetMs,null,completed);
+    private bool PlayLightAnimCore(ObjectType type,string trigger,int layer,uint durationMs,bool modifier,CubeLightModifier? lights,int timerOffsetMs,uint? nativeObjectId,Action? completed=null)
     {
         Animations.EnsureLoaded(); // Standalone host initialization precedes the component state lock.
         Playing pushed;
@@ -1109,19 +1110,13 @@ public sealed class CubeLightComponent
                         $"No active object with id {id} found in block world unable to blend anims");
                 else
                 {
-                    // ActiveObject's state is retained by its identity, after SetLEDs' period/colour normalization.
-                    if (!_ledStates.TryGetValue(connected, out var current))
-                    {
-                        if (input.Any(p => p.Leds.Any(l => ColorWord(l.OnColor) == 0 || ColorWord(l.OffColor) == 0)))
-                        { Log("MISSING: M4-041 | ActiveObject constructor LED state before its first SetLEDs has no checked row"); return false; }
-                        current = new LedPattern[4]; // never consumed: none of the source words is zero.
-                    }
+                    var current = connected.ActiveLedState; // Zero from ActiveObject construction; normalized by SetLEDs later.
                     blended = BlendAnimWithCurLights(input, current, out blendResult);
                 }
                 if (backBlended && blendResult) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.AlreadyPlayingBlendedAnim", "Can't play a blended anim over already playing blended anim"); return false; }
                 bool useBlended = (modifier || blendResult) && !backBlended;
                 if (useBlended && connected is null)
-                { Log("MISSING: M4-045 / M15-037 | modifier with NullActiveObject: empty-slot timer reads past native node at 0x006386DA; reachability requires BuildPyramid lifecycle"); return false; }
+                { Log("Stack.CubeLightComponent.SkipNullModifier: M1-034 / M4-045: modifier with NullActiveObject reads past native node at 0x006386DA; push skipped, prior state retained"); return false; }
                 string playingName = name;
                 if (useBlended)
                 {
@@ -1138,7 +1133,7 @@ public sealed class CubeLightComponent
                 uint duration = unchecked(first.DurationMs + offset);
                 var playing = new Playing { BaseAnim = anim, Slot = useBlended ? info.BlendedSlots[layer] : null, Name = playingName, Trigger = trigger, Blended = useBlended, Index = 0,
                     TimerMs = (first.DurationMs | offset) == 0 ? 0 : unchecked(NowMs + duration), TimerOffset = unchecked((int)offset),
-                    CanBeOverridden = anim[^1].CanBeOverridden };
+                    CanBeOverridden = anim[^1].CanBeOverridden, Completed=completed };
                 stack.Add(playing);
                 pushed = playing;
                 if (layer > info.CurrentLayer) { SourceLog(EngineLogLevel.Info, "CubeLightComponent", "CubeLightComponent.PlayLightAnim.LightsNotSet", $"Lights not set on object {id} layer {layerName} because current layer is {unchecked((uint)info.CurrentLayer)}"); return true; }
@@ -1181,6 +1176,22 @@ public sealed class CubeLightComponent
     {
         var calls = new List<Action>();
         var defaults = new HashSet<ObjectType>();
+        // fidelity: M4-051 — copy callback, pop, invoke, then inspect the remaining stack (including reentrant changes).
+        void Pop(List<Playing> stack,bool invoke=true)
+        {
+            var callback=stack[^1].Completed;
+            stack.RemoveAt(stack.Count-1);
+            if(callback is null||!invoke)return;
+            var pending=calls.ToArray();calls.Clear();
+            Monitor.Exit(_gate);
+            try
+            {
+                foreach(var call in pending)call();
+                Behavior.SteppedBehavior.ReportMissing("M4-051 completion callback guard 0x00564A64 reads a key in the global tree at 0x0103EB1C (entry+0x48); key producer/eligibility is not in the checked rows; invoking the stored host callback without guessing that guard");
+                _robot.Engine.RunIsolated(callback);
+            }
+            finally{Monitor.Enter(_gate);}
+        }
         void Send(ObjectType type, CubeLightPattern pattern, bool transition)
         {
             uint? id = TryObjectId(type);
@@ -1202,7 +1213,7 @@ public sealed class CubeLightComponent
                 foreach (var t in _infos.Keys) defaults.Add(t);
             }
             uint now = NowMs;
-            foreach (var (type, info) in _infos)
+            foreach (var (type, info) in _infos.ToArray())
             {
                 var stack = info.Layers[info.CurrentLayer];
                 if (stack.Count > 0)
@@ -1230,8 +1241,8 @@ public sealed class CubeLightComponent
                         }
                     }
                     // W4: +0x41 set, or the last pattern was reached. Pop, then P2: pop consecutive stopped entries.
-                    stack.RemoveAt(stack.Count - 1);
-                    while (stack.Count > 0 && stack[^1].Stop) stack.RemoveAt(stack.Count - 1);
+                    Pop(stack,invoke:!top.Dangling); // M1-034/M4-045: a fault-retired entry cannot claim normal completion.
+                    while (stack.Count > 0 && stack[^1].Stop) Pop(stack);
                     if (stack.Count > 0)
                     {
                         // P3: resend the lower animation's current pattern, with no timer or iterator reset.
@@ -1528,7 +1539,7 @@ public sealed class CubeLightComponent
     private uint SetObjectLights(ObjectType type, CubeLightPattern p)
     {
         if (p.MakeRelative)
-        { Log("MISSING: M4-018 / M11-004 | relative ObjectLights requires located object / MakeStateRelativeToXY 0x00637E76; no guessed send"); return 0x04000000; }
+        { Log("MISSING: M4-052 | relative ObjectLights requires located object / MakeStateRelativeToXY 0x00637E76; no guessed send"); return 0x04000000; }
         var cube = _robot.Cubes.ConnectedCubes.FirstOrDefault(c => c.Type == type && c.ObjectId is not null);
         if (cube is null) { SourceLog(EngineLogLevel.Info, "CubeLightController", "CubeLightController.SetObjectLights.NullActiveObject", "Null active object pointer"); return 0x04000000; }
         var leds = new LedPattern[4];
@@ -1545,7 +1556,7 @@ public sealed class CubeLightComponent
         lock (_sendGate)
         {
             var connected = _robot.VisionModeRecipient?.World.ConnectedObjects.FirstOrDefault(o => o.ActiveId == unchecked((int)cube.ObjectId!.Value));
-            if (connected is not null) lock (_gate) { _ledStates.Remove(connected); _ledStates.Add(connected, leds); }
+            if (connected is not null) lock (_gate) connected.ActiveLedState=leds;
             return SetLights(cube.ObjectId!.Value, leds, gamma: 0x80, p.RotationPeriodMs);
         }
     }

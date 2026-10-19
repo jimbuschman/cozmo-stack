@@ -104,7 +104,8 @@ public sealed partial class CozmoEngine
         Das.SetArchiveLogConfig(0x00666C04, 0x00666E44, ".tar.gz"); // 0x00665A4E.
         if (Options.DataCollectionEnabled) Das.EnableNetwork(2); else Das.DisableNetwork(2);
         Das.Configure(new(null, "/DASConfig.json"), new(2, "DASLogs"), new(3, ""));
-        EmitStackLog("MISSING: M3-055 DASConfigure absolute resource roots and DASPlatform_Android.Init / InitForUnityPlayer app input selection (0x00665CD6, 0x00665EEC/0x00665F14); source descriptors retained, no Android object or host path invented");
+        // M3-055 manager exclusion (2026-10-18): Configure roots/platform selector are phone-app machinery;
+        // config input M3-052, sink(b) paths M3-051 and engine-visible device ID M3-058 own the boundaries.
         Das.NativeInit("cozmo"); // 0x00665F3A, game literal at0x00BFE7BE.
         Das.Pause(false);
         // fidelity: M3-058 — persisted host device-ID replaces DAS platform+0x1C input.

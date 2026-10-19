@@ -32,6 +32,7 @@ public sealed class M3M4X28BuilderTests
         Assert.True(released);Assert.True(frameEntered.IsSet);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(true)] [InlineData(false)]
     public void MovementLocatedLoopKeepsQueryAndAllUpdatesInOneFrameWindow(bool moving)

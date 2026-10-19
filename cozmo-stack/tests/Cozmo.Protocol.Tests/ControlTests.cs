@@ -648,6 +648,7 @@ public class ControlTests
         Assert.DoesNotContain(logs, l => l.Contains("ObjectPowerLevel.Broadcast"));
     }
 
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void CubeTelemetryLandsOnTheConnectedCube()
     {

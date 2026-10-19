@@ -122,6 +122,7 @@ public class M5LastReadsTests
         Assert.NotNull(robot.Animations.FaceAnimations);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B_M5_6_DeferredStatFailureWarnsOnceInCollectOrder()
     {

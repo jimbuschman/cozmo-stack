@@ -21,6 +21,7 @@ public sealed class M11ImageQualityRowsTests
         {Mask=mask;InitialFactor=factor;factor=Factor;return Status;}
         public uint ComputePercentile(float percentile)=>percentile<0.5f?Low:High;
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(16,66,20)] [InlineData(60,66,60)] [InlineData(66,66,60)]
     [InlineData(70,66,70)] [InlineData(1,9,0)] [InlineData(-11,66,0)]
@@ -28,6 +29,7 @@ public sealed class M11ImageQualityRowsTests
     public void LimitedExposureFollowsSignedDivisionWrapAndDivisibilityBypass(int e,int max,int expected)
         =>Assert.Equal(expected,ImageQualityProcessor.Quantize(e,max));
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0x3F7FFF58u)] [InlineData(0x3F800054u)] [InlineData(0x7FC12345u)]
     public void DeadbandEqualityAndNaNLeaveGainBitsAndStillQuantize(uint bits)
@@ -38,6 +40,7 @@ public sealed class M11ImageQualityRowsTests
         Assert.Equal(0x7F854321u,BitConverter.SingleToUInt32Bits(result.Gain));
         Assert.Equal(16,p.Propose(1,State(),0,_=>0).Exposure);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ExposureFirstDecreaseGainFirstIncreaseAndArmConversionAreExact()
     {
@@ -55,6 +58,7 @@ public sealed class M11ImageQualityRowsTests
         Assert.Equal(0,ImageQualityProcessor.ArmSigned(float.NaN));
         Assert.Equal(5,p.Propose(0.5f,State(9),0,_=>0).Exposure); // roundf ties away
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(231u,3)] [InlineData(230u,1)]
     public void TooBrightUsesUnsignedStrictPercentileAndUnorderedGain(uint value,byte expected)
@@ -63,6 +67,7 @@ public sealed class M11ImageQualityRowsTests
         var result=p.Propose(0.5f,State(1,float.NaN),0,v=>{requested=v;return value;});
         Assert.Equal(expected,result.Quality);Assert.Equal(0x3DCCCCCDu,BitConverter.SingleToUInt32Bits(requested));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(19u,2)] [InlineData(20u,1)]
     public void TooDarkUsesShippedThresholdAndNaNGainExposureBranch(uint value,byte expected)
@@ -71,6 +76,7 @@ public sealed class M11ImageQualityRowsTests
         var result=p.Propose(2,State(66,float.NaN),0,v=>{requested=v;return value;});
         Assert.Equal(expected,result.Quality);Assert.Equal(0x3F666666u,BitConverter.SingleToUInt32Bits(requested));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MaskUsesSignedDoubleCountedAreaAndComplementWeights()
     {
@@ -83,6 +89,7 @@ public sealed class M11ImageQualityRowsTests
         p.Settings.MeterFromDetections=false;
         Assert.True(p.TryMask(image,new[]{new ImageQualityRectangle(-1,0,2,5)},out mask));Assert.Null(mask);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void PipelineStartsWithOneAndFailureDoesNotComputeOrQuantizeAProposal()
     {
@@ -93,6 +100,7 @@ public sealed class M11ImageQualityRowsTests
         var log=Assert.Single(logs);Assert.Equal(EngineLogLevel.Warning,log.Level);Assert.Null(log.Channel);
         Assert.Equal("VisionSystem.CheckImageQuality.ComputeNewExposureFailed",log.Key);Assert.Equal("Detection Quads=1",log.Text);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ConfigUsesShippedByteValueAndMissingKeyStopsAfterPriorWrites()
     {
@@ -120,6 +128,7 @@ public sealed class M11ImageQualityRowsTests
     }
     private static CameraCalibration Cal()=>new(){Rows=16,Columns=16,FocalLengthX=20,FocalLengthY=20,CenterX=8,CenterY=8};
     private static VisionFrameResult Frame(VisionSystem vision,uint n=1)=>vision.ProcessImage(new GrayImage(16,16),n,n,new VisionPoseData(n,Pose3d.Identity,0,0,false,false));
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void RealFrameEntryDropsAllRecipientsAndPublicationOnQualityFailure()
     {
@@ -142,6 +151,7 @@ public sealed class M11ImageQualityRowsTests
         }
         finally{EngineErrorState.ErrorFlagSet=old;}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void PendingPairCopiesBeforeQualityAndLimitedExposureDoesNotOverwriteCurrent()
     {
@@ -166,6 +176,7 @@ public sealed class M11ImageQualityRowsTests
         robot.Lights.SetHeadlight(true);Frame(vision);
         Assert.Equal(1<<14,vision.ModeEnableMask);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NullConfigValueIsMissingRatherThanAZeroAndTerminatingConversionKeepsPriorStatics()
     {
@@ -181,6 +192,7 @@ public sealed class M11ImageQualityRowsTests
         }
         finally{EngineErrorState.ErrorFlagSet=old;}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiveCaptureStopsOnUnknownRoiProducerWithoutFabricatingAnEngineFailure()
     {
@@ -193,6 +205,7 @@ public sealed class M11ImageQualityRowsTests
         Assert.NotNull(vision.ProcessCapture(new GrayImage(16,16),2,1));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void VisionConstructorLoadsTheRealShippedQualityStaticsFromItsResourceInput()
     {
@@ -219,6 +232,7 @@ public sealed class M11ImageQualityRowsTests
         }
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ADisabledFaceProducerIsNotRunBeforeTheQualityConsumer()
     {
@@ -228,6 +242,7 @@ public sealed class M11ImageQualityRowsTests
         Assert.NotNull(Frame(vision).ImageQuality);Assert.Equal(0,faces.Calls);Assert.Equal(0,vision.Faces.Count);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void SetAndDisableKeepsSignedNativeExposureAndDisablesAfterValidationFailure()
     {
@@ -245,6 +260,7 @@ public sealed class M11ImageQualityRowsTests
         Frame(vision);Assert.Equal(1,vision.ModeEnableMask); // request still applied after failed settings validation
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void HostRobotTeardownUsesTheSharedProcessFlagGate()
     {

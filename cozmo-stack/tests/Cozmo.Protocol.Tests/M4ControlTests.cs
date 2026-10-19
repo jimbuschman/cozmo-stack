@@ -18,6 +18,7 @@ namespace Cozmo.Protocol.Tests;
 public class M4ControlTests
 {
     // 0x0063429C, 0x00634534/57A, 0x0053564C and 0x00535948.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B9_CliffThresholdCountAndLiveUndetectedLogsKeepNativeOrder()
     {
@@ -40,6 +41,7 @@ public class M4ControlTests
     }
 
     // 0x006324E4 and 0x00587460..0x0058749A; public SetBackpack routes the first locator.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B9_BackpackFirstLocatorAndUnknownNameUseSourceKeysAndErrorFlag()
     {
@@ -55,6 +57,7 @@ public class M4ControlTests
     }
 
     // 0x007B9BE4 >7 returns NULL; 0x00533BA2/0x00533C72 and data table 0x01020EF8/0x01020F00.
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void B9_CubeConnectionEventsAndInvalidUpAxisKeepNativeFields()
     {
@@ -68,6 +71,7 @@ public class M4ControlTests
         Assert.Contains(entries, e => e.Name == "Robot.HandleActiveObjectUpAxisChanged.UpAxisChanged" && e.Text.EndsWith("UpAxis: (null)"));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B9_CubeSleepEntryPrecedesTheStopLogs()
     {
@@ -79,6 +83,7 @@ public class M4ControlTests
     }
 
     // 0x00637AA4 / 0x00637BD6 / 0x00637B34 and 0x00638150 through live light entries.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B9_CubeUpdatePreviousEmptyAndNullTransitionLogsFollowTheirGates()
     {
@@ -108,6 +113,7 @@ public class M4ControlTests
     }
 
     // P5 / 0x00637C02..06: Update's bool, not the occupied State stack, decides the default pick.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void B10_DefaultPickUsesUpdateArgumentWithOccupiedStateLayer(bool pick)
@@ -125,6 +131,7 @@ public class M4ControlTests
         finally {Directory.Delete(res,true);}
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B10_TransitionGateDefaultsFalseAndMissingIngressIsReportedOnce()
     {
@@ -145,6 +152,7 @@ public class M4ControlTests
     }
 
     // B-M3M4-6: world _gate must be released before the configuration subscriber takes _updateGate.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(true)] [InlineData(false)]
     public void B6_MovementPoseSubscriberAllowsConcurrentConfigurationBuild(bool moving)
@@ -178,6 +186,7 @@ public class M4ControlTests
         Assert.Equal(moving, located.IsMoving); Assert.Null(world.LocalizedToObjectId);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B6_LightAndCubeLogsAllowCrossThreadComponentReentry()
     {
@@ -216,6 +225,7 @@ public class M4ControlTests
     }
 
     // Manager-checked signed-byte subtract/cmp 0x00630B2E..0x00630B42 and sChanneledInfoF 0x00630B5C.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(60, 0, true)] [InlineData(61, 0, false)] [InlineData(-68, -128, true)] [InlineData(-67, -128, false)] [InlineData(50, -100, false)]
     public void B7_TapIgnoredUsesTheSourceKeyChannelAndSignedDifference(sbyte positive, sbyte negative, bool ignored)
@@ -235,6 +245,7 @@ public class M4ControlTests
     }
 
     // B8: 0x005350AA..0x0053519C; live ProcessMessages -> Sensors.Handle.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(2.5f, "3", false)] [InlineData(-2.5f, "-3", false)] [InlineData(1000.5f, "1001", true)]
     public void B8_FallingEventHasRoundfTextUnsignedDurationAndSourceOrder(float intensity, string text, bool needs)
@@ -250,6 +261,7 @@ public class M4ControlTests
         Assert.Equal(needs ? new[] { "needs", "event", "report" } : new[] { "event", "report" }, order);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B8_UnlockAllTracksLogsBeforeClearingAndSendingTheTrackIndex()
     {
@@ -265,6 +277,7 @@ public class M4ControlTests
     }
 
     // B-M3M4-5 checked Stopped body 0x534924..53494A and the shared Moved body.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false, false)] [InlineData(true, false)] [InlineData(false, true)] [InlineData(true, true)]
     public void B5_MovementDirtiesMatchedLocatedInstanceExceptWhenCarried(bool moving, bool carried)
@@ -282,6 +295,7 @@ public class M4ControlTests
         Assert.Contains(rig.Log, l => l.Contains($"ObjectMovedOrStopped: ObjectID: {id} (Active ID 0)"));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B5_ChargerHookFiltersBothMovementReports()
     {
@@ -296,6 +310,7 @@ public class M4ControlTests
         Assert.False(rig.Robot.Cubes.ByObjectId(0)!.Moving);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B5_NoWorldIdSkipsMovementAndLightPlayWithVisibleMissing()
     {
@@ -310,6 +325,7 @@ public class M4ControlTests
         } finally { Directory.Delete(res, true); }
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B5_CliffRestoreLogsThenSendsThenClearsWithoutHoldingSensorLock()
     {
@@ -329,6 +345,7 @@ public class M4ControlTests
     }
 
     // Opus M4-001: literal strings BEA11C/BEA169; getDegrees f32 0084CD40.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B5_LightNullActiveObjectClearsTimerAndUpdateCannotAdvancePendingPush()
     {
@@ -366,6 +383,7 @@ public class M4ControlTests
         finally { Directory.Delete(res, true); }
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_001_CheckedClipWarningsUseRescaledDegreesAndInvariantOneDecimal()
     {
@@ -562,6 +580,7 @@ public class M4ControlTests
     /// (+0x34E) is marked right after the time-sync gate, before the origin check (0x0051293C..0x00512948), so a
     /// rejected state marks it too.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_020_SC4f_SC4g_AStateWithAnUnknownOriginIsDroppedWithAWarning()
     {
@@ -588,6 +607,7 @@ public class M4ControlTests
     /// {timestamp 0, frameId robot+0x2B0 = 0, originId the current origin = 1, identity pose 0, 0, 0}
     /// (0x0051526E..0x005153AE, 0x00512734..0x005127B6; SC4e, SC4g, SC4h); +0x520 is stamped once it is sent.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_020_CD18_SyncTimeSendsAbsoluteLocalizationUpdateAfterImageRequest()
     {
@@ -609,6 +629,7 @@ public class M4ControlTests
     }
 
     /// <summary>M1-041 CD18: Robot::SyncTime runs RobotStateHistory::Clear before SendSyncTime (0x0051521E..).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M1_041_CD18_SyncTimeClearsTheRobotStateHistory()
     {
@@ -628,6 +649,7 @@ public class M4ControlTests
     /// the later steps are skipped: the history and the cliff threshold schedule. The one SetCliffDetectThreshold {50}
     /// is SetOnCharger's (C8, before the origin check), not the schedule's.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_020_C3_AnOriginRejectedStateStillAppliesThePartBeforeTheOriginCheck()
     {
@@ -661,6 +683,7 @@ public class M4ControlTests
     /// sends SetBodyRadioMode {0x01, 0x00} and restarts the count; a state with the bit does not reset it. The count is
     /// before the origin check (0x00512AD0..0x00512B52), so a dropped state counts too.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_022_SC10_SetBodyRadioModeAfter16StatesWithoutTheBit()
     {
@@ -685,6 +708,7 @@ public class M4ControlTests
     /// game EnableCliffSensor only stores +4; with the sensor disabled a CliffEvent with flags ≠ 0 is dropped with no
     /// broadcast, and one with flags 0 still goes out.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_SC1_SC5_SC6_CliffDefaultsAndTheDisabledDrop()
     {
@@ -714,6 +738,7 @@ public class M4ControlTests
     /// raw values (+0xE), CLIFF_DETECTED (+6) and the timestamp (+8) are stored for every time-synced state, including
     /// one the origin check later drops (origin 0 is never in the pose-origin list, SC4g).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_008_SC2_TheCliffDataOfAHandledStateIsStored()
     {
@@ -732,6 +757,7 @@ public class M4ControlTests
     /// M4-019 SC7: PotentialCliff off the charger platform, not in drone or SDK mode: StopAllMotors (0x3B) and
     /// EnableStopOnCliff {0} (0x0053582C..0x00535998).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_SC7_PotentialCliffStopsAllMotorsAndDisablesStopOnCliff()
     {
@@ -749,6 +775,7 @@ public class M4ControlTests
     /// M11-044 / M11-053 (0x00512B88..0x00512BA6, 0x00512FB4): a state that triggers Delocalize (a treads commit involving OnTreads) jumps over 0x00512D7A..0x00512EA6, so it sends no
     /// SetCliffDetectThreshold (0x00512DA2, 0x00512EA0); the next ordinary state does send the first {50}.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M11_044_ADelocalizingStateSendsNoCliffThresholdAndTheNextOrdinaryOneDoes()
     {
@@ -772,10 +799,13 @@ public class M4ControlTests
     /// each accepted state reaches the threshold schedule's S1 entry. No {50} send is asserted: the earlier Delocalize's D2 ClearCliffRunningStats resets the cliff variance, so a
     /// threshold send is not guaranteed here.
     /// </summary>
+    // reach: unit (explicit history admission/query result fixtures; production join MISSING at M11-097).
     [Fact]
     public void M11_044_ACommitBetweenTwoOffTreadsStatesDoesNotDelocalize()
     {
         using var rig = new Rig();
+        rig.Robot.Sensors.HistoryAdmissionForTest=_=>true;rig.Robot.Sensors.HistoryStatsGateForTest=_=>true; // M11-097 result fixtures.
+
         rig.ToSynced();
         rig.Calibrate();
         using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal());
@@ -805,6 +835,7 @@ public class M4ControlTests
     /// SetCliffDetectThreshold {50}; after more than 50 mm it sends {400} once. A dropped state reaches neither; SC8:
     /// nothing sends EnableStopOnCliff at connection.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_SC4_SC8_TheThresholdSchedule()
     {
@@ -833,6 +864,7 @@ public class M4ControlTests
     /// MoveRobotPoseForward(pose, −20 mm) = (x − 20 cosθ, y − 20 sinθ), between the pose before and after each matching
     /// state, counted from the first. A pure turn in place moves the drive centre: turning by π moves it 40 mm.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_C7_TheDistanceIsTheDriveCentreDisplacement()
     {
@@ -860,6 +892,7 @@ public class M4ControlTests
     /// PotentialCliff on the platform is ignored; a committed off-treads change to anything but OnTreads clears it once
     /// the contacts flag is 0 (400).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_C8_SC7_TheChargerPlatform()
     {
@@ -897,6 +930,7 @@ public class M4ControlTests
     /// 99 − 16·2π = −1.5310 and clips to the min with AngleTooLow, and −99 rad rescales to +1.5310 and clips to
     /// the max with AngleTooHigh. M4-003 MD1/MA11: the defaults are head 10 rad/s, 20 rad/s², duration 0.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_001_M4_003_MA9_MA11_HeadIsClippedAndCarriesTheAppDefaults()
     {
@@ -931,6 +965,7 @@ public class M4ControlTests
     /// true only when a − b &gt; 0 and not IsNear(a, b, 1e-5 bits 0x3727C5AC). A target within 1e-5 past a limit is
     /// therefore sent unclipped and without a warning; past it, the limit is sent with the warning.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_001_M4_016_TheClipUsesTheOneEpsilonNearTest()
     {
@@ -967,6 +1002,7 @@ public class M4ControlTests
     /// saturates the ceil turn count, so ±inf stays ±inf (not inf − inf = NaN) and a huge finite value keeps its
     /// magnitude; the clip then sends the limit with the warning instead of NaN.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_001_M4_016_InfinityAndHugeAnglesClipInsteadOfSendingNaN()
     {
@@ -1003,6 +1039,7 @@ public class M4ControlTests
     /// then a report below 0xBEFA35DD (−28°) is stored as −25°, above 0x3F543B67 (47.5°) as 44.5°, anything else
     /// as reported.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_001_MA22_RS6_TheHeadAngleIsMinus25UntilCalibratedThenClamped()
     {
@@ -1028,6 +1065,7 @@ public class M4ControlTests
     /// M4-002 MA13/MA14: the presets are 32, 76, 92 and −1; a height in [0, ∞) outside [32, 92] is clamped with a
     /// warning; a negative height goes to whichever of 32 and 92 is nearer the current height; defaults 10/20/0 (MA11).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_002_MA13_MA14_LiftClampAndTheNegativeHeightGoesToTheNearerPreset()
     {
@@ -1065,6 +1103,7 @@ public class M4ControlTests
     /// preset choice happen when the action starts, with the lift height read then; the warning is "%f mm. Clipping to be in
     /// range." (0x00549398) with the requested height; a NaN height is stored by the second clamp as 32.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_002_Init_TheLiftClampWarningAndPresetChoiceRunAtInitWithTheHeightReadThen()
     {
@@ -1102,6 +1141,7 @@ public class M4ControlTests
     /// M4-031: a LockTracks caller that supplies no debug name gets one visible MISSING line per calling file (the engine passes a
     /// name the inventory does not give for these M5/M7/M8 callers); a supplied name logs nothing.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_031_AMissingLockTracksDebugNameIsReportedOncePerCallingFile()
     {
@@ -1120,6 +1160,7 @@ public class M4ControlTests
     }
 
     /// <summary>M2-015 (settled by M4 MD1): the MessageExtras defaults are the app's, head 10/20 and lift 10/20, duration 0.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M2_015_MD1_TheBuilderDefaultsAreTheAppsValues()
     {
@@ -1135,6 +1176,7 @@ public class M4ControlTests
     /// M4-005 MA8: one u8 counter shared by head and lift, 0 at construction and pre-incremented, so the ids run
     /// 1..255, 0, 1.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_005_MA8_ActionIdsRun1To255Then0AndAreShared()
     {
@@ -1164,6 +1206,7 @@ public class M4ControlTests
     /// M4-003 (0x00540572..0x0054057C): IActionRunner::Update refuses a move whose required track is already
     /// locked and fails it with the engine result 0x03000019, sending nothing.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_003_MA_ALockedTrackFailsTheHeadMoveWith03000019()
     {
@@ -1186,6 +1229,7 @@ public class M4ControlTests
     /// DisableAnimTracks 0x9D {1}, before its SetHeadAngle, and releases it at the action's end, which sends
     /// EnableAnimTracks 0x9E {1}. The in-position move takes and releases it too (M4-016 unresolved).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_003_MA_TheHeadMoveLocksThenUnlocksItsTrack()
     {
@@ -1217,12 +1261,14 @@ public class M4ControlTests
     /// M4-016 (0x0052B0C2): the IAction timeout slot's default is 30.0 s, used when the caller passes no timeout.
     /// The old 5 s is wrong.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_016_MA17_TheDefaultActionTimeoutIs30Seconds()
     {
         Assert.Equal(TimeSpan.FromSeconds(30), CozmoMotion.DefaultActionTimeout);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_CheckedStartStampUsesFirstUpdateRatherThanTheEnqueueClock()
     {
@@ -1247,6 +1293,7 @@ public class M4ControlTests
     /// with no VisionSystem attached SetHeadlight logs no engine error, does not set _errG, still sends the message,
     /// and the requested mode is applied when a VisionSystem attaches.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_017_NoVisionSystemLogsNoErrorSendsHeadlightAndAppliesTheModeOnAttach()
     {
@@ -1270,6 +1317,7 @@ public class M4ControlTests
     /// set-recipient + take-pending, so a request racing the attach is never lost (it is on the new system's queue
     /// either way, and the mode bit is applied on its first Update).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_017_ARequestRacingTheVisionSystemAttachIsNeverLost()
     {
@@ -1305,6 +1353,7 @@ public class M4ControlTests
     /// "%s timed out after %.1f seconds." 0x00540FF8, timeout from slot 0x2C): the timeout result 0x03000018 is
     /// followed by the warning (sWarningF, no channel) while the +0x57 flag (default 1, ctor +0x55 = 0x10000 store 0x0053FE18..0x0053FE1C) is set.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_TimeoutLogsTheWarningForHeadAndLift()
     {
@@ -1332,6 +1381,7 @@ public class M4ControlTests
     /// "Cancelling action %s[%d]"; SetTag while running warning "IActionRunner.SetTag" "Action %s [%d] is running unable to
     /// set tag to %d"; SetTag invalid error "IActionRunner.SetTag.InvalidTag" "Tag [%d] is invalid" then the error flag.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_ActionNamesAndBaseRunnerLogsMatchTheEngineTexts()
     {
@@ -1370,6 +1420,7 @@ public class M4ControlTests
     }
 
     /// <summary>M4-016 0x00540E7C: with the +0x57 flag clear, the timeout result is returned with no warning.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_016_TimeoutWarningIsSkippedWhenTheFlagIsClear()
     {
@@ -1389,6 +1440,7 @@ public class M4ControlTests
     /// apart. The counters are process-wide (0x01051028/2A head, 0x0105102C/2E lift), so only the spacing between two
     /// logs is asserted.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_016_TheElevenCountLogsFireEveryEleventhCheckIfDone()
     {
@@ -1432,6 +1484,7 @@ public class M4ControlTests
         }
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_017_CheckedHeadlightQueuesModeUntilVisionUpdate()
     {
@@ -1469,6 +1522,7 @@ public class M4ControlTests
     /// therefore refuses to interrupt a lift move and falls back to QueueNow (Q15): the running move is
     /// Cancelled and Deleted (0x02000000), not Interrupted (0x03000009), and the incoming move is queued.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_CanInterrupt_A_LiftMoveRefusesQ14InterruptionAndFallsBackToQueueNow()
     {
@@ -1496,6 +1550,7 @@ public class M4ControlTests
     /// 0.0349066, at least 2°), nor when the lift is within 5 mm and not moving (MC+0xB = !LIFT_IN_POS); the move
     /// then succeeds.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_MA15_NothingIsSentWhenAlreadyInPosition()
     {
@@ -1523,6 +1578,7 @@ public class M4ControlTests
     /// M4-016 MA16/MA17: the ack counts only for the sent action's id; after it, the move succeeds once the head is in
     /// position and not moving (HEAD_IN_POS set). A state in position before the ack does not complete it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_MA16_MA17_CompletionIsTheAckThenInPositionAndStopped()
     {
@@ -1544,6 +1600,7 @@ public class M4ControlTests
     }
 
     /// <summary>M4-016 MA17: after the ack, a head that moved and then stopped out of position fails with 0x04000004.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_MA17_StoppingOutOfPositionIsStoppedMakingProgress()
     {
@@ -1571,6 +1628,7 @@ public class M4ControlTests
     /// latched, so a head that reached the target while still moving and then stopped out of tolerance succeeds;
     /// StoppedMakingProgress needs not in position, not moving and having moved.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_C1_TheHeadInPositionIsLatched()
     {
@@ -1597,6 +1655,7 @@ public class M4ControlTests
     /// acked, CheckIfDone returns Running before it touches the latch, so a head passing through the target before the
     /// ack does not latch; after the ack, moving and then stopping short is StoppedMakingProgress.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_R1_PassingTheTargetBeforeTheAckDoesNotLatch()
     {
@@ -1623,6 +1682,7 @@ public class M4ControlTests
     /// state before it does not complete it); after the ack it succeeds once in position and not moving (LIFT_IN_POS set,
     /// MC+0xB == 0); moving and then stopping out of position after having moved is 0x04000004.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_016_C6_TheLiftCompletion()
     {
@@ -1660,6 +1720,7 @@ public class M4ControlTests
     /// Queue item Q3 / M4-007 MA5: EmergencyStop runs StopAllMotors' unlock preamble (EnableAnimTracks for a track
     /// direct drive holds) before its StopAllMotors and this stack's extra DriveWheels(0) (the shutdown decision note).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_007_MA5_EmergencyStopUnlocksAHeldTrackFirst()
     {
@@ -1679,6 +1740,7 @@ public class M4ControlTests
     /// once, and unlocks it at zero with EnableAnimTracks 0x9E {mask}; BODY 4 (speed |l| + |r|), HEAD 1, LIFT 2; the
     /// command itself follows verbatim. |speed| &lt; 1e-5 counts as zero.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_014_MA1_MA2_MA3_DirectDriveLocksAndUnlocksTheTracks()
     {
@@ -1710,6 +1772,7 @@ public class M4ControlTests
     /// send MoveHead{0}, MoveLift{0} or DriveWheels{0,0,0,0}; StopAllMotors runs the preamble for all three, then sends
     /// only StopAllMotors 0x3B (no DriveWheels).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_015_M4_007_MA4_MA5_TheStopsRunTheUnlockPreamble()
     {
@@ -1746,6 +1809,7 @@ public class M4ControlTests
     /// M4-017 LB1/LB2/LB3/LB4h: after the first state, with no source, every Robot::Update sends the Off lights: 0x03
     /// with LEDs 1..3 then 0x11 with LEDs 0 and 4, every LED `00 80 00 80 00 00 00 00 00 00`, then u8 0.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_017_LB1_LB2_LB3_TheOffLightsGoOutEveryTickWhileThereIsNoSource()
     {
@@ -1773,6 +1837,7 @@ public class M4ControlTests
     /// change of charging state replaces the game's LEDs. Without the shipped JSON "Charging" does not resolve: a warning,
     /// the state still stored, nothing played. After OffCharger is looped the per-tick Off resend stops (LB4h).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_017_LB4_LB4i_LB5_TheChargingStateSharesTheLocatorWithSetBackpack()
     {
@@ -1805,6 +1870,7 @@ public class M4ControlTests
     /// `E0 81 00 80 0A 1E 0A 0A E3 FF`, L2 `E0 81 00 80 1E 0A 0A 0A F7 FF`, L3 `E0 81 E0 81 00 00 0A 0A 00 00`, LEDs 0
     /// and 4 unlit. Skipped visibly when the OBB is not on this machine.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_017_LB4g_ChargingOnTheWireFromTheShippedPatterns()
     {
@@ -1829,6 +1895,7 @@ public class M4ControlTests
     /// pattern follows (CubeID + CubeLights `E0 83 00 80 22 64 04 22 00 00` ×4, no gamma); 5100 ms later the animation
     /// ends and the default layer-2 animation (Connected) is asked for.
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_018_LC1_LC6_WakeUpOnConnection()
     {
@@ -1868,6 +1935,7 @@ public class M4ControlTests
     /// two patterns are 1280 ms (overridable by default) and 5100 ms (canBeOverridden false); the default-layer triggers
     /// resolve too. Skipped visibly when the OBB is not on this machine.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_LC3_TheShippedWakeUpAnimationLoads()
     {
@@ -1887,6 +1955,7 @@ public class M4ControlTests
     /// M4-018 LC8/LC1: a disconnection sends nothing and keeps ObjectInfo. Reconnection attempts WakeUp,
     /// but the running shipped WakeUp's last-pattern false rejects the push (0x006386EC..0x006386F4).
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_018_LC8_AReconnectCannotOverrideRunningWakeUp()
     {
@@ -1915,6 +1984,7 @@ public class M4ControlTests
     /// M4-018 LC4/LC5: WhiteBalanceColor scales G and B by 0.6, truncating, when R ≠ 0; frames are u8((ms + 29) / 30)
     /// with 0xFFFFFFFF → 0xFF and a solid 0x7FFFFFFF → 0x45; LB4f's backpack offset maps −1 to 0x00FF.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_LC4_LC5_LB4f_TheColourAndFrameConversions()
     {
@@ -1938,6 +2008,7 @@ public class M4ControlTests
     /// is the connected object's, which AddConnectedActiveObject gave it; the located object here is a cube with that ID, and a Known object
     /// is what MarkDirty acts on.)
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_023_CD10g_TheDoubleTapWindowReachesTheWorld()
     {
@@ -1971,6 +2042,7 @@ public class M4ControlTests
     /// M4-009 CD10a/CD10b/CD10c: Moved and Stopped are broadcast for every message (SetIsMoving only on a change), an
     /// unknown active id is dropped with a warning, and UpAxisChanged for an unknown id is an error.
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_009_CD10a_CD10b_CD10c_MovedAndStoppedAreBroadcastPerMessage()
     {
@@ -1998,6 +2070,7 @@ public class M4ControlTests
     /// no "sim", SetPhysicalRobot) with the filter on, taps queue for 75 ms from the first and only the strongest is
     /// broadcast, the earliest winning a tie.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_023_CD10e_CD10f_TapsAreFilteredAndOnlyTheStrongestIsBroadcast()
     {
@@ -2026,6 +2099,7 @@ public class M4ControlTests
     /// M4-023 CD10d/CD10e/CD10g: with the filter off a tap is broadcast at once; the tap opens a 500 ms window in which a
     /// Moved message is ignored; after it movement is reported again.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_023_CD10d_CD10g_TheDoubleTapWindowSuppressesMovement()
     {
@@ -2059,6 +2133,7 @@ public class M4ControlTests
     /// one finishes and pops, the animation below it is resent immediately with its current pattern (the spin), with
     /// no timer or iterator reset; its own expired timer then advances it to fadeOut on the next tick.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_P3_APopResendsTheLowerAnimationsCurrentPattern()
     {
@@ -2095,6 +2170,7 @@ public class M4ControlTests
     /// SetEnableFreeplayLightStates(enable = false) is the engine's enable = 1. After it the layer is empty (P5 sends
     /// the static off when it empties) and the cube is game-layer-only, so a WakeUp is refused.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_C12_1_C12_2_EnableGameLayerOnlySendsTheStaticOffLights()
     {
@@ -2128,6 +2204,7 @@ public class M4ControlTests
     /// enable = (msg.byte0 == 0); Robot.cs:1902-1907). It clears the game-layer-only flag and picks the default
     /// layer-2 animation again, so a WakeUp is allowed once more.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_C12_2_AppEnableTrueRestoresTheDefaultLayer()
     {
@@ -2156,6 +2233,7 @@ public class M4ControlTests
     /// "all objects" 0x00639B94 / "object " 0x00639BA0 + id), and the single-object no-op when the object has no
     /// ObjectInfo (cmp r7,end; beq 0x006399D8..0x006399E0): nothing is sent or stopped.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_EnableGameLayerOnlyLogsOnEntryAndASingleUnknownObjectIsANoOp()
     {
@@ -2191,6 +2269,7 @@ public class M4ControlTests
     /// (0x00639BA0 "object " + id) and is then a no-op; only id -1 is "all objects", so another negative id prints
     /// "object -5" and is looked up like any id.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_SetEnableFreeplayLightStatesLogsBeforeLookupForAnUnknownId()
     {
@@ -2220,6 +2299,7 @@ public class M4ControlTests
     /// (nested, then outer); were comp+0x22 cleared first the nested call would return at C13.4 and B is picked once.
     /// Each object is cleared and re-picked before the next: at A's pick B has not been picked yet.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_C13_1_DisableAllClearsAndRepicksEachObjectThenWritesComp22Last()
     {
@@ -2258,6 +2338,7 @@ public class M4ControlTests
     /// for id -1, ObjectInfo+0x1C == enable for a named object. A repeated SetEnableFreeplayLightStates with the same
     /// value therefore sends nothing, on either direction and on both paths.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_C13_4_ARepeatedEnableGameLayerOnlySendsNothing()
     {
@@ -2300,6 +2381,7 @@ public class M4ControlTests
     /// from BodyLightComponent.OffLights. Through SetLEDs with gamma 0x80 it is the solid off LED
     /// `00 00 00 00 45 45 00 00 00 00`, which the production enable=1 path puts on the wire.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_C12_1_TheStaticOffLightsAreTheCitedBytes()
     {
@@ -2343,6 +2425,7 @@ public class M4ControlTests
     /// cache; the sliding window's removal step uses N = the constant 100.0f, not the deque size, so 100 samples of
     /// 500 then one of 1500 give a variance of exactly 10000.0 (mean' = 500 + 1000/100, M2 = 1000*990, /99).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_SC4c_TheWelfordWindowUsesTheConstant100()
     {
@@ -2361,6 +2444,7 @@ public class M4ControlTests
     /// M4-019 SC4a S7: IncrementSuspiciousCliffCount returns while the cache is below 151; from 400 it stores 150
     /// and sends SetCliffDetectThreshold{150}, so a second call sends nothing.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_SC4a_IncrementSends150FromTheCache()
     {
@@ -2383,10 +2467,13 @@ public class M4ControlTests
     /// triggers IncrementSuspiciousCliffCount when the running variance is over 10000 and a sample exceeds min+15,
     /// sending 150 (from the cache of 400); +0x1C is then cleared.
     /// </summary>
+    // reach: unit (explicit history admission/query result fixtures; production join MISSING at M11-097).
     [Fact]
     public void M4_019_SC4b_TheSuspiciousWalkSends150()
     {
         using var rig = new Rig();
+        rig.Robot.Sensors.HistoryAdmissionForTest=_=>true;rig.Robot.Sensors.HistoryStatsGateForTest=_=>true; // M11-097 result fixtures.
+
         rig.ToSynced();
         rig.Calibrate();
         var s = rig.Robot.Sensors;
@@ -2416,6 +2503,7 @@ public class M4ControlTests
     /// M4-019 H1..H4 (tag 0xD4, 0x0053539C..0x00535480): H3 Evaluate stores the Robot's last state timestamp into
     /// +0x1C; H4 broadcasts RobotStopped only while the cliff sensor is enabled. Nothing is sent to the robot.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_H1_H4_RobotStoppedEvaluatesAndBroadcasts()
     {
@@ -2443,6 +2531,7 @@ public class M4ControlTests
     /// (0x0053546E) on the robot's own list, then broadcasts; with the sensor disabled none of the three happens. UpdateFullRobotState's
     /// DetectGyroDrift/DetectBias calls (0x00512FBA, 0x00512FC4, M10-015) are reported MISSING too, until a hook is set.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_019_H4_RobotStoppedCancelsTheActionsAndNamesTheUnbuiltCalls()
     {
@@ -2485,7 +2574,7 @@ public class M4ControlTests
             lock (missing)
             {
                 Assert.Contains(missing, m => m.StartsWith("MISSING: M8-019 HandleRobotStopped "));
-                Assert.Contains(missing, m => m.StartsWith("MISSING: M10-015/M11-051/M11-053 ") && m.Contains("history-add result / GetLastStateWithFrameID admission"));
+                Assert.Contains(missing, m => m.StartsWith("MISSING: M11-097 C12.4"));
             }
             await Task.WhenAny(head, Task.Delay(1000));
         }
@@ -2498,6 +2587,7 @@ public class M4ControlTests
     /// M4-003 MA12: on the game path, a lift height of exactly 32.0 mm while carrying runs PlaceObjectOnGroundAction
     /// instead of MoveLiftToHeight; any other height still sends SetLiftHeight.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_003_MA12_A32mmLiftWhileCarryingRunsPlaceObjectOnGround()
     {
@@ -2526,6 +2616,7 @@ public class M4ControlTests
     /// M4-012 MA20: a MotorCalibration that starts the lift invokes the SetCarriedObjectAsUnattached(true) seam; the
     /// head starting or the lift finishing does not.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_012_MA20_ALiftCalibrationWhileCarryingDetaches()
     {
@@ -2545,6 +2636,7 @@ public class M4ControlTests
     /// M4-009 CD10a: the carried-object exclusion suppresses the ObjectMoved broadcast (the manipulation layer wires
     /// the M12 CarryingComponent into this seam).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_009_CD10a_TheCarriedObjectIsExcludedFromTheMovedBroadcast()
     {
@@ -2566,6 +2658,7 @@ public class M4ControlTests
     /// the dock target ObjectID. It defaults to −1 (none), DockWithObject writes it, and AbortDocking does not
     /// reset it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_009_C11_1_DockWithObjectSetsAndAbortKeepsTheDockTarget()
     {
@@ -2588,6 +2681,7 @@ public class M4ControlTests
     /// M4-005 MA8: a direct SetHeadAngle outside M4 (the M11 face-turn path) takes the shared u8 counter, so its ids
     /// run 1, 2, ... instead of the fixed 3.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M4_005_MA8_TheDirectHeadSendSharesTheCounter()
     {
@@ -2616,6 +2710,7 @@ public class M4ControlTests
     /// own Update pops Sleep and SleepNoFade and leaves the still-running WakeUp on top. No game-message id is
     /// invented; the public API mirrors Robot.cs:2090.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_S1_S3_S4_S5_EnableCubeSleepPicksSleepAndStopsIt()
     {
@@ -2650,6 +2745,7 @@ public class M4ControlTests
     /// held while robot+0x2C4 is 0 and applied on the first Update after it returns to 1, re-picking the default
     /// layer for every object.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_S7_C11_2_TheDelocalizeRefreshWaitsForRelocalization()
     {
@@ -2682,6 +2778,7 @@ public class M4ControlTests
     /// reads that same flag. The only writer back to 1 here is a commit to OnTreads; SetLocalizedTo is M11 and
     /// not built.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_S7_TheDelocalizePathFeedsTheCubeLightGate()
     {
@@ -2722,6 +2819,7 @@ public class M4ControlTests
         finally { Directory.Delete(res, true); }
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_018_CheckedRefreshReadsTheSetLocalizedToOwner()
     {
@@ -2756,6 +2854,7 @@ public class M4ControlTests
     /// not already 400, and clears the window; a second call with the cache already at 400 sends nothing. The
     /// constructor's Delocalize runs it (M4-020 ConstructorDelocalize) with the cache at 400.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_SC4d_ClearCliffRunningStatsRestores400()
     {
@@ -2781,6 +2880,7 @@ public class M4ControlTests
     /// Delocalize, M4-020 ConstructorDelocalize) is wired to ClearCliffRunningStats. With the cache at 150 it restores
     /// 400 and sends 400.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_SC4d_TheDelocalizePathRestoresTheThreshold()
     {
@@ -2801,6 +2901,7 @@ public class M4ControlTests
     /// moves the drive centre by d·Δθ: 0 while carrying, and 40 mm for a π turn when not. The 400 follows the drive
     /// centre, not the robot origin.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_C7_TheDistanceIsZeroWhileCarrying()
     {
@@ -2824,10 +2925,13 @@ public class M4ControlTests
     /// frame-mismatch path while robot+0x2C0 &lt; 0x65; the 101st mismatch skips them. C12.3: the counter is
     /// per-mismatch-run, so the 101st also resets it to 0 (0x00512F88).
     /// </summary>
+    // reach: unit (explicit history admission/query result fixtures; production join MISSING at M11-097).
     [Fact]
     public void M4_019_S1_TheStatsRunForTheFirst100FrameMismatches()
     {
         using var rig = new Rig();
+        rig.Robot.Sensors.HistoryAdmissionForTest=_=>true;rig.Robot.Sensors.HistoryStatsGateForTest=_=>true; // M11-097 result fixtures.
+
         rig.ToSynced();
         rig.Calibrate();
         var s = rig.Robot.Sensors;
@@ -2851,6 +2955,7 @@ public class M4ControlTests
     /// M4-019 C12.3 (0x00512F1C, 0x00512EAE): robot+0x2C0 is per-mismatch-run. A frame-mismatched accepted state
     /// increments it; the next frame-matching state resets it to 0. (Origin-rejected states leave it untouched.)
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_C12_3_TheFrameMismatchCounterResetsOnAFrameMatch()
     {
@@ -2872,6 +2977,7 @@ public class M4ControlTests
     /// M4-019 C12.3 (0x00512F1C, 0x00512F88): a run of frame mismatches accumulates, the 101st (0x65) skips the
     /// stats and resets the counter, and the next mismatch starts a new run at 1.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_C12_3_TheFrameMismatchCounterResetsAfter0x65()
     {
@@ -2892,6 +2998,7 @@ public class M4ControlTests
     /// to the stats/threshold body at 0x512FB4, skipping the frame compare, the frame-match reset and the mismatch
     /// increment. The counter therefore stays 0 for the committing state, even though its frame id is mismatched.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_019_C13_2_TheTreadsChangeLeavesTheFrameMismatchCounterAtZero()
     {

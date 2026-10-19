@@ -64,6 +64,7 @@ public class EngineAppLayerTests
     // P2/P4/P5/P6: all five wire slots and ascending sends. Reply inputs below
     // drive the pool boundary explicitly: five identical unique types cannot coexist
     // in BlockWorld (M11-013), so this is not five world-object acceptance claims.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_010_AllFiveSlotsSendConnectAndRequestedDisconnectInOrder()
     {
@@ -97,6 +98,7 @@ public class EngineAppLayerTests
     }
 
     // P10: signed robot-clock delta, >=10001; expiry precedes requested connections (P11).
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Theory]
     [InlineData(11000u, true)]
     [InlineData(11001u, false)]
@@ -122,6 +124,7 @@ public class EngineAppLayerTests
     }
 
     // P12/P14/P17: enabled gate; f32 2s throttle and discovery >= start+duration; Enable sends nothing.
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_010_FilterEnableAndDiscoveryTimersUseInclusiveBoundaries()
     {
@@ -404,6 +407,7 @@ public class EngineAppLayerTests
     }
 
     // Native raw getline / %s argument: a UTF8 BOM is data, NUL terminates only the logged C string.
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void B11_PoolLoadUsesRawBytesAndParseErrorKeepsExactCStringBytes()
     {
@@ -423,6 +427,7 @@ public class EngineAppLayerTests
     }
 
     // Checked M4-011 Load 0061A2DC..0061A58E; Init through SetPhysicalRobot 00513954.
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_011_CheckedPoolGrammarAndFiveEntryBoundThroughFirmwareEntry()
     {
@@ -453,6 +458,7 @@ public class EngineAppLayerTests
     }
 
     // M4-011: order 00537ABC/00537C80; last-at-equal RSSI 00518314; save 0061B014.
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_011_CheckedRssiTieAndSaveThroughAdvertisementAndRobotTick()
     {
@@ -481,6 +487,7 @@ public class EngineAppLayerTests
     }
 
     // 0x0061AD04 / 0x0061AD5E error text and errG gates. Success is covered through the live tick above.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B9_PersistentPoolDuplicateAndFullErrorsSetTheFlagAfterTheSourceEntry()
     {
@@ -509,6 +516,7 @@ public class EngineAppLayerTests
     }
 
     // M4-010 ConnectToRequestedObjects 00514A70..00514C46 and matching connect/disconnect receivers.
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_010_CheckedPendingRequestWaitsForAdvertisementThenSendsSlot()
     {
@@ -547,6 +555,7 @@ public class EngineAppLayerTests
     /// P1 (0x00517426..0x00517434), P3..P5 (0x00514B36, 0x00514B84, 0x00514C04), P6 (0x005179F2..0x00517ADE), P7 (0x00517BF0..0x00517CE0) and P9
     /// (0x005149AA..0x005149CA): the slot-state diagnostics, in the engine's order and with its arguments.
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_010_P1_P7_P9_TheSlotPathLogsWhatTheEngineLogs()
     {
@@ -612,6 +621,7 @@ public class EngineAppLayerTests
     /// P5 (0x00514C04..0x00514C0E): a request of 0 for a held slot logs "Sending ... factory ID = %d" (0) before the message; P3 (0x00514B2C..0x00514B3C): a
     /// request for a second cube of a type already connected warns, clears the request, and still sends (with the cleared id 0).
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_010_P3_P5_TheDuplicateTypeWarningAndTheEmptyingSendLogThemselves()
     {
@@ -648,6 +658,7 @@ public class EngineAppLayerTests
     /// kObjectTypes order {1, 2, 3}, "Discovered closer object 0x%x" for each candidate, then "Connecting to discovered objects" before the pool is
     /// filled, then SendBlockPoolData's info precedes the external-interface message.
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_010_P14_P27_TheDiscoveryDiagnosticsFollowTheTypeOrder()
     {
@@ -697,6 +708,7 @@ public class EngineAppLayerTests
     /// P15 and P27 (0x0061AAE6..0x0061AB4A): a pooled cube no slot holds is looked up ("Looking for a replacement for object 0x%x of type %s"), and a closer
     /// advertiser of its type that is a different cube is announced ("Found replacement object 0x%x") before the pool is requested again.
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_010_P15_P27_TheReplacementDiagnosticsNameThePooledCubeAndTheCandidate()
     {
@@ -722,6 +734,7 @@ public class EngineAppLayerTests
     }
 
     // P12/P15/P17: replacement uses >= enable+5, after the two-second update gate; runtime replacement does not Save.
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_010_PoolReplacementAtFiveSecondsSendsWithoutChangingPersistentPool()
     {
@@ -1703,6 +1716,7 @@ public class EngineAppLayerTests
     /// only from Robot::SetPhysicalRobot(true), i.e. only when the firmware JSON has no "sim"; it is not an app
     /// default, and a simulated robot never loads the pool.
     /// </summary>
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void M4_011_BlockFilterInitRunsFromSetPhysicalRobotNotTheAppDefaults()
     {
@@ -2581,6 +2595,7 @@ public class EngineAppLayerTests
     /// 0x0065258E) — equals, field for field, the same device of a newly constructed robot. The objects are the same ones
     /// callers held before. VisionSystem.Enabled is a caller's switch and is kept.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed()
     {

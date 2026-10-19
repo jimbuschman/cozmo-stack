@@ -944,6 +944,7 @@ public class CoreReviewTests
     /// CORE-008, the exception the source names: what the robot is holding moves into the new origin rather than being forgotten (<c>BlockWorld::UpdateObjectOrigin</c> per carried object at
     /// 0x00510CF0), here at the engine's trigger, the tread boundary.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CORE008_ACarriedObjectSurvivesTheTreadsBoundaryDelocalization()
     {

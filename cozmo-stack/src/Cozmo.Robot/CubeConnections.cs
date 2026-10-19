@@ -731,10 +731,13 @@ public sealed class CubeConnections
     /// </summary>
     private void Save()
     {
+        // fidelity: M4-043
         if (_poolPath.Length == 0) return;
         try
         {
-            if (_persistentPool.All(p => p.FactoryId == 0) && File.Exists(_poolPath)) File.Delete(_poolPath);
+            // Native remove 0x0061B068 ignores failure and still attempts the truncating write.
+            if (_persistentPool.All(p => p.FactoryId == 0) && File.Exists(_poolPath))
+                try { File.Delete(_poolPath); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
             using var writer = new StreamWriter(_poolPath, append: false, new System.Text.UTF8Encoding(false));
             foreach (var (factoryId, type) in _persistentPool)
                 if (factoryId != 0)

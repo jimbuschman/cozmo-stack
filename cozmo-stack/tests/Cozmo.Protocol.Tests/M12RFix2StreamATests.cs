@@ -31,6 +31,7 @@ public class M12RFix2StreamATests
     /// double 0.698132 (0x3F32B8C7). Through <see cref="BlockWorld.ClampPoseToFlat"/>, the function the error signal calls: a tilt of one binary32 step below the constant is
     /// snapped flat, one step above it is left as it is (the old decimal would have snapped it).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_019_TheErrorSignalClampIsTheBinary32FortyDegrees()
     {
@@ -50,6 +51,7 @@ public class M12RFix2StreamATests
     /// M12-001, Block::GeneratePreActionPoses: the Flipping corner is binary32 0x42624EEF (rodata 0x004E5C60 added to size.x * 0.5f with vmul.f32 / vadd.f32 at
     /// 0x004E592C/0x004E5934; the Y is the movw/movt 0xC2624EEF at 0x004E5CB2..0x004E5CBC), not the double 56.5771 (0x42624EF3).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_001_TheFlippingCornerIsTheBinary32AtTheEnginesAddress()
     {
@@ -65,6 +67,7 @@ public class M12RFix2StreamATests
     /// M12-001, ComputePreActionPoseDistThreshold 0x00550098: the arithmetic is binary32 (vmul.f32 0x0055010A / 0x00550118, vadd.f32 0x0055011C, vsqrt.f32 0x00550122, sinf
     /// 0x00550140, vmul.f32 0x0055014E, vadd.f32 0x00550164). A relative translation of (30, 40, 12) and a tolerance of 0.5 rad, emulated in float.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_001_TheThresholdIsComputedInBinary32()
     {
@@ -87,6 +90,7 @@ public class M12RFix2StreamATests
     /// M5-005 / M5-017: <c>SetSeed(0)</c> reads the entropy word ONCE (0x0082F898 <c>blx 0x4CCEA8</c>) and seeds mt19937 with it even when it is zero
     /// (0x0082F89C <c>mov r5, r0</c> straight into the loop at 0x0082F8A4..0x0082F8C4). The standard mt19937 seeded 0 starts 2357136044; seeded 5489 it starts 3499211612, 581869302.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M5_005_SeedZeroTakesOneEntropyWordAndUsesItEvenWhenItIsZero()
     {
@@ -98,6 +102,7 @@ public class M12RFix2StreamATests
         Assert.Equal(1, reads);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M5_017_ANonzeroEntropyWordIsTheSeedAndANonzeroSeedReadsNone()
     {
@@ -116,6 +121,7 @@ public class M12RFix2StreamATests
     /// M12-002, PathComponent::ExecutePath 0x0064A3C2..0x0064A3CA: <c>ldrh r1,[r4,#0x42]; adds r1,#1; strh r1,[r4,#0x42]</c>, a plain u16 increment with no zero case, so the path
     /// id after 0xFFFF is 0 (and the ExecutePath message carries it) and then 1.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_002_ThePathIdWrapsFromFFFFToZero()
     {
@@ -151,6 +157,7 @@ public class M12RFix2StreamATests
     /// while now &lt;= stamp + 500 (the boundary itself included), and past it the pick-up has failed (0x00553CAA: SetCarriedObjectAsUnattached(true), Retry result).
     /// Driven through the action, with the robot's state timestamps as the clock.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_007_AStillMovingObjectKeepsVerifyRunningUntilTheAllowanceThenFails()
     {
@@ -207,6 +214,7 @@ public class M12RFix2StreamATests
     /// M12-007, Verify's order: byte [[+0xCC]+5] (didSucceed, 0x00553C06) is 0 -> the moving/seen-recently block (0x00553C72..0x00553D70) is skipped (branch to 0x00553D72), and the carry check
     /// (0x00553DE4, 0x00553FC8) returns 0x04000005. A failed dock of a cube that reports itself moving is therefore 0x04000005, not ObjectStillMoving, and never 0x04000000.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_007_AFailedDockSkipsTheMovingBlockAndEndsAtTheCarryCheck()
     {
@@ -228,6 +236,7 @@ public class M12RFix2StreamATests
     /// M12-017, IDockAction::Init registers the 0xC5 handler (0x005516EA) and the 0xDA handler (0x00551750) for the action: with no dock action there is no handler, so
     /// MovingLiftPostDock and LiftLoad reach nobody. (The old code subscribed once for the DockingSystem's lifetime and raised MovingLiftPostDock(false) with no action at all.)
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_017_WithNoDockActionTheLiftMessagesHaveNoHandler()
     {
@@ -253,6 +262,7 @@ public class M12RFix2StreamATests
     /// M12-017, IDockAction::CheckIfDone 0x005521AC: DockWithObject is called first (0x005522AE) and AddSquint(.., "DockSquint", ..) only after it, on the started-docking branch
     /// (0x00552394). Through the action: when the dock message is logged the squint layer does not exist yet; after the dock it does, and the action recorded the add.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_017_TheDockSquintIsAddedAfterDockWithObjectNotBefore()
     {
@@ -313,6 +323,7 @@ public class M12RFix2StreamATests
     /// (0x00547268, `it ge; addge r1,#4` 0x00547174). The block is built only when the carried id is set (gate 0x005C818C..0x005C8194); in the live flow (InitInternal 0x005C7FD0:
     /// drive, 0x19A animation, StartActing(LookDownAtBlock)) it still is, and the release (0x005C8480..0x005C84CE) comes after the look-after-place action ends.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_012_WithACarriedObjectTheLookAfterPlaceBuildsHeadAndAMinusEightyDrive()
     {
@@ -343,6 +354,7 @@ public class M12RFix2StreamATests
     }
 
     /// <summary>M15-012 gate: with no carried object (-1 at [[robot+0x284]+8]) `beq 0x005C8264` skips the head+drive parallel and the WaitForImagesAction; only the keep-alive remains.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_012_WithNoCarriedObjectOnlyTheKeepAliveRemains()
     {
@@ -368,6 +380,7 @@ public class M12RFix2StreamATests
     /// M15-012: the look-after-place sequential compound adds the parallel with ignoreFailure = 0 (0x005C8220), so a failed child ends the parallel at once with its failure
     /// (0x0054FB36..0x0054FBCC) and CompoundActionSequential::UpdateInternal 0x0054F70C returns it: the image wait and the keep-alive do not run. The path component reports Failed (P3/P30).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_012_AFailedLookDownDriveEndsTheCompoundBeforeTheImageWaitAndTheKeepAlive()
     {

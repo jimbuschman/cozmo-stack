@@ -105,6 +105,7 @@ public class M3M4X10BuilderTests : IDisposable
     }
 
     // Native queue/warn/store 0x006B229C..0x006B230C, plus the adopted callback isolation rule.
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task CameraConcurrentRequestsProduceOneWarningForTheActualPredecessor()
     {

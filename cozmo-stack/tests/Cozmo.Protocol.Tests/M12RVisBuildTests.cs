@@ -27,6 +27,7 @@ public class M12RVisBuildTests
     /// (0x005500EE..0x005500F4) and the THREE-D norm (0x00550102..0x00550122); out0 = 2*d*sin(tol) (0x005501A4), out1 = d*sin(tol) (0x005501A8).
     /// The goal comes first and the object second (0x0055ACF0, 0x005561A0, 0x00550FF8).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_020_TheThresholdIsTheThreeDimensionalNormOfTheObjectInTheGoalsFrame()
     {
@@ -50,6 +51,7 @@ public class M12RVisBuildTests
     /// M12-022: the 7-arg ctor 0x0055850C stores the ActionType argument at +0x80 and -1.0 at +0x84 (0x005585A0, r1 = 0xBF800000); the 4-arg
     /// ctor 0x005587B8 stores 6 at +0x80 (0x0055883C) and the float at +0x84 (0x0055884C); +0x148 = 1 from both (inventory G3.9, row 11.1).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_022_TheSevenArgAndFourArgConstructorsDifferInActionTypeAndDistance()
     {
@@ -74,6 +76,7 @@ public class M12RVisBuildTests
     /// ActionType 0 (0x0052A0C4..0x0052A0DA); clear builds the 4-arg ctor with distance [msg+0x30] and useManualSpeed [msg+0x34]
     /// (0x0052A0E0..0x0052A0EE).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_022_TheGotoObjectFactoryPicksTheConstructorByUsePreDockPose()
     {
@@ -90,6 +93,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-022: DriveToPlaceCarriedObjectAction ctor 0x00559CD4: r2 = 1, then 2 when r3 != 0 (0x00559CDE/0x00559CE4/0x00559CE8); its only caller passes 1 (0x00554B40/0x00554B42).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_022_DriveToPlaceCarriedObjectPassesActionTypeTwo()
     {
@@ -103,6 +107,7 @@ public class M12RVisBuildTests
     /// delta = (-200, -100)/223.6068 * 100 = (-89.4427, -44.7214); goal = (110.5573, 55.2786, 5); yaw = atan2(44.7214, 89.4427) = 0.4636476.
     /// A robot closer to the object than +0x84 needs no goal (0x005591C2..0x005591D6).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_022_TheObjectDeltaGoalIsBuiltFromTheObjectTheRobotAndTheDistance()
     {
@@ -120,6 +125,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-022 end to end: the type-6 drive sends a path to the object+delta goal, 150 mm short of a cube 300 mm ahead.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_022_TheTypeSixDriveGoesToThePointShortOfTheObject()
     {
@@ -142,6 +148,7 @@ public class M12RVisBuildTests
     // ------------------------------------------------------------------ M12-011
 
     /// <summary>M12-011, CheckIfDone 0x00559880: +0x148 == 0 returns 0 before the object lookup (0x0055989C).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_011_ACheckAtEndOfZeroReturnsSuccessBeforeLookingForTheObject()
     {
@@ -152,6 +159,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-011: an object that is not located is BadObject 0x03000004 (0x005598B6 + 0x005598BA).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_011_AMissingObjectIsBadObject()
     {
@@ -165,6 +173,7 @@ public class M12RVisBuildTests
     /// M12-011, ActionType 6 (0x00559998..0x005599FE): the robot-to-object XY distance squared against +0x84 squared; beyond it the result is
     /// 0x04000001; within it 0. The cube is at (300, 0): a robot at x=160 is 140 away of 150, a robot at x=100 is 200 away.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_011_TypeSixComparesTheDistanceToTheObjectOriginAgainstPlus0x84()
     {
@@ -184,6 +193,7 @@ public class M12RVisBuildTests
     /// M12-011, the production path 0x00559A86..0x00559AE6: every other ActionType calls the +0x150 function with a bool&amp; in-position flag
     /// (0x00559A9C); flag 0 gives 0x04000001 (0x00559AE4), otherwise the function's result is returned (0x00559AE6).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_011_TheProductionPathReadsTheInPositionFlagOfThePosesFunction()
     {
@@ -225,6 +235,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-023, 0x0055AB5C..0x0055AB6A and 0x0055AB74: [[robot+0x24C]] == 3, or a path status above 4, returns RUNNING 0x01000000.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_TheEntryGatesReturnRunning()
     {
@@ -240,6 +251,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-023, state 0 Failed (0x0055AB8E..0x0055ABDA): [+0xB0] = -1.0, result 0x03000013, no end animation.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_FailedIsPathPlanningFailedWithNoEndAnimation()
     {
@@ -255,6 +267,7 @@ public class M12RVisBuildTests
     /// M12-023, state 1 ComputingPath (0x0055ABDC..0x0055AD6A): an unset deadline becomes now + [+0xA8] (4.0, inventory G3.9) and returns RUNNING; before
     /// the deadline RUNNING; at or after it PathComponent::Abort (0x0055AD5C), [+0xB0] = -1.0 and 0x03000013 with no end animation.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_ComputingPathTimesOutAfterFourSecondsByAbortingThePath()
     {
@@ -272,6 +285,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-023: state 2 WaitingToBeginPath returns RUNNING (0x0055B0CE); state 3 FollowingPath calls PlayStartAnim (0x0055AC08), sets [+0xB0] = -1.0 and increments [+0xC4], RUNNING.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_WaitingReturnsRunningAndFollowingPlaysTheStartAnimation()
     {
@@ -293,6 +307,7 @@ public class M12RVisBuildTests
     /// on the full pose with Radians [+0x9C] = 0.174533; true gives 0; the tail (0x0055B0AA..0x0055B0CC) then calls PlayEndAnim and a non-zero return
     /// keeps RUNNING.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_ReadyAtTheGoalIsSuccessAndTheEndAnimationCanKeepItRunning()
     {
@@ -312,6 +327,7 @@ public class M12RVisBuildTests
     /// M12-023, not at the goal (0x0055AEC2..0x0055B0A6): equal path ids give 0x04000002 (string DoneNotInPlace, 0x0055B056); different ids keep the
     /// initial 0x03000008, which is neither RUNNING nor 0x03000013, so the end animation is still asked.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_NotAtTheGoalIsFailedTraversingOrTheInitialResultByThePathIds()
     {
@@ -328,6 +344,7 @@ public class M12RVisBuildTests
     /// (0x0055ACF0, 0x0055ACF4 ldrd), z stays Robot::GetHeight. Goal (100, 0, 0), object (200, 0, 22): d = sqrt(100^2 + 22^2) = 102.4109,
     /// out1 = d*sin(0.174533) = 17.7856, out0 = 35.5712. The robot 30 mm off in x is inside, 20 mm off in y is outside.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_TheThresholdPairReplacesTheXAndYTolerance()
     {
@@ -344,6 +361,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-023, GoalIndex: goals[idx] with stride 12 (0x0055ACCE..0x0055ACEA) is the goal tested.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_023_TheGoalTestedIsGoalsAtTheIndex()
     {
@@ -357,6 +375,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>D3/H1/H3: a checked NoAnimation triplet initializes the REAL shared handler and completes without an end action.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_024_RealHandlerInitAndNoAnimationTailDoNotFabricateAbort()
     {
@@ -368,6 +387,7 @@ public class M12RVisBuildTests
         Assert.Equal(ActionResult.Success,d.CheckIfDone(Tick(4,robot:At(100,0))));
     }
     /// <summary>The live task uses the same source CheckIfDone tail on the ActionList; the explicit geometry fixture supplies path inputs.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_024_TheLivePathReturnsSuccessThroughTheEndLifecycle()
     {
@@ -383,6 +403,7 @@ public class M12RVisBuildTests
     /// <summary>
     /// M12-025, ctor 0x00554BE0: A -> +0x108, B -> +0x10C, r3 -> +0xA8, ctor bool -> +0x110, +0xFC = -1, +0x100 = 0, +0xC0 = 0, +0xF0 = 0x208 or 0x209 if r3 != 0.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_TheConstructorStoresItsArguments()
     {
@@ -403,6 +424,7 @@ public class M12RVisBuildTests
     /// M12-025, 0x00554C86..0x00554CDE (verifier A4): +0xB9 is cleared, with the log PlaceRelObjectAction.Constructor.WillNotCheckPreDockPoses, when |A| >= 9.99999975e-06
     /// OR |B| >= 9.99999975e-06; when both are below it the store is skipped.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0.0, 0.0, true)]
     [InlineData(9.0e-06, -9.0e-06, true)]
@@ -422,6 +444,7 @@ public class M12RVisBuildTests
     /// M12-025, the wire factory (0x0052A72E..0x0052A754), usePreDockPose false: PlaceRelObjectAction(robot, id, true, A = [msg+0x30], B = 0.0, [msg+0x3A], true),
     /// then 1 at +0xF7 and 0 at +0xB9. usePreDockPose true builds DriveToPlaceRelObjectAction, which this stack does not have: NotSupportedException.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_TheWireRoutes()
     {
@@ -440,6 +463,7 @@ public class M12RVisBuildTests
     /// <summary>
     /// M12-025, InitInternal 0x00554DCC: with +0x110 set the transform is skipped (result 0) and +0x9C = A' (0.0 if A' &lt; -16.000009), +0xA0 = B'; +0xBB = 3 when |B'| &gt;= eps (B' is 5 here; the post-transform rule is M12_025_TheBBTestReadsThePostTransformB).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_InitInternalSkipsTheTransformAndStoresTheOffsets()
     {
@@ -464,6 +488,7 @@ public class M12RVisBuildTests
     /// the robot) within 0.2617994 of 0: (A', B') = (-A, B); of +pi/2: (B, A); of -pi/2: (-B, -A); of +-pi: (A, -B); none: 0x04000001; A' &lt; -16.000009: 0x03000000.
     /// A = 10, B = 5. The queries are inputs: their engine bodies are MISSING.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0.0, -10.0, 5.0)]
     [InlineData(0.2, -10.0, 5.0)]
@@ -484,6 +509,7 @@ public class M12RVisBuildTests
         Assert.Equal(expectB, act.OffsetB, 9);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_TheTransformFailuresHaveTheirOwnResults()
     {
@@ -519,6 +545,7 @@ public class M12RVisBuildTests
     /// zero offsets the shift is zero and the pose is unchanged (12.15). alreadyInPosition (12.16/12.17) is set when the robot is within {out0, out1, 100.0}
     /// of a kept element by Radians 0x3E060A92.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_ZeroOffsetsKeepEveryPoseAndFlagTheRobotAtOne()
     {
@@ -537,6 +564,7 @@ public class M12RVisBuildTests
     /// M12-026, row 12.10 size condition and the (0,1) case: B = 30, A = 0 over [E1, E4]. E1 (y = 0): r7 = 0, r8 = 0: kept. E4 (y = +97): B and y agree, r7 = 1, r8 = 0,
     /// |x| = 0 &lt;= 1 but only two poses remain, so it is kept ("size >= 3"). With a third pose it is erased.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_TheAlignedPoseIsKeptWhenFewerThanThreePosesRemain()
     {
@@ -555,6 +583,7 @@ public class M12RVisBuildTests
     /// <summary>
     /// M12-026, rows 12.12/12.13: a closest-marker query that fails or a marker count other than one erases the pose with no size condition; an empty result is 0x03000010 (12.18).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_AFailedMarkerQueryErasesThePose()
     {
@@ -570,6 +599,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-026, IsAtPreActionPoseWithVisualVerification 0x005B6F5C: missing object 0x03000004; [obj+0x1C] + 1000.0 &lt; now gives 0x0300001D (0x005B7022).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_IsAtPreActionPoseWithVisualVerificationResults()
     {
@@ -588,6 +618,7 @@ public class M12RVisBuildTests
     /// x = 200 - 0.9695*(89.7385 + 53) = 61.61, d to the object 142.74, thresholds (37.3, 18.6): |dx| 1.6 inside, yaw 0: in position, 0. Robot (-20, 0): b = 75, pose x = 40.29,
     /// d = 164.74, t0 = 42.9 &lt; |dx| 60.29: the byte is 0, so 0x04000001. A carried object is the non-zero 0x03000004 (M12-031 10.1) and no pose left is 0x03000010.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_IsAtPreActionPoseWithVisualVerificationMapsTheInPositionByteForNonPlaceTypes()
     {
@@ -605,6 +636,7 @@ public class M12RVisBuildTests
     // ------------------------------------------------------------------ M12-008
 
     /// <summary>M12-008 step 6 (0x00632E3E..0x00632E9E): x = L + 4.0 with L the THREE-D length of the marker translation, y = 0, z = -12.5; the rotation is kept.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_TheObjectOnLiftUsesTheThreeDimensionalMarkerNormAndKeepsTheRotation()
     {
@@ -620,6 +652,7 @@ public class M12RVisBuildTests
     private static uint Attach(Rig rig, uint? id, MarkerType code) => rig.M.Docking.SetObjectAsAttachedToLift(id, code);
 
     /// <summary>M12-008 steps 1-4: no id, already carrying, a missing object and a marker the object does not have each return 1 without changing what is carried.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_TheEarlyStepsReturnOneAndAttachNothing()
     {
@@ -642,6 +675,7 @@ public class M12RVisBuildTests
     /// (AddLiftRelativeObservation 0x00506E5C, PoseState 1) with confirmation count 1 (0x00506ECC), and the BlockConfigurationManager dirty flag is set
     /// (0x006331B2..0x006331BC). The lift pose is the pivot (-41, 0, 45) plus the 66 mm arm swung by the lift angle (0x0050FFE0, 0x00510038).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_ThePickedUpObjectHangsAtThePointBelowThePlateWithItsRotationKept()
     {
@@ -673,6 +707,7 @@ public class M12RVisBuildTests
     /// M12-008 step 8: a cube resting on the carried one (found with tolerance 15.0, onTop) is given AddObjectRelativeObservation (PoseState 2 Dirty, 0x00506D30..0x00506D3E),
     /// this+0x14 is its id, and it is parented to the carried object (SetParent 0x00633006..0x00633010), so it moves with it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_ACubeOnTopIsRecordedDirtyAndFollowsTheCarriedOne()
     {
@@ -724,6 +759,7 @@ public class M12RVisBuildTests
     /// M12-033, Radians::rescale 0x0084C87C (research Q3.1): the range is (-pi, pi]; Radians(4.712389) "becomes about -1.570796"; -pi (the float 0xC0490FDB) becomes
     /// +pi; NaN passes through.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_033_RescaleKeepsAngleInMinusPiToPi()
     {
@@ -738,6 +774,7 @@ public class M12RVisBuildTests
     /// M12-033, Radians::IsNear 0x0084CC0A (research Q3.2): <c>|rescale(this - other)| &lt; |tol|</c>, STRICT (0x0084CC4E vcmpe, 0x0084CC56 movmi), wrap-aware, the
     /// tolerance's sign ignored, NaN false.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_033_IsNearIsStrictWrapAwareAndIgnoresTheToleranceSign()
     {
@@ -753,6 +790,7 @@ public class M12RVisBuildTests
     /// <c>atan2f(-R01, R11)</c>. R00 = 0.1, R10 = 0.2 (sum 0.05), R01 = -0.6, R11 = 0.8 (sum 1.0): the second branch, atan2(0.6, 0.8) = 0.6435011, not
     /// atan2(0.2, 0.1) = 1.1071487.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_033_GetAngleAroundZaxisPicksTheBetterConditionedPair()
     {
@@ -767,6 +805,7 @@ public class M12RVisBuildTests
     /// result Pose3d(yaw, Z_AXIS, T); f = 0 is the centre height, 0.5 the top face; roll and pitch are dropped. A cube at (100, 50, 22) yawed 0.3 and pitched 0.1
     /// (44 mm on every axis): f = 0.5 gives z = 22 + 44 * 0.5 = 44, f = 0 gives 22; yaw 0.3, x, y unchanged, rotation flat.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_033_TheZRotatedPointKeepsXyAndYawAndAddsTheExtentTimesF()
     {
@@ -785,6 +824,7 @@ public class M12RVisBuildTests
     /// planar, the top face (0, 0, 44) and the bottom face (0, 0, 0) both have d^2 = 0 and the side faces 22^2 = 484, so the FIRST of the two in the marker list wins
     /// (strictly smaller); 3-D, the top face is 56 away, the bottom 100 and the sides sqrt(22^2 + 78^2) = 81, so the top face wins.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_033_TheClosestMarkerIsPlanarOrThreeDimensionalAndStrictlySmaller()
     {
@@ -804,6 +844,7 @@ public class M12RVisBuildTests
     /// <summary>
     /// M12-031, GetPreActionPoses 0x005508C8 (research 10.1): a null object, and an object the robot is carrying, are 0x03000004 (0x005508F0..0x0055096A).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_ANullOrCarriedObjectIsBadObject()
     {
@@ -814,6 +855,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-031 (research 10.5): no pose left is 0x03000010; the Entry type (3) generates none (M12-001).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_NoPosesIsNoPreActionPoses()
     {
@@ -825,6 +867,7 @@ public class M12RVisBuildTests
     /// M12-031 approach-angle filter (research 10.4, literal 0x00550DC4 = 0x3F490F33 = 0.785388): only with useApproachAngle, a pose whose wrap-aware
     /// |yaw - approachAngle| is &gt;= 0.785388 is erased. The Front pose's own yaw as the angle keeps it (difference 0); 0.78 away keeps it; 0.79 away erases it.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_TheApproachAngleFilterErasesAtOrBeyondPointSevenEightFive()
     {
@@ -847,6 +890,7 @@ public class M12RVisBuildTests
     /// M12-031 closest pose (research 10.6): PLANAR strictly-smaller squared distance from FLT_MAX (0x00550DC8), so two poses at the same x, y keep the first even when
     /// the second is nearer in z. Poses at (100, 0, -18) and (100, 0, 4); the robot at (0, 0, 0): the second is nearer in 3-D (4 against 18), the first wins.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_TheClosestPoseIsPlanarAndTheFirstWinsATie()
     {
@@ -863,6 +907,7 @@ public class M12RVisBuildTests
     /// Robot (25, 0): outside the box: flag A clear gives 0 with the byte 0, flag A set 0x04000001 (the "too far" log). Robot (15, 0) at yaw exactly 0.1: the angle test
     /// (0.1 &lt; 0.1 - 1e-5) fails, byte 0, result 0 -- a failed angle test never gives 0x04000001. Tolerance 0: the guard writes the -1.0 pair, result 0, byte 0.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_TheInPositionByteAndTheTooFarResult()
     {
@@ -891,6 +936,7 @@ public class M12RVisBuildTests
     /// (not just the closest); the in-position flag is the byte at out+0x1C. Cube (200, 0), robot (60, 0) facing +x: the Front docking pose is within the threshold pair
     /// (d ~ 160, so 2 d sin 7.5 deg = 42 and d sin 7.5 deg = 21 mm), in position; the robot at (-20, 0) is 60 mm from it in x, outside 42: not in position.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_029_TheDefaultFunctionReturnsEveryPoseAndTheInPositionByte()
     {
@@ -926,6 +972,7 @@ public class M12RVisBuildTests
     /// erased and the same index is tested again; true if any was erased. Match (0, 0): (0, 0) and (50, 50) go, and so does a second copy of (0, 0) right behind the first;
     /// (150, 0) (150 &gt; 100), (0, 0) with dz = 101 and (0, 0) yawed 0.6 (&gt; 0.5236) stay.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_029_RemoveMatchingPredockPoseErasesEveryMatchInPlace()
     {
@@ -945,6 +992,7 @@ public class M12RVisBuildTests
     /// M12-029, the DriveToHelper functor 0x005B61A2: GetPossiblePoses, then (result 0) RemoveMatchingPredockPose and the in-position flag cleared when it removed
     /// something. The robot is in position at the Front pose; excluding the Front pose itself leaves the flag false and the Front pose gone.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_029_TheDriveToHelperFunctorRemovesTheMatchAndClearsInPosition()
     {
@@ -971,6 +1019,7 @@ public class M12RVisBuildTests
     // ------------------------------------------------------------------ M12-030
 
     /// <summary>M12-030, ctor 0x00559CD4 (research 13.1): the base type is 2 when the first bool is set (production), else 1; the remaining arguments are stored.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_030_TheConstructorPicksActionTypeTwoOrOne()
     {
@@ -993,6 +1042,7 @@ public class M12RVisBuildTests
     /// 0x03000000) and the pre-action check requested: the robot far from every pose gets 0x04000001 (step 4 returns first); the robot standing on a pose gets the
     /// 0x03000000 from InitInternal. Nothing is docked either time.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_017_InitInternalRunsAfterThePreActionCheck()
     {
@@ -1021,6 +1071,7 @@ public class M12RVisBuildTests
     /// otherwise, if CanStackOnTopOfObject, DockAction 2 (PlaceHigh) and +0xBB = 0; otherwise 0x03000004. A cube on top of another (centre z = 66 &gt; 0.5 * 44 + 15 + 1e-5, IsPoseTooHigh
     /// 0x00877954) cannot be stacked on.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_017_SelectDockActionForAPlaceRel()
     {
@@ -1056,6 +1107,7 @@ public class M12RVisBuildTests
     /// +0x95 [18], +0xBA [19], +0xBB [20], +0xC1 [21] (the tag byte is [0]). Run twice on one action: the second Init's SelectDockAction stores 0 again before InitInternal, so a
     /// B that has dropped to 0 leaves +0xBB at 0, not at the stale 3.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_005_ThePlaceDockCarriesPlus0xBBAndPlus0x95()
     {
@@ -1085,6 +1137,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-005, the writers other than PlaceRel: RollObjectAction stores 0 in +0xBB (0x005565D6) and DockAction 5 in +0x80 (0x005565DC): byte 4 = 5, byte 7 = 0; PickupObjectAction writes 2 (0x005536EA).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_005_RollWritesZeroAndPickupWritesTwoInPlus0xBB()
     {
@@ -1110,6 +1163,7 @@ public class M12RVisBuildTests
     /// M12-017 step 8 with [+0xB9] (research 6.8): the dock marker is the closest pre-action pose's marker and the log "Robot is within (%.1f,%.1f) of the nearest pre-action
     /// pose, proceeding with docking." is written. A robot at (60, 0) facing a cube at (200, 0) is nearest the Front pose, whose marker is the Front face (marker at -x).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_017_TheDockMarkerIsTheClosestPreActionPosesMarker()
     {
@@ -1130,6 +1184,7 @@ public class M12RVisBuildTests
     /// (0, 10) so +0xBB = 3 although B = 0; with psi ~ 0 (A', B') = (-A, B) = (-10, 0) and +0xBB stays 0 although A != 0. The test is movpl (0x00554E10/0x00554E12), so a NaN B' also
     /// sets 3.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_TheBBTestReadsThePostTransformB()
     {
@@ -1153,6 +1208,7 @@ public class M12RVisBuildTests
     /// M12-025, the transform's three psi compares are raw STRICT compares against 0x3E860A92 (0x00554EC8..0x00554ED8, 0x00554F0A..0x00554F12, 0x00554F38..0x00554F40): a
     /// difference equal to the tolerance is not near, one just under it is; NaN is near nothing (vcmpe unordered, bpl taken). The four windows follow from that on either side.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_TheAlignmentCompareIsStrict()
     {
@@ -1164,6 +1220,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-025 with the engine's own queries (M12-033): a cube observed near yaw 0 gives (A', B') = (-A, B) = (-10, 5) (psi within 15 degrees of 0).</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_TheTransformWorksWithTheEnginesQueries()
     {
@@ -1190,6 +1247,7 @@ public class M12RVisBuildTests
     /// (M12-021, size 25.0f). E3/E4 have |y| = 97, o = B = 0: s4 = 97, minDist = 25/0.8 = 31.25, W = 97*0.8 - 25 = 52.6, W &gt; 20 so W - 20 = 32.6 (0x005560C8); A = 50 clamps to 32.6
     /// (a rows/fy mapping would leave 50, no width reduction 50 too). E1 (same-sign x, y = 0, three poses left) and E2 (sign mismatch) are erased.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_TheCameraFieldsAndTheTwentyMillimetreReductionGiveTheClampedShift()
     {
@@ -1205,6 +1263,7 @@ public class M12RVisBuildTests
     /// M12-026 row 12.12 (research Q4.4): s4 &lt; minDist = width / t is 'InvalidDistance' and the pose is erased. With t = 0.8 and width 25 the limit is 31.25: a pose 30 out is erased (s4 = 30),
     /// one 32 out is kept (s4 = 32, W = 32*0.8 - 25 = 0.6, no reduction as 0.6 &lt; 20, and A = B = 0 leave it where it is).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_ThePoseIsErasedBelowWidthOverT()
     {
@@ -1221,6 +1280,7 @@ public class M12RVisBuildTests
     /// so is one 0.03 from -pi/2 (Radians(4.712389) rescales to about -pi/2); 0.04 from +pi/2 is not (mode 0: dx = A, dy = clamp(B, -W, W)). Pose at (0, -97), A = 50, B = 0, t = 0.8: mode 1 gives x = 32.6
     /// (W = 97 * 0.8 - 25 - 20); mode 0 has s4 = A + |x| = 50, W = 50 * 0.8 - 25 = 15, so x = A = 50 and y = clamp(0) = 0.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_TheFacingTestIsStrictAndWrapAware()
     {
@@ -1240,6 +1300,7 @@ public class M12RVisBuildTests
     /// M12-026 request (research Q4.7, Q4.8): GetPreActionPoses(ActionType 1, flag A 0); a non-zero result (the object is carried: 0x03000004) leaves the vector empty and the exit returns
     /// 0x03000010, not GetPreActionPoses' code; with an ordinary cube the pose list is what GetPreActionPoses returned and the function succeeds.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_026_ComputeTakesItsPosesFromGetPreActionPoses()
     {
@@ -1257,6 +1318,7 @@ public class M12RVisBuildTests
     /// M12-022, InitHelper 0x00558FB4 (research 5.1, 5.2): a strictly negative +0x84 gives 0x0300000D (0x00558FE2 vcmpe s0,#0; 0x00558FEA bpl skips the error block 0x00558FEC..0x0055903E
     /// unless N is set, which only a negative value does).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(-1.0f)]
     [InlineData(-0.001f)]
@@ -1277,6 +1339,7 @@ public class M12RVisBuildTests
     /// <summary>
     /// M12-022 (research 5.2): +0.0 and -0.0 do NOT error: vcmpe s0,#0 sets Z (equal), N stays clear, bpl is taken. The drive is built to the object's own point (delta * 0 = 0) and a path is sent.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0.0f)]
     [InlineData(-0.0f)]
@@ -1299,6 +1362,7 @@ public class M12RVisBuildTests
     /// M12-022 (research 5.2, 5.3): a NaN +0x84 does NOT take the error path (unordered vcmpe: N = 0, bpl taken); the goal build multiplies delta by NaN (0x005591E4) so the goal is NaN, and
     /// InitHelper returns no result for it. This stack throws a visible NotSupportedException for the NaN goal (MISSING: what the planner does with it) instead of sending a path.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_022_ANanDistanceBuildsANanGoalAndIsAVisibleStub()
     {
@@ -1320,6 +1384,7 @@ public class M12RVisBuildTests
     /// M12-008 step 8, SetParent 0x00633006..0x00633010: the cube on top is parented to the carried one AT ONCE. After a successful pick-up dock, with no frame processed since, the top cube
     /// still has the offset from the carried cube it had before (the carried one moved to the lift).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_TheCubeOnTopFollowsAtOnceWhenThePickupResultArrives()
     {
@@ -1348,6 +1413,7 @@ public class M12RVisBuildTests
     /// M12-008 step 2 (0x00632CD8..0x00632D2E): already carrying returns 1. The result is recorded in LastAttachResult and logged; what HandlePickAndPlaceResult does with a non-zero
     /// result is not in the inventory (MISSING), so nothing else changes: the earlier carried object stays carried.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_ANonZeroAttachResultIsRecordedAndLoggedNotDecided()
     {
@@ -1369,6 +1435,7 @@ public class M12RVisBuildTests
     /// M12-008, AddLiftRelativeObservation 0x00506E5C (SetPose Known, count 1) and AddObjectRelativeObservation 0x00506CD8 (SetPose Dirty): the write runs under the world's lock and raises
     /// PoseStateChanged when the state changes, as MarkReleased does; OV01 now supplies the real synchronous broadcast. The historical test name is retained; four threads x 1000 calls reach the configuration recipient exactly 4000 times and add nothing to the obsolete unread counter.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_TheConfirmerWritesAreSynchronisedAndTheBroadcastCounterIsAtomic()
     {
@@ -1415,6 +1482,7 @@ public class M12RVisBuildTests
     /// Tilting the pose about X by theta gives R22 = cos(theta): 29.9 degrees (0.86690, |R22 - 1| = 0.1331) is valid, 30.1 degrees (0.86515, 0.13485) is not, and 45 degrees (0.7071) is not
     /// (the retired UprightOnly rule R22 &gt; 0.5 would have kept it).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0.0, true)]
     [InlineData(29.9, true)]
@@ -1439,6 +1507,7 @@ public class M12RVisBuildTests
     /// A cube (44 mm) at (100, 0) is hit by the centre line; one at (100, 40) (y 18..62) by the right samples (27.1 is inside); one at (100, 50) (y 28..72) by none (27.1 &lt; 28); (100, -40) by the left
     /// samples; (-30, 0) (x -52..-8) by the first sample (-15.611); (-40, 0) (x -62..-18) by none (-15.611 &gt; -18); one at (300, 0) is past the last sample (164.389).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(100, 0, false)]
     [InlineData(100, 40, false)]
@@ -1460,6 +1529,7 @@ public class M12RVisBuildTests
     /// (x 178..222): skipped, valid. The same cube at (170, 0) (centroid outside the quad, still covering 164.389) is a hit. An obstacle carrying the target's own id 7 at (100, 0) is skipped
     /// while the same geometry with id 9 is a hit. An empty obstacle vector is valid (0x004DF31A..0x004DF320).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_036_TheOwnIdAndTheOwnQuadCentroidAreExempt()
     {
@@ -1477,6 +1547,7 @@ public class M12RVisBuildTests
     /// M12-036, |m - p|^2 &lt;= 0: the direction is not normalised, the perpendicular is (0, 0) and every one of the n = floor(55.9/10) = 5 samples is p itself. A pose at the marker position
     /// (178, 0) is hit by an obstacle covering (178, 0) (a cube at (170, 0), x 148..192) and not by one at (178, 40).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_036_AZeroLengthSweepSamplesOnlyThePose()
     {
@@ -1493,6 +1564,7 @@ public class M12RVisBuildTests
     /// z = 22 (0..44) is in; z = 0 (-22..22) is in; z = -22 (-44..0) is out (top &lt;= 0); z = 122 (100..144) is out (bottom &gt;= 100); z = 121 (99..143) is in (bottom &lt; 100);
     /// z = -21 (-43..1) is in. An upside-down cube has rz = -44, the same band. The ignored id is out.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_036_GetObstaclesKeepsTheObjectsThatOverlapTheRobotsHeightBand()
     {
@@ -1513,6 +1585,7 @@ public class M12RVisBuildTests
     /// M12-036 / M13-023 (labelled stand-in): an object whose footprint cannot be computed (here a cube pitched 0.3 rad, not yaw-only) is still an obstacle, as the M13-023 planar stand-in: it
     /// contains a point within half a cube (22 mm) of its centre in x, y. It is flagged so a caller can see it is not the engine's quad.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_036_ATiltedObstacleIsTheLabelledPlanarStandIn()
     {
@@ -1531,6 +1604,7 @@ public class M12RVisBuildTests
     /// M12-036 with the rig: ManipulationSystem.GetObstacles ignores the carried ids (CarryingComponent::GetCarryingObjects) and uses Robot::GetHeight. A carried cube 7 is dropped from the list; the
     /// other located cube stays. Robot::GetHeight = max(66 sin(lift) + 45 + 5, 67.7) (0x00516F0C): at the rig's 32 mm lift the floor 67.7 applies.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_036_TheSystemsObstaclesIgnoreTheCarriedObject()
     {
@@ -1560,6 +1634,7 @@ public class M12RVisBuildTests
     /// 0x05 on the sides (sb 0 and 2) and 0x0F on the bottom (M12-021); an independent evaluation of the tables gives R22 = 1 only for the four side faces at sb 0 (sb 2 is upside down, -1; the
     /// bottom face's four poses are tilted), so for EVERY type (Docking, Flipping, Rolling, PlaceRelative, PlaceOnGround) exactly Front, Back, Left, Right at sb 0 survive, in that order.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(PreActionType.Docking)]
     [InlineData(PreActionType.Flipping)]
@@ -1579,6 +1654,7 @@ public class M12RVisBuildTests
     /// gives the four Docking poses then the four Rolling poses; a non-empty withCode set keeps only elements whose marker code is in it ({LightCubeI_Back} gives the Back pose alone); an
     /// empty withAction set collects nothing.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_001_TheTypesAreWalkedInAscendingOrderAndTheCodeFilterApplies()
     {
@@ -1596,6 +1672,7 @@ public class M12RVisBuildTests
     /// type generates (true), a second call for the same object and type finds the cache full (false), a new type generates again (true); the Entry type (3) produces nothing so its cache is empty
     /// on every call (true); an empty withAction set touches no cache (false).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_001_TheReturnByteSaysACacheVectorWasGenerated()
     {
@@ -1620,6 +1697,7 @@ public class M12RVisBuildTests
     /// M12-001 / M12-036: the cone decides on the composed pose's rotation. A cube pitched about Y by theta has R22 = cos(theta) for every side-face sb-0 pose (the stored rotation of a side face at sb 0 is
     /// a pure yaw): 25 degrees (0.906) keeps all four, 35 degrees (0.819, which the retired 0.5 rule kept) keeps none.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(25.0, 4)]
     [InlineData(35.0, 0)]
@@ -1634,6 +1712,7 @@ public class M12RVisBuildTests
     /// along x = 200, y from about 215 down to 25, with samples at x = 200 +- 27.1 clear of x 78..122) survive: the result is Success with Back, Left, Right in that order. A 35 degree pitched cube gives
     /// 0x03000010 (no pose left, 0x00550DC4 region), a carried one 0x03000004.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_GetPreActionPosesAppliesTheValidityFilterAndTheObstacles()
     {
@@ -1656,6 +1735,7 @@ public class M12RVisBuildTests
     /// a failed yaw test (45 degrees &gt; 5): the byte is 0 and the result is 0, so Init continues (the retired C# refused with 0x04000001). A robot at the origin is outside the box: flag A
     /// set gives 0x04000001, flag A clear gives 0 and continues. A carried cube gives its result code 0x03000004 whatever flag A is.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_031_FlipBlockInitCallsGetPreActionPosesWithFlagAAndActsOnTheResultOnly()
     {
@@ -1694,6 +1774,7 @@ public class M12RVisBuildTests
     /// 0x0063C654..0x0063C794). A flat cube at z 22 is stackable whatever its PoseState (Known, Dirty, even Unknown); carried, a charger-family object, one with a cube on top, and one at z 66 are not.
     /// IsPoseTooHigh is given the pose with respect to the robot pose (0x00877955); the rig's robot z is 0, so that cannot differ from the world z here.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_012_CanStackNeedsTheHelperChecksAndTheHeightRule()
     {
@@ -1736,6 +1817,7 @@ public class M12RVisBuildTests
     /// DISCARDED (0x00533848..0x00533854). A successful BlockPickedUp stores true, a failed one stores false and attaches nothing; with another cube already carried the attach returns 1 and
     /// NOTHING else changes (the earlier cube stays carried, no message, no retry).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_008_TheSuccessByteIsStoredBeforeTheBranchAndTheAttachReturnIsDiscarded()
     {
@@ -1768,6 +1850,7 @@ public class M12RVisBuildTests
     /// WillNotCheckPreDockPoses log). onTop false is +0xA8 set: DockAction 3 (PlaceLow); onTop true is +0xA8 clear: DockAction 2 (PlaceHigh) when CanStackOnTopOfObject holds, else 0x03000004
     /// and nothing is sent (SelectDockAction 0x00555434, M12-017). The error signal's y carries the raw Offsets y: the signal with Offsets (0, 30, 0) is 30 mm more than with (0, 0, 0).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_025_TheLegacyConstructorKeepsThePreActionCheckAndTheDefaultDockingMethod()
     {
@@ -1818,6 +1901,7 @@ public class M12RVisBuildTests
     /// M12-037, GetObservedMarkers 0x00876C50: sinceTime == 0 is an empty vector; otherwise the markers of the list (in list order) observed at or after sinceTime. The object's last observation saw
     /// {Right, Front}: with sinceTime = its own last-observed time the answer is [Front, Right] (the list order Front, Back, Left, Right, Top, Bottom); one millisecond later is empty; zero is empty.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_037_GetObservedMarkersFollowsTheListOrderAndTheSinceTime()
     {
@@ -1835,6 +1919,7 @@ public class M12RVisBuildTests
     /// (200, 22, 22) and Right at (200, -22, 22): Front (d2 = 32168) beats Back (d2 = 49768); Left and Right are equally far (d2 = 40968 each), so the FIRST in the list (Left) wins (strict &lt;).
     /// Every distance NaN chooses nothing (null).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_037_TheObservedMarkerNearestTheRobotWinsWithAStrictCompare()
     {
@@ -1876,6 +1961,7 @@ public class M12RVisBuildTests
     /// is for the target with the code [+0x82] (the chosen marker's code: the Front marker, 6, the only one observed) or ANY_CODE when [+0xF7] is set. PlaceRelObjectAction stores [+0xC0] = 0
     /// (M12-025), so its compound is the turn action alone. The verify action runs first.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_037_TheCompoundIsVerifyThenTurnWithTheRecordedArguments()
     {
@@ -1918,6 +2004,7 @@ public class M12RVisBuildTests
     /// A' = -17 &lt; -16.000009: 0x03000000); then the compound runs and a result other than {0, RUNNING} is returned with nothing docked (a turn result 0x04000000 comes back as it is);
     /// with success the dock is sent. The observed-marker choice fails first with 0x0300001D when nothing was observed (0x00551A30..0x00551A82), before InitInternal and the compound.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_017_InitInternalThenTheCompoundThenTheDock()
     {
@@ -1944,6 +2031,7 @@ public class M12RVisBuildTests
     }
 
     /// <summary>M12-037 (labelled stand-in): with the default sub-action executor the verify-no-object action is a COUNTED no-op stub, so the gap shows in the trace and the counter.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_037_TheDefaultVerifyNoObjectStubIsCountedAndTraced()
     {
@@ -1965,6 +2053,7 @@ public class M12RVisBuildTests
     /// in the inventory (only its angle helper is), so it is a visible NotSupportedException. Clone (thunk 0x004E3954 -&gt; 0x004E38D4, 0x0087660E, 0x004E0C4C..0x004E0C58) keeps NOTHING: the clone's
     /// ObjectID is -1 (uint.MaxValue), so the inner GetPreActionPoses does NOT answer 0x03000004 for it (0x00550904 compares -1 with the carried id): the chain goes on to poses and a drive.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public async Task M12_030_TheCloneKeepsNothingSoTheInnerChainDrivesInsteadOfAnswering0x03000004()
     {
@@ -2001,6 +2090,7 @@ public class M12RVisBuildTests
     /// M12-030, CheckIfDone 0x00559FA4: the compound's result is replaced by 0x04000008 when +0x179 is set and the goal is not free; with +0x179 clear the query is not called; the query is given the
     /// carried object, the placement pose and the padding [+0x17C]. IsPlacementGoalFree 0x0055A070 returns true before any query when the carried object is not found.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_030_CheckIfDoneReportsPlacementGoalNotFree()
     {
@@ -2034,6 +2124,7 @@ public class M12RVisBuildTests
     /// intersect with padding 0 (free) and does with padding 20 (its half extent becomes 42, y -47..37; the overlap with -82..-38 is 9 mm). A cube 8 at (200, -25) (y -47..-3, overlapping by 9 mm)
     /// blocks with padding 0. There is NO Z test: the same overlap at a height of 200 still blocks. The carried cube itself is ignored (id 7) though it is located.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_030_IsPlacementGoalFreeIntersectsThePaddedCandidateQuadWithoutAZTest()
     {
@@ -2076,6 +2167,7 @@ public class M12RVisBuildTests
     /// GetAngleAroundZaxis (M12-033); X and Y arms call the (unread, MISSING) functions given. R = Rz(0.5): row 2 = (0, 0, 1): +3, the angle 0.5. R = Rx(pi) Rz(0.5) = [[c,-s,0],[-s,-c,0],[0,0,-1]]:
     /// row 2 = (0, 0, -1): -3, and GetAngleAroundZaxis takes the second branch (R10^2 + R00^2 = 1 is not &gt; R01^2 + R11^2 = 1): atan2(s, -c) = pi - 0.5, so -(pi - 0.5) = -2.6416.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_030_TheApproachAngleHelperPicksTheAxisArm()
     {
@@ -2111,6 +2203,7 @@ public class M12RVisBuildTests
     /// A = Left (139.4), B = Front (150.3): A.y = 68.6 &gt;= -88.6: A = Left. At (0, 0) Front and Left tie (144.63): whichever the strict &lt; makes A, the y rule gives Left both ways.
     /// closestOnly pushes the WORLD pose of poses[closestIndex], the PLANAR closest (M12-031): Front from (0, -10), Left from (0, 10).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_035_GetPossiblePosesKeepsTheNearestTwoAndTheYRule()
     {
@@ -2135,6 +2228,7 @@ public class M12RVisBuildTests
     /// M12-035, the face rule (Q3.6 (6)): with a known face and both poses expressed against it the answer is A when dist(A, face) &gt; dist(B, face), else B. Robot (0, -10): A = Front, B = Left. A NAMED
     /// face at (130, 80, 50) is 50.75 from Left and 166.49 from Front: dist(A) &gt; dist(B), so A = Front (the y rule alone would say Left); one at (130, -80, 50) is 50.75 from Front and 166.49 from Left: B = Left.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_035_AKnownFaceDecidesBetweenTheTwoNearestPoses()
     {
@@ -2154,6 +2248,7 @@ public class M12RVisBuildTests
     /// M12-035, the exits: a non-zero GetPreActionPoses result is returned (a carried cube 0x03000004; a cube pitched 35 degrees, whose poses all fall outside the 30 degree cone, is the
     /// 0x03000010 that GetPreActionPoses itself gives when no pose is left, which is the list-empty exit 0x03000010 too).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_035_GetPossiblePosesReturnsTheNonZeroResults()
     {
@@ -2174,6 +2269,7 @@ public class M12RVisBuildTests
     /// +0x140 = 1, the FlipBlockAction constructor default. The helper is false for a negative threshold and for an empty vector; a non-empty one needs ComputeDistanceSQBetween (MISSING) and throws.
     /// L2 (ShouldDriveToClosestPreActionPose(b), 0x0055E3B0) is the same with closestOnly = b.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_035_TheInstalledFunctionLeavesTheFlipFlagAtOneAndSelectsClosestOnlyForL2()
     {
@@ -2210,6 +2306,7 @@ public class M12RVisBuildTests
     /// M12-035, DriveToFlipBlockPoseAction ctor 0x0055EB04 (ActionType 5, [this+0x44] = 9) installs L3 (0x0055EB74: GetPossiblePoses with closestOnly 0, the in-position flag untouched);
     /// ShouldDriveToClosestPreActionPose(b) 0x0055EC04 installs L4 (closestOnly = b). Robot (0, -10): L3 gives the nearest-two answer (Left), L4 with true the planar closest (Front), L4 with false Left.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_035_TheDriveToFlipBlockPoseInstallersL3AndL4()
     {
@@ -2237,6 +2334,7 @@ public class M12RVisBuildTests
     /// 0x00559A8E strb.w r0,[sp,#0x10]); flag NON-ZERO returns the function's result, flag ZERO returns 0x04000001 (0x00559AE4). L1..L4 never write the bool, so a flip drive ends 0x04000001
     /// even though GetPossiblePoses succeeds; DriveAndFlipBlockAction ignores that failure (the outer compound's AddAction(inner, true, false), 0x0055B370) and runs the flip.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_035_TheFlipInstallersLeaveTheFlagZeroSoCheckIfDoneEnds0x04000001()
     {
@@ -2275,6 +2373,7 @@ public class M12RVisBuildTests
     /// sample i = 19 (174.389) would exist for n = 20 (ceil) but not for n = 19, so with floor the pose is VALID; its centroid (190, 40) is outside the target's own quad (y -22..22), so no exemption.
     /// A cube at (180, 40) (x 158..202) is reached by the sample at 164.389 (i = 18) and is a hit.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_036_TheSweepStepCountIsFloorNotCeil()
     {
@@ -2288,6 +2387,7 @@ public class M12RVisBuildTests
     /// compound (TurnAndVerify stays null, the sub-action executor is never asked) and has NO 2 s visible-marker wait, so it docks even when the target's last observation saw no marker
     /// (the pre-batch flow docked on the marker facing the robot); an engine-shaped action still runs the compound (M12_037 tests).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M12_028_TheLegacyPlaceRelKeepsTheEarlierStandInAndNeverWaitsForAVisibleMarker()
     {
@@ -2314,6 +2414,7 @@ public class M12RVisBuildTests
     /// 200 mm gives sqrt(200^2 + 22^2) = 201.2 mm, so the line ends at 221.2 (the planar norm would give 220). The expectation is computed from the world's observed pose (an input). Init's
     /// DisableReactionsWithLock (0x0055EEC6) and IActionRunner::Update (0x0055EF7E) are M8's: visible as a trace line and a counter, not modelled.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_TheFlipDriveDistanceIsTheThreeDimensionalNorm()
     {
@@ -2340,6 +2441,7 @@ public class M12RVisBuildTests
     /// completed. The robot reports the lift at 32 mm (not at the 45 mm target): the lift command is sent and, while it is not acknowledged, NO path line is sent; after the ack and a state with the
     /// lift in position at 45 mm (angle 0) the drive line appears.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_TheFlipDrivesOnlyAfterTheLiftMoveCompletes()
     {
@@ -2376,6 +2478,7 @@ public class M12RVisBuildTests
     /// only the FlipBlockAction the derived constructor added runs, and its Init answers 0x03000004 for a carried object (GetPreActionPoses). And maxTurn &gt; 0 is Radians::operator&gt; with the
     /// 1e-5 epsilon (0x0055B38C): 0.5e-5 is not positive, 2e-5 is, -1 and 0 are not.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_ACarriedObjectAddsNoDriveOrTurnsAndTheMaxTurnUsesTheEpsilon()
     {
@@ -2433,6 +2536,7 @@ public class M12RVisBuildTests
     /// The tick that queues it is one where the approach lift has ended and released the lift track (M4-003, 0x005408EC): otherwise the queued action fails with 0x03000019 (next test). The path is
     /// held so the compound stays RUNNING while the cube comes within range.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(39.0, false)]
     [InlineData(30.0, true)]
@@ -2473,6 +2577,7 @@ public class M12RVisBuildTests
     /// So while the approach MoveLiftToHeightAction (the compound's first action) still holds the lift track, the carry lift is sent all the same (no 0x03000019), it takes no lock of its own (the
     /// track is still held by the approach move, and only that move's end frees it) and sends no DisableAnimTracks/EnableAnimTracks. The cube is within 40 mm from the first tick.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_TheCarryLiftRunsWhileTheApproachLiftHoldsTheTrackAndTakesNoLock()
     {
@@ -2509,6 +2614,7 @@ public class M12RVisBuildTests
     /// (the retired fallback raised the lift after a failure; it has no source). The 45 mm lift move is never acknowledged: its engine-clock IAction timeout (the 30.0 s default, 0x0052B0C2) fires with
     /// 0x03000018 (0x00540E80), the compound ends with that code, no drive is sent, no carry lift is queued, and the object is Unknown. The cube is 200 mm away, so no RUNNING tick had it within 40 mm either.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_AFailedCompoundMarksTheObjectUnknownAndQueuesNoCarryLift()
     {
@@ -2536,6 +2642,7 @@ public class M12RVisBuildTests
     /// M13-028 / M4-016 MA17 (0x005493F6..0x00549508): a lift move that fails returns the engine's own code from MotionOutcome.EngineResult (0x04000004 StoppedMakingProgress, 0x03000016 send failed);
     /// an outcome with no engine code (only the unsourced C# wait ran out) is the stand-in ActionResult.Timeout.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_ALiftFailureReturnsTheEnginesResultCode()
     {
@@ -2560,6 +2667,7 @@ public class M12RVisBuildTests
     /// sqrt(30^2 + 22^2) = 37.2: the lift is queued on the robot's action list (a 92 mm SetLiftHeight) and the tick is RUNNING (null); a second RUNNING tick queues nothing more ([+0x13C] != -1).
     /// The queued action's byte +0x56 = 1 is modelled as suppressed track locking (see the test above and the one on the held approach lift).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(200.0, false)]
     [InlineData(39.0, false)]
@@ -2581,6 +2689,7 @@ public class M12RVisBuildTests
     /// 0x03000004 BadObject (0x0055F09C cmp r0,#0; beq 0x55F18C; 0x0055F1C4), no carry lift. NOT RUNNING with no object: warn and return the compound's result (0x0055F17A cbz), nothing marked; NOT RUNNING with the
     /// object: MarkObjectUnknown(obj, true) (0x0055F186) and the compound's result, whatever it is (Retry 0x04000000 here).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_TheTickLooksTheObjectUpEveryTickAndReturnsTheCompoundsResult()
     {
@@ -2606,6 +2715,7 @@ public class M12RVisBuildTests
     /// lift ended and released the lift track) when the cube comes within 40 mm, so a RUNNING tick queues the carry lift and it is sent; the carry lift is never acknowledged. The flip still ends with the
     /// compound's result, Success (not Timeout, 0x04000004 or 0x03000016), without waiting for that lift, and the unfinished lift is counted as a cancel the stack cannot do (no cancel handle: MISSING).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_TheFlipNeverWaitsOnTheQueuedCarryLift()
     {
@@ -2647,6 +2757,7 @@ public class M12RVisBuildTests
     /// M8 calls (3 in all). The engine destroys the embedded compound in the destructor (0x0055ED68), so it never sends the drive: the 45 mm lift move is still pending when the flip ends, its
     /// acknowledgement and an in-position state arrive only AFTERWARDS, and no path message (line, arc, turn, execute, clear) and no lift command may go out after the flip returned.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M13_028_ALostObjectEndsARunningFlipWithBadObjectAndNoPathIsSentAfterwards()
     {

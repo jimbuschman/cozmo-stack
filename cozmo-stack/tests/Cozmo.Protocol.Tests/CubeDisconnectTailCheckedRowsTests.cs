@@ -17,6 +17,7 @@ public sealed class CubeDisconnectTailCheckedRowsTests
         map.Add(((int)obj.Family,(int)obj.Type,unchecked((int)id)),obj);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void BodyAndUnionKeepRawByteAndWorldID()
     {
@@ -25,6 +26,7 @@ public sealed class CubeDisconnectTailCheckedRowsTests
         Assert.Equal(new byte[]{0x0D,0,0x44,0x33,0x22,0x11,0xDD,0xCC,0xBB,0xAA,0xFF,0xFF,0xFF,0xFF,0xFE},m.ToUnionBytes());
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiveUnknownRemovalSkipsPoolAndGameButStillLogsRecvd()
     {
@@ -42,6 +44,7 @@ public sealed class CubeDisconnectTailCheckedRowsTests
         Assert.Empty(reports);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiveValidRemovalOrdersEventPoolRecvdAndGameEvenOnFactoryMismatch()
     {
@@ -58,6 +61,7 @@ public sealed class CubeDisconnectTailCheckedRowsTests
         Assert.Equal(ActiveObjectSlotState.Empty,robot.Cubes.Connections.Slots[2].State);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(5u)] [InlineData(uint.MaxValue)]
     public void InvalidActiveSlotHasNoSourceTail(uint slot)
@@ -98,6 +102,7 @@ public sealed class CubeDisconnectTailCheckedRowsTests
         Assert.NotNull(report);Assert.Equal((byte)1,report.ConnectedByte);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0)] [InlineData(1)] [InlineData(2)] [InlineData(3)] [InlineData(4)]
     public void CheckedPoolBodyLogsOldStateAndResetsOnlyStateThree(int state)

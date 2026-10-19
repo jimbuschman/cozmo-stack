@@ -85,6 +85,7 @@ public class NavigationTests
 
     // ------------------------------------------------------------------ motion primitives and the planner
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheShippedMotionPrimitivesParseAsTheEngineReadsThem()
     {
@@ -112,6 +113,7 @@ public class NavigationTests
         Assert.Equal(15, prims.ThetaIndex(-0.4f));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AnEmptyWorldPlansAStraightRunOfLongStraights()
     {
@@ -132,6 +134,7 @@ public class NavigationTests
         Assert.Equal((0f, 0f, 300f, 0f), (line.FromX, line.FromY, line.ToX, line.ToY));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TurningPrimitivesBecomeLineAndArcSegmentsThatEndOnTheLattice()
     {
@@ -158,6 +161,7 @@ public class NavigationTests
         Assert.Equal(0.3, ((PathSegment.PointTurn)full.Value.Path[^1]).TargetAngleRad, 6);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ThePlannerRoutesAroundACubeInTheWay()
     {
@@ -189,6 +193,7 @@ public class NavigationTests
         Assert.Null(new LatticePlanner(hard).PlanTo(At(0, 0, 0), new[] { At(150, 0, 0) }, PathMotionProfile.Default));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
     public void DriveToPoseUsesTheLatticePlannerAndTheFakeRobotArrives()
@@ -208,6 +213,7 @@ public class NavigationTests
         Assert.Contains(rig.Sent, m => m is AppendPathSegmentLine || m is AppendPathSegmentArc);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     [Trait("Fidelity","M13-035 HARDWARE_ONLY scheduling")]
     public void DriveToObjectWithThePlannerTreatsOtherCubesAsObstaclesButNotTheTarget()
@@ -234,6 +240,7 @@ public class NavigationTests
 
     // ------------------------------------------------------------------ the charger
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheChargerIsAPassiveObjectWithOneRectangularMarker()
     {
@@ -265,6 +272,7 @@ public class NavigationTests
     /// <c>Pose3d(angle + pi/2, Z, (x, -y, -15.5))</c> on the marker's pose. Through the marker's own
     /// -pi/2 at (86, 0, 22) that is the identity rotation at (-164, 0, 6.5) in the charger's frame.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheChargerGeneratesOnePreDockPoseOnItsAxisTwoHundredAndFiftyMillimetresOut()
     {
@@ -290,6 +298,7 @@ public class NavigationTests
     /// (<c>ConfigureAlignWithChargerAction</c> 0x0054E1C4 and <c>ConfigureTurnAndMountAction</c>
     /// 0x0054E458), and the retry drive (0x0054E72C).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheMountCarriesTheEnginesOwnNumbers()
     {
@@ -320,6 +329,7 @@ public class NavigationTests
     /// turn-and-mount is never configured (0x0054E2FA is reached only when the align returned success).
     /// The action does not loop - it makes one attempt and hands back a result.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AFailedAlignEndsTheMountWithoutTurningOrReversing()
     {
@@ -340,6 +350,7 @@ public class NavigationTests
         Assert.False(rig.OnCharger);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AChargerInViewIsLocalisedWithoutBeingConnected()
     {
@@ -357,6 +368,7 @@ public class NavigationTests
         Assert.InRange(Math.Abs(StraightLinePlanner.Wrap(obs.Object.Pose.AngleAroundZ)), 0, 0.1);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MountChargerAlignsTurnsAndBacksOntoTheContacts()
     {
@@ -409,6 +421,7 @@ public class NavigationTests
         Assert.Equal(1, mount.Attempts);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DriveOffChargerDrivesTheChargerLengthPlusTheExtraAndFiresTheEvent()
     {
@@ -448,6 +461,7 @@ public class NavigationTests
         Assert.False(Runnable(b, ctx));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ReactToOnChargerPlaysThenAnnouncesSleepAndDisconnectOnItsTimers()
     {
@@ -480,6 +494,7 @@ public class NavigationTests
 
     // ------------------------------------------------------------------ the flip action
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void FlipDrivesThroughTheCubeRaisingTheLiftAndForgetsItsPose()
     {
@@ -512,6 +527,7 @@ public class NavigationTests
 
     private static ObservableObject Cube(uint id, ObjectType type, Pose3d pose) => new(id, type, CubeGeometry.CubeMarkers(type)) { Pose = pose, PoseState = PoseState.Known };
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void StacksBasesAndPyramidsAreRecognisedFromCubePoses()
     {
@@ -534,6 +550,7 @@ public class NavigationTests
         Assert.False(BlockConfigurationManager.BlocksFormPyramidBase(a, Cube(2, ObjectType.Block_LIGHTCUBE2, new Pose3d(Mat3.AboutX(Math.PI / 2), new Vec3(300, -25, 22))), out _));  // on its side
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheConfigurationManagerTracksWhatTheWorldSeesAndWhenItFirstSawIt()
     {
@@ -579,6 +596,7 @@ public class NavigationTests
 
     // ------------------------------------------------------------------ the whiteboard and the workouts
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void BeaconsAndFailureMemoryDriveTheHikingBehaviours()
     {
@@ -606,6 +624,7 @@ public class NavigationTests
     /// AIWhiteboard::AreAllCubesInBeacons; CreateLookAfterPlaceAction 0x005C8174 waits for two images
     /// (movs r2, #2 at 0x005C8242); TransitionToDisapointment 0x005ED0F0 plays trigger 0x1B.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheBeaconAndStackConstantsAreTheEnginesOwn()
     {
@@ -634,6 +653,7 @@ public class NavigationTests
     /// the robot's BLOCK_PLACED result releases the carried cube (HandlePickAndPlaceResult 0x00533780 is the only release), the status bit rises and clears, the verify action ends the action, and the
     /// callback 0x005E188C logs "Successfully placed cube" and fires FireEmotionEvents with NO NeedActionCompleted.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ThinkAboutBeaconsThenBringCubeToBeaconPlacesTheCubeInside()   // the name is the manifest's (M15-009/M15-011 `test` field)
     {
@@ -717,6 +737,7 @@ public class NavigationTests
     /// M15-011, SelectNewBeacon 0x005E5F0C..0x005E5F30: Robot::GetPose is copied (Pose3d::Pose3d 0x005E5F1A) and handed to AddBeacon with the radius at [this+0x128]: the beacon sits at the
     /// whole robot pose, z included. A robot state whose pose has z = 25 and yaw 0.5 gives a beacon at (100, 50, 25) with that yaw (a planar rebuild would give z = 0).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_011_TheBeaconIsAddedAtTheFullRobotPose()
     {
@@ -745,6 +766,7 @@ public class NavigationTests
     /// already inside the beacon (within radius - (carried X dimension + 10) = 121 mm of its centre, 0x0059C2BE..0x0059C2D8) the stack branch is taken: "Decided to place '..' on top of '..'"
     /// (0x005DF4AA), no PickupCube report, and when the stack action succeeds StackCube (0x2A, 0x005E14B6) is reported then FireEmotionEvents (0x005E14BE).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_008_TheStackBranchComesBeforeThePickupCubeReportAndReportsStackCube()
     {
@@ -774,6 +796,7 @@ public class NavigationTests
     /// SetFailedToUse(target, StackOnObject) (0x005E156E -> 0x005E1660); 4 with the cube not carried (the retry test fails) -> the same failure (0x005E15D8); 1 (running) and 2 (cancelled) branch to
     /// 0x005E1684 and return: no log, no SetFailedToUse.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(0x00000000u, "success")]
     [InlineData(0x01000000u, "none")]
@@ -811,6 +834,7 @@ public class NavigationTests
     /// M15-008, AIBeacon::IsLocWithinBeacon(pose, margin) 0x0059C24C: the pose in the beacon's frame, its translation squared in THREE dimensions in binary32 (x*x, then + y*y, then + z*z),
     /// against (radius - margin)^2 + 1.0e-5f; within when the right side is at least the left. Radius 175, margin 54: limit 121^2 = 14641 (the 1e-5 is below a binary32 ulp of 14641).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M15_008_IsLocWithinBeaconIsThreeDimensionalAndMarginReduced()
     {
@@ -828,6 +852,7 @@ public class NavigationTests
         Assert.False(rotated.IsLocWithinBeacon(new Pose3d(Mat3.Identity, new Vec3(500 + 130, -200, 10)), 54f));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheWorkoutConfigParsesAndScoresLiftsFromConfidence()
     {
@@ -855,6 +880,7 @@ public class NavigationTests
         Assert.Equal(w.Workouts[^1], w.GetCurrentWorkout());                         // and it sticks there
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheWorkoutBehaviourLiftsStrongThenWeakAndPutsTheCubeDown()
     {
@@ -892,6 +918,7 @@ public class NavigationTests
         rig.MoreCubes.Add((ObjectType.Block_LIGHTCUBE3, CubeAt(x, y, 0, 110)));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void KnockOverCubesReachesFlipsTheBottomBlockAndCelebrates()
     {
@@ -946,6 +973,7 @@ public class NavigationTests
         Assert.InRange(reach.XEndMm, 165, 180);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void PopAWheelieDrivesDocksAndReEnablesStopOnCliff()
     {
@@ -971,6 +999,7 @@ public class NavigationTests
     }
 
     /// <summary>M13-015 retry classifier/animation with the explicit geometry fixture dependency; this does not verify M12-024.</summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void PopAWheelieRetryDecisionWithIsolatedDrivingDependency()
     {
@@ -990,6 +1019,7 @@ public class NavigationTests
         Assert.Contains(b.Trace, l => l.Contains("PopAWheelieRetry"));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     // Native M12-032 status, with an explicit NoAnimation driving fixture; this is not default production selection.
     public void PopAWheelieNoAnimationFixtureDriveCompletionDoesNotFabricateFailedAbort()
@@ -1012,6 +1042,7 @@ public class NavigationTests
         Assert.NotEmpty(driveResults);Assert.Contains(ActionResult.Success,driveResults);Assert.DoesNotContain(ActionResult.Abort,driveResults);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void RamIntoBlockChargesTheCubeAndBacksOff()
     {
@@ -1033,6 +1064,7 @@ public class NavigationTests
         Assert.Equal(PoseState.Dirty, obj.PoseState);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CantHandleTallStackLooksDownThenUpThenSulks()
     {
@@ -1056,6 +1088,7 @@ public class NavigationTests
         Assert.Contains(b.Trace, l => l.Contains("CantHandleTallStack"));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CheckForStackAtIntervalLooksAboveTheBlockAndWaitsOutTheInterval()
     {
@@ -1077,6 +1110,7 @@ public class NavigationTests
         clock = 15.5; Assert.True(Runnable(b, ctx));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void RespondPossiblyRollRespondsToAnUprightCubeAndRollsOneOnItsSide()
     {
@@ -1106,6 +1140,7 @@ public class NavigationTests
         Assert.Equal((byte)DockAction.RollLow, dock!.ToBytes()[17]);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void BuildPyramidBasePicksUpOneCubeAndPlacesItBesideTheOther()
     {
@@ -1134,6 +1169,7 @@ public class NavigationTests
         b.Stop(BehaviorStopReason.Interrupted);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MajorFrustrationDrivesToARandomPoseInItsConfiguredRange()
     {
@@ -1154,6 +1190,7 @@ public class NavigationTests
         Assert.Contains(rig.Sent, m => m is ExecutePath);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TheShippedNavigationSetHasTwentyFiveBehavioursWithDistinctIds()
     {
@@ -1174,6 +1211,7 @@ public class NavigationTests
     /// the clamp threshold is 0xC1800005 = -16.000009536743164; and
     /// <c>GetPreActionTypeFromAlignmentType</c> 0x005532B8 maps 0-&gt;1, 1-&gt;0, 2-&gt;1, 3-&gt;1, invalid-&gt;1.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AlignWithObjectUsesTheEnginesAlignmentTypeTable()
     {
@@ -1208,6 +1246,7 @@ public class NavigationTests
     /// <c>num_angles</c>; the hard-coded 16 is on the uncalled <c>Init(char const*)</c> 0x008528A8. A file
     /// with a different <c>num_angles</c> therefore produces a different heading count.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ThePlannerUsesTheJsonNumAngles()
     {
@@ -1224,6 +1263,7 @@ public class NavigationTests
     /// non-zero with an empty segment list, and 2 on success; the expansion cap it passes is
     /// 0x01C9C380 = 30,000,000.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DoPlanningReturnsTheEngineResultCodes()
     {
@@ -1258,6 +1298,7 @@ public class NavigationTests
     /// +0x44 = 7; <c>Init</c> returns 0 when not on the contacts, and <c>CheckIfDone</c> fails 0x04000009
     /// while the robot is still on them.
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DriveOffChargerContactsActionFailsWhileStillOnTheContacts()
     {
@@ -1291,6 +1332,7 @@ public class NavigationTests
     /// M13-014. <c>IDriveToInteractWithObject</c> 0x0055B1F4 adds a <c>TurnTowardsLastFacePoseAction</c>
     /// and a <c>TurnTowardsObjectAction</c> when maxTurn &gt; 0 (0x0055B37C..0x0055B43C).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DriveAndFlipBlockIgnoresTheFailedDriveAndRunsBothTurnsAndTheFlip()
     {

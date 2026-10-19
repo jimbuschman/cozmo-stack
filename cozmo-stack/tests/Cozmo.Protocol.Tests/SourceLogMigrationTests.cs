@@ -86,6 +86,7 @@ public class SourceLogMigrationTests
             "NeedsState.InvalidNeedLevel", "Need level does not exist in brackets cache");
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void B8_CheckedCubePatternErrorUsesSourceKeyAndUnknownPathStatusStaysVisible()
     {

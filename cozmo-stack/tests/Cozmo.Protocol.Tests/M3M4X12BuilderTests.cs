@@ -12,6 +12,7 @@ public class M3M4X12BuilderTests : IDisposable
     private readonly string _dasRoot = Directory.CreateTempSubdirectory("das12-").FullName;
     public void Dispose() { EngineErrorState.ErrorFlagSet = _error; Directory.Delete(_dasRoot, true); }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DropCountUsesUnsignedMaximumAndStoresBeforeSourceEvent()
     {
@@ -34,6 +35,7 @@ public class M3M4X12BuilderTests : IDisposable
         Assert.Equal((byte)255, state.ClientDropCount);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void DasStartupControlOrderUsesCheckedArgumentsAndReportsMissingInputs(bool enabled)
@@ -58,7 +60,7 @@ public class M3M4X12BuilderTests : IDisposable
         Assert.Equal(new object?[] { false }, calls[4].Arguments);
         Assert.True(completed.Wait(TimeSpan.FromSeconds(10)));
         Assert.Equal(false, success); Assert.Equal("", response);
-        Assert.Contains(missing, s => s.StartsWith("MISSING: M3-055 DASConfigure"));
+        Assert.DoesNotContain(missing, s => s.StartsWith("MISSING: M3-055 DASConfigure"));
         Assert.DoesNotContain(missing, s => s.Contains("$player_id MD5 input") || s.Contains("DasTransferTask.OnTransferReady"));
         calls.Clear(); robot.Engine.RequestDataCollectionOption(true); robot.Engine.Tick();
         Assert.Equal(0u, robot.Engine.Das.DisabledReasons);
@@ -78,6 +80,7 @@ public class M3M4X12BuilderTests : IDisposable
         robot.Dispose(); Assert.Contains(calls, c => c.Name == "DASDisableNetwork" && Equals(c.Arguments[0], 4u));
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CameraPendingClearGapIsVisibleAndDoesNotEmitStaleOverwriteWarning()
     {
@@ -85,7 +88,7 @@ public class M3M4X12BuilderTests : IDisposable
         robot.Engine.StackLogLine += missing.Add; robot.Engine.LogEntry += e => keys.Add(e.Name);
         robot.CameraSettings.Handle(new DefaultCameraParams { Field0 = 3f, Field1 = 1.5f, Field2 = 1, Field3 = 50, Field4 = new byte[17] });
         Assert.True(robot.CameraSettings.SetCameraSettings(20, 1.5f));
-        // Historical manifest test name retained: OV15-17/B-M11-6 retires the old suppression.
+        // Historical name; this unit now asserts the restored native overwrite warning, not a pending-clear gap.
         Assert.Equal(2,keys.Count(k=>k=="VisionSystem.SetNextCameraParams.OverwritingPreviousParams"));
         Assert.DoesNotContain(missing, s => s.StartsWith("MISSING: M11-060"));
         Assert.Equal((20, 1.5f), robot.CameraSettings.NextCameraParams);
@@ -114,6 +117,7 @@ public class M3M4X12BuilderTests : IDisposable
         taps[0].Cube.LastTap!.Timestamp=999;Assert.Equal(444u,cubes.ByObjectId(0)!.LastTap!.Timestamp);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(true)] [InlineData(false)]
     public void InvalidStateSourceErrorIsDeliveredBeforeFlag(bool connected)
@@ -127,6 +131,7 @@ public class M3M4X12BuilderTests : IDisposable
         Assert.Equal(false, flagAtError); Assert.True(EngineErrorState.ErrorFlagSet);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ParseErrorDeliversOnceToEachRawStringAndLegacySink()
     {
@@ -145,6 +150,7 @@ public class M3M4X12BuilderTests : IDisposable
         finally { File.Delete(path); }
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ClearSendBufferLogsFifoOutsideLockWithoutSending()
     {

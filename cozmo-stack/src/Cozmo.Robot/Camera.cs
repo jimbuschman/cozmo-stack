@@ -644,7 +644,7 @@ public sealed partial class CameraSettings
     public bool AutoExposureEnabled { get; private set; } = true;
     /// <summary>
     /// VisionSystem::IsInitialized (+0x58, 1g): set when VisionComponent::Init has read vision_config.json. This stack
-    /// has no config load that can fail, so it counts as initialised from construction.
+    /// retains the legacy true view; full system readiness is still the explicit M11-059 gap reported by HandleDefaultCameraParams.
     /// </summary>
     public bool VisionSystemInitialized => true;
     /// <summary>VisionComponent +0x32A: the colour flag (A24, 3a), 0 from the constructor (0x00650180).</summary>
@@ -685,7 +685,8 @@ public sealed partial class CameraSettings
     /// broadcasts CurrentCameraParams {g, e, auto-exposure}. Returns whether it sent. VizManager::SendCameraInfo is
     /// the engine's visualiser and has no counterpart here.
     /// </summary>
-    public bool SetCameraSettings(ushort exposureMs, float gain) => SetCameraSettings((int)exposureMs,gain);
+    public bool SetCameraSettings(ushort exposureMs, float gain)
+        => _robot.Engine.InvokeCameraRequest(()=>SetCameraSettings((int)exposureMs,gain));
 
     internal bool SetCameraSettings(int exposureMs, float gain)
     {

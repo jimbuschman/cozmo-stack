@@ -9,7 +9,8 @@ public sealed partial class CameraSettings
         lock (_gate) AutoExposureEnabled=enable;
         _robot.Lights.QueueVisionMode(7,enable);
     }
-    public void SetAndDisableAutoExposure(ushort exposureMs,float gain) => SetAndDisableAutoExposure((int)exposureMs,gain);
+    public void SetAndDisableAutoExposure(ushort exposureMs,float gain)
+        => _robot.Engine.InvokeCameraRequest(()=>{SetAndDisableAutoExposure((int)exposureMs,gain);return true;});
     internal void SetAndDisableAutoExposure(int exposureMs,float gain)
     {
         SetCameraSettings(exposureMs,gain); // report uses the old +0x329 byte, including send failure

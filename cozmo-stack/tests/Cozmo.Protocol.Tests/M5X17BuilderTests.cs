@@ -26,6 +26,7 @@ public sealed class M5X17BuilderTests
         public void ActionIsBeingDestroyed(){Calls.Add("Destroy");State=5;}
     }
     private static DriveToPoseTick Tick(int status,Pose3d? pose=null,ushort sent=1,ushort received=1,sbyte segment=-1)=>new(status,0,pose??Pose3d.Identity,67.7,sent,received,segment);
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void InitRunsBeforeNoGoalFailureWithExactArgumentsAndCleanupOrder()
     {
@@ -34,6 +35,7 @@ public sealed class M5X17BuilderTests
         Assert.Equal(0,h.State);var order=new List<string>();d.LifecycleCallObserved=order.Add;r.M.PathIsActiveForTest=()=>true;r.M.ErasePlannerObstaclesForTest=_=>{};d.AbortPath=()=>{};
         d.Dispose();Assert.Equal(new[]{"Abort","ErasePlanner:True","ErasePlanner:False","DestroyDriving"},order);Assert.Equal("Destroy",h.Calls.Last());
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void EndStateHoldsAndFreshPoseAndStatusDetermineTheResultAfterCompletion()
     {
@@ -45,6 +47,7 @@ public sealed class M5X17BuilderTests
         h.State=0;Assert.Equal(ActionResult.Running,d.CheckIfDone(Tick(4,new Pose3d(Mat3.Identity,new Vec3(200,0,0)))));
         h.State=4;Assert.Equal(ActionResult.Success,d.CheckIfDone(Tick(4))); // No stored failed-arrival result.
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void FollowingCallsStartEveryTickAndNativeOldCounterModuloLogsOneAndEleven()
     {
@@ -55,6 +58,7 @@ public sealed class M5X17BuilderTests
         Assert.EndsWith("[-3] Waiting for robot to complete its path traversal (1), _currPathSegment=-5, _lastSentPathID=65535, _lastRecvdPathID=9.",texts[0]);
         Assert.Contains("traversal (11)",texts[1]);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void RealStartSelectsStartOrLoopOnlyFromStateZeroAndQueuesExactRequest()
     {
@@ -65,6 +69,7 @@ public sealed class M5X17BuilderTests
         h.PlayStartAnim();Assert.Single(requests);h.Push(new((AnimationTrigger)0x23F,(AnimationTrigger)0x91,(AnimationTrigger)0x23F),"loop-fixture");h.Init(4,101,true,true);h.PlayStartAnim();Assert.Equal(2,h.State);Assert.NotEqual(0u,h.LoopId);
         Assert.Equal((AnimationTrigger)0x91,requests[1].Trigger);Assert.Equal(2,r.Rig.Engine.Robot!.ActionList.QueueCount);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LoopCompletionDoubleUnlockResendsEnableTracksAndNamesPrintBoundary()
     {
@@ -75,8 +80,9 @@ public sealed class M5X17BuilderTests
         r.Robot.Motion.LockTracks(4,"101","DriveToPose");int mark=r.Mark();var lines=new List<string>();var entries=new List<EngineLogEntry>();r.Engine.StackLogLine+=lines.Add;r.Engine.LogEntry+=entries.Add;
         h.HandleActionCompleted(h.LoopId,0x02000000); // cancelled loop: avoids the unbuilt zero-ID start completion.
         Assert.Equal(2,r.RawSince(mark).Count(bytes=>bytes[0]==(byte)RobotMessageId.EnableAnimTracks));
-        Assert.Contains(entries,e=>e.Name=="MovementComponent.UnlockTracks"&&e.Text.EndsWith("Tracks 0x4 are not currently locked by 101"));Assert.Contains(lines,l=>l.StartsWith("MISSING: M4-047"));
+        Assert.Contains(entries,e=>e.Name=="MovementComponent.UnlockTracks"&&e.Text.EndsWith("Tracks 0x4 are not currently locked by 101"));Assert.DoesNotContain(lines,l=>l.StartsWith("MISSING: M4-047"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TimeoutBypassesTailAndRetryReinitializesTheSameSharedHandler()
     {
@@ -87,6 +93,7 @@ public sealed class M5X17BuilderTests
         Assert.Equal(EngineActionResult.Running,retry.Update());Assert.Equal(1,h.Calls.Count(c=>c=="Init"));
         Assert.Equal((uint)ActionResult.FailedTraversingPath,retry.Update());Assert.Equal(2,h.Calls.Count(c=>c=="Init"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void StraightStartsOnceSkipsEndOnPathFailureAndSucceedsAfterEnd()
     {
@@ -95,6 +102,7 @@ public sealed class M5X17BuilderTests
         Assert.Equal(ActionResult.FailedTraversingPath,d.CheckIfDone(new(true,true,false)));Assert.DoesNotContain("End",h.Calls);
         Assert.Equal(ActionResult.Running,d.CheckIfDone(new(false,true,false)));h.State=4;Assert.Equal(ActionResult.Success,d.CheckIfDone(new(false,true,false)));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TrackInitRepeatsAndStoredResultAndUnconditionalDestructionMatchT1T3()
     {
@@ -103,6 +111,7 @@ public sealed class M5X17BuilderTests
         Assert.Equal(0x01000000u,track.FinishWithDrivingAnimation(0x03000008));h.State=3;Assert.Equal(0x01000000u,track.DrivingCompletionGate());h.State=4;Assert.Equal(0x03000008u,track.DrivingCompletionGate());
         track.DrivingAnimation=false;track.Dispose();Assert.Equal("Destroy",h.Calls.Last());
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ActivityClockStrategyAndBroadcasterPrecedeGatedDrivingAndIdleMissingCalls()
     {
@@ -112,6 +121,7 @@ public sealed class M5X17BuilderTests
         calls.Clear();a.OnDeselected(8,calls.Add);Assert.Contains("RemoveIdleAnimation",calls[0]);Assert.Contains("RemoveDrivingAnimations",calls[1]);
         var none=new Activity{Id="none",Strategy=new ActivityStrategy(),DriveStartAnim=(AnimationTrigger)0x23F,IdleAnim=(AnimationTrigger)0x23F};calls.Clear();none.OnSelected(9,calls.Add);none.OnDeselected(10,calls.Add);Assert.Single(calls);Assert.Contains("UpdateActivity",calls[0]);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NativeFailureAndPlanningTimeoutUseSourceKeysAndUnequalIdsSetTheErrorFlag()
     {

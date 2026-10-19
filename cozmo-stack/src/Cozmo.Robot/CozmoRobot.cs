@@ -346,6 +346,7 @@ public sealed partial class CozmoRobot : IDisposable
             Sensors.OffTreads.MarkDelocalized();
         };
         Engine.DelocalizationCubeHook=Lights.Cubes.OnRobotDelocalized;
+        LocalizationWorld.ActiveObjectPoseStateChanged=Lights.Cubes.OnActiveObjectPoseStateChanged;
         // fidelity: M11-069
         Engine.DelocalizationComponentHook=stage=>
         {

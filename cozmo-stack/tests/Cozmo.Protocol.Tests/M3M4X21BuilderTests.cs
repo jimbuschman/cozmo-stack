@@ -10,6 +10,7 @@ public sealed class M3M4X21BuilderTests
     private static string Shipped()
     {for(var d=new DirectoryInfo(AppContext.BaseDirectory);d!=null;d=d.Parent){var p=Path.Combine(d.FullName,"re-analysis/obb/assets/cozmo_resources");if(Directory.Exists(p))return p;}throw new InvalidOperationException("Shipped cube assets required");}
     private static CubeLightModifier Modifier=>new(Enumerable.Repeat(LedPattern.Solid(new LedColor(0,0,0,0)),4).ToArray(),0,0,default);
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void ShippedShorterSlotSkipsFreedNodeResendAndKeepsOtherQueuedSends(bool stop)
@@ -42,6 +43,7 @@ public sealed class M3M4X21BuilderTests
         }
         finally{Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DeferredHostTouchAndCollectedLoadParseAndLogOnlyOnce()
     {
@@ -56,6 +58,7 @@ public sealed class M3M4X21BuilderTests
         }
         finally{Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MissingDirectoryStillEmitsWarningsThenLoadTime()
     {
@@ -65,6 +68,7 @@ public sealed class M3M4X21BuilderTests
         Assert.Equal("RobotDataLoader.LoadCubeLightAnimations.LoadTime",Assert.Single(entries).Key);
         Assert.Equal(EngineLogLevel.Info,entries[^1].Level);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NullResourceInputDoesNotFallBackToAnimationAssets()
     {
@@ -79,6 +83,7 @@ public sealed class M3M4X21BuilderTests
         }
         finally{Directory.Delete(root,true);}
     }
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void RegrownSlotDoesNotReviveAnIteratorFreedByEarlierShrink(bool modifier)
@@ -107,6 +112,7 @@ public sealed class M3M4X21BuilderTests
         }
         finally{Directory.Delete(root,true);}
     }
+    // reach: production — message dispatch/tick or public command entry, with actual component wiring.
     [Fact]
     public void CollectedCubeFilesAndTriggerMapBothUseResourcesPath()
     {
@@ -120,12 +126,14 @@ public sealed class M3M4X21BuilderTests
         }
         finally{Directory.Delete(resources,true);Directory.Delete(assets,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NullRootDirectLoadEmitsLoadTimeOnce()
     {
         var logs=new List<string>();CubeLightAnimations.Load(null,sourceLog:(_,_,key,_)=>logs.Add(key));
         Assert.Equal(new[]{"RobotDataLoader.LoadCubeLightAnimations.LoadTime"},logs);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void RepeatedFatalFileWithoutTextSinkIsANondeduplicatedEngineStackPolicySkip()
     {
@@ -143,6 +151,7 @@ public sealed class M3M4X21BuilderTests
         }
         finally{Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MissingResourceNoticesWithoutTextSinkUseTheEngineStackChannel()
     {
@@ -154,6 +163,7 @@ public sealed class M3M4X21BuilderTests
         Assert.Equal(new[]{"Stack.CubeLightLoader.TriggerMapNotFound","Stack.CubeLightLoader.AnimationsNotFound","RobotDataLoader.LoadCubeLightAnimations.LoadTime"},order);
         Assert.Equal("RobotDataLoader.LoadCubeLightAnimations.LoadTime",Assert.Single(source).Name);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void BackpackCollectUsesTheConstructorResourceRootAndNeverAnAssetsDecoy(bool supplied)

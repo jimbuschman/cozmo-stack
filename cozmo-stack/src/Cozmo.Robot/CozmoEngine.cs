@@ -71,6 +71,7 @@ public sealed class CozmoEngineOptions
     public string? ResourcesPath { get; init; }
 
     /// <summary>Where the block pool is kept (<see cref="CubeConnections.Init"/>); an empty path turns persistence off.</summary>
+    // fidelity: M3-064 — host supplies DataPlatformExternalPath (scope 4).
     public string? BlockPoolPath { get; init; }
 
     // fidelity: M3-054
@@ -207,6 +208,7 @@ internal sealed class EngineTickRunner
     private readonly Action<string> _log;
     private volatile bool _stop;
     private Thread? _thread;
+    internal bool IsCurrentThread => ReferenceEquals(Thread.CurrentThread,_thread);
 
     public EngineTickRunner(Func<long> nowNs, Action<long> sleepNs, Func<long, int> tick, Action<string> log)
     {
@@ -2233,6 +2235,20 @@ public sealed partial class CozmoEngine : IDisposable
 
     /// <summary>Runs <paramref name="gameMessage"/> as a game message at the start of the next tick (CD7).</summary>
     internal void PostGameMessage(Action gameMessage) => Post(gameMessage);
+
+    // M3-021: public camera requests join the same engine-thread queue as native game inputs.
+    // Keep the synchronous host result, without waiting on the engine thread itself.
+    internal T InvokeCameraRequest<T>(Func<T> request)
+    {
+        ObjectDisposedException.ThrowIf(_disposed,this);
+        if(_runner is null || _runner.IsCurrentThread || Monitor.IsEntered(_tickLock))
+        {
+            lock(_tickLock)return request(); // Before startup / manually ticked units have no competing engine worker.
+        }
+        var done=new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Post(()=>{try{done.TrySetResult(request());}catch(Exception ex){done.TrySetException(ex);}});
+        return done.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
+    }
 
     // ------------------------------------------------------------------ robot → engine
 

@@ -25,6 +25,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         public void Disconnect(IPEndPoint address) {} public void SendData(byte[] data) {}
     }
     private static Pose3d At(double x,double y,double z=0,double yaw=0) => new(Mat3.AboutZ(yaw),new Vec3(x,y,z));
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiveCliffUsesConstructorMapSharedIdInputQuadAndRobotNormal()
     {
@@ -53,6 +54,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Equal(new[] { "BlockWorld.AddLocatedObject","robot.object_located","RobotImplMessaging.HandleCliffEvent.Detected" },entries.Select(e=>e.Name));
         Assert.Contains(missing,s=>s.Contains("M11-048")); Assert.Empty(world.Maps.Current.Regions);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AllOverlapsAreStampedWithInclusiveBoxToleranceAndPiOverride()
     {
@@ -66,6 +68,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Same(a,returned); Assert.Equal(777u,a.LastObservedTimestamp);Assert.Equal(777u,b.LastObservedTimestamp);
         Assert.Equal(2,w.LocatedObjects.Count); // both boundary hits; angle pi cannot reject
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void FrameCasesKeepParentedFailureSilentAndUseIdentityForOtherAsParent()
     {
@@ -80,6 +83,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         a.PoseNameNode.Parent=b.PoseNameNode;Assert.True(Same());
         b.OriginId=1;a.PoseNameNode.Parent=null;Assert.IsType<NotSupportedException>(Assert.Throws<System.Reflection.TargetInvocationException>(()=>Same()).InnerException);Assert.Contains(missing,s=>s.Contains("M12 pose records"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CliffDataCloneSharesNoTimestampsAndEqualityUsesStrictNormalBound()
     {
@@ -91,6 +95,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.True(zero.Same(new CliffMapData(new Vec2(MathF.BitDecrement(tolerance),0),99)));
         Assert.False(zero.Same(new CliffMapData(new Vec2(float.NaN,0),0)));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NativeAreaRetainsParentCreditThroughSubdivisionAndMerge()
     {
@@ -107,6 +112,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Empty(t.Root.Children);Assert.Same(shared,t.Root.Content.Data);Assert.Equal(nativeArea*2,t.Processor.ExploredArea);
         Assert.Contains(t.Root,t.Processor.TypeSets[MemoryMapContentType.Cliff]);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ForceRemovalEdgeAreaSwapAndDestroyFollowProcessorCallbacks()
     {
@@ -123,6 +129,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         other.DestroyNodes(tree.Processor);Assert.Equal(4,other.Children.Count);Assert.All(other.Children,Assert.Null);
         Assert.Equal(a*2.25,tree.Processor.ExploredArea);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MergeIncludesChildThreeTimestampsAndWritesSharedChildZero()
     {
@@ -132,6 +139,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         var shared=t.Root.Children[0]!.Content.Data;t.Root.TryAutoMerge(t.Processor);
         Assert.Same(shared,t.Root.Content.Data);Assert.Equal(1u,shared.First);Assert.Equal(999u,shared.Last);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ExpansionGateTypoKeyRemovalWarningAndDirtyMatchCheckedRows()
     {
@@ -145,6 +153,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         removal.Insert(new[] {new Vec2(81,81)},new SourceMapData(MemoryMapContentType.ObstacleChargerRemoved,1,2),1);
         Assert.Equal("QuadTree.Insert.RemovalPolyNotContained",keys[^1]);Assert.False(removal.Dirty);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MapLifecyclePrintsArgumentOriginAndKeepsCurrentHelperNonNull()
     {
@@ -161,6 +170,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.True(EngineErrorState.ErrorFlagSet);Assert.Equal(4u,m.CurrentOrigin);Assert.False(m.Maps.ContainsKey(3));Assert.NotNull(m.Current);
         Assert.Contains(missing,s=>s.Contains("M11-048"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void PlayAreaStrictFloatGateRunsBeforeWindowAndNaNSkips()
     {
@@ -174,6 +184,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         now=double.NaN;w.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),cam,0,pd);Assert.Single(seen);
         Assert.DoesNotContain("robot.play_area_size",keys);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void PoseQueueUsesFirstDuplicateAndFlagZeroBranchesAndAlwaysNotifiesConfiguration()
     {
@@ -185,6 +196,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         w.BroadcastObjectPoseChanged(o,Pose3d.Identity,PoseState.Known);Assert.Equal(1,w.PoseChangeCount);
         w.BroadcastObjectPoseChanged(o,Pose3d.Identity,PoseState.Known);Assert.Equal("BlockWorld.OnObjectPoseChanged.MultipleChanges",keys[^1]);Assert.Equal(1,w.PoseChangeCount);Assert.Equal(4,notifications);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void AddAndUpdateFailureLeavesWindowSetAndSkipsTail()
     {
@@ -198,6 +210,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Equal(7u,result.Status);Assert.True(w.PoseChangeWindow);Assert.False(tail);
         Assert.Contains("BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed",keys);Assert.True(EngineErrorState.ErrorFlagSet);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void VisionFailureStillCallsDockingBeforeLocalHandlerError()
     {
@@ -213,6 +226,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         Assert.Equal(new[] {"BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed","VisionComponent.UpdateVisionResults.BlockWorldUpdateFailed","docking","VisionComponent.UpdateAllResults.LocalHandlerFailed"},order);
         Assert.True(vision.World.PoseChangeWindow);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DeletionDefersNotificationsAndNullWarningPrecedesPredicate()
     {
@@ -227,6 +241,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
         f.Predicates.Add(_=>{predicate=true;return false;});w.DeleteLocatedObjects(f);
         Assert.False(predicate);Assert.Equal("BlockWorld.DeleteLocatedObjects.NullObject",Assert.Single(keys));Assert.Empty(map);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NaNInsertLogsBeforeErrorFlagAndDoesNotMutate()
     {

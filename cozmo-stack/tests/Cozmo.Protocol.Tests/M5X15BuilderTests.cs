@@ -9,6 +9,7 @@ public sealed class M5X15BuilderTests : IDisposable
 {
     private readonly bool _error = EngineErrorState.ErrorFlagSet;
     public void Dispose() => EngineErrorState.ErrorFlagSet = _error;
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData("file")] [InlineData("directory")] [InlineData("missing")]
     public void CacheCleanupRunsAtConstructionAndBeforeRobotDestruction(string kind)
@@ -31,6 +32,7 @@ public sealed class M5X15BuilderTests : IDisposable
         }
         finally { Directory.Delete(cache, true); }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ParameterMessageUsesBaseSetterAndPreservesOrderDefaultsAndMismatchTail()
     {
@@ -51,6 +53,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Equal(false, flagAtError); Assert.True(EngineErrorState.ErrorFlagSet);
         Assert.Equal(4000f, p[LiveIdleParam.BlinkSpacingMaxTime_ms]);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void SubscriptionDirectionsOwnersAndQuietUnfedMembersMatch()
     {
@@ -65,6 +68,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Contains(lines, l => l.Contains("M9-029 subscription 0xC4"));
         Assert.DoesNotContain(lines, l => l.Contains("subscription 0xB4") || l.Contains("owned vector +8"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DrivingStackErasesFirstMatchAndChangesCurrentOnlyOnInit()
     {
@@ -85,6 +89,7 @@ public sealed class M5X15BuilderTests : IDisposable
         keys.Clear(); EngineErrorState.ErrorFlagSet = false; handler.Remove("absent");
         Assert.Equal(new[] { "LoopBoundOverflow" }, keys); Assert.Equal(1001, handler.Entries.Count); Assert.True(EngineErrorState.ErrorFlagSet);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(1, false, 0x94, 0x90, 0x8C)] [InlineData(0, true, 0x96, 0x92, 0x8E)] [InlineData(0, false, 0x95, 0x91, 0x8D)]
     public void DrivingInitSelectsMoodBeforeNeedsThenDefault(int mood, bool needs, int start, int loop, int end)
@@ -97,6 +102,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Equal(new DrivingAnimations((AnimationTrigger)start, (AnimationTrigger)loop, (AnimationTrigger)end), handler.Current);
         Assert.Equal(mood == 1 ? new[] { "mood" } : new[] { "mood", "needs" }, order);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CompletedLoopDoubleUnlocksThenEndCompletionLocksAndDestroyCancelsInOrder()
     {
@@ -121,6 +127,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Equal(new[] { ("Cancel", 0u), ("Cancel", 401u), ("Cancel", 402u) }, calls);
         Assert.Equal(0u, handler.PlayEndAnim());
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MissingMoodAndNeedsFallThroughToDefaultAndQueueARealRunner()
     {
@@ -137,6 +144,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.DoesNotContain(lines, l => l.Contains("M12-032 PathComponent.HasPathToFollow")); // P30 now reads the real constructor's Ready status.
         Assert.Equal(0, robot.Engine.Robot!.ActionList.QueueCount);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void DrivingTrackOwnerUsesSignedToStringOfTagBits()
     {
@@ -148,6 +156,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.True(robot.Motion.AreAllTracksLockedBy(4, "-2147483647"));
         Assert.False(robot.Motion.AreAllTracksLockedBy(4, "2147483649"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ActionListCompletionReachesTheEngineToGameSignal()
     {
@@ -158,6 +167,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.NotNull(completed); Assert.Equal(601u, completed.Value.Tag); Assert.Equal(0u, completed.Value.Result);
     }
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void CompletedLoopQueuesAndUpdatesItsEndDuringTheSameActionListTick()
     {

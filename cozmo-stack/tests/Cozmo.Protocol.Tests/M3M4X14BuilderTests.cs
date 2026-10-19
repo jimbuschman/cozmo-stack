@@ -18,6 +18,7 @@ public sealed class M3M4X14BuilderTests : IDisposable
         """;
     private static void Define(CubeLightAnimations lib, string text, List<EngineLogEntry> entries)
     { Assert.True(Json.TryParseFirst(Encoding.UTF8.GetBytes(text), out var doc)); using(doc) lib.Define(doc.RootElement, null, Capture(entries)); }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LoaderFirstByteSortedNameScalarEmptyReplaceDefaultsAndConversions()
     {
@@ -42,6 +43,7 @@ public sealed class M3M4X14BuilderTests : IDisposable
         }
         finally { Directory.Delete(root,true); }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LoaderErrorOrderAndFailedDefinitionKeepsPrevious()
     {
@@ -59,6 +61,7 @@ public sealed class M3M4X14BuilderTests : IDisposable
         }
         finally { Directory.Delete(root,true); }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData("[1]")] [InlineData("7")] [InlineData("{\"wakeUp\":{\"x\":1}}")]
     [InlineData("{\"wakeUp\":[1]}")] [InlineData("pattern")]
@@ -90,6 +93,7 @@ public sealed class M3M4X14BuilderTests : IDisposable
         }
         finally { Directory.Delete(root,true); }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void BlendWholeWordAndClampedLEDWarningsUseExactWords()
     {
@@ -101,6 +105,7 @@ public sealed class M3M4X14BuilderTests : IDisposable
         var logs=new List<EngineLogEntry>(); CubeLightComponent.GetLEDState(current,4,Capture(logs)); CubeLightComponent.GetLEDState(current,-7,Capture(logs));
         Assert.Equal(new[]{"Requested LED index is too large (4 > 3). Returning 3.","LED index should be >= 0, not -7. Using 0."},logs.Select(e=>e.Text));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ModifierOrsWordsAddsPerLedPeriodsFourRotationAddsAndCopiesRawPoint()
     {
@@ -118,6 +123,7 @@ public sealed class M3M4X14BuilderTests : IDisposable
         Assert.Equal(7u,p.RotationPeriodMs);Assert.Equal(2,p.RelativeMode);Assert.Equal(0x7fc12345,BitConverter.SingleToInt32Bits(p.RelativePoint.X));
         Assert.Equal(unchecked((int)0x80000000),BitConverter.SingleToInt32Bits(p.RelativePoint.Y)); Assert.Equal(123u,p.DurationMs);Assert.False(p.CanBeOverridden);Assert.Equal("n",p.DebugName);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData("DanceFadeOff","fadeOff_1sec")] [InlineData("Flash","flash")] [InlineData("SpeedTapWin","speedTapWin")]
     public void ShippedZeroAnimationsBlendThroughConnectedProductionPlay(string trigger,string name)
@@ -142,6 +148,7 @@ public sealed class M3M4X14BuilderTests : IDisposable
         }
         finally {Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NonBlendedZeroDurationClearsAndStopSerializerRunsAfterUpdate()
     {
@@ -159,11 +166,12 @@ public sealed class M3M4X14BuilderTests : IDisposable
             var zero=new LedColor(0,0,0,0);var mod=new CubeLightModifier(Enumerable.Repeat(LedPattern.Solid(zero),4).ToArray(),0,0,default);
             var missing=new List<string>();rig.Engine.StackLogLine+=missing.Add;
             Assert.False(component.PlayLightAnim(ObjectType.Block_LIGHTCUBE1,"Sleep",2,modifier:true,lights:mod));
-            Assert.Contains(missing,l=>l.Contains("M4-045 / M15-037"));
+            Assert.Contains(missing,l=>l.Contains("M1-034 / M4-045"));
             Assert.Contains(logs,l=>l.Name=="CubeLightComponent.BlendAnimWithCurLights.NullActiveObject");
         }
         finally {Directory.Delete(root,true);}
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void LiveModifierFeedsBlendLayerOneOverloadAndBackBlendedDiscardsIt()
     {

@@ -235,6 +235,8 @@ public sealed partial class ObservableObject
     /// <summary>OV10 F2: vtable +0x0C is 1 for ActiveCube and Charger; localization eligibility is a separate slot.</summary>
     // fidelity: M11-013
     public bool IsActive => CubeGeometry.IsCube(Type) || Type == ObjectType.Charger_Basic;
+    // fidelity: M4-041 — ActiveObject ctor 0x004E0C6E..0x004E0CAC: four zero color/period states per identity.
+    internal LedPattern[] ActiveLedState = new LedPattern[4];
     /// <summary>vtable +0x5C, <c>IsUnique</c>: 1 for ActiveCube (0x004E3882) and Charger (0x004E3883), 0 in the base (0x004E02AE).</summary>
     public bool IsUnique => ObservableMapSlot5C == 1;
     /// <summary>Pose in the robot's world origin; meaningful while <see cref="PoseState"/> is not Unknown.</summary>
@@ -1094,6 +1096,8 @@ public sealed partial class BlockWorld
     // this stack (there is no EngineToGame channel): MISSING (M11-038). PoseStateChanged is this stack's consumer channel for the
     // pose-state broadcasts and for a located object being deleted.
     public event Action<ObservableObject, PoseState, PoseState>? PoseStateChanged;
+    // fidelity: M4-049 — native vtable +0xC gate precedes this recipient.
+    internal Action<uint,PoseState,PoseState>? ActiveObjectPoseStateChanged;
     /// <summary>Lines the world model would log, for the conformance tool.</summary>
     public event Action<string>? Log;
 
@@ -2344,8 +2348,8 @@ public sealed partial class BlockWorld
         if(oldState!=obj.PoseState && obj.PoseState!=PoseState.Unknown)
             Maps.UpdateObjectPose(obj,obj.Pose,oldState);
         // MapComponent::UpdateObjectPose immediately returns for family 6, on both calls. No game message for a cliff.
-        if (oldState != obj.PoseState)
-            Missing("M4-049 active-object vtable +0xC gate at 0x005062B8..0x005062DA is unread; no cube-light pose-state callback is inferred from an object family");
+        if(oldState!=obj.PoseState && obj.IsActive)
+            ActiveObjectPoseStateChanged?.Invoke(obj.ObjectId,oldState,obj.PoseState); // 0x004E385D; other families0x004E0241.
         if (obj.Family != ObjectFamily.MarkerlessObject && oldState != obj.PoseState)
             PoseStateChanged?.Invoke(obj,oldState,obj.PoseState);
     }

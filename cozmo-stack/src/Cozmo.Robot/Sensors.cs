@@ -370,6 +370,9 @@ public sealed class CozmoSensors
     private uint _cliffSuspiciousAt;                        // +0x1C
     /// <summary>The raw-state history the lower_bound walk reads (RobotStateHistory's raw map): timestamp and cliff[0].</summary>
     private readonly List<(uint Timestamp, ushort Cliff0)> _cliffHistory = new();
+    // M11-097 owns the native AddRobotStateToHistory / GetLastStateWithFrameID results; no success is invented.
+    internal Func<RobotState,bool?>? HistoryAdmissionForTest;
+    internal Func<RobotState,bool?>? HistoryStatsGateForTest;
 
     // fidelity: M4-019
     /// <summary>SC4c W4: the constant divisor of the removal step, 100.0f (0x00634728), not the deque size.</summary>
@@ -833,7 +836,7 @@ public sealed class CozmoSensors
         }
         if (CliffHistoricalPoseForTest is null)
         {
-            _robot.Engine.EmitStackLog("MISSING: M11-051/M11-053 ComputeStateAt(timestamp, true) 0x006349A6; cliff pose/result unknown, skipping AddCliff and its conditional Detected/failure logs");
+            _robot.Engine.EmitStackLog("MISSING: M11-097 ComputeStateAt(timestamp, true) 0x006349A6; cliff pose/result unknown, skipping AddCliff and its conditional Detected/failure logs");
             return null;
         }
         var state = CliffHistoricalPoseForTest(cliff.Timestamp);
@@ -977,12 +980,7 @@ public sealed class CozmoSensors
                     // key = timestamp, value carries cliff[0]. C13.3: the engine's state-history retention is 3000 ms
                     // (RobotStateHistory::RobotStateHistory sets the window at history+0x3c, 0x0053088D..0x005308C6);
                     // the stack's parallel history uses the same window, which only bounds memory.
-                    if (s.CliffDataRaw is { Length: 4 } hraw)
-                    {
-                        _cliffHistory.Add((s.Timestamp, hraw[0]));
-                        while (_cliffHistory.Count > 0 && unchecked(s.Timestamp - _cliffHistory[0].Timestamp) > 3000)
-                            _cliffHistory.RemoveAt(0);
-                    }
+                    // Admission follows the origin/treads/history-result gates below, not this raw sensor copy.
                 }
                 // fidelity: M4-033
                 // T3/T4: 0x00512996, after CliffSensorComponent::UpdateRobotData and before path/IMU handling.
@@ -1051,11 +1049,23 @@ public sealed class CozmoSensors
                     // < 0x65. C12.3: the counter is per-mismatch-run: 0 on a frame match, old+1 on a mismatch, 0 once the
                     // count reaches 0x65 (so the 101st mismatch still skips the stats). C12.4: r6 = 1 also on an
                     // AddRobotStateToHistory failure (0x00512C38) and a GetLastStateWithFrameID failure (0x00513110); the
-                    // origin miss is the OriginAccepted gate below. MISSING: this layer has no history-add or pose-frame
-                    // failure signal (the stack's RobotStateHistory.Add is void and lives in M11; there is no
-                    // GetLastStateWithFrameID), so those two cannot be included.
+                    // origin miss is the OriginAccepted gate below. M11-097 owns the missing result signals.
                     if (_robot.Engine.Robot?.OriginAccepted(s) == true)
                     {
+                        bool? admitted=ReferenceEquals(DelocalizeTrigger,s)?false:HistoryAdmissionForTest?.Invoke(s);
+                        if(admitted is null)
+                            Behavior.SteppedBehavior.ReportMissing("M11-097 AddRobotStateToHistory result 0x00512C38 is unbuilt; cliff-history admission is skipped after the supported off-ramp origin gate 0x00512C44 (on-ramp entry 0x00512BE2..0x00512BEE is unreachable: M2-024)");
+                        if(admitted==true && s.CliffDataRaw is {Length:4} hraw)
+                            lock(_gate)
+                            {
+                                if(!_cliffHistory.Any(e=>e.Timestamp==s.Timestamp))
+                                {
+                                    int at=_cliffHistory.FindIndex(e=>e.Timestamp>s.Timestamp);
+                                    if(at<0)_cliffHistory.Add((s.Timestamp,hraw[0]));else _cliffHistory.Insert(at,(s.Timestamp,hraw[0]));
+                                }
+                                uint newest=_cliffHistory[^1].Timestamp;
+                                _cliffHistory.RemoveAll(e=>newest>=3000 && e.Timestamp<newest-3000);
+                            }
                         bool mismatch = !FrameMatches(s);
                         bool statsAllowed;
                         if (mismatch)
@@ -1079,9 +1089,15 @@ public sealed class CozmoSensors
                         }
                         if (statsAllowed)
                         {
-                            DetectGyroDriftAndBias(s);
-                            if (s.CliffDataRaw is { Length: 4 } sraw) UpdateCliffRunningStats(sraw[0]);
-                            UpdateCliffDetectThreshold();
+                            bool? historyGate=HistoryStatsGateForTest?.Invoke(s);
+                            if(historyGate is null)
+                                Behavior.SteppedBehavior.ReportMissing("M11-097 C12.4 AddRobotStateToHistory / GetLastStateWithFrameID failure gate 0x00513088..0x00513110 is unbuilt; gyro/cliff running-stat tail skipped rather than assuming success");
+                            if(admitted==true&&historyGate==true)
+                            {
+                                DetectGyroDriftAndBias(s);
+                                if (s.CliffDataRaw is { Length: 4 } sraw) UpdateCliffRunningStats(sraw[0]);
+                                UpdateCliffDetectThreshold();
+                            }
                         }
                     }
                 }

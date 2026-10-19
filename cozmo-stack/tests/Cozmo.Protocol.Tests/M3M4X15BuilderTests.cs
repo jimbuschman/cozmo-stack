@@ -10,6 +10,7 @@ public sealed class M3M4X15BuilderTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("das15-").FullName;
     public void Dispose() => Directory.Delete(_root,true);
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(1u,"00F8C16A-EB80-47FF-0030-67B84814BCEE")]
     [InlineData(0u,"00087F8C-2FAA-C497-00A8-16B7C0CC21D8")]
@@ -25,6 +26,7 @@ public sealed class M3M4X15BuilderTests : IDisposable
         Assert.Equal(ulong.MaxValue,EngineUuid.ToUUIDWord(18446744073709551616.0));
         Assert.Equal(0xfffffffffffff800UL,EngineUuid.ToUUIDWord(double.BitDecrement(18446744073709551616.0)));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ZeroByteDeviceFileIsOverwrittenInJavaFormAndEmptyLineIsPreserved()
     {
@@ -37,6 +39,7 @@ public sealed class M3M4X15BuilderTests : IDisposable
         File.WriteAllText(path,"\n");using var empty=Create(path);
         Assert.Equal("d41d8cd98f00b204e9800998ecf8427e",empty.Engine.Das.GetGlobalsForThisRun()["$player_id"]);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void FailedDirectoryCreateOrFileWriteStillStartsWithNewDeviceId(bool directoryTarget)
@@ -48,6 +51,7 @@ public sealed class M3M4X15BuilderTests : IDisposable
         Assert.Matches("^[0-9a-f]{32}$",robot.Engine.Das.GetGlobalsForThisRun()["$player_id"]);
         Assert.False(File.Exists(path));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void NativeHeadBodyEventsFollowGlobalsAndUseSameBufferForTextAndData()
     {

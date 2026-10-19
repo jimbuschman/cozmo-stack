@@ -22,6 +22,7 @@ public sealed class M5X16BuilderTests : IDisposable
     }
     private CozmoRobot Robot(Action<string>? beforeStat=null)=>CozmoRobot.CreateForTest(new Port(),()=>0,
         new CozmoEngineOptions{DasDeviceIdPath=Path.Combine(_root,"device-id")},beforeAnimationFileStat:beforeStat);
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void SourceLookupLogsOnceThenErrorFlagWhilePresenceAndEmptyRemainSilent()
     {
@@ -34,6 +35,7 @@ public sealed class M5X16BuilderTests : IDisposable
         var error=Assert.Single(entries);Assert.Equal(Invalid,error.Name);Assert.Equal(EngineLogLevel.Error,error.Level);Assert.Null(error.Channel);
         Assert.Equal("AnimationGroup requested for unknown animation group 'absent'.",error.Text);Assert.Equal(false,flagAtError);Assert.True(EngineErrorState.ErrorFlagSet);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void TriggerInitAndIdleEachReachOneNativeLoggingLookup()
     {
@@ -44,6 +46,7 @@ public sealed class M5X16BuilderTests : IDisposable
         entries.Clear();var scheduler=robot.Animations.Scheduler;scheduler.PushIdleAnimation(AnimationTrigger.NeutralFace,"test");scheduler.Advance(0);
         Assert.Single(entries.Where(e=>e.Name==Invalid));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void RobotConstructedDuringLoadGetsDefaultTriggerSinkAndOrderedMissLogs()
     {
@@ -57,6 +60,7 @@ public sealed class M5X16BuilderTests : IDisposable
             Assert.Contains(entries,e=>e.Name==Invalid&&e.Text.EndsWith("AnimationGroup requested for unknown animation group ''."));
         }
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void FacelessNeutralConstructionLogsSkipButRemovalDoesNot()
     {
@@ -64,6 +68,7 @@ public sealed class M5X16BuilderTests : IDisposable
         scheduler.LoadNeutralFace();Assert.Contains(missing,l=>l.Contains("M1-034 / M5-010"));
         missing.Clear();scheduler.ResetToConstructed();Assert.DoesNotContain(missing,l=>l.Contains("M1-034 / M5-010"));
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ActivityLifecycleNamesActualOwningRecordAndDoesNotFakeHandlerStack()
     {

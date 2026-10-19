@@ -57,6 +57,7 @@ public class RemainingGapTests
     /// entry is 0; above it the smallest prime at or above the input; 0xFFFFFFFC and up raises (0x0003B074). The table and the cases are
     /// the binary's (the table was read from the shipped libc++_shared.so).
     /// </summary>
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void M4_010_P28_NextPrimeIsTheSmallestPrimeAtOrAboveTheInputWithTheTablesZero()
     {
@@ -81,6 +82,7 @@ public class RemainingGapTests
 
     // ------------------------------------------------------------------ M4-011: the persistent pool
 
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ThePoolIsSavedAsTheEngineWritesItAndLoadedBackAtInit()
     {

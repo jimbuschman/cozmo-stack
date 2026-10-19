@@ -9,6 +9,7 @@ public sealed class M11DelocalizationBuilderTests
 {
     private static ObservableObject Object(uint id,uint bucket,Pose3d parent)=>new(id,ObjectType.Block_LIGHTCUBE1,Array.Empty<KnownMarker>())
         {OriginId=bucket,Pose=new Pose3d(Rotation3d.Identity,new(12,0,22),parent:parent),PoseState=PoseState.Known,ActiveId=0,FromDistance=1};
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void SameRootDoesNotMoveOrTouchTheConfirmer()
     {
@@ -16,6 +17,7 @@ public sealed class M11DelocalizationBuilderTests
         var obj=Object(18,7,old);world.AddLocatedObject(obj);var node=obj.NativePose.Node;
         Assert.Equal(0u,world.UpdateObjectOrigin(18,7));Assert.Same(node,obj.NativePose.Node);Assert.Equal(7u,obj.OriginId);Assert.Null(obj.Confirmation);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ChangedRootRekeysAndUpdatesExistingConfirmerWithoutChangingStateOrPose()
     {
@@ -29,6 +31,7 @@ public sealed class M11DelocalizationBuilderTests
         Assert.Same(entry,obj.Confirmation);Assert.Equal(4,entry.Count);Assert.Equal(3,entry.Misses);
         Assert.Equal(1u,world.UpdateObjectOrigin(18,7)); // Last old bucket erased, hence BadOrigin.
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void ALocalizableObjectKeepsTheWholeOldBucketWithoutPoseStateWrites()
     {
@@ -39,6 +42,7 @@ public sealed class M11DelocalizationBuilderTests
         Assert.True(world.AnyRemainingLocalizableObjects(7));Assert.False(world.AnyRemainingLocalizableObjects(8));
         world.FinishDelocalization(9);Assert.Equal(2,world.Objects.Count);Assert.Equal(PoseState.Known,good.PoseState);Assert.Equal(PoseState.Dirty,other.PoseState);Assert.Equal(0,changes);
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void VisionOnlyDefaultsAndOverwriteRetainTheNativeFieldsAndNoCullBranch()
     {
@@ -65,6 +69,7 @@ public sealed class M11DelocalizationBuilderTests
         Assert.Equal(1u,r.PoseFrameId);Assert.Equal((byte)1,r.VisionPoseUpdated);
         Assert.Equal(delivered+1,rig.Robot.Engine.NativeUiDeliveryCount); // E3 increments once before app delivery.
     }
+    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
     [Fact]
     public void MissingExternalInterfaceSkipsAppAndLocalEmitTogether()
     {
