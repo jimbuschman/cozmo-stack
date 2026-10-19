@@ -118,7 +118,7 @@
 | 61w3n | B-M3M4-33 | DONE per status/B-M3M4-33.md (robot-state history pulled into M3+M4, operator 2026-10-1... | DONE (5/5 checked items; 2 MISSING) | `research/20261019-b-m3m4-33-check.md` |
 | 61w3o | B-M3M4-34 | DONE per status/B-M3M4-34.md; manager fix review PASS (research/20261019-b-m3m4-34-chec... | DONE (5/5 items; 3 MISSING) | `research/20261019-b-m3m4-34-check.md` |
 | 61w3p | B-M3M4-35 | DONE per status/B-M3M4-35.md; manager check PASS (research/20261019-b-m3m4-35-check.md) | DONE (2/2 items; 0 MISSING) | `research/20261019-b-m3m4-35-check.md` |
-| 61w3q | B-M3M4-36 | open (operator decision 2026-10-19: CozmoRobot always builds its world model; settle fi... | no status file | none found |
+| 61w3q | B-M3M4-36 | DONE per status/B-M3M4-36.md; manager check PASS (research/20261019-b-m3m4-36-check.md)... | DONE (6/6 items; 0 MISSING) | `research/20261019-b-m3m4-36-check.md` |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
