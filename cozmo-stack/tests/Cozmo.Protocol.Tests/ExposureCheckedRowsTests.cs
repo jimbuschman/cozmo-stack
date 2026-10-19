@@ -72,7 +72,7 @@ public sealed class ExposureCheckedRowsTests:IDisposable
     }
     [Fact] public void ActualVisionWrapperLogsOnlySuccessAndOwnsTheConnectedPipeline()
     {
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot);var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision;var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;
         Assert.Equal(0u,vision.SetAutoExposureParams(2,115,.5f,.8f));Assert.IsType<ExposurePipeline>(vision.QualityProcessor.Pipeline);var info=Assert.Single(logs);Assert.Equal("VisionSystem",info.Channel);Assert.Equal("VisionSystem.SetAutoExposureParams",info.Name);Assert.Equal("subSample:2 midVal:115 midPerc:0.500 changeFrac:0.800",info.Text);
         logs.Clear();Assert.Equal(0x03000000u,vision.SetAutoExposureParams(0,99,.5f,.8f));Assert.DoesNotContain(logs,e=>e.Level==EngineLogLevel.Info);
     }

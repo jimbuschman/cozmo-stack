@@ -32,7 +32,7 @@ public static class FreeplayTool
     {
         using var robot = CozmoRobot.CreateOffline(engineOptions:EngineStartupResources.OptionsForRoot(obb));
         robot.Transport.OfflineAcceptConnection();
-        using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
+        var vision = robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         using var m = new ManipulationSystem(robot, vision);
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap() };
         using var stack = FreeplayStack.Create(obb, robot, ctx, () => 0, vision, m, withReactions: false);
@@ -69,7 +69,7 @@ public static class FreeplayTool
         robot.Transport.OfflineAcceptConnection();
         var assets = TriggersTool.FindAssetsRoot(obb);
         if (assets is not null) robot.Animations.LoadFrom(assets);
-        using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
+        var vision = robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         using var m = new ManipulationSystem(robot, vision);
         var ctx = new BehaviorContext { Robot = robot, Triggers = new AnimationTriggerMap(), Mood = new MoodState(MoodModel.Load(obb)) };
         double clock = 0;
@@ -102,7 +102,7 @@ public static class FreeplayTool
         robot.Animations.LoadFrom(assets);
         var sound = Path.Combine(obb, "assets", "cozmo_resources", "sound");
         if (Directory.Exists(sound)) robot.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound });
-        using var vision = new VisionSystem(robot);
+        var vision = robot.Vision;
         using var m = new ManipulationSystem(robot, vision);
         var log = new List<string>();
         bool nominal = false;

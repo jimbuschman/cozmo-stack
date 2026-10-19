@@ -523,13 +523,14 @@ public class FaceRecognizerTests
     /// <c>SetSerializedData</c> endpoint when the seam is available, and <c>GetSerializedFaceData</c>
     /// serializes the enrollment back out; <c>SetFaceEnrollmentMode</c> forwards Enroll's mode/id.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M14_011_VisionSystemWiresTheRecognizerAlbumAndEnrollmentPaths()
     {
-        using var rig = new Rig();
         var okao = new FakeOkaoRecognizer { ProductionCapacity = 1000, RestoredCapacity = 1000 };
         okao.RestoredEntries.Add(5);
-        using var vision = new VisionSystem(rig.Robot, rig.Cal, okaoRecognizer: okao);
+        using var rig = new Rig(okaoRecognizer:okao);
+        var vision = rig.Robot.Vision;
         Assert.True(vision.Recognizer.IsAvailable);
 
         vision.InstallSerializedFaceData(new byte[] { 1 }, EnrollmentFor((1, 5, "A")));

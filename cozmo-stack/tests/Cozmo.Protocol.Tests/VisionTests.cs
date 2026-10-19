@@ -807,7 +807,7 @@ public class VisionTests
         public WorldRig(bool connectCube = true, bool seedCubeId = true)
         {
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
-            Vision = new VisionSystem(Robot, Cal) { Enabled = false };
+            Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
             Vision.World.Log += Log.Add;
             Vision.Log += Log.Add;
             if (seedCubeId) ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE1, CubeId);
@@ -873,6 +873,7 @@ public class VisionTests
     /// &amp;&amp; !wasCameraMoving &amp;&amp; notMoving</c>, Known when true (0x00505EB4..0x00505EBA). The object's ID is the one <c>SetID</c> stores for the type
     /// (0x004EF468), which the rig seeded.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ACubeIsLocatedOnlyAfterTwoMatchingSightingsAndIsKnownWhenCloseAndSteady()
     {
@@ -942,6 +943,7 @@ public class VisionTests
     /// (no store to +0x24 in 0x00507128..0x005075A4) and deletes the object with <c>DeleteLocatedObjects</c> (0x005073F4): the object is gone from the world,
     /// and its own state byte is untouched.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ADirtyCubeThatIsNotWhereItShouldBeIsDeletedAfterTwoMisses()
     {
@@ -972,6 +974,7 @@ public class VisionTests
     /// wants a Dirty pose. The robot has to see through to something behind where the cube was, or have
     /// been told the cube moved, before it gives the cube up.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void AKnownCubeThatVanishesFromAnEmptyViewIsKept()
     {
@@ -987,6 +990,7 @@ public class VisionTests
         Assert.True(rig.Vision.Locator.IsLocated(WorldRig.CubeId));
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ACubeOutOfViewIsNotMarkedUnobserved()
     {
@@ -1001,6 +1005,7 @@ public class VisionTests
         Assert.False(rig.Vision.Locator.IsVisibleFromCamera(WorldRig.CubeId));
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void UnobservedChecksAreSkippedWhileMovingOrRotatingFast()
     {
@@ -1027,6 +1032,7 @@ public class VisionTests
     /// <c>ProcessCapture</c>), so an IMU rate reaches <c>BlockWorld::CheckForUnobservedObjects</c> through
     /// the public entry point the offline rig uses.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheRotatingGateReachesBlockWorldThroughProcessImage()
     {
@@ -1046,6 +1052,7 @@ public class VisionTests
     /// (bit 0) of the <c>HistRobotState</c> nearest the timestamp (lambda 0x00642672,
     /// <c>HistRobotState[+0x58] &amp; 1</c>). <c>AreWheelsMoving</c> is bit 15 and must not skip the pass.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void OnlyTheIsMovingBitSkipsTheUnobservedPass()
     {
@@ -1085,6 +1092,7 @@ public class VisionTests
     /// confirmed: <c>AddVisualObservation</c> sets the count to 1 and the entry's pose to the new one (0x506A46..0x506A4E), returns false, and the observation is
     /// dropped; the next matching sighting at the new place makes 2 and <c>UpdatePoseInInstance</c> moves the object.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheFirstSightingDoesNotConfirmAndTheSecondDoes()
     {
@@ -1119,6 +1127,7 @@ public class VisionTests
     /// 35.2 mm) and the rotation tolerance is pi/4 (thunk 0x4E025C with 0.8 at 0x4E028C, thunk 0x4E0290).
     /// <c>IsObjectConfirmedAtObservedPose</c> 0x0050634C compares the instance with the entry's pose by them (0x005063B8).
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheObjectMatchToleranceIsTheExtentTimesZeroPointEightAndFortyFiveDegrees()
     {
@@ -1147,6 +1156,7 @@ public class VisionTests
     /// paths (0x6250D4 is reached from both, then 0x62520C). The stacked-pose update runs only on the normal
     /// path (0x6250D0; the empty branch jumps to 0x6250D4).
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheFrameSequenceRunsTheBlockConfigurationHookOnBothPaths()
     {
@@ -1169,6 +1179,7 @@ public class VisionTests
     /// still moving without making it Known, and one sighting after it has stopped returns it to Known. A move beyond the tolerance needs two sightings at the new place: the
     /// first only resets the entry's count (0x506A46..0x506A4E).
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void AMovedReportMakesTheCubeDirtyAndASightingAfterItStopsMakesItKnownAgain()
     {
@@ -1195,6 +1206,7 @@ public class VisionTests
         Assert.True((o.Pose.Translation - CubeAhead(210, 0, 0.3).Translation).Length < 6);
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ACubeSeenByTwoFacesIsOneObjectWithAJointPose()
     {
@@ -1209,6 +1221,7 @@ public class VisionTests
         Assert.True((r.Objects[0].Object.Pose.Translation - cube.Translation).Length < 5, $"{r.Objects[0].Object.Pose.Translation} vs {cube.Translation}");
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheRealLocatorFiresTheCubeMovedReactionOnlyWhenTheCubeIsOutOfSight()
     {
@@ -1266,6 +1279,7 @@ public class VisionTests
 
     // ------------------------------------------------------------------ AcknowledgeObject
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ObjectPositionUpdatedFiresOnAFirstSightingAndAgainOnlyAfterAnEightyMillimetreMove()
     {
@@ -1307,6 +1321,7 @@ public class VisionTests
         Assert.True(strategy.ShouldTrigger(ctx, null, 0, runnable));
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void AcknowledgeObjectTurnsVerifiesWithTwoImagesAndPlaysTheReaction()
     {
@@ -1342,6 +1357,7 @@ public class VisionTests
         behavior.Stop(BehaviorStopReason.Completed);
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void AcknowledgeObjectGivesUpOnATargetTheWorldModelCannotLocate()
     {

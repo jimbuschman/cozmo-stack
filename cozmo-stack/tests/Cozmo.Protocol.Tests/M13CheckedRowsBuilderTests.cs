@@ -132,7 +132,7 @@ public sealed class M13CheckedRowsBuilderTests
     public async Task LiveEyeLayerAndMotorAckUseTheSameGate()
     {
         using var rig=new M4ControlTests.Rig();rig.ToSynced();
-        using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};using var m=new ManipulationSystem(rig.Robot,vision);
+        var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(rig.Robot,vision);
         var service=new MountChargerAction.LivePanTiltRobot(m);
         typeof(EngineRobot).GetProperty(nameof(EngineRobot.PoseFrameId))!.SetValue(rig.Engine.Robot,5u);
         Assert.Equal(5u,service.OriginId);Assert.NotEqual(service.OriginId,rig.Engine.Robot!.CurrentOriginId);
@@ -213,11 +213,12 @@ public sealed class M13CheckedRowsBuilderTests
         Assert.Equal(new MinAreaRectF.RotatedRect(0.5f,0.5f,3,9,0),rect);
         var firstNan=MinAreaRectF.RectangleFallback(new[]{new Point2f(float.NaN,0),new Point2f(1,1)});Assert.True(float.IsNaN(firstNan.Cx));Assert.True(float.IsNaN(firstNan.W));
     }
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ActionDestructorsDoNotAbortAPathAfterAbortAllMadeItInactive()
     {
         using var rig=new M4ControlTests.Rig();rig.ToSynced();
-        using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};using var m=new ManipulationSystem(rig.Robot,vision);
+        var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(rig.Robot,vision);
         var drive=new DriveToPoseAction(m);var straight=new DriveStraightAction(m,10,20,false);
         rig.Robot.Motion.Path.DriveToPoseStatus=3;
         rig.Robot.Motion.Path.Abort();Assert.False(rig.Robot.Motion.Path.IsActive);
@@ -225,6 +226,7 @@ public sealed class M13CheckedRowsBuilderTests
         Assert.DoesNotContain(rig.SentSince(mark),message=>message is ClearPath);
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void LatticeDestructionJoinsThenReleasesSubscriptionsBeforeTheWaitHandle()
     {

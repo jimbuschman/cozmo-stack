@@ -73,10 +73,11 @@ public sealed class M11SmallReadsBuilderTests
         noInterface.Native.Delocalize(false);Assert.Empty(noInterface.Order);Assert.False(noInterface.Native.BlockConfigurationForceUpdate);
         Assert.All(noInterface.Native.TallStackContainers,s=>{Assert.True(s.HasStoredPose);Assert.NotNull(s.Stack);});
     }
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ConfigurationFacadeReadsTheSameNativeDirtyFlagAndRobotRemovalRetiresItsRecipients()
     {
-        using var f=new Fixture();using var vision=new VisionSystem(f.Rig.Robot,CameraCalibration.Nominal()){Enabled=false};using var m=new ManipulationSystem(f.Rig.Robot,vision);
+        using var f=new Fixture();var vision=f.Rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(f.Rig.Robot,vision);
         Assert.True(m.Configurations.ForceUpdate);m.Configurations.ForceUpdate=false;Assert.False(f.Native.BlockConfigurationForceUpdate);
         f.Order.Clear();f.Native.Delocalize(false);Assert.True(m.Configurations.ForceUpdate);
         f.Rig.Engine.Robots.RemoveRobot(1,false);Assert.Equal(0,f.Rig.Engine.AnimationMessages.Count(0x32,true));
@@ -85,7 +86,7 @@ public sealed class M11SmallReadsBuilderTests
     [Fact]
     public void FreeplayManagerTallStackFacadeUsesTheClearedNativeContainerFields()
     {
-        using var f=new Fixture();using var vision=new VisionSystem(f.Rig.Robot,CameraCalibration.Nominal()){Enabled=false};using var m=new ManipulationSystem(f.Rig.Robot,vision);
+        using var f=new Fixture();var vision=f.Rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(f.Rig.Robot,vision);
         string obb=Path.GetFullPath(Path.Combine(Resources(),"../.."));
         var context=new BehaviorContext{Robot=f.Rig.Robot,Triggers=AnimationTriggerMap.Load(Resources())};
         using var stack=FreeplayStack.Create(obb,f.Rig.Robot,context,()=>0,vision,m,withReactions:false);

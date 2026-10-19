@@ -26,7 +26,7 @@ public sealed class M11DecodeBoundaryTests
     [InlineData((byte)5)] [InlineData((byte)6)]
     public void SynchronousEntrySkipsThrowKeepsCacheAndEmitsOnlyStackPolicy(byte encoding)
     {
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,Cal());
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal();
         var prior=new GrayImage(2,2);vision.EncodedFrameCache.Reset(prior);
         var source=new List<EngineLogEntry>();robot.Engine.LogEntry+=source.Add;
         var missing=new List<string>();SteppedBehavior.MissingReported+=missing.Add;
@@ -44,7 +44,7 @@ public sealed class M11DecodeBoundaryTests
         bool old=EngineErrorState.ErrorFlagSet;
         try
         {
-            using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,Cal());
+            using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal();
             vision.EncodedFrameCache.Reset(new GrayImage(2,2));var source=new List<EngineLogEntry>();robot.Engine.LogEntry+=source.Add;
             Assert.Null(vision.ProcessFrame(Frame(3)));
             Assert.Null(vision.EncodedFrameCache.Gray);Assert.True(vision.EncodedFrameCache.RgbValid);Assert.Equal(0,vision.EncodedFrameCache.Width);
@@ -59,7 +59,7 @@ public sealed class M11DecodeBoundaryTests
     public void WorkerSkipsCompletionAfterThrowButDiscardsPendingAfterReturnedFailure(bool throws)
     {
         bool old=EngineErrorState.ErrorFlagSet;
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,Cal()){Enabled=true,ModeEnableMask=0};
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal(); vision.Enabled=true; vision.ModeEnableMask=0;
         int handed=0;
         void Pending()=>vision.HandOverFrame(Frame(1,120));
         void Missing(string text){if(text.Contains("M1-034/M11-058 decode throw")&&text.Contains("image 119 ")){Interlocked.Increment(ref handed);Pending();}}
@@ -79,7 +79,7 @@ public sealed class M11DecodeBoundaryTests
     [InlineData(0)] [InlineData(2)]
     public void ReplayErasesOnceThenLogsEachNamedEntryBeforeBroadcast(int count)
     {
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,Cal());
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=Cal();
         for(int id=1;id<=count;id++)vision.Faces.AddOrUpdateFace(new TrackedFace(new DetectedFace(id,new FaceRect(0,0,10,10),Name:"name"+id),1),Pose3d.Identity,false);
         var host=new List<string>();var local=new List<string>();var logs=new List<string>();
         vision.EnrolledFacesErased+=()=>host.Add("erase");vision.EnrolledFacesErasedInternal+=()=>local.Add("erase");
@@ -136,9 +136,9 @@ public sealed class M11DecodeBoundaryTests
             if(absent=="DropStatsWindowLength_sec")performance.Remove(absent);else if(absent is not null)quality.Remove(absent);
             string folder=Path.Combine(root,"config","engine");Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder,"vision_config.json"),System.Text.Json.JsonSerializer.Serialize(new{ImageQuality=quality,PerformanceLogging=performance}));
-            using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,new CozmoEngineOptions{ResourcesPath=root});
-            var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;
-            using var vision=new VisionSystem(robot,Cal());check(robot,vision,logs);
+            var logs=new List<EngineLogEntry>();
+            using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,new CozmoEngineOptions{ResourcesPath=root},engineCreated:e=>e.LogEntry+=logs.Add);
+            var vision=robot.Vision; vision.Calibration=Cal();check(robot,vision,logs);
         }
         finally
         {
@@ -155,7 +155,7 @@ public sealed class M11DecodeBoundaryTests
     {
         using var zip=System.IO.Compression.ZipFile.OpenRead(Path.Combine(AppContext.BaseDirectory,"Fixtures","jpeg_decode","data.zip"));
         using var input=zip.GetEntry("in/b0_16x16_ri1_n_ad2_f0.bin")!.Open();using var bytes=new MemoryStream();input.CopyTo(bytes);
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,CameraCalibration.Nominal());
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         var frame=new CameraFrame{ImageId=130,Timestamp=130,Width=320,Height=240,Encoding=encoding,Jpeg=bytes.ToArray(),RawPayload=bytes.ToArray()};
         var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;
         Assert.Null(vision.ProcessFrame(frame));Assert.Equal(16,vision.EncodedFrameCache.Width);Assert.Equal(16,vision.EncodedFrameCache.Height);

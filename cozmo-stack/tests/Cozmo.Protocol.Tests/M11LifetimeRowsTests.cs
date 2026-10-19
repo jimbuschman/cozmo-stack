@@ -13,11 +13,12 @@ public sealed class M11LifetimeRowsTests
     private static CameraFrame Frame(uint id = 1) => new() { ImageId=id, Timestamp=id, Width=320, Height=240, Encoding=8 };
     private static readonly CameraCalibration Calibration = CameraCalibration.Nominal();
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public async Task DisposalWaitsForTheWorkerAndItsExitLogBeforePrintingTimers()
     {
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot, Calibration) { Enabled=true };
+        var vision = robot.Vision; vision.Calibration=Calibration; vision.Enabled=true;
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         var entries = new ConcurrentQueue<(EngineLogEntry Entry,int Thread,string? ThreadName)>();
@@ -57,11 +58,12 @@ public sealed class M11LifetimeRowsTests
         Assert.Equal(count,entries.Count);
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void EmptyWorkerStillLivesUntilShutdownAndTheSkipByteRetainsTheMailbox()
     {
         using var robot=CozmoRobot.CreateOffline();
-        using var vision=new VisionSystem(robot) { Enabled=true, SkipProcessorPass=true };
+        var vision=robot.Vision; vision.Enabled=true; vision.SkipProcessorPass=true;
         var entries=new ConcurrentQueue<EngineLogEntry>();robot.Engine.LogEntry+=entries.Enqueue;
         var messages=new ConcurrentQueue<string>();vision.Log+=messages.Enqueue;
         vision.HandOverFrame(Frame());
@@ -77,11 +79,12 @@ public sealed class M11LifetimeRowsTests
         Assert.Single(entries,e=>e.Text=="Terminated Robot VisionComponent::Processor thread");
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void DisposalFromAFrameCallbackIsRejectedBeforeStoppingTheWorker()
     {
         using var robot=CozmoRobot.CreateOffline();
-        using var vision=new VisionSystem(robot) { Enabled=true };
+        var vision=robot.Vision; vision.Enabled=true;
         using var callback=new ManualResetEventSlim();
         using var secondFrame=new ManualResetEventSlim();
         Exception? failure=null;int decoded=0;
@@ -103,11 +106,12 @@ public sealed class M11LifetimeRowsTests
         vision.Dispose();
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void NoThreadHandleEmitsOnlyTheTwoWindowLogs()
     {
         using var robot=CozmoRobot.CreateOffline();
-        var vision=new VisionSystem(robot);
+        var vision=robot.Vision;
         var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;
         vision.Dispose();
         Assert.Equal(2,logs.Count);
@@ -138,11 +142,12 @@ public sealed class M11LifetimeRowsTests
         Assert.Equal("T averaged 9007199254740992.0000ms over 1 calls (3002399751580331.5000ms over 3 calls since last print)",logs[2]);
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void ProfilerPreservesTimerIdentityAndTheApprovedInsertionOrderIncludingZeroCalls()
     {
         using var robot=CozmoRobot.CreateOffline();
-        var vision=new VisionSystem(robot);
+        var vision=robot.Vision;
         vision.LifetimeProfiler.ApplyVisionPerformanceLoggingNames();
         vision.LifetimeProfiler.CreateTimer("same");
         vision.LifetimeProfiler.CreateTimer("middle");
@@ -170,6 +175,7 @@ public sealed class M11LifetimeRowsTests
         private int Delete() { Deletes++;BeforeDelete?.Invoke();return Result; }
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Theory]
     [InlineData(0)]
     [InlineData(1)]
@@ -181,8 +187,8 @@ public sealed class M11LifetimeRowsTests
         {
             var seam=DispatchProxy.Create<IOkaoFaceRecognizer,DeleteProxy>();
             var proxy=(DeleteProxy)(object)seam;proxy.Result=result;
-            using var robot=CozmoRobot.CreateOffline();
-            var vision=new VisionSystem(robot,okaoRecognizer:seam);
+            using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{VisionOkaoRecognizer=seam});
+            var vision=robot.Vision;
             var original=vision.Recognizer.AlbumHandle;
             proxy.BeforeDelete=()=>Assert.Same(original,vision.Recognizer.AlbumHandle);
             var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;

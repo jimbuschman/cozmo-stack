@@ -63,7 +63,7 @@ public sealed class RobotStateHistoryAdmissionTests
     [Fact]
     public void HostFramePoseUsesTheCheckedInterpolationQuery()
     {
-        using var f=new Fixture();using var vision=new VisionSystem(f.Rig.Robot,CameraCalibration.Nominal());
+        using var f=new Fixture();var vision=f.Rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         vision.ModeEnableMask&=~(1<<7); // isolate query from the separately unbuilt image-quality ROI producer
         f.Send(f.State(100,0));f.Send(f.State(200,10));
         var image=new GrayImage(vision.Calibration!.Columns,vision.Calibration.Rows);image.Fill(150);

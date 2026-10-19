@@ -214,7 +214,7 @@ public sealed class M3M4X16BuilderTests : IDisposable
     [Fact]
     public void VisionFailureStillCallsDockingBeforeLocalHandlerError()
     {
-        using var robot=Robot();using var vision=new VisionSystem(robot,CameraCalibration.Nominal()) { Enabled=false };
+        using var robot=Robot();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         vision.World.LocalizeRobotResultForTest=()=>7;
         var order=new List<string>();robot.Engine.LogEntry+=e=> { if(e.Name is "BlockWorld.UpdateObservedMarkers.AddAndUpdateFailed" or "VisionComponent.UpdateVisionResults.BlockWorldUpdateFailed" or "VisionComponent.UpdateAllResults.LocalHandlerFailed") order.Add(e.Name); };
         vision.DockingMarkersProcessed+=_=>order.Add("docking");

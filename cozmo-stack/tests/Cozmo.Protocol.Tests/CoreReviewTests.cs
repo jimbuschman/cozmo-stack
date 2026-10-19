@@ -811,13 +811,14 @@ public class CoreReviewTests
     /// This drives a calibrated synthetic frame - flat ground with a dark band across it, which is what a
     /// step or an obstacle edge looks like - through <c>ProcessImage</c> and reads the map afterwards.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void CORE007_AFrameWithAGroundEdgeReachesTheMapThroughTheProductionPath()
     {
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
         var cal = CameraCalibration.Nominal();
-        var vision = new VisionSystem(robot) { Calibration = cal };
+        var vision = robot.Vision; vision.Calibration = cal;
         var map = new MemoryMap();
 
         // the wiring FreeplayStack makes
@@ -856,13 +857,14 @@ public class CoreReviewTests
     /// CORE-007, the other half: a frame with nothing in it must not put an edge in the map, so that what
     /// the first test sees is the band and not the wiring inventing content.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void CORE007_FlatGroundLeavesNoEdgeInTheMap()
     {
         using var robot = CozmoRobot.CreateOffline();
         robot.Transport.OfflineAcceptConnection();
         var cal = CameraCalibration.Nominal();
-        var vision = new VisionSystem(robot) { Calibration = cal, OverheadEdges = new OverheadEdgesDetector() };
+        var vision = robot.Vision; vision.Calibration = cal; vision.OverheadEdges = new OverheadEdgesDetector();
         var map = new MemoryMap();
         vision.FrameProcessed += r =>
         {
@@ -885,6 +887,7 @@ public class CoreReviewTests
     /// trigger: <c>Robot::Delocalize</c> 0x00510A24 is called from <c>UpdateFullRobotState</c> at 0x00512B88..0x00512BA6 (PLT 0x4A7804), only when <c>CheckAndUpdateTreadsState</c> committed a
     /// change to or from OnTreads (r7 != 0, 0x00512A62..0x00512A94). A state that merely reports another origin id (one the pose-origin list holds) is filed in the history and forgets nothing.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void CORE008_AnOriginChangeInTheStateStreamAloneDoesNotDelocalize()
     {
@@ -1009,6 +1012,7 @@ public class CoreReviewTests
     /// the events use. This runs the real stack, raises a real emotion event through the mood the stack
     /// holds, and then does nothing but tick.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void CORE009_MoodDecaysOnOrdinaryStackTicks()
     {
@@ -1054,6 +1058,7 @@ public class CoreReviewTests
     /// its events are in different eras and neither the decay nor the repetition penalty means anything.
     /// The stack now gives every behaviour its own clock.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void CORE009_EveryBehaviourIsOnTheStacksClock()
     {
@@ -1086,6 +1091,7 @@ public class CoreReviewTests
     /// a late disposal of the old one must leave those alone. Each delegate is cleared only while it is
     /// still the one that instance put there.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void CORE010_ADisposedManipulationSystemStopsTouchingTheVisionSystem()
     {
@@ -1129,6 +1135,7 @@ public class CoreReviewTests
     /// CORE-010, the other half: disposing an old instance after a replacement has installed its own must
     /// not clear the replacement's.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void CORE010_ALateDisposalDoesNotClearTheReplacementsCallbacks()
     {

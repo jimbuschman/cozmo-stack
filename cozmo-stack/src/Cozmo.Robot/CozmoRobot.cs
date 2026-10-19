@@ -204,6 +204,9 @@ public sealed partial class CozmoRobot : IDisposable
     internal Vision.BlockWorld LocalizationWorld { get; set; } = new(deferMap: true);
     // fidelity: M4-017
     internal Vision.VisionSystem? VisionModeRecipient { get; set; }
+    private readonly Vision.VisionSystem? _vision;
+    /// <summary>The robot-owned vision system and world model, constructed before connection.</summary>
+    public Vision.VisionSystem Vision => _vision ?? throw new InvalidOperationException("World-less unit-test composition has no VisionSystem.");
     /// <summary>Backpack LEDs and the infrared headlight.</summary>
     public CozmoLights Lights { get; }
     /// <summary>Everything the robot reports about itself: power, motion, IMU and cliffs.</summary>
@@ -243,6 +246,8 @@ public sealed partial class CozmoRobot : IDisposable
                 FilesPath=settings.FilesPath,ResourcesPath=settings.ResourcesPath,BlockPoolPath=settings.BlockPoolPath,NeedsDeviceDirectory=settings.NeedsDeviceDirectory,
                 DataCollectionEnabled=settings.DataCollectionEnabled,DasDeviceIdPath=settings.DasDeviceIdPath,DasDeviceId=settings.DasDeviceId,LabLocaleLanguage=settings.LabLocaleLanguage,LabLocaleCountry=settings.LabLocaleCountry,EngineConfigJson=settings.EngineConfigJson,AudioInputDispatch=settings.AudioInputDispatch,BeforeStart=settings.BeforeStart,
                 AnimationCachePath=owned,VerboseLogDisplay=settings.VerboseLogDisplay,
+                VisionCalibration=settings.VisionCalibration,VisionDetector=settings.VisionDetector,
+                VisionOkaoRecognizer=settings.VisionOkaoRecognizer,OmitVisionForTest=settings.OmitVisionForTest,
                 DataPlatformPersistentPath=settings.DataPlatformPersistentPath,RobotVolume=settings.RobotVolume,
             };
         }
@@ -400,6 +405,11 @@ public sealed partial class CozmoRobot : IDisposable
         Engine.AfterSuccessDefaults = SendAppDefaults;
         Engine.LoadHostBehaviorMap();
         Engine.ConfigureStartupLoaders(Animations);
+        // fidelity: M4-009, M4-018, M4-019, M4-027
+        // B-M3M4-36 operator decision: the engine always owns VisionComponent/BlockWorld with Robot.
+        // Subscribe before any connection event; retain the existing NV calibration and worker start gates.
+        if (!Engine.Options.OmitVisionForTest)
+            _vision = new Vision.VisionSystem(this,Engine.Options.VisionCalibration,Engine.Options.VisionDetector,Engine.Options.VisionOkaoRecognizer);
     }
 
     private readonly List<(EngineLogLevel Level, string? Channel, string Key, string Text)> _lightLoadingLogs = new();
@@ -734,6 +744,8 @@ public sealed partial class CozmoRobot : IDisposable
     /// </summary>
     public void Dispose()
     {
+        // Same order as the former host-owned using scopes: vision joins/detaches before robot teardown.
+        _vision?.Dispose();
         try
         {
         // fidelity: M5-022

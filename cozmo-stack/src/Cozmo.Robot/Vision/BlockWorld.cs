@@ -1032,7 +1032,7 @@ public sealed partial class BlockWorld
             EmitPublicLog($"Robot.LocalizeToObject.UnlocalizedObject: Refusing to localize to object {existing.ObjectId}, which claims not to be localizable.");
             return 1;
         }
-        EmitPublicLog("MISSING: M4-037 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt");
+        EmitPublicLog("MISSING: M11-044 Rejigger/Flatten pose-tree child renames _REJ/_FLT (0x00847F20/0x00847FD8); M13-032 UpdateMapOrigins caller 0x0051590C cannot run before successful M11-044 Rejigger; localization helpers remain unbuilt");
         UnbuiltLocalizeToObjectCalls++;
         return SetLocalizedTo(existing) ? 0u : 1u;
     }

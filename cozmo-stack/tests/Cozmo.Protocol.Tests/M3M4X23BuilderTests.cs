@@ -91,11 +91,12 @@ public sealed class M3M4X23BuilderTests
         w.ApplyRelativeObservation(cube,Pose3d.Identity,PoseState.Dirty,null);
         Assert.Equal(2,configuration);Assert.Equal(2,states);Assert.Equal(0,w.PoseChangeCount);
     }
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Theory]
     [InlineData("delocalize")] [InlineData("attach")] [InlineData("lift")]
     public void DockingAndDelocalizationTakeFrameBeforeTheRobotPoseGate(string operation)
     {
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,CameraCalibration.Nominal()){Enabled=false};
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         robot.Engine.Robots.AddRobot(CozmoEngine.RobotId);var native=robot.Engine.Robot!;
         vision.History.Add(new RobotState{Timestamp=1,PoseOriginId=native.CurrentOriginId});
         var (unused,cube,camera,pose)=World();vision.World.AddLocatedObject(cube);

@@ -118,7 +118,7 @@ public sealed class LabWritebackCheckedRowsTests:IDisposable
     {using var robot=Robot();var first=robot.Engine.Robots.AddRobot(7,false);robot.Engine.Robots.AddRobot(1,false);Assert.Same(first,robot.Engine.Robots.GetFirstRobot());}
     [Fact] public void PyramidRoleGettersPreserveOutputOnInvalidAndCopyAllUintBits()
     {
-        using var robot=Robot();using var vision=new VisionSystem(robot,CameraCalibration.Nominal()){Enabled=false};using var m=new ManipulationSystem(robot,vision);var behavior=new BuildPyramidBaseBehavior(m);uint value=91;
+        using var robot=Robot();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;using var m=new ManipulationSystem(robot,vision);var behavior=new BuildPyramidBaseBehavior(m);uint value=91;
         Assert.False(behavior.TryGetBaseBlockId(ref value));Assert.Equal(91u,value);
         foreach(var name in new[]{"BaseBlockId","StaticBlockId","TopBlockId"})typeof(BuildPyramidBaseBehavior).GetProperty(name)!.SetValue(behavior,0xF0000000u);
         Assert.True(behavior.TryGetBaseBlockId(ref value));Assert.Equal(0xF0000000u,value);value=2;Assert.True(behavior.TryGetStaticBlockId(ref value));Assert.Equal(0xF0000000u,value);value=3;Assert.True(behavior.TryGetTopBlockId(ref value));Assert.Equal(0xF0000000u,value);

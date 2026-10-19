@@ -38,7 +38,7 @@ public sealed class M3M4X28BuilderTests
     [InlineData(true)] [InlineData(false)]
     public void MovementLocatedLoopKeepsQueryAndAllUpdatesInOneFrameWindow(bool moving)
     {
-        using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
+        using var rig=new M4ControlTests.Rig();var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         rig.ToSynced();rig.State();var world=vision.World;
         var located=new ObservableObject(99,ObjectType.Block_LIGHTCUBE1,CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
             {ActiveId=0,OriginId=world.CurrentOriginId,Pose=Pose3d.Identity,PoseState=PoseState.Known};
@@ -56,7 +56,7 @@ public sealed class M3M4X28BuilderTests
     // reach: unit (located non-active fixture object; native disconnect writes complete before the deferred public diagnostic).
     public void DisconnectLocatedUpdateRemainsInsideOneFrameWindow()
     {
-        using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
+        using var rig=new M4ControlTests.Rig();var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         rig.ToSynced();rig.State();var world=vision.World;
         rig.Data(new ObjectConnectionState{ObjectID=0,FactoryID=123,ObjectType=ObjectType.Block_LIGHTCUBE1,Connected=true});rig.Tick();
         uint id=world.ConnectedObjectIdForActiveId(0)!.Value;
@@ -74,7 +74,7 @@ public sealed class M3M4X28BuilderTests
     // reach: unit (native Delocalize entry/component notification; queued public app reports run after the handler).
     public void DelocalizationNotificationRemainsInsideTheHandlerFrameWindow()
     {
-        using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
+        using var rig=new M4ControlTests.Rig();var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         rig.ToSynced();rig.State();uint before=vision.World.CurrentOriginId;
         FrameCannotSplitHandler(vision.World,pause=>rig.Engine.DelocalizationComponentHook=stage=>{if(stage=="FaceWorld")pause();},
             ()=>rig.Engine.Robot!.Delocalize(false));
@@ -85,7 +85,7 @@ public sealed class M3M4X28BuilderTests
     // reach: production — actual treads packet, dispatch and engine tick; native frame gate blocks before reset.
     public void DelocalizeWaitsForFrameBeforeResettingMismatchCount()
     {
-        using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
+        using var rig=new M4ControlTests.Rig();var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         rig.ToSynced();rig.Calibrate();rig.State();var world=vision.World;
         var count=typeof(BlockWorld).GetField("_robot2C0",BindingFlags.Instance|BindingFlags.NonPublic)!;
         count.SetValue(world,(byte)7);using var started=new ManualResetEventSlim();Task? handler=null;

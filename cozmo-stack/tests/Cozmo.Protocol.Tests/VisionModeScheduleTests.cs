@@ -57,11 +57,12 @@ public class VisionModeScheduleTests
     /// <c>VisionSystem+0xac</c> AND the front schedule's bit. A clear bit returns false without consulting
     /// the schedule.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheGateIsTheEnableBitAndTheSchedule()
     {
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
+        var vision = robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         Assert.Equal(VisionSystem.ShippedModeEnableMask, vision.ModeEnableMask);
 
         // enabled marker mode on the default schedule runs every frame
@@ -110,6 +111,7 @@ public class VisionModeScheduleTests
     /// overhead edges 4, quality 7, statistics 8, pets 9 and laser points 15 (bits
     /// 0x0002/0x0004/0x0008/0x0010/0x0080/0x0100/0x0200/0x8000) and disables 10..13.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheShippedModeEnableMaskEnablesTheConfiguredModes()
     {
@@ -117,7 +119,7 @@ public class VisionModeScheduleTests
         Assert.Equal(expected, VisionSystem.ShippedModeEnableMask);
 
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
+        var vision = robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         Assert.Equal(expected, vision.ModeEnableMask);
         foreach (var mode in new[]
         {
@@ -139,13 +141,14 @@ public class VisionModeScheduleTests
     /// success, calls <c>MarkerDetector::Init</c> 0x006B1E78, which runs <c>Parameters::Initialize</c>
     /// 0x008752F8. The detector's parameters therefore go back to the shipped values on an install.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void TheCalibrationInstallReinitialisesTheDetectorParameters()
     {
-        using var robot = CozmoRobot.CreateOffline();
         var modified = new QuadDetector(new QuadDetectorParameters { MinQuadArea = 999, MinContrastRatio = 2.5 });
         var detector = new MarkerDetector(modified, new MarkerDecoder());
-        using var vision = new VisionSystem(robot, CameraCalibration.Nominal(), detector);
+        using var robot = CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{VisionCalibration=CameraCalibration.Nominal(),VisionDetector=detector});
+        var vision = robot.Vision;
         Assert.Equal(999, vision.Detector.Quads.Parameters.MinQuadArea);
 
         vision.UpdateCameraCalibration(CameraCalibration.Nominal());

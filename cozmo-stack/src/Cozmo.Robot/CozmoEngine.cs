@@ -57,6 +57,14 @@ public sealed class RobotConnectionException : IOException
 /// <summary>Where the engine finds its inputs, and the app defaults policy M1-042 sends.</summary>
 public sealed class CozmoEngineOptions
 {
+    /// <summary>Optional initial camera calibration; null keeps the connection-time NV calibration path.</summary>
+    public Vision.CameraCalibration? VisionCalibration { get; init; }
+    /// <summary>Optional marker detector for the robot-owned vision system.</summary>
+    public Vision.MarkerDetector? VisionDetector { get; init; }
+    /// <summary>Optional OKAO recognizer boundary; null uses the existing default.</summary>
+    public Vision.IOkaoFaceRecognizer? VisionOkaoRecognizer { get; init; }
+    // Explicit unit-test composition only. Every public production construction keeps its world model.
+    internal bool OmitVisionForTest { get; set; }
     /// <summary>Host nurture directory, supplied before NeedsManager::Init; null leaves device persistence unbound.</summary>
     public string? NeedsDeviceDirectory { get; init; }
     // fidelity: M3-061 — host replacement for app DataPlatformFilesPath/persistentDataPath; scope 0 appends /output.

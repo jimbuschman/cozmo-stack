@@ -65,7 +65,7 @@ public sealed class M3M4X19BuilderTests
     }
     [Fact] public void SharedWorldHasOneStackLogSubscription()
     {
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,CameraCalibration.Nominal()){Enabled=false};var missing=new List<string>();robot.Engine.StackLogLine+=missing.Add;
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;var missing=new List<string>();robot.Engine.StackLogLine+=missing.Add;
         vision.World.BaseStationSeconds=()=>61;var f=Frame();vision.World.UpdateObservedMarkers(Array.Empty<ObservedMarker>(),f.Camera,0,f.Pose);
         Assert.Single(missing.Where(s=>s.Contains("robot.play_area_size")));
     }

@@ -703,6 +703,7 @@ public class M3DeviceTests
     /// line "Waiting for first full robot state to be handled" and returns. G2 (0x00513C7E..0x00513C9A): a non-zero UpdateAllResults
     /// warns Robot.Update.VisionComponentUpdateFail (empty format) and returns.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M3_032_G1_G2_RobotUpdateLogsItsTwoGates()
     {
@@ -2080,11 +2081,12 @@ public class M3DeviceTests
     /// <c>VisionSystem::Update</c> (0x006B4B7C), so the log for encoding 0 comes from the vision path, not from
     /// the frame's assembly in <c>CozmoCamera</c>.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M3_018_I2_TheIsColorZeroLogIsEmittedAtTheVisionSystemCall()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal());
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         var log = new List<string>();
         vision.Log += log.Add;
         var frame = new CameraFrame { Encoding = 0, Width = 320, Height = 240, RawPayload = new byte[4], Jpeg = new byte[4] };
@@ -2334,6 +2336,7 @@ public class M3DeviceTests
     /// pixel-centre mapping gives dst[0] = p[0], dst[2k] = (p[k-1] + 3 p[k] + 2) &gt;&gt; 2, dst[2k+1] = (3 p[k] + p[k+1] +
     /// 2) &gt;&gt; 2 and dst[319] = p[159], every row copied as it is.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M3_018_A10_InterLinear160To320()
     {
@@ -2483,6 +2486,7 @@ public class M3DeviceTests
     /// NVResult ≠ 0, a size other than 56 (MakeWordAligned(CameraCalibration::Size())), and success, which also installs
     /// the calibration and hands it to vision. The reply's Length is the index, so the 56-byte blob sits at index 0.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Theory]
     [InlineData(-1, 56, false)]
     [InlineData(0, 40, false)]
@@ -2490,7 +2494,7 @@ public class M3DeviceTests
     public void M3_022_1j_TheCalibrationCallbackEnablesVisionOnEveryPath(int result, int size, bool installs)
     {
         using var rig = new Rig();
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Enabled = false;
         rig.ToSuccess();                                            // body hardware 7: distortion kept
         Assert.False(rig.Robot.CameraSettings.VisionEnabled);
         SendConnectionReadsUntilCalibration(rig);                   // M3-026/M3-033: the queued reads go out from Update
@@ -2518,6 +2522,7 @@ public class M3DeviceTests
     /// callback zeroes all eight distortion coefficients before installing the calibration ("IgnoringDistCoeffs").
     /// The operator's robot reports 4.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M3_022_1j_BodyHardwareAtMostSixZeroesTheDistortionCoefficients()
     {
@@ -2535,6 +2540,7 @@ public class M3DeviceTests
     /// M3-022 order (B-M3M4 build item 4): the callback installs the calibration (SetCameraCalibration, 0x0065ADE0) before it stores +0x48 = 1
     /// (0x0065AE80), so at the install the flag is still 0 and the install is announced first; on a failed read there is no install and only the store.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Theory]
     [InlineData(0, true)]
     [InlineData(-1, false)]
@@ -3470,7 +3476,7 @@ public class M3DeviceTests
         {
             // the live order: ConnectToRobot first (AddRobot queues the reads), then the VisionSystem
             rig.ToValidated();
-            using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+            var vision = rig.Robot.Vision; vision.Enabled = false;
             rig.Data(new ManufacturingID { SerialNumber = 0xABCD, BodyHwVersion = 7, BodyColor = 2 });
             rig.Tick();
             SendFirstFullState(rig);
@@ -3541,6 +3547,7 @@ public class M3DeviceTests
     /// is the live order's late edge: the reads complete after Gate A, which can be after the caller builds the
     /// VisionSystem; the engine keeps ConnectionFaceAlbumResult for it.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M3_034_AVisionSystemBuiltAfterTheReadsAdoptTheBufferedFaceAlbum()
     {
@@ -3567,7 +3574,7 @@ public class M3DeviceTests
         }
 
         Assert.NotNull(rig.Engine.ConnectionFaceAlbumResult);   // buffered with no subscriber
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Enabled = false;
         var (gotAlbum, gotEnrollment) = vision.GetSerializedFaceData();
         Assert.Equal(album, gotAlbum);
         Assert.Equal(enrollment, gotEnrollment);
@@ -3614,6 +3621,7 @@ public class M3DeviceTests
     /// called from RobotManager::RemoveRobot). A VisionSystem built after the reconnect does not adopt the old
     /// album.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M3_034_TheFaceAlbumResultIsClearedOnRemoval()
     {
@@ -3643,7 +3651,7 @@ public class M3DeviceTests
         Assert.Null(rig.Engine.Robot);
         Assert.Null(rig.Engine.ConnectionFaceAlbumResult);
 
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Enabled = false;
         var (album, enrollment) = vision.GetSerializedFaceData();
         Assert.Empty(album);
         Assert.Empty(enrollment);
@@ -3737,11 +3745,12 @@ public class M3DeviceTests
     /// M3-022/M3-033: the wait helper returns the calibration the engine's single connection read installed
     /// (0x006583FA queues it; the 0x0065AB68 callback installs it), driven through Camera.OnRobotConnected.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public async Task M3_022_TheConnectionCalibrationWaitReturnsTheEngineRead()
     {
         using var rig = new Rig();
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Enabled = false;
         rig.ToSuccess();
         var wait = vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(1));
         SendConnectionReadsUntilCalibration(rig);
@@ -3753,11 +3762,12 @@ public class M3DeviceTests
     }
 
     /// <summary>M3-022: a connection calibration read that never completes makes the wait return null (the removed read's contract).</summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public async Task M3_022_TheConnectionCalibrationWaitReturnsNullWhenTheReadNeverCompletes()
     {
         using var rig = new Rig();
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Enabled = false;
         var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromMilliseconds(50));
         Assert.Null(cal);
     }

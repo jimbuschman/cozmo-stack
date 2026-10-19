@@ -16,35 +16,39 @@ public sealed class VisionConfigCheckedRowsTests:IDisposable
         var g=ImageQualitySettings.Globals;(g.TooBright,g.TooDark,g.MeterFromDetections,g.Low,g.Mid,g.High)=(_saved.TooBright,_saved.TooDark,_saved.MeterFromDetections,_saved.Low,_saved.Mid,_saved.High);
         VisionSystem.TimeBeforeQualityErrorMs=_time;VisionSystem.RepeatedQualityErrorIntervalMs=_repeat;CameraSettings.ConfiguredInitialExposureTimeMs=_exposure;EngineErrorState.ErrorFlagSet=_error;
     }
+    // reach: unit (robot-owned vision with explicit quality frame inputs; full native Init join remains M11-059).
     [Fact] public void ShippedExposureInputsConnectToActualFrameConsumer()
     {
         using var resources=new BackupTestResources();using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,resources.Options());
-        using var vision=new VisionSystem(robot,new CameraCalibration{Rows=16,Columns=16,FocalLengthX=20,FocalLengthY=20,CenterX=8,CenterY=8}){ModeEnableMask=1<<7};
+        var vision=robot.Vision; vision.Calibration=new CameraCalibration{Rows=16,Columns=16,FocalLengthX=20,FocalLengthY=20,CenterX=8,CenterY=8}; vision.ModeEnableMask=1<<7;
         var p=Assert.IsType<ExposurePipeline>(vision.QualityProcessor.Pipeline);Assert.Equal((byte)115,p.MidValue);Assert.Equal(0x3F000000u,BitConverter.SingleToUInt32Bits(p.MidPercentile));Assert.Equal(0x3F4CCCCDu,BitConverter.SingleToUInt32Bits(p.MaxChange));Assert.Equal(2,p.SubSample);
         vision.QualityRectangleInput=()=>Array.Empty<ImageQualityRectangle>();var image=new GrayImage(16,16);image.Fill(100);
         var frame=vision.ProcessImage(image,1,1,new VisionPoseData(1,Pose3d.Identity,0,0,false,false));Assert.NotNull(frame.ImageQuality);Assert.Equal(64,p.Histogram.Total);Assert.Equal(64,p.Histogram.Bins[100]);
         // Explicit test ROI boundary does not claim detector rectangle production or camera application.
     }
+    // reach: unit (invalid fixture configuration through robot construction; native Init prerequisites remain M11-059).
     [Fact] public void InitFailureLogsParameterErrorThenItsFailureTailWithoutSuccessInfo()
     {
         using var resources=new BackupTestResources();var options=resources.Options();string path=Path.Combine(options.ResourcesPath!,CozmoEngine.VisionConfigurationPath);
         File.WriteAllText(path,File.ReadAllText(path).Replace("0.80","2.00",StringComparison.Ordinal));
-        using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,options);var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;
-        using var vision=new VisionSystem(robot);Assert.Null(vision.QualityProcessor.Pipeline);
+        var logs=new List<EngineLogEntry>();using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,options,engineCreated:e=>e.LogEntry+=logs.Add);
+        var vision=robot.Vision;Assert.Null(vision.QualityProcessor.Pipeline);
         Assert.Equal(new[]{"ImagingPipeline.SetExposureParameters.BadMaxChangeFraction","VisionSystem.Init.SetExposureParametersFailed"},logs.Where(l=>l.Level==EngineLogLevel.Error).Select(l=>l.Name));Assert.DoesNotContain(logs,l=>l.Name=="VisionSystem.SetAutoExposureParams");
     }
+    // reach: unit (direct initial-mode loop with supplied configuration; full native Init prerequisite join remains M11-059).
     [Fact] public void InitialModesUseByteKeyOrderAndPassFalseEntriesToo()
     {
-        using var resources=new BackupTestResources();using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,resources.Options());using var vision=new VisionSystem(robot){ModeEnableMask=0};
+        using var resources=new BackupTestResources();using var robot=CozmoRobot.CreateForTest(new M4ControlTests.FakePort(),()=>0,resources.Options());var vision=robot.Vision; vision.ModeEnableMask=0;
         var calls=new List<(int Mode,bool Enable)>();vision.InitialModeCallObservedForTest=(m,e)=>calls.Add((m,e));
         var modes=robot.Engine.VisionConfiguration.Members[Convert.ToHexString("InitialVisionModes"u8)];vision.ApplyInitialVisionModes(modes);
         Assert.Equal(new[]{"CheckingQuality","ComputingStatistics","DetectingBlinkAmount","DetectingFaces","DetectingGaze","DetectingLaserPoints","DetectingMarkers","DetectingMotion","DetectingOverheadEdges","DetectingPets","DetectingSmileAmount","EstimatingFacialExpression"},calls.Select(c=>((VisionMode)c.Mode).ToString()));
         Assert.Equal(new[]{true,true,false,true,false,true,true,true,true,true,false,false},calls.Select(c=>c.Enable));Assert.Equal(0x839E,vision.ModeEnableMask);
         // This exercises the real loop/body on its owner; full native Init prerequisite join remains M11-059.
     }
+    // reach: unit (direct configuration loop with supplied null/array nodes; native Init join remains M11-059).
     [Fact] public void GetMemberNamesEmptyArraySkipsConfigButNullIsEmpty()
     {
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot){ModeEnableMask=4};var calls=new List<int>();vision.InitialModeCallObservedForTest=(m,_)=>calls.Add(m);
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.ModeEnableMask=4;var calls=new List<int>();vision.InitialModeCallObservedForTest=(m,_)=>calls.Add(m);
         vision.ApplyInitialVisionModes(new());Assert.Empty(calls);Assert.Equal(4,vision.ModeEnableMask);
         var diagnostics=new List<string>();StackDiagnostics.Reported+=diagnostics.Add;
         try{vision.ApplyInitialVisionModes(new(){Kind=FirmwareJsonKind.Array});Assert.Equal(4,vision.ModeEnableMask);Assert.Contains(diagnostics,s=>s.Contains("M1-034/M11-082")&&s.Contains("008E6D08"));}

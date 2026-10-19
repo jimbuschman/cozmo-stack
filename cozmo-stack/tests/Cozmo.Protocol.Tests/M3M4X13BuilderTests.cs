@@ -123,7 +123,7 @@ public sealed class M3M4X13BuilderTests : IDisposable
     public void DifferentIdsWarningUsesFirstLocatedIdThenThisIdAndRootNames()
     {
         using var robot = TestRobot();
-        using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
+        var vision = robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         var world = vision.World;
         world.AddLocatedObject(new ObservableObject(41, ObjectType.Block_LIGHTCUBE1, Array.Empty<KnownMarker>()) { ActiveId = 0, OriginId = 1, PoseState = PoseState.Known });
         world.AddLocatedObject(new ObservableObject(42, ObjectType.Block_LIGHTCUBE1, Array.Empty<KnownMarker>()) { ActiveId = 0, OriginId = 2, PoseState = PoseState.Known });

@@ -28,6 +28,8 @@ internal sealed class BackupTestResources : IDisposable
             DataCollectionEnabled = options.DataCollectionEnabled, DasDeviceIdPath = options.DasDeviceIdPath, DasDeviceId = options.DasDeviceId, LabLocaleLanguage=options.LabLocaleLanguage, LabLocaleCountry=options.LabLocaleCountry,EngineConfigJson=options.EngineConfigJson,
             AnimationCachePath = options.AnimationCachePath, VerboseLogDisplay = options.VerboseLogDisplay,
             DataPlatformPersistentPath = options.DataPlatformPersistentPath, RobotVolume = options.RobotVolume,
+            VisionCalibration=options.VisionCalibration,VisionDetector=options.VisionDetector,
+            VisionOkaoRecognizer=options.VisionOkaoRecognizer,OmitVisionForTest=options.OmitVisionForTest,
         };
     }
     public void Dispose() => Directory.Delete(Root,true);

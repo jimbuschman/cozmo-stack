@@ -31,9 +31,9 @@ public class ControlTests
 
         public void Dispose() => Robot.Dispose();
 
-        public Rig()
+        public Rig(bool omitWorldForTest=false)
         {
-            Robot = CozmoRobot.CreateOffline(TransportOptions.EngineDefaults, _clock);
+            Robot = CozmoRobot.CreateOffline(TransportOptions.EngineDefaults, _clock,new CozmoEngineOptions{OmitVisionForTest=omitWorldForTest});
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
         }
 
@@ -636,7 +636,8 @@ public class ControlTests
     [Fact]
     public void M4_008_A12_WithoutAWorldNothingIsBroadcastAndTheGapIsVisible()
     {
-        using var rig = new Rig();
+        // reach: unit (explicit internal world-less composition; production always installs the lookup).
+        using var rig = new Rig(omitWorldForTest:true);
         var logs = new List<string>();
         var sent = new List<ObjectPowerLevel>();
         rig.Robot.Engine.CaptureSourceLogs(l => { lock (logs) logs.Add(l); });
@@ -653,7 +654,7 @@ public class ControlTests
     public void CubeTelemetryLandsOnTheConnectedCube()
     {
         using var rig = new Rig();
-        using var world = new Cozmo.Robot.Vision.VisionSystem(rig.Robot, Cozmo.Robot.Vision.CameraCalibration.Nominal()) { Enabled = false };
+        var world = rig.Robot.Vision; world.Calibration=Cozmo.Robot.Vision.CameraCalibration.Nominal(); world.Enabled = false;
         rig.Send(new ObjectConnectionState { ObjectID = 3, FactoryID = 1, ObjectType = ObjectType.Block_LIGHTCUBE2, Connected = true });
 
         rig.Send(new ObjectPowerLevel { ObjectID = 3, BatteryLevel = 140, MissedPackets = 9 });

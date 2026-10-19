@@ -47,7 +47,7 @@ public sealed partial class VisionSystem : IDisposable
     /// <summary>M3-034: the FaceAlbum/Enrollment consumer, kept so Dispose can unsubscribe it.</summary>
     private readonly Action<byte[], byte[]> _faceAlbumLoaded;
 
-    public VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
+    internal VisionSystem(CozmoRobot robot, CameraCalibration? calibration = null, MarkerDetector? detector = null, IOkaoFaceRecognizer? okaoRecognizer = null)
     {
         _robot = robot;
         LifetimeProfiler.SourceLog = (l, c, k, t) => robot.Engine.EmitSourceLog(l, c, k, t);
@@ -216,6 +216,10 @@ public sealed partial class VisionSystem : IDisposable
         {
             if (!locked) Log?.Invoke($"vision reset: a frame was still being processed after {RemovalWait.TotalSeconds:F0} s; it is discarded at its next check");
             Calibration = _constructedCalibration;
+            // fidelity: M3-034 — removal destroys VC+0x2F4/+0x300 (0x0051116C, ~VisionComponent0x0065258E).
+            // The robot-owned host instance survives; discard the retained raw NV vectors with that owner.
+            _serializedFaceAlbum = Array.Empty<byte>();
+            _serializedFaceEnrollment = Array.Empty<byte>();
             // B-M11-8 round 2: a removal is expected to leave no robot, so this reset does not go through History's MISSING report.
             (_robot.Engine.Robot?.PoseHistory ?? _noRobotHistory).ResetToConstructed();
             Imu.ResetToConstructed();

@@ -256,7 +256,7 @@ public sealed class M3M4RelativeBuilderTests
     [Theory][InlineData((byte)1)][InlineData((byte)2)]
     public void ShortRawPreservesThePreviouslyPublishedImage(byte encoding)
     {
-        using var robot=CozmoRobot.CreateOffline();using var vision=new VisionSystem(robot,CameraCalibration.Nominal()){Enabled=false};
+        using var robot=CozmoRobot.CreateOffline();var vision=robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         var full=new CameraFrame{ImageId=1,Timestamp=1,Width=2,Height=2,Encoding=encoding,RawPayload=Enumerable.Repeat((byte)75,encoding==1?4:12).ToArray()};
         vision.ProcessFrame(full);var prior=vision.EncodedFrameCache;Assert.Equal(2,prior.Width);
         var logs=new List<EngineLogEntry>();robot.Engine.LogEntry+=logs.Add;var policy=new List<string>();StackDiagnostics.Reported+=policy.Add;

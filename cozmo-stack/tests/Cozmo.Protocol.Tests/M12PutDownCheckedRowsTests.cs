@@ -19,7 +19,7 @@ public sealed class M12PutDownCheckedRowsTests
         internal EngineRobot Robot=>Rig.Engine.Robot!;
         internal Fixture()
         {
-            Rig.ToSynced();Vision=new VisionSystem(Rig.Robot,CameraCalibration.Nominal()){Enabled=false};M=new ManipulationSystem(Rig.Robot,Vision);
+            Rig.ToSynced();Vision=Rig.Robot.Vision; Vision.Calibration=CameraCalibration.Nominal(); Vision.Enabled=false;M=new ManipulationSystem(Rig.Robot,Vision);
             Vision.World.CurrentOriginId=Robot.CurrentOriginId;Rig.Engine.LogEntry+=Logs.Add;
         }
         internal ObservableObject Add(uint id=7,Pose3d? parent=null)
@@ -104,6 +104,7 @@ public sealed class M12PutDownCheckedRowsTests
         Assert.Null(f.M.Docking.Carrying.CarriedObjectId);Assert.True(EngineErrorState.ErrorFlagSet);
         Assert.Contains(f.Logs,e=>e.Name=="Robot.UnSetCarryingObjects.NullObject"&&e.Text.EndsWith("Object 9 robot 1 thought it was carrying no longer exists in the world."));Assert.Single(f.M.Docking.Sent.OfType<CarryStateUpdate>());
     }
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void DeleteFilterUsesIdsCapturedBeforeUnset()
     {
@@ -120,6 +121,7 @@ public sealed class M12PutDownCheckedRowsTests
         f.Rig.Data(new MotorAutoEnabled{MotorID=lift?MotorID.MOTOR_LIFT:MotorID.MOTOR_HEAD,Enabled=false});f.Rig.Tick();
         Assert.Equal(lift?(uint?)null:7u,f.M.Docking.Carrying.CarriedObjectId);
     }
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void PickAndPlaceSuccessEnablesMarkersAfterReleaseIncludingPrimaryFailure()
     {
@@ -135,6 +137,7 @@ public sealed class M12PutDownCheckedRowsTests
         bool Request()=>CubePreActionPoses.GetCurrentPreActionPoses(obj,new[]{PreActionType.Docking},Array.Empty<MarkerType>(),f.Robot.MainPose,0,Array.Empty<PreActionObstacle>(),new List<PreActionPose>());
         Assert.True(Request());Assert.False(Request());Assert.Equal(0u,f.Release());Assert.True(Request());
     }
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void DirtyObservationClearsLocalizationBeforeThePoseBroadcast()
     {

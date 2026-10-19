@@ -1088,7 +1088,11 @@ public sealed class CubeLightComponent
             {
                 var connected = _robot.LocalizationWorld.ConnectedObjects.FirstOrDefault(o => o.Type == type);
                 if (nativeObjectId is null && connected is null && (!_infos.TryGetValue(type, out var retained) || retained.ObjectId == uint.MaxValue))
-                { Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real BlockWorld ObjectID; active-slot fallback is not used"); return false; }
+                {
+                    if(_robot.VisionModeRecipient is null)Log("MISSING: M4-009 / M11-004 | PlayLightAnim requires the real BlockWorld ObjectID; active-slot fallback is not used");
+                    else Log($"Stack.CubeLightComponent.PlayLightAnim.NoObjectForType: no connected or retained world ObjectID for {type}; play refused");
+                    return false;
+                }
                 uint id = nativeObjectId ?? connected?.ObjectId ?? _infos[type].ObjectId;
                 objectId = id;
                 string layerName = layer switch { 0 => "User/Game", 1 => "Engine", 2 => "State", _ => "Invalid" };
@@ -1210,7 +1214,7 @@ public sealed class CubeLightComponent
                 if (transition) SendTransitionMessage(id);
                 if (SetObjectLights(type, pattern,out bool skipped) != 0)
                 {
-                    if(skipped)Log("Stack.CubeLightComponent.Update.RelativeSendSkipped: MISSING M4-052 relative-light callee/policy stop before wire send; prior light state retained");
+                    if(skipped)Log("Stack.CubeLightComponent.Update.RelativeSendSkipped: M1-034/M4-052 skipped invalid marker access before wire send; prior light state retained");
                     else SourceLog(EngineLogLevel.Warning, null, "CubeLightComponent.Update.SetLightsFailed", "");
                 }
             });

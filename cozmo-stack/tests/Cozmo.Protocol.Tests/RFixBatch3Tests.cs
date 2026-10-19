@@ -208,7 +208,7 @@ public class RFixBatch3Tests : IDisposable
         public LiveRig()
         {
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
-            Vision = new VisionSystem(Robot, Cal) { Enabled = false };
+            Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
             Vision.ModeEnableMask &= ~(1<<7); // This fixture targets history/markers, not the unfinished quality producer (B-M11-6).
             Vision.Log += l => { lock (Log) Log.Add(l); };
             ObjectIdSpace.SeedUniqueIdForTests(ObjectType.Block_LIGHTCUBE1, 7);
@@ -253,6 +253,7 @@ public class RFixBatch3Tests : IDisposable
     /// M11-023 / M11-029 / M11-031 through the live entry: a rendered cube in a frame goes through <c>ProcessCapture</c>, the marker front end (quad, line fit, corners, refinement, decode) and
     /// reaches the world; the located object is the cube, and the decoded markers are the rendered cube's.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M11_023_ARenderedCubeIsDetectedAndLocatedThroughTheCameraPath()
     {
@@ -272,6 +273,7 @@ public class RFixBatch3Tests : IDisposable
     /// this stack cannot supply (image timestamp 0 on fw2457; its samples are keyed by ImageId). A stack-side limitation must not become a drop: frames with markers are kept whether or not an image IMU
     /// sample arrived and whatever its rates, so the cube is located.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M11_050_TheUnbuiltRotationGateNeverDropsAFrame()
     {
@@ -318,6 +320,7 @@ public class RFixBatch3Tests : IDisposable
     /// is not the robot's current one drops the frame, with the OldOrigin log (0x00654FDA..: "VisionComponent.UpdateVisionMarkers.OldOrigin"). The stack cannot allocate a second origin
     /// (<c>AddNewOrigin</c> is unbuilt, M11-053), so the origin list gets the second id the way <c>Robot::Delocalize</c> would add it; the offline link's accept-any-origin seam is switched off.
     /// </summary>
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M11_050_AStateFromAnotherOriginThanTheWorldsIsDropped()
     {
@@ -387,12 +390,13 @@ public class RFixBatch3Tests : IDisposable
     private static void Dirty(VisionSystem vision) =>
         typeof(QuadDetector).GetProperty("Parameters")!.SetValue(vision.Detector.Quads, new QuadDetectorParameters { MinQuadArea = 999 });
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Fact]
     public void M11_039_OnlyASuccessfulSetCalibrationReinitialisesTheDetector()
     {
-        using var robot = CozmoRobot.CreateOffline();
         var modified = new QuadDetector(new QuadDetectorParameters { MinQuadArea = 999 });
-        using var vision = new VisionSystem(robot, null, new MarkerDetector(modified, new MarkerDecoder()));
+        using var robot = CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{VisionDetector=new MarkerDetector(modified,new MarkerDecoder())});
+        var vision = robot.Vision;
         var logs = new List<string>();
         vision.Log += logs.Add;
         Assert.Null(vision.Calibration);

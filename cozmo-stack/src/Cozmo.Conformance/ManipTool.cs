@@ -26,7 +26,7 @@ public static class ManipTool
         string? acceptance = AcceptancePath(a);
         Console.WriteLine($"connecting to {a[1]}...");
         using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
-        using var vision = new VisionSystem(robot);
+        var vision = robot.Vision;
         using var m = new ManipulationSystem(robot, vision);
         var log = new List<string>();
         void Say(string line) { Console.WriteLine(line); log.Add(line); }

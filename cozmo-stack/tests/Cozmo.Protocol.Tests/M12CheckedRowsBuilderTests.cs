@@ -20,7 +20,7 @@ public sealed class M12CheckedRowsBuilderTests
         internal Fixture()
         {
             Rig.ToSynced();
-            Vision=new VisionSystem(Rig.Robot,CameraCalibration.Nominal()){Enabled=false};
+            Vision=Rig.Robot.Vision; Vision.Calibration=CameraCalibration.Nominal(); Vision.Enabled=false;
             M=new ManipulationSystem(Rig.Robot,Vision);
             Vision.World.CurrentOriginId=Native.CurrentOriginId;
         }

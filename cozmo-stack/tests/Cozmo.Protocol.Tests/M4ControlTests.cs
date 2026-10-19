@@ -61,7 +61,7 @@ public class M4ControlTests
     [Fact]
     public void B9_CubeConnectionEventsAndInvalidUpAxisKeepNativeFields()
     {
-        using var rig = new Rig(); using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        using var rig = new Rig(); var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced(); rig.State(); var entries = new List<EngineLogEntry>(); rig.Engine.LogEntry += entries.Add;
         ConnectCube(rig);
         var connection = Assert.Single(entries.Where(e => e.Name == "robot.accessory_connection"));
@@ -158,7 +158,7 @@ public class M4ControlTests
     public void B6_MovementPoseSubscriberAllowsConcurrentConfigurationBuild(bool moving)
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced(); rig.State(); ConnectCube(rig);
         var world = vision.World;
         uint id = world.ConnectedObjectIdForActiveId(0)!.Value;
@@ -282,7 +282,7 @@ public class M4ControlTests
     [InlineData(false, false)] [InlineData(true, false)] [InlineData(false, true)] [InlineData(true, true)]
     public void B5_MovementDirtiesMatchedLocatedInstanceExceptWhenCarried(bool moving, bool carried)
     {
-        using var rig = new Rig(); using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        using var rig = new Rig(); var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced(); rig.State(); ConnectCube(rig);
         uint id = vision.World.ConnectedObjectIdForActiveId(0)!.Value;
         var located = new ObservableObject(id, ObjectType.Block_LIGHTCUBE1, CubeGeometry.MarkersFor(ObjectType.Block_LIGHTCUBE1))
@@ -299,7 +299,7 @@ public class M4ControlTests
     [Fact]
     public void B5_ChargerHookFiltersBothMovementReports()
     {
-        using var rig = new Rig(); using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        using var rig = new Rig(); var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced(); rig.State(); ConnectCube(rig);
         uint id = vision.World.ConnectedObjectIdForActiveId(0)!.Value;
         rig.Robot.Cubes.SetChargerObjectIdFromMountInit(id);
@@ -440,13 +440,13 @@ public class M4ControlTests
         public static readonly IPEndPoint RobotEp = new(RobotIp, 5551);
         private uint _ts = 100;
 
-        private readonly VisionSystem? _fixtureWorld;
         public Rig(string? resources = null, bool attachWorld = true, CozmoEngineOptions? engineOptions = null)
         {
             // The test factory owns an isolated default animation cache until Robot.Dispose; explicit fixture paths are retained.
-            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, engineOptions ?? new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources });
+            var settings=engineOptions ?? new CozmoEngineOptions { BlockPoolPath = "", ResourcesPath = resources };
+            settings.OmitVisionForTest=!attachWorld; // Explicit world-less unit composition; production always builds it.
+            Robot = CozmoRobot.CreateForTest(Port, () => NowNs, settings);
             Engine.CaptureSourceLogs(l => { lock (Log) Log.Add(l); });
-            if (attachWorld && resources is not null) _fixtureWorld = new VisionSystem(Robot, CameraCalibration.Nominal()) { Enabled = false };
         }
 
         public void Tick(double ms = 60) { NowNs += (long)(ms * 1_000_000); Engine.Tick(); }
@@ -498,7 +498,7 @@ public class M4ControlTests
         public List<byte[]> RawSince(int mark) { lock (Port.Sent) return Port.Sent.Skip(mark).ToList(); }
         public List<RobotMessage> SentSince(int mark) => RawSince(mark).Select(b => RobotMessage.Parse(b)).ToList();
         public bool Logged(string part) { lock (Log) return Log.Any(l => l.Contains(part)); }
-        public void Dispose() { _fixtureWorld?.Dispose(); Robot.Dispose(); }
+        public void Dispose() { Robot.Dispose(); }
     }
 
     private static byte[] Hex(string s) => Convert.FromHexString(s.Replace(" ", ""));
@@ -643,7 +643,7 @@ public class M4ControlTests
     public void M1_041_CD18_SyncTimeClearsTheRobotStateHistory()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced();
         rig.State(); rig.State();
         Assert.True(vision.History.Count > 0);
@@ -663,7 +663,7 @@ public class M4ControlTests
     public void M4_020_C3_AnOriginRejectedStateStillAppliesThePartBeforeTheOriginCheck()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced();
         rig.Calibrate();
         int mark = rig.Mark();
@@ -817,7 +817,7 @@ public class M4ControlTests
 
         rig.ToSynced();
         rig.Calibrate();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal());
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal();
         int mark = rig.Mark();
         rig.State(RobotStatusFlag.IsBodyAccMode | RobotStatusFlag.IsPickedUp);          // OnTreads -> InAir (a Delocalize state)
         Assert.Equal(OffTreadsState.InAir, rig.Robot.Sensors.OffTreadsState);
@@ -906,7 +906,8 @@ public class M4ControlTests
     [Fact]
     public void M4_019_C8_SC7_TheChargerPlatform()
     {
-        using var rig = new Rig();
+        // reach: unit (explicit world-less composition isolates SC7 contact/InAir writers from the world footprint step).
+        using var rig = new Rig(attachWorld:false);
         rig.ToSynced();
         rig.Calibrate();
         var events = new List<bool>();
@@ -1315,8 +1316,8 @@ public class M4ControlTests
         Assert.False(rig.Logged("NullVisionSystem"));
         Assert.False(EngineErrorState.ErrorFlagSet);
         Assert.Single(rig.SentSince(mark).OfType<SetHeadlight>());
-        using var vision = new VisionSystem(rig.Robot, new CameraCalibration
-        { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 });
+        var vision = rig.Robot.Vision; vision.Calibration=new CameraCalibration
+        { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 };
         vision.ModeEnableMask = 1;
         vision.ProcessImage(new GrayImage(16, 16), 1, 100, new VisionPoseData(100, Pose3d.Identity, 0, 0, false, false));
         Assert.Equal(0x4000, vision.ModeEnableMask);               // the held LimitedExposure (mode 14) request applied
@@ -1338,8 +1339,8 @@ public class M4ControlTests
             using var gate = new ManualResetEventSlim();
             var setter = Task.Run(() => { gate.Wait(); rig.Robot.Lights.SetHeadlight(true); });
             gate.Set();
-            using var vision = new VisionSystem(rig.Robot, new CameraCalibration
-            { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 });
+            var vision = rig.Robot.Vision; vision.Calibration=new CameraCalibration
+            { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 };
             setter.Wait();
             vision.ModeEnableMask = 1;
             vision.ProcessImage(new GrayImage(16, 16), 1, 100, new VisionPoseData(100, Pose3d.Identity, 0, 0, false, false));
@@ -1500,8 +1501,8 @@ public class M4ControlTests
     {
         using var rig = new Rig();
         rig.ToSynced();
-        using var vision = new VisionSystem(rig.Robot, new CameraCalibration
-        { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 });
+        var vision = rig.Robot.Vision; vision.Calibration=new CameraCalibration
+        { Rows = 16, Columns = 16, FocalLengthX = 20, FocalLengthY = 20, CenterX = 8, CenterY = 8 };
         var logs = new List<string>();
         vision.Log += logs.Add;
         vision.ModeEnableMask = 1; // Idle; no markers or opaque face recipients involved.
@@ -2023,7 +2024,7 @@ public class M4ControlTests
     public void M4_023_CD10g_TheDoubleTapWindowReachesTheWorld()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced();
         rig.State();
         const uint id = 1;                                                // the radio slot
@@ -2057,7 +2058,7 @@ public class M4ControlTests
     public void M4_009_CD10a_CD10b_CD10c_MovedAndStoppedAreBroadcastPerMessage()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced();
         rig.State();
         ConnectCube(rig);
@@ -2114,7 +2115,7 @@ public class M4ControlTests
     public void M4_023_CD10d_CD10g_TheDoubleTapWindowSuppressesMovement()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced();
         rig.State();
         ConnectCube(rig);
@@ -2672,7 +2673,7 @@ public class M4ControlTests
     public void M4_009_C11_1_DockWithObjectSetsAndAbortKeepsTheDockTarget()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         using var docking = new DockingSystem(rig.Robot, vision);
         rig.ToSynced();
         rig.State();
@@ -2695,7 +2696,7 @@ public class M4ControlTests
     public async Task M4_005_MA8_TheDirectHeadSendSharesTheCounter()
     {
         using var rig = new Rig();
-        using var vision = new VisionSystem(rig.Robot, CameraCalibration.Nominal()) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled = false;
         rig.ToSynced();
         rig.State();
         Assert.NotNull(vision.History.Latest);
@@ -2837,7 +2838,7 @@ public class M4ControlTests
         {
             using var rig = new Rig(res);
             rig.ToSynced(); rig.State();
-            using var vision = new VisionSystem(rig.Robot);
+            var vision = rig.Robot.Vision;
             var type = ObjectType.Block_LIGHTCUBE1;
             ConnectCube(rig, slot: 0, type: type);
             var lights = rig.Robot.Lights.Cubes;

@@ -938,7 +938,7 @@ public class M11RVisBuildTests : IDisposable
         Assert.False(robot.Engine.Robot!.PhysicalRobotRecorded);
         robot.Engine.Robot.HandleFirmwareVersion(new FirmwareVersion { Signature = System.Text.Encoding.UTF8.GetBytes("{\"version\":1}") });
         Assert.True(robot.Engine.Robot.PhysicalRobotRecorded);
-        using var vision = new VisionSystem(robot, Cal);
+        var vision = robot.Vision; vision.Calibration=Cal;
         Assert.Equal(8, vision.World.LiftOccluderPoints.Count);
     }
 
@@ -957,7 +957,7 @@ public class M11RVisBuildTests : IDisposable
         robot.Transport.ProcessIncoming(FrameCodec.Encode(conn));
         Assert.NotNull(robot.Engine.Robot);
         robot.Engine.Robot!.HandleFirmwareVersion(new FirmwareVersion { Signature = System.Text.Encoding.UTF8.GetBytes(json) });
-        using var vision = new VisionSystem(robot, Cal);
+        var vision = robot.Vision; vision.Calibration=Cal;
         Assert.Equal(8, vision.World.LiftOccluderPoints.Count);
         Assert.Equal(expectedZ, vision.World.LiftOccluderPoints[7].Z);
     }
@@ -1699,7 +1699,7 @@ public class M11RVisBuildTests : IDisposable
     public void M11_037_TheEngineRaisesSetPhysicalRobotToTheWorld()
     {
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot, Cal);
+        var vision = robot.Vision; vision.Calibration=Cal;
         Assert.Empty(vision.World.LiftOccluderPoints);
         robot.Engine.RaisePhysicalRobotSet(false);
         Assert.Equal(-28.5, vision.World.LiftOccluderPoints[7].Z);
@@ -1738,7 +1738,7 @@ public class M11RVisBuildTests : IDisposable
     public void M11_049_NoImageIsProcessedUntilTheCalibrationReadCallbackHasRunOnAnyOutcome(int nvResult, int size)
     {
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot);
+        var vision = robot.Vision;
         var log = new List<string>(); vision.Log += l => { lock (log) log.Add(l); };
         Assert.False(vision.Enabled);
         vision.HandOverFrame(BadFrame(1));
@@ -1769,7 +1769,7 @@ public class M11RVisBuildTests : IDisposable
     {
         Assert.Equal(TimeSpan.FromMilliseconds(2), VisionSystem.ProcessorPollInterval);
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot, Cal) { Enabled = true };
+        var vision = robot.Vision; vision.Calibration=Cal; vision.Enabled = true;
         var seen = new List<string>();
         var inFrameOne = new ManualResetEventSlim(); var release = new ManualResetEventSlim();
         // each processed BadFrame ends in one M3-020 policy line (an empty mini reconstruction): the first one is frame 1, held here while 2, 3 and 4 arrive
@@ -1806,7 +1806,7 @@ public class M11RVisBuildTests : IDisposable
     public void M11_012_WithoutACalibrationTheVisionSystemRefusesAndDoesNotSubstituteOne()
     {
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot);
+        var vision = robot.Vision;
         var log = new List<string>(); vision.Log += log.Add;
         var image = new GrayImage(320, 240);
         image.Fill(120);
@@ -1966,7 +1966,7 @@ public class M11RVisBuildTests : IDisposable
         foreach (bool usableRemains in new[] { true, false })
         {
             using var robot = CozmoRobot.CreateOffline();
-            using var vision = new VisionSystem(robot, Cal);
+            var vision = robot.Vision; vision.Calibration=Cal;
             var m = Locate(vision.World, Cube(vision.World, 1, At(150, 0)));
             m.ActiveId = 1; m.FromDistance = 100;
             vision.World.SetLocalizedTo(m);
@@ -2125,7 +2125,7 @@ public class M11RVisBuildTests : IDisposable
         public ImageRig()
         {
             Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
-            Vision = new VisionSystem(Robot, Cal) { Enabled = false };
+            Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
             Vision.World.Log += l => { lock (Log) Log.Add(l); };
         }
 

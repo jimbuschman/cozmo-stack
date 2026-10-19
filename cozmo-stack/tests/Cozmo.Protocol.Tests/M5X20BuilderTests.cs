@@ -121,10 +121,11 @@ public sealed class M5X20BuilderTests
         finally{EngineErrorState.ErrorFlagSet=previous;}
     }
 
+    // reach: unit (robot-owned vision instance with direct frame/helper or fixture inputs; full native producer is not claimed).
     [Theory] [InlineData(false)] [InlineData(true)]
     public void HostStraightFailedStartReturnsTheNativeInitFailure(bool failExecute)
     {
-        using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
+        using var rig=new M4ControlTests.Rig();var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         rig.ToSynced();rig.State();using var m=new ManipulationSystem(rig.Robot,vision);
         rig.Robot.Motion.Path.SendPathMessage=message=>failExecute?message is not ExecutePath:message is not ClearPath;
         var tick=new HostDriveStraightTick(m,100,100);Assert.Equal(0u,tick.Init());

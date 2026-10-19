@@ -38,7 +38,7 @@ public sealed class M3M4ReviewFixTests
             Data(new FirmwareVersion{RobotId=1,Signature=Encoding.UTF8.GetBytes("{\"sim\":true}")});
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.RobotValidated==true,TimeSpan.FromSeconds(5)));
             Data(new SyncTimeAck());
-            Vision=new VisionSystem(Robot,CameraCalibration.Nominal()){Enabled=true,ModeEnableMask=1<<VisionSystem.DetectingMarkers};
+            Vision=Robot.Vision; Vision.Calibration=CameraCalibration.Nominal(); Vision.Enabled=true; Vision.ModeEnableMask=1<<VisionSystem.DetectingMarkers;
             Robot.Engine.InvokeEngineRequest(()=>{Robot.Engine.Robot!.SendFault=m=>{if(m is CubeLights lights)Wire.Enqueue(lights);return null;};return true;});
             if(state)State(100);
         }

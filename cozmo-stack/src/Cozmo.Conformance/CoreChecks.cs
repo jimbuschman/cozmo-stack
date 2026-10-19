@@ -298,7 +298,8 @@ public static class CoreChecks
     /// </summary>
     private static async Task<(bool, string)> Core004(CozmoRobot robot, Action<string> say)
     {
-        using var vision = new VisionSystem(robot, CameraCalibration.Nominal());
+        var vision = robot.Vision;
+        if(robot.CameraSettings.Calibration is null)vision.Calibration=CameraCalibration.Nominal();
         using var m = new ManipulationSystem(robot, vision);
 
         if (robot.State.Latest is not { } initial) return (false, "no RobotState pose for path A");
@@ -339,7 +340,7 @@ public static class CoreChecks
     /// </summary>
     private static async Task<(bool, string)> Core007(CozmoRobot robot, int seconds, Action<string> say)
     {
-        using var vision = new VisionSystem(robot);
+        var vision = robot.Vision;
         var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         if (cal is null)
         {
@@ -400,7 +401,7 @@ public static class CoreChecks
     /// </summary>
     private static async Task<(bool, string)> Core008(CozmoRobot robot, int seconds, Action<string> say)
     {
-        using var vision = new VisionSystem(robot);
+        var vision = robot.Vision;
         var cal = await vision.WaitForConnectionCalibrationAsync(TimeSpan.FromSeconds(3));
         if (cal is null) return (false, "no camera calibration; run the vision check (K) first");
 

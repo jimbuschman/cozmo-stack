@@ -80,10 +80,10 @@ internal sealed class Rig : IDisposable
         public void ActionIsBeingDestroyed() => State=5;
     }
 
-    public Rig()
+    public Rig(IOkaoFaceRecognizer? okaoRecognizer=null)
     {
         _signalContext = SynchronizationContext.Current as SignalTestContext;
-        Robot = CozmoRobot.CreateOffline(clock: Clock);
+        Robot = CozmoRobot.CreateOffline(clock: Clock,engineOptions:new CozmoEngineOptions{VisionCalibration=Cal,VisionOkaoRecognizer=okaoRecognizer});
         if (_signalContext is not null) Robot.Transport.MessageQueued += _signalContext.MarkFirmwareWorkPending;
         Deliver(new SubMessage(ReliableMessageType.ConnectionResponse, Array.Empty<byte>(), _seq++));
         // The robot calibrates head and lift on connect (M4-004). The fake robot reports both finished, so Motion
@@ -91,7 +91,7 @@ internal sealed class Rig : IDisposable
         // of only ever timing out.
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_HEAD, CalibStarted = false });
         Send(new MotorCalibration { MotorID = MotorID.MOTOR_LIFT, CalibStarted = false });
-        Vision = new VisionSystem(Robot, Cal) { Enabled = false };
+        Vision = Robot.Vision; Vision.Calibration=Cal; Vision.Enabled = false;
         M = new ManipulationSystem(Robot, Vision);
         // These geometry/wire regressions isolate the M12-024 animation lifecycle.
         // This is not a source-complete driving action. Dedicated M12-024 tests clear the seam and

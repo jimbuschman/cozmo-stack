@@ -2599,9 +2599,9 @@ public class EngineAppLayerTests
     [Fact]
     public void M1_025_M1_015_CB33_CC26_CC27_RemoveRobotLeavesEveryDeviceAsConstructed()
     {
-        using var rig = new Rig();
         var constructedCal = Cozmo.Robot.Vision.CameraCalibration.Nominal();
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot, constructedCal) { Enabled = false };
+        using var rig = new Rig(new CozmoEngineOptions{BlockPoolPath="",VisionCalibration=constructedCal});
+        var vision = rig.Robot.Vision; vision.Calibration=constructedCal; vision.Enabled = false;
         var robot = rig.Robot;
         var held = new object[] { robot.State, robot.Camera, robot.Display, robot.Audio, robot.Motion, robot.Lights, robot.Sensors,
                                   robot.Cubes, robot.CubeAccel, robot.Animations, robot.Face, vision.History, vision.World };
@@ -2619,9 +2619,9 @@ public class EngineAppLayerTests
         Assert.Same(constructedCal, vision.Calibration);
         Assert.True(vision.Enabled);
 
-        using var fresh = new Rig();
+        using var fresh = new Rig(new CozmoEngineOptions{BlockPoolPath="",VisionCalibration=constructedCal});
         _ = fresh.Robot.Lights.Cubes.Animations.ForTrigger("Sleep"); // Both resource-backed deferred loaders have run once.
-        using var freshVision = new Cozmo.Robot.Vision.VisionSystem(fresh.Robot, constructedCal) { Enabled = false };
+        var freshVision = fresh.Robot.Vision; freshVision.Calibration=constructedCal; freshVision.Enabled = false;
         Assert.Equal(held, new object[] { robot.State, robot.Camera, robot.Display, robot.Audio, robot.Motion, robot.Lights, robot.Sensors,
                                           robot.Cubes, robot.CubeAccel, robot.Animations, robot.Face, vision.History, vision.World });
         AssertAsConstructed(fresh.Robot.State, robot.State, "State", KeptAcrossRemoval);
@@ -2652,7 +2652,7 @@ public class EngineAppLayerTests
     public void M1_025_M1_015_CC27_AfterRemovalASecondConnectStartsFromAFreshRobot()
     {
         using var rig = new Rig();
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot) { Enabled = false };
+        var vision = rig.Robot.Vision; vision.Enabled = false;
         rig.ToSuccess();
         UseEveryDevice(rig, vision);
         rig.Disconnected();
@@ -2724,10 +2724,7 @@ public class EngineAppLayerTests
     {
         using var rig = new Rig();
         var detector = new BlockingFaceDetector();
-        using var vision = new Cozmo.Robot.Vision.VisionSystem(rig.Robot, Cozmo.Robot.Vision.CameraCalibration.Nominal())
-        {
-            Enabled = false, FaceDetector = detector,
-        };
+        var vision = rig.Robot.Vision; vision.Calibration=Cozmo.Robot.Vision.CameraCalibration.Nominal(); vision.Enabled = false; vision.FaceDetector = detector;
         rig.ToSuccess();
         rig.Data(new SyncTimeAck());
         rig.Data(new RobotState { Timestamp = 10, PoseOriginId = 1 });

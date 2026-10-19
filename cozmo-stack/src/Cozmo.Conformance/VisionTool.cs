@@ -42,7 +42,7 @@ public static class VisionTool
         var cal = CameraCalibration.Nominal();
         Console.WriteLine($"calibration: {cal}");
         using var robot = CozmoRobot.CreateOffline();
-        using var vision = new VisionSystem(robot, cal) { Enabled = false };
+        var vision = robot.Vision; vision.Calibration=cal; vision.Enabled = false;
         vision.World.Log += l => Console.WriteLine("  world: " + l);
         int failures = 0, cases = 0;
         var rnd = new Random(11);
@@ -127,7 +127,7 @@ public static class VisionTool
         string? acceptance = AcceptancePath(a), outDir = Arg(a, "--out");
         Console.WriteLine($"connecting to {a[1]}...");
         using var robot = await CozmoRobot.ConnectAsync(IPAddress.Parse(a[1]),engineOptions:EngineStartupResources.Options(a));
-        using var vision = new VisionSystem(robot);
+        var vision = robot.Vision;
         var log = new List<string>();
         void Say(string line) { Console.WriteLine(line); log.Add(line); }
         vision.Log += l => Say("  vision: " + l);

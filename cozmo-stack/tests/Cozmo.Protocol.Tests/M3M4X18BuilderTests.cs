@@ -163,7 +163,7 @@ public sealed class M3M4X18BuilderTests
         var calls=new List<string>();rig.Engine.MessageDispatchObservedForTest=(t,n)=>{if(t==RobotMessageId.MotorActionAck)calls.Add(n);};
         rig.Engine.Broadcast(new MotorActionAck());Assert.Equal(new[]{"TurnAction","HeadAction","LiftAction","TurnAction"},calls);
         first.Dispose();calls.Clear();rig.Engine.Broadcast(new MotorActionAck());Assert.Equal(new[]{"HeadAction","LiftAction","TurnAction"},calls);
-        using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
+        var vision=rig.Robot.Vision; vision.Calibration=CameraCalibration.Nominal(); vision.Enabled=false;
         using var docking=new DockingSystem(rig.Robot,vision);
         using var a=docking.RegisterActionHandlers(default);using var b=docking.RegisterActionHandlers(default);
         calls.Clear();rig.Engine.MessageDispatchObservedForTest=(t,n)=>{if(t==RobotMessageId.LiftLoad)calls.Add(n);};
