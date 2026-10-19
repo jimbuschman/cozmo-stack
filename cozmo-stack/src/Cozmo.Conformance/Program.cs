@@ -173,7 +173,7 @@ static int Usage()
                                              motors and disposes (bounded 2 s), then writes the bundle.
                                              Exit 0 PASS, 1 FAIL or INCOMPLETE, 2 usage or OBB missing, 3 watchdog,
                                              4 interrupted (Ctrl+C)
-          m3m4-hw [robot-ip] [--only <checks>] [--origin-probe] [--include-lift] [--cube-wait <s>] [--photo KEY=path] [--out <dir>] [--yes]
+          m3m4-hw [robot-ip] --resources <dir> [--only <checks>] [--include-lift] [--allow-drive] [--cube-wait <s>] [--photo KEY=path] [--out <dir>] [--yes]
                                              DRAFT hardware run M3M4-HW (M3-008, M3-016, M3-036, M4-013, M4-021, M4-024): observations only, no PASS
           m1m2-hw [robot-ip] --resources <cozmo_resources> [--skip-connect-async] [--operator <label>] [--out <dir>] [--yes]
                                              M1+M2 acceptance run M1M2-HW: startup, connect, needs read, latency, link, disconnect, ConnectAsync; observations only, no PASS

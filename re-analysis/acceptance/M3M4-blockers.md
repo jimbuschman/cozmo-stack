@@ -27,6 +27,8 @@ builder job is open. What has never run is a settling pass over the records them
 
 ## Sequence
 
+**Update (2026-10-19, hardware script):** `hardware/scripts/m3m4-hw-2.md` approved for the operator's run. The tool `m3m4-hw` now has 13 checks (the seven HARDWARE_ONLY records, pass B's coverage list, cube lights), with the four harness defects of the 2026-10-12 run fixed. Waiting on the operator.
+
 **Update (2026-10-19, B-M3M4-36 check PASS):** `research/20261019-b-m3m4-36-check.md`. The 16 held records settled (M4-052 EQUIVALENT_IMPLEMENTATION). M3 and M4 hold no gap records; implementation complete. Left: the hardware script and run, then ACCEPTED.
 
 **Update (2026-10-19, settle readiness):** `research/20261019-m3m4-settle.md`. Seven records settled EXACT_SOURCE (M3-012, M3-055, M3-060, M4-043, M4-044, M4-047, M4-050). The VisionSystem/BlockWorld exists only when a host builds one, so the cube, light, cliff and camera-limit paths of the other 16 skip with MISSINGs in a vision-less host. **Operator decision: always build it.** B-M3M4-36 (open), its check, settle the 16, then the hardware script (pass B's 14 coverage items).

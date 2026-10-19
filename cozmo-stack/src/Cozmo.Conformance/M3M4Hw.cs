@@ -15,9 +15,10 @@ using StbImageSharp;
 namespace Cozmo.Conformance;
 
 /// <summary>
-/// <c>m3m4-hw</c>: DRAFT hardware acceptance run M3M4-HW for the seven HARDWARE_ONLY records of M3-device and
-/// M4-control (M3-008, M3-016, M3-036, M3-050, M4-013, M4-021, M4-024). The manager must approve it before the operator runs
-/// it (re-analysis/acceptance/hardware/scripts/m3m4-hw-draft.md). It connects through the production engine
+/// <c>m3m4-hw</c>: hardware acceptance run M3M4-HW for M3-device and M4-control: the seven HARDWARE_ONLY records
+/// (M3-008, M3-016, M3-036, M3-050, M4-013, M4-021, M4-024) and, since 2026-10-19, the coverage list of settling pass B
+/// (M3-012, M3-021, M3-055, M3-060, M4-018, M4-019, M4-027, M4-038, M4-047, M4-051; checks in M3M4HwSettle.cs).
+/// Script document: re-analysis/acceptance/hardware/scripts/m3m4-hw-2.md. It connects through the production engine
 /// (<see cref="CozmoRobot.Create"/> + ConnectToRobot, as <c>control-check</c> does), runs one observation procedure per
 /// record, and writes one self-contained bundle. It never commits, never writes the manifest, and never writes the
 /// robot's NV storage.
@@ -30,8 +31,10 @@ public static class M3M4Hw
 {
     public const string TestId = "M3M4-HW";
 
-    /// <summary>The seven records this run is about. All must exist in re-analysis/fidelity_manifest.json or the run stops before touching the network.</summary>
-    public static readonly string[] RecordIds = { "M3-008", "M3-016", "M3-036", "M4-013", "M4-021", "M4-024", "M3-050" };
+    /// <summary>The HARDWARE_ONLY records; a warning is given if one is no longer HARDWARE_ONLY.</summary>
+    public static readonly string[] HardwareOnlyIds = { "M3-008", "M3-016", "M3-036", "M4-013", "M4-021", "M4-024", "M3-050" };
+    /// <summary>Every record this run is about. All must exist in re-analysis/fidelity_manifest.json or the run stops before touching the network.</summary>
+    public static readonly string[] RecordIds = HardwareOnlyIds.Concat(new[] { "M3-012", "M3-021", "M3-055", "M3-060", "M4-018", "M4-019", "M4-027", "M4-038", "M4-047", "M4-051" }).ToArray();
 
     public sealed record CheckDef(string Id, string Title, string[] Records, bool Moves, bool NeedsOperator, bool NeedsCube);
 
@@ -44,7 +47,17 @@ public static class M3M4Hw
         new("FACE_ROWS", "Known face patterns that separate pair-bit to display-row mappings, plus face-frame sweeps for the playback period; the operator answers what the face showed", new[] { "M3-008" }, false, true, false),
         new("MOTOR_CAL", "StartMotorCalibration (head) after the connection-time calibration has finished: reports and head motion after the request only", new[] { "M4-013" }, true, true, false),
         new("CUBE_TELEM", "Cube telemetry before and after the cube connects, with and without StreamObjectAccel; what precedes it", new[] { "M4-024" }, false, true, true),
+        new("DAS_EVENTS", "The head-ID and body-ID DAS events and the startup flush result event, from the engine log (passive)", new[] { "M3-055", "M3-060" }, false, false, false),
+        new("CAMERA_PARAMS", "DefaultCameraParams and the SetCameraParams the engine sends; public SetCameraSettings with a valid and two out-of-range requests, then the original values", new[] { "M3-021" }, false, false, false),
+        new("TRACK_UNLOCK", "LockTracks, UnlockTracks, then UnlockTracks again: the miss path's log and EnableAnimTracks re-send", new[] { "M4-047" }, false, false, false),
+        new("ANIM_BUDGET", "A long audio animation (no wheel motion): the robot's AnimationState counters beside the engine's streamed totals; budget warnings and drops", new[] { "M3-012" }, true, false, false),
+        new("CLIFF", "Cliff threshold sends since connect; with --allow-drive a slow drive to a table edge (RobotStopped/CliffEvent order, API CliffDetected, HandleCliffEvent logs); a hand lift", new[] { "M4-019", "M4-038" }, true, true, false),
+        new("CUBE_LIGHTS", "Public PlayLightAnim(Flash) on the connected cube with a completion callback: SetCubeGamma/CubeID/CubeLights on the wire", new[] { "M4-018", "M4-051" }, false, true, true),
+        new("DISCONNECT_QUIET", "After the run's teardown: no motor, light or other data message after the DisconnectRequest", new[] { "M4-027" }, false, false, false),
     };
+
+    /// <summary>The order checks run in: passive first, motion and long waits last. DISCONNECT_QUIET is judged after teardown.</summary>
+    public static readonly string[] RunOrder = { "DAS_EVENTS", "ORIGIN", "NV_READS", "CAMERA_PARAMS", "COLOR_IMAGES", "FACE_ROWS", "TRACK_UNLOCK", "ANIM_BUDGET", "MOTOR_CAL", "CLIFF", "CUBE_TELEM", "CUBE_LIGHTS" };
 
     // ---- the fixed timings (not options, so every bundle ran the same script)
     internal const int ConnectBudgetMs = 10000, ConnectedSettleMs = 3000;
@@ -60,6 +73,21 @@ public static class M3M4Hw
     internal static readonly uint[] FactoryLen1Tags = { 0x80000001, 0x80000000, 0x80000004, 0x80000006, 0x80000011, 0x80000012 };
     /// <summary>The non-factory entry tags (size-table keys other than the 0x198000 sentinel). Read only.</summary>
     internal static readonly uint[] NonFactoryTags = { 0x180000, 0x181000, 0x182000, 0x183000, 0x184000, 0x194000, 0x195000, 0x196000, 0x197000 };
+
+    /// <summary>
+    /// Maps a typed answer to one of the offered choices: case-insensitive equal, the choice's number (1-based), or a unique
+    /// prefix. Text that matches none (and a free-number prompt's answer) is kept as typed.
+    /// </summary>
+    public static string NormaliseAnswer(string typed, string[] choices)
+    {
+        var t = typed.Trim();
+        var eq = choices.FirstOrDefault(c => string.Equals(c, t, StringComparison.OrdinalIgnoreCase));
+        if (eq is not null) return eq;
+        if (choices.Length > 1 && int.TryParse(t, out int k) && k >= 1 && k <= choices.Length) return choices[k - 1];
+        var pre = choices.Where(c => c.StartsWith(t, StringComparison.OrdinalIgnoreCase)).ToList();
+        return pre.Count == 1 && t.Length > 0 ? pre[0] : t;
+    }
+
 
     // ------------------------------------------------------------------ record validation (fail fast)
 
@@ -77,7 +105,7 @@ public static class M3M4Hw
         foreach (var id in RecordIds)
         {
             var r = (JsonObject)byId[id].DeepClone();
-            if (r["status"]?.GetValue<string>() != "HARDWARE_ONLY") warnings.Add($"{id} is {r["status"]} in the manifest, not HARDWARE_ONLY: the manager must re-read the record before this run is used");
+            if (HardwareOnlyIds.Contains(id) && r["status"]?.GetValue<string>() != "HARDWARE_ONLY") warnings.Add($"{id} is {r["status"]} in the manifest, not HARDWARE_ONLY: the manager must re-read the record before this run is used");
             list.Add(r);
         }
         return list;
@@ -88,7 +116,7 @@ public static class M3M4Hw
     {
         var named = Checks.SelectMany(c => c.Records).ToList();
         var stray = named.Except(RecordIds).ToList();
-        if (stray.Count > 0) return "a check names a record outside the seven: " + string.Join(", ", stray);
+        if (stray.Count > 0) return "a check names a record outside RecordIds: " + string.Join(", ", stray);
         var unnamed = RecordIds.Except(named).ToList();
         return unnamed.Count > 0 ? "a record no check names: " + string.Join(", ", unnamed) : null;
     }
@@ -98,7 +126,7 @@ public static class M3M4Hw
     private static int Usage(string why)
     {
         if (why.Length > 0) Console.Error.WriteLine("m3m4-hw: " + why);
-        Console.Error.WriteLine("usage: m3m4-hw [robot-ip] [--only ORIGIN,NV_READS,COLOR_IMAGES,FACE_ROWS,MOTOR_CAL,CUBE_TELEM] [--include-lift]\n"
+        Console.Error.WriteLine("usage: m3m4-hw [robot-ip] --resources <cozmo_resources> [--only " + string.Join(",", Checks.Select(c => c.Id)) + "] [--include-lift] [--allow-drive]\n"
                               + "               [--cube-wait <seconds, default 45>] [--photo <KEY>=<path> ...] [--operator <label>] [--out <dir>] [--yes]\n"
                               + "  KEY is a prompt key named in the draft document, e.g. FACE_ROWS.TOP_BAND; --yes asks no questions (answers recorded as null).");
         return 2;
@@ -106,7 +134,7 @@ public static class M3M4Hw
 
     public static int Run(string[] args)
     {
-        IPAddress? ip = null; string? outParent = null, operatorLabel = null; bool yes = false, probe = false, lift = false; int cubeWaitS = 45;
+        IPAddress? ip = null; string? outParent = null, operatorLabel = null; bool yes = false, probe = false, lift = false, drive = false; int cubeWaitS = 45;
         HashSet<string>? only = null; var photos = new Dictionary<string, string>(StringComparer.Ordinal);
         for (int i = 1; i < args.Length; i++)
         {
@@ -117,6 +145,7 @@ public static class M3M4Hw
                     break; // Retained in argv for EngineStartupResources.
                 case "--yes": yes = true; break;
                 case "--include-lift": lift = true; break;
+                case "--allow-drive": drive = true; break;
                 case "--only":
                     if (++i >= args.Length) return Usage("--only needs a list");
                     only = args[i].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToHashSet(StringComparer.Ordinal);
@@ -155,12 +184,12 @@ public static class M3M4Hw
 
         string parent = outParent ?? Path.Combine(repoRoot!, "re-analysis", "acceptance", "hardware");
         string bundle = Path.GetFullPath(Path.Combine(parent, $"{DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}-{TestId}"));
-        var run = new M3M4Run(ip, bundle, repoRoot, args, records, warnings, only, yes, probe, lift, cubeWaitS, photos, operatorLabel);
+        var run = new M3M4Run(ip, bundle, repoRoot, args, records, warnings, only, yes, probe, lift, drive, cubeWaitS, photos, operatorLabel);
         return run.ExecuteAsync().GetAwaiter().GetResult();
     }
 }
 
-internal sealed class M3M4Run
+internal sealed partial class M3M4Run
 {
     private sealed record FrameRec(double T, DateTime Utc, bool Out, byte[] Raw, Frame? Frame, string? Error);
     private sealed record Msg(double T, bool Out, byte Tag, byte[] Payload);
@@ -168,7 +197,7 @@ internal sealed class M3M4Run
 
     private readonly IPAddress _ip; private readonly string _bundle; private readonly string? _repoRoot; private readonly string[] _argv;
     private readonly List<JsonObject> _records; private readonly List<string> _warnings; private readonly HashSet<string>? _only;
-    private readonly bool _yes, _probe, _lift; private readonly int _cubeWaitS; private readonly Dictionary<string, string> _photos; private readonly string? _operator;
+    private readonly bool _yes, _probe, _lift, _allowDrive; private readonly int _cubeWaitS; private readonly Dictionary<string, string> _photos; private readonly string? _operator;
 
     private readonly DateTime _t0Utc = DateTime.UtcNow;
     private readonly ConcurrentQueue<FrameRec> _frames = new();
@@ -187,8 +216,8 @@ internal sealed class M3M4Run
     private int _written, _aborting;
 
     public M3M4Run(IPAddress ip, string bundle, string? repoRoot, string[] argv, List<JsonObject> records, List<string> warnings, HashSet<string>? only,
-                   bool yes, bool probe, bool lift, int cubeWaitS, Dictionary<string, string> photos, string? operatorLabel)
-    { _ip = ip; _bundle = bundle; _repoRoot = repoRoot; _argv = argv; _records = records; _warnings = warnings; _only = only; _yes = yes; _probe = probe; _lift = lift; _cubeWaitS = cubeWaitS; _photos = photos; _operator = operatorLabel; }
+                   bool yes, bool probe, bool lift, bool allowDrive, int cubeWaitS, Dictionary<string, string> photos, string? operatorLabel)
+    { _ip = ip; _bundle = bundle; _repoRoot = repoRoot; _argv = argv; _records = records; _warnings = warnings; _only = only; _yes = yes; _probe = probe; _lift = lift; _allowDrive = allowDrive; _cubeWaitS = cubeWaitS; _photos = photos; _operator = operatorLabel; }
 
     private double Now() => (DateTime.UtcNow - _t0Utc).TotalMilliseconds;
     private double T(DateTime utc) => (utc - _t0Utc).TotalMilliseconds;
@@ -244,7 +273,7 @@ internal sealed class M3M4Run
             _robot = CozmoRobot.Create(engineOptions:EngineStartupResources.Options(_argv));
             Subscribe(_robot);
             connected = Connect(_robot);
-            foreach (var def in M3M4Hw.Checks)
+            foreach (var def in M3M4Hw.RunOrder.Select(id => M3M4Hw.Checks.Single(c => c.Id == id)))
             {
                 if (_only is not null && !_only.Contains(def.Id)) continue;
                 if (_cancelled) { Skip(def, "run interrupted before this check"); continue; }
@@ -263,6 +292,12 @@ internal sealed class M3M4Run
                         "FACE_ROWS" => FaceCheck(),
                         "MOTOR_CAL" => MotorCalCheck(),
                         "CUBE_TELEM" => await CubeCheck(),
+                        "DAS_EVENTS" => DasEventsCheck(),
+                        "CAMERA_PARAMS" => CameraParamsCheck(),
+                        "TRACK_UNLOCK" => TrackUnlockCheck(),
+                        "ANIM_BUDGET" => await AnimBudgetCheck(),
+                        "CLIFF" => await CliffCheck(),
+                        "CUBE_LIGHTS" => await CubeLightsCheck(),
                         _ => null,
                     };
                 }
@@ -283,6 +318,12 @@ internal sealed class M3M4Run
             Interlocked.Exchange(ref _aborting, 1);
             try { StopBounded(); } catch (Exception e) { lock (_exceptions) _exceptions.Add("dispose: " + e); }
         }
+        var quiet = M3M4Hw.Checks.Single(c => c.Id == "DISCONNECT_QUIET");
+        if (connected && (_only is null || _only.Contains(quiet.Id)))
+        {
+            try { AddResult(quiet, DisconnectQuietResult(), Now()); }
+            catch (Exception e) { lock (_exceptions) _exceptions.Add("DISCONNECT_QUIET: " + e); }
+        }
         // Checks never run: record them so the result names every selected check.
         string overall = WriteBundle();
         Console.WriteLine();
@@ -296,10 +337,11 @@ internal sealed class M3M4Run
     {
         Console.WriteLine("""
 
-            M3M4-HW (DRAFT). Read the draft document first. Setup:
+            M3M4-HW. Read re-analysis/acceptance/hardware/scripts/m3m4-hw-2.md first. Setup:
               - the computer is on the robot's Wi-Fi; the official app and every other client is closed;
-              - Cozmo on its treads on a clear flat surface with 30 cm free all round (the head nods; with --include-lift the lift also moves);
-              - nothing is written to the robot's storage; no wheel or lift motion unless --include-lift;
+              - Cozmo on its treads on a clear flat surface with 30 cm free all round (the head nods; ANIM_BUDGET moves head and
+                lift; with --include-lift the lift calibrates; with --allow-drive CLIFF drives slowly to a table edge, hand ready);
+              - nothing is written to the robot's storage; no wheel motion unless --allow-drive;
               - the face must be visible to the operator; for CUBE_TELEM one powered cube within 30 cm;
               - answers and photo paths are typed at the prompts; blank means "could not tell" (recorded as such).
             Ctrl+C stops the run and still writes the bundle.
@@ -313,8 +355,6 @@ internal sealed class M3M4Run
     {
         res["id"] = def.Id; res["title"] = def.Title;
         res["records"] = new JsonArray(def.Records.Select(r => (JsonNode)r).ToArray());
-        if (def.Id == "CUBE_TELEM") res["contextRecords"] = new JsonArray(new JsonObject
-            { ["id"] = "M4-010", ["status"] = "IMPLEMENTATION_GAP", ["uncertainty"] = "auto-pool connection path is awaiting strong verification" });
         res["moves"] = def.Moves; res["startMs"] = Num(from); res["endMs"] = Num(Now());
         res["settlesNoRecord"] = "an observation, not a verdict on the record: no verdict here changes the manifest or raises provenance";
         lock (_checkResults) _checkResults.Add(res);
@@ -474,7 +514,7 @@ internal sealed class M3M4Run
             Console.WriteLine($"[{fullKey}] {question}");
             Console.Write($"  answer ({string.Join(" / ", choices)}; blank = could not tell): ");
             var line = Console.ReadLine()?.Trim();
-            answer = string.IsNullOrEmpty(line) ? "could-not-tell" : line;
+            answer = string.IsNullOrEmpty(line) ? "could-not-tell" : M3M4Hw.NormaliseAnswer(line, choices);
         }
         if (photo)
         {
@@ -483,7 +523,13 @@ internal sealed class M3M4Run
             {
                 Console.Write("  photo file path (blank = none): ");
                 var l = Console.ReadLine()?.Trim().Trim('"');
-                if (!string.IsNullOrEmpty(l)) path = l;
+                if (!string.IsNullOrEmpty(l) && Directory.Exists(l))
+                {
+                    Console.Write("  that is a folder; give the photo file itself (blank = none): ");
+                    l = Console.ReadLine()?.Trim().Trim('"');
+                }
+                if (!string.IsNullOrEmpty(l) && File.Exists(l)) path = l;
+                else if (!string.IsNullOrEmpty(l)) lock (_exceptions) _exceptions.Add($"photo {l}: not a file; none recorded");
             }
             if (path is not null)
             {
@@ -543,7 +589,12 @@ internal sealed class M3M4Run
         };
         res["connectionUpdate"] = phaseA;
         bool sameAsUpdateBefore = before.Count > 0 && before.All(s => s.Origin == upd.PoseOriginId && s.Frame == upd.PoseFrameId);
-        if (before.Count < 3 || settled.Count < 20)
+        if (before.Count == 0 && settled.Count >= 20 && settled.All(s => s.Origin == upd.PoseOriginId && s.Frame == upd.PoseFrameId))
+        {
+            res["verdict"] = "OBSERVED_REPORTS_UPDATE_VALUES_FROM_FIRST_STATE";
+            res["verdictRule"] = "the engine sends the update before the first RobotState, so there is no in-run before; every state from 500 ms after it reports the update's origin and frame. Baseline: 20260924-202748-CONTROL (no update sent: all 855 states origin 0 frame 0)";
+        }
+        else if (before.Count < 3 || settled.Count < 20)
         {
             res["verdict"] = "INCONCLUSIVE"; res["verdictRule"] = "fewer than 3 states before the update or 20 after it";
             missing.Add($"states before: {before.Count}; after +500 ms: {settled.Count}: the first RobotStates may arrive after the update (the engine sends it at SyncTime, before the first state); then only the cross-bundle comparison with 20260924-202748-CONTROL (all 855 states origin 0 frame 0, no update sent) applies");
@@ -1043,7 +1094,9 @@ internal sealed class M3M4Run
         var encodings = new StringBuilder();
         foreach (var frame in Frames().Where(f => !f.Out && f.Frame is not null).OrderBy(f => f.T))
             foreach (var message in frame.Frame!.Messages)
-                if (message.Payload.Length > 0 && message.Payload[0] == Tag(RobotMessageId.Image) && Parse(message.Payload) is ImageChunk chunk)
+                // Only data sub-messages: other sub-message types whose first byte happens to equal the Image tag misparsed (2026-10-12 run).
+                if (message.Type is ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage
+                    && message.Payload.Length > 0 && message.Payload[0] == Tag(RobotMessageId.Image) && Parse(message.Payload) is ImageChunk chunk)
                 {
                     var row = ImageEncodingObservation(chunk);
                     row["t"] = Num(frame.T);
@@ -1051,12 +1104,11 @@ internal sealed class M3M4Run
                     encodings.AppendLine(row.ToJsonString());
                 }
         File.WriteAllText(Path.Combine(_bundle, "image-encodings.jsonl"), encodings.ToString(), Encoding.UTF8);
-        _warnings.Add("CUBE_TELEM context: M4-010 remains IMPLEMENTATION_GAP; the auto-pool connection path is awaiting strong verification.");
         JsonObject[] checks; lock (_checkResults) checks = _checkResults.ToArray();
         string overall = _exceptions.Count > 0 && checks.Length == 0 ? "ERROR" : checks.Any(c => c["verdict"]!.GetValue<string>() == "INCONCLUSIVE") ? "REVIEW_REQUIRED_SOME_INCONCLUSIVE" : "REVIEW_REQUIRED";
         var result = new JsonObject
         {
-            ["test"] = M3M4Hw.TestId, ["draft"] = true,
+            ["test"] = M3M4Hw.TestId, ["script"] = "m3m4-hw-2",
             ["overall"] = overall,
             ["overallRule"] = "never PASS: every check is OBSERVED_* or INCONCLUSIVE and the manager judges the bundle; no verdict settles a record or raises provenance",
             ["operatorLabel"] = _operator,
@@ -1076,7 +1128,7 @@ internal sealed class M3M4Run
         {
             if (_repoRoot is not null)
             {
-                foreach (var (src, name) in new[] { (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4Hw.cs"), "M3M4Hw.cs"), (Path.Combine(_repoRoot, "re-analysis", "acceptance", "hardware", "scripts", "m3m4-hw-draft.md"), "m3m4-hw-draft.md") })
+                foreach (var (src, name) in new[] { (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4Hw.cs"), "M3M4Hw.cs"), (Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4HwSettle.cs"), "M3M4HwSettle.cs"), (Path.Combine(_repoRoot, "re-analysis", "acceptance", "hardware", "scripts", "m3m4-hw-2.md"), "m3m4-hw-2.md") })
                     if (File.Exists(src)) { File.Copy(src, Path.Combine(_bundle, name), overwrite: true); _extraFiles.Add(name); }
             }
         }
@@ -1107,14 +1159,19 @@ internal sealed class M3M4Run
         {
             ["test"] = M3M4Hw.TestId, ["commandLine"] = "cozmo-conformance " + string.Join(' ', _argv),
             ["gitHead"] = head, ["gitDirty"] = status?.Length > 0, ["gitStatus"] = status is null ? null : new JsonArray(status.Take(100).Select(l => (JsonNode)l).ToArray()),
-            ["scriptSha256"] = new JsonObject { ["cozmo-stack/src/Cozmo.Conformance/M3M4Hw.cs"] = scriptSha, ["re-analysis/acceptance/hardware/scripts/m3m4-hw-draft.md"] = _repoRoot is null ? null : Sha(Path.Combine(_repoRoot, "re-analysis", "acceptance", "hardware", "scripts", "m3m4-hw-draft.md")) },
+            ["scriptSha256"] = new JsonObject
+            {
+                ["cozmo-stack/src/Cozmo.Conformance/M3M4Hw.cs"] = scriptSha,
+                ["cozmo-stack/src/Cozmo.Conformance/M3M4HwSettle.cs"] = _repoRoot is null ? null : Sha(Path.Combine(_repoRoot, "cozmo-stack", "src", "Cozmo.Conformance", "M3M4HwSettle.cs")),
+                ["re-analysis/acceptance/hardware/scripts/m3m4-hw-2.md"] = _repoRoot is null ? null : Sha(Path.Combine(_repoRoot, "re-analysis", "acceptance", "hardware", "scripts", "m3m4-hw-2.md")),
+            },
             ["assemblySha256"] = new JsonObject
             {
                 ["cozmo-conformance.dll"] = Sha(typeof(M3M4Hw).Assembly.Location), ["Cozmo.Robot.dll"] = Sha(typeof(CozmoRobot).Assembly.Location),
                 ["Cozmo.Transport.dll"] = Sha(typeof(ReliableTransport).Assembly.Location), ["Cozmo.Protocol.dll"] = Sha(typeof(Frame).Assembly.Location),
             },
             ["robotIp"] = _ip.ToString(), ["robotPort"] = RobotAddress.RemotePort(false), ["only"] = _only is null ? null : new JsonArray(_only.Select(x => (JsonNode)x).ToArray()),
-            ["originProbe"] = _probe, ["includeLift"] = _lift, ["cubeWaitSeconds"] = _cubeWaitS, ["yes"] = _yes,
+            ["originProbe"] = _probe, ["includeLift"] = _lift, ["allowDrive"] = _allowDrive, ["cubeWaitSeconds"] = _cubeWaitS, ["yes"] = _yes,
             ["os"] = RuntimeInformation.OSDescription, ["dotnet"] = RuntimeInformation.FrameworkDescription,
             ["startUtc"] = _t0Utc.ToString("o", CultureInfo.InvariantCulture), ["endUtc"] = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture),
             ["timings"] = new JsonObject
