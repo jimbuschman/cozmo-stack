@@ -7,6 +7,28 @@ namespace Cozmo.Robot;
 // OV128 L4-L7, corrected by 20261018-ov128-check.md. This is the live SetObjectLights callee.
 internal static class RelativeCubeLights
 {
+    // OV129 C1-C5: supplied pose is already flattened by GetTopMarker. Do not compose Marker.Pose again.
+    internal static Point3f[] Get3dCorners(KnownMarker marker,Pose3d pose)
+    {
+        float width=(float)marker.SizeMm,height=(float)(double.IsNaN(marker.HeightMm)?marker.SizeMm:marker.HeightMm);
+        // Canonical words BF000000/3F000000 and +0; all scale operations are binary32.
+        var corners=new Point3f[]{new(width*-0.5f,0,height*0.5f),new(width*-0.5f,0,height*-0.5f),
+            new(width*0.5f,0,height*0.5f),new(width*0.5f,0,height*-0.5f)};
+        var transform=pose.Transform; // GetTransform 0x0084499A; no parent walk here.
+        // ApplyTo 0x0050343C..0x00503520 visits physical slots 0,2,1,3, including unused C3.
+        foreach(int i in new[]{0,2,1,3})corners[i]=new Point3f(transform.Apply(corners[i].ToVec3()));
+        return corners;
+    }
+    internal static Vec3 ComputeNormal(KnownMarker marker,Pose3d pose)
+    {
+        var c=Get3dCorners(marker,pose);
+        var a=new Point3f(c[2].X-c[0].X,c[2].Y-c[0].Y,c[2].Z-c[0].Z);
+        var b=new Point3f(c[1].X-c[0].X,c[1].Y-c[0].Y,c[1].Z-c[0].Z);
+        // OV129 N2-N4, 0x0087E418..0x0087E4A6. Separate products: no FMA or normalization.
+        float t0=a.Z*b.X,t1=b.Y*a.Z,t2=b.Z*a.X,t3=a.Y*b.Z,t4=b.Y*a.X,t5=a.Y*b.X;
+        float ny=t2-t0,nx=t1-t3,nz=t5-t4;
+        return new(nx,ny,nz);
+    }
     internal static int Corner(Radians a)
     {
         var p=new Radians(BitConverter.Int32BitsToSingle(0x3FC90FDB));
@@ -57,14 +79,7 @@ internal static class RelativeCubeLights
             {
                 using var placed=new Pose3d(marker.PoseOnObject);placed.SetParent(objectPose);
                 using var root=placed.GetWithRespectToRoot();
-                if(checkedNormalInput is null)
-                {
-                    // Reopened target of 0x004E69F8 is 0x0087E3FA: transformed corners and a cross product,
-                    // not a rotated unit axis. OV128 does not check that callee's arithmetic. Do not invent it.
-                    Behavior.SteppedBehavior.ReportMissing("M4-052 KnownMarker::ComputeNormal(Pose3d) 0x0087E3FA, called at0x004E69F8: transformed-corner arithmetic has no adopted row; relative light state/send skipped");
-                    return null;
-                }
-                var normal=checkedNormalInput(marker,root);
+                var normal=checkedNormalInput is null?ComputeNormal(marker,root):checkedNormalInput(marker,root);
                 // GetTopMarker 0x004E69F8..0x004E6A32: include the zero products, then strict max (ties keep first).
                 float dot=(float)normal.X*0;dot+=(float)normal.Y*0;dot+=(float)normal.Z*1;
                 if(dot>best){best=dot;selected=marker;top?.Dispose();top=new Pose3d(root);}

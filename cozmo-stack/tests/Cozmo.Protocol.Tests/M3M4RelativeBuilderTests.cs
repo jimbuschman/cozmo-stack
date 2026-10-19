@@ -61,7 +61,7 @@ public sealed class M3M4RelativeBuilderTests
     public void FacePreservesEpsilonAtAllFourBoundaries(int bits,int mask)
         => Assert.Equal(mask,RelativeCubeLights.Face(new Radians(F(bits))));
 
-    // reach: unit (substitutes ComputeNormal output; join MISSING M4-052 0x004E69F8 -> 0x0087E3FA).
+    // reach: unit (substitutes ComputeNormal output to isolate strict tie selection; actual normal and production join covered in B35).
     [Theory][InlineData(false,(byte)1)][InlineData(true,(byte)1)][InlineData(false,(byte)2)]
     public void TopMarkerStrictTieAndRootPoseFeedTheNativeChoice(bool otherFirst,byte mode)
     {
@@ -78,7 +78,7 @@ public sealed class M3M4RelativeBuilderTests
         Assert.Equal(otherFirst,logs.Any(l=>l.EndsWith("IgnoringBecauseBlockOnSide")));
     }
 
-    // reach: unit (substitutes ComputeNormal output at M4-052 0x004E69F8 -> 0x0087E3FA; shared live send callee).
+    // reach: unit (substitutes ComputeNormal output to isolate located/active-slot routing; production normal join covered in B35).
     [Theory][InlineData((byte)1)][InlineData((byte)2)]
     public void RelativeUnitUsesLocatedStateAndItsOwnActiveSlot(byte mode)
     {
@@ -122,7 +122,7 @@ public sealed class M3M4RelativeBuilderTests
         Assert.DoesNotContain(rig.SentSince(mark),m=>m is CubeID or CubeLights);
     }
 
-    // reach: unit (located-only identity and substituted ComputeNormal output; join MISSING M4-052 0x0087E3FA).
+    // reach: unit (located-only identity and substituted ComputeNormal output to isolate active slot; no missing normal join remains).
     [Fact]
     public void RelativeSendUsesLocatedSlotWithoutAConnectedCopy()
     {
@@ -206,21 +206,35 @@ public sealed class M3M4RelativeBuilderTests
         lights.StopLightAnim("Flash",0,Type);Assert.Equal(1,calls);
     }
 
-    // reach: production — public API, shipped Flash/modifier, real connected/located world and actual send gate.
-    // The missing normal callee is observed here; no production relative CubeLights payload is claimed.
+    // reach: production - public PlayLightAnim with shipped Flash and relative modifier, real native normal,
+    // located/connected cube state and normal CubeID/CubeLights wire output. Located pose is a known world input;
+    // this test does not claim the independent vision-localization producer or physical robot acceptance.
     [Fact]
-    public void PublicRelativePlayNamesTheUnreadNormalAndSendsNoGuessedLights()
+    public void PublicRelativePlaySendsRotatedLedPayloadUsingNativeNormal()
     {
         using var rig=new M4ControlTests.Rig(Shipped());rig.ToSynced();rig.State();M4ControlTests.ConnectCube(rig);
         var world=rig.Robot.LocalizationWorld;var connected=world.ConnectedObjects.Single(o=>o.ActiveId==0);
-        var located=new ObservableObject(connected.ObjectId,Type,CubeGeometry.MarkersFor(Type)){OriginId=world.CurrentOriginId,PoseState=PoseState.Known};
-        world.AddLocatedObject(located);var prior=(LedPattern[])located.ActiveLedState.Clone();
-        Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();var missing=new List<string>();
+        using var pose=new Pose3d(F(0x3FC90FDB),new Vec3(0,1,0),Vec3.Zero);
+        var located=new ObservableObject(connected.ObjectId,Type,CubeGeometry.MarkersFor(Type)){OriginId=world.CurrentOriginId,PoseState=PoseState.Known,Pose=pose};
+        world.AddLocatedObject(located);
+        // Shipped Flash is white/black, on/off100ms. Modifier adds unique timings so rotation is observable.
+        var modifier=Enumerable.Range(0,4).Select(i=>new LedPattern(default,default,(uint)(30*i),(uint)(60*i),30,60,30*i)).ToArray();
+        var missing=new List<string>();Cozmo.Robot.Behavior.SteppedBehavior.ResetMissingForTests();
         Cozmo.Robot.Behavior.SteppedBehavior.MissingReported+=missing.Add;int mark=rig.Mark();
-        try{Assert.True(rig.Robot.Lights.Cubes.PlayLightAnim(Type,"Flash",modifier:true,lights:new(new LedPattern[4],0,1,Vector2.Zero)));}
+        try{Assert.True(rig.Robot.Lights.Cubes.PlayLightAnim(Type,"Flash",modifier:true,lights:new(modifier,0,1,Vector2.Zero)));}
         finally{Cozmo.Robot.Behavior.SteppedBehavior.MissingReported-=missing.Add;}
-        Assert.DoesNotContain(rig.SentSince(mark),m=>m is CubeID or CubeLights);Assert.Equal(prior,located.ActiveLedState);
-        Assert.Contains(missing,m=>m.Contains("M4-052 KnownMarker::ComputeNormal")&&m.Contains("0x0087E3FA"));
+        var sent=rig.SentSince(mark).Where(m=>m is CubeID or CubeLights).ToArray();
+        Assert.Equal(2,sent.Length);Assert.Equal(0u,Assert.IsType<CubeID>(sent[0]).ObjectID);
+        var wire=Assert.IsType<CubeLights>(sent[1]).Lights;
+        // +pi/2 about Y puts Front up; native side fallback corner6 moves source [1,2,3,0].
+        int[] order={1,2,3,0};
+        for(int j=0;j<4;j++)
+        {
+            int i=order[j];Assert.Equal((ushort)0xFE73,wire[j].OnColor);Assert.Equal((ushort)0x8000,wire[j].OffColor);
+            Assert.Equal((byte)(4+i),wire[j].OnFrames);Assert.Equal((byte)(4+2*i),wire[j].OffFrames);
+            Assert.Equal((byte)1,wire[j].TransitionOnFrames);Assert.Equal((byte)2,wire[j].TransitionOffFrames);Assert.Equal((short)i,wire[j].Offset);
+        }
+        Assert.DoesNotContain(missing,m=>m.Contains("KnownMarker::ComputeNormal"));
     }
 
     // reach: unit (raw encoding/geometry supplied to checked decoder; actual firmware short-frame producer UNKNOWN M3-050).

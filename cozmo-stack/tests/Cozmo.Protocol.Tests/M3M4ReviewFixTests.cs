@@ -236,24 +236,20 @@ public sealed class M3M4ReviewFixTests
         finally{history.Clear();RobotStateHistory.ConsecutiveGaps=gaps;}
     }
 
-    // reach: unit (forces a due timer because M4-052 ComputeNormal0x0087E3FA stops the initial production send;
-    // actual public modifier/play and checked Update use the real missing-callee result, no substituted send result).
+    // reach: production - public WakeUp relative modifier and normal engine tick pass its first duration;
+    // real ComputeNormal and Update send, with a known located world input (vision producer not claimed).
     [Fact]
-    public void RelativeUpdateNamesTheMissingStopInsteadOfAFalseWireFailure()
+    public void RelativeUpdateSendsAfterNativeNormalInsteadOfReportingMissing()
     {
         using var rig=new M4ControlTests.Rig(Shipped());rig.ToSynced();rig.State();M4ControlTests.ConnectCube(rig);
         var world=rig.Robot.LocalizationWorld;var connected=world.ConnectedObjects.Single(o=>o.ActiveId==0);
         world.AddLocatedObject(new ObservableObject(connected.ObjectId,Type,CubeGeometry.MarkersFor(Type)){OriginId=world.CurrentOriginId,PoseState=PoseState.Known});
         var lights=rig.Robot.Lights.Cubes;
-        Assert.True(lights.PlayLightAnim(Type,"WakeUp",modifier:true,lights:new(new LedPattern[4],0,1,System.Numerics.Vector2.Zero))); // shipped two-pattern clip
-        var flags=BindingFlags.Instance|BindingFlags.NonPublic|BindingFlags.Public;
-        var infos=(System.Collections.IDictionary)typeof(CubeLightComponent).GetField("_infos",flags)!.GetValue(lights)!;
-        var info=infos[Type]!;var layers=(Array)info.GetType().GetField("Layers",flags)!.GetValue(info)!;
-        var stack=(System.Collections.IList)layers.GetValue(1)!;var top=stack[stack.Count-1]!;
-        top.GetType().GetField("TimerMs",flags)!.SetValue(top,1u);
+        Assert.True(lights.PlayLightAnim(Type,"WakeUp",modifier:true,lights:new(new LedPattern[4],0,1,System.Numerics.Vector2.Zero)));
         var source=new List<EngineLogEntry>();var log=new List<string>();rig.Engine.LogEntry+=source.Add;rig.Engine.StackLogLine+=log.Add;
-        lights.Update();
-        Assert.Contains(log,s=>s.Contains("RelativeSendSkipped")&&s.Contains("MISSING M4-052"));
+        int mark=rig.Mark();rig.Tick(1290);
+        Assert.Single(rig.SentSince(mark).OfType<CubeLights>());
+        Assert.DoesNotContain(log,s=>s.Contains("RelativeSendSkipped"));
         Assert.DoesNotContain(source,e=>e.Name=="CubeLightComponent.Update.SetLightsFailed");
     }
 }
