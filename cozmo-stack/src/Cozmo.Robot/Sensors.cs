@@ -1008,78 +1008,81 @@ public sealed class CozmoSensors
                 // UFRS order (M4 C3): the IMU filters and CheckAndUpdateTreadsState (0x00512A72) on BaseStationTimer ms
                 // (A2), gated by the head calibration (A1) and fed the physical flag (A4); the commit consequences run
                 // inside (A8..A14, the platform clear through the hook set in the constructor).
-                var er = _robot.Engine.Robot;
-                OffTreads.HeadCalibrated = _state.HeadCalibrated;
-                OffTreads.IsPhysical = er?.IsPhysicalRobot ?? false;
-                bool onTreadsBefore = OffTreads.Current == OffTreadsState.OnTreads;
-                OffTreads.Update(s, _robot.Engine.Timer.TimeStampMs);
-                // fidelity: M4-019
-                // C13.2 (0x00512B9C..0x00512BAA): a committed change to or from OnTreads stores robot+0x2C0 = 0 and
-                // then branches straight to the stats/threshold body at 0x512FB4, past the origin check, the
-                // pose/history, the threshold schedule, the frame compare, the frame-match reset and the mismatch
-                // increment; the stats run unconditionally (the cmp r6,#0 gate at 0x512FB0 is not reached), so the
-                // counter stays 0 for that state.
-                bool treadsChanged = (OffTreads.Current == OffTreadsState.OnTreads) != onTreadsBefore;
-                if (treadsChanged) _frameMismatchCount = 0;
-                // fidelity: M11-044
-                // r7 != 0 at 0x00512A94/0x00512A86 (a committed change to or from OnTreads) is what makes UpdateFullRobotState Delocalize at 0x00512B88..0x00512BA6 (performed below after the +0x2BC OR).
-                if (treadsChanged) DelocalizeTrigger = s;
-                // fidelity: M4-019
-                // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
-                SetOnCharger(s.Has(RobotStatusFlag.IsOnCharger));
-                // fidelity: M4-022
-                // SC10 (0x00512AD0..0x00512B52): the body-radio-mode count comes after SetOnCharger (SetBodyRadioMode at
-                // 0x00512B46 follows SetOnCharger's threshold send at 0x00512AB4) and before MovementComponent::Update.
-                er?.CountBodyRadioMode(s);
-                // fidelity: M10-002, M10-006
-                // MovementComponent::CheckForUnexpectedMovement (0x0063E398) is tail-called from MovementComponent::Update
-                // (0x0063E392), which UpdateFullRobotState runs before the origin check (B1, 0x00512B5C): every synced state.
-                // B2: robot+0x14; B3: robot+0x248 (the AnimationState tag) and the BODY track's lock set.
-                UnexpectedMovement.IsPhysical = er?.IsPhysicalRobot ?? false;
-                UnexpectedMovement.AnimationStateTag = er?.AnimationStateTag ?? 0;
-                UnexpectedMovement.BodyTrackLocked = (_robot.Motion.LockedTracks & CozmoMotion.BodyTrack) != 0;
-                var movement = UnexpectedMovement.Update(s);
-                if(movement is not null)
-                {_robot.Engine.QueueAppEvent(UnexpectedMovementDetected,movement);UnexpectedMovementDetectedInternal?.Invoke(movement);}
-                // M11-044's moved-since-localized OR is before the treads/origin/history branches.
-                _robot.LocalizationWorld.NoteRobotState((s.Status&(uint)RobotStatusFlag.HeadInPos)==0 || s.Has(RobotStatusFlag.AreWheelsMoving),
-                    OffTreads.Current!=OffTreadsState.OnTreads);
-                // fidelity: M11-097, M11-053, M4-019 — OV128 A1-A8, in native order.
-                bool runTail=false;
-                if(treadsChanged && er is not null)
+                using(var stateFrame=_robot.LocalizationWorld.EnterPoseMutation())
                 {
-                    _robot.LocalizationWorld.ResetPoseFrameMismatch();
-                    er.Delocalize((s.Status&2)!=0); // BEFORE detectors/stats; this state is not added
-                    er.LastFullStateResult=0;runTail=true;
-                }
-                else if(er is not null)
-                {
-                    uint admission=er.AddIncomingStateToHistory(s);
-                    er.LastFullStateResult=admission;
-                    if(admission==0)
+                    var er = _robot.Engine.Robot;
+                    OffTreads.HeadCalibrated = _state.HeadCalibrated;
+                    OffTreads.IsPhysical = er?.IsPhysicalRobot ?? false;
+                    bool onTreadsBefore = OffTreads.Current == OffTreadsState.OnTreads;
+                    OffTreads.Update(s, _robot.Engine.Timer.TimeStampMs);
+                    // fidelity: M4-019
+                    // C13.2 (0x00512B9C..0x00512BAA): a committed change to or from OnTreads stores robot+0x2C0 = 0 and
+                    // then branches straight to the stats/threshold body at 0x512FB4, past the origin check, the
+                    // pose/history, the threshold schedule, the frame compare, the frame-match reset and the mismatch
+                    // increment; the stats run unconditionally (the cmp r6,#0 gate at 0x512FB0 is not reached), so the
+                    // counter stays 0 for that state.
+                    bool treadsChanged = (OffTreads.Current == OffTreadsState.OnTreads) != onTreadsBefore;
+                    if (treadsChanged) _frameMismatchCount = 0;
+                    // fidelity: M11-044
+                    // r7 != 0 at 0x00512A94/0x00512A86 (a committed change to or from OnTreads) is what makes UpdateFullRobotState Delocalize at 0x00512B88..0x00512BA6 (performed below after the +0x2BC OR).
+                    if (treadsChanged) DelocalizeTrigger = s;
+                    // fidelity: M4-019
+                    // C8 P3..P5: UpdateFullRobotState then feeds SetOnCharger with IS_ON_CHARGER (0x00512AAC..0x00512AB4).
+                    SetOnCharger(s.Has(RobotStatusFlag.IsOnCharger));
+                    // fidelity: M4-022
+                    // SC10 (0x00512AD0..0x00512B52): the body-radio-mode count comes after SetOnCharger (SetBodyRadioMode at
+                    // 0x00512B46 follows SetOnCharger's threshold send at 0x00512AB4) and before MovementComponent::Update.
+                    er?.CountBodyRadioMode(s);
+                    // fidelity: M10-002, M10-006
+                    // MovementComponent::CheckForUnexpectedMovement (0x0063E398) is tail-called from MovementComponent::Update
+                    // (0x0063E392), which UpdateFullRobotState runs before the origin check (B1, 0x00512B5C): every synced state.
+                    // B2: robot+0x14; B3: robot+0x248 (the AnimationState tag) and the BODY track's lock set.
+                    UnexpectedMovement.IsPhysical = er?.IsPhysicalRobot ?? false;
+                    UnexpectedMovement.AnimationStateTag = er?.AnimationStateTag ?? 0;
+                    UnexpectedMovement.BodyTrackLocked = (_robot.Motion.LockedTracks & CozmoMotion.BodyTrack) != 0;
+                    var movement = UnexpectedMovement.Update(s);
+                    if(movement is not null)
+                    {_robot.Engine.QueueAppEvent(UnexpectedMovementDetected,movement);UnexpectedMovementDetectedInternal?.Invoke(movement);}
+                    // M11-044's moved-since-localized OR is before the treads/origin/history branches.
+                    _robot.LocalizationWorld.NoteRobotState((s.Status&(uint)RobotStatusFlag.HeadInPos)==0 || s.Has(RobotStatusFlag.AreWheelsMoving),
+                        OffTreads.Current!=OffTreadsState.OnTreads);
+                    // fidelity: M11-097, M11-053, M4-019 — OV128 A1-A8, in native order.
+                    bool runTail=false;
+                    if(treadsChanged && er is not null)
                     {
-                        bool updated=CliffThresholdSchedule(s); // before-pose, UpdateCurrPoseFromHistory, after-pose
-                        er.LastFullStateResult=updated?0u:1u;
-                        if(FrameMatches(s)){_frameMismatchCount=0;runTail=true;}
-                        else
+                        _robot.LocalizationWorld.ResetPoseFrameMismatch();
+                        er.Delocalize((s.Status&2)!=0); // BEFORE detectors/stats; this state is not added
+                        er.LastFullStateResult=0;runTail=true;
+                    }
+                    else if(er is not null)
+                    {
+                        uint admission=er.AddIncomingStateToHistory(s);
+                        er.LastFullStateResult=admission;
+                        if(admission==0)
                         {
-                            _frameMismatchCount++;runTail=_frameMismatchCount<0x65;
-                            if(!runTail)
+                            bool updated=CliffThresholdSchedule(s); // before-pose, UpdateCurrPoseFromHistory, after-pose
+                            er.LastFullStateResult=updated?0u:1u;
+                            if(FrameMatches(s)){_frameMismatchCount=0;runTail=true;}
+                            else
                             {
-                                _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"Robot.UpdateFullRobotState.MismatchedFrameIDs",
-                                    $"Robot[{s.PoseFrameId}] and engine[{er.PoseFrameId}] frameIDs are mismatched, delocalizing");
-                                Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();_frameMismatchCount=0;
-                                FrameMismatchDelocalizeTrigger=s;_robot.LocalizationWorld.ResetPoseFrameMismatch();
-                                er.Delocalize(_robot.Carrying.IsCarryingObject);er.LastFullStateResult=1;
+                                _frameMismatchCount++;runTail=_frameMismatchCount<0x65;
+                                if(!runTail)
+                                {
+                                    _robot.Engine.EmitSourceLog(EngineLogLevel.Error,null,"Robot.UpdateFullRobotState.MismatchedFrameIDs",
+                                        $"Robot[{s.PoseFrameId}] and engine[{er.PoseFrameId}] frameIDs are mismatched, delocalizing");
+                                    Cozmo.Transport.EngineErrorState.StoreAndMaybeBreak();_frameMismatchCount=0;
+                                    FrameMismatchDelocalizeTrigger=s;_robot.LocalizationWorld.ResetPoseFrameMismatch();
+                                    er.Delocalize(_robot.Carrying.IsCarryingObject);er.LastFullStateResult=1;
+                                }
                             }
                         }
                     }
-                }
-                if(runTail)
-                {
-                    DetectGyroDriftAndBias(s);
-                    if(s.CliffDataRaw is {Length:4} rawTail)UpdateCliffRunningStats(rawTail[0]);
-                    UpdateCliffDetectThreshold();
+                    if(runTail)
+                    {
+                        DetectGyroDriftAndBias(s);
+                        if(s.CliffDataRaw is {Length:4} rawTail)UpdateCliffRunningStats(rawTail[0]);
+                        UpdateCliffDetectThreshold();
+                    }
                 }
 
                 bool picked = s.Has(RobotStatusFlag.IsPickedUp);

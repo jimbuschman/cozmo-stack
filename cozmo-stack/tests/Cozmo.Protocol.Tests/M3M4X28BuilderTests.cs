@@ -68,27 +68,28 @@ public sealed class M3M4X28BuilderTests
     }
 
     [Fact]
+    // reach: unit (native Delocalize entry/component notification; queued public app reports run after the handler).
     public void DelocalizationNotificationRemainsInsideTheHandlerFrameWindow()
     {
         using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
         rig.ToSynced();rig.State();uint before=vision.World.CurrentOriginId;
-        FrameCannotSplitHandler(vision.World,pause=>vision.RobotDelocalized+=_=>pause(),
-            ()=>typeof(VisionSystem).GetMethod("DelocalizeRobot",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(vision,new object[]{false}));
+        FrameCannotSplitHandler(vision.World,pause=>rig.Engine.DelocalizationComponentHook=stage=>{if(stage=="FaceWorld")pause();},
+            ()=>rig.Engine.Robot!.Delocalize(false));
         Assert.Equal(before+1,vision.World.CurrentOriginId);
     }
 
     [Fact]
+    // reach: production — actual treads packet, dispatch and engine tick; native frame gate blocks before reset.
     public void DelocalizeWaitsForFrameBeforeResettingMismatchCount()
     {
         using var rig=new M4ControlTests.Rig();using var vision=new VisionSystem(rig.Robot,CameraCalibration.Nominal()){Enabled=false};
-        rig.ToSynced();rig.State();var world=vision.World;
+        rig.ToSynced();rig.Calibrate();rig.State();var world=vision.World;
         var count=typeof(BlockWorld).GetField("_robot2C0",BindingFlags.Instance|BindingFlags.NonPublic)!;
-        var entry=typeof(VisionSystem).GetMethod("DelocalizeRobot",BindingFlags.Instance|BindingFlags.NonPublic)!;
         count.SetValue(world,(byte)7);using var started=new ManualResetEventSlim();Task? handler=null;
         Monitor.Enter(world.FrameGate);
         try
         {
-            handler=Task.Run(()=>{started.Set();entry.Invoke(vision,new object[]{false});});Assert.True(started.Wait(Bound));
+            handler=Task.Run(()=>{started.Set();rig.Data(rig.MakeState(RobotStatusFlag.IsBodyAccMode|RobotStatusFlag.IsPickedUp));rig.Tick();});Assert.True(started.Wait(Bound));
             Assert.False(handler.Wait(TimeSpan.FromMilliseconds(100)));Assert.Equal((byte)7,world.Robot2C0);
         }
         finally{Monitor.Exit(world.FrameGate);if(handler is not null)Assert.True(handler.Wait(Bound));}
