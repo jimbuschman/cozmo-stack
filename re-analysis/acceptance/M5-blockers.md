@@ -29,6 +29,8 @@ Logs: M5-013's BufferFaceToSend key/text (B-LOG-1, HELD as cleanup) is not on th
 
 ## Sequence
 
+**Builder watch / B-M5-25 review (Codex, 2026-10-20):** a9334fee bounded PASS (`research/20261020-b-m5-25-check.md`); native abort/drain/neutral instructions checked, ordered raw replay verified, manager M5Hw tests 35/35 and fidelity check pass. Cleanup extended in PROJECT_STATE. B-M5-26 claimed at c472606f; review next after publication, then 27..31. No settlement or verification upgrade. **M5 acceptance remains blocked on the operator rerun; physical stop and exact neutral timing remain unverified. FailedTraversingPath remains unexplained; a successful drive is still required later.**
+
 **Builder watch / B-M5-24 review (Codex, 2026-10-20):** bdad8435 bounded PASS (`research/20261020-b-m5-24-check.md`); fresh native instruction check, manager lifecycle tests8/8, fidelity check706 records. Lifecycle observations retain timing and non-atomic snapshot limits. Cleanup queued in PROJECT_STATE. B-M5-25 claimed at018045c7; review jobs25..31 in order as published. **This is not hardware acceptance: M5 remains blocked on the operator rerun and successful drive coverage remains outstanding.**
 
 **Judgement (Codex temporary manager/verifier, operator-authorized 2026-10-20):**
