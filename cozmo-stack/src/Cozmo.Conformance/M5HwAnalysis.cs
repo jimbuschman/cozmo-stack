@@ -9,6 +9,56 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    // Frame activity must come from independently established generation evidence, never total wire counts.
+    // The allowed public harness currently cannot supply this; synthetic unit fixtures name that substitution.
+    public sealed record FaceActivity(int AudioFrameLine, int AudioOrdinal, bool Active);
+
+    public static JsonObject FiniteLayers(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs,
+        bool drained, IReadOnlyList<FaceActivity>? activity = null)
+    {
+        var rows = OrderedUnique(messages).Where(m => m.Outbound && m.AtMs >= fromMs && m.AtMs <= toMs
+            && m.Payload.Length > 0).ToArray();
+        var audioIndices = Enumerable.Range(0, rows.Length).Where(i => rows[i].Payload[0] is 0x8E or 0x8F).ToArray();
+        var frames = new JsonArray(); int missingFace = 0, unexpectedFace = 0, matched = 0;
+        foreach (int i in audioIndices)
+        {
+            int next = Array.FindIndex(rows, i + 1, m => m.Payload[0] is 0x8E or 0x8F or 0x9A);
+            if (next < 0) next = rows.Length;
+            int faces = rows.Skip(i + 1).Take(next - i - 1).Count(m => m.Payload[0] == 0x97);
+            var flags = activity?.Where(a => a.AudioFrameLine == rows[i].FrameLine && a.AudioOrdinal == rows[i].SubmessageOrdinal).ToArray();
+            bool? active = flags?.Length == 1 ? flags[0].Active : null;
+            if (active is not null) matched++;
+            if (active == true && faces != 1) missingFace++;
+            if (active == false && faces != 0) unexpectedFace++;
+            frames.Add(new JsonObject { ["audioFrameLine"] = rows[i].FrameLine, ["audioOrdinal"] = rows[i].SubmessageOrdinal,
+                ["faceActive"] = active, ["faces"] = faces });
+        }
+        int starts = rows.Count(m => m.Payload[0] == 0x9B), ends = rows.Count(m => m.Payload[0] == 0x9A);
+        int faceCount = rows.Count(m => m.Payload[0] == 0x97), backpack = rows.Count(m => m.Payload[0] == (byte)RobotMessageId.AnimBackpackLights);
+        bool established = audioIndices.Length > 0 && activity?.Count == audioIndices.Length && matched == audioIndices.Length;
+        int assignedFaces = frames.Sum(f => f!["faces"]!.GetValue<int>());
+        bool lifecycle = starts == 1 && ends == 1 && !rows.Any(m => m.Payload[0] == 0x8D)
+            && rows.First(m => m.Payload[0] == 0x9B).Payload.Length == 2
+            && rows.Last().Payload[0] == 0x9A && rows.Last().Payload.Length == 1;
+        return new JsonObject
+        {
+            ["verdict"] = missingFace > 0 ? "OBSERVED_MISSING_REQUIRED_FACE" : unexpectedFace > 0
+                ? "OBSERVED_UNEXPECTED_FACE" : established && drained && lifecycle && backpack > 0 && faceCount > 0 && assignedFaces == faceCount
+                    ? "OBSERVED_CONDITIONAL_LAYER_FRAMES" : "INCONCLUSIVE",
+            ["faces"] = faceCount, ["audioFrames"] = audioIndices.Length, ["backpackChanges"] = backpack,
+            ["starts"] = starts, ["ends"] = ends, ["drained"] = drained,
+            ["faceActivityEstablished"] = established, ["frameEvidence"] = frames,
+            ["missingRequiredFaceFrames"] = missingFace, ["unexpectedFaceFrames"] = unexpectedFace,
+            ["wireWindow"] = WireEvidence(rows),
+            ["missing"] = established ? null : "Per-frame layered face flags and random-draw/generation timing are unavailable through the allowed public observations; aggregate counts cannot establish required face output.",
+            ["verdictRule"] = "M5-029: ApplyLayersToAnim(null) sets face only from a due face-layer result; "
+                + "StreamLayers buffers face iff that flag is set. First distortion face is not due before cumulative "
+                + "duration >=33 ms; backpack has independent 0/200,200/60,260/60,320/60,380/60 timing. "
+                + "Face/audio totals may differ. A stored base face does not set the flag. No exact 13/20 oracle. "
+                + "Unknown flags/draws remain INCONCLUSIVE; distinct persistent coverage is KEEP_ALIVE."
+        };
+    }
+
     public sealed record CapturedFrame(int Line, double AtMs, bool Outbound, Frame? Frame);
 
     public static IEnumerable<M5Hw.WireMessage> ReadWire(IEnumerable<CapturedFrame> frames)

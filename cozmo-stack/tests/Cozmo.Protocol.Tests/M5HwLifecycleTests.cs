@@ -56,6 +56,7 @@ public class M5HwLifecycleTests
     [Fact]
     public void PersistentFaceNeedsItsOwnPreconditionsAndOutputAndRejectsEnd()
     {
+        // Face bytes97,01 are tag-only fixtures, not valid face serialization or decoding coverage.
         // M5-028 C530..556: HaveLayersToSend blocks End. Face output is conditional (M5-029).
         var face = new[] { Out(20, 0x97, 1) };
         Assert.Equal("OBSERVED_PERSISTENT_FACE_WINDOW", Verdict(M5HwAnalysis.PersistentFace(face, 0, 10000, true)));

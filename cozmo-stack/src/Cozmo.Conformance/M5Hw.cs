@@ -27,7 +27,7 @@ public static class M5Hw
         new("KEEP_ALIVE", "Neutral replay, live bursts and persistent face stream", new[]{"M5-010","M5-027","M5-028","M5-029","M5-030","M5-036","M5-057"}),
         new("LOCKED_HEAD", "Head keyframes still stream while head track is locked", new[]{"M5-036","M4-047"}),
         new("AUDIO", "744-byte samples, silence, counters and pacing", new[]{"M5-008","M5-036","M3-012","M6-042"}),
-        new("LAYERS", "Face and backpack layer traffic", new[]{"M5-028","M5-031","M5-032"}),
+        new("LAYERS", "Face and backpack layer traffic", new[]{"M5-028","M5-029","M5-031","M5-032","M5-036"}),
         new("LIVE_IDLE", "Calibrated head input and default wiggles", new[]{"M5-030","M5-057","M5-036"}),
         new("PARAMETERS", "Uncapped 45000 ms blink maximum over 60 seconds", new[]{"M5-062","M5-028"}),
         new("DRIVING", "Short DriveToPose and driving animation sequence", new[]{"M5-063","M12-024","M7-026","M15-001","M8-020","M8-021"}),
@@ -299,11 +299,14 @@ internal sealed class M5Run
                         double layerStart = Now; int pulse = 1; sched.DesiredFaceDistortion = () => Interlocked.Exchange(ref pulse, 0) == 1 ? 0.8f : 0f;
                         if (!Poll(() => Volatile.Read(ref pulse) == 0, 2000)) return Missing("TLC did not consume distortion pulse");
                         Wait(200); bool drained = Poll(() => !sched.HaveLayersToSend, 5000); Wait(300);
-                        var rows = Wire(layerStart); int face = rows.Count(x => x.Outbound && x.Payload[0] == (byte)RobotMessageId.AnimFaceImage), backpack = rows.Count(x => x.Outbound && x.Payload[0] == (byte)RobotMessageId.AnimBackpackLights), audio = rows.Count(x => x.Outbound && x.Payload[0] is 0x8E or 0x8F), starts = rows.Count(x => x.Outbound && x.Payload[0] == 0x9B), ends = rows.Count(x => x.Outbound && x.Payload[0] == 0x9A);
-                        var result = Observe("Finite public distortion-provider pulse through TLC.Update. Harness timeout 600s temporarily suppresses new keepalive; short nonlive play removes prior persistent layers via A12. Q1.8/Q1.9 layer traffic must carry a face per audio frame and Start/End around the finite stream.");
-                        result["layerFromMs"] = layerStart; result["faces"] = face; result["audioFrames"] = audio; result["backpackChanges"] = backpack; result["starts"] = starts; result["ends"] = ends; result["drained"] = drained;
+                        double layerEnd = Now;
+                        var result = M5HwAnalysis.FiniteLayers(Wire(layerStart, layerEnd), layerStart, layerEnd, drained);
+                        result["layerFromMs"] = layerStart; result["layerToMs"] = layerEnd;
+                        result["stimulus"] = "Finite public distortion-provider pulse through TLC.Update; 600s harness timeout suppresses keepalive and short nonlive InitStream removes its persistent layers. No per-frame generation flags are exposed; counts alone cannot certify the random finite-glitch trace.";
+                        var persistent = results.FirstOrDefault(x => x["id"]?.GetValue<string>() == "KEEP_ALIVE")?["persistentFace"];
+                        result["persistentFaceCoverage"] = persistent?.DeepClone() ?? Missing("Separate KEEP_ALIVE persistent-face observation not available in this subset");
                         result["observation"] = Ask("Were distorted face and backpack light changes visible?", new[] { "both", "face-only", "neither", "unclear" });
-                        if (!drained || audio == 0 || face != audio || backpack == 0 || starts != 1 || ends != 1) result["verdict"] = "INCONCLUSIVE"; return result;
+                        return result;
                     }
                     finally { sched.DesiredFaceDistortion = previous; sched.KeepAliveTimeoutSec = timeout; }
                 }

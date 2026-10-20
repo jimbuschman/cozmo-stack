@@ -64,7 +64,7 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are 
 | KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with ordered Start FF/End bursts; then a separate ten-second no-idle persistent-eye-dart face window, requiring face output and no End while its prerequisites hold. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 burst idle; M5-027/030. Persistent layers: M5-028/029, 0x0057C530..0x0057C556. |
 | LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain 0x93, exactly one EnableAnimTracks and physical observation. | M4-047 plus robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
 | AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 <=14 frames/8192 bytes; direct End adds a frame outside C9. M6 runtime uncertainty remains embedded. |
-| LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Require face per audio frame, backpack changes, Start/End and drained layers; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. The provider and temporary timeout are explicit harness controls, not M7 behavior claims. |
+| LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; without per-frame face flags/draw evidence this remains INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
 | LIVE_IDLE | Twelve seconds of default ProceduralLive; compare streamed signed head angles with preceding Motion.HeadAngleRad samples and default +/-6 degrees; require body/lift wiggles. | M5-030 0x0057D838..0x0057D84E, A34 defaults. Uncalibrated input is not forced; B-M5-23 covers it offline. |
 | PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
 | DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Failure to reach the triplet is incomplete evidence, not a replacement implementation. |
@@ -123,3 +123,15 @@ Reliable resends count once; raw frames retain all copies. Candidate neutral Sta
 The native last-stream engine clock is not available through the allowed public observations: no exact
 neutral deadline is inferred from cancel-call time. The historical first-run observations remain unchanged.
 Operator rerun and independent judgment are required.
+
+## Dated correction - B-M5-26, 2026-10-20
+
+The first-run finite glitch's 13 face / 20 audio observations are historical counts, not a certified expected
+trace. Face output follows the layered face flag; the first face can be not due and backpack can continue
+after the face track. A stored base face alone does not request emission. The aggregate equality rule is removed.
+The harness retains the full ordered finite window and counts, plus distinct persistent-face coverage from
+KEEP_ALIVE (or an explicit missing-subset note). Existing public observations do not expose the per-frame
+face flag, random draws or generation timing, so finite-glitch completeness remains INCONCLUSIVE.
+The analysis supports independently established frame-activity evidence; current synthetic unit cases substitute
+those flags and cannot stand for real hardware coverage. No production hooks or scheduler changes were added.
+Operator rerun and discriminating evidence are still required.
