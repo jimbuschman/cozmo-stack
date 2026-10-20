@@ -1,11 +1,11 @@
 {
   "subsystem": "M5-animation",
-  "approved": "2026-10-16",
+  "approved": "2026-10-19",
   "inventory": "re-analysis/inventory/M5-animation.md",
   "inventory_sha256": "51f2e6a2b8315a3ec895a29a2cf7d404c065494253e5f8c98d435c5c8c687ad6",
   "records": {
     "M5-001": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Clip loading: FlatBuffer fields 0..9 in engine track order, first rejected keyframe truncates, JSON clips named by their first key, the two animation directories",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -102,7 +102,7 @@
       "hardware_required": false
     },
     "M5-008": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "One streaming animation: refuse or interrupt, tags 1..0xFE returned, loops with the same tag, live forced to 1 loop, ReplayLastAnimation",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -123,7 +123,7 @@
       "hardware_required": false
     },
     "M5-009": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Audio keyframe load rules: id low 32 bits, volume default 1.0, absent probabilities 1/N, mismatch or sum > 1 rejects",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -135,7 +135,7 @@
       "hardware_required": false
     },
     "M5-010": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -178,7 +178,7 @@
       "hardware_required": false
     },
     "M5-013": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "faceAnimations: one sprite frame per stream frame, empty frames skipped, two RLE variants per image chosen by _firstScanLine, index reset on abort",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -217,7 +217,7 @@
       "hardware_required": false
     },
     "M5-016": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Backpack-lights track: loaded via JSON, colours raw-or-normalised, 0x98 sent every frame while current, LED order Left Front Middle Back Right",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -278,7 +278,7 @@
         "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-020 (Opus settling pass, manager-adopted 2026-10-11).",
         "re-analysis/research/20261012-m5-x9-extraction.md section 5: the Unity Random consumer is CodeLabGame.cs:3094-3107 only; CodeLab runs in internal SDK mode (CodeLabGame.cs:967), which the app-boundary scope rule excludes (AGENTS.md, operator 2026-10-09)."
       ],
-      "live_path": false,
+      "live_path": true,
       "hardware_required": false
     },
     "M5-021": {
@@ -364,7 +364,7 @@
       "hardware_required": false
     },
     "M5-027": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Idle animations: the idle stack, PushIdle/RemoveIdle, idle InitStream with tag 0xFF, ProceduralLive, the no-animation path",
       "authority": "libcozmoEngine.so 3.4.0-1204; libopencv_imgproc.so 3.1.0 (shipped)",
       "evidence": [
@@ -500,7 +500,7 @@
       "hardware_required": true
     },
     "M5-037": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Driving-animation and AnimationStreamer teardown",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -513,7 +513,7 @@
       "hardware_required": false
     },
     "M5-038": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CreateGoToSleepAnimSequence animation factory boundary",
       "authority": "libcozmoEngine.so 3.4.0-1204",
       "evidence": [
@@ -581,7 +581,7 @@
       "hardware_required": false
     },
     "M5-044": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "~TrackLayerComponent internals and the AnimationStreamer +0xC shared object at teardown",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -660,7 +660,7 @@
       "hardware_required": false
     },
     "M5-051": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "readAsJson diagnostics: the Failed to read error and the Json reader errors debug line",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -670,7 +670,7 @@
       "hardware_required": false
     },
     "M5-052": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Face-animation loader: dir walk, mtime gate, reserved name, sorted frames, name/stoi/negative errors that abort the animation, gap fill, grayscale 128x64 gate",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -681,7 +681,7 @@
       "hardware_required": false
     },
     "M5-053": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "DrivingAnimationHandler and streamer handler teardown order",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -691,7 +691,7 @@
       "hardware_required": false
     },
     "M5-054": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "CannedAnimationContainer::GetAnimation and its InvalidName error",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -701,7 +701,7 @@
       "hardware_required": false
     },
     "M5-055": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "~CozmoEngine member destruction order (RobotDataLoader abort flag, robot and streamer teardown, weak-signal unlinks)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -744,7 +744,7 @@
       "hardware_required": false
     },
     "M5-059": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "AnimationTransfer CleanUp(1) at engine construction and destruction: delete <cache>/TestAnim.json",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -774,7 +774,7 @@
       "hardware_required": false
     },
     "M5-062": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "AnimationStreamer HandleSetParameters (G2E 0xB4 SetLiveIdleAnimationParameters)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -784,7 +784,7 @@
       "hardware_required": false
     },
     "M5-063": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -795,7 +795,7 @@
       "hardware_required": false
     },
     "M5-064": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "Unread engine/context teardown bodies: BaseStationTimer instance, engine +0x38, TransferQueueMgr Dispatch::Stop, GameLogTransferTask +0x10",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [
@@ -806,7 +806,7 @@
       "hardware_required": false
     },
     "M5-065": {
-      "status": "IMPLEMENTATION_GAP",
+      "status": "EXACT_SOURCE",
       "title": "AnimationGroupContainer::GetAnimationGroup miss: InvalidName error, errG, null return (callers: streamer constructor, GetAnimationNameFromGroup)",
       "authority": "libcozmoEngine.so 3.4.0-1204.",
       "evidence": [

@@ -178,6 +178,7 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M6-028
         // CreateAudioAnimation (0x00599FF0) switches on RobotAudioClient's output source, which HandleFirmwareVersion sets (CozmoEngine robot AudioOutputSource);
         // a robot with no firmware version yet has the client constructor's 0 (None).
+        // fidelity: M5-038
         robot.Engine.CreateGoToSleepSequence = _ => GoToSleepAnimation.Create(robot, SleepTriggerFactory);
         _scheduler.OutputSource = () => robot.Engine.Robot?.AudioOutputSource;
         _sink.AnimationEvent += e => robot.Engine.QueueAppEvent(Event,e); // Stack string observer, not a second native E2G publication.
@@ -710,6 +711,7 @@ public sealed class CozmoAnimations : IDisposable
         Thread? t;
         lock (_gate) t = _ticker;
         if (t is not null && t != Thread.CurrentThread) t.Join();
+        // fidelity: M5-037
         _scheduler.Destroy();
     }
 }

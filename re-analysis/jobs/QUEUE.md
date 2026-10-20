@@ -161,6 +161,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3o | [B-M3M4-34](B-M3M4-34.md) | DONE per status/B-M3M4-34.md; manager fix review PASS (research/20261019-b-m3m4-34-check.md) |
 | 61w3p | [B-M3M4-35](B-M3M4-35.md) | DONE per status/B-M3M4-35.md; manager check PASS (research/20261019-b-m3m4-35-check.md) |
 | 61w3q | [B-M3M4-36](B-M3M4-36.md) | DONE per status/B-M3M4-36.md; manager check PASS (research/20261019-b-m3m4-36-check.md); the 16 held M3/M4 records settled |
+| 61w3r | [B-M5-23](B-M5-23.md) | open — the animation head input is robot+0x2FC (M5-011, M5-014, M5-030); M5 settling cleanup |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |

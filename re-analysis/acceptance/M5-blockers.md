@@ -29,6 +29,18 @@ Logs: M5-013's BufferFaceToSend key/text (B-LOG-1, HELD as cleanup) is not on th
 
 ## Sequence
 
+**Update (2026-10-19, settling passes adopted).** Both FAIL on one defect (`research/20261019-m5-settling-a.md`, `-b.md`):
+the group draw (M5-011, M5-014) and live idle (M5-030) read the raw reported head angle with a 0 fallback, where the
+engine reads robot+0x2FC (`Motion.HeadAngleRad`, −25° until calibrated). The manager confirmed it in the code.
+- **Settled EXACT_SOURCE (20):** M5-001, 008, 009, 010, 013, 016, 027, 037, 038, 044, 051, 052, 053, 054, 055, 059, 062,
+  063, 064, 065. Stale `unresolved` text marked superseded; exclusions recorded by the manager (inputs our system never
+  produces: non-strict JSON grammar and G5b Debug text, non-shipped PNG/stoi input, B-M1-7 S3); tags added for M5-037/038.
+- **Held:** M5-011, M5-014, M5-030: job B-M5-23 (with the queued cleanup). M5-036: the hardware run.
+- **Records:** M5-020 corrected to `live_path: true` (the public expression API; operator decision 2026-09-29) and M5
+  re-approved; M5-042's SetSdkStatus half checked (SDK-only); M5-061 wording; handoffs noted on M8-015 (timer lead),
+  M8-021 (sleep seam), M7-026 (driving mood use).
+- **Next:** B-M5-23, its check, settle the three; then the M5 hardware script from pass B's 11-item coverage list.
+
 **Update (2026-10-19): B-M5-22 Opus check PASS** (`research/20261019-b-m5-22-check.md`); six queued items
 (log order, a depth-limit reload count, two tests, reach labels, duplicate test entries, ResourceDirectory candidates)
 go to the next M5 job. Next: settling pass A.
