@@ -162,6 +162,14 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3p | [B-M3M4-35](B-M3M4-35.md) | DONE per status/B-M3M4-35.md; manager check PASS (research/20261019-b-m3m4-35-check.md) |
 | 61w3q | [B-M3M4-36](B-M3M4-36.md) | DONE per status/B-M3M4-36.md; manager check PASS (research/20261019-b-m3m4-36-check.md); the 16 held M3/M4 records settled |
 | 61w3r | [B-M5-23](B-M5-23.md) | done 6f0f18b0; Opus check PASS (research/20261019-b-m5-23-check.md); M5-011/014/030 settled. Was: open — the animation head input is robot+0x2FC (M5-011, M5-014, M5-030); M5 settling cleanup |
+| 61w3s0 | [B-M5-24](B-M5-24.md) | open — Separate live-idle bursts from persistent-layer keepalive; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s1 | [B-M5-25](B-M5-25.md) | open — Grade abort leftovers after ordered wire Abort; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s2 | [B-M5-26](B-M5-26.md) | open — Use conditional face output for finite layer checks; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s3 | [B-M5-27](B-M5-27.md) | open — Bound locked-head observations to the locked clip; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s4 | [B-M5-28](B-M5-28.md) | open — Record objective blink evidence alongside observations; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s5 | [B-M5-29](B-M5-29.md) | open — Separate delivered-state snapshots from budget admission; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s6 | [B-M5-30](B-M5-30.md) | open — Judge teardown during destruction with queue provenance; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s7 | [B-M5-31](B-M5-31.md) | open — Make driving-phase expectations conditional on action result; Codex HW judgement 2026-10-20; harness only, operator rerun required |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |

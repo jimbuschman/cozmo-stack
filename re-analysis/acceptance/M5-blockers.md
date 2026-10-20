@@ -29,6 +29,23 @@ Logs: M5-013's BufferFaceToSend key/text (B-LOG-1, HELD as cleanup) is not on th
 
 ## Sequence
 
+**Judgement (Codex temporary manager/verifier, operator-authorized 2026-10-20):**
+`research/20261020-m5-hw-1-judgement.md`, with raw replay and fresh native instruction evidence.
+**NOT ACCEPTED; corrected harness and operator rerun required.** The first-read leads below are superseded where
+the judgement disagrees: ProceduralLive does end/restart FF bursts; the no-End path is the distinct persistent-layer
+case. Abort's extra frame precedes wire Abort; finite-layer faces are conditional; Disable1 did reach the robot and
+locked head telemetry stayed constant; decoded blink closures are about44.1s apart; delivered audio-counter snapshots
+mix epochs. Failed DriveStart need not enter Loop. Teardown was checked during Dispose, including sequence provenance.
+Jobs **B-M5-24..31** queue the separate harness root causes, first the live-idle oracle. No proven stack behavior
+bug, manifest settlement, firmware conclusion or acceptance follows. Exact finite-glitch counts and the M12/M13
+traversal cause remain unverified. See the judgement for each check and the remaining hardware observations.
+
+**Operator follow-up (2026-10-20):** all eight jobs B-M5-24..31 must be published for the builder. B-M5-27 now owns
+clear expected-appearance descriptions and marked observation windows for every prompt, including an explanation of
+neutral eyes and exclusion of post-unlock movement from LOCKED_HEAD. Preserve unexpected observations; incorrect test
+rules do not explain everything the operator saw. FailedTraversingPath remains an unknown M12/M13 cause, and successful
+driving remains required coverage for a later run. M5 acceptance stays blocked on the robot rerun.
+
 **First read of run `hardware/20261020-074223-M5-HW-2cc1cf` (manager, 2026-10-20; NOT a judgement, leads only).**
 Connected, drive allowed, no run errors. From `result.json`:
 - TAGS: starts 1,2,3 with matching echoes (an extra started echo 4). AUDIO: 744-byte framing and ~30 Hz hold, but

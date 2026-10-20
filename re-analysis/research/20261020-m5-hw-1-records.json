@@ -1,0 +1,353 @@
+[
+  {
+    "id": "M1-045",
+    "title": "Idle-timeout go-to-sleep factory handoff and queue submission",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1\u2013T9; re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+      "RobotIdleTimeoutComponent::Update 0x0052CE54..0x0052CE6A: ldr.w r5,[robot,#0x250] (the ActionList), blx CreateGoToSleepAnimSequence 0x0052CE5E, then ActionList::QueueAction (0x0053D93C) with position 0 and u8 0 at 0x0052CE6A",
+      "0x0052CE54..0x0052CE6A: factory result goes to existing Robot ActionList QueueAction position0 NOW, retries byte0; return discarded. C# CozmoEngine.QueueGoToSleep required higher factory interface. Factory and child execution are new M5/M4/M8 sleep records in correction A2."
+    ]
+  },
+  {
+    "id": "M12-024",
+    "title": "DrivingAnimationHandler PlayStartAnim / PlayEndAnim",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "0x0055AC08 PlayStartAnim call; 0x0055B0AA..0x0055B0CC PlayEndAnim call and its return handling",
+      "re-analysis/research/20260929-R-VIS-M12-M13-gap1-extraction.md Q1c",
+      "re-analysis/research/20261013-m12-024-driving-lifecycle.md: DriveToPose::Init calls handler Init first (0x0055A86C..0x0055A888; tracks +0x54, tag +0x60, suppress +0x56, repeat 0); CheckIfDone state-3 gate 0x0055AB5A..0x0055AB6A; status 3 PlayStartAnim every tick and the every-10th WaitingForPathCompletion info (0x0055AC06..0x0055ACA0, 0xBECBFB/0xBECC32); tail 0x0055B0AA..0x0055B0CC; status 0 and 2 return directly; the result is recomputed after the end animation (state 4); destructor 0x0055A5FC..0x0055A63C (Abort, EraseAllPlannerObstacles(1)/(0), ActionIsBeingDestroyed); no Cancel override; IAction order (TIMEOUT before CheckIfDone, retry re-runs Init) 0x00540D1C..0x00540F9E."
+    ]
+  },
+  {
+    "id": "M15-001",
+    "title": "NeedsManager initialization, periodic update and need-bracket rules",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "CozmoEngine::Init 0x004EC9E6..0x004ECA0A",
+      "NeedsManager::Init 0x00692574",
+      "NeedsManager::Update 0x00695C9C",
+      "NeedsState::UpdateCurNeedsBrackets 0x0069C12C",
+      "needs_config.json",
+      "NeedsManager::Init time threading 0x004EC9DA..0x004ECA0A, 0x0069257E, 0x006926CE, 0x006934B0, 0x0069358A..0x0069359E",
+      "NeedsManager::PossiblyWriteToDevice 0x00695DC4 (0x03A2C940 against a microsecond clock = 61 s; ApplyDecayForTimeSinceLastDeviceWrite divides by 1e6 at 0x0069532C)"
+    ]
+  },
+  {
+    "id": "M3-012",
+    "title": "The engine send budgets: 14 unplayed audio frames; min(8192 - unplayed bytes, 30000); counters from AnimationState and every send",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "C9 UpdateAmountToSend 0x0057C6F6..0x0057C7AC (14 at 0x0057C79E add.w r1,r1,#0xe)",
+      "C10 the AnimationState handler writes the played counters (0x00537FD0..0x0053800C)",
+      "C11 bytes += EngineToRobot::Size(), frames += 1 for 0x8E/0x8F (0x0057BFB0..0x0057BFCC)",
+      "C12 EndOfAnimation counts one frame plus its bytes (0x0057C464..0x0057C496); C13 the ctor zeroes the counters (0x0050FD0A)",
+      "re-analysis/research/20261011-m3m4-fix-rows.md section 1 (Opus extraction, manager-adopted 2026-10-11): the full log rows (level, channel, key, format, arguments, gates, errG/break and order) and the differences from the C#."
+    ]
+  },
+  {
+    "id": "M4-014",
+    "title": "Direct-drive track locks: DisableAnimTracks / EnableAnimTracks around DriveWheels, MoveHead and MoveLift",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "MA1 DriveWheels 0x0063ED82..0x0063EE9A, MoveHead 0x0063F4F6..0x0063F5D2; MA1-lift MoveLift 0x0063F73A..0x0063F92A",
+      "MA2 DirectDriveCheckSpeedAndLockTracks 0x0063EFB0..0x0063F0B8 (1e-5 at 0x0063F0F8)",
+      "MA3 LockTracks 0x006400D0..0x00640188 (0x9D); UnlockTracks 0x0063FE92..0x0063FFB4 (0x9E)"
+    ]
+  },
+  {
+    "id": "M4-026",
+    "title": "Robot::AbortAll: the order of its five calls and the OR'd result",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "0x0051194C..0x0051198C; 0x00649268..0x0064927C; 0x0063BE36; 0x00517E0A; 0x006409C2; Cancel type -1, Path Abort, Dock Abort, AbortAnimation, StopAllMotors in order; OR results without short circuit. Nested stop/direct-drive predicates and recursive callbacks remain required.",
+      "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1\u2013T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+      "Re-read: ActionList::Cancel ldr.w r0,[r4,#0x250]; mov.w r1,#-1; blx 0x4A7ABC 0x00511956..0x0051195A; PathComponent::Abort ldr r0,[r4,#0x5C]; blx 0x4A7AC8 0x0051195E..0x00511960; DockingComponent::AbortDocking ldr.w r0,[r4,#0x280]; blx 0x4A7AD4 0x00511966..0x0051196A; Robot::SendAbortAnimation blx 0x4A7AE0 0x00511972; MovementComponent::StopAllMotors ldr.w r0,[r4,#0x254]; blx 0x4A7AEC 0x00511978..0x0051197C; orr.w/orrs/movne r0,#1 0x00511980..0x00511988",
+      "Handoffs: Cancel(-1) M8-015; PathComponent::Abort/ClearPath 0x00649100..0x006492A0 (0x00649268..0x0064927C included) M13-029; the AbortDocking send 0x0063BE10..0x0063BE36 M12-018; SendAbortAnimation (0x00517E0A) M5-022; StopAllMotors (0x006409C2) M4-015"
+    ]
+  },
+  {
+    "id": "M4-047",
+    "title": "MovementComponent::UnlockTracks miss path: the info log, PrintLockState, and EnableAnimTracks re-sent for free tracks",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261013-m12-024-driving-lifecycle.md: UnlockTracks 0x0063FE5C..0x0063FFD8: per bit, find LockInfo by who (first string only, 0x00642508..0x00642574); miss -> sChanneledInfoF \"Unnamed\" \"MovementComponent.UnlockTracks\" (0x640040) \"Tracks 0x%x are not currently locked by %s\" (0x640060) with the full mask and who, then PrintLockState(); an empty set ORs the bit; mask != 0 sends EnableAnimTracks(mask). Reached by the driving handler's double unlock (PlayEndAnim) and a cancel during the end animation."
+    ]
+  },
+  {
+    "id": "M5-008",
+    "title": "One streaming animation: refuse or interrupt, tags 1..0xFE returned, loops with the same tag, live forced to 1 loop, ReplayLastAnimation",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "A4 0x0057B17E..0x0057B1B2",
+      "A5 0x0057B1DE..0x0057B24A",
+      "A6 0x0057B2FC..0x0057B304",
+      "A8 0x0057B29C..0x0057B2C8",
+      "A9 0x0057B2D4..0x0057B2F6, 0x0057B660..0x0057B672",
+      "A13 0x0057CFF6..0x0057D036",
+      "A27 0x0057ED0E..0x0057ED2A",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-008 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-fix-rows.md section 5 (Opus fix rows, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261012-m5-x9-extraction.md section 4c: sVerifyFailedReturnFalse 0x0080D9A4 logs sErrorV \"VERIFY(%s): \", sets errG with no debug break; sDumpCallstack 0x0080DA08 is a no-op (0x0080B0A6 bx lr); the flush 0x0080DA24 goes MultiLoggerProvider::Flush 0x006673BA -> DasLoggerProvider::Flush 0x006671F4 -> libDAS DASForceFlushNow (M3-051); returns 0.",
+      "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242).",
+      "re-analysis/research/20261012-m9-029-custom-song.md check: SetStreamingAnimation stores +0x38 = anim at 0x0057B24A before the custom branch; the live/tag/InitStream tail (0x0057B29C..0x0057B2F6) runs on whatever +0x38 holds; ReplayLastAnimation (A27, 0x0057ED0E) replays by the name at +0x54 through the string overload with custom = false (0x0057B160..0x0057B16C)."
+    ]
+  },
+  {
+    "id": "M5-010",
+    "title": "Neutral face: the first ProceduralFace keyframe of the first clip of ag_neutral_face; reset data and layer base; replayed after abort-to-nothing and RemoveIdle",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "A2 0x0057A0D4..0x0057A20E, ProceduralFace::Reset 0x0058359C; AnimationTriggerMap.json:1308-1309",
+      "A30 0x0057BA60..0x0057BD6E",
+      "A31 0x0057CF6A..0x0057CFF2",
+      "R-ANIM pre-extraction part 1 item 3 P1..P8: _resetData GOT 0x103ED4C, Reset 0x0058359C, TLC::Init 0x0064EDE2, streamer ctor 0x0057A0D4..0x0057A288, default face 0x00583660",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-010 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-fix-rows.md section 7 (Opus fix rows, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-022",
+    "title": "Disconnect and teardown: a failed send only returns; Robot::SendAbortAnimation (0x8D) as AbortAll calls it; ~AnimationStreamer",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "A37 0x0051194C..0x0051197C; 0x00511120; 0x0051154A; ~AnimationStreamer 0x0057AF58",
+      "Handoff (overlap ruling 2026-10-10): AbortAll's order and result (0x0051194C..0x0051198C) are M4-026's; this record keeps Robot::SendAbortAnimation, called at 0x00511972 (body 0x00517E0A)",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-022 (Opus settling pass, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-023",
+    "title": "Abort: AnimationAborted broadcast -> AbortAnimation 0x8D reliable; state cleared; buffer kept and flushed by the next no-animation Update unless InitStream drops it; no EndOfAnimation",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "A22 0x0057B3F2..0x0057B426",
+      "A23 0x005276E8..0x0052771A, 0x0052C22E -> 0x00517DDE..0x00517E0A",
+      "A24 0x0057B442..0x0057B58A",
+      "A25 0x0057D122..0x0057D1DE",
+      "R-ANIM pre-extraction part 1 item 8 8a..8c: choice 0x0057B418..0x0057B430, reset 0x0057B562",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-023 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-fix-rows.md section 12 (Opus fix rows, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 2: SetStreamingAnimation(null) stores +0x73 = 1 when an old stream existed (0x0057B2FC..0x0057B300), and with an idle streamer (+0x38 == 0) still calls Abort() (0x0057B1DE -> 0x0057B242)."
+    ]
+  },
+  {
+    "id": "M5-027",
+    "title": "Idle animations: the idle stack, PushIdle/RemoveIdle, idle InitStream with tag 0xFF, ProceduralLive, the no-animation path",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "A1 0x0057A064..0x0057A0AC",
+      "A28 0x0057D03A..0x0057D060, 0x0057D122..0x0057D1E2",
+      "A29 0x0057D064..0x0057D448",
+      "A30 0x0057B914..0x0057BD6E",
+      "R-ANIM pre-extraction part 1 item 9 9a..9c: +0x64 writers 0x00579FC6, 0x0057B926, 0x0057BD66, 0x0057D022, 0x0057D3F6; drain 0x0057D168; HasResponse 0x00670AD0",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-027 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-fix-rows.md section 14 (Opus fix rows, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-028",
+    "title": "Keep-alive: timeout 0.5 s, KeepFaceAlive darts and blinks, default params, continuous StreamLayers while a persistent layer exists",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "A31 0x0057CF6A..0x0057CFF2; A32 0x0057A050, 0x0057E010; A33 0x0058D374..0x0058D558; A34 0x0057DB40..0x0057DCD6",
+      "gap1 K1..K9 GenerateEyeShift 0x0058D10E.., LookAt 0x00584158..0x0058428A, GetNextBlinkFrame table 0x00C5AAD8",
+      "gap2 Q1.7..Q1.10 StreamLayers 0x0057C4F6..0x0057C680",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-028 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-fix-rows.md section 15 (Opus fix rows, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-029",
+    "title": "Track layer manager: tags, AddLayer/AddPersistentLayer, persistent hold, AddToPersistentLayer, the Remove cross-fade, HaveLayersToSend, frame flags",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "gap1 L1..L8 0x0058E630..0x0058EC6C",
+      "gap2 Q1.1..Q1.6 0x0064F4FE..0x0064F518, 0x0058E66E..0x0058E77C, 0x0064EFA8..0x0064F22C",
+      "gap3 K5 Remove end keyframe",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-029 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-fix-rows.md section 16 (Opus fix rows, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-030",
+    "title": "Live idle (UpdateLiveAnimation): gates, body/lift/head wiggles with their parameters, LiveIdleTurn eye shift, lock and carry checks",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "A35 0x0057D5F8..0x0057DA82",
+      "gap1 K2 0x0058CFCE..0x0058D04A; K10 0x0064F3C8..0x0064F498; R2..R4",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-030 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-settling-pass.md section 5 and re-analysis/research/20261011-m5-open-reads.md (Codex rows, Opus spot-check PASS 2026-10-11): PL1-PL19, PLU: ProceduralLive 0x198 is pushed only through GameToEngine PushIdleAnimation (tag 174, 0x0057EC1A..0x0057EC32); no fixed native caller or shipped config produces 0x198.",
+      "re-analysis/research/20261011-m5-fix-rows.md section 17 (Opus fix rows, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-031",
+    "title": "Glitch: AddGlitch face and backpack layers, GetNextDistortionFrame table, ScanlineDistorter, per-row shift, AddOffNoise",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "gap1 G1, G3..G11 (0x0064EDE8..0x0064EEFE, 0x0053A9A8..0x0053AB1E, 0x0053A0B0..0x0053A898, 0x00585DFE..0x00585E94)",
+      "gap2 G1..G7 GenerateGlitchLights 0x0058CB64..0x0058CD2A",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-031 (Opus settling pass, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-032",
+    "title": "DrawFace: 64x128 canvas, the face transform via shipped cv::warpAffine INTER_NEAREST BORDER_CONSTANT 0, row extent, interlace clearing, scan-line shift",
+    "status": "EQUIVALENT_IMPLEMENTATION",
+    "evidence": [
+      "E1 0x00585B30..0x00585D9A; E2 0x00585D9C..0x00585E94",
+      "gap1 D4, D5",
+      "gap3 C1..C6 warpAffine 0x00081850.., invoker 0x0007FC60..0x0008016A, remapNearest 0x00072C38..0x00072D8C (matches stock 3.1.0)",
+      "R-ANIM pre-extraction part 1 item 10 10a..10e: GetTransformationMatrix 0x00584FF8, InputArray 0x00585C84, warpAffine imgproc 0x0008193C",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-032 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261011-m5-fix-rows.md section 18 (Opus fix rows, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-035",
+    "title": "The streamer never reads enabledAnimTracks or skips a locked track; locks only through DisableAnimTracks/EnableAnimTracks; the live idle checks MovementComponent locks",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "B1 0x00537FFC..0x00537FFE",
+      "B2 0x00513000..0x0051304E",
+      "B3 0x0057C94E..0x0057CA7A",
+      "B4 0x0057D636, 0x0057D664, 0x0057D69E",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-035 (Opus settling pass, manager-adopted 2026-10-11)."
+    ]
+  },
+  {
+    "id": "M5-036",
+    "title": "Robot-side animation behaviour: AbortAnimation handling and leftovers, Start without End and the unbounded keep-alive stream, locked-track suppression, animStarted/animEnded echo",
+    "status": "HARDWARE_ONLY",
+    "evidence": [
+      "A23, A25, B3, gap2 Q1.10",
+      "robot firmware 2457 is not shipped"
+    ]
+  },
+  {
+    "id": "M5-037",
+    "title": "Driving-animation and AnimationStreamer teardown",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "0x00511524..0x0051154A; 0x0057AF48..0x0057AFDA; 0x0057B044..0x0057B0C2; Destroy driving subscriptions/vector and streamer; ClearSendBuffer discards without send. TrackLayer/live/shared descendant effects UNKNOWN; no final flush inferred.",
+      "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1\u2013T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-037 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261012-m5-x9-extraction.md section 4a: the descendant effects are read; the teardown order is M5-053."
+    ]
+  },
+  {
+    "id": "M5-038",
+    "title": "CreateGoToSleepAnimSequence animation factory boundary",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "0x0052CEA2..0x0052CFC0; 0x0052CECA..0x0052CEDE; 0x0052CF0E; 0x0052CF44; Parallel root contains sequential triggers 0xD2/0xD5/0xD4 and lift child. First trigger args1,1,0,f32 0x42700000,0. Factory only caller 0x0052CE5E. Concrete animation effects and compound execution owned separately.",
+      "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1\u2013T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+      "re-analysis/research/20261011-m5-settling-pass.md section 1, row M5-038 (Opus settling pass, manager-adopted 2026-10-11).",
+      "re-analysis/research/20261012-m8-play-animation-actions.md section 7 and re-analysis/research/20261012-m8-play-animation-actions-check.md: the factory builds D2, D5 and D4 as TriggerAnimationAction(loops 1, interrupt 1, mask 0, 0x42700000, strict 0) and the lift child MoveLiftToHeight(preset 0, 0x40A00000), added through compound vtable +0x20 with r3 = 0, [sp] = 0 (rows 1..7 confirmed)."
+    ]
+  },
+  {
+    "id": "M5-053",
+    "title": "DrivingAnimationHandler and streamer handler teardown order",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261012-m5-x9-extraction.md section 4a: Robot dtor 0x00511524..0x00511542 (+0x4C handle vector released back to front 0x004EAEA2..0x004EAEBA; +8 vector 0x004F090C; handler deleted); handler subscriptions 0x5A, 0xB5, 0xB6 only with an external interface (0x004F072C); streamer SetupHandlers 0x0057A5A8 subscribes 0xAE, 0xAF, 0xAD, 0xC4, released 0xC4, 0xAD, 0xAF, 0xAE (0x0057AF6C); each release is the last owner."
+    ]
+  },
+  {
+    "id": "M5-055",
+    "title": "~CozmoEngine member destruction order (RobotDataLoader abort flag, robot and streamer teardown, weak-signal unlinks)",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261012-m5-settling-2.md: ~RobotDataLoader sets +0x278 with dmb before joining the load thread (0x0051F0D4..0x0051F0E6); the weak-signal unlinks in the streamer and handler teardown (M5-044, M5-053) depend on whether UiMessageHandler is still alive; the ~CozmoEngine member order is not read.",
+      "re-analysis/research/20261012-m5-teardown-reads.md item 1 (Opus-checked 14/14): ~CozmoEngine 0x004EC68C..0x004EC722 (+0x64, vectors +0x50/+0x40, +0x3C, +0x38, +0x34 CozmoContext, +0x30 UiMessageHandler, Json +0x18, vector +4) and wrapper 0x004EC79C; ~CozmoContext 0x004EAAAC..0x004EAC14 calls RobotManager::RemoveRobots first (0x004EAABE -> 0x0052F428..0x0052F472); ~Robot 0x00511512..0x0051154A; ~AnimationStreamer 0x0057AF48..0x0057AFDA (+0xC base subscription, tag 0xB4, released last); ~RobotDataLoader 0x0051F0C6..0x0051F0EA (runs after RobotManager); ~UiMessageHandler 0x0066011C..0x00660192; signal destructors 0x006634B8 (E2G) and 0x00663620 (G2E). So the UiMessageHandler and both signal maps are alive when the Robots release their subscriptions."
+    ]
+  },
+  {
+    "id": "M5-057",
+    "title": "PushIdleAnimation(ProceduralLive) as the app-supplied input that starts live animation (app input)",
+    "status": "COMPATIBILITY_POLICY",
+    "evidence": [
+      "re-analysis/research/20261012-m5-settling-2.md: UpdateLiveAnimation 0x0057D5F8..0x0057DA82 runs only when the idle stack top is ProceduralLive, which is pushed through the game-to-engine PushIdleAnimation (tag 0xAE) by the app (M5-030)."
+    ]
+  },
+  {
+    "id": "M5-059",
+    "title": "AnimationTransfer CleanUp(1) at engine construction and destruction: delete <cache>/TestAnim.json",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261012-m5-teardown-members.md: ctor CleanUp(1) 0x0057F376..0x0057F37A after DeviceDataManager (0x004EB2CE); dtor CleanUp(1) 0x0057FC20..0x0057FC22, first after VizManager::Disconnect (0x004EC6C0..0x004EC6CC); CleanUp 0x0057FA00..0x0057FB88: pathToResource(2, \"TestAnim.json\" 0x004D7224..0x004D7252) = cache + \"/\" + name (0x0084BE82, 0x0084BEF6..0x0084BF16), FileExists stat+S_ISREG (0x0080343E..0x0080344A), remove() (0x00802C64..0x00802C72); no log; the directory step needs +0x14, set only by TransferFile."
+    ]
+  },
+  {
+    "id": "M5-060",
+    "title": "The DataPlatform cache path (DataPlatformCachePath; app input)",
+    "status": "COMPATIBILITY_POLICY",
+    "evidence": [
+      "re-analysis/research/20261012-m5-teardown-members.md: cozmo_startup reads config key \"DataPlatformCachePath\" (0x006658F0 -> 0x006659CC) into DataPlatform+0xC; the app sets it to Application.temporaryCachePath (RobotEngineManager.cs:534)."
+    ]
+  },
+  {
+    "id": "M5-062",
+    "title": "AnimationStreamer HandleSetParameters (G2E 0xB4 SetLiveIdleAnimationParameters)",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261012-m5-teardown-members.md: lambda 0x0057E836 -> HandleSetParameters 0x0057E860..0x0057E90E: names.size == values.size -> if +0x18 SetDefaultParams (0x0057E882..0x0057E88C), then SetParam per pair (0x0057E89A..0x0057E8B2); else sErrorF (0x0057E8D0, format 0xBEF4E1) and errG (0x0057E8F6..0x0057E90A). Registered at 0x0057A4BA only with an external interface (0x0057A4AC). App senders: Robot.cs:663, :1402-1404."
+    ]
+  },
+  {
+    "id": "M5-063",
+    "title": "DrivingAnimationHandler bodies: HandleActionCompleted (E2G 0x5A), PushDrivingAnimations (G2E 0xB5), RemoveDrivingAnimations (G2E 0xB6)",
+    "status": "EXACT_SOURCE",
+    "evidence": [
+      "re-analysis/research/20261012-m5-teardown-members.md: callbacks 0x004F110E -> HandleActionCompleted 0x004F0D78 (engine sender: ActionQueue 0x0053FAAA); 0x004F1186 -> PushDrivingAnimations 0x004F0944; 0x004F120E -> RemoveDrivingAnimations 0x004F0A94; registered only if HasExternalInterface() == 1 (0x004F072C..0x004F0732).",
+      "re-analysis/research/20261012-m5-driving-handler-read.md: handler state ctor 0x004F06B0..0x004F0878 / Init 0x004F0FC4..0x004F0FF4; Push gate warning 0x004F094C..0x004F0964 and push_back 0x004F0988..0x004F09FA; Remove gate 0x004F0A9E..0x004F0AB4, empty-stack warning 0x004F0ADA..0x004F0C22 (0xBE4672), first-match erase 0x004F0AE4..0x004F0C6C, LoopBoundOverflow drivingAnimationHandler.cpp:108 0x004F0B5A..0x004F0BB6; UpdateCurrDrivingAnimations only from Init (0x004F0D2C..0x004F0D74: back(), else Sad 0x2C, else needs-met 0x38, else default 0x20); HandleActionCompleted 0x004F0D78..0x004F0E2A with PlayEndAnim 0x004F0EFA..0x004F0F4A, PlayDrivingLoopAnim 0x004F0E58..0x004F0EA0, PlayDrivingEndAnim 0x004F106C..0x004F10C0, lock/unlock helpers 0x004F0EB2..0x004F0EE2 / 0x004F0F4C; ActionIsBeingDestroyed 0x004F0F94..0x004F0FC0."
+    ]
+  },
+  {
+    "id": "M6-042",
+    "title": "Wwise Term-time notifications and the engine destructor order: 0xA35998 user callbacks, PBI vt[0]/+0x10 and 0x9D3470 in 0xA387DC, the end-of-event callback 0x8D8D41 cookie lifetime, and whether ~RobotAudioClient runs before ~CozmoAudioController",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "re-analysis/research/overnight/20261016-ov97-99-answer.md: 0xA35998 user vt[0] calls 0xA35A48..0xA35A74; 0xA387DC PBI drain; callback 0x8D8D41 reads cookie+0x38; ~AudioEngineController deletes +0xC at 0x8D1C78..0x8D1C88 and runs ClearGarbageCollector before Term (0x8D8048 -> 0x8D8068); ~RobotAudioClient 0x599A6C; ~CozmoAudioController 0x5946F0..0x594716.",
+      "re-analysis/research/overnight/20261016-ov116-119-answer.md: PostEvent wrapper 0x8D8CEC..0x8D8D32; context makers 0x599E6A..0x599E86, 0x8DED32..0x8DED4C; PostAudioEvent 0x8D1F46..0x8D216E; ~AudioEngineController 0x8D1C2C..0x8D1C98; Term order 0x99DCEC..0x99E010 (thread stop 0xA40B18 zeroes 0x108DF4C); PBI drain 0xA387DC..0xA38880; 0xA029DC -> 0xA04DE8..0xA04E64 -> CheckRemove 0xA03618..0xA037E4; callback 0x8D8D44..0x8D8F30 -> 0x9A206C -> CancelEventCallback 0xA03540..0xA03610 (pthread_cond_wait 0xA03604); transitions 0xA36044..0xA36110; destructor order 0x4EC6F8..0x4EC702, 0x4EAABE, 0x51155C..0x511568, 0x4EAC04..0x4EAC0E, 0x8DEB12..0x8DEB3A."
+    ]
+  },
+  {
+    "id": "M7-026",
+    "title": "MoodManager::GetSimpleMood and the mood time MoodManager+0x130 (inputs to the animation group draw)",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "re-analysis/research/20261012-m5-x9-extraction.md section 4f: GetSimpleMood 0x0067C084 (Default; Happy > 0.33f -> Happy; Confident < -0.29f -> Sad; Happy < -0.33f -> Sad; constants 0x0067C0C0..0x0067C0C8); the group draw reads MoodManager+0x130 (0x0058A95C), written only by MoodManager::Update(t) 0x0067B67E and Reset/ctor."
+    ]
+  },
+  {
+    "id": "M8-017",
+    "title": "The compound action runtime: ICompoundAction, CompoundActionSequential and CompoundActionParallel (construction, AddAction naming, update/result tables, retry, completion store, teardown), as used by the go-to-sleep sequence and other compounds",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "0x0052CEA2..0x0052CFC0; Parallel/sequential child execution, ignore-failure predicate and completion/track interactions remain higher framework obligations; M1 owns only factory handoff and NOW/retries0 submission.",
+      "Manager-adopted re-analysis/research/20261005-B-M1M2-blockers-extraction.md T1\u2013T9 and ownership table; instruction companion re-analysis/research/20261005-B-M1M2-blockers-native.txt",
+      "re-analysis/research/20261012-m8-play-animation-actions-check.md addition 4..5: AddAction(IActionRunner*, bool, bool) 0x0054EC7C -> AddAction(function, bool) 0x0054ED90 (empty predicate; child inherits +0x57; compound name appended); the trailing boolean is never loaded.",
+      "re-analysis/research/overnight/20261014-ov20-21-check.md: C1 0x0052CECA..0x0052CFA2; C2 0x0054E990..0x0054EA86; C3 0x0053FDB8..0x0053FE1C; C4 0x0054EC7C..0x0054EEAC; C5 0x0054F4F8..0x0054F54C; S1-S8 0x0054F70C..0x0054F992, 0x0054F5A0..0x0054F696, 0x0054F560..0x0054F59E; P1-P5 0x0054FAB0..0x0054FBCC, 0x0054EC56..0x0054EC7A; D1-D4 0x0054F050..0x0054F130, 0x0054F170..0x0054F1BC, 0x0054F270..0x0054F3EA, 0x0054EB78..0x0054EC2A, 0x0054FC2C..0x0054FC66; the seven log sites; AlreadyPrepped call sites 0x0054F0C0, 0x0054FB3C."
+    ]
+  },
+  {
+    "id": "M8-020",
+    "title": "PlayAnimationAction: construction, Init, robot/game animation handlers, CheckIfDone, animationCompleted, destructor streamer stop",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "re-analysis/research/20261012-m8-play-animation-actions.md rows C1, C8..C11, P1..P12, D1..D3, L2..L8: ctor 0x00543C08..0x00543CBE (+0x84 loops, +0x8B 0, +0x8C interrupt, +0x90 null, +0x94 timeout; 60.0f -> FLT_MAX only when loops == 0), Init 0x00543F20 (cozmo_sings_custom remap 0x0054417C/0x00544190, lookup robot[0]->+0x20->+0x48, SetStreamingAnimation(robot+0x60, anim, loops, interrupt, flag) -> +0x8B, tag 0 -> failed, 0x03000001; R2E 0xCA/0xCB/0xD5 via 0x00519F8C and E2G 0x5F via external-interface vtable +0x28; callbacks 0x005452F1, 0x0054541D, 0x0054561D, 0x005457F5 and AnimationEvent forward 0x00545750), CheckIfDone 0x005441C0, GetCompletionUnion 0x005441DE (0x0075C544, 0x006C22DC), destructor 0x00543DAC (StillStreaming info 0x00543DF2 on robot+0x98 == +0x90; SetStreamingAnimation(null, 1, true, false) at 0x00543E26; releases +0xB4, +0xAC, +0xA4, +0x9C), vtable 0x01021584 slots +0x1C/+0x20/+0x2C (0x00545210).",
+      "re-analysis/research/20261012-m8-play-animation-actions-check.md additions 2 (the null SetStreamingAnimation tail: +0x73 store and the idle Abort)."
+    ]
+  },
+  {
+    "id": "M8-021",
+    "title": "TriggerAnimationAction: trigger to group, Init NO_ANIM_NAME paths, the group choice hand-off, the DAS blacklist gate and the robot.play_animation event",
+    "status": "IMPLEMENTATION_GAP",
+    "evidence": [
+      "re-analysis/research/20261012-m8-play-animation-actions.md rows T1..T12, D4, L11..L13: ctor 0x00544228, SetAnimGroupFromTrigger 0x0054432C (Has == 1 before Get; empty-group warning TriggerAnimationAction.EmptyAnimGroupNameForTrigger \"Event: %s\" at 0x005443AC), Init 0x0054443C (NO_ANIM_NAME 0x0300000C; GetAnimationNameFromGroup with the robot and strictCooldown; blacklist set walk +0x8C/+0x90; sEvent robot.play_animation, value +0x78, $data trigger + \":\" + group at 0x005445BC), vtable 0x010215BC."
+    ]
+  }
+]

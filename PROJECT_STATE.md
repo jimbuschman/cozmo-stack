@@ -40,6 +40,18 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **Temporary M5 handoff (operator, 2026-10-20):** Codex is manager and independent verifier for M5 until Claude
+  returns; evidence, role separation and approval checkpoints are unchanged. First robot run judged in
+  `re-analysis/research/20261020-m5-hw-1-judgement.md`: **NOT ACCEPTED; operator rerun required**.
+  Native live idle permits FF Start/End bursts; the first-read no-End lead was a harness error, not a proven
+  scheduler defect. Other confirmed harness errors concern abort ordering, conditional face output, observation
+  phases, mixed-epoch counters, teardown interval and failed-drive phase expectations. Jobs **B-M5-24..31** queued,
+  starting with the live-idle oracle. No stack behavior fix is justified yet, no manifest status changed.
+  Physical observations, exact finite-glitch trace and the M12/M13 drive failure remain bounded uncertainties.
+  **Before rerun (operator, 2026-10-20):** B-M5-27 covers clear, expected-appearance descriptions and explicitly bounded
+  observation windows for every prompt, retaining unexplained observations. FailedTraversingPath is still unexplained;
+  a successful drive must be observed in a later run. Publishing these jobs does not unblock M5 acceptance.
+
 - **Temporary manager handoff (operator, 2026-10-17):** Codex takes over Claude's manager and independent
   verification duties while Claude is unavailable; the operator has restarted the separate builder and research
   lanes. This supersedes the Claude/Opus-only role restrictions for this handoff, not the evidence standard,
