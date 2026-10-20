@@ -40,12 +40,22 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
-- **M5 harness queue reviewed (Codex, 2026-10-20):** all B-M5-24..31 published and bounded PASS;
-  final report `re-analysis/research/20261020-b-m5-31-check.md` (implementation8b9bc2d1), manager focused62/62
-  and fidelity check pass. Requested cleanup completed; builder monitor stops after publication of this handoff.
-  **M5 is NOT ACCEPTED.** Corrected operator hardware rerun remains required. Finite-layer activity, actual blink
-  calls/deadlines, coherent admission and conditional teardown enqueue-origin diagnostic gaps remain explicit;
-  rerun alone cannot guarantee their closure. FailedTraversingPath remains unexplained; successful drive required.
+- **M5 decisions before the rerun (operator, 2026-10-20; manager review of Codex's M5 work):**
+  - Codex's run-1 judgement and B-M5-24..31 reviewed and adopted (no stack behaviour bug; harness bugs fixed;
+    reports `research/20261020-m5-hw-1-judgement.md` and `research/20261020-b-m5-24-check.md`..`-31-check.md`).
+    M5 harness tests 62/62, fidelity check passes. Spot-checked: live-idle FF restart `0x57D3F0..D44C`.
+  - **Diagnostic hooks approved.** LAYERS, PARAMETERS and AUDIO could never be conclusive on hardware: their graders'
+    evidence (per-frame face flag, KeepFaceAlive blink-timer steps, send-admission allowance) was supplied only by unit
+    fixtures. Read-only diagnostic observation in the stack touches none of "What we reproduce" 1-4, so it is allowed
+    instrumentation, not invented behaviour. Job **B-M5-32**.
+  - **DRIVING split.** M5-063 is judged on whichever phase path the drive's action results select (successful Start ->
+    Loop -> End, or failed Start -> End cleanup). Successful traversal moves to the M12/M13 acceptance, which must observe
+    a successful DriveToPose; FailedTraversingPath stays unexplained there. Job **B-M5-32**.
+  - KEEP_ALIVE keeps the operator's resting-eye comparison as a gate.
+  - **M5 is NOT ACCEPTED.** Next: B-M5-32 built and verified, then the operator rerun.
+  - **Handoff (2026-10-20):** B-M5-32 was dispatched to cozmo-implementer, and the session may end before it reports.
+    Any B-M5-32 code in the working tree is uncommitted and unverified. Next session: check its status file and the
+    diff against the job, run cozmo-verifier, run the full suite once, then commit.
 
 - **Temporary M5 handoff (operator, 2026-10-20):** Codex is manager and independent verifier for M5 until Claude
   returns; evidence, role separation and approval checkpoints are unchanged. First robot run judged in
@@ -125,8 +135,6 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 - **Wwise runtime found (M6 extraction, 2026-09-24).** The Wwise 2016.2 runtime is statically linked into libcozmoEngine.so, as symbol-less ARM code at 0x0095E540..0x00AE2E40. Anything earlier marked BLOCKED_EXTERNAL for "Wwise runtime semantics" is therefore RECOVERABLE_GAP, not blocked, and gets re-classified as each layer (M6, M9) is inventoried.
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
-
-- **B-M5-24 Codex review PASS (2026-10-20):** `research/20261020-b-m5-24-check.md`, implementation bdad8435. Bounded harness correction only; 8/8 focused tests and fidelity check pass. Next harness batch: make the persistent-face unit fixture a valid encoded face or explicitly label it tag-only; repair replacement characters in the new script/settling-report headings. Exact lifecycle timing, sampled persistence and physical display remain unverified. B-M5-25 subsequently passed the bounded review below; B-M5-26 claimed, 27..31 pending. M5 acceptance remains blocked on the operator rerun.
 
 - **M3M4-HW harness (2026-10-19; bundle README):** answers typed with spaces don't map to hyphenated choices and the PARITY_STEP grader's expected answer is reversed; DAS_EVENTS should attach through `BeforeStart`; DISCONNECT_QUIET should judge "no data after the teardown batch" rather than key on a DisconnectRequest frame (M1-006 pacing can hold it back). Conformance tools set the nominal calibration after construction instead of through `VisionCalibration` (B-M3M4-36 check).
 
@@ -267,15 +275,3 @@ The user-level agents in `~/.claude/agents/` (`cozmo-m1-transport-auditor`, `coz
 ## Open decisions for the operator
 
 - **M6-002 Vorbis IMDCT (correction C8).** The engine's inverse MDCT is a float NEON transform whose per-lane arithmetic and table indexing are RECOVERABLE_GAP (ranges and the 615-float master table are named in `re-analysis/evidence/m6-vorbis/vorbis-imdct.md`). **Decided (operator, 2026-09-27): exact.** Transliterate the lane-level arithmetic and vendor the 2460 table bytes. The RECOVERABLE_GAP rows go back to the extractor. The kernel stays fail-closed until then.
-
-- **B-M5-25 Codex review PASS (2026-10-20):** `research/20261020-b-m5-25-check.md`, implementation a9334fee. Ordered-wire Abort boundary and reliable deduplication checked against native instructions and immutable raw replay; manager focused tests 35/35, fidelity check passes. Extend the B-M5-24 tag-only face fixture and replacement-character cleanup to B-M5-25 fixtures/script heading. Exact neutral replay timing and physical stop behavior remain unverified. B-M5-26 claimed at c472606f; review next after publication. M5 acceptance stays blocked on the operator rerun; FailedTraversingPath remains unexplained and successful driving must be observed later.
-
-- **B-M5-26 Codex bounded review PASS (2026-10-20):** `research/20261020-b-m5-26-check.md`, implementation99965613, publicationee03a489. Conditional native face flag verified; real finite-layer result correctly remains INCONCLUSIVE because public observations lack per-frame generation/activity evidence. This diagnostic gap remains open for judgement even after rerun; no production hook or invented trace authorized. B-M5-27 claimed,28..31 pending. B-M5-24 tag-only fixture label and script/settling-report encoding cleanup completed; B-M5-25 fixture labels remain queued. M5 acceptance remains blocked; successful driving remains outstanding.
-
-- **B-M5-27 Codex bounded review PASS (2026-10-20):** `research/20261020-b-m5-27-check.md`, implementationb23ce509, publication58b4c484. Native lock/unlock and neutral selection checked; bounded prompts/raw telemetry preserve unexpected human observations. Focused45/45 and fidelity check pass. Prior B-M5-25 fixture labeling cleanup completed. Nonblocking next-harness cleanup: emit matching aborted END when LAYERS returns Missing after an unconsumed pulse, and for interrupted marked phases; no positive result is currently produced there. B-M5-28 claimed;29..31 pending. No hardware acceptance; finite-layer diagnostic gap and unexplained driving failure remain.
-
-- **B-M5-28 Codex bounded review PASS (2026-10-20):** `research/20261020-b-m5-28-check.md`, implementation7362c2da, publication3b67e0c8. Per-call native blink timer/reset checked; dark images/readback/human answers do not certify generation or firmware. Real PARAMETERS remains INCONCLUSIVE: actual call/deadline/generation evidence is unavailable in allowed public observations. This diagnostic gap remains open alongside B-M5-26 even after rerun; no invented hooks authorized. B-M5-29 claimed,30..31 pending. B-M5-27 interrupted-window cleanup remains queued. M5 acceptance blocked; unexplained FailedTraversingPath/successful driving still outstanding.
-
-- **B-M5-29 Codex bounded review PASS (2026-10-20):** `research/20261020-b-m5-29-check.md`, implementationb8a14a8e, publicatione319e14e. Native send admission/direct-End accounting checked; mixed-epoch counter differences remain diagnostics. Actual coherent allowance/success evidence is unavailable in allowed public observations: budgetCompliance NOT_JUDGED, AUDIO INCONCLUSIVE. This diagnostic gap remains alongside finite-layer and blink-generation gaps even after rerun. B-M5-27 pending-window END cleanup completed. B-M5-30 claimed,31 pending; M5 acceptance blocked and successful driving still outstanding.
-
-- **B-M5-30 Codex bounded review PASS (2026-10-20):** `research/20261020-b-m5-30-check.md`, implementation967af8d8, publication42ac55fb. Native discard/AbortAll path checked; actual worker Dispose interval and full-history resends separate from unknown first-send origins. Manager56/56 focused tests and fidelity check pass. New animation first sends with unavailable enqueue/generation origin remain INCONCLUSIVE; no invented hooks. B-M5-31 claimed and next. Earlier diagnostic gaps remain open; no M5 acceptance before corrected operator rerun, successful driving still outstanding.
