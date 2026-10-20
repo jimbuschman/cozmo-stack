@@ -52,11 +52,36 @@ public static class M5Hw
     }
     public sealed record ObservationPlan(string Id, string Watch, string Expected);
     public static readonly ObservationPlan[] ObservationPlans = {
-        new("CANCEL", "face screen, head and lift", "A shipped clip plays briefly and is cancelled. Watch its activity stop; afterward the face may return to the loaded resting-eye reference. Compare the two rounded eye shapes in neutral-reference.svg. A brief close/reopen is a blink; a shift of eye positions is an eye dart. Those are separate from continued clip activity. No body-driving clip is selected."),
-        new("LIVE", "head, lift and wheel/body movement", "Default ProceduralLive may make small head/lift movements and body wiggles. Watch only this ten-second window; the idle will be removed at its end before questions. Face eye darts and blinks are separate observations."),
-        new("LOCKED", "head angle", "The head is locked at its starting angle while a shipped head-animation clip plays. Face/lift may animate. Judge the head only between START and END LOCKED; ignore motion before START and after the announced UNLOCK."),
-        new("LAYERS", "face screen and five backpack lights separately", "A short distortion pulse may briefly shift or distort the face image and change backpack lights. Face and backpack need not start or finish together. Watch each separately only between START and END LAYERS."),
-        new("BLINKS", "face screen", "For sixty seconds, watch the eyes briefly close and reopen (blink). Sideways/up-down eye shifts are darts, not blinks. An old scheduled blink may happen first; later blink spacing is requested at about44-45 seconds. No movement idle is pushed. Report timing you actually saw or choose unclear/not-observed.")
+        new("CANCEL", "the eyes on the face screen, the whole head, and the front lifting arms",
+            "This takes a few seconds. An animation starts, then the program asks it to stop after about three quarters of a second.\n"
+            + "Keep looking at Cozmo until END. The animation's exact expression varies; you do not need to identify it.\n"
+            + "Afterward you will answer FOUR separate questions:\n"
+            + "  1. Did the animation that was playing stop, or did it keep going?\n"
+            + "  2. Did the eyes return to shapes like the picture in neutral-reference.svg? Compare their outlines, not color or thin display lines.\n"
+            + "  3. Did the eyes briefly close and open again? That is a BLINK.\n"
+            + "  4. Did the eye shapes slide left/right or up/down inside the screen? That is an EYE DART, not the whole head moving.\n"
+            + "A later blink or eye dart does not by itself mean the original animation continued. If you cannot distinguish them, choose unclear."),
+        new("LIVE", "the wheels and the whole body",
+            "Watch for 10 seconds. We will ask ONE question: did the wheels/body make any small wiggles?\n"
+            + "Look for the body shifting or turning slightly, rather than a long drive. Head or lifting-arm movement alone does not count.\n"
+            + "Ignore changes to the eye picture for this question. We will stop this part before asking for your answer."),
+        new("LOCKED", "the angle of the whole head, not the eye picture",
+            "Watch during a short animation, until END (usually a few seconds).\n"
+            + "We will ask ONE question: did the whole head stay at the same angle it had at START?\n"
+            + "The eye picture or lifting arms may move; those do not count as head movement.\n"
+            + "Ignore any head motion before START and after the announced UNLOCK."),
+        new("LAYERS", "the face screen and the five lights on top of the backpack",
+            "This effect is brief. Position yourself so you can see both before starting.\n"
+            + "We will ask TWO questions: did the face picture briefly shift or become distorted, and did the backpack lights change?\n"
+            + "A face change means the picture on the screen changed, not that the whole head moved.\n"
+            + "The face and lights need not change at the same instant. Watch until END; answer for each separately.\n"
+            + "If you only managed to watch one, choose not-observed for the other."),
+        new("BLINKS", "the eyes on the face screen",
+            "Watch for 60 seconds. A BLINK is the eyes briefly closing and reopening.\n"
+            + "Sideways/up-down eye shifts are darts, not blinks. Moving the whole head is not a blink either.\n"
+            + "We will ask whether the gap between blinks was about 44-45 seconds. You can use a clock or stopwatch.\n"
+            + "The first blink may happen sooner because it was already scheduled. Do not time from START to that first blink.\n"
+            + "Time from one blink to the next. If you see fewer than two blinks, or cannot judge the gap, choose unclear.")
     };
     public sealed record WireMessage(double AtMs, bool Outbound, byte[] Payload,
         int FrameLine = 0, int SubmessageOrdinal = 0, ushort? ReliableSequence = null, int ConnectionEpoch = 0, bool IsRetransmission = false);
@@ -150,13 +175,18 @@ internal sealed class M5Run
     JsonObject BeginWindow(string check, string phase)
     {
         var plan = M5Hw.ObservationPlans.Single(p => p.Id == phase);
-        Console.WriteLine($"Watch {plan.Watch}. {plan.Expected}");
-        if (phase == "CANCEL") Console.WriteLine("Engine-derived reference (not proof of firmware display): " + Path.Combine(bundle, "neutral-reference.svg"));
+        Console.WriteLine($"\nGET READY TO WATCH: {phase}\nLook at {plan.Watch}.\n{plan.Expected}");
+        if (phase == "CANCEL") Console.WriteLine("Eye-shape picture to compare with: " + Path.Combine(bundle, "neutral-reference.svg"));
+        if (!yes)
+        {
+            Console.WriteLine("Read the instructions first. Get a clear view of Cozmo, then press Enter to start watching.");
+            ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
+        }
         double from = Now;
         var window = new JsonObject { ["check"] = check, ["phase"] = phase, ["watch"] = plan.Watch,
             ["expected"] = plan.Expected, ["fromMs"] = from };
         activeObservationWindow = window;
-        Console.WriteLine($"START {phase} observation ({from:F1} ms)");
+        Console.WriteLine($"START {phase} — WATCH COZMO NOW. Keep watching until END.");
         Event("observation-window-start", (JsonObject)window.DeepClone()); return window;
     }
     void EndWindow(JsonObject window)
@@ -164,7 +194,7 @@ internal sealed class M5Run
         if (ReferenceEquals(activeObservationWindow, window)) activeObservationWindow = null;
         if (window["toMs"] is not null) return;
         window["outcome"] ??= "completed";
-        window["toMs"] = Now; Console.WriteLine($"END {window["phase"]} observation ({Now:F1} ms). Ignore subsequent activity when answering.");
+        window["toMs"] = Now; Console.WriteLine($"END {window["phase"]} — you can look back at the screen. Answer only about what you just watched.");
         Event("observation-window-end", (JsonObject)window.DeepClone());
     }
     void ClosePendingWindow(string reason)
@@ -176,15 +206,34 @@ internal sealed class M5Run
     {
         if (window["toMs"] is null) throw new InvalidOperationException("Close the observation window before asking.");
         choices = choices.Concat(new[] { "unclear", "not-observed" }).Distinct().ToArray();
-        string bounded = $"For the marked {window["phase"]} window {window["fromMs"]}..{window["toMs"]} ms only; exclude activity afterward: {question}";
-        Console.WriteLine(bounded + " [" + string.Join(" / ", choices) + "]");
+        string bounded = $"Think only about the part between START {window["phase"]} and END {window["phase"]}. {question}";
+        Console.WriteLine("\n" + bounded);
+        for (int i = 0; i < choices.Length; i++)
+        {
+            string meaning = choices[i] switch
+            {
+                "seen" => "I watched and saw it happen.",
+                "not-seen" => "I watched, but did not see it happen.",
+                "unclear" => "I watched, but could not tell or am not sure.",
+                "not-observed" => "I missed this part or was looking somewhere else.",
+                "stopped" => "The animation that was playing stopped.",
+                "continued" => "The same animation kept going after the stop request.",
+                "resembled-reference" => "The eye outlines looked like the reference picture.",
+                "different" => "I could see the eye outlines, and they looked different from the reference picture.",
+                "yes" => "Yes, I could tell that this happened.",
+                "no" => "No, I could tell that this did not happen.",
+                _ => choices[i]
+            };
+            Console.WriteLine($"  {i + 1}. {choices[i]} — {meaning}");
+        }
+        Console.WriteLine("Type a number or the choice name, then press Enter. It is OK to be unsure; please do not guess.");
         double asked = Now; string? raw = yes ? null : ReadLineBounded();
         var answer = M5HwAnalysis.ObservationAnswer(window, bounded, raw, choices, asked, Now);
         Event("operator-observation", (JsonObject)answer.DeepClone()); return answer;
     }
     void WindowNotes(JsonObject window)
     {
-        Console.WriteLine($"Optional description of anything unexpected during {window["phase"]} ({window["fromMs"]}..{window["toMs"]} ms); Enter to leave blank:");
+        Console.WriteLine("Anything else you noticed during that part? Describe it in your own words, or press Enter to skip.");
         window["freeText"] = yes ? null : ReadLineBounded();
         Event("operator-window-notes", (JsonObject)window.DeepClone());
     }
@@ -206,7 +255,15 @@ internal sealed class M5Run
     public int Execute()
     {
         Directory.CreateDirectory(bundle); cache = Path.Combine(bundle, "cache"); Directory.CreateDirectory(cache); File.WriteAllText(Path.Combine(cache, "TestAnim.json"), "{}");
-        Console.WriteLine("M5-HW: put Cozmo on the FLOOR, off charger, with clear space; head/lift and face animate. --allow-drive also enables idle body wiggles and short DriveToPose. Ctrl+C stops and preserves evidence. About 3 minutes.\nBundle: " + bundle);
+        Console.WriteLine("M5 animation and face test\n"
+            + "Put Cozmo on the FLOOR, off the charger, with at least 30 cm of clear space around him.\n"
+            + "His eyes, head, lifting arms and backpack lights may move or change; sound may play.\n"
+            + "With --allow-drive, his wheels may wiggle and one check attempts a short 6 cm drive.\n"
+            + "Some checks are automatic: they say NO ANSWER NEEDED. You do not need to judge those.\n"
+            + "For the parts you watch, read the instructions, then press Enter when ready. Look at Cozmo from START to END.\n"
+            + "After END, answer the numbered questions. 'not-seen' means you watched but saw nothing; 'not-observed' means you missed it.\n"
+            + "Choose 'unclear' if you watched but are unsure. These answers are useful observations, not a request to declare pass or fail.\n"
+            + "Allow a few minutes plus time to read and answer. Ctrl+C stops the run and saves the evidence.\nBundle: " + bundle);
 
         ConsoleCancelEventHandler interrupt = (_, e) => { e.Cancel = true; cancel.Cancel(); }; Console.CancelKeyPress += interrupt;
         using var timer = new Timer(_ => cancel.Cancel(), null, TimeSpan.FromMinutes(10), Timeout.InfiniteTimeSpan);
@@ -231,7 +288,10 @@ internal sealed class M5Run
                 SaveNeutralReference();
                 if (!yes && neutralReference["file"] is not null)
                 {
-                    Console.WriteLine("Before checks start, open neutral-reference.svg from the bundle in a browser and review the resting-eye shape. This is an engine-derived reference, not a firmware display verdict. Press Enter when ready.");
+                    Console.WriteLine("Before starting: open the neutral-reference.svg file shown above in your browser (you can paste its full path into the address bar).\n"
+                        + "Keep that picture available. Later we will ask whether Cozmo's eyes return to similar outlines after an animation stops.\n"
+                        + "Compare the shapes of the two eyes, not their color or thin display lines. The picture comes from the loaded animation; it is a reference, not a claim that the robot displayed it.\n"
+                        + "Press Enter after you have looked at the picture.");
                     ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
                 }
             }
@@ -241,7 +301,28 @@ internal sealed class M5Run
                 if (only is not null && !only.Contains(def.Id)) result = Missing("not selected by --only");
                 else if (!connected || robot.Transport.State != LinkState.Connected) result = Missing("connection/readiness unavailable");
                 else if (cancel.IsCancellationRequested) result = Missing("run interrupted");
-                else { Console.WriteLine("Running " + def.Id); Event("check-start", new() { ["check"] = def.Id }); try { result = Check(def.Id); ClosePendingWindow("Check returned without completing the marked phase."); } catch (Exception e) { ClosePendingWindow(e.Message); errors.Enqueue(def.Id + ": " + e); result = Missing(e.Message); } }
+                else
+                {
+                    string instruction = def.Id switch
+                    {
+                        "TAGS" => "NO ANSWER NEEDED: three short animations will play. The program records whether they start and finish.",
+                        "ABORT" => "You will watch an animation stop, then answer four short questions. Instructions follow.",
+                        "KEEP_ALIVE" => "You will watch an animation stop, then watch body wiggles. A final face-recording part is automatic.",
+                        "LOCKED_HEAD" => "You will watch whether the whole head stays still while an animation plays. Instructions follow.",
+                        "AUDIO" => "NO ANSWER NEEDED: an animation with sound data will play. The program checks the recorded audio messages; you do not need to judge the sound.",
+                        "LAYERS" => "You will watch a brief face-picture effect and the backpack lights. A short setup animation may play first.",
+                        "LIVE_IDLE" => "NO ANSWER NEEDED: the program records 12 seconds of small idle movements, if driving is enabled.",
+                        "PARAMETERS" => "You will watch for blinks for 60 seconds. A short setup animation may play first; instructions follow.",
+                        "DRIVING" => "NO ANSWER NEEDED: if driving is enabled, Cozmo will be asked to move forward 6 cm. Keep the floor clear; the program records the result.",
+                        "SLEEP" => "NO ANSWER NEEDED: the program checks an internal sleep request. You do not need to look for a sleeping expression.",
+                        "TEARDOWN" => "NO ANSWER NEEDED: an animation starts, then the connection closes. The program records shutdown.",
+                        _ => ""
+                    };
+                    Console.WriteLine($"\n--- {def.Id} ---\n{instruction}");
+                    Event("check-start", new() { ["check"] = def.Id });
+                    try { result = Check(def.Id); ClosePendingWindow("Check returned without completing the marked phase."); }
+                    catch (Exception e) { ClosePendingWindow(e.Message); errors.Enqueue(def.Id + ": " + e); result = Missing(e.Message); }
+                }
                 result["id"] = def.Id; result["records"] = JsonSerializer.SerializeToNode(def.Records); result["fromMs"] = start; result["toMs"] = Now;
                 result["uncertainty"] = new JsonArray(records.Where(x => def.Records.Contains(x["id"]!.GetValue<string>()) && x["status"]!.GetValue<string>() is "HARDWARE_ONLY" or "BLOCKED_EXTERNAL" or "IMPLEMENTATION_GAP" or "RECOVERABLE_GAP").Select(x => x.DeepClone()).ToArray()); results.Add(result);
             }
@@ -282,7 +363,7 @@ internal sealed class M5Run
                 {
                     var c = Clip(4000, 12000); if (c is null) return Missing("No long clip without body track");
                     var cancelWindow = BeginWindow(id, "CANCEL");
-                    var t = Play(c); Wait(750); double at = Now; Console.WriteLine("CANCEL requested now; watch the clip stop, then distinguish resting-eye shape, blinks and darts."); Event("cancel-call", new() { ["tag"] = t.Tag }); r.Animations.Stop();
+                    var t = Play(c); Wait(750); double at = Now; Console.WriteLine("STOP REQUESTED — keep watching Cozmo: does the animation stop, and what do the eyes do next?"); Event("cancel-call", new() { ["tag"] = t.Tag }); r.Animations.Stop();
                     Poll(() => Wire(at).Any(x => x.Outbound && x.Payload[0] == 0x8D), 2000);
                     var wireAbort = Wire(at).FirstOrDefault(x => x.Outbound && x.Payload[0] == 0x8D);
                     double abortAt = wireAbort?.AtMs ?? Now, quietEnd = abortAt + 400;
@@ -296,10 +377,10 @@ internal sealed class M5Run
                     EndWindow(cancelWindow); result["wireObservationVerdict"] = result["verdict"]!.DeepClone();
                     result["cancelAtMs"] = at; result["keepAliveWindowEndMs"] = Now;
                     result["neutralReference"] = neutralReference.DeepClone();
-                    result["clipStopped"] = AskWindow(cancelWindow, "After the announced cancel, did the clip's face/head/lift activity stop?", "stopped", "continued");
-                    result["restingEyeAppearance"] = AskWindow(cancelWindow, "After cancel, did the two resting-eye shapes resemble the loaded reference?", "resembled-reference", "different");
-                    result["blinkObservation"] = AskWindow(cancelWindow, "Did the eyes briefly close and reopen?", "seen", "not-seen");
-                    result["eyeDartObservation"] = AskWindow(cancelWindow, "Did the eye shapes shift position within the face?", "seen", "not-seen");
+                    result["clipStopped"] = AskWindow(cancelWindow, "After STOP REQUESTED, did the animation that was playing stop? A separate blink or eye dart afterward does not by itself mean it continued.", "stopped", "continued");
+                    result["restingEyeAppearance"] = AskWindow(cancelWindow, "After the stop request, did the two eye outlines look like the reference picture you opened? Compare the shapes, not color or thin display lines.", "resembled-reference", "different");
+                    result["blinkObservation"] = AskWindow(cancelWindow, "Did you see a BLINK: the eyes briefly closing and opening again?", "seen", "not-seen");
+                    result["eyeDartObservation"] = AskWindow(cancelWindow, "Did you see an EYE DART: the eye shapes sliding within the screen, without counting movement of the whole head?", "seen", "not-seen");
                     WindowNotes(cancelWindow); result["observationWindow"] = cancelWindow;
                     if (neutralReference["file"] is null || result["clipStopped"]!["answer"]!.GetValue<string>() != "stopped"
                         || result["restingEyeAppearance"]!["answer"]!.GetValue<string>() != "resembled-reference") result["verdict"] = "INCONCLUSIVE";
@@ -321,10 +402,11 @@ internal sealed class M5Run
                                 result["liveFromMs"] = live; result["liveToMs"] = liveEnd;
                             }
                             finally { EndWindow(liveWindow); IdleOff(); }
-                            result["bodyObservation"] = AskWindow(liveWindow, "Did the body/wheels make small wiggles?", "seen", "not-seen");
+                            result["bodyObservation"] = AskWindow(liveWindow, "Did you see the wheels or whole body make small wiggles? Head or lifting-arm movement alone does not count.", "seen", "not-seen");
                             WindowNotes(liveWindow); result["liveObservationWindow"] = liveWindow;
                             if (result["bodyObservation"]!["answer"]!.GetValue<string>() != "seen") result["verdict"] = "INCONCLUSIVE";
                         }
+                        Console.WriteLine("NO ANSWER NEEDED for this next part: a short setup animation plays, then the program records the face for about 10 seconds.");
                         // A short nonlive play clears the previous idle and its persistent keepalive layers.
                         // Normal KeepFaceAlive then supplies the persistent eye dart; no fabricated layer or hook.
                         var prime = Clip(300, 2000);
@@ -366,7 +448,10 @@ internal sealed class M5Run
                     var c = Clip(1500, 7000, AnimationTrack.Head); if (c is null) return Missing("No head clip without body track");
                     double lockAt = Now; Event("head-lock-request", new());
                     r.Motion.LockTracks(CozmoMotion.HeadTrack, "m5-hw", "hardware test"); Wait(300);
-                    var window = BeginWindow(id, "LOCKED"); double clipFrom = window["fromMs"]!.GetValue<double>(), clipTo = clipFrom, unlockAt = clipFrom;
+                    JsonObject window;
+                    try { window = BeginWindow(id, "LOCKED"); }
+                    catch { r.Motion.UnlockTracks(CozmoMotion.HeadTrack, "m5-hw"); throw; }
+                    double clipFrom = window["fromMs"]!.GetValue<double>(), clipTo = clipFrom, unlockAt = clipFrom;
                     try { Complete(Play(c), (int)c.DurationMs + 5000); clipTo = Now; }
                     finally
                     {
@@ -376,7 +461,7 @@ internal sealed class M5Run
                     Wait(300);
                     var result = M5HwAnalysis.LockedHead(Wire(start), lockAt, clipFrom, clipTo, unlockAt, Now);
                     result["wireObservationVerdict"] = result["verdict"]!.DeepClone();
-                    result["headStayedPut"] = AskWindow(window, "Did the head stay at its starting angle during the locked clip, excluding all post-UNLOCK motion?", "yes", "no");
+                    result["headStayedPut"] = AskWindow(window, "Did the WHOLE HEAD stay at its starting angle until END? Ignore the eye picture, lifting arms, and any head movement after UNLOCK.", "yes", "no");
                     WindowNotes(window); result["observationWindow"] = window;
                     if (result["headStayedPut"]!["answer"]!.GetValue<string>() != "yes") result["verdict"] = "INCONCLUSIVE";
                     return result;
@@ -413,8 +498,8 @@ internal sealed class M5Run
                         var persistent = results.FirstOrDefault(x => x["id"]?.GetValue<string>() == "KEEP_ALIVE")?["persistentFace"];
                         result["persistentFaceCoverage"] = persistent?.DeepClone() ?? Missing("Separate KEEP_ALIVE persistent-face observation not available in this subset");
                         sched.DesiredFaceDistortion = previous; sched.KeepAliveTimeoutSec = timeout;
-                        result["faceObservation"] = AskWindow(layerWindow, "Was a brief face-image distortion or shift visible?", "seen", "not-seen");
-                        result["backpackObservation"] = AskWindow(layerWindow, "Did the backpack lights change?", "seen", "not-seen");
+                        result["faceObservation"] = AskWindow(layerWindow, "Did the picture on the face screen briefly shift or become distorted? Movement of the whole head does not count.", "seen", "not-seen");
+                        result["backpackObservation"] = AskWindow(layerWindow, "Did any of the five lights on top of the backpack change? Answer separately from the face picture.", "seen", "not-seen");
                         WindowNotes(layerWindow); result["observationWindow"] = layerWindow;
                         return result;
                     }
@@ -436,7 +521,9 @@ internal sealed class M5Run
                     result["maxReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMaxTime_ms]; result["minReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMinTime_ms];
                     // The B4 write and KeepFaceAlive both hold the scheduler lock: a call stamped after this readback ran after the write.
                     double readbackAt = Now; result["readbackAtMs"] = readbackAt;
-                    var blinkWindow = BeginWindow(id, "BLINKS");
+                    JsonObject blinkWindow;
+                    try { blinkWindow = BeginWindow(id, "BLINKS"); }
+                    catch { r.Animations.SetLiveIdleAnimationParameters(Array.Empty<LiveIdleParam>(), Array.Empty<float>(), true); throw; }
                     var layerSamples = new JsonArray();
                     try
                     {
@@ -448,7 +535,7 @@ internal sealed class M5Run
                         }
                     }
                     finally { EndWindow(blinkWindow); r.Animations.SetLiveIdleAnimationParameters(Array.Empty<LiveIdleParam>(), Array.Empty<float>(), true); }
-                    result["observation"] = AskWindow(blinkWindow, "After any initial blink, were subsequent close/reopen blinks about44-45 seconds apart (do not count eye darts)?", "yes", "no");
+                    result["observation"] = AskWindow(blinkWindow, "Was the gap FROM ONE BLINK TO THE NEXT about 44-45 seconds? Do not count from START to the first blink. Choose unclear if you saw fewer than two blinks or could not judge the gap.", "yes", "no");
                     WindowNotes(blinkWindow); result["observationWindow"] = blinkWindow;
                     double blinkEnd = blinkWindow["toMs"]!.GetValue<double>();
                     var calls = M5HwAnalysis.BlinkCalls(Diagnostics(), readbackAt, blinkEnd);

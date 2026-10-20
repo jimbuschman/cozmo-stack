@@ -48,6 +48,48 @@ and operator answers. Answer the observation prompts; numbers and case-insensiti
 replace hyphens. Ctrl+C cancels bounded waits and attempts Dispose, preserving the bundle. A ten-minute watchdog
 cancels prompts/waits. Dispose is bounded to five seconds; a timeout is an error and invalidates teardown evidence.
 
+### What you need to watch
+
+The program now pauses before each part that needs your eyes. Read its instructions,
+get a clear view of Cozmo, and press Enter. Watch Cozmo from **START** until **END**;
+then look back at the computer and answer. Each part previews its questions before
+it starts. Do not use activity after END to answer an earlier question.
+
+Parts labelled **NO ANSWER NEEDED** are recorded automatically. You do not need to
+judge the message counters, sound quality, drive result or sleep request.
+
+| Watching part | Look here | What you will be asked |
+| --- | --- | --- |
+| Animation stops (ABORT and first part of KEEP_ALIVE) | Eyes, whole head and front lifting arms, for a few seconds | Did the original animation stop after the stop request? Did the eye outlines resemble the reference picture? Did you see a blink? Did you see an eye dart? These are four separate answers. |
+| Body wiggles (second part of KEEP_ALIVE) | Wheels and whole body for 10 seconds | Did they make small wiggles? Head or lifting-arm movement alone does not count. |
+| Head held still (LOCKED_HEAD) | Angle of the whole head during a short animation | Did it stay at the angle it had at START? Ignore moving eye pictures and any movement after UNLOCK. |
+| Brief picture/light effect (LAYERS) | Face screen and five lights on top of the backpack | Did the picture shift or distort? Did the lights change? Answer separately; they need not change together. |
+| Blink spacing (PARAMETERS) | Eyes for 60 seconds | Was the gap between one blink and the next about 44–45 seconds? Use a clock if helpful. Do not measure from START to the first blink. Fewer than two blinks, or uncertain timing, means unclear. |
+
+A **blink** is the eyes briefly closing and reopening. An **eye dart** is the eye
+shapes sliding within the screen; it is different from the whole head moving.
+Normal later blinks or eye darts do not by themselves mean the cancelled animation
+continued.
+
+Before the checks, open the printed `neutral-reference.svg` path in your browser
+and keep the picture available. For the resting-eye question, compare the outlines
+of the two eyes with that picture, not their color or thin display lines. The actual
+loaded animation supplies the reference; the picture is not proof of what the
+robot displayed.
+
+Answers are numbered on screen; type the number or choice name and press Enter.
+**not-seen** means you watched but did not see it happen. **unclear** means you
+watched but could not tell. **not-observed** means you missed that part or were
+looking elsewhere. All are useful observations: do not guess an answer to make
+the test pass. After the questions you can describe anything unexpected in your
+own words, or press Enter to skip the notes.
+
+These prompt changes (B-M5-34) add readiness pauses before observation START,
+not extra time inside the measured windows. The existing grading, canonical
+answer values and evidence requirements remain unchanged. `--yes` skips the new
+readiness pauses along with the existing answer prompts. Cancelling at the new
+head/blink readiness pauses releases the head lock or restores blink defaults.
+
 Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are explicitly incomplete.
 `--yes` suppresses prompts and records missing human observations; it is not an acceptance shortcut.
 `--only TAGS,ABORT` selects a diagnostic subset; every omitted check remains INCONCLUSIVE in the bundle.
