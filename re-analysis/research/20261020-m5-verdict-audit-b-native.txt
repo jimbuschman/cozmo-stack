@@ -278,7 +278,7 @@ RANGE 0057C178..0057C1FC
 0057C1EE add      sp, #0x20
 0057C1F0 vpop     {d8}
 0057C1F4 pop      {r4, r5, r7, pc}
-0057C1F6 nop      
+0057C1F6 nop
 0057C1F8 bge      #0x57c19a
 0057C1FA lsls     r5, r5, #1
 
@@ -1149,7 +1149,7 @@ RANGE 4ADC24..4ADC30
 RANGE 57C100..57C178
 0057C100 mov      r0, r4
 0057C102 blx      #0x4a40a8
-0057C106 nop      
+0057C106 nop
 0057C108 ldr      r1, [r0, #0x64]
 0057C10A ldr      r1, [r5, #0x54]
 0057C10C strb     r1, [r4, #0x11]
@@ -1244,7 +1244,7 @@ RANGE 57F13C..57F184
 0057F176 addne.w  r1, r2, #0x14
 0057F17A mov      r0, r1
 0057F17C bx       lr
-0057F17E nop      
+0057F17E nop
 RANGE 57DB40..57DBA0
 0057DB40 push.w   {r4, r5, r6, r7, r8, lr}
 0057DB44 movw     r2, #0x8000
@@ -1320,4 +1320,4 @@ RANGE 7ABE40..7ABEA0
 RANGE 7ABF0A..7ABF10
 007ABF0A adds     r0, #1
 007ABF0C pop      {r4, r5, r6, pc}
-007ABF0E nop      
+007ABF0E nop

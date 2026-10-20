@@ -1,6 +1,6 @@
 # B-M5-34 sourced expectations and runnable instructions
 
-Manager: Codex, 2026-10-20. This review supersedes the prompt-only acceptance in
+Manager: Codex, 2026-10-20. Implementation commit: `4333d6ee`. This review supersedes the prompt-only acceptance in
 `20261020-b-m5-34-check.md`. That earlier review preserved grading rules which did
 not meet the operator's subsequently explicit sourced-expectation requirement.
 

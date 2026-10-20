@@ -63,7 +63,7 @@ stands. Nothing new starts outside the current layer.
     with physical observations and capture completeness kept explicit. Independent affected-diff review
     PASS; focused tests 90/90; offline preview/validate PASS (11 checks, 44 records);
     fidelity 706 PASS; full suite 5979/5979 PASS, zero skips, run once before commit.
-    The corrected harness is ready for the operator run. No production-engine or manifest change,
+    Implementation `4333d6ee`. The corrected harness is ready for the operator run. No production-engine or manifest change,
     no hardware run and no M5 acceptance.
   - **M5 is NOT ACCEPTED.** Next: operator rerun; B-M5-32/33 hooks and harness corrections are built and independently verified.
   - **Handoff (2026-10-20):** B-M5-32 was dispatched to cozmo-implementer, and the session may end before it reports.

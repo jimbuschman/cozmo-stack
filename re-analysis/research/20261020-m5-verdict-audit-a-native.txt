@@ -1012,7 +1012,7 @@ RANGE 004F8C08..004F8C7E
 004F8C58: blx #0x4a40cc
 004F8C5C: mov r0, r5
 004F8C5E: blx #0x4a40a8
-004F8C62: nop 
+004F8C62: nop
 004F8C64: ldrb r6, [r4, r2]
 004F8C66: lsls r4, r6, #2
 004F8C68: ldr r3, [r1]
