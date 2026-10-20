@@ -233,12 +233,16 @@ public class M5HwTests
         ["drops"] = drops
     };
 
+    // reach: unit (synthetic capture/delivery snapshots; no actual admission epoch or hardware coverage).
     [Fact]
     public void AudioNeedsSamplesSilenceSufficientDurationAndCounterEvidence()
     {
         var wire = AudioWire();
         var states = new[] { AudioState(100, 1000, 990, 100000, 99000), AudioState(5000, 1150, 1136, 110000, 101808) };
-        Assert.Equal("OBSERVED_AUDIO_FRAMING_AND_COUNTERS", Verdict(M5HwAnalysis.Audio(wire, states, 0, 6000)));
+        var measured = M5HwAnalysis.Audio(wire, states, 0, 6000);
+        Assert.Equal("INCONCLUSIVE", Verdict(measured));
+        Assert.Equal("OBSERVED_AUDIO_FRAMING_AND_COUNTERS", measured["framingVerdict"]!.GetValue<string>());
+        Assert.Equal("NOT_JUDGED", measured["budgetCompliance"]!.GetValue<string>());
         Assert.Equal("INCONCLUSIVE", Verdict(M5HwAnalysis.Audio(Array.Empty<M5Hw.WireMessage>(), states, 0, 6000)));
         Assert.Equal("INCONCLUSIVE", Verdict(M5HwAnalysis.Audio(wire, Array.Empty<JsonObject>(), 0, 6000)));
         Assert.Equal("INCONCLUSIVE", Verdict(M5HwAnalysis.Audio(wire.Where(m => m.Payload[0] == 0x8F), states, 0, 6000)));

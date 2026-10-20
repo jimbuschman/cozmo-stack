@@ -63,7 +63,7 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are 
 | ABORT | Cancel a long shipped clip after 750 ms. Count exactly one 0x8D, no End, at most one audio/face marker within 400 ms after the ordered wire Abort (pre-command backlog is separate); preserve full counter/echo tail and operator observation. | M5-023 A22/A23/A25; pending built frame can drain. Robot semantics M5-036. |
 | KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with ordered Start FF/End bursts; then a separate ten-second no-idle persistent-eye-dart face window, requiring face output and no End while its prerequisites hold. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 burst idle; M5-027/030. Persistent layers: M5-028/029, 0x0057C530..0x0057C556. |
 | LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain lock request, actual Disable1, marked clip interval, F1 EnabledAnimTracks and raw head telemetry, then separate unlock request/actual Enable1 and physical observation. | M4-014 producer, M4-047 unlock, M5-035 unsuppressed stream and robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
-| AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 <=14 frames/8192 bytes; direct End adds a frame outside C9. M6 runtime uncertainty remains embedded. |
+| AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 admission uses remaining allowances at the send gate; API-delivery differences do not measure that gate. Direct End adds a frame/bytes outside admission; budget compliance is NOT_JUDGED without atomic evidence. M6 runtime uncertainty remains embedded. |
 | LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; without per-frame face flags/draw evidence this remains INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
 | LIVE_IDLE | Twelve seconds of default ProceduralLive; compare streamed signed head angles with preceding Motion.HeadAngleRad samples and default +/-6 degrees; require body/lift wiggles. | M5-030 0x0057D838..0x0057D84E, A34 defaults. Uncalibrated input is not forced; B-M5-23 covers it offline. |
 | PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
@@ -179,3 +179,23 @@ transitions: subtract60 per call, including across pauses; a new draw after the 
 inclusive. This does not certify the real generator or display. Physical answers remain separate.
 M3-008 display-row/playback uncertainty and M5-036 remain embedded. Operator rerun and discriminating
 generation evidence are needed; elapsed wall time or dark encoded frames alone cannot settle the check.
+
+## Dated audio-epoch correction - B-M5-29, 2026-10-20
+
+AUDIO now retains separate framingVerdict, ordered raw traffic, source F1 identities/connection epochs and
+API delivery snapshots. A1565 stream total paired successively with old1549/1550/1551 payloads can show
+16/15/14 ahead without any observed send violation. Maxima and above-limit snapshot counts are diagnostic
+only. No2ms delivery grouping is an acceptance threshold. Missing raw-state matches remain unknown.
+
+budgetCompliance is NOT_JUDGED. Actual remaining allowance and send-success observations at the native
+admission boundary are not exposed to this harness. SendFault and InvokeEngineRequest are internal to
+the robot assembly; unlocked API delivery callbacks can overlap later mutations and are not atomic
+substitutes. No reflection, production hooks or budget changes are introduced. Independently captured
+coherent samples may identify a per-sample violation; a few good samples never certify every send.
+Direct End bypasses buffered admission, but successful End still increments frames and bytes. Overall
+AUDIO is INCONCLUSIVE when only framing/counter diagnostics are available; framing/rate remain visible.
+M6-042 and M5-036 uncertainty remain embedded.
+
+Manager-queued B-M5-27 cleanup is folded here: an incomplete/aborted marked observation phase emits its
+END with an incomplete outcome/reason before continuing/teardown. It does not ask a positive question or
+extend native settings/locks on failure. Historical bundles are unchanged.

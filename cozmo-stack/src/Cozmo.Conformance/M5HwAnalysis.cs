@@ -9,6 +9,35 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    // Coherent means independently captured actual remaining allowances at the send gate, not a
+    // subtraction of an old delivered F1 payload from later stream totals. No public runtime join exists.
+    public sealed record BudgetAdmission(double AtMs, long Epoch, byte MessageId, int MessageBytes,
+        int RemainingBytes, int RemainingAudioFrames, bool Sent, bool Coherent);
+
+    public static JsonObject BudgetSamples(IReadOnlyList<BudgetAdmission>? samples)
+    {
+        var rows = new JsonArray(); int violations = 0, coherent = 0;
+        foreach (var sample in samples ?? Array.Empty<BudgetAdmission>())
+        {
+            bool directEnd = sample.MessageId == 0x9A;
+            int frameCost = sample.MessageId is 0x8E or 0x8F ? 1 : 0;
+            bool violation = sample.Coherent && sample.Sent && !directEnd
+                && (sample.MessageBytes > sample.RemainingBytes || frameCost > sample.RemainingAudioFrames);
+            if (sample.Coherent) coherent++;
+            if (violation) violations++;
+            rows.Add(new JsonObject { ["atMs"] = sample.AtMs, ["epoch"] = sample.Epoch,
+                ["messageId"] = sample.MessageId, ["messageBytes"] = sample.MessageBytes,
+                ["remainingBytesAtGate"] = sample.RemainingBytes, ["remainingFramesAtGate"] = sample.RemainingAudioFrames,
+                ["sent"] = sample.Sent, ["coherentGateObservation"] = sample.Coherent,
+                ["directEndBypass"] = directEnd, ["observedViolation"] = violation });
+        }
+        return new JsonObject { ["coherentSampleVerdict"] = violations > 0 ? "OBSERVED_COHERENT_ADMISSION_VIOLATION"
+                : coherent > 0 ? "OBSERVED_COHERENT_SAMPLES_WITHIN_GATE" : "NOT_JUDGED",
+            ["coherentSamples"] = coherent, ["observedViolations"] = violations, ["samples"] = rows,
+            ["budgetCompliance"] = "NOT_JUDGED",
+            ["coverageNote"] = "Individual coherent samples do not certify all sends. Buffered admission uses actual remaining byte/frame allowances; direct End bypasses it but still adds one frame and its bytes on success." };
+    }
+
     // Actual call/deadline observations only. Public harness snapshots cannot currently populate this join.
     public sealed record BlinkCall(long CallNumber, double AtMs, int BeforeMs, int AfterMs, bool Generated);
 
@@ -322,10 +351,12 @@ public static class M5HwAnalysis
     }
 
     public static JsonObject Audio(IEnumerable<M5Hw.WireMessage> messages, IEnumerable<JsonObject> events,
-        double fromMs, double toMs)
+        double fromMs, double toMs, IReadOnlyList<BudgetAdmission>? admissions = null)
     {
-        var wire = messages.Where(m => m.Outbound && m.AtMs >= fromMs && m.AtMs <= toMs
-            && m.Payload.Length != 0).OrderBy(m => m.AtMs).ToArray();
+        var ordered = OrderedUnique(messages).Where(m => m.AtMs >= fromMs && m.AtMs <= toMs && m.Payload.Length != 0).ToArray();
+        var wire = ordered.Where(m => m.Outbound).ToArray();
+        var rawStates = ordered.Where(m => !m.Outbound && m.Payload[0] == (byte)RobotMessageId.AnimState && m.Payload.Length == 16)
+            .Select(m => (Wire: m, State: (AnimationState)RobotMessage.Parse(m.Payload))).ToArray();
         var audio = wire.Where(m => m.Payload[0] is 0x8E or 0x8F).ToArray();
         var states = events.Where(e => e["kind"]?.GetValue<string>() == "animation-state"
             && e["atMs"]!.GetValue<double>() >= fromMs && e["atMs"]!.GetValue<double>() <= toMs)
@@ -351,6 +382,10 @@ public static class M5HwAnalysis
             int framesAhead = unchecked(e["streamFrames"]!.GetValue<int>() - e["audioPlayed"]!.GetValue<int>());
             int bytesAhead = unchecked(e["streamBytes"]!.GetValue<int>() - e["bytesPlayed"]!.GetValue<int>());
             double at = e["atMs"]!.GetValue<double>();
+            uint? robotTimestamp = e["robotTimestamp"]?.GetValue<uint>();
+            var source = rawStates.LastOrDefault(s => s.Wire.AtMs <= at && s.State.Timestamp == robotTimestamp
+                && s.State.NumAudioFramesPlayed == e["audioPlayed"]!.GetValue<int>()
+                && s.State.NumAnimBytesPlayed == e["bytesPlayed"]!.GetValue<int>()).Wire;
             bool active = audio.Length > 0 && at >= audio[0].AtMs && at < firstEnd;
             if (active) { activeFramesAhead.Add(framesAhead); activeBytesAhead.Add(bytesAhead); }
             rows.Add(new JsonObject
@@ -359,6 +394,10 @@ public static class M5HwAnalysis
                 ["framesAhead"] = framesAhead,
                 ["bytesAhead"] = bytesAhead,
                 ["beforeFirstEnd"] = active,
+                ["rawStateWire"] = source is null ? null : WireEvidence(new[] { source }),
+                ["stateConnectionEpoch"] = source?.ConnectionEpoch,
+                ["isAtomicAdmissionEvidence"] = false,
+                ["epochNote"] = "F1 payload epoch is earlier raw receipt; stream totals are sampled at API delivery. Neither difference is an atomic send-admission observation.",
                 ["snapshot"] = e.DeepClone()
             });
         }
@@ -385,8 +424,16 @@ public static class M5HwAnalysis
             ["verdictRule"] = "M5 pass-B check 5: 744 sample bytes plus tag, empty silence, at least five seconds, "
                 + "approximately 30 audio frames/s. M3-012 C9 allows 14 unplayed audio frames and 8192 bytes; "
                 + "C12 counts direct End outside that budget. Snapshots and host wire pacing are observations, "
-                + "not atomic budget samples or robot execution timestamps; manager judges any discrepancy."
+                + "not atomic budget samples or robot execution timestamps. Counter differences above14/8192 "
+                + "are mixed-epoch diagnostics, not alleged send violations. No2ms grouping threshold is used."
         };
+        result["framingVerdict"] = result["verdict"]!.DeepClone();
+        var budget = BudgetSamples(admissions);
+        result["budgetEvidence"] = budget; result["budgetCompliance"] = "NOT_JUDGED";
+        result["orderedWireWindow"] = WireEvidence(ordered);
+        result["admissionEvidenceMissing"] = "Actual allowance/success observations at0x57BF96..BFCC are unavailable through the allowed public harness. SendFault/InvokeEngineRequest are internal; unlocked API delivery snapshots cannot replace admission epochs.";
+        if (budget["observedViolations"]!.GetValue<int>() > 0) result["verdict"] = "OBSERVED_COHERENT_ADMISSION_VIOLATION";
+        else if (result["verdict"]!.GetValue<string>() == "OBSERVED_AUDIO_FRAMING_AND_COUNTERS") result["verdict"] = "INCONCLUSIVE";
         if (states.Length >= 2)
         {
             var first = states[0]; var last = states[^1];

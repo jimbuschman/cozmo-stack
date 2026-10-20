@@ -133,6 +133,7 @@ internal sealed class M5Run
     readonly List<JsonObject> results = new(); readonly ConcurrentQueue<string> errors = new(); readonly CancellationTokenSource cancel = new();
     CozmoRobot? robot; RobotConnectionResponse? response; bool disposed, disposeCompleted, connected; string cache = ""; bool cacheCtor;
     JsonObject neutralReference = new();
+    JsonObject? activeObservationWindow;
     double Now => clock.Elapsed.TotalMilliseconds;
     public M5Run(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, HashSet<string>? only, bool yes, bool drive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.only = only; this.yes = yes; this.drive = drive; }
@@ -150,14 +151,22 @@ internal sealed class M5Run
         double from = Now;
         var window = new JsonObject { ["check"] = check, ["phase"] = phase, ["watch"] = plan.Watch,
             ["expected"] = plan.Expected, ["fromMs"] = from };
+        activeObservationWindow = window;
         Console.WriteLine($"START {phase} observation ({from:F1} ms)");
         Event("observation-window-start", (JsonObject)window.DeepClone()); return window;
     }
     void EndWindow(JsonObject window)
     {
+        if (ReferenceEquals(activeObservationWindow, window)) activeObservationWindow = null;
         if (window["toMs"] is not null) return;
+        window["outcome"] ??= "completed";
         window["toMs"] = Now; Console.WriteLine($"END {window["phase"]} observation ({Now:F1} ms). Ignore subsequent activity when answering.");
         Event("observation-window-end", (JsonObject)window.DeepClone());
+    }
+    void ClosePendingWindow(string reason)
+    {
+        if (activeObservationWindow is not { } window) return;
+        window["outcome"] = "incomplete"; window["reason"] = reason; EndWindow(window);
     }
     JsonObject AskWindow(JsonObject window, string question, params string[] choices)
     {
@@ -227,13 +236,13 @@ internal sealed class M5Run
                 if (only is not null && !only.Contains(def.Id)) result = Missing("not selected by --only");
                 else if (!connected || robot.Transport.State != LinkState.Connected) result = Missing("connection/readiness unavailable");
                 else if (cancel.IsCancellationRequested) result = Missing("run interrupted");
-                else { Console.WriteLine("Running " + def.Id); Event("check-start", new() { ["check"] = def.Id }); try { result = Check(def.Id); } catch (Exception e) { errors.Enqueue(def.Id + ": " + e); result = Missing(e.Message); } }
+                else { Console.WriteLine("Running " + def.Id); Event("check-start", new() { ["check"] = def.Id }); try { result = Check(def.Id); ClosePendingWindow("Check returned without completing the marked phase."); } catch (Exception e) { ClosePendingWindow(e.Message); errors.Enqueue(def.Id + ": " + e); result = Missing(e.Message); } }
                 result["id"] = def.Id; result["records"] = JsonSerializer.SerializeToNode(def.Records); result["fromMs"] = start; result["toMs"] = Now;
                 result["uncertainty"] = new JsonArray(records.Where(x => def.Records.Contains(x["id"]!.GetValue<string>()) && x["status"]!.GetValue<string>() is "HARDWARE_ONLY" or "BLOCKED_EXTERNAL" or "IMPLEMENTATION_GAP" or "RECOVERABLE_GAP").Select(x => x.DeepClone()).ToArray()); results.Add(result);
             }
         }
         catch (Exception e) { errors.Enqueue(e.ToString()); }
-        finally { DisposeBounded(); Console.CancelKeyPress -= interrupt; WriteBundle(); }
+        finally { ClosePendingWindow("Run interrupted before phase completion."); DisposeBounded(); Console.CancelKeyPress -= interrupt; WriteBundle(); }
         Console.WriteLine("M5 observations saved: " + bundle + "\nNo record settled; return this whole folder for review.");
         return errors.Count == 0 && results.Count == 11 && results.All(x => x["verdict"]!.GetValue<string>() != "INCONCLUSIVE") ? 0 : 1;
     }
