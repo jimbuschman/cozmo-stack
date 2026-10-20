@@ -50,16 +50,36 @@ public static class M5Hw
         string found = M3M4Hw.NormaliseAnswer(normal, choices);
         return choices.Contains(found) ? found : answer.Trim();
     }
-    public sealed record WireMessage(double AtMs, bool Outbound, byte[] Payload);
+    public sealed record WireMessage(double AtMs, bool Outbound, byte[] Payload,
+        int FrameLine = 0, int SubmessageOrdinal = 0, ushort? ReliableSequence = null, int ConnectionEpoch = 0);
     public static JsonObject GradeAbort(IEnumerable<WireMessage> messages, double cancelMs, double quietEndMs)
     {
-        var all = messages.OrderBy(x => x.AtMs).ToArray();
-        var prior = all.Where(x => x.Outbound && x.AtMs < cancelMs && x.Payload.Length > 0 && x.Payload[0] is 0x9B or 0x9A or 0x8D).LastOrDefault();
-        bool active = prior is not null && prior.Payload.Length == 2 && prior.Payload[0] == 0x9B;
+        var all = M5HwAnalysis.OrderedUnique(messages).ToArray();
         var rows = all.Where(x => x.Outbound && x.AtMs >= cancelMs && x.AtMs <= quietEndMs && x.Payload.Length > 0).ToArray();
-        int audio = rows.Count(x => x.Payload[0] is 0x8E or 0x8F), abort = rows.Count(x => x.Payload[0] == 0x8D), end = rows.Count(x => x.Payload[0] == 0x9A), faces = rows.Count(x => x.Payload[0] == (byte)RobotMessageId.AnimFaceImage);
+        int abortIndex = Array.FindIndex(rows, x => x.Payload[0] == 0x8D);
+        var command = abortIndex < 0 ? null : rows[abortIndex];
+        var prior = command is null ? null : all.TakeWhile(x => !ReferenceEquals(x, command))
+            .LastOrDefault(x => x.Outbound && x.Payload.Length > 0 && x.Payload[0] is 0x9B or 0x9A or 0x8D);
+        bool active = prior is not null && prior.Payload.Length == 2 && prior.Payload[0] == 0x9B;
+        var backlog = abortIndex < 0 ? rows : rows.Take(abortIndex).ToArray();
+        var after = abortIndex < 0 ? Array.Empty<WireMessage>() : rows.Skip(abortIndex + 1).ToArray();
+        int audio = after.Count(x => x.Payload[0] is 0x8E or 0x8F), abort = rows.Count(x => x.Payload[0] == 0x8D),
+            end = after.Count(x => x.Payload[0] == 0x9A), faces = after.Count(x => x.Payload[0] == (byte)RobotMessageId.AnimFaceImage);
         bool malformed = rows.Any(x => (x.Payload[0] is 0x8D or 0x9A or 0x8F) && x.Payload.Length != 1 || x.Payload[0] == 0x8E && x.Payload.Length != 745);
-        return new JsonObject { ["verdict"] = active && !malformed && quietEndMs - cancelMs >= 400 && abort == 1 && end == 0 && faces <= 1 && audio <= 1 ? "OBSERVED_CANCEL_WIRE_SHAPE" : "INCONCLUSIVE", ["abortCount"] = abort, ["endCount"] = end, ["faceCount"] = faces, ["audioFrameCount"] = audio, ["verdictRule"] = "M5-023 A22/A23/A25: active stream, one abort, no End, at most one audio frame marker and face before keepalive. Raw pending frame components retained. Robot counter/echo semantics remain M5-036 HARDWARE_ONLY." };
+        return new JsonObject
+        {
+            ["verdict"] = active && command is not null && !malformed && quietEndMs - command.AtMs >= 400
+                && abort == 1 && end == 0 && faces <= 1 && audio <= 1
+                && !after.Any(x => x.Payload[0] == 0x9B) ? "OBSERVED_CANCEL_WIRE_SHAPE" : "INCONCLUSIVE",
+            ["abortCount"] = abort, ["endCount"] = end, ["faceCount"] = faces, ["audioFrameCount"] = audio,
+            ["cancelCallAtMs"] = cancelMs, ["wireAbort"] = command is null ? null : M5HwAnalysis.WireEvidence(new[] { command }),
+            ["quietEndMs"] = quietEndMs, ["preCommandBacklog"] = M5HwAnalysis.WireEvidence(backlog),
+            ["postAbortMessages"] = M5HwAnalysis.WireEvidence(after),
+            ["verdictRule"] = "M5-023 A22/A23/A25: active stream before actual ordered wire Abort, one Abort, "
+                + "no End/new Start and at most one audio marker/face in the following 400 ms. Pre-command backlog "
+                + "is separate, even in the Abort datagram; reliable retransmissions count once. The native neutral "
+                + "gate uses last-stream time, not cancel wall time. Robot counters/echo semantics remain M5-036 HARDWARE_ONLY."
+        };
     }
     public static JsonObject GradeTags(IEnumerable<WireMessage> messages)
     {
@@ -154,15 +174,9 @@ internal sealed class M5Run
     }
     List<M5Hw.WireMessage> Wire(double from = 0, double to = double.MaxValue)
     {
-        var output = new List<M5Hw.WireMessage>(); var seenOut = new HashSet<ushort>(); var seenIn = new HashSet<ushort>();
-        foreach (var f in frames.ToArray().OrderBy(x => x.T)) if (f.Frame is { } frame) foreach (var m in frame.Messages)
-        {
-            var seen = f.Out ? seenOut : seenIn; if (m.Type is ReliableMessageType.ConnectionRequest or ReliableMessageType.ConnectionResponse) { seen.Clear(); continue; }
-            if (m.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage) || m.Payload.Length == 0) continue;
-            if (m.IsReliable) { if (!seen.Add(m.Seq)) continue; if (seen.Count > 8192) { ushort newest = m.Seq; seen.RemoveWhere(old => unchecked((ushort)(newest - old)) > 4096); } }
-            if (f.T >= from && f.T <= to) output.Add(new(f.T, f.Out, m.Payload));
-        }
-        return output;
+        return M5HwAnalysis.ReadWire(frames.ToArray().Select((f, index) =>
+            new M5HwAnalysis.CapturedFrame(index + 1, f.T, f.Out, f.Frame)))
+            .Where(m => m.AtMs >= from && m.AtMs <= to).ToList();
     }
     AnimationClip? Clip(uint min = 1000, uint max = 10000, AnimationTrack required = AnimationTrack.Face)
     {
@@ -188,15 +202,21 @@ internal sealed class M5Run
             case "KEEP_ALIVE":
                 {
                     var c = Clip(4000, 12000); if (c is null) return Missing("No long clip without body track");
-                    var t = Play(c); Wait(750); double at = Now; Event("cancel-call", new() { ["tag"] = t.Tag }); r.Animations.Stop(); Wait(400);
-                    var result = M5Hw.GradeAbort(Wire(start), at, at + 400); Wait(1600);
-                    result["robotCounterTail"] = new JsonArray(events.Where(e => e["kind"]?.GetValue<string>() == "animation-state" && e["atMs"]!.GetValue<double>() >= at && e["atMs"]!.GetValue<double>() <= at + 2000).Select(e => e.DeepClone()).ToArray());
-                    result["robotEchoTail"] = JsonSerializer.SerializeToNode(Wire(at, at + 2000).Where(x => !x.Outbound && x.Payload[0] is (byte)RobotMessageId.AnimStarted or (byte)RobotMessageId.AnimEnded).Select(x => new { atMs = x.AtMs, payloadHex = Convert.ToHexString(x.Payload) }));
-                    var keep = Wire(at + 400, at + 2000).Where(x => x.Outbound && x.Payload[0] is 0x9B or (byte)RobotMessageId.AnimFaceImage).ToArray();
+                    var t = Play(c); Wait(750); double at = Now; Event("cancel-call", new() { ["tag"] = t.Tag }); r.Animations.Stop();
+                    Poll(() => Wire(at).Any(x => x.Outbound && x.Payload[0] == 0x8D), 2000);
+                    var wireAbort = Wire(at).FirstOrDefault(x => x.Outbound && x.Payload[0] == 0x8D);
+                    double abortAt = wireAbort?.AtMs ?? Now, quietEnd = abortAt + 400;
+                    if (Now < quietEnd) Wait((int)Math.Ceiling(quietEnd - Now));
+                    var result = M5Hw.GradeAbort(Wire(start, quietEnd), at, quietEnd); Wait(1600);
+                    result["robotCounterTail"] = new JsonArray(events.Where(e => e["kind"]?.GetValue<string>() == "animation-state" && e["atMs"]!.GetValue<double>() >= at && e["atMs"]!.GetValue<double>() <= abortAt + 2000).Select(e => e.DeepClone()).ToArray());
+                    result["robotEchoTail"] = JsonSerializer.SerializeToNode(Wire(at, abortAt + 2000).Where(x => !x.Outbound && x.Payload[0] is (byte)RobotMessageId.AnimStarted or (byte)RobotMessageId.AnimEnded).Select(x => new { atMs = x.AtMs, payloadHex = Convert.ToHexString(x.Payload) }));
+                    var keep = Wire(quietEnd, abortAt + 2000).Where(x => x.Outbound && x.Payload[0] is 0x9B or (byte)RobotMessageId.AnimFaceImage).ToArray();
                     result["keepAliveTail"] = JsonSerializer.SerializeToNode(keep.Select(x => new { atMs = x.AtMs, payloadHex = Convert.ToHexString(x.Payload) }));
                     if (id == "KEEP_ALIVE" && !keep.Any(x => x.Payload[0] == (byte)RobotMessageId.AnimFaceImage)) result["verdict"] = "INCONCLUSIVE";
                     result["cancelAtMs"] = at; result["keepAliveWindowEndMs"] = Now; result["robotObservation"] = Ask("Did the animation stop, followed by neutral eyes?", new[] { "stopped-then-neutral", "continued", "unclear" });
-                    result["timingNote"] = "400 ms cancel window excludes the 0.5 s keepalive gate measured from last stream activity, not necessarily cancel wall time. Full two-second tail captured.";
+                    result["timingNote"] = "Quiet interval is 400 ms after actual wire Abort; full two-second tail retained. The 0.5 s neutral gate uses native last-stream engine time, unavailable through existing public observations; no cancel-time equality or exact neutral deadline is asserted.";
+                    result["nativeLastStreamTime"] = null;
+                    result["neutralCandidateStarts"] = M5HwAnalysis.WireEvidence(Wire(quietEnd, abortAt + 2000).Where(x => x.Outbound && x.Payload.Length == 2 && x.Payload[0] == 0x9B && x.Payload[1] != 255));
                     if (id == "KEEP_ALIVE")
                     {
                         if (!drive) { result["liveIdle"] = Missing("--allow-drive required for default body wiggles"); result["verdict"] = "INCONCLUSIVE"; }
@@ -366,7 +386,7 @@ internal sealed class M5Run
     {
         foreach (var def in M5Hw.Checks.Where(d => results.All(x => x["id"]?.GetValue<string>() != d.Id))) results.Add(new() { ["id"] = def.Id, ["records"] = JsonSerializer.SerializeToNode(def.Records), ["verdict"] = "INCONCLUSIVE", ["missing"] = "run terminated before check" });
         File.WriteAllLines(Path.Combine(bundle, "frames.jsonl"), frames.Select(f => new JsonObject { ["atMs"] = f.T, ["outbound"] = f.Out, ["rawBase64"] = Convert.ToBase64String(f.Raw), ["error"] = f.Error }.ToJsonString()));
-        File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), Wire().Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload) }.ToJsonString()));
+        File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), Wire().Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload), ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal, ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));
         var files = new JsonArray(); foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M5Hw.cs", "cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs", "cozmo-stack/src/Cozmo.Conformance/Program.cs", "re-analysis/acceptance/hardware/scripts/m5-hw-1.md", "re-analysis/fidelity_manifest.json", "re-analysis/research/20261019-m5-settling-b.md" })
         {

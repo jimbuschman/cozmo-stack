@@ -9,6 +9,54 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    public sealed record CapturedFrame(int Line, double AtMs, bool Outbound, Frame? Frame);
+
+    public static IEnumerable<M5Hw.WireMessage> ReadWire(IEnumerable<CapturedFrame> frames)
+    {
+        var seenOut = new HashSet<ushort>(); var seenIn = new HashSet<ushort>();
+        int outEpoch = 0, inEpoch = 0;
+        foreach (var capture in frames.OrderBy(f => f.AtMs).ThenBy(f => f.Line))
+        {
+            if (capture.Frame is not { } frame) continue;
+            for (int ordinal = 0; ordinal < frame.Messages.Count; ordinal++)
+            {
+                var m = frame.Messages[ordinal]; var seen = capture.Outbound ? seenOut : seenIn;
+                if (m.Type is ReliableMessageType.ConnectionRequest or ReliableMessageType.ConnectionResponse)
+                { seen.Clear(); if (capture.Outbound) outEpoch++; else inEpoch++; continue; }
+                if (m.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)
+                    || m.Payload.Length == 0) continue;
+                if (m.IsReliable)
+                {
+                    if (!seen.Add(m.Seq)) continue;
+                    if (seen.Count > 8192) seen.RemoveWhere(old => unchecked((ushort)(m.Seq - old)) > 4096);
+                }
+                yield return new(capture.AtMs, capture.Outbound, m.Payload, capture.Line, ordinal,
+                    m.IsReliable ? m.Seq : null, capture.Outbound ? outEpoch : inEpoch);
+            }
+        }
+    }
+
+    public static IEnumerable<M5Hw.WireMessage> OrderedUnique(IEnumerable<M5Hw.WireMessage> messages)
+    {
+        var epochs = new Dictionary<(bool, int), HashSet<ushort>>();
+        foreach (var m in messages.OrderBy(m => m.AtMs).ThenBy(m => m.FrameLine).ThenBy(m => m.SubmessageOrdinal))
+        {
+            if (m.ReliableSequence is { } seq)
+            {
+                var key = (m.Outbound, m.ConnectionEpoch);
+                if (!epochs.TryGetValue(key, out var seen)) epochs[key] = seen = new();
+                if (!seen.Add(seq)) continue;
+                if (seen.Count > 8192) seen.RemoveWhere(old => unchecked((ushort)(seq - old)) > 4096);
+            }
+            yield return m;
+        }
+    }
+
+    public static JsonArray WireEvidence(IEnumerable<M5Hw.WireMessage> messages) => new(messages.Select(m =>
+        (JsonNode)new JsonObject { ["atMs"] = m.AtMs, ["payloadHex"] = Convert.ToHexString(m.Payload),
+            ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal,
+            ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }).ToArray());
+
     public static JsonObject LiveBursts(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs)
     {
         // Stable timestamp sort retains capture/submessage order for equal timestamps.
