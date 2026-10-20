@@ -52,13 +52,21 @@ stands. Nothing new starts outside the current layer.
     Loop -> End, or failed Start -> End cleanup). Successful traversal moves to the M12/M13 acceptance, which must observe
     a successful DriveToPose; FailedTraversingPath stays unexplained there. Job **B-M5-32**.
   - KEEP_ALIVE keeps the operator's resting-eye comparison as a gate.
-  - **M5 is NOT ACCEPTED.** Next: B-M5-32 built and verified, then the operator rerun.
+  - **M5 is NOT ACCEPTED.** Next: B-M5-33 corrections to B-M5-32, independent re-verification, then the operator rerun.
   - **Handoff (2026-10-20):** B-M5-32 was dispatched to cozmo-implementer, and the session may end before it reports.
     **Built (implementer reported 2026-10-20):** M5Hw tests 72/72, wider filter 1532/1532, fidelity check passes,
     full suite not run; report in `jobs/status/B-M5-32.md`, ten choices listed there for the manager to confirm
     (public `AnimationScheduler.Diagnostic` surface, `StreamSendBuffer.Buffer` now returns long, 1000 ms join margin).
-    The code in the working tree is uncommitted and unverified. Next session: check its status file and the
-    diff against the job, run cozmo-verifier, run the full suite once, then commit.
+    **Codex independent review FAIL (2026-10-20):** `research/20261020-b-m5-32-check.md`.
+    F1: LAYERS can pass despite an explicit unjoined-frame problem. F2: AUDIO assumes zero earlier spending when
+    the window cuts a budget epoch, falsely reporting an accounting mismatch. Both reproduced; focused tests 72/72.
+    Ten choices ruled on in the report; no engine behavior defect established. No full-suite run or commit.
+    **Operator queued fixes (2026-10-20): B-M5-33**, next builder pickup. The initial local-only queue was not
+    visible in the builder clone; corrected for publication with `jobs/B-M5-32-baseline.patch` carrying the rejected
+    implementation, its new files and tests. The job gives apply-check instructions and the patch hash. The builder
+    applies it, fixes F1/F2, and publishes the combined work under normal fidelity/full-suite gates. The baseline
+    is not approved production code. Independent affected-diff review remains required before the operator rerun.
+    No hardware run or settlement by the builder.
 
 - **Temporary M5 handoff (operator, 2026-10-20):** Codex is manager and independent verifier for M5 until Claude
   returns; evidence, role separation and approval checkpoints are unchanged. First robot run judged in

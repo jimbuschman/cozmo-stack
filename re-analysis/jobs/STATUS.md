@@ -120,6 +120,16 @@
 | 61w3p | B-M3M4-35 | DONE per status/B-M3M4-35.md; manager check PASS (research/20261019-b-m3m4-35-check.md) | DONE (2/2 items; 0 MISSING) | `research/20261019-b-m3m4-35-check.md` |
 | 61w3q | B-M3M4-36 | DONE per status/B-M3M4-36.md; manager check PASS (research/20261019-b-m3m4-36-check.md)... | DONE (6/6 items; 0 MISSING) | `research/20261019-b-m3m4-36-check.md` |
 | 61w3r | B-M5-23 | done 6f0f18b0; Opus check PASS (research/20261019-b-m5-23-check.md); M5-011/014/030 set... | DONE (9/9 items; 0 MISSING) | `research/20261019-b-m5-23-check.md` |
+| 61w3s0 | B-M5-24 | done bdad8435; Codex bounded review PASS (research/20261020-b-m5-24-check.md); cleanup ... | DONE (3/3 items; 0 MISSING) | `research/20261020-b-m5-24-check.md` |
+| 61w3s1 | B-M5-25 | done a9334fee; Codex bounded review PASS (research/20261020-b-m5-25-check.md); cleanup ... | DONE (3/3 items; 0 MISSING) | `research/20261020-b-m5-25-check.md` |
+| 61w3s2 | B-M5-26 | done99965613; Codex bounded review PASS (research/20261020-b-m5-26-check.md); finite-la... | DONE (3/3 items; 1 MISSING) | `research/20261020-b-m5-26-check.md` |
+| 61w3s3 | B-M5-27 | done b23ce509; Codex bounded review PASS (research/20261020-b-m5-27-check.md); cleanup ... | DONE (4/4 items; 0 MISSING) | `research/20261020-b-m5-27-check.md` |
+| 61w3s4 | B-M5-28 | done7362c2da; Codex bounded review PASS (research/20261020-b-m5-28-check.md); generatio... | DONE (3/3 items; 1 MISSING) | `research/20261020-b-m5-28-check.md` |
+| 61w3s5 | B-M5-29 | done b8a14a8e; Codex bounded review PASS (research/20261020-b-m5-29-check.md); admissio... | DONE (3/3 items; 1 MISSING) | `research/20261020-b-m5-29-check.md` |
+| 61w3s6 | B-M5-30 | done967af8d8; Codex bounded review PASS (research/20261020-b-m5-30-check.md); queue-ori... | DONE (3/3 items; 1 MISSING) | `research/20261020-b-m5-30-check.md` |
+| 61w3s7 | B-M5-31 | done8b9bc2d1; Codex bounded review PASS (research/20261020-b-m5-31-check.md);24..31 rev... | DONE (3/3 items; 0 MISSING) | `research/20261020-b-m5-31-check.md` |
+| 61w3s8 | B-M5-32 | DONE locally, uncommitted; Codex review FAIL F1/F2 (research/20261020-b-m5-32-check.md)... | DONE (4/4 items; 0 MISSING) | `research/20261020-b-m5-32-check.md` |
+| 61w3s9 | B-M5-33 | open — next builder pickup; apply supplied B-M5-32-baseline.patch, then fix LAYERS unjo... | no status file | none found |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |

@@ -1,0 +1,1450 @@
+diff --git a/cozmo-stack/src/Cozmo.Conformance/M5Hw.cs b/cozmo-stack/src/Cozmo.Conformance/M5Hw.cs
+index d7cb5761..a8e52b3b 100644
+--- a/cozmo-stack/src/Cozmo.Conformance/M5Hw.cs
++++ b/cozmo-stack/src/Cozmo.Conformance/M5Hw.cs
+@@ -131,12 +131,16 @@ internal sealed class M5Run
+     readonly string root, bundle, resources; readonly IPAddress ip; readonly List<JsonObject> records; readonly string[] argv; readonly HashSet<string>? only; readonly bool yes, drive;
+     readonly Stopwatch clock = Stopwatch.StartNew(); readonly ConcurrentQueue<JsonObject> events = new(); readonly ConcurrentQueue<(double T, bool Out, byte[] Raw, Frame? Frame, string? Error)> frames = new();
+     readonly List<JsonObject> results = new(); readonly ConcurrentQueue<string> errors = new(); readonly CancellationTokenSource cancel = new();
++    // B-M5-32: read-only engine observations (AnimationScheduler.Diagnostic), enqueued only; stamped on this clock.
++    readonly ConcurrentQueue<AnimationDiagnostic> diagnostics = new(); readonly long clockOrigin;
+     CozmoRobot? robot; RobotConnectionResponse? response; bool disposed, disposeCompleted, connected; string cache = ""; bool cacheCtor;
+     JsonObject neutralReference = new();
+     JsonObject? activeObservationWindow;
+     double Now => clock.Elapsed.TotalMilliseconds;
+     public M5Run(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, HashSet<string>? only, bool yes, bool drive)
+-    { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.only = only; this.yes = yes; this.drive = drive; }
++    { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.only = only; this.yes = yes; this.drive = drive; clockOrigin = Stopwatch.GetTimestamp() - clock.ElapsedTicks; }
++    double StampMs(long timestamp) => (timestamp - clockOrigin) * 1000.0 / Stopwatch.Frequency;
++    List<M5HwAnalysis.Diagnostic> Diagnostics() => diagnostics.ToArray().Select(d => new M5HwAnalysis.Diagnostic(StampMs(d.Timestamp), d)).ToList();
+     void Event(string kind, JsonObject data) { data["atMs"] = Now; data["kind"] = kind; events.Enqueue(data); }
+     void Wait(int ms) { if (cancel.Token.WaitHandle.WaitOne(ms)) cancel.Token.ThrowIfCancellationRequested(); }
+     bool Poll(Func<bool> predicate, int ms) { double end = Now + ms; while (Now < end) { if (predicate()) return true; Wait(10); } return predicate(); }
+@@ -213,6 +217,7 @@ internal sealed class M5Run
+             robot = CozmoRobot.Create(engineOptions: new CozmoEngineOptions { ResourcesPath = resources, AnimationCachePath = cache, BeforeStart = e => { EngineEvidence.Subscribe(e, line => { }, Event); e.GoToSleepRequested += () => Event("go-to-sleep-requested", new()); e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject()); } });
+             cacheCtor = !File.Exists(Path.Combine(cache, "TestAnim.json"));
+             robot.Transport.FrameTrace += f => frames.Enqueue((Now, f.Outbound, (byte[])f.Raw.Clone(), f.Frame, f.Error));
++            robot.Animations.Scheduler.Diagnostic += diagnostics.Enqueue; // raised under the scheduler lock: enqueue only, never call back
+             robot.Engine.ConnectionResponse += r => { response = r; Event("connection-response", new() { ["result"] = r.Result.ToString(), ["firmware"] = r.FwVersion }); };
+             robot.HandlerFaulted += e => Event("handler-fault", new() { ["exception"] = e.ToString() });
+             robot.Animations.Event += s => Event("animation-event", new() { ["text"] = s });
+@@ -382,7 +387,9 @@ internal sealed class M5Run
+                     var sound = new[] { Path.Combine(resources, "sound"), Path.Combine(resources, "assets", "sound") }.FirstOrDefault(Directory.Exists);
+                     string source = "none (silence only)"; if (sound is not null) { r.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound }); source = sound; }
+                     double playStart = Now; Complete(Play(c), (int)c.DurationMs + 8000); double playEnd = Now; Wait(500);
+-                    var result = M5HwAnalysis.Audio(Wire(playStart, playEnd), events, playStart, playEnd); result["playFromMs"] = playStart; result["playToMs"] = playEnd;
++                    var hooks = Diagnostics(); var join = M5HwAnalysis.JoinSends(Wire(), hooks, playStart, playEnd);
++                    var result = M5HwAnalysis.Audio(Wire(playStart, playEnd), events, playStart, playEnd,
++                        M5HwAnalysis.Admissions(hooks, playStart, playEnd), join, M5HwAnalysis.Refreshes(hooks)); result["playFromMs"] = playStart; result["playToMs"] = playEnd;
+                     result["clip"] = c.Name; result["audioSource"] = source;
+                     return result;
+                 }
+@@ -398,9 +405,12 @@ internal sealed class M5Run
+                         if (!Poll(() => Volatile.Read(ref pulse) == 0, 2000)) return Missing("TLC did not consume distortion pulse");
+                         Wait(200); bool drained = Poll(() => !sched.HaveLayersToSend, 5000); Wait(300);
+                         double layerEnd = Now; EndWindow(layerWindow);
+-                        var result = M5HwAnalysis.FiniteLayers(Wire(layerStart, layerEnd), layerStart, layerEnd, drained);
++                        var hooks = Diagnostics(); var join = M5HwAnalysis.JoinSends(Wire(), hooks, layerStart, layerEnd);
++                        var (activity, layerRows, activityProblem) = M5HwAnalysis.LayerActivity(join, hooks, layerStart, layerEnd);
++                        var result = M5HwAnalysis.FiniteLayers(Wire(layerStart, layerEnd), layerStart, layerEnd, drained, activity, activityProblem);
++                        result["sendJoin"] = join.Evidence; result["layerFrameHook"] = layerRows;
+                         result["layerFromMs"] = layerStart; result["layerToMs"] = layerEnd;
+-                        result["stimulus"] = "Finite public distortion-provider pulse through TLC.Update; 600s harness timeout suppresses keepalive and short nonlive InitStream removes its persistent layers. No per-frame generation flags are exposed; counts alone cannot certify the random finite-glitch trace.";
++                        result["stimulus"] = "Finite public distortion-provider pulse through TLC.Update; 600s harness timeout suppresses keepalive and short nonlive InitStream removes its persistent layers. Per-frame face flags come from the read-only StreamLayers hook (B-M5-32), joined to the wire by stream order; counts alone cannot certify the random finite-glitch trace.";
+                         var persistent = results.FirstOrDefault(x => x["id"]?.GetValue<string>() == "KEEP_ALIVE")?["persistentFace"];
+                         result["persistentFaceCoverage"] = persistent?.DeepClone() ?? Missing("Separate KEEP_ALIVE persistent-face observation not available in this subset");
+                         sched.DesiredFaceDistortion = previous; sched.KeepAliveTimeoutSec = timeout;
+@@ -425,6 +435,8 @@ internal sealed class M5Run
+                     r.Animations.SetLiveIdleAnimationParameters(new[] { LiveIdleParam.BlinkSpacingMinTime_ms, LiveIdleParam.BlinkSpacingMaxTime_ms }, new[] { 44000f, 45000f }); Wait(300);
+                     var result = Observe("M5-062 B4 base setter accepts 45000 uncapped. Min 44000 and max 45000 avoid the max<=min fallback and make long-spacing observation discriminating; first pre-existing blink deadline may remain. No movement idle is pushed.");
+                     result["maxReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMaxTime_ms]; result["minReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMinTime_ms];
++                    // The B4 write and KeepFaceAlive both hold the scheduler lock: a call stamped after this readback ran after the write.
++                    double readbackAt = Now; result["readbackAtMs"] = readbackAt;
+                     var blinkWindow = BeginWindow(id, "BLINKS");
+                     var layerSamples = new JsonArray();
+                     try
+@@ -440,12 +452,15 @@ internal sealed class M5Run
+                     result["observation"] = AskWindow(blinkWindow, "After any initial blink, were subsequent close/reopen blinks about44-45 seconds apart (do not count eye darts)?", "yes", "no");
+                     WindowNotes(blinkWindow); result["observationWindow"] = blinkWindow;
+                     double blinkEnd = blinkWindow["toMs"]!.GetValue<double>();
+-                    result["parameterRequestAtMs"] = parameterAt; result["existingDeadline"] = "Retained by B4; actual internal deadline unavailable through allowed public observations.";
++                    var calls = M5HwAnalysis.BlinkCalls(Diagnostics(), readbackAt, blinkEnd);
++                    result["parameterRequestAtMs"] = parameterAt;
++                    result["existingDeadline"] = calls.Count > 0 ? calls[0].BeforeMs : null;
++                    result["existingDeadlineNote"] = "Blink timer before the first KeepFaceAlive call after the readback (hook, 0x58D382..38C); B4 retains it.";
+                     var evidence = M5HwAnalysis.Blinks(Wire(parameterAt, blinkEnd), parameterAt, blinkEnd,
+-                        result["minReadback"]!.GetValue<float>(), result["maxReadback"]!.GetValue<float>(), result["observation"]!.AsObject());
++                        result["minReadback"]!.GetValue<float>(), result["maxReadback"]!.GetValue<float>(), result["observation"]!.AsObject(), calls);
+                     evidence["layerNameSnapshots"] = layerSamples;
+-                    evidence["snapshotNote"] = "Wall-clock/public engine-time/layer-name samples are not KeepFaceAlive call numbers or generation/deadline events. Do not infer a call count from elapsed time or fabricate blink events from pixel darkness.";
+-                    result["blinkEvidence"] = evidence; result["verdict"] = "INCONCLUSIVE";
++                    evidence["snapshotNote"] = "Wall-clock/public engine-time/layer-name samples are not KeepFaceAlive call numbers or generation/deadline events. Calls come only from the read-only KeepFaceAlive hook, from the readback onward. Do not infer a call count from elapsed time or fabricate blink events from pixel darkness.";
++                    result["blinkEvidence"] = evidence; result["verdict"] = evidence["verdict"]!.DeepClone();
+                     return result;
+                 }
+             case "DRIVING":
+@@ -460,7 +475,7 @@ internal sealed class M5Run
+                         while (!task.IsCompleted && !limit.IsCancellationRequested) { string? current = r.Animations.Playing; if (current != last) { states.Add(new JsonObject { ["atMs"] = Now, ["playing"] = current, ["tag"] = r.Animations.CurrentTag }); last = current; } Wait(10); }
+                         if (!task.IsCompleted) { limit.Cancel(); if (!task.Wait(2000)) { DisposeBounded(); connected = false; throw new TimeoutException("Drive cancellation did not complete; robot torn down before action cleanup"); } }
+                         Wait(100);
+-                        var result = Observe("Actual DriveToPose.RunAsync on real ActionList, 60 mm forward from current pose; animation names/tags and completion time retained. M12/M8 gaps remain explicit; no successful move is called source proof.");
++                        var result = Observe("Actual DriveToPose.RunAsync on real ActionList, 60 mm forward from current pose; animation names/tags and completion time retained. The verdict covers M5-063 on whichever phase path the action results select, whatever the drive result (operator 2026-10-20); successful traversal belongs to the M12/M13 acceptance. M12/M8 gaps remain explicit; no successful move is called source proof.");
+                         result["actionCompletions"] = new JsonArray(events.Where(e => e["kind"]?.GetValue<string>() == "action-completed" && e["atMs"]!.GetValue<double>() >= start).Select(e => e.DeepClone()).ToArray()); result["animationTransitions"] = states; result["driveCompletedAtMs"] = Now; result["result"] = task.IsCompletedSuccessfully ? task.Result.ToString() : "timed out/cancelled"; result["trace"] = JsonSerializer.SerializeToNode(action.Trace);
+                         result["triplet"] = "default trigger ids 0x95 / 0x91 / 0x8D; no pushed overrides";
+                         var phaseAnalysis = M5HwAnalysis.DrivingPhases(Wire(start), events, action.Tag, start, Now);
+@@ -472,7 +487,8 @@ internal sealed class M5Run
+                         result["orderedDefaultPhases"] = phaseAnalysis["loopRequired"]?.GetValue<bool>() == true
+                             && phaseAnalysis["loopRequestObserved"]!.GetValue<bool>() && phaseAnalysis["conditionalPhaseOrder"]!.GetValue<bool>();
+                         result["verdict"] = phaseAnalysis["verdict"]!.DeepClone();
+-                        if (!task.IsCompletedSuccessfully || task.Result != ActionResult.Success) result["verdict"] = "INCONCLUSIVE";
++                        result["loopRequestCovered"] = phaseAnalysis["loopRequestCovered"]!.DeepClone();
++                        result["successfulTraversalCoverage"] = false; result["traversalJudgement"] = phaseAnalysis["traversalJudgement"]!.DeepClone();
+                         return result;
+                     }
+                     finally { limit.Cancel(); if (!task.IsCompleted && !task.Wait(2000)) { DisposeBounded(); connected = false; } r.Motion.StopAllMotors(); if (task.IsCompleted || disposeCompleted) { action.Dispose(); goal.Dispose(); m.Dispose(); } else { errors.Enqueue("Drive action dependencies retained until process exit because teardown did not complete"); } }
+@@ -525,6 +541,7 @@ internal sealed class M5Run
+         File.WriteAllLines(Path.Combine(bundle, "frames.jsonl"), frames.Select(f => new JsonObject { ["atMs"] = f.T, ["outbound"] = f.Out, ["rawBase64"] = Convert.ToBase64String(f.Raw), ["error"] = f.Error }.ToJsonString()));
+         File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), Wire().Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload), ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal, ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }.ToJsonString()));
+         File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));
++        File.WriteAllLines(Path.Combine(bundle, "diagnostics.jsonl"), Diagnostics().Select(d => { var row = JsonSerializer.SerializeToNode(d.Observation, d.Observation.GetType())!.AsObject(); row["type"] = d.Observation.GetType().Name; row["atMs"] = d.AtMs; return row.ToJsonString(); }));
+         var files = new JsonArray(); foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M5Hw.cs", "cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs", "cozmo-stack/src/Cozmo.Conformance/Program.cs", "re-analysis/acceptance/hardware/scripts/m5-hw-1.md", "re-analysis/fidelity_manifest.json", "re-analysis/research/20261019-m5-settling-b.md" })
+         {
+             string source = Path.Combine(root, relative); if (!File.Exists(source)) { errors.Enqueue("Missing provenance file " + relative); continue; }
+@@ -543,7 +560,7 @@ internal sealed class M5Run
+         string? commit = null; try { var p = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true }); commit = p!.StandardOutput.ReadToEnd().Trim(); p.WaitForExit(); } catch (Exception e) { errors.Enqueue("git: " + e.Message); }
+         var report = new JsonObject { ["testId"] = M5Hw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv), ["resources"] = resources, ["allowDrive"] = drive, ["connected"] = connected, ["checks"] = JsonSerializer.SerializeToNode(results), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["binaries"] = binaries, ["errors"] = JsonSerializer.SerializeToNode(errors), ["acceptance"] = "NOT_JUDGED: operator observations and manager review required; hardware success does not raise provenance" };
+         File.WriteAllText(Path.Combine(bundle, "result.json"), report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+-        File.WriteAllText(Path.Combine(bundle, "README.txt"), "M5-HW evidence bundle. result.json contains every check and source records; messages.jsonl deduplicates reliable resends, frames.jsonl retains every datagram; events.jsonl retains startup logs, API events and counters. Times are host capture times, not device execution times. No acceptance or manifest changes performed. See provenance script for limits.");
++        File.WriteAllText(Path.Combine(bundle, "README.txt"), "M5-HW evidence bundle. result.json contains every check and source records; messages.jsonl deduplicates reliable resends, frames.jsonl retains every datagram; events.jsonl retains startup logs, API events and counters; diagnostics.jsonl retains the read-only engine hook observations (KeepFaceAlive, StreamLayers frames, send gate, budget refresh). Times are host capture times, not device execution times. No acceptance or manifest changes performed. See provenance script for limits.");
+     }
+ }
+ 
+diff --git a/cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs b/cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs
+index eaf9539f..9729a09a 100644
+--- a/cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs
++++ b/cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs
+@@ -1,5 +1,6 @@
+ using System.Text.Json.Nodes;
+ using Cozmo.Protocol;
++using Cozmo.Robot.Animation;
+ using Cozmo.Robot.Behavior;
+ 
+ namespace Cozmo.Conformance;
+@@ -62,9 +63,16 @@ public static class M5HwAnalysis
+             : !endBefore ? "INCONCLUSIVE_END_WIRE_EVIDENCE"
+             : loopRequired == true ? "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS" : "OBSERVED_FAILED_START_END_CLEANUP";
+         bool successRequests = driveResult == 0 && phaseVerdict == "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS";
++        // Operator 2026-10-20 (DRIVING split): M5-063 is judged on whichever phase path the action results select,
++        // whatever the drive result. Successful traversal belongs to the M12/M13 acceptance.
++        bool m5PathObserved = phaseVerdict is "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS" or "OBSERVED_FAILED_START_END_CLEANUP";
++        bool loopCovered = phaseVerdict == "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS";
+         return new JsonObject
+         {
+-            ["verdict"] = successRequests ? "OBSERVED_SUCCESSFUL_DRIVE_PHASE_REQUESTS" : "INCONCLUSIVE",
++            ["verdict"] = m5PathObserved ? phaseVerdict : "INCONCLUSIVE",
++            ["m5_063PathObserved"] = m5PathObserved,
++            ["loopRequestCovered"] = loopCovered,
++            ["loopCoverageOpen"] = !loopCovered,
+             ["phaseVerdict"] = phaseVerdict, ["startActionId"] = ids[0], ["loopActionId"] = ids[1], ["endActionId"] = ids[2],
+             ["startCompletion"] = start?.DeepClone(), ["startResult"] = startResult, ["loopRequired"] = loopRequired,
+             ["loopRequestObserved"] = loopObserved, ["loopCoverageMissing"] = loopRequired is null ? null : loopRequired == true && !loopObserved,
+@@ -72,13 +80,15 @@ public static class M5HwAnalysis
+             ["endActionCompletion"] = endAction?.DeepClone(), ["endActionCompletionBeforeDrive"] = endActionBefore,
+             ["driveCompletion"] = drive?.DeepClone(), ["driveResult"] = driveResult,
+             ["successfulStartLoopEndRequestCoverage"] = successRequests, ["successfulTraversalCoverage"] = false,
+-            ["traversalJudgement"] = "NOT_JUDGED: phase requests/API results alone do not certify physical traversal or M12/M13 source completeness. Failed traversal cannot satisfy successful traversal coverage.",
++            ["traversalJudgement"] = "NOT_JUDGED: successful traversal belongs to the M12/M13 acceptance, which must observe a successful DriveToPose. Phase requests/API results alone do not certify physical traversal or M12/M13 source completeness. Failed traversal cannot satisfy successful traversal coverage.",
+             ["driveOutcomeAssessment"] = driveResult == 0 ? "API_SUCCESS_REQUIRES_TRAVERSAL_REVIEW" : "UNASSESSED_M12_M13_OUTCOME",
+             ["phaseTriggerLogs"] = new JsonArray(phaseLogs.Select(e => e.DeepClone()).ToArray()),
+             ["boundaryDiagnostics"] = new JsonArray(rows.Where(e => e["kind"]?.GetValue<string>() == "stack-log"
+                 && e["line"]?.GetValue<string>().StartsWith("MISSING:", StringComparison.Ordinal) == true).Select(e => e.DeepClone()).ToArray()),
+             ["identityNote"] = "Action IDs require an unambiguous existing PreconditionsMet log for the selected group. Missing/ambiguous logs do not imply a source defect. Host completion delivery may follow the synchronous Loop request; matching ID/result, not delivery timestamp, determines its requirement.",
+-            ["verdictRule"] = "M5-063 requires matching Start ID and result0 before requesting the default Loop. A failed Start permits Start->End cleanup. A matching End completion sets state4 regardless of result; successful End/robot echo coverage is separate from the completion-order gate. No failed drive satisfies successful traversal coverage; M12/M13 cause remains unassessed. No planner/action correction or acceptance follows."
++            ["verdictRule"] = "M5-063 (0x4F0D80..D8C, 0x4F0E14..2A) requires matching Start ID and result0 before requesting the default Loop. A failed Start permits Start->End cleanup. A matching End completion sets state4 regardless of result (0x4F0DC8..DD4); successful End/robot echo coverage is separate from the completion-order gate. "
++                + "Operator 2026-10-20: the check's verdict covers M5-063 only and is OBSERVED on either selected path (successful Start->Loop->End requests or failed Start->End cleanup), whatever the drive result; contradictions stay non-OBSERVED. "
++                + "loopRequestCovered records the Loop request; a failed-path run leaves Loop coverage open for a later run. Successful traversal belongs to the M12/M13 acceptance: successfulTraversalCoverage stays false and the traversal is NOT_JUDGED here. No planner/action correction or acceptance follows."
+         };
+     }
+ 
+@@ -129,36 +139,215 @@ public static class M5HwAnalysis
+         };
+     }
+ 
+-    // Coherent means independently captured actual remaining allowances at the send gate, not a
+-    // subtraction of an old delivered F1 payload from later stream totals. No public runtime join exists.
++    // ---------------------------------------------------------------- B-M5-32 diagnostic hooks
++
++    /// <summary>One read-only engine observation from <see cref="AnimationScheduler.Diagnostic"/>, stamped on the
++    /// harness clock at its observed point (the hook's own Stopwatch timestamp, taken before a send).</summary>
++    public sealed record Diagnostic(double AtMs, AnimationDiagnostic Observation);
++
++    /// <summary>The EngineToRobot tags the animation stream sends (IAnimationSink C2..C19, A20, A21): 0x8E, 0x8F,
++    /// 0x91..0x95, 0x97..0x9B.</summary>
++    public static readonly byte[] StreamMessageIds = { 0x8E, 0x8F, 0x91, 0x92, 0x93, 0x94, 0x95, 0x97, 0x98, 0x99, 0x9A, 0x9B };
++
++    /// <summary>Harness choice: a joined wire message must be captured within this long after its gate observation, and
++    /// gate observations up to this long before a window are included so in-flight sends can be joined.</summary>
++    public const double JoinMarginMs = 1000;
++
++    /// <summary>The join of successful send-gate observations to the captured outbound wire.</summary>
++    public sealed class SendJoin
++    {
++        public string? Problem { get; init; }
++        public IReadOnlyDictionary<long, M5Hw.WireMessage> BySequence { get; init; } = new Dictionary<long, M5Hw.WireMessage>();
++        public IReadOnlySet<(bool Outbound, int Line, int Ordinal)> JoinedWire { get; init; } = new HashSet<(bool, int, int)>();
++        public JsonObject Evidence { get; init; } = new();
++        public static (bool Outbound, int Line, int Ordinal) Key(M5Hw.WireMessage m) => (m.Outbound, m.FrameLine, m.SubmessageOrdinal);
++        public bool IsJoined(M5Hw.WireMessage m) => JoinedWire.Contains(Key(m));
++    }
++
++    /// <summary>
++    /// Joins the successful send-gate observations (C14 gate and the direct End) made in [fromMs - margin, toMs] to
++    /// the outbound stream messages of the capture, by stream order: the gate's send order must equal one contiguous
++    /// run of the deduplicated outbound stream-tag messages, matching tag and EngineToRobot size, each captured no
++    /// earlier than its gate observation and within the margin after it. Exactly one such run must exist; none or
++    /// several leave the whole join unmade, with the reason. Time only bounds candidates; order and content decide.
++    /// </summary>
++    public static SendJoin JoinSends(IEnumerable<M5Hw.WireMessage> messages, IReadOnlyList<Diagnostic> diagnostics,
++        double fromMs, double toMs)
++    {
++        var sent = diagnostics.Where(d => d.Observation is SendGateObservation { Sent: true }
++                && d.AtMs >= fromMs - JoinMarginMs && d.AtMs <= toMs)
++            .Select(d => (d.AtMs, Gate: (SendGateObservation)d.Observation)).ToArray();
++        var wire = OrderedUnique(messages).Where(m => m.Outbound && m.Payload.Length > 0
++            && Array.IndexOf(StreamMessageIds, m.Payload[0]) >= 0).ToArray();
++        string? problem = null; int offset = -1, candidates = 0;
++        if (sent.Length == 0) problem = "No successful send-gate observation in the window; nothing to join.";
++        else if (sent.Any(s => s.Gate.MessageId is null)) problem = "A successful send-gate observation names no catalogued message tag; its wire identity is unknown.";
++        else
++        {
++            for (int o = 0; o + sent.Length <= wire.Length; o++)
++            {
++                if (wire[o].AtMs < sent[0].AtMs) continue;
++                if (wire[o].AtMs > sent[0].AtMs + JoinMarginMs) break;
++                bool match = true;
++                for (int k = 0; k < sent.Length && match; k++)
++                {
++                    var w = wire[o + k]; var (at, gate) = sent[k];
++                    match = w.Payload[0] == gate.MessageId && w.Payload.Length == gate.Size
++                        && w.AtMs >= at && w.AtMs <= at + JoinMarginMs;
++                }
++                if (match) { candidates++; offset = o; }
++            }
++            if (candidates == 0) problem = "No contiguous run of captured outbound stream messages matches the gate's send order (tag, size, capture after gate); another sender or a lost/unsent message breaks the join.";
++            else if (candidates > 1) problem = $"{candidates} runs of captured stream messages match the gate's send order; the join is ambiguous.";
++        }
++        var bySequence = new Dictionary<long, M5Hw.WireMessage>();
++        var joined = new HashSet<(bool, int, int)>();
++        if (problem is null)
++            for (int k = 0; k < sent.Length; k++)
++            {
++                joined.Add(SendJoin.Key(wire[offset + k]));
++                if (sent[k].Gate.BufferSequence != 0) bySequence[sent[k].Gate.BufferSequence] = wire[offset + k];
++            }
++        int unjoinedInWindow = wire.Count(m => m.AtMs >= fromMs && m.AtMs <= toMs && !joined.Contains(SendJoin.Key(m)));
++        return new SendJoin
++        {
++            Problem = problem, BySequence = bySequence, JoinedWire = joined,
++            Evidence = new JsonObject
++            {
++                ["joined"] = problem is null, ["problem"] = problem, ["sentGateObservations"] = sent.Length,
++                ["matchingRuns"] = candidates, ["unjoinedStreamWireInWindow"] = unjoinedInWindow,
++                ["firstJoinedWire"] = problem is null ? WireEvidence(new[] { wire[offset] }) : null,
++                ["lastJoinedWire"] = problem is null ? WireEvidence(new[] { wire[offset + sent.Length - 1] }) : null,
++                ["marginMs"] = JoinMarginMs,
++                ["joinRule"] = "B-M5-32: successful C14 gate sends and direct End (0x57BF96..BFCC, 0x57C464..496) in send order "
++                    + "must equal exactly one contiguous run of deduplicated outbound stream-tag messages (tag, EngineToRobot size), "
++                    + "each captured at or after its gate observation and within the margin. Zero or several runs: unjoined. "
++                    + "The margin is a harness choice; time bounds candidates, order and content decide."
++            }
++        };
++    }
++
++    /// <summary>
++    /// M5-029 per-frame face activity from the StreamLayers hook, keyed by the wire identity of each frame's audio
++    /// message through the send join. A frame whose audio (or, with its face flag set, whose face) is not joined stays
++    /// unjoined and is not guessed.
++    /// </summary>
++    public static (IReadOnlyList<FaceActivity>? Activity, JsonArray Rows, string? Problem) LayerActivity(SendJoin join,
++        IReadOnlyList<Diagnostic> diagnostics, double fromMs, double toMs)
++    {
++        var frames = diagnostics.Where(d => d.Observation is LayerFrameObservation && d.AtMs >= fromMs && d.AtMs <= toMs).ToArray();
++        var rows = new JsonArray();
++        if (join.Problem is not null) return (null, rows, "Send join unavailable: " + join.Problem);
++        if (frames.Length == 0) return (null, rows, "No StreamLayers frame observation in the window.");
++        var activity = new List<FaceActivity>(); int unjoined = 0;
++        foreach (var d in frames)
++        {
++            var f = (LayerFrameObservation)d.Observation;
++            join.BySequence.TryGetValue(f.AudioBufferSequence, out var audio);
++            M5Hw.WireMessage? face = null;
++            if (f.FaceBufferSequence is { } s) join.BySequence.TryGetValue(s, out face);
++            string? reason = audio is null ? "The frame's audio message is not joined to the wire."
++                : f.FaceFlag && f.FaceBufferSequence is null ? "Face flag set but no face was buffered (BufferFaceToSend produced no message)."
++                : f.FaceFlag && face is null ? "The frame's buffered face is not joined to the wire."
++                : !f.FaceFlag && f.FaceBufferSequence is not null ? "A face was buffered with the face flag clear." : null;
++            if (reason is null) activity.Add(new FaceActivity(audio!.FrameLine, audio.SubmessageOrdinal, f.FaceFlag));
++            else unjoined++;
++            rows.Add(new JsonObject { ["atMs"] = d.AtMs, ["frameNumber"] = f.FrameNumber, ["streamTimeMs"] = f.StreamTimeMs,
++                ["faceFlag"] = f.FaceFlag, ["backpackFlag"] = f.BackpackFlag,
++                ["audioWire"] = audio is null ? null : WireEvidence(new[] { audio }),
++                ["faceWire"] = face is null ? null : WireEvidence(new[] { face }), ["unjoinedReason"] = reason });
++        }
++        return (activity, rows, unjoined > 0 ? $"{unjoined} StreamLayers frame(s) could not be joined to the wire." : null);
++    }
++
++    /// <summary>M5-028 KeepFaceAlive calls from the hook, in call order, within the window.</summary>
++    public static IReadOnlyList<BlinkCall> BlinkCalls(IReadOnlyList<Diagnostic> diagnostics, double fromMs, double toMs)
++        => diagnostics.Where(d => d.Observation is KeepFaceAliveObservation && d.AtMs >= fromMs && d.AtMs <= toMs)
++            .Select(d => { var k = (KeepFaceAliveObservation)d.Observation;
++                return new BlinkCall(k.CallNumber, d.AtMs, k.BlinkTimerBeforeMs, k.BlinkTimerAfterMs, k.BlinkGenerated); }).ToArray();
++
++    /// <summary>M3-012 gate observations within the window, as coherent admission samples.</summary>
++    public static IReadOnlyList<BudgetAdmission> Admissions(IReadOnlyList<Diagnostic> diagnostics, double fromMs, double toMs)
++        => diagnostics.Where(d => d.Observation is SendGateObservation && d.AtMs >= fromMs && d.AtMs <= toMs)
++            .Select(d => { var g = (SendGateObservation)d.Observation;
++                return new BudgetAdmission(d.AtMs, g.BudgetEpoch, g.MessageId ?? 0, g.Size, g.RemainingBytes,
++                    g.RemainingAudioFrames, g.Sent, Coherent: true, CountsAsAudioFrame: g.CountsAsAudioFrame,
++                    DirectBypass: g.DirectBypass, BufferSequence: g.BufferSequence, Admitted: g.DirectBypass ? null : g.Admitted); }).ToArray();
++
++    /// <summary>Every observed budget refresh (C9), whatever its time: an epoch's rows may follow its refresh.</summary>
++    public static IReadOnlyList<BudgetRefresh> Refreshes(IReadOnlyList<Diagnostic> diagnostics)
++        => diagnostics.Where(d => d.Observation is BudgetRefreshObservation)
++            .Select(d => { var r = (BudgetRefreshObservation)d.Observation;
++                return new BudgetRefresh(d.AtMs, r.BudgetEpoch, r.BytesPlayed, r.FramesPlayed, r.BytesStreamed,
++                    r.FramesStreamed, r.BytesToSend, r.FramesToSend); }).ToArray();
++
++    public sealed record BudgetRefresh(double AtMs, long Epoch, int BytesPlayed, int FramesPlayed, int BytesStreamed,
++        int FramesStreamed, int BytesToSend, int FramesToSend);
++
++    // Coherent means actual remaining allowances observed at the send gate (the B-M5-32 hook), not a
++    // subtraction of an old delivered F1 payload from later stream totals.
+     public sealed record BudgetAdmission(double AtMs, long Epoch, byte MessageId, int MessageBytes,
+-        int RemainingBytes, int RemainingAudioFrames, bool Sent, bool Coherent);
++        int RemainingBytes, int RemainingAudioFrames, bool Sent, bool Coherent,
++        bool? CountsAsAudioFrame = null, bool DirectBypass = false, long BufferSequence = 0, bool? Admitted = null);
+ 
+-    public static JsonObject BudgetSamples(IReadOnlyList<BudgetAdmission>? samples)
++    public static JsonObject BudgetSamples(IReadOnlyList<BudgetAdmission>? samples, IReadOnlyList<BudgetRefresh>? refreshes = null)
+     {
+-        var rows = new JsonArray(); int violations = 0, coherent = 0;
++        var rows = new JsonArray(); int violations = 0, coherent = 0, formulaMismatches = 0, accountingMismatches = 0, unverified = 0;
++        // C9 (0x57C6F6..7AC): bytes = played - streamed + 8192, negative -> 0, then min(30000); frames = max(0, played - streamed + 14).
++        var byEpoch = new Dictionary<long, BudgetRefresh>();
++        var refreshRows = new JsonArray();
++        foreach (var r in refreshes ?? Array.Empty<BudgetRefresh>())
++        {
++            byEpoch[r.Epoch] = r;
++            int bytes = unchecked(r.BytesPlayed - r.BytesStreamed + 8192); if (bytes < 0) bytes = 0;
++            int expectedBytes = Math.Min(bytes, 30000), expectedFrames = Math.Max(unchecked(r.FramesPlayed - r.FramesStreamed + 14), 0);
++            bool mismatch = r.BytesToSend != expectedBytes || r.FramesToSend != expectedFrames;
++            if (mismatch) { formulaMismatches++;
++                refreshRows.Add(new JsonObject { ["atMs"] = r.AtMs, ["epoch"] = r.Epoch, ["bytesToSend"] = r.BytesToSend,
++                    ["expectedBytes"] = expectedBytes, ["framesToSend"] = r.FramesToSend, ["expectedFrames"] = expectedFrames }); }
++        }
++        // C14 (0x57BFB0..BFCC): only a successful buffered send subtracts its size and, for audio, one frame.
++        var spent = new Dictionary<long, (int Bytes, int Frames)>();
+         foreach (var sample in samples ?? Array.Empty<BudgetAdmission>())
+         {
+-            bool directEnd = sample.MessageId == 0x9A;
+-            int frameCost = sample.MessageId is 0x8E or 0x8F ? 1 : 0;
++            bool directEnd = sample.DirectBypass || sample.MessageId == 0x9A;
++            int frameCost = sample.CountsAsAudioFrame is { } audio ? (audio ? 1 : 0) : sample.MessageId is 0x8E or 0x8F ? 1 : 0;
+             bool violation = sample.Coherent && sample.Sent && !directEnd
+                 && (sample.MessageBytes > sample.RemainingBytes || frameCost > sample.RemainingAudioFrames);
+             if (sample.Coherent) coherent++;
+             if (violation) violations++;
++            bool? accountingMatches = null;
++            if (sample.Coherent && refreshes is not null)
++            {
++                if (sample.Epoch == 0 || !byEpoch.TryGetValue(sample.Epoch, out var refresh)) unverified++;
++                else
++                {
++                    var used = spent.GetValueOrDefault(sample.Epoch);
++                    accountingMatches = sample.RemainingBytes == unchecked(refresh.BytesToSend - used.Bytes)
++                        && sample.RemainingAudioFrames == refresh.FramesToSend - used.Frames;
++                    if (accountingMatches == false) accountingMismatches++;
++                    if (sample.Sent && !directEnd) spent[sample.Epoch] = (unchecked(used.Bytes + sample.MessageBytes), used.Frames + frameCost);
++                }
++            }
+             rows.Add(new JsonObject { ["atMs"] = sample.AtMs, ["epoch"] = sample.Epoch,
+                 ["messageId"] = sample.MessageId, ["messageBytes"] = sample.MessageBytes,
+                 ["remainingBytesAtGate"] = sample.RemainingBytes, ["remainingFramesAtGate"] = sample.RemainingAudioFrames,
+-                ["sent"] = sample.Sent, ["coherentGateObservation"] = sample.Coherent,
+-                ["directEndBypass"] = directEnd, ["observedViolation"] = violation });
++                ["admitted"] = sample.Admitted, ["sent"] = sample.Sent, ["coherentGateObservation"] = sample.Coherent,
++                ["bufferSequence"] = sample.BufferSequence, ["directEndBypass"] = directEnd,
++                ["observedViolation"] = violation, ["allowanceAccountingMatches"] = accountingMatches });
+         }
+         return new JsonObject { ["coherentSampleVerdict"] = violations > 0 ? "OBSERVED_COHERENT_ADMISSION_VIOLATION"
++                : formulaMismatches + accountingMismatches > 0 ? "OBSERVED_ADMISSION_ACCOUNTING_MISMATCH"
+                 : coherent > 0 ? "OBSERVED_COHERENT_SAMPLES_WITHIN_GATE" : "NOT_JUDGED",
+-            ["coherentSamples"] = coherent, ["observedViolations"] = violations, ["samples"] = rows,
++            ["coherentSamples"] = coherent, ["observedViolations"] = violations,
++            ["allowanceFormulaMismatches"] = formulaMismatches, ["allowanceAccountingMismatches"] = accountingMismatches,
++            ["accountingUnverifiedSamples"] = refreshes is null ? null : unverified,
++            ["refreshesChecked"] = refreshes?.Count, ["formulaMismatchRows"] = refreshRows, ["samples"] = rows,
+             ["budgetCompliance"] = "NOT_JUDGED",
+-            ["coverageNote"] = "Individual coherent samples do not certify all sends. Buffered admission uses actual remaining byte/frame allowances; direct End bypasses it but still adds one frame and its bytes on success." };
++            ["coverageNote"] = "Individual coherent samples do not certify all sends. Buffered admission uses actual remaining byte/frame allowances; direct End bypasses it but still adds one frame and its bytes on success. With refreshes, each epoch's allowances are checked against C9 and each gate's remainder against C14's successful-send accounting." };
+     }
+ 
+-    // Actual call/deadline observations only. Public harness snapshots cannot currently populate this join.
++    // Actual call/deadline observations only: the B-M5-32 KeepFaceAlive hook (BlinkCalls) or a named unit substitute.
+     public sealed record BlinkCall(long CallNumber, double AtMs, int BeforeMs, int AfterMs, bool Generated);
+ 
+     public static JsonObject Blinks(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs,
+@@ -207,10 +396,13 @@ public static class M5HwAnalysis
+             ["generationEvidenceAvailable"] = captured, ["generationCalls"] = ticks, ["problems"] = problems,
+             ["encodedFaceDiagnostics"] = faces, ["physicalObservation"] = observation.DeepClone(),
+             ["firmwareAcceptance"] = "NOT_JUDGED",
+-            ["missing"] = captured ? null : "Actual KeepFaceAlive call numbers, pre-existing blink deadline and generation/reset values at 0x58D382..38C/0x58D54C..550 are not exposed by the allowed public harness observations.",
++            ["missing"] = captured ? null : calls is { Count: > 0 }
++                ? "KeepFaceAlive calls were observed but none generated a blink inside the window."
++                : "No KeepFaceAlive call observation (0x58D382..38C/0x58D54C..550) in the window: the diagnostic hook was not supplied or the keep-alive gate stayed closed.",
+             ["verdictRule"] = "M5-062 B4 base setter preserves the existing blink deadline. M5-028 subtracts60 "
+                 + "per KeepFaceAlive call, not wall milliseconds; a due blink generates and draws a new inclusive "
+                 + "44000..45000 deadline from these parameter values. Paused calls do not consume wall time. "
++                + "Calls come only from the read-only KeepFaceAlive hook (B-M5-32), one row per actual call. "
+                 + "Readback, layer-name samples, dark encoded images and human answers cannot fabricate generation "
+                 + "events. Lit pixels use the engine codec model only; nearest raw F1 messages bound host capture "
+                 + "order, not firmware playback/display (M3-008/M5-036). No darkness threshold is an acceptance rule."
+@@ -275,12 +467,12 @@ public static class M5HwAnalysis
+         };
+     }
+ 
+-    // Frame activity must come from independently established generation evidence, never total wire counts.
+-    // The allowed public harness currently cannot supply this; synthetic unit fixtures name that substitution.
++    // Frame activity must come from independently established generation evidence, never total wire counts:
++    // the B-M5-32 StreamLayers hook joined to the wire (LayerActivity), or a named unit substitute.
+     public sealed record FaceActivity(int AudioFrameLine, int AudioOrdinal, bool Active);
+ 
+     public static JsonObject FiniteLayers(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs,
+-        bool drained, IReadOnlyList<FaceActivity>? activity = null)
++        bool drained, IReadOnlyList<FaceActivity>? activity = null, string? activityProblem = null)
+     {
+         var rows = OrderedUnique(messages).Where(m => m.Outbound && m.AtMs >= fromMs && m.AtMs <= toMs
+             && m.Payload.Length > 0).ToArray();
+@@ -316,12 +508,15 @@ public static class M5HwAnalysis
+             ["faceActivityEstablished"] = established, ["frameEvidence"] = frames,
+             ["missingRequiredFaceFrames"] = missingFace, ["unexpectedFaceFrames"] = unexpectedFace,
+             ["wireWindow"] = WireEvidence(rows),
+-            ["missing"] = established ? null : "Per-frame layered face flags and random-draw/generation timing are unavailable through the allowed public observations; aggregate counts cannot establish required face output.",
++            ["missing"] = established ? null : activityProblem
++                ?? (activity is null ? "No per-frame layered face flag (StreamLayers hook) was supplied; aggregate counts cannot establish required face output."
++                    : "The supplied per-frame face flags do not cover every audio frame in the window exactly once."),
+             ["verdictRule"] = "M5-029: ApplyLayersToAnim(null) sets face only from a due face-layer result; "
+                 + "StreamLayers buffers face iff that flag is set. First distortion face is not due before cumulative "
+                 + "duration >=33 ms; backpack has independent 0/200,200/60,260/60,320/60,380/60 timing. "
+                 + "Face/audio totals may differ. A stored base face does not set the flag. No exact 13/20 oracle. "
+-                + "Unknown flags/draws remain INCONCLUSIVE; distinct persistent coverage is KEEP_ALIVE."
++                + "Flags come from the read-only StreamLayers hook joined to the wire by stream order (B-M5-32); "
++                + "unknown or unjoined flags remain INCONCLUSIVE; distinct persistent coverage is KEEP_ALIVE."
+         };
+     }
+ 
+@@ -476,7 +671,8 @@ public static class M5HwAnalysis
+     }
+ 
+     public static JsonObject Audio(IEnumerable<M5Hw.WireMessage> messages, IEnumerable<JsonObject> events,
+-        double fromMs, double toMs, IReadOnlyList<BudgetAdmission>? admissions = null)
++        double fromMs, double toMs, IReadOnlyList<BudgetAdmission>? admissions = null,
++        SendJoin? join = null, IReadOnlyList<BudgetRefresh>? refreshes = null)
+     {
+         var ordered = OrderedUnique(messages).Where(m => m.AtMs >= fromMs && m.AtMs <= toMs && m.Payload.Length != 0).ToArray();
+         var wire = ordered.Where(m => m.Outbound).ToArray();
+@@ -553,12 +749,36 @@ public static class M5HwAnalysis
+                 + "are mixed-epoch diagnostics, not alleged send violations. No2ms grouping threshold is used."
+         };
+         result["framingVerdict"] = result["verdict"]!.DeepClone();
+-        var budget = BudgetSamples(admissions);
++        var budget = BudgetSamples(admissions, refreshes);
+         result["budgetEvidence"] = budget; result["budgetCompliance"] = "NOT_JUDGED";
+         result["orderedWireWindow"] = WireEvidence(ordered);
+-        result["admissionEvidenceMissing"] = "Actual allowance/success observations at0x57BF96..BFCC are unavailable through the allowed public harness. SendFault/InvokeEngineRequest are internal; unlocked API delivery snapshots cannot replace admission epochs.";
++        // B-M5-32: every outbound audio message of the window must be joined, by stream order, to a successful
++        // coherent gate observation whose epoch's allowances were themselves observed.
++        int unjoinedAudio = join is null ? audio.Length : audio.Count(m => !join.IsJoined(m));
++        int coherentInWindow = (admissions ?? Array.Empty<BudgetAdmission>()).Count(a => a.Coherent);
++        string? admissionMissing = admissions is null || coherentInWindow == 0
++                ? "No send-gate observation (0x57BF96..BFCC) was supplied for this window; delivery snapshots cannot replace admission epochs."
++            : join is null ? "Gate observations were not joined to the wire."
++            : join.Problem is not null ? "Send join unavailable: " + join.Problem
++            : unjoinedAudio > 0 ? $"{unjoinedAudio} outbound audio message(s) in the window are not joined to a gate observation."
++            : refreshes is null ? "Budget refresh observations (C9) were not supplied; gate allowances cannot be checked."
++            : budget["accountingUnverifiedSamples"]!.GetValue<int>() > 0 ? "Some gate observations belong to a budget epoch whose refresh was not observed."
++            : null;
++        result["sendJoin"] = join?.Evidence.DeepClone();
++        result["unjoinedAudioMessages"] = unjoinedAudio;
++        result["admissionEvidenceMissing"] = admissionMissing;
++        int mismatches = budget["allowanceFormulaMismatches"]!.GetValue<int>() + budget["allowanceAccountingMismatches"]!.GetValue<int>();
+         if (budget["observedViolations"]!.GetValue<int>() > 0) result["verdict"] = "OBSERVED_COHERENT_ADMISSION_VIOLATION";
+-        else if (result["verdict"]!.GetValue<string>() == "OBSERVED_AUDIO_FRAMING_AND_COUNTERS") result["verdict"] = "INCONCLUSIVE";
++        else if (mismatches > 0) result["verdict"] = "OBSERVED_ADMISSION_ACCOUNTING_MISMATCH";
++        else if (result["verdict"]!.GetValue<string>() == "OBSERVED_AUDIO_FRAMING_AND_COUNTERS")
++        {
++            result["verdict"] = admissionMissing is null ? "OBSERVED_AUDIO_FRAMING_AND_ADMISSION" : "INCONCLUSIVE";
++            if (admissionMissing is null) result["budgetCompliance"] = "OBSERVED_FOR_JOINED_WINDOW";
++        }
++        result["admissionRule"] = "M3-012 C9 (0x57C6F6..7AC) refresh: bytes max(0,min(30000,played-streamed+8192)), frames max(0,played-streamed+14). "
++            + "C14 (0x57BF96..BFCC): a buffered message passes when its size fits the bytes left and, for 0x8E/0x8F, a frame is left; "
++            + "only a successful send subtracts. C12 direct End (0x57C464..496) bypasses the gate. Positive only when every outbound "
++            + "audio message in the window is joined to an observed gate send and every epoch's refresh is observed; it covers this window, not every send of the run.";
+         if (states.Length >= 2)
+         {
+             var first = states[0]; var last = states[^1];
+diff --git a/cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs b/cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs
+index bb5299bd..d94ef587 100644
+--- a/cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs
++++ b/cozmo-stack/src/Cozmo.Robot/Animation/AnimationScheduler.cs
+@@ -108,6 +108,7 @@ public sealed class StreamSendBuffer
+         public bool IsAudio;
+         public Func<bool> Send = () => true;
+         public string? TagName;
++        public long Sequence;      // B-M5-32 diagnostic buffering order; 0 when buffered with no observer
+     }
+ 
+     private readonly object _gate = new();
+@@ -115,6 +116,13 @@ public sealed class StreamSendBuffer
+     private int _bytesStreamed, _framesStreamed, _bytesToSend, _framesToSend;
+     private bool _draining;
+ 
++    // fidelity: M3-012
++    // B-M5-32 read-only diagnostics (operator 2026-10-20). Set only by AnimationScheduler.Diagnostic's add/remove; null
++    // when nothing subscribes, so the engine path then costs one null check per point. The observer is the scheduler's
++    // guarded raiser (a throwing handler is caught there), and is invoked outside this buffer's _gate.
++    internal volatile Action<AnimationDiagnostic>? Observer;
++    private long _bufferSequence, _budgetEpochCounter, _budgetEpoch;
++
+     /// <summary>The engine log for the budget warning (C9).</summary>
+     public Action<string>? Log { get; set; }
+     public SourceLogSink? SourceLog { get; set; }
+@@ -143,6 +151,8 @@ public sealed class StreamSendBuffer
+     public void UpdateAmountToSend(int bytesPlayed, int framesPlayed)
+     {
+         var logs = new List<(EngineLogLevel Level, string? Channel, string Key, string Text)>();
++        var observer = Observer;
++        BudgetRefreshObservation? refresh = null;
+         lock (_gate)
+         {
+             int bytes = unchecked(bytesPlayed - _bytesStreamed + BytesAhead);
+@@ -155,24 +165,41 @@ public sealed class StreamSendBuffer
+             }
+             _bytesToSend = Math.Min(bytes, MaxBytesPerUpdate);
+             _framesToSend = Math.Max(unchecked(framesPlayed - _framesStreamed + AudioFramesAhead), 0);
++            // fidelity: M3-012 (B-M5-32 hook: the allowances C9 just stored, 0x0057C6F6..0x0057C7AC; read only)
++            if (observer is null) _budgetEpoch = 0;
++            else
++            {
++                _budgetEpoch = ++_budgetEpochCounter;
++                refresh = new BudgetRefreshObservation(System.Diagnostics.Stopwatch.GetTimestamp(), _budgetEpoch,
++                    bytesPlayed, framesPlayed, _bytesStreamed, _framesStreamed, _bytesToSend, _framesToSend);
++            }
+         }
+         foreach (var line in logs) SourceLogDispatch.Write(SourceLog, Log, line.Level, line.Channel, line.Key, line.Text);
++        if (refresh is not null) observer!(refresh);
+     }
+ 
+     /// <summary>The test seam's budget (a sink that models no robot): nothing is held back.</summary>
+     internal void Unlimited()
+     {
+-        lock (_gate) { _bytesToSend = int.MaxValue; _framesToSend = int.MaxValue; }
++        lock (_gate) { _bytesToSend = int.MaxValue; _framesToSend = int.MaxValue; _budgetEpoch = 0; }
+     }
+ 
+-    /// <summary>BufferMessageToSend: appends a message whose size and kind are given, to be sent by <paramref name="send"/>.</summary>
+-    public void Buffer(object? owner, int size, bool isAudio, Func<bool> send, string? tagName = null)
++    /// <summary>
++    /// BufferMessageToSend: appends a message whose size and kind are given, to be sent by <paramref name="send"/>.
++    /// Returns the entry's diagnostic buffering sequence (B-M5-32; 0 when no diagnostic observer is attached).
++    /// </summary>
++    public long Buffer(object? owner, int size, bool isAudio, Func<bool> send, string? tagName = null)
+     {
+-        lock (_gate) _fifo.AddLast(new Entry { Owner = owner, Size = size, IsAudio = isAudio, Send = send, TagName = tagName });
++        lock (_gate)
++        {
++            long sequence = Observer is null ? 0 : ++_bufferSequence;
++            _fifo.AddLast(new Entry { Owner = owner, Size = size, IsAudio = isAudio, Send = send, TagName = tagName, Sequence = sequence });
++            return sequence;
++        }
+     }
+ 
+     /// <summary>BufferMessageToSend for a message: its size and kind are its own (C11).</summary>
+-    public void Buffer(object? owner, RobotMessage m, Func<RobotMessage, bool> send)
++    public long Buffer(object? owner, RobotMessage m, Func<RobotMessage, bool> send)
+         => Buffer(owner, SizeOf(m), IsAudioMessage(m.Id), () => send(m), MessageCatalog.ById[m.Id].Member);
+ 
+     /// <summary>How a drain ended (C14, A18): the buffer emptied, a budget stopped it, or a send failed.</summary>
+@@ -198,15 +225,31 @@ public sealed class StreamSendBuffer
+             {
+                 LinkedListNode<Entry> node;
+                 Entry e;
++                bool admitted;
++                int gateBytes, gateFrames;
++                long gateEpoch;
+                 lock (_gate)
+                 {
+                     if (_fifo.First is not { } first) return DrainResult.Empty;
+                     node = first;
+                     e = node.Value;
+-                    if (e.Size > _bytesToSend) return DrainResult.BudgetStop;
+-                    if (e.IsAudio && _framesToSend <= 0) return DrainResult.BudgetStop;
++                    gateBytes = _bytesToSend;
++                    gateFrames = _framesToSend;
++                    gateEpoch = _budgetEpoch;
++                    // the byte gate (0x0057BF96/0x0057BF98), then the audio-frame gate (0x0057BF9A/0x0057BFA0)
++                    admitted = !(e.Size > _bytesToSend) && !(e.IsAudio && _framesToSend <= 0);
+                 }
+-                if (!e.Send()) return DrainResult.SendError;
++                // fidelity: M3-012 (B-M5-32 hook at the C14 gate, 0x0057BF96..0x0057BFCC; read only)
++                var observer = e.Size != 0 ? Observer : null;
++                long at = observer is null ? 0 : System.Diagnostics.Stopwatch.GetTimestamp();
++                if (!admitted)
++                {
++                    observer?.Invoke(GateObservation(e, at, gateEpoch, gateBytes, gateFrames, admitted: false, sent: false));
++                    return DrainResult.BudgetStop;
++                }
++                bool sent = e.Send();
++                observer?.Invoke(GateObservation(e, at, gateEpoch, gateBytes, gateFrames, admitted: true, sent: sent));
++                if (!sent) return DrainResult.SendError;
+                 lock (_gate)
+                 {
+                     if (node.List == _fifo) _fifo.Remove(node);
+@@ -222,6 +265,26 @@ public sealed class StreamSendBuffer
+     /// <summary><see cref="Drain"/>, true when the buffer emptied.</summary>
+     public bool SendBufferedMessages() => Drain() == DrainResult.Empty;
+ 
++    private static SendGateObservation GateObservation(Entry e, long at, long epoch, int bytes, int frames, bool admitted, bool sent)
++        => new(at, e.Sequence, epoch, MessageIdOf(e.TagName), e.Size, e.IsAudio, bytes, frames, admitted, sent, DirectBypass: false);
++
++    /// <summary>B-M5-32: the allowances left and their budget epoch, read for the direct End observation only.</summary>
++    internal (int Bytes, int Frames, long Epoch) GateSnapshot()
++    {
++        lock (_gate) return (_bytesToSend, _framesToSend, _budgetEpoch);
++    }
++
++    private static Dictionary<string, byte>? s_idByMember;
++
++    /// <summary>B-M5-32: the EngineToRobot tag for a buffered entry's catalogue member name; null when unknown or not unique.</summary>
++    internal static byte? MessageIdOf(string? member)
++    {
++        if (member is null) return null;
++        var map = s_idByMember ??= MessageCatalog.ById.Values.GroupBy(i => i.Member).Where(g => g.Count() == 1)
++            .ToDictionary(g => g.Key, g => (byte)g.Single().Id);
++        return map.TryGetValue(member, out var id) ? id : null;
++    }
++
+     /// <summary>
+     /// A message sent directly, not through the buffer and not budget-gated, but counted: EndOfAnimation's path
+     /// (SendEndOfAnimation 0x0057C464..0x0057C496, C12). <paramref name="countsAsFrame"/> adds one to frames streamed.
+@@ -294,6 +357,7 @@ public sealed class StreamSendBuffer
+             _fifo.Clear();
+             _bytesStreamed = _framesStreamed = 0;
+             _bytesToSend = _framesToSend = 0;
++            _budgetEpoch = 0;          // B-M5-32 diagnostic: no observed refresh describes these allowances
+         }
+     }
+ }
+@@ -552,6 +616,50 @@ public sealed class AnimationScheduler
+         set => _tlc.DesiredFaceDistortion = value;
+     }
+ 
++    // fidelity: M5-028, M5-029, M3-012
++    private Action<AnimationDiagnostic>? _diagnostic;
++    private Action<AnimationDiagnostic>? _diagnosticObserver;    // RaiseDiagnostic while anything subscribes, else null
++    private long _layerFrameNumber;
++
++    /// <summary>
++    /// Read-only engine observations for the M5 hardware harness (B-M5-32; operator 2026-10-20): every
++    /// <c>KeepFaceAlive</c> call (<see cref="KeepFaceAliveObservation"/>, M5-028), every <c>StreamLayers</c> frame
++    /// (<see cref="LayerFrameObservation"/>, M5-029), every message offered at the send gate and the direct End
++    /// (<see cref="SendGateObservation"/>, M3-012) and every budget refresh (<see cref="BudgetRefreshObservation"/>).
++    /// Nothing here changes what is sent, when, or in what order, and no random number is drawn; with no subscriber
++    /// each point costs one null check.
++    /// <para>
++    /// Raised synchronously on the engine thread while the scheduler's lock is held. A handler must not call back into
++    /// the scheduler or the robot and should only enqueue the observation. A handler that throws is caught and logged,
++    /// and the engine path carries on unchanged (M1-034 style); later handlers of that one observation are skipped.
++    /// </para>
++    /// </summary>
++    public event Action<AnimationDiagnostic>? Diagnostic
++    {
++        add { lock (_gate) { _diagnostic += value; WireDiagnosticLocked(); } }
++        remove { lock (_gate) { _diagnostic -= value; WireDiagnosticLocked(); } }
++    }
++
++    private void WireDiagnosticLocked()
++    {
++        Action<AnimationDiagnostic>? observer = _diagnostic is null ? null : RaiseDiagnostic;
++        _diagnosticObserver = observer;
++        Stream.Observer = observer;
++        _tlc.Face.Observer = observer;
++    }
++
++    private void RaiseDiagnostic(AnimationDiagnostic observation)
++    {
++        var handlers = _diagnostic;
++        if (handlers is null) return;
++        try { handlers(observation); }
++        catch (Exception ex)
++        {
++            try { Log?.Invoke($"Animation diagnostic handler threw; observation dropped, engine path unchanged (M1-034 style, B-M5-32): {ex.GetType().Name}: {ex.Message}"); }
++            catch (Exception) { /* a failing log must not reach the engine path either */ }
++        }
++    }
++
+     /// <summary>
+     /// Synchronous local E2G seam, not a host subscription: AnimationAborted{tag} from Abort when its tag is non-zero (A22).
+     /// the robot layer's RobotEventHandler subscribes and sends AbortAnimation 0x8D, reliable, directly (A23).
+@@ -1473,7 +1581,14 @@ public sealed class AnimationScheduler
+     /// </summary>
+     private int SendEndOfAnimationLocked()
+     {
++        // fidelity: M3-012 (B-M5-32 hook: the direct End bypasses the C14 gate, 0x0057C464..0x0057C496; read only)
++        var observer = _diagnosticObserver;
++        long at = 0;
++        (int Bytes, int Frames, long Epoch) gate = default;
++        if (observer is not null) { at = System.Diagnostics.Stopwatch.GetTimestamp(); gate = Stream.GateSnapshot(); }
+         bool sent = Stream.SendDirect(StreamSizes.EndOfAnimation, true, () => SafeSend(_sink.AnimationEnded));
++        observer?.Invoke(new SendGateObservation(at, 0, gate.Epoch, (byte)RobotMessageId.AnimEndOfAnimation,
++            StreamSizes.EndOfAnimation, true, gate.Bytes, gate.Frames, Admitted: false, Sent: sent, DirectBypass: true));
+         if (!sent) return 1;
+         _startSent = false;
+         _endSent = true;
+@@ -1647,16 +1762,17 @@ public sealed class AnimationScheduler
+     /// BufferFaceToSend (M3 B5, 0x0057C1FC..0x0057C2DA): DrawFace with the drawer's _firstScanLine, then CompressRLE,
+     /// buffered as FaceImage every time, with no de-duplication (Q1.8).
+     /// </summary>
+-    private void BufferFaceToSendLocked(ProceduralFacePose face)
++    /// <returns>The face message's diagnostic buffering sequence (B-M5-32), or null when no face was buffered.</returns>
++    private long? BufferFaceToSendLocked(ProceduralFacePose face)
+     {
+         var canvas = ProceduralFaceRenderer.DrawFace(face, _scanLines.Drawer);
+         var payload = FaceBitmapCodec.EncodeCanvas(canvas, FaceBitmapCodec.CanvasRows, FaceBitmapCodec.CanvasColumns);
+         if (payload is null)
+         {
+             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.BufferFaceToSend", "Failed to get RLE frame from procedural face");
+-            return;
++            return null;
+         }
+-        Buffer(StreamSizes.Face(payload), false, () => _sink.FaceImage(payload), tagName: "animFaceImage");
++        return Buffer(StreamSizes.Face(payload), false, () => _sink.FaceImage(payload), tagName: "animFaceImage");
+     }
+ 
+     private void BufferFaceFired(FaceFrame f)
+@@ -1668,9 +1784,9 @@ public sealed class AnimationScheduler
+     }
+ 
+     /// <summary>(3): one audio message, AudioSample with the frame's 744 bytes or AudioSilence.</summary>
+-    private void BufferAudioLocked(byte[]? sample)
++    private long BufferAudioLocked(byte[]? sample)
+     {
+-        Buffer(sample is null ? StreamSizes.AudioSilence : StreamSizes.AudioSample, true,
++        return Buffer(sample is null ? StreamSizes.AudioSilence : StreamSizes.AudioSample, true,
+                () => _sink.Audio(sample), onSent: () => AudioFramesSent++, tagName: sample is null ? "animAudioSilence" : "animAudioSample");
+     }
+ 
+@@ -1695,7 +1811,7 @@ public sealed class AnimationScheduler
+             while (_tlc.HaveLayersToSend && built < owed)
+             {
+                 var frame = _tlc.ApplyLayersToAnim(null, (int)_startMs, (int)_streamMs, null, storeFace: false);
+-                BufferAudioLocked(frame.Audio ? frame.AudioSample : null);
++                long audioSequence = BufferAudioLocked(frame.Audio ? frame.AudioSample : null);
+                 if (!_startSent)
+                 {
+                     _tag = IncrementTagCtr();
+@@ -1703,7 +1819,13 @@ public sealed class AnimationScheduler
+                 }
+                 if (frame.Backpack && frame.BackpackLeds is { } leds)
+                     Buffer(StreamSizes.BackpackLights, false, () => _sink.BackpackLights(leds), tagName: "animBackpackLights");
+-                if (frame.Face && frame.FaceOut is { } face) BufferFaceToSendLocked(face);
++                long? faceSequence = null;
++                if (frame.Face && frame.FaceOut is { } face) faceSequence = BufferFaceToSendLocked(face);
++                // fidelity: M5-029 (B-M5-32 hook: the layered face flag, 0x0064F204..0x0064F22C, as tested at
++                // 0x0057C63C..0x0057C646; read only, raised after the frame is buffered and before its drain)
++                _diagnosticObserver?.Invoke(new LayerFrameObservation(System.Diagnostics.Stopwatch.GetTimestamp(),
++                    ++_layerFrameNumber, _streamMs, frame.Face, frame.Backpack && frame.BackpackLeds is not null,
++                    audioSequence, faceSequence));
+                 built++;
+                 if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) { result = 1; break; }
+                 _streamMs += FrameStepMs;
+@@ -1722,9 +1844,9 @@ public sealed class AnimationScheduler
+     /// robot gone) is a failed send: it stays at the front and is not counted (C14), as MessageHandler's result would be.
+     /// A keyframe's KeyframeFired goes when its first message is sent.
+     /// </summary>
+-    private void Buffer(int size, bool isAudio, Action send, StreamKeyframe? fires = null, Action? onSent = null, string? tagName = null)
++    private long Buffer(int size, bool isAudio, Action send, StreamKeyframe? fires = null, Action? onSent = null, string? tagName = null)
+     {
+-        Stream.Buffer(_owner, size, isAudio, () =>
++        return Stream.Buffer(_owner, size, isAudio, () =>
+         {
+             if (!SafeSend(send)) return false;
+             onSent?.Invoke();
+diff --git a/cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs b/cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs
+index c1d9c29d..34cb88a9 100644
+--- a/cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs
++++ b/cozmo-stack/src/Cozmo.Robot/Animation/TrackLayers.cs
+@@ -165,6 +165,8 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
+     /// </summary>
+     public void KeepFaceAlive(LiveIdleParams p)
+     {
++        int blinkBefore = BlinkTimerMs;                  // B-M5-32 diagnostic only
++        int? drawMin = null, drawMax = null;
+         BlinkTimerMs -= 60;
+         DartTimerMs -= 60;
+ 
+@@ -193,9 +195,23 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
+                 max = 30000;
+             }
+             BlinkTimerMs = Rng.RandIntInRange(min, max);
++            drawMin = min;
++            drawMax = max;
+         }
++
++        // fidelity: M5-028 (B-M5-32 hook: the blink timer before the 60 decrement, 0x0058D382..0x0058D38C, and after the
++        // call, the deadline drawn at 0x0058D54C..0x0058D550 when the blink branch ran; read only, no RNG draw)
++        Observer?.Invoke(new KeepFaceAliveObservation(System.Diagnostics.Stopwatch.GetTimestamp(), ++_keepAliveCalls,
++            blinkBefore, BlinkTimerMs, drawMin is not null, drawMin, drawMax));
+     }
+ 
++    /// <summary>
++    /// B-M5-32: the scheduler's guarded diagnostic raiser while anything subscribes to
++    /// <see cref="AnimationScheduler.Diagnostic"/>, else null. Set under the scheduler's lock.
++    /// </summary>
++    internal Action<AnimationDiagnostic>? Observer;
++    private long _keepAliveCalls;
++
+     /// <summary>
+     /// K1 GenerateEyeShift(params): d = EyeDartMaxDistance; x = RandIntInRange((int)−d, (int)d), then y likewise;
+     /// dur = RandIntInRange((int)p25, (int)p26); a default face through LookAt(x, y, 5, 5, p28 up, p29 down, p27 outer);
+diff --git a/cozmo-stack/tests/Cozmo.Protocol.Tests/M5HwDrivingTests.cs b/cozmo-stack/tests/Cozmo.Protocol.Tests/M5HwDrivingTests.cs
+index 96fec79c..e9545fb2 100644
+--- a/cozmo-stack/tests/Cozmo.Protocol.Tests/M5HwDrivingTests.cs
++++ b/cozmo-stack/tests/Cozmo.Protocol.Tests/M5HwDrivingTests.cs
+@@ -23,8 +23,11 @@ public class M5HwDrivingTests
+     public void FailedStartAndTraversalPermitNoLoopButDoNotSatisfySuccessfulTraversal()
+     {
+         var result=Grade(Events());
+-        Assert.Equal("INCONCLUSIVE",result["verdict"]!.GetValue<string>());
++        // Operator 2026-10-20 DRIVING split: M5-063 is OBSERVED on the failed-Start path whatever the drive result.
++        Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["verdict"]!.GetValue<string>());
+         Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["phaseVerdict"]!.GetValue<string>());
++        Assert.False(result["loopRequestCovered"]!.GetValue<bool>());
++        Assert.True(result["loopCoverageOpen"]!.GetValue<bool>());
+         Assert.False(result["loopRequired"]!.GetValue<bool>());
+         Assert.False(result["loopCoverageMissing"]!.GetValue<bool>());
+         Assert.True(result["endCompletionBeforeDrive"]!.GetValue<bool>());
+@@ -57,6 +60,7 @@ public class M5HwDrivingTests
+         Assert.Null(Grade(unknown)["loopRequired"]);
+         var unexpected=Events(); unexpected.Add(Log(40,"GetResponseForAnimationTrigger.Found","DriveLoopDefault -> ag_loop"));
+         Assert.Equal("OBSERVED_LOOP_AFTER_NONZERO_START",Grade(unexpected)["phaseVerdict"]!.GetValue<string>());
++        Assert.Equal("INCONCLUSIVE",Grade(unexpected)["verdict"]!.GetValue<string>());     // contradiction stays non-OBSERVED
+     }
+ 
+     // reach: unit (synthetic request/completion ordering; public completion may follow synchronous Loop construction).
+@@ -68,11 +72,30 @@ public class M5HwDrivingTests
+         events.Add(Log(40,"GetResponseForAnimationTrigger.Found","DriveLoopDefault -> ag_loop"));
+         events.Add(Log(41,"IAction.Update.PreconditionsMet","Preconditions for PlayAnimationag_loop [101] successfully met."));
+         var result=Grade(events);
+-        Assert.Equal("OBSERVED_SUCCESSFUL_DRIVE_PHASE_REQUESTS",result["verdict"]!.GetValue<string>());
++        Assert.Equal("OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS",result["verdict"]!.GetValue<string>());
++        Assert.True(result["loopRequestCovered"]!.GetValue<bool>());
+         Assert.True(result["successfulStartLoopEndRequestCoverage"]!.GetValue<bool>());
+         Assert.False(result["successfulTraversalCoverage"]!.GetValue<bool>());
+     }
+ 
++    // reach: unit (synthetic successful Start/Loop/End with a failed drive; native 0x4F0D80..D8C selects Loop on
++    // matching Start result0, independent of the later drive result).
++    [Fact]
++    public void SuccessfulPhasePathIsObservedWhateverTheDriveResultAndTraversalStaysUnjudged()
++    {
++        var events=Events(0,0x04000002); events.RemoveAll(e=>e["Tag"]?.GetValue<uint>()==100);
++        events.Add(Complete(45,100,26,0));
++        events.Add(Log(40,"GetResponseForAnimationTrigger.Found","DriveLoopDefault -> ag_loop"));
++        events.Add(Log(41,"IAction.Update.PreconditionsMet","Preconditions for PlayAnimationag_loop [101] successfully met."));
++        var result=Grade(events);
++        Assert.Equal("OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS",result["verdict"]!.GetValue<string>());
++        Assert.True(result["loopRequestCovered"]!.GetValue<bool>());
++        Assert.False(result["successfulStartLoopEndRequestCoverage"]!.GetValue<bool>());
++        Assert.False(result["successfulTraversalCoverage"]!.GetValue<bool>());
++        Assert.StartsWith("NOT_JUDGED",result["traversalJudgement"]!.GetValue<string>());
++        Assert.Contains("M12/M13",result["traversalJudgement"]!.GetValue<string>());
++    }
++
+     // reach: unit (immutable captured run replay; no new robot run, source settlement or traversal proof).
+     [Fact]
+     public void FirstRunFailedTraversingPathRetainsItsBoundaryDiagnosticsAndValidCleanup()
+@@ -88,6 +111,8 @@ public class M5HwDrivingTests
+         Assert.Equal(0x02000000u,result["startResult"]!.GetValue<uint>());
+         Assert.False(result["loopRequired"]!.GetValue<bool>());
+         Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["phaseVerdict"]!.GetValue<string>());
++        Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["verdict"]!.GetValue<string>());
++        Assert.False(result["loopRequestCovered"]!.GetValue<bool>());
+         Assert.True(result["endCompletionBeforeDrive"]!.GetValue<bool>());
+         Assert.False(result["successfulTraversalCoverage"]!.GetValue<bool>());
+         Assert.Contains(result["boundaryDiagnostics"]!.AsArray(),r=>r!["line"]!.GetValue<string>().Contains("M13-033"));
+diff --git a/re-analysis/acceptance/hardware/scripts/m5-hw-1.md b/re-analysis/acceptance/hardware/scripts/m5-hw-1.md
+index 87b9dbcd..ff2d8ebf 100644
+--- a/re-analysis/acceptance/hardware/scripts/m5-hw-1.md
++++ b/re-analysis/acceptance/hardware/scripts/m5-hw-1.md
+@@ -63,11 +63,11 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are
+ | ABORT | Cancel a long shipped clip after 750 ms. Count exactly one 0x8D, no End, at most one audio/face marker within 400 ms after the ordered wire Abort (pre-command backlog is separate); preserve full counter/echo tail and operator observation. | M5-023 A22/A23/A25; pending built frame can drain. Robot semantics M5-036. |
+ | KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with ordered Start FF/End bursts; then a separate ten-second no-idle persistent-eye-dart face window, requiring face output and no End while its prerequisites hold. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 burst idle; M5-027/030. Persistent layers: M5-028/029, 0x0057C530..0x0057C556. |
+ | LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain lock request, actual Disable1, marked clip interval, F1 EnabledAnimTracks and raw head telemetry, then separate unlock request/actual Enable1 and physical observation. | M4-014 producer, M4-047 unlock, M5-035 unsuppressed stream and robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
+-| AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 admission uses remaining allowances at the send gate; API-delivery differences do not measure that gate. Direct End adds a frame/bytes outside admission; budget compliance is NOT_JUDGED without atomic evidence. M6 runtime uncertainty remains embedded. |
+-| LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; without per-frame face flags/draw evidence this remains INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
++| AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 admission uses remaining allowances at the send gate; API-delivery differences do not measure that gate. Direct End adds a frame/bytes outside admission. Since B-M5-32 the read-only send-gate and budget-refresh hooks supply the allowances, joined to the wire by stream order; without a complete join budget compliance stays NOT_JUDGED. M6 runtime uncertainty remains embedded. |
++| LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; per-frame face flags come from the read-only StreamLayers hook joined to the wire (B-M5-32); an unjoined frame keeps the check INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
+ | LIVE_IDLE | Twelve seconds of default ProceduralLive; compare streamed signed head angles with preceding Motion.HeadAngleRad samples and default +/-6 degrees; require body/lift wiggles. | M5-030 0x0057D838..0x0057D84E, A34 defaults. Uncalibrated input is not forced; B-M5-23 covers it offline. |
+-| PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
+-| DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Successful default Start/Loop/End request coverage is separate from failed Start/End cleanup; failed traversal remains unassessed and does not cover a successful drive. |
++| PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. KeepFaceAlive call/deadline rows from the read-only hook (B-M5-32) decide the verdict; the physical answer is retained separately. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
++| DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Since 2026-10-20 the verdict covers M5-063 on whichever phase path the action results select, whatever the drive result; loopRequestCovered records the Loop request. Successful traversal belongs to the M12/M13 acceptance. |
+ | SLEEP | Public StartIdleTimeout(0.2,-1), observe visible MISSING and GoToSleepRequested; cancel timer. Capture new animation starts and logs for absence of sleep-child actions. | M5-038/M1-045; D2/D5/D4 are factory requests, not robot message IDs. The M8 action gap stays open. |
+ | TEARDOWN | Dispose during a long clip; verify stale TestAnim.json deleted on construction and Dispose; grade the actual Dispose-call interval with discard markers, reliable identities and queue-origin limits; post-close silence is diagnostic. | M5-037/053/055/059. Teardown batch may contain stop/disconnect; M1-006 pacing may prevent a DisconnectRequest reaching the wire. |
+ 
+@@ -84,6 +84,8 @@ sets are recorded. Missing suitable assets produce INCONCLUSIVE. No fabricated c
+   window; raw frames remain authoritative. Timings are host capture times, not firmware execution times.
+ - `events.jsonl`: startup diagnostics subscribed through BeforeStart, connection response, robot/animation state,
+   stream counters, API action completion reports, play/cancel calls, errors and check boundaries.
++- `diagnostics.jsonl` (B-M5-32): every read-only engine hook observation of the run (KeepFaceAlive calls, StreamLayers
++  frames, send-gate offers and the direct End, budget refreshes), with its harness-clock time.
+ - `provenance/`: script, harness sources, entrypoint, manifest and adopted settling report, with SHA-256 hashes.
+ - `binaries/`: exact loaded Cozmo assemblies and their hashes; `resource-hashes.json` identifies animation/group/sound files.
+ 
+@@ -246,3 +248,40 @@ The End completion-order gate is distinct from successful End playback evidence:
+ handler state4 for any result. A failed End action is reported as such and is not silently accepted as
+ successful End coverage or mislabeled as early drive completion. Successful wire/echo evidence remains
+ separately required for that observation; unavailable evidence stays inconclusive.
++
++## Dated diagnostic-hook and driving correction - B-M5-32, 2026-10-20
++
++The operator approved read-only diagnostic hooks in the stack's animation code ("M5 decisions before the rerun").
++`AnimationScheduler.Diagnostic` reports, at the native point each grader cites, without drawing a random number,
++sending anything or changing any order (a regression compares the outbound bytes with and without subscribers):
++
++- every `KeepFaceAlive` call (M5-028): call number, blink timer before the 60 decrement (0x58D382..38C), the timer
++  after the call and whether a blink was generated with the bounds of its draw (0x58D54C..550);
++- every `StreamLayers` frame (M5-029): the layered face flag (0x64F204..22C, tested at 0x57C63C..646) and the send-buffer
++  sequence numbers of the frame's audio and face messages;
++- every message offered at the send gate and the direct End (M3-012, 0x57BF96..BFCC, 0x57C464..496): tag, size,
++  remaining byte/audio-frame allowances, admitted, sent; and every budget refresh (C9, 0x57C6F6..7AC).
++
++The harness subscribes for the whole run and only enqueues. The join to the wire is by stream order: the successful
++gate sends (from one second before a window to its end) must equal exactly one contiguous run of the captured,
++deduplicated outbound stream messages (tag and size), each captured at or after its gate observation and within one
++second of it. No run or several runs leave the join unmade and the check INCONCLUSIVE with the reason; nothing is
++guessed. The one-second margin is a harness choice, not an engine constant.
++
++- **LAYERS**: each StreamLayers frame's flag is keyed to its joined audio message; FiniteLayers then checks face output
++  per frame. An unjoined frame keeps the check INCONCLUSIVE.
++- **PARAMETERS**: the verdict now comes from the KeepFaceAlive calls stamped after the 44000/45000 readback (the B4
++  write and KeepFaceAlive share the scheduler lock, so those calls follow the write): 60 per call, a generated blink
++  draws an inclusive 44000..45000 deadline, calls continuous. The physical answer and encoded-face diagnostics remain
++  separate observations; firmware display stays NOT_JUDGED (M3-008/M5-036).
++- **AUDIO**: OBSERVED_AUDIO_FRAMING_AND_ADMISSION requires the framing observation plus every outbound audio message in
++  the window joined to an observed gate send, every refresh matching C9 and every gate remainder matching C14's
++  successful-send accounting. budgetCompliance is then OBSERVED_FOR_JOINED_WINDOW (that window, not every send of the
++  run); otherwise NOT_JUDGED.
++- **DRIVING** (operator decision): the check's verdict covers M5-063 and is OBSERVED on either selected path
++  (OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS or OBSERVED_FAILED_START_END_CLEANUP), whatever the drive result.
++  loopRequestCovered records whether the Loop request was covered; a failed-path run leaves Loop coverage open for a
++  later run. Contradictions stay non-OBSERVED. successfulTraversalCoverage stays false and the traversal NOT_JUDGED:
++  successful traversal belongs to the M12/M13 acceptance, and FailedTraversingPath stays unexplained there.
++
++Bundles gain `diagnostics.jsonl`. No manifest, inventory or status change; M5 is not accepted by this correction.
+diff --git a/cozmo-stack/src/Cozmo.Robot/Animation/AnimationDiagnostics.cs b/cozmo-stack/src/Cozmo.Robot/Animation/AnimationDiagnostics.cs
+new file mode 100644
+index 00000000..84f771e8
+--- /dev/null
++++ b/cozmo-stack/src/Cozmo.Robot/Animation/AnimationDiagnostics.cs
+@@ -0,0 +1,60 @@
++namespace Cozmo.Robot.Animation;
++
++// fidelity: M5-028, M5-029, M3-012
++/// <summary>
++/// One read-only observation from <see cref="AnimationScheduler.Diagnostic"/> (B-M5-32; operator decision 2026-10-20,
++/// "M5 decisions before the rerun"). These observe engine state at the native point each record names. They are
++/// instrumentation for the M5 hardware harness, not behaviour: they draw no random numbers, send nothing and change no
++/// ordering. <see cref="Timestamp"/> is <see cref="System.Diagnostics.Stopwatch.GetTimestamp"/> taken at the observed
++/// point (before the send, for a send gate), so a subscriber can bound it against its own Stopwatch clock.
++/// </summary>
++public abstract record AnimationDiagnostic(long Timestamp);
++
++// fidelity: M5-028
++/// <summary>
++/// One <c>FaceLayerManager::KeepFaceAlive</c> call (A33; the blink timer at manager+0x14). <see cref="CallNumber"/>
++/// rises by one for every call observed while a subscriber is attached. <see cref="BlinkTimerBeforeMs"/> is the timer
++/// before the call's 60 decrement (0x0058D382..0x0058D38C); <see cref="BlinkTimerAfterMs"/> is the timer when the call
++/// returns: the decremented value, or the new deadline drawn at 0x0058D54C..0x0058D550 when the blink branch ran.
++/// <see cref="DrawMinMs"/>/<see cref="DrawMaxMs"/> are the bounds that draw used (after the max &lt;= min fallback),
++/// null when no blink was generated.
++/// </summary>
++public sealed record KeepFaceAliveObservation(long Timestamp, long CallNumber, int BlinkTimerBeforeMs,
++    int BlinkTimerAfterMs, bool BlinkGenerated, int? DrawMinMs, int? DrawMaxMs) : AnimationDiagnostic(Timestamp);
++
++// fidelity: M5-029
++/// <summary>
++/// One <c>StreamLayers</c> frame (A36/Q1.8). <see cref="FaceFlag"/> is the layered face flag ApplyLayersToAnim(null)
++/// returned (0x0064F204..0x0064F22C), which StreamLayers tests before buffering the face (0x0057C63C..0x0057C646).
++/// <see cref="AudioBufferSequence"/> and <see cref="FaceBufferSequence"/> are the send-buffer sequence numbers of the
++/// frame's audio message and of its face message (null when no face was buffered); they equal
++/// <see cref="SendGateObservation.BufferSequence"/> of the same messages at the send gate, which is how a subscriber
++/// joins this frame to the outbound stream order. <see cref="FrameNumber"/> rises by one per observed frame.
++/// </summary>
++public sealed record LayerFrameObservation(long Timestamp, long FrameNumber, long StreamTimeMs, bool FaceFlag,
++    bool BackpackFlag, long AudioBufferSequence, long? FaceBufferSequence) : AnimationDiagnostic(Timestamp);
++
++// fidelity: M3-012
++/// <summary>
++/// One message offered at the stream's send gate (<c>SendBufferedMessages</c>, C14, 0x0057BF96..0x0057BFCC), or the
++/// direct EndOfAnimation send that bypasses it (0x0057C464..0x0057C496, <see cref="DirectBypass"/>).
++/// <see cref="RemainingBytes"/>/<see cref="RemainingAudioFrames"/> are the allowances left at that moment (C9,
++/// 0x0057C6F6..0x0057C7AC, less the earlier successful sends of the same Update). <see cref="Admitted"/> is whether the
++/// buffered gate let it through (not applicable, and false, for a direct End); <see cref="Sent"/> whether the send
++/// succeeded (only a successful send is counted, 0x0057BFAE). <see cref="BufferSequence"/> numbers buffered messages
++/// in buffering order (0 when buffered with no subscriber attached, and for a direct End). <see cref="BudgetEpoch"/>
++/// names the <see cref="BudgetRefreshObservation"/> whose allowances apply (0 when that refresh was not observed).
++/// <see cref="MessageId"/> is the EngineToRobot tag, null when the buffered entry names no catalogued message.
++/// Zero-size entries (stack bookkeeping, no robot message) are not reported.
++/// </summary>
++public sealed record SendGateObservation(long Timestamp, long BufferSequence, long BudgetEpoch, byte? MessageId,
++    int Size, bool CountsAsAudioFrame, int RemainingBytes, int RemainingAudioFrames, bool Admitted, bool Sent,
++    bool DirectBypass) : AnimationDiagnostic(Timestamp);
++
++// fidelity: M3-012
++/// <summary>
++/// One <c>UpdateAmountToSend</c> (C9, 0x0057C6F6..0x0057C7AC): the played counters it read (C10), the streamed
++/// counters at that moment (C11..C13), and the byte and audio-frame allowances it stored.
++/// </summary>
++public sealed record BudgetRefreshObservation(long Timestamp, long BudgetEpoch, int BytesPlayed, int FramesPlayed,
++    int BytesStreamed, int FramesStreamed, int BytesToSend, int FramesToSend) : AnimationDiagnostic(Timestamp);
+diff --git a/cozmo-stack/tests/Cozmo.Protocol.Tests/M5HwHookTests.cs b/cozmo-stack/tests/Cozmo.Protocol.Tests/M5HwHookTests.cs
+new file mode 100644
+index 00000000..4dc10d4e
+--- /dev/null
++++ b/cozmo-stack/tests/Cozmo.Protocol.Tests/M5HwHookTests.cs
+@@ -0,0 +1,423 @@
++using System.Text.Json.Nodes;
++using Cozmo.Conformance;
++using Cozmo.Robot;
++using Cozmo.Robot.Animation;
++using Cozmo.Robot.Behavior;
++using Xunit;
++
++namespace Cozmo.Protocol.Tests;
++
++/// <summary>
++/// B-M5-32: the read-only diagnostic hooks (AnimationScheduler.Diagnostic) and their join to the wire. Every expected
++/// value is a native rule cited with it (M5-028 0x58D382..38C / 0x58D48C..490 / 0x58D540..550 / ctor 0x58CD78;
++/// M5-029 0x64F204..22C / 0x57C63C..646 / 0x58D69E..D6D0 / 0x58CB8C..CD2A; M3-012 C9 0x57C6F6..7AC, C11/C12,
++/// C14 0x57BF96..BFCC, direct End 0x57C464..496), never a value read back from the code under test.
++/// </summary>
++[Collection("M5 process statics")]       // the drawer/face-animation scan-line parity is a process static (M3 B3)
++public class M5HwHookTests
++{
++    /// <summary>Serialises each sink call to the EngineToRobot message RobotAnimationSink sends, in send order.</summary>
++    private sealed class WireSink : IAnimationSink
++    {
++        public readonly List<byte[]> Messages = new();
++        public Action<byte[]>? OnSend;
++        public bool Paced;
++        public int Played, BytesPlayed;
++        public int? AudioFramesPlayed => Paced ? Played : null;
++        public int? AnimBytesPlayed => Paced ? BytesPlayed : null;
++        private void Send(RobotMessage m) { var b = m.ToBytes(); Messages.Add(b); OnSend?.Invoke(b); }
++        public void Face(FaceBitmap bitmap) => FaceImage(FaceBitmapCodec.Encode(bitmap));
++        public void FaceImage(byte[] payload) => Send(new Cozmo.Protocol.FaceImage { Image = payload });
++        public void Audio(byte[]? f) { if (f is null) Send(new AudioSilence()); else Send(new AudioSample { Samples = f }); }
++        public void Head(sbyte deg, uint dur) => Send(new Cozmo.Protocol.HeadAngle { DurationTimeMs = (ushort)dur, AngleDeg = deg });
++        public void Lift(byte mm, uint dur) => Send(new Cozmo.Protocol.LiftHeight { DurationTimeMs = (ushort)dur, HeightMm = mm });
++        public void AnimationStarted(byte tag) => Send(new StartOfAnimation { AnimId = tag });
++        public void AnimationEnded() => Send(new EndOfAnimation());
++        public void Body(BodyKeyframe k) { if (k.EncodedRadius is { } r) Send(new BodyMotion { Speed = k.Speed, RadiusMm = r }); }
++        public void BodyStop() => Send(new BodyMotion { Speed = 0, RadiusMm = BodyKeyframe.StraightRadius });
++        public void Lights(LightsKeyframe keyframe) { }
++        public void BackpackLights(ushort[] leds) => Send(new Cozmo.Protocol.BackpackLights { Field0 = (ushort[])leds.Clone() });
++        public void AnimEvent(byte animEvent) => Send(new Cozmo.Protocol.Event { Field0 = animEvent });
++        public void RecordHeading() => Send(new Cozmo.Protocol.RecordHeading());
++        public void TurnToRecordedHeading(TurnToRecordedHeadingKeyframe k) => Send(RobotAnimationSink.ToMessage(k));
++        public void Event(string eventId) { }
++        public void Finished(string clipName, bool completed) { }
++    }
++
++    private sealed class FixedAudio : IAnimationAudioSource
++    {
++        private readonly short[] _pcm;
++        public FixedAudio(short[] pcm) => _pcm = pcm;
++        public short[]? GetPcm(long eventId, float volume) => _pcm;
++        public string? NameOf(long eventId) => "tone";
++    }
++
++    /// <summary>
++    /// A scheduler, its wire (one synthetic capture per sink send, 0.5 ms after the tick that sent it) and its hook
++    /// observations stamped with the tick time. The modelled robot plays one audio frame per tick and every byte.
++    /// </summary>
++    private sealed class Run
++    {
++        public readonly WireSink Sink = new();
++        public readonly AnimationScheduler S;
++        public readonly List<M5HwAnalysis.Diagnostic> Hooks = new();
++        public readonly List<M5Hw.WireMessage> Wire = new();
++        public double Now;
++        public Action<Run>? Robot;
++        public Run(int seed, bool subscribe = true, bool paced = true, Action<AnimationDiagnostic>? handler = null)
++        {
++            Sink.Paced = paced;
++            S = new AnimationScheduler(Sink, new Random(seed));
++            Sink.OnSend = b => Wire.Add(new M5Hw.WireMessage(Now + 0.5, true, b, Wire.Count + 1, 0));
++            if (subscribe) S.Diagnostic += d => Hooks.Add(new M5HwAnalysis.Diagnostic(Now, d));
++            if (handler is not null) S.Diagnostic += handler;
++            Robot = r => { r.Sink.Played = Math.Min(r.S.Stream.FramesStreamed, r.Sink.Played + 1); r.Sink.BytesPlayed = r.S.Stream.BytesStreamed; };
++        }
++        public void Tick(double t) { Now = t; Robot?.Invoke(this); S.Advance(t); }
++        public void Ticks(double from, double to, double step = 1000.0 / AnimationScheduler.FrameRateHz) { for (double t = from; t <= to; t += step) Tick(t); }
++        public IEnumerable<T> Of<T>() where T : AnimationDiagnostic => Hooks.Select(h => h.Observation).OfType<T>();
++    }
++
++    private static AnimationClip Clip(string name, params Keyframe[] frames)
++    {
++        var list = frames.OrderBy(f => f.TriggerTimeMs).ToList();
++        AnimationTrack tracks = 0; uint end = 0;
++        foreach (var f in list) { tracks |= f.Track; end = Math.Max(end, f.EndTimeMs); }
++        return new AnimationClip { Name = name, Keyframes = list, Tracks = tracks, DurationMs = end };
++    }
++
++    private static FaceKeyframe FaceAt(uint t, float x)
++    {
++        var pose = ProceduralFaceRenderer.Nominal();
++        pose.Left[EyeParam.EyeCenterX] = x;
++        return new FaceKeyframe(t, pose);
++    }
++
++    private static AnimationClip ShortClip() => Clip("prime", new HeadKeyframe(0, 100, 5, 0), new EventKeyframe(200, "e"));
++
++    private static AnimationClip RichClip(uint durationMs) => Clip("rich",
++        new[] { (Keyframe)new AudioKeyframe(0, new long[] { 1 }, 1f, Array.Empty<float>(), false),
++                new HeadKeyframe(100, 200, 10, 0), new LiftKeyframe(300, 200, 40, 0), new EventKeyframe(durationMs, "end") }
++            .Concat(Enumerable.Range(0, (int)(durationMs / 99)).Select(i => (Keyframe)FaceAt((uint)(i * 99), i % 7))).ToArray());
++
++    /// <summary>The finite layer scenario: a prime clip, idle ticks, then one distortion pulse until the layers end.</summary>
++    private static (Run Run, double PulseAt, double EndAt) LayerPulse(int seed, bool subscribe = true, Action<AnimationDiagnostic>? handler = null)
++    {
++        var run = new Run(seed, subscribe, handler: handler);
++        run.S.KeepAliveTimeoutSec = 600;                       // the harness's keep-alive suppression (LAYERS)
++        run.S.Play(ShortClip(), 1000);
++        run.Ticks(1000, 2000);
++        Assert.False(run.S.IsPlaying);
++        int pulse = 1;
++        run.S.DesiredFaceDistortion = () => Interlocked.Exchange(ref pulse, 0) == 1 ? 0.8f : 0f;
++        double at = 2100, t = at;
++        for (; t < 6000 && (t == at || run.S.HaveLayersToSend || !run.S.Stream.IsEmpty || run.S.StartEndFlags.StartSent); t += 1000.0 / 30) run.Tick(t);
++        return (run, at, t);
++    }
++
++    // ---------------------------------------------------------------- M5-028
++
++    // reach: production (the live entry Advance, keep-alive block 0x57CF6A..CFF2 -> KeepFaceAlive; B4 through
++    // HandleSetParameters, the retained handler's body) with an unpaced test sink.
++    [Fact]
++    public void KeepFaceAliveHookReportsSixtyPerCallAndAnInclusiveNewDeadline()
++    {
++        var run = new Run(3, paced: false);
++        run.S.HandleSetParameters(new[] { (byte)LiveIdleParam.BlinkSpacingMinTime_ms, (byte)LiveIdleParam.BlinkSpacingMaxTime_ms }, new[] { 100f, 200f }, false);
++        run.S.Play(ShortClip(), 1000);
++        run.Ticks(1000, 4000, 60);
++        var calls = run.Of<KeepFaceAliveObservation>().ToArray();
++        Assert.True(calls.Length > 10);
++        Assert.Equal(0, calls[0].BlinkTimerBeforeMs);            // manager+0x14 is 0 from the ctor (0x0058CD78)
++        for (int i = 0; i < calls.Length; i++)
++        {
++            var c = calls[i];
++            Assert.Equal(i + 1, c.CallNumber);
++            if (i > 0) Assert.Equal(calls[i - 1].BlinkTimerAfterMs, c.BlinkTimerBeforeMs);
++            bool due = c.BlinkTimerBeforeMs - 60 <= 0;           // 0x58D382..38C subtract 60; 0x58D48C..490 skip while positive
++            Assert.Equal(due, c.BlinkGenerated);
++            if (due)
++            {
++                Assert.Equal(100, c.DrawMinMs); Assert.Equal(200, c.DrawMaxMs);
++                Assert.InRange(c.BlinkTimerAfterMs, 100, 200);   // 0x82FA96..FAC8: min + trunc(dbl * (max - min + 1))
++            }
++            else
++            {
++                Assert.Equal(c.BlinkTimerBeforeMs - 60, c.BlinkTimerAfterMs);
++                Assert.Null(c.DrawMinMs); Assert.Null(c.DrawMaxMs);
++            }
++        }
++        Assert.True(calls.Count(c => c.BlinkGenerated) >= 3);
++    }
++
++    // reach: production (Advance through the keep-alive block; B4 handler body sets max == min).
++    [Fact]
++    public void KeepFaceAliveHookReportsTheFallbackBoundsWhenMaxIsNotAboveMin()
++    {
++        var run = new Run(4, paced: false);
++        run.S.HandleSetParameters(new[] { (byte)LiveIdleParam.BlinkSpacingMinTime_ms, (byte)LiveIdleParam.BlinkSpacingMaxTime_ms }, new[] { 500f, 500f }, false);
++        run.S.Play(ShortClip(), 1000);
++        run.Ticks(1000, 2000, 60);
++        var first = run.Of<KeepFaceAliveObservation>().First();
++        Assert.True(first.BlinkGenerated);
++        Assert.Equal(7500, first.DrawMinMs); Assert.Equal(30000, first.DrawMaxMs);     // 0x58D540..544
++        Assert.InRange(first.BlinkTimerAfterMs, 7500, 30000);
++    }
++
++    // ---------------------------------------------------------------- M5-029
++
++    // reach: production (Advance -> no-animation path -> StreamLayers with a DesiredFaceDistortion pulse through
++    // TLC.Update/AddGlitch) with a modelled robot sink in place of the transport.
++    [Fact]
++    public void StreamLayersHookFaceFlagMatchesWhatWasBufferedInStreamOrder()
++    {
++        var (run, _, _) = LayerPulse(5);
++        var sent = run.Of<SendGateObservation>().Where(g => g.Sent).ToArray();
++        Assert.Equal(run.Sink.Messages.Count, sent.Length);      // every successful send is one sink message
++        for (int k = 0; k < sent.Length; k++)
++        {
++            Assert.Equal(run.Sink.Messages[k][0], sent[k].MessageId);
++            Assert.Equal(run.Sink.Messages[k].Length, sent[k].Size);   // C11: tag plus the member's packed size
++        }
++        var index = new Dictionary<long, int>();
++        for (int k = 0; k < sent.Length; k++) if (sent[k].BufferSequence != 0) index[sent[k].BufferSequence] = k;
++        var frames = run.Of<LayerFrameObservation>().ToArray();
++        Assert.NotEmpty(frames);
++        Assert.False(frames[0].FaceFlag);       // first distortion face trigger is cumulative duration >= 33 (0x58D69E..D6D0): not due at 0
++        Assert.True(frames[0].BackpackFlag);    // backpack layer's first keyframe at trigger 0 (0x58CB8C..CD2A)
++        Assert.Contains(frames, f => f.FaceFlag);
++        foreach (var f in frames)
++        {
++            int a = index[f.AudioBufferSequence];
++            Assert.True(run.Sink.Messages[a][0] is 0x8E or 0x8F);
++            int next = a + 1;
++            while (next < run.Sink.Messages.Count && run.Sink.Messages[next][0] is not (0x8E or 0x8F or 0x9A)) next++;
++            var faces = Enumerable.Range(a + 1, next - a - 1).Where(i => run.Sink.Messages[i][0] == 0x97).ToArray();
++            // 0x57C63C..646: StreamLayers buffers the face iff the layered face flag (0x64F204..22C) is set
++            if (f.FaceFlag) Assert.Equal(new[] { index[f.FaceBufferSequence!.Value] }, faces);
++            else { Assert.Null(f.FaceBufferSequence); Assert.Empty(faces); }
++        }
++    }
++
++    // ---------------------------------------------------------------- M3-012
++
++    // reach: production (Advance -> UpdateStream/StreamLayers -> RefreshBudget -> Drain, and the direct End) with a
++    // modelled robot whose played counters the test sets: substitutes the AnimationState handler (C10).
++    [Fact]
++    public void SendGateHookFollowsTheNativeAllowanceFormulaAndSuccessfulSendAccounting()
++    {
++        var run = new Run(6);
++        run.S.AudioSource = new FixedAudio(CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(1500)));
++        int tick = 0;
++        run.Robot = r =>
++        {
++            tick++;
++            r.Sink.Played = Math.Min(r.S.Stream.FramesStreamed, r.Sink.Played + 1);
++            int streamed = r.S.Stream.BytesStreamed;
++            r.Sink.BytesPlayed = tick < 20 ? streamed + 40000 : tick < 30 ? streamed - 9000 : streamed;   // cap, clamp, normal
++        };
++        run.S.Play(RichClip(2500), 1000);
++        run.Ticks(1000, 5000);
++        Assert.False(run.S.IsPlaying);
++
++        var obs = run.Hooks.Select(h => h.Observation).ToArray();
++        var refreshes = new Dictionary<long, BudgetRefreshObservation>();
++        var spent = new Dictionary<long, (int Bytes, int Frames)>();
++        int sentSoFar = 0; bool capSeen = false, clampSeen = false, frameStop = false, byteStop = false, directEnd = false;
++        foreach (var o in obs)
++        {
++            if (o is BudgetRefreshObservation r)
++            {
++                var before = run.Wire.Take(sentSoFar).ToArray();
++                Assert.Equal(before.Sum(m => m.Payload.Length), r.BytesStreamed);                     // C11: every send adds its Size
++                Assert.Equal(before.Count(m => m.Payload[0] is 0x8E or 0x8F or 0x9A), r.FramesStreamed); // C11/C12
++                int raw = r.BytesPlayed - r.BytesStreamed + 8192;                                      // C9
++                Assert.Equal(raw < 0 ? 0 : Math.Min(raw, 30000), r.BytesToSend);
++                Assert.Equal(Math.Max(0, r.FramesPlayed - r.FramesStreamed + 14), r.FramesToSend);
++                capSeen |= raw > 30000; clampSeen |= raw < 0;
++                refreshes[r.BudgetEpoch] = r;
++            }
++            else if (o is SendGateObservation g)
++            {
++                var epoch = refreshes[g.BudgetEpoch];
++                var used = spent.GetValueOrDefault(g.BudgetEpoch);
++                Assert.Equal(epoch.BytesToSend - used.Bytes, g.RemainingBytes);                      // C14 BFB0..BFCC
++                Assert.Equal(epoch.FramesToSend - used.Frames, g.RemainingAudioFrames);
++                if (g.DirectBypass)
++                {
++                    Assert.Equal((byte?)0x9A, g.MessageId); directEnd |= g.Sent;                              // 0x57C464..496
++                }
++                else
++                {
++                    bool audio = g.MessageId is 0x8E or 0x8F;
++                    Assert.Equal(audio, g.CountsAsAudioFrame);
++                    bool admit = !(g.Size > g.RemainingBytes) && !(audio && g.RemainingAudioFrames <= 0); // BF96/BF98, BF9A/BFA0
++                    Assert.Equal(admit, g.Admitted);
++                    if (!admit && g.Size > g.RemainingBytes) byteStop = true;
++                    else if (!admit) frameStop = true;
++                    if (g.Sent) spent[g.BudgetEpoch] = (used.Bytes + g.Size, used.Frames + (audio ? 1 : 0));
++                }
++                if (g.Sent)
++                {
++                    Assert.Equal(run.Wire[sentSoFar].Payload[0], g.MessageId);
++                    Assert.Equal(run.Wire[sentSoFar].Payload.Length, g.Size);
++                    sentSoFar++;
++                }
++            }
++        }
++        Assert.Equal(run.Wire.Count, sentSoFar);
++        Assert.True(capSeen && clampSeen && frameStop && byteStop && directEnd,
++            $"cap {capSeen} clamp {clampSeen} frameStop {frameStop} byteStop {byteStop} directEnd {directEnd}");
++    }
++
++    // ---------------------------------------------------------------- no behaviour change
++
++    private static List<byte[]> FullScenario(bool subscribe, Action<AnimationDiagnostic>? handler = null, List<string>? log = null)
++    {
++        // The same process-static start for every run: scan-line parity (M3 B3) and the distorter's function-static RNG (G6).
++        ScanLineState.Process.Drawer = 0; ScanLineState.Process.FaceAnimation = 0; ScanlineDistorter.Rng = new EngineRandom(1u);
++        var run = new Run(11, subscribe, handler: handler);
++        if (log is not null) run.S.Log = log.Add;
++        run.S.AudioSource = new FixedAudio(CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(600)));
++        run.S.Play(RichClip(1500), 1000);
++        run.Ticks(1000, 3500);
++        int pulse = 1;
++        run.S.DesiredFaceDistortion = () => Interlocked.Exchange(ref pulse, 0) == 1 ? 0.8f : 0f;
++        run.Ticks(3533, 5000);
++        run.S.PushIdleAnimation(AnimationTrigger.ProceduralLive, "test");
++        run.Ticks(5033, 11000, 60);
++        return run.Sink.Messages;
++    }
++
++    // reach: production (Advance over a clip with audio, a layer pulse and the ProceduralLive idle with keep-alive),
++    // with a modelled robot sink; compares the outbound bytes with and without subscribers.
++    [Fact]
++    public void ASubscriberChangesNoOutboundByteOrderOrRandomDraw()
++    {
++        var oldDistortionRng = ScanlineDistorter.Rng;
++        List<byte[]> plain, again, observed, throwing; var log = new List<string>();
++        try
++        {
++            plain = FullScenario(subscribe: false);
++            again = FullScenario(subscribe: false, log: new List<string>());
++            observed = FullScenario(subscribe: true);
++            throwing = FullScenario(subscribe: false, handler: _ => throw new InvalidOperationException("boom"), log: log);
++        }
++        finally { ScanlineDistorter.Rng = oldDistortionRng; }
++        // Precondition: the scenario is deterministic without any subscriber (and with a log attached).
++        Assert.Equal(plain.Count, again.Count);
++        for (int i = 0; i < plain.Count; i++) Assert.Equal(plain[i], again[i]);
++        Assert.True(plain.Count > 200);
++        Assert.Contains(plain, m => m[0] == 0x97);
++        Assert.Contains(plain, m => m[0] == 0x8E);
++        Assert.Contains(plain, m => m[0] == 0x93);
++        Assert.Equal(plain.Count, observed.Count);
++        for (int i = 0; i < plain.Count; i++) Assert.Equal(plain[i], observed[i]);
++        Assert.Equal(plain.Count, throwing.Count);
++        for (int i = 0; i < plain.Count; i++) Assert.Equal(plain[i], throwing[i]);
++        Assert.Contains(log, l => l.Contains("Animation diagnostic handler threw") && l.Contains("M1-034"));
++    }
++
++    // ---------------------------------------------------------------- the graders with hook evidence
++
++    // reach: unit (real scheduler hooks; the wire is the sink's send order with synthetic capture times, standing in
++    // for the transport capture the hardware run supplies).
++    [Fact]
++    public void FiniteLayersIsPositiveWithJoinedHookFlagsAndInconclusiveWhenTheJoinBreaks()
++    {
++        var (run, pulseAt, endAt) = LayerPulse(5);
++        double from = pulseAt - 1, to = endAt + 1;
++        var join = M5HwAnalysis.JoinSends(run.Wire, run.Hooks, from, to);
++        Assert.Null(join.Problem);
++        var (activity, rows, problem) = M5HwAnalysis.LayerActivity(join, run.Hooks, from, to);
++        Assert.Null(problem);
++        var result = M5HwAnalysis.FiniteLayers(run.Wire, from, to, !run.S.HaveLayersToSend, activity, problem);
++        Assert.Equal("OBSERVED_CONDITIONAL_LAYER_FRAMES", result["verdict"]!.GetValue<string>());
++        Assert.True(result["faceActivityEstablished"]!.GetValue<bool>());
++
++        // A foreign stream message inside the run: no contiguous match, so nothing is joined.
++        var mid = run.Wire[run.Wire.Count - 5];
++        var foreign = run.Wire.Append(new M5Hw.WireMessage(mid.AtMs, true, new byte[] { 0x8F }, mid.FrameLine, 1)).ToList();
++        var broken = M5HwAnalysis.JoinSends(foreign, run.Hooks, from, to);
++        Assert.NotNull(broken.Problem);
++        var (noActivity, _, brokenProblem) = M5HwAnalysis.LayerActivity(broken, run.Hooks, from, to);
++        Assert.Null(noActivity);
++        var inconclusive = M5HwAnalysis.FiniteLayers(foreign, from, to, true, noActivity, brokenProblem);
++        Assert.Equal("INCONCLUSIVE", inconclusive["verdict"]!.GetValue<string>());
++        Assert.Contains("Send join unavailable", inconclusive["missing"]!.GetValue<string>());
++    }
++
++    // reach: unit (real scheduler KeepFaceAlive hook driven through B4 and Advance; synthetic window bounds).
++    [Fact]
++    public void BlinksIsPositiveWithHookCallsForThe44000To45000Request()
++    {
++        var run = new Run(8, paced: false);
++        run.S.HandleSetParameters(new[] { (byte)LiveIdleParam.BlinkSpacingMinTime_ms, (byte)LiveIdleParam.BlinkSpacingMaxTime_ms }, new[] { 44000f, 45000f }, false);
++        run.S.Play(ShortClip(), 1000);
++        run.Ticks(1000, 50000, 60);
++        var calls = M5HwAnalysis.BlinkCalls(run.Hooks, 0, 50000);
++        Assert.True(calls.Count(c => c.Generated) >= 2);
++        var yes = new JsonObject { ["answer"] = "yes" };
++        var result = M5HwAnalysis.Blinks(run.Wire, 0, 50000, 44000, 45000, yes, calls);
++        Assert.Equal("OBSERVED_BLINK_CALL_TRANSITIONS", result["verdict"]!.GetValue<string>());
++        Assert.Null(result["missing"]);
++        var none = M5HwAnalysis.Blinks(run.Wire, 0, 50000, 44000, 45000, yes, Array.Empty<M5HwAnalysis.BlinkCall>());
++        Assert.Equal("INCONCLUSIVE", none["verdict"]!.GetValue<string>());
++    }
++
++    // reach: unit (real scheduler gate/refresh hooks over a 6 s audio clip; modelled robot played counters; the wire
++    // and the AnimationState delivery snapshots are synthetic stand-ins for the hardware capture).
++    [Fact]
++    public void AudioIsPositiveWhenEveryAudioMessageJoinsAnObservedGateAndInconclusiveOtherwise()
++    {
++        var run = new Run(9);
++        run.S.AudioSource = new FixedAudio(CozmoAudio.Tone(440, TimeSpan.FromMilliseconds(4000)));
++        var events = new List<JsonObject>();
++        double playStart = 1000;
++        run.S.Play(Clip("audio", new AudioKeyframe(0, new long[] { 1 }, 1f, Array.Empty<float>(), false), new EventKeyframe(6000, "end")), playStart);
++        double t = playStart;
++        for (; t < 9000 && run.S.IsPlaying; t += 1000.0 / 30)
++        {
++            run.Tick(t);
++            if (((int)(t / 1000)) != ((int)((t - 1000.0 / 30) / 1000)))
++                events.Add(new JsonObject { ["kind"] = "animation-state", ["atMs"] = t + 0.7, ["robotTimestamp"] = (uint)t,
++                    ["audioPlayed"] = run.Sink.Played, ["bytesPlayed"] = run.Sink.BytesPlayed, ["drops"] = 0,
++                    ["streamFrames"] = run.S.Stream.FramesStreamed, ["streamBytes"] = run.S.Stream.BytesStreamed });
++        }
++        double playEnd = t;
++        var join = M5HwAnalysis.JoinSends(run.Wire, run.Hooks, playStart, playEnd);
++        var result = M5HwAnalysis.Audio(run.Wire, events, playStart, playEnd,
++            M5HwAnalysis.Admissions(run.Hooks, playStart, playEnd), join, M5HwAnalysis.Refreshes(run.Hooks));
++        Assert.Equal("OBSERVED_AUDIO_FRAMING_AND_COUNTERS", result["framingVerdict"]!.GetValue<string>());
++        Assert.Equal("OBSERVED_AUDIO_FRAMING_AND_ADMISSION", result["verdict"]!.GetValue<string>());
++        Assert.Equal("OBSERVED_FOR_JOINED_WINDOW", result["budgetCompliance"]!.GetValue<string>());
++        Assert.Null(result["admissionEvidenceMissing"]);
++        Assert.Equal(0, result["budgetEvidence"]!["allowanceAccountingMismatches"]!.GetValue<int>());
++
++        var mid = run.Wire[run.Wire.Count / 2];
++        var foreign = run.Wire.Append(new M5Hw.WireMessage(mid.AtMs, true, new byte[] { 0x8F }, mid.FrameLine, 1)).ToList();
++        var broken = M5HwAnalysis.JoinSends(foreign, run.Hooks, playStart, playEnd);
++        var inconclusive = M5HwAnalysis.Audio(foreign, events, playStart, playEnd,
++            M5HwAnalysis.Admissions(run.Hooks, playStart, playEnd), broken, M5HwAnalysis.Refreshes(run.Hooks));
++        Assert.Equal("INCONCLUSIVE", inconclusive["verdict"]!.GetValue<string>());
++        Assert.Equal("NOT_JUDGED", inconclusive["budgetCompliance"]!.GetValue<string>());
++        Assert.Contains("Send join unavailable", inconclusive["admissionEvidenceMissing"]!.GetValue<string>());
++    }
++
++    // reach: unit (synthetic gate rows and wire: two equally good runs must not be joined).
++    [Fact]
++    public void AnAmbiguousAlignmentIsNotJoined()
++    {
++        var gate = new SendGateObservation(0, 1, 1, 0x8F, 1, true, 8192, 14, true, true, false);
++        var hooks = new List<M5HwAnalysis.Diagnostic> { new(10, gate), new(11, gate with { BufferSequence = 2 }) };
++        var wire = new[] { 10.5, 11.5, 12.5 }.Select((at, i) => new M5Hw.WireMessage(at, true, new byte[] { 0x8F }, i + 1, 0)).ToList();
++        var join = M5HwAnalysis.JoinSends(wire, hooks, 10, 12);
++        Assert.Contains("ambiguous", join.Problem);
++        Assert.Empty(join.BySequence);
++        Assert.Equal(2, join.Evidence["matchingRuns"]!.GetValue<int>());
++        // A capture earlier than its gate observation cannot be that send.
++        var early = M5HwAnalysis.JoinSends(new[] { new M5Hw.WireMessage(9, true, new byte[] { 0x8F }, 1, 0),
++            new M5Hw.WireMessage(10.5, true, new byte[] { 0x8F }, 2, 0) }, hooks, 10, 12);
++        Assert.NotNull(early.Problem);
++    }
++}
