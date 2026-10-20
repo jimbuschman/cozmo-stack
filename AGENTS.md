@@ -379,4 +379,8 @@ Two rules the checker cannot see, so they are the manager's:
 
 - Each test is a script the manager writes, plus any physical setup steps.
 - A run writes one self-contained bundle to `re-analysis/acceptance/hardware/<yyyymmdd-hhmmss>-<test-id>/`, containing the machine-readable result, logs, captures and the script's version hash.
+- **Every expectation is sourced** (operator, 2026-10-20). A check passes or fails only on an expected result that
+  cites the engine (a record and its native address or file), the same evidence rule as the stack. Anything that
+  cannot be sourced (appearance, random timing, firmware display) is recorded as an observation for the operator
+  to judge, never as an automatic pass or fail. A rule with no citation is a harness defect.
 - The script never commits. The operator copies the bundle back, and the manager judges it from the bundle and decides whether it goes into git.
