@@ -29,6 +29,23 @@ Logs: M5-013's BufferFaceToSend key/text (B-LOG-1, HELD as cleanup) is not on th
 
 ## Sequence
 
+**First read of run `hardware/20261020-074223-M5-HW-2cc1cf` (manager, 2026-10-20; NOT a judgement, leads only).**
+Connected, drive allowed, no run errors. From `result.json`:
+- TAGS: starts 1,2,3 with matching echoes (an extra started echo 4). AUDIO: 744-byte framing and ~30 Hz hold, but
+  frames-ahead reaches 16 and bytes-ahead 9324 (77 snapshots above 14): check against the C9 budget (M3-012) before
+  blaming the snapshot timing. SLEEP and TEARDOWN as expected (teardown still to judge per item 4 below).
+- **KEEP_ALIVE live idle: 13 Start-FF and 13 End in 10 s**; source expects Start FF and no End (A29/L8). Strongest lead:
+  live idle appears to restart its stream; the operator saw the cancelled clip "continued".
+- ABORT: one 0x8D, no End, but 2 faces and 2 audio markers in the 400 ms window (rule allows 1); operator said
+  stopped-then-neutral.
+- LOCKED_HEAD: head moved although HEAD_TRACK was locked (2 head keyframes, 1 EnableAnimTracks): check whether
+  DisableAnimTracks went out at the lock (M4-047) before calling it robot-side (M5-036).
+- PARAMETERS: blinks not widely spaced (operator "no") although readback 44000/45000: trace whether the blink path reads
+  these parameters (M5-062/M5-028).
+- LAYERS: faces 13 vs audio frames 20 (rule: a face per audio frame); operator unclear.
+- DRIVING: DriveToPose FailedTraversingPath; default phases not ordered: M12 path, judge separately.
+- events.jsonl MISSINGs are from other layers (M11, M1-058 locale); no handler faults.
+
 **Handoff (manager, 2026-10-20; Claude out of usage until Thursday).** The operator ran `m5-hw` (first run) and reported
 "honestly, nothing is seeming quite right", answering the neutral-eyes prompts `unclear`. No specifics yet. Whoever
 judges the bundle (`acceptance/hardware/<timestamp>-M5-HW-*`):

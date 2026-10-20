@@ -1,0 +1,1 @@
+M5-HW evidence bundle. result.json contains every check and source records; messages.jsonl deduplicates reliable resends, frames.jsonl retains every datagram; events.jsonl retains startup logs, API events and counters. Times are host capture times, not device execution times. No acceptance or manifest changes performed. See provenance script for limits.
