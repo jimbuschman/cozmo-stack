@@ -40,6 +40,13 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **M5 harness queue reviewed (Codex, 2026-10-20):** all B-M5-24..31 published and bounded PASS;
+  final report `re-analysis/research/20261020-b-m5-31-check.md` (implementation8b9bc2d1), manager focused62/62
+  and fidelity check pass. Requested cleanup completed; builder monitor stops after publication of this handoff.
+  **M5 is NOT ACCEPTED.** Corrected operator hardware rerun remains required. Finite-layer activity, actual blink
+  calls/deadlines, coherent admission and conditional teardown enqueue-origin diagnostic gaps remain explicit;
+  rerun alone cannot guarantee their closure. FailedTraversingPath remains unexplained; successful drive required.
+
 - **Temporary M5 handoff (operator, 2026-10-20):** Codex is manager and independent verifier for M5 until Claude
   returns; evidence, role separation and approval checkpoints are unchanged. First robot run judged in
   `re-analysis/research/20261020-m5-hw-1-judgement.md`: **NOT ACCEPTED; operator rerun required**.
