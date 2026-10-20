@@ -9,6 +9,65 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    // Actual call/deadline observations only. Public harness snapshots cannot currently populate this join.
+    public sealed record BlinkCall(long CallNumber, double AtMs, int BeforeMs, int AfterMs, bool Generated);
+
+    public static JsonObject Blinks(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs,
+        float minReadback, float maxReadback, JsonObject observation, IReadOnlyList<BlinkCall>? calls = null)
+    {
+        var wire = OrderedUnique(messages).Where(m => m.AtMs >= fromMs && m.AtMs <= toMs && m.Payload.Length > 0).ToArray();
+        bool IsState(M5Hw.WireMessage m) => !m.Outbound && m.Payload[0] == (byte)RobotMessageId.AnimState && m.Payload.Length == 16;
+        var faces = new JsonArray();
+        for (int index = 0; index < wire.Length; index++)
+        {
+            var face = wire[index];
+            if (!face.Outbound || face.Payload[0] != (byte)RobotMessageId.AnimFaceImage) continue;
+            var row = new JsonObject { ["wire"] = WireEvidence(new[] { face }) };
+            bool valid = face.Payload.Length >= 3 && (face.Payload[1] | face.Payload[2] << 8) == face.Payload.Length - 3;
+            row["countPrefixValid"] = valid;
+            if (valid) row["engineModelLitPixels"] = Cozmo.Robot.FaceBitmapCodec.DecodeCanvas(face.Payload.AsSpan(3)).Count(x => x != 0);
+            var before = wire.Take(index).LastOrDefault(IsState);
+            var after = wire.Skip(index + 1).FirstOrDefault(IsState);
+            row["precedingWireAnimationState"] = before is null ? null : WireEvidence(new[] { before });
+            row["followingWireAnimationState"] = after is null ? null : WireEvidence(new[] { after });
+            faces.Add(row);
+        }
+        var problems = new JsonArray(); var ticks = new JsonArray(); int generated = 0;
+        BlinkCall? prior = null;
+        foreach (var call in calls ?? Array.Empty<BlinkCall>())
+        {
+            if (call.AtMs < fromMs || call.AtMs > toMs || (prior is not null && call.AtMs < prior.AtMs))
+                problems.Add("Call timestamps do not belong to this ordered observation window.");
+            int remaining = unchecked(call.BeforeMs - 60);
+            bool due = remaining <= 0;
+            if (call.Generated != due || (!due && call.AfterMs != remaining)
+                || (due && (call.AfterMs < 44000 || call.AfterMs > 45000))) problems.Add("Call/deadline transition contradicts the checked 60-per-call branch.");
+            if (prior is not null && (call.CallNumber != prior.CallNumber + 1 || call.BeforeMs != prior.AfterMs)) problems.Add("Incomplete or discontinuous KeepFaceAlive call sequence.");
+            if (call.Generated) generated++;
+            ticks.Add(new JsonObject { ["callNumber"] = call.CallNumber, ["atMs"] = call.AtMs,
+                ["beforeMs"] = call.BeforeMs, ["afterMs"] = call.AfterMs, ["generationObserved"] = call.Generated,
+                ["wallGapMs"] = prior is null ? null : call.AtMs - prior.AtMs });
+            prior = call;
+        }
+        bool captured = calls is { Count: > 0 } && generated > 0;
+        return new JsonObject
+        {
+            ["verdict"] = problems.Count > 0 ? "OBSERVED_BLINK_CALL_MISMATCH"
+                : captured && minReadback == 44000 && maxReadback == 45000 ? "OBSERVED_BLINK_CALL_TRANSITIONS" : "INCONCLUSIVE",
+            ["minReadback"] = minReadback, ["maxReadback"] = maxReadback,
+            ["generationEvidenceAvailable"] = captured, ["generationCalls"] = ticks, ["problems"] = problems,
+            ["encodedFaceDiagnostics"] = faces, ["physicalObservation"] = observation.DeepClone(),
+            ["firmwareAcceptance"] = "NOT_JUDGED",
+            ["missing"] = captured ? null : "Actual KeepFaceAlive call numbers, pre-existing blink deadline and generation/reset values at 0x58D382..38C/0x58D54C..550 are not exposed by the allowed public harness observations.",
+            ["verdictRule"] = "M5-062 B4 base setter preserves the existing blink deadline. M5-028 subtracts60 "
+                + "per KeepFaceAlive call, not wall milliseconds; a due blink generates and draws a new inclusive "
+                + "44000..45000 deadline from these parameter values. Paused calls do not consume wall time. "
+                + "Readback, layer-name samples, dark encoded images and human answers cannot fabricate generation "
+                + "events. Lit pixels use the engine codec model only; nearest raw F1 messages bound host capture "
+                + "order, not firmware playback/display (M3-008/M5-036). No darkness threshold is an acceptance rule."
+        };
+    }
+
     public static JsonObject LockedHead(IEnumerable<M5Hw.WireMessage> messages, double lockAt,
         double clipFrom, double clipTo, double unlockAt, double toMs)
     {

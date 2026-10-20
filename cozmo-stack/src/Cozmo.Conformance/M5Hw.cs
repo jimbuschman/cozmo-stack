@@ -20,7 +20,7 @@ public static class M5Hw
 {
     public const string TestId = "M5-HW";
     public sealed record CheckDef(string Id, string Title, string[] Records);
-    public static readonly string[] HardwareOnlyIds = { "M5-036" };
+    public static readonly string[] HardwareOnlyIds = { "M5-036", "M3-008" };
     public static readonly CheckDef[] Checks = {
         new("TAGS", "Three plays: wire start tags and robot echoes", new[]{"M5-008","M5-036"}),
         new("ABORT", "Mid-stream cancellation and robot counters", new[]{"M5-023","M5-036"}),
@@ -29,7 +29,7 @@ public static class M5Hw
         new("AUDIO", "744-byte samples, silence, counters and pacing", new[]{"M5-008","M5-036","M3-012","M6-042"}),
         new("LAYERS", "Face and backpack layer traffic", new[]{"M5-028","M5-029","M5-031","M5-032","M5-036"}),
         new("LIVE_IDLE", "Calibrated head input and default wiggles", new[]{"M5-030","M5-057","M5-036"}),
-        new("PARAMETERS", "Uncapped 45000 ms blink maximum over 60 seconds", new[]{"M5-062","M5-028"}),
+        new("PARAMETERS", "Uncapped 45000 ms blink maximum over 60 seconds", new[]{"M5-062","M5-028","M5-036","M3-008"}),
         new("DRIVING", "Short DriveToPose and driving animation sequence", new[]{"M5-063","M12-024","M7-026","M15-001","M8-020","M8-021"}),
         new("SLEEP", "Sleep deadline fallback and known action gap", new[]{"M5-038","M1-045","M8-017","M8-020","M8-021"}),
         new("TEARDOWN", "Dispose during clip, cache cleanup and quiet wire", new[]{"M5-037","M5-053","M5-055","M5-059","M5-060"}),
@@ -412,15 +412,32 @@ internal sealed class M5Run
             case "PARAMETERS":
                 {
                     var prime = Clip(300, 2000); if (prime is null) return Missing("No clip to prime keepalive blink path"); Complete(Play(prime), (int)prime.DurationMs + 5000);
+                    double parameterAt = Now; Event("blink-parameters-request", new() { ["minMs"] = 44000, ["maxMs"] = 45000, ["resetExistingDeadline"] = false });
                     r.Animations.SetLiveIdleAnimationParameters(new[] { LiveIdleParam.BlinkSpacingMinTime_ms, LiveIdleParam.BlinkSpacingMaxTime_ms }, new[] { 44000f, 45000f }); Wait(300);
                     var result = Observe("M5-062 B4 base setter accepts 45000 uncapped. Min 44000 and max 45000 avoid the max<=min fallback and make long-spacing observation discriminating; first pre-existing blink deadline may remain. No movement idle is pushed.");
                     result["maxReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMaxTime_ms]; result["minReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMinTime_ms];
                     var blinkWindow = BeginWindow(id, "BLINKS");
-                    try { Wait(60000); }
+                    var layerSamples = new JsonArray();
+                    try
+                    {
+                        for (int second = 0; second < 60; second++)
+                        {
+                            layerSamples.Add(new JsonObject { ["atMs"] = Now, ["engineSecondsSnapshot"] = r.Engine.Timer.SecondsF,
+                                ["faceLayers"] = JsonSerializer.SerializeToNode(r.Animations.Scheduler.FaceLayerNames) });
+                            Wait(1000);
+                        }
+                    }
                     finally { EndWindow(blinkWindow); r.Animations.SetLiveIdleAnimationParameters(Array.Empty<LiveIdleParam>(), Array.Empty<float>(), true); }
                     result["observation"] = AskWindow(blinkWindow, "After any initial blink, were subsequent close/reopen blinks about44-45 seconds apart (do not count eye darts)?", "yes", "no");
                     WindowNotes(blinkWindow); result["observationWindow"] = blinkWindow;
-                    if (result["minReadback"]!.GetValue<float>() != 44000 || result["maxReadback"]!.GetValue<float>() != 45000 || result["observation"]?["answer"]?.GetValue<string>() != "yes") result["verdict"] = "INCONCLUSIVE"; return result;
+                    double blinkEnd = blinkWindow["toMs"]!.GetValue<double>();
+                    result["parameterRequestAtMs"] = parameterAt; result["existingDeadline"] = "Retained by B4; actual internal deadline unavailable through allowed public observations.";
+                    var evidence = M5HwAnalysis.Blinks(Wire(parameterAt, blinkEnd), parameterAt, blinkEnd,
+                        result["minReadback"]!.GetValue<float>(), result["maxReadback"]!.GetValue<float>(), result["observation"]!.AsObject());
+                    evidence["layerNameSnapshots"] = layerSamples;
+                    evidence["snapshotNote"] = "Wall-clock/public engine-time/layer-name samples are not KeepFaceAlive call numbers or generation/deadline events. Do not infer a call count from elapsed time or fabricate blink events from pixel darkness.";
+                    result["blinkEvidence"] = evidence; result["verdict"] = "INCONCLUSIVE";
+                    return result;
                 }
             case "DRIVING":
                 {

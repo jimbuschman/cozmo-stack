@@ -163,3 +163,19 @@ F1 enabled-track bits and head telemetry use raw capture times inside the clip w
 harness unlock is labeled as that unlock, not an InitStream action. Missing/wrong Disable, early Enable,
 head-track-reported-enabled and changed head telemetry are distinct observations; no physical verdict follows
 from counters or operator text alone. M5-036 and unexplained movement remain for operator rerun/review.
+
+## Dated blink-evidence correction - B-M5-28, 2026-10-20
+
+PARAMETERS retains B4 request time,44000/45000 readback and the existing deadline policy. It records
+public layer-name/engine-time snapshots plus encoded face-image lit-pixel diagnostics, valid count prefixes,
+raw identities and nearest preceding/following raw F1 messages. These are host capture bounds, not firmware
+playback timestamps or proof that a blink occurred. No low-pixel threshold manufactures a generation event.
+
+Actual KeepFaceAlive call numbers, old deadline and generation/reset values are not publicly exposed within
+this job's allowed scope. No reflection, production hooks or fabricated generation events are added.
+Consequently real PARAMETERS source-consumption completeness remains INCONCLUSIVE even with correct
+readback or a yes observation. Synthetic analysis fixtures can supply independently recorded call/deadline
+transitions: subtract60 per call, including across pauses; a new draw after the old deadline is44000..45000
+inclusive. This does not certify the real generator or display. Physical answers remain separate.
+M3-008 display-row/playback uncertainty and M5-036 remain embedded. Operator rerun and discriminating
+generation evidence are needed; elapsed wall time or dark encoded frames alone cannot settle the check.
