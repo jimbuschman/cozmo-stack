@@ -61,7 +61,7 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are 
 | --- | --- | --- |
 | TAGS | Three short shipped clips without body tracks, through PlayTracked; Start tags 1,2,3 and chronological started/ended echoes. | M5-008 increment 0x0057B660..0x0057B672; robot echo meaning M5-036. |
 | ABORT | Cancel a long shipped clip after 750 ms. Count exactly one 0x8D, no End, at most one audio/face frame marker in the first 400 ms; preserve full counter/echo tail and operator observation. | M5-023 A22/A23/A25; pending built frame can drain. Robot semantics M5-036. |
-| KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with Start FF and no End. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 continuous idle. |
+| KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with ordered Start FF/End bursts; then a separate ten-second no-idle persistent-eye-dart face window, requiring face output and no End while its prerequisites hold. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 burst idle; M5-027/030. Persistent layers: M5-028/029, 0x0057C530..0x0057C556. |
 | LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain 0x93, exactly one EnableAnimTracks and physical observation. | M4-047 plus robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
 | AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 <=14 frames/8192 bytes; direct End adds a frame outside C9. M6 runtime uncertainty remains embedded. |
 | LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Require face per audio frame, backpack changes, Start/End and drained layers; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. The provider and temporary timeout are explicit harness controls, not M7 behavior claims. |
@@ -98,3 +98,18 @@ human observations. Exit 1 means at least one incomplete check or run error; 2 i
 Return the **whole bundle folder** to the manager. The script does not classify hardware failures or modify production
 behavior. The manager traces any failing path and reviews evidence before deciding corrections or acceptance.
 
+
+## Dated correction — B-M5-24, 2026-10-20
+
+The original no-End claim for ProceduralLive was a harness error (checked first-run judgement section 1).
+KEEP_ALIVE now retains chronological FF Start/End pairs, burst spans and restart gaps. It requires repeated
+bursts in a ten-second harness window; an open final burst is recorded. Invalid ordering remains visible.
+These wire observations do not certify exact restart timing: review generation, engine ticks, drained FIFO and
+audio completion against 0x0057D414..0x0057D44C. No scheduler behavior changed.
+
+A distinct observation primes a short nonlive clip, waits for no explicit play, idle top Count and the normal
+KeepAliveEyeDart face layer, then captures ten seconds. Preconditions are sampled via existing public properties
+about every 60 ms (not an atomic production hook). It requires face output and no End/Abort in that window;
+Start may precede the window. Failure to observe the prerequisites is INCONCLUSIVE. This is the persistent-layer
+case, not a no-End rule for all idle states. Hardware-only M5-036 and operator observations remain unresolved.
+Historical run results and the validation history above are preserved. An operator rerun is required.

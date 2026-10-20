@@ -24,7 +24,7 @@ public static class M5Hw
     public static readonly CheckDef[] Checks = {
         new("TAGS", "Three plays: wire start tags and robot echoes", new[]{"M5-008","M5-036"}),
         new("ABORT", "Mid-stream cancellation and robot counters", new[]{"M5-023","M5-036"}),
-        new("KEEP_ALIVE", "Cancel to neutral replay; Start without End in live idle", new[]{"M5-010","M5-027","M5-036","M5-057"}),
+        new("KEEP_ALIVE", "Neutral replay, live bursts and persistent face stream", new[]{"M5-010","M5-027","M5-028","M5-029","M5-030","M5-036","M5-057"}),
         new("LOCKED_HEAD", "Head keyframes still stream while head track is locked", new[]{"M5-036","M4-047"}),
         new("AUDIO", "744-byte samples, silence, counters and pacing", new[]{"M5-008","M5-036","M3-012","M6-042"}),
         new("LAYERS", "Face and backpack layer traffic", new[]{"M5-028","M5-031","M5-032"}),
@@ -200,7 +200,52 @@ internal sealed class M5Run
                     if (id == "KEEP_ALIVE")
                     {
                         if (!drive) { result["liveIdle"] = Missing("--allow-drive required for default body wiggles"); result["verdict"] = "INCONCLUSIVE"; }
-                        else { double live = Now; IdleOn(); try { Wait(10000); var lw = Wire(live); int ls = lw.Count(x => x.Outbound && x.Payload.Length == 2 && x.Payload[0] == 0x9B && x.Payload[1] == 255), le = lw.Count(x => x.Outbound && x.Payload[0] == 0x9A); result["liveIdle"] = new JsonObject { ["verdict"] = ls > 0 && le == 0 ? "OBSERVED_FF_WITHOUT_END" : "INCONCLUSIVE", ["startFF"] = ls, ["ends"] = le }; if (ls == 0 || le > 0) result["verdict"] = "INCONCLUSIVE"; result["liveFromMs"] = live; result["liveToMs"] = Now; } finally { IdleOff(); } }
+                        else
+                        {
+                            double live = Now; IdleOn();
+                            try
+                            {
+                                Wait(10000); double liveEnd = Now;
+                                var bursts = M5HwAnalysis.LiveBursts(Wire(live, liveEnd), live, liveEnd);
+                                result["liveIdle"] = bursts;
+                                if (bursts["verdict"]!.GetValue<string>() != "OBSERVED_FF_BURST_ORDER") result["verdict"] = "INCONCLUSIVE";
+                                result["liveFromMs"] = live; result["liveToMs"] = liveEnd;
+                            }
+                            finally { IdleOff(); }
+                        }
+                        // A short nonlive play clears the previous idle and its persistent keepalive layers.
+                        // Normal KeepFaceAlive then supplies the persistent eye dart; no fabricated layer or hook.
+                        var prime = Clip(300, 2000);
+                        if (prime is null) { result["persistentFace"] = Missing("No short clip to prime the no-idle layer path"); result["verdict"] = "INCONCLUSIVE"; }
+                        else
+                        {
+                            Complete(Play(prime), (int)prime.DurationMs + 5000);
+                            var scheduler = r.Animations.Scheduler;
+                            bool Preconditions() => !scheduler.IsPlaying
+                                && scheduler.IdleStack.Last().Trigger == AnimationScheduler.IdleCount
+                                && scheduler.FaceLayerNames.Contains("KeepAliveEyeDart");
+                            if (!Poll(Preconditions, 5000)) { result["persistentFace"] = Missing("No-animation/no-idle persistent KeepAliveEyeDart prerequisites not observed"); result["verdict"] = "INCONCLUSIVE"; }
+                            else
+                            {
+                                double layerFrom = Now; var samples = new JsonArray(); bool held = true;
+                                Event("persistent-face-window-start", new());
+                                do
+                                {
+                                    bool valid = Preconditions(); held &= valid;
+                                    samples.Add(new JsonObject { ["atMs"] = Now, ["preconditionsHeld"] = valid,
+                                        ["faceLayers"] = JsonSerializer.SerializeToNode(scheduler.FaceLayerNames) });
+                                    Wait(60);
+                                } while (Now - layerFrom < 10000);
+                                double layerTo = Now; held &= Preconditions();
+                                Event("persistent-face-window-end", new());
+                                var persistent = M5HwAnalysis.PersistentFace(Wire(layerFrom, layerTo), layerFrom, layerTo, held);
+                                persistent["fromMs"] = layerFrom; persistent["toMs"] = layerTo;
+                                persistent["preconditionSamples"] = samples;
+                                persistent["preconditionNote"] = "Existing public scheduler snapshots sampled about every 60 ms; not atomic instrumentation. No idle or explicit play is issued during this window. Review raw traffic for intervening activity.";
+                                result["persistentFace"] = persistent;
+                                if (persistent["verdict"]!.GetValue<string>() != "OBSERVED_PERSISTENT_FACE_WINDOW") result["verdict"] = "INCONCLUSIVE";
+                            }
+                        }
                     }
                     return result;
                 }

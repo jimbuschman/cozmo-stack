@@ -9,6 +9,76 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    public static JsonObject LiveBursts(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs)
+    {
+        // Stable timestamp sort retains capture/submessage order for equal timestamps.
+        var rows = messages.Where(m => m.Outbound && m.AtMs >= fromMs && m.AtMs <= toMs
+            && m.Payload.Length > 0 && m.Payload[0] is 0x9B or 0x9A or 0x8D).OrderBy(m => m.AtMs);
+        var evidence = new JsonArray(); var problems = new JsonArray();
+        double? opened = null, lastEnd = null; int starts = 0, pairs = 0;
+        foreach (var row in rows)
+        {
+            byte id = row.Payload[0];
+            var item = new JsonObject { ["atMs"] = row.AtMs, ["payloadHex"] = Convert.ToHexString(row.Payload) };
+            evidence.Add(item);
+            if (id == 0x9B)
+            {
+                starts++;
+                if (row.Payload.Length != 2 || row.Payload[1] != 255) problems.Add("Expected Start FF.");
+                if (opened is not null) problems.Add("Start before the preceding burst End.");
+                if (lastEnd is not null) item["restartGapMs"] = row.AtMs - lastEnd.Value;
+                opened = row.AtMs;
+            }
+            else if (id == 0x9A)
+            {
+                if (row.Payload.Length != 1) problems.Add("Malformed End.");
+                if (opened is null) problems.Add("End without preceding Start FF.");
+                else { item["burstSpanMs"] = row.AtMs - opened.Value; pairs++; }
+                opened = null; lastEnd = row.AtMs;
+            }
+            else problems.Add("Unexpected Abort inside the live observation window.");
+        }
+        return new JsonObject
+        {
+            ["verdict"] = problems.Count > 0 ? "OBSERVED_INVALID_BURST_ORDER"
+                : pairs >= 2 && toMs - fromMs >= 10000 ? "OBSERVED_FF_BURST_ORDER" : "INCONCLUSIVE",
+            ["startFF"] = starts, ["completedBursts"] = pairs, ["openFinalBurst"] = opened is not null,
+            ["orderedLifecycle"] = evidence, ["problems"] = problems,
+            ["verdictRule"] = "M5-027/030: UpdateLiveAnimation precedes the common idle tail; completed tracks, "
+                + "audio and FIFO permit End, then endSent/no frames/empty FIFO permit InitStream(FF). "
+                + "At least two paired bursts in a ten-second harness window; a final open burst is retained. "
+                + "Wire spans/restart gaps are evidence only: exact restart timing requires review against generation, "
+                + "engine ticks and budget/FIFO readiness; ordering alone does not certify it. M5-036 remains hardware-only."
+        };
+    }
+
+    public static JsonObject PersistentFace(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs,
+        bool preconditionsHeld)
+    {
+        var rows = messages.Where(m => m.Outbound && m.AtMs >= fromMs && m.AtMs <= toMs
+            && m.Payload.Length > 0).ToArray();
+        int faces = rows.Count(m => m.Payload[0] == (byte)RobotMessageId.AnimFaceImage && m.Payload.Length > 1);
+        int ends = rows.Count(m => m.Payload[0] == 0x9A);
+        var lifecycle = rows.Where(m => m.Payload[0] is 0x9B or 0x9A or 0x8D).ToArray();
+        bool invalid = ends > 0 || lifecycle.Any(m => m.Payload[0] == 0x8D)
+            || lifecycle.Count(m => m.Payload[0] == 0x9B) > 1
+            || lifecycle.Any(m => m.Payload[0] == 0x9B && (m.Payload.Length != 2 || m.Payload[1] == 255));
+        return new JsonObject
+        {
+            ["verdict"] = !preconditionsHeld ? "INCONCLUSIVE" : invalid ? "OBSERVED_UNEXPECTED_LAYER_LIFECYCLE"
+                : faces == 0 || toMs - fromMs < 10000 ? "INCONCLUSIVE" : "OBSERVED_PERSISTENT_FACE_WINDOW",
+            ["preconditionsHeld"] = preconditionsHeld, ["faces"] = faces, ["ends"] = ends,
+            ["orderedLifecycle"] = JsonSerializerNode(lifecycle),
+            ["verdictRule"] = "M5-028/029: no explicit animation or movement idle; a persistent KeepAliveEyeDart "
+                + "face layer remains present. StreamLayers ends only once layers/FIFO drain. Require face output "
+                + "and no End/Abort during this ten-second window, which may begin after Start. This observes a "
+                + "bounded interval of the persistent stream, not indefinite execution or firmware display (M5-036)."
+        };
+    }
+
+    private static JsonArray JsonSerializerNode(IEnumerable<M5Hw.WireMessage> rows) => new(rows.Select(m =>
+        (JsonNode)new JsonObject { ["atMs"] = m.AtMs, ["payloadHex"] = Convert.ToHexString(m.Payload) }).ToArray());
+
     public static JsonObject DrivingEnd(IEnumerable<M5Hw.WireMessage> messages,
         IEnumerable<JsonObject> completions, double endTriggerAtMs, double driveCompletedAtMs)
     {

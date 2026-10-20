@@ -153,6 +153,20 @@ AnimationState counters) and `M3M4Hw.cs` (ANIM_BUDGET, TRACK_UNLOCK, DISCONNECT_
 11. **Teardown (M5-037/053/055/059):** Dispose during a clip: no animation message after DisconnectRequest (ClearSendBuffer
     0x0057AF58; DISCONNECT_QUIET); a stale `<cache>/TestAnim.json` is gone after construction and after Dispose.
 
+### Dated coverage correction — B-M5-24, 2026-10-20
+
+The historical item 3's “live idle: Start 0xFF, no End for 10 s” is superseded by the checked
+20261020-m5-hw-1-judgement section 1. UpdateLiveAnimation runs before the common idle tail; End is allowed
+when tracks/audio/FIFO complete (0x0057CB44..0x0057CB80), and the tail reinitializes FF after endSent,
+no frames and an empty FIFO (0x0057D414..0x0057D44C). Capture paired bursts and preserve ordered timing
+evidence; wire counts alone do not certify restart timing.
+
+No-End belongs to a distinct no-animation/no-movement-idle persistent face-layer observation:
+StreamLayers only ends when layers and FIFO drain (0x0057C530..0x0057C556; M5-028/029). The harness
+waits for the normal persistent KeepAliveEyeDart layer, records the prerequisites and requires face output
+without End during ten seconds. M5-027/030 own live bursts; M5-036 remains hardware-only. This dated
+correction preserves the original conclusion as history; no new settlement or acceptance. Operator rerun required.
+
 ## Manager actions proposed
 
 1. Build (M5-030 with part A's M5-011/M5-014): wire `live.HeadAngleRad` (`CozmoAnimations.cs`:215) to
