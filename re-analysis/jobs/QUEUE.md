@@ -164,8 +164,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3r | [B-M5-23](B-M5-23.md) | done 6f0f18b0; Opus check PASS (research/20261019-b-m5-23-check.md); M5-011/014/030 settled. Was: open — the animation head input is robot+0x2FC (M5-011, M5-014, M5-030); M5 settling cleanup |
 | 61w3s0 | [B-M5-24](B-M5-24.md) | done bdad8435; Codex bounded review PASS (research/20261020-b-m5-24-check.md); cleanup queued, operator rerun required |
 | 61w3s1 | [B-M5-25](B-M5-25.md) | done a9334fee; Codex bounded review PASS (research/20261020-b-m5-25-check.md); cleanup queued, operator rerun required |
-| 61w3s2 | [B-M5-26](B-M5-26.md) | CLAIMED per status/B-M5-26.md (c472606f); review pending; harness only, operator rerun required |
-| 61w3s3 | [B-M5-27](B-M5-27.md) | open — Bound locked-head observations to the locked clip; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s2 | [B-M5-26](B-M5-26.md) | done99965613; Codex bounded review PASS (research/20261020-b-m5-26-check.md); finite-layer diagnostic gap retained, operator rerun required |
+| 61w3s3 | [B-M5-27](B-M5-27.md) | CLAIMED per status/B-M5-27.md (ee03a489); review pending; all prompt windows/expected appearance required; operator rerun required |
 | 61w3s4 | [B-M5-28](B-M5-28.md) | open — Record objective blink evidence alongside observations; Codex HW judgement 2026-10-20; harness only, operator rerun required |
 | 61w3s5 | [B-M5-29](B-M5-29.md) | open — Separate delivered-state snapshots from budget admission; Codex HW judgement 2026-10-20; harness only, operator rerun required |
 | 61w3s6 | [B-M5-30](B-M5-30.md) | open — Judge teardown during destruction with queue provenance; Codex HW judgement 2026-10-20; harness only, operator rerun required |
