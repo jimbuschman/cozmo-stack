@@ -52,9 +52,25 @@ public sealed class M5X23BuilderTests
             {var p=Path.Combine(d.FullName,"re-analysis/obb/assets/cozmo_resources");if(Directory.Exists(p)){resources=p;break;}}
             Assert.NotNull(resources);
             Robot=CozmoRobot.Create(engineOptions:new CozmoEngineOptions{ResourcesPath=resources,BlockPoolPath=""});
+            try
+            {
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.IsReadyDelivered,TimeSpan.FromSeconds(20)));
+            int connectSent=0;
+            void ObserveConnect(FrameEvent e)
+            {
+                if(e.Outbound&&e.Frame?.Messages.Any(m=>m.Type==ReliableMessageType.ConnectionRequest)==true)
+                    Interlocked.Exchange(ref connectSent,1);
+            }
+            Robot.Transport.FrameTrace+=ObserveConnect;
+            try
+            {
             Robot.ConnectToRobot(IPAddress.Loopback,isSimulated:true);
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==1,5000));
+            // RCM state1 follows posting Connect. The reliable connection is created later by SendConnectLocked;
+            // answer its actual request, as a peer does, so ConnectionResponse cannot arrive before that creation.
+            Assert.True(SpinWait.SpinUntil(()=>Volatile.Read(ref connectSent)!=0,5000));
+            }
+            finally{Robot.Transport.FrameTrace-=ObserveConnect;}
             Incoming(ReliableMessageType.ConnectionResponse,Array.Empty<byte>());
             Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.ConnectionState==2,5000));
             Robot.Engine.InvokeEngineRequest(()=>{Robot.Engine.Robot!.SendFault=m=>{Wire.Enqueue(m);return null;};return true;});
@@ -75,6 +91,8 @@ public sealed class M5X23BuilderTests
                 Assert.True(SpinWait.SpinUntil(()=>Robot.Engine.NvStorage.IsIdle||Wire.OfType<NVCommand>().Count()>count,3000));
             }
             Assert.True(SpinWait.SpinUntil(()=>Robot.AnimationStreamingOpen,5000));
+            }
+            catch{Robot.Dispose();throw;}
         }
         private void Incoming(ReliableMessageType type,byte[] body)=>Robot.Transport.ProcessIncoming(FrameCodec.Encode(Frame.Single(new SubMessage(type,body,_sequence++),1)));
         private void Data(RobotMessage message)=>Incoming(ReliableMessageType.SingleReliableMessage,message.ToBytes());
