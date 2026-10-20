@@ -52,7 +52,7 @@ stands. Nothing new starts outside the current layer.
     Loop -> End, or failed Start -> End cleanup). Successful traversal moves to the M12/M13 acceptance, which must observe
     a successful DriveToPose; FailedTraversingPath stays unexplained there. Job **B-M5-32**.
   - KEEP_ALIVE keeps the operator's resting-eye comparison as a gate.
-  - **M5 is NOT ACCEPTED.** Next: B-M5-33 corrections to B-M5-32, independent re-verification, then the operator rerun.
+  - **M5 is NOT ACCEPTED.** Next: operator rerun; B-M5-32/33 hooks and harness corrections are built and independently verified.
   - **Handoff (2026-10-20):** B-M5-32 was dispatched to cozmo-implementer, and the session may end before it reports.
     **Built (implementer reported 2026-10-20):** M5Hw tests 72/72, wider filter 1532/1532, fidelity check passes,
     full suite not run; report in `jobs/status/B-M5-32.md`, ten choices listed there for the manager to confirm
@@ -67,6 +67,12 @@ stands. Nothing new starts outside the current layer.
     applies it, fixes F1/F2, and publishes the combined work under normal fidelity/full-suite gates. The baseline
     is not approved production code. Independent affected-diff review remains required before the operator rerun.
     No hardware run or settlement by the builder.
+    **B-M5-33 complete and independently verified (Codex, 2026-10-20):** implementation `c984cc1f`,
+    validation publication `cb0f657c`; `research/20261020-b-m5-33-check.md` PASS closes F1/F2.
+    Reviewer focused tests 79/79, fidelity 706 records PASS; production hooks match the previously reviewed
+    B-M5-32 baseline. Builder recorded full suite 5968/5968 PASS; not repeated for this bounded re-review.
+    Local workspace fast-forwarded to the published implementation after verifying/removing only its identical
+    baseline patch. The operator rerun is ready; no records settled, no hardware run by Codex.
 
 - **Temporary M5 handoff (operator, 2026-10-20):** Codex is manager and independent verifier for M5 until Claude
   returns; evidence, role separation and approval checkpoints are unchanged. First robot run judged in

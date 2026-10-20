@@ -1,5 +1,15 @@
 # M5 acceptance: what stands in the way (manager, 2026-10-19)
 
+**Latest update (2026-10-20): B-M5-33 independent review PASS.** Implementation `c984cc1f`
+and validation `cb0f657c` publish B-M5-32 plus both harness corrections. See
+`research/20261020-b-m5-33-check.md`: unjoined layer evidence stays INCONCLUSIVE;
+AUDIO reconstructs earlier epoch spending. Reviewer M5Hw tests 79/79 and fidelity
+check pass; builder full suite 5968/5968 passed. The previously reviewed hooks and
+DRIVING split are retained. **Next: operator rerun of m5-hw-1 and bundle judgement.**
+M5 is NOT ACCEPTED; no record settlement or hardware run by Codex. Physical display,
+resting-eye comparison, actual wire joins and the stated teardown limits still
+require the run; successful traversal belongs to M12/M13.
+
 - **Target:** M5-animation reaches ACCEPTED, under "Done for a layer" in `PROJECT_STATE.md`, judged by AGENTS.md
   "What we reproduce" (2026-10-17).
 - **Examined:** `main` at 3799cdcd. Sources: the manifest, `jobs/QUEUE.md`, `jobs/STATUS.md`, the check files named below.

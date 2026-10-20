@@ -170,8 +170,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s5 | [B-M5-29](B-M5-29.md) | done b8a14a8e; Codex bounded review PASS (research/20261020-b-m5-29-check.md); admission diagnostic gap retained, operator rerun required |
 | 61w3s6 | [B-M5-30](B-M5-30.md) | done967af8d8; Codex bounded review PASS (research/20261020-b-m5-30-check.md); queue-origin limits retained, operator rerun required |
 | 61w3s7 | [B-M5-31](B-M5-31.md) | done8b9bc2d1; Codex bounded review PASS (research/20261020-b-m5-31-check.md);24..31 reviews complete, hardware/diagnostic gaps and successful driving outstanding |
-| 61w3s8 | [B-M5-32](B-M5-32.md) | DONE locally, uncommitted; Codex review FAIL F1/F2 (research/20261020-b-m5-32-check.md); corrections in B-M5-33 |
-| 61w3s9 | [B-M5-33](B-M5-33.md) | open — next builder pickup; apply supplied B-M5-32-baseline.patch, then fix LAYERS unjoined-frame gate and AUDIO partial-epoch accounting; normal builder publication gates, independent review still required |
+| 61w3s8 | [B-M5-32](B-M5-32.md) | DONE; baseline published with B-M5-33 in c984cc1f; initial review FAIL F1/F2, both closed by research/20261020-b-m5-33-check.md |
+| 61w3s9 | [B-M5-33](B-M5-33.md) | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-m5-33-check.md); focused 79/79, builder full suite 5968/5968; operator rerun next |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |

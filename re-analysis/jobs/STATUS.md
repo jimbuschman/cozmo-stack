@@ -128,8 +128,8 @@
 | 61w3s5 | B-M5-29 | done b8a14a8e; Codex bounded review PASS (research/20261020-b-m5-29-check.md); admissio... | DONE (3/3 items; 1 MISSING) | `research/20261020-b-m5-29-check.md` |
 | 61w3s6 | B-M5-30 | done967af8d8; Codex bounded review PASS (research/20261020-b-m5-30-check.md); queue-ori... | DONE (3/3 items; 1 MISSING) | `research/20261020-b-m5-30-check.md` |
 | 61w3s7 | B-M5-31 | done8b9bc2d1; Codex bounded review PASS (research/20261020-b-m5-31-check.md);24..31 rev... | DONE (3/3 items; 0 MISSING) | `research/20261020-b-m5-31-check.md` |
-| 61w3s8 | B-M5-32 | DONE locally, uncommitted; Codex review FAIL F1/F2 (research/20261020-b-m5-32-check.md)... | DONE (4/4 items; 0 MISSING) | `research/20261020-b-m5-32-check.md` |
-| 61w3s9 | B-M5-33 | open — next builder pickup; apply supplied B-M5-32-baseline.patch, then fix LAYERS unjo... | no status file | none found |
+| 61w3s8 | B-M5-32 | DONE; baseline published with B-M5-33 in c984cc1f; initial review FAIL F1/F2, both clos... | DONE (4/4 items; 0 MISSING) | `research/20261020-b-m5-32-check.md` |
+| 61w3s9 | B-M5-33 | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-... | DONE (2/2 corrections; 0 MISSING) | `research/20261020-b-m5-33-check.md` |
 | 61w4 | B-M12-7 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
 | 61w5 | B-LOG-1 | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs... | no status file | none found |
 | 61x | B-M15-8 | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was ... | no status file | none found |
