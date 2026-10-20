@@ -42,8 +42,9 @@ public class M5HwObservationTests
         Assert.True(Grade(Locked().Append(Out(50,0x9E,1)))["enableBeforeUnlock"]!.GetValue<bool>());
         var moved=Grade(Locked().Append(State(75,0.2f)));
         Assert.True(moved["headTelemetryChanged"]!.GetValue<bool>());
-        Assert.Equal("OBSERVED_HEAD_TELEMETRY_CHANGED",moved["verdict"]!.GetValue<string>());
+        Assert.Equal("OBSERVED_LOCKED_HEAD_EVIDENCE",moved["verdict"]!.GetValue<string>());
         Assert.True(Grade(Locked().Append(Tracks(75,255)))["headTrackReportedEnabled"]!.GetValue<bool>());
+        Assert.Equal("OBSERVED_LOCKED_HEAD_EVIDENCE",Grade(Locked().Where(m=>m.Outbound))["verdict"]!.GetValue<string>());
     }
 
     // reach: unit (observation metadata/raw answers replace interactive input; no source/physical verdict).

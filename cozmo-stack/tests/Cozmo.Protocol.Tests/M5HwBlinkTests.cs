@@ -51,7 +51,10 @@ public class M5HwBlinkTests
     public void DiscontinuousOrOutOfRangeGenerationIsNotCertified()
     {
         var gap=new[]{new M5HwAnalysis.BlinkCall(1,0,60,44500,true),new M5HwAnalysis.BlinkCall(3,60,44500,44440,false)};
-        Assert.Equal("OBSERVED_BLINK_CALL_MISMATCH",M5HwAnalysis.Blinks(Array.Empty<M5Hw.WireMessage>(),0,60000,44000,45000,Yes(),gap)["verdict"]!.GetValue<string>());
+        var incomplete=M5HwAnalysis.Blinks(Array.Empty<M5Hw.WireMessage>(),0,60000,44000,45000,Yes(),gap);
+        Assert.Equal("INCONCLUSIVE",incomplete["verdict"]!.GetValue<string>());
+        Assert.NotEmpty(incomplete["captureProblems"]!.AsArray());
+        Assert.Empty(incomplete["problems"]!.AsArray());
         var wrong=new[]{new M5HwAnalysis.BlinkCall(1,0,60,30000,true)};
         Assert.Equal("OBSERVED_BLINK_CALL_MISMATCH",M5HwAnalysis.Blinks(Array.Empty<M5Hw.WireMessage>(),0,60000,44000,45000,Yes(),wrong)["verdict"]!.GetValue<string>());
     }

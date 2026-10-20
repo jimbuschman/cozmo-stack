@@ -49,7 +49,8 @@ public class M5HwDrivingTests
         Assert.Equal("INCONCLUSIVE_END_COMPLETION",Grade(wrongEnd)["phaseVerdict"]!.GetValue<string>());
         var ambiguousWire=Wire().Append(new M5Hw.WireMessage(105,true,new byte[]{0x9B,17}));
         var ambiguous=M5HwAnalysis.DrivingPhases(ambiguousWire,Events(),99,0,200);
-        Assert.Equal("INCONCLUSIVE_END_WIRE_EVIDENCE",ambiguous["phaseVerdict"]!.GetValue<string>());
+        Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",ambiguous["phaseVerdict"]!.GetValue<string>());
+        Assert.False(ambiguous["endCompletionBeforeDrive"]!.GetValue<bool>());
     }
 
     // reach: unit (synthetic action identities; an unrelated successful animation cannot require this Loop).
@@ -125,8 +126,9 @@ public class M5HwDrivingTests
         var result=M5HwAnalysis.DrivingPhases(Array.Empty<M5Hw.WireMessage>(),events,99,0,200);
         Assert.True(result["endActionCompletionBeforeDrive"]!.GetValue<bool>());
         Assert.False(result["endCompletionBeforeDrive"]!.GetValue<bool>());
-        Assert.Equal("OBSERVED_FAILED_END_ACTION",result["phaseVerdict"]!.GetValue<string>());
-        Assert.Equal("INCONCLUSIVE",result["verdict"]!.GetValue<string>());
+        Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["phaseVerdict"]!.GetValue<string>());
+        Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["verdict"]!.GetValue<string>());
+        Assert.Equal(0x0300000Cu,result["endResultObservation"]!.GetValue<uint>());
     }
 
 }

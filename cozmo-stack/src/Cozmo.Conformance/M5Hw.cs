@@ -24,9 +24,9 @@ public static class M5Hw
     public static readonly CheckDef[] Checks = {
         new("TAGS", "Three plays: wire start tags and robot echoes", new[]{"M5-008","M5-036"}),
         new("ABORT", "Mid-stream cancellation and robot counters", new[]{"M5-023","M5-036"}),
-        new("KEEP_ALIVE", "Neutral replay, live bursts and persistent face stream", new[]{"M5-010","M5-027","M5-028","M5-029","M5-030","M5-036","M5-057"}),
+        new("KEEP_ALIVE", "Neutral replay, live bursts and persistent face stream", new[]{"M5-010","M5-023","M5-027","M5-028","M5-029","M5-030","M5-036","M5-057"}),
         new("LOCKED_HEAD", "Head keyframes still stream while head track is locked", new[]{"M4-014","M4-047","M5-035","M5-036"}),
-        new("AUDIO", "744-byte samples, silence, counters and pacing", new[]{"M5-008","M5-036","M3-012","M6-042"}),
+        new("AUDIO", "744-byte samples, silence, counters and pacing", new[]{"M2-008","M2-009","M5-008","M5-036","M3-012","M6-042"}),
         new("LAYERS", "Face and backpack layer traffic", new[]{"M5-028","M5-029","M5-031","M5-032","M5-036"}),
         new("LIVE_IDLE", "Calibrated head input and default wiggles", new[]{"M5-030","M5-057","M5-036"}),
         new("PARAMETERS", "Uncapped 45000 ms blink maximum over 60 seconds", new[]{"M5-062","M5-028","M5-036","M3-008"}),
@@ -35,9 +35,167 @@ public static class M5Hw
         new("TEARDOWN", "Dispose interval, discarded buffer and transport provenance", new[]{"M5-037","M5-053","M5-055","M5-059","M5-060","M5-022","M4-026","M5-036","M6-042"}),
     };
     public static readonly string[] RecordIds = Checks.SelectMany(x => x.Records).Distinct().ToArray();
-    public static string? CheckDefinitionProblem() => Checks.SelectMany(x => x.Records).Except(RecordIds).Any() || RecordIds.Except(Checks.SelectMany(x => x.Records)).Any() ? "check/record mismatch" : null;
+    public sealed record SourceRule(string Check, string Record, string Citation, string Comparison);
+    public static readonly SourceRule[] SourceRules = {
+        new("TAGS", "M5-008", "0x00579FD0..0x00579FD4; 0x0057B2D4..0x0057B2F6; 0x0057C410..0x0057C424", "Fresh outgoing tag allocation starts at 1 and increments; three captured non-idle starts are compared with 1,2,3. Layer starts share the allocator, so this does not establish clip attribution."),
+        new("ABORT", "M5-023", "0x0057B3F2..0x0057B410; 0x00517DE4..0x00517E0A; 0x007AA392; 0x007A47DC", "One cancellation produces one reliable empty-body 0x8D; resends count once. Tail counts and physical reaction are observations."),
+        new("KEEP_ALIVE", "M5-023", "0x0057B3F2..0x0057B410; 0x00517DE4..0x00517E0A", "The same cancellation-command comparison as ABORT."),
+        new("KEEP_ALIVE", "M5-027", "0x0057D3EE..0x0057D44C", "Captured live-idle bursts use Start FF followed by End before another Start; no fixed restart time."),
+        new("KEEP_ALIVE", "M5-028", "0x0057C52A..0x0057C556; 0x0057C606..0x0057C646", "With no animation/idle and persistent-layer prerequisites held, layer traffic continues without ending; snapshots limit continuous-state certainty."),
+        new("LOCKED_HEAD", "M4-014", "0x0064014E..0x00640188; 0x0063FF94..0x0063FFB4", "Disable head mask1 before the clip and Enable mask1 after harness unlock; no early Enable."),
+        new("LOCKED_HEAD", "M5-035", "0x0057C9D4..0x0057C9E2", "Head keyframes continue to stream while the track is locked. Firmware suppression is not inferred."),
+        new("AUDIO", "M2-008", "0x007ABE46..0x007ABE54; 0x007ABF0A", "Outbound union size is member size plus its one-byte tag."),
+        new("AUDIO", "M2-009", "0x007BCDAA; 0x007BCE8A", "AudioSample has 744 body bytes; AudioSilence has no body."),
+        new("AUDIO", "M3-012", "0x0057C6F6..0x0057C7AC; 0x0057BF84..0x0057BFCC; 0x0057C464..0x0057C496", "Refresh byte/frame allowances from played/streamed counters, require available budget for buffered sends, subtract on success; direct End bypasses the gate."),
+        new("LAYERS", "M5-029", "0x0064F1D4..0x0064F204; 0x0064F222..0x0064F22C; 0x0057C63C..0x0057C646", "A joined frame emits one face iff its recorded face-output flag is set."),
+        new("LAYERS", "M5-028", "0x0057C52A..0x0057C556; 0x0057C606..0x0057C624", "Layer stream starts once and ends after layers and queued messages drain."),
+        new("LIVE_IDLE", "M5-030", "0x0057D83E..0x0057D85C; 0x004F8C12..0x004F8C4A", "Head packet has a u16 duration and signed angle byte. Nearest delivered head input and random track occurrence remain observations."),
+        new("PARAMETERS", "M5-062", "0x0057E89A..0x0057E8B2; 0x0057C1EC", "Base parameter setter stores the requested 44000/45000 values without the derived cap."),
+        new("PARAMETERS", "M5-028", "0x0058D382..0x0058D38C; 0x0058D48C..0x0058D4BE; 0x0058D506..0x0058D550; 0x0082FA96..0x0082FAC0", "Each KeepFaceAlive call subtracts60; a due blink generates and draws an inclusive deadline from the requested range. No wall-clock blink interval is implied."),
+        new("DRIVING", "M5-063", "0x004F0D80..0x004F0D8C; 0x004F0E14..0x004F0E2A; 0x004F0DC8..0x004F0DD4", "Matching successful Start requests Loop; matching End completion sets state4 irrespective of End result."),
+        new("DRIVING", "M12-024", "0x0055B0BA..0x0055B0C8", "Drive remains running while its End animation is pending. This boundary comparison does not settle the remaining M12 record gap."),
+        new("SLEEP", "M1-045", "0x0052CE54..0x0052CE6A", "KNOWN GAP: native calls the factory then queues its action. Capturing the host fallback/diagnostic is observation coverage only."),
+        new("SLEEP", "M5-038", "0x0052CEA2..0x0052CFC0", "KNOWN GAP: the native factory constructs compound children; the test does not claim that the missing production writer ran."),
+        new("TEARDOWN", "M5-037", "0x0057AF58; 0x0057B044..0x0057B0C0", "Streamer destruction clears queued messages without sending a final flush. A missing per-entry discard log may mean the queue was empty."),
+        new("TEARDOWN", "M5-059", "0x0057F376..0x0057F37A; 0x0057FC20..0x0057FC22; 0x0057FA14..0x0057FA2E", "Construction and destruction remove the existing TestAnim.json in the configured cache.")
+    };
+    public sealed record CheckGuide(string Purpose, string Automatic, string Observation, string[] Phases);
+    public static CheckGuide Guide(string id) => id switch
+    {
+        "TAGS" => new("Check the identifiers attached to three animation requests.",
+            "Record outgoing start identifiers and the robot's replies.",
+            "NO ANSWER NEEDED. This does not judge how the selected animation looks.", Array.Empty<string>()),
+        "ABORT" => new("Check the messages sent when an animation is cancelled partway through.",
+            "Record the stop command and the messages before and after it.",
+            "Watch the eyes, head and lifting arms after the stop request. Your description of the physical result is an observation.", new[] { "CANCEL" }),
+        "KEEP_ALIVE" => new("Check animation traffic after cancellation, during live idle, and with persistent face layers.",
+            "Record the cancellation tail, live-idle start/end order, and a separate face-only window.",
+            "Watch the cancellation and then 10 seconds of wheel/body activity. No particular eye shape or random wiggle is a passing answer.", new[] { "CANCEL", "LIVE" }),
+        "LOCKED_HEAD" => new("Check that a head-track lock is sent while animation head commands continue to stream.",
+            "Record the disable/enable commands, animation head commands, and the robot's reported head state.",
+            "Watch the angle of the whole head between START and END. Whether the robot physically holds it is retained for review.", new[] { "LOCKED" }),
+        "AUDIO" => new("Check audio-message sizes and the engine's send-budget decisions.",
+            "Record sample/silence messages and join them to the engine's send-gate observations.",
+            "NO ANSWER NEEDED. This does not judge sound quality or certify the unfinished sound layers.", Array.Empty<string>()),
+        "LAYERS" => new("Check messages generated by a brief face/backpack distortion request.",
+            "Compare each captured layer frame with the engine's recorded face-output flag.",
+            "Watch the face screen and backpack lights separately. Report any change; no exact appearance is prescribed.", new[] { "LAYERS" }),
+        "LIVE_IDLE" => new("Record default idle head, lift and body commands and the head-angle input used.",
+            "Capture 12 seconds of idle traffic and retain head-angle comparisons for review.",
+            "NO ANSWER NEEDED. A random movement may not occur during this sample.", Array.Empty<string>()),
+        "PARAMETERS" => new("Check that blink parameters are stored without a cap and used by the blink timer.",
+            "Read back 44000/45000 and check recorded timer transitions at KeepFaceAlive calls.",
+            "Watch the eyes for 60 seconds and report whether you saw at least two blinks. These parameter values do not promise a 44–45 second wall-clock gap.", new[] { "BLINKS" }),
+        "DRIVING" => new("Check the animation phase requests around a short drive attempt.",
+            "Record Start, conditional Loop and End requests together with their action results.",
+            "NO ANSWER NEEDED. The requested distance is 6 cm. This check does not establish successful navigation.", Array.Empty<string>()),
+        "SLEEP" => new("Record the sleep-deadline fallback and the known missing action path.",
+            "Record the fallback request and its diagnostic.",
+            "NO ANSWER NEEDED. Do not look for a sleeping expression; the missing action path remains open.", Array.Empty<string>()),
+        "TEARDOWN" => new("Check pending-animation cleanup when the connection is disposed.",
+            "Record the actual disposal interval, buffer-discard evidence and temporary animation-cache cleanup.",
+            "NO ANSWER NEEDED. Post-disconnect appearance is not a shutdown verdict.", Array.Empty<string>()),
+        _ => throw new ArgumentException("Unknown M5 check " + id)
+    };
+    public static string DescribeCheck(string id, bool includeSources = false)
+    {
+        var guide = Guide(id);
+        return $"WHAT THIS TESTS: {guide.Purpose}\nRECORDED AUTOMATICALLY: {guide.Automatic}\nYOUR PART: {guide.Observation}\n"
+            + (includeSources ? "SOURCE: " + string.Join("; ", SourceRules.Where(r => r.Check == id).Select(r => $"{r.Record} {r.Citation}")) : "");
+    }
+    public static void Preview(IEnumerable<CheckDef> checks)
+    {
+        Console.WriteLine("M5 TEST PREVIEW — no robot, resources or network required.\n"
+            + "The live test checks source-backed messages/state and saves physical observations separately.\n"
+            + "You are never asked whether Cozmo simply 'looks right'. Read each preview, press Enter when ready, and watch only from START to END.\n");
+        foreach (var check in checks)
+        {
+            Console.WriteLine($"--- {check.Id} ---\n{DescribeCheck(check.Id, true)}");
+            foreach (var phase in Guide(check.Id).Phases)
+            {
+                var plan = ObservationPlans.Single(p => p.Id == phase);
+                Console.WriteLine($"\nGET READY TO WATCH: {phase}\nLook at {plan.Watch}.\n{plan.Expected}\n"
+                    + "[Press Enter when ready]\n[START — watch Cozmo]\n[END — answer the previewed questions]\n");
+            }
+        }
+    }
+    // Harness reporting only: explicit cases prevent an OBSERVED_MALFORMED_* result being printed as a pass.
+    public static string ResultKind(JsonObject result)
+    {
+        string verdict = result["verdict"]?.GetValue<string>() ?? "INCONCLUSIVE";
+        string kind = verdict switch
+        {
+            "OBSERVED_INVALID_CANCEL_COMMAND" or "OBSERVED_MALFORMED_AUDIO_FRAMING"
+                or "OBSERVED_COHERENT_ADMISSION_VIOLATION" or "OBSERVED_ADMISSION_ACCOUNTING_MISMATCH"
+                or "OBSERVED_BLINK_CALL_MISMATCH" or "OBSERVED_MISSING_REQUIRED_FACE"
+                or "OBSERVED_UNEXPECTED_FACE" or "OBSERVED_INVALID_BURST_ORDER"
+                or "OBSERVED_UNEXPECTED_LAYER_LIFECYCLE" or "OBSERVED_STREAMER_FINAL_FLUSH"
+                or "OBSERVED_MALFORMED_HEAD_KEYFRAME" or "OBSERVED_LOOP_AFTER_NONZERO_START"
+                or "OBSERVED_END_COMPLETION_ORDER_MISMATCH" or "OBSERVED_EARLY_HEAD_ENABLE" => "MISMATCH",
+            "OBSERVED_OUTBOUND_TAG_SEQUENCE" or "OBSERVED_CANCEL_COMMAND" or "OBSERVED_FF_BURST_ORDER"
+                or "OBSERVED_PERSISTENT_FACE_WINDOW" or "OBSERVED_LOCKED_HEAD_EVIDENCE"
+                or "OBSERVED_AUDIO_FRAMING_AND_ADMISSION" or "OBSERVED_CONDITIONAL_LAYER_FRAMES"
+                or "OBSERVED_BLINK_CALL_TRANSITIONS" or "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS"
+                or "OBSERVED_FAILED_START_END_CLEANUP" or "OBSERVED_DISPOSE_DISCARD_INTERVAL" => "MATCH",
+            "KNOWN_GAP" => "KNOWN_GAP",
+            "OBSERVED_LIVE_IDLE_MEASUREMENTS" or "OBSERVED_CAPTURE" => "OBSERVATION",
+            _ => "INCOMPLETE"
+        };
+        // Parent checks retain their subchecks; an explicit contradiction must not disappear under INCONCLUSIVE.
+        foreach (var child in result.Select(p => p.Value).OfType<JsonObject>())
+            if (child["verdict"] is not null && ResultKind(child) == "MISMATCH") return "MISMATCH";
+        if (result["phaseVerdict"]?.GetValue<string>() is "OBSERVED_LOOP_AFTER_NONZERO_START" or "OBSERVED_END_COMPLETION_ORDER_MISMATCH")
+            return "MISMATCH";
+        return kind;
+    }
+    public static string DescribeResult(JsonObject result)
+    {
+        string kind = ResultKind(result);
+        string meaning = kind switch
+        {
+            "MATCH" => "Captured evidence matched the stated source-backed comparison.",
+            "MISMATCH" => "Captured evidence contradicts a stated comparison; review the saved detail.",
+            "KNOWN_GAP" => "Known missing implementation path recorded; this is not an engine-behavior pass.",
+            "OBSERVATION" => "Measurements saved for review; no source-backed pass/fail comparison is claimed.",
+            _ => "The required setup or evidence was incomplete; this does not establish an engine failure."
+        };
+        var reasons = new List<string>();
+        void Collect(JsonObject row)
+        {
+            foreach (string name in new[] { "missing", "problems", "captureProblems", "admissionEvidenceMissing" })
+            {
+                if (row[name] is JsonValue value && value.TryGetValue<string>(out var note)) reasons.Add(note);
+                else if (row[name] is JsonArray notes) reasons.AddRange(notes.OfType<JsonValue>().Select(n => n.ToString()));
+            }
+            foreach (var child in row.Select(p => p.Value).OfType<JsonObject>())
+                if (child["verdict"] is not null) Collect(child);
+        }
+        Collect(result);
+        string detail = string.Join(" ", reasons.Distinct().Take(6));
+        var observations = new List<string>();
+        foreach (var (field, label) in new[] {
+            ("clipStopped", "Original animation stopped"), ("restingEyeAppearance", "Resting-eye comparison"),
+            ("blinkObservation", "Blink seen"), ("eyeDartObservation", "Eye dart seen"), ("bodyObservation", "Body/wheel movement"),
+            ("headStayedPut", "Head stayed at its starting angle"), ("faceObservation", "Face-picture change"),
+            ("backpackObservation", "Backpack-light change"), ("observation", "At least two blinks seen") })
+            if (result[field]?["answer"] is JsonValue answer) observations.Add(label + ": " + answer.ToString());
+        foreach (string field in new[] { "observationWindow", "liveObservationWindow" })
+            if (result[field]?["freeText"] is JsonValue note && !string.IsNullOrWhiteSpace(note.ToString()))
+                observations.Add("Your notes: " + note.ToString());
+        return $"{result["id"]}: {kind} — {meaning}" + (detail.Length == 0 ? "" : "\n  " + detail)
+            + (observations.Count == 0 ? "" : "\n  Physical observations (not graded): " + string.Join("; ", observations));
+    }
+    public static string? CheckDefinitionProblem()
+    {
+        if (Checks.SelectMany(x => x.Records).Except(RecordIds).Any() || RecordIds.Except(Checks.SelectMany(x => x.Records)).Any()) return "check/record mismatch";
+        if (Checks.Any(c => !SourceRules.Any(r => r.Check == c.Id))) return "check has no source/known-gap basis";
+        if (SourceRules.Any(r => !Checks.Any(c => c.Id == r.Check && c.Records.Contains(r.Record))
+            || string.IsNullOrWhiteSpace(r.Citation) || string.IsNullOrWhiteSpace(r.Comparison))) return "invalid or uncited comparison";
+        return null;
+    }
     public static List<JsonObject> LoadRecords(string path, List<string> warnings)
     {
+        if (CheckDefinitionProblem() is { } problem) throw new InvalidOperationException(problem);
         var all = JsonNode.Parse(File.ReadAllText(path))!["records"]!.AsArray().Select(x => x!.AsObject()).ToDictionary(x => x["id"]!.GetValue<string>());
         var missing = RecordIds.Where(id => !all.ContainsKey(id)).ToArray();
         if (missing.Length > 0) throw new InvalidOperationException("Missing fidelity records: " + string.Join(", ", missing));
@@ -79,9 +237,10 @@ public static class M5Hw
         new("BLINKS", "the eyes on the face screen",
             "Watch for 60 seconds. A BLINK is the eyes briefly closing and reopening.\n"
             + "Sideways/up-down eye shifts are darts, not blinks. Moving the whole head is not a blink either.\n"
-            + "We will ask whether the gap between blinks was about 44-45 seconds. You can use a clock or stopwatch.\n"
-            + "The first blink may happen sooner because it was already scheduled. Do not time from START to that first blink.\n"
-            + "Time from one blink to the next. If you see fewer than two blinks, or cannot judge the gap, choose unclear.")
+            + "We will ask ONE question: did you see at least two blinks during this part?\n"
+            + "If you use a clock, you can record the measured gaps in the notes afterward; timing is optional.\n"
+            + "The engine timer advances per KeepFaceAlive call, so 44000/45000 does not promise a 44-45 second wall-clock gap.\n"
+            + "The program checks the timer automatically. Your answer describes only what you saw; unsure or missed observations are useful too.")
     };
     public sealed record WireMessage(double AtMs, bool Outbound, byte[] Payload,
         int FrameLine = 0, int SubmessageOrdinal = 0, ushort? ReliableSequence = null, int ConnectionEpoch = 0, bool IsRetransmission = false);
@@ -98,20 +257,21 @@ public static class M5Hw
         var after = abortIndex < 0 ? Array.Empty<WireMessage>() : rows.Skip(abortIndex + 1).ToArray();
         int audio = after.Count(x => x.Payload[0] is 0x8E or 0x8F), abort = rows.Count(x => x.Payload[0] == 0x8D),
             end = after.Count(x => x.Payload[0] == 0x9A), faces = after.Count(x => x.Payload[0] == (byte)RobotMessageId.AnimFaceImage);
-        bool malformed = rows.Any(x => (x.Payload[0] is 0x8D or 0x9A or 0x8F) && x.Payload.Length != 1 || x.Payload[0] == 0x8E && x.Payload.Length != 745);
+        bool malformedAbort = rows.Any(x => x.Payload[0] == 0x8D && x.Payload.Length != 1);
+        bool malformedTail = after.Any(x => (x.Payload[0] is 0x9A or 0x8F) && x.Payload.Length != 1 || x.Payload[0] == 0x8E && x.Payload.Length != 745);
         return new JsonObject
         {
-            ["verdict"] = active && command is not null && !malformed && quietEndMs - command.AtMs >= 400
-                && abort == 1 && end == 0 && faces <= 1 && audio <= 1
-                && !after.Any(x => x.Payload[0] == 0x9B) ? "OBSERVED_CANCEL_WIRE_SHAPE" : "INCONCLUSIVE",
+            ["verdict"] = malformedAbort || abort > 1 ? "OBSERVED_INVALID_CANCEL_COMMAND"
+                : active && command is not null && quietEndMs - command.AtMs >= 400
+                && abort == 1 ? "OBSERVED_CANCEL_COMMAND" : "INCONCLUSIVE",
             ["abortCount"] = abort, ["endCount"] = end, ["faceCount"] = faces, ["audioFrameCount"] = audio,
+            ["activeStreamObserved"] = active, ["malformedAbort"] = malformedAbort, ["malformedTail"] = malformedTail,
             ["cancelCallAtMs"] = cancelMs, ["wireAbort"] = command is null ? null : M5HwAnalysis.WireEvidence(new[] { command }),
             ["quietEndMs"] = quietEndMs, ["preCommandBacklog"] = M5HwAnalysis.WireEvidence(backlog),
             ["postAbortMessages"] = M5HwAnalysis.WireEvidence(after),
-            ["verdictRule"] = "M5-023 A22/A23/A25: active stream before actual ordered wire Abort, one Abort, "
-                + "no End/new Start and at most one audio marker/face in the following 400 ms. Pre-command backlog "
-                + "is separate, even in the Abort datagram; reliable retransmissions count once. The native neutral "
-                + "gate uses last-stream time, not cancel wall time. Robot counters/echo semantics remain M5-036 HARDWARE_ONLY."
+            ["tailAssessment"] = "NOT_JUDGED: End/Start/audio/face counts are retained observations. The neutral-replay gate uses unobserved last-stream time (0x0057CF6A..0x0057CFF2), so a 400 ms interval after captured Abort does not establish a quiet-tail expectation.",
+            ["coverageRequirement"] = "Observe an active stream, one cancellation call and its outgoing command, then retain at least 400 ms after that command. This interval is a harness choice.",
+            ["verdictRule"] = "M5-023 0x0057B3F2..0x0057B410 -> 0x00517DE4..0x00517E0A sends one empty-body AbortAnimation (0x8D) for cancellation. Reliable retransmissions count once. This verdict covers the cancellation command only; tail traffic and physical/firmware effects remain separate observations."
         };
     }
     public static JsonObject GradeTags(IEnumerable<WireMessage> messages)
@@ -122,17 +282,22 @@ public static class M5Hw
         var echoes = rows.Where(x => !x.Outbound && x.Payload.Length == 2 && x.Payload[0] == (byte)RobotMessageId.AnimStarted).ToArray();
         var ends = rows.Where(x => !x.Outbound && x.Payload.Length == 2 && x.Payload[0] == (byte)RobotMessageId.AnimEnded).ToArray();
         bool ordered = startRows.All(s => echoes.Any(e => e.AtMs >= s.AtMs && e.Payload[1] == s.Payload[1] && ends.Any(end => end.AtMs >= e.AtMs && end.Payload[1] == s.Payload[1])));
-        return new JsonObject { ["verdict"] = starts.SequenceEqual(new[] { 1, 2, 3 }) && ordered ? "OBSERVED_TAGS_AND_START_ECHOES" : "INCONCLUSIVE", ["starts"] = JsonSerializer.SerializeToNode(starts), ["startedEchoes"] = JsonSerializer.SerializeToNode(echoes.Select(x => (int)x.Payload[1])), ["endedEchoes"] = JsonSerializer.SerializeToNode(ends.Select(x => (int)x.Payload[1])), ["verdictRule"] = "Fresh connection, three plays before another explicit play; M5-008 increment 1,2,3, ordered matching started then ended robot echoes. Idle FF retained separately; firmware meaning is M5-036." };
+        return new JsonObject { ["verdict"] = starts.SequenceEqual(new[] { 1, 2, 3 }) ? "OBSERVED_OUTBOUND_TAG_SEQUENCE" : "INCONCLUSIVE",
+            ["starts"] = JsonSerializer.SerializeToNode(starts), ["startedEchoes"] = JsonSerializer.SerializeToNode(echoes.Select(x => (int)x.Payload[1])),
+            ["endedEchoes"] = JsonSerializer.SerializeToNode(ends.Select(x => (int)x.Payload[1])), ["orderedMatchingEchoesObserved"] = ordered && startRows.Length == 3,
+            ["echoAssessment"] = "NOT_JUDGED: robot start/end replies are retained observations; M5-036 HARDWARE_ONLY.",
+            ["verdictRule"] = "Fresh connection, three explicit plays; M5-008 0x0057B660..0x0057B672 increments outgoing tags 1,2,3. Robot echoes do not gate this source-backed outbound comparison." };
     }
     public static int Run(string[] args)
     {
         try
         {
             string? root = LinkCheck.FindRepoRoot(); if (root is null) throw new ArgumentException("Run inside the repository.");
-            bool validate = false, yes = false, drive = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false); HashSet<string>? only = null;
+            bool validate = false, preview = false, yes = false, drive = false; string? resources = null, output = null; IPAddress ip = RobotAddress.DefaultFor(false); HashSet<string>? only = null;
             for (int i = 1; i < args.Length; i++) switch (args[i])
                 {
                     case "--validate": validate = true; break;
+                    case "--preview": preview = true; break;
                     case "--yes": yes = true; break;
                     case "--allow-drive": drive = true; break;
                     case "--resources": resources = args[++i]; break;
@@ -143,11 +308,12 @@ public static class M5Hw
             if (only is not null && (only.Count == 0 || only.Except(Checks.Select(x => x.Id)).Any())) throw new ArgumentException("Unknown or empty --only check list.");
             var warnings = new List<string>(); var records = LoadRecords(Path.Combine(root, "re-analysis", "fidelity_manifest.json"), warnings);
             if (validate) { Console.WriteLine($"M5-HW: {Checks.Length} checks, {records.Count} valid records; no network opened.\n" + string.Join("\n", warnings)); return 0; }
+            if (preview) { Preview(Checks.Where(c => only is null || only.Contains(c.Id))); return 0; }
             var options = EngineStartupResources.OptionsForRoot(resources);
             string bundle = Path.Combine(output ?? Path.Combine(root, "re-analysis", "acceptance", "hardware"), DateTime.Now.ToString("yyyyMMdd-HHmmss") + "-M5-HW-" + Guid.NewGuid().ToString("N")[..6]);
             return new M5Run(root, bundle, ip, options.ResourcesPath!, records, args, only, yes, drive).Execute();
         }
-        catch (Exception e) { Console.Error.WriteLine("m5-hw: " + e.Message + "\nusage: m5-hw [robot-ip] --resources <dir> [--only CHECK,...] [--allow-drive] [--yes] [--out <parent>] | --validate"); return 2; }
+        catch (Exception e) { Console.Error.WriteLine("m5-hw: " + e.Message + "\nusage: m5-hw [robot-ip] --resources <dir> [--only CHECK,...] [--allow-drive] [--yes] [--out <parent>] | --validate | --preview"); return 2; }
     }
 }
 
@@ -303,34 +469,23 @@ internal sealed class M5Run
                 else if (cancel.IsCancellationRequested) result = Missing("run interrupted");
                 else
                 {
-                    string instruction = def.Id switch
-                    {
-                        "TAGS" => "NO ANSWER NEEDED: three short animations will play. The program records whether they start and finish.",
-                        "ABORT" => "You will watch an animation stop, then answer four short questions. Instructions follow.",
-                        "KEEP_ALIVE" => "You will watch an animation stop, then watch body wiggles. A final face-recording part is automatic.",
-                        "LOCKED_HEAD" => "You will watch whether the whole head stays still while an animation plays. Instructions follow.",
-                        "AUDIO" => "NO ANSWER NEEDED: an animation with sound data will play. The program checks the recorded audio messages; you do not need to judge the sound.",
-                        "LAYERS" => "You will watch a brief face-picture effect and the backpack lights. A short setup animation may play first.",
-                        "LIVE_IDLE" => "NO ANSWER NEEDED: the program records 12 seconds of small idle movements, if driving is enabled.",
-                        "PARAMETERS" => "You will watch for blinks for 60 seconds. A short setup animation may play first; instructions follow.",
-                        "DRIVING" => "NO ANSWER NEEDED: if driving is enabled, Cozmo will be asked to move forward 6 cm. Keep the floor clear; the program records the result.",
-                        "SLEEP" => "NO ANSWER NEEDED: the program checks an internal sleep request. You do not need to look for a sleeping expression.",
-                        "TEARDOWN" => "NO ANSWER NEEDED: an animation starts, then the connection closes. The program records shutdown.",
-                        _ => ""
-                    };
-                    Console.WriteLine($"\n--- {def.Id} ---\n{instruction}");
+                    Console.WriteLine($"\n--- {def.Id} ---\n{M5Hw.DescribeCheck(def.Id)}");
                     Event("check-start", new() { ["check"] = def.Id });
                     try { result = Check(def.Id); ClosePendingWindow("Check returned without completing the marked phase."); }
                     catch (Exception e) { ClosePendingWindow(e.Message); errors.Enqueue(def.Id + ": " + e); result = Missing(e.Message); }
                 }
                 result["id"] = def.Id; result["records"] = JsonSerializer.SerializeToNode(def.Records); result["fromMs"] = start; result["toMs"] = Now;
+                result["sourceComparisons"] = JsonSerializer.SerializeToNode(M5Hw.SourceRules.Where(r => r.Check == def.Id));
+                result["coverageNote"] = "Local time windows, requested sample counts, track occurrences, required hooks and bounded waits are capture requirements, not guaranteed engine timing or behavior.";
                 result["uncertainty"] = new JsonArray(records.Where(x => def.Records.Contains(x["id"]!.GetValue<string>()) && x["status"]!.GetValue<string>() is "HARDWARE_ONLY" or "BLOCKED_EXTERNAL" or "IMPLEMENTATION_GAP" or "RECOVERABLE_GAP").Select(x => x.DeepClone()).ToArray()); results.Add(result);
+                result["resultKind"] = M5Hw.ResultKind(result); result["summary"] = M5Hw.DescribeResult(result);
+                Console.WriteLine(result["summary"]!.GetValue<string>());
             }
         }
         catch (Exception e) { errors.Enqueue(e.ToString()); }
         finally { ClosePendingWindow("Run interrupted before phase completion."); DisposeBounded(); Console.CancelKeyPress -= interrupt; WriteBundle(); }
         Console.WriteLine("M5 observations saved: " + bundle + "\nNo record settled; return this whole folder for review.");
-        return errors.Count == 0 && results.Count == 11 && results.All(x => x["verdict"]!.GetValue<string>() != "INCONCLUSIVE") ? 0 : 1;
+        return errors.Count == 0 && results.Count == 11 && results.All(x => M5Hw.ResultKind(x) is "MATCH" or "OBSERVATION" or "KNOWN_GAP") ? 0 : 1;
     }
     List<M5Hw.WireMessage> Wire(double from = 0, double to = double.MaxValue, bool includeRetransmissions = false)
     {
@@ -368,7 +523,8 @@ internal sealed class M5Run
                     var wireAbort = Wire(at).FirstOrDefault(x => x.Outbound && x.Payload[0] == 0x8D);
                     double abortAt = wireAbort?.AtMs ?? Now, quietEnd = abortAt + 400;
                     if (Now < quietEnd) Wait((int)Math.Ceiling(quietEnd - Now));
-                    var result = M5Hw.GradeAbort(Wire(start, quietEnd), at, quietEnd); Wait(1600);
+                    var result = M5Hw.GradeAbort(Wire(start, quietEnd), at, quietEnd);
+                    result["cancellationCommand"] = result.DeepClone(); Wait(1600);
                     result["robotCounterTail"] = new JsonArray(events.Where(e => e["kind"]?.GetValue<string>() == "animation-state" && e["atMs"]!.GetValue<double>() >= at && e["atMs"]!.GetValue<double>() <= abortAt + 2000).Select(e => e.DeepClone()).ToArray());
                     result["robotEchoTail"] = JsonSerializer.SerializeToNode(Wire(at, abortAt + 2000).Where(x => !x.Outbound && x.Payload[0] is (byte)RobotMessageId.AnimStarted or (byte)RobotMessageId.AnimEnded).Select(x => new { atMs = x.AtMs, payloadHex = Convert.ToHexString(x.Payload) }));
                     var keep = Wire(quietEnd, abortAt + 2000).Where(x => x.Outbound && x.Payload[0] is 0x9B or (byte)RobotMessageId.AnimFaceImage).ToArray();
@@ -382,8 +538,7 @@ internal sealed class M5Run
                     result["blinkObservation"] = AskWindow(cancelWindow, "Did you see a BLINK: the eyes briefly closing and opening again?", "seen", "not-seen");
                     result["eyeDartObservation"] = AskWindow(cancelWindow, "Did you see an EYE DART: the eye shapes sliding within the screen, without counting movement of the whole head?", "seen", "not-seen");
                     WindowNotes(cancelWindow); result["observationWindow"] = cancelWindow;
-                    if (neutralReference["file"] is null || result["clipStopped"]!["answer"]!.GetValue<string>() != "stopped"
-                        || result["restingEyeAppearance"]!["answer"]!.GetValue<string>() != "resembled-reference") result["verdict"] = "INCONCLUSIVE";
+                    result["physicalObservationAssessment"] = "NOT_JUDGED: answers and reference availability describe the physical result; M5-036 does not establish a firmware appearance expectation.";
                     result["timingNote"] = "Quiet interval is 400 ms after actual wire Abort; full two-second tail retained. The 0.5 s neutral gate uses native last-stream engine time, unavailable through existing public observations; no cancel-time equality or exact neutral deadline is asserted.";
                     result["nativeLastStreamTime"] = null;
                     result["neutralCandidateStarts"] = M5HwAnalysis.WireEvidence(Wire(quietEnd, abortAt + 2000).Where(x => x.Outbound && x.Payload.Length == 2 && x.Payload[0] == 0x9B && x.Payload[1] != 255));
@@ -404,7 +559,6 @@ internal sealed class M5Run
                             finally { EndWindow(liveWindow); IdleOff(); }
                             result["bodyObservation"] = AskWindow(liveWindow, "Did you see the wheels or whole body make small wiggles? Head or lifting-arm movement alone does not count.", "seen", "not-seen");
                             WindowNotes(liveWindow); result["liveObservationWindow"] = liveWindow;
-                            if (result["bodyObservation"]!["answer"]!.GetValue<string>() != "seen") result["verdict"] = "INCONCLUSIVE";
                         }
                         Console.WriteLine("NO ANSWER NEEDED for this next part: a short setup animation plays, then the program records the face for about 10 seconds.");
                         // A short nonlive play clears the previous idle and its persistent keepalive layers.
@@ -463,7 +617,7 @@ internal sealed class M5Run
                     result["wireObservationVerdict"] = result["verdict"]!.DeepClone();
                     result["headStayedPut"] = AskWindow(window, "Did the WHOLE HEAD stay at its starting angle until END? Ignore the eye picture, lifting arms, and any head movement after UNLOCK.", "yes", "no");
                     WindowNotes(window); result["observationWindow"] = window;
-                    if (result["headStayedPut"]!["answer"]!.GetValue<string>() != "yes") result["verdict"] = "INCONCLUSIVE";
+                    result["physicalObservationAssessment"] = "NOT_JUDGED: observed head motion is retained separately from outgoing lock/stream commands; M5-036 HARDWARE_ONLY.";
                     return result;
                 }
             case "AUDIO":
@@ -535,7 +689,7 @@ internal sealed class M5Run
                         }
                     }
                     finally { EndWindow(blinkWindow); r.Animations.SetLiveIdleAnimationParameters(Array.Empty<LiveIdleParam>(), Array.Empty<float>(), true); }
-                    result["observation"] = AskWindow(blinkWindow, "Was the gap FROM ONE BLINK TO THE NEXT about 44-45 seconds? Do not count from START to the first blink. Choose unclear if you saw fewer than two blinks or could not judge the gap.", "yes", "no");
+                    result["observation"] = AskWindow(blinkWindow, "Did you see at least TWO BLINKS during this part? If you timed any gaps, add the measured times in the notes. No particular wall-clock gap is required.", "yes", "no");
                     WindowNotes(blinkWindow); result["observationWindow"] = blinkWindow;
                     double blinkEnd = blinkWindow["toMs"]!.GetValue<double>();
                     var calls = M5HwAnalysis.BlinkCalls(Diagnostics(), readbackAt, blinkEnd);
@@ -587,7 +741,10 @@ internal sealed class M5Run
                         && e["kind"]?.GetValue<string>() == "stack-log"
                         && e["line"]?.GetValue<string>().StartsWith("MISSING: M5-038 -> M8 ", StringComparison.Ordinal) == true);
                     var sends = Wire(start).Where(x => x.Outbound && x.Payload[0] == 0x9B).ToArray();
-                    var result = fallback && missing ? Observe("M5-038/M1-045 fallback and visible MISSING observed; known M8 action gap remains. D2/D5/D4 are factory requests, not wire opcodes; no new named sleep play should appear in logs.") : Missing("Missing fallback or diagnostic"); result["goToSleepRequested"] = fallback; result["missingDiagnostic"] = missing; result["animationStarts"] = sends.Length; return result;
+                    var result = fallback && missing ? new JsonObject { ["verdict"] = "KNOWN_GAP",
+                        ["verdictRule"] = "Host diagnostic coverage only: M5-038/M1-045 fallback and visible missing-path diagnostic. Native 0x0052CE54..0x0052CE6A uses the SleepTriggerFactory and queues the action; that production writer and M8 action path remain incomplete." }
+                        : Missing("Host fallback or missing-path diagnostic was not captured; the known sleep-action gap remains.");
+                    result["goToSleepRequested"] = fallback; result["missingDiagnostic"] = missing; result["animationStarts"] = sends.Length; return result;
                 }
             case "TEARDOWN":
                 {
@@ -598,6 +755,7 @@ internal sealed class M5Run
                     if (begin is null || end is null) return Missing("No complete actual Dispose call interval; request/timeout is not destruction evidence");
                     double beginMs = begin["atMs"]!.GetValue<double>(), endMs = end["atMs"]!.GetValue<double>();
                     var result = M5HwAnalysis.Teardown(Wire(includeRetransmissions: true), events, beginMs, endMs, disposeCompleted);
+                    result["disposeInterval"] = result.DeepClone();
                     result["intervalVerdict"] = result["verdict"]!.DeepClone(); result["disposeRequestAtMs"] = requestAt;
                     result["cacheRemovedOnConstruction"] = cacheCtor; result["cacheRemovedOnDispose"] = !File.Exists(Path.Combine(cache, "TestAnim.json"));
                     result["postDisposeOutboundDiagnostic"] = M5HwAnalysis.WireEvidence(Wire(endMs, endMs + 1000).Where(m => m.Outbound && m.AtMs > endMs));
@@ -624,6 +782,12 @@ internal sealed class M5Run
     void WriteBundle()
     {
         foreach (var def in M5Hw.Checks.Where(d => results.All(x => x["id"]?.GetValue<string>() != d.Id))) results.Add(new() { ["id"] = def.Id, ["records"] = JsonSerializer.SerializeToNode(def.Records), ["verdict"] = "INCONCLUSIVE", ["missing"] = "run terminated before check" });
+        foreach (var result in results) { result["resultKind"] = M5Hw.ResultKind(result); result["summary"] = M5Hw.DescribeResult(result); }
+        File.WriteAllText(Path.Combine(bundle, "SUMMARY.txt"), "M5 animation and face test\n"
+            + "MATCH compares captured messages/state with a cited source rule. MISMATCH needs review. INCOMPLETE means setup/evidence was missing.\n"
+            + "OBSERVATION and KNOWN_GAP are not engine-behavior passes. Physical answers never settle M5 or certify firmware behavior.\n\n"
+            + string.Join("\n\n", results.Select(M5Hw.DescribeResult))
+            + "\n\nRun errors:\n" + (errors.IsEmpty ? "None." : string.Join("\n", errors)));
         File.WriteAllLines(Path.Combine(bundle, "frames.jsonl"), frames.Select(f => new JsonObject { ["atMs"] = f.T, ["outbound"] = f.Out, ["rawBase64"] = Convert.ToBase64String(f.Raw), ["error"] = f.Error }.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), Wire().Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload), ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal, ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));

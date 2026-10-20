@@ -31,7 +31,7 @@ public class M5HwAbortTests
         Assert.True(abort.SubmessageOrdinal > 0);
         // Source-checked replay in the judgement: audio391/face392 BEFORE Abort395, audio396/face397 AFTER.
         var result = M5Hw.GradeAbort(wire, 7715.5276, abort.AtMs + 400);
-        Assert.Equal("OBSERVED_CANCEL_WIRE_SHAPE", Verdict(result));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(result));
         Assert.Equal(1, result["audioFrameCount"]!.GetValue<int>());
         Assert.Equal(1, result["faceCount"]!.GetValue<int>());
         Assert.Contains(result["preCommandBacklog"]!.AsArray(), m => m!["reliableSequence"]!.GetValue<ushort>() == 391);
@@ -53,12 +53,12 @@ public class M5HwAbortTests
             Out(200, new byte[]{0x97,1}, 3, 2, 6)
         };
         var result = M5Hw.GradeAbort(wire, 90, 500);
-        Assert.Equal("OBSERVED_CANCEL_WIRE_SHAPE", Verdict(result));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(result));
         Assert.Equal(2, result["preCommandBacklog"]!.AsArray().Count);
         Assert.Equal(2, result["postAbortMessages"]!.AsArray().Count);
         Assert.Equal(1, result["abortCount"]!.GetValue<int>());
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(wire.Append(Out(250, new byte[]{0x8F}, 4, 0, 7)), 90, 500)));
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(wire.Append(Out(250, new byte[]{0x9A}, 4, 0, 7)), 90, 500)));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(wire.Append(Out(250, new byte[]{0x8F}, 4, 0, 7)), 90, 500)));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(wire.Append(Out(250, new byte[]{0x9A}, 4, 0, 7)), 90, 500)));
         Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(wire, 90, 490)));
     }
 

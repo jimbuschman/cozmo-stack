@@ -126,7 +126,7 @@ public class M5HwTests
         // A22/A23/A25: one Abort, no End, buffered frame may follow. The harness must first
         // observe an active stream, or it has not exercised the claimed cancellation.
         var active = new[] { Out(10, 0x9B, 1), Out(100, 0x8D) };
-        Assert.Equal("OBSERVED_CANCEL_WIRE_SHAPE", Verdict(M5Hw.GradeAbort(active, 100, 500)));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(active, 100, 500)));
         Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(active, 100, 499)));
         Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(Array.Empty<M5Hw.WireMessage>(), 100, 500)));
         Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(new[] { Out(100, 0x8D) }, 100, 500)));
@@ -145,9 +145,9 @@ public class M5HwTests
         var result = M5Hw.GradeAbort(rows, 100, 500);
         Assert.Equal(1, result["abortCount"]!.GetValue<int>());
         Assert.Equal(0, result["endCount"]!.GetValue<int>());
-        Assert.Equal("OBSERVED_CANCEL_WIRE_SHAPE", Verdict(result));
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(rows.Append(Out(120, 0x8D)), 100, 500)));
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(rows.Append(Out(500, (byte)RobotMessageId.AnimEndOfAnimation)), 100, 500)));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(result));
+        Assert.Equal("OBSERVED_INVALID_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(rows.Append(Out(120, 0x8D)), 100, 500)));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(rows.Append(Out(500, (byte)RobotMessageId.AnimEndOfAnimation)), 100, 500)));
     }
 
     [Fact]
@@ -155,20 +155,23 @@ public class M5HwTests
     {
         // Generated serializer/CLAD AbortAnimation has zero body bytes; the payload includes its tag.
         var malformed = new[] { Out(10, 0x9B, 1), Out(100, 0x8D, 99) };
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(malformed, 100, 500)));
+        Assert.Equal("OBSERVED_INVALID_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(malformed, 100, 500)));
     }
 
     [Fact]
-    public void CancellationAllowsOneBufferedAudioFrameButNotTwo()
+    public void CancellationTailIsObservedWithoutAnUnmeasuredNeutralReplayDeadline()
     {
-        // A25 retains at most the already-built frame. Each stream frame has one audio marker.
+        // reach: unit; M5-023 0x57B3F2..410 sends Abort. M5-028 0x57CF90..BE gates neutral replay
+        // by last-stream time, absent from these captures; tail counts cannot reject the command.
         var one = new[] { Out(10, 0x9B, 1), Out(100, 0x8D), Out(150, 0x8F) };
-        Assert.Equal("OBSERVED_CANCEL_WIRE_SHAPE", Verdict(M5Hw.GradeAbort(one, 100, 500)));
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeAbort(one.Append(Out(200, 0x8F)), 100, 500)));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(one, 100, 500)));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(one.Append(Out(200, 0x8F)), 100, 500)));
+        var replay = one.Append(Out(170, 0x9B, 2)).Append(Out(200, 0x8F));
+        Assert.Equal("OBSERVED_CANCEL_COMMAND", Verdict(M5Hw.GradeAbort(replay, 100, 500)));
     }
 
     [Fact]
-    public void TagsRequireThreeOrderedNonIdleStartsAndTheirSubsequentEchoes()
+    public void OutgoingTagsAreIndependentOfFirmwareEchoObservations()
     {
         // M5 A9 at 0x0057B660..0x0057B672: fresh explicit plays allocate 1, 2, 3.
         var rows = new[]
@@ -178,9 +181,10 @@ public class M5HwTests
             Out(30, 0x9B, 2), In(31, 0xCA, 2), In(32, 0xCB, 2),
             Out(40, 0x9B, 3), In(41, 0xCA, 3), In(42, 0xCB, 3)
         };
-        Assert.Equal("OBSERVED_TAGS_AND_START_ECHOES", Verdict(M5Hw.GradeTags(rows)));
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeTags(rows.Where(x => x.Outbound))));
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeTags(rows.Where(x => x.AtMs != 41))));
+        Assert.Equal("OBSERVED_OUTBOUND_TAG_SEQUENCE", Verdict(M5Hw.GradeTags(rows)));
+        Assert.Equal("OBSERVED_OUTBOUND_TAG_SEQUENCE", Verdict(M5Hw.GradeTags(rows.Where(x => x.Outbound))));
+        Assert.False(M5Hw.GradeTags(rows.Where(x => x.Outbound))["orderedMatchingEchoesObserved"]!.GetValue<bool>());
+        Assert.Equal("OBSERVED_OUTBOUND_TAG_SEQUENCE", Verdict(M5Hw.GradeTags(rows.Where(x => x.AtMs != 41))));
         Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeTags(Array.Empty<M5Hw.WireMessage>())));
         var premature = new[]
         {
@@ -189,7 +193,8 @@ public class M5HwTests
             Out(20, 0x9B, 2), In(22, 0xCB, 2),
             Out(30, 0x9B, 3), In(32, 0xCB, 3)
         };
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeTags(premature)));
+        Assert.Equal("OBSERVED_OUTBOUND_TAG_SEQUENCE", Verdict(M5Hw.GradeTags(premature)));
+        Assert.False(M5Hw.GradeTags(premature)["orderedMatchingEchoesObserved"]!.GetValue<bool>());
     }
 
     [Fact]
@@ -208,7 +213,8 @@ public class M5HwTests
             Out(20, 0x9B, 2), In(21, 0xCA, 2), In(22, 0xCB, 2),
             Out(30, 0x9B, 3), In(31, 0xCA, 3), In(32, 0xCB, 3)
         };
-        Assert.Equal("INCONCLUSIVE", Verdict(M5Hw.GradeTags(malformed)));
+        Assert.Equal("OBSERVED_OUTBOUND_TAG_SEQUENCE", Verdict(M5Hw.GradeTags(malformed)));
+        Assert.False(M5Hw.GradeTags(malformed)["orderedMatchingEchoesObserved"]!.GetValue<bool>());
     }
 
     private static M5Hw.WireMessage[] AudioWire()

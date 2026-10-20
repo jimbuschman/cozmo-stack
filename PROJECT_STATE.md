@@ -51,7 +51,20 @@ stands. Nothing new starts outside the current layer.
   - **DRIVING split.** M5-063 is judged on whichever phase path the drive's action results select (successful Start ->
     Loop -> End, or failed Start -> End cleanup). Successful traversal moves to the M12/M13 acceptance, which must observe
     a successful DriveToPose; FailedTraversingPath stays unexplained there. Job **B-M5-32**.
-  - KEEP_ALIVE keeps the operator's resting-eye comparison as a gate.
+  - **Superseded by operator, 2026-10-20, AGENTS.md Hardware runs:** KEEP_ALIVE's resting-eye
+    comparison is retained as an observation, not a verdict gate. B-M5-34 now includes a per-check audit:
+    every automatic behavioral expectation needs an engine record and native address/file; unsupported
+    appearance, random timing and firmware expectations become observations. Earlier resting-eye gate
+    approval is withdrawn. B-M5-34 completes this correction, as recorded below.
+  - **B-M5-34 correction (Codex manager, 2026-10-20):** both bounded native verdict audits adopted
+    (`research/20261020-m5-verdict-audit-a.md`, `-b.md`). A separate implementer corrected the
+    harness comparisons and instructions; the review is
+    `research/20261020-b-m5-34-verdict-check.md`. Every check now has a purpose and cited comparison,
+    with physical observations and capture completeness kept explicit. Independent affected-diff review
+    PASS; focused tests 90/90; offline preview/validate PASS (11 checks, 44 records);
+    fidelity 706 PASS; full suite 5979/5979 PASS, zero skips, run once before commit.
+    The corrected harness is ready for the operator run. No production-engine or manifest change,
+    no hardware run and no M5 acceptance.
   - **M5 is NOT ACCEPTED.** Next: operator rerun; B-M5-32/33 hooks and harness corrections are built and independently verified.
   - **Handoff (2026-10-20):** B-M5-32 was dispatched to cozmo-implementer, and the session may end before it reports.
     **Built (implementer reported 2026-10-20):** M5Hw tests 72/72, wider filter 1532/1532, fidelity check passes,

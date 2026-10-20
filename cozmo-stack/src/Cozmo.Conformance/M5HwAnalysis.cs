@@ -59,8 +59,6 @@ public static class M5HwAnalysis
             : loopRequired == true && !loopObserved ? "INCONCLUSIVE_REQUIRED_LOOP_REQUEST"
             : loopRequired == false && loopObserved ? "OBSERVED_LOOP_AFTER_NONZERO_START"
             : !ordered ? "INCONCLUSIVE_PHASE_ORDER" : endAction is null ? "INCONCLUSIVE_END_COMPLETION" : !endActionBefore ? "OBSERVED_END_COMPLETION_ORDER_MISMATCH"
-            : endAction!["Result"]!.GetValue<uint>() != 0 ? "OBSERVED_FAILED_END_ACTION"
-            : !endBefore ? "INCONCLUSIVE_END_WIRE_EVIDENCE"
             : loopRequired == true ? "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS" : "OBSERVED_FAILED_START_END_CLEANUP";
         bool successRequests = driveResult == 0 && phaseVerdict == "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS";
         // Operator 2026-10-20 (DRIVING split): M5-063 is judged on whichever phase path the action results select,
@@ -78,6 +76,8 @@ public static class M5HwAnalysis
             ["loopRequestObserved"] = loopObserved, ["loopCoverageMissing"] = loopRequired is null ? null : loopRequired == true && !loopObserved,
             ["conditionalPhaseOrder"] = ordered, ["endEvidence"] = endEvidence, ["endCompletionBeforeDrive"] = endBefore,
             ["endActionCompletion"] = endAction?.DeepClone(), ["endActionCompletionBeforeDrive"] = endActionBefore,
+            ["endResultObservation"] = endAction?["Result"]?.DeepClone(),
+            ["endWireAssessment"] = "NOT_JUDGED: successful End result and matching firmware echo are separate observations; M5-063 0x4F0DC8..DD4 requires the matching End action completion irrespective of its result.",
             ["driveCompletion"] = drive?.DeepClone(), ["driveResult"] = driveResult,
             ["successfulStartLoopEndRequestCoverage"] = successRequests, ["successfulTraversalCoverage"] = false,
             ["traversalJudgement"] = "NOT_JUDGED: successful traversal belongs to the M12/M13 acceptance, which must observe a successful DriveToPose. Phase requests/API results alone do not certify physical traversal or M12/M13 source completeness. Failed traversal cannot satisfy successful traversal coverage.",
@@ -405,17 +405,18 @@ public static class M5HwAnalysis
             row["followingWireAnimationState"] = after is null ? null : WireEvidence(new[] { after });
             faces.Add(row);
         }
-        var problems = new JsonArray(); var ticks = new JsonArray(); int generated = 0;
+        var problems = new JsonArray(); var captureProblems = new JsonArray(); var ticks = new JsonArray(); int generated = 0;
         BlinkCall? prior = null;
         foreach (var call in calls ?? Array.Empty<BlinkCall>())
         {
-            if (call.AtMs < fromMs || call.AtMs > toMs || (prior is not null && call.AtMs < prior.AtMs))
-                problems.Add("Call timestamps do not belong to this ordered observation window.");
+            bool inWindow = call.AtMs >= fromMs && call.AtMs <= toMs;
+            if (!inWindow || (prior is not null && call.AtMs < prior.AtMs))
+                captureProblems.Add("Call timestamps do not belong to this ordered observation window.");
             int remaining = unchecked(call.BeforeMs - 60);
             bool due = remaining <= 0;
-            if (call.Generated != due || (!due && call.AfterMs != remaining)
-                || (due && (call.AfterMs < 44000 || call.AfterMs > 45000))) problems.Add("Call/deadline transition contradicts the checked 60-per-call branch.");
-            if (prior is not null && (call.CallNumber != prior.CallNumber + 1 || call.BeforeMs != prior.AfterMs)) problems.Add("Incomplete or discontinuous KeepFaceAlive call sequence.");
+            if (inWindow && (call.Generated != due || (!due && call.AfterMs != remaining)
+                || (due && (call.AfterMs < 44000 || call.AfterMs > 45000)))) problems.Add("Call/deadline transition contradicts the checked 60-per-call branch.");
+            if (prior is not null && (call.CallNumber != prior.CallNumber + 1 || call.BeforeMs != prior.AfterMs)) captureProblems.Add("Incomplete or discontinuous KeepFaceAlive call sequence.");
             if (call.Generated) generated++;
             ticks.Add(new JsonObject { ["callNumber"] = call.CallNumber, ["atMs"] = call.AtMs,
                 ["beforeMs"] = call.BeforeMs, ["afterMs"] = call.AfterMs, ["generationObserved"] = call.Generated,
@@ -426,9 +427,11 @@ public static class M5HwAnalysis
         return new JsonObject
         {
             ["verdict"] = problems.Count > 0 ? "OBSERVED_BLINK_CALL_MISMATCH"
+                : captureProblems.Count > 0 ? "INCONCLUSIVE"
                 : captured && minReadback == 44000 && maxReadback == 45000 ? "OBSERVED_BLINK_CALL_TRANSITIONS" : "INCONCLUSIVE",
             ["minReadback"] = minReadback, ["maxReadback"] = maxReadback,
             ["generationEvidenceAvailable"] = captured, ["generationCalls"] = ticks, ["problems"] = problems,
+            ["captureProblems"] = captureProblems,
             ["encodedFaceDiagnostics"] = faces, ["physicalObservation"] = observation.DeepClone(),
             ["firmwareAcceptance"] = "NOT_JUDGED",
             ["missing"] = captured ? null : calls is { Count: > 0 }
@@ -465,9 +468,9 @@ public static class M5HwAnalysis
         bool changed = heads.Select(s => BitConverter.SingleToInt32Bits(s.State.HeadAngle)).Distinct().Count() > 1;
         return new JsonObject
         {
-            ["verdict"] = !validDisable || earlyEnable || !ownUnlock || commands == 0 || states.Length == 0 || heads.Length < 2
-                ? "INCONCLUSIVE" : reportedEnabled ? "OBSERVED_HEAD_TRACK_REPORTED_ENABLED"
-                : changed ? "OBSERVED_HEAD_TELEMETRY_CHANGED" : "OBSERVED_LOCKED_HEAD_EVIDENCE",
+            ["verdict"] = earlyEnable ? "OBSERVED_EARLY_HEAD_ENABLE" : !validDisable || !ownUnlock || commands == 0
+                ? "INCONCLUSIVE" : "OBSERVED_LOCKED_HEAD_EVIDENCE",
+            ["firmwareObservationAssessment"] = "NOT_JUDGED: head telemetry changes, enabled-track reports and their sample counts are firmware observations, independent of the outgoing wire comparison.",
             ["lockRequestAtMs"] = lockAt, ["clipFromMs"] = clipFrom, ["clipToMs"] = clipTo,
             ["unlockRequestAtMs"] = unlockAt, ["observationEndMs"] = toMs,
             ["validDisableBeforeClip"] = validDisable, ["enableBeforeUnlock"] = earlyEnable,
@@ -773,8 +776,8 @@ public static class M5HwAnalysis
         if (activeFramesAhead.Count == 0) missing.Add("No counter snapshot during the active audio stream before End.");
         var result = new JsonObject
         {
-            ["verdict"] = missing.Count != 0 ? "INCONCLUSIVE" : bad != 0
-                ? "OBSERVED_MALFORMED_AUDIO_FRAMING" : "OBSERVED_AUDIO_FRAMING_AND_COUNTERS",
+            ["verdict"] = bad != 0 ? "OBSERVED_MALFORMED_AUDIO_FRAMING"
+                : missing.Count != 0 ? "INCONCLUSIVE" : "OBSERVED_AUDIO_FRAMING_AND_COUNTERS",
             ["sampleCount"] = audio.Count(m => m.Payload[0] == 0x8E),
             ["silenceCount"] = audio.Count(m => m.Payload[0] == 0x8F),
             ["malformedAudioMessages"] = bad,
@@ -790,8 +793,9 @@ public static class M5HwAnalysis
             ["snapshotsAbove8192Bytes"] = activeBytesAhead.Count(n => n > 8192),
             ["counterRows"] = rows,
             ["missing"] = missing,
-            ["verdictRule"] = "M5 pass-B check 5: 744 sample bytes plus tag, empty silence, at least five seconds, "
-                + "approximately 30 audio frames/s. M3-012 C9 allows 14 unplayed audio frames and 8192 bytes; "
+            ["coverageRequirement"] = "At least two audio packets, both sample and silence paths, five seconds of captured audio and counter samples are local coverage requirements, not engine guarantees.",
+            ["verdictRule"] = "M2-008/M2-009 0x007BCDAA/0x007BCE8A and union +1 at 0x007ABF0A: 744 sample bytes plus tag, empty silence. "
+                + "M3-012 C9 allows 14 unplayed audio frames and 8192 bytes; "
                 + "C12 counts direct End outside that budget. Snapshots and host wire pacing are observations, "
                 + "not atomic budget samples or robot execution timestamps. Counter differences above14/8192 "
                 + "are mixed-epoch diagnostics, not alleged send violations. No2ms grouping threshold is used."
@@ -885,8 +889,8 @@ public static class M5HwAnalysis
         if (lift == 0) missing.Add("No lift wiggle observed.");
         return new JsonObject
         {
-            ["verdict"] = missing.Count > 0 ? "INCONCLUSIVE" : malformed > 0
-                ? "OBSERVED_MALFORMED_HEAD_KEYFRAME" : "OBSERVED_LIVE_IDLE_MEASUREMENTS",
+            ["verdict"] = malformed > 0 ? "OBSERVED_MALFORMED_HEAD_KEYFRAME"
+                : missing.Count > 0 ? "INCONCLUSIVE" : "OBSERVED_LIVE_IDLE_MEASUREMENTS",
             ["headFrames"] = heads.Length,
             ["bodyFrames"] = body,
             ["liftFrames"] = lift,

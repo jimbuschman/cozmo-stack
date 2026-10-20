@@ -1,332 +1,109 @@
-# M5-HW v1 — animation and face hardware observations
+# M5 animation and face test — operator guide
 
-This is the operator script for the eleven checks in the adopted 2026-10-19 M5 settling pass B.
-The executable is `Cozmo.Conformance m5-hw`. It creates evidence, never commits, never edits the manifest,
-and never marks M5 ACCEPTED. M5-036 stays HARDWARE_ONLY until the manager judges a robot run.
+This run checks the C# stack's animation messages and engine state, and records what the real robot does.
+You do not decide whether Cozmo "looks right". The program compares the evidence it can source automatically;
+you answer concrete questions about what you saw. Unknown firmware behavior remains an observation.
 
-## Offline validation (Codex, 2026-10-20)
+## Run
 
-Independent read-only review: PASS, including a focused re-review of the final driving-completion correlation
-and sleep diagnostic predicate. The checks follow the production API/engine/streamer/transport path; no production
-behavior or fidelity status changed.
-
-- Build and `m5-hw --validate`: passed, 11 checks and 28 current manifest records, no network opened.
-- `fidelity.py --check`: passed, 706 records.
-- Full suite: 5,911 passed, one failure, zero skipped. The failure was the repository source scan rejecting the
-  sleep reader's bare diagnostic-word match; the reader now matches the actual M5-038 stack-log prefix.
-- Final focused run after that correction and the last driving-correlation change: 25/25 passed
-  (`M5HwTests` plus `M11DelocalizationB8Tests.NoSourceFileWritesAMissingIntoTheEngineLogStream`).
-
-The full suite was not repeated after the focused correction. No hardware run or commit was made.
-Remaining uncertainty is the real robot's behavior and the explicitly embedded higher-layer gaps, not a
-source-fidelity claim inferred from these offline tests.
-
-## Prepare and run
-
-From the repository root, build and perform the offline preflight:
+From the repository root, with the PC connected to Cozmo's Wi-Fi:
 
 ```powershell
-dotnet build cozmo-stack/src/Cozmo.Conformance/Cozmo.Conformance.csproj
-dotnet run --no-build --project cozmo-stack/src/Cozmo.Conformance -- m5-hw --validate
+dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m5-hw --resources re-analysis/obb/assets/cozmo_resources --allow-drive
 ```
 
-`--validate` reads the current manifest and all referenced records; it does not create a robot, open a socket,
-or require extracted assets. Unknown/missing record IDs stop preflight. It prints unresolved cross-layer records.
+Put Cozmo on the **floor**, off the charger, with at least 30 cm clear around him. The head and lift move,
+the face/backpack may change, sound may play, and this command permits wheel motion and a 6 cm drive attempt.
+Allow a few minutes plus reading/answer time. Ctrl+C stops the run and preserves its evidence.
 
-Connect the PC to Cozmo's Wi-Fi. Put Cozmo on the **floor**, off the charger, with at least 30 cm clear on all sides.
-The head and lift move, face and backpack animate, and audio may play. With `--allow-drive`, live idle may wiggle
-his wheels and the driving check requests a 60 mm forward goal. Keep hands clear and use Ctrl+C to stop the run.
-The engine's cliff behavior is not a substitute for the floor setup.
+Before each check, the program says **what it tests**, **what it records automatically**, and **your part**.
+For observations, read the preview, get a clear view, then press Enter. Watch from **START** to **END**.
+Answer afterward using a numbered choice. Do not include motion after END in an earlier answer.
+
+To review the exact shared check descriptions and observation previews without a robot:
 
 ```powershell
-dotnet run --no-build --project cozmo-stack/src/Cozmo.Conformance -- m5-hw --resources re-analysis/obb/assets/cozmo_resources --allow-drive
+dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m5-hw --preview
 ```
 
-If the extracted resources are elsewhere, replace that path. An optional robot IP precedes the flags; the default
-is the same production robot address used by the existing hardware tools. Expect about three minutes plus loading
-and operator answers. Answer the observation prompts; numbers and case-insensitive choices work, and spaces can
-replace hyphens. Ctrl+C cancels bounded waits and attempts Dispose, preserving the bundle. A ten-minute watchdog
-cancels prompts/waits. Dispose is bounded to five seconds; a timeout is an error and invalidates teardown evidence.
+`--preview` prints the source references too. `--validate` checks the current fidelity references without
+resources or network access. Neither command creates a robot or an acceptance bundle.
 
-### What you need to watch
+## What you watch
 
-The program now pauses before each part that needs your eyes. Read its instructions,
-get a clear view of Cozmo, and press Enter. Watch Cozmo from **START** until **END**;
-then look back at the computer and answer. Each part previews its questions before
-it starts. Do not use activity after END to answer an earlier question.
-
-Parts labelled **NO ANSWER NEEDED** are recorded automatically. You do not need to
-judge the message counters, sound quality, drive result or sleep request.
-
-| Watching part | Look here | What you will be asked |
+| Part | What to watch | What to report |
 | --- | --- | --- |
-| Animation stops (ABORT and first part of KEEP_ALIVE) | Eyes, whole head and front lifting arms, for a few seconds | Did the original animation stop after the stop request? Did the eye outlines resemble the reference picture? Did you see a blink? Did you see an eye dart? These are four separate answers. |
-| Body wiggles (second part of KEEP_ALIVE) | Wheels and whole body for 10 seconds | Did they make small wiggles? Head or lifting-arm movement alone does not count. |
-| Head held still (LOCKED_HEAD) | Angle of the whole head during a short animation | Did it stay at the angle it had at START? Ignore moving eye pictures and any movement after UNLOCK. |
-| Brief picture/light effect (LAYERS) | Face screen and five lights on top of the backpack | Did the picture shift or distort? Did the lights change? Answer separately; they need not change together. |
-| Blink spacing (PARAMETERS) | Eyes for 60 seconds | Was the gap between one blink and the next about 44–45 seconds? Use a clock if helpful. Do not measure from START to the first blink. Fewer than two blinks, or uncertain timing, means unclear. |
+| ABORT; first part of KEEP_ALIVE | Eyes, whole head and front lifting arms during a short animation and its stop request | Four separate answers: did the original animation stop; did eye outlines resemble the displayed reference; did you see a blink; did you see an eye dart? The exact animation expression is not prescribed. |
+| KEEP_ALIVE live idle | Wheels and whole body for 10 seconds | Whether you saw a small shift/turn. Head or lifting-arm movement alone does not count. No random wiggle is required for a passing visual answer. |
+| LOCKED_HEAD | Angle of the whole head during the marked clip | Whether it stayed at its starting angle. Ignore the eye picture and motion after UNLOCK. |
+| LAYERS | Face screen and the five backpack lights | Whether the picture changed and whether the lights changed, separately. No exact distortion or simultaneous change is prescribed. |
+| PARAMETERS | Eyes for 60 seconds | Whether you saw at least two blinks. If you measured gaps, put them in the notes. **No 44–45 second wall-clock gap is expected.** The program checks the engine's timer separately. |
 
-A **blink** is the eyes briefly closing and reopening. An **eye dart** is the eye
-shapes sliding within the screen; it is different from the whole head moving.
-Normal later blinks or eye darts do not by themselves mean the cancelled animation
-continued.
+A **blink** is the eyes briefly closing and reopening. An **eye dart** is the eye shapes sliding inside the
+screen; the whole head moving is different. A later blink/dart does not establish that a cancelled animation continued.
 
-Before the checks, open the printed `neutral-reference.svg` path in your browser
-and keep the picture available. For the resting-eye question, compare the outlines
-of the two eyes with that picture, not their color or thin display lines. The actual
-loaded animation supplies the reference; the picture is not proof of what the
-robot displayed.
+For the eye-shape comparison, open the printed `neutral-reference.svg` path in a browser before starting.
+Compare the two eye outlines, not color or thin display lines. This picture is generated from the loaded neutral
+animation; it is a comparison aid, not proof of what the firmware displays. Missing/different reference appearance
+is retained and never silently converted into an engine failure or a passing answer.
 
-Answers are numbered on screen; type the number or choice name and press Enter.
-**not-seen** means you watched but did not see it happen. **unclear** means you
-watched but could not tell. **not-observed** means you missed that part or were
-looking elsewhere. All are useful observations: do not guess an answer to make
-the test pass. After the questions you can describe anything unexpected in your
-own words, or press Enter to skip the notes.
+**not-seen** means you watched but saw none. **unclear** means you watched but could not tell.
+**not-observed** means you missed that part. Free-text notes follow each observation. All answers are retained;
+none is an instruction to guess the desired result.
 
-These prompt changes (B-M5-34) add readiness pauses before observation START,
-not extra time inside the measured windows. The existing grading, canonical
-answer values and evidence requirements remain unchanged. `--yes` skips the new
-readiness pauses along with the existing answer prompts. Cancelling at the new
-head/blink readiness pauses releases the head lock or restores blink defaults.
+TAGS, AUDIO, LIVE_IDLE, DRIVING, SLEEP and TEARDOWN say **NO ANSWER NEEDED**. The program records their evidence.
+You do not judge sound quality, packet counters, successful navigation, or a sleeping expression.
 
-Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are explicitly incomplete.
-`--yes` suppresses prompts and records missing human observations; it is not an acceptance shortcut.
-`--only TAGS,ABORT` selects a diagnostic subset; every omitted check remains INCONCLUSIVE in the bundle.
-`--out <directory>` changes the parent output directory. The default is:
+## What each result means
 
-`re-analysis/acceptance/hardware/<yyyymmdd-hhmmss>-M5-HW-<unique suffix>/`
+Each check prints a plain-language summary, also saved in `SUMMARY.txt`:
 
-## Check coverage and judgment
+- **MATCH:** captured evidence matched the stated source-backed comparison. It is not M5 acceptance.
+- **MISMATCH:** captured evidence contradicted a stated comparison; the saved detail needs review.
+- **INCOMPLETE:** setup or required evidence was missing. This does not establish an engine defect.
+- **OBSERVATION:** measurements saved without a source-backed pass/fail claim.
+- **KNOWN_GAP:** the missing implementation path remains open; its diagnostic was observed.
 
-| Check | Stimulus and evidence | Source boundary |
+Physical answers and your notes appear alongside the result, explicitly ungraded. For example, a matched outgoing
+stop command can coexist with "original animation stopped: unclear". That uncertainty remains for review.
+
+Local time windows, minimum sample counts, random track occurrence and observation availability are **coverage
+requirements**, not engine timing guarantees. A capture can identify a real malformed message even when other
+coverage is missing. Mismatch results are not successful exit statuses just because their internal name begins OBSERVED.
+
+## Automatic comparisons and limits
+
+The exact comparisons, current records and native citations are embedded in each check's `sourceComparisons` in
+`result.json`. The live prompts omit addresses so you can concentrate on the test.
+
+| Check | Automatic comparison / evidence | Source and limit |
 | --- | --- | --- |
-| TAGS | Three short shipped clips without body tracks, through PlayTracked; Start tags 1,2,3 and chronological started/ended echoes. | M5-008 increment 0x0057B660..0x0057B672; robot echo meaning M5-036. |
-| ABORT | Cancel a long shipped clip after 750 ms. Count exactly one 0x8D, no End, at most one audio/face marker within 400 ms after the ordered wire Abort (pre-command backlog is separate); preserve full counter/echo tail and operator observation. | M5-023 A22/A23/A25; pending built frame can drain. Robot semantics M5-036. |
-| KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with ordered Start FF/End bursts; then a separate ten-second no-idle persistent-eye-dart face window, requiring face output and no End while its prerequisites hold. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 burst idle; M5-027/030. Persistent layers: M5-028/029, 0x0057C530..0x0057C556. |
-| LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain lock request, actual Disable1, marked clip interval, F1 EnabledAnimTracks and raw head telemetry, then separate unlock request/actual Enable1 and physical observation. | M4-014 producer, M4-047 unlock, M5-035 unsuppressed stream and robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
-| AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 admission uses remaining allowances at the send gate; API-delivery differences do not measure that gate. Direct End adds a frame/bytes outside admission. Since B-M5-32 the read-only send-gate and budget-refresh hooks supply the allowances, joined to the wire by stream order; without a complete join budget compliance stays NOT_JUDGED. M6 runtime uncertainty remains embedded. |
-| LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; per-frame face flags come from the read-only StreamLayers hook joined to the wire (B-M5-32); an unjoined frame keeps the check INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
-| LIVE_IDLE | Twelve seconds of default ProceduralLive; compare streamed signed head angles with preceding Motion.HeadAngleRad samples and default +/-6 degrees; require body/lift wiggles. | M5-030 0x0057D838..0x0057D84E, A34 defaults. Uncalibrated input is not forced; B-M5-23 covers it offline. |
-| PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. KeepFaceAlive call/deadline rows from the read-only hook (B-M5-32) decide the verdict; the physical answer is retained separately. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
-| DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Since 2026-10-20 the verdict covers M5-063 on whichever phase path the action results select, whatever the drive result; loopRequestCovered records the Loop request. Successful traversal belongs to the M12/M13 acceptance. |
-| SLEEP | Public StartIdleTimeout(0.2,-1), observe visible MISSING and GoToSleepRequested; cancel timer. Capture new animation starts and logs for absence of sleep-child actions. | M5-038/M1-045; D2/D5/D4 are factory requests, not robot message IDs. The M8 action gap stays open. |
-| TEARDOWN | Dispose during a long clip; verify stale TestAnim.json deleted on construction and Dispose; grade the actual Dispose-call interval with discard markers, reliable identities and queue-origin limits; post-close silence is diagnostic. | M5-037/053/055/059. Teardown batch may contain stop/disconnect; M1-006 pacing may prevent a DisconnectRequest reaching the wire. |
+| TAGS | First three captured non-idle outgoing tags compared with 1,2,3. Robot replies saved separately. | M5-008 `0x0057B2D4..0x0057B2F6`; layer starts share the allocator, so tags alone do not attribute starts to clips. M5-036 firmware echoes remain observations. |
+| ABORT | One valid empty-body cancellation command for the observed active stream. | M5-023 `0x0057B3F2..0x0057B410`, `0x00517DE4..0x00517E0A`, body size `0x007A47DC`. The 400 ms tail is sampling only: last-stream time for neutral replay is unavailable. No assumed face/audio count or quiet interval is graded. |
+| KEEP_ALIVE | Cancellation command, ordered Start-FF/End idle bursts, then conditional persistent-face lifecycle. | M5-023; M5-027 `0x0057D3EE..0x0057D44C`; M5-028 `0x0057C52A..0x0057C556`, `0x0057C606..0x0057C646`. Face occurrence in two seconds and burst count in ten seconds are coverage, not guarantees. |
+| LOCKED_HEAD | Disable head mask1 before clip, continuing head commands, Enable mask1 after unlock. | M4-014 `0x0064014E..0x00640188`, `0x0063FF94..0x0063FFB4`; M5-035 `0x0057C9D4..0x0057C9E2`. Head movement, firmware track masks and sample counts remain observations. |
+| AUDIO | 744-byte sample body / empty silence body plus tag; joined send-budget refresh/admission/accounting. | M2-008/009 `0x007BCDAA`, `0x007BCE8A`, `0x007ABF0A`; M3-012 `0x0057C6F6..0x0057C7AC`, `0x0057BF84..0x0057BFCC`. Both audio paths, five-second span and counter samples are coverage requirements. M6 audio semantics remain unresolved. |
+| LAYERS | One face exactly when the joined frame's face-output flag is set; captured lifecycle/drain. | M5-029 `0x0064F1D4..0x0064F22C`, `0x0057C63C..0x0057C646`; M5-028 layer lifecycle above. Unknown joins are incomplete; this does not independently verify random generation or visible appearance. |
+| LIVE_IDLE | Packet shape checked; nearest delivered head input and track occurrence measured. | M5-030 `0x0057D83E..0x0057D85C`, `0x004F8C12..0x004F8C4A`. Nearest delivered state is not exact build-time state; no promise of head/body/lift activity within twelve seconds. |
+| PARAMETERS | Requested uncapped values read back; actual KeepFaceAlive timer-call transitions checked. | M5-062 `0x0057E89A..0x0057E8B2`, `0x0057C1EC`; M5-028 `0x0058D382..0x0058D38C`, `0x0058D48C..0x0058D550`. Subtract60 **per call**, not wall milliseconds. Missing/discontinuous calls are incomplete capture. |
+| DRIVING | Start result selects Loop; matching End action completion precedes drive completion regardless of End result. | M5-063 `0x004F0D80..0x004F0D8C`, `0x004F0E14..0x004F0E2A`, `0x004F0DC8..0x004F0DD4`; boundary M12-024 `0x0055B0BA..0x0055B0C8`. Firmware End echoes and successful traversal are separate observations. M12/M13 acceptance still needs a successful drive. |
+| SLEEP | Host fallback and known-gap diagnostic captured. | M1-045 `0x0052CE54..0x0052CE6A`; M5-038 `0x0052CEA2..0x0052CFC0`. Native factory/queue behavior is not claimed reproduced by this diagnostic. |
+| TEARDOWN | Actual disposal interval, discarded queued entries, no evidenced streamer final flush; cache cleanup. | M5-037 `0x0057AF58`, `0x0057B044..0x0057B0C0`; M5-059 `0x0057F376..0x0057F37A`, `0x0057FC20..0x0057FC22`, `0x0057FA14..0x0057FA2E`. Empty queues need no discard log; unknown send origins remain incomplete. |
 
-All stimulus intervals and the drive distance are harness choices, not recovered engine constants.
-Clip selection is deterministic by duration then name, excluding body tracks; selected names, durations and track
-sets are recorded. Missing suitable assets produce INCONCLUSIVE. No fabricated clips replace shipped assets.
+## Saved evidence and options
 
-## Evidence bundle
+The final output gives the folder to return for review:
+`re-analysis/acceptance/hardware/<date-time>-M5-HW-<unique suffix>/`.
 
-- `result.json`: all eleven checks, exact current fidelity records (including unresolved cross-layer uncertainty),
-  arguments, resource root, timestamps, commit, errors and provenance hashes.
-- `frames.jsonl`: every raw datagram and parse error, with host capture timestamp and direction.
-- `messages.jsonl`: decoded submessage payload hex, reliable retransmissions deduplicated within a bounded sequence
-  window; raw frames remain authoritative. Timings are host capture times, not firmware execution times.
-- `events.jsonl`: startup diagnostics subscribed through BeforeStart, connection response, robot/animation state,
-  stream counters, API action completion reports, play/cancel calls, errors and check boundaries.
-- `diagnostics.jsonl` (B-M5-32): every read-only engine hook observation of the run (KeepFaceAlive calls, StreamLayers
-  frames, send-gate offers and the direct End, budget refreshes), with its harness-clock time.
-- `provenance/`: script, harness sources, entrypoint, manifest and adopted settling report, with SHA-256 hashes.
-- `binaries/`: exact loaded Cozmo assemblies and their hashes; `resource-hashes.json` identifies animation/group/sound files.
+It contains `SUMMARY.txt`, machine-readable `result.json`, raw `frames.jsonl`, deduplicated `messages.jsonl`,
+`events.jsonl`, read-only engine `diagnostics.jsonl`, resource/source/binary hashes, and the neutral reference.
+Capture timestamps are host times, not firmware execution times. No record is settled and no acceptance is performed.
 
-Counters are lifetime counters, not reset per play. Delivery-time stream counters are not atomic budget snapshots:
-review snapshots above 14/8192 using raw order and End boundaries before deciding there is a production defect.
-Head samples likewise precede wire capture, not necessarily frame construction; queue lag can explain apparent
-+/-6 outliers. Observe robot stop, echo tags, played counters and drops together for M5-036.
+`--only TAGS,ABORT` selects a diagnostic subset; omitted checks are explicitly incomplete. `--out <directory>`
+changes the bundle parent. `--yes` skips readiness/answer prompts and saves not-observed answers. Without
+`--allow-drive`, live-idle/drive coverage remains incomplete. A ten-minute watchdog bounds the run; disposal has
+a five-second host limit. Exit 0 means no recorded mismatch/incomplete check or run error, not layer acceptance;
+known gaps and physical observations remain in the report.
 
-`OBSERVED_*` describes captured evidence and its rule; it is not PASS or ACCEPTED. A malformed observation remains
-visible and requires review. `INCONCLUSIVE` names missing prerequisites, skipped motion, absent messages or incomplete
-human observations. Exit 1 means at least one incomplete check or run error; 2 is a preflight/argument failure.
-Return the **whole bundle folder** to the manager. The script does not classify hardware failures or modify production
-behavior. The manager traces any failing path and reviews evidence before deciding corrections or acceptance.
-
-
-## Dated correction - B-M5-24, 2026-10-20
-
-The original no-End claim for ProceduralLive was a harness error (checked first-run judgement section 1).
-KEEP_ALIVE now retains chronological FF Start/End pairs, burst spans and restart gaps. It requires repeated
-bursts in a ten-second harness window; an open final burst is recorded. Invalid ordering remains visible.
-These wire observations do not certify exact restart timing: review generation, engine ticks, drained FIFO and
-audio completion against 0x0057D414..0x0057D44C. No scheduler behavior changed.
-
-A distinct observation primes a short nonlive clip, waits for no explicit play, idle top Count and the normal
-KeepAliveEyeDart face layer, then captures ten seconds. Preconditions are sampled via existing public properties
-about every 60 ms (not an atomic production hook). It requires face output and no End/Abort in that window;
-Start may precede the window. Failure to observe the prerequisites is INCONCLUSIVE. This is the persistent-layer
-case, not a no-End rule for all idle states. Hardware-only M5-036 and operator observations remain unresolved.
-Historical run results and the validation history above are preserved. An operator rerun is required.
-
-## Dated correction - B-M5-25, 2026-10-20
-
-Abort leftovers are now anchored after the actual outbound Abort submessage, with raw frame line, ordinal,
-reliable sequence and connection epoch retained. A timestamp alone cannot order data within a datagram.
-The 400 ms quiet interval starts at wire Abort; pre-command transport backlog is reported separately.
-Reliable resends count once; raw frames retain all copies. Candidate neutral Start traffic is retained separately.
-The native last-stream engine clock is not available through the allowed public observations: no exact
-neutral deadline is inferred from cancel-call time. The historical first-run observations remain unchanged.
-Operator rerun and independent judgment are required.
-
-## Dated correction - B-M5-26, 2026-10-20
-
-The first-run finite glitch's 13 face / 20 audio observations are historical counts, not a certified expected
-trace. Face output follows the layered face flag; the first face can be not due and backpack can continue
-after the face track. A stored base face alone does not request emission. The aggregate equality rule is removed.
-The harness retains the full ordered finite window and counts, plus distinct persistent-face coverage from
-KEEP_ALIVE (or an explicit missing-subset note). Existing public observations do not expose the per-frame
-face flag, random draws or generation timing, so finite-glitch completeness remains INCONCLUSIVE.
-The analysis supports independently established frame-activity evidence; current synthetic unit cases substitute
-those flags and cannot stand for real hardware coverage. No production hooks or scheduler changes were added.
-Operator rerun and discriminating evidence are still required.
-
-## Dated observation correction - B-M5-27, 2026-10-20
-
-Every visual question now refers to a named START/END window with its own expected appearance, part to watch,
-check ID and timestamps. Answer only about that marked interval and exclude later activity. Choose unclear
-or not-observed when appropriate; optional free-text descriptions and raw answers are retained for investigation.
-A source-compatible wire shape never explains away an unexpected physical observation. --yes records missing
-human evidence, never a pass. Existing first-run answers remain historical observations, unchanged.
-
-Before these checks, the tool writes neutral-reference.svg from the loaded neutral clip's first ProceduralFace
-keyframe using the existing engine-derived renderer and explicit scanline parity0. Open that file in a browser
-for the resting-eye shape: two upright, rounded rectangular eyes separated by a gap. It is a grayscale engine
-reference, not proof of firmware color, scanout or what the robot actually displays. Missing clip/face data
-leaves the reference unavailable; no substitute appearance is invented.
-
-| Window | Watch and distinguish | End and answer boundary |
-| --- | --- | --- |
-| CANCEL (ABORT/KEEP_ALIVE) | Brief clip, announced cancel, stopping of clip activity; resting-eye reference; closing/reopening blinks; shifts of eye position (darts). Each is asked separately. | Ends after the bounded cancellation tail; questions exclude subsequent movement. Body-driving clips are excluded. |
-| LIVE (KEEP_ALIVE) | Small head/lift movements and body/wheel wiggles from default ProceduralLive, separately from face activity. | Idle removed immediately after END and before the body observation question. |
-| LOCKED | Head angle at the start of the marked shipped clip; face/lift may still animate. | END announced, then UNLOCK announced and issued before any question. Ignore all post-unlock head motion. |
-| LAYERS | Brief face-image distortion/shift and backpack changes, asked separately; their durations can differ. | End after finite window/drain observation; restore host provider/timeout before questions. |
-| BLINKS | Sixty seconds of brief eye closing/reopening, distinct from eye-position darts; an old deadline may fire first, later requested spacing about44-45s. | END announced and parameters restored before the question/notes, with no answer-driven extension. |
-
-LOCKED_HEAD keeps raw Disable/Enable identities and masks separate from host requests and clip bounds.
-F1 enabled-track bits and head telemetry use raw capture times inside the clip window. An Enable after the
-harness unlock is labeled as that unlock, not an InitStream action. Missing/wrong Disable, early Enable,
-head-track-reported-enabled and changed head telemetry are distinct observations; no physical verdict follows
-from counters or operator text alone. M5-036 and unexplained movement remain for operator rerun/review.
-
-## Dated blink-evidence correction - B-M5-28, 2026-10-20
-
-PARAMETERS retains B4 request time,44000/45000 readback and the existing deadline policy. It records
-public layer-name/engine-time snapshots plus encoded face-image lit-pixel diagnostics, valid count prefixes,
-raw identities and nearest preceding/following raw F1 messages. These are host capture bounds, not firmware
-playback timestamps or proof that a blink occurred. No low-pixel threshold manufactures a generation event.
-
-Actual KeepFaceAlive call numbers, old deadline and generation/reset values are not publicly exposed within
-this job's allowed scope. No reflection, production hooks or fabricated generation events are added.
-Consequently real PARAMETERS source-consumption completeness remains INCONCLUSIVE even with correct
-readback or a yes observation. Synthetic analysis fixtures can supply independently recorded call/deadline
-transitions: subtract60 per call, including across pauses; a new draw after the old deadline is44000..45000
-inclusive. This does not certify the real generator or display. Physical answers remain separate.
-M3-008 display-row/playback uncertainty and M5-036 remain embedded. Operator rerun and discriminating
-generation evidence are needed; elapsed wall time or dark encoded frames alone cannot settle the check.
-
-## Dated audio-epoch correction - B-M5-29, 2026-10-20
-
-AUDIO now retains separate framingVerdict, ordered raw traffic, source F1 identities/connection epochs and
-API delivery snapshots. A1565 stream total paired successively with old1549/1550/1551 payloads can show
-16/15/14 ahead without any observed send violation. Maxima and above-limit snapshot counts are diagnostic
-only. No2ms delivery grouping is an acceptance threshold. Missing raw-state matches remain unknown.
-
-budgetCompliance is NOT_JUDGED. Actual remaining allowance and send-success observations at the native
-admission boundary are not exposed to this harness. SendFault and InvokeEngineRequest are internal to
-the robot assembly; unlocked API delivery callbacks can overlap later mutations and are not atomic
-substitutes. No reflection, production hooks or budget changes are introduced. Independently captured
-coherent samples may identify a per-sample violation; a few good samples never certify every send.
-Direct End bypasses buffered admission, but successful End still increments frames and bytes. Overall
-AUDIO is INCONCLUSIVE when only framing/counter diagnostics are available; framing/rate remain visible.
-M6-042 and M5-036 uncertainty remain embedded.
-
-Manager-queued B-M5-27 cleanup is folded here: an incomplete/aborted marked observation phase emits its
-END with an incomplete outcome/reason before continuing/teardown. It does not ask a positive question or
-extend native settings/locks on failure. Historical bundles are unchanged.
-
-## Dated teardown correction - B-M5-30, 2026-10-20
-
-TEARDOWN records the request separately from begin/end inside the worker actually calling Dispose.
-A thrown/timeout Dispose is incomplete. Cache deletion checks at construction/destruction remain.
-Analysis retains raw retransmissions, unique traffic during destruction, discard diagnostics and bounded
-one-second before/after windows. An Abort inside Dispose is prefix traffic to investigate under M4-026/
-M5-022, not a streamer final flush inferred from its tag. M5-037 ClearSendBuffer discards rather than sends.
-
-The raw full-history reader identifies old reliable retransmissions. A newly observed face/audio/etc packet
-during Dispose can still have been queued earlier; without independent origin evidence it is INCONCLUSIVE.
-No queue/destructor hook or invented enqueue timestamp is added. Independently supplied origin observations
-can separate prequeued first sends and a forbidden newly generated streamer flush. Current live captures
-cannot provide that origin for a new candidate packet. Raw frames remain authoritative.
-
-A completed interval with a real engine ClearSendBuffer discard marker and no unassigned/forbidden new
-animation data is a bounded discard observation, not full destructor or hardware acceptance. No marker can
-also mean the buffer was already empty; that discard branch is then unobserved, not proven faulty.
-No-data-after-transport-close is retained as a diagnostic and never the sole positive criterion.
-Historical run bounds are host request/return measurements; its replay does not fabricate the new exact
-worker-call markers. Operator rerun/review and unresolved queue provenance remain explicit.
-
-## Dated driving-phase correction - B-M5-31, 2026-10-20
-
-DRIVING identifies Start/End action IDs only from unambiguous existing selected-group/precondition logs,
-then matches completion IDs and results. Only a matching Start result0 requires the default Loop request.
-Host delivery of that result may follow synchronous Loop construction; delivery time is not native callback
-time. Nonzero Start permits Start-to-End cleanup without a false missing-Loop defect. Missing/ambiguous
-identity or logs remain incomplete evidence, not an automatic stack defect.
-
-End evidence now requires the identified End action's successful report after its matching candidate robot
-Ended echo and before the drive report; multiple candidate end-stream Starts are ambiguous. Failed Start/
-End cleanup, missing required Loop, unexpected Loop after nonzero Start and early drive completion are
-separate classifications. An arbitrary failure is not automatically acceptable M5 behavior.
-
-A failed drive remains INCONCLUSIVE with its exact result and M12/M13 boundary diagnostics. A successful
-API result with matching phase requests is only request/API coverage: physical traversal is NOT_JUDGED,
-and successfulTraversalCoverage stays false until independent traversal judgement. Animation transitions,
-raw wire, action reports and trace remain available for that review. Additional actually observed M12/M13/
-M8 boundary record IDs are embedded; no planner/action fix, new exclusion or status upgrade is made.
-The original FailedTraversingPath cause returns to extraction in its own layer; a successful real drive
-and the operator's corrected hardware rerun remain outstanding.
-
-The End completion-order gate is distinct from successful End playback evidence: matching End ID sets
-handler state4 for any result. A failed End action is reported as such and is not silently accepted as
-successful End coverage or mislabeled as early drive completion. Successful wire/echo evidence remains
-separately required for that observation; unavailable evidence stays inconclusive.
-
-## Dated diagnostic-hook and driving correction - B-M5-32, 2026-10-20
-
-The operator approved read-only diagnostic hooks in the stack's animation code ("M5 decisions before the rerun").
-`AnimationScheduler.Diagnostic` reports, at the native point each grader cites, without drawing a random number,
-sending anything or changing any order (a regression compares the outbound bytes with and without subscribers):
-
-- every `KeepFaceAlive` call (M5-028): call number, blink timer before the 60 decrement (0x58D382..38C), the timer
-  after the call and whether a blink was generated with the bounds of its draw (0x58D54C..550);
-- every `StreamLayers` frame (M5-029): the layered face flag (0x64F204..22C, tested at 0x57C63C..646) and the send-buffer
-  sequence numbers of the frame's audio and face messages;
-- every message offered at the send gate and the direct End (M3-012, 0x57BF96..BFCC, 0x57C464..496): tag, size,
-  remaining byte/audio-frame allowances, admitted, sent; and every budget refresh (C9, 0x57C6F6..7AC).
-
-The harness subscribes for the whole run and only enqueues. The join to the wire is by stream order: the successful
-gate sends (from one second before a window to its end) must equal exactly one contiguous run of the captured,
-deduplicated outbound stream messages (tag and size), each captured at or after its gate observation and within one
-second of it. No run or several runs leave the join unmade and the check INCONCLUSIVE with the reason; nothing is
-guessed. The one-second margin is a harness choice, not an engine constant.
-
-- **LAYERS**: each StreamLayers frame's flag is keyed to its joined audio message; FiniteLayers then checks face output
-  per frame. An unjoined frame keeps the check INCONCLUSIVE.
-- **PARAMETERS**: the verdict now comes from the KeepFaceAlive calls stamped after the 44000/45000 readback (the B4
-  write and KeepFaceAlive share the scheduler lock, so those calls follow the write): 60 per call, a generated blink
-  draws an inclusive 44000..45000 deadline, calls continuous. The physical answer and encoded-face diagnostics remain
-  separate observations; firmware display stays NOT_JUDGED (M3-008/M5-036).
-- **AUDIO**: OBSERVED_AUDIO_FRAMING_AND_ADMISSION requires the framing observation plus every outbound audio message in
-  the window joined to an observed gate send, each relevant refresh matching C9 and every window gate remainder
-  matching C14's successful-send accounting. B-M5-33 reconstructs spending from the full earlier gate history of
-  each relevant epoch, including failed offers (no spending) and direct End (no allowance subtraction). The join
-  margin is not an epoch boundary. An unavailable or unestablished prefix leaves accounting unverified and the
-  result INCONCLUSIVE with its reason. budgetCompliance is then OBSERVED_FOR_JOINED_WINDOW only for the joined
-  window, not for earlier prefix rows or every send of the run; otherwise NOT_JUDGED.
-- **DRIVING** (operator decision): the check's verdict covers M5-063 and is OBSERVED on either selected path
-  (OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS or OBSERVED_FAILED_START_END_CLEANUP), whatever the drive result.
-  loopRequestCovered records whether the Loop request was covered; a failed-path run leaves Loop coverage open for a
-  later run. Contradictions stay non-OBSERVED. successfulTraversalCoverage stays false and the traversal NOT_JUDGED:
-  successful traversal belongs to the M12/M13 acceptance, and FailedTraversingPath stays unexplained there.
-
-Bundles gain `diagnostics.jsonl`. No manifest, inventory or status change; M5 is not accepted by this correction.
+This guide supersedes earlier M5-HW instructions that required firmware echoes, resting-eye resemblance,
+a visible wiggle, quiet cancellation-tail counts, or a 44–45 second physical blink interval as engine expectations.
