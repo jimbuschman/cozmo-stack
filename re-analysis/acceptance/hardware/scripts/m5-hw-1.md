@@ -67,7 +67,7 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are 
 | LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; without per-frame face flags/draw evidence this remains INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
 | LIVE_IDLE | Twelve seconds of default ProceduralLive; compare streamed signed head angles with preceding Motion.HeadAngleRad samples and default +/-6 degrees; require body/lift wiggles. | M5-030 0x0057D838..0x0057D84E, A34 defaults. Uncalibrated input is not forced; B-M5-23 covers it offline. |
 | PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
-| DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Failure to reach the triplet is incomplete evidence, not a replacement implementation. |
+| DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Successful default Start/Loop/End request coverage is separate from failed Start/End cleanup; failed traversal remains unassessed and does not cover a successful drive. |
 | SLEEP | Public StartIdleTimeout(0.2,-1), observe visible MISSING and GoToSleepRequested; cancel timer. Capture new animation starts and logs for absence of sleep-child actions. | M5-038/M1-045; D2/D5/D4 are factory requests, not robot message IDs. The M8 action gap stays open. |
 | TEARDOWN | Dispose during a long clip; verify stale TestAnim.json deleted on construction and Dispose; grade the actual Dispose-call interval with discard markers, reliable identities and queue-origin limits; post-close silence is diagnostic. | M5-037/053/055/059. Teardown batch may contain stop/disconnect; M1-006 pacing may prevent a DisconnectRequest reaching the wire. |
 
@@ -220,3 +220,29 @@ also mean the buffer was already empty; that discard branch is then unobserved, 
 No-data-after-transport-close is retained as a diagnostic and never the sole positive criterion.
 Historical run bounds are host request/return measurements; its replay does not fabricate the new exact
 worker-call markers. Operator rerun/review and unresolved queue provenance remain explicit.
+
+## Dated driving-phase correction - B-M5-31, 2026-10-20
+
+DRIVING identifies Start/End action IDs only from unambiguous existing selected-group/precondition logs,
+then matches completion IDs and results. Only a matching Start result0 requires the default Loop request.
+Host delivery of that result may follow synchronous Loop construction; delivery time is not native callback
+time. Nonzero Start permits Start-to-End cleanup without a false missing-Loop defect. Missing/ambiguous
+identity or logs remain incomplete evidence, not an automatic stack defect.
+
+End evidence now requires the identified End action's successful report after its matching candidate robot
+Ended echo and before the drive report; multiple candidate end-stream Starts are ambiguous. Failed Start/
+End cleanup, missing required Loop, unexpected Loop after nonzero Start and early drive completion are
+separate classifications. An arbitrary failure is not automatically acceptable M5 behavior.
+
+A failed drive remains INCONCLUSIVE with its exact result and M12/M13 boundary diagnostics. A successful
+API result with matching phase requests is only request/API coverage: physical traversal is NOT_JUDGED,
+and successfulTraversalCoverage stays false until independent traversal judgement. Animation transitions,
+raw wire, action reports and trace remain available for that review. Additional actually observed M12/M13/
+M8 boundary record IDs are embedded; no planner/action fix, new exclusion or status upgrade is made.
+The original FailedTraversingPath cause returns to extraction in its own layer; a successful real drive
+and the operator's corrected hardware rerun remain outstanding.
+
+The End completion-order gate is distinct from successful End playback evidence: matching End ID sets
+handler state4 for any result. A failed End action is reported as such and is not silently accepted as
+successful End coverage or mislabeled as early drive completion. Successful wire/echo evidence remains
+separately required for that observation; unavailable evidence stays inconclusive.

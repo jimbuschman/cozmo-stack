@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Cozmo.Protocol;
+using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Conformance;
 
@@ -9,6 +10,78 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    public static JsonObject DrivingPhases(IEnumerable<M5Hw.WireMessage> messages, IEnumerable<JsonObject> events,
+        uint driveTag, double fromMs, double toMs)
+    {
+        var rows = events.Where(e => e["atMs"]!.GetValue<double>() >= fromMs && e["atMs"]!.GetValue<double>() <= toMs).OrderBy(e => e["atMs"]!.GetValue<double>()).ToArray();
+        var phaseLogs = rows.Where(e => e["name"]?.GetValue<string>() == "GetResponseForAnimationTrigger.Found").ToArray();
+        string[] names = { ((AnimationTrigger)0x95).ToString(), ((AnimationTrigger)0x91).ToString(), ((AnimationTrigger)0x8D).ToString() };
+        var phases = names.Select(name => phaseLogs.FirstOrDefault(e => e["text"]?.GetValue<string>().StartsWith(name + " -> ", StringComparison.Ordinal) == true)).ToArray();
+        uint? ActionId(JsonObject? phase)
+        {
+            if (phase is null) return null;
+            string text = phase["text"]!.GetValue<string>(); string group = text[(text.IndexOf(" -> ", StringComparison.Ordinal) + 4)..];
+            string prefix = "Preconditions for PlayAnimation" + group + " [";
+            var ids = new HashSet<uint>();
+            foreach (var e in rows.Where(e => e["name"]?.GetValue<string>() == "IAction.Update.PreconditionsMet"))
+            {
+                string value = e["text"]?.GetValue<string>() ?? "";
+                int end = value.IndexOf(']', prefix.Length <= value.Length ? prefix.Length : 0);
+                if (value.StartsWith(prefix, StringComparison.Ordinal) && end > prefix.Length
+                    && uint.TryParse(value.AsSpan(prefix.Length, end - prefix.Length), out uint id)) ids.Add(id);
+            }
+            return ids.Count == 1 ? ids.Single() : null;
+        }
+        var ids = phases.Select(ActionId).ToArray();
+        var completions = rows.Where(e => e["kind"]?.GetValue<string>() == "action-completed").ToArray();
+        JsonObject? Completion(uint? tag, int type)
+        {
+            if (tag is null) return null;
+            var matches = completions.Where(e => e["Tag"]?.GetValue<uint>() == tag && e["ActionType"]?.GetValue<int>() == type).ToArray();
+            return matches.Length == 1 ? matches[0] : null;
+        }
+        var start = Completion(ids[0], 26); var endAction = Completion(ids[2], 26); var drive = Completion(driveTag, 12);
+        uint? startResult = start?["Result"]?.GetValue<uint>(), driveResult = drive?["Result"]?.GetValue<uint>();
+        bool? loopRequired = startResult is { } sr ? sr == 0 : null;
+        bool loopObserved = phases[1] is not null;
+        double? startAt = phases[0]?["atMs"]?.GetValue<double>(), loopAt = phases[1]?["atMs"]?.GetValue<double>(), endAt = phases[2]?["atMs"]?.GetValue<double>();
+        bool ordered = startAt is not null && endAt is not null && startAt <= endAt
+            && (!loopObserved || (startAt <= loopAt && loopAt <= endAt));
+        var endEvidence = endAt is { } endTime && ids[2] is { } endId && drive is not null
+            ? DrivingEnd(messages, completions, endTime, drive["atMs"]!.GetValue<double>(), endId)
+            : new JsonObject { ["endCompletionBeforeDrive"] = false, ["missing"] = "End action identity or drive completion unavailable/ambiguous." };
+        bool endBefore = endEvidence["endCompletionBeforeDrive"]!.GetValue<bool>();
+        bool endActionBefore = endAction is not null && drive is not null
+            && endAction["atMs"]!.GetValue<double>() <= drive["atMs"]!.GetValue<double>();
+        bool identity = startResult is not null && ids[2] is not null && driveResult is not null;
+        string phaseVerdict = !identity ? "INCONCLUSIVE_PHASE_IDENTITY"
+            : loopRequired == true && !loopObserved ? "INCONCLUSIVE_REQUIRED_LOOP_REQUEST"
+            : loopRequired == false && loopObserved ? "OBSERVED_LOOP_AFTER_NONZERO_START"
+            : !ordered ? "INCONCLUSIVE_PHASE_ORDER" : endAction is null ? "INCONCLUSIVE_END_COMPLETION" : !endActionBefore ? "OBSERVED_END_COMPLETION_ORDER_MISMATCH"
+            : endAction!["Result"]!.GetValue<uint>() != 0 ? "OBSERVED_FAILED_END_ACTION"
+            : !endBefore ? "INCONCLUSIVE_END_WIRE_EVIDENCE"
+            : loopRequired == true ? "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS" : "OBSERVED_FAILED_START_END_CLEANUP";
+        bool successRequests = driveResult == 0 && phaseVerdict == "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS";
+        return new JsonObject
+        {
+            ["verdict"] = successRequests ? "OBSERVED_SUCCESSFUL_DRIVE_PHASE_REQUESTS" : "INCONCLUSIVE",
+            ["phaseVerdict"] = phaseVerdict, ["startActionId"] = ids[0], ["loopActionId"] = ids[1], ["endActionId"] = ids[2],
+            ["startCompletion"] = start?.DeepClone(), ["startResult"] = startResult, ["loopRequired"] = loopRequired,
+            ["loopRequestObserved"] = loopObserved, ["loopCoverageMissing"] = loopRequired is null ? null : loopRequired == true && !loopObserved,
+            ["conditionalPhaseOrder"] = ordered, ["endEvidence"] = endEvidence, ["endCompletionBeforeDrive"] = endBefore,
+            ["endActionCompletion"] = endAction?.DeepClone(), ["endActionCompletionBeforeDrive"] = endActionBefore,
+            ["driveCompletion"] = drive?.DeepClone(), ["driveResult"] = driveResult,
+            ["successfulStartLoopEndRequestCoverage"] = successRequests, ["successfulTraversalCoverage"] = false,
+            ["traversalJudgement"] = "NOT_JUDGED: phase requests/API results alone do not certify physical traversal or M12/M13 source completeness. Failed traversal cannot satisfy successful traversal coverage.",
+            ["driveOutcomeAssessment"] = driveResult == 0 ? "API_SUCCESS_REQUIRES_TRAVERSAL_REVIEW" : "UNASSESSED_M12_M13_OUTCOME",
+            ["phaseTriggerLogs"] = new JsonArray(phaseLogs.Select(e => e.DeepClone()).ToArray()),
+            ["boundaryDiagnostics"] = new JsonArray(rows.Where(e => e["kind"]?.GetValue<string>() == "stack-log"
+                && e["line"]?.GetValue<string>().StartsWith("MISSING:", StringComparison.Ordinal) == true).Select(e => e.DeepClone()).ToArray()),
+            ["identityNote"] = "Action IDs require an unambiguous existing PreconditionsMet log for the selected group. Missing/ambiguous logs do not imply a source defect. Host completion delivery may follow the synchronous Loop request; matching ID/result, not delivery timestamp, determines its requirement.",
+            ["verdictRule"] = "M5-063 requires matching Start ID and result0 before requesting the default Loop. A failed Start permits Start->End cleanup. A matching End completion sets state4 regardless of result; successful End/robot echo coverage is separate from the completion-order gate. No failed drive satisfies successful traversal coverage; M12/M13 cause remains unassessed. No planner/action correction or acceptance follows."
+        };
+    }
+
     // Optional independently observed enqueue/generation origin. Raw first-send time is insufficient.
     public sealed record TeardownOrigin(int FrameLine, int SubmessageOrdinal, string Origin, double OriginAtMs);
 
@@ -374,13 +447,13 @@ public static class M5HwAnalysis
         (JsonNode)new JsonObject { ["atMs"] = m.AtMs, ["payloadHex"] = Convert.ToHexString(m.Payload) }).ToArray());
 
     public static JsonObject DrivingEnd(IEnumerable<M5Hw.WireMessage> messages,
-        IEnumerable<JsonObject> completions, double endTriggerAtMs, double driveCompletedAtMs)
+        IEnumerable<JsonObject> completions, double endTriggerAtMs, double driveCompletedAtMs, uint? expectedEndActionId = null)
     {
-        var wire = messages.Where(m => m.AtMs >= endTriggerAtMs && m.AtMs <= driveCompletedAtMs)
-            .OrderBy(m => m.AtMs).ToArray();
-        var start = wire.FirstOrDefault(m => m.Outbound && m.Payload.Length == 2
-            && m.Payload[0] == (byte)RobotMessageId.AnimStartOfAnimation && m.Payload[1] != 255);
-        var ended = start is null ? null : wire.FirstOrDefault(m => !m.Outbound && m.AtMs >= start.AtMs
+        var wire = OrderedUnique(messages).Where(m => m.AtMs >= endTriggerAtMs && m.AtMs <= driveCompletedAtMs).ToArray();
+        var starts = wire.Where(m => m.Outbound && m.Payload.Length == 2
+            && m.Payload[0] == (byte)RobotMessageId.AnimStartOfAnimation && m.Payload[1] != 255).ToArray();
+        var start = starts.Length == 1 ? starts[0] : null;
+        var ended = start is null ? null : wire.Skip(Array.IndexOf(wire, start) + 1).FirstOrDefault(m => !m.Outbound
             && m.Payload.Length == 2 && m.Payload[0] == (byte)RobotMessageId.AnimEnded
             && m.Payload[1] == start.Payload[1]);
         // A loop's completion is enqueued before the synchronous handler creates the end action.
@@ -389,11 +462,13 @@ public static class M5HwAnalysis
         bool before = ended is not null && completions.Any(e =>
             e["kind"]?.GetValue<string>() == "action-completed"
             && e["ActionType"]!.GetValue<int>() == 26 && e["Result"]!.GetValue<uint>() == 0
+            && (expectedEndActionId is null || e["Tag"]?.GetValue<uint>() == expectedEndActionId)
             && e["atMs"]!.GetValue<double>() >= ended.AtMs
             && e["atMs"]!.GetValue<double>() <= driveCompletedAtMs);
         return new JsonObject
         {
             ["endPhaseWireTag"] = start?.Payload[1],
+            ["expectedEndActionId"] = expectedEndActionId, ["candidateEndWireStarts"] = starts.Length,
             ["endPhaseStartAtMs"] = start?.AtMs,
             ["endPhaseRobotEndedAtMs"] = ended?.AtMs,
             ["endCompletionBeforeDrive"] = before

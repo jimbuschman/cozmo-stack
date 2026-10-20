@@ -30,7 +30,7 @@ public static class M5Hw
         new("LAYERS", "Face and backpack layer traffic", new[]{"M5-028","M5-029","M5-031","M5-032","M5-036"}),
         new("LIVE_IDLE", "Calibrated head input and default wiggles", new[]{"M5-030","M5-057","M5-036"}),
         new("PARAMETERS", "Uncapped 45000 ms blink maximum over 60 seconds", new[]{"M5-062","M5-028","M5-036","M3-008"}),
-        new("DRIVING", "Short DriveToPose and driving animation sequence", new[]{"M5-063","M12-024","M7-026","M15-001","M8-020","M8-021"}),
+        new("DRIVING", "Short DriveToPose and driving animation sequence", new[]{"M5-063","M12-024","M7-026","M15-001","M8-020","M8-021","M5-036","M12-032","M12-002","M13-021","M13-033","M8-005","M8-015","M8-023","M8-027"}),
         new("SLEEP", "Sleep deadline fallback and known action gap", new[]{"M5-038","M1-045","M8-017","M8-020","M8-021"}),
         new("TEARDOWN", "Dispose interval, discarded buffer and transport provenance", new[]{"M5-037","M5-053","M5-055","M5-059","M5-060","M5-022","M4-026","M5-036","M6-042"}),
     };
@@ -463,20 +463,16 @@ internal sealed class M5Run
                         var result = Observe("Actual DriveToPose.RunAsync on real ActionList, 60 mm forward from current pose; animation names/tags and completion time retained. M12/M8 gaps remain explicit; no successful move is called source proof.");
                         result["actionCompletions"] = new JsonArray(events.Where(e => e["kind"]?.GetValue<string>() == "action-completed" && e["atMs"]!.GetValue<double>() >= start).Select(e => e.DeepClone()).ToArray()); result["animationTransitions"] = states; result["driveCompletedAtMs"] = Now; result["result"] = task.IsCompletedSuccessfully ? task.Result.ToString() : "timed out/cancelled"; result["trace"] = JsonSerializer.SerializeToNode(action.Trace);
                         result["triplet"] = "default trigger ids 0x95 / 0x91 / 0x8D; no pushed overrides";
-                        var phaseLogs = events.Where(e => e["atMs"]!.GetValue<double>() >= start && e["name"]?.GetValue<string>() == "GetResponseForAnimationTrigger.Found").ToArray();
-                        string[] expected = { ((AnimationTrigger)0x95).ToString(), ((AnimationTrigger)0x91).ToString(), ((AnimationTrigger)0x8D).ToString() };
-                        var phaseTimes = expected.Select(name => phaseLogs.FirstOrDefault(e => e["text"]?.GetValue<string>().StartsWith(name + " -> ", StringComparison.Ordinal) == true)?["atMs"]?.GetValue<double>()).ToArray();
-                        var completions = events.Where(e => e["kind"]?.GetValue<string>() == "action-completed" && e["atMs"]!.GetValue<double>() >= start).ToArray();
-                        var driveDone = completions.FirstOrDefault(e => e["ActionType"]!.GetValue<int>() == 12
-                            && e["Tag"]!.GetValue<uint>() == action.Tag);
-                        var endEvidence = phaseTimes[2] is { } endAt && driveDone is not null
-                            ? M5HwAnalysis.DrivingEnd(Wire(start), completions, endAt, driveDone["atMs"]!.GetValue<double>())
-                            : new JsonObject { ["endCompletionBeforeDrive"] = false };
-                        bool endBeforeDrive = endEvidence["endCompletionBeforeDrive"]!.GetValue<bool>();
-                        result["endEvidence"] = endEvidence;
-                        bool ordered = phaseTimes.All(t => t is not null) && phaseTimes[0] <= phaseTimes[1] && phaseTimes[1] <= phaseTimes[2];
-                        result["phaseTriggerLogs"] = new JsonArray(phaseLogs.Select(e => e.DeepClone()).ToArray()); result["orderedDefaultPhases"] = ordered; result["endCompletionBeforeDrive"] = endBeforeDrive;
-                        if (!task.IsCompletedSuccessfully || task.Result != ActionResult.Success || !ordered || !endBeforeDrive) result["verdict"] = "INCONCLUSIVE";
+                        var phaseAnalysis = M5HwAnalysis.DrivingPhases(Wire(start), events, action.Tag, start, Now);
+                        result["phaseAnalysis"] = phaseAnalysis;
+                        result["phaseTriggerLogs"] = phaseAnalysis["phaseTriggerLogs"]!.DeepClone();
+                        result["endEvidence"] = phaseAnalysis["endEvidence"]!.DeepClone();
+                        result["endCompletionBeforeDrive"] = phaseAnalysis["endCompletionBeforeDrive"]!.DeepClone();
+                        result["conditionalPhaseOrder"] = phaseAnalysis["conditionalPhaseOrder"]!.DeepClone();
+                        result["orderedDefaultPhases"] = phaseAnalysis["loopRequired"]?.GetValue<bool>() == true
+                            && phaseAnalysis["loopRequestObserved"]!.GetValue<bool>() && phaseAnalysis["conditionalPhaseOrder"]!.GetValue<bool>();
+                        result["verdict"] = phaseAnalysis["verdict"]!.DeepClone();
+                        if (!task.IsCompletedSuccessfully || task.Result != ActionResult.Success) result["verdict"] = "INCONCLUSIVE";
                         return result;
                     }
                     finally { limit.Cancel(); if (!task.IsCompleted && !task.Wait(2000)) { DisposeBounded(); connected = false; } r.Motion.StopAllMotors(); if (task.IsCompleted || disposeCompleted) { action.Dispose(); goal.Dispose(); m.Dispose(); } else { errors.Enqueue("Drive action dependencies retained until process exit because teardown did not complete"); } }
