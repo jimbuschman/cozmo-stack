@@ -222,6 +222,7 @@ public class M5AnimationTests
     /// one, BadTriggerTime, L4) ends the load: the lift, the face and the first head keyframe stay, and the body keyframe,
     /// on a later track, is never loaded.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_001_D1_C1_C2_ARejectedKeyframeEndsTheLoadAndKeepsWhatCameBefore()
     {
@@ -244,6 +245,7 @@ public class M5AnimationTests
     /// keyframes are radius 50 (numeric, CheckTurnSpeed: 150 stays), TURN_IN_PLACE at 450 → 300 (CheckRotationSpeed) and
     /// STRAIGHT at 10; anim_triple_backup's first body keyframe is speed −25 for 500 ms. None is truncated.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_001_J1_TheFourShippedJsonClipsLoad()
     {
@@ -273,6 +275,7 @@ public class M5AnimationTests
     }
 
     /// <summary>gap4 P1: a clip named FaceAnimationManager::ProceduralAnimName, "_PROCEDURAL_", is skipped.</summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_001_P1_TheProceduralNameIsSkipped()
     {
@@ -576,6 +579,7 @@ public class M5AnimationTests
     /// A4: a streaming animation and a non-null newcomer without interrupt → refused (tag 0), nothing changes; A5/A9: with
     /// interrupt the old one is aborted and the newcomer gets the next tag; A9: tags cycle 1..0xFE.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_008_A4_A5_A9_RefuseInterruptAndTheTags()
     {
@@ -599,6 +603,7 @@ public class M5AnimationTests
     /// A13: each loop re-inits with the same tag and sends its own Start and End; the handle completes on the Update
     /// after the last End; numLoops 0 loops forever.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_008_A13_EachLoopReInitsWithTheSameTag()
     {
@@ -617,6 +622,7 @@ public class M5AnimationTests
     }
 
     /// <summary>A27: ReplayLastAnimation plays the last streamed name again (interrupt = 1), with a new tag.</summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_008_A27_ReplayLastAnimation()
     {
@@ -636,6 +642,7 @@ public class M5AnimationTests
     /// C13: the id is the low 32 bits; volume defaults to 1.0; no probability vector gives 1/N each; a count mismatch or a
     /// running sum above 1 rejects the keyframe.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_009_C13_TheAudioKeyframeLoadRules()
     {
@@ -671,6 +678,7 @@ public class M5AnimationTests
     }
 
     /// <summary>A2: the neutral clip is the first of ag_neutral_face; its first ProceduralFace keyframe becomes the layer base face.</summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_010_A2_TheNeutralFaceIsTheLayerBase()
     {
@@ -684,6 +692,7 @@ public class M5AnimationTests
     /// idle and more than 0.5 s has passed since the last stream, replays the neutral clip with SetStreamingAnimation
     /// (a new tag, 2) and it streams in that same Update. Before the 0.5 s nothing is replayed.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_010_A6_A31_TheNeutralFaceIsReplayedAfterACancel()
     {
@@ -736,12 +745,12 @@ public class M5AnimationTests
     public void M5_014_D7_TheCooldownIsSharedByName()
     {
         var root = AssetsRoot();
-        if (root is null) return;
+        Assert.NotNull(root);
         var lib = AnimationLibrary.Open(root);
         var groups = lib.GroupNames.Select(n => lib.GetGroup(n)!).ToList();
         var shared = groups.SelectMany(g => g.Entries.Select(e => (g, e))).GroupBy(x => x.e.Name)
                            .FirstOrDefault(x => x.Select(y => y.g.Name).Distinct().Count() > 1);
-        if (shared is null) return;
+        Assert.NotNull(shared);
         var (g1, e1) = shared.First();
         var (g2, e2) = shared.First(x => x.g.Name != g1.Name);
         e1.Container.SetCooldown(e1.Name, 10);
@@ -909,6 +918,7 @@ public class M5AnimationTests
     /// ff cc 00 ff → 0xFF20.
     /// C18: the order Left, Front, Middle, Back, Right.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_016_C17_C18_TheColourWordsAndTheOrder()
     {
@@ -927,6 +937,7 @@ public class M5AnimationTests
     /// C18: while current the keyframe is sent every frame until counter ≥ duration, that frame too: duration 100 gives 5
     /// frames (counters 0, 33, 66, 99, 132); a second keyframe due at 33 waits behind it (A19) and first goes on frame 5.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_016_C18_TheBackpackIsSentEveryFrameWhileCurrent()
     {
@@ -1172,6 +1183,7 @@ public class M5AnimationTests
     /// A1, A30: the idle stack starts {Count, "default_anim_lock"}; RemoveIdleAnimation refuses the last entry and an
     /// unknown lock (1); Push then Remove by lock works (0).
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_A1_A30_TheIdleStack()
     {
@@ -1189,6 +1201,7 @@ public class M5AnimationTests
     /// new-top-is-Count branch only (a non-Count new top branches to 0x0057BD70). A Count-top removal always clears,
     /// whether or not the idle was playing; a non-Count new top leaves both alone.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_9a3_RemoveIdleClearsOnlyOnACountTop()
     {
@@ -1230,6 +1243,7 @@ public class M5AnimationTests
     /// A29: a new idle runs InitStream(anim, 0xFF) and builds no frame that Update; the next Update streams it with
     /// StartOfAnimation 0xFF.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_A29_AnIdleAnimationInitsWithTag0xFfThenStreams()
     {
@@ -1510,6 +1524,7 @@ public class M5AnimationTests
     /// idle (InitStream(live, 0xFF), no frame), the next sends silence, StartOfAnimation 0xFF and the keyframe, and, the
     /// keyframe consumed, the End.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_A29_StreamLiveKeyframesGoOutInsideTheUpdate()
     {
@@ -1529,6 +1544,7 @@ public class M5AnimationTests
     /// 0xFF) and InitStreams the clip (tag 1), Stop aborts it (AnimationAborted 1); +0x64 is still set, so the next Update
     /// continues the live animation rather than re-initialising it, and its StartOfAnimation carries +0xA0 = 1.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_A13_APlayThenStopInOneTickContinuesTheLiveStream()
     {
@@ -1679,6 +1695,7 @@ public class M5AnimationTests
     /// B3 (0x0057D428..0x0057D43E): the live idle's UpdateStream sets +0x88 = now, so with nothing streamed before, the keep-alive
     /// block (A31, idle == live) runs from the Update after the first live frame: its layers appear.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_B3_AnIdleStreamSetsTheLastStreamTime()
     {
@@ -1698,6 +1715,7 @@ public class M5AnimationTests
     /// ended, the live idle is re-initialised (InitStream(live, 0xFF)) although it is still the same idle with frames left,
     /// and its next frame carries StartOfAnimation 0xFF again.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_C4_AfterAClipTheLiveIdleIsReinitialisedWithTag255()
     {
@@ -1720,6 +1738,7 @@ public class M5AnimationTests
     /// B1 (0x0057D03A..0x0057D04C): with a top other than Count the no-animation path goes straight to the idle and neither
     /// flushes nor sends an End; the idle's InitStream drops the leftovers (A12).
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_027_B1_WithAnIdleOnTopTheLeftoversAreNotFlushed()
     {
@@ -1748,6 +1767,7 @@ public class M5AnimationTests
     /// (a round would give 29), the lift at the mean 35 (both variabilities set to 0 here), the body at ±10 mm/s for
     /// 250..1500 ms.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_030_L1_L8_TheLiveIdleGeneratesItsKeyframes()
     {
@@ -1850,6 +1870,7 @@ public class M5AnimationTests
     /// C5 item 5.1: <c>Image::Threshold</c> uses <c>cv::operator&gt;</c>, so the test is strictly above 0x80: a pixel
     /// equal to 0x80 becomes 0 and 0x81 is lit.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_013_5_1_TheThresholdIsStrictlyAbove0x80()
     {
@@ -1867,6 +1888,7 @@ public class M5AnimationTests
     /// same keyframe object with its index at the frame count makes the first GetStreamMessage reset it and send
     /// nothing, and the next frame sends frame 0.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_013_5_4_5_5_TheIndexResetIsLazyAndAnEmptyFrameAdvances()
     {
@@ -1904,6 +1926,7 @@ public class M5AnimationTests
     /// is true at once. GetStreamMessage's lazy reset consumes the keyframe in one frame; it must not stall the track,
     /// and the animation must be able to end.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_013_5_5_AnUnknownFaceAnimationNameIsConsumedAndDoesNotStall()
     {
@@ -1934,6 +1957,7 @@ public class M5AnimationTests
     /// last '/'; Event reads "event_id"; DeviceAudio reads "audioName"; RecordHeading reads nothing; TurnToRecordedHeading
     /// reads the eight members in order and CheckRotationSpeed clamps speed to ±300 and accel/decel to ±13636.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_001_F2_E2_D2_R1_T2_TheFiveJsonKeyframeReaders()
     {
@@ -1972,6 +1996,7 @@ public class M5AnimationTests
     /// C5 item 1 (F2, E2, D2): a reader that fails ends the clip's load with the earlier keyframes kept. FaceAnimation
     /// without "animName", Event with an unrecognised "event_id", and DeviceAudio without "audioName" all reject.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_001_F2_E2_D2_AnInvalidJsonKeyframeEndsTheLoadKeepingWhatCameBefore()
     {
@@ -2033,6 +2058,7 @@ public class M5AnimationTests
     /// C5 item 3 (P1..P5): the reset data is null until the streamer constructor's SetResetData, so Reset is a no-op and
     /// the layer-base face stays the default-constructed ProceduralFace.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_010_P1_P2_WithoutANeutralFaceTheLayerBaseStaysTheDefault()
     {
@@ -2060,6 +2086,7 @@ public class M5AnimationTests
     /// C5 item 6.1..6.3: the 13-entry table with the exact values; the lookup is case-sensitive; a miss returns DEFAULT.
     /// LIGHTGRAY exists as a symbol but is not in the map.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_016_6_1_6_3_TheNamedColorsTable()
     {
@@ -2085,6 +2112,7 @@ public class M5AnimationTests
     /// C5 item 6.4/6.5: a string colour goes through the table; an unknown name is DEFAULT with a warning, not a
     /// rejection. The five reads reuse one ColorRGBA (a 3-element array would keep the previous alpha).
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M5_016_6_4_6_5_AStringColourGoesThroughTheTableAndAnUnknownNameIsDefault()
     {

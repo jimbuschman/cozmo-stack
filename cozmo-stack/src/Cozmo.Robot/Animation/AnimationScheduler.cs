@@ -2055,7 +2055,8 @@ public sealed class AnimationScheduler
 /// What UpdateLiveAnimation reads from the robot (gap4 L2..L6; gap1 R2..R4): DockingComponent+4 (picking or placing,
 /// status bit 2), the MovementComponent flags +9 (IS_MOVING), +0xB (not LIFT_IN_POS) and +0xA (not HEAD_IN_POS), the track
 /// locks (AreAnyTracksLocked: body 4, lift 2, head 1), CarryingComponent+8 ≠ −1 (carrying, M12's), and robot+0x2FC (the
-/// head angle, radians). Unset, each reads as clear or 0.
+/// calibrated/clamped head angle, radians, constructor -25 degrees). Production binds it to Motion.HeadAngleRad;
+/// standalone input fixtures retain their explicit clear/0 defaults.
 /// </summary>
 public sealed class LiveIdleRobotInputs
 {

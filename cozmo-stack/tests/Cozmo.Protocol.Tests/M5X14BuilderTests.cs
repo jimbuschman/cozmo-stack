@@ -10,6 +10,7 @@ public sealed class M5X14BuilderTests : IDisposable
 {
     private readonly bool _error = EngineErrorState.ErrorFlagSet;
     public void Dispose() => EngineErrorState.ErrorFlagSet = _error;
+    // reach: production - live robot loader/constructor or public input with actual component wiring; fixture assets supplied where stated.
     [Fact]
     public void RobotConstructionReadsNeutralOnceAndLoadCompletionDoesNotRetry()
     {
@@ -30,6 +31,7 @@ public sealed class M5X14BuilderTests : IDisposable
         }
         finally { Directory.Delete(root, true); }
     }
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void ResetMissAndFacelessClipKeepPriorResetData(bool faceless)
@@ -43,6 +45,7 @@ public sealed class M5X14BuilderTests : IDisposable
         Assert.Equal(17f, scheduler.LayerBaseFace.Left[0]);
         if (faceless) { Assert.NotEmpty(lines); Assert.All(lines, s => Assert.Contains("M1-034 / M5-010", s)); }
     }
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void ArbitraryBehaviorReportsCustomSongBeforeLibraryLookup()
     {

@@ -132,6 +132,7 @@ public class M5X13BuilderTests : IDisposable
         Assert.DoesNotContain(typeof(CozmoAnimations).GetMethods(), m => m.Name.Contains("ReplaceNotesInSong"));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -1694,6 +1694,7 @@ public class M3DeviceTests
     /// on frame 0 while the sprite is pending, M5 C7), 66 and 99 the animation's frames; then the clip has no frames left
     /// and ends (M5 A20), so no procedural face ever goes.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M3_015_A17_APendingFaceAnimationHoldsTheProceduralFaceBack()
     {
@@ -1755,6 +1756,7 @@ public class M3DeviceTests
     /// neither flushes nor sends an End, and the live idle's InitStream(live, 0xFF) (the previous idle was not the live one,
     /// 0x0057D3F0..0x0057D3FE) drops them (ClearSendBuffer, A12). No EndOfAnimation is sent.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void M3_013_A13_A29_A12_WithTheLiveStreamActiveACancelledClipsLeftoversAreDropped()
     {

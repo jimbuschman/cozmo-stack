@@ -61,7 +61,6 @@ public sealed class FaceAnimationLibrary
             lib._cache[name] = Array.Empty<FaceBitmap>(); lib._variants[name] = Array.Empty<FaceAnimationFrame>();
             jobs.Add(path);
         }
-        log?.Invoke("MISSING: M5-052 cv::imread grayscale/libopencv PNG decode 0x0086E75E and libc++ stoi 0x00580A0E; host decoder/canonical decimal input only");
         AnimationLibrary.DispatchFiles(jobs, lib.LoadImageFrames);
         return lib;
     }

@@ -100,7 +100,7 @@ public sealed class AnimationGroup
     public SourceLogSink? SourceLog { get; set; }
     internal AnimationGroupEntry? GetAnimationName(EngineRandom rng, SimpleMood mood, double? nowSec, double? headRad, bool strict)
     {
-        float time = (float)(nowSec ?? 0), head = (float)(headRad ?? 0);
+        float time = (float)(nowSec ?? 0), head = headRad is { } h ? (float)h : BitConverter.Int32BitsToSingle(unchecked((int)0xBEDF66F3));
         while (true)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Debug, "Unnamed", "AnimationGroup.GetAnimation", $"getting animation from group '{Name}', simple mood = '{mood}'");
@@ -216,7 +216,7 @@ public sealed class AnimationTriggerResponses
 /// <summary>
 /// Cozmo's own animation assets: the clips (<c>CannedAnimationContainer</c>), the groups (<c>AnimationGroupContainer</c>)
 /// and the trigger map (<see cref="AnimationTriggerResponses"/>). Clips come from assets/animations/ and
-/// config/engine/animations/ (gap1 C5): a ".bin" is FlatBuffer, anything else JSON (C4). Every clip is loaded at startup by four contiguous workers.
+/// config/engine/animations/ (gap1 C5): a ".bin" is FlatBuffer, anything else JSON (C4). M1-055 preserves deterministic definition order across the loader workers.
 /// </summary>
 public sealed class AnimationLibrary : IAnimationCatalog
 {
@@ -271,7 +271,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
     /// </summary>
     public Func<double>? CooldownTimeSec { get; set; }
 
-    /// <summary>The robot's head angle in radians (robot+0x2FC) for the head-angle gate. Unset: the constructor head angle zero.</summary>
+    /// <summary>The calibrated/clamped head angle in radians (robot+0x2FC). Unset: Robot constructor word 0xBEDF66F3 (-25 degrees).</summary>
     public Func<double?>? HeadAngleRad { get; set; }
 
     /// <summary>
@@ -358,12 +358,20 @@ public sealed class AnimationLibrary : IAnimationCatalog
     // fidelity: M5-051
     private JsonDocument? ReadAsJson(string path) => ReadAsJson(path, Log, SourceLog);
     internal static JsonDocument? ReadAsJson(string path, Action<string>? log, SourceLogSink? sourceLog)
+        => ReadAsJson(path,log,sourceLog,out _);
+    internal static JsonDocument? ReadAsJson(string path, Action<string>? log, SourceLogSink? sourceLog,out bool terminating,string owner="M5-051")
     {
+        terminating=false;
         try
         {
             string text = File.ReadAllText(path);
             if (ExceedsJsonValueDepth(text))
-            { log?.Invoke($"Loader file skipped (M1-034): JsonCpp stack-limit fatal path in {path}"); return null; }
+            {
+                terminating=true;
+                string message=$"Loader file skipped (M1-034): {owner} JsonCpp stack-limit fatal path in {path}";
+                if(log is not null)log(message);else SteppedBehavior.ReportMissing(message);
+                return null;
+            }
             return JsonDocument.Parse(text, new JsonDocumentOptions { MaxDepth = 1000 });
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException or JsonException)
@@ -648,7 +656,7 @@ public sealed class AnimationLibrary : IAnimationCatalog
         if (g is null || g.Entries.Count == 0) return ""; // C3: only a miss logs; an existing empty group is silent.
         g.Log = Log; g.SourceLog = SourceLog;
         if (CurrentMood is null && Interlocked.Exchange(ref _missingSimpleMoodReported, 1) == 0)
-            Log?.Invoke("MISSING: M5-011 SimpleMood (M7); Default retained because GetSimpleMood is not represented");
+            Log?.Invoke("MISSING: M7-026 SimpleMood; Default retained because GetSimpleMood is not represented");
         return g.GetAnimationName(ContextRandom, CurrentMood?.Invoke() ?? SimpleMood.Default,
             (float)(CooldownTimeSec?.Invoke() ?? 0), HeadAngleRad?.Invoke(), strict)?.Name ?? "";
     }

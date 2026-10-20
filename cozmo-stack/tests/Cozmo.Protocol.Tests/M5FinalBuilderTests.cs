@@ -35,6 +35,7 @@ public class M5FinalBuilderTests : IDisposable
     private static AnimationClip Clip(params Keyframe[] frames) => new()
     { Name = "c", Keyframes = frames, Tracks = frames.Aggregate(AnimationTrack.None, (t, k) => t | k.Track) };
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void FlushCountsRobotMessagesAndExcludesBlockedBackpackCallbacks()
     {
@@ -51,6 +52,7 @@ public class M5FinalBuilderTests : IDisposable
             Assert.Single(logs, l => l.Key == "AnimationStreamer.Update.SendBufferNotEmpty").Text);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void RemoveIdleNeverFindsIndex1000AndReportsTheSourceOverflow()
     {
@@ -65,6 +67,7 @@ public class M5FinalBuilderTests : IDisposable
         Assert.True(EngineErrorState.ErrorFlagSet);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("BodyMotion", 4)] [InlineData("LiftHeight", 2)] [InlineData("HeadAngle", 1)]
     public void LiveAppendFailureLogsInnerThenTrackThenOuter(string track, byte unlocked)
@@ -107,6 +110,7 @@ public class M5FinalBuilderTests : IDisposable
         Assert.Equal(0x3F555556, BitConverter.SingleToInt32Bits(ProceduralFaceRenderer.DistortionRowFraction(inv, 5)));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("BodyMotionKeyFrame", "\"durationTime_ms\":10,\"speed\":1", "BodyMotionKeyFrame.SetMembersFromJson.MissingRadius", "c: Missing 'radius_mm' field.")]
     [InlineData("BodyMotionKeyFrame", "\"durationTime_ms\":10,\"speed\":1,\"radius_mm\":\"bad\"", "BodyMotionKeyFrame.BadRadiusString", "c: Unrecognized string for 'radius_mm' field: bad")]
@@ -130,6 +134,7 @@ public class M5FinalBuilderTests : IDisposable
         Assert.Empty(stack); Assert.True(EngineErrorState.ErrorFlagSet);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void KeepAliveUsesNanosecondsAtTheStrictHalfSecondBoundary()
     {
@@ -145,6 +150,7 @@ public class M5FinalBuilderTests : IDisposable
         Assert.Contains("KeepAliveEyeDart", scheduler.FaceLayerNames);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void FaceMapMissIsCaseSensitiveAndConsumed()
     {

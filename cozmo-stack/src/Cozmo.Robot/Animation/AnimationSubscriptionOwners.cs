@@ -17,7 +17,11 @@ internal sealed class AnimationSubscriptionOwners
                 ? factory(tags[i], e2g) : engine.AnimationMessages.SubscribeMessage(tag, e2g, callback is null ? null : message => callback(tag, message));
             _owners.Add((tags[i], e2g, owner));
             if (engine.AnimationSubscriptionFactory is null && callback is null)
-                engine.EmitStackLog($"MISSING: {Owner(tag)} subscription 0x{tag:X2} callback recipient; concrete ownership/unlink is built (M5-056)");
+            {
+                if(tag is 0xAE or 0xAF or 0xAD or 0xC4)
+                    engine.EmitStackLog($"{Owner(tag)} subscription 0x{tag:X2}: {InputOwner(tag)}; concrete ownership/unlink is built (M5-056)");
+                else engine.EmitStackLog($"MISSING: {Owner(tag)} subscription 0x{tag:X2} callback recipient; concrete ownership/unlink is built (M5-056)");
+            }
         }
     }
     // fidelity: M5-061, M5-062, M5-063, M9-029
@@ -25,6 +29,11 @@ internal sealed class AnimationSubscriptionOwners
     {
         0x5A or 0xB5 or 0xB6 => "M5-063", 0xB4 => "M5-062",
         0xAE or 0xAF => "M5-027/M5-057", 0xAD => "M5-061", 0xC4 => "M9-029", _ => "M5-056"
+    };
+    private static string InputOwner(byte tag)=>tag switch
+    {
+        0xAE or 0xAF=>"idle push/remove inputs supplied by the host API (M5-057)",
+        0xAD=>"replay input owned by M5-061",0xC4=>"custom-song input owned by M9-029",_=>"callback input owned by "+Owner(tag)
     };
     internal void Release()
     {

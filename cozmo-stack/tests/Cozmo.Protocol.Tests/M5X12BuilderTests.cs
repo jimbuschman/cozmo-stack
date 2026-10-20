@@ -6,6 +6,7 @@ namespace Cozmo.Protocol.Tests;
 [Collection("M5 process statics")]
 public class M5X12BuilderTests
 {
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void UnmappedNullIdleTailReportsApprovedSkipAndStreamerStillPlays()
     {

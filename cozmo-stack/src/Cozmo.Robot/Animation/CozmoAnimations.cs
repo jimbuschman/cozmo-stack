@@ -201,7 +201,8 @@ public sealed class CozmoAnimations : IDisposable
         // fidelity: M5-030
         // UpdateLiveAnimation's robot inputs (gap4 L2..L6, gap1 R2..R4), from the last RobotState the robot stored: status bit
         // 2 (DockingComponent+4), IS_MOVING (+9), !LIFT_IN_POS (+0xB), !HEAD_IN_POS (+0xA); the track locks (M4-014); the head
-        // angle (robot+0x2FC). Before any state they read clear, as the components' constructors leave them.
+        // angle (robot+0x2FC). Flags start clear; the head starts at 0xBEDF66F3 (-25 degrees), and only
+        // calibrated/clamped Motion reports update it (M4-001), independently of the raw RobotState view.
         var live = _scheduler.LiveIdleInputs;
         live.PickingOrPlacing = () => robot.State.Latest?.Has(RobotStatusFlag.IsPickingOrPlacing) ?? false;
         live.Moving = () => robot.State.Latest?.Has(RobotStatusFlag.IsMoving) ?? false;
@@ -213,7 +214,7 @@ public sealed class CozmoAnimations : IDisposable
         // state reaches this robot as Motion.IsCarryingObject, wired by the manipulation system after construction, so it is read
         // at call time; unwired reads as not carrying.
         live.Carrying = () => robot.Motion.IsCarryingObject?.Invoke() == true;
-        live.HeadAngleRad = () => robot.State.HeadAngleRad ?? 0f;
+        live.HeadAngleRad = () => robot.Motion.HeadAngleRad;
     }
 
     // fidelity: M5-053, M5-044
@@ -407,18 +408,17 @@ public sealed class CozmoAnimations : IDisposable
                 triggerResponses:DrivingTriggerMap?.ToResponses() ?? new AnimationTriggerResponses(), progressAdded:progressAdded);
         Library.Log = _robot.Engine.Log;
         Library.SourceLog = (level, channel, key, text) => _robot.Engine.EmitSourceLog(level, channel, key, text);
-        // D5: the head-angle gate reads robot+0x2FC (the reported head angle, radians)
-        Library.HeadAngleRad = () => _robot.State.HeadAngleRad;
+        // D5: robot+0x2FC is the calibrated/clamped Motion value, not the raw telemetry head angle.
+        Library.HeadAngleRad = () => _robot.Motion.HeadAngleRad;
         // fidelity: M5-045
         // R45-2..R45-3: loader -> container+0x28 -> group+0 uses context+0x14.
         Library.ContextRandom = _scheduler.ContextRandom;
-        bool reportedMoodClock = false;
+        int reportedMoodClock = 0;
         Library.CooldownTimeSec = () =>
         {
-            if (!reportedMoodClock)
+            if (Interlocked.Exchange(ref reportedMoodClock,1)==0)
             {
-                reportedMoodClock = true;
-                _robot.Engine.EmitStackLog("MISSING: M5-011 MoodManager+0x130 clock input (M7, 0x0058A95C/0x0067B67E); existing BaseStationTimer stand-in remains unverified");
+                _robot.Engine.EmitStackLog("MISSING: M7-026 MoodManager+0x130 clock input (0x0058A95C/0x0067B67E); existing BaseStationTimer stand-in remains unverified");
             }
             return _robot.Engine.Timer.Seconds;
         }; // M7 owns the cached clock. This job does not build or claim that recipient.

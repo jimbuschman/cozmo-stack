@@ -17,6 +17,7 @@ public class M5X11BuilderTests : IDisposable
     private static AnimationClip Parse(string frames,ConcurrentQueue<Entry> entries)
     {using var doc=JsonDocument.Parse("{\"c\":["+frames+"]}");return JsonClipLoader.LoadDocument(doc,null,Capture(entries))!;}
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void MissingTriggerHasChildErrorFlagThenParentTailWhileNullTriggerIsAccepted()
     {
@@ -30,6 +31,7 @@ public class M5X11BuilderTests : IDisposable
         Assert.Equal(0u,Assert.Single(clip.Keyframes).TriggerTimeMs);Assert.False(clip.LoadTruncated);Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("")] [InlineData(",\"audioEventId\":null")]
     public void MissingOrNullAudioIdIsScalarZero(string id)
@@ -38,6 +40,7 @@ public class M5X11BuilderTests : IDisposable
         var audio=Assert.IsType<AudioKeyframe>(Assert.Single(clip.Keyframes));Assert.Equal(new long[]{0},audio.EventIds);Assert.Equal(new[]{1f},audio.Probabilities);Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void EmptyProbabilityVectorUsesOneOverIdCountAndNullElementsConvert()
     {
@@ -48,6 +51,7 @@ public class M5X11BuilderTests : IDisposable
         audio=Assert.IsType<AudioKeyframe>(Assert.Single(clip.Keyframes));Assert.Equal(new[]{0f,1f},audio.Probabilities);Assert.False(clip.LoadTruncated);Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void NullColorElementsBecomeZeroAndBadLengthWarnsBeforeElementConversion()
     {
@@ -68,6 +72,7 @@ public class M5X11BuilderTests : IDisposable
         var face=Assert.IsType<FaceKeyframe>(Assert.Single(clip.Keyframes));Assert.All(face.Pose.Left.ToArray(),v=>Assert.Equal(0f,v));Assert.All(face.Pose.Right.ToArray(),v=>Assert.Equal(0f,v));Assert.DoesNotContain(entries,e=>e.Level==EngineLogLevel.Error);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("neutral")] [InlineData("idle")] [InlineData("replay")]
     public void LibraryLookupMissIsKeyedAndPrecedesTheThreeCallerTails(string caller)

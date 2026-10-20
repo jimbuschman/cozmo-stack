@@ -79,6 +79,7 @@ public class M5BuilderCorrectionsTests
         finally { Directory.Delete(root, true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void L6_4_OpenReadFailuresBecomeBinaryDataEmpty(bool unauthorized)
@@ -112,7 +113,7 @@ public class M5BuilderCorrectionsTests
             var library = robot.Animations.LoadFrom(root);
             Assert.Equal("a", library.GetAnimationNameFromGroup("g", false));
             Assert.Equal("a", library.GetAnimationNameFromGroup("g", false));
-            Assert.Single(diagnostics, s => s.StartsWith("MISSING: M5-011 SimpleMood (M7)"));
+            Assert.Single(diagnostics, s => s.StartsWith("MISSING: M7-026 SimpleMood"));
             library.CurrentMood = () => SimpleMood.Happy; robot.Engine.ContextRandom.SetSeed(5489);
             Assert.Equal("a", library.GetAnimationNameFromGroup("g", false));
             Assert.Equal((545404204d + 4161255391d * 4294967296d) / 18446744073709551616d,
@@ -149,6 +150,7 @@ public class M5BuilderCorrectionsTests
         finally { Eye.ClippingWarningEnabled = old; }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void JsonReservedNameLogsLoadingBeforeReservedName()
     {
@@ -164,6 +166,7 @@ public class M5BuilderCorrectionsTests
         finally { Directory.Delete(root, true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("false")] [InlineData("17")] [InlineData("null")] [InlineData("{}")]
     public void JsonBackpackWrongTypesWarnAndReject(string bad)
@@ -171,6 +174,7 @@ public class M5BuilderCorrectionsTests
         CheckColors(bad, "\"bad-name\"", new[] { "JsonTools.GetColorOptional" });
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void JsonBackpackWarningsFollowColorReadOrder()
     {

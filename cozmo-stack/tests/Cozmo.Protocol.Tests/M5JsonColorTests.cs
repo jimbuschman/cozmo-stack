@@ -12,6 +12,7 @@ public class M5JsonColorTests
         "{\"Name\":\"BackpackLightsKeyFrame\",\"triggerTime_ms\":0,\"durationTime_ms\":1," + colors + "}";
     private const string Arrays = "\"Back\":[0,0,0],\"Front\":[0,0,0],\"Middle\":[0,0,0],\"Left\":[0,0,0],\"Right\":[0,0,0]";
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("BLACK", 0x000000FFu, 0x8000)]
     [InlineData("OFFWHITE", 0xCCCCCCFFu, 0xE739)]
@@ -37,6 +38,7 @@ public class M5JsonColorTests
         });
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void NamedAlphaCarriesIntoFollowingThreeComponentArray()
     {
@@ -50,6 +52,7 @@ public class M5JsonColorTests
         });
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("Back")] [InlineData("Front")] [InlineData("Middle")] [InlineData("Left")] [InlineData("Right")]
     public void MissingColorSkipsHelperWarningAndStopsAtFailedFrame(string key)
@@ -59,6 +62,7 @@ public class M5JsonColorTests
         AssertRejected(Frame(colors), key, false);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void InvalidColorWarnsBeforeCallerErrorAndSetsErrorFlag()
         => AssertRejected(Frame(Arrays.Replace("\"Back\":[0,0,0]", "\"Back\":null")), "Back", true);
@@ -98,6 +102,7 @@ public class M5JsonColorTests
         finally { File.Delete(path); EngineErrorState.ErrorFlagSet = old; }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("{}")] [InlineData("[]")] [InlineData("null")]
     public void EmptyJsonFileSkipsDefinitionSilentlyAndAdvancesProgress(string json)
@@ -136,6 +141,7 @@ public class M5JsonColorTests
         finally { Directory.Delete(root, true); EngineErrorState.ErrorFlagSet = old; }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("[1]")]
     [InlineData("\"x\"")]
@@ -162,6 +168,7 @@ public class M5JsonColorTests
         finally { EngineErrorState.ErrorFlagSet = old; }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData(false)] [InlineData(true)]
     public void JsonReadFailureKeepsOpenAliveAndAdvancesProgress(bool denyRead)

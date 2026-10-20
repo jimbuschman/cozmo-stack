@@ -99,7 +99,8 @@ public sealed class AnimationTriggerMap
             try
             {
                 // Stage a file so M1-034 loses only that file, including inserts preceding its fatal input.
-                entries = ReadFile(file, log, sourceLog);
+                entries = ReadFile(file, log, sourceLog,out bool terminating);
+                if(terminating){skippedFile=true;continue;}
                 completedFile = true;
             }
             catch (Exception e) when (e is TerminatingInput or JsonClipLoader.JsonCppException)
@@ -122,10 +123,10 @@ public sealed class AnimationTriggerMap
         return skippedFile && !completedFile && previous is not null ? previous : map;
     }
 
-    private static Dictionary<string, string> ReadFile(string file, Action<string>? log, SourceLogSink? sourceLog)
+    private static Dictionary<string, string> ReadFile(string file, Action<string>? log, SourceLogSink? sourceLog,out bool terminating)
     {
         var entries = new Dictionary<string, string>(StringComparer.Ordinal);
-        using var doc = AnimationLibrary.ReadAsJson(file, log, sourceLog);
+        using var doc = AnimationLibrary.ReadAsJson(file, log, sourceLog,out terminating,"M5-034");
         if (doc is null || doc.RootElement.ValueKind == JsonValueKind.Null) return entries;
         if (doc.RootElement.ValueKind != JsonValueKind.Object)
             throw new TerminatingInput("non-object root at isMember 0x006704A0 / find throw 0x008EAF8A");

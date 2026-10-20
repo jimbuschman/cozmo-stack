@@ -258,6 +258,7 @@ public class AnimationGapTests
     /// The engine's tag counter skips both ends of the byte: IncrementTagCtr at 0x0057B660 keeps
     /// incrementing while the value it came from was above 0xFD, so it stores 1..0xFE and never 0 or 0xFF.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TheTagCounterWrapsPastZeroAndFf()
     {
@@ -679,6 +680,7 @@ public class AnimationGapTests
     /// every frame while its keyframe is current, until counter ≥ duration: duration 100 gives 5 frames. Left
     /// [1, 0.7, 0, 0] is r 255, g trunc(178.5) = 178, b 0, a 0: 0x7C00 | 0x2C0 = 0x7EC0.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void ALightsKeyframeIsStreamedEveryFrameWhileCurrent()
     {

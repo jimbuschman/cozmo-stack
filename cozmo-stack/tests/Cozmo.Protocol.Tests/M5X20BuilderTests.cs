@@ -55,6 +55,7 @@ public sealed class M5X20BuilderTests
         Assert.Equal(expected,BitConverter.SingleToInt32Bits(action.TimeoutSeconds));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("[]")] [InlineData("1")]
     public void NonObjectTriggerMapKeepsPriorMapAndStillLoadsClips(string malformed)

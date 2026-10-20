@@ -40,6 +40,7 @@ public class AnimationStreamLifecycleTests
     /// idle (InitStream(live, 0xFF), no frame), and the one after sends the frame as audio, then StartOfAnimation once
     /// (0x0057C9D0), then the body keyframe (0x0057CA56).
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void ALiveBodyKeyframeGoesOutInsideAnOpenedLiveStream()
     {
@@ -65,6 +66,7 @@ public class AnimationStreamLifecycleTests
     /// (+0x64 = 0 after the clip's UpdateStream, A13; InitStream(live, 0xFF), A29) with no frame; the Update after streams
     /// the live keyframe with StartOfAnimation 0xFF.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void AClipTakingOverEndsTheLiveStreamWithoutAnEndOfAnimationAndTheLiveStreamReopensAfterIt()
     {
@@ -90,6 +92,7 @@ public class AnimationStreamLifecycleTests
     /// A29: once the live animation's keyframes are consumed it has ended (endSent, no frames, buffer empty), so every
     /// Update re-inits it (InitStream(live, 0xFF)) and streams nothing until a keyframe is appended.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TheLiveIdleReInitsOnEveryUpdateOnceItsKeyframesAreConsumed()
     {
@@ -106,6 +109,7 @@ public class AnimationStreamLifecycleTests
     }
 
     /// <summary>Abort 0x0057B3E0 sends no body stop (A24); the keyframe's own stop (C5) never came because it was cancelled first.</summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void CancellingAnAnimationWithABodyKeyframeRunningSendsNoBodyStop()
     {
@@ -128,6 +132,7 @@ public class AnimationStreamLifecycleTests
     /// <summary>
     /// AnimationStreamer::Abort 0x0057B3E0 sends the robot nothing itself: no EndOfAnimation and no trailing audio (A24).
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void ACancelledAnimationSendsNoEndOfAnimation()
     {
@@ -141,6 +146,7 @@ public class AnimationStreamLifecycleTests
         Assert.Equal(new[] { "finished" }, sink.Log.Skip(before));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void AReplacedAnimationSendsNoEndOfAnimationBeforeTheNewOnesStart()
     {

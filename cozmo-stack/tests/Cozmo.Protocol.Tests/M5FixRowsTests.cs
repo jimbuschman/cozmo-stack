@@ -124,6 +124,7 @@ public class M5FixRowsTests
         Entry(entries, "AnimationGroup.GetAnimation.NoAnimation", EngineLogLevel.Error, null, "Could not find a single animation from group 'g' to run. Returning empty");
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void L1ToL9_LoadsEagerlyWithOwnNamesCaseSensitiveSuffixesAndJsonFailureProgress()
     {

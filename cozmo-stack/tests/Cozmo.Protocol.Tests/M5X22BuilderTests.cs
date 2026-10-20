@@ -35,6 +35,50 @@ public sealed class M5X22BuilderTests
     private static IReadOnlyDictionary<string, string> Pairs(AnimationTriggerMap map) =>
         (Dictionary<string, string>)typeof(AnimationTriggerMap).GetField("_groups", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(map)!;
 
+    // reach: unit (file enumeration order supplied to the real container loader; no substituted reader or parse result).
+    [Fact]
+    public void ReadAsJsonFalseBetweenGoodFilesContinuesWithoutRollingBackOtherFiles()
+    {
+        using var f=new Fixture();
+        var first=f.Write("first.json","{\"Pairs\":[{\"CladEvent\":\"BlockReact\",\"AnimName\":\"first\"}]}");
+        var bad=f.Write("bad.json","{");
+        var last=f.Write("last.json","{\"Pairs\":[{\"CladEvent\":\"DriveStartHappy\",\"AnimName\":\"last\"}]}");
+        var map=AnimationTriggerMap.LoadFiles(new[]{first,bad,last},f.Maps,f.Stack.Add,(l,c,k,t)=>f.Rig.Engine.EmitSourceLog(l,c,k,t));
+        Assert.Equal("first",map.GroupFor(AnimationTrigger.BlockReact));Assert.Equal("last",map.GroupFor(AnimationTrigger.DriveStartHappy));
+        Assert.Equal(2,map.Count);Assert.True(EngineErrorState.ErrorFlagSet);
+        Assert.Single(f.Logs.Where(e=>e.Name=="DataPlatform.readAsJson"));Assert.DoesNotContain(f.Stack,s=>s.Contains("M1-034"));
+    }
+
+    // reach: unit (ordered files supplied; duplicate pair still evaluates AnimName.asString before insertion).
+    [Theory][InlineData("[]")][InlineData("{}")]
+    public void DuplicateKeyWithAggregateAnimNameStillTerminatesItsFile(string aggregate)
+    {
+        using var f=new Fixture();
+        var first=f.Write("first.json","{\"Pairs\":[{\"CladEvent\":\"BlockReact\",\"AnimName\":\"prior\"}]}");
+        var bad=f.Write("bad.json","{\"Pairs\":[{\"CladEvent\":\"AcknowledgeObject\",\"AnimName\":\"rollback\"},{\"CladEvent\":\"BlockReact\",\"AnimName\":"+aggregate+"}]}");
+        var last=f.Write("last.json","{\"Pairs\":[{\"CladEvent\":\"DriveStartHappy\",\"AnimName\":\"last\"}]}");
+        var map=AnimationTriggerMap.LoadFiles(new[]{first,bad,last},f.Maps,f.Stack.Add,null);
+        Assert.Equal("prior",map.GroupFor(AnimationTrigger.BlockReact));Assert.Equal("last",map.GroupFor(AnimationTrigger.DriveStartHappy));
+        Assert.Null(map.GroupFor(AnimationTrigger.AcknowledgeObject));Assert.Single(f.Stack.Where(s=>s.Contains("asString throw")));
+        Assert.False(EngineErrorState.ErrorFlagSet);
+    }
+
+    // reach: unit (host reload with a depth-limit file; native terminates, M1-034 skips it and preserves previous map).
+    [Fact]
+    public void DepthFatalCountsAsTerminatingForTheHostReloadPolicyAndNamesItsOwner()
+    {
+        using var f=new Fixture();
+        var file=f.Write("depth.json","{\"Pairs\":[{\"CladEvent\":\"BlockReact\",\"AnimName\":\"prior\"}]}");
+        var previous=AnimationTriggerMap.LoadFiles(new[]{file},f.Maps,f.Stack.Add,null);
+        File.WriteAllText(file,new string('[',1001)+"0"+new string(']',1001));
+        var reloaded=AnimationTriggerMap.LoadFiles(new[]{file},f.Maps,f.Stack.Add,null,previous);
+        Assert.Same(previous,reloaded);
+        var skip=Assert.Single(f.Stack.Where(s=>s.Contains("stack-limit fatal path")));
+        Assert.Contains("M1-034",skip);Assert.Contains("M5-034",skip);Assert.Contains(file,skip);
+        Assert.False(EngineErrorState.ErrorFlagSet);
+    }
+
+    // reach: production - live robot loader/constructor or public input with actual component wiring; fixture assets supplied where stated.
     [Fact]
     public void LiveLoadUsesAllRecursiveJsonFilesAndIgnoresUnrelatedMaps()
     {
@@ -52,6 +96,7 @@ public sealed class M5X22BuilderTests
         Assert.Contains("a", library.ClipNames);
     }
 
+    // reach: production - live robot loader/constructor or public input with actual component wiring; fixture assets supplied where stated.
     [Fact]
     public void ASubdirectoryContributesAtItsEncounterPositionRatherThanAfterParentFiles()
     {
@@ -65,6 +110,7 @@ public sealed class M5X22BuilderTests
         Assert.Equal("nested", f.Rig.Robot.Animations.DrivingTriggerMap!.GroupFor(AnimationTrigger.BlockReact));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void CrossFileFirstInsertFollowsTheSuppliedFileOrder()
     {
@@ -75,6 +121,7 @@ public sealed class M5X22BuilderTests
         Assert.Equal("two", AnimationTriggerMap.LoadFiles(new[] { second, first }, f.Maps, f.Stack.Add, null).GroupFor(AnimationTrigger.BlockReact));
     }
 
+    // reach: production - live robot loader/constructor or public input with actual component wiring; fixture assets supplied where stated.
     [Theory]
     [InlineData("null", "", "")]
     [InlineData("{}", "", "")]
@@ -90,6 +137,7 @@ public sealed class M5X22BuilderTests
         Assert.DoesNotContain(f.Stack, line => line.Contains("M1-034"));
     }
 
+    // reach: unit for supplied-order LoadFiles; production for the LoadFrom half using the real recursive loader; malformed file inputs are explicit fixtures.
     [Theory]
     [InlineData("{\"Pairs\":[{\"CladEvent\":\"AcknowledgeObject\",\"AnimName\":\"must-rollback\"},1]}")]
     [InlineData("{\"Pairs\":[true]}")]
@@ -122,6 +170,7 @@ public sealed class M5X22BuilderTests
         Assert.False(EngineErrorState.ErrorFlagSet);
     }
 
+    // reach: production - live robot loader/constructor or public input with actual component wiring; fixture assets supplied where stated.
     [Theory]
     [InlineData("null")] [InlineData("{}")] [InlineData("1")] [InlineData("true")] [InlineData("\"s\"")]
     public void ZeroSizePairsNeverReachTheThrowingIntegerIndexer(string pairs)

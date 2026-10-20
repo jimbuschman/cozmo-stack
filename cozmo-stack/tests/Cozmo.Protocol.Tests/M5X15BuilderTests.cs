@@ -32,7 +32,7 @@ public sealed class M5X15BuilderTests : IDisposable
         }
         finally { Directory.Delete(cache, true); }
     }
-    // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).
+    // reach: production - public SetLiveIdleAnimationParameters input delivered by Engine.Tick; real base setters/defaults/error tail.
     [Fact]
     public void ParameterMessageUsesBaseSetterAndPreservesOrderDefaultsAndMismatchTail()
     {
@@ -66,6 +66,7 @@ public sealed class M5X15BuilderTests : IDisposable
         Assert.Contains(lines, l => l.Contains("M5-027/M5-057 subscription 0xAE"));
         Assert.Contains(lines, l => l.Contains("M5-061 subscription 0xAD"));
         Assert.Contains(lines, l => l.Contains("M9-029 subscription 0xC4"));
+        Assert.DoesNotContain(lines,l=>l.StartsWith("MISSING:")&&new[]{"subscription 0xAE","subscription 0xAF","subscription 0xAD","subscription 0xC4"}.Any(l.Contains));
         Assert.DoesNotContain(lines, l => l.Contains("subscription 0xB4") || l.Contains("owned vector +8"));
     }
     // reach: unit (direct component/helper entry or substituted fixture state; complete production caller is not asserted).

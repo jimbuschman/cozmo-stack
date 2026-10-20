@@ -8,14 +8,13 @@ namespace Cozmo.Protocol.Tests;
 /// The decoder run against Cozmo's real animation assets.
 ///
 /// The assets are Anki's and the repository does not redistribute the OBB, so nothing is committed here.
-/// These tests locate the unpacked resources if they are present and skip if they are not, which means they
-/// are meaningful on a machine that has the OBB and silent on one that does not. Set
+/// These tests require the unpacked resources and fail clearly if they are absent. Set
 /// <c>COZMO_ASSETS</c> to point at the assets directory to override the search.
 /// </summary>
 public class AnimationAssetTests
 {
     /// <summary>The unpacked assets directory, or null when the OBB is not on this machine.</summary>
-    private static string? AssetsRoot()
+    private static string AssetsRoot()
     {
         var env = Environment.GetEnvironmentVariable("COZMO_ASSETS");
         if (!string.IsNullOrEmpty(env) && Directory.Exists(env)) return env;
@@ -28,28 +27,23 @@ public class AnimationAssetTests
             if (Directory.Exists(Path.Combine(candidate, "animations"))) return candidate;
             dir = dir.Parent;
         }
-        return null;
+        throw new DirectoryNotFoundException("Unpacked OBB assets required; set COZMO_ASSETS or install re-analysis/obb.");
     }
 
-    private static AnimationLibrary? Library()
+    private static AnimationLibrary Library()
     {
         var root = AssetsRoot();
-        return root is null ? null : AnimationLibrary.Open(root);
+        return AnimationLibrary.Open(root);
     }
 
     /// <summary>
-    /// Makes the skip visible. Without this a machine with no OBB would report every asset test as passing
-    /// when in fact none of them ran.
+    /// Requires the OBB, so missing local assets cannot produce a passing asset suite.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TheAssetTestsSayWhetherTheyActuallyRan()
     {
         var root = AssetsRoot();
-        if (root is null)
-        {
-            Assert.True(true, "no unpacked OBB on this machine, so the asset tests are skipping");
-            return;
-        }
         var lib = AnimationLibrary.Open(root);
         Assert.True(lib.ClipNames.Count > 0, $"assets found at {root} but no clips loaded");
     }
@@ -61,11 +55,11 @@ public class AnimationAssetTests
     /// keeps the odd canvas row of each pair before compressing it. This reads the same files and checks
     /// the frames are there and are not blank.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TheShippedFaceAnimationsLoadAsFrames()
     {
         var root = AssetsRoot();
-        if (root is null) return;
         var faces = FaceAnimationLibrary.Open(root);
         Assert.Equal(2, faces.Names.Count);
         Assert.Contains("face_bored_event_02", faces.Names);
@@ -83,11 +77,11 @@ public class AnimationAssetTests
     /// FaceAnimationKeyFrame::GetStreamMessage 0x004F97C8 does with its frame index and what IsDone
     /// 0x004F976C ends when the index reaches GetNumFrames.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void AClipWithAFaceAnimationTrackStreamsItsFrames()
     {
         var root = AssetsRoot();
-        if (root is null) return;
         var lib = AnimationLibrary.Open(root);
         var faces = FaceAnimationLibrary.Open(root);
         var clip = lib.GetClip("anim_bored_event_02");
@@ -124,11 +118,11 @@ public class AnimationAssetTests
         public void Finished(string clipName, bool completed) { }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TheShippedClipsAllDecode()
     {
         var lib = Library();
-        if (lib is null) return;                 // no OBB on this machine
 
         Assert.True(lib.ClipNames.Count > 200, $"expected the full animation set, found {lib.ClipNames.Count}");
 
@@ -168,11 +162,11 @@ public class AnimationAssetTests
         Assert.True(tracks.HasFlag(AnimationTrack.Lights));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void EveryProceduralFaceKeyframeCarriesNineteenParametersPerEye()
     {
         var lib = Library();
-        if (lib is null) return;
 
         int faces = 0;
         foreach (var name in lib.ClipNames)
@@ -185,12 +179,12 @@ public class AnimationAssetTests
         Assert.True(faces > 1000, $"only {faces} face keyframes found across the whole asset set");
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void AKnownClipDecodesToWhatTheAssetActuallyHolds()
     {
         var lib = Library();
-        if (lib is null) return;
-        if (!lib.HasClip("anim_bored_01")) return;
+        Assert.True(lib.HasClip("anim_bored_01"),"Shipped anim_bored_01 is required");
 
         var clip = lib.GetClip("anim_bored_01");
         Assert.Equal("anim_bored_01", clip.Name);
@@ -220,11 +214,11 @@ public class AnimationAssetTests
         Assert.Equal(1f, audio.Volume, 3);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TheBodyRadiusTokenIsKeptAsWrittenBecauseItIsAString()
     {
         var lib = Library();
-        if (lib is null) return;
 
         var tokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in lib.ClipNames)
@@ -240,11 +234,11 @@ public class AnimationAssetTests
         }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void AnimationGroupsLoadAndChooseOnlyRealClips()
     {
         var lib = Library();
-        if (lib is null) return;
 
         Assert.True(lib.GroupNames.Count > 10, $"only {lib.GroupNames.Count} groups loaded");
         var rnd = new Random(7);
@@ -273,12 +267,12 @@ public class AnimationAssetTests
     /// A file can hold more than one clip. anim_bored_01.bin holds anim_bored_01 and anim_bored_02, and
     /// indexing by filename alone left the second unreachable.
     /// </summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void EveryClipInsideAFileIsReachableNotJustTheOneNamedAfterIt()
     {
         var lib = Library();
-        if (lib is null) return;
-        if (!lib.HasClip("anim_bored_01")) return;
+        Assert.True(lib.HasClip("anim_bored_01"),"Shipped anim_bored_01 is required");
 
         Assert.True(lib.HasClip("anim_bored_02"), "anim_bored_02 lives inside anim_bored_01.bin");
         var second = lib.GetClip("anim_bored_02");
@@ -297,12 +291,12 @@ public class AnimationAssetTests
     }
 
     /// <summary>A real clip driven through the scheduler, to prove the timeline works on real data.</summary>
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void ARealClipPlaysThroughTheSchedulerOnItsOwnTimeline()
     {
         var lib = Library();
-        if (lib is null) return;
-        if (!lib.HasClip("anim_bored_01")) return;
+        Assert.True(lib.HasClip("anim_bored_01"),"Shipped anim_bored_01 is required");
 
         var clip = lib.GetClip("anim_bored_01");
         var fired = new List<Keyframe>();

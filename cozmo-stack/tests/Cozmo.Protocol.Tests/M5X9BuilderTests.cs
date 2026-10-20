@@ -41,6 +41,7 @@ public class M5X9BuilderTests : IDisposable
         Assert.DoesNotContain(entries, e => e.Key.EndsWith("MissingRadius"));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("\"bad\"")] [InlineData("[]")] [InlineData("{}")]
     public void NumericIncompatibleTypesSkipWholeFileWithoutFakeEngineError(string value)
@@ -59,6 +60,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root, true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("5", "Animation.DefineFromJson.FrameMissing", "frame 1 of 'c' animation is missing or incorrect type.")]
     [InlineData("{}", "Animation.DefineFromJson.FrameNameMissing", "Missing 'Name' field for frame 1 of 'c' animation.")]
@@ -71,6 +73,7 @@ public class M5X9BuilderTests : IDisposable
         Check(entries, key, EngineLogLevel.Error, null, text); Assert.Single(entries.Where(e => e.Level == EngineLogLevel.Error));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void TrackFailureUsesTheParentTailAndMissingTriggerStaysVisible()
     {
@@ -139,6 +142,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root, true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void ReadAsJsonErrorFlagThenConditionalDebugWithOwnedTextArgument()
     {
@@ -164,6 +168,7 @@ public class M5X9BuilderTests : IDisposable
         Assert.All(entries, e => { Assert.Equal(EngineLogLevel.Info,e.Level); Assert.Equal("Animations",e.Channel); Assert.Equal($"Found {10 + int.Parse(e.Text[^1..])} animation files of type {e.Text[^1..]}",e.Text); }); Assert.Empty(stack);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void EagerFaceLoadUsesByteSortGapFillAndBothShippedGrayscaleDepths()
     {
@@ -182,6 +187,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root,true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("a", "Could not find '.' in frame filename a")]
     [InlineData("a.png", "Could not find '_' in frame filename a.png")]
@@ -200,6 +206,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root,true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void FaceSizeFailureContinuesReservedNameRejectsAndOutOfRangeIsIsolated()
     {
@@ -229,6 +236,7 @@ public class M5X9BuilderTests : IDisposable
     }
     private sealed class Owner(Action release):IDisposable { public void Dispose()=>release(); }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void VerifyHasNoCallstackWritesAndFlushSeesErrorFlag()
     {
@@ -242,6 +250,7 @@ public class M5X9BuilderTests : IDisposable
         Assert.DoesNotContain(stack,s=>s.Contains("callstack"));
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void FrameGateAndFlushIgnoreHostCallbacksWhenRobotCountIsZero()
     {
@@ -252,6 +261,7 @@ public class M5X9BuilderTests : IDisposable
         Assert.True((bool)gate.Invoke(scheduler,new object[]{anim})!); Assert.Equal(0,scheduler.Advance(0)); Assert.Empty(entries);
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void FaceNameMissWarningIsSourceKeyedAndAuthoredJsonOverrideIsZero()
     {
@@ -291,6 +301,7 @@ public class M5X9BuilderTests : IDisposable
         Assert.Equal((byte)0,StreamAnimation.Of(parsed).FaceAnim.Current!.FaceAnimationOverride);
     }
 
+    // reach: production - live robot loader/constructor or public input with actual component wiring; fixture assets supplied where stated.
     [Fact]
     public void LiveLoaderOwnsAThreadAndFaceDecodeFollowsBackpackLoad()
     {
@@ -299,13 +310,12 @@ public class M5X9BuilderTests : IDisposable
         {
             File.WriteAllText(Path.Combine(root,"animations","c.json"),"{\"c\":[]}");
             File.WriteAllBytes(Path.Combine(root,"faceAnimations","f","f_0.png"),Png(128,64,1,255));
-            using var robot=CozmoRobot.CreateOffline(); int caller=Environment.CurrentManagedThreadId;
-            var threads=new ConcurrentQueue<int>(); var events=new ConcurrentQueue<string>();
-            robot.Engine.LogEntry+=e=>{if(e.Name=="RobotDataLoader.LoadAnimations.CannedAnimationsCount")threads.Enqueue(Environment.CurrentManagedThreadId);events.Enqueue(e.Name??"");};
-            robot.Engine.StackLogLine+=s=>{if(s.StartsWith("MISSING: M5-052 cv::imread"))events.Enqueue("face decode");};
+            using var robot=CozmoRobot.CreateOffline(engineOptions:new CozmoEngineOptions{ResourcesPath=root}); int caller=Environment.CurrentManagedThreadId;
+            var threads=new ConcurrentQueue<int>(); var events=new ConcurrentQueue<string>(); bool? faceAbsentAtBackpack=null;
+            robot.Engine.LogEntry+=e=>{if(e.Name=="RobotDataLoader.LoadAnimations.CannedAnimationsCount")threads.Enqueue(Environment.CurrentManagedThreadId);events.Enqueue(e.Name??"");if(e.Name=="RobotDataLoader.LoadBackpackLightAnimations.LoadTime")faceAbsentAtBackpack=robot.Animations.FaceAnimations is null;};
             robot.Animations.LoadFrom(root);
             Assert.NotEqual(caller,Assert.Single(threads));
-            var ordered=events.ToList(); Assert.True(ordered.IndexOf("face decode")>ordered.IndexOf("RobotDataLoader.LoadBackpackLightAnimations.LoadTime"));
+            Assert.Contains("RobotDataLoader.LoadBackpackLightAnimations.LoadTime",events);Assert.True(faceAbsentAtBackpack);
             Assert.Single(robot.Animations.FaceAnimations!.Variants("f")!);
         }
         finally{Directory.Delete(root,true);}
@@ -383,6 +393,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root,true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("-9223372036854775808","-9223372036854775808")]
     [InlineData("18446744073709551615","18446744073709551615")]
@@ -406,6 +417,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root,true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData("FaceAnimationKeyFrame","animName","[]")]
     [InlineData("FaceAnimationKeyFrame","animName","{}")]
@@ -425,6 +437,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root,true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData(16,0,0)] [InlineData(8,2,0)] [InlineData(8,0,1)]
     public void UnsupportedPngSkipsWithStackMissingAndNoEngineSizeError(int depth,int colour,int interlace)
@@ -443,6 +456,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root,true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory]
     [InlineData(999,false)] [InlineData(1000,true)] [InlineData(1001,true)]
     public void JsonDepthFatalUsesActiveValueDepthInsteadOfExceptionText(int containers,bool fatal)
@@ -459,6 +473,7 @@ public class M5X9BuilderTests : IDisposable
         finally { Directory.Delete(root,true); }
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void MalformedSecondBinaryTableRollsBackFirstRegistration()
     {

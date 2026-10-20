@@ -27,6 +27,7 @@ public sealed class M5X21BuilderTests
         public void Dispose(){Rig.Dispose();Directory.Delete(Root,true);EngineErrorState.ErrorFlagSet=_oldError;}
     }
 
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void ReadAsJsonFalseEmptiesMapAndUsesItsOwnErrorFlagWithoutCrashSkip()
     {
@@ -36,6 +37,7 @@ public sealed class M5X21BuilderTests
         Assert.Equal(EngineLogLevel.Error,log.Level);Assert.Null(log.Channel);Assert.EndsWith($"Failed to read [{f.Map}]",log.Text);
         Assert.True(EngineErrorState.ErrorFlagSet);Assert.DoesNotContain(f.Stack,l=>l.Contains("M1-034"));
     }
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory] [InlineData("{}")] [InlineData("null")]
     public void MissingPairsLeavesANonnullEmptyContainerSilently(string json)
     {
@@ -44,6 +46,7 @@ public sealed class M5X21BuilderTests
         Assert.False(EngineErrorState.ErrorFlagSet);Assert.DoesNotContain(f.Logs,l=>l.Level is EngineLogLevel.Error or EngineLogLevel.Warning);
         Assert.DoesNotContain(f.Stack,l=>l.Contains("M1-034"));
     }
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void IntegerCladEventUsesAsStringAndDoesNotBecomeAnEnumOrDiscardOtherPairs()
     {
@@ -54,6 +57,7 @@ public sealed class M5X21BuilderTests
         Assert.Null(map.GroupFor((AnimationTrigger)1));Assert.Equal("after",map.GroupFor(AnimationTrigger.DriveStartHappy));
         Assert.False(EngineErrorState.ErrorFlagSet);Assert.DoesNotContain(f.Stack,l=>l.Contains("M1-034"));
     }
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Theory] [InlineData("[]")] [InlineData("5")] [InlineData("true")]
     public void NonObjectIsMemberTerminationKeepsPriorMapWithVisiblePolicySkip(string json)
     {
@@ -62,6 +66,7 @@ public sealed class M5X21BuilderTests
         Assert.Single(f.Stack.Where(l=>l.Contains("M1-034 / M7-002")&&l.Contains("0x006704A0")));
         Assert.DoesNotContain(f.Logs,l=>l.Name=="DataPlatform.readAsJson");Assert.False(EngineErrorState.ErrorFlagSet);
     }
+    // reach: unit (direct loader/streamer/helper or authored fixture inputs; complete robot entry and native producers are not claimed).
     [Fact]
     public void AThrowingFreeplayLoadLeavesBothPreviousDrivingInputsUntouched()
     {
