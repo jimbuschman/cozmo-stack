@@ -99,7 +99,7 @@ Return the **whole bundle folder** to the manager. The script does not classify 
 behavior. The manager traces any failing path and reviews evidence before deciding corrections or acceptance.
 
 
-## Dated correction — B-M5-24, 2026-10-20
+## Dated correction - B-M5-24, 2026-10-20
 
 The original no-End claim for ProceduralLive was a harness error (checked first-run judgement section 1).
 KEEP_ALIVE now retains chronological FF Start/End pairs, burst spans and restart gaps. It requires repeated
@@ -114,7 +114,7 @@ Start may precede the window. Failure to observe the prerequisites is INCONCLUSI
 case, not a no-End rule for all idle states. Hardware-only M5-036 and operator observations remain unresolved.
 Historical run results and the validation history above are preserved. An operator rerun is required.
 
-## Dated correction — B-M5-25, 2026-10-20
+## Dated correction - B-M5-25, 2026-10-20
 
 Abort leftovers are now anchored after the actual outbound Abort submessage, with raw frame line, ordinal,
 reliable sequence and connection epoch retained. A timestamp alone cannot order data within a datagram.
