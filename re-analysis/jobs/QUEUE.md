@@ -105,7 +105,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 37 | [B-M5-20](B-M5-20.md) | done 166a157e; Opus check PASS (research/20261015-b-m5-20-pass.md); queued items in B-M5-21 |
 | 36a | [B-M3M4-29](B-M3M4-29.md) | done 37dfcdfd; Opus check PASS (research/20261015-b-m3m4-29-pass.md); hardware tools construct again |
 | 36b | [B-M5-21](B-M5-21.md) | done 31e05384; Opus check FAIL (live trigger map single-file; missing members dropped; crash inputs escape; research/20261015-b-m5-21-check.md); fixes in B-M5-22 |
-| 36c | [B-M5-22](B-M5-22.md) | DONE per status/B-M5-22.md (multi-file trigger container M5-034; JsonCpp missing/null members; M1-034 per-file skips) |
+| 36c | [B-M5-22](B-M5-22.md) | done 30576f80; Opus check PASS (research/20261019-b-m5-22-check.md); six queued items for the next M5 job |
 | 38 | [B-M2M15-1](B-M2M15-1.md) | BLOCKED per status/B-M2M15-1.md (UnlockId table and InitConfig, M15-044; handler bodies, M2-023) |
 | 39 | [B-M11-2](B-M11-2.md) | DONE per status/B-M11-2.md (RobotDelocalized recipients M11-072; GetParent/FindRoot M11-076) |
 | 40 | [B-M12-3](B-M12-3.md) | DONE per status/B-M12-3.md (lift pose M12-027; dock registration M12-034; cube-light callback M4-049; PlaceRel producers M12-028, helper M12-042; approach angle M12-039; PreActionPose fields M12-038/M12-001; docking lifetime M12-040/M12-018); Opus check FAIL (retirement race; research/20261016-b-m12-3-check.md), fixes in B-M12-7 |
