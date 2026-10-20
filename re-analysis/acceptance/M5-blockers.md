@@ -29,6 +29,21 @@ Logs: M5-013's BufferFaceToSend key/text (B-LOG-1, HELD as cleanup) is not on th
 
 ## Sequence
 
+**Handoff (manager, 2026-10-20; Claude out of usage until Thursday).** The operator ran `m5-hw` (first run) and reported
+"honestly, nothing is seeming quite right", answering the neutral-eyes prompts `unclear`. No specifics yet. Whoever
+judges the bundle (`acceptance/hardware/<timestamp>-M5-HW-*`):
+1. Follow AGENTS.md "Required workflow for every hardware failure" before any code change: trace each failing check's
+   production path, classify (implementation bug, source gap, hardware-only unknown, blocked external, test/harness bug).
+2. Judge from `frames.jsonl` (raw, authoritative), `messages.jsonl`, `events.jsonl` (startup logs, MISSINGs,
+   handler faults, AnimationState counters) and `result.json`, against the source rows in
+   `research/20261019-m5-settling-b.md` "Hardware coverage" and each check's `verdictRule`. Operator answers are
+   observations, not verdicts.
+3. Look first for a common cause (every check looking wrong suggests one): face images reaching the robot at all
+   (AnimFaceImage on the wire, ClientDropCount), animation Start/End and robot echoes, handler faults, readiness.
+4. TEARDOWN: judge animation traffic between Dispose start and end (ClearSendBuffer 0x0057AF58), not "no data after".
+5. Write the judgement as the bundle's README (model: `hardware/20261019-182707-M3M4-HW/README.md`); fixes become
+   jobs; M5 is ACCEPTED only when every check is as source and M5-036 is observed.
+
 **Update (2026-10-20): M5 hardware script reviewed** (`hardware/scripts/m5-hw-1.md`, tool `m5-hw`, built by Codex). Approved
 for the operator's run after one manager fix: LOCKED_HEAD locked mask 4 (BODY_TRACK) instead of HEAD_TRACK (1). Noted for
 judging: TEARDOWN's "no data after Dispose" is near-tautological (the transport is closed); judge the clip's animation
