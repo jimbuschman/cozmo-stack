@@ -9,6 +9,53 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    // Optional independently observed enqueue/generation origin. Raw first-send time is insufficient.
+    public sealed record TeardownOrigin(int FrameLine, int SubmessageOrdinal, string Origin, double OriginAtMs);
+
+    public static JsonObject Teardown(IEnumerable<M5Hw.WireMessage> messages, IEnumerable<JsonObject> events,
+        double beginMs, double endMs, bool completed, IReadOnlyList<TeardownOrigin>? origins = null)
+    {
+        var raw = messages.Where(m => m.Payload.Length > 0).OrderBy(m => m.AtMs).ThenBy(m => m.FrameLine).ThenBy(m => m.SubmessageOrdinal).ToArray();
+        var unique = OrderedUnique(raw).ToArray();
+        var first = new HashSet<M5Hw.WireMessage>(unique, ReferenceEqualityComparer.Instance);
+        var during = unique.Where(m => !m.IsRetransmission && m.Outbound && m.AtMs >= beginMs && m.AtMs <= endMs).ToArray();
+        var resends = raw.Where(m => m.Outbound && m.AtMs >= beginMs && m.AtMs <= endMs
+            && (m.IsRetransmission || !first.Contains(m))).ToArray();
+        var markers = events.Where(e => e["kind"]?.GetValue<string>() == "engine-log"
+            && e["name"]?.GetValue<string>() == "AnimationStreamer.ClearSendBuffer"
+            && e["text"]?.GetValue<string>()?.StartsWith("Clearing unsent ", StringComparison.Ordinal) == true
+            && e["atMs"]!.GetValue<double>() >= beginMs && e["atMs"]!.GetValue<double>() <= endMs).ToArray();
+        var candidates = new JsonArray(); int unknown = 0, flush = 0, queued = 0;
+        foreach (var m in during.Where(m => m.Payload[0] is >= 0x8E and <= 0x9B))
+        {
+            var evidence = origins?.Where(o => o.FrameLine == m.FrameLine && o.SubmessageOrdinal == m.SubmessageOrdinal).ToArray();
+            var origin = evidence?.Length == 1 ? evidence[0] : null;
+            string classification;
+            if (origin is { Origin: "queued-before-dispose" } && origin.OriginAtMs <= beginMs)
+            { classification = "PREQUEUED_FIRST_SEND"; queued++; }
+            else if (origin is { Origin: "streamer-final-flush" } && origin.OriginAtMs >= beginMs && origin.OriginAtMs <= endMs)
+            { classification = "OBSERVED_STREAMER_FINAL_FLUSH"; flush++; }
+            else { classification = "UNKNOWN_ENQUEUE_OR_GENERATION_ORIGIN"; unknown++; }
+            candidates.Add(new JsonObject { ["wire"] = WireEvidence(new[] { m }), ["classification"] = classification,
+                ["origin"] = origin?.Origin, ["originAtMs"] = origin?.OriginAtMs });
+        }
+        return new JsonObject
+        {
+            ["verdict"] = flush > 0 ? "OBSERVED_STREAMER_FINAL_FLUSH" : !completed || endMs <= beginMs
+                || unknown > 0 || markers.Length == 0 ? "INCONCLUSIVE" : "OBSERVED_DISPOSE_DISCARD_INTERVAL",
+            ["disposeBeginMs"] = beginMs, ["disposeEndMs"] = endMs, ["disposeCompleted"] = completed,
+            ["retransmissionsDuringDispose"] = WireEvidence(resends), ["newOutboundDuringDispose"] = WireEvidence(during),
+            ["abortAllPrefixCandidates"] = WireEvidence(during.Where(m => m.Payload[0] == 0x8D)),
+            ["animationDataCandidates"] = candidates, ["unknownOrigins"] = unknown,
+            ["knownPrequeuedFirstSends"] = queued, ["observedStreamerFlushes"] = flush,
+            ["streamerDiscardMarkers"] = new JsonArray(markers.Select(e => e.DeepClone()).ToArray()),
+            ["beforeWindow"] = WireEvidence(raw.Where(m => m.AtMs >= beginMs - 1000 && m.AtMs < beginMs)),
+            ["afterWindow"] = WireEvidence(raw.Where(m => m.AtMs > endMs && m.AtMs <= endMs + 1000)),
+            ["queueOriginNote"] = "Retransmissions are identified from full raw history. A first wire send during Dispose may have been queued before it; enqueue/generation provenance is not publicly exposed. Unknown origin is inconclusive, never inferred as a destructor flush.",
+            ["verdictRule"] = "M4-026 AbortAll precedes M5-022/037 streamer teardown. Abort is retained as prefix traffic, not classified as a final flush by tag alone. ClearSendBuffer logs/discards pending messages without sending. Require a completed Dispose interval and discard marker; retain before/after windows. Post-close silence alone proves neither discard nor destructor fidelity. Cache assertions and all other teardown scope remain separate."
+        };
+    }
+
     // Coherent means independently captured actual remaining allowances at the send gate, not a
     // subtraction of an old delivered F1 payload from later stream totals. No public runtime join exists.
     public sealed record BudgetAdmission(double AtMs, long Epoch, byte MessageId, int MessageBytes,
@@ -207,7 +254,7 @@ public static class M5HwAnalysis
 
     public sealed record CapturedFrame(int Line, double AtMs, bool Outbound, Frame? Frame);
 
-    public static IEnumerable<M5Hw.WireMessage> ReadWire(IEnumerable<CapturedFrame> frames)
+    public static IEnumerable<M5Hw.WireMessage> ReadWire(IEnumerable<CapturedFrame> frames, bool includeRetransmissions = false)
     {
         var seenOut = new HashSet<ushort>(); var seenIn = new HashSet<ushort>();
         int outEpoch = 0, inEpoch = 0;
@@ -221,13 +268,15 @@ public static class M5HwAnalysis
                 { seen.Clear(); if (capture.Outbound) outEpoch++; else inEpoch++; continue; }
                 if (m.Type is not (ReliableMessageType.SingleReliableMessage or ReliableMessageType.SingleUnreliableMessage)
                     || m.Payload.Length == 0) continue;
+                bool retransmission = false;
                 if (m.IsReliable)
                 {
-                    if (!seen.Add(m.Seq)) continue;
+                    retransmission = !seen.Add(m.Seq);
+                    if (retransmission && !includeRetransmissions) continue;
                     if (seen.Count > 8192) seen.RemoveWhere(old => unchecked((ushort)(m.Seq - old)) > 4096);
                 }
                 yield return new(capture.AtMs, capture.Outbound, m.Payload, capture.Line, ordinal,
-                    m.IsReliable ? m.Seq : null, capture.Outbound ? outEpoch : inEpoch);
+                    m.IsReliable ? m.Seq : null, capture.Outbound ? outEpoch : inEpoch, retransmission);
             }
         }
     }
@@ -251,7 +300,8 @@ public static class M5HwAnalysis
     public static JsonArray WireEvidence(IEnumerable<M5Hw.WireMessage> messages) => new(messages.Select(m =>
         (JsonNode)new JsonObject { ["atMs"] = m.AtMs, ["payloadHex"] = Convert.ToHexString(m.Payload),
             ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal,
-            ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }).ToArray());
+            ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch,
+            ["isRetransmission"] = m.IsRetransmission }).ToArray());
 
     public static JsonObject LiveBursts(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs)
     {

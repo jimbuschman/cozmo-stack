@@ -32,7 +32,7 @@ public static class M5Hw
         new("PARAMETERS", "Uncapped 45000 ms blink maximum over 60 seconds", new[]{"M5-062","M5-028","M5-036","M3-008"}),
         new("DRIVING", "Short DriveToPose and driving animation sequence", new[]{"M5-063","M12-024","M7-026","M15-001","M8-020","M8-021"}),
         new("SLEEP", "Sleep deadline fallback and known action gap", new[]{"M5-038","M1-045","M8-017","M8-020","M8-021"}),
-        new("TEARDOWN", "Dispose during clip, cache cleanup and quiet wire", new[]{"M5-037","M5-053","M5-055","M5-059","M5-060"}),
+        new("TEARDOWN", "Dispose interval, discarded buffer and transport provenance", new[]{"M5-037","M5-053","M5-055","M5-059","M5-060","M5-022","M4-026","M5-036","M6-042"}),
     };
     public static readonly string[] RecordIds = Checks.SelectMany(x => x.Records).Distinct().ToArray();
     public static string? CheckDefinitionProblem() => Checks.SelectMany(x => x.Records).Except(RecordIds).Any() || RecordIds.Except(Checks.SelectMany(x => x.Records)).Any() ? "check/record mismatch" : null;
@@ -59,7 +59,7 @@ public static class M5Hw
         new("BLINKS", "face screen", "For sixty seconds, watch the eyes briefly close and reopen (blink). Sideways/up-down eye shifts are darts, not blinks. An old scheduled blink may happen first; later blink spacing is requested at about44-45 seconds. No movement idle is pushed. Report timing you actually saw or choose unclear/not-observed.")
     };
     public sealed record WireMessage(double AtMs, bool Outbound, byte[] Payload,
-        int FrameLine = 0, int SubmessageOrdinal = 0, ushort? ReliableSequence = null, int ConnectionEpoch = 0);
+        int FrameLine = 0, int SubmessageOrdinal = 0, ushort? ReliableSequence = null, int ConnectionEpoch = 0, bool IsRetransmission = false);
     public static JsonObject GradeAbort(IEnumerable<WireMessage> messages, double cancelMs, double quietEndMs)
     {
         var all = M5HwAnalysis.OrderedUnique(messages).ToArray();
@@ -246,10 +246,10 @@ internal sealed class M5Run
         Console.WriteLine("M5 observations saved: " + bundle + "\nNo record settled; return this whole folder for review.");
         return errors.Count == 0 && results.Count == 11 && results.All(x => x["verdict"]!.GetValue<string>() != "INCONCLUSIVE") ? 0 : 1;
     }
-    List<M5Hw.WireMessage> Wire(double from = 0, double to = double.MaxValue)
+    List<M5Hw.WireMessage> Wire(double from = 0, double to = double.MaxValue, bool includeRetransmissions = false)
     {
         return M5HwAnalysis.ReadWire(frames.ToArray().Select((f, index) =>
-            new M5HwAnalysis.CapturedFrame(index + 1, f.T, f.Out, f.Frame)))
+            new M5HwAnalysis.CapturedFrame(index + 1, f.T, f.Out, f.Frame)), includeRetransmissions)
             .Where(m => m.AtMs >= from && m.AtMs <= to).ToList();
     }
     AnimationClip? Clip(uint min = 1000, uint max = 10000, AnimationTrack required = AnimationTrack.Face)
@@ -494,8 +494,17 @@ internal sealed class M5Run
             case "TEARDOWN":
                 {
                     var c = Clip(4000, 12000); if (c is null) return Missing("No long clip for Dispose-during-play"); Play(c); Wait(750); File.WriteAllText(Path.Combine(cache, "TestAnim.json"), "{}");
-                    double before = Now; DisposeBounded(); double after = Now; Thread.Sleep(1000);
-                    var late = Wire(after).Where(x => x.Outbound).ToArray(); var result = Observe("No outbound data after Dispose completes; teardown batch may contain stop/disconnect. DisconnectRequest is not required because M1-006 pacing may retain it."); result["disposeStartMs"] = before; result["disposeEndMs"] = after; result["lateMessages"] = late.Length; result["cacheRemovedOnConstruction"] = cacheCtor; result["cacheRemovedOnDispose"] = !File.Exists(Path.Combine(cache, "TestAnim.json")); if (!disposeCompleted || late.Length > 0 || !cacheCtor || File.Exists(Path.Combine(cache, "TestAnim.json"))) result["verdict"] = "INCONCLUSIVE"; return result;
+                    double requestAt = Now; Event("dispose-request", new()); DisposeBounded(); Thread.Sleep(1000);
+                    var begin = events.LastOrDefault(e => e["kind"]?.GetValue<string>() == "dispose-begin");
+                    var end = events.LastOrDefault(e => e["kind"]?.GetValue<string>() == "dispose-end");
+                    if (begin is null || end is null) return Missing("No complete actual Dispose call interval; request/timeout is not destruction evidence");
+                    double beginMs = begin["atMs"]!.GetValue<double>(), endMs = end["atMs"]!.GetValue<double>();
+                    var result = M5HwAnalysis.Teardown(Wire(includeRetransmissions: true), events, beginMs, endMs, disposeCompleted);
+                    result["intervalVerdict"] = result["verdict"]!.DeepClone(); result["disposeRequestAtMs"] = requestAt;
+                    result["cacheRemovedOnConstruction"] = cacheCtor; result["cacheRemovedOnDispose"] = !File.Exists(Path.Combine(cache, "TestAnim.json"));
+                    result["postDisposeOutboundDiagnostic"] = M5HwAnalysis.WireEvidence(Wire(endMs, endMs + 1000).Where(m => m.Outbound && m.AtMs > endMs));
+                    if (!cacheCtor || File.Exists(Path.Combine(cache, "TestAnim.json"))) result["verdict"] = "INCONCLUSIVE";
+                    return result;
                 }
             default: return Missing("No implementation");
         }
@@ -503,9 +512,16 @@ internal sealed class M5Run
     void DisposeBounded()
     {
         if (disposed || robot is null) return; disposed = true; var r = robot;
-        var task = Task.Run(() => { try { r.Dispose(); } catch (Exception e) { lock (errors) errors.Enqueue("Dispose: " + e); } });
-        disposeCompleted = task.Wait(5000); if (!disposeCompleted) { lock (errors) errors.Enqueue("Dispose did not finish in 5 seconds; quiet-wire result invalid"); }
-        Event("dispose-returned", new() { ["completed"] = task.IsCompleted });
+        var task = Task.Run(() =>
+        {
+            bool success = false; Event("dispose-begin", new());
+            try { r.Dispose(); success = true; return true; }
+            catch (Exception e) { errors.Enqueue("Dispose: " + e); return false; }
+            finally { Event("dispose-end", new() { ["success"] = success }); }
+        });
+        bool finished = task.Wait(5000); disposeCompleted = finished && task.GetAwaiter().GetResult();
+        if (!finished) errors.Enqueue("Dispose did not finish in 5 seconds; destruction interval incomplete");
+        Event("dispose-returned", new() { ["completed"] = finished, ["success"] = disposeCompleted });
     }
     void WriteBundle()
     {

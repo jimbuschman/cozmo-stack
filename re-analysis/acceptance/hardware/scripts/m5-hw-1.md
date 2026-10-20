@@ -69,7 +69,7 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are 
 | PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
 | DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Failure to reach the triplet is incomplete evidence, not a replacement implementation. |
 | SLEEP | Public StartIdleTimeout(0.2,-1), observe visible MISSING and GoToSleepRequested; cancel timer. Capture new animation starts and logs for absence of sleep-child actions. | M5-038/M1-045; D2/D5/D4 are factory requests, not robot message IDs. The M8 action gap stays open. |
-| TEARDOWN | Dispose during a long clip; verify stale TestAnim.json deleted on construction and Dispose; observe no data after Dispose completion. | M5-037/053/055/059. Teardown batch may contain stop/disconnect; M1-006 pacing may prevent a DisconnectRequest reaching the wire. |
+| TEARDOWN | Dispose during a long clip; verify stale TestAnim.json deleted on construction and Dispose; grade the actual Dispose-call interval with discard markers, reliable identities and queue-origin limits; post-close silence is diagnostic. | M5-037/053/055/059. Teardown batch may contain stop/disconnect; M1-006 pacing may prevent a DisconnectRequest reaching the wire. |
 
 All stimulus intervals and the drive distance are harness choices, not recovered engine constants.
 Clip selection is deterministic by duration then name, excluding body tracks; selected names, durations and track
@@ -199,3 +199,24 @@ M6-042 and M5-036 uncertainty remain embedded.
 Manager-queued B-M5-27 cleanup is folded here: an incomplete/aborted marked observation phase emits its
 END with an incomplete outcome/reason before continuing/teardown. It does not ask a positive question or
 extend native settings/locks on failure. Historical bundles are unchanged.
+
+## Dated teardown correction - B-M5-30, 2026-10-20
+
+TEARDOWN records the request separately from begin/end inside the worker actually calling Dispose.
+A thrown/timeout Dispose is incomplete. Cache deletion checks at construction/destruction remain.
+Analysis retains raw retransmissions, unique traffic during destruction, discard diagnostics and bounded
+one-second before/after windows. An Abort inside Dispose is prefix traffic to investigate under M4-026/
+M5-022, not a streamer final flush inferred from its tag. M5-037 ClearSendBuffer discards rather than sends.
+
+The raw full-history reader identifies old reliable retransmissions. A newly observed face/audio/etc packet
+during Dispose can still have been queued earlier; without independent origin evidence it is INCONCLUSIVE.
+No queue/destructor hook or invented enqueue timestamp is added. Independently supplied origin observations
+can separate prequeued first sends and a forbidden newly generated streamer flush. Current live captures
+cannot provide that origin for a new candidate packet. Raw frames remain authoritative.
+
+A completed interval with a real engine ClearSendBuffer discard marker and no unassigned/forbidden new
+animation data is a bounded discard observation, not full destructor or hardware acceptance. No marker can
+also mean the buffer was already empty; that discard branch is then unobserved, not proven faulty.
+No-data-after-transport-close is retained as a diagnostic and never the sole positive criterion.
+Historical run bounds are host request/return measurements; its replay does not fabricate the new exact
+worker-call markers. Operator rerun/review and unresolved queue provenance remain explicit.
