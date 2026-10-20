@@ -29,6 +29,11 @@ Logs: M5-013's BufferFaceToSend key/text (B-LOG-1, HELD as cleanup) is not on th
 
 ## Sequence
 
+**Update (2026-10-20): M5 hardware script reviewed** (`hardware/scripts/m5-hw-1.md`, tool `m5-hw`, built by Codex). Approved
+for the operator's run after one manager fix: LOCKED_HEAD locked mask 4 (BODY_TRACK) instead of HEAD_TRACK (1). Noted for
+judging: TEARDOWN's "no data after Dispose" is near-tautological (the transport is closed); judge the clip's animation
+traffic between Dispose start and end (ClearSendBuffer 0x0057AF58) from frames.jsonl instead.
+
 **Update (2026-10-19): B-M5-23 Opus check PASS** (`research/20261019-b-m5-23-check.md`). M5-011, M5-014, M5-030 settled
 EXACT_SOURCE (mood and mood clock are M7-026's by the cross-layer rule). M5 holds no gap records; left: M5-036 and the
 M5 hardware script (pass B's 11-item list), the operator's run, ACCEPTED.
