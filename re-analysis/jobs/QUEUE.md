@@ -166,8 +166,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s1 | [B-M5-25](B-M5-25.md) | done a9334fee; Codex bounded review PASS (research/20261020-b-m5-25-check.md); cleanup queued, operator rerun required |
 | 61w3s2 | [B-M5-26](B-M5-26.md) | done99965613; Codex bounded review PASS (research/20261020-b-m5-26-check.md); finite-layer diagnostic gap retained, operator rerun required |
 | 61w3s3 | [B-M5-27](B-M5-27.md) | done b23ce509; Codex bounded review PASS (research/20261020-b-m5-27-check.md); cleanup queued, operator rerun required |
-| 61w3s4 | [B-M5-28](B-M5-28.md) | CLAIMED per status/B-M5-28.md (58b4c484); review pending; objective blink evidence, operator rerun required |
-| 61w3s5 | [B-M5-29](B-M5-29.md) | open — Separate delivered-state snapshots from budget admission; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s4 | [B-M5-28](B-M5-28.md) | done7362c2da; Codex bounded review PASS (research/20261020-b-m5-28-check.md); generation diagnostic gap retained, operator rerun required |
+| 61w3s5 | [B-M5-29](B-M5-29.md) | CLAIMED per status/B-M5-29.md (3b67e0c8); review pending; coherent audio-budget epochs, operator rerun required |
 | 61w3s6 | [B-M5-30](B-M5-30.md) | open — Judge teardown during destruction with queue provenance; Codex HW judgement 2026-10-20; harness only, operator rerun required |
 | 61w3s7 | [B-M5-31](B-M5-31.md) | open — Make driving-phase expectations conditional on action result; Codex HW judgement 2026-10-20; harness only, operator rerun required |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
