@@ -8,12 +8,12 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 
 | status | records |
 | --- | ---: |
-| EXACT_SOURCE | 236 |
+| EXACT_SOURCE | 239 |
 | EQUIVALENT_IMPLEMENTATION | 6 |
 | COMPATIBILITY_POLICY | 68 |
 | HARDWARE_ONLY | 14 |
 | BLOCKED_EXTERNAL | 2 |
-| IMPLEMENTATION_GAP | 357 |
+| IMPLEMENTATION_GAP | 354 |
 | RECOVERABLE_GAP | 23 |
 | **total** | **706** |
 
@@ -25,7 +25,7 @@ Counts are read from the manifest. A status says what the evidence supports; it 
 | M2-protocol | ACCEPTED | 2026-10-18 | 24 | 22 | 2 | 0 | 0 | 0 | 0 |
 | M3-device | ACCEPTED | 2026-10-18 | 64 | 39 | 21 | 4 | 0 | 0 | 0 |
 | M4-control | ACCEPTED | 2026-10-19 | 52 | 40 | 9 | 3 | 0 | 0 | 0 |
-| M5-animation | INVENTORY_APPROVED | 2026-10-19 | 65 | 50 | 11 | 1 | 3 | 0 | 3 |
+| M5-animation | INVENTORY_APPROVED | 2026-10-19 | 65 | 53 | 11 | 1 | 0 | 0 | 0 |
 | M6-wwise-bank | INVENTORY_APPROVED | 2026-10-18 | 45 | 1 | 2 | 0 | 38 | 4 | 41 |
 | M7-behaviour | INVENTORY_APPROVED | 2026-10-16 | 29 | 4 | 0 | 0 | 23 | 2 | 24 |
 | M8-framework | INVENTORY_APPROVED | 2026-10-16 | 27 | 0 | 1 | 0 | 24 | 2 | 26 |

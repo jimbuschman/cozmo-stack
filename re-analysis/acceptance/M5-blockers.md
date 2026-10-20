@@ -29,6 +29,10 @@ Logs: M5-013's BufferFaceToSend key/text (B-LOG-1, HELD as cleanup) is not on th
 
 ## Sequence
 
+**Update (2026-10-19): B-M5-23 Opus check PASS** (`research/20261019-b-m5-23-check.md`). M5-011, M5-014, M5-030 settled
+EXACT_SOURCE (mood and mood clock are M7-026's by the cross-layer rule). M5 holds no gap records; left: M5-036 and the
+M5 hardware script (pass B's 11-item list), the operator's run, ACCEPTED.
+
 **Update (2026-10-19, settling passes adopted).** Both FAIL on one defect (`research/20261019-m5-settling-a.md`, `-b.md`):
 the group draw (M5-011, M5-014) and live idle (M5-030) read the raw reported head angle with a 0 fallback, where the
 engine reads robot+0x2FC (`Motion.HeadAngleRad`, −25° until calibrated). The manager confirmed it in the code.
