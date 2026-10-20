@@ -38,6 +38,7 @@ public class M5HwAbortTests
         Assert.Contains(result["postAbortMessages"]!.AsArray(), m => m!["frameLine"]!.GetValue<int>() == 569 && m["reliableSequence"]!.GetValue<ushort>() == 396);
     }
 
+    // Face97,01 fixtures below recognize tags/identity only, not valid face serialization.
     // reach: unit (synthetic same-datagram order/retransmissions substitute hardware transport).
     [Fact]
     public void OrdinalNotTimestampSeparatesSameDatagramDataAndRetransmissionCountsOnce()

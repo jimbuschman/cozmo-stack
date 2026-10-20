@@ -25,7 +25,7 @@ public static class M5Hw
         new("TAGS", "Three plays: wire start tags and robot echoes", new[]{"M5-008","M5-036"}),
         new("ABORT", "Mid-stream cancellation and robot counters", new[]{"M5-023","M5-036"}),
         new("KEEP_ALIVE", "Neutral replay, live bursts and persistent face stream", new[]{"M5-010","M5-027","M5-028","M5-029","M5-030","M5-036","M5-057"}),
-        new("LOCKED_HEAD", "Head keyframes still stream while head track is locked", new[]{"M5-036","M4-047"}),
+        new("LOCKED_HEAD", "Head keyframes still stream while head track is locked", new[]{"M4-014","M4-047","M5-035","M5-036"}),
         new("AUDIO", "744-byte samples, silence, counters and pacing", new[]{"M5-008","M5-036","M3-012","M6-042"}),
         new("LAYERS", "Face and backpack layer traffic", new[]{"M5-028","M5-029","M5-031","M5-032","M5-036"}),
         new("LIVE_IDLE", "Calibrated head input and default wiggles", new[]{"M5-030","M5-057","M5-036"}),
@@ -50,6 +50,14 @@ public static class M5Hw
         string found = M3M4Hw.NormaliseAnswer(normal, choices);
         return choices.Contains(found) ? found : answer.Trim();
     }
+    public sealed record ObservationPlan(string Id, string Watch, string Expected);
+    public static readonly ObservationPlan[] ObservationPlans = {
+        new("CANCEL", "face screen, head and lift", "A shipped clip plays briefly and is cancelled. Watch its activity stop; afterward the face may return to the loaded resting-eye reference. Compare the two rounded eye shapes in neutral-reference.svg. A brief close/reopen is a blink; a shift of eye positions is an eye dart. Those are separate from continued clip activity. No body-driving clip is selected."),
+        new("LIVE", "head, lift and wheel/body movement", "Default ProceduralLive may make small head/lift movements and body wiggles. Watch only this ten-second window; the idle will be removed at its end before questions. Face eye darts and blinks are separate observations."),
+        new("LOCKED", "head angle", "The head is locked at its starting angle while a shipped head-animation clip plays. Face/lift may animate. Judge the head only between START and END LOCKED; ignore motion before START and after the announced UNLOCK."),
+        new("LAYERS", "face screen and five backpack lights separately", "A short distortion pulse may briefly shift or distort the face image and change backpack lights. Face and backpack need not start or finish together. Watch each separately only between START and END LAYERS."),
+        new("BLINKS", "face screen", "For sixty seconds, watch the eyes briefly close and reopen (blink). Sideways/up-down eye shifts are darts, not blinks. An old scheduled blink may happen first; later blink spacing is requested at about44-45 seconds. No movement idle is pushed. Report timing you actually saw or choose unclear/not-observed.")
+    };
     public sealed record WireMessage(double AtMs, bool Outbound, byte[] Payload,
         int FrameLine = 0, int SubmessageOrdinal = 0, ushort? ReliableSequence = null, int ConnectionEpoch = 0);
     public static JsonObject GradeAbort(IEnumerable<WireMessage> messages, double cancelMs, double quietEndMs)
@@ -124,6 +132,7 @@ internal sealed class M5Run
     readonly Stopwatch clock = Stopwatch.StartNew(); readonly ConcurrentQueue<JsonObject> events = new(); readonly ConcurrentQueue<(double T, bool Out, byte[] Raw, Frame? Frame, string? Error)> frames = new();
     readonly List<JsonObject> results = new(); readonly ConcurrentQueue<string> errors = new(); readonly CancellationTokenSource cancel = new();
     CozmoRobot? robot; RobotConnectionResponse? response; bool disposed, disposeCompleted, connected; string cache = ""; bool cacheCtor;
+    JsonObject neutralReference = new();
     double Now => clock.Elapsed.TotalMilliseconds;
     public M5Run(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, HashSet<string>? only, bool yes, bool drive)
     { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.only = only; this.yes = yes; this.drive = drive; }
@@ -133,7 +142,54 @@ internal sealed class M5Run
     JsonObject Observe(string note) => new() { ["verdict"] = "OBSERVED_CAPTURE", ["verdictRule"] = note };
     JsonObject Missing(string note) => new() { ["verdict"] = "INCONCLUSIVE", ["missing"] = note };
     string? ReadLineBounded() { var read = Task.Run(Console.ReadLine); while (!read.IsCompleted) { if (cancel.IsCancellationRequested) return null; Thread.Sleep(50); } return read.GetAwaiter().GetResult(); }
-    string? Ask(string question, string[] choices) { Console.WriteLine(question + " [" + string.Join(" / ", choices) + "]"); if (yes) return null; return M5Hw.NormaliseAnswer(ReadLineBounded() ?? "", choices); }
+    JsonObject BeginWindow(string check, string phase)
+    {
+        var plan = M5Hw.ObservationPlans.Single(p => p.Id == phase);
+        Console.WriteLine($"Watch {plan.Watch}. {plan.Expected}");
+        if (phase == "CANCEL") Console.WriteLine("Engine-derived reference (not proof of firmware display): " + Path.Combine(bundle, "neutral-reference.svg"));
+        double from = Now;
+        var window = new JsonObject { ["check"] = check, ["phase"] = phase, ["watch"] = plan.Watch,
+            ["expected"] = plan.Expected, ["fromMs"] = from };
+        Console.WriteLine($"START {phase} observation ({from:F1} ms)");
+        Event("observation-window-start", (JsonObject)window.DeepClone()); return window;
+    }
+    void EndWindow(JsonObject window)
+    {
+        if (window["toMs"] is not null) return;
+        window["toMs"] = Now; Console.WriteLine($"END {window["phase"]} observation ({Now:F1} ms). Ignore subsequent activity when answering.");
+        Event("observation-window-end", (JsonObject)window.DeepClone());
+    }
+    JsonObject AskWindow(JsonObject window, string question, params string[] choices)
+    {
+        if (window["toMs"] is null) throw new InvalidOperationException("Close the observation window before asking.");
+        choices = choices.Concat(new[] { "unclear", "not-observed" }).Distinct().ToArray();
+        string bounded = $"For the marked {window["phase"]} window {window["fromMs"]}..{window["toMs"]} ms only; exclude activity afterward: {question}";
+        Console.WriteLine(bounded + " [" + string.Join(" / ", choices) + "]");
+        double asked = Now; string? raw = yes ? null : ReadLineBounded();
+        var answer = M5HwAnalysis.ObservationAnswer(window, bounded, raw, choices, asked, Now);
+        Event("operator-observation", (JsonObject)answer.DeepClone()); return answer;
+    }
+    void WindowNotes(JsonObject window)
+    {
+        Console.WriteLine($"Optional description of anything unexpected during {window["phase"]} ({window["fromMs"]}..{window["toMs"]} ms); Enter to leave blank:");
+        window["freeText"] = yes ? null : ReadLineBounded();
+        Event("operator-window-notes", (JsonObject)window.DeepClone());
+    }
+    void SaveNeutralReference()
+    {
+        var clip = robot!.Animations.Scheduler.NeutralFaceAnimation;
+        var frame = clip?.Keyframes.OfType<FaceKeyframe>().FirstOrDefault();
+        if (frame is null) { neutralReference = Missing("Loaded neutral clip/first face is unavailable; no invented appearance reference"); Console.WriteLine("Resting-eye reference unavailable; its visual comparison will be incomplete."); return; }
+        byte[] canvas = ProceduralFaceRenderer.DrawFace(frame.Pose, 0);
+        var svg = new System.Text.StringBuilder("<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 64' width='768' height='384'><title>Engine-derived loaded neutral face, scanline parity0; reference only, not firmware display</title><rect width='128' height='64' fill='black'/><g fill='white'>");
+        for (int y = 0; y < 64; y++) for (int x = 0; x < 128; x++)
+            if (canvas[y * 128 + x] != 0) svg.Append($"<rect x='{x}' y='{y}' width='1' height='1'/>");
+        svg.Append("</g></svg>"); string path = Path.Combine(bundle, "neutral-reference.svg"); File.WriteAllText(path, svg.ToString());
+        neutralReference = new() { ["clip"] = clip!.Name, ["firstFaceTriggerMs"] = frame.TriggerTimeMs,
+            ["file"] = "neutral-reference.svg", ["sha256"] = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant(),
+            ["basis"] = "M5-010 loaded neutral clip's first ProceduralFace keyframe; existing M5-032 renderer, explicit parity0. This engine-derived grayscale shape reference does not prove firmware color, scanout or display." };
+        Event("neutral-reference", (JsonObject)neutralReference.DeepClone()); Console.WriteLine("Resting-eye reference: " + path);
+    }
     public int Execute()
     {
         Directory.CreateDirectory(bundle); cache = Path.Combine(bundle, "cache"); Directory.CreateDirectory(cache); File.WriteAllText(Path.Combine(cache, "TestAnim.json"), "{}");
@@ -152,10 +208,19 @@ internal sealed class M5Run
             robot.HandlerFaulted += e => Event("handler-fault", new() { ["exception"] = e.ToString() });
             robot.Animations.Event += s => Event("animation-event", new() { ["text"] = s });
             robot.State.StateUpdated += s => Event("state", new() { ["headRad"] = s.HeadAngle, ["motionHeadRad"] = robot.Motion.HeadAngleRad, ["status"] = s.Status, ["streamBytes"] = robot.Animations.Scheduler.Stream.BytesStreamed, ["streamFrames"] = robot.Animations.Scheduler.Stream.FramesStreamed });
-            robot.Message += m => { if (m is AnimationState a) Event("animation-state", new() { ["robotTimestamp"] = a.Timestamp, ["bytesPlayed"] = a.NumAnimBytesPlayed, ["audioPlayed"] = a.NumAudioFramesPlayed, ["tag"] = a.Tag, ["drops"] = a.ClientDropCount, ["streamBytes"] = robot.Animations.Scheduler.Stream.BytesStreamed, ["streamFrames"] = robot.Animations.Scheduler.Stream.FramesStreamed }); };
+            robot.Message += m => { if (m is AnimationState a) Event("animation-state", new() { ["robotTimestamp"] = a.Timestamp, ["bytesPlayed"] = a.NumAnimBytesPlayed, ["audioPlayed"] = a.NumAudioFramesPlayed, ["tag"] = a.Tag, ["drops"] = a.ClientDropCount, ["enabledAnimTracks"] = a.EnabledAnimTracks, ["streamBytes"] = robot.Animations.Scheduler.Stream.BytesStreamed, ["streamFrames"] = robot.Animations.Scheduler.Stream.FramesStreamed }); };
             robot.ConnectToRobot(ip);
             connected = Poll(() => response?.Result == RobotConnectionResult.Success && robot.Engine.Robot is { TimeSynced: true, FirstFullStateHandled: true, ReadyToStream: true }, 15000);
             if (connected) { bool assets = Poll(() => robot.Animations.ClipNames.Count > 0, 15000); bool calibrated = Poll(() => robot.State.CalibrationComplete, 20000); Event("check-readiness", new() { ["assets"] = assets, ["calibrated"] = calibrated }); connected = assets && calibrated; }
+            if (connected)
+            {
+                SaveNeutralReference();
+                if (!yes && neutralReference["file"] is not null)
+                {
+                    Console.WriteLine("Before checks start, open neutral-reference.svg from the bundle in a browser and review the resting-eye shape. This is an engine-derived reference, not a firmware display verdict. Press Enter when ready.");
+                    ReadLineBounded(); cancel.Token.ThrowIfCancellationRequested();
+                }
+            }
             foreach (var def in M5Hw.Checks)
             {
                 double start = Now; JsonObject result;
@@ -202,7 +267,8 @@ internal sealed class M5Run
             case "KEEP_ALIVE":
                 {
                     var c = Clip(4000, 12000); if (c is null) return Missing("No long clip without body track");
-                    var t = Play(c); Wait(750); double at = Now; Event("cancel-call", new() { ["tag"] = t.Tag }); r.Animations.Stop();
+                    var cancelWindow = BeginWindow(id, "CANCEL");
+                    var t = Play(c); Wait(750); double at = Now; Console.WriteLine("CANCEL requested now; watch the clip stop, then distinguish resting-eye shape, blinks and darts."); Event("cancel-call", new() { ["tag"] = t.Tag }); r.Animations.Stop();
                     Poll(() => Wire(at).Any(x => x.Outbound && x.Payload[0] == 0x8D), 2000);
                     var wireAbort = Wire(at).FirstOrDefault(x => x.Outbound && x.Payload[0] == 0x8D);
                     double abortAt = wireAbort?.AtMs ?? Now, quietEnd = abortAt + 400;
@@ -213,7 +279,16 @@ internal sealed class M5Run
                     var keep = Wire(quietEnd, abortAt + 2000).Where(x => x.Outbound && x.Payload[0] is 0x9B or (byte)RobotMessageId.AnimFaceImage).ToArray();
                     result["keepAliveTail"] = JsonSerializer.SerializeToNode(keep.Select(x => new { atMs = x.AtMs, payloadHex = Convert.ToHexString(x.Payload) }));
                     if (id == "KEEP_ALIVE" && !keep.Any(x => x.Payload[0] == (byte)RobotMessageId.AnimFaceImage)) result["verdict"] = "INCONCLUSIVE";
-                    result["cancelAtMs"] = at; result["keepAliveWindowEndMs"] = Now; result["robotObservation"] = Ask("Did the animation stop, followed by neutral eyes?", new[] { "stopped-then-neutral", "continued", "unclear" });
+                    EndWindow(cancelWindow); result["wireObservationVerdict"] = result["verdict"]!.DeepClone();
+                    result["cancelAtMs"] = at; result["keepAliveWindowEndMs"] = Now;
+                    result["neutralReference"] = neutralReference.DeepClone();
+                    result["clipStopped"] = AskWindow(cancelWindow, "After the announced cancel, did the clip's face/head/lift activity stop?", "stopped", "continued");
+                    result["restingEyeAppearance"] = AskWindow(cancelWindow, "After cancel, did the two resting-eye shapes resemble the loaded reference?", "resembled-reference", "different");
+                    result["blinkObservation"] = AskWindow(cancelWindow, "Did the eyes briefly close and reopen?", "seen", "not-seen");
+                    result["eyeDartObservation"] = AskWindow(cancelWindow, "Did the eye shapes shift position within the face?", "seen", "not-seen");
+                    WindowNotes(cancelWindow); result["observationWindow"] = cancelWindow;
+                    if (neutralReference["file"] is null || result["clipStopped"]!["answer"]!.GetValue<string>() != "stopped"
+                        || result["restingEyeAppearance"]!["answer"]!.GetValue<string>() != "resembled-reference") result["verdict"] = "INCONCLUSIVE";
                     result["timingNote"] = "Quiet interval is 400 ms after actual wire Abort; full two-second tail retained. The 0.5 s neutral gate uses native last-stream engine time, unavailable through existing public observations; no cancel-time equality or exact neutral deadline is asserted.";
                     result["nativeLastStreamTime"] = null;
                     result["neutralCandidateStarts"] = M5HwAnalysis.WireEvidence(Wire(quietEnd, abortAt + 2000).Where(x => x.Outbound && x.Payload.Length == 2 && x.Payload[0] == 0x9B && x.Payload[1] != 255));
@@ -222,7 +297,7 @@ internal sealed class M5Run
                         if (!drive) { result["liveIdle"] = Missing("--allow-drive required for default body wiggles"); result["verdict"] = "INCONCLUSIVE"; }
                         else
                         {
-                            double live = Now; IdleOn();
+                            var liveWindow = BeginWindow(id, "LIVE"); double live = Now; IdleOn();
                             try
                             {
                                 Wait(10000); double liveEnd = Now;
@@ -231,7 +306,10 @@ internal sealed class M5Run
                                 if (bursts["verdict"]!.GetValue<string>() != "OBSERVED_FF_BURST_ORDER") result["verdict"] = "INCONCLUSIVE";
                                 result["liveFromMs"] = live; result["liveToMs"] = liveEnd;
                             }
-                            finally { IdleOff(); }
+                            finally { EndWindow(liveWindow); IdleOff(); }
+                            result["bodyObservation"] = AskWindow(liveWindow, "Did the body/wheels make small wiggles?", "seen", "not-seen");
+                            WindowNotes(liveWindow); result["liveObservationWindow"] = liveWindow;
+                            if (result["bodyObservation"]!["answer"]!.GetValue<string>() != "seen") result["verdict"] = "INCONCLUSIVE";
                         }
                         // A short nonlive play clears the previous idle and its persistent keepalive layers.
                         // Normal KeepFaceAlive then supplies the persistent eye dart; no fabricated layer or hook.
@@ -272,11 +350,22 @@ internal sealed class M5Run
             case "LOCKED_HEAD":
                 {
                     var c = Clip(1500, 7000, AnimationTrack.Head); if (c is null) return Missing("No head clip without body track");
-                    r.Motion.LockTracks(CozmoMotion.HeadTrack, "m5-hw", "hardware test"); Wait(300); double locked = Now;
-                    try { Complete(Play(c), (int)c.DurationMs + 5000); } finally { r.Motion.UnlockTracks(CozmoMotion.HeadTrack, "m5-hw"); }
+                    double lockAt = Now; Event("head-lock-request", new());
+                    r.Motion.LockTracks(CozmoMotion.HeadTrack, "m5-hw", "hardware test"); Wait(300);
+                    var window = BeginWindow(id, "LOCKED"); double clipFrom = window["fromMs"]!.GetValue<double>(), clipTo = clipFrom, unlockAt = clipFrom;
+                    try { Complete(Play(c), (int)c.DurationMs + 5000); clipTo = Now; }
+                    finally
+                    {
+                        EndWindow(window); clipTo = window["toMs"]!.GetValue<double>(); unlockAt = Now; Console.WriteLine("UNLOCK head now. Movement after this announcement is outside LOCKED observation.");
+                        Event("head-unlock-request", new()); r.Motion.UnlockTracks(CozmoMotion.HeadTrack, "m5-hw");
+                    }
                     Wait(300);
-                    var rows = Wire(locked); int head = rows.Count(x => x.Outbound && x.Payload[0] == 0x93), enable = rows.Count(x => x.Outbound && x.Payload[0] == (byte)RobotMessageId.EnableAnimTracks);
-                    var result = Observe("M4-047 lock HEAD_TRACK (mask 1, Motion.HeadTrack); M5-036 robot head semantics, raw RobotState and operator observation; compare streamed head commands against physical movement."); result["headKeyframes"] = head; result["enableCount"] = enable; result["headStayedPut"] = Ask("Did the head stay still while the clip played?", new[] { "yes", "no", "unclear" }); if (head == 0 || enable != 1 || result["headStayedPut"]?.GetValue<string>() != "yes") result["verdict"] = "INCONCLUSIVE"; return result;
+                    var result = M5HwAnalysis.LockedHead(Wire(start), lockAt, clipFrom, clipTo, unlockAt, Now);
+                    result["wireObservationVerdict"] = result["verdict"]!.DeepClone();
+                    result["headStayedPut"] = AskWindow(window, "Did the head stay at its starting angle during the locked clip, excluding all post-UNLOCK motion?", "yes", "no");
+                    WindowNotes(window); result["observationWindow"] = window;
+                    if (result["headStayedPut"]!["answer"]!.GetValue<string>() != "yes") result["verdict"] = "INCONCLUSIVE";
+                    return result;
                 }
             case "AUDIO":
                 {
@@ -296,16 +385,19 @@ internal sealed class M5Run
                     {
                         sched.KeepAliveTimeoutSec = 600; Complete(Play(c), (int)c.DurationMs + 5000);
                         if (!Poll(() => !sched.HaveLayersToSend, 3000)) return Missing("Existing layers did not drain after nonlive InitStream RemoveKeepFaceAlive(99)");
-                        double layerStart = Now; int pulse = 1; sched.DesiredFaceDistortion = () => Interlocked.Exchange(ref pulse, 0) == 1 ? 0.8f : 0f;
+                        var layerWindow = BeginWindow(id, "LAYERS"); double layerStart = Now; int pulse = 1; sched.DesiredFaceDistortion = () => Interlocked.Exchange(ref pulse, 0) == 1 ? 0.8f : 0f;
                         if (!Poll(() => Volatile.Read(ref pulse) == 0, 2000)) return Missing("TLC did not consume distortion pulse");
                         Wait(200); bool drained = Poll(() => !sched.HaveLayersToSend, 5000); Wait(300);
-                        double layerEnd = Now;
+                        double layerEnd = Now; EndWindow(layerWindow);
                         var result = M5HwAnalysis.FiniteLayers(Wire(layerStart, layerEnd), layerStart, layerEnd, drained);
                         result["layerFromMs"] = layerStart; result["layerToMs"] = layerEnd;
                         result["stimulus"] = "Finite public distortion-provider pulse through TLC.Update; 600s harness timeout suppresses keepalive and short nonlive InitStream removes its persistent layers. No per-frame generation flags are exposed; counts alone cannot certify the random finite-glitch trace.";
                         var persistent = results.FirstOrDefault(x => x["id"]?.GetValue<string>() == "KEEP_ALIVE")?["persistentFace"];
                         result["persistentFaceCoverage"] = persistent?.DeepClone() ?? Missing("Separate KEEP_ALIVE persistent-face observation not available in this subset");
-                        result["observation"] = Ask("Were distorted face and backpack light changes visible?", new[] { "both", "face-only", "neither", "unclear" });
+                        sched.DesiredFaceDistortion = previous; sched.KeepAliveTimeoutSec = timeout;
+                        result["faceObservation"] = AskWindow(layerWindow, "Was a brief face-image distortion or shift visible?", "seen", "not-seen");
+                        result["backpackObservation"] = AskWindow(layerWindow, "Did the backpack lights change?", "seen", "not-seen");
+                        WindowNotes(layerWindow); result["observationWindow"] = layerWindow;
                         return result;
                     }
                     finally { sched.DesiredFaceDistortion = previous; sched.KeepAliveTimeoutSec = timeout; }
@@ -323,8 +415,12 @@ internal sealed class M5Run
                     r.Animations.SetLiveIdleAnimationParameters(new[] { LiveIdleParam.BlinkSpacingMinTime_ms, LiveIdleParam.BlinkSpacingMaxTime_ms }, new[] { 44000f, 45000f }); Wait(300);
                     var result = Observe("M5-062 B4 base setter accepts 45000 uncapped. Min 44000 and max 45000 avoid the max<=min fallback and make long-spacing observation discriminating; first pre-existing blink deadline may remain. No movement idle is pushed.");
                     result["maxReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMaxTime_ms]; result["minReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMinTime_ms];
-                    Console.WriteLine("Observe blink spacing for 60 seconds."); try { Wait(60000); result["observation"] = Ask("After any initial blink, were subsequent blinks widely spaced (about 44-45 seconds)?", new[] { "yes", "no", "unclear" }); } finally { r.Animations.SetLiveIdleAnimationParameters(Array.Empty<LiveIdleParam>(), Array.Empty<float>(), true); }
-                    if (result["minReadback"]!.GetValue<float>() != 44000 || result["maxReadback"]!.GetValue<float>() != 45000 || result["observation"]?.GetValue<string>() != "yes") result["verdict"] = "INCONCLUSIVE"; return result;
+                    var blinkWindow = BeginWindow(id, "BLINKS");
+                    try { Wait(60000); }
+                    finally { EndWindow(blinkWindow); r.Animations.SetLiveIdleAnimationParameters(Array.Empty<LiveIdleParam>(), Array.Empty<float>(), true); }
+                    result["observation"] = AskWindow(blinkWindow, "After any initial blink, were subsequent close/reopen blinks about44-45 seconds apart (do not count eye darts)?", "yes", "no");
+                    WindowNotes(blinkWindow); result["observationWindow"] = blinkWindow;
+                    if (result["minReadback"]!.GetValue<float>() != 44000 || result["maxReadback"]!.GetValue<float>() != 45000 || result["observation"]?["answer"]?.GetValue<string>() != "yes") result["verdict"] = "INCONCLUSIVE"; return result;
                 }
             case "DRIVING":
                 {

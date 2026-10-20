@@ -9,6 +9,64 @@ namespace Cozmo.Conformance;
 /// </summary>
 public static class M5HwAnalysis
 {
+    public static JsonObject LockedHead(IEnumerable<M5Hw.WireMessage> messages, double lockAt,
+        double clipFrom, double clipTo, double unlockAt, double toMs)
+    {
+        var all = OrderedUnique(messages).Where(m => m.Payload.Length > 0).ToArray();
+        var wire = all.Where(m => m.AtMs >= lockAt && m.AtMs <= toMs).ToArray();
+        var disables = wire.Where(m => m.Outbound && m.Payload[0] == 0x9D).ToArray();
+        var enables = wire.Where(m => m.Outbound && m.Payload[0] == 0x9E).ToArray();
+        bool validDisable = disables.Any(m => m.AtMs <= clipFrom && m.Payload.Length == 2 && m.Payload[1] == 1);
+        bool earlyEnable = enables.Any(m => m.AtMs < unlockAt && m.Payload.Length == 2 && (m.Payload[1] & 1) != 0);
+        bool ownUnlock = enables.Any(m => m.AtMs >= unlockAt && m.Payload.Length == 2 && m.Payload[1] == 1);
+        var states = wire.Where(m => !m.Outbound && m.AtMs >= clipFrom && m.AtMs <= clipTo
+            && m.Payload[0] == (byte)RobotMessageId.AnimState && m.Payload.Length == 16)
+            .Select(m => (Wire: m, State: (AnimationState)RobotMessage.Parse(m.Payload))).ToArray();
+        var heads = wire.Where(m => !m.Outbound && m.AtMs >= clipFrom && m.AtMs <= clipTo
+            && m.Payload[0] == (byte)RobotMessageId.State && m.Payload.Length == 92)
+            .Select(m => (Wire: m, State: (RobotState)RobotMessage.Parse(m.Payload))).ToArray();
+        int commands = wire.Count(m => m.Outbound && m.AtMs >= clipFrom && m.AtMs <= clipTo && m.Payload[0] == 0x93 && m.Payload.Length == 4);
+        bool reportedEnabled = states.Any(s => (s.State.EnabledAnimTracks & 1) != 0);
+        bool changed = heads.Select(s => BitConverter.SingleToInt32Bits(s.State.HeadAngle)).Distinct().Count() > 1;
+        return new JsonObject
+        {
+            ["verdict"] = !validDisable || earlyEnable || !ownUnlock || commands == 0 || states.Length == 0 || heads.Length < 2
+                ? "INCONCLUSIVE" : reportedEnabled ? "OBSERVED_HEAD_TRACK_REPORTED_ENABLED"
+                : changed ? "OBSERVED_HEAD_TELEMETRY_CHANGED" : "OBSERVED_LOCKED_HEAD_EVIDENCE",
+            ["lockRequestAtMs"] = lockAt, ["clipFromMs"] = clipFrom, ["clipToMs"] = clipTo,
+            ["unlockRequestAtMs"] = unlockAt, ["observationEndMs"] = toMs,
+            ["validDisableBeforeClip"] = validDisable, ["enableBeforeUnlock"] = earlyEnable,
+            ["harnessUnlockEnableObserved"] = ownUnlock, ["headKeyframes"] = commands,
+            ["headTrackReportedEnabled"] = reportedEnabled, ["headTelemetryChanged"] = changed,
+            ["disableWire"] = WireEvidence(disables), ["enableWire"] = WireEvidence(enables),
+            ["trackReports"] = new JsonArray(states.Select(s => (JsonNode)new JsonObject {
+                ["atMs"] = s.Wire.AtMs, ["frameLine"] = s.Wire.FrameLine,
+                ["robotTimestamp"] = s.State.Timestamp, ["enabledAnimTracks"] = s.State.EnabledAnimTracks }).ToArray()),
+            ["headTelemetry"] = new JsonArray(heads.Select(s => (JsonNode)new JsonObject {
+                ["atMs"] = s.Wire.AtMs, ["frameLine"] = s.Wire.FrameLine,
+                ["robotTimestamp"] = s.State.Timestamp, ["headRad"] = s.State.HeadAngle }).ToArray()),
+            ["verdictRule"] = "M4-014 Disable head mask1 before the clip; M5-035 still streams head keyframes; "
+                + "the harness's own Enable mask1 follows its unlock request, not InitStream. Raw F1 masks and "
+                + "head telemetry are bounded to the marked clip; later movement is excluded. Telemetry changes "
+                + "are observations without an invented tolerance. No physical verdict follows from counters or "
+                + "operator text alone; firmware execution/display remains M5-036 HARDWARE_ONLY."
+        };
+    }
+
+    public static JsonObject ObservationAnswer(JsonObject window, string question, string? raw, string[] choices,
+        double askedAtMs, double answeredAtMs)
+    {
+        if (window["fromMs"] is null || window["toMs"] is null)
+            throw new InvalidOperationException("Observation answers require a closed, marked window.");
+        return new()
+        {
+            ["window"] = window.DeepClone(), ["question"] = question, ["rawAnswer"] = raw,
+            ["answer"] = raw is null ? "not-observed" : M5Hw.NormaliseAnswer(raw, choices),
+            ["askedAtMs"] = askedAtMs, ["answeredAtMs"] = answeredAtMs,
+            ["interpretation"] = "Operator observation only; unexpected, unclear and free text are retained for investigation, never converted into hardware acceptance."
+        };
+    }
+
     // Frame activity must come from independently established generation evidence, never total wire counts.
     // The allowed public harness currently cannot supply this; synthetic unit fixtures name that substitution.
     public sealed record FaceActivity(int AudioFrameLine, int AudioOrdinal, bool Active);

@@ -62,7 +62,7 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are 
 | TAGS | Three short shipped clips without body tracks, through PlayTracked; Start tags 1,2,3 and chronological started/ended echoes. | M5-008 increment 0x0057B660..0x0057B672; robot echo meaning M5-036. |
 | ABORT | Cancel a long shipped clip after 750 ms. Count exactly one 0x8D, no End, at most one audio/face marker within 400 ms after the ordered wire Abort (pre-command backlog is separate); preserve full counter/echo tail and operator observation. | M5-023 A22/A23/A25; pending built frame can drain. Robot semantics M5-036. |
 | KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with ordered Start FF/End bursts; then a separate ten-second no-idle persistent-eye-dart face window, requiring face output and no End while its prerequisites hold. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 burst idle; M5-027/030. Persistent layers: M5-028/029, 0x0057C530..0x0057C556. |
-| LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain 0x93, exactly one EnableAnimTracks and physical observation. | M4-047 plus robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
+| LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain lock request, actual Disable1, marked clip interval, F1 EnabledAnimTracks and raw head telemetry, then separate unlock request/actual Enable1 and physical observation. | M4-014 producer, M4-047 unlock, M5-035 unsuppressed stream and robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
 | AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 <=14 frames/8192 bytes; direct End adds a frame outside C9. M6 runtime uncertainty remains embedded. |
 | LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; without per-frame face flags/draw evidence this remains INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
 | LIVE_IDLE | Twelve seconds of default ProceduralLive; compare streamed signed head angles with preceding Motion.HeadAngleRad samples and default +/-6 degrees; require body/lift wiggles. | M5-030 0x0057D838..0x0057D84E, A34 defaults. Uncalibrated input is not forced; B-M5-23 covers it offline. |
@@ -135,3 +135,31 @@ face flag, random draws or generation timing, so finite-glitch completeness rema
 The analysis supports independently established frame-activity evidence; current synthetic unit cases substitute
 those flags and cannot stand for real hardware coverage. No production hooks or scheduler changes were added.
 Operator rerun and discriminating evidence are still required.
+
+## Dated observation correction - B-M5-27, 2026-10-20
+
+Every visual question now refers to a named START/END window with its own expected appearance, part to watch,
+check ID and timestamps. Answer only about that marked interval and exclude later activity. Choose unclear
+or not-observed when appropriate; optional free-text descriptions and raw answers are retained for investigation.
+A source-compatible wire shape never explains away an unexpected physical observation. --yes records missing
+human evidence, never a pass. Existing first-run answers remain historical observations, unchanged.
+
+Before these checks, the tool writes neutral-reference.svg from the loaded neutral clip's first ProceduralFace
+keyframe using the existing engine-derived renderer and explicit scanline parity0. Open that file in a browser
+for the resting-eye shape: two upright, rounded rectangular eyes separated by a gap. It is a grayscale engine
+reference, not proof of firmware color, scanout or what the robot actually displays. Missing clip/face data
+leaves the reference unavailable; no substitute appearance is invented.
+
+| Window | Watch and distinguish | End and answer boundary |
+| --- | --- | --- |
+| CANCEL (ABORT/KEEP_ALIVE) | Brief clip, announced cancel, stopping of clip activity; resting-eye reference; closing/reopening blinks; shifts of eye position (darts). Each is asked separately. | Ends after the bounded cancellation tail; questions exclude subsequent movement. Body-driving clips are excluded. |
+| LIVE (KEEP_ALIVE) | Small head/lift movements and body/wheel wiggles from default ProceduralLive, separately from face activity. | Idle removed immediately after END and before the body observation question. |
+| LOCKED | Head angle at the start of the marked shipped clip; face/lift may still animate. | END announced, then UNLOCK announced and issued before any question. Ignore all post-unlock head motion. |
+| LAYERS | Brief face-image distortion/shift and backpack changes, asked separately; their durations can differ. | End after finite window/drain observation; restore host provider/timeout before questions. |
+| BLINKS | Sixty seconds of brief eye closing/reopening, distinct from eye-position darts; an old deadline may fire first, later requested spacing about44-45s. | END announced and parameters restored before the question/notes, with no answer-driven extension. |
+
+LOCKED_HEAD keeps raw Disable/Enable identities and masks separate from host requests and clip bounds.
+F1 enabled-track bits and head telemetry use raw capture times inside the clip window. An Enable after the
+harness unlock is labeled as that unlock, not an InitStream action. Missing/wrong Disable, early Enable,
+head-track-reported-enabled and changed head telemetry are distinct observations; no physical verdict follows
+from counters or operator text alone. M5-036 and unexplained movement remain for operator rerun/review.
