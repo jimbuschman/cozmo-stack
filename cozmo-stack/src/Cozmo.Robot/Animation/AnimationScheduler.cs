@@ -108,12 +108,20 @@ public sealed class StreamSendBuffer
         public bool IsAudio;
         public Func<bool> Send = () => true;
         public string? TagName;
+        public long Sequence;      // B-M5-32 diagnostic buffering order; 0 when buffered with no observer
     }
 
     private readonly object _gate = new();
     private readonly LinkedList<Entry> _fifo = new();
     private int _bytesStreamed, _framesStreamed, _bytesToSend, _framesToSend;
     private bool _draining;
+
+    // fidelity: M3-012
+    // B-M5-32 read-only diagnostics (operator 2026-10-20). Set only by AnimationScheduler.Diagnostic's add/remove; null
+    // when nothing subscribes, so the engine path then costs one null check per point. The observer is the scheduler's
+    // guarded raiser (a throwing handler is caught there), and is invoked outside this buffer's _gate.
+    internal volatile Action<AnimationDiagnostic>? Observer;
+    private long _bufferSequence, _budgetEpochCounter, _budgetEpoch;
 
     /// <summary>The engine log for the budget warning (C9).</summary>
     public Action<string>? Log { get; set; }
@@ -143,6 +151,8 @@ public sealed class StreamSendBuffer
     public void UpdateAmountToSend(int bytesPlayed, int framesPlayed)
     {
         var logs = new List<(EngineLogLevel Level, string? Channel, string Key, string Text)>();
+        var observer = Observer;
+        BudgetRefreshObservation? refresh = null;
         lock (_gate)
         {
             int bytes = unchecked(bytesPlayed - _bytesStreamed + BytesAhead);
@@ -155,24 +165,41 @@ public sealed class StreamSendBuffer
             }
             _bytesToSend = Math.Min(bytes, MaxBytesPerUpdate);
             _framesToSend = Math.Max(unchecked(framesPlayed - _framesStreamed + AudioFramesAhead), 0);
+            // fidelity: M3-012 (B-M5-32 hook: the allowances C9 just stored, 0x0057C6F6..0x0057C7AC; read only)
+            if (observer is null) _budgetEpoch = 0;
+            else
+            {
+                _budgetEpoch = ++_budgetEpochCounter;
+                refresh = new BudgetRefreshObservation(System.Diagnostics.Stopwatch.GetTimestamp(), _budgetEpoch,
+                    bytesPlayed, framesPlayed, _bytesStreamed, _framesStreamed, _bytesToSend, _framesToSend);
+            }
         }
         foreach (var line in logs) SourceLogDispatch.Write(SourceLog, Log, line.Level, line.Channel, line.Key, line.Text);
+        if (refresh is not null) observer!(refresh);
     }
 
     /// <summary>The test seam's budget (a sink that models no robot): nothing is held back.</summary>
     internal void Unlimited()
     {
-        lock (_gate) { _bytesToSend = int.MaxValue; _framesToSend = int.MaxValue; }
+        lock (_gate) { _bytesToSend = int.MaxValue; _framesToSend = int.MaxValue; _budgetEpoch = 0; }
     }
 
-    /// <summary>BufferMessageToSend: appends a message whose size and kind are given, to be sent by <paramref name="send"/>.</summary>
-    public void Buffer(object? owner, int size, bool isAudio, Func<bool> send, string? tagName = null)
+    /// <summary>
+    /// BufferMessageToSend: appends a message whose size and kind are given, to be sent by <paramref name="send"/>.
+    /// Returns the entry's diagnostic buffering sequence (B-M5-32; 0 when no diagnostic observer is attached).
+    /// </summary>
+    public long Buffer(object? owner, int size, bool isAudio, Func<bool> send, string? tagName = null)
     {
-        lock (_gate) _fifo.AddLast(new Entry { Owner = owner, Size = size, IsAudio = isAudio, Send = send, TagName = tagName });
+        lock (_gate)
+        {
+            long sequence = Observer is null ? 0 : ++_bufferSequence;
+            _fifo.AddLast(new Entry { Owner = owner, Size = size, IsAudio = isAudio, Send = send, TagName = tagName, Sequence = sequence });
+            return sequence;
+        }
     }
 
     /// <summary>BufferMessageToSend for a message: its size and kind are its own (C11).</summary>
-    public void Buffer(object? owner, RobotMessage m, Func<RobotMessage, bool> send)
+    public long Buffer(object? owner, RobotMessage m, Func<RobotMessage, bool> send)
         => Buffer(owner, SizeOf(m), IsAudioMessage(m.Id), () => send(m), MessageCatalog.ById[m.Id].Member);
 
     /// <summary>How a drain ended (C14, A18): the buffer emptied, a budget stopped it, or a send failed.</summary>
@@ -198,15 +225,31 @@ public sealed class StreamSendBuffer
             {
                 LinkedListNode<Entry> node;
                 Entry e;
+                bool admitted;
+                int gateBytes, gateFrames;
+                long gateEpoch;
                 lock (_gate)
                 {
                     if (_fifo.First is not { } first) return DrainResult.Empty;
                     node = first;
                     e = node.Value;
-                    if (e.Size > _bytesToSend) return DrainResult.BudgetStop;
-                    if (e.IsAudio && _framesToSend <= 0) return DrainResult.BudgetStop;
+                    gateBytes = _bytesToSend;
+                    gateFrames = _framesToSend;
+                    gateEpoch = _budgetEpoch;
+                    // the byte gate (0x0057BF96/0x0057BF98), then the audio-frame gate (0x0057BF9A/0x0057BFA0)
+                    admitted = !(e.Size > _bytesToSend) && !(e.IsAudio && _framesToSend <= 0);
                 }
-                if (!e.Send()) return DrainResult.SendError;
+                // fidelity: M3-012 (B-M5-32 hook at the C14 gate, 0x0057BF96..0x0057BFCC; read only)
+                var observer = e.Size != 0 ? Observer : null;
+                long at = observer is null ? 0 : System.Diagnostics.Stopwatch.GetTimestamp();
+                if (!admitted)
+                {
+                    observer?.Invoke(GateObservation(e, at, gateEpoch, gateBytes, gateFrames, admitted: false, sent: false));
+                    return DrainResult.BudgetStop;
+                }
+                bool sent = e.Send();
+                observer?.Invoke(GateObservation(e, at, gateEpoch, gateBytes, gateFrames, admitted: true, sent: sent));
+                if (!sent) return DrainResult.SendError;
                 lock (_gate)
                 {
                     if (node.List == _fifo) _fifo.Remove(node);
@@ -221,6 +264,26 @@ public sealed class StreamSendBuffer
 
     /// <summary><see cref="Drain"/>, true when the buffer emptied.</summary>
     public bool SendBufferedMessages() => Drain() == DrainResult.Empty;
+
+    private static SendGateObservation GateObservation(Entry e, long at, long epoch, int bytes, int frames, bool admitted, bool sent)
+        => new(at, e.Sequence, epoch, MessageIdOf(e.TagName), e.Size, e.IsAudio, bytes, frames, admitted, sent, DirectBypass: false);
+
+    /// <summary>B-M5-32: the allowances left and their budget epoch, read for the direct End observation only.</summary>
+    internal (int Bytes, int Frames, long Epoch) GateSnapshot()
+    {
+        lock (_gate) return (_bytesToSend, _framesToSend, _budgetEpoch);
+    }
+
+    private static Dictionary<string, byte>? s_idByMember;
+
+    /// <summary>B-M5-32: the EngineToRobot tag for a buffered entry's catalogue member name; null when unknown or not unique.</summary>
+    internal static byte? MessageIdOf(string? member)
+    {
+        if (member is null) return null;
+        var map = s_idByMember ??= MessageCatalog.ById.Values.GroupBy(i => i.Member).Where(g => g.Count() == 1)
+            .ToDictionary(g => g.Key, g => (byte)g.Single().Id);
+        return map.TryGetValue(member, out var id) ? id : null;
+    }
 
     /// <summary>
     /// A message sent directly, not through the buffer and not budget-gated, but counted: EndOfAnimation's path
@@ -294,6 +357,7 @@ public sealed class StreamSendBuffer
             _fifo.Clear();
             _bytesStreamed = _framesStreamed = 0;
             _bytesToSend = _framesToSend = 0;
+            _budgetEpoch = 0;          // B-M5-32 diagnostic: no observed refresh describes these allowances
         }
     }
 }
@@ -550,6 +614,50 @@ public sealed class AnimationScheduler
     {
         get => _tlc.DesiredFaceDistortion;
         set => _tlc.DesiredFaceDistortion = value;
+    }
+
+    // fidelity: M5-028, M5-029, M3-012
+    private Action<AnimationDiagnostic>? _diagnostic;
+    private Action<AnimationDiagnostic>? _diagnosticObserver;    // RaiseDiagnostic while anything subscribes, else null
+    private long _layerFrameNumber;
+
+    /// <summary>
+    /// Read-only engine observations for the M5 hardware harness (B-M5-32; operator 2026-10-20): every
+    /// <c>KeepFaceAlive</c> call (<see cref="KeepFaceAliveObservation"/>, M5-028), every <c>StreamLayers</c> frame
+    /// (<see cref="LayerFrameObservation"/>, M5-029), every message offered at the send gate and the direct End
+    /// (<see cref="SendGateObservation"/>, M3-012) and every budget refresh (<see cref="BudgetRefreshObservation"/>).
+    /// Nothing here changes what is sent, when, or in what order, and no random number is drawn; with no subscriber
+    /// each point costs one null check.
+    /// <para>
+    /// Raised synchronously on the engine thread while the scheduler's lock is held. A handler must not call back into
+    /// the scheduler or the robot and should only enqueue the observation. A handler that throws is caught and logged,
+    /// and the engine path carries on unchanged (M1-034 style); later handlers of that one observation are skipped.
+    /// </para>
+    /// </summary>
+    public event Action<AnimationDiagnostic>? Diagnostic
+    {
+        add { lock (_gate) { _diagnostic += value; WireDiagnosticLocked(); } }
+        remove { lock (_gate) { _diagnostic -= value; WireDiagnosticLocked(); } }
+    }
+
+    private void WireDiagnosticLocked()
+    {
+        Action<AnimationDiagnostic>? observer = _diagnostic is null ? null : RaiseDiagnostic;
+        _diagnosticObserver = observer;
+        Stream.Observer = observer;
+        _tlc.Face.Observer = observer;
+    }
+
+    private void RaiseDiagnostic(AnimationDiagnostic observation)
+    {
+        var handlers = _diagnostic;
+        if (handlers is null) return;
+        try { handlers(observation); }
+        catch (Exception ex)
+        {
+            try { Log?.Invoke($"Animation diagnostic handler threw; observation dropped, engine path unchanged (M1-034 style, B-M5-32): {ex.GetType().Name}: {ex.Message}"); }
+            catch (Exception) { /* a failing log must not reach the engine path either */ }
+        }
     }
 
     /// <summary>
@@ -1473,7 +1581,14 @@ public sealed class AnimationScheduler
     /// </summary>
     private int SendEndOfAnimationLocked()
     {
+        // fidelity: M3-012 (B-M5-32 hook: the direct End bypasses the C14 gate, 0x0057C464..0x0057C496; read only)
+        var observer = _diagnosticObserver;
+        long at = 0;
+        (int Bytes, int Frames, long Epoch) gate = default;
+        if (observer is not null) { at = System.Diagnostics.Stopwatch.GetTimestamp(); gate = Stream.GateSnapshot(); }
         bool sent = Stream.SendDirect(StreamSizes.EndOfAnimation, true, () => SafeSend(_sink.AnimationEnded));
+        observer?.Invoke(new SendGateObservation(at, 0, gate.Epoch, (byte)RobotMessageId.AnimEndOfAnimation,
+            StreamSizes.EndOfAnimation, true, gate.Bytes, gate.Frames, Admitted: false, Sent: sent, DirectBypass: true));
         if (!sent) return 1;
         _startSent = false;
         _endSent = true;
@@ -1647,16 +1762,17 @@ public sealed class AnimationScheduler
     /// BufferFaceToSend (M3 B5, 0x0057C1FC..0x0057C2DA): DrawFace with the drawer's _firstScanLine, then CompressRLE,
     /// buffered as FaceImage every time, with no de-duplication (Q1.8).
     /// </summary>
-    private void BufferFaceToSendLocked(ProceduralFacePose face)
+    /// <returns>The face message's diagnostic buffering sequence (B-M5-32), or null when no face was buffered.</returns>
+    private long? BufferFaceToSendLocked(ProceduralFacePose face)
     {
         var canvas = ProceduralFaceRenderer.DrawFace(face, _scanLines.Drawer);
         var payload = FaceBitmapCodec.EncodeCanvas(canvas, FaceBitmapCodec.CanvasRows, FaceBitmapCodec.CanvasColumns);
         if (payload is null)
         {
             SourceLogDispatch.GetSink(SourceLog, Log)?.Invoke(EngineLogLevel.Error, null, "AnimationStreamer.BufferFaceToSend", "Failed to get RLE frame from procedural face");
-            return;
+            return null;
         }
-        Buffer(StreamSizes.Face(payload), false, () => _sink.FaceImage(payload), tagName: "animFaceImage");
+        return Buffer(StreamSizes.Face(payload), false, () => _sink.FaceImage(payload), tagName: "animFaceImage");
     }
 
     private void BufferFaceFired(FaceFrame f)
@@ -1668,9 +1784,9 @@ public sealed class AnimationScheduler
     }
 
     /// <summary>(3): one audio message, AudioSample with the frame's 744 bytes or AudioSilence.</summary>
-    private void BufferAudioLocked(byte[]? sample)
+    private long BufferAudioLocked(byte[]? sample)
     {
-        Buffer(sample is null ? StreamSizes.AudioSilence : StreamSizes.AudioSample, true,
+        return Buffer(sample is null ? StreamSizes.AudioSilence : StreamSizes.AudioSample, true,
                () => _sink.Audio(sample), onSent: () => AudioFramesSent++, tagName: sample is null ? "animAudioSilence" : "animAudioSample");
     }
 
@@ -1695,7 +1811,7 @@ public sealed class AnimationScheduler
             while (_tlc.HaveLayersToSend && built < owed)
             {
                 var frame = _tlc.ApplyLayersToAnim(null, (int)_startMs, (int)_streamMs, null, storeFace: false);
-                BufferAudioLocked(frame.Audio ? frame.AudioSample : null);
+                long audioSequence = BufferAudioLocked(frame.Audio ? frame.AudioSample : null);
                 if (!_startSent)
                 {
                     _tag = IncrementTagCtr();
@@ -1703,7 +1819,13 @@ public sealed class AnimationScheduler
                 }
                 if (frame.Backpack && frame.BackpackLeds is { } leds)
                     Buffer(StreamSizes.BackpackLights, false, () => _sink.BackpackLights(leds), tagName: "animBackpackLights");
-                if (frame.Face && frame.FaceOut is { } face) BufferFaceToSendLocked(face);
+                long? faceSequence = null;
+                if (frame.Face && frame.FaceOut is { } face) faceSequence = BufferFaceToSendLocked(face);
+                // fidelity: M5-029 (B-M5-32 hook: the layered face flag, 0x0064F204..0x0064F22C, as tested at
+                // 0x0057C63C..0x0057C646; read only, raised after the frame is buffered and before its drain)
+                _diagnosticObserver?.Invoke(new LayerFrameObservation(System.Diagnostics.Stopwatch.GetTimestamp(),
+                    ++_layerFrameNumber, _streamMs, frame.Face, frame.Backpack && frame.BackpackLeds is not null,
+                    audioSequence, faceSequence));
                 built++;
                 if (Stream.Drain() == StreamSendBuffer.DrainResult.SendError) { result = 1; break; }
                 _streamMs += FrameStepMs;
@@ -1722,9 +1844,9 @@ public sealed class AnimationScheduler
     /// robot gone) is a failed send: it stays at the front and is not counted (C14), as MessageHandler's result would be.
     /// A keyframe's KeyframeFired goes when its first message is sent.
     /// </summary>
-    private void Buffer(int size, bool isAudio, Action send, StreamKeyframe? fires = null, Action? onSent = null, string? tagName = null)
+    private long Buffer(int size, bool isAudio, Action send, StreamKeyframe? fires = null, Action? onSent = null, string? tagName = null)
     {
-        Stream.Buffer(_owner, size, isAudio, () =>
+        return Stream.Buffer(_owner, size, isAudio, () =>
         {
             if (!SafeSend(send)) return false;
             onSent?.Invoke();

@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Cozmo.Protocol;
+using Cozmo.Robot.Animation;
 using Cozmo.Robot.Behavior;
 
 namespace Cozmo.Conformance;
@@ -62,9 +63,16 @@ public static class M5HwAnalysis
             : !endBefore ? "INCONCLUSIVE_END_WIRE_EVIDENCE"
             : loopRequired == true ? "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS" : "OBSERVED_FAILED_START_END_CLEANUP";
         bool successRequests = driveResult == 0 && phaseVerdict == "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS";
+        // Operator 2026-10-20 (DRIVING split): M5-063 is judged on whichever phase path the action results select,
+        // whatever the drive result. Successful traversal belongs to the M12/M13 acceptance.
+        bool m5PathObserved = phaseVerdict is "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS" or "OBSERVED_FAILED_START_END_CLEANUP";
+        bool loopCovered = phaseVerdict == "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS";
         return new JsonObject
         {
-            ["verdict"] = successRequests ? "OBSERVED_SUCCESSFUL_DRIVE_PHASE_REQUESTS" : "INCONCLUSIVE",
+            ["verdict"] = m5PathObserved ? phaseVerdict : "INCONCLUSIVE",
+            ["m5_063PathObserved"] = m5PathObserved,
+            ["loopRequestCovered"] = loopCovered,
+            ["loopCoverageOpen"] = !loopCovered,
             ["phaseVerdict"] = phaseVerdict, ["startActionId"] = ids[0], ["loopActionId"] = ids[1], ["endActionId"] = ids[2],
             ["startCompletion"] = start?.DeepClone(), ["startResult"] = startResult, ["loopRequired"] = loopRequired,
             ["loopRequestObserved"] = loopObserved, ["loopCoverageMissing"] = loopRequired is null ? null : loopRequired == true && !loopObserved,
@@ -72,13 +80,15 @@ public static class M5HwAnalysis
             ["endActionCompletion"] = endAction?.DeepClone(), ["endActionCompletionBeforeDrive"] = endActionBefore,
             ["driveCompletion"] = drive?.DeepClone(), ["driveResult"] = driveResult,
             ["successfulStartLoopEndRequestCoverage"] = successRequests, ["successfulTraversalCoverage"] = false,
-            ["traversalJudgement"] = "NOT_JUDGED: phase requests/API results alone do not certify physical traversal or M12/M13 source completeness. Failed traversal cannot satisfy successful traversal coverage.",
+            ["traversalJudgement"] = "NOT_JUDGED: successful traversal belongs to the M12/M13 acceptance, which must observe a successful DriveToPose. Phase requests/API results alone do not certify physical traversal or M12/M13 source completeness. Failed traversal cannot satisfy successful traversal coverage.",
             ["driveOutcomeAssessment"] = driveResult == 0 ? "API_SUCCESS_REQUIRES_TRAVERSAL_REVIEW" : "UNASSESSED_M12_M13_OUTCOME",
             ["phaseTriggerLogs"] = new JsonArray(phaseLogs.Select(e => e.DeepClone()).ToArray()),
             ["boundaryDiagnostics"] = new JsonArray(rows.Where(e => e["kind"]?.GetValue<string>() == "stack-log"
                 && e["line"]?.GetValue<string>().StartsWith("MISSING:", StringComparison.Ordinal) == true).Select(e => e.DeepClone()).ToArray()),
             ["identityNote"] = "Action IDs require an unambiguous existing PreconditionsMet log for the selected group. Missing/ambiguous logs do not imply a source defect. Host completion delivery may follow the synchronous Loop request; matching ID/result, not delivery timestamp, determines its requirement.",
-            ["verdictRule"] = "M5-063 requires matching Start ID and result0 before requesting the default Loop. A failed Start permits Start->End cleanup. A matching End completion sets state4 regardless of result; successful End/robot echo coverage is separate from the completion-order gate. No failed drive satisfies successful traversal coverage; M12/M13 cause remains unassessed. No planner/action correction or acceptance follows."
+            ["verdictRule"] = "M5-063 (0x4F0D80..D8C, 0x4F0E14..2A) requires matching Start ID and result0 before requesting the default Loop. A failed Start permits Start->End cleanup. A matching End completion sets state4 regardless of result (0x4F0DC8..DD4); successful End/robot echo coverage is separate from the completion-order gate. "
+                + "Operator 2026-10-20: the check's verdict covers M5-063 only and is OBSERVED on either selected path (successful Start->Loop->End requests or failed Start->End cleanup), whatever the drive result; contradictions stay non-OBSERVED. "
+                + "loopRequestCovered records the Loop request; a failed-path run leaves Loop coverage open for a later run. Successful traversal belongs to the M12/M13 acceptance: successfulTraversalCoverage stays false and the traversal is NOT_JUDGED here. No planner/action correction or acceptance follows."
         };
     }
 
@@ -129,36 +139,250 @@ public static class M5HwAnalysis
         };
     }
 
-    // Coherent means independently captured actual remaining allowances at the send gate, not a
-    // subtraction of an old delivered F1 payload from later stream totals. No public runtime join exists.
-    public sealed record BudgetAdmission(double AtMs, long Epoch, byte MessageId, int MessageBytes,
-        int RemainingBytes, int RemainingAudioFrames, bool Sent, bool Coherent);
+    // ---------------------------------------------------------------- B-M5-32 diagnostic hooks
 
-    public static JsonObject BudgetSamples(IReadOnlyList<BudgetAdmission>? samples)
+    /// <summary>One read-only engine observation from <see cref="AnimationScheduler.Diagnostic"/>, stamped on the
+    /// harness clock at its observed point (the hook's own Stopwatch timestamp, taken before a send).</summary>
+    public sealed record Diagnostic(double AtMs, AnimationDiagnostic Observation);
+
+    /// <summary>The EngineToRobot tags the animation stream sends (IAnimationSink C2..C19, A20, A21): 0x8E, 0x8F,
+    /// 0x91..0x95, 0x97..0x9B.</summary>
+    public static readonly byte[] StreamMessageIds = { 0x8E, 0x8F, 0x91, 0x92, 0x93, 0x94, 0x95, 0x97, 0x98, 0x99, 0x9A, 0x9B };
+
+    /// <summary>Harness choice: a joined wire message must be captured within this long after its gate observation, and
+    /// gate observations up to this long before a window are included so in-flight sends can be joined.</summary>
+    public const double JoinMarginMs = 1000;
+
+    /// <summary>The join of successful send-gate observations to the captured outbound wire.</summary>
+    public sealed class SendJoin
     {
-        var rows = new JsonArray(); int violations = 0, coherent = 0;
+        public string? Problem { get; init; }
+        public IReadOnlyDictionary<long, M5Hw.WireMessage> BySequence { get; init; } = new Dictionary<long, M5Hw.WireMessage>();
+        public IReadOnlySet<(bool Outbound, int Line, int Ordinal)> JoinedWire { get; init; } = new HashSet<(bool, int, int)>();
+        public JsonObject Evidence { get; init; } = new();
+        public static (bool Outbound, int Line, int Ordinal) Key(M5Hw.WireMessage m) => (m.Outbound, m.FrameLine, m.SubmessageOrdinal);
+        public bool IsJoined(M5Hw.WireMessage m) => JoinedWire.Contains(Key(m));
+    }
+
+    /// <summary>
+    /// Joins the successful send-gate observations (C14 gate and the direct End) made in [fromMs - margin, toMs] to
+    /// the outbound stream messages of the capture, by stream order: the gate's send order must equal one contiguous
+    /// run of the deduplicated outbound stream-tag messages, matching tag and EngineToRobot size, each captured no
+    /// earlier than its gate observation and within the margin after it. Exactly one such run must exist; none or
+    /// several leave the whole join unmade, with the reason. Time only bounds candidates; order and content decide.
+    /// </summary>
+    public static SendJoin JoinSends(IEnumerable<M5Hw.WireMessage> messages, IReadOnlyList<Diagnostic> diagnostics,
+        double fromMs, double toMs)
+    {
+        var sent = diagnostics.Where(d => d.Observation is SendGateObservation { Sent: true }
+                && d.AtMs >= fromMs - JoinMarginMs && d.AtMs <= toMs)
+            .Select(d => (d.AtMs, Gate: (SendGateObservation)d.Observation)).ToArray();
+        var wire = OrderedUnique(messages).Where(m => m.Outbound && m.Payload.Length > 0
+            && Array.IndexOf(StreamMessageIds, m.Payload[0]) >= 0).ToArray();
+        string? problem = null; int offset = -1, candidates = 0;
+        if (sent.Length == 0) problem = "No successful send-gate observation in the window; nothing to join.";
+        else if (sent.Any(s => s.Gate.MessageId is null)) problem = "A successful send-gate observation names no catalogued message tag; its wire identity is unknown.";
+        else
+        {
+            for (int o = 0; o + sent.Length <= wire.Length; o++)
+            {
+                if (wire[o].AtMs < sent[0].AtMs) continue;
+                if (wire[o].AtMs > sent[0].AtMs + JoinMarginMs) break;
+                bool match = true;
+                for (int k = 0; k < sent.Length && match; k++)
+                {
+                    var w = wire[o + k]; var (at, gate) = sent[k];
+                    match = w.Payload[0] == gate.MessageId && w.Payload.Length == gate.Size
+                        && w.AtMs >= at && w.AtMs <= at + JoinMarginMs;
+                }
+                if (match) { candidates++; offset = o; }
+            }
+            if (candidates == 0) problem = "No contiguous run of captured outbound stream messages matches the gate's send order (tag, size, capture after gate); another sender or a lost/unsent message breaks the join.";
+            else if (candidates > 1) problem = $"{candidates} runs of captured stream messages match the gate's send order; the join is ambiguous.";
+        }
+        var bySequence = new Dictionary<long, M5Hw.WireMessage>();
+        var joined = new HashSet<(bool, int, int)>();
+        if (problem is null)
+            for (int k = 0; k < sent.Length; k++)
+            {
+                joined.Add(SendJoin.Key(wire[offset + k]));
+                if (sent[k].Gate.BufferSequence != 0) bySequence[sent[k].Gate.BufferSequence] = wire[offset + k];
+            }
+        int unjoinedInWindow = wire.Count(m => m.AtMs >= fromMs && m.AtMs <= toMs && !joined.Contains(SendJoin.Key(m)));
+        return new SendJoin
+        {
+            Problem = problem, BySequence = bySequence, JoinedWire = joined,
+            Evidence = new JsonObject
+            {
+                ["joined"] = problem is null, ["problem"] = problem, ["sentGateObservations"] = sent.Length,
+                ["matchingRuns"] = candidates, ["unjoinedStreamWireInWindow"] = unjoinedInWindow,
+                ["firstJoinedWire"] = problem is null ? WireEvidence(new[] { wire[offset] }) : null,
+                ["lastJoinedWire"] = problem is null ? WireEvidence(new[] { wire[offset + sent.Length - 1] }) : null,
+                ["marginMs"] = JoinMarginMs,
+                ["joinRule"] = "B-M5-32: successful C14 gate sends and direct End (0x57BF96..BFCC, 0x57C464..496) in send order "
+                    + "must equal exactly one contiguous run of deduplicated outbound stream-tag messages (tag, EngineToRobot size), "
+                    + "each captured at or after its gate observation and within the margin. Zero or several runs: unjoined. "
+                    + "The margin is a harness choice; time bounds candidates, order and content decide."
+            }
+        };
+    }
+
+    /// <summary>
+    /// M5-029 per-frame face activity from the StreamLayers hook, keyed by the wire identity of each frame's audio
+    /// message through the send join. A frame whose audio (or, with its face flag set, whose face) is not joined stays
+    /// unjoined and is not guessed.
+    /// </summary>
+    public static (IReadOnlyList<FaceActivity>? Activity, JsonArray Rows, string? Problem) LayerActivity(SendJoin join,
+        IReadOnlyList<Diagnostic> diagnostics, double fromMs, double toMs)
+    {
+        var frames = diagnostics.Where(d => d.Observation is LayerFrameObservation && d.AtMs >= fromMs && d.AtMs <= toMs).ToArray();
+        var rows = new JsonArray();
+        if (join.Problem is not null) return (null, rows, "Send join unavailable: " + join.Problem);
+        if (frames.Length == 0) return (null, rows, "No StreamLayers frame observation in the window.");
+        var activity = new List<FaceActivity>(); int unjoined = 0;
+        foreach (var d in frames)
+        {
+            var f = (LayerFrameObservation)d.Observation;
+            join.BySequence.TryGetValue(f.AudioBufferSequence, out var audio);
+            M5Hw.WireMessage? face = null;
+            if (f.FaceBufferSequence is { } s) join.BySequence.TryGetValue(s, out face);
+            string? reason = audio is null ? "The frame's audio message is not joined to the wire."
+                : f.FaceFlag && f.FaceBufferSequence is null ? "Face flag set but no face was buffered (BufferFaceToSend produced no message)."
+                : f.FaceFlag && face is null ? "The frame's buffered face is not joined to the wire."
+                : !f.FaceFlag && f.FaceBufferSequence is not null ? "A face was buffered with the face flag clear." : null;
+            if (reason is null) activity.Add(new FaceActivity(audio!.FrameLine, audio.SubmessageOrdinal, f.FaceFlag));
+            else unjoined++;
+            rows.Add(new JsonObject { ["atMs"] = d.AtMs, ["frameNumber"] = f.FrameNumber, ["streamTimeMs"] = f.StreamTimeMs,
+                ["faceFlag"] = f.FaceFlag, ["backpackFlag"] = f.BackpackFlag,
+                ["audioWire"] = audio is null ? null : WireEvidence(new[] { audio }),
+                ["faceWire"] = face is null ? null : WireEvidence(new[] { face }), ["unjoinedReason"] = reason });
+        }
+        return (activity, rows, unjoined > 0 ? $"{unjoined} StreamLayers frame(s) could not be joined to the wire." : null);
+    }
+
+    /// <summary>M5-028 KeepFaceAlive calls from the hook, in call order, within the window.</summary>
+    public static IReadOnlyList<BlinkCall> BlinkCalls(IReadOnlyList<Diagnostic> diagnostics, double fromMs, double toMs)
+        => diagnostics.Where(d => d.Observation is KeepFaceAliveObservation && d.AtMs >= fromMs && d.AtMs <= toMs)
+            .Select(d => { var k = (KeepFaceAliveObservation)d.Observation;
+                return new BlinkCall(k.CallNumber, d.AtMs, k.BlinkTimerBeforeMs, k.BlinkTimerAfterMs, k.BlinkGenerated); }).ToArray();
+
+    /// <summary>M3-012 gate observations within the window, as coherent admission samples.</summary>
+    public static IReadOnlyList<BudgetAdmission> Admissions(IReadOnlyList<Diagnostic> diagnostics, double fromMs, double toMs)
+        => diagnostics.Where(d => d.Observation is SendGateObservation && d.AtMs >= fromMs && d.AtMs <= toMs)
+            .Select(d => { var g = (SendGateObservation)d.Observation;
+                return new BudgetAdmission(d.AtMs, g.BudgetEpoch, g.MessageId ?? 0, g.Size, g.RemainingBytes,
+                    g.RemainingAudioFrames, g.Sent, Coherent: true, CountsAsAudioFrame: g.CountsAsAudioFrame,
+                    DirectBypass: g.DirectBypass, BufferSequence: g.BufferSequence, Admitted: g.DirectBypass ? null : g.Admitted); }).ToArray();
+
+    /// <summary>Every observed budget refresh (C9), whatever its time: an epoch's rows may follow its refresh.</summary>
+    public static IReadOnlyList<BudgetRefresh> Refreshes(IReadOnlyList<Diagnostic> diagnostics)
+        => diagnostics.Where(d => d.Observation is BudgetRefreshObservation)
+            .Select(d => { var r = (BudgetRefreshObservation)d.Observation;
+                return new BudgetRefresh(d.AtMs, r.BudgetEpoch, r.BytesPlayed, r.FramesPlayed, r.BytesStreamed,
+                    r.FramesStreamed, r.BytesToSend, r.FramesToSend); }).ToArray();
+
+    public sealed record BudgetRefresh(double AtMs, long Epoch, int BytesPlayed, int FramesPlayed, int BytesStreamed,
+        int FramesStreamed, int BytesToSend, int FramesToSend);
+
+    // Coherent means actual remaining allowances observed at the send gate (the B-M5-32 hook), not a
+    // subtraction of an old delivered F1 payload from later stream totals.
+    public sealed record BudgetAdmission(double AtMs, long Epoch, byte MessageId, int MessageBytes,
+        int RemainingBytes, int RemainingAudioFrames, bool Sent, bool Coherent,
+        bool? CountsAsAudioFrame = null, bool DirectBypass = false, long BufferSequence = 0, bool? Admitted = null);
+
+    // prefix is the complete observed gate history before the judged window, not a join-margin slice.
+    // Null means that history is unavailable; an empty list explicitly means no earlier offers were observed.
+    public static JsonObject BudgetSamples(IReadOnlyList<BudgetAdmission>? samples, IReadOnlyList<BudgetRefresh>? refreshes = null,
+        IReadOnlyList<BudgetAdmission>? prefix = null)
+    {
+        var rows = new JsonArray(); int violations = 0, coherent = 0, formulaMismatches = 0, accountingMismatches = 0, unverified = 0;
+        // C9 (0x57C6F6..7AC): bytes = played - streamed + 8192, negative -> 0, then min(30000); frames = max(0, played - streamed + 14).
+        var byEpoch = new Dictionary<long, BudgetRefresh>();
+        var refreshRows = new JsonArray();
+        var relevantEpochs = (samples ?? Array.Empty<BudgetAdmission>()).Where(s => s.Coherent).Select(s => s.Epoch).ToHashSet();
+        foreach (var r in (refreshes ?? Array.Empty<BudgetRefresh>()).Where(r => relevantEpochs.Contains(r.Epoch)))
+        {
+            byEpoch[r.Epoch] = r;
+            int bytes = unchecked(r.BytesPlayed - r.BytesStreamed + 8192); if (bytes < 0) bytes = 0;
+            int expectedBytes = Math.Min(bytes, 30000), expectedFrames = Math.Max(unchecked(r.FramesPlayed - r.FramesStreamed + 14), 0);
+            bool mismatch = r.BytesToSend != expectedBytes || r.FramesToSend != expectedFrames;
+            if (mismatch) { formulaMismatches++;
+                refreshRows.Add(new JsonObject { ["atMs"] = r.AtMs, ["epoch"] = r.Epoch, ["bytesToSend"] = r.BytesToSend,
+                    ["expectedBytes"] = expectedBytes, ["framesToSend"] = r.FramesToSend, ["expectedFrames"] = expectedFrames }); }
+        }
+        // C14 (0x57BFB0..BFCC): only a successful buffered send subtracts its size and, for audio, one frame.
+        var spent = new Dictionary<long, (int Bytes, int Frames)>();
+        var prefixProblems = new Dictionary<long, string>();
+        var anchoredEpochs = new HashSet<long>();
+        foreach (var sample in prefix ?? Array.Empty<BudgetAdmission>())
+        {
+            if (!relevantEpochs.Contains(sample.Epoch) || !byEpoch.TryGetValue(sample.Epoch, out var refresh)) continue;
+            var used = spent.GetValueOrDefault(sample.Epoch);
+            if (!sample.Coherent || sample.AtMs < refresh.AtMs)
+                prefixProblems[sample.Epoch] = "The accounting prefix contains an incoherent offer or an offer before its refresh.";
+            else if (sample.RemainingBytes != unchecked(refresh.BytesToSend - used.Bytes)
+                || sample.RemainingAudioFrames != refresh.FramesToSend - used.Frames)
+                prefixProblems[sample.Epoch] = "The earlier gate history does not establish the accounting prefix from its refresh.";
+            if (!prefixProblems.ContainsKey(sample.Epoch)) anchoredEpochs.Add(sample.Epoch);
+            if (sample.Sent && !sample.DirectBypass && sample.MessageId != 0x9A)
+                spent[sample.Epoch] = (unchecked(used.Bytes + sample.MessageBytes), used.Frames
+                    + (sample.CountsAsAudioFrame ?? (sample.MessageId is 0x8E or 0x8F) ? 1 : 0));
+        }
         foreach (var sample in samples ?? Array.Empty<BudgetAdmission>())
         {
-            bool directEnd = sample.MessageId == 0x9A;
-            int frameCost = sample.MessageId is 0x8E or 0x8F ? 1 : 0;
+            bool directEnd = sample.DirectBypass || sample.MessageId == 0x9A;
+            int frameCost = sample.CountsAsAudioFrame is { } audio ? (audio ? 1 : 0) : sample.MessageId is 0x8E or 0x8F ? 1 : 0;
             bool violation = sample.Coherent && sample.Sent && !directEnd
                 && (sample.MessageBytes > sample.RemainingBytes || frameCost > sample.RemainingAudioFrames);
             if (sample.Coherent) coherent++;
             if (violation) violations++;
+            bool? accountingMatches = null; string? accountingProblem = null;
+            if (!sample.Coherent) prefixProblems[sample.Epoch] = "An incoherent offer prevents establishing subsequent accounting.";
+            if (sample.Coherent && refreshes is not null)
+            {
+                if (sample.Epoch == 0 || !byEpoch.TryGetValue(sample.Epoch, out var refresh))
+                    accountingProblem = "The budget epoch refresh was not observed.";
+                else if (prefix is null)
+                    accountingProblem = "The accounting prefix from the budget refresh through the window is unavailable.";
+                else if (prefixProblems.TryGetValue(sample.Epoch, out var problem)) accountingProblem = problem;
+                else if (sample.AtMs < refresh.AtMs) accountingProblem = "The gate observation precedes its budget refresh.";
+                else if (!anchoredEpochs.Contains(sample.Epoch) && (sample.RemainingBytes != refresh.BytesToSend
+                    || sample.RemainingAudioFrames != refresh.FramesToSend))
+                {
+                    accountingProblem = "The accounting prefix is unavailable: the first observed offer already has reduced allowances.";
+                    prefixProblems[sample.Epoch] = accountingProblem;
+                }
+                else
+                {
+                    anchoredEpochs.Add(sample.Epoch);
+                    var used = spent.GetValueOrDefault(sample.Epoch);
+                    accountingMatches = sample.RemainingBytes == unchecked(refresh.BytesToSend - used.Bytes)
+                        && sample.RemainingAudioFrames == refresh.FramesToSend - used.Frames;
+                    if (accountingMatches == false) accountingMismatches++;
+                    if (sample.Sent && !directEnd) spent[sample.Epoch] = (unchecked(used.Bytes + sample.MessageBytes), used.Frames + frameCost);
+                }
+            }
+            if (accountingProblem is not null) unverified++;
             rows.Add(new JsonObject { ["atMs"] = sample.AtMs, ["epoch"] = sample.Epoch,
                 ["messageId"] = sample.MessageId, ["messageBytes"] = sample.MessageBytes,
                 ["remainingBytesAtGate"] = sample.RemainingBytes, ["remainingFramesAtGate"] = sample.RemainingAudioFrames,
-                ["sent"] = sample.Sent, ["coherentGateObservation"] = sample.Coherent,
-                ["directEndBypass"] = directEnd, ["observedViolation"] = violation });
+                ["admitted"] = sample.Admitted, ["sent"] = sample.Sent, ["coherentGateObservation"] = sample.Coherent,
+                ["bufferSequence"] = sample.BufferSequence, ["directEndBypass"] = directEnd,
+                ["observedViolation"] = violation, ["allowanceAccountingMatches"] = accountingMatches,
+                ["accountingUnverifiedReason"] = accountingProblem });
         }
         return new JsonObject { ["coherentSampleVerdict"] = violations > 0 ? "OBSERVED_COHERENT_ADMISSION_VIOLATION"
-                : coherent > 0 ? "OBSERVED_COHERENT_SAMPLES_WITHIN_GATE" : "NOT_JUDGED",
-            ["coherentSamples"] = coherent, ["observedViolations"] = violations, ["samples"] = rows,
+                : formulaMismatches + accountingMismatches > 0 ? "OBSERVED_ADMISSION_ACCOUNTING_MISMATCH"
+                : unverified > 0 ? "INCONCLUSIVE" : coherent > 0 ? "OBSERVED_COHERENT_SAMPLES_WITHIN_GATE" : "NOT_JUDGED",
+            ["coherentSamples"] = coherent, ["observedViolations"] = violations,
+            ["allowanceFormulaMismatches"] = formulaMismatches, ["allowanceAccountingMismatches"] = accountingMismatches,
+            ["accountingUnverifiedSamples"] = refreshes is null ? null : unverified,
+            ["refreshesChecked"] = refreshes is null ? null : byEpoch.Count, ["formulaMismatchRows"] = refreshRows, ["samples"] = rows,
             ["budgetCompliance"] = "NOT_JUDGED",
-            ["coverageNote"] = "Individual coherent samples do not certify all sends. Buffered admission uses actual remaining byte/frame allowances; direct End bypasses it but still adds one frame and its bytes on success." };
+            ["coverageNote"] = "Individual coherent samples do not certify all sends. Buffered admission uses actual remaining byte/frame allowances; direct End bypasses it but still adds one frame and its bytes on success. Only epochs used in the judged window are checked. Complete earlier gate history from each refresh is required before checking the window remainder against C14; missing prefix evidence is unverified, never assumed zero." };
     }
 
-    // Actual call/deadline observations only. Public harness snapshots cannot currently populate this join.
+    // Actual call/deadline observations only: the B-M5-32 KeepFaceAlive hook (BlinkCalls) or a named unit substitute.
     public sealed record BlinkCall(long CallNumber, double AtMs, int BeforeMs, int AfterMs, bool Generated);
 
     public static JsonObject Blinks(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs,
@@ -207,10 +431,13 @@ public static class M5HwAnalysis
             ["generationEvidenceAvailable"] = captured, ["generationCalls"] = ticks, ["problems"] = problems,
             ["encodedFaceDiagnostics"] = faces, ["physicalObservation"] = observation.DeepClone(),
             ["firmwareAcceptance"] = "NOT_JUDGED",
-            ["missing"] = captured ? null : "Actual KeepFaceAlive call numbers, pre-existing blink deadline and generation/reset values at 0x58D382..38C/0x58D54C..550 are not exposed by the allowed public harness observations.",
+            ["missing"] = captured ? null : calls is { Count: > 0 }
+                ? "KeepFaceAlive calls were observed but none generated a blink inside the window."
+                : "No KeepFaceAlive call observation (0x58D382..38C/0x58D54C..550) in the window: the diagnostic hook was not supplied or the keep-alive gate stayed closed.",
             ["verdictRule"] = "M5-062 B4 base setter preserves the existing blink deadline. M5-028 subtracts60 "
                 + "per KeepFaceAlive call, not wall milliseconds; a due blink generates and draws a new inclusive "
                 + "44000..45000 deadline from these parameter values. Paused calls do not consume wall time. "
+                + "Calls come only from the read-only KeepFaceAlive hook (B-M5-32), one row per actual call. "
                 + "Readback, layer-name samples, dark encoded images and human answers cannot fabricate generation "
                 + "events. Lit pixels use the engine codec model only; nearest raw F1 messages bound host capture "
                 + "order, not firmware playback/display (M3-008/M5-036). No darkness threshold is an acceptance rule."
@@ -275,12 +502,12 @@ public static class M5HwAnalysis
         };
     }
 
-    // Frame activity must come from independently established generation evidence, never total wire counts.
-    // The allowed public harness currently cannot supply this; synthetic unit fixtures name that substitution.
+    // Frame activity must come from independently established generation evidence, never total wire counts:
+    // the B-M5-32 StreamLayers hook joined to the wire (LayerActivity), or a named unit substitute.
     public sealed record FaceActivity(int AudioFrameLine, int AudioOrdinal, bool Active);
 
     public static JsonObject FiniteLayers(IEnumerable<M5Hw.WireMessage> messages, double fromMs, double toMs,
-        bool drained, IReadOnlyList<FaceActivity>? activity = null)
+        bool drained, IReadOnlyList<FaceActivity>? activity = null, string? activityProblem = null)
     {
         var rows = OrderedUnique(messages).Where(m => m.Outbound && m.AtMs >= fromMs && m.AtMs <= toMs
             && m.Payload.Length > 0).ToArray();
@@ -301,14 +528,15 @@ public static class M5HwAnalysis
         }
         int starts = rows.Count(m => m.Payload[0] == 0x9B), ends = rows.Count(m => m.Payload[0] == 0x9A);
         int faceCount = rows.Count(m => m.Payload[0] == 0x97), backpack = rows.Count(m => m.Payload[0] == (byte)RobotMessageId.AnimBackpackLights);
-        bool established = audioIndices.Length > 0 && activity?.Count == audioIndices.Length && matched == audioIndices.Length;
+        bool established = activityProblem is null && audioIndices.Length > 0
+            && activity?.Count == audioIndices.Length && matched == audioIndices.Length;
         int assignedFaces = frames.Sum(f => f!["faces"]!.GetValue<int>());
         bool lifecycle = starts == 1 && ends == 1 && !rows.Any(m => m.Payload[0] == 0x8D)
             && rows.First(m => m.Payload[0] == 0x9B).Payload.Length == 2
             && rows.Last().Payload[0] == 0x9A && rows.Last().Payload.Length == 1;
         return new JsonObject
         {
-            ["verdict"] = missingFace > 0 ? "OBSERVED_MISSING_REQUIRED_FACE" : unexpectedFace > 0
+            ["verdict"] = activityProblem is not null ? "INCONCLUSIVE" : missingFace > 0 ? "OBSERVED_MISSING_REQUIRED_FACE" : unexpectedFace > 0
                 ? "OBSERVED_UNEXPECTED_FACE" : established && drained && lifecycle && backpack > 0 && faceCount > 0 && assignedFaces == faceCount
                     ? "OBSERVED_CONDITIONAL_LAYER_FRAMES" : "INCONCLUSIVE",
             ["faces"] = faceCount, ["audioFrames"] = audioIndices.Length, ["backpackChanges"] = backpack,
@@ -316,12 +544,15 @@ public static class M5HwAnalysis
             ["faceActivityEstablished"] = established, ["frameEvidence"] = frames,
             ["missingRequiredFaceFrames"] = missingFace, ["unexpectedFaceFrames"] = unexpectedFace,
             ["wireWindow"] = WireEvidence(rows),
-            ["missing"] = established ? null : "Per-frame layered face flags and random-draw/generation timing are unavailable through the allowed public observations; aggregate counts cannot establish required face output.",
+            ["missing"] = established ? null : activityProblem
+                ?? (activity is null ? "No per-frame layered face flag (StreamLayers hook) was supplied; aggregate counts cannot establish required face output."
+                    : "The supplied per-frame face flags do not cover every audio frame in the window exactly once."),
             ["verdictRule"] = "M5-029: ApplyLayersToAnim(null) sets face only from a due face-layer result; "
                 + "StreamLayers buffers face iff that flag is set. First distortion face is not due before cumulative "
                 + "duration >=33 ms; backpack has independent 0/200,200/60,260/60,320/60,380/60 timing. "
                 + "Face/audio totals may differ. A stored base face does not set the flag. No exact 13/20 oracle. "
-                + "Unknown flags/draws remain INCONCLUSIVE; distinct persistent coverage is KEEP_ALIVE."
+                + "Flags come from the read-only StreamLayers hook joined to the wire by stream order (B-M5-32); "
+                + "unknown or unjoined flags remain INCONCLUSIVE; distinct persistent coverage is KEEP_ALIVE."
         };
     }
 
@@ -475,8 +706,21 @@ public static class M5HwAnalysis
         };
     }
 
+    // The live harness and regression fixtures use this same wiring. The full run snapshot supplies the
+    // accounting prefix, independently of the bounded wire join and of the window's compliance claim.
+    public static JsonObject AudioFromDiagnostics(IEnumerable<M5Hw.WireMessage> messages, IEnumerable<JsonObject> events,
+        double fromMs, double toMs, IReadOnlyList<Diagnostic> diagnostics)
+    {
+        var wire = messages.ToArray();
+        var history = Admissions(diagnostics, double.NegativeInfinity, toMs);
+        return Audio(wire, events, fromMs, toMs, history.Where(a => a.AtMs >= fromMs).ToArray(),
+            JoinSends(wire, diagnostics, fromMs, toMs), Refreshes(diagnostics), history.Where(a => a.AtMs < fromMs).ToArray());
+    }
+
     public static JsonObject Audio(IEnumerable<M5Hw.WireMessage> messages, IEnumerable<JsonObject> events,
-        double fromMs, double toMs, IReadOnlyList<BudgetAdmission>? admissions = null)
+        double fromMs, double toMs, IReadOnlyList<BudgetAdmission>? admissions = null,
+        SendJoin? join = null, IReadOnlyList<BudgetRefresh>? refreshes = null,
+        IReadOnlyList<BudgetAdmission>? accountingPrefix = null)
     {
         var ordered = OrderedUnique(messages).Where(m => m.AtMs >= fromMs && m.AtMs <= toMs && m.Payload.Length != 0).ToArray();
         var wire = ordered.Where(m => m.Outbound).ToArray();
@@ -553,12 +797,37 @@ public static class M5HwAnalysis
                 + "are mixed-epoch diagnostics, not alleged send violations. No2ms grouping threshold is used."
         };
         result["framingVerdict"] = result["verdict"]!.DeepClone();
-        var budget = BudgetSamples(admissions);
+        var budget = BudgetSamples(admissions, refreshes, accountingPrefix);
         result["budgetEvidence"] = budget; result["budgetCompliance"] = "NOT_JUDGED";
         result["orderedWireWindow"] = WireEvidence(ordered);
-        result["admissionEvidenceMissing"] = "Actual allowance/success observations at0x57BF96..BFCC are unavailable through the allowed public harness. SendFault/InvokeEngineRequest are internal; unlocked API delivery snapshots cannot replace admission epochs.";
+        // B-M5-32: every outbound audio message of the window must be joined, by stream order, to a successful
+        // coherent gate observation whose epoch's allowances were themselves observed.
+        int unjoinedAudio = join is null ? audio.Length : audio.Count(m => !join.IsJoined(m));
+        int coherentInWindow = (admissions ?? Array.Empty<BudgetAdmission>()).Count(a => a.Coherent);
+        string? admissionMissing = admissions is null || coherentInWindow == 0
+                ? "No send-gate observation (0x57BF96..BFCC) was supplied for this window; delivery snapshots cannot replace admission epochs."
+            : join is null ? "Gate observations were not joined to the wire."
+            : join.Problem is not null ? "Send join unavailable: " + join.Problem
+            : unjoinedAudio > 0 ? $"{unjoinedAudio} outbound audio message(s) in the window are not joined to a gate observation."
+            : refreshes is null ? "Budget refresh observations (C9) were not supplied; gate allowances cannot be checked."
+            : budget["accountingUnverifiedSamples"]!.GetValue<int>() > 0 ? "Accounting unverified: "
+                + budget["samples"]!.AsArray().First(r => r!["accountingUnverifiedReason"] is not null)!["accountingUnverifiedReason"]!.GetValue<string>()
+            : null;
+        result["sendJoin"] = join?.Evidence.DeepClone();
+        result["unjoinedAudioMessages"] = unjoinedAudio;
+        result["admissionEvidenceMissing"] = admissionMissing;
+        int mismatches = budget["allowanceFormulaMismatches"]!.GetValue<int>() + budget["allowanceAccountingMismatches"]!.GetValue<int>();
         if (budget["observedViolations"]!.GetValue<int>() > 0) result["verdict"] = "OBSERVED_COHERENT_ADMISSION_VIOLATION";
-        else if (result["verdict"]!.GetValue<string>() == "OBSERVED_AUDIO_FRAMING_AND_COUNTERS") result["verdict"] = "INCONCLUSIVE";
+        else if (mismatches > 0) result["verdict"] = "OBSERVED_ADMISSION_ACCOUNTING_MISMATCH";
+        else if (result["verdict"]!.GetValue<string>() == "OBSERVED_AUDIO_FRAMING_AND_COUNTERS")
+        {
+            result["verdict"] = admissionMissing is null ? "OBSERVED_AUDIO_FRAMING_AND_ADMISSION" : "INCONCLUSIVE";
+            if (admissionMissing is null) result["budgetCompliance"] = "OBSERVED_FOR_JOINED_WINDOW";
+        }
+        result["admissionRule"] = "M3-012 C9 (0x57C6F6..7AC) refresh: bytes max(0,min(30000,played-streamed+8192)), frames max(0,played-streamed+14). "
+            + "C14 (0x57BF96..BFCC): a buffered message passes when its size fits the bytes left and, for 0x8E/0x8F, a frame is left; "
+            + "only a successful send subtracts. C12 direct End (0x57C464..496) bypasses the gate. Positive only when every outbound "
+            + "audio message in the window is joined to an observed gate send and each relevant epoch has its refresh and complete earlier gate history; it covers this window, not every send of the run.";
         if (states.Length >= 2)
         {
             var first = states[0]; var last = states[^1];

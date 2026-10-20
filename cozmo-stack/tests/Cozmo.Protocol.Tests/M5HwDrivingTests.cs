@@ -23,8 +23,11 @@ public class M5HwDrivingTests
     public void FailedStartAndTraversalPermitNoLoopButDoNotSatisfySuccessfulTraversal()
     {
         var result=Grade(Events());
-        Assert.Equal("INCONCLUSIVE",result["verdict"]!.GetValue<string>());
+        // Operator 2026-10-20 DRIVING split: M5-063 is OBSERVED on the failed-Start path whatever the drive result.
+        Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["verdict"]!.GetValue<string>());
         Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["phaseVerdict"]!.GetValue<string>());
+        Assert.False(result["loopRequestCovered"]!.GetValue<bool>());
+        Assert.True(result["loopCoverageOpen"]!.GetValue<bool>());
         Assert.False(result["loopRequired"]!.GetValue<bool>());
         Assert.False(result["loopCoverageMissing"]!.GetValue<bool>());
         Assert.True(result["endCompletionBeforeDrive"]!.GetValue<bool>());
@@ -57,6 +60,7 @@ public class M5HwDrivingTests
         Assert.Null(Grade(unknown)["loopRequired"]);
         var unexpected=Events(); unexpected.Add(Log(40,"GetResponseForAnimationTrigger.Found","DriveLoopDefault -> ag_loop"));
         Assert.Equal("OBSERVED_LOOP_AFTER_NONZERO_START",Grade(unexpected)["phaseVerdict"]!.GetValue<string>());
+        Assert.Equal("INCONCLUSIVE",Grade(unexpected)["verdict"]!.GetValue<string>());     // contradiction stays non-OBSERVED
     }
 
     // reach: unit (synthetic request/completion ordering; public completion may follow synchronous Loop construction).
@@ -68,9 +72,28 @@ public class M5HwDrivingTests
         events.Add(Log(40,"GetResponseForAnimationTrigger.Found","DriveLoopDefault -> ag_loop"));
         events.Add(Log(41,"IAction.Update.PreconditionsMet","Preconditions for PlayAnimationag_loop [101] successfully met."));
         var result=Grade(events);
-        Assert.Equal("OBSERVED_SUCCESSFUL_DRIVE_PHASE_REQUESTS",result["verdict"]!.GetValue<string>());
+        Assert.Equal("OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS",result["verdict"]!.GetValue<string>());
+        Assert.True(result["loopRequestCovered"]!.GetValue<bool>());
         Assert.True(result["successfulStartLoopEndRequestCoverage"]!.GetValue<bool>());
         Assert.False(result["successfulTraversalCoverage"]!.GetValue<bool>());
+    }
+
+    // reach: unit (synthetic successful Start/Loop/End with a failed drive; native 0x4F0D80..D8C selects Loop on
+    // matching Start result0, independent of the later drive result).
+    [Fact]
+    public void SuccessfulPhasePathIsObservedWhateverTheDriveResultAndTraversalStaysUnjudged()
+    {
+        var events=Events(0,0x04000002); events.RemoveAll(e=>e["Tag"]?.GetValue<uint>()==100);
+        events.Add(Complete(45,100,26,0));
+        events.Add(Log(40,"GetResponseForAnimationTrigger.Found","DriveLoopDefault -> ag_loop"));
+        events.Add(Log(41,"IAction.Update.PreconditionsMet","Preconditions for PlayAnimationag_loop [101] successfully met."));
+        var result=Grade(events);
+        Assert.Equal("OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS",result["verdict"]!.GetValue<string>());
+        Assert.True(result["loopRequestCovered"]!.GetValue<bool>());
+        Assert.False(result["successfulStartLoopEndRequestCoverage"]!.GetValue<bool>());
+        Assert.False(result["successfulTraversalCoverage"]!.GetValue<bool>());
+        Assert.StartsWith("NOT_JUDGED",result["traversalJudgement"]!.GetValue<string>());
+        Assert.Contains("M12/M13",result["traversalJudgement"]!.GetValue<string>());
     }
 
     // reach: unit (immutable captured run replay; no new robot run, source settlement or traversal proof).
@@ -88,6 +111,8 @@ public class M5HwDrivingTests
         Assert.Equal(0x02000000u,result["startResult"]!.GetValue<uint>());
         Assert.False(result["loopRequired"]!.GetValue<bool>());
         Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["phaseVerdict"]!.GetValue<string>());
+        Assert.Equal("OBSERVED_FAILED_START_END_CLEANUP",result["verdict"]!.GetValue<string>());
+        Assert.False(result["loopRequestCovered"]!.GetValue<bool>());
         Assert.True(result["endCompletionBeforeDrive"]!.GetValue<bool>());
         Assert.False(result["successfulTraversalCoverage"]!.GetValue<bool>());
         Assert.Contains(result["boundaryDiagnostics"]!.AsArray(),r=>r!["line"]!.GetValue<string>().Contains("M13-033"));

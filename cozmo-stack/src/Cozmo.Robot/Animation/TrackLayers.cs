@@ -165,6 +165,8 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
     /// </summary>
     public void KeepFaceAlive(LiveIdleParams p)
     {
+        int blinkBefore = BlinkTimerMs;                  // B-M5-32 diagnostic only
+        int? drawMin = null, drawMax = null;
         BlinkTimerMs -= 60;
         DartTimerMs -= 60;
 
@@ -193,8 +195,22 @@ internal sealed class FaceLayerManager : TrackLayerManager<FaceFrame>
                 max = 30000;
             }
             BlinkTimerMs = Rng.RandIntInRange(min, max);
+            drawMin = min;
+            drawMax = max;
         }
+
+        // fidelity: M5-028 (B-M5-32 hook: the blink timer before the 60 decrement, 0x0058D382..0x0058D38C, and after the
+        // call, the deadline drawn at 0x0058D54C..0x0058D550 when the blink branch ran; read only, no RNG draw)
+        Observer?.Invoke(new KeepFaceAliveObservation(System.Diagnostics.Stopwatch.GetTimestamp(), ++_keepAliveCalls,
+            blinkBefore, BlinkTimerMs, drawMin is not null, drawMin, drawMax));
     }
+
+    /// <summary>
+    /// B-M5-32: the scheduler's guarded diagnostic raiser while anything subscribes to
+    /// <see cref="AnimationScheduler.Diagnostic"/>, else null. Set under the scheduler's lock.
+    /// </summary>
+    internal Action<AnimationDiagnostic>? Observer;
+    private long _keepAliveCalls;
 
     /// <summary>
     /// K1 GenerateEyeShift(params): d = EyeDartMaxDistance; x = RandIntInRange((int)−d, (int)d), then y likewise;

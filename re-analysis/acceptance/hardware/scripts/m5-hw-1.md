@@ -63,11 +63,11 @@ Without `--allow-drive`, KEEP_ALIVE's live-idle part, LIVE_IDLE and DRIVING are 
 | ABORT | Cancel a long shipped clip after 750 ms. Count exactly one 0x8D, no End, at most one audio/face marker within 400 ms after the ordered wire Abort (pre-command backlog is separate); preserve full counter/echo tail and operator observation. | M5-023 A22/A23/A25; pending built frame can drain. Robot semantics M5-036. |
 | KEEP_ALIVE | Same cancellation, two-second neutral tail; with drive enabled, ten seconds of ProceduralLive with ordered Start FF/End bursts; then a separate ten-second no-idle persistent-eye-dart face window, requiring face output and no End while its prerequisites hold. | A31 0x0057CF6A..0x0057CFF2 measures the 0.5 s gate from last stream activity, **not cancel time**. A29/L8 burst idle; M5-027/030. Persistent layers: M5-028/029, 0x0057C530..0x0057C556. |
 | LOCKED_HEAD | Lock HEAD_TRACK (mask 1; mask 4 is BODY_TRACK, corrected by the manager 2026-10-20), play shipped head clip, unlock; retain lock request, actual Disable1, marked clip interval, F1 EnabledAnimTracks and raw head telemetry, then separate unlock request/actual Enable1 and physical observation. | M4-014 producer, M4-047 unlock, M5-035 unsuppressed stream and robot-side M5-036. RobotState samples let the reviewer compare reported motion. |
-| AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 admission uses remaining allowances at the send gate; API-delivery differences do not measure that gate. Direct End adds a frame/bytes outside admission; budget compliance is NOT_JUDGED without atomic evidence. M6 runtime uncertainty remains embedded. |
-| LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; without per-frame face flags/draw evidence this remains INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
+| AUDIO | Shipped >=5.5 s audio clip without body; Wwise bank source if available, sample/silence lengths, >=5 s span, rate, stream/play counters, drops and budget snapshots. | C9 admission uses remaining allowances at the send gate; API-delivery differences do not measure that gate. Direct End adds a frame/bytes outside admission. Since B-M5-32 the read-only send-gate and budget-refresh hooks supply the allowances, joined to the wire by stream order; without a complete join budget compliance stays NOT_JUDGED. M6 runtime uncertainty remains embedded. |
+| LAYERS | Temporarily suppress keepalive with a 600 s timeout, short nonlive play removes persistent keepalive layers, then one finite host distortion pulse. Retain conditional face/audio/backpack counts, Start/End, drained state and full ordered window; per-frame face flags come from the read-only StreamLayers hook joined to the wire (B-M5-32); an unjoined frame keeps the check INCONCLUSIVE; restore settings. | A12 removes keepalive; M5-031 TLC.Update/AddGlitch, Q1.8/Q1.9. M5-029 gates face emission; the provider and temporary timeout are explicit harness controls, not M7 behavior claims. Separate persistent-face coverage is under KEEP_ALIVE. |
 | LIVE_IDLE | Twelve seconds of default ProceduralLive; compare streamed signed head angles with preceding Motion.HeadAngleRad samples and default +/-6 degrees; require body/lift wiggles. | M5-030 0x0057D838..0x0057D84E, A34 defaults. Uncalibrated input is not forced; B-M5-23 covers it offline. |
-| PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
-| DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Successful default Start/Loop/End request coverage is separate from failed Start/End cleanup; failed traversal remains unassessed and does not cover a successful drive. |
+| PARAMETERS | Public message setter sets blink min/max to 44000/45000, confirms readback, observes for 60 s; restores defaults. KeepFaceAlive call/deadline rows from the read-only hook (B-M5-32) decide the verdict; the physical answer is retained separately. | M5-062 0x0057E8A2 calls base setter uncapped. A narrow valid min<max window makes spacing measurable; equal bounds trigger native fallback; an already scheduled blink may fire first. |
+| DRIVING | With drive consent, actual ManipulationSystem / DriveToPose.RunAsync 60 mm forward; record animation transitions, API action completion order, result and trace; 15 s timeout and stop. | M5-063 default 0x95/0x91/0x8D triplet; M12-024/M8/M7/M15 unresolved dependencies remain explicit. Since 2026-10-20 the verdict covers M5-063 on whichever phase path the action results select, whatever the drive result; loopRequestCovered records the Loop request. Successful traversal belongs to the M12/M13 acceptance. |
 | SLEEP | Public StartIdleTimeout(0.2,-1), observe visible MISSING and GoToSleepRequested; cancel timer. Capture new animation starts and logs for absence of sleep-child actions. | M5-038/M1-045; D2/D5/D4 are factory requests, not robot message IDs. The M8 action gap stays open. |
 | TEARDOWN | Dispose during a long clip; verify stale TestAnim.json deleted on construction and Dispose; grade the actual Dispose-call interval with discard markers, reliable identities and queue-origin limits; post-close silence is diagnostic. | M5-037/053/055/059. Teardown batch may contain stop/disconnect; M1-006 pacing may prevent a DisconnectRequest reaching the wire. |
 
@@ -84,6 +84,8 @@ sets are recorded. Missing suitable assets produce INCONCLUSIVE. No fabricated c
   window; raw frames remain authoritative. Timings are host capture times, not firmware execution times.
 - `events.jsonl`: startup diagnostics subscribed through BeforeStart, connection response, robot/animation state,
   stream counters, API action completion reports, play/cancel calls, errors and check boundaries.
+- `diagnostics.jsonl` (B-M5-32): every read-only engine hook observation of the run (KeepFaceAlive calls, StreamLayers
+  frames, send-gate offers and the direct End, budget refreshes), with its harness-clock time.
 - `provenance/`: script, harness sources, entrypoint, manifest and adopted settling report, with SHA-256 hashes.
 - `binaries/`: exact loaded Cozmo assemblies and their hashes; `resource-hashes.json` identifies animation/group/sound files.
 
@@ -246,3 +248,43 @@ The End completion-order gate is distinct from successful End playback evidence:
 handler state4 for any result. A failed End action is reported as such and is not silently accepted as
 successful End coverage or mislabeled as early drive completion. Successful wire/echo evidence remains
 separately required for that observation; unavailable evidence stays inconclusive.
+
+## Dated diagnostic-hook and driving correction - B-M5-32, 2026-10-20
+
+The operator approved read-only diagnostic hooks in the stack's animation code ("M5 decisions before the rerun").
+`AnimationScheduler.Diagnostic` reports, at the native point each grader cites, without drawing a random number,
+sending anything or changing any order (a regression compares the outbound bytes with and without subscribers):
+
+- every `KeepFaceAlive` call (M5-028): call number, blink timer before the 60 decrement (0x58D382..38C), the timer
+  after the call and whether a blink was generated with the bounds of its draw (0x58D54C..550);
+- every `StreamLayers` frame (M5-029): the layered face flag (0x64F204..22C, tested at 0x57C63C..646) and the send-buffer
+  sequence numbers of the frame's audio and face messages;
+- every message offered at the send gate and the direct End (M3-012, 0x57BF96..BFCC, 0x57C464..496): tag, size,
+  remaining byte/audio-frame allowances, admitted, sent; and every budget refresh (C9, 0x57C6F6..7AC).
+
+The harness subscribes for the whole run and only enqueues. The join to the wire is by stream order: the successful
+gate sends (from one second before a window to its end) must equal exactly one contiguous run of the captured,
+deduplicated outbound stream messages (tag and size), each captured at or after its gate observation and within one
+second of it. No run or several runs leave the join unmade and the check INCONCLUSIVE with the reason; nothing is
+guessed. The one-second margin is a harness choice, not an engine constant.
+
+- **LAYERS**: each StreamLayers frame's flag is keyed to its joined audio message; FiniteLayers then checks face output
+  per frame. An unjoined frame keeps the check INCONCLUSIVE.
+- **PARAMETERS**: the verdict now comes from the KeepFaceAlive calls stamped after the 44000/45000 readback (the B4
+  write and KeepFaceAlive share the scheduler lock, so those calls follow the write): 60 per call, a generated blink
+  draws an inclusive 44000..45000 deadline, calls continuous. The physical answer and encoded-face diagnostics remain
+  separate observations; firmware display stays NOT_JUDGED (M3-008/M5-036).
+- **AUDIO**: OBSERVED_AUDIO_FRAMING_AND_ADMISSION requires the framing observation plus every outbound audio message in
+  the window joined to an observed gate send, each relevant refresh matching C9 and every window gate remainder
+  matching C14's successful-send accounting. B-M5-33 reconstructs spending from the full earlier gate history of
+  each relevant epoch, including failed offers (no spending) and direct End (no allowance subtraction). The join
+  margin is not an epoch boundary. An unavailable or unestablished prefix leaves accounting unverified and the
+  result INCONCLUSIVE with its reason. budgetCompliance is then OBSERVED_FOR_JOINED_WINDOW only for the joined
+  window, not for earlier prefix rows or every send of the run; otherwise NOT_JUDGED.
+- **DRIVING** (operator decision): the check's verdict covers M5-063 and is OBSERVED on either selected path
+  (OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS or OBSERVED_FAILED_START_END_CLEANUP), whatever the drive result.
+  loopRequestCovered records whether the Loop request was covered; a failed-path run leaves Loop coverage open for a
+  later run. Contradictions stay non-OBSERVED. successfulTraversalCoverage stays false and the traversal NOT_JUDGED:
+  successful traversal belongs to the M12/M13 acceptance, and FailedTraversingPath stays unexplained there.
+
+Bundles gain `diagnostics.jsonl`. No manifest, inventory or status change; M5 is not accepted by this correction.

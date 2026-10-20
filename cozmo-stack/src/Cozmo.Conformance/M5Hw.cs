@@ -131,12 +131,16 @@ internal sealed class M5Run
     readonly string root, bundle, resources; readonly IPAddress ip; readonly List<JsonObject> records; readonly string[] argv; readonly HashSet<string>? only; readonly bool yes, drive;
     readonly Stopwatch clock = Stopwatch.StartNew(); readonly ConcurrentQueue<JsonObject> events = new(); readonly ConcurrentQueue<(double T, bool Out, byte[] Raw, Frame? Frame, string? Error)> frames = new();
     readonly List<JsonObject> results = new(); readonly ConcurrentQueue<string> errors = new(); readonly CancellationTokenSource cancel = new();
+    // B-M5-32: read-only engine observations (AnimationScheduler.Diagnostic), enqueued only; stamped on this clock.
+    readonly ConcurrentQueue<AnimationDiagnostic> diagnostics = new(); readonly long clockOrigin;
     CozmoRobot? robot; RobotConnectionResponse? response; bool disposed, disposeCompleted, connected; string cache = ""; bool cacheCtor;
     JsonObject neutralReference = new();
     JsonObject? activeObservationWindow;
     double Now => clock.Elapsed.TotalMilliseconds;
     public M5Run(string root, string bundle, IPAddress ip, string resources, List<JsonObject> records, string[] argv, HashSet<string>? only, bool yes, bool drive)
-    { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.only = only; this.yes = yes; this.drive = drive; }
+    { this.root = root; this.bundle = bundle; this.ip = ip; this.resources = resources; this.records = records; this.argv = argv; this.only = only; this.yes = yes; this.drive = drive; clockOrigin = Stopwatch.GetTimestamp() - clock.ElapsedTicks; }
+    double StampMs(long timestamp) => (timestamp - clockOrigin) * 1000.0 / Stopwatch.Frequency;
+    List<M5HwAnalysis.Diagnostic> Diagnostics() => diagnostics.ToArray().Select(d => new M5HwAnalysis.Diagnostic(StampMs(d.Timestamp), d)).ToList();
     void Event(string kind, JsonObject data) { data["atMs"] = Now; data["kind"] = kind; events.Enqueue(data); }
     void Wait(int ms) { if (cancel.Token.WaitHandle.WaitOne(ms)) cancel.Token.ThrowIfCancellationRequested(); }
     bool Poll(Func<bool> predicate, int ms) { double end = Now + ms; while (Now < end) { if (predicate()) return true; Wait(10); } return predicate(); }
@@ -213,6 +217,7 @@ internal sealed class M5Run
             robot = CozmoRobot.Create(engineOptions: new CozmoEngineOptions { ResourcesPath = resources, AnimationCachePath = cache, BeforeStart = e => { EngineEvidence.Subscribe(e, line => { }, Event); e.GoToSleepRequested += () => Event("go-to-sleep-requested", new()); e.ActionCompleted += a => Event("action-completed", JsonSerializer.SerializeToNode(a)!.AsObject()); } });
             cacheCtor = !File.Exists(Path.Combine(cache, "TestAnim.json"));
             robot.Transport.FrameTrace += f => frames.Enqueue((Now, f.Outbound, (byte[])f.Raw.Clone(), f.Frame, f.Error));
+            robot.Animations.Scheduler.Diagnostic += diagnostics.Enqueue; // raised under the scheduler lock: enqueue only, never call back
             robot.Engine.ConnectionResponse += r => { response = r; Event("connection-response", new() { ["result"] = r.Result.ToString(), ["firmware"] = r.FwVersion }); };
             robot.HandlerFaulted += e => Event("handler-fault", new() { ["exception"] = e.ToString() });
             robot.Animations.Event += s => Event("animation-event", new() { ["text"] = s });
@@ -382,7 +387,8 @@ internal sealed class M5Run
                     var sound = new[] { Path.Combine(resources, "sound"), Path.Combine(resources, "assets", "sound") }.FirstOrDefault(Directory.Exists);
                     string source = "none (silence only)"; if (sound is not null) { r.Animations.AudioSource = Cozmo.Robot.Animation.Wwise.WwiseAudioSource.Load(new[] { sound }); source = sound; }
                     double playStart = Now; Complete(Play(c), (int)c.DurationMs + 8000); double playEnd = Now; Wait(500);
-                    var result = M5HwAnalysis.Audio(Wire(playStart, playEnd), events, playStart, playEnd); result["playFromMs"] = playStart; result["playToMs"] = playEnd;
+                    var hooks = Diagnostics();
+                    var result = M5HwAnalysis.AudioFromDiagnostics(Wire(), events, playStart, playEnd, hooks); result["playFromMs"] = playStart; result["playToMs"] = playEnd;
                     result["clip"] = c.Name; result["audioSource"] = source;
                     return result;
                 }
@@ -398,9 +404,12 @@ internal sealed class M5Run
                         if (!Poll(() => Volatile.Read(ref pulse) == 0, 2000)) return Missing("TLC did not consume distortion pulse");
                         Wait(200); bool drained = Poll(() => !sched.HaveLayersToSend, 5000); Wait(300);
                         double layerEnd = Now; EndWindow(layerWindow);
-                        var result = M5HwAnalysis.FiniteLayers(Wire(layerStart, layerEnd), layerStart, layerEnd, drained);
+                        var hooks = Diagnostics(); var join = M5HwAnalysis.JoinSends(Wire(), hooks, layerStart, layerEnd);
+                        var (activity, layerRows, activityProblem) = M5HwAnalysis.LayerActivity(join, hooks, layerStart, layerEnd);
+                        var result = M5HwAnalysis.FiniteLayers(Wire(layerStart, layerEnd), layerStart, layerEnd, drained, activity, activityProblem);
+                        result["sendJoin"] = join.Evidence; result["layerFrameHook"] = layerRows;
                         result["layerFromMs"] = layerStart; result["layerToMs"] = layerEnd;
-                        result["stimulus"] = "Finite public distortion-provider pulse through TLC.Update; 600s harness timeout suppresses keepalive and short nonlive InitStream removes its persistent layers. No per-frame generation flags are exposed; counts alone cannot certify the random finite-glitch trace.";
+                        result["stimulus"] = "Finite public distortion-provider pulse through TLC.Update; 600s harness timeout suppresses keepalive and short nonlive InitStream removes its persistent layers. Per-frame face flags come from the read-only StreamLayers hook (B-M5-32), joined to the wire by stream order; counts alone cannot certify the random finite-glitch trace.";
                         var persistent = results.FirstOrDefault(x => x["id"]?.GetValue<string>() == "KEEP_ALIVE")?["persistentFace"];
                         result["persistentFaceCoverage"] = persistent?.DeepClone() ?? Missing("Separate KEEP_ALIVE persistent-face observation not available in this subset");
                         sched.DesiredFaceDistortion = previous; sched.KeepAliveTimeoutSec = timeout;
@@ -425,6 +434,8 @@ internal sealed class M5Run
                     r.Animations.SetLiveIdleAnimationParameters(new[] { LiveIdleParam.BlinkSpacingMinTime_ms, LiveIdleParam.BlinkSpacingMaxTime_ms }, new[] { 44000f, 45000f }); Wait(300);
                     var result = Observe("M5-062 B4 base setter accepts 45000 uncapped. Min 44000 and max 45000 avoid the max<=min fallback and make long-spacing observation discriminating; first pre-existing blink deadline may remain. No movement idle is pushed.");
                     result["maxReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMaxTime_ms]; result["minReadback"] = r.Animations.Scheduler.LiveIdleParameters[LiveIdleParam.BlinkSpacingMinTime_ms];
+                    // The B4 write and KeepFaceAlive both hold the scheduler lock: a call stamped after this readback ran after the write.
+                    double readbackAt = Now; result["readbackAtMs"] = readbackAt;
                     var blinkWindow = BeginWindow(id, "BLINKS");
                     var layerSamples = new JsonArray();
                     try
@@ -440,12 +451,15 @@ internal sealed class M5Run
                     result["observation"] = AskWindow(blinkWindow, "After any initial blink, were subsequent close/reopen blinks about44-45 seconds apart (do not count eye darts)?", "yes", "no");
                     WindowNotes(blinkWindow); result["observationWindow"] = blinkWindow;
                     double blinkEnd = blinkWindow["toMs"]!.GetValue<double>();
-                    result["parameterRequestAtMs"] = parameterAt; result["existingDeadline"] = "Retained by B4; actual internal deadline unavailable through allowed public observations.";
+                    var calls = M5HwAnalysis.BlinkCalls(Diagnostics(), readbackAt, blinkEnd);
+                    result["parameterRequestAtMs"] = parameterAt;
+                    result["existingDeadline"] = calls.Count > 0 ? calls[0].BeforeMs : null;
+                    result["existingDeadlineNote"] = "Blink timer before the first KeepFaceAlive call after the readback (hook, 0x58D382..38C); B4 retains it.";
                     var evidence = M5HwAnalysis.Blinks(Wire(parameterAt, blinkEnd), parameterAt, blinkEnd,
-                        result["minReadback"]!.GetValue<float>(), result["maxReadback"]!.GetValue<float>(), result["observation"]!.AsObject());
+                        result["minReadback"]!.GetValue<float>(), result["maxReadback"]!.GetValue<float>(), result["observation"]!.AsObject(), calls);
                     evidence["layerNameSnapshots"] = layerSamples;
-                    evidence["snapshotNote"] = "Wall-clock/public engine-time/layer-name samples are not KeepFaceAlive call numbers or generation/deadline events. Do not infer a call count from elapsed time or fabricate blink events from pixel darkness.";
-                    result["blinkEvidence"] = evidence; result["verdict"] = "INCONCLUSIVE";
+                    evidence["snapshotNote"] = "Wall-clock/public engine-time/layer-name samples are not KeepFaceAlive call numbers or generation/deadline events. Calls come only from the read-only KeepFaceAlive hook, from the readback onward. Do not infer a call count from elapsed time or fabricate blink events from pixel darkness.";
+                    result["blinkEvidence"] = evidence; result["verdict"] = evidence["verdict"]!.DeepClone();
                     return result;
                 }
             case "DRIVING":
@@ -460,7 +474,7 @@ internal sealed class M5Run
                         while (!task.IsCompleted && !limit.IsCancellationRequested) { string? current = r.Animations.Playing; if (current != last) { states.Add(new JsonObject { ["atMs"] = Now, ["playing"] = current, ["tag"] = r.Animations.CurrentTag }); last = current; } Wait(10); }
                         if (!task.IsCompleted) { limit.Cancel(); if (!task.Wait(2000)) { DisposeBounded(); connected = false; throw new TimeoutException("Drive cancellation did not complete; robot torn down before action cleanup"); } }
                         Wait(100);
-                        var result = Observe("Actual DriveToPose.RunAsync on real ActionList, 60 mm forward from current pose; animation names/tags and completion time retained. M12/M8 gaps remain explicit; no successful move is called source proof.");
+                        var result = Observe("Actual DriveToPose.RunAsync on real ActionList, 60 mm forward from current pose; animation names/tags and completion time retained. The verdict covers M5-063 on whichever phase path the action results select, whatever the drive result (operator 2026-10-20); successful traversal belongs to the M12/M13 acceptance. M12/M8 gaps remain explicit; no successful move is called source proof.");
                         result["actionCompletions"] = new JsonArray(events.Where(e => e["kind"]?.GetValue<string>() == "action-completed" && e["atMs"]!.GetValue<double>() >= start).Select(e => e.DeepClone()).ToArray()); result["animationTransitions"] = states; result["driveCompletedAtMs"] = Now; result["result"] = task.IsCompletedSuccessfully ? task.Result.ToString() : "timed out/cancelled"; result["trace"] = JsonSerializer.SerializeToNode(action.Trace);
                         result["triplet"] = "default trigger ids 0x95 / 0x91 / 0x8D; no pushed overrides";
                         var phaseAnalysis = M5HwAnalysis.DrivingPhases(Wire(start), events, action.Tag, start, Now);
@@ -472,7 +486,8 @@ internal sealed class M5Run
                         result["orderedDefaultPhases"] = phaseAnalysis["loopRequired"]?.GetValue<bool>() == true
                             && phaseAnalysis["loopRequestObserved"]!.GetValue<bool>() && phaseAnalysis["conditionalPhaseOrder"]!.GetValue<bool>();
                         result["verdict"] = phaseAnalysis["verdict"]!.DeepClone();
-                        if (!task.IsCompletedSuccessfully || task.Result != ActionResult.Success) result["verdict"] = "INCONCLUSIVE";
+                        result["loopRequestCovered"] = phaseAnalysis["loopRequestCovered"]!.DeepClone();
+                        result["successfulTraversalCoverage"] = false; result["traversalJudgement"] = phaseAnalysis["traversalJudgement"]!.DeepClone();
                         return result;
                     }
                     finally { limit.Cancel(); if (!task.IsCompleted && !task.Wait(2000)) { DisposeBounded(); connected = false; } r.Motion.StopAllMotors(); if (task.IsCompleted || disposeCompleted) { action.Dispose(); goal.Dispose(); m.Dispose(); } else { errors.Enqueue("Drive action dependencies retained until process exit because teardown did not complete"); } }
@@ -525,6 +540,7 @@ internal sealed class M5Run
         File.WriteAllLines(Path.Combine(bundle, "frames.jsonl"), frames.Select(f => new JsonObject { ["atMs"] = f.T, ["outbound"] = f.Out, ["rawBase64"] = Convert.ToBase64String(f.Raw), ["error"] = f.Error }.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "messages.jsonl"), Wire().Select(m => new JsonObject { ["atMs"] = m.AtMs, ["outbound"] = m.Outbound, ["tag"] = $"0x{m.Payload[0]:X2}", ["payloadHex"] = Convert.ToHexString(m.Payload), ["frameLine"] = m.FrameLine, ["submessageOrdinal"] = m.SubmessageOrdinal, ["reliableSequence"] = m.ReliableSequence, ["connectionEpoch"] = m.ConnectionEpoch }.ToJsonString()));
         File.WriteAllLines(Path.Combine(bundle, "events.jsonl"), events.Select(e => e.ToJsonString()));
+        File.WriteAllLines(Path.Combine(bundle, "diagnostics.jsonl"), Diagnostics().Select(d => { var row = JsonSerializer.SerializeToNode(d.Observation, d.Observation.GetType())!.AsObject(); row["type"] = d.Observation.GetType().Name; row["atMs"] = d.AtMs; return row.ToJsonString(); }));
         var files = new JsonArray(); foreach (var relative in new[] { "cozmo-stack/src/Cozmo.Conformance/M5Hw.cs", "cozmo-stack/src/Cozmo.Conformance/M5HwAnalysis.cs", "cozmo-stack/src/Cozmo.Conformance/Program.cs", "re-analysis/acceptance/hardware/scripts/m5-hw-1.md", "re-analysis/fidelity_manifest.json", "re-analysis/research/20261019-m5-settling-b.md" })
         {
             string source = Path.Combine(root, relative); if (!File.Exists(source)) { errors.Enqueue("Missing provenance file " + relative); continue; }
@@ -543,7 +559,7 @@ internal sealed class M5Run
         string? commit = null; try { var p = Process.Start(new ProcessStartInfo("git", "rev-parse HEAD") { WorkingDirectory = root, RedirectStandardOutput = true, UseShellExecute = false, CreateNoWindow = true }); commit = p!.StandardOutput.ReadToEnd().Trim(); p.WaitForExit(); } catch (Exception e) { errors.Enqueue("git: " + e.Message); }
         var report = new JsonObject { ["testId"] = M5Hw.TestId, ["createdUtc"] = DateTime.UtcNow.ToString("O"), ["commit"] = commit, ["argv"] = JsonSerializer.SerializeToNode(argv), ["resources"] = resources, ["allowDrive"] = drive, ["connected"] = connected, ["checks"] = JsonSerializer.SerializeToNode(results), ["records"] = JsonSerializer.SerializeToNode(records), ["provenance"] = files, ["binaries"] = binaries, ["errors"] = JsonSerializer.SerializeToNode(errors), ["acceptance"] = "NOT_JUDGED: operator observations and manager review required; hardware success does not raise provenance" };
         File.WriteAllText(Path.Combine(bundle, "result.json"), report.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-        File.WriteAllText(Path.Combine(bundle, "README.txt"), "M5-HW evidence bundle. result.json contains every check and source records; messages.jsonl deduplicates reliable resends, frames.jsonl retains every datagram; events.jsonl retains startup logs, API events and counters. Times are host capture times, not device execution times. No acceptance or manifest changes performed. See provenance script for limits.");
+        File.WriteAllText(Path.Combine(bundle, "README.txt"), "M5-HW evidence bundle. result.json contains every check and source records; messages.jsonl deduplicates reliable resends, frames.jsonl retains every datagram; events.jsonl retains startup logs, API events and counters; diagnostics.jsonl retains the read-only engine hook observations (KeepFaceAlive, StreamLayers frames, send gate, budget refresh). Times are host capture times, not device execution times. No acceptance or manifest changes performed. See provenance script for limits.");
     }
 }
 
