@@ -168,8 +168,8 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s3 | [B-M5-27](B-M5-27.md) | done b23ce509; Codex bounded review PASS (research/20261020-b-m5-27-check.md); cleanup queued, operator rerun required |
 | 61w3s4 | [B-M5-28](B-M5-28.md) | done7362c2da; Codex bounded review PASS (research/20261020-b-m5-28-check.md); generation diagnostic gap retained, operator rerun required |
 | 61w3s5 | [B-M5-29](B-M5-29.md) | done b8a14a8e; Codex bounded review PASS (research/20261020-b-m5-29-check.md); admission diagnostic gap retained, operator rerun required |
-| 61w3s6 | [B-M5-30](B-M5-30.md) | CLAIMED per status/B-M5-30.md (e319e14e); review pending; teardown interval/provenance, operator rerun required |
-| 61w3s7 | [B-M5-31](B-M5-31.md) | open — Make driving-phase expectations conditional on action result; Codex HW judgement 2026-10-20; harness only, operator rerun required |
+| 61w3s6 | [B-M5-30](B-M5-30.md) | done967af8d8; Codex bounded review PASS (research/20261020-b-m5-30-check.md); queue-origin limits retained, operator rerun required |
+| 61w3s7 | [B-M5-31](B-M5-31.md) | CLAIMED per status/B-M5-31.md (42ac55fb); review pending; conditional driving phases, successful driving and operator rerun required |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
