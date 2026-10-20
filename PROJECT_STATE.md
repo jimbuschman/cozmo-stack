@@ -119,6 +119,8 @@ Small behaviour choices are noted here rather than put to the operator. Each kee
 
 ## Cleanup queue (non-behavioural; fold into the next batch)
 
+- **B-M5-24 Codex review PASS (2026-10-20):** `research/20261020-b-m5-24-check.md`, implementation bdad8435. Bounded harness correction only; 8/8 focused tests and fidelity check pass. Next harness batch: make the persistent-face unit fixture a valid encoded face or explicitly label it tag-only; repair replacement characters in the new script/settling-report headings. Exact lifecycle timing, sampled persistence and physical display remain unverified. B-M5-25 claimed; 26..31 pending. M5 acceptance remains blocked on the operator rerun.
+
 - **M3M4-HW harness (2026-10-19; bundle README):** answers typed with spaces don't map to hyphenated choices and the PARITY_STEP grader's expected answer is reversed; DAS_EVENTS should attach through `BeforeStart`; DISCONNECT_QUIET should judge "no data after the teardown batch" rather than key on a DisconnectRequest frame (M1-006 pacing can hold it back). Conformance tools set the nominal calibration after construction instead of through `VisionCalibration` (B-M3M4-36 check).
 
 - **Flake (2026-10-18):** `NeedsPersistenceGateTests.RealConnectNeverRestoresOrWritesUnbuiltNeedsPersistence(hasV5: False)`
