@@ -285,5 +285,5 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 51 | [R-M12-DETACH-POSE](../research/requests/20261021-m12-detach-pose-join.md) | open |
 | 52 | [R-M7-MOOD-INIT](../research/requests/20261021-m7-mood-init-input.md) | answered b19ce1bc; pending independent review/adoption |
 | 53 | [R-M14-PET-SIZE](../research/requests/20261021-m14-pet-image-size-boundary.md) | answered d2fa68f3; pending independent review/adoption |
-| 54 | [R-M7-MOOD-MISSING](../research/requests/20261021-m7-missing-mood-config-outcome.md) | open |
-| 55 | [R-M14-CALIBRATION-CORPUS](../research/requests/20261021-m14-existing-calibration-corpus.md) | open |
+| 54 | [R-M7-MOOD-MISSING](../research/requests/20261021-m7-missing-mood-config-outcome.md) | HELD (reading hold 2026-10-21; M7/M14 wait for their layer) |
+| 55 | [R-M14-CALIBRATION-CORPUS](../research/requests/20261021-m14-existing-calibration-corpus.md) | HELD (reading hold 2026-10-21; M7/M14 wait for their layer) |
