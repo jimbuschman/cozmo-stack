@@ -40,6 +40,8 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **2026-10-21 B-M13-10:** Claude-authorized false insertion stamp correction implemented and separate Codex bounded review PASS; focused53/53, fidelity707 PASS, M13-navigation correction re-approved. Full suite pending post-commit. Codex review; Claude spot-check pending. Builds with bounded review this session:1; records settled:0. Next: held backlog review row37 then38 and remaining M13-017; no new research, no hardware script.
+
 - **2026-10-21, operator review-first hold:** finish only already-open research51–53, then stop reading;54/55 held. Review M13 drive-off/charger-map/rest of017, then M11, M8, M10. Other answers wait. All Codex reviews are marked Claude spot-check pending; required build findings need that check before acceptance. One builder at a time toward M13-017; no dock/drive-off hardware before it finishes. Monitor updated to this order.
 
 - **2026-10-21, B-M10-2 bounded review PASS:** e332207b fixes six native classifier threshold literals; independent source/diff review `research/20261021-b-m10-2-check.md`. Builder reports focused65/full6019 passing; reviewer did not rerun. M10-001 remains IMPLEMENTATION_GAP; recipient joins and whole-layer acceptance remain open.

@@ -253,9 +253,6 @@ public sealed partial class ObservableObject
     public bool IsLocated => PoseState != PoseState.Unknown;
     /// <summary>Robot timestamp of the frame that last observed the object (obj+0x1C).</summary>
     public uint LastObservedTimestamp { get; internal set; }
-    // fidelity: M13-040 -- AddLocatedObject insertion stamp, obj+0x54, 0x00622D24..D30.
-    internal uint AddedToWorldTimestamp { get; private set; }
-    internal void StampAddedToWorld(uint timestamp) => AddedToWorldTimestamp = timestamp;
 
     /// <summary>
     /// Whether the cube is reporting itself in motion: true between an <c>ObjectMoved</c> and the
@@ -2310,9 +2307,6 @@ public sealed partial class BlockWorld
             _located[KeyOf(obj)] = obj;
             _forgotten.Remove(obj.ObjectId);
         }
-        // fidelity: M13-040 -- native addition stamp follows insertion, before diagnostics/broadcast.
-        if (RobotTimestamp is { } timestamp) obj.StampAddedToWorld(timestamp());
-        else Missing("M13-040 AddLocatedObject stamp 0x00622D24..D30: robot timestamp owner is unbound; prior insertion stamp retained");
         var link = EntryFor(obj.ObjectId);
         if (link is not null) obj.Confirmation = link;
         Source(EngineLogLevel.Info,"BlockWorld","BlockWorld.AddLocatedObject",string.Format(System.Globalization.CultureInfo.InvariantCulture,
@@ -3090,7 +3084,7 @@ public sealed partial class BlockWorld
         obj.SetContactObservationPose(copy); // Known skips state2's SetLocalizedTo(null); -1 preserves distance.
         obj.PoseNameNode!.Parent = OriginNode?.Invoke(obj.OriginId);
         if (existing) BroadcastObjectPoseChanged(obj, oldPose, oldState);
-        else AddLocatedObject(obj); // obstacle deletion, insertion/stamp and null-old-pose Invalid broadcast
+        else AddLocatedObject(obj); // obstacle deletion, insertion and null-old-pose Invalid broadcast
         LogCallbackDeferral.RunGated(_gate, () =>
         {
             var entry = EntryForOrCreate(obj.ObjectId);

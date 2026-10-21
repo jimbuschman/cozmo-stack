@@ -730,8 +730,8 @@ public sealed class CozmoSensors
     /// SetOnCharger(onContacts) (C8 P3..P5, 0x005119AA..0x00511C14): with the bit set and +0x338 still 0,
     /// SetOnChargerPlatform(true) (and the ChargerEvent); with it clear the platform flag is left alone; then +0x338 :=
     /// the bit. M13-040 observes a Known located charger on every true input before these edges.
+    /// The engine's <c>ChargerEvent{onCharger}</c> broadcast (tag 0x39) comes from these edges.
     /// </summary>
-    /// <summary>The engine's <c>ChargerEvent{onCharger}</c> broadcast (tag 0x39) from <c>SetOnCharger</c>'s edges.</summary>
     // fidelity: M7-021
     public event Action<bool>? ChargerEvent;
     internal event Action<bool>? ChargerEventInternal;

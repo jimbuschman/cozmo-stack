@@ -27,7 +27,7 @@ public class M13ContactChargerTests
         rig.Tick();
     }
 
-    // reach: production (received RobotState -> synchronized device routing -> SetOnCharger -> real shared world).
+    // reach: unit (pose substituted; origin 999 prevents contact packets from replacing the owned fixture pose).
     // Setup supplies the existing owned pose; coordinates in the contact packet deliberately disagree.
     [Fact]
     public void ContactCreatesKnownRootRelativeChargerAndRepeatedTrueObservesWithoutAnotherEdge()
@@ -55,8 +55,6 @@ public class M13ContactChargerTests
         Assert.Equal(1, charger.PoseConfirmationCount);
         Assert.Equal(0u, charger.LastObservedTimestamp);
         Assert.Equal(0u, charger.Confirmation!.LastPoseUpdatedTime);
-        uint stamp = charger.AddedToWorldTimestamp;
-        Assert.Equal(rig.Robot.State.Latest!.Timestamp, stamp);
         Assert.Equal(new[] { true }, edges);
 
         OwnedPose(rig, 400, 500);
@@ -65,13 +63,12 @@ public class M13ContactChargerTests
         Assert.Same(charger, Charger(rig));
         Assert.Equal(430d, charger.Pose.Translation.X);
         Assert.Equal(500d, charger.Pose.Translation.Y);
-        Assert.Equal(stamp, charger.AddedToWorldTimestamp); // updates are not insertions
         Assert.Equal(charger.Pose.Translation, charger.ReferencePose.Translation);
         Assert.Equal(1, charger.PoseConfirmationCount);
         Assert.Equal(new[] { true }, edges);
     }
 
-    // reach: production (real ingress and recipient wiring; observers do not replace world/map/light operations).
+    // reach: unit (pose substituted; origin 999 prevents pose admission; real world/map/light recipients).
     [Fact]
     public void InsertionAndKnownStateRecipientsPrecedeContactOutputsAndConfirmerTail()
     {
@@ -82,7 +79,6 @@ public class M13ContactChargerTests
         {
             Assert.Equal("Visible", trigger); Assert.Equal(2, layer); // corrected A9: NEW Known =>0x25/layer2
             var obj = world.GetLocatedObjectById(id)!;
-            Assert.NotEqual(0u, obj.AddedToWorldTimestamp);
             Assert.Null(obj.Confirmation); // native notifications precede confirmer stores
             order.Add("light:Known");
         };
@@ -156,7 +152,7 @@ public class M13ContactChargerTests
         Assert.Equal(1000d, old.Pose.Translation.X);
     }
 
-    // reach: production (real VisionSystem platform hook on engine Tick; no synthetic distance cutoff).
+    // reach: unit (pose substituted with robot.SetPose; real VisionSystem platform hook on engine Tick).
     [Fact]
     public void ContactOffRetainsChargerAndPlatformUntilFootprintsSeparateThenSends400Once()
     {
