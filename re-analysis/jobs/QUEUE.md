@@ -241,7 +241,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 23 | [R-SMALL-2](../research/requests/20261013-small-reads-2.md) | answered (overnight P3); checked (research/20261013-small-reads-2-check.md): M15-044 to build, M2-022 split (M2-023 to build) |
 | 24 | [R-M13-017](../research/requests/20261021-m13-017-located-charger.md) | checked with A9 correction (new state chooses light trigger), research/20261021-m13-017-located-charger-check.md; contact inventory integrated as M13-040 and B-M13-9 released e48d585b; D1 exhaustive caller census not verified |
 | 25 | [R-M11-POSE-HISTORY](../research/requests/20261021-m11-pose-history-settling.md) | answered c419483d; partial F4 and raw-query control-flow check in research/20261021-m11-pose-history-check.md (citation cleanup; nearest tie-before confirmed); remaining report pending review, no settlement |
-| 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; pending independent review/adoption |
+| 26 | [R-M8-ACTIONLIST](../research/requests/20261021-m8-actionlist-completion-settling.md) | answered e0c71224; partial Clear mechanics check research/20261021-m8-actionlist-check.md; remaining report/survivor effects pending |
 | 27 | [R-M10-CLASSIFIER](../research/requests/20261021-m10-classifier-settling.md) | answered 9d1efe80; pending independent review/adoption; reported constants/cancel/detach defects are not yet adopted |
 | 28 | [R-M11-TIMEOUT](../research/requests/20261021-m11-history-timeout-input.md) | answered 6d43bd2a; T1-T3/T6 value/writers checked in research/20261021-m11-pose-history-check.md; census/alias claims pending; no settlement |
 | 29 | [R-M8-COMPLETION](../research/requests/20261021-m8-animation-completion-payload.md) | answered f395e545; pending independent review/adoption |
@@ -255,6 +255,8 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 37 | [R-M13-DRIVEOFF-JOINS](../research/requests/20261021-m13-driveoff-remaining-joins.md) | answered 19b0a313; partial gate check research/20261021-m13-driveoff-remaining-check.md confirms SevereNeeds vs stale animation-state evidence; remaining rows pending; no builder release |
 | 38 | [R-M11-CHARGER-MAP](../research/requests/20261021-m11-charger-map-add-join.md) | answered 9ff5b508; pending independent review/adoption |
 | 39 | [R-M15-SEVERE-INPUT](../research/requests/20261021-m15-severe-need-input.md) | answered 3609db0c; pending independent review/adoption |
-| 40 | [R-M8-EXTERNAL-ADMISSION](../research/requests/20261021-m8-external-action-admission.md) | open |
-| 41 | [R-M7-SDK-BOUNDARY](../research/requests/20261021-m7-sdk-record-boundary.md) | open |
+| 40 | [R-M8-EXTERNAL-ADMISSION](../research/requests/20261021-m8-external-action-admission.md) | answered b50df484; pending independent review/adoption |
+| 41 | [R-M7-SDK-BOUNDARY](../research/requests/20261021-m7-sdk-record-boundary.md) | answered 97bdc60f; pending independent review/adoption |
 | 42 | [R-M12-CACHE-LIFETIME](../research/requests/20261021-m12-predock-cache-lifetime.md) | open |
+| 43 | [R-M8-TEARDOWN-CLOCK](../research/requests/20261021-m8-teardown-timer-readers.md) | open |
+| 44 | [R-M11-RETAINED-OWNER](../research/requests/20261021-m11-retained-pose-owner-comparison.md) | open |
