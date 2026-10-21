@@ -248,7 +248,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 31 | [R-M11-POSE-SERIAL](../research/requests/20261021-m11-pose-serialization-callers.md) | answered c334871d; pending independent review/adoption |
 | 32 | [R-M8-FEED-SURVIVOR](../research/requests/20261021-m8-feeding-clear-survivor.md) | answered 166a2e6a; pending independent review/adoption |
 | 33 | [R-M8-PROFILE](../research/requests/20261021-m8-action-motion-profile-lifetime.md) | answered 5e1b0a13; pending independent review/adoption |
-| 34 | [R-M11-HISTORY-INDEX](../research/requests/20261021-m11-computed-history-index.md) | answered bec5a0dc; pending independent review/adoption |
+| 34 | [R-M11-HISTORY-INDEX](../research/requests/20261021-m11-computed-history-index.md) | answered bec5a0dc; partial producer check research/20261021-m11-computed-history-index-check.md; readers/lifetime/live consumer pending, no builder release |
 | 35 | [R-M10-OBSTACLE-ALIAS](../research/requests/20261021-m10-obstacle-flag-alias.md) | answered 06b06760; pending independent review/adoption |
 | 36 | [R-M11-POSE-CONFIG](../research/requests/20261021-m11-pose-change-configuration.md) | answered 152c58fa; pending independent review/adoption |
 | 37 | [R-M13-DRIVEOFF-JOINS](../research/requests/20261021-m13-driveoff-remaining-joins.md) | answered 19b0a313; partial gate check research/20261021-m13-driveoff-remaining-check.md confirms SevereNeeds vs stale animation-state evidence; remaining rows pending; no builder release |
