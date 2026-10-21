@@ -54,7 +54,8 @@ stands. Nothing new starts outside the current layer.
   PASS; focused 131/131, fidelity 706, offline validate (11 checks/45 records) and
   preview PASS. Full suite **5993/5993 PASS**, zero failed/skipped, 6 m 6 s,
   run once before commit; report `research/20261020-b-m5-35-check.md`.
-  Corrected harness ready for operator rerun; M5 remains NOT ACCEPTED.
+  Implementation **893e1027**. Corrected harness ready for operator rerun;
+  M5 remains NOT ACCEPTED.
   The handoff's "drive succeeded" statement is contradicted by the bundle:
   `FailedTraversingPath`, successfulTraversalCoverage=false. M12/M13 remains open.
   The reported early-connect logs in the accepted M3/M4 run need a separate bounded
