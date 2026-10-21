@@ -29,6 +29,17 @@ The engine sends 400 only after the accumulated drive-centre travel passes 50 mm
 0x00512E7C..0x00512E80 accumulate, 0x00512E8A literal 50.0f at 0x00512D18, 0x00512E9C 400). The robot's own reported
 poses (0xF0, frame 0 throughout) give only **5.7 mm** of drive-centre travel from session start to 223339 ms
 (25.6 mm by 224300). With the engine's 50, the single 379 sample would not have stopped the robot.
-So the stack's accumulated distance was wrong; the root cause is being diagnosed (replay of the recorded states).
+So the 400 did not come from the distance rule; see the root cause below. (An earlier draft of this note blamed the
+distance accumulation; the replay disproved that.)
 
-M4-019 is EXACT_SOURCE with verification NONE; this run is evidence its live input path needs re-checking.
+## Root cause (manager replay, 2026-10-20)
+
+Replaying the bundle's inbound states through the stack (`M4ControlTests.Rig`, throwaway test) shows the distance
+schedule was correct: 5.6 mm when the threshold became 400. The 400 came from **SetOnChargerPlatform(false)**:
+the robot status carried IsOnCharger (bit 12, 0x9391) from the start of the run until the drive moved it off the
+contacts (0x8391 at ~223339 ms). Cozmo had been left on the charger. With no located charger in the world, the stack's
+Robot::Update platform step takes the no-charger branch (0x00513E26) and clears the platform flag as soon as the contacts
+drop, which sends 400. The engine creates the located charger on SetOnCharger's rising edge and holds the flag (and 50)
+until the robot footprint leaves the charger quad. That gap is already recorded: **M13-017** (IMPLEMENTATION_GAP,
+`unresolved`: "this stack never creates the located charger on SetOnCharger's rising edge"), reported MISSING live.
+It belongs to M13. For M5: the harness must check that Cozmo is off the charger before it starts.

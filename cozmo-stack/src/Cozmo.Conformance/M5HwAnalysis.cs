@@ -65,9 +65,24 @@ public static class M5HwAnalysis
         // whatever the drive result. Successful traversal belongs to the M12/M13 acceptance.
         bool m5PathObserved = phaseVerdict is "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS" or "OBSERVED_FAILED_START_END_CLEANUP";
         bool loopCovered = phaseVerdict == "OBSERVED_SUCCESSFUL_START_LOOP_END_REQUESTS";
+        var missing = new JsonArray();
+        if (phaseVerdict == "INCONCLUSIVE_PHASE_IDENTITY")
+        {
+            var absent = new List<string>();
+            if (startResult is null) absent.Add("the Start animation action's result");
+            if (ids[2] is null) absent.Add("an End animation action (no End driving animation was requested)");
+            if (driveResult is null) absent.Add("the drive action's result");
+            missing.Add("Could not identify " + string.Join(", ", absent) + ", so the driving-animation path cannot be judged.");
+        }
+        else if (phaseVerdict == "INCONCLUSIVE_REQUIRED_LOOP_REQUEST") missing.Add("The Start animation succeeded but no Loop animation request was seen.");
+        else if (phaseVerdict == "INCONCLUSIVE_PHASE_ORDER") missing.Add("The Start, Loop and End animation requests were not seen in that order.");
+        else if (phaseVerdict == "INCONCLUSIVE_END_COMPLETION") missing.Add("No completion was seen for the End animation action.");
+        var stop = DrivingStop(rows, driveResult);
         return new JsonObject
         {
             ["verdict"] = m5PathObserved ? phaseVerdict : "INCONCLUSIVE",
+            ["missing"] = missing.Count == 0 ? null : missing,
+            ["explanation"] = stop["explanation"]?.DeepClone(), ["driveStop"] = stop,
             ["m5_063PathObserved"] = m5PathObserved,
             ["loopRequestCovered"] = loopCovered,
             ["loopCoverageOpen"] = !loopCovered,
@@ -89,6 +104,34 @@ public static class M5HwAnalysis
             ["verdictRule"] = "M5-063 (0x4F0D80..D8C, 0x4F0E14..2A) requires matching Start ID and result0 before requesting the default Loop. A failed Start permits Start->End cleanup. A matching End completion sets state4 regardless of result (0x4F0DC8..DD4); successful End/robot echo coverage is separate from the completion-order gate. "
                 + "Operator 2026-10-20: the check's verdict covers M5-063 only and is OBSERVED on either selected path (successful Start->Loop->End requests or failed Start->End cleanup), whatever the drive result; contradictions stay non-OBSERVED. "
                 + "loopRequestCovered records the Loop request; a failed-path run leaves Loop coverage open for a later run. Successful traversal belongs to the M12/M13 acceptance: successfulTraversalCoverage stays false and the traversal is NOT_JUDGED here. No planner/action correction or acceptance follows."
+        };
+    }
+
+    /// <summary>ActionResult CANCELLED_WHILE_RUNNING: ActionList::Cancel sets 0x02000000 (0x00540A3C..0x00540A40).</summary>
+    public const uint CancelledWhileRunning = 0x02000000;
+
+    /// <summary>
+    /// Explains a cancelled drive whose window holds a robot stop: the engine's RobotStopped handler cancels the
+    /// action list (0x0053542E..0x00535480; research/20261020-m5-drive-cliff-stop.md). An explanation, not a verdict.
+    /// </summary>
+    public static JsonObject DrivingStop(IEnumerable<JsonObject> windowEvents, uint? driveResult)
+    {
+        var rows = windowEvents.ToArray();
+        bool Log(string name, string? text = null) => rows.Any(e => e["kind"]?.GetValue<string>() == "engine-log"
+            && e["name"]?.GetValue<string>() == name && (text is null || e["text"]?.GetValue<string>().Contains(text, StringComparison.Ordinal) == true));
+        bool robotStopped = Log("RobotImplMessaging.HandleRobotStopped");
+        bool pathInterrupted = Log("PathComponent.ReceivedPathEvent", "PATH_INTERRUPTED");
+        bool cliffTrace = rows.Any(e => e["kind"]?.GetValue<string>() == "stack-log"
+            && e["line"]?.GetValue<string>().Contains("StoppingDueToCliff", StringComparison.Ordinal) == true);
+        bool cancelled = driveResult == CancelledWhileRunning;
+        return new JsonObject
+        {
+            ["driveCancelled"] = cancelled, ["robotStoppedLog"] = robotStopped, ["pathInterruptedLog"] = pathInterrupted,
+            ["stoppingDueToCliffTrace"] = cliffTrace,
+            // Only RobotStopped has a cited cancel path; RobotStopped's field meaning is unknown, so the cause is named only with the cliff trace.
+            ["explanation"] = !(cancelled && robotStopped) ? null : cliffTrace
+                ? "The robot reported a cliff stop (ProxSensors.UpdateCliff.StoppingDueToCliff) and RobotStopped; the engine's RobotStopped handler cancels the action list (0x0053542E..0x00535480), so the drive ended CANCELLED_WHILE_RUNNING. The cancel is engine behaviour; whether the cliff was real or false (e.g. the on-charger threshold, M13-017) needs review (research/20261020-m5-drive-cliff-stop.md)."
+                : "The robot sent RobotStopped (cause not logged); the engine's RobotStopped handler cancels the action list (0x0053542E..0x00535480), so the drive ended CANCELLED_WHILE_RUNNING. Why the robot stopped needs review."
         };
     }
 
@@ -122,10 +165,17 @@ public static class M5HwAnalysis
             candidates.Add(new JsonObject { ["wire"] = WireEvidence(new[] { m }), ["classification"] = classification,
                 ["origin"] = origin?.Origin, ["originAtMs"] = origin?.OriginAtMs });
         }
+        // Every INCONCLUSIVE condition is named, so the summary always prints why.
+        var missing = new JsonArray();
+        if (!completed) missing.Add("Dispose did not complete inside the harness limit.");
+        if (endMs <= beginMs) missing.Add("The Dispose interval is empty (end not after begin).");
+        if (unknown > 0) missing.Add($"{unknown} first send(s) during Dispose have no enqueue origin.");
+        if (markers.Length == 0) missing.Add("No AnimationStreamer.ClearSendBuffer discard log inside the Dispose interval.");
         return new JsonObject
         {
             ["verdict"] = flush > 0 ? "OBSERVED_STREAMER_FINAL_FLUSH" : !completed || endMs <= beginMs
                 || unknown > 0 || markers.Length == 0 ? "INCONCLUSIVE" : "OBSERVED_DISPOSE_DISCARD_INTERVAL",
+            ["missing"] = flush > 0 || missing.Count == 0 ? null : missing,
             ["disposeBeginMs"] = beginMs, ["disposeEndMs"] = endMs, ["disposeCompleted"] = completed,
             ["retransmissionsDuringDispose"] = WireEvidence(resends), ["newOutboundDuringDispose"] = WireEvidence(during),
             ["abortAllPrefixCandidates"] = WireEvidence(during.Where(m => m.Payload[0] == 0x8D)),
@@ -134,9 +184,36 @@ public static class M5HwAnalysis
             ["streamerDiscardMarkers"] = new JsonArray(markers.Select(e => e.DeepClone()).ToArray()),
             ["beforeWindow"] = WireEvidence(raw.Where(m => m.AtMs >= beginMs - 1000 && m.AtMs < beginMs)),
             ["afterWindow"] = WireEvidence(raw.Where(m => m.AtMs > endMs && m.AtMs <= endMs + 1000)),
-            ["queueOriginNote"] = "Retransmissions are identified from full raw history. A first wire send during Dispose may have been queued before it; enqueue/generation provenance is not publicly exposed. Unknown origin is inconclusive, never inferred as a destructor flush.",
+            ["queueOriginNote"] = "Retransmissions are identified from full raw history. A first wire send during Dispose may have been queued before it; its origin comes only from independent evidence (the harness joins the B-M5-32 send-gate observations to the wire, TeardownOrigins). Unknown origin is inconclusive, never inferred as a destructor flush.",
             ["verdictRule"] = "M4-026 AbortAll precedes M5-022/037 streamer teardown. Abort is retained as prefix traffic, not classified as a final flush by tag alone. ClearSendBuffer logs/discards pending messages without sending. Require a completed Dispose interval and discard marker; retain before/after windows. Post-close silence alone proves neither discard nor destructor fidelity. Cache assertions and all other teardown scope remain separate."
         };
+    }
+
+    /// <summary>
+    /// Enqueue origins for <see cref="Teardown"/> from the run's own send-gate observations (B-M5-32). The gate
+    /// observations made from one join margin before Dispose begins through its end are joined to the wire by
+    /// <see cref="JoinSends"/>; a joined message whose gate observation is stamped at or before dispose-begin was handed
+    /// to the reliable transport before Dispose began, so it is "queued-before-dispose" however late its first wire
+    /// send (M1-006 pacing; research/20261020-m5-teardown-sends.md). A gate observation inside the interval gets no
+    /// origin and stays unknown. When the join cannot be made, no origin is given and the reason is in the evidence.
+    /// </summary>
+    public static IReadOnlyList<TeardownOrigin> TeardownOrigins(IEnumerable<M5Hw.WireMessage> messages,
+        IReadOnlyList<Diagnostic> diagnostics, double beginMs, double endMs, out JsonObject evidence)
+    {
+        var join = JoinSends(messages, diagnostics, beginMs, endMs);
+        var origins = new List<TeardownOrigin>();
+        if (join.Problem is null)
+            foreach (var (key, gateAt) in join.GateAtMsByWire)
+                if (key.Outbound && gateAt <= beginMs)
+                    origins.Add(new TeardownOrigin(key.Line, key.Ordinal, "queued-before-dispose", gateAt));
+        evidence = new JsonObject
+        {
+            ["sendJoin"] = join.Evidence.DeepClone(), ["queuedBeforeDisposeOrigins"] = origins.Count,
+            ["originRule"] = "A wire message joined (by stream order, B-M5-32) to a successful send-gate observation stamped at or before "
+                + "dispose-begin was queued before Dispose; later first sends are reliable-layer pacing (M1-006). Gate observations "
+                + "inside the interval give no origin. No join, no origins."
+        };
+        return origins;
     }
 
     // ---------------------------------------------------------------- B-M5-32 diagnostic hooks
@@ -159,6 +236,8 @@ public static class M5HwAnalysis
         public string? Problem { get; init; }
         public IReadOnlyDictionary<long, M5Hw.WireMessage> BySequence { get; init; } = new Dictionary<long, M5Hw.WireMessage>();
         public IReadOnlySet<(bool Outbound, int Line, int Ordinal)> JoinedWire { get; init; } = new HashSet<(bool, int, int)>();
+        /// <summary>The harness-clock time of the gate observation each joined wire message was joined to.</summary>
+        public IReadOnlyDictionary<(bool Outbound, int Line, int Ordinal), double> GateAtMsByWire { get; init; } = new Dictionary<(bool, int, int), double>();
         public JsonObject Evidence { get; init; } = new();
         public static (bool Outbound, int Line, int Ordinal) Key(M5Hw.WireMessage m) => (m.Outbound, m.FrameLine, m.SubmessageOrdinal);
         public bool IsJoined(M5Hw.WireMessage m) => JoinedWire.Contains(Key(m));
@@ -202,16 +281,18 @@ public static class M5HwAnalysis
         }
         var bySequence = new Dictionary<long, M5Hw.WireMessage>();
         var joined = new HashSet<(bool, int, int)>();
+        var gateAt = new Dictionary<(bool, int, int), double>();
         if (problem is null)
             for (int k = 0; k < sent.Length; k++)
             {
                 joined.Add(SendJoin.Key(wire[offset + k]));
+                gateAt[SendJoin.Key(wire[offset + k])] = sent[k].AtMs;
                 if (sent[k].Gate.BufferSequence != 0) bySequence[sent[k].Gate.BufferSequence] = wire[offset + k];
             }
         int unjoinedInWindow = wire.Count(m => m.AtMs >= fromMs && m.AtMs <= toMs && !joined.Contains(SendJoin.Key(m)));
         return new SendJoin
         {
-            Problem = problem, BySequence = bySequence, JoinedWire = joined,
+            Problem = problem, BySequence = bySequence, JoinedWire = joined, GateAtMsByWire = gateAt,
             Evidence = new JsonObject
             {
                 ["joined"] = problem is null, ["problem"] = problem, ["sentGateObservations"] = sent.Length,
@@ -434,7 +515,9 @@ public static class M5HwAnalysis
             ["captureProblems"] = captureProblems,
             ["encodedFaceDiagnostics"] = faces, ["physicalObservation"] = observation.DeepClone(),
             ["firmwareAcceptance"] = "NOT_JUDGED",
-            ["missing"] = captured ? null : calls is { Count: > 0 }
+            ["missing"] = captured ? (minReadback == 44000 && maxReadback == 45000 ? null
+                    : $"The blink settings read back as {minReadback}/{maxReadback} ms, not the requested 44000/45000.")
+                : calls is { Count: > 0 }
                 ? "KeepFaceAlive calls were observed but none generated a blink inside the window."
                 : "No KeepFaceAlive call observation (0x58D382..38C/0x58D54C..550) in the window: the diagnostic hook was not supplied or the keep-alive gate stayed closed.",
             ["verdictRule"] = "M5-062 B4 base setter preserves the existing blink deadline. M5-028 subtracts60 "
@@ -466,10 +549,18 @@ public static class M5HwAnalysis
         int commands = wire.Count(m => m.Outbound && m.AtMs >= clipFrom && m.AtMs <= clipTo && m.Payload[0] == 0x93 && m.Payload.Length == 4);
         bool reportedEnabled = states.Any(s => (s.State.EnabledAnimTracks & 1) != 0);
         bool changed = heads.Select(s => BitConverter.SingleToInt32Bits(s.State.HeadAngle)).Distinct().Count() > 1;
+        var missing = new JsonArray();
+        if (!earlyEnable)
+        {
+            if (!validDisable) missing.Add("No DisableAnimTracks for the head (mask 1) before the clip.");
+            if (!ownUnlock) missing.Add("No EnableAnimTracks mask 1 after the harness unlock.");
+            if (commands == 0) missing.Add("No head keyframe was sent during the clip.");
+        }
         return new JsonObject
         {
             ["verdict"] = earlyEnable ? "OBSERVED_EARLY_HEAD_ENABLE" : !validDisable || !ownUnlock || commands == 0
                 ? "INCONCLUSIVE" : "OBSERVED_LOCKED_HEAD_EVIDENCE",
+            ["missing"] = missing.Count == 0 ? null : missing,
             ["firmwareObservationAssessment"] = "NOT_JUDGED: head telemetry changes, enabled-track reports and their sample counts are firmware observations, independent of the outgoing wire comparison.",
             ["lockRequestAtMs"] = lockAt, ["clipFromMs"] = clipFrom, ["clipToMs"] = clipTo,
             ["unlockRequestAtMs"] = unlockAt, ["observationEndMs"] = toMs,
@@ -547,9 +638,15 @@ public static class M5HwAnalysis
             ["faceActivityEstablished"] = established, ["frameEvidence"] = frames,
             ["missingRequiredFaceFrames"] = missingFace, ["unexpectedFaceFrames"] = unexpectedFace,
             ["wireWindow"] = WireEvidence(rows),
-            ["missing"] = established ? null : activityProblem
+            ["missing"] = !established ? activityProblem
                 ?? (activity is null ? "No per-frame layered face flag (StreamLayers hook) was supplied; aggregate counts cannot establish required face output."
-                    : "The supplied per-frame face flags do not cover every audio frame in the window exactly once."),
+                    : "The supplied per-frame face flags do not cover every audio frame in the window exactly once.")
+                : missingFace > 0 || unexpectedFace > 0 ? null
+                : !drained ? "The layers did not drain after the glitch."
+                : !lifecycle ? "The layer stream did not start once and end once (one Start, one End last, no Abort)."
+                : backpack == 0 ? "No backpack light message was sent in the window."
+                : faceCount == 0 ? "No face image was sent in the window."
+                : assignedFaces != faceCount ? "Some face images were not inside an audio frame." : null,
             ["verdictRule"] = "M5-029: ApplyLayersToAnim(null) sets face only from a due face-layer result; "
                 + "StreamLayers buffers face iff that flag is set. First distortion face is not due before cumulative "
                 + "duration >=33 ms; backpack has independent 0/200,200/60,260/60,320/60,380/60 timing. "
@@ -639,10 +736,14 @@ public static class M5HwAnalysis
             }
             else problems.Add("Unexpected Abort inside the live observation window.");
         }
+        var missing = new JsonArray();
+        if (problems.Count == 0 && pairs < 2) missing.Add($"Only {pairs} complete live-idle burst(s) (Start FF then End) in the window; at least two are needed.");
+        if (problems.Count == 0 && toMs - fromMs < 10000) missing.Add("The live-idle window was shorter than 10 s.");
         return new JsonObject
         {
             ["verdict"] = problems.Count > 0 ? "OBSERVED_INVALID_BURST_ORDER"
                 : pairs >= 2 && toMs - fromMs >= 10000 ? "OBSERVED_FF_BURST_ORDER" : "INCONCLUSIVE",
+            ["missing"] = missing.Count == 0 ? null : missing,
             ["startFF"] = starts, ["completedBursts"] = pairs, ["openFinalBurst"] = opened is not null,
             ["orderedLifecycle"] = evidence, ["problems"] = problems,
             ["verdictRule"] = "M5-027/030: UpdateLiveAnimation precedes the common idle tail; completed tracks, "
@@ -664,10 +765,18 @@ public static class M5HwAnalysis
         bool invalid = ends > 0 || lifecycle.Any(m => m.Payload[0] == 0x8D)
             || lifecycle.Count(m => m.Payload[0] == 0x9B) > 1
             || lifecycle.Any(m => m.Payload[0] == 0x9B && (m.Payload.Length != 2 || m.Payload[1] == 255));
+        var missing = new JsonArray();
+        if (!preconditionsHeld) missing.Add("The no-animation, no-idle, KeepAliveEyeDart conditions did not hold for the whole window.");
+        else if (!invalid)
+        {
+            if (faces == 0) missing.Add("No face image was sent in the window.");
+            if (toMs - fromMs < 10000) missing.Add("The window was shorter than 10 s.");
+        }
         return new JsonObject
         {
             ["verdict"] = !preconditionsHeld ? "INCONCLUSIVE" : invalid ? "OBSERVED_UNEXPECTED_LAYER_LIFECYCLE"
                 : faces == 0 || toMs - fromMs < 10000 ? "INCONCLUSIVE" : "OBSERVED_PERSISTENT_FACE_WINDOW",
+            ["missing"] = missing.Count == 0 ? null : missing,
             ["preconditionsHeld"] = preconditionsHeld, ["faces"] = faces, ["ends"] = ends,
             ["orderedLifecycle"] = JsonSerializerNode(lifecycle),
             ["verdictRule"] = "M5-028/029: no explicit animation or movement idle; a persistent KeepAliveEyeDart "

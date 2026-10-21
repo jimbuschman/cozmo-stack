@@ -40,6 +40,16 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **M5 run 3 (`20261020-200624-M5-HW-97161e`, operator, 2026-10-20 evening): NOT ACCEPTED; no stack defect found.**
+  OK: TAGS, ABORT, AUDIO, LOCKED_HEAD, PARAMETERS; SLEEP known gap. The four incomplete parts were harness setup or
+  grading: KEEP_ALIVE/LAYERS blocked by the engine-faithful lingering LiveIdleTurn eye shift
+  (`research/20261020-m5-liveidleturn-linger.md`); TEARDOWN lacked enqueue origins for sends queued before Dispose
+  (`research/20261020-m5-teardown-sends.md`); DRIVING was cancelled by a false cliff stop because Cozmo was left on the
+  charger, through the recorded M13-017 located-charger gap (`research/20261020-m5-drive-cliff-stop.md`; M13 work, not
+  built now). Harness batch (implementer, verifier FAIL on one overclaiming DRIVING explanation, fixed by manager to the
+  verifier's wording): LAYERS before KEEP_ALIVE, face-only window before live idle, TEARDOWN origins from the send gate,
+  a reason on every incomplete row, an off-charger check. Harness tests 110/110. Ready for the operator's run 4.
+
 - **M5 harness wording rewrite (manager, 2026-10-20 evening; operator: the prompts were confusing and vague).**
   Operator-facing text only: an up-front list of the 11 parts, a `PART n of 11` header per part (what Cozmo does,
   what is checked, your job, duration), WATCH NOW / STOP WATCHING markers, six plain questions

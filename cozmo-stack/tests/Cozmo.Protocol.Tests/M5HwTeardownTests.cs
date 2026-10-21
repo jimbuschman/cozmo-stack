@@ -65,4 +65,59 @@ public class M5HwTeardownTests
         var spoof=new JsonObject{["kind"]="operator-window-notes",["name"]="AnimationStreamer.ClearSendBuffer",["text"]="Clearing unsent animFaceImage",["atMs"]=115};
         Assert.Equal("INCONCLUSIVE",M5HwAnalysis.Teardown(Array.Empty<M5Hw.WireMessage>(),new[]{spoof},100,120,true)["verdict"]!.GetValue<string>());
     }
+
+    // The shape of run 20261020-200624-M5-HW-97161e (research/20261020-m5-teardown-sends.md): the last tick queued
+    // reliable seq 12751..12757 (8E, 93, 97, 8E, 97, 8E, 93) before dispose-begin; 12754..12757 first went out during
+    // Dispose, paced by the reliable layer (M1-006); then AbortAll (0x8D) and one ClearSendBuffer discard. Native order:
+    // ~Robot AbortAll 0x00511120, ~AnimationStreamer 0x0051154A whose ClearSendBuffer 0x0057B044..0x0057B0B4 discards
+    // without sending; the transport is torn down later (0x0062EE98..0x0062EEB8), so queued traffic keeps draining.
+    static readonly (byte Tag,int Size)[] LastTick={(0x8E,745),(0x93,4),(0x97,5),(0x8E,745),(0x97,5),(0x8E,745),(0x93,4)};
+    const double DisposeBegin=226702.65, DisposeEnd=226772.30;
+    static byte[] Body((byte Tag,int Size) m){var b=new byte[m.Size];b[0]=m.Tag;return b;}
+    static M5Hw.WireMessage[] TeardownWire()
+    {
+        double[] at={226699.96,226699.96,226699.96,226703.56,226703.56,226737.70,226737.70};
+        int[] line={16507,16507,16507,16508,16508,16512,16512}, ordinal={1,2,3,2,3,0,1};
+        return LastTick.Select((m,k)=>new M5Hw.WireMessage(at[k],true,Body(m),line[k],ordinal[k],(ushort)(12751+k),1))
+            .Append(new M5Hw.WireMessage(226770.14,true,new byte[]{0x8D},16514,3,12760,1)).ToArray();
+    }
+    static List<M5HwAnalysis.Diagnostic> Gates(double lastTwoAt=226699.50)=>LastTick.Select((m,k)=>new M5HwAnalysis.Diagnostic(
+        k>=5?lastTwoAt:226699.15+k*0.05,new Cozmo.Robot.Animation.SendGateObservation(0,13050+k,3341,m.Tag,m.Size,m.Tag==0x8E,
+            8192,14,true,true,false))).ToList();
+
+    // reach: unit (synthetic gate observations and wire with the bundle's shape; the live join runs in M5Hw TEARDOWN).
+    [Fact]
+    public void SendGateOriginsMakeTheRunsFourDisposeFirstSendsPrequeued()
+    {
+        var wire=TeardownWire(); var events=new[]{Marker(226767.71)};
+        var origins=M5HwAnalysis.TeardownOrigins(wire,Gates(),DisposeBegin,DisposeEnd,out var evidence);
+        Assert.True(evidence["sendJoin"]!["joined"]!.GetValue<bool>());
+        var result=M5HwAnalysis.Teardown(wire,events,DisposeBegin,DisposeEnd,true,origins);
+        Assert.Equal("OBSERVED_DISPOSE_DISCARD_INTERVAL",result["verdict"]!.GetValue<string>());
+        var candidates=result["animationDataCandidates"]!.AsArray();
+        Assert.Equal(new ushort[]{12754,12755,12756,12757},candidates.Select(c=>c!["wire"]![0]!["reliableSequence"]!.GetValue<ushort>()));
+        Assert.All(candidates,c=>Assert.Equal("PREQUEUED_FIRST_SEND",c!["classification"]!.GetValue<string>()));
+        Assert.Equal(4,result["knownPrequeuedFirstSends"]!.GetValue<int>());
+        Assert.Equal(0,result["unknownOrigins"]!.GetValue<int>());
+        Assert.Null(result["missing"]);
+        // Without origins the same capture is INCONCLUSIVE, and says why.
+        var bare=M5HwAnalysis.Teardown(wire,events,DisposeBegin,DisposeEnd,true);
+        Assert.Equal("INCONCLUSIVE",bare["verdict"]!.GetValue<string>());
+        Assert.Contains("4 first send(s) during Dispose have no enqueue origin.",bare["missing"]!.AsArray().Select(n=>n!.GetValue<string>()));
+    }
+
+    // reach: unit (synthetic; the grader is not loosened: a gate observation inside Dispose gives no origin).
+    [Fact]
+    public void AGateObservationInsideDisposeLeavesItsSendUnknown()
+    {
+        var wire=TeardownWire();
+        var origins=M5HwAnalysis.TeardownOrigins(wire,Gates(lastTwoAt:226710.0),DisposeBegin,DisposeEnd,out _);
+        var result=M5HwAnalysis.Teardown(wire,new[]{Marker(226767.71)},DisposeBegin,DisposeEnd,true,origins);
+        Assert.Equal("INCONCLUSIVE",result["verdict"]!.GetValue<string>());
+        Assert.Equal(2,result["unknownOrigins"]!.GetValue<int>());
+        Assert.Contains("2 first send(s) during Dispose have no enqueue origin.",result["missing"]!.AsArray().Select(n=>n!.GetValue<string>()));
+        // No gate observations at all: no join, so no origins.
+        Assert.Empty(M5HwAnalysis.TeardownOrigins(wire,new List<M5HwAnalysis.Diagnostic>(),DisposeBegin,DisposeEnd,out var none));
+        Assert.False(none["sendJoin"]!["joined"]!.GetValue<bool>());
+    }
 }
