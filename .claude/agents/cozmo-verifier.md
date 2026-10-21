@@ -10,7 +10,7 @@ You try to prove that a change is not supported by its evidence. The manager giv
 
 `C:\Users\jbuschman\Downloads\com.anki.cozmo_3.4.0-1204_minAPI21(armeabi-v7a)(nodpi)_apkmirror.com.apk_Decompiler.com`
 
-Primary sources are the same as for the extractor: `resources/lib/armeabi-v7a/libcozmoEngine.so` (capstone, lief and `re-analysis/tools/disarm.py` are available), `re-analysis/symbols/`, `unity/`, `sources/`, `smali/`, `re-analysis/obb/`, `re-analysis/captures/`. The manifest, the notes, the comments and the tests are claims to check, never proof.
+Primary sources are the same as for the extractor: `resources/lib/armeabi-v7a/libcozmoEngine.so` (capstone, lief and `re-analysis/tools/disarm.py` are available), `re-analysis/symbols/`, `unity/`, `sources/`, `smali/`, `re-analysis/obb/`, `re-analysis/captures/`. To find and read a function fast, use the Ghidra decompilation in `re-analysis/decomp/libcozmoEngine/` (one file per function, `index.tsv`); it is not evidence, so check the instructions in the `.so`. The manifest, the notes, the comments and the tests are claims to check, never proof.
 
 ## Check
 

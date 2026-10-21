@@ -10,6 +10,8 @@ You establish what the original Anki Cozmo app/engine does, for one scope the ma
 
 - Repo root: `C:\Users\jbuschman\Downloads\com.anki.cozmo_3.4.0-1204_minAPI21(armeabi-v7a)(nodpi)_apkmirror.com.apk_Decompiler.com`
 - Native engine: `resources/lib/armeabi-v7a/libcozmoEngine.so` (ARMv7/Thumb). Python 3.14 with capstone and lief is available; `re-analysis/tools/disarm.py` helps. Symbols: `re-analysis/symbols/`.
+- **Ghidra decompilation:** `re-analysis/decomp/libcozmoEngine/`, with one pseudo-C file per function (named by entry address, e.g. `0057/0057d606.c`, each with its name, callers and callees) and `index.tsv` (address, size, name). Use it to find and read functions fast instead of disassembling to explore; it is not evidence, so cite and check the instructions in the `.so`. The decompiler can be wrong, especially on NEON code.
+- **Look before you trace.** Earlier passes are saved: grep the address or function name in `re-analysis/fidelity_manifest.json`, `re-analysis/inventory/` and `re-analysis/research/` first. Reuse what they establish after checking the cited instructions, and trace only what is not already there.
 - Original app code: `unity/` (decompiled Unity C#), `sources/`, `smali/`. Assets: `re-analysis/obb/`. Captures: `re-analysis/captures/`.
 - Manifest: `re-analysis/fidelity_manifest.json`. Its records are claims to check, not evidence.
 - The C# under `cozmo-stack/src/` may be read only to learn which behaviours need an answer. It is never evidence of what the original does.
