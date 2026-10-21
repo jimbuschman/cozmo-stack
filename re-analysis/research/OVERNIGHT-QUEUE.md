@@ -1,8 +1,7 @@
 # Overnight research queue (2026-10-13/14)
 
 **Operator queue update, 2026-10-21:** after finishing any current request, check the
-Research lane in `../jobs/QUEUE.md` first. Its four independent foundation reads
-(M13-017, M11 pose/history, M8 ActionList/completion, M10 classifier) take priority
+Research lane in `../jobs/QUEUE.md` first. Its open independent reading jobs take priority
 over this backlog and builder pre-flight. Publish one answer at a time, then take
 the next open request without waiting for adoption or a build. Keep 3–4 independent
 reading jobs queued; the manager replenishes and reviews them.

@@ -1,5 +1,18 @@
 # M10–M15 and M7/M8 acceptance: what stands in the way (2026-10-20)
 
+**Queue handoff (2026-10-21):** the four initial research answers are published
+(8626fcfd, c419483d, e0c71224, 9d1efe80), all pending independent review/adoption.
+The charger report corrects the initial rising-edge shorthand: observation runs
+on every contact-true input; only edge events are gated. Review that contract first.
+M10 reports exact-constant and unbound cancel/detach findings; these are review
+leads, not approved builder instructions. M11 reports the core history joins now
+built, with timeout-input and frame-pose assembly residue. M8 retains typed
+completion and lifecycle gaps. Three independent narrow reads replenish the live
+queue: history timeout input, animation completion payload, frame-pose assembly.
+Builder release still requires reviewed evidence and applicable inventory approval.
+The operator requested ongoing push monitoring/queue upkeep; a 10-minute chat
+monitor is active. No records or acceptances changed by this handoff.
+
 **Manager review (2026-10-21): APPROVED, with three conditions.** Counts, review states, live/non-live gaps,
 hardware-only and blocked lists, SetOnCharger 0x00511990 (+0x338 read at 0x00511A66/0x00511BA8), SetPoseOnCharger
 0x00516870 and M11-016's 2026-10-14 decision were checked against the manifest and the `.so`.
