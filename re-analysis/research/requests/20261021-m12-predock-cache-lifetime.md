@@ -1,0 +1,6 @@
+# R-M12-CACHE-LIFETIME — actionable cached-pose clearing
+
+Independent read-only job; answer `research/20261021-m12-predock-cache-lifetime.md`.
+Search research/inventory first and quote current M12-001/045 and M13-009. Start from B-M13-9's explicit cached-pose destructor/lifetime MISSING at actionable SetPose0x004E01F8..0x004E0212. Reuse checked vector-clear and pose primitives; do not repeat the charger observation.
+
+Narrow question: what retained values/parent ownership or later robot/API behavior differs when cached pre-action entries are cleared? Trace actual entry destruction and supported retained consumers, distinguishing C++ mechanisms from observable lifetime/state. Identify which owner is still absent and whether an existing supported parent-value representation already preserves effects. A test vector clearing is not proof; no-effect needs a complete bounded reader/ownership argument. Return source citations, current implementation reach, UNKNOWNs, smallest build/disposition and independent oracle. No whole docking audit, code/tests, policy decision, manifest edits, approval or hardware. Decomp/libcozmoEngine is navigation; .so instructions are evidence. Publish research only.

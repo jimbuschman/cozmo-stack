@@ -61,3 +61,42 @@ Next review unit: state-emplace/full-state ownership, native Get/IsValidKey
 outputs, initialization/reset and the actual marker key consumer. Then prepare
 an explicit owning inventory record and integration approval for one bounded
 producer/reader/consumer build. This partial check alone does not release it.
+
+
+## Follow-up: core reader/state/reset checks (HEAD3609db0c)
+
+Independent native reads extend coverage:
+- GetComputed531CCC..1D6C: exact timestamp miss leaves outputs untouched;
+  hit stores state address1D12 before optional key lookup. Null key-output
+  succeeds without the index. Missing timestamp→key warns and returns1 after
+  the state address was written, preserving key output. Hit copies key1D2C.
+- IsValidKey53214C..2186 tests exact unsigned membership in map+24 only. It
+  does not check the reciprocal index or reject0 specially.
+- New state node constructor532664..26B6 allocates0x7C, stores timestamp,
+  copies pose via532692 and0x5C state bytes via5326AA. Existing-state update
+  remains the previously checked in-place assignment and0x5B copy. Internal
+  C# layout need not reproduce allocator/padding, but state and alias effects do.
+- State-emplace-false branch531C96/98 sets result1 and cleans the temporary;
+  it does not overwrite state/key outputs. Supported single-thread reach of
+  this exceptional branch is still unestablished; do not manufacture a race.
+- Constructor53088C..8C6 initializes five local trees, local+38=0/window3000;
+  Clear5308C8..96C clears the local trees and+38. No direct global store exists
+  in these bodies. Reused tree destruction is not a new global alias census.
+  ELF dynamic symbol currHistStateKey_ is at1059ED0, size4, as reported.
+
+Marker boundary independently inspected at654D60..DA0,654E50..E92,
+654F04..F64 and654FDA..5012: it requests a generated key with flag1, checks
+result/origin/rotation, then invokes IsValidKey on the returned key only when
+its marker camera word matches the component camera word. Invalid takes the
+warning/skip branch. Current code has no such key filter. This verifies the
+existence/order of this consumer, not its entire camera-copy provenance or
+marker lifecycle. That consumer remains M11-050 work, outside the proposed core.
+
+**Core handoff conclusion:** the reviewed producer/reader semantics are enough
+for a bounded full-state/key-store implementation using existing checked pose
+and query primitives. Proposed owning record M11-098 and HELD job B-M11-18
+are specified in the job packet. This is not whole M11-044 settlement. Full
+marker assembly, camera identity, borrowed-state consumer census, arbitrary
+counter writers/aliases and native inter-thread race behavior remain unclaimed.
+A shared serialized counter is required for the known engine-owned calls;
+no global absence proof or custom concurrent host API is being promised.

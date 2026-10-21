@@ -175,6 +175,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s8 | [B-M5-32](B-M5-32.md) | DONE; baseline published with B-M5-33 in c984cc1f; initial review FAIL F1/F2, both closed by research/20261020-b-m5-33-check.md |
 | 61w3s9 | [B-M5-33](B-M5-33.md) | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-m5-33-check.md); focused 79/79, builder full suite 5968/5968; operator rerun next |
 | 61w3t | [B-M13-9](B-M13-9.md) | DONE 0138af17 + 3f54bccc; independent bounded PASS research/20261021-b-m13-9-check.md, focused53/53; shared-owner gaps and hardware remain |
+| 61w3u | [B-M11-18](B-M11-18.md) | HELD — proposed M11-098 core inventory addition/approval; bounded source review ready, no implementation authorization yet |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |
@@ -253,6 +254,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 36 | [R-M11-POSE-CONFIG](../research/requests/20261021-m11-pose-change-configuration.md) | answered 152c58fa; pending independent review/adoption |
 | 37 | [R-M13-DRIVEOFF-JOINS](../research/requests/20261021-m13-driveoff-remaining-joins.md) | answered 19b0a313; partial gate check research/20261021-m13-driveoff-remaining-check.md confirms SevereNeeds vs stale animation-state evidence; remaining rows pending; no builder release |
 | 38 | [R-M11-CHARGER-MAP](../research/requests/20261021-m11-charger-map-add-join.md) | answered 9ff5b508; pending independent review/adoption |
-| 39 | [R-M15-SEVERE-INPUT](../research/requests/20261021-m15-severe-need-input.md) | open |
+| 39 | [R-M15-SEVERE-INPUT](../research/requests/20261021-m15-severe-need-input.md) | answered 3609db0c; pending independent review/adoption |
 | 40 | [R-M8-EXTERNAL-ADMISSION](../research/requests/20261021-m8-external-action-admission.md) | open |
 | 41 | [R-M7-SDK-BOUNDARY](../research/requests/20261021-m7-sdk-record-boundary.md) | open |
+| 42 | [R-M12-CACHE-LIFETIME](../research/requests/20261021-m12-predock-cache-lifetime.md) | open |
