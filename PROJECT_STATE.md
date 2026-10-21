@@ -40,6 +40,15 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **M5 harness wording rewrite (manager, 2026-10-20 evening; operator: the prompts were confusing and vague).**
+  Operator-facing text only: an up-front list of the 11 parts, a `PART n of 11` header per part (what Cozmo does,
+  what is checked, your job, duration), WATCH NOW / STOP WATCHING markers, six plain questions
+  (1 yes / 2 no / 3 not sure / 4 missed; blinks as a count), plain result lines (OK / PROBLEM / COULD NOT CHECK /
+  KNOWN MISSING PIECE / SAVED FOR REVIEW) and one OVERALL line. Removed the two unanswerable questions
+  (animation stopped; eyes match the reference SVG; recorded NOT_ASKED) and ABORT's duplicate watch window.
+  Grading, verdicts and evidence are unchanged. Codex's uncommitted partial edit of the same file was folded in.
+  Ready for the operator rerun; M5 remains NOT ACCEPTED.
+
 - **M5 second hardware run / B-M5-35 (2026-10-20):** operator supplied
   `20261020-180933-M5-HW-bde6cd`; judged **NOT ACCEPTED** in
   `research/20261020-m5-hw-2-judgement.md`. Confirmed harness startup defect:

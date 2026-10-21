@@ -1,87 +1,68 @@
 # M5 animation and face test — operator guide
 
-This run checks the C# stack's animation messages and engine state, and records what the real robot does.
-You do not decide whether Cozmo "looks right". The program compares the evidence it can source automatically;
-you answer concrete questions about what you saw. Unknown firmware behavior remains an observation.
+## What this test is for
+
+The program makes Cozmo animate, records every message the stack sends him, and checks those messages against
+the original Cozmo engine. **That checking is automatic.** In four of the eleven parts you are asked what you
+saw. Your answers are saved as notes; they never make anything pass or fail, so any honest answer is fine.
 
 ## Run
 
-From the repository root, with the PC connected to Cozmo's Wi-Fi:
+PC on Cozmo's Wi-Fi. Cozmo on the **floor**, off the charger, 30 cm clear around him. From the repository root:
 
 ```powershell
 dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m5-hw --resources re-analysis/obb/assets/cozmo_resources --allow-drive
 ```
 
-`dotnet run` builds the current code before starting; no separate compile command is needed.
-
-Put Cozmo on the **floor**, off the charger, with at least 30 cm clear around him. The head and lift move,
-the face/backpack may change, sound may play, and this command permits wheel motion and a 6 cm drive attempt.
-Allow a few minutes plus reading/answer time. Ctrl+C stops the run and preserves its evidence.
-
-Startup first waits for delivered engine readiness, then connects and checks the cached neutral face and its
-reference picture. The 60-second readiness budget is a host coverage limit, not an engine timing expectation.
-If startup fails, is interrupted, or the cached neutral/reference is missing, the run **stops before the checks or
-observation questions** and saves an incomplete bundle. Its startup summary lists the actual error messages.
-Do not spend time watching an invalid setup. This gate follows M2-021 (`StartupManager.cs:322–341`,
-`ConnectionFlowController.cs:670–673`) and M5-010 (constructor `0x0057A0D4..0x0057A282`, once-per-Robot neutral lookup).
-A missing cached neutral prevents this test's neutral comparison; later explicit clips can still render.
-
-Before each check, the program says **what it tests**, **what it records automatically**, and **your part**.
-For observations, read the preview, get a clear view, then press Enter. Watch from **START** to **END**.
-Answer afterward using a numbered choice. Do not include motion after END in an earlier answer.
-
-To review the exact shared check descriptions and observation previews without a robot:
+To see exactly what the run will show you, without a robot:
 
 ```powershell
 dotnet run --project cozmo-stack/src/Cozmo.Conformance -- m5-hw --preview
 ```
 
-`--preview` prints the source references too. `--validate` checks the current fidelity references without
-resources or network access. Neither command creates a robot or an acceptance bundle.
+The run first connects (up to a minute, nothing to watch). If connecting fails, it stops before any part and
+says why. Then the parts run in order. Each one starts with a header like
+`=== PART 3 of 11: KEEP_ALIVE (about 30 s) ===` saying what Cozmo will do, what the program checks, and your job.
 
-## What you watch
+## The parts
 
-| Part | What to watch | What to report |
-| --- | --- | --- |
-| ABORT; first part of KEEP_ALIVE | Eyes, whole head and front lifting arms during a short animation and its stop request | Four separate answers: did the original animation stop; did eye outlines resemble the displayed reference; did you see a blink; did you see an eye dart? The exact animation expression is not prescribed. |
-| KEEP_ALIVE live idle | Wheels and whole body for 10 seconds | Whether you saw a small shift/turn. Head or lifting-arm movement alone does not count. No random wiggle is required for a passing visual answer. |
-| LOCKED_HEAD | Angle of the whole head during the marked clip | Whether it stayed at its starting angle. Ignore the eye picture and motion after UNLOCK. |
-| LAYERS | Face screen and the five backpack lights | Whether the picture changed and whether the lights changed, separately. No exact distortion or simultaneous change is prescribed. |
-| PARAMETERS | Eyes for 60 seconds | Whether you saw at least two blinks. If you measured gaps, put them in the notes. **No 44–45 second wall-clock gap is expected.** The program checks the engine's timer separately. |
+| # | Part | Cozmo does | Your job |
+| --- | --- | --- | --- |
+| 1 | TAGS | plays one short face animation three times | nothing |
+| 2 | ABORT | starts a long animation and stops it after ~¾ s | nothing |
+| 3 | KEEP_ALIVE | stops an animation again, 10 s of idle wiggles, 10 s face-only idle | **watch the eyes (~3 s), then the wheels (10 s)** |
+| 4 | LOCKED_HEAD | locks the head, plays an animation that normally moves it | **watch the head** |
+| 5 | AUDIO | plays an animation with sound | nothing |
+| 6 | LAYERS | the face screen glitches briefly | **watch the face and the backpack lights** |
+| 7 | LIVE_IDLE | 12 s of idle wiggles | nothing |
+| 8 | PARAMETERS | sets blinking to about once per 44 s, then sits for 60 s | **count the blinks** |
+| 9 | DRIVING | tries to drive 6 cm forward | nothing |
+| 10 | SLEEP | asks to go to sleep (known missing piece; nothing visible should happen) | nothing |
+| 11 | TEARDOWN | disconnects in the middle of an animation | nothing |
 
-A **blink** is the eyes briefly closing and reopening. An **eye dart** is the eye shapes sliding inside the
-screen; the whole head moving is different. A later blink/dart does not establish that a cancelled animation continued.
+About 4 minutes plus connecting and your answers.
 
-For the eye-shape comparison, open the printed `neutral-reference.svg` path in a browser before starting.
-Compare the two eye outlines, not color or thin display lines. This picture is generated from the loaded neutral
-animation; it is a comparison aid, not proof of what the firmware displays. Missing/different reference appearance
-is retained and never silently converted into an engine failure or a passing answer.
+## When you watch
 
-**not-seen** means you watched but saw none. **unclear** means you watched but could not tell.
-**not-observed** means you missed that part. Free-text notes follow each observation. All answers are retained;
-none is an instruction to guess the desired result.
+1. The program says what to look at and for how long, and lists the questions it will ask.
+2. Get a clear view and press Enter. `>>> WATCH NOW <<<` appears.
+3. Watch until `>>> STOP WATCHING <<<`.
+4. Answer each question: `1` yes, `2` no, `3` not sure, `4` I missed it. For blinks, type the number you counted.
+5. Optionally type anything odd you noticed, or just press Enter.
 
-TAGS, AUDIO, LIVE_IDLE, DRIVING, SLEEP and TEARDOWN say **NO ANSWER NEEDED**. The program records their evidence.
-You do not judge sound quality, packet counters, successful navigation, or a sleeping expression.
+## Reading the results
 
-## What each result means
+After each part, and again in `SUMMARY.txt`, there is one line:
 
-Each check prints a plain-language summary, also saved in `SUMMARY.txt`:
+- **OK:** the stack sent what the original engine sends.
+- **PROBLEM:** the stack sent something the engine would not. Needs review.
+- **COULD NOT CHECK:** setup or evidence was missing; the reason is shown. Not a failure by itself.
+- **KNOWN MISSING PIECE:** reported as expected (SLEEP).
+- **SAVED FOR REVIEW:** recorded only; nothing to pass or fail (LIVE_IDLE).
 
-- **MATCH:** captured evidence matched the stated source-backed comparison. It is not M5 acceptance.
-- **MISMATCH:** captured evidence contradicted a stated comparison; the saved detail needs review.
-- **INCOMPLETE:** setup or required evidence was missing. This does not establish an engine defect.
-- **OBSERVATION:** measurements saved without a source-backed pass/fail claim.
-- **KNOWN_GAP:** the missing implementation path remains open; its diagnostic was observed.
+The run ends with one `OVERALL:` line. Either way, send the results folder back for review.
 
-Physical answers and your notes appear alongside the result, explicitly ungraded. For example, a matched outgoing
-stop command can coexist with "original animation stopped: unclear". That uncertainty remains for review.
-
-Local time windows, minimum sample counts, random track occurrence and observation availability are **coverage
-requirements**, not engine timing guarantees. A capture can identify a real malformed message even when other
-coverage is missing. Mismatch results are not successful exit statuses just because their internal name begins OBSERVED.
-
-## Automatic comparisons and limits
+## Reference for review: what each part compares, and its engine source
 
 The exact comparisons, current records and native citations are embedded in each check's `sourceComparisons` in
 `result.json`. The live prompts omit addresses so you can concentrate on the test.
@@ -110,10 +91,8 @@ It contains `SUMMARY.txt`, machine-readable `result.json`, raw `frames.jsonl`, d
 Capture timestamps are host times, not firmware execution times. No record is settled and no acceptance is performed.
 
 `--only TAGS,ABORT` selects a diagnostic subset; omitted checks are explicitly incomplete. `--out <directory>`
-changes the bundle parent. `--yes` skips readiness/answer prompts and saves not-observed answers. Without
+changes the bundle parent. `--yes` skips the prompts and saves "not-observed" answers. Without
 `--allow-drive`, live-idle/drive coverage remains incomplete. A ten-minute watchdog bounds the run; disposal has
 a five-second host limit. Exit 0 means no recorded mismatch/incomplete check or run error, not layer acceptance;
 known gaps and physical observations remain in the report.
 
-This guide supersedes earlier M5-HW instructions that required firmware echoes, resting-eye resemblance,
-a visible wiggle, quiet cancellation-tail counts, or a 44–45 second physical blink interval as engine expectations.

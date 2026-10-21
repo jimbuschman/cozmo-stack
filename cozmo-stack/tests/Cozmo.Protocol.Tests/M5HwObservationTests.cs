@@ -68,10 +68,13 @@ public class M5HwObservationTests
     public void EveryObservationFamilyExplainsWhatToWatchAndSeparatesBlinkDartAndPostUnlockMotion()
     {
         Assert.Equal(new[]{"BLINKS","CANCEL","LAYERS","LIVE","LOCKED"},M5Hw.ObservationPlans.Select(p=>p.Id).OrderBy(x=>x));
-        Assert.All(M5Hw.ObservationPlans,p=>{Assert.NotEmpty(p.Watch);Assert.NotEmpty(p.Expected);});
-        Assert.Contains("after the announced UNLOCK",M5Hw.ObservationPlans.Single(p=>p.Id=="LOCKED").Expected);
-        Assert.Contains("neutral-reference.svg",M5Hw.ObservationPlans.Single(p=>p.Id=="CANCEL").Expected);
-        Assert.Contains("darts, not blinks",M5Hw.ObservationPlans.Single(p=>p.Id=="BLINKS").Expected);
+        Assert.All(M5Hw.ObservationPlans,p=>{Assert.NotEmpty(p.Watch);Assert.NotEmpty(p.HowLong);Assert.NotEmpty(p.Questions);});
+        Assert.Contains("after STOP WATCHING",M5Hw.ObservationPlans.Single(p=>p.Id=="LOCKED").Note);
+        Assert.Contains("sliding around is not a blink",M5Hw.ObservationPlans.Single(p=>p.Id=="BLINKS").Note);
+        // Every question the run asks maps to a planned field, and every watched part names its windows.
+        Assert.All(M5Hw.Checks,c=>Assert.All(M5Hw.Guide(c.Id).Phases,p=>Assert.Contains(M5Hw.ObservationPlans,o=>o.Id==p)));
+        Assert.Equal(M5Hw.ObservationPlans.SelectMany(p=>p.Questions).Select(q=>q.Field).Distinct().Count(),
+            M5Hw.ObservationPlans.SelectMany(p=>p.Questions).Count());
         var noHuman=M5HwAnalysis.ObservationAnswer(new JsonObject{["fromMs"]=0,["toMs"]=1},"q",null,new[]{"yes","unclear"},2,3);
         Assert.Equal("not-observed",noHuman["answer"]!.GetValue<string>());
         Assert.Null(noHuman["verdict"]);
