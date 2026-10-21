@@ -269,7 +269,7 @@ Prioritize this live queue over overnight builder pre-flight when these jobs are
 | 33 | [R-M8-PROFILE](../research/requests/20261021-m8-action-motion-profile-lifetime.md) | answered 5e1b0a13; pending independent review/adoption |
 | 34 | [R-M11-HISTORY-INDEX](../research/requests/20261021-m11-computed-history-index.md) | answered bec5a0dc; partial producer check research/20261021-m11-computed-history-index-check.md; readers/lifetime/live consumer pending, no builder release |
 | 35 | [R-M10-OBSTACLE-ALIAS](../research/requests/20261021-m10-obstacle-flag-alias.md) | answered 06b06760; pending independent review/adoption |
-| 36 | [R-M11-POSE-CONFIG](../research/requests/20261021-m11-pose-change-configuration.md) | answered 152c58fa; pending independent review/adoption |
+| 36 | [R-M11-POSE-CONFIG](../research/requests/20261021-m11-pose-change-configuration.md) | bounded Codex review recorded; Claude spot-check and root-cache inventory correction pending; no build release |
 | 37 | [R-M13-DRIVEOFF-JOINS](../research/requests/20261021-m13-driveoff-remaining-joins.md) | answered 19b0a313; expanded caller/constructor/cancel review research/20261021-m13-driveoff-remaining-check.md; Codex review; Claude spot-check pending; real tag/subscription, severe-need and completion-owner gaps remain |
 | 38 | [R-M11-CHARGER-MAP](../research/requests/20261021-m11-charger-map-add-join.md) | answered 9ff5b508; bounded add/cache/height review research/20261021-m11-charger-map-add-check.md; Codex review; Claude spot-check pending; height defect confirmed, complete tree/callback review remains |
 | 39 | [R-M15-SEVERE-INPUT](../research/requests/20261021-m15-severe-need-input.md) | answered 3609db0c; pending independent review/adoption |

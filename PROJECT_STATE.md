@@ -40,6 +40,8 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **2026-10-21 configuration recipient review:** held row36 bounded native check recorded in `research/20261021-m11-pose-change-configuration-check.md`. Pending-ID/threshold/reset findings confirmed; root-pose cache correction prepared but not approved or applied. No build released; container and public-state subscriber gaps remain. Codex review; Claude spot-check pending. Totals unchanged:2 builds verified,0 records settled. Next ordered review:row44 retained pose owner. No new research or hardware check.
+
 - **2026-10-21 B-M13-11:** shared row2 height selector and empty/singleton/line minAreaRect branches built in6a8d507f; separate Codex bounded review PASS. Focused73/73, full6036/6036, zero skipped (6m17s), fidelity707 PASS. Codex review; Claude spot-check pending. Session totals:2 builds verified,0 records settled. Backlog review continues; M13-017 not hardware-ready. B-M11-18 new-record inventory approval and bounded M15 row39 hold exception have been asked asynchronously; neither is assumed approved. No new research queued and no robot check written.
 
 - **2026-10-21 B-M13-10:** Claude-authorized false insertion stamp correction implemented and separate Codex bounded review PASS; focused53/53, fidelity707 PASS, M13-navigation correction re-approved. Full suite6019/6019 PASS, zero skipped (6m25s); implementation7f42b427, claim reconciliation0d0ccc1c. Codex review; Claude spot-check pending. Builds with bounded review this session:1; records settled:0. Next: held backlog review row37 then38 and remaining M13-017; no new research, no hardware script.
