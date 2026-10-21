@@ -1,5 +1,7 @@
 # Computed history index producer review — partial (2026-10-21)
 
+**Codex review; Claude spot-check pending**
+
 Examined HEAD19961e92 and report `20261021-m11-computed-history-index.md`
 (bec5a0dc). Independent instructions from shipped libcozmoEngine.so, Thumb.
 Coverage: main successful/error-return flow531B84..1C94 and scalar map helpers

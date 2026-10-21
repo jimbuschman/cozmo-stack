@@ -1,5 +1,7 @@
 # M11 pose/history review — partial (2026-10-21)
 
+**Codex review; Claude spot-check pending**
+
 Examined HEAD f395e545. This is an independent bounded check of F4 in
 `20261021-m11-pose-history-settling.md` (c419483d), not approval of its complete
 history/pose coverage or settlement recommendations. No production edits or tests.

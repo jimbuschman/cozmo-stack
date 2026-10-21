@@ -1,5 +1,7 @@
 # M10 classifier — partial independent constants check
 
+**Codex review; Claude spot-check pending**
+
 Revision50138aea, 2026-10-21. Independent check of F1 in
 20261021-m10-classifier-settling.md against shipped native instructions and
 current OffTreads.cs. PASS for the six reported constant mismatches. Other

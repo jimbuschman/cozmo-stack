@@ -1,5 +1,7 @@
 # M8 ActionList review — partial (2026-10-21)
 
+**Codex review; Claude spot-check pending**
+
 HEAD97bdc60f; reviewed Clear rows from `20261021-m8-actionlist-completion-settling.md`.
 Actual Thumb instructions independently read, not decompiler output:
 

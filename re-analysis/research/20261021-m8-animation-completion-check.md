@@ -1,5 +1,7 @@
 # M8 animation completion — partial independent check (2026-10-21)
 
+**Codex review; Claude spot-check pending**
+
 Reviewed at dc3004dd, against the current manifest and native instructions in
 resources/lib/armeabi-v7a/libcozmoEngine.so. Report:
 20261021-m8-animation-completion-payload.md. This is a partial check, not adoption

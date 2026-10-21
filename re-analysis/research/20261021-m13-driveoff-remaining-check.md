@@ -1,5 +1,7 @@
 # Drive-off animation gate review — partial (2026-10-21)
 
+**Codex review; Claude spot-check pending**
+
 Examined HEAD19b0a313 and report `20261021-m13-driveoff-remaining-joins.md`.
 Independent native check of the gate/override ownership only; not the report's
 full action/cancel/constructor path or a builder release. No code/tests changed.

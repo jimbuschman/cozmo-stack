@@ -1,5 +1,7 @@
 # R-M7-MOOD-MISSING — bounded remaining input evidence
 
+**HELD — do not start. Operator reading hold, 2026-10-21.**
+
 Read-only job; answer research/20261021-m7-missing-mood-config-outcome.md.
 Search research/inventory before tracing; native instructions are primary and
 re-analysis/decomp/libcozmoEngine/ is navigation.

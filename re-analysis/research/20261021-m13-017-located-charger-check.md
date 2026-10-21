@@ -1,5 +1,7 @@
 # R-M13-017 source review (Codex, 2026-10-21)
 
+**Codex review; Claude spot-check pending**
+
 Reviewed `20261021-m13-017-located-charger.md` (8626fcfd), against working HEAD
 `da6dd692`, current manifest and ARMv7/Thumb instructions in
 `resources/lib/armeabi-v7a/libcozmoEngine.so`. Operator authorized ongoing Codex
