@@ -176,7 +176,7 @@ re-scopes them under AGENTS.md "What we reproduce" (2026-10-17). The research la
 | 61w3s9 | [B-M5-33](B-M5-33.md) | done c984cc1f, validation cb0f657c; Codex independent review PASS (research/20261020-b-m5-33-check.md); focused 79/79, builder full suite 5968/5968; operator rerun next |
 | 61w3t | [B-M13-9](B-M13-9.md) | DONE 0138af17 + 3f54bccc; independent bounded PASS research/20261021-b-m13-9-check.md, focused53/53; shared-owner gaps and hardware remain |
 | 61w3u | [B-M11-18](B-M11-18.md) | HELD — proposed M11-098 core inventory addition/approval; bounded source review ready, no implementation authorization yet |
-| 61w3v | [B-M10-2](B-M10-2.md) | CLAIMED 66c3dd9a per status/B-M10-2.md — six exact classifier constants only |
+| 61w3v | [B-M10-2](B-M10-2.md) | DONE e332207b; bounded PASS research/20261021-b-m10-2-check.md; builder reports focused65/full6019, whole M10 remains open |
 | 61w4 | [B-M12-7](B-M12-7.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M2M15-2 (B-M12-3 check FAIL: dock handler retirement race; C5 queue; 0x4C producer) |
 | 61w5 | [B-LOG-1](B-LOG-1.md) | HELD (manager, 2026-10-17: now a cleanup item under AGENTS.md "What we reproduce"; logs are best effort, not on the acceptance path) — was open, after B-M12-7 (six log sites with wrong key/text/channel, found by logkey_check.py) |
 | 61x | [B-M15-8](B-M15-8.md) | HELD (manager, 2026-10-17: M1+M2 acceptance assessment; not open until released) — was open, after B-M1-2 (expose approved spark/activity inputs) |

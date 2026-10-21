@@ -40,6 +40,8 @@ stands. Nothing new starts outside the current layer.
 
 ## Where things stand (2026-10-16)
 
+- **2026-10-21, B-M10-2 bounded review PASS:** e332207b fixes six native classifier threshold literals; independent source/diff review `research/20261021-b-m10-2-check.md`. Builder reports focused65/full6019 passing; reviewer did not rerun. M10-001 remains IMPLEMENTATION_GAP; recipient joins and whole-layer acceptance remain open.
+
 - **2026-10-21, B-M13-9 built and bounded review PASS:** contact-true charger observation is implemented in0138af17, fixtures corrected in3f54bccc; independent review `research/20261021-b-m13-9-check.md`, focused53/53 pass. Builder reports full6009/6009. M13-040 remains IMPLEMENTATION_GAP with shared configuration/map/cache lifetime gaps; M13-017 and hardware remain unfinished. No change to M1-M5 acceptance.
 
 - **M5 run 4 (`acceptance/hardware/20261020-211745-M5-HW-87b83f`, 2026-10-20): hardware run PASSES** (judgement in its
