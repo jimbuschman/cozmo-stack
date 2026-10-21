@@ -163,8 +163,8 @@ public static class CubeGeometry
 
     /// <summary>
     /// <c>ObservableObject::GetDimInParentFrame&lt;'Z'&gt;</c> 0x00557794: the object's extent along the
-    /// parent axis its own Z lies closest to. The axis choice is the one <c>IsRestingFlat</c> makes (the
-    /// largest-magnitude component of the object's Z in the parent frame); a cube is 44 on every axis.
+    /// parent Z axis: row 2 of the supplied rotation selects the largest absolute component, with
+    /// strict comparisons retaining X before Y before Z on ties. A cube is 44 on every axis.
     /// </summary>
     // fidelity: M12-012
     public static double DimInParentFrameZ(ObservableObject o) => DimInParentFrameZ(o, o.Pose.Rotation);
@@ -172,11 +172,13 @@ public static class CubeGeometry
     /// <summary>The same with an explicit rotation: <c>IsPoseTooHigh</c> reads the PASSED pose's rotation (<c>GetRotationMatrix(GetTransform(pose))</c>, 0x00877968..0x0087797A), not the object's own.</summary>
     public static double DimInParentFrameZ(ObservableObject o, Mat3 r)
     {
-        double x = Math.Abs(r[0, 2]), y = Math.Abs(r[1, 2]), z = Math.Abs(r[2, 2]);
         var size = SizeOf(o.Type);
-        if (z >= x && z >= y) return size.Z;
-        if (x >= y) return size.X;
-        return size.Y;
+        return Math.Abs(Manipulation.RotatedParentAxis.Get(r, 2)) switch
+        {
+            3 => size.Z,
+            2 => size.Y,
+            _ => size.X
+        };
     }
 
     /// <summary>

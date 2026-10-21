@@ -430,7 +430,7 @@ public sealed class Quadrilateral
 ///
 /// Cubes use all eight canonical vertices, padded and rotated in binary32, followed by the shared
 /// <see cref="MinAreaRectF"/> port, the checked corner sort and root-frame translation. Unported
-/// degenerate rectangle branches return false visibly; they are not replaced by a planar approximation.
+/// rectangle branches return false visibly; they are not replaced by a planar approximation.
 /// </summary>
 // fidelity: M13-007, M13-023
 public static class Footprint
@@ -473,8 +473,8 @@ public static class Footprint
 /// (<c>CHullCmpPoints</c> order, <c>Sklansky_&lt;float&gt;</c> with pprev = stack[ss-4]), then the rotating calipers with every float operation separate, then
 /// <c>RotatedRect::points</c> (0x00086188). The libm calls (cos, sin, atan2, sqrt) are <see cref="Math"/>'s, the stack's libm policy.
 ///
-/// NOT built, visible: a hull of fewer than three points (the engine's n &lt;= 2 paths at 0x0009CDFE / 0x0009CE82) throws <see cref="NotSupportedException"/>
-/// naming them; the <c>GetBoundingQuad</c> catch-all that falls back to the axis-aligned box when cv::minAreaRect throws (0x004E65C6) is not reproduced.
+/// Hulls with zero, one or two points use the native zero, point and line results (0x0009CDFC..0x0009CEAC).
+/// The <c>GetBoundingQuad</c> catch-all that falls back to the axis-aligned box when cv::minAreaRect throws (0x004E65C6) is not reproduced.
 /// </summary>
 // fidelity: M13-024
 public static class MinAreaRectF
@@ -545,6 +545,7 @@ public static class MinAreaRectF
     {
         var arr = points.ToArray();
         int total = arr.Length;
+        if (total == 0) return new List<Point2f>(); // cv::convexHull 0x00039174..0x000391FC
         Array.Sort(arr, (p, q) => Lt(p, q) ? -1 : (Lt(q, p) ? 1 : 0));
         int miny = 0, maxy = 0;
         for (int i = 1; i < total; i++)
@@ -578,7 +579,19 @@ public static class MinAreaRectF
     {
         var h = ConvexHull(points);
         int n = h.Count;
-        if (n <= 2) throw new NotSupportedException("M13-024: cv::minAreaRect's n <= 2 hull paths (0x0009CDFE, 0x0009CE82) are not ported");
+        if (n == 0) return default; // zero result words, 0x0009C7E2..0x0009C7EC
+        if (n == 1) return new RotatedRect(h[0].X, h[0].Y, 0f, 0f, 0f); // 0x0009CE82..0x0009CE8C
+        if (n == 2)
+        {
+            // 0x0009CDFC..0x0009CE80: midpoint and h[1]-h[0] in f32, then double libm.
+            float midX = (h[0].X + h[1].X) * 0.5f;
+            float midY = (h[0].Y + h[1].Y) * 0.5f;
+            float lineX = h[1].X - h[0].X, lineY = h[1].Y - h[0].Y;
+            float length = (float)Math.Sqrt((double)lineY * lineY + (double)lineX * lineX);
+            float angle = (float)Math.Atan2(lineY, lineX);
+            float scaled = angle * 180f; // common 0x0009CE8E..0x0009CEAC
+            return new RotatedRect(midX, midY, length, 0f, (float)((double)scaled / Math.PI));
+        }
         int left = 0, right = 0, top = 0, bottom = 0;
         float leftX = h[0].X, rightX = h[0].X, topY = h[0].Y, bottomY = h[0].Y;
         var vx = new float[n]; var vy = new float[n]; var inv = new float[n];
@@ -676,8 +689,8 @@ public static class MinAreaRectF
 /// from the slot +0x54, <c>Charger::GetCanonicalCorners</c> 0x004E9A50 (x in {0, 96}, y in {-40, 40}, z in {0, 31}), adds (signbit(p) ? -padding : +padding) to each
 /// coordinate, rotates with the pose's rotation matrix as x' = (x*m0 + y*m1) + z*m2, y' = (x*m3 + y*m4) + z*m5 (z' discarded), builds <c>GetBoundingQuad&lt;float&gt;</c> 0x004E6490
 /// (<see cref="MinAreaRectF"/>, <c>RotatedRect::points</c>, <c>SortCornersClockwise</c>) and adds the pose's x, y (0x004E68CC).
-/// CHOICE (M13-023 stays open for the numbers): the pose's rotation matrix is this stack's double matrix rounded to float32; the engine rebuilds it from its quaternion
-/// (<c>Rotation3d::GetRotationMatrix</c>), whose last-bit behaviour is not read.
+/// The pose's rotation getter rebuilds its f32 matrix from the quaternion; Mat3's accessor widens those stored values,
+/// so the casts below preserve them. The shared pose arithmetic retains its own verification boundary.
 ///
 /// <b>The robot's</b>: <c>Robot::GetBoundingQuadXY(pose, padding)</c> 0x00514D74, the canonical quad rotated by <c>RotationMatrix2d(GetAngleAroundZaxis)</c> and translated by
 /// the pose's x, y (the rotation itself is <see cref="LatticeEnvironment.RobotQuad"/>).
