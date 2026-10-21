@@ -147,3 +147,43 @@ Bounded verdict: no scalar-selection/blend correction found. This does not
 reverify Radians normalization, quaternion construction, libm edge semantics,
 PoseBase internals or root-fault behavior. Existing explicit M1-034 guard remains;
 no new policy or whole M11-052 settlement. No tests run in this slice.
+
+
+## Follow-up: ComputeStateAt selection before correction (66c3dd9a)
+
+Partial independent PASS, 2026-10-21. Re-read native
+0x00531784..0x005318D6, normal return0x00531ACE..0x00531AE8 and current
+NativeRobotStateHistory.ComputeStateAtCore (lines217 onward). Prior report's
+097 exact/raw-selection row agrees within this scope. No full correction-chain
+or pose-owner approval is implied.
+
+Current M11-097 is IMPLEMENTATION_GAP, titled “RobotStateHistory query and
+admission results: ComputeStateAt, GetLastStateWithFrameID and
+AddRobotStateToHistory's result”. Current evidence includes adopted OV128 H1
+0x00531792..0x005317E6, H2 raw query, H9 correction chain and the corrected
+frame-increase-before-stop rule; no status/evidence changes made here.
+
+- The vision tree lower_bound and equality check precede raw construction/query.
+  Exact match stores requested time at17CE, assigns pose17D2, copies0x5B state
+  bytes17DE/17E0 and returns0 without reading the interpolation argument. This
+  supports exact vision priority even if no raw bracket exists.
+- No match constructs a temporary raw state, forwards the caller's flag at
+  17EA/17FA and calls GetRawStateAt17FC. Nonzero result is retained in r7 and
+  returned after temporary cleanup at1AD0..1ADA; output pose/state is not copied
+  on this failure path. Returned-time behavior belongs to the raw query.
+- The next tree lookup reads the selected raw time from the output reference
+  (180C/1834), not the original requested timestamp. An exact key is selected;
+  otherwise predecessor is selected, including maximum key when lower_bound
+  is end. Empty tree or a key before the first vision entry takes raw-copy
+  fallback (1860/1ADE ->18C8).
+- Selected vision frame <= raw frame takes raw pose assignment18C4 and full
+  0x5B state copy18D0/18D2. Strictly newer vision frame enters correction.
+  Current LastOrDefault(key<=rawTime), no-entry/frame comparison and raw.Assign
+  implement these selection cases. The correction body itself was not newly
+  checked in this slice.
+
+No code defect found in these selection steps. Existing pose assignment,
+serialized-state representation and destruction dependencies remain separate;
+this is not a new whole-path fidelity claim. No tests or hardware run. The
+broader report's correction chain, ownership, frame assembly and remaining
+rows still require review; B-M11-18 remains held for its separate inventory.
