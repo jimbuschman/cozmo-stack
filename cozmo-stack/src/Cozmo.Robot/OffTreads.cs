@@ -53,17 +53,17 @@ public sealed class OffTreadsClassifier
     /// <summary>A5: onSide = sideDev &lt; 3000 (0x512200).</summary>
     public const float OnSideAccelBand = 3000f;
     /// <summary>A5: pitch &gt; Rad(1.91986) is extreme.</summary>
-    public const float OnFacePitchHighRad = 1.91986f;
+    public const float OnFacePitchHighRad = 1.919862151145935f; // 0x3FF5BE0B, 0x00511E66/6A
     /// <summary>A5: pitch &lt; Rad(−1.39626) is extreme.</summary>
-    public const float OnFacePitchLowRad = -1.39626f;
+    public const float OnFacePitchLowRad = -1.3962633609771729f; // 0xBFB2B8C2, 0x00511EE6/EA
     /// <summary>A5: the on-back centre on a physical robot, f64 at 0x5122A8.</summary>
-    public const double OnBackCentrePhysicalRad = 1.30027;
+    public const double OnBackCentrePhysicalRad = 1.3002703189849854; // 0x3FF4CDE840000000, 0x005122A8
     /// <summary>A5: the on-back centre when not physical, f64 at 0x5122A0.</summary>
-    public const double OnBackCentreSimulatedRad = 1.68250;
+    public const double OnBackCentreSimulatedRad = 1.6824973821640015; // 0x3FFAEB8260000000, 0x005122A0
     /// <summary>A5: onBack = |d| ≤ 0.261799 (0x5122B0).</summary>
-    public const double OnBackHalfWidthRad = 0.261799;
+    public const double OnBackHalfWidthRad = 0.2617993950843811; // 0x3FD0C15240000000, 0x005122B0
     /// <summary>A5: level = |pitch| ≤ 0.785398 (0x5122BC).</summary>
-    public const float LevelPitchRad = 0.785398f;
+    public const float LevelPitchRad = 0.7853981852531433f; // 0x3F490FDB, 0x005122BC
     /// <summary>A6/A7: the 250 ms debounce (t = now − 250; commit when t + 250 ≤ now).</summary>
     public const uint DebounceMs = 250;
     /// <summary>A6: an on-back candidate's time is now + 750 (`addw r0,fp,#0x2ee`).</summary>
